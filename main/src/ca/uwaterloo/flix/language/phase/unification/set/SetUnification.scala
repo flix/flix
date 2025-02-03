@@ -38,7 +38,21 @@ object SetUnification {
   /**
     * Tracks the number of constraints eliminated by each rewrite rule.
     */
-  val ElimPerRule: mutable.Map[String, Int] = mutable.Map.empty
+  val ElimPerRule: mutable.Map[Phase, Int] = mutable.Map.empty
+
+  /**
+   * Represents the name of phase.
+   */
+  sealed trait Phase
+
+  object Phase {
+    case object ConstantPropagation extends Phase
+    case object VariablePropagation extends Phase
+    case object VariableAssignment extends Phase
+    case object TrivialAndDuplicate extends Phase
+    case object SuccessiveVariableElimination extends Phase
+    case object Trivial extends Phase
+  }
 
   /** Represents the running mutable state of the solver. */
   final class State(initialEquations: List[Equation]) {
@@ -86,20 +100,20 @@ object SetUnification {
     */
   def solve(l: List[Equation])(implicit listener: SolverListener): (List[Equation], SetSubstitution) = {
     val state = new State(l)
-    val trivialPhaseName = "Trivial"
+    val trivialPhaseName = Phase.Trivial
 
     if (EnableRewriteRules) {
-      runWithState(state, runRule(constantAssignment), "ConstProp")
+      runWithState(state, runRule(constantAssignment), Phase.ConstantPropagation)
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, runRule(variableAlias), "VarProp")
+      runWithState(state, runRule(variableAlias), Phase.VariablePropagation)
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, runRule(variableAssignment), "VarAssign")
+      runWithState(state, runRule(variableAssignment), Phase.VariableAssignment)
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, duplicatedAndReflective, "TrivDup")
+      runWithState(state, duplicatedAndReflective, Phase.TrivialAndDuplicate)
       runWithState(state, runRule(trivial), trivialPhaseName)
     }
 
-    runWithState(state, runRule(sve), "SVE")
+    runWithState(state, runRule(sve), Phase.SuccessiveVariableElimination)
 
     (state.eqs, state.subst)
   }
@@ -107,17 +121,17 @@ object SetUnification {
   /**
     * Runs the given equation system solver `phase` on `state`.
     */
-  private def runWithState(state: State, phase: List[Equation] => Option[(List[Equation], SetSubstitution)], phaseName: String)(implicit listener: SolverListener): Unit = {
-    listener.onEnterPhase(phaseName, state)
+  private def runWithState(state: State, f: List[Equation] => Option[(List[Equation], SetSubstitution)], phase: Phase)(implicit listener: SolverListener): Unit = {
+    listener.onEnterPhase(phase.toString, state)
 
-    phase(state.eqs) match {
+    f(state.eqs) match {
       case Some((eqs, subst)) =>
 
         if (EnableStats) {
           synchronized {
-            val count = ElimPerRule.getOrElse(phaseName, 0)
+            val count = ElimPerRule.getOrElse(phase, 0)
             val delta = state.eqs.length - eqs.length
-            ElimPerRule.put(phaseName, count + delta)
+            ElimPerRule.put(phase, count + delta)
           }
         }
 

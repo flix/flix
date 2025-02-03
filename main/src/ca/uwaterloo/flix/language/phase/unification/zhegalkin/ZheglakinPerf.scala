@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
+import ca.uwaterloo.flix.language.phase.unification.set.SetUnification.Phase
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetUnification}
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
 import ca.uwaterloo.flix.util.{FileOps, Options, Subeffecting}
@@ -175,14 +176,13 @@ object ZheglakinPerf {
     assert(errors.isEmpty)
     SetUnification.EnableStats = false
 
-    val m: Map[String, Int] = SetUnification.ElimPerRule.toMap
-
-    val constProp = m("ConstProp")
-    val varProp = m("VarProp")
-    val varAssign = m("VarAssign")
-    val trivDup = m("TrivDup")
-    val sve = m("SVE")
-    val trivial = m("Trivial")
+    val m = SetUnification.ElimPerRule.toMap
+    val constProp = m(Phase.ConstantPropagation)
+    val varProp = m(Phase.VariablePropagation)
+    val varAssign = m(Phase.VariableAssignment)
+    val trivDup = m(Phase.TrivialAndDuplicate)
+    val sve = m(Phase.SuccessiveVariableElimination)
+    val trivial = m(Phase.Trivial)
 
     println("-" * 80)
     println("  ConstProp |  VarProp |  VarAssign |  TrivDup |    SVE |  Trivial")
