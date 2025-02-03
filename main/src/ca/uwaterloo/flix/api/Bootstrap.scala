@@ -892,7 +892,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }.flatMap {
       case (_, originalScheme) =>
         val newScheme = defn.spec.declaredScheme
-        val isSafe = EffectLock.isSafe2(originalScheme, newScheme)
+        val isSafe = EffectLock.isSafe(originalScheme, newScheme)
         if (isSafe) {
           None
         } else {
