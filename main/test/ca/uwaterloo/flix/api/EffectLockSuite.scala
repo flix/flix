@@ -21,7 +21,7 @@ class EffectLockSuite extends AnyFunSuite {
         |
         |""".stripMargin
     val (flix, result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result)(flix))
+    assert(checkIsSafe("g", "f", result)(flix))
   }
 
   test("Safe.02") {
@@ -33,7 +33,7 @@ class EffectLockSuite extends AnyFunSuite {
         |
         |""".stripMargin
     val (flix, result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result)(flix))
+    assert(checkIsSafe("g", "f", result)(flix))
   }
 
   test("Safe.03") {
@@ -49,7 +49,7 @@ class EffectLockSuite extends AnyFunSuite {
         |
         |""".stripMargin
     val (flix, result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result)(flix))
+    assert(checkIsSafe("g", "f", result)(flix))
   }
 
   test("Safe.04") {
@@ -65,7 +65,7 @@ class EffectLockSuite extends AnyFunSuite {
         |
         |""".stripMargin
     val (flix, result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result)(flix))
+    assert(checkIsSafe("g", "f", result)(flix))
   }
 
   test("Unsafe.01") {
@@ -81,7 +81,7 @@ class EffectLockSuite extends AnyFunSuite {
         |
         |""".stripMargin
     val (flix, result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("f", "g", result)(flix))
+    assert(!checkIsSafe("g", "f", result)(flix))
   }
 
   test("Unsafe.02") {
@@ -97,7 +97,7 @@ class EffectLockSuite extends AnyFunSuite {
         |
         |""".stripMargin
     val (flix, result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result)(flix))
+    assert(!checkIsSafe("g", "f", result)(flix))
   }
 
   test("Reachable.01") {
@@ -252,25 +252,28 @@ class EffectLockSuite extends AnyFunSuite {
     case Some(r) => r.defs.keys.map(_.text).toSet
   }
 
-  private def checkIsSafe(defn1: String, defn2: String, optRoot: Option[TypedAst.Root])(implicit flix: Flix): Boolean = {
+  /**
+    * Check that `upgrade` is a safe upgrade of `original`.
+    */
+  private def checkIsSafe(upgrade: String, original: String, optRoot: Option[TypedAst.Root])(implicit flix: Flix): Boolean = {
     optRoot match {
       case Some(root) =>
-        val optDefn1 = root.defs.find {
-          case (sym, _) => sym.text == defn1
+        val optUpgrade = root.defs.find {
+          case (sym, _) => sym.text == upgrade
         }
-        if (optDefn1.isEmpty) {
-          fail(s"unable to find $defn1")
+        if (optUpgrade.isEmpty) {
+          fail(s"unable to find $upgrade")
         }
-        val optDefn2 = root.defs.find {
-          case (sym, _) => sym.text == defn2
+        val optOriginal = root.defs.find {
+          case (sym, _) => sym.text == original
         }
-        if (optDefn2.isEmpty) {
-          fail(s"unable to find $defn2")
+        if (optOriginal.isEmpty) {
+          fail(s"unable to find $original")
         }
 
-        val sc1 = optDefn1.get._2.spec.declaredScheme
-        val sc2 = optDefn2.get._2.spec.declaredScheme
-        EffectLock.isSafe(sc1, sc2)
+        val scUpgrade = optUpgrade.get._2.spec.declaredScheme
+        val scOriginal = optOriginal.get._2.spec.declaredScheme
+        EffectLock.isSafe(scUpgrade, scOriginal)
 
       case None => fail("program does not compile")
     }
