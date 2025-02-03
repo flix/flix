@@ -856,21 +856,21 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   private def validateLibs(originalLibs: Map[Library, NamedTypeSchemes], upgradedProgram: List[TypedAst.Def])(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
-    Validation.mapN(Validation.traverse(upgradedProgram)(defn => validateDefn(defn.sym, defn, originalLibs)))(_ => ())
+    Validation.mapN(Validation.traverse(upgradedProgram)(validateDefn(originalLibs, _)))(_ => ())
   }
 
-  private def validateDefn(sym: Symbol.DefnSym, defn: TypedAst.Def, lockedSignatures: Map[Library, NamedTypeSchemes])(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
-    sym.loc.sp1.source.input match {
+  private def validateDefn(originalLibs: Map[Library, NamedTypeSchemes], defn: TypedAst.Def)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
+    defn.sym.loc.sp1.source.input match {
       case Input.Unknown | Input.PkgFile(_, _) | Input.Text(_, _, _) | Input.TxtFile(_, _) => Validation.Success(())
       case Input.FileInPackage(path, _, _, _) =>
         val name = path.getFileName.toString
-        lockedSignatures.get(name) match {
+        originalLibs.get(name) match {
           case None => Validation.Success(())
           case Some(signatures) =>
             val matchingSigs = signatures.find {
-              case (sym1, _) =>
-                out.println(s"debug from json: $sym1")
-                sym.namespace == sym1.namespace && sym.text == sym1.text
+              case (sym, _) =>
+                out.println(s"debug from json: $sym")
+                defn.sym.namespace == sym.namespace && defn.sym.text == sym.text
             }
             matchingSigs match {
               case None => Validation.Success(())
@@ -882,8 +882,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
                   out.println("Upgrade is valid")
                   Validation.Success(())
                 } else {
-                  out.println(s"$sym is a bad upgrade")
-                  Validation.Failure(BootstrapError.EffectUpgradeError(sym, originalScheme, newScheme))
+                  out.println(s"${defn.sym} is a bad upgrade")
+                  Validation.Failure(BootstrapError.EffectUpgradeError(defn.sym, originalScheme, newScheme))
                 }
             }
         }
