@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.api.effectlock.EffectLock
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialization
 import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext}
@@ -8,7 +10,19 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.Path
 
-class EffectLockSuite extends AnyFunSuite {
+class EffectLockSuite extends AnyFunSuite with TestUtils {
+
+  test("IsSafe.01") {
+    val input =
+      """
+        |pub def f(): Unit = ???
+        |
+        |pub def g(): Unit = ???
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(checkIsSafe("f", "g", result))
+  }
 
   test("Reachable.01") {
     val input =
@@ -23,7 +37,7 @@ class EffectLockSuite extends AnyFunSuite {
         |def a(): Unit = ()
         |
       """.stripMargin
-    val result = reachableDefs(checkEffectLock(input))
+    val result = reachableDefs(checkWithReachability(input, Options.TestWithLibNix))
     val expected = Set("main", "f", "g")
     assert(result == expected)
   }
@@ -43,7 +57,7 @@ class EffectLockSuite extends AnyFunSuite {
         |def g(h: Unit -> Unit): Unit = h()
         |
       """.stripMargin
-    val result = reachableDefs(checkEffectLock(input))
+    val result = reachableDefs(checkWithReachability(input, Options.TestWithLibNix))
     val expected = Set("main", "q", "g")
     assert(result == expected)
   }
@@ -65,7 +79,7 @@ class EffectLockSuite extends AnyFunSuite {
         |def a(): Unit = ()
         |
       """.stripMargin
-    val result = reachableDefs(checkEffectLock(input))
+    val result = reachableDefs(checkWithReachability(input, Options.TestWithLibNix))
     val expected = Set("main", "q", "g")
     assert(result == expected)
   }
@@ -143,9 +157,9 @@ class EffectLockSuite extends AnyFunSuite {
     (tpe, ser)
   }
 
-  private def checkEffectLock(input: String): Option[TypedAst.Root] = {
+  private def checkWithReachability(input: String, opts: Options): Option[TypedAst.Root] = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-    implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibNix).addSourceCode("<test>", input)
+    implicit val flix: Flix = new Flix().setOptions(opts).addSourceCode("<test>", input)
     val result = flix.effectLockReachable()
     result
   }
@@ -153,5 +167,29 @@ class EffectLockSuite extends AnyFunSuite {
   private def reachableDefs(root: Option[TypedAst.Root]): Set[String] = root match {
     case None => Set.empty
     case Some(r) => r.defs.keys.map(_.text).toSet
+  }
+
+  private def checkIsSafe(defn1: String, defn2: String, optRoot: Option[TypedAst.Root]): Boolean = {
+    optRoot match {
+      case Some(root) =>
+        val optDefn1 = root.defs.find {
+          case (sym, _) => sym.text == defn1
+        }
+        if (optDefn1.isEmpty) {
+          fail(s"unable to find $defn1")
+        }
+        val optDefn2 = root.defs.find {
+          case (sym, _) => sym.text == defn2
+        }
+        if (optDefn2.isEmpty) {
+          fail(s"unable to find $defn2")
+        }
+
+        val sc1 = optDefn1.get._2.spec.declaredScheme
+        val sc2 = optDefn2.get._2.spec.declaredScheme
+        EffectLock.isSafe(sc1, sc2)
+
+      case None => fail("program does not compile")
+    }
   }
 }
