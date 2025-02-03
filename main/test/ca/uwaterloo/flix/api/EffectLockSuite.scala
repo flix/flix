@@ -52,6 +52,22 @@ class EffectLockSuite extends AnyFunSuite {
     assert(checkIsSafe("f", "g", result)(flix))
   }
 
+  test("Safe.04") {
+    val input =
+      """
+        |pub eff E {
+        |    def e(): Unit
+        |}
+        |
+        |pub def f(_: a -> b \ E): b \ E = unchecked_cast(() as b \ E)
+        |
+        |pub def g(_: a -> b \ ef): b \ ef = ???
+        |
+        |""".stripMargin
+    val (flix, result, _) = check(input, Options.TestWithLibNix)
+    assert(checkIsSafe("f", "g", result)(flix))
+  }
+
   test("Unsafe.01") {
     val input =
       """
@@ -66,6 +82,22 @@ class EffectLockSuite extends AnyFunSuite {
         |""".stripMargin
     val (flix, result, _) = check(input, Options.TestWithLibNix)
     assert(!checkIsSafe("f", "g", result)(flix))
+  }
+
+  test("Unsafe.02") {
+    val input =
+      """
+        |pub eff E {
+        |    def e(): Unit
+        |}
+        |
+        |pub def f(_: a -> b \ ef): b \ ef = ???
+        |
+        |pub def g(_: a -> b \ E): b \ E = unchecked_cast(() as b \ E)
+        |
+        |""".stripMargin
+    val (flix, result, _) = check(input, Options.TestWithLibNix)
+    assert(checkIsSafe("f", "g", result)(flix))
   }
 
   test("Reachable.01") {
