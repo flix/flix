@@ -200,6 +200,7 @@ object Serialization {
     case TypeConstructor.CaseUnion(sym) => ??? // SerializableTypeConstructor.CaseUnion(sym)
     case TypeConstructor.CaseIntersection(sym) => ??? // SerializableTypeConstructor.CaseIntersection(sym)
     case TypeConstructor.CaseSet(syms, enumSym) => ??? // SerializableTypeConstructor.CaseSet(syms, enumSym)
+    case TypeConstructor.Region(_) => ??? // STC.Region(sym)
     case TypeConstructor.RegionToStar => STC.RegionToStar
     case TypeConstructor.RegionWithoutRegion => ??? // SerializableTypeConstructor.RegionWithoutRegion
     case TypeConstructor.Error(id, kind) => ??? // SerializableTypeConstructor.Error(id, kind)
