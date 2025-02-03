@@ -12,7 +12,7 @@ import java.nio.file.Path
 
 class EffectLockSuite extends AnyFunSuite with TestUtils {
 
-  test("IsSafe.01") {
+  test("Safe.01") {
     val input =
       """
         |pub def f(): Unit = ???
@@ -24,7 +24,7 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result))
   }
 
-  test("IsSafe.02") {
+  test("Safe.02") {
     val input =
       """
         |pub def f(): Bool -> Unit = ???
@@ -36,7 +36,7 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result))
   }
 
-  test("IsSafe.03") {
+  test("Safe.03") {
     val input =
       """
         |pub def f(): Bool -> Unit \ IO = ???
@@ -48,7 +48,7 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result))
   }
 
-  test("IsSafe.04") {
+  test("Unsafe.01") {
     val input =
       """
         |pub def f(): Bool -> Unit = ???
