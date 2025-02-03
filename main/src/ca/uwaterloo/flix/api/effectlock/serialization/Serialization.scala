@@ -105,7 +105,7 @@ object Serialization {
   }
 
   private def toKindedTypeVarSym(sym: SSymbol.VarSym): Symbol.KindedTypeVarSym = {
-    new Symbol.KindedTypeVarSym(sym.id, toVarText(sym.text), toKind(sym.kind), isRegion = false, isSlack = false, scope = Scope.Top, loc = SourceLocation.Unknown)
+    new Symbol.KindedTypeVarSym(sym.id, toVarText(sym.text), toKind(sym.kind), isSlack = false, scope = Scope.Top, loc = SourceLocation.Unknown)
   }
 
   private def fromType(tpe: Type): SType = tpe match {
