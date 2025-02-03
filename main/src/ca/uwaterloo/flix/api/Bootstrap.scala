@@ -848,21 +848,19 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def effectUpgrade(flix: Flix)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
     val path = getEffectLockFile(projectPath)
     out.println(s"Reading from file: ${path.getFileName.toString}")
-    // TODO: Add error handling
     val json = Files.readString(path) // TODO: Check that it is readable and exists. Add this as method to FileOps
-    val Some(deserde) = Serialization.deserialize(json)
+    val Some(deserde) = Serialization.deserialize(json) // TODO: Add error handling
     out.println("Lock file read. Checking upgrade safety")
-    validateLibs(flix, out, deserde)
+    validateLibs(deserde)(out, flix)
   }
 
-  private def validateLibs(flix: Flix, out: PrintStream, lockedSignatures: Map[Library, NamedTypeSchemes]): Validation[Unit, BootstrapError] = {
-    Validation.flatMapN(check(flix)) {
-      case root =>
-        val result = Validation.traverse(root.defs) {
-          case (sym, defn) => validateLib(sym, defn, lockedSignatures, out)
-        }
-        Validation.mapN(result)(_ => ())
+  private def validateLibs(lockedSignatures: Map[Library, NamedTypeSchemes])(implicit out: PrintStream, flix: Flix): Validation[Unit, BootstrapError] = {
+    val result = Validation.flatMapN(check(flix)) {
+      case root => Validation.traverse(root.defs) {
+        case (sym, defn) => validateLib(sym, defn, lockedSignatures, out)
+      }
     }
+    Validation.mapN(result)(_ => ())
   }
 
   private def validateLib(sym: Symbol.DefnSym, defn: TypedAst.Def, lockedSignatures: Map[Library, NamedTypeSchemes], out: PrintStream): Validation[Unit, BootstrapError] = {
