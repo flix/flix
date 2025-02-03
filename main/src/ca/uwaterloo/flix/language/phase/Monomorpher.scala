@@ -132,6 +132,10 @@ object Monomorpher {
           case Some(t) => t       // Case 2: Variable in subst. Note: All types in the *StrictSubstitution* are already normalized.
         }
 
+      // We map regions to IO
+      case Type.Cst(TypeConstructor.Region(_), _) =>
+        Type.IO
+
       case cst@Type.Cst(_, _) =>
         // Maintain and exploit reference equality for performance.
         cst
@@ -541,9 +545,7 @@ object Monomorpher {
     case LoweredAst.Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
-      // forcedly mark the region variable as IO inside the region
-      val subst1 = subst.unbind(regionVar.sym) + (regionVar.sym -> Type.IO)
-      MonoAst.Expr.Scope(freshSym, regionVar, visitExp(exp, env1, subst1), subst(tpe), subst(eff), loc)
+      MonoAst.Expr.Scope(freshSym, regionVar, visitExp(exp, env1, subst), subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1, env0, subst)
@@ -910,6 +912,9 @@ object Monomorpher {
     case Type.Pure => CofiniteEffSet.empty
     case Type.Cst(TypeConstructor.Effect(sym), _) =>
       CofiniteEffSet.mkSet(sym)
+    case Type.Cst(TypeConstructor.Region(_), _) =>
+      // We map regions to IO
+      CofiniteEffSet.mkSet(Symbol.IO)
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _) =>
       CofiniteEffSet.complement(eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) =>

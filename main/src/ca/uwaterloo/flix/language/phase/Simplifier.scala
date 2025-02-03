@@ -361,6 +361,8 @@ object Simplifier {
             // The row types themselves return monotype records, so we do nothing here.
             visitType(elm)
 
+          case TypeConstructor.Region(_) => MonoType.Unit
+
           case TypeConstructor.True => MonoType.Unit
           case TypeConstructor.False => MonoType.Unit
           case TypeConstructor.Not => MonoType.Unit
@@ -522,6 +524,8 @@ object Simplifier {
           case TypeConstructor.Record =>
             val List(elm) = tpe.typeArguments
             Type.mkRecord(visitPolyType(elm), loc)
+
+          case TypeConstructor.Region(_) => Type.mkUnit(loc)
 
           case TypeConstructor.True => Type.mkUnit(loc)
           case TypeConstructor.False => Type.mkUnit(loc)

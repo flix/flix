@@ -1227,8 +1227,15 @@ object Type {
   /**
     * Returns a Region type for the given region argument `r` with the given source location `loc`.
     */
-  def mkRegion(r: Type, loc: SourceLocation): Type =
+  def mkRegionToStar(r: Type, loc: SourceLocation): Type =
     Type.Apply(Type.Cst(TypeConstructor.RegionToStar, loc), r, loc)
+
+  /**
+    * Returns a region type with the given symbol.
+    */
+  def mkRegion(sym: Symbol.RegionSym, loc: SourceLocation): Type = {
+    Type.Cst(TypeConstructor.Region(sym), loc)
+  }
 
   /**
     * Replace type aliases with the types they represent.
@@ -1399,6 +1406,47 @@ object Type {
     case Constant.Str(_) => Type.Str
     case Constant.Regex(_) => Type.Regex
     case Constant.RecordEmpty => Type.mkRecord(Type.RecordRowEmpty, SourceLocation.Unknown)
+  }
+
+  /**
+    * Replaces the given region in the type with the Pure effect.
+    */
+  def purifyRegion(tpe0: Type, sym: Symbol.RegionSym): Type = tpe0 match {
+    case Cst(TypeConstructor.Region(sym1), _) if sym == sym1 => Type.Pure
+    case t: Cst => t
+    case t: Var => t
+    case Apply(tpe1, tpe2, loc) =>
+      val t1 = purifyRegion(tpe1, sym)
+      val t2 = purifyRegion(tpe2, sym)
+      Type.Apply(t1, t2, loc)
+    case Alias(_, _, tpe, loc) =>
+      purifyRegion(tpe, sym)
+    case AssocType(symUse, arg, kind, loc) =>
+      val a = purifyRegion(arg, sym)
+      AssocType(symUse, a, kind, loc)
+    case JvmToType(tpe, loc) =>
+      val t = purifyRegion(tpe, sym)
+      JvmToType(t, loc)
+    case JvmToEff(tpe, loc) =>
+      val t = purifyRegion(tpe, sym)
+      JvmToEff(t, loc)
+    case UnresolvedJvmType(member, loc) =>
+      val m = member match {
+        case JvmMember.JvmConstructor(clazz, tpes) =>
+          val ts = tpes.map(purifyRegion(_, sym))
+          JvmMember.JvmConstructor(clazz, ts)
+        case JvmMember.JvmField(base, tpe, name) =>
+          val t = purifyRegion(tpe, sym)
+          JvmMember.JvmField(base, t, name)
+        case JvmMember.JvmMethod(tpe, name, tpes) =>
+          val t = purifyRegion(tpe, sym)
+          val ts = tpes.map(purifyRegion(_, sym))
+          JvmMember.JvmMethod(t, name, ts)
+        case JvmMember.JvmStaticMethod(clazz, name, tpes) =>
+          val ts = tpes.map(purifyRegion(_, sym))
+          JvmMember.JvmStaticMethod(clazz, name, ts)
+      }
+      UnresolvedJvmType(m, loc)
   }
 
 }

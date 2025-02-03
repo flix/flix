@@ -400,7 +400,7 @@ object ConstraintGen {
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.Scope(sym, regionVar, exp, tvar, evar, loc) =>
+      case Expr.Scope(sym, regSym, exp, tvar, evar, loc) =>
         // We must visit exp INSIDE the region
         // (i.e. between `enter` and `exit`)
         // because we need to resolve local constraints
@@ -410,8 +410,8 @@ object ConstraintGen {
         // We must unify sym.tvar and the region var INSIDE the region
         // because we need to ensure that reference to the region are
         // resolved BEFORE purifying the region as we exit
-        c.enterRegion(regionVar.sym)
-        c.unifyType(sym.tvar, Type.mkRegion(regionVar, loc), loc)
+        c.enterRegion(regSym)
+        c.unifyType(sym.tvar, Type.mkRegionToStar(Type.mkRegion(regSym, loc), loc), loc)
         val (tpe, eff) = visitExp(exp)
         c.unifyType(tvar, tpe, loc)
         c.exitRegion(evar, eff, loc)
@@ -507,7 +507,7 @@ object ConstraintGen {
 
       case Expr.ArrayLit(exps, exp, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
-        val regionType = Type.mkRegion(regionVar, loc)
+        val regionType = Type.mkRegionToStar(regionVar, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         val (tpe, eff) = visitExp(exp)
         c.expectType(expected = regionType, actual = tpe, exp.loc)
@@ -521,7 +521,7 @@ object ConstraintGen {
 
       case Expr.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
-        val regionType = Type.mkRegion(regionVar, loc)
+        val regionType = Type.mkRegionToStar(regionVar, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         val (tpe3, eff3) = visitExp(exp3)
@@ -585,7 +585,7 @@ object ConstraintGen {
             case Some((_, fieldTpe2)) => c.unifyType(fieldTpe1, fieldTpe2, expr.loc)
           }
         }
-        c.unifyType(Type.mkRegion(regionVar, loc), regionTpe, region.loc)
+        c.unifyType(Type.mkRegionToStar(regionVar, loc), regionTpe, region.loc)
         c.unifyType(evar, Type.mkUnion(fieldEffs :+ regionEff :+ regionVar, loc), loc)
         val resTpe = tvar
         val resEff = evar
@@ -916,7 +916,7 @@ object ConstraintGen {
         // --------------------------------------------------------
         // Γ ⊢ spawn e1 @ e2 : Unit \ (ef1 ∩ prims) ∪ ef2
         val regionVar = Type.freshVar(Kind.Eff, loc)
-        val regionType = Type.mkRegion(regionVar, loc)
+        val regionType = Type.mkRegionToStar(regionVar, loc)
         val anyEff = Type.freshVar(Kind.Eff, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
