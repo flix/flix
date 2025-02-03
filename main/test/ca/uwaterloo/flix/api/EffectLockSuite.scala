@@ -39,7 +39,11 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
   test("Safe.03") {
     val input =
       """
-        |pub def f(): Bool -> Unit \ IO = ???
+        |pub eff A {
+        |    def a(): Unit
+        |}
+        |
+        |pub def f(): (Bool -> Unit \ A) = unchecked_cast(() as Bool -> Unit \ A)
         |
         |pub def g(): Bool -> Unit = ???
         |
@@ -51,9 +55,13 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
   test("Unsafe.01") {
     val input =
       """
+        |pub eff A {
+        |    def a(): Unit
+        |}
+        |
         |pub def f(): Bool -> Unit = ???
         |
-        |pub def g(): Bool -> Unit \ IO = ???
+        |pub def g(): (Bool -> Unit \ A) = unchecked_cast(() as Bool -> Unit \ A)
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)

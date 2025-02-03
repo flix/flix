@@ -45,8 +45,7 @@ object EffectLock {
       case (TypeConstructor.BigInt, TypeConstructor.BigInt) => true
       case (TypeConstructor.Str, TypeConstructor.Str) => true
       case (TypeConstructor.Regex, TypeConstructor.Regex) => true
-      case (TypeConstructor.Arrow(arity1), TypeConstructor.Arrow(arity2)) => true
-      case (TypeConstructor.ArrowWithoutEffect(arity1), TypeConstructor.ArrowWithoutEffect(arity2)) => true
+      case (TypeConstructor.Arrow(arity1), TypeConstructor.Arrow(arity2)) => arity1 == arity2
       case (TypeConstructor.RecordRowEmpty, TypeConstructor.RecordRowEmpty) => true
       case (TypeConstructor.RecordRowExtend(label1), TypeConstructor.RecordRowExtend(label2)) => true
       case (TypeConstructor.Record, TypeConstructor.Record) => true
