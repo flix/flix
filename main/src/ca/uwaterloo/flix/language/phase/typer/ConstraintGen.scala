@@ -1238,7 +1238,7 @@ object ConstraintGen {
         // The operation type is `Void`. Flix does not have subtyping, but here we want something close to it.
         // Hence we treat `Void` as a fresh type variable.
         // An alternative would be to allow empty pattern matches, but that is cumbersome.
-        Type.freshVar(Kind.Star, op.spec.tpe.loc, isRegion = false, VarText.Absent)
+        Type.freshVar(Kind.Star, op.spec.tpe.loc, VarText.Absent)
       case _ => op.spec.tpe
     }
   }

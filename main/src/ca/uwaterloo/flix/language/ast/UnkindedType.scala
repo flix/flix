@@ -317,8 +317,8 @@ object UnkindedType {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(loc: SourceLocation, isRegion: Boolean = false, text: VarText = VarText.Absent)(implicit scope: Scope, flix: Flix): UnkindedType.Var = {
-    val sym = Symbol.freshUnkindedTypeVarSym(text, isRegion, loc)
+  def freshVar(loc: SourceLocation, text: VarText = VarText.Absent)(implicit scope: Scope, flix: Flix): UnkindedType.Var = {
+    val sym = Symbol.freshUnkindedTypeVarSym(text, loc)
     UnkindedType.Var(sym, loc)
   }
 
