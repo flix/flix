@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetUnification}
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
@@ -48,21 +47,18 @@ object ZheglakinPerf {
                              opts: Options
                            )
 
-  def main(args: Array[String]): Unit = {
-    val N: Int = args.headOption.flatMap(_.toIntOption) match {
-      case None => DefaultN
-      case Some(n) => n
-    }
+  def run(n: Option[Int]): Unit = {
+    val r = n.getOrElse(DefaultN)
 
-    rq1(N)
-    rq2(N)
+    rq1()
+    rq2()
     //RQ22(N)
-    rq3(N)
-    rq6(N)
+    rq3(r)
+    rq6(r)
   }
 
 
-  private def rq1(n: Int): Unit = {
+  private def rq1(): Unit = {
     println(RQ1)
 
     // TODO: What options should be used when we collect the constraints?
@@ -168,7 +164,7 @@ object ZheglakinPerf {
     println()
   }
 
-  private def rq2(n: Int): Unit = {
+  private def rq2(): Unit = {
     println(RQ2)
 
     SetUnification.EnableStats = true
@@ -331,11 +327,11 @@ object ZheglakinPerf {
     */
   private def throughput(lines: Long, time: Long): Int = ((1_000_000_000L * lines).toDouble / time.toDouble).toInt
 
-  case class Run(lines: Int, time: Long)
+  private case class Run(lines: Int, time: Long)
 
-  case class Runs(lines: Int, times: List[Long])
+  private case class Runs(lines: Int, times: List[Long])
 
-  case class Throughput(min: Int, max: Int, avg: Int, mdn: Int) {
+  private case class Throughput(min: Int, max: Int, avg: Int, mdn: Int) {
     override def toString: String = f"min: $min%,7d, max: $max%,7d, avg: $avg%,7d, median: $mdn%,7d"
   }
 
