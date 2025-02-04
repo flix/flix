@@ -100,6 +100,22 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
     assert(!checkIsSafe("g", "f", result))
   }
 
+  test("Unsafe.03") {
+    val input =
+      """
+        |pub eff E {
+        |    def e(): Unit
+        |}
+        |
+        |pub def f(_: String): String = ???
+        |
+        |pub def g(_: String): String \ E = unchecked_cast("str" as String \ E)
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(!checkIsSafe("g", "f", result))
+  }
+
   test("Reachable.01") {
     val input =
       """
