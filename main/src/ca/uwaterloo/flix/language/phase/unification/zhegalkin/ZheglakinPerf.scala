@@ -139,7 +139,7 @@ object ZheglakinPerf {
 
     println("-" * 80)
     // Runs and Systems
-    println(f"\\newcommand{\\Runs}{${table.length}%,d}")
+    println(f"\\newcommand{\\Runs}{$n%,d}")
     println(f"\\newcommand{\\Systems}{${table.length}%,d}")
     // Constraints
     println(f"\\newcommand{\\ConstraintsTot}{${table.map(_._1).sum}%,d}")
