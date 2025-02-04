@@ -113,8 +113,6 @@ object SetUnification {
       runWithState(state, runRule(trivial), trivialPhaseName)
     }
 
-    //runWithState(state, runRule(sve), Phase.SuccessiveVariableElimination)
-
     sveAll(state.eqs) match {
       case None =>
         // Failure: We found a conflict.
@@ -454,35 +452,6 @@ object SetUnification {
   }
 
   /**
-    * Solves equations using successive-variable-elimination, i.e. exhaustive instantiation.
-    *
-    * SVE can always make progress, so [[None]] is never returned.
-    *
-    * Always returns no equations or `eq` marked as [[Equation.Status.Unsolvable]] or
-    * [[Equation.Status.Timeout]].
-    */
-  private def sve(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
-    implicit val alg: BoolAlg[ZhegalkinExpr] = ZhegalkinAlgebra
-    val f1 = Zhegalkin.toZhegalkin(eq.f1)
-    val f2 = Zhegalkin.toZhegalkin(eq.f2)
-    val q = alg.mkXor(f1, f2)
-
-    try {
-      val subst = ZhegalkinCache.lookupOrComputeSVE(q, q => {
-        SveAlgorithm.successiveVariableElimination(q)
-      })
-
-      val m = subst.m.foldLeft(IntMap.empty[SetFormula]) {
-        case (acc, (x, e)) => acc.updated(x, Zhegalkin.toSetFormula(e))
-      }
-      Some((Nil, SetSubstitution(m)))
-    } catch {
-      case _: BoolUnificationException =>
-        Some((List(eq.toUnsolvable), SetSubstitution.empty))
-    }
-  }
-
-  /**
    * Attempts to solve all the given equations using the SVE algorithm.
    */
   private def sveAll(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {  // TODO: Return type
@@ -515,7 +484,7 @@ object SetUnification {
       }
 
       if (EnableStats) {
-        val count = ElimPerRule.get(Phase.SuccessiveVariableElimination)
+        val count = ElimPerRule.getOrElse(Phase.SuccessiveVariableElimination, 0)
         ElimPerRule.put(Phase.SuccessiveVariableElimination, count + eqs.length)
       }
 
