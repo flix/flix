@@ -28,10 +28,9 @@ import scala.collection.mutable
 object ZheglakinPerf {
 
   private val RQ1 = "RQ1: Characteristics of the Boolean Equation Systems"
-  private val RQ2 = "RQ2: Hit Rate of Simple Rewrite Rules"
-  private val RQ22 = "RQ2.2: Performance Gain of the Simple Rewrite Rules"
+  private val RQ2 = "RQ2: Performance Gain of with Rewrite Rules"
   private val RQ3 = "RQ3: Performance Gain of Per-Operation Caching"
-  private val RQ6 = "RQ6: The Performance Cost of Subeffecting and Regaining It"
+  private val RQ4 = "RQ4: Performance Gain of the Solve-and-Retry Strategy"
 
   private val DefaultN: Int = 2
 
@@ -51,15 +50,14 @@ object ZheglakinPerf {
   def run(n: Option[Int]): Unit = {
     val r = n.getOrElse(DefaultN)
 
-    rq1()
+    rq1(r)
     rq2()
-    //RQ22(N)
     rq3(r)
-    rq6(r)
+    rq4(r)
   }
 
 
-  private def rq1(): Unit = {
+  private def rq1(n: Int): Unit = {
     println(RQ1)
 
     // TODO: What options should be used when we collect the constraints?
@@ -140,8 +138,9 @@ object ZheglakinPerf {
 
 
     println("-" * 80)
-    // Constraint Systems
-    println(f"\\newcommand{\\ConstraintSystems}{${table.length}%,d}")
+    // Runs and Systems
+    println(f"\\newcommand{\\Runs}{$n%,d}")
+    println(f"\\newcommand{\\Systems}{${table.length}%,d}")
     // Constraints
     println(f"\\newcommand{\\ConstraintsTot}{${table.map(_._1).sum}%,d}")
     println(f"\\newcommand{\\ConstraintsMin}{${table.map(_._1).min}%,d}")
@@ -177,34 +176,17 @@ object ZheglakinPerf {
     SetUnification.EnableStats = false
 
     val m = SetUnification.ElimPerRule.toMap
+    val trivial = m(Phase.Trivial)
     val constProp = m(Phase.ConstantPropagation)
     val varProp = m(Phase.VariablePropagation)
     val varAssign = m(Phase.VariableAssignment)
-    val trivDup = m(Phase.TrivialAndDuplicate)
+    val reflDupl = m(Phase.ReflexiveAndDuplicate)
     val sve = m(Phase.SuccessiveVariableElimination)
-    val trivial = m(Phase.Trivial)
 
     println("-" * 80)
-    println("  ConstProp |  VarProp |  VarAssign |  TrivDup |    SVE |  Trivial")
+    println("  Trivial | ConstProp |  VarProp |  VarAssign |  ReflDupl |    SVE")
     println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    println(f"$constProp%,11d & $varProp%,8d & $varAssign%,10d & $trivDup%,8d & $sve%,6d & $trivial%,8d \\\\")
-    println("-" * 80)
-    println()
-    println()
-  }
-
-  private def rq2Throughput(n: Int): Unit = {
-    println(RQ22)
-
-    val DefaultNoRewriteRules = Config(rewriteRules = false, cacheInterCst = false, cacheUnion = false, cacheInter = true, cacheXor = false, cacheSVE = false, smartSubeffecting = true, opts = Options.Default.copy(xsubeffecting = FullSubeffecting))
-
-    val m1 = runConfig(DefaultNoRewriteRules, n).mdn
-    val m2 = runConfig(DefaultNoRewriteRules.copy(rewriteRules = true), n).mdn
-
-    println("-" * 80)
-    println("\\textsf{Baseline} & Rewrite Rules \\\\")
-    println("\\midrule")
-    println(f"\\textsf{Throughput (\\textsf{median})} & $m1%,7d & $m2%,7d \\\\")
+    println(f"$trivial%,9d & $constProp%,9d & $varProp%,8d & $varAssign%,10d & $reflDupl%,9d & $sve%,6d \\\\")
     println("-" * 80)
     println()
     println()
@@ -232,8 +214,8 @@ object ZheglakinPerf {
     println()
   }
 
-  private def rq6(n: Int): Unit = {
-    println(RQ6)
+  private def rq4(n: Int): Unit = {
+    println(RQ4)
 
     val DefaultNoSubeffecting = Config(rewriteRules = true, cacheInterCst = false, cacheUnion = false, cacheInter = true, cacheXor = false, cacheSVE = false, opts = Options.Default.copy(xsubeffecting = Set.empty))
 
