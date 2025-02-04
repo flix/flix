@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.*
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
-import org.json4s.JsonAST.{JString, JValue}
+import org.json4s.JsonAST.{JArray, JString, JValue}
 import org.json4s.JsonDSL.*
 import org.json4s.ParserUtil.ParseException
 import org.json4s.*
@@ -261,7 +261,11 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sourceCode, currentErrors)(flix, root)
 
     case Request.Highlight(id, uri, pos) =>
-      ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(root)
+      val highlights = HighlightProvider.processHighlight(uri, pos)(root)
+      if (highlights.isEmpty)
+        ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this highlight.")
+      else
+          ("id" -> id) ~("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON).toList))
 
     case Request.Hover(id, uri, pos) =>
       HoverProvider.processHover(uri, pos)(root, flix) match {
