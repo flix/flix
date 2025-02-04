@@ -5,6 +5,8 @@ import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, Type, TypeConstructo
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Unification}
 
+import scala.collection.immutable.SortedSet
+
 object EffectLock {
 
   /**
@@ -15,18 +17,17 @@ object EffectLock {
   }
 
   private def unifiableSchemes(sc1: Scheme, sc2: Scheme)(implicit flix: Flix): Boolean = {
-    val unification = Unification.fullyUnifyTypes(sc1.base, sc2.base, RigidityEnv.empty, EqualityEnv.empty)(Scope.Top, flix)
-    unification match {
-      case Some(subst) => subst(sc2) == sc2
-      case None => false
-    }
+    val renv = RigidityEnv.apply(SortedSet.from(sc2.quantifiers))
+    val unification = Unification.fullyUnifyTypes(sc1.base, sc2.base, renv, EqualityEnv.empty)(Scope.Top, flix)
+    unification.isDefined
   }
 
   private def monomorphicDowngrade(sc1: Scheme, sc2: Scheme): Boolean = {
     val noQuantifiers = sc1.quantifiers.isEmpty && sc2.quantifiers.isEmpty
     val sameMonomorphicType = checkSameMonomorphicType(sc1.base, sc2.base)
-    val subsetOfEffects = sc1.base.arrowEffectType.effects.subsetOf(sc2.base.arrowEffectType.effects)
-    noQuantifiers && sameMonomorphicType && subsetOfEffects
+    val subsetOfEffects1 = sc1.base.arrowEffectType.effects.subsetOf(sc2.base.arrowEffectType.effects)
+    val subsetOfEffects2 = sc1.base.arrowResultType.effects.subsetOf(sc2.base.arrowResultType.effects)
+    noQuantifiers && sameMonomorphicType && subsetOfEffects1 && subsetOfEffects2
   }
 
   private def checkSameMonomorphicType(tpe1: Type, tpe2: Type): Boolean = (tpe1, tpe2) match {
