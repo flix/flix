@@ -292,6 +292,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(root)
 
     case Request.SemanticTokens(id, uri) =>
+//      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("data" -> Nil))
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("data" -> SemanticTokensProvider.provideSemanticTokens(uri)(root)))
 
     case Request.InlayHint(id, uri, range) =>
