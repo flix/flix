@@ -102,39 +102,6 @@ sealed trait Type {
   }
 
   /**
-    * Returns all the associated types in the given type.
-    */
-  def assocs: Set[Type.AssocType] = this match {
-    case t: Type.AssocType => Set(t)
-
-    case _: Type.Var => Set.empty
-    case _: Type.Cst => Set.empty
-
-    case Type.Apply(tpe1, tpe2, _) => tpe1.assocs ++ tpe2.assocs
-    case Type.Alias(_, _, tpe, _) => tpe.assocs
-
-    case Type.JvmToType(tpe, _) => tpe.assocs
-    case Type.JvmToEff(tpe, _) => tpe.assocs
-    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(Set.empty[Type.AssocType])((acc, t) => acc ++ t.assocs)
-  }
-
-  /**
-   * Returns all the JvmToEffs in the given type.
-   */
-  def jvmToEffs: Set[Type.JvmToEff] = this match {
-    case t: Type.JvmToEff => Set(t)
-
-    case _: Type.Var => Set.empty
-    case _: Type.Cst => Set.empty
-
-    case Type.Apply(tpe1, tpe2, _) => tpe1.jvmToEffs ++ tpe2.jvmToEffs
-    case Type.Alias(_, _, tpe, _) => tpe.jvmToEffs
-    case Type.AssocType(_, arg, _, _) => arg.jvmToEffs
-    case Type.JvmToType(tpe, _) => tpe.jvmToEffs
-    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(Set.empty[Type.JvmToEff])((acc, t) => acc ++ t.jvmToEffs)
-  }
-
-  /**
     * Optionally returns the type constructor of `this` type.
     *
     * Return `None` if the type constructor is a variable.

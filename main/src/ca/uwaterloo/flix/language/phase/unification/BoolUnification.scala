@@ -79,19 +79,15 @@ object BoolUnification {
     *
     * This environment should be used in the functions [[toType]] and [[fromType]].
     */
-  private def getEnv(fs: List[Type]): Bimap[IrreducibleEff, Int] = {
+  private def getEnv(fs: List[Type]): Bimap[Symbol.KindedTypeVarSym, Int] = {
     // Compute the variables in `tpe`.
     val tvars =
       fs.foldLeft(SortedSet.empty[Symbol.KindedTypeVarSym])((acc, tpe) => acc ++ tpe.typeVars.map(_.sym))
-        .toList.map(IrreducibleEff.Var.apply)
-
-    val effs =
-      fs.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, tpe) => acc ++ tpe.effects)
-        .toList.map(IrreducibleEff.Eff.apply)
+        .toList
 
     // Construct a bi-directional map from type variables to indices.
     // The idea is that the first variable becomes x0, the next x1, and so forth.
-    (tvars ++ effs).zipWithIndex.foldLeft(Bimap.empty[IrreducibleEff, Int]) {
+    tvars.zipWithIndex.foldLeft(Bimap.empty[Symbol.KindedTypeVarSym, Int]) {
       case (macc, (sym, x)) => macc + (sym -> x)
     }
   }
@@ -99,31 +95,21 @@ object BoolUnification {
   /**
     * Returns a rigidity environment on formulas that is equivalent to the given one on types.
     */
-  def liftRigidityEnv(renv: RigidityEnv, env: Bimap[IrreducibleEff, Int]): SortedSet[Int] = {
-    val rigidVars = renv.s.flatMap {
-      case tvar => env.getForward(IrreducibleEff.Var(tvar))
+  def liftRigidityEnv(renv: RigidityEnv, env: Bimap[Symbol.KindedTypeVarSym, Int]): SortedSet[Int] = {
+    renv.s.flatMap {
+      case tvar => env.getForward(tvar)
     }
-    val effs = env.m1.collect {
-      case (IrreducibleEff.Eff(_), i) => i
-    }
-    rigidVars ++ effs
   }
 
   /**
     * Converts this formula substitution into a type substitution
     */
-  def toTypeSubstitution(s: BoolSubstitution[BoolFormula], env: Bimap[IrreducibleEff, Int]): Substitution = {
+  def toTypeSubstitution(s: BoolSubstitution[BoolFormula], env: Bimap[Symbol.KindedTypeVarSym, Int]): Substitution = {
     val map = s.m.map {
       case (k0, v0) =>
         val k = env.getBackward(k0).getOrElse(throw InternalCompilerException(s"missing key $k0", SourceLocation.Unknown))
-        val tvar = k match {
-          case IrreducibleEff.Var(sym) => sym
-          case IrreducibleEff.Eff(sym) => throw InternalCompilerException(s"unexpected substituted effect: $sym", SourceLocation.Unknown)
-          case IrreducibleEff.Assoc(sym, _) => throw InternalCompilerException(s"unexpected substituted effect: $sym", SourceLocation.Unknown)
-          case IrreducibleEff.JvmToEff(t) => throw InternalCompilerException(s"unexpected substituted effect: $t", SourceLocation.Unknown)
-        }
         val v = toType(v0, env)
-        (tvar, v)
+        (k, v)
     }
     Substitution(map)
   }
@@ -131,8 +117,8 @@ object BoolUnification {
   /**
     * Converts the given type t into a formula.
     */
-  private def fromType[F](t: Type, env: Bimap[IrreducibleEff, Int])(implicit alg: BoolAlg[F]): F = Type.eraseTopAliases(t) match {
-    case Type.Var(sym, _) => env.getForward(IrreducibleEff.Var(sym)) match {
+  private def fromType[F](t: Type, env: Bimap[Symbol.KindedTypeVarSym, Int])(implicit alg: BoolAlg[F]): F = Type.eraseTopAliases(t) match {
+    case Type.Var(sym, _) => env.getForward(sym) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => alg.mkVar(x)
     }
@@ -144,35 +130,15 @@ object BoolUnification {
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
   }
 
-  private def toType(f: BoolFormula, env: Bimap[IrreducibleEff, Int]): Type = f match {
+  private def toType(f: BoolFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = f match {
     case BoolFormula.True => Type.True
     case BoolFormula.False => Type.False
     case BoolFormula.And(f1, f2) => Type.mkAnd(toType(f1, env), toType(f2, env), SourceLocation.Unknown)
     case BoolFormula.Or(f1, f2) => Type.mkOr(toType(f1, env), toType(f2, env), SourceLocation.Unknown)
     case BoolFormula.Not(f1) => Type.mkNot(toType(f1, env), SourceLocation.Unknown)
     case BoolFormula.Var(id) => env.getBackward(id) match {
-      case Some(IrreducibleEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
-      case Some(IrreducibleEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
-      case Some(IrreducibleEff.Assoc(sym, arg)) => Type.AssocType(AssocTypeSymUse(sym, SourceLocation.Unknown), arg, Kind.Eff, SourceLocation.Unknown)
-      case Some(IrreducibleEff.JvmToEff(t)) => t
+      case Some(sym) => Type.Var(sym, SourceLocation.Unknown)
       case None => throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown)
     }
   }
-
-  /**
-    * An irreducible effect.
-    */
-  sealed trait IrreducibleEff
-
-  object IrreducibleEff {
-
-    case class Var(sym: Symbol.KindedTypeVarSym) extends IrreducibleEff
-
-    case class Eff(sym: Symbol.EffectSym) extends IrreducibleEff
-
-    case class Assoc(sym: Symbol.AssocTypeSym, arg: Type) extends IrreducibleEff
-
-    case class JvmToEff(tpe: Type.JvmToEff) extends IrreducibleEff
-  }
-
 }
