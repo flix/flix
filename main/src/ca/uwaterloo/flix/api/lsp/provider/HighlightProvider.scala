@@ -62,14 +62,14 @@ object HighlightProvider {
     * @return     A [[JObject]] representing an LSP highlight response. On success, contains [[DocumentHighlight]]
     *             for each occurrence of the symbol under the cursor.
     */
-  def processHighlight(uri: String, pos: Position)(implicit root: Root): JObject = {
+  def processHighlight(uri: String, pos: Position)(implicit root: Root): Set[DocumentHighlight] = {
     val highlightRight = searchRightOfCursor(uri, pos).flatMap(x => getOccurs(x, uri))
     val highlightLeft = searchLeftOfCursor(uri, pos).flatMap(x => getOccurs(x, uri))
 
     highlightRight
       .orElse(highlightLeft)
       .map(mkHighlights)
-      .getOrElse(mkNotFound(uri, pos))
+      .getOrElse(Set.empty)
   }
 
   /**
@@ -666,14 +666,12 @@ object HighlightProvider {
     * those created from `occurs.reads` have [[DocumentHighlightKind.Read]]
     *
     * @param occurs The [[Occurs]] to be highlighted.
-    * @return       LSP highlight response containing [[DocumentHighlight]] for every occurrence in `occurs`.
+    * @return       Set of [[DocumentHighlight]] for every occurrence in `occurs`.
     */
-  private def mkHighlights(occurs: Occurs): JObject = {
+  private def mkHighlights(occurs: Occurs): Set[DocumentHighlight] = {
     val writeHighlights = occurs.writes.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write))
     val readHighlights = occurs.reads.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
 
-    val highlights = writeHighlights ++ readHighlights
-
-    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON).toList))
+    writeHighlights ++ readHighlights
   }
 }
