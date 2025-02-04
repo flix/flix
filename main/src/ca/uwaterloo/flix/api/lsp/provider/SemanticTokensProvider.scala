@@ -34,7 +34,7 @@ object SemanticTokensProvider {
   /**
     * Processes a request for (full) semantic tokens.
     */
-  def provideSemanticTokens(uri: String)(implicit root: Root): JObject = {
+  def provideSemanticTokens(uri: String)(implicit root: Root): List[Int] = {
     //
     // This class uses iterators over lists to ensure fast append (!)
     //
@@ -113,12 +113,7 @@ object SemanticTokensProvider {
     //
     // Encode the semantic tokens as a list of integers.
     //
-    val encodedTokens = encodeSemanticTokens(filteredTokens)
-
-    //
-    // Construct the JSON result.
-    //
-    ("result" -> ("data" -> encodedTokens))
+    encodeSemanticTokens(filteredTokens)
   }
 
   /**
