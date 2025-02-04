@@ -29,7 +29,7 @@ case class MarkupContent(kind: MarkupKind, value: String) {
   def toJSON: JValue = ("kind" -> kind.toJSON) ~ ("value" -> value)
 
   def toLsp4j: lsp4j.MarkupContent = {
-    val markupContent = new org.eclipse.lsp4j.MarkupContent()
+    val markupContent = new lsp4j.MarkupContent()
     markupContent.setKind(kind.toLsp4j)
     markupContent.setValue(value)
     markupContent
