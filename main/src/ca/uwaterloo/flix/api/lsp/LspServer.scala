@@ -29,7 +29,6 @@ import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
 
-import java.util
 import java.util.concurrent.CompletableFuture
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
@@ -224,7 +223,7 @@ object LspServer {
       CompletableFuture.completedFuture(hover)
     }
 
-    override def documentHighlight(params: DocumentHighlightParams): CompletableFuture[util.List[_ <: DocumentHighlight]] = {
+    override def documentHighlight(params: DocumentHighlightParams): CompletableFuture[java.util.List[_ <: DocumentHighlight]] = {
       val uri = params.getTextDocument.getUri
       val position = Position.fromLsp4j(params.getPosition)
       val highlights = HighlightProvider.processHighlight(uri, position)(flixLanguageServer.root)
