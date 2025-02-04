@@ -909,16 +909,7 @@ object Weeder2 {
     }
 
     private def visitQnameExpr(tree: Tree)(implicit sctx: SharedContext): Expr.Ambiguous = {
-      expect(tree, TreeKind.QName)
-      val idents = pickAll(TreeKind.Ident, tree).map(tokenToIdent)
-      val trailingDot = tryPick(TreeKind.TrailingDot, tree).nonEmpty
-      assert(idents.nonEmpty) // Require at least one ident
-      val first = idents.head
-      val ident = idents.last
-      val nnameIdents = idents.dropRight(1)
-      val loc = SourceLocation(isReal = true, first.loc.sp1, ident.loc.sp2)
-      val nname = Name.NName(nnameIdents, loc)
-      val qname = Name.QName(nname, ident, loc, trailingDot)
+      val qname = visitQName(tree)
       Expr.Ambiguous(qname, qname.loc)
     }
 
@@ -3080,11 +3071,20 @@ object Weeder2 {
     val trailingDot = tryPick(TreeKind.TrailingDot, tree).nonEmpty
     assert(idents.nonEmpty) // We require at least one element to construct a qname
     val first = idents.head
-    val ident = idents.last
-    val nnameIdents = idents.dropRight(1)
-    val loc = SourceLocation(isReal = true, first.loc.sp1, ident.loc.sp2)
-    val nname = Name.NName(nnameIdents, loc)
-    Name.QName(nname, ident, loc, trailingDot)
+    val last = idents.last
+    val loc = SourceLocation(isReal = true, first.loc.sp1, last.loc.sp2)
+
+    // If there is a trailing dot, we use all the idents as namespace and use "" as the ident
+    if (trailingDot) {
+      val nname = Name.NName(idents, loc)
+      val identLoc = SourceLocation(isReal = true, last.loc.sp2, last.loc.sp2)
+      val ident = Name.Ident("", identLoc)
+      Name.QName(nname, ident, loc)
+      // Otherwise we use all but the last ident as namespace and the last ident as the ident
+    } else{
+      val nname = Name.NName(idents.dropRight(1), loc)
+      Name.QName(nname, last, loc)
+    }
   }
 
   private def pickNameIdent(tree: Tree)(implicit sctx: SharedContext): Validation[Name.Ident, CompilationMessage] = {
