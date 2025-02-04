@@ -49,7 +49,7 @@ object SetUnification {
     final case object ConstantPropagation extends Phase
     final case object VariablePropagation extends Phase
     final case object VariableAssignment extends Phase
-    final case object TrivialAndDuplicate extends Phase
+    final case object ReflexiveAndDuplicate extends Phase
     final case object SuccessiveVariableElimination extends Phase
     final case object Trivial extends Phase
   }
@@ -109,7 +109,7 @@ object SetUnification {
       runWithState(state, runRule(trivial), trivialPhaseName)
       runWithState(state, runRule(variableAssignment), Phase.VariableAssignment)
       runWithState(state, runRule(trivial), trivialPhaseName)
-      runWithState(state, duplicatedAndReflective, Phase.TrivialAndDuplicate)
+      runWithState(state, reflexiveAndDuplicate, Phase.ReflexiveAndDuplicate)
       runWithState(state, runRule(trivial), trivialPhaseName)
     }
 
@@ -145,11 +145,13 @@ object SetUnification {
   }
 
   /**
-    * Eliminates redundant equations
-    *   - equations that occur multiple times
-    *   - `f ~ f` (reflective, syntactically trivial)
+    * Eliminates redundant equations:
+    *   - (Reflexive): Equations where the left and right are the same, i.e. `[f ~ f, l] -> [l]`.
+    *   - (Duplicate): Equations that occur more than once, i.e. `[e, e, l] -> [e, l]`.
+    *
+    * Always succeeds.
     */
-  private def duplicatedAndReflective(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
+  private def reflexiveAndDuplicate(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
     var result: List[Equation] = Nil
     val seen = mutable.Set.empty[Equation]
     var changed = false
