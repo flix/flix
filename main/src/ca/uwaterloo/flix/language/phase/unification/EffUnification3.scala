@@ -203,7 +203,8 @@ object EffUnification3 {
           case Some(Atom.Error(_)) =>
             macc
           // An invalid atom. Crash.
-          case Some(other) => throw InternalCompilerException(s"unexpected non-variable mapped to variable: $other", SourceLocation.Unknown)
+          case Some(other) =>
+            throw InternalCompilerException(s"unexpected non-variable mapped to variable: $other", SourceLocation.Unknown)
           // An unbound identifier. Crash.
           case None => throw InternalCompilerException(s"Unexpected unbound substitution identifier '$k'", SourceLocation.Unknown)
         }

@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.unification.set
 
+import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status.Unsolvable
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolUnificationException, SveAlgorithm}
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinCache, ZhegalkinExpr}
@@ -116,7 +117,9 @@ object SetUnification {
     //runWithState(state, runRule(sve), Phase.SuccessiveVariableElimination)
 
     sveAll(state.eqs) match {
-      case None => state.eqs = state.eqs.map(_.toUnsolvable)
+      case None =>
+        state.eqs = state.eqs.map(_.toUnsolvable)
+        state.subst = SetSubstitution.empty
       case Some((_, s)) =>
         state.eqs = Nil
         state.subst = s @@ state.subst
@@ -479,6 +482,26 @@ object SetUnification {
   // TODO: Docs
   // TODO: Return type
   private def sveAll(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
+
+    // TODO: Need to think better about conflicting equations.
+
+    if (eqs.isEmpty) {
+      return Some((Nil, SetSubstitution.empty))
+    }
+
+    // Bail immediately if there are non-pending equations.
+    if (!eqs.forall(_.isPending)) {
+      return None
+    }
+
+    synchronized {
+      if (eqs.toString().contains("c24")) {
+        println(eqs.mkString("\n"))
+        println()
+        println()
+      }
+    }
+
     implicit val alg: BoolAlg[ZhegalkinExpr] = ZhegalkinAlgebra
     val l = eqs.map {
       case Equation(f1, f2, _, _) =>
