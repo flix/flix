@@ -14,7 +14,7 @@ object EffectLock {
     * Returns true if `sc1` is unifiable with `sc2` or if `sc1` is a monomorphic downgrade of `sc2`.
     */
   def isSafe(sc1: Scheme, sc2: Scheme): Boolean = {
-    unifiableSchemes(sc1, sc2) || isSubset(sc1, sc2)
+    unifiableSchemes(sc1, sc2) || isSubset(sc1.base, sc2.base)
   }
 
   /**
@@ -40,37 +40,31 @@ object EffectLock {
     * 𝜏1 −→ 𝜏2 \ 𝜑 ⪯ 𝜏1 -→ 𝜏2 \ 𝜑′
     *
     */
-  private def isSubset(sc1: Scheme, sc2: Scheme): Boolean = {
+  private def isSubset(tpe1: Type, tpe2: Type): Boolean = {
     // 1. Types match t1 -> t2
+    val isMatchingArgs = tpe1.arrowArgTypes == tpe2.arrowArgTypes
+    val isMatchingResult = tpe1.arrowResultType == tpe2.arrowResultType
 
-    val isMatchingArgs = sc1.base.arrowArgTypes == sc2.base.arrowArgTypes
-    val isMatchingResult = sc1.base.arrowResultType == sc2.base.arrowResultType
     // TODO: What about type variables? Alpha equivalence
 
     // 2. Boolean unification of effects phi + phi' = phi'
-    val sc1Effs = sc1.base.arrowEffectType
-    val sc2Effs = sc2.base.arrowEffectType
+    val sc1Effs = tpe1.arrowEffectType
+    val sc2Effs = tpe2.arrowEffectType
     val left = Type.mkUnion(sc1Effs, sc2Effs, sc1Effs.loc)
     implicit val flix: Flix = new Flix().setOptions(Options.Default)
     val (solution, subst) = EffUnification3.unifyAll(List((left, sc2Effs, sc2Effs.loc)), Scope.Top, RigidityEnv.empty)
     println("new")
-    println(sc1.base.arrowArgTypes)
-    println(sc1.base.arrowResultType)
-    println(sc1.base.arrowEffectType)
+    println(s"sc1.base.arrowArgTypes: ${tpe1.arrowArgTypes}")
+    println(s"sc1.base.arrowResultType: ${tpe1.arrowResultType}")
+    println(s"sc1.base.arrowEffectType: ${tpe1.arrowEffectType}")
     println("old")
-    println(sc2.base.arrowArgTypes)
-    println(sc2.base.arrowResultType)
-    println(sc2.base.arrowEffectType)
+    println(s"sc2.base.arrowArgTypes: ${tpe2.arrowArgTypes}")
+    println(s"sc2.base.arrowResultType: ${tpe2.arrowResultType}")
+    println(s"sc2.base.arrowEffectType: ${tpe2.arrowEffectType}")
     println("---------------")
     println(solution)
     isMatchingArgs && isMatchingResult && solution.isEmpty
   }
-
-
-
-
-
-
 
 
   private def monomorphicDowngrade(sc1: Scheme, sc2: Scheme): Boolean = {
