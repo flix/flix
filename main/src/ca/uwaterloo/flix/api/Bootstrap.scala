@@ -846,14 +846,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  def effectUpgrade(flix: Flix)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
+  def effectUpgrade(root: TypedAst.Root)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
     val path = getEffectLockFile(projectPath)
     out.println(s"Reading from file: ${path.getFileName.toString}")
     val json = Files.readString(path) // TODO: Check that it is readable and exists. Add this as method to FileOps
     val Some(deserde) = Serialization.deserialize(json) // TODO: Add error handling
     out.println("Lock file read. Checking upgrade safety")
-    val compilationResult = check(flix) // TODO: Maybe call flix.check or pass compilation result to this function
-    Validation.flatMapN(compilationResult)(root => validateLibs(deserde, root.defs.values.toList))
+    validateLibs(deserde, root.defs.values.toList)
   }
 
   private def validateLibs(originalLibs: Map[Library, NamedTypeSchemes], upgradedProgram: List[TypedAst.Def]): Validation[Unit, BootstrapError.EffectUpgradeError] = {

@@ -337,7 +337,7 @@ object Main {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
-              bootstrap.effectUpgrade(flix)
+              flatMapN(bootstrap.check(flix))(bootstrap.effectUpgrade)
           }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
