@@ -37,6 +37,7 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
   }
 
   test("Safe.03") {
+    // TODO: According to the paper, result types should always be equal but intuitively it should be safe to do this
     val input =
       """
         |pub eff A {
