@@ -67,7 +67,7 @@ object BootstrapError {
          |
          |The following potentially harmful changes were detected:
          |
-         |+ `$sym` now uses *{${newScheme.base.effects}}*!
+         |+ `$sym` now uses *{${newScheme.base.effects.mkString(", ")}}*!
          |
          |  The function is used in these places:
          |  - TODO
