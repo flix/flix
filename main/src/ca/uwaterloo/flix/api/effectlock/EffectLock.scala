@@ -45,7 +45,11 @@ object EffectLock {
     case (Type.Apply(tpe11, tpe12, _), Type.Apply(tpe21, tpe22, _)) =>
       checkSameMonomorphicType(tpe11, tpe21) && checkSameMonomorphicType(tpe12, tpe22)
 
-    case (Type.Alias(symUse1, args1, tpe1, _), Type.Alias(symUse2, args2, tpe2, _)) => ???
+    case (Type.Alias(symUse1, args1, tpe1, _), Type.Alias(symUse2, args2, tpe2, _)) =>
+      args1.zip(args2).forall {
+        case (t1, t2) => checkSameMonomorphicType(t1, t2)
+      } && checkSameMonomorphicType(tpe1, tpe2)
+
     case (Type.AssocType(symUse1, arg1, kind1, _), Type.AssocType(symUse2, arg2, kind2, _)) => ???
     case _ => false
   }
