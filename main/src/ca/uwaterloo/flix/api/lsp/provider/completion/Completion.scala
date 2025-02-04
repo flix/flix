@@ -381,8 +381,11 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.EnumTagCompletion(tag, ap, qualified, inScope) =>
-      val qualifiedName = tag.sym.toString
+    case Completion.EnumTagCompletion(tag, namespace, ap, qualified, inScope) =>
+      val qualifiedName = if (namespace.nonEmpty)
+        namespace.mkString(".") + "." + tag.sym.name
+      else
+        tag.sym.toString
       val name = if (qualified) qualifiedName else tag.sym.name
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
@@ -814,11 +817,12 @@ object Completion {
     * Represents an Enum Tag completion
     *
     * @param tag        the tag.
+    * @param namespace  the namespace of the tag, if not provided, we use the fully qualified name.
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the signature is inScope.
     */
-  case class EnumTagCompletion(tag: TypedAst.Case, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class EnumTagCompletion(tag: TypedAst.Case, namespace: List[String], ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents a Module completion
