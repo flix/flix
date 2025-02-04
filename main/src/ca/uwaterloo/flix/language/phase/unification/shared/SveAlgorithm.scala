@@ -46,7 +46,7 @@ object SveAlgorithm {
   def successiveVariableElimination[F](l: List[(F, F)])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
     var subst = BoolSubstitution.empty[F]
     for ((f1, f2) <- l) {
-      val q = alg.mkXor(subst(f1), subst(f2))
+      val q = alg.mkXor(subst(f1), subst(f2)) // TODO: Incorrect, should apply only the new subst to remaining
       val s1 = successiveVariableElimination(q)
       subst = s1 @@ subst
     }
