@@ -59,7 +59,6 @@ object BootstrapError {
   }
 
   case class EffectUpgradeError(sym: Symbol.DefnSym, originalScheme: Scheme, newScheme: Scheme) extends BootstrapError {
-    // TODO: Refactor each plus to be a snippet for each unsafe upgrade
     override def message(f: Formatter): String =
       s"""@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
          |@  WARNING! YOU MAY BE SUBJECT TO A SUPPLY CHAIN ATTACK!  @
@@ -72,8 +71,6 @@ object BootstrapError {
          |
          |  The function is used in these places:
          |  - TODO
-         |
-         |  Do you trust `$sym` to use *{${newScheme.base.effects}}* [y/N]?
          |""".stripMargin
   }
 }
