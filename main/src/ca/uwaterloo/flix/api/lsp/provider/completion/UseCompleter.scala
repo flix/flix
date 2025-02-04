@@ -25,7 +25,7 @@ object UseCompleter {
     */
   def getCompletions(uri: String, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] ={
     val moduleSym = Symbol.mkModuleSym(namespace)
-    root.modules.getOrElse(moduleSym, Nil).collect{
+    root.modules.get(moduleSym).collect{
       case mod:  Symbol.ModuleSym if fuzzyMatch(ident, mod.ns.last) => ModCompletion(mod)
       case enum: Symbol.EnumSym   if fuzzyMatch(ident, enum.name)   => UseEnumCompletion(enum.toString)
       case eff:  Symbol.EffectSym if fuzzyMatch(ident, eff.name)    => UseEffCompletion(eff.toString)
