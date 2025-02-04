@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.api.effectlock
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Unification}
+import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, EffUnification3, EqualityEnv, Unification}
 import ca.uwaterloo.flix.util.Options
 
 import scala.collection.immutable.SortedSet
@@ -14,15 +14,64 @@ object EffectLock {
     * Returns true if `sc1` is unifiable with `sc2` or if `sc1` is a monomorphic downgrade of `sc2`.
     */
   def isSafe(sc1: Scheme, sc2: Scheme): Boolean = {
-    unifiableSchemes(sc1, sc2) || monomorphicDowngrade(sc1, sc2)
+    unifiableSchemes(sc1, sc2) || isSubset(sc1, sc2)
   }
 
+  /**
+    * Generalize-rule
+    *
+    * 𝜎1 ⊑ 𝜏2
+    * -------
+    * 𝜎1 ⪯ 𝜏2
+    *
+    */
   private def unifiableSchemes(sc1: Scheme, sc2: Scheme): Boolean = {
     implicit val flix: Flix = new Flix().setOptions(Options.Default)
     val renv = RigidityEnv.apply(SortedSet.from(sc2.quantifiers))
     val unification = Unification.fullyUnifyTypes(sc1.base, sc2.base, renv, EqualityEnv.empty)(Scope.Top, flix)
     unification.isDefined
   }
+
+  /**
+    * Subset-rule
+    *
+    * 𝜑 ∪ 𝜑′ ≡ 𝜑′
+    * ----------
+    * 𝜏1 −→ 𝜏2 \ 𝜑 ⪯ 𝜏1 -→ 𝜏2 \ 𝜑′
+    *
+    */
+  private def isSubset(sc1: Scheme, sc2: Scheme): Boolean = {
+    // 1. Types match t1 -> t2
+
+    val isMatchingArgs = sc1.base.arrowArgTypes == sc2.base.arrowArgTypes
+    val isMatchingResult = sc1.base.arrowResultType == sc2.base.arrowResultType
+    // TODO: What about type variables? Alpha equivalence
+
+    // 2. Boolean unification of effects phi + phi' = phi'
+    val sc1Effs = sc1.base.arrowEffectType
+    val sc2Effs = sc2.base.arrowEffectType
+    val left = Type.mkUnion(sc1Effs, sc2Effs, sc1Effs.loc)
+    implicit val flix: Flix = new Flix().setOptions(Options.Default)
+    val (solution, subst) = EffUnification3.unifyAll(List((left, sc2Effs, sc2Effs.loc)), Scope.Top, RigidityEnv.empty)
+    println("new")
+    println(sc1.base.arrowArgTypes)
+    println(sc1.base.arrowResultType)
+    println(sc1.base.arrowEffectType)
+    println("old")
+    println(sc2.base.arrowArgTypes)
+    println(sc2.base.arrowResultType)
+    println(sc2.base.arrowEffectType)
+    println("---------------")
+    println(solution)
+    isMatchingArgs && isMatchingResult && solution.isEmpty
+  }
+
+
+
+
+
+
+
 
   private def monomorphicDowngrade(sc1: Scheme, sc2: Scheme): Boolean = {
     val noQuantifiers = sc1.quantifiers.isEmpty && sc2.quantifiers.isEmpty
