@@ -1,8 +1,8 @@
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.effectlock.EffectLock
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialization
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext}
 import ca.uwaterloo.flix.util.Options
@@ -10,7 +10,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.Path
 
-class EffectLockSuite extends AnyFunSuite {
+class EffectLockSuite extends AnyFunSuite with TestUtils {
 
   test("Safe.01") {
     val input =
@@ -20,8 +20,8 @@ class EffectLockSuite extends AnyFunSuite {
         |pub def g(): Unit = ???
         |
         |""".stripMargin
-    val (flix, result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result)(flix))
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(checkIsSafe("g", "f", result))
   }
 
   test("Safe.02") {
@@ -32,8 +32,8 @@ class EffectLockSuite extends AnyFunSuite {
         |pub def g(): Bool -> Unit = ???
         |
         |""".stripMargin
-    val (flix, result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result)(flix))
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(checkIsSafe("g", "f", result))
   }
 
   test("Safe.03") {
@@ -48,8 +48,8 @@ class EffectLockSuite extends AnyFunSuite {
         |pub def g(): Bool -> Unit = ???
         |
         |""".stripMargin
-    val (flix, result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result)(flix))
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(checkIsSafe("g", "f", result))
   }
 
   test("Safe.04") {
@@ -64,8 +64,8 @@ class EffectLockSuite extends AnyFunSuite {
         |pub def g(_: a -> b \ ef): b \ ef = ???
         |
         |""".stripMargin
-    val (flix, result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result)(flix))
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(checkIsSafe("g", "f", result))
   }
 
   test("Unsafe.01") {
@@ -80,8 +80,8 @@ class EffectLockSuite extends AnyFunSuite {
         |pub def g(): (Bool -> Unit \ A) = unchecked_cast(() as Bool -> Unit \ A)
         |
         |""".stripMargin
-    val (flix, result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("g", "f", result)(flix))
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(!checkIsSafe("g", "f", result))
   }
 
   test("Unsafe.02") {
@@ -96,8 +96,8 @@ class EffectLockSuite extends AnyFunSuite {
         |pub def g(_: a -> b \ E): b \ E = unchecked_cast(() as b \ E)
         |
         |""".stripMargin
-    val (flix, result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("g", "f", result)(flix))
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(!checkIsSafe("g", "f", result))
   }
 
   test("Reachable.01") {
@@ -222,13 +222,6 @@ class EffectLockSuite extends AnyFunSuite {
     assert(expected == actual)
   }
 
-  def check(s: String, o: Options): (Flix, Option[TypedAst.Root], List[CompilationMessage]) = {
-    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-    val flix = new Flix().setOptions(o).addSourceCode("<test>", s)
-    val (result, errors) = flix.check()
-    (flix, result, errors)
-  }
-
   private def checkSerializationType(input: String, funSym: String): (Type, String) = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
     implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibNix).addSourceCode("<test>", input)
@@ -255,7 +248,7 @@ class EffectLockSuite extends AnyFunSuite {
   /**
     * Check that `upgrade` is a safe upgrade of `original`.
     */
-  private def checkIsSafe(upgrade: String, original: String, optRoot: Option[TypedAst.Root])(implicit flix: Flix): Boolean = {
+  private def checkIsSafe(upgrade: String, original: String, optRoot: Option[TypedAst.Root]): Boolean = {
     optRoot match {
       case Some(root) =>
         val optUpgrade = root.defs.find {
