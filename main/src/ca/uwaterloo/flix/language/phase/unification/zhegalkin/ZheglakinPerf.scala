@@ -176,17 +176,17 @@ object ZheglakinPerf {
     SetUnification.EnableStats = false
 
     val m = SetUnification.ElimPerRule.toMap
+    val trivial = m(Phase.Trivial)
     val constProp = m(Phase.ConstantPropagation)
     val varProp = m(Phase.VariablePropagation)
     val varAssign = m(Phase.VariableAssignment)
     val reflDupl = m(Phase.ReflexiveAndDuplicate)
     val sve = m(Phase.SuccessiveVariableElimination)
-    val trivial = m(Phase.Trivial)
 
     println("-" * 80)
-    println("  ConstProp |  VarProp |  VarAssign |  ReflDupl |    SVE |  Trivial")
+    println("  Trivial | ConstProp |  VarProp |  VarAssign |  ReflDupl |    SVE")
     println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    println(f"$constProp%,11d & $varProp%,8d & $varAssign%,10d & $reflDupl%,9d & $sve%,6d & $trivial%,8d \\\\")
+    println(f"$trivial%,9d & $constProp%,9d & $varProp%,8d & $varAssign%,10d & $reflDupl%,9d & $sve%,6d \\\\")
     println("-" * 80)
     println()
     println()
