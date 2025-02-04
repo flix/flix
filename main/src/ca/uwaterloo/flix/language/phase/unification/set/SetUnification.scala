@@ -47,15 +47,10 @@ object SetUnification {
 
   object Phase {
     final case object ConstantPropagation extends Phase
-
     final case object VariablePropagation extends Phase
-
     final case object VariableAssignment extends Phase
-
     final case object TrivialAndDuplicate extends Phase
-
     final case object SuccessiveVariableElimination extends Phase
-
     final case object Trivial extends Phase
   }
 
