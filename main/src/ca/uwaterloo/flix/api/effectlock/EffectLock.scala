@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Unification}
+import ca.uwaterloo.flix.util.Options
 
 import scala.collection.immutable.SortedSet
 
@@ -12,11 +13,12 @@ object EffectLock {
   /**
     * Returns true if `sc1` is unifiable with `sc2` or if `sc1` is a monomorphic downgrade of `sc2`.
     */
-  def isSafe(sc1: Scheme, sc2: Scheme)(implicit flix: Flix): Boolean = { // TODO: Check if new flix instance can be used locally
+  def isSafe(sc1: Scheme, sc2: Scheme): Boolean = {
     unifiableSchemes(sc1, sc2) || monomorphicDowngrade(sc1, sc2)
   }
 
-  private def unifiableSchemes(sc1: Scheme, sc2: Scheme)(implicit flix: Flix): Boolean = {
+  private def unifiableSchemes(sc1: Scheme, sc2: Scheme): Boolean = {
+    implicit val flix: Flix = new Flix().setOptions(Options.Default)
     val renv = RigidityEnv.apply(SortedSet.from(sc2.quantifiers))
     val unification = Unification.fullyUnifyTypes(sc1.base, sc2.base, renv, EqualityEnv.empty)(Scope.Top, flix)
     unification.isDefined
