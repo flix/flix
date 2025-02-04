@@ -476,7 +476,7 @@ object SetUnification {
 
     try {
       // Solve *ALL* equations via SVE and obtain the substitution.
-      val subst = SveAlgorithm.successiveVariableElimination(l)
+      val subst = SveAlgorithm.sveAll(l)
 
       // Reconstruct a set substitution.
       val m = subst.m.foldLeft(IntMap.empty[SetFormula]) {

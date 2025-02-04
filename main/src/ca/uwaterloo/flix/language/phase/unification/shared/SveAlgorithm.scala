@@ -43,13 +43,16 @@ object SveAlgorithm {
     *
     * @throws `BoolUnificationException` if SVE fails.
     */
-  def successiveVariableElimination[F](l: List[(F, F)])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
+  def sveAll[F](l: List[(F, F)])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
+
+    // TODO: Add a cache on BoolAlg.
+
     var subst = BoolSubstitution.empty[F]
     var rest = l
     while (rest.nonEmpty) {
       val (f1, f2) = rest.head
       val q = alg.mkXor(f1, f2)
-      val s1 = successiveVariableElimination(q)
+      val s1 = sveOne(q)
       rest = rest.tail.map(p => (s1(p._1), s1(p._2)))
       subst = s1 @@ subst
     }
@@ -63,7 +66,7 @@ object SveAlgorithm {
     *
     * @throws `BoolUnificationException` if SVE fails.
     */
-  def successiveVariableElimination[F](f: F)(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
+  private def sveOne[F](f: F)(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
     val fvs = alg.freeVars(f).toList
     successiveVariableElimination(f, fvs)
   }
