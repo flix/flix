@@ -53,7 +53,7 @@ object ZheglakinPerf {
     rq1(r)
     rq2()
     rq3(r)
-    rq6(r)
+    rq4(r)
   }
 
 
@@ -214,7 +214,7 @@ object ZheglakinPerf {
     println()
   }
 
-  private def rq6(n: Int): Unit = {
+  private def rq4(n: Int): Unit = {
     println(RQ4)
 
     val DefaultNoSubeffecting = Config(rewriteRules = true, cacheInterCst = false, cacheUnion = false, cacheInter = true, cacheXor = false, cacheSVE = false, opts = Options.Default.copy(xsubeffecting = Set.empty))
