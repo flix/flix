@@ -853,10 +853,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val Some(deserde) = Serialization.deserialize(json) // TODO: Add error handling
     out.println("Lock file read. Checking upgrade safety")
     val compilationResult = check(flix) // TODO: Maybe call flix.check or pass compilation result to this function
-    Validation.mapN(compilationResult)(root => validateLibs(deserde, root.defs.values.toList)(flix))
+    Validation.flatMapN(compilationResult)(root => validateLibs(deserde, root.defs.values.toList))
   }
 
-  private def validateLibs(originalLibs: Map[Library, NamedTypeSchemes], upgradedProgram: List[TypedAst.Def])(implicit flix: Flix): Validation[Unit, BootstrapError.EffectUpgradeError] = {
+  private def validateLibs(originalLibs: Map[Library, NamedTypeSchemes], upgradedProgram: List[TypedAst.Def]): Validation[Unit, BootstrapError.EffectUpgradeError] = {
     val errors = mutable.ListBuffer.empty[BootstrapError.EffectUpgradeError]
 
     for (
@@ -886,7 +886,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
          Input.TxtFile(_, _) => None
   }
 
-  private def validateDefn(originalSignatures: NamedTypeSchemes, defn: TypedAst.Def)(implicit flix: Flix): Option[BootstrapError.EffectUpgradeError] = {
+  private def validateDefn(originalSignatures: NamedTypeSchemes, defn: TypedAst.Def): Option[BootstrapError.EffectUpgradeError] = {
     originalSignatures.find {
       case (sym, _) => defn.sym.namespace == sym.namespace && defn.sym.text == sym.text
     }.flatMap {
