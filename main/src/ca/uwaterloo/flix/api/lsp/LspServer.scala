@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.api.lsp.provider.HoverProvider
+import ca.uwaterloo.flix.api.lsp.provider.{HighlightProvider, HoverProvider}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.api.lsp.{Position, PublishDiagnosticsParams}
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -29,8 +29,10 @@ import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
 
+import java.util
 import java.util.concurrent.CompletableFuture
 import scala.collection.mutable
+import scala.jdk.CollectionConverters.*
 
 object LspServer {
   def run(o: Options): Unit = {
@@ -95,6 +97,7 @@ object LspServer {
 
       val serverCapabilities = new ServerCapabilities
       serverCapabilities.setHoverProvider(true)
+      serverCapabilities.setDocumentHighlightProvider(true)
       serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)// TODO: make it incremental
 
       CompletableFuture.completedFuture(new InitializeResult(serverCapabilities))
@@ -220,6 +223,14 @@ object LspServer {
       val position = Position.fromLsp4j(params.getPosition)
       val hover = HoverProvider.processHover(uri, position)(flixLanguageServer.root, flixLanguageServer.flix).map(_.toLsp4j).orNull
       CompletableFuture.completedFuture(hover)
+    }
+
+    override def documentHighlight(params: DocumentHighlightParams): CompletableFuture[util.List[_ <: DocumentHighlight]] = {
+      System.err.println(s"documentHighlight: $params")
+      val uri = params.getTextDocument.getUri
+      val position = Position.fromLsp4j(params.getPosition)
+      val highlights = HighlightProvider.processHighlight(uri, position)(flixLanguageServer.root)
+      CompletableFuture.completedFuture(highlights.map(_.toLsp4j).toList.asJava)
     }
   }
 
