@@ -42,7 +42,7 @@ object Instances {
     implicit val sctx: SharedContext = SharedContext.mk()
     flix.phaseNew("Instances") {
       val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances)(ParOps.parMapValueList2(_)(checkInstancesOfTrait(_, root)))
-      val traits = chaneSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
+      val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
       (root.copy(instances = instances, traits = traits), sctx.errors.asScala.toList)
     }
   }
