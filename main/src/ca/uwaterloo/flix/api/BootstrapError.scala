@@ -59,6 +59,19 @@ object BootstrapError {
   }
 
   case class EffectUpgradeError(sym: Symbol.DefnSym, originalScheme: Scheme, newScheme: Scheme) extends BootstrapError {
-    override def message(f: Formatter): String = s"(placeholder): bad effect upgrade $sym"
+    // TODO: Refactor each plus to be a snippet for each unsafe upgrade
+    override def message(f: Formatter): String =
+      s"""@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+         |@  WARNING! YOU MAY BE SUBJECT TO A SUPPLY CHAIN ATTACK!  @
+         |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+         |            ~~ Effect signatures have changed! ~~
+         |
+         |The following potentially harmful changes were detected:
+         |
+         |+ `$sym` now uses *{${newScheme.base.effects}}*
+         |
+         |  The function is used in these places:
+         |  - TODO
+         |""".stripMargin
   }
 }
