@@ -68,10 +68,12 @@ object BootstrapError {
          |
          |The following potentially harmful changes were detected:
          |
-         |+ `$sym` now uses *{${newScheme.base.effects}}*
+         |+ `$sym` now uses *{${newScheme.base.effects}}*!
          |
          |  The function is used in these places:
          |  - TODO
+         |
+         |  Do you trust `$sym` to use *{${newScheme.base.effects}}* [y/N]?
          |""".stripMargin
   }
 }
