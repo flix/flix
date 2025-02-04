@@ -190,8 +190,8 @@ object EffUnification3 {
       case (macc, (k, SetFormula.Var(x))) if k == x => macc
       case (macc, (k, v)) =>
         m.getBackward(k) match {
-          // A proper var. Add it to the substitution.
           case Some(Atom.VarFlex(sym)) =>
+            // A proper var. Add it to the substitution.
             if (sym.isSlack && !withSlack) {
               // Special Case: The slack variable was set to the empty set.
               macc + (sym -> Type.Pure)
@@ -199,14 +199,18 @@ object EffUnification3 {
               // General Case: The map determines the type variable.
               macc + (sym -> fromSetFormula(v, sym.loc))
             }
-          // An error type. Don't add it to the substitution.
+
           case Some(Atom.Error(_)) =>
+            // An error type. Don't add it to the substitution.
             macc
-          // An invalid atom. Crash.
-          case Some(other) =>
-            throw InternalCompilerException(s"unexpected non-variable mapped to variable: $other", SourceLocation.Unknown)
-          // An unbound identifier. Crash.
-          case None => throw InternalCompilerException(s"Unexpected unbound substitution identifier '$k'", SourceLocation.Unknown)
+
+          case Some(a) =>
+            // An invalid atom. Crash.
+            throw InternalCompilerException(s"Unexpected atom '$a' for key '$k'.", SourceLocation.Unknown)
+
+          case None =>
+            // An unbound identifier. Crash.
+            throw InternalCompilerException(s"Unexpected unbound variable '$k'.", SourceLocation.Unknown)
         }
     })
   }
