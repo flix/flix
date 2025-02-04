@@ -218,7 +218,6 @@ object LspServer {
       * Now a mock implementation that just returns a simple greeting.
       */
     override def hover(params: HoverParams): CompletableFuture[Hover] = {
-      System.err.println(s"hover: $params")
       val uri = params.getTextDocument.getUri
       val position = Position.fromLsp4j(params.getPosition)
       val hover = HoverProvider.processHover(uri, position)(flixLanguageServer.root, flixLanguageServer.flix).map(_.toLsp4j).orNull
@@ -226,7 +225,6 @@ object LspServer {
     }
 
     override def documentHighlight(params: DocumentHighlightParams): CompletableFuture[util.List[_ <: DocumentHighlight]] = {
-      System.err.println(s"documentHighlight: $params")
       val uri = params.getTextDocument.getUri
       val position = Position.fromLsp4j(params.getPosition)
       val highlights = HighlightProvider.processHighlight(uri, position)(flixLanguageServer.root)
