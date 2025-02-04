@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.api.effectlock
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.phase.unification.{BoolUnification, EffUnification3, EqualityEnv, Unification}
+import ca.uwaterloo.flix.language.phase.unification.{EffUnification3, EqualityEnv, Unification}
 import ca.uwaterloo.flix.util.Options
 
 import scala.collection.immutable.SortedSet
