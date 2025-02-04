@@ -41,16 +41,21 @@ object SetUnification {
   val ElimPerRule: mutable.Map[Phase, Int] = mutable.Map.empty
 
   /**
-   * Represents the name of phase.
-   */
+    * Represents the name of phase.
+    */
   sealed trait Phase
 
   object Phase {
     final case object ConstantPropagation extends Phase
+
     final case object VariablePropagation extends Phase
+
     final case object VariableAssignment extends Phase
+
     final case object TrivialAndDuplicate extends Phase
+
     final case object SuccessiveVariableElimination extends Phase
+
     final case object Trivial extends Phase
   }
 
@@ -113,7 +118,14 @@ object SetUnification {
       runWithState(state, runRule(trivial), trivialPhaseName)
     }
 
-    runWithState(state, runRule(sve), Phase.SuccessiveVariableElimination)
+    //runWithState(state, runRule(sve), Phase.SuccessiveVariableElimination)
+
+    sveAll(state.eqs) match {
+      case None => state.eqs = state.eqs.map(_.toUnsolvable)
+      case Some((_, s)) =>
+        state.eqs = Nil
+        state.subst = s @@ state.subst
+    }
 
     (state.eqs, state.subst)
   }
@@ -466,6 +478,33 @@ object SetUnification {
     } catch {
       case _: BoolUnificationException =>
         Some((List(eq.toUnsolvable), SetSubstitution.empty))
+    }
+  }
+
+  // TODO: Docs
+  // TODO: Return type
+  private def sveAll(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {
+    implicit val alg: BoolAlg[ZhegalkinExpr] = ZhegalkinAlgebra
+    val l = eqs.map {
+      case Equation(f1, f2, _, _) =>
+        val x = Zhegalkin.toZhegalkin(f1)
+        val y = Zhegalkin.toZhegalkin(f2)
+        (x, y)
+    }
+
+    try {
+      val subst = SveAlgorithm.successiveVariableElimination(l)
+      val m = subst.m.foldLeft(IntMap.empty[SetFormula]) {
+        case (acc, (x, e)) => acc.updated(x, Zhegalkin.toSetFormula(e))
+      }
+
+      if (EnableStats) {
+        ElimPerRule.put(Phase.SuccessiveVariableElimination, eqs.length)
+      }
+
+      Some((Nil, SetSubstitution(m)))
+    } catch {
+      case _: BoolUnificationException => None
     }
   }
 
