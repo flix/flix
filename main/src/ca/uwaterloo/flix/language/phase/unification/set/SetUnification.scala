@@ -456,8 +456,7 @@ object SetUnification {
 
     try {
       val subst = ZhegalkinCache.lookupOrComputeSVE(q, q => {
-        val fvs = alg.freeVars(q).toList
-        SveAlgorithm.successiveVariableElimination(q, fvs)
+        SveAlgorithm.successiveVariableElimination(q)
       })
 
       val m = subst.m.foldLeft(IntMap.empty[SetFormula]) {
