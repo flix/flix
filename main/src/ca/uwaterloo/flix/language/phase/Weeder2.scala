@@ -1783,7 +1783,11 @@ object Weeder2 {
     private def visitTryCatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[CatchRule, CompilationMessage] = {
       expect(tree, TreeKind.Expr.TryCatchRuleFragment)
       mapN(pickNameIdent(tree), pickQName(tree), pickExpr(tree)) {
-        (ident, qname, expr) => CatchRule(ident, javaQnameToFqn(qname), expr)
+        case (ident, qname, expr) if qname.isUnqualified => CatchRule(ident, qname.ident, expr)
+        case (ident, qname, expr) =>
+          val error = IllegalQualifiedName(qname.loc)
+          sctx.errors.add(error)
+          CatchRule(ident, qname.ident, expr)
       }
     }
 
