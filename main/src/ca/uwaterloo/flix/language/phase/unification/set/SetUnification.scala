@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolUnificationException, SveAlgorithm}
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinCache, ZhegalkinExpr}
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinExpr}
+import ca.uwaterloo.flix.util.Result
 
 import scala.collection.immutable.IntMap
 import scala.collection.mutable
@@ -114,16 +115,16 @@ object SetUnification {
     }
 
     sveAll(state.eqs) match {
-      case None =>
-        // Failure: We found a conflict.
-        // Mark all equations as unsolvable and drop the partial substitution.
-        state.eqs = state.eqs.map(_.toUnsolvable)
-        state.subst = SetSubstitution.empty
-      case Some((_, s)) =>
+      case Result.Ok(s) =>
         // Success: We solved all equations using SVE.
         // Mark all equations as solved and update the substitution.
         state.eqs = Nil
         state.subst = s @@ state.subst
+      case Result.Err(eqs) =>
+        // Failure: We found a conflict.
+        // Store the unsolveable equations and reset the partial substitution.
+        state.eqs = eqs
+        state.subst = SetSubstitution.empty
     }
 
     (state.eqs, state.subst)
@@ -454,17 +455,20 @@ object SetUnification {
   }
 
   /**
-   * Attempts to solve all the given equations using the SVE algorithm.
+   * Attempts to solve all the given equations `eqs` using the SVE algorithm.
+   *
+   * Returns `Result.Ok(s)` with a complete substitution `s` if all equations were solved.
+   * Returns `Result.Err(l)` with a list of unsolveable equations. (At least one equation is unsolveable.)
    */
-  private def sveAll(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {  // TODO: Return type
+  private def sveAll(eqs: List[Equation]): Result[SetSubstitution, List[Equation]] = {
     // Return immediately if there are no equations to solve.
     if (eqs.isEmpty) {
-      return Some((Nil, SetSubstitution.empty))
+      return Result.Ok(SetSubstitution.empty)
     }
 
-    // Return immediately if there is an equation that is unsolvable (i.e. in conflict).
+    // Return immediately if there already is an equation that is unsolvable (i.e. in conflict).
     if (eqs.exists(_.isUnsolvable)) {
-      return None
+      return Result.Err(eqs.map(_.toUnsolvable))
     }
 
     // Convert all equations to Zhegalkin polynomials.
@@ -490,11 +494,11 @@ object SetUnification {
         ElimPerRule.put(Phase.SuccessiveVariableElimination, count + eqs.length)
       }
 
-      Some((Nil, SetSubstitution(m)))
+      Result.Ok(SetSubstitution(m))
     } catch {
       case _: BoolUnificationException =>
-        // SVE failed. We give up.
-        None
+        // SVE failed. We give up. We indiscriminately mark all equations as unsolveable.
+        Result.Err(eqs.map(_.toUnsolvable))
     }
   }
 
