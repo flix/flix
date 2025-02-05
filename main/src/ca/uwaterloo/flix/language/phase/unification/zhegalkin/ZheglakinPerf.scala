@@ -108,6 +108,19 @@ object ZheglakinPerf {
         |
         |plt.savefig('numberOfVarsPerSystem.png')
         |plt.show()
+        |
+        |
+        |
+        |
+        |seaborn.histplot(data=df[['Elms', 'RigidVars']], multiple='dodge', discrete=True, alpha=0.8, palette=seaborn.color_palette()[1:])
+        |plt.title("Constants and Elements")
+        |plt.ylabel("Quantity")
+        |plt.grid(True)
+        |
+        |plt.savefig('histogram.png')
+        |plt.show()
+        |
+        |
         |""".stripMargin
 
     val table = allEquationSystems.map {
