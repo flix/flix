@@ -44,9 +44,6 @@ object SveAlgorithm {
     * @throws `BoolUnificationException` if SVE fails.
     */
   def sveAll[F](l: List[(F, F)])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
-
-    // TODO: Add a cache on BoolAlg.
-
     var subst = BoolSubstitution.empty[F]
     var rest = l
     while (rest.nonEmpty) {
@@ -64,11 +61,15 @@ object SveAlgorithm {
     *
     * Eliminates all free variables in `f`.
     *
+    * Uses the SVE cache, if enabled.
+    *
     * @throws `BoolUnificationException` if SVE fails.
     */
   private def sveOne[F](f: F)(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
-    val fvs = alg.freeVars(f).toList
-    successiveVariableElimination(f, fvs)
+    alg.lookupOrComputeSVE(f, _ => {
+      val fvs = alg.freeVars(f).toList
+      successiveVariableElimination(f, fvs)
+    })
   }
 
   /**
