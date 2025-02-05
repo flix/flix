@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.util
 /**
   * Represents an immutable list of at least size two.
   */
-case class TwoList[T](x: T, y: T, rest: List[T]) {
+final case class TwoList[T](x: T, y: T, rest: List[T]) {
 
   /**
     * Applies the given function `f` to every element of `this` list.
