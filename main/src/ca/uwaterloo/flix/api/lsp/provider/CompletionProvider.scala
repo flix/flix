@@ -44,7 +44,7 @@ import org.json4s.JsonDSL.*
   */
 object CompletionProvider {
 
-  def autoComplete(uri: String, pos: Position, source: String, currentErrors: List[CompilationMessage])(implicit flix: Flix, root: TypedAst.Root): JObject = {
+  def autoComplete(uri: String, pos: Position, source: String, currentErrors: List[CompilationMessage])(implicit flix: Flix, root: TypedAst.Root): CompletionList = {
     val completionItems = getCompletionContext(source, uri, pos, currentErrors).map {ctx =>
       errorsAt(ctx.uri, ctx.pos, currentErrors).flatMap({
         case WeederError.UnqualifiedUse(_) => UseCompleter.getCompletions(ctx)
@@ -120,7 +120,7 @@ object CompletionProvider {
         case _ => HoleCompletion.getHoleCompletion(ctx, root)
       }).map(comp => comp.toCompletionItem(ctx))
     }.getOrElse(Nil)
-    ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, completionItems).toJSON)
+    CompletionList(isIncomplete = true, completionItems)
   }
 
   /**
