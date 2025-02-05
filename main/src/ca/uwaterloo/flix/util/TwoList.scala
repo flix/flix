@@ -38,7 +38,6 @@ final case class TwoList[T](x: T, y: T, rest: List[T]) {
   /**
    * Folds `f` over the elements of `this` list.
    */
-  @inline
   def foldRight[S](z: S)(f: (T, S) => S): S = {
     f(x, f(y, rest.foldRight(z)(f)))
   }
