@@ -1784,10 +1784,10 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.TryCatchRuleFragment)
       mapN(pickNameIdent(tree), pickQName(tree), pickExpr(tree)) {
         case (ident, qname, expr) if qname.isUnqualified => CatchRule(ident, qname.ident, expr)
-        case (_, qname, _) =>
+        case (ident, qname, expr) =>
           val error = IllegalQualifiedName(qname.loc)
           sctx.errors.add(error)
-          CatchRule(Name.Ident("error", tree.loc), Name.Ident("error", tree.loc), Expr.Error(error))
+          CatchRule(ident, qname.ident, expr)
       }
     }
 
