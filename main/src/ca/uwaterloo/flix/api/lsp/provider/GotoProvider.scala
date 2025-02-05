@@ -30,13 +30,12 @@ object GotoProvider {
   /**
    * Processes a goto request.
    */
-  def processGoto(uri: String, pos: Position)(implicit root: Root): JObject = {
+  def processGoto(uri: String, pos: Position)(implicit root: Root): Option[LocationLink] = {
     val gotoRight = searchRight(uri, pos).flatMap(goto)
     val gotoLeft = searchLeft(uri, pos).flatMap(goto)
 
     gotoRight
       .orElse(gotoLeft)
-      .getOrElse(mkNotFound(uri, pos))
   }
 
   /**
@@ -103,28 +102,28 @@ object GotoProvider {
     * @return     LSP Goto response for when the cursor is on `x` if `x` is an occurrence of a [[Symbol]].
     *             Otherwise, returns [[None]].
     */
-  private def goto(x: AnyRef)(implicit root: Root): Option[JObject] = x match {
+  private def goto(x: AnyRef)(implicit root: Root): Option[LocationLink] = x match {
     // Assoc Types
-    case SymUse.AssocTypeSymUse(sym, loc) => Some(mkGoto(LocationLink.fromAssocTypeSym(sym, loc)))
+    case SymUse.AssocTypeSymUse(sym, loc) => Some(LocationLink.fromAssocTypeSym(sym, loc))
     // Defs
-    case SymUse.DefSymUse(sym, loc) => Some(mkGoto(LocationLink.fromDefSym(sym, loc)))
+    case SymUse.DefSymUse(sym, loc) => Some(LocationLink.fromDefSym(sym, loc))
     // Effects
-    case SymUse.EffectSymUse(sym, qname) => Some(mkGoto(LocationLink.fromEffectSym(sym, qname.loc)))
-    case Type.Cst(TypeConstructor.Effect(sym), loc) => Some(mkGoto(LocationLink.fromEffectSym(sym, loc)))
-    case SymUse.OpSymUse(sym, loc) => Some(mkGoto(LocationLink.fromOpSym(sym, loc)))
+    case SymUse.EffectSymUse(sym, qname) => Some(LocationLink.fromEffectSym(sym, qname.loc))
+    case Type.Cst(TypeConstructor.Effect(sym), loc) => Some(LocationLink.fromEffectSym(sym, loc))
+    case SymUse.OpSymUse(sym, loc) => Some(LocationLink.fromOpSym(sym, loc))
     // Enums
-    case Type.Cst(TypeConstructor.Enum(sym, _), loc) => Some(mkGoto(LocationLink.fromEnumSym(sym, loc)))
-    case SymUse.CaseSymUse(sym, loc) => Some(mkGoto(LocationLink.fromCaseSym(sym, loc)))
+    case Type.Cst(TypeConstructor.Enum(sym, _), loc) => Some(LocationLink.fromEnumSym(sym, loc))
+    case SymUse.CaseSymUse(sym, loc) => Some(LocationLink.fromCaseSym(sym, loc))
     // Struct
-    case Type.Cst(TypeConstructor.Struct(sym, _), loc) => Some(mkGoto(LocationLink.fromStructSym(sym, loc)))
-    case SymUse.StructFieldSymUse(sym, loc) => Some(mkGoto(LocationLink.fromStructFieldSym(sym, loc)))
+    case Type.Cst(TypeConstructor.Struct(sym, _), loc) => Some(LocationLink.fromStructSym(sym, loc))
+    case SymUse.StructFieldSymUse(sym, loc) => Some(LocationLink.fromStructFieldSym(sym, loc))
     // Traits
-    case SymUse.TraitSymUse(sym, loc) => Some(mkGoto(LocationLink.fromTraitSym(sym, loc)))
-    case SymUse.SigSymUse(sym, loc) => Some(mkGoto(LocationLink.fromSigSym(sym, loc)))
+    case SymUse.TraitSymUse(sym, loc) => Some(LocationLink.fromTraitSym(sym, loc))
+    case SymUse.SigSymUse(sym, loc) => Some(LocationLink.fromSigSym(sym, loc))
     // Type Vars
-    case Type.Var(sym, loc) => Some(mkGoto(LocationLink.fromTypeVarSym(sym, loc)))
+    case Type.Var(sym, loc) => Some(LocationLink.fromTypeVarSym(sym, loc))
     // Vars
-    case TypedAst.Expr.Var(sym, _, loc) => Some(mkGoto(LocationLink.fromVarSym(sym, loc)))
+    case TypedAst.Expr.Var(sym, _, loc) => Some(LocationLink.fromVarSym(sym, loc))
     case _ => None
   }
 
@@ -184,21 +183,4 @@ object GotoProvider {
     case tpe: Type => tpe.loc.isReal
     case _ => false
   }
-
-  /**
-    * Returns a succesful Goto reply containing the given [[LocationLink]] `link`
-    *
-    * @param  link [[LocationLink]] that the reply should contain.
-    * @return succesful Goto reply containing `link`.
-    */
-  private def mkGoto(link: LocationLink): JObject = {
-    ("status" -> ResponseStatus.Success) ~ ("result" -> link.toJSON)
-  }
-
-  /**
-   * Returns a reply indicating that nothing was found at the `uri` and `pos`.
-   */
-  private def mkNotFound(uri: String, pos: Position): JObject =
-    ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
-
 }

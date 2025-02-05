@@ -274,7 +274,10 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       }
 
     case Request.Goto(id, uri, pos) =>
-      ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(root)
+      GotoProvider.processGoto(uri, pos)(root) match {
+        case Some(location) => ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> location.toJSON)
+        case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
+      }
 
     case Request.Implementation(id, uri, pos) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root).map(_.toJSON))
