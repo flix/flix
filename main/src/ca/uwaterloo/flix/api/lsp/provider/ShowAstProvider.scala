@@ -34,15 +34,11 @@ object ShowAstProvider {
     *   - `title` (a string like `Namer.flix.ir`)
     *   - `text` (a string with the ir representation).
     */
-  def showAst()(implicit flix: Flix): JObject = {
+  def showAst()(implicit flix: Flix): Path = {
     val oldOpts = flix.options
     flix.setOptions(oldOpts.copy(xprintphases = true))
     flix.compile()
     flix.setOptions(oldOpts)
-    pathObject(AstPrinter.astFolderPath)
-  }
-
-  private def pathObject(path: Path): JObject = {
-    ("path" -> path.toAbsolutePath.toString)
+    AstPrinter.astFolderPath
   }
 }
