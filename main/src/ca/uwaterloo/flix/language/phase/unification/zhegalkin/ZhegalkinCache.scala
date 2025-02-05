@@ -27,7 +27,6 @@ object ZhegalkinCache {
   var EnableUnionCache: Boolean = true
   var EnableInterCache: Boolean = true
   var EnableXorCache: Boolean = true
-  var EnableSVECache: Boolean = false
   var EnableInterCstCache: Boolean = false
 
   /**
@@ -44,11 +43,6 @@ object ZhegalkinCache {
     * A cache that represents the exclusive-or of the two given Zhegalkin expressions.
     */
   private val cachedXor: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap()
-
-  /**
-    * A cache of SVE queries: a map from the query to its MGU (if it exists).
-    */
-  private val cachedSVE: ConcurrentMap[ZhegalkinExpr, BoolSubstitution[ZhegalkinExpr]] = new ConcurrentHashMap()
 
   /**
     * A cache that represents the intersection of the given Zhegalkin constant and expression.
@@ -96,20 +90,6 @@ object ZhegalkinCache {
   }
 
   /**
-    * Returns the result of running the given `sve` algorithm on the given Zhegalkin expressions `q`.
-    *
-    * Performs a lookup in the cache or computes the result.
-    */
-  @inline
-  def lookupOrComputeSVE(q: ZhegalkinExpr, sve: ZhegalkinExpr => BoolSubstitution[ZhegalkinExpr]): BoolSubstitution[ZhegalkinExpr] = {
-    if (!EnableSVECache) {
-      return sve(q)
-    }
-
-    cachedSVE.computeIfAbsent(q, _ => sve(q))
-  }
-
-  /**
     * Returns the intersection of the given Zhegalkin constant `c` and the expression `e`.
     *
     * Performs a lookup in the cache or computes the result.
@@ -129,13 +109,8 @@ object ZhegalkinCache {
     cachedUnion.clear()
     cachedInter.clear()
     cachedXor.clear()
-    cachedSVE.clear()
     cachedInterCst.clear()
+    ZhegalkinAlgebra.clearCache()
   }
-
-  /**
-    * Returns a human-readable string with statistics about the caches.
-    */
-  def stats: String = s"cachedUnion = ${cachedUnion.size()}, cachedInter = ${cachedInter.size()}, cachedInterCst = ${cachedInterCst.size()}, cachedXor = ${cachedXor.size()}, cachedSVE = ${cachedSVE.size()}"
 
 }
