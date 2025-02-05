@@ -59,16 +59,15 @@ object FindReferencesProvider {
     * @param uri  The URI of the file where the cursor is, provided by the LSP request.
     * @param pos  The [[Position]] of the cursor within the file given by `uri`, provided by the LSP request.
     * @param root The root AST node of the Flix project.
-    * @return     A "Find References" LSP response.
+    * @return     A Set of SourceLocations.
     */
-  def findRefs(uri: String, pos: Position)(implicit root: Root): JObject = {
+  def findRefs(uri: String, pos: Position)(implicit root: Root): Set[SourceLocation] = {
     val left = searchLeftOfCursor(uri, pos).flatMap(getOccurs)
     val right = searchRightOfCursor(uri, pos).flatMap(getOccurs)
 
     right.orElse(left)
       .map(_.filter(isInProject))
-      .map(mkResponse)
-      .getOrElse(mkNotFound(uri, pos))
+      .getOrElse(Set.empty)
   }
 
   /**
@@ -483,23 +482,4 @@ object FindReferencesProvider {
     case Input.FileInPackage(_, _, _, _) => false
     case Input.Unknown => false
   }
-
-
-  /**
-    * Returns a successful "find references" LSP response containing the LSP [[Location]] for each
-    * [[SourceLocation]] of the occurrences of the element that we're finding references to.
-    *
-    * @param refs The [[SourceLocation]]s for the occurrences of the element that we're finding references to.
-    * @return     A successful "find references" LSP response.
-    */
-  private def mkResponse(refs: Set[SourceLocation]): JObject = {
-    ("status" -> ResponseStatus.Success) ~ ("result" -> refs.map(Location.from).map(_.toJSON))
-  }
-
-  /**
-    * Returns a reply indicating that nothing was found at the `uri` and `pos`.
-    */
-  private def mkNotFound(uri: String, pos: Position): JObject =
-    ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
-
 }

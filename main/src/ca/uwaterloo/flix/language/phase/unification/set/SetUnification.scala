@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolUnificationException, SveAlgorithm}
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinCache, ZhegalkinExpr}
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinExpr}
+import ca.uwaterloo.flix.util.Result
 
 import scala.collection.immutable.IntMap
 import scala.collection.mutable
@@ -41,8 +42,8 @@ object SetUnification {
   val ElimPerRule: mutable.Map[Phase, Int] = mutable.Map.empty
 
   /**
-   * Represents the name of phase.
-   */
+    * Represents the name of phase.
+    */
   sealed trait Phase
 
   object Phase {
@@ -113,7 +114,18 @@ object SetUnification {
       runWithState(state, runRule(trivial), trivialPhaseName)
     }
 
-    runWithState(state, runRule(sve), Phase.SuccessiveVariableElimination)
+    sveAll(state.eqs) match {
+      case Result.Ok(s) =>
+        // Success: We solved all equations using SVE.
+        // Mark all equations as solved and update the substitution.
+        state.eqs = Nil
+        state.subst = s @@ state.subst
+      case Result.Err(eqs) =>
+        // Failure: We found a conflict.
+        // Store the unsolveable equations and reset the partial substitution.
+        state.eqs = eqs
+        state.subst = SetSubstitution.empty
+    }
 
     (state.eqs, state.subst)
   }
@@ -443,32 +455,50 @@ object SetUnification {
   }
 
   /**
-    * Solves equations using successive-variable-elimination, i.e. exhaustive instantiation.
-    *
-    * SVE can always make progress, so [[None]] is never returned.
-    *
-    * Always returns no equations or `eq` marked as [[Equation.Status.Unsolvable]] or
-    * [[Equation.Status.Timeout]].
-    */
-  private def sve(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+   * Attempts to solve all the given equations `eqs` using the SVE algorithm.
+   *
+   * Returns `Result.Ok(s)` with a complete substitution `s` if all equations were solved.
+   * Returns `Result.Err(l)` with a list of unsolveable equations. (At least one equation is unsolveable.)
+   */
+  private def sveAll(eqs: List[Equation]): Result[SetSubstitution, List[Equation]] = {
+    // Return immediately if there are no equations to solve.
+    if (eqs.isEmpty) {
+      return Result.Ok(SetSubstitution.empty)
+    }
+
+    // Return immediately if there already is an equation that is unsolvable (i.e. in conflict).
+    if (eqs.exists(_.isUnsolvable)) {
+      return Result.Err(eqs.map(_.toUnsolvable))
+    }
+
+    // Convert all equations to Zhegalkin polynomials.
     implicit val alg: BoolAlg[ZhegalkinExpr] = ZhegalkinAlgebra
-    val f1 = Zhegalkin.toZhegalkin(eq.f1)
-    val f2 = Zhegalkin.toZhegalkin(eq.f2)
-    val q = alg.mkXor(f1, f2)
+    val l = eqs.map {
+      case Equation(f1, f2, _, _) =>
+        val x = Zhegalkin.toZhegalkin(f1)
+        val y = Zhegalkin.toZhegalkin(f2)
+        (x, y)
+    }
 
     try {
-      val subst = ZhegalkinCache.lookupOrComputeSVE(q, q => {
-        val fvs = alg.freeVars(q).toList
-        SveAlgorithm.successiveVariableElimination(q, fvs)
-      })
+      // Solve *ALL* equations via SVE and obtain the substitution.
+      val subst = SveAlgorithm.sveAll(l)
 
+      // Reconstruct a set substitution.
       val m = subst.m.foldLeft(IntMap.empty[SetFormula]) {
         case (acc, (x, e)) => acc.updated(x, Zhegalkin.toSetFormula(e))
       }
-      Some((Nil, SetSubstitution(m)))
+
+      if (EnableStats) {
+        val count = ElimPerRule.getOrElse(Phase.SuccessiveVariableElimination, 0)
+        ElimPerRule.put(Phase.SuccessiveVariableElimination, count + eqs.length)
+      }
+
+      Result.Ok(SetSubstitution(m))
     } catch {
       case _: BoolUnificationException =>
-        Some((List(eq.toUnsolvable), SetSubstitution.empty))
+        // SVE failed. We give up. We indiscriminately mark all equations as unsolveable.
+        Result.Err(eqs.map(_.toUnsolvable))
     }
   }
 

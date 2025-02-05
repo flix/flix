@@ -253,12 +253,12 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     case Request.Check(id) => processCheck(id)
 
     case Request.Codelens(id, uri) =>
-      ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(root)
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(CodeLensProvider.processCodeLens(uri)(root).map(_.toJSON)))
 
     case Request.Complete(id, uri, pos) =>
       // Find the source of the given URI (which should always exist).
       val sourceCode = sources(uri)
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sourceCode, currentErrors)(flix, root)
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionProvider.autoComplete(uri, pos, sourceCode, currentErrors)(flix, root).toJSON)
 
     case Request.Highlight(id, uri, pos) =>
       val highlights = HighlightProvider.processHighlight(uri, pos)(root)
@@ -274,7 +274,10 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       }
 
     case Request.Goto(id, uri, pos) =>
-      ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(root)
+      GotoProvider.processGoto(uri, pos)(root) match {
+        case Some(location) => ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> location.toJSON)
+        case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
+      }
 
     case Request.Implementation(id, uri, pos) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root).map(_.toJSON))
@@ -289,10 +292,10 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(root).map(_.toJSON))
 
     case Request.Uses(id, uri, pos) =>
-      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(root)
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> FindReferencesProvider.findRefs(uri, pos)(root).map(Location.from).map(_.toJSON))
 
     case Request.SemanticTokens(id, uri) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ SemanticTokensProvider.provideSemanticTokens(uri)(root)
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("data" -> SemanticTokensProvider.provideSemanticTokens(uri)(root)))
 
     case Request.InlayHint(id, uri, range) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.getInlayHints(uri, range).map(_.toJSON))

@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
-import ca.uwaterloo.flix.language.phase.unification.shared.BoolSubstitution
-
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentMap}
 
 object ZhegalkinCache {
@@ -24,36 +22,51 @@ object ZhegalkinCache {
   /**
     * Controls what caches are enabled.
     */
+  var EnableInterCstCache: Boolean = false
   var EnableUnionCache: Boolean = true
   var EnableInterCache: Boolean = true
   var EnableXorCache: Boolean = true
-  var EnableSVECache: Boolean = false
-  var EnableInterCstCache: Boolean = false
+
+  /**
+   * A cache that represents the intersection of the given Zhegalkin constant and expression.
+   *
+   * Note: initial size and load factor determined by profiling.
+   */
+  private val cachedInterCst: ConcurrentMap[(ZhegalkinCst, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap(1024, 0.5f)
 
   /**
     * A cache that represents the union of the two given Zhegalkin expressions.
+    *
+    * Note: initial size and load factor determined by profiling.
     */
-  private val cachedUnion: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap()
+  private val cachedUnion: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap(1024, 0.5f)
 
   /**
     * A cache that represents the intersection of the two given Zhegalkin expressions.
+    *
+    * Note: initial size and load factor determined by profiling.
     */
-  private val cachedInter: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap()
+  private val cachedInter: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap(2048, 0.5f)
 
   /**
     * A cache that represents the exclusive-or of the two given Zhegalkin expressions.
+    *
+    * Note: initial size and load factor determined by profiling.
     */
-  private val cachedXor: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap()
+  private val cachedXor: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap(8192, 0.5f)
 
   /**
-    * A cache of SVE queries: a map from the query to its MGU (if it exists).
-    */
-  private val cachedSVE: ConcurrentMap[ZhegalkinExpr, BoolSubstitution[ZhegalkinExpr]] = new ConcurrentHashMap()
-
-  /**
-    * A cache that represents the intersection of the given Zhegalkin constant and expression.
-    */
-  private val cachedInterCst: ConcurrentMap[(ZhegalkinCst, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap()
+   * Returns the intersection of the given Zhegalkin constant `c` and the expression `e`.
+   *
+   * Performs a lookup in the cache or computes the result.
+   */
+  @inline
+  def lookupOrComputeInterCst(c: ZhegalkinCst, e: ZhegalkinExpr, mkInter: (ZhegalkinCst, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
+    if (!EnableInterCstCache) {
+      return mkInter(c, e)
+    }
+    cachedInterCst.computeIfAbsent((c, e), _ => mkInter(c, e))
+  }
 
   /**
     * Returns the union of the two given Zhegalkin expressions `e1` and `e2`.
@@ -96,46 +109,14 @@ object ZhegalkinCache {
   }
 
   /**
-    * Returns the result of running the given `sve` algorithm on the given Zhegalkin expressions `q`.
-    *
-    * Performs a lookup in the cache or computes the result.
-    */
-  @inline
-  def lookupOrComputeSVE(q: ZhegalkinExpr, sve: ZhegalkinExpr => BoolSubstitution[ZhegalkinExpr]): BoolSubstitution[ZhegalkinExpr] = {
-    if (!EnableSVECache) {
-      return sve(q)
-    }
-
-    cachedSVE.computeIfAbsent(q, _ => sve(q))
-  }
-
-  /**
-    * Returns the intersection of the given Zhegalkin constant `c` and the expression `e`.
-    *
-    * Performs a lookup in the cache or computes the result.
-    */
-  @inline
-  def lookupOrComputeInterCst(c: ZhegalkinCst, e: ZhegalkinExpr, mkInter: (ZhegalkinCst, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
-    if (!EnableInterCstCache) {
-      return mkInter(c, e)
-    }
-    cachedInterCst.computeIfAbsent((c, e), _ => mkInter(c, e))
-  }
-
-  /**
     * Clears all caches.
     */
   def clearCaches(): Unit = {
+    cachedInterCst.clear()
     cachedUnion.clear()
     cachedInter.clear()
     cachedXor.clear()
-    cachedSVE.clear()
-    cachedInterCst.clear()
+    ZhegalkinAlgebra.clearCache()
   }
-
-  /**
-    * Returns a human-readable string with statistics about the caches.
-    */
-  def stats: String = s"cachedUnion = ${cachedUnion.size()}, cachedInter = ${cachedInter.size()}, cachedInterCst = ${cachedInterCst.size()}, cachedXor = ${cachedXor.size()}, cachedSVE = ${cachedSVE.size()}"
 
 }
