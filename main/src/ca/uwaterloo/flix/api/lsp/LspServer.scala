@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.api.lsp.provider.{HighlightProvider, HoverProvider}
+import ca.uwaterloo.flix.api.lsp.provider.{HighlightProvider, HoverProvider, SemanticTokensProvider}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.api.lsp.{Position, PublishDiagnosticsParams}
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Options
+import org.eclipse.lsp4j
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
@@ -97,6 +98,15 @@ object LspServer {
       val serverCapabilities = new ServerCapabilities
       serverCapabilities.setHoverProvider(true)
       serverCapabilities.setDocumentHighlightProvider(true)
+      serverCapabilities.setSemanticTokensProvider(
+        new SemanticTokensWithRegistrationOptions(
+          new SemanticTokensLegend(
+            List("class", "enum", "enumMember", "function", "interface", "operator", "parameter", "property", "method", "namespace", "type", "typeParameter", "variable").asJava,
+            List("declaration", "definition").asJava
+          ),
+          true
+        )
+      )
       serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)// TODO: make it incremental
 
       CompletableFuture.completedFuture(new InitializeResult(serverCapabilities))
@@ -228,6 +238,17 @@ object LspServer {
       val position = Position.fromLsp4j(params.getPosition)
       val highlights = HighlightProvider.processHighlight(uri, position)(flixLanguageServer.root)
       CompletableFuture.completedFuture(highlights.map(_.toLsp4j).toList.asJava)
+    }
+
+    /**
+      * Returns the semantic tokens (full) for the given document, which is used to provide semantic highlighting.
+      */
+    override def semanticTokensFull(params: SemanticTokensParams): CompletableFuture[SemanticTokens] = {
+      val uri = params.getTextDocument.getUri
+      val tokens = SemanticTokensProvider.provideSemanticTokens(uri)(flixLanguageServer.root)
+      val semanticTokens = new lsp4j.SemanticTokens()
+      semanticTokens.setData(tokens.map(Int.box).asJava)
+      CompletableFuture.completedFuture(semanticTokens)
     }
   }
 
