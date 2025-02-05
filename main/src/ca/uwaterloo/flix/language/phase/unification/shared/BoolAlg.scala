@@ -78,7 +78,7 @@ trait BoolAlg[F] {
   def map(f: F)(fn: Int => F): F
 
   /**
-   * Returns the result of running the given `sve` algorithm on the given Zhegalkin expressions `q`.
+   * Returns the result of running the given `sve` algorithm on the given Zhegalkin expression `q`.
    *
    * Performs a lookup in the cache or computes the result.
    */
