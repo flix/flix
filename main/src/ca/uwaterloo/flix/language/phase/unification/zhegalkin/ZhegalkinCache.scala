@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
-import ca.uwaterloo.flix.language.phase.unification.shared.BoolSubstitution
-
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentMap}
 
 object ZhegalkinCache {
@@ -24,10 +22,15 @@ object ZhegalkinCache {
   /**
     * Controls what caches are enabled.
     */
+  var EnableInterCstCache: Boolean = false
   var EnableUnionCache: Boolean = true
   var EnableInterCache: Boolean = true
   var EnableXorCache: Boolean = true
-  var EnableInterCstCache: Boolean = false
+
+  /**
+   * A cache that represents the intersection of the given Zhegalkin constant and expression.
+   */
+  private val cachedInterCst: ConcurrentMap[(ZhegalkinCst, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap()
 
   /**
     * A cache that represents the union of the two given Zhegalkin expressions.
@@ -45,9 +48,17 @@ object ZhegalkinCache {
   private val cachedXor: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap()
 
   /**
-    * A cache that represents the intersection of the given Zhegalkin constant and expression.
-    */
-  private val cachedInterCst: ConcurrentMap[(ZhegalkinCst, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap()
+   * Returns the intersection of the given Zhegalkin constant `c` and the expression `e`.
+   *
+   * Performs a lookup in the cache or computes the result.
+   */
+  @inline
+  def lookupOrComputeInterCst(c: ZhegalkinCst, e: ZhegalkinExpr, mkInter: (ZhegalkinCst, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
+    if (!EnableInterCstCache) {
+      return mkInter(c, e)
+    }
+    cachedInterCst.computeIfAbsent((c, e), _ => mkInter(c, e))
+  }
 
   /**
     * Returns the union of the two given Zhegalkin expressions `e1` and `e2`.
@@ -90,26 +101,13 @@ object ZhegalkinCache {
   }
 
   /**
-    * Returns the intersection of the given Zhegalkin constant `c` and the expression `e`.
-    *
-    * Performs a lookup in the cache or computes the result.
-    */
-  @inline
-  def lookupOrComputeInterCst(c: ZhegalkinCst, e: ZhegalkinExpr, mkInter: (ZhegalkinCst, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
-    if (!EnableInterCstCache) {
-      return mkInter(c, e)
-    }
-    cachedInterCst.computeIfAbsent((c, e), _ => mkInter(c, e))
-  }
-
-  /**
     * Clears all caches.
     */
   def clearCaches(): Unit = {
+    cachedInterCst.clear()
     cachedUnion.clear()
     cachedInter.clear()
     cachedXor.clear()
-    cachedInterCst.clear()
     ZhegalkinAlgebra.clearCache()
   }
 
