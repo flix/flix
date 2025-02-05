@@ -32,7 +32,7 @@ object ZheglakinPerf {
   private val RQ3 = "RQ3: Performance Gain of Per-Operation Caching"
   private val RQ4 = "RQ4: Performance Gain of the Solve-and-Retry Strategy"
 
-  private val DefaultN: Int = 2
+  private val DefaultN: Int = 1
 
   private val FullSubeffecting: Set[Subeffecting] = Set(Subeffecting.ModDefs, Subeffecting.InsDefs, Subeffecting.Lambdas)
 

@@ -45,7 +45,6 @@ case class SetSubstitution(m: IntMap[SetFormula]) {
   /** Applies `this` substitution to `f`. Replaces [[SetFormula.Var]] according to `this`. */
   def apply(f: SetFormula): SetFormula = {
     def visit(f0: SetFormula): SetFormula = f0 match {
-      // Maintain and exploit reference equality for performance.
       case SetFormula.Univ => SetFormula.Univ
 
       case SetFormula.Empty => SetFormula.Empty
@@ -56,13 +55,16 @@ case class SetSubstitution(m: IntMap[SetFormula]) {
 
       case SetFormula.Var(x) => m.getOrElse(x, f0)
 
-      case SetFormula.Compl(f1) =>
-        val inner = visit(f1)
-        if (inner eq f1) f0 else SetFormula.mkCompl(inner)
+      case SetFormula.Compl(x) => SetFormula.mkCompl(visit(x))
 
       case SetFormula.Inter(l) => SetFormula.Inter(l.map(visit))
 
-      case SetFormula.Union(l) => SetFormula.Union(l.map(visit))
+      case SetFormula.Union(l) => l.foldRight(SetFormula.Empty: SetFormula) {
+        case (x, acc) => visit(x) match {
+          case SetFormula.Empty => acc
+          case x1 => SetFormula.mkUnion2(x1, acc)
+        }
+      }
 
       case SetFormula.Xor(l) => SetFormula.mkXorAll(l.map(visit))
     }

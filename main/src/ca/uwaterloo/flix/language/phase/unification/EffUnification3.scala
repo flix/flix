@@ -169,7 +169,7 @@ object EffUnification3 {
       SetFormula.mkUnion2(toSetFormula(tpe1), toSetFormula(tpe2))
 
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) =>
-      SetFormula.mkInter(toSetFormula(tpe1), toSetFormula(tpe2))
+      SetFormula.mkInter2(toSetFormula(tpe1), toSetFormula(tpe2))
 
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), tpe1, _), tpe2, _) =>
       SetFormula.mkDiff2(toSetFormula(tpe1), toSetFormula(tpe2))

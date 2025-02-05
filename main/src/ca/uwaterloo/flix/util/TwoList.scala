@@ -36,6 +36,14 @@ case class TwoList[T](x: T, y: T, rest: List[T]) {
   def forall(f: T => Boolean): Boolean = f(x) && f(y) && rest.forall(f)
 
   /**
+   * Folds `f` over the elements of `this` list.
+   */
+  @inline
+  def foldRight[S](z: S)(f: (T, S) => S): S = {
+    f(x, f(y, rest.foldRight(z)(f)))
+  }
+
+  /**
     * Returns an iterator of the elements of `this` list.
     */
   def iterator: Iterator[T] = Iterator(x) ++ Iterator(y) ++ rest.iterator

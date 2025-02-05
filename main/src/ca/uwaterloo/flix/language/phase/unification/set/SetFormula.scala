@@ -269,7 +269,7 @@ object SetFormula {
   /**
     * Returns the intersection of `f1` and `f2`.
     */
-  def mkInter(f1: SetFormula, f2: SetFormula): SetFormula = (f1, f2) match {
+  def mkInter2(f1: SetFormula, f2: SetFormula): SetFormula = (f1, f2) match {
     case (Empty, _) => Empty
     case (_, Empty) => Empty
     case (Univ, _) => f2
@@ -323,6 +323,6 @@ object SetFormula {
 
   /** Returns the difference of `f1` and `f2` (`-`) with the formula `f1 ∩ !f2`. */
   def mkDiff2(f1: SetFormula, f2: SetFormula): SetFormula =
-    mkInter(f1, mkCompl(f2))
+    mkInter2(f1, mkCompl(f2))
 
 }

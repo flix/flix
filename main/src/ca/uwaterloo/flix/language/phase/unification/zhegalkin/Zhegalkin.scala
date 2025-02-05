@@ -58,11 +58,11 @@ object Zhegalkin {
       case ZhegalkinTerm(cst, vars) =>
         // c ∩ x1 ∩ x2 ∩ ... ∩ xn
         val flexVars = vars.foldLeft(SetFormula.Univ: SetFormula) {
-          case (acc, zvar) if zvar.flexible => SetFormula.mkInter(acc, SetFormula.Var(zvar.id))
+          case (acc, zvar) if zvar.flexible => SetFormula.mkInter2(acc, SetFormula.Var(zvar.id))
           case (acc, _) => acc
         }
         val rigidVars = vars.foldLeft(SetFormula.Univ: SetFormula) {
-          case (acc, zvar) if !zvar.flexible => SetFormula.mkInter(acc, SetFormula.Cst(zvar.id))
+          case (acc, zvar) if !zvar.flexible => SetFormula.mkInter2(acc, SetFormula.Cst(zvar.id))
           case (acc, _) => acc
         }
         SetFormula.mkInter3(visitCst(cst), flexVars, rigidVars)
