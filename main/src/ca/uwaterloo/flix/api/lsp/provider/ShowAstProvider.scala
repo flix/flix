@@ -29,10 +29,7 @@ import java.nio.file.Path
 object ShowAstProvider {
 
   /**
-    * Returns a JSON object with
-    *
-    *   - `title` (a string like `Namer.flix.ir`)
-    *   - `text` (a string with the ir representation).
+    * Returns a Path
     */
   def showAst()(implicit flix: Flix): Path = {
     val oldOpts = flix.options
