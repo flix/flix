@@ -29,23 +29,31 @@ object ZhegalkinCache {
 
   /**
    * A cache that represents the intersection of the given Zhegalkin constant and expression.
+   *
+   * Note: initial size and load factor determined by profiling.
    */
-  private val cachedInterCst: ConcurrentMap[(ZhegalkinCst, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap()
+  private val cachedInterCst: ConcurrentMap[(ZhegalkinCst, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap(1024, 0.5f)
 
   /**
     * A cache that represents the union of the two given Zhegalkin expressions.
+    *
+    * Note: initial size and load factor determined by profiling.
     */
-  private val cachedUnion: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap()
+  private val cachedUnion: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap(1024, 0.5f)
 
   /**
     * A cache that represents the intersection of the two given Zhegalkin expressions.
+    *
+    * Note: initial size and load factor determined by profiling.
     */
-  private val cachedInter: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap()
+  private val cachedInter: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap(2048, 0.5f)
 
   /**
     * A cache that represents the exclusive-or of the two given Zhegalkin expressions.
+    *
+    * Note: initial size and load factor determined by profiling.
     */
-  private val cachedXor: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap()
+  private val cachedXor: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap(8192, 0.5f)
 
   /**
    * Returns the intersection of the given Zhegalkin constant `c` and the expression `e`.
