@@ -41,8 +41,8 @@ object SetUnification {
   val ElimPerRule: mutable.Map[Phase, Int] = mutable.Map.empty
 
   /**
-   * Represents the name of phase.
-   */
+    * Represents the name of phase.
+    */
   sealed trait Phase
 
   object Phase {
@@ -113,7 +113,18 @@ object SetUnification {
       runWithState(state, runRule(trivial), trivialPhaseName)
     }
 
-    runWithState(state, runRule(sve), Phase.SuccessiveVariableElimination)
+    sveAll(state.eqs) match {
+      case None =>
+        // Failure: We found a conflict.
+        // Mark all equations as unsolvable and drop the partial substitution.
+        state.eqs = state.eqs.map(_.toUnsolvable)
+        state.subst = SetSubstitution.empty
+      case Some((_, s)) =>
+        // Success: We solved all equations using SVE.
+        // Mark all equations as solved and update the substitution.
+        state.eqs = Nil
+        state.subst = s @@ state.subst
+    }
 
     (state.eqs, state.subst)
   }
@@ -443,32 +454,47 @@ object SetUnification {
   }
 
   /**
-    * Solves equations using successive-variable-elimination, i.e. exhaustive instantiation.
-    *
-    * SVE can always make progress, so [[None]] is never returned.
-    *
-    * Always returns no equations or `eq` marked as [[Equation.Status.Unsolvable]] or
-    * [[Equation.Status.Timeout]].
-    */
-  private def sve(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+   * Attempts to solve all the given equations using the SVE algorithm.
+   */
+  private def sveAll(eqs: List[Equation]): Option[(List[Equation], SetSubstitution)] = {  // TODO: Return type
+    // Return immediately if there are no equations to solve.
+    if (eqs.isEmpty) {
+      return Some((Nil, SetSubstitution.empty))
+    }
+
+    // Return immediately if there is an equation that is unsolvable (i.e. in conflict).
+    if (eqs.exists(_.isUnsolvable)) {
+      return None
+    }
+
+    // Convert all equations to Zhegalkin polynomials.
     implicit val alg: BoolAlg[ZhegalkinExpr] = ZhegalkinAlgebra
-    val f1 = Zhegalkin.toZhegalkin(eq.f1)
-    val f2 = Zhegalkin.toZhegalkin(eq.f2)
-    val q = alg.mkXor(f1, f2)
+    val l = eqs.map {
+      case Equation(f1, f2, _, _) =>
+        val x = Zhegalkin.toZhegalkin(f1)
+        val y = Zhegalkin.toZhegalkin(f2)
+        (x, y)
+    }
 
     try {
-      val subst = ZhegalkinCache.lookupOrComputeSVE(q, q => {
-        val fvs = alg.freeVars(q).toList
-        SveAlgorithm.successiveVariableElimination(q, fvs)
-      })
+      // Solve *ALL* equations via SVE and obtain the substitution.
+      val subst = SveAlgorithm.sveAll(l)
 
+      // Reconstruct a set substitution.
       val m = subst.m.foldLeft(IntMap.empty[SetFormula]) {
         case (acc, (x, e)) => acc.updated(x, Zhegalkin.toSetFormula(e))
       }
+
+      if (EnableStats) {
+        val count = ElimPerRule.getOrElse(Phase.SuccessiveVariableElimination, 0)
+        ElimPerRule.put(Phase.SuccessiveVariableElimination, count + eqs.length)
+      }
+
       Some((Nil, SetSubstitution(m)))
     } catch {
       case _: BoolUnificationException =>
-        Some((List(eq.toUnsolvable), SetSubstitution.empty))
+        // SVE failed. We give up.
+        None
     }
   }
 

@@ -266,18 +266,17 @@ object ZheglakinPerf {
     * Runs Flix multiple times.
     */
   private def runN(N: Int, c: Config): IndexedSeq[Run] = {
+    SetUnification.EnableRewriteRules = c.rewriteRules
+
+    ZhegalkinCache.EnableInterCstCache = c.cacheInterCst
+    ZhegalkinCache.EnableUnionCache = c.cacheUnion
+    ZhegalkinCache.EnableInterCache = c.cacheInter
+    ZhegalkinCache.EnableXorCache = c.cacheXor
+    ZhegalkinAlgebra.EnableSVECache = c.cacheSVE
+
+    EffUnification3.EnableSmartSubeffecting = c.smartSubeffecting
+
     (0 until N).map { _ =>
-
-      SetUnification.EnableRewriteRules = c.rewriteRules
-
-      ZhegalkinCache.EnableUnionCache = c.cacheUnion
-      ZhegalkinCache.EnableInterCache = c.cacheInter
-      ZhegalkinCache.EnableXorCache = c.cacheXor
-      ZhegalkinCache.EnableSVECache = c.cacheSVE
-      ZhegalkinCache.EnableInterCstCache = c.cacheInterCst
-
-      EffUnification3.EnableSmartSubeffecting = c.smartSubeffecting
-
       val flix = new Flix()
       flix.setOptions(c.opts)
       runSingle(flix)
