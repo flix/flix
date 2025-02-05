@@ -40,7 +40,9 @@ object ConstraintSolverInterface {
       if (flix.options.xprinttyper.contains(sym.toString)) {
         Debug.startRecording()
       }
-      visitSpec(spec, defn.loc, infResult, renv0, tconstrs0, tenv0, eqEnv0, root)
+      val result = visitSpec(spec, defn.loc, infResult, renv0, tconstrs0, tenv0, eqEnv0, root)
+      Debug.stopRecording()
+      result
   }
 
   /**
