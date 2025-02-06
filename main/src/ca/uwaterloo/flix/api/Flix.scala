@@ -893,7 +893,7 @@ class Flix {
     }
   }
 
-  def reachableLibraryFunctions(root: TypedAst.Root): (Map[String, List[TypedAst.Def]], ListMap[Symbol, SourceLocation]) = {
+  def reachableLibraryFunctions(root: TypedAst.Root): (Map[Path, List[TypedAst.Def]], ListMap[Symbol, SourceLocation]) = {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
@@ -903,12 +903,11 @@ class Flix {
     shutdownForkJoinPool()
 
     // Filter for public functions in libraries
-    val reachable = filteredRoot.defs.foldLeft(Map.empty[String, List[TypedAst.Def]]) {
+    val reachable = filteredRoot.defs.foldLeft(Map.empty[Path, List[TypedAst.Def]]) {
       case (acc, (sym, defn)) if defn.spec.mod.isPublic => sym.loc.sp1.source.input match {
         case Input.FileInPackage(path, _, _, _) =>
-          val name = path.getFileName.toString
-          val defs = acc.getOrElse(name, List.empty)
-          acc + (name -> (defn :: defs))
+          val defs = acc.getOrElse(path, List.empty)
+          acc + (path -> (defn :: defs))
 
         case Input.Text(_, _, _) | Input.TxtFile(_, _) | Input.PkgFile(_, _) | Input.Unknown => acc
       }

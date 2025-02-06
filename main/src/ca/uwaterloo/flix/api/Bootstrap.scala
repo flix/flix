@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
-import ca.uwaterloo.flix.util.{FileOps, Formatter, Result, Validation}
+import ca.uwaterloo.flix.util.{FileOps, Formatter, InternalCompilerException, Result, Validation}
 
 import java.io.PrintStream
 import java.nio.file.*
@@ -840,8 +840,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     Validation.mapN(check(flix)) {
       case root =>
         val path = getEffectLockFile(projectPath)
-        val (defs, _) = flix.reachableLibraryFunctions(root)
-        val ser = Serialization.serialize(defs)
+        val (reachableDefs, _) = flix.reachableLibraryFunctions(root)
+        val resolvedDefs = reachableDefs.map {
+          case (path, defs) => resolveLibName(path) -> defs
+        }
+        val ser = Serialization.serialize(resolvedDefs)
         FileOps.writeString(path, ser)
     }
   }
@@ -884,9 +887,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   private def extractLibName(defn: TypedAst.Def): Option[String] = defn.sym.loc.sp1.source.input match {
-    // TODO: Remove the extension name and version number to obtain lib name
     case Input.FileInPackage(packagePath, _, _, _) =>
-      Some(packagePath.getFileName.toString)
+      Some(resolveLibName(packagePath))
 
     case Input.Unknown |
          Input.PkgFile(_, _) |
@@ -907,5 +909,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           Some(BootstrapError.EffectUpgradeError(defn.sym, uses, originalScheme, newScheme))
         }
     }
+  }
+
+  private def resolveLibName(path: Path): String = {
+    path.getParent.getParent.getFileName.toString
   }
 }
