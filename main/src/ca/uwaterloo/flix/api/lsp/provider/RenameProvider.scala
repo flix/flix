@@ -60,13 +60,12 @@ object RenameProvider {
     * @param root     The root AST node of the Flix project.
     * @return         A [[JObject]] representing a Rename LSP response.
     */
-  def processRename(newName: String, uri: String, pos: Position)(implicit root: Root): JObject = {
+  def processRename(newName: String, uri: String, pos: Position)(implicit root: Root): Option[WorkspaceEdit] = {
     val left = searchLeftOfCursor(uri, pos).flatMap(getOccurs)
     val right = searchRightOfCursor(uri, pos).flatMap(getOccurs)
 
     right.orElse(left)
       .map(rename(newName))
-      .getOrElse(mkNotFound(uri, pos))
   }
 
   /**
@@ -232,7 +231,7 @@ object RenameProvider {
     *
     * NB: The occurrences must *NOT* overlap nor be repeated. Hence they are a set.
     */
-  private def rename(newName: String)(occurrences: Set[SourceLocation]): JObject = {
+  private def rename(newName: String)(occurrences: Set[SourceLocation]): WorkspaceEdit = {
     // Convert the set of occurrences to a sorted list.
     val targets = occurrences.toList.sorted
 
@@ -244,17 +243,6 @@ object RenameProvider {
       case (uri, locs) => uri -> locs.map(loc => TextEdit(Range.from(loc), newName))
     }
 
-    // Assemble the workspace edit.
-    val workspaceEdit = WorkspaceEdit(textEdits)
-
-    // Construct the JSON result.
-    ("status" -> ResponseStatus.Success) ~ ("result" -> workspaceEdit.toJSON)
+     WorkspaceEdit(textEdits)
   }
-
-  /**
-    * Returns a reply indicating that nothing was found at the `uri` and `pos`.
-    */
-  private def mkNotFound(uri: String, pos: Position): JObject =
-    ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
-
 }
