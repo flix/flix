@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getEffectLockFile,
 import ca.uwaterloo.flix.api.effectlock.EffectLock
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialization
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialization.{Library, NamedTypeSchemes}
-import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -28,8 +28,8 @@ import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
-import ca.uwaterloo.flix.util.collection.Chain
+import ca.uwaterloo.flix.util.Validation.flatMapN
+import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
 import ca.uwaterloo.flix.util.{FileOps, Formatter, Result, Validation}
 
 import java.io.PrintStream
@@ -840,19 +840,19 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     Validation.mapN(check(flix)) {
       case root =>
         val path = getEffectLockFile(projectPath)
-        val defs = flix.reachableLibraryFunctions(root)
+        val (defs, _) = flix.reachableLibraryFunctions(root)
         val ser = Serialization.serialize(defs)
         FileOps.writeString(path, ser)
     }
   }
 
-  def effectUpgrade(root: TypedAst.Root): Validation[Unit, BootstrapError] = {
+  def effectUpgrade(root: TypedAst.Root, uses: ListMap[Symbol, SourceLocation]): Validation[Unit, BootstrapError] = {
     val path = getEffectLockFile(projectPath)
 
     FileOps.readFile(path) match {
       case Ok(json) => Serialization.deserialize(json) match {
         case Some(originalLibs) =>
-          validateLibs(originalLibs, root.defs.values.toList)
+          validateLibs(originalLibs, root.defs.values.toList, uses)
 
         case None =>
           Validation.Failure(BootstrapError.FileError("invalid effect lock file"))
@@ -864,13 +864,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  private def validateLibs(originalLibs: Map[Library, NamedTypeSchemes], upgradedProgram: List[TypedAst.Def]): Validation[Unit, BootstrapError.EffectUpgradeError] = {
+  private def validateLibs(originalLibs: Map[Library, NamedTypeSchemes], upgradedProgram: List[TypedAst.Def], uses: ListMap[Symbol, SourceLocation]): Validation[Unit, BootstrapError] = {
     val errors = mutable.ListBuffer.empty[BootstrapError.EffectUpgradeError]
     for (
       defn <- upgradedProgram;
       libName <- extractLibName(defn);
       originalSignatures <- originalLibs.get(libName);
-      err <- validateDefn(originalSignatures, defn)
+      defnUses = uses.get(defn.sym);
+      err <- validateDefn(originalSignatures, defn, defnUses)
     ) {
       errors.addOne(err)
     }
@@ -893,7 +894,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
          Input.TxtFile(_, _) => None
   }
 
-  private def validateDefn(originalSignatures: NamedTypeSchemes, defn: TypedAst.Def): Option[BootstrapError.EffectUpgradeError] = {
+  private def validateDefn(originalSignatures: NamedTypeSchemes, defn: TypedAst.Def, uses: List[SourceLocation]): Option[BootstrapError.EffectUpgradeError] = {
     originalSignatures.find {
       case (sym, _) => defn.sym.namespace == sym.namespace && defn.sym.text == sym.text
     }.flatMap {
@@ -903,7 +904,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         if (isSafe) {
           None
         } else {
-          Some(BootstrapError.EffectUpgradeError(defn.sym, originalScheme, newScheme))
+          Some(BootstrapError.EffectUpgradeError(defn.sym, uses, originalScheme, newScheme))
         }
     }
   }

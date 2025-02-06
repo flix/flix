@@ -224,7 +224,7 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
       case sd => sd
     }
     val root1 = root.copy(defs = defs)
-    val reachableDefs = flix.reachableLibraryFunctions(root1)
+    val (reachableDefs, _) = flix.reachableLibraryFunctions(root1)
     val ser = Serialization.serialize(reachableDefs)
     val Some(actual) = Serialization.deserialize(ser)
     val expected = root1.defs.foldLeft(Map.empty[Serialization.Library, List[Serialization.NamedTypeScheme]]) {

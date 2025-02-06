@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.effectlock.{EffectLock, Reachability}
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
+import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source, SymUse}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.*
-import ca.uwaterloo.flix.util.collection.{Chain, MultiMap}
+import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MultiMap}
 import ca.uwaterloo.flix.util.tc.Debug
 
 import java.nio.charset.Charset
@@ -893,17 +893,18 @@ class Flix {
     }
   }
 
-  def reachableLibraryFunctions(root: TypedAst.Root): Map[String, List[TypedAst.Def]] = {
+  def reachableLibraryFunctions(root: TypedAst.Root): (Map[String, List[TypedAst.Def]], ListMap[Symbol, SymUse]) = {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
     // Initialize fork-join thread pool.
     initForkJoinPool()
-    val (root1, occurrenceInfo) = Reachability.run(root)
+    val (root1, uses) = Reachability.run(root)
     shutdownForkJoinPool()
-    root1.defs.foldLeft(Map.empty[String, List[TypedAst.Def]]) {
+
+    val reachable = root1.defs.foldLeft(Map.empty[String, List[TypedAst.Def]]) {
       case (acc, (sym, defn)) if defn.spec.mod.isPublic => sym.loc.sp1.source.input match {
-        case Input.FileInPackage(path, virtualPath, _, _) =>
+        case Input.FileInPackage(path, _, _, _) =>
           val name = path.getFileName.toString
           val defs = acc.getOrElse(name, List.empty)
           acc + (name -> (defn :: defs))
@@ -912,6 +913,6 @@ class Flix {
       }
       case (acc, _) => acc
     }
-
+    (reachable, uses)
   }
 }

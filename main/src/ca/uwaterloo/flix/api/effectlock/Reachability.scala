@@ -46,12 +46,12 @@ object Reachability {
       case (sym, _) => allReachable.contains(ReachableSym.DefnSym(sym))
     }
 
-    val occurrenceInfo = sctx.useSites.asScala.foldLeft(ListMap.empty[Symbol, SymUse]) {
+    val uses = sctx.useSites.asScala.foldLeft(ListMap.empty[Symbol, SymUse]) {
       case (acc, (sym, symUse)) => acc + (sym -> symUse)
     }
 
     // Reassemble the AST.
-    (root.copy(defs = reachableDefs), occurrenceInfo)
+    (root.copy(defs = reachableDefs), uses)
   }
 
   /**

@@ -19,12 +19,14 @@ package ca.uwaterloo.flix
 import ca.uwaterloo.flix.Main.Command.PlainLsp
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.shared.SymUse
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZheglakinPerf
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
 import ca.uwaterloo.flix.util.Validation.flatMapN
 import ca.uwaterloo.flix.util.*
+import ca.uwaterloo.flix.util.collection.ListMap
 
 import java.io.{File, PrintStream}
 import java.net.BindException
@@ -337,7 +339,16 @@ object Main {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
-              flatMapN(bootstrap.check(flix))(bootstrap.effectUpgrade)
+              flatMapN(bootstrap.check(flix)) {
+                root =>
+                  val (_, uses) = flix.reachableLibraryFunctions(root)
+                  val useLocs = uses.map {
+                    case (sym, SymUse.SigSymUse(_, loc)) => sym -> loc
+                    case (sym, SymUse.DefSymUse(_, loc)) => sym -> loc
+                    case (sym, _) => throw InternalCompilerException(s"unexpected symbol $sym", SourceLocation.Unknown)
+                  }.foldLeft(ListMap.empty[Symbol, SourceLocation])(_ + _)
+                  bootstrap.effectUpgrade(root, useLocs)
+              }
           }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
