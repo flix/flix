@@ -20,7 +20,7 @@ package ca.uwaterloo.flix.util
 import scala.collection.immutable.SortedSet
 
 /**
-  * Represents a finite or co-finite set with an infinite universe of integers.
+  * Represents a finite or co-finite set with an infinite universe.
   *
   * All sets are either a [[SortedSet]] or a complement of it.
   *
@@ -29,7 +29,6 @@ import scala.collection.immutable.SortedSet
 sealed trait CofiniteSet[T] {
 
   import CofiniteSet.{Compl, Set}
-
 
   /** Returns `true` if `this` is [[CofiniteSet.empty]]. */
   def isEmpty: Boolean = this match {
@@ -56,7 +55,12 @@ object CofiniteSet {
   /**
     * A trait that indicates the empty and universal values of this type have been cached.
     *
-    * We use this to ensure there is ONE empty and ONE universe value (per type) throughout the program.
+    * We use this for performance:
+    * There is one value for `empty` and `universe` per instance of the trait.
+    * As long as the same trait is used as evidence to the [[CofiniteSet.empty]] and [[CofiniteSet.universe]] functions,
+    * the same object will be returned every time [[CofiniteSet.empty]] or [[CofiniteSet.universe]] is called.
+    *
+    * This avoids allocation of new objects every time an empty or universal set is created.
     */
   trait Cached[T] {
     val empty: CofiniteSet[T]
@@ -68,10 +72,10 @@ object CofiniteSet {
     override val universe: CofiniteSet[Int] = Compl(SortedSet.empty)
   }
 
-  /** Represents a finite set of integers. */
+  /** Represents a finite set. */
   case class Set[T](s: SortedSet[T]) extends CofiniteSet[T]
 
-  /** Represents a co-finite set of integers. */
+  /** Represents a co-finite set. */
   case class Compl[T](s: SortedSet[T]) extends CofiniteSet[T]
 
   /** The empty set. */
