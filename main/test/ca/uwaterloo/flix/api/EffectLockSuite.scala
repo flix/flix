@@ -69,20 +69,36 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("g", "f", result))
   }
 
-  test("Unsafe.01") {
+  test("Safe.05") {
     val input =
       """
-        |pub eff A {
-        |    def a(): Unit
+        |pub eff E {
+        |    def e(): Unit
         |}
         |
-        |pub def f(): Bool -> Unit = ???
+        |pub def f(_: String): String \ E = unchecked_cast("str" as String \ E)
         |
-        |pub def g(): (Bool -> Unit \ A) = unchecked_cast(() as Bool -> Unit \ A)
+        |pub def g(_: String): String = ???
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("g", "f", result))
+    assert(checkIsSafe("g", "f", result))
+  }
+
+  test("Unsafe.01") {
+    val input =
+      """
+        |pub eff E {
+        |    def a(): Unit
+        |}
+        |
+        |pub def f(): (Bool -> Unit \ E) = unchecked_cast(() as Bool -> Unit \ E)
+        |
+        |pub def g(): Bool -> Unit = ???
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(!checkIsSafe("f", "g", result))
   }
 
   test("Unsafe.02") {
@@ -92,13 +108,13 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
         |    def e(): Unit
         |}
         |
-        |pub def f(_: a -> b \ ef): b \ ef = ???
+        |pub def f(_: a -> b \ E): b \ E = unchecked_cast(() as b \ E)
         |
-        |pub def g(_: a -> b \ E): b \ E = unchecked_cast(() as b \ E)
+        |pub def g(_: a -> b \ ef): b \ ef = ???
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("g", "f", result))
+    assert(!checkIsSafe("f", "g", result))
   }
 
   test("Unsafe.03") {
@@ -108,13 +124,13 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
         |    def e(): Unit
         |}
         |
-        |pub def f(_: String): String = ???
+        |pub def f(_: String): String \ E = unchecked_cast("str" as String \ E)
         |
-        |pub def g(_: String): String \ E = unchecked_cast("str" as String \ E)
+        |pub def g(_: String): String = ???
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("g", "f", result))
+    assert(!checkIsSafe("f", "g", result))
   }
 
   test("Reachable.01") {
