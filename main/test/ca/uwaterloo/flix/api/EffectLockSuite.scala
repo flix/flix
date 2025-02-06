@@ -12,6 +12,18 @@ import java.nio.file.Path
 
 class EffectLockSuite extends AnyFunSuite with TestUtils {
 
+  test("Safe.00") {
+    val input =
+      """
+        |pub def f(x: Int32): Int32 = x
+        |
+        |pub def g(x: a): a = x
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(checkIsSafe("g", "f", result))
+  }
+
   test("Safe.01") {
     val input =
       """
@@ -124,6 +136,7 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
   }
 
   test("Safe.08") {
+    // TODO: alpha renaming?
     val input =
       """
         |pub eff E {
@@ -133,9 +146,9 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
         |    def e(): Unit
         |}
         |
-        |pub def f(_: a -> b \ ef): String \ {ef, A, E} = unchecked_cast("str" as String \ {ef, A, E})
+        |pub def f(_: a -> b \ ef): b \ {ef, A, E} = unchecked_cast(() as b \ {ef, A, E})
         |
-        |pub def g(_: a -> b \ ef): String \ {ef, A} = unchecked_cast("str" as String \ {ef, A})
+        |pub def g(_: a -> b \ ef): b \ {ef, A} = unchecked_cast(() as b \ {ef, A})
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
@@ -234,7 +247,7 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("f", "g", result))
+    assert(checkIsSafe("f", "g", result))
   }
 
   test("Safe.14") {
@@ -343,6 +356,7 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
   }
 
   test("Unsafe.06") {
+    // TODO: Alpha renaming
     val input =
       """
         |pub eff E {
