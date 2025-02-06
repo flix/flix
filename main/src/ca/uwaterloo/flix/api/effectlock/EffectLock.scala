@@ -103,7 +103,8 @@ object EffectLock {
     val (unsolvedConstraints, subst) = EffUnification3.unifyAll(List((left, sc2Effs, sc2Effs.loc)), Scope.Top, RigidityEnv.empty)
     println(subst)
     println(unsolvedConstraints)
-    isMatchingArgs && isMatchingResultTypes && unsolvedConstraints.isEmpty
+    val isUnifiableForAllValuations = unsolvedConstraints.isEmpty && subst.isEmpty
+    isMatchingArgs && isMatchingResultTypes & unsolvedConstraints.isEmpty // && isUnifiableForAllValuations
   }
 }
 
