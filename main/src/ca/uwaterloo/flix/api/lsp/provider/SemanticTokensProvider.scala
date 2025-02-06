@@ -333,7 +333,7 @@ object SemanticTokensProvider {
 
     case Expr.Use(_, _, exp, _) => visitExp(exp) // TODO NS-REFACTOR add token for sym
 
-    case Expr.Cst(_, _, _) => Iterator.empty
+    case cst: Expr.Cst => visitCst(cst)
 
     case Expr.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp)
@@ -624,6 +624,21 @@ object SemanticTokensProvider {
     */
   private def visitExps(exps0: List[Expr]): Iterator[SemanticToken] =
     exps0.flatMap(visitExp).iterator
+
+  private def visitCst(constant: Expr.Cst): Iterator[SemanticToken] = constant.cst match {
+    case _ : Constant.Str |
+         _ : Constant.Char => Iterator(SemanticToken(SemanticTokenType.String, Nil, constant.loc))
+    case _ : Constant.Int8 |
+         _ : Constant.Int16 |
+         _ : Constant.Int32 |
+         _ : Constant.Int64 |
+         _ : Constant.BigInt |
+         _ : Constant.Float32 |
+         _ : Constant.Float64 |
+         _ : Constant.BigDecimal => Iterator(SemanticToken(SemanticTokenType.Number, Nil, constant.loc))
+    case _: Constant.Regex => Iterator(SemanticToken(SemanticTokenType.Regexp, Nil, constant.loc))
+    case _ => Iterator(SemanticToken(SemanticTokenType.Type, Nil, constant.loc))
+  }
 
   /**
     * Returns all semantic tokens in the given pattern `pat0`.
