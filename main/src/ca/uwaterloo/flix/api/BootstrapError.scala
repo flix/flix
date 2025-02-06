@@ -15,7 +15,8 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.language.ast.{Scheme, Symbol}
+import ca.uwaterloo.flix.language.ast.shared.SymUse
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol}
 import ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.tools.pkg.{ManifestError, PackageError}
 import ca.uwaterloo.flix.util.Formatter
@@ -58,19 +59,37 @@ object BootstrapError {
     }
   }
 
-  case class EffectUpgradeError(sym: Symbol.DefnSym, originalScheme: Scheme, newScheme: Scheme) extends BootstrapError {
-    override def message(f: Formatter): String =
+  case class EffectUpgradeError(sym: Symbol.DefnSym, uses: List[SourceLocation], originalScheme: Scheme, newScheme: Scheme) extends BootstrapError {
+    override def message(f: Formatter): String = {
+
       s"""@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
          |@  WARNING! YOU MAY BE SUBJECT TO A SUPPLY CHAIN ATTACK!  @
          |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
          |            ~~ Effect signatures have changed! ~~
          |
          |The following potentially harmful changes were detected:
+         |$effectSets
          |
-         |+ `$sym` now uses *{${newScheme.base.effects.mkString(", ")}}*!
-         |
-         |  The function is used in these places:
-         |  - TODO
+         |$useSites
          |""".stripMargin
+    }
+
+    private def effectSets: String = {
+      val newEffectSet = newScheme.base.effects.mkString("*{", ", ", "}*")
+      val effectSetDiff = newScheme.base.effects.diff(originalScheme.base.effects).mkString("*{", ", ", "}*")
+      val congruentSentence = if (newScheme.base.effects.size == 1) "The new effect is" else "The new effects are"
+      s"""
+         |+ `$sym` now uses $newEffectSet!
+         |   $congruentSentence: $effectSetDiff
+         |""".stripMargin
+    }
+
+    private def useSites: String = {
+      val congruentSentence = if (uses.length == 1) "The function is used in this place" else "The function is used in these places"
+      s"""
+         |  $congruentSentence:
+         |${uses.mkString("  - ", s"${System.lineSeparator()}  - ", "")}
+         |""".stripMargin
+    }
   }
 }
