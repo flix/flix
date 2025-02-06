@@ -116,7 +116,7 @@ object STC {
 
   case object SymmetricDiff extends STC
 
-  // case class Effect(sym: Symbol.EffectSym) extends SerializableTypeConstructor
+  case class Effect(sym: SSymbol.EffectSym) extends STC
   // case class CaseComplement(sym: Symbol.RestrictableEnumSym) extends SerializableTypeConstructor
   // case class CaseUnion(sym: Symbol.RestrictableEnumSym) extends SerializableTypeConstructor
   // case class CaseIntersection(sym: Symbol.RestrictableEnumSym) extends SerializableTypeConstructor

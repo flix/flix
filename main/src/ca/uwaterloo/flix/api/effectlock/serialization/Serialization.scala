@@ -204,7 +204,9 @@ object Serialization {
     case TypeConstructor.Intersection => STC.Intersection
     case TypeConstructor.Difference => STC.Difference
     case TypeConstructor.SymmetricDiff => STC.SymmetricDiff
-    case TypeConstructor.Effect(sym) => ??? // SerializableTypeConstructor.Effect(sym)
+    case TypeConstructor.Effect(sym) =>
+      val ssym = SSymbol.EffectSym(sym.namespace, sym.name)
+      STC.Effect(ssym)
     case TypeConstructor.CaseComplement(sym) => ??? // SerializableTypeConstructor.CaseComplement(sym)
     case TypeConstructor.CaseUnion(sym) => ??? // SerializableTypeConstructor.CaseUnion(sym)
     case TypeConstructor.CaseIntersection(sym) => ??? // SerializableTypeConstructor.CaseIntersection(sym)
@@ -326,6 +328,9 @@ object Serialization {
     case STC.Intersection => TypeConstructor.Intersection
     case STC.Difference => TypeConstructor.Difference
     case STC.SymmetricDiff => TypeConstructor.SymmetricDiff
+    case STC.Effect(ssym) =>
+      val s = new Symbol.EffectSym(ssym.namespace, ssym.name, SourceLocation.Unknown)
+      TypeConstructor.Effect(s)
     case STC.RegionToStar => TypeConstructor.RegionToStar
   }
 }
