@@ -225,7 +225,10 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
     }
     val root1 = root.copy(defs = defs)
     val (reachableDefs, _) = flix.reachableLibraryFunctions(root1)
-    val ser = Serialization.serialize(reachableDefs)
+    val resolvedDefs = reachableDefs.map {
+      case (sym, d) => resolveLibName(sym) -> d
+    }
+    val ser = Serialization.serialize(resolvedDefs)
     val Some(actual) = Serialization.deserialize(ser)
     val expected = root1.defs.foldLeft(Map.empty[Serialization.Library, List[Serialization.NamedTypeScheme]]) {
       case (acc, (sym, defn)) => sym.loc.sp1.source.input match {
@@ -288,4 +291,9 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
       case None => fail("program does not compile")
     }
   }
+
+  private def resolveLibName(path: Path): String = {
+    path.getParent.getParent.getFileName.toString
+  }
+
 }
