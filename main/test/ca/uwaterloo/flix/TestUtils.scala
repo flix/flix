@@ -114,7 +114,34 @@ trait TestUtils {
           if (actual.loc == SourceLocation.Unknown) {
             if (!allowUnknown) fail("Error contains unknown source location.")
           }
+
+          // Check that the error is where specified (according to the ERROR string)
+          getExpectedErrorLine(actual) match {
+            case None => () // fall through
+            case Some(expectedLine) =>
+              val startLine = actual.loc.sp1.line
+              val endLine = actual.loc.sp2.line
+              if (startLine != expectedLine || endLine != expectedLine) {
+                fail(s"Error was expected on line $expectedLine but found on lines $startLine - $endLine.")
+              }
+          }
+
         case None => fail(s"Expected an error of type ${expected.getSimpleName}, but found:\n\n${actuals.map(p => p._2.getName)}.")
       }
+  }
+
+  /**
+    * Returns the line where the error is expected, if specified.
+    */
+  private def getExpectedErrorLine(error: CompilationMessage): Option[Int] = {
+    val content = new String(error.source.data)
+    val expectedIndex = content.linesIterator.indexWhere(_.contains("ERROR"))
+
+    // expectedIndex is -1 if no line contains ERROR
+    // line numbers are offset by 1
+    expectedIndex match {
+      case -1 => None
+      case index => Some(index + 1)
+    }
   }
 }
