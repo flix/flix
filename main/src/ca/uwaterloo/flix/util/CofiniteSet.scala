@@ -1,5 +1,6 @@
 /*
  * Copyright 2024 Jonathan Lindegaard Starup
+ * Copyright 2025 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +53,11 @@ sealed trait CofiniteSet[T] {
 
 object CofiniteSet {
 
+  /**
+    * A trait that indicates the empty and universal values of this type have been cached.
+    *
+    * We use this to ensure there is ONE empty and ONE universe value (per type) throughout the program.
+    */
   trait Cached[T] {
     val empty: CofiniteSet[T]
     val universe: CofiniteSet[T]
@@ -157,5 +163,4 @@ object CofiniteSet {
   /** Returns the symmetric difference of `s1` and `s2`. */
   def xor[T](s1: CofiniteSet[T], s2: CofiniteSet[T]): CofiniteSet[T] =
     union(difference(s1, s2), difference(s2, s1))
-
 }
