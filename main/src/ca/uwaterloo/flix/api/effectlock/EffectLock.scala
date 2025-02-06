@@ -25,6 +25,12 @@ import scala.collection.immutable.SortedSet
 
 object EffectLock {
 
+  def println(s: Object): Unit = {
+    if (true) {
+      Predef.println(s)
+    }
+  }
+
   /**
     * Returns true if `sc1` is unifiable with `sc2` or if `sc1` is a monomorphic downgrade of `sc2`.
     */
@@ -63,27 +69,41 @@ object EffectLock {
     *
     */
   private def isSubset(tpe1: Type, tpe2: Type): Boolean = {
+    implicit val flix: Flix = new Flix().setOptions(Options.Default)
     // TODO: What about type variables? Alpha equivalence
     // 1. Types match t1 -> t2
     (tpe1.typeConstructor, tpe2.typeConstructor) match {
       case (Some(TypeConstructor.Arrow(_)), Some(TypeConstructor.Arrow(_))) => ()
       case _ => return false
     }
-    val isMatchingArgs = tpe1.arrowArgTypes == tpe2.arrowArgTypes
+    val isMatchingArgs = true // tpe1.arrowArgTypes == tpe2.arrowArgTypes
+    println(s"tpe1.arrowArgTypes: ${tpe1.arrowArgTypes}")
+    println(s"tpe2.arrowArgTypes: ${tpe2.arrowArgTypes}")
+    println(s"isMatchingArgs: $isMatchingArgs")
     val tpe1Res = tpe1.arrowResultType
     val tpe2Res = tpe2.arrowResultType
     val isMatchingResultTypes = (tpe1.arrowResultType.typeConstructor, tpe2.arrowResultType.typeConstructor) match {
       case (Some(TypeConstructor.Arrow(_)), Some(TypeConstructor.Arrow(_))) => isSubset(tpe1Res, tpe2Res)
-      case (t1, t2) => t1 == t2
+      case (t1, t2) =>
+        println(s"t1: $t1")
+        println(s"t2: $t2")
+        t1 == t2
     }
+    println(s"tpe1.arrowResultType: ${tpe1.arrowResultType}")
+    println(s"tpe2.arrowResultType: ${tpe2.arrowResultType}")
+    println(s"isMatchingResultTypes: $isMatchingResultTypes")
 
 
     // 2. Boolean unification of effects phi + phi' = phi'
     val sc1Effs = tpe1.arrowEffectType
     val sc2Effs = tpe2.arrowEffectType
+    println(s"g sc1Effs: $sc1Effs")
+    println(s"f sc2Effs: $sc2Effs")
     val left = Type.mkUnion(sc1Effs, sc2Effs, sc1Effs.loc)
-    implicit val flix: Flix = new Flix().setOptions(Options.Default)
-    val (unsolvedConstraints, _) = EffUnification3.unifyAll(List((left, sc2Effs, sc2Effs.loc)), Scope.Top, RigidityEnv.empty)
+    val (unsolvedConstraints, subst) = EffUnification3.unifyAll(List((left, sc2Effs, sc2Effs.loc)), Scope.Top, RigidityEnv.empty)
+    println(subst)
+    println(unsolvedConstraints)
     isMatchingArgs && isMatchingResultTypes && unsolvedConstraints.isEmpty
   }
 }
+
