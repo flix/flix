@@ -51,16 +51,6 @@ class StringCursor(val data: Array[Char]) {
     }
   }
 
-  /** Returns a copy of `this`, pointing to the same underlying array. */
-  def copy(): StringCursor = {
-    val sc = new StringCursor(data)
-    sc.offset = offset
-    sc.line = line
-    sc.column = column
-    sc.prevLineMaxColumn = prevLineMaxColumn
-    sc
-  }
-
   /**
     * Advances cursor one char forward, returning the char it was previously sitting on.
     * Note: If the lexer has arrived at EOF, advance will continuously return EOF without advancing.
@@ -121,4 +111,15 @@ class StringCursor(val data: Array[Char]) {
       advance()
     }
   }
+
+  /** Returns a copy of `this`, pointing to the same underlying array. */
+  def copy(): StringCursor = {
+    val sc = new StringCursor(data)
+    sc.offset = offset
+    sc.line = line
+    sc.column = column
+    sc.prevLineMaxColumn = prevLineMaxColumn
+    sc
+  }
+
 }
