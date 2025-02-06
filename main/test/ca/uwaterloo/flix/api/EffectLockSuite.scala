@@ -40,11 +40,11 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
     // TODO: According to the paper, result types should always be equal but intuitively it should be safe to do this
     val input =
       """
-        |pub eff A {
+        |pub eff E {
         |    def a(): Unit
         |}
         |
-        |pub def f(): (Bool -> Unit \ A) = unchecked_cast(() as Bool -> Unit \ A)
+        |pub def f(): (Bool -> Unit \ E) = unchecked_cast(() as Bool -> Unit \ E)
         |
         |pub def g(): Bool -> Unit = ???
         |
