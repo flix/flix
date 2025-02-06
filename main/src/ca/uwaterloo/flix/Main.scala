@@ -346,6 +346,7 @@ object Main {
               }
           }.toResult match {
             case Result.Ok(_) =>
+              out.println("Upgrade is safe")
               System.exit(0)
             case Result.Err(errors) =>
               errors.map(_.message(formatter)).foreach(println)
