@@ -28,18 +28,12 @@ object Serialization {
   }
 
   def deserialize(json: String): Option[Map[Library, NamedTypeSchemes]] = {
-    // Toggle error handling
-    if (true) {
+    try {
       val deser = read[Map[Library, List[SDef]]](json)
       Some(toLibs(deser))
-    } else {
-      try {
-        val deser = read[Map[Library, List[SDef]]](json)
-        Some(toLibs(deser))
-      }
-      catch {
-        case _: Exception => None
-      }
+    }
+    catch {
+      case _: Exception => None
     }
   }
 

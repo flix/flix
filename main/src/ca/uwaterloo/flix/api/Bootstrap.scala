@@ -846,14 +846,18 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  def effectUpgrade(root: TypedAst.Root)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
+  def effectUpgrade(root: TypedAst.Root): Validation[Unit, BootstrapError] = {
     val path = getEffectLockFile(projectPath)
-    out.println(s"Reading from file: ${path.getFileName.toString}")
+
     FileOps.readFile(path) match {
-      case Ok(json) =>
-        val Some(deserde) = Serialization.deserialize(json) // TODO: Add error handling
-        out.println("Lock file read. Checking upgrade safety")
-        validateLibs(deserde, root.defs.values.toList)
+      case Ok(json) => Serialization.deserialize(json) match {
+        case Some(originalLibs) =>
+          validateLibs(originalLibs, root.defs.values.toList)
+
+        case None =>
+          Validation.Failure(BootstrapError.FileError("invalid effect lock file"))
+
+      }
 
       case Err(e) =>
         Validation.Failure(BootstrapError.FileError(e))
