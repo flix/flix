@@ -3078,9 +3078,11 @@ object Weeder2 {
     // The resulting QName will be something like QName(["A", "B"], "")
     if (trailingDot) {
       val nname = Name.NName(idents, loc)
-      val emptyIdentLoc = SourceLocation(isReal = true, last.loc.sp2, last.loc.sp2)
+      val positionAfterDot = last.loc.sp2.copy(col = (last.loc.sp2.col + 1).toShort)
+      val emptyIdentLoc = SourceLocation(isReal = true, positionAfterDot, positionAfterDot)
       val emptyIdent = Name.Ident("", emptyIdentLoc)
-      Name.QName(nname, emptyIdent, loc)
+      val qnameLoc = SourceLocation(isReal = true, first.loc.sp1, positionAfterDot)
+      Name.QName(nname, emptyIdent, qnameLoc)
       // Otherwise we use all but the last ident as namespace and the last ident as the ident
     } else{
       val nname = Name.NName(idents.dropRight(1), loc)
