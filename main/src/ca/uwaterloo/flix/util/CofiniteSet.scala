@@ -62,12 +62,12 @@ object CofiniteSet {
     *
     * This avoids allocation of new objects every time an empty or universal set is created.
     */
-  trait Cached[T] {
+  trait SingletonValues[T] {
     val empty: CofiniteSet[T]
     val universe: CofiniteSet[T]
   }
 
-  implicit object CachedInt extends Cached[Int] {
+  implicit object IntSingletonValues extends SingletonValues[Int] {
     override val empty: CofiniteSet[Int] = Set(SortedSet.empty)
     override val universe: CofiniteSet[Int] = Compl(SortedSet.empty)
   }
@@ -79,10 +79,10 @@ object CofiniteSet {
   case class Compl[T](s: SortedSet[T]) extends CofiniteSet[T]
 
   /** The empty set. */
-  def empty[T](implicit ev: Cached[T]): CofiniteSet[T] = ev.empty
+  def empty[T](implicit ev: SingletonValues[T]): CofiniteSet[T] = ev.empty
 
   /** The universe set. */
-  def universe[T](implicit ev: Cached[T]): CofiniteSet[T] = ev.universe
+  def universe[T](implicit ev: SingletonValues[T]): CofiniteSet[T] = ev.universe
 
   /** Returns the wrapped set of `s`. */
   def mkSet[T](s: SortedSet[T]): CofiniteSet[T] = Set(s)
