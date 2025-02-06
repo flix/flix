@@ -52,7 +52,7 @@ object Typer {
     val sigs = traits.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
     val modules = ListMap(collectModules(root))
 
-    val result = TypedAst.Root(modules, traits, instances, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.mainEntryPoint, Set.empty, root.sources, traitEnv, eqEnv, root.availableClasses, precedenceGraph, DependencyGraph.empty)
+    val result = TypedAst.Root(modules, traits, instances, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.mainEntryPoint, Set.empty, root.sources, traitEnv, eqEnv, root.availableClasses, precedenceGraph, DependencyGraph.empty, root.tokens)
 
     (result, sctx.errors.asScala.toList)
 
@@ -62,7 +62,7 @@ object Typer {
     * Collects the symbols in the given root into a map.
     */
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
-    case KindedAst.Root(traits, _, defs, enums, structs, _, effects, typeAliases, _, _, _, _) =>
+    case KindedAst.Root(traits, _, defs, enums, structs, _, effects, typeAliases, _, _, _, _, _) =>
       val sigs = traits.values.flatMap { trt => trt.sigs.values.map(_.sym) }
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 

@@ -78,7 +78,7 @@ object Kinder {
 
     val effects = ParOps.parMapValues(root.effects)(visitEffect(_, taenv, root))
 
-    val newRoot = KindedAst.Root(traits, instances, defs, enums, structs, restrictableEnums, effects, taenv, root.uses, root.mainEntryPoint, root.sources, root.availableClasses)
+    val newRoot = KindedAst.Root(traits, instances, defs, enums, structs, restrictableEnums, effects, taenv, root.uses, root.mainEntryPoint, root.sources, root.availableClasses, root.tokens)
 
     (newRoot, sctx.errors.asScala.toList)
   }

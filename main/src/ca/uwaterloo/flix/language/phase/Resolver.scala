@@ -111,7 +111,8 @@ object Resolver {
                   taOrder,
                   root.mainEntryPoint,
                   root.sources,
-                  root.availableClasses
+                  root.availableClasses,
+                  root.tokens
                 )
             }
         }

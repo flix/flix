@@ -60,7 +60,7 @@ object Namer {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
 
-      (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses), sctx.errors.asScala.toList)
+      (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), sctx.errors.asScala.toList)
     }
 
   /**
