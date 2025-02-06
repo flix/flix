@@ -899,10 +899,11 @@ class Flix {
 
     // Initialize fork-join thread pool.
     initForkJoinPool()
-    val (root1, uses) = Reachability.run(root)
+    val (filteredRoot, uses) = Reachability.run(root)
     shutdownForkJoinPool()
 
-    val reachable = root1.defs.foldLeft(Map.empty[String, List[TypedAst.Def]]) {
+    // Filter for public functions in libraries
+    val reachable = filteredRoot.defs.foldLeft(Map.empty[String, List[TypedAst.Def]]) {
       case (acc, (sym, defn)) if defn.spec.mod.isPublic => sym.loc.sp1.source.input match {
         case Input.FileInPackage(path, _, _, _) =>
           val name = path.getFileName.toString
