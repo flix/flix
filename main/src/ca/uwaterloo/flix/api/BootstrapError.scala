@@ -84,7 +84,7 @@ object BootstrapError {
 
     private def useSites: String = {
       val congruentSentence = if (uses.length == 1) "The function is used in this place" else "The function is used in these places"
-      s"""   $congruentSentence:
+      s"""  $congruentSentence:
          |${uses.mkString("  - ", s"${System.lineSeparator()}  - ", "")}
          |""".stripMargin
     }
