@@ -20,14 +20,20 @@ import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Expr
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.shared.SymUse
+import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
 import ca.uwaterloo.flix.util.ParOps
+
+import java.util.concurrent.ConcurrentLinkedQueue
+import scala.jdk.CollectionConverters.*
 
 object Reachability {
 
   /**
     * Returns the root with only reachable functions.
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = {
+  def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, Map[Symbol.DefnSym, List[DefSymUse]]) = {
+    implicit val sctx: SharedContext = SharedContext.mk()
+
     // Entry points are always reachable.
     val initReach: Set[ReachableSym] = root.entryPoints.map(ReachableSym.DefnSym.apply)
 
@@ -39,8 +45,19 @@ object Reachability {
       case (sym, _) => allReachable.contains(ReachableSym.DefnSym(sym))
     }
 
+    val occurrenceInfo = sctx.useSites.asScala.foldLeft(Map.empty[Symbol.DefnSym, List[DefSymUse]]) {
+      case (acc, (sym, symUse)) => acc.get(sym) match {
+        case Some(uses) =>
+          val entry = sym -> (symUse :: uses)
+          acc + entry
+        case None =>
+          val entry = sym -> List(symUse)
+          acc + entry
+      }
+    }
+
     // Reassemble the AST.
-    root.copy(defs = reachableDefs)
+    (root.copy(defs = reachableDefs), occurrenceInfo)
   }
 
   /**
@@ -332,5 +349,11 @@ object Reachability {
 
     case class SigSym(sym: Symbol.SigSym) extends ReachableSym
 
+  }
+
+  private case class SharedContext(useSites: ConcurrentLinkedQueue[(Symbol.DefnSym, DefSymUse)])
+
+  private object SharedContext {
+    def mk(): SharedContext = SharedContext(new ConcurrentLinkedQueue())
   }
 }

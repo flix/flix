@@ -882,7 +882,7 @@ class Flix {
       // Initialize fork-join thread pool.
       initForkJoinPool()
 
-      val root = Reachability.run(optRoot.get)
+      val (root, occurrenceInfo) = Reachability.run(optRoot.get)
 
       shutdownForkJoinPool()
 
@@ -899,7 +899,7 @@ class Flix {
 
     // Initialize fork-join thread pool.
     initForkJoinPool()
-    val root1 = Reachability.run(root)
+    val (root1, occurrenceInfo) = Reachability.run(root)
     shutdownForkJoinPool()
     root1.defs.foldLeft(Map.empty[String, List[TypedAst.Def]]) {
       case (acc, (sym, defn)) if defn.spec.mod.isPublic => sym.loc.sp1.source.input match {
