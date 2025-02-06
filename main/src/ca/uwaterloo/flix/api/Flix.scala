@@ -16,9 +16,9 @@
 
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.effectlock.{EffectLock, Reachability}
+import ca.uwaterloo.flix.api.effectlock.Reachability
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source, SymUse}
+import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
@@ -893,7 +893,7 @@ class Flix {
     }
   }
 
-  def reachableLibraryFunctions(root: TypedAst.Root): (Map[String, List[TypedAst.Def]], ListMap[Symbol, SymUse]) = {
+  def reachableLibraryFunctions(root: TypedAst.Root): (Map[String, List[TypedAst.Def]], ListMap[Symbol, SourceLocation]) = {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 

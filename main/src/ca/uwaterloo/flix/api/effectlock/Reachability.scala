@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Expr
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.shared.SymUse
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters.*
@@ -31,7 +31,7 @@ object Reachability {
   /**
     * Returns the root with only reachable functions.
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, ListMap[Symbol, SymUse]) = {
+  def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, ListMap[Symbol, SourceLocation]) = {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     // Entry points are always reachable.
@@ -46,7 +46,7 @@ object Reachability {
       case (sym, _) => allReachable.contains(ReachableSym.DefnSym(sym))
     }
 
-    val uses = sctx.useSites.asScala.foldLeft(ListMap.empty[Symbol, SymUse]) {
+    val uses = sctx.useSites.asScala.foldLeft(ListMap.empty[Symbol, SourceLocation]) {
       case (acc, (sym, symUse)) => acc + (sym -> symUse)
     }
 
@@ -108,15 +108,15 @@ object Reachability {
     case Expr.ApplyClo(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.ApplyDef(SymUse.DefSymUse(sym, _), exps, _, _, _, loc) =>
-      val use = sym -> mkSymUse(sym0, loc)
-      sctx.useSites.add(use)
+    case Expr.ApplyDef(SymUse.DefSymUse(sym, loc), exps, _, _, _, _) =>
+      sctx.useSites.add(sym -> loc)
       Set(ReachableSym.DefnSym(sym)) ++ visitExps(exps)
 
     case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
       visitExps(exps)
 
-    case Expr.ApplySig(SymUse.SigSymUse(sym, _), exps, _, _, _, _) =>
+    case Expr.ApplySig(SymUse.SigSymUse(sym, loc), exps, _, _, _, _) =>
+      sctx.useSites.add(sym -> loc)
       Set(ReachableSym.SigSym(sym)) ++ visitExps(exps)
 
     case Expr.Unary(_, exp, _, _, _) =>
@@ -334,29 +334,6 @@ object Reachability {
     */
   private def visitExps(exps: List[TypedAst.Expr])(implicit sym0: Symbol, sctx: SharedContext): Set[ReachableSym] = exps.map(visitExp).fold(Set())(_ ++ _)
 
-  private def mkSymUse(sym0: Symbol, loc: SourceLocation): SymUse = sym0 match {
-    case sym: Symbol.DefnSym => SymUse.DefSymUse(sym, loc)
-    case sym: Symbol.SigSym => SymUse.SigSymUse(sym, loc)
-    case _: Symbol.VarSym
-         | _: Symbol.KindedTypeVarSym
-         | _: Symbol.UnkindedTypeVarSym
-         | _: Symbol.EnumSym
-         | _: Symbol.StructSym
-         | _: Symbol.RestrictableEnumSym
-         | _: Symbol.CaseSym
-         | _: Symbol.StructFieldSym
-         | _: Symbol.RestrictableCaseSym
-         | _: Symbol.TraitSym
-         | _: Symbol.LabelSym
-         | _: Symbol.HoleSym
-         | _: Symbol.TypeAliasSym
-         | _: Symbol.AssocTypeSym
-         | _: Symbol.EffectSym
-         | _: Symbol.OpSym
-         | _: Symbol.RegionSym
-         | _: Symbol.ModuleSym => throw InternalCompilerException(s"unexpected symbol $sym0", loc)
-  }
-
   /**
     * A common super-type for reachable symbols (defs, traits, sigs)
     */
@@ -372,7 +349,7 @@ object Reachability {
 
   }
 
-  private case class SharedContext(useSites: ConcurrentLinkedQueue[(Symbol, SymUse)])
+  private case class SharedContext(useSites: ConcurrentLinkedQueue[(Symbol, SourceLocation)])
 
   private object SharedContext {
     def mk(): SharedContext = SharedContext(new ConcurrentLinkedQueue())

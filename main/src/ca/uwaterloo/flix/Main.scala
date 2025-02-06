@@ -342,12 +342,7 @@ object Main {
               flatMapN(bootstrap.check(flix)) {
                 root =>
                   val (_, uses) = flix.reachableLibraryFunctions(root)
-                  val useLocs = uses.map {
-                    case (sym, SymUse.SigSymUse(_, loc)) => sym -> loc
-                    case (sym, SymUse.DefSymUse(_, loc)) => sym -> loc
-                    case (sym, _) => throw InternalCompilerException(s"unexpected symbol $sym", SourceLocation.Unknown)
-                  }.foldLeft(ListMap.empty[Symbol, SourceLocation])(_ + _)
-                  bootstrap.effectUpgrade(root, useLocs)
+                  bootstrap.effectUpgrade(root, uses)
               }
           }.toResult match {
             case Result.Ok(_) =>
