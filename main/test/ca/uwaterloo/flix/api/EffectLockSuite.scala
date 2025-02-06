@@ -236,6 +236,7 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
     val (result, _) = check(input, Options.TestWithLibNix)
     assert(!checkIsSafe("f", "g", result))
   }
+
   test("Safe.14") {
     val input =
       """
