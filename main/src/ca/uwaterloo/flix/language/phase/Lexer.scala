@@ -191,7 +191,7 @@ object Lexer {
     * Peeks the character before the previous that state was on if available.
     */
   private def previousPrevious()(implicit s: State): Option[Char] =
-    s.sc.previousPrevious
+    s.sc.nth(-2)
 
   /**
     * Peeks the character that is `n` characters before the current if available
@@ -217,7 +217,7 @@ object Lexer {
     * Peeks the character after the one that state is sitting on if available.
     */
   private def peekPeek()(implicit s: State): Option[Char] =
-    s.sc.peekPeek
+    s.sc.nth(1)
 
   /**
     * A helper function wrapping peek, with special handling for escaped characters.

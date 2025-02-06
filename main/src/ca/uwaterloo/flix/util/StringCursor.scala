@@ -53,8 +53,8 @@ class StringCursor(val data: Array[Char]) {
 
   /**
     * Advances cursor one char forward, returning the char it was previously sitting on.
-    * Note: If the lexer has arrived at EOF, advance will continuously return EOF without advancing.
-    * This is to avoid returning an Option, which is tedious to work with.
+    *
+    * If the cursor has advanced past the content, EOF is returned (`'\u0000'`).
     */
   def advance(): Char = {
     if (offset >= data.length) {
@@ -86,10 +86,11 @@ class StringCursor(val data: Array[Char]) {
   /** Peeks the previous character if available. */
   def previous: Option[Char] = nth(-1)
 
-  /** Peeks the character before the previous if available. */
-  def previousPrevious: Option[Char] = nth(-2)
-
-  /** Peeks the character that cursor is currently sitting on without advancing. */
+  /**
+    * Peeks the character that cursor is currently sitting on without advancing.
+    *
+    * If the cursor has advanced past the content, EOF is returned (`'\u0000'`).
+    */
   def peek: Char = {
     if (offset < data.length) {
       data(offset)
@@ -97,9 +98,6 @@ class StringCursor(val data: Array[Char]) {
       '\u0000' // EOF char
     }
   }
-
-  /** Peeks the character after the current if available. */
-  def peekPeek: Option[Char] = nth(+1)
 
   /** Returns true if the cursor has moved past the end. */
   def eof: Boolean = offset >= data.length
