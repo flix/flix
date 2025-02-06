@@ -78,16 +78,13 @@ object BootstrapError {
       val newEffectSet = newScheme.base.effects.mkString("*{", ", ", "}*")
       val effectSetDiff = newScheme.base.effects.diff(originalScheme.base.effects).mkString("*{", ", ", "}*")
       val congruentSentence = if (newScheme.base.effects.size == 1) "The new effect is" else "The new effects are"
-      s"""
-         |+ `$sym` now uses $newEffectSet!
-         |   $congruentSentence: $effectSetDiff
-         |""".stripMargin
+      val newChanges = s"$congruentSentence: $effectSetDiff"
+      s"+ `$sym` now uses $newEffectSet!"
     }
 
     private def useSites: String = {
       val congruentSentence = if (uses.length == 1) "The function is used in this place" else "The function is used in these places"
-      s"""
-         |  $congruentSentence:
+      s"""   $congruentSentence:
          |${uses.mkString("  - ", s"${System.lineSeparator()}  - ", "")}
          |""".stripMargin
     }
