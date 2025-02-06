@@ -199,6 +199,62 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("g", "f", result))
   }
 
+  test("Safe.12") {
+    val input =
+      """
+        |pub eff E {
+        |    def e(): Unit
+        |}
+        |pub eff A {
+        |    def e(): Unit
+        |}
+        |
+        |pub def f(_: a -> b \ ef): String \ {ef, A, E} = unchecked_cast("str" as String \ {ef, A, E})
+        |
+        |pub def g(_: a -> b): String \ {A, E} = unchecked_cast("str" as String \ {A, E})
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(checkIsSafe("f", "g", result))
+  }
+
+  test("Safe.13") {
+    val input =
+      """
+        |pub eff E {
+        |    def e(): Unit
+        |}
+        |pub eff A {
+        |    def e(): Unit
+        |}
+        |
+        |pub def f(_: a -> b \ ef): String \ {ef, A, E} = unchecked_cast("str" as String \ {ef, A, E})
+        |
+        |pub def g(_: a -> b \ ef): String \ {A, E} = unchecked_cast("str" as String \ {A, E})
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(!checkIsSafe("f", "g", result))
+  }
+  test("Safe.14") {
+    val input =
+      """
+        |pub eff E {
+        |    def e(): Unit
+        |}
+        |pub eff A {
+        |    def e(): Unit
+        |}
+        |
+        |pub def f(_: a -> b \ {ef1, ef2}): String \ {ef1, ef2, A, E} = unchecked_cast("str" as String \ {ef1, ef2, A, E})
+        |
+        |pub def g(_: a -> b \ ef): String \ {ef, A, E} = unchecked_cast("str" as String \ {ef, A, E})
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(checkIsSafe("f", "g", result))
+  }
+
   test("Unsafe.01") {
     val input =
       """
@@ -298,63 +354,6 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
         |pub def f(_: a -> b \ ef): String \ {ef, A, E} = unchecked_cast("str" as String \ {ef, A, E})
         |
         |pub def g(_: a -> b \ ef): String \ {ef, A} = unchecked_cast("str" as String \ {ef, A})
-        |
-        |""".stripMargin
-    val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("f", "g", result))
-  }
-
-  test("Unsafe.07") {
-    val input =
-      """
-        |pub eff E {
-        |    def e(): Unit
-        |}
-        |pub eff A {
-        |    def e(): Unit
-        |}
-        |
-        |pub def f(_: a -> b \ ef): String \ {ef, A, E} = unchecked_cast("str" as String \ {ef, A, E})
-        |
-        |pub def g(_: a -> b \ ef): String \ {ef, A, E} = unchecked_cast("str" as String \ {ef, A, E})
-        |
-        |""".stripMargin
-    val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("f", "g", result))
-  }
-
-  test("Unsafe.08") {
-    val input =
-      """
-        |pub eff E {
-        |    def e(): Unit
-        |}
-        |pub eff A {
-        |    def e(): Unit
-        |}
-        |
-        |pub def f(_: a -> b \ ef): String \ {ef, A, E} = unchecked_cast("str" as String \ {ef, A, E})
-        |
-        |pub def g(_: a -> b \ ef): String \ {A, E} = unchecked_cast("str" as String \ {A, E})
-        |
-        |""".stripMargin
-    val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("f", "g", result))
-  }
-
-  test("Unsafe.09") {
-    val input =
-      """
-        |pub eff E {
-        |    def e(): Unit
-        |}
-        |pub eff A {
-        |    def e(): Unit
-        |}
-        |
-        |pub def f(_: a -> b \ ef): String \ {ef, A, E} = unchecked_cast("str" as String \ {ef, A, E})
-        |
-        |pub def g(_: a -> b): String \ {A, E} = unchecked_cast("str" as String \ {A, E})
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
