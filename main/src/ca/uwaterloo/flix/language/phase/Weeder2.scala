@@ -3075,11 +3075,12 @@ object Weeder2 {
     val loc = SourceLocation(isReal = true, first.loc.sp1, last.loc.sp2)
 
     // If there is a trailing dot, we use all the idents as namespace and use "" as the ident
+    // The resulting QName will be something like QName(["A", "B"], "")
     if (trailingDot) {
       val nname = Name.NName(idents, loc)
-      val identLoc = SourceLocation(isReal = true, last.loc.sp2, last.loc.sp2)
-      val ident = Name.Ident("", identLoc)
-      Name.QName(nname, ident, loc)
+      val emptyIdentLoc = SourceLocation(isReal = true, last.loc.sp2, last.loc.sp2)
+      val emptyIdent = Name.Ident("", emptyIdentLoc)
+      Name.QName(nname, emptyIdent, loc)
       // Otherwise we use all but the last ident as namespace and the last ident as the ident
     } else{
       val nname = Name.NName(idents.dropRight(1), loc)
