@@ -15,7 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.api.lsp.provider.{HighlightProvider, HoverProvider, SemanticTokensProvider}
+import ca.uwaterloo.flix.api.lsp.Range
+import ca.uwaterloo.flix.api.lsp.provider.{CodeActionProvider, HighlightProvider, HoverProvider, SemanticTokensProvider}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.api.lsp.{Position, PublishDiagnosticsParams}
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -27,9 +28,11 @@ import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Options
 import org.eclipse.lsp4j
 import org.eclipse.lsp4j.*
+import org.eclipse.lsp4j.jsonrpc.messages
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
 
+import java.util
 import java.util.concurrent.CompletableFuture
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
@@ -66,7 +69,7 @@ object LspServer {
     /**
       * The current compilation errors.
       */
-    private var currentErrors: List[CompilationMessage] = Nil
+    var currentErrors: List[CompilationMessage] = Nil
 
     /**
       * The proxy to the language client.
@@ -95,6 +98,10 @@ object LspServer {
 
       clientCapabilities = initializeParams.getCapabilities
 
+      CompletableFuture.completedFuture(new InitializeResult(mkServerCapabilities()))
+    }
+
+    private def mkServerCapabilities(): ServerCapabilities = {
       val serverCapabilities = new ServerCapabilities
       serverCapabilities.setHoverProvider(true)
       serverCapabilities.setDocumentHighlightProvider(true)
@@ -107,9 +114,10 @@ object LspServer {
           true
         )
       )
+      serverCapabilities.setCodeActionProvider(true)
       serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)// TODO: make it incremental
 
-      CompletableFuture.completedFuture(new InitializeResult(serverCapabilities))
+      serverCapabilities
     }
 
     override def shutdown(): CompletableFuture[AnyRef] = {
@@ -219,6 +227,18 @@ object LspServer {
 
     override def didSave(didSaveTextDocumentParams: DidSaveTextDocumentParams): Unit = {
       System.err.println(s"didSaveTextDocumentParams: $didSaveTextDocumentParams")
+    }
+
+    override def codeAction(params: CodeActionParams): CompletableFuture[util.List[messages.Either[Command, CodeAction]]] = {
+      val uri = params.getTextDocument.getUri
+      val range = Range.fromLsp4j(params.getRange)
+      val codeActions =
+        CodeActionProvider
+        .getCodeActions(uri, range, flixLanguageServer.currentErrors)(flixLanguageServer.root)
+        .map(_.toLsp4j)
+        .map(messages.Either.forRight[Command, CodeAction])
+        .asJava
+      CompletableFuture.completedFuture(codeActions)
     }
 
     /**

@@ -15,8 +15,11 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import org.eclipse.lsp4j
 import org.json4s.JValue
 import org.json4s.JsonDSL.*
+
+import scala.jdk.CollectionConverters.*
 
 /**
   * Represents a `CodeAction` in LSP.
@@ -51,4 +54,16 @@ case class CodeAction(title: String,
       ("disabled" -> disabledReason.map("reason" -> _)) ~
       ("edit" -> edit.map(_.toJSON)) ~
       ("command" -> command.map(_.toJSON))
+
+  def toLsp4j: lsp4j.CodeAction = {
+    val c = new lsp4j.CodeAction()
+    c.setTitle(title)
+    c.setKind(kind.toLsp4j)
+    diagnostic.foreach(d => c.setDiagnostics(List(d.toLsp4j).asJava))
+    c.setIsPreferred(isPreferred)
+    disabledReason.foreach(reason => c.setDisabled(new lsp4j.CodeActionDisabled(reason)))
+    edit.foreach(e => c.setEdit(e.toLsp4j))
+    command.foreach(cmd => c.setCommand(cmd.toLsp4j))
+    c
+  }
 }

@@ -15,8 +15,11 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import org.eclipse.lsp4j
 import org.json4s.JsonDSL.*
 import org.json4s.*
+
+import scala.jdk.CollectionConverters.*
 
 /**
   * Represents a `Command` in LSP.
@@ -28,4 +31,6 @@ import org.json4s.*
   */
 case class Command(title: String, command: String, arguments: List[JValue]) {
   def toJSON: JValue = ("title" -> title) ~ ("command" -> command) ~ ("arguments" -> arguments)
+
+  def toLsp4j: lsp4j.Command = new lsp4j.Command(title, command, arguments.map(_.asInstanceOf[Object]).asJava)
 }
