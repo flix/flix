@@ -450,7 +450,9 @@ object Typer {
               sctx.errors.add(error)
               ()
             }
-          case t => throw InternalCompilerException(s"illegal type: $t", t.loc)
+
+          // Resiliency: If the associated type is ill-formed, then we ignore it.
+          case otherType => ()
         }
     }
   }

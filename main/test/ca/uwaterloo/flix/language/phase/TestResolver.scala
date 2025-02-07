@@ -1342,6 +1342,21 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
+  test("UndefinedTypeVar.Where.01") {
+    // https://github.com/flix/flix/issues/8409
+    val input =
+      """
+        |trait Trait[t] {
+        |    type Tpe: Type
+        |}
+        |
+        |def foo(): Unit where Trait.Tpe[a] ~ Int32 =
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
   test("UndefinedTypeVar.Expression.01") {
     val input =
       """
