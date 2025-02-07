@@ -38,6 +38,8 @@ object EffectLock {
     implicit val flix: Flix = new Flix().setOptions(Options.Default)
     val sc1rename = naiveAlphaRename(sc1)
     val sc2rename = naiveAlphaRename(sc2)
+    println(s"g: $sc1")
+    println(s"f: $sc2")
     println(s"renamed sc1: $sc1rename")
     println(s"renamed sc2: $sc2rename")
     isGeneralizable(sc1, sc2) || isSubset(sc1rename, sc2rename)
@@ -52,8 +54,6 @@ object EffectLock {
     *
     */
   private def isGeneralizable(sc1: Scheme, sc2: Scheme)(implicit flix: Flix): Boolean = {
-    println(s"g: $sc1")
-    println(s"f: $sc2")
     val renv = RigidityEnv.apply(SortedSet.from(sc2.quantifiers))
     val unification = Unification.fullyUnifyTypes(sc1.base, sc2.base, renv, EqualityEnv.empty)(Scope.Top, flix)
     unification match {
