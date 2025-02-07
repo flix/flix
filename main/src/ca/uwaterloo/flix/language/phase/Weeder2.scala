@@ -3102,7 +3102,7 @@ object Weeder2 {
     tryPick(TreeKind.Ident, tree).map(tokenToIdent)
   }
 
-  def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
+  private def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
     val idents = pickQNameIdents(tree)
     mapN(idents) {
       idents => Name.JavaName(idents, tree.loc)
@@ -3155,13 +3155,6 @@ object Weeder2 {
         Name.Ident(name, tree.loc)
       case _ => throw InternalCompilerException(s"Parse failure: expected first child of '${tree.kind}' to be Child.Token", tree.loc)
     }
-  }
-
-  /**
-    * Turns a Name.QName into a string by removing prefix "##" and joining with ".".
-    */
-  private def javaQnameToFqn(qname: Name.QName): String = {
-    (qname.namespace.idents.map(_.name.stripPrefix("##")) :+ qname.ident.name).mkString(".")
   }
 
   /**
