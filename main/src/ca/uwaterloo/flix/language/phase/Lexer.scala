@@ -1230,17 +1230,18 @@ object Lexer {
       * Advance the cursor past `s` if it matches the current content.
       *
       * Returns true if the cursor was advanced.
-      *
-      * `s` must not contains the EOF character (`'\u0000'`).
       */
     def advanceIfMatch(s: String): Boolean = {
-      val start = this.offset
-      var offset = 0
-      while (offset < s.length) {
-        if (data(start + offset) != s(offset)) {
+      if (this.offset + s.length >= data.length) {
+        return false
+      }
+
+      var sIndex = 0
+      while (sIndex < s.length) {
+        if (data(this.offset + sIndex) != s(sIndex)) {
           return false
         }
-        offset += 1
+        sIndex += 1
       }
 
       for (_ <- 0 until s.length) {
