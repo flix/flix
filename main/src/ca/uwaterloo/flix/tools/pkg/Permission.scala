@@ -18,35 +18,27 @@ package ca.uwaterloo.flix.tools.pkg
 sealed trait Permission
 
 /**
- * Permissions for dependencies.
- */
+  * Permissions for dependencies.
+  */
 object Permission {
 
-  /**
-   * Permission to have an effect.
-   */
-  case object Effect extends Permission {
-    override def toString: String = "effect"
-  }
+  case object FlixOnly extends Permission
 
-  /**
-   * Permission to call Java libraries.
-   */
-  case object JavaInterop extends Permission {
-    override def toString: String = "java-interop"
-  }
+  case object Restricted extends Permission
 
-  /**
-   * Permission to use unchecked casts.
-   */
-  case object UncheckedCast extends Permission {
-    override def toString: String = "unchecked-cast"
-  }
+  case object All extends Permission
 
-  def mkPermission(s: String): Option[Permission] = s match {
-    case "java-interop" => Some(JavaInterop)
-    case "unchecked-cast" => Some(UncheckedCast)
-    case "effect" => Some(Effect)
+  def fromString(s: String): Option[Permission] = s.toLowerCase match {
+    case "none" => Some(FlixOnly)
+    case "nothing" => Some(FlixOnly)
+    case "n" => Some(FlixOnly)
+    case "1" => Some(FlixOnly)
+    case "restricted" => Some(Restricted)
+    case "r" => Some(Restricted)
+    case "2" => Some(Restricted)
+    case "all" => Some(All)
+    case "a" => Some(All)
+    case "3" => Some(All)
     case _ => None
   }
 }
