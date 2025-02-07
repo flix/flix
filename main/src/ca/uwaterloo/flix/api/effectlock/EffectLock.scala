@@ -80,42 +80,43 @@ object EffectLock {
 
     // 1. Types match t1 -> t2
     (tpe1.typeConstructor, tpe2.typeConstructor) match {
-      case (Some(TypeConstructor.Arrow(_)), Some(TypeConstructor.Arrow(_))) => ()
-      case _ => return false
-    }
-
-    val isMatchingArgs = tpe1.arrowArgTypes == tpe2.arrowArgTypes
-    println(s"tpe1.arrowArgTypes: ${tpe1.arrowArgTypes}")
-    println(s"tpe2.arrowArgTypes: ${tpe2.arrowArgTypes}")
-    println(s"isMatchingArgs: $isMatchingArgs")
-    val tpe1Res = tpe1.arrowResultType
-    val tpe2Res = tpe2.arrowResultType
-    val isMatchingResultTypes = (tpe1.arrowResultType.typeConstructor, tpe2.arrowResultType.typeConstructor) match {
       case (Some(TypeConstructor.Arrow(_)), Some(TypeConstructor.Arrow(_))) =>
-        val sc11 = Scheme(sc1.quantifiers, List.empty, List.empty, tpe1Res)
-        val sc21 = Scheme(sc2.quantifiers, List.empty, List.empty, tpe2Res)
-        isSubset(sc11, sc21)
 
-      case (t1, t2) =>
-        println(s"t1: $t1")
-        println(s"t2: $t2")
-        t1 == t2
+        val isMatchingArgs = tpe1.arrowArgTypes == tpe2.arrowArgTypes
+        println(s"tpe1.arrowArgTypes: ${tpe1.arrowArgTypes}")
+        println(s"tpe2.arrowArgTypes: ${tpe2.arrowArgTypes}")
+        println(s"isMatchingArgs: $isMatchingArgs")
+        val tpe1Res = tpe1.arrowResultType
+        val tpe2Res = tpe2.arrowResultType
+        val isMatchingResultTypes = (tpe1.arrowResultType.typeConstructor, tpe2.arrowResultType.typeConstructor) match {
+          case (Some(TypeConstructor.Arrow(_)), Some(TypeConstructor.Arrow(_))) =>
+            val sc11 = Scheme(sc1.quantifiers, List.empty, List.empty, tpe1Res)
+            val sc21 = Scheme(sc2.quantifiers, List.empty, List.empty, tpe2Res)
+            isSubset(sc11, sc21)
+
+          case (t1, t2) =>
+            println(s"t1: $t1")
+            println(s"t2: $t2")
+            t1 == t2
+        }
+        println(s"tpe1.arrowResultType: ${tpe1.arrowResultType}")
+        println(s"tpe2.arrowResultType: ${tpe2.arrowResultType}")
+        println(s"isMatchingResultTypes: $isMatchingResultTypes")
+
+
+        // 2. Boolean unification of effects phi + phi' = phi'
+        val sc1Effs = tpe1.arrowEffectType
+        val sc2Effs = tpe2.arrowEffectType
+        val left = Type.mkUnion(sc1Effs, sc2Effs, sc1Effs.loc)
+        val renv = RigidityEnv.apply(SortedSet.from(sc2.quantifiers))
+        val (unsolvedConstraints, _) = EffUnification3.unifyAll(List((left, sc2Effs, sc2Effs.loc)), Scope.Top, renv)
+        println(s"sc1Effs: $sc1Effs")
+        println(s"sc2Effs: $sc2Effs")
+        println(unsolvedConstraints)
+        isMatchingArgs && isMatchingResultTypes & unsolvedConstraints.isEmpty
+
+      case _ => false
     }
-    println(s"tpe1.arrowResultType: ${tpe1.arrowResultType}")
-    println(s"tpe2.arrowResultType: ${tpe2.arrowResultType}")
-    println(s"isMatchingResultTypes: $isMatchingResultTypes")
-
-
-    // 2. Boolean unification of effects phi + phi' = phi'
-    val sc1Effs = tpe1.arrowEffectType
-    val sc2Effs = tpe2.arrowEffectType
-    val left = Type.mkUnion(sc1Effs, sc2Effs, sc1Effs.loc)
-    val renv = RigidityEnv.apply(SortedSet.from(sc2.quantifiers))
-    val (unsolvedConstraints, _) = EffUnification3.unifyAll(List((left, sc2Effs, sc2Effs.loc)), Scope.Top, renv)
-    println(s"sc1Effs: $sc1Effs")
-    println(s"sc2Effs: $sc2Effs")
-    println(unsolvedConstraints)
-    isMatchingArgs && isMatchingResultTypes & unsolvedConstraints.isEmpty
   }
 
   private def naiveAlphaRename(sc: Scheme): Scheme = {
