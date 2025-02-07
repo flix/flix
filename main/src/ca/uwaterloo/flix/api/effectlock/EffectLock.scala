@@ -30,7 +30,7 @@ object EffectLock {
     */
   def isSafe(sc1: Scheme, sc2: Scheme): Boolean = {
     implicit val flix: Flix = new Flix().setOptions(Options.Default)
-    isGeneralizable(sc1, sc2) || isSubset(sc1, sc2)
+    isGeneralizable(sc1, sc2) || isSubset(sc1.copy(base = naiveAlphaRename(sc1.base)), sc2.copy(base = naiveAlphaRename(sc2.base)))
   }
 
   /**
@@ -67,7 +67,8 @@ object EffectLock {
       case (Some(TypeConstructor.Arrow(_)), Some(TypeConstructor.Arrow(_))) => ()
       case _ => return false
     }
-    val isMatchingArgs = true // tpe1.arrowArgTypes == tpe2.arrowArgTypes
+
+    val isMatchingArgs = tpe1.arrowArgTypes == tpe2.arrowArgTypes
     val tpe1Res = tpe1.arrowResultType
     val tpe2Res = tpe2.arrowResultType
     val isMatchingResultTypes = (tpe1.arrowResultType.typeConstructor, tpe2.arrowResultType.typeConstructor) match {
@@ -87,6 +88,10 @@ object EffectLock {
     val renv = RigidityEnv.apply(SortedSet.from(sc2.quantifiers))
     val (unsolvedConstraints, _) = EffUnification3.unifyAll(List((left, sc2Effs, sc2Effs.loc)), Scope.Top, renv)
     isMatchingArgs && isMatchingResultTypes & unsolvedConstraints.isEmpty
+  }
+
+  private def naiveAlphaRename(tpe1: Type): Type = {
+    tpe1
   }
 }
 
