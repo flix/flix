@@ -315,6 +315,27 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("NoMatchingInstance.Location.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    pub def f(x: a): Unit
+        |}
+        |
+        |instance C[MyBox[a]] with C[a] {
+        |    pub def f(x: MyBox[a]): Unit = ???
+        |}
+        |
+        |enum MyBox[a](a)
+        |
+        |def foo(): Unit = {
+        |  C.f(MyBox.MyBox(123)) // ERROR
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MissingInstance](result)
+  }
+
   test("NoMatchingInstance.Relation.01") {
     val input =
       """

@@ -332,7 +332,7 @@ object ConstraintSolver2 {
         // Case 2: One match. Use the instance constraints.
         case Some(newConstrs) =>
           progress.markProgress()
-          newConstrs.map(traitConstraintToTypeConstraint)
+          newConstrs.map(traitConstraintToTypeConstraint(_, loc))
       }
   }
 
@@ -562,9 +562,11 @@ object ConstraintSolver2 {
 
   /**
     * Converts a syntactic type constraint into a semantic type constraint.
+    *
+    * Replaces the the location with the given location.
     */
-  def traitConstraintToTypeConstraint(constr: TraitConstraint): TypeConstraint = constr match {
-    case TraitConstraint(head, arg, loc) => TypeConstraint.Trait(head.sym, arg, loc)
+  def traitConstraintToTypeConstraint(constr: TraitConstraint, loc: SourceLocation): TypeConstraint = constr match {
+    case TraitConstraint(head, arg, _) => TypeConstraint.Trait(head.sym, arg, loc)
   }
 
   /**
