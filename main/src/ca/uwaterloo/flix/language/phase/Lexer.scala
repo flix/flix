@@ -557,32 +557,8 @@ object Lexer {
     * Checks whether the following substring matches a keyword.
     * Will advance the current position past the keyword if there is a match.
     */
-  private def isMatchCurrent(keyword: String)(implicit s: State): Boolean = {
-    // Check if the keyword can appear before eof.
-    if (s.sc.getOffset + keyword.length > s.src.data.length) {
-      return false
-    }
-
-    // Check if the next n characters in source matches those of keyword one at a time.
-    val start = s.sc.getOffset
-    var matches = true
-    var offset = 0
-    while (matches && offset < keyword.length) {
-      if (s.src.data(start + offset) != keyword(offset)) {
-        matches = false
-      } else {
-        offset += 1
-      }
-    }
-
-    if (matches) {
-      for (_ <- 0 until keyword.length) {
-        advance()
-      }
-    }
-
-    matches
-  }
+  private def isMatchCurrent(keyword: String)(implicit s: State): Boolean =
+    s.sc.advanceIfMatch(keyword)
 
   /**
     * Checks whether the following substring matches a operator.
@@ -1248,6 +1224,28 @@ object Lexer {
       while (this.peek.isWhitespace) {
         advance()
       }
+    }
+
+    /**
+      * Advance the cursor past `s` if it matches the current content.
+      *
+      * `s` must not contains the EOF character (`'\u0000'`).
+      */
+    def advanceIfMatch(s: String): Boolean = {
+      val start = this.offset
+      var offset = 0
+      while (offset < s.length) {
+        if (data(start + offset) != s(offset)) {
+          return false
+        }
+        offset += 1
+      }
+
+      for (_ <- 0 until s.length) {
+        advance()
+      }
+
+      true
     }
 
     /** Returns a copy of `this`, pointing to the same underlying array. */
