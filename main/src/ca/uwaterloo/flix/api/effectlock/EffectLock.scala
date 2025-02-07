@@ -25,16 +25,11 @@ import scala.collection.immutable.SortedSet
 
 object EffectLock {
 
-  def println(s: Object): Unit = {
-    if (true) {
-      Predef.println(s)
-    }
-  }
-
   /**
     * Returns true if `sc1` is unifiable with `sc2` or if `sc1` is a monomorphic downgrade of `sc2`.
     */
   def isSafe(sc1: Scheme, sc2: Scheme): Boolean = {
+    implicit val flix: Flix = new Flix().setOptions(Options.Default)
     isGeneralizable(sc1, sc2) || isSubset(sc1, sc2)
   }
 
@@ -46,16 +41,11 @@ object EffectLock {
     * 𝜎1 ⪯ 𝜏2
     *
     */
-  private def isGeneralizable(sc1: Scheme, sc2: Scheme): Boolean = {
-    println(s"g: $sc1")
-    println(s"f: $sc2")
-    implicit val flix: Flix = new Flix().setOptions(Options.Default)
+  private def isGeneralizable(sc1: Scheme, sc2: Scheme)(implicit flix: Flix): Boolean = {
     val renv = RigidityEnv.apply(SortedSet.from(sc2.quantifiers))
     val unification = Unification.fullyUnifyTypes(sc1.base, sc2.base, renv, EqualityEnv.empty)(Scope.Top, flix)
     unification match {
-      case Some(subst) =>
-        println(subst)
-        subst(sc1.base) == sc2.base
+      case Some(subst) => subst(sc1.base) == sc2.base
       case None => false
     }
   }
@@ -68,20 +58,16 @@ object EffectLock {
     * 𝜏1 −→ 𝜏2 \ 𝜑 ⪯ 𝜏1 -→ 𝜏2 \ 𝜑′
     *
     */
-  private def isSubset(sc1: Scheme, sc2: Scheme): Boolean = {
+  private def isSubset(sc1: Scheme, sc2: Scheme)(implicit flix: Flix): Boolean = {
     val tpe1 = sc1.base
     val tpe2 = sc2.base
-    implicit val flix: Flix = new Flix().setOptions(Options.Default)
-    // TODO: What about type variables? Alpha equivalence
+
     // 1. Types match t1 -> t2
     (tpe1.typeConstructor, tpe2.typeConstructor) match {
       case (Some(TypeConstructor.Arrow(_)), Some(TypeConstructor.Arrow(_))) => ()
       case _ => return false
     }
     val isMatchingArgs = true // tpe1.arrowArgTypes == tpe2.arrowArgTypes
-    println(s"tpe1.arrowArgTypes: ${tpe1.arrowArgTypes}")
-    println(s"tpe2.arrowArgTypes: ${tpe2.arrowArgTypes}")
-    println(s"isMatchingArgs: $isMatchingArgs")
     val tpe1Res = tpe1.arrowResultType
     val tpe2Res = tpe2.arrowResultType
     val isMatchingResultTypes = (tpe1.arrowResultType.typeConstructor, tpe2.arrowResultType.typeConstructor) match {
@@ -89,26 +75,17 @@ object EffectLock {
         val sc11 = Scheme(sc1.quantifiers, List.empty, List.empty, tpe1Res)
         val sc21 = Scheme(sc2.quantifiers, List.empty, List.empty, tpe2Res)
         isSubset(sc11, sc21)
+
       case (t1, t2) =>
-        println(s"t1: $t1")
-        println(s"t2: $t2")
         t1 == t2
     }
-    println(s"tpe1.arrowResultType: ${tpe1.arrowResultType}")
-    println(s"tpe2.arrowResultType: ${tpe2.arrowResultType}")
-    println(s"isMatchingResultTypes: $isMatchingResultTypes")
-
 
     // 2. Boolean unification of effects phi + phi' = phi'
     val sc1Effs = tpe1.arrowEffectType
     val sc2Effs = tpe2.arrowEffectType
-    println(s"g sc1Effs: $sc1Effs")
-    println(s"f sc2Effs: $sc2Effs")
     val left = Type.mkUnion(sc1Effs, sc2Effs, sc1Effs.loc)
     val renv = RigidityEnv.apply(SortedSet.from(sc2.quantifiers))
-    val (unsolvedConstraints, subst) = EffUnification3.unifyAll(List((left, sc2Effs, sc2Effs.loc)), Scope.Top, renv)
-    println(subst)
-    println(unsolvedConstraints)
+    val (unsolvedConstraints, _) = EffUnification3.unifyAll(List((left, sc2Effs, sc2Effs.loc)), Scope.Top, renv)
     isMatchingArgs && isMatchingResultTypes & unsolvedConstraints.isEmpty
   }
 }
