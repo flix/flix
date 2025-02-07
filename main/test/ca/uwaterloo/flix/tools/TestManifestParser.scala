@@ -7,7 +7,8 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.language.ast.Symbol
 import org.scalatest.funsuite.AnyFunSuite
 import ca.uwaterloo.flix.tools.pkg.Manifest
-import ca.uwaterloo.flix.tools.pkg.Permission
+import ca.uwaterloo.flix.tools.pkg.Permissions
+import ca.uwaterloo.flix.tools.pkg.Permissions.FlixOnly
 
 import java.io.File
 import java.net.URI
@@ -188,8 +189,8 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.dependencies") {
-    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3), Nil),
-      Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1), Nil),
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3), FlixOnly),
+      Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1), FlixOnly),
       Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
       Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
       Dependency.JarDependency(new URI("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar").toURL, "myJar.jar")))(actual = {
@@ -331,17 +332,16 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = ["java-interop", "unchecked-cast", "effect"] }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = none }
         |""".stripMargin
     }
-    assertResult(expected = Set(Permission.JavaInterop, Permission.UncheckedCast, Permission.Effect))(actual =
+    assertResult(expected = FlixOnly)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) =>
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
             .permissions
-            .toSet
         case Err(e) => e.message(f)
       }
     )
@@ -365,7 +365,6 @@ class TestManifestParser extends AnyFunSuite {
             .head
             .asInstanceOf[Dependency.FlixDependency]
             .permissions
-            .toSet
       }
     )
   }

@@ -15,20 +15,26 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-sealed trait Permission
+sealed trait Permissions
 
 /**
   * Permissions for dependencies.
   */
-object Permission {
+object Permissions {
 
-  case object FlixOnly extends Permission
+  case object FlixOnly extends Permissions {
+    override def toString: String = "none"
+  }
 
-  case object Restricted extends Permission
+  case object Restricted extends Permissions {
+    override def toString: String = "restricted"
+  }
 
-  case object All extends Permission
+  case object All extends Permissions {
+    override def toString: String = "all"
+  }
 
-  def fromString(s: String): Option[Permission] = s.toLowerCase match {
+  def fromString(s: String): Option[Permissions] = s.toLowerCase match {
     case "none" => Some(FlixOnly)
     case "nothing" => Some(FlixOnly)
     case "n" => Some(FlixOnly)
