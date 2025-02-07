@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Range
-import ca.uwaterloo.flix.api.lsp.provider.{CodeActionProvider, CompletionProvider, FindReferencesProvider, GotoProvider, HighlightProvider, HoverProvider, InlayHintProvider, RenameProvider, SemanticTokensProvider, SymbolProvider}
+import ca.uwaterloo.flix.api.lsp.provider.{CodeActionProvider, CodeLensProvider, CompletionProvider, FindReferencesProvider, GotoProvider, HighlightProvider, HoverProvider, InlayHintProvider, RenameProvider, SemanticTokensProvider, SymbolProvider}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.api.lsp.{Position, PublishDiagnosticsParams}
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -122,6 +122,7 @@ object LspServer {
         )
       )
       serverCapabilities.setCodeActionProvider(true)
+      serverCapabilities.setCodeLensProvider(new CodeLensOptions(true))
       serverCapabilities.setCompletionProvider(new CompletionOptions(true, TriggerChars.asJava))
       serverCapabilities.setReferencesProvider(true)
       serverCapabilities.setDefinitionProvider(true)
@@ -253,6 +254,12 @@ object LspServer {
         .map(messages.Either.forRight[Command, CodeAction])
         .asJava
       CompletableFuture.completedFuture(codeActions)
+    }
+
+    override def codeLens(params: CodeLensParams): CompletableFuture[util.List[_ <: CodeLens]] = {
+      val uri = params.getTextDocument.getUri
+      val codeLens = CodeLensProvider.processCodeLens(uri)(flixLanguageServer.root).map(_.toLsp4j).asJava
+      CompletableFuture.completedFuture(codeLens)
     }
 
     override def completion(params: CompletionParams): CompletableFuture[messages.Either[util.List[CompletionItem], CompletionList]] = {
