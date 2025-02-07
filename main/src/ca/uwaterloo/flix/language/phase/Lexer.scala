@@ -1229,6 +1229,8 @@ object Lexer {
     /**
       * Advance the cursor past `s` if it matches the current content.
       *
+      * Returns true if the cursor was advanced.
+      *
       * `s` must not contains the EOF character (`'\u0000'`).
       */
     def advanceIfMatch(s: String): Boolean = {
