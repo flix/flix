@@ -35,6 +35,8 @@ object Range {
     Range(Position.fromBegin(loc), Position.fromEnd(loc))
   }
 
+  def fromLsp4j(range: lsp4j.Range): Range = Range(Position.fromLsp4j(range.getStart), Position.fromLsp4j(range.getEnd))
+
   /**
     * Tries to parse the given `json` value as a [[Range]].
     */

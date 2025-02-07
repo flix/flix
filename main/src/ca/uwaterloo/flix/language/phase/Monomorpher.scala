@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, Type
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps}
-import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{CofiniteEffSet, CofiniteSet, InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.SortedSet
@@ -128,9 +128,9 @@ object Monomorpher {
       */
     def apply(tpe0: Type): Type = tpe0 match {
       case v@Type.Var(sym, _) => s.m.get(sym) match {
-          case None => default(v) // Case 1: Variable unbound. Use the default type.
-          case Some(t) => t       // Case 2: Variable in subst. Note: All types in the *StrictSubstitution* are already normalized.
-        }
+        case None => default(v) // Case 1: Variable unbound. Use the default type.
+        case Some(t) => t // Case 2: Variable in subst. Note: All types in the *StrictSubstitution* are already normalized.
+      }
 
       // We map regions to IO
       case Type.Cst(TypeConstructor.Region(_), _) =>
@@ -407,7 +407,7 @@ object Monomorpher {
     * Creates a table for fast lookup of instances.
     */
   private def mkFastInstanceLookup(instances: ListMap[Symbol.TraitSym, Instance]): Map[(Symbol.TraitSym, TypeConstructor), Instance] = {
-    instances.map{
+    instances.map {
       case (sym, inst) => ((sym, inst.tpe.typeConstructor.get), inst)
     }.toMap
   }
@@ -804,7 +804,7 @@ object Monomorpher {
     * This is equivalent to `envs.reduce(_ ++ _)` without crashing on empty lists.
     */
   private def combineEnvs(envs: List[Map[Symbol.VarSym, Symbol.VarSym]]): Map[Symbol.VarSym, Symbol.VarSym] = {
-    envs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]){
+    envs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
       case (acc, m) => acc ++ m
     }
   }
@@ -907,31 +907,31 @@ object Monomorpher {
   }
 
   /** Evaluates a ground, simplified effect type */
-  private def eval(eff: Type): CofiniteEffSet = eff match {
-    case Type.Univ => CofiniteEffSet.universe
-    case Type.Pure => CofiniteEffSet.empty
+  private def eval(eff: Type): CofiniteSet[Symbol.EffectSym] = eff match {
+    case Type.Univ => CofiniteSet.universe
+    case Type.Pure => CofiniteSet.empty
     case Type.Cst(TypeConstructor.Effect(sym), _) =>
-      CofiniteEffSet.mkSet(sym)
+      CofiniteSet.mkSet(sym)
     case Type.Cst(TypeConstructor.Region(_), _) =>
       // We map regions to IO
-      CofiniteEffSet.mkSet(Symbol.IO)
+      CofiniteSet.mkSet(Symbol.IO)
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _) =>
-      CofiniteEffSet.complement(eval(y))
+      CofiniteSet.complement(eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) =>
-      CofiniteEffSet.union(eval(x), eval(y))
+      CofiniteSet.union(eval(x), eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _) =>
-      CofiniteEffSet.intersection(eval(x), eval(y))
+      CofiniteSet.intersection(eval(x), eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _) =>
-      CofiniteEffSet.difference(eval(x), eval(y))
+      CofiniteSet.difference(eval(x), eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
-      CofiniteEffSet.xor(eval(x), eval(y))
+      CofiniteSet.xor(eval(x), eval(y))
     case other => throw InternalCompilerException(s"Unexpected effect $other", other.loc)
   }
 
   /** Returns the [[Type]] representation of `set` with `loc`. */
-  private def evalToType(set: CofiniteEffSet, loc: SourceLocation): Type = set match {
-    case CofiniteEffSet.Set(s) => Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc)
-    case CofiniteEffSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc), loc)
+  private def evalToType(set: CofiniteSet[Symbol.EffectSym], loc: SourceLocation): Type = set match {
+    case CofiniteSet.Set(s) => Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc)
+    case CofiniteSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc), loc)
   }
 
   /** Returns the normalized default type for the kind of `tpe0`. */
@@ -952,4 +952,13 @@ object Monomorpher {
     case Kind.Error => throw InternalCompilerException(s"Unexpected type '$tpe0'.", tpe0.loc)
   }
 
+  /**
+    * An instance of [[CofiniteSet.SingletonValues]] for effect symbols.
+    */
+  private implicit val EffectSymSingletonValues: CofiniteSet.SingletonValues[Symbol.EffectSym] = {
+    new CofiniteSet.SingletonValues[Symbol.EffectSym] {
+      override val empty: CofiniteSet[Symbol.EffectSym] = CofiniteSet.Set(SortedSet.empty)
+      override val universe: CofiniteSet[Symbol.EffectSym] = CofiniteSet.Compl(SortedSet.empty)
+    }
+  }
 }
