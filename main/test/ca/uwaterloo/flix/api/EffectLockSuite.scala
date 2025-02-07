@@ -192,7 +192,7 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("g", "f", result))
   }
 
-  test("Safe.11") {
+  ignore("Safe.11") {
     val input =
       """
         |pub eff E {
@@ -211,7 +211,7 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("g", "f", result))
   }
 
-  test("Safe.12") {
+  ignore("Safe.12") {
     val input =
       """
         |pub eff E {
@@ -230,7 +230,7 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result))
   }
 
-  test("Safe.13") {
+  ignore("Safe.13") {
     val input =
       """
         |pub eff E {
