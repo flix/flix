@@ -132,7 +132,7 @@ object Parser2 {
     }.unzip
 
     // Join refreshed syntax trees with the already fresh ones.
-    val result = SyntaxTree.Root(refreshed.toMap ++ fresh)
+    val result = SyntaxTree.Root(refreshed.toMap ++ fresh, tokens)
     (result, errors.flatten.toList)
   }
 
