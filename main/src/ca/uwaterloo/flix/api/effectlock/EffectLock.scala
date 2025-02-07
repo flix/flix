@@ -59,6 +59,8 @@ object EffectLock {
     unification match {
       case Some(subst) =>
         println(subst)
+        println(s"subst(sc1.base): ${subst(sc1.base)}")
+        println(s"sc2.base: ${sc2.base}")
         subst(sc1.base) == sc2.base
       case None => false
     }
