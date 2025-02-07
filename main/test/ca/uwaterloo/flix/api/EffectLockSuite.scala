@@ -269,6 +269,74 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result))
   }
 
+  test("Safe.15") {
+    val input =
+      """
+        |pub def f(_: Unit -> Unit): Unit = ()
+        |
+        |pub def g(_: a -> b): Unit = ()
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(checkIsSafe("g", "f", result))
+  }
+
+  test("Safe.16") {
+    val input =
+      """
+        |pub def f(_: Unit -> Unit \ ef): Unit = ()
+        |
+        |pub def g(_: a -> b \ ef): Unit = ()
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(checkIsSafe("g", "f", result))
+  }
+
+  test("Safe.17") {
+    val input =
+      """
+        |pub def f(_: Unit -> Unit): Unit = ()
+        |
+        |pub def g(_: a -> b \ ef): Unit = ()
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(checkIsSafe("g", "f", result))
+  }
+
+  test("Safe.18") {
+    val input =
+      """
+        |pub eff E {
+        |    def a(): Unit
+        |}
+        |
+        |pub def f(_: Unit -> Unit \ E): Unit = ()
+        |
+        |pub def g(_: a -> b \ ef): Unit = ()
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(checkIsSafe("g", "f", result))
+  }
+
+  test("Safe.19") {
+    val input =
+      """
+        |pub eff E {
+        |    def a(): Unit
+        |}
+        |
+        |pub def f(_: Unit -> b \ ef): Unit = ()
+        |
+        |pub def g(_: a -> b \ ef): Unit = ()
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(checkIsSafe("g", "f", result))
+  }
+
   test("Unsafe.01") {
     val input =
       """
@@ -381,6 +449,74 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
         |pub def f(_: Unit -> Unit \ ef): Unit = ()
         |
         |pub def g(_: Int32 -> Unit \ ef): Unit = ()
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(!checkIsSafe("f", "g", result))
+  }
+
+  test("Unsafe.08") {
+    val input =
+      """
+        |pub def f(_: Unit -> Unit): Unit = ()
+        |
+        |pub def g(_: a -> b): Unit = ()
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(!checkIsSafe("f", "g", result))
+  }
+
+  test("Unsafe.09") {
+    val input =
+      """
+        |pub def f(_: Unit -> Unit \ ef): Unit = ()
+        |
+        |pub def g(_: a -> b \ ef): Unit = ()
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(!checkIsSafe("f", "g", result))
+  }
+
+  test("Unsafe.10") {
+    val input =
+      """
+        |pub def f(_: Unit -> Unit): Unit = ()
+        |
+        |pub def g(_: a -> b \ ef): Unit = ()
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(!checkIsSafe("f", "g", result))
+  }
+
+  test("Unsafe.11") {
+    val input =
+      """
+        |pub eff E {
+        |    def a(): Unit
+        |}
+        |
+        |pub def f(_: Unit -> Unit \ E): Unit = ()
+        |
+        |pub def g(_: a -> b \ ef): Unit = ()
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(!checkIsSafe("f", "g", result))
+  }
+
+  test("Unsafe.12") {
+    val input =
+      """
+        |pub eff E {
+        |    def a(): Unit
+        |}
+        |
+        |pub def f(_: Unit -> b \ ef): Unit = ()
+        |
+        |pub def g(_: a -> b \ ef): Unit = ()
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
