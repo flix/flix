@@ -1232,7 +1232,7 @@ object Lexer {
       * Returns true if the cursor was advanced.
       */
     def advanceIfMatch(s: String): Boolean = {
-      if (this.offset + s.length >= data.length) {
+      if (this.offset + s.length > data.length) {
         return false
       }
 
