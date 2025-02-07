@@ -160,6 +160,12 @@ object Name {
     * @param namespace    the namespace
     * @param ident        the identifier.
     * @param loc          the source location of the qualified name.
+    *
+    * Note that the ident could be empty if there is a trailing dot.
+    *
+    * Example:
+    *   - "A.B.Color" -> namespace = ["A", "B"], ident = "Color"
+    *   - "A.B." -> namespace = ["A", "B"], ident = ""
     */
   case class QName(namespace: NName, ident: Ident, loc: SourceLocation) {
     /**

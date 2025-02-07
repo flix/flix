@@ -3083,8 +3083,8 @@ object Weeder2 {
       val emptyIdent = Name.Ident("", emptyIdentLoc)
       val qnameLoc = SourceLocation(isReal = true, first.loc.sp1, positionAfterDot)
       Name.QName(nname, emptyIdent, qnameLoc)
+    } else {
       // Otherwise we use all but the last ident as namespace and the last ident as the ident
-    } else{
       val nname = Name.NName(idents.dropRight(1), loc)
       Name.QName(nname, last, loc)
     }
