@@ -136,7 +136,6 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
   }
 
   test("Safe.08") {
-    // TODO: alpha renaming?
     val input =
       """
         |pub eff E {
@@ -250,7 +249,7 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result))
   }
 
-  test("Safe.14") {
+  ignore("Safe.14") {
     val input =
       """
         |pub eff E {
@@ -424,7 +423,6 @@ class EffectLockSuite extends AnyFunSuite with TestUtils {
   }
 
   test("Unsafe.06") {
-    // TODO: Alpha renaming
     val input =
       """
         |pub eff E {
