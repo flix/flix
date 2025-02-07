@@ -59,7 +59,7 @@ object Weeder2 {
       }
 
       val compilationUnits = mapN(sequence(refreshed))(_.toMap ++ fresh)
-      (mapN(compilationUnits)(WeededAst.Root(_, entryPoint, readRoot.availableClasses)), sctx.errors.asScala.toList)
+      (mapN(compilationUnits)(WeededAst.Root(_, entryPoint, readRoot.availableClasses, root.tokens)), sctx.errors.asScala.toList)
     }(DebugValidation())
   }
 
@@ -909,16 +909,7 @@ object Weeder2 {
     }
 
     private def visitQnameExpr(tree: Tree)(implicit sctx: SharedContext): Expr.Ambiguous = {
-      expect(tree, TreeKind.QName)
-      val idents = pickAll(TreeKind.Ident, tree).map(tokenToIdent)
-      val trailingDot = tryPick(TreeKind.TrailingDot, tree).nonEmpty
-      assert(idents.nonEmpty) // Require at least one ident
-      val first = idents.head
-      val ident = idents.last
-      val nnameIdents = idents.dropRight(1)
-      val loc = SourceLocation(isReal = true, first.loc.sp1, ident.loc.sp2)
-      val nname = Name.NName(nnameIdents, loc)
-      val qname = Name.QName(nname, ident, loc, trailingDot)
+      val qname = visitQName(tree)
       Expr.Ambiguous(qname, qname.loc)
     }
 
@@ -3084,11 +3075,23 @@ object Weeder2 {
     val trailingDot = tryPick(TreeKind.TrailingDot, tree).nonEmpty
     assert(idents.nonEmpty) // We require at least one element to construct a qname
     val first = idents.head
-    val ident = idents.last
-    val nnameIdents = idents.dropRight(1)
-    val loc = SourceLocation(isReal = true, first.loc.sp1, ident.loc.sp2)
-    val nname = Name.NName(nnameIdents, loc)
-    Name.QName(nname, ident, loc, trailingDot)
+    val last = idents.last
+    val loc = SourceLocation(isReal = true, first.loc.sp1, last.loc.sp2)
+
+    // If there is a trailing dot, we use all the idents as namespace and use "" as the ident
+    // The resulting QName will be something like QName(["A", "B"], "")
+    if (trailingDot) {
+      val nname = Name.NName(idents, loc)
+      val positionAfterDot = last.loc.sp2.copy(col = (last.loc.sp2.col + 1).toShort)
+      val emptyIdentLoc = SourceLocation(isReal = true, positionAfterDot, positionAfterDot)
+      val emptyIdent = Name.Ident("", emptyIdentLoc)
+      val qnameLoc = SourceLocation(isReal = true, first.loc.sp1, positionAfterDot)
+      Name.QName(nname, emptyIdent, qnameLoc)
+    } else {
+      // Otherwise we use all but the last ident as namespace and the last ident as the ident
+      val nname = Name.NName(idents.dropRight(1), loc)
+      Name.QName(nname, last, loc)
+    }
   }
 
   private def pickNameIdent(tree: Tree)(implicit sctx: SharedContext): Validation[Name.Ident, CompilationMessage] = {
@@ -3099,7 +3102,7 @@ object Weeder2 {
     tryPick(TreeKind.Ident, tree).map(tokenToIdent)
   }
 
-  def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
+  private def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
     val idents = pickQNameIdents(tree)
     mapN(idents) {
       idents => Name.JavaName(idents, tree.loc)
@@ -3152,13 +3155,6 @@ object Weeder2 {
         Name.Ident(name, tree.loc)
       case _ => throw InternalCompilerException(s"Parse failure: expected first child of '${tree.kind}' to be Child.Token", tree.loc)
     }
-  }
-
-  /**
-    * Turns a Name.QName into a string by removing prefix "##" and joining with ".".
-    */
-  private def javaQnameToFqn(qname: Name.QName): String = {
-    (qname.namespace.idents.map(_.name.stripPrefix("##")) :+ qname.ident.name).mkString(".")
   }
 
   /**
@@ -3269,15 +3265,12 @@ object Weeder2 {
     * But for enum variants, two variants are duplicates if they share names.
     */
   private def getDuplicates[A, K](items: Seq[A], groupBy: A => K): List[(A, A)] = {
-    val duplicates = items.groupBy(groupBy).collect { case (_, is) if is.length > 1 => is }
-    val pairs = duplicates.map(dups => {
-      for {
-        (x, idxX) <- dups.zipWithIndex
-        (y, idxY) <- dups.zipWithIndex
-        if (idxX + 1) == idxY
-      } yield (x, y)
-    })
-    List.from(pairs.flatten)
+    val groups = items.groupBy(groupBy)
+    for {
+      (_, group) <- groups.toList
+      // if a group has a nonempty tail, then everything in the tail is a duplicate of the head
+      duplicate <- group.tail
+    } yield (group.head, duplicate)
   }
 
   /**

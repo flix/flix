@@ -132,7 +132,7 @@ object Parser2 {
     }.unzip
 
     // Join refreshed syntax trees with the already fresh ones.
-    val result = SyntaxTree.Root(refreshed.toMap ++ fresh)
+    val result = SyntaxTree.Root(refreshed.toMap ++ fresh, tokens)
     (result, errors.flatten.toList)
   }
 
@@ -705,8 +705,9 @@ object Parser2 {
               loc = currentSourceLocation()
             )
             val mark = open()
+            advance()
             close(mark, TreeKind.TrailingDot)
-            advanceWithError(error)
+            s.errors.append(error)
             continue = false
           } else {
             advance() // Eat the dot
@@ -725,8 +726,9 @@ object Parser2 {
             loc = currentSourceLocation()
           )
           val mark = open()
+          advance()
           close(mark, TreeKind.TrailingDot)
-          advanceWithError(error)
+          s.errors.append(error)
           continue = false
         case _ => continue = false
       }

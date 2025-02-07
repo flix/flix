@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -72,22 +72,16 @@ object Lexer {
   /** The internal state of the lexer as it tokenizes a single source. */
   private class State(val src: Source) {
 
+    /** A string cursor on `src.data`. */
+    var sc: StringCursor = new StringCursor(src.data)
+
     /** `start` is the first position of the token that is currently being lexed. */
-    var start: Position = new Position(0, 0, 0)
+    var start: Position = new Position(sc.getLine, sc.getColumn, sc.getOffset)
 
-    /**
-      * The current head of the reader, not yet lexed.
-      *
-      * This is always equal to `start` or ahead of `start`.
-      */
-    val current: Position = new Position(0, 0, 0)
-
-    /**
-      * The width of the previous line. This allows computing `current`s previous position.
-      *
-      * See [[addToken]].
-      */
-    var prevWidth: Int = -1
+    /** Set `start` to the current position. */
+    def resetStart(): Unit = {
+      start = new Position(sc.getLine, sc.getColumn, sc.getOffset)
+    }
 
     /**
       * The sequence of tokens produced by the lexer.
@@ -105,8 +99,8 @@ object Lexer {
     /** Save a checkpoint to revert to. */
     def save(): Checkpoint = {
       Checkpoint(
-        start = new Position(this.start.line, this.start.column, this.start.offset),
-        current = new Position(this.current.line, this.current.column, this.current.offset),
+        start = this.start,
+        sc = sc.copy(),
         tokensLength = tokens.length,
         interpolationNestingLevel = this.interpolationNestingLevel
       )
@@ -117,19 +111,17 @@ object Lexer {
       if (tokens.length != c.tokensLength) throw InternalCompilerException("Restored checkpoint across token generation", sourceLocationAtCurrent()(this))
       if (start.line != c.start.line || start.column != c.start.column || start.offset != c.start.offset)
         throw InternalCompilerException("Restored checkpoint across token generation (start was moved)", sourceLocationAtCurrent()(this))
-      this.current.line = c.current.line
-      this.current.column = c.current.column
-      this.current.offset = c.current.offset
+      this.sc = c.sc
       this.interpolationNestingLevel = c.interpolationNestingLevel
     }
   }
 
-  private case class Checkpoint(start: Position, current: Position, tokensLength: Int, interpolationNestingLevel: Int)
+  private case class Checkpoint(start: Position, sc: StringCursor, tokensLength: Int, interpolationNestingLevel: Int)
 
   /**
     * A source position keeping track of both line, column as well as absolute character offset.
     */
-  private class Position(var line: Int, var column: Int, var offset: Int)
+  private class Position(val line: Int, val column: Int, val offset: Int)
 
   /**
     * Run the lexer on multiple `Source`s in parallel.
@@ -163,14 +155,14 @@ object Lexer {
     while (!eof()) {
       whitespace()
       if (!eof()) {
-        s.start = new Position(s.current.line, s.current.column, s.current.offset)
+        s.resetStart()
         val k = scanToken()
         addToken(k)
       }
     }
 
     // Add a virtual eof token at the last position.
-    s.start = new Position(s.current.line, s.current.column, s.current.offset)
+    s.resetStart()
     addToken(TokenKind.Eof)
 
     val errors = s.tokens.collect {
@@ -186,54 +178,26 @@ object Lexer {
     * Note: If the lexer has arrived at EOF advance will continuously return EOF without advancing.
     * This is a design choice to avoid returning an Option[Char], which would be doable but tedious to work with.
     */
-  private def advance()(implicit s: State): Char = {
-    if (s.current.offset >= s.src.data.length) {
-      return '\u0000'
-    }
-
-    val c = s.src.data(s.current.offset)
-    if (c == '\n') {
-      s.prevWidth = s.current.column
-      s.current.line += 1
-      s.current.column = 0
-    } else {
-      s.current.column += 1
-    }
-    s.current.offset += 1
-    c
-  }
+  private def advance()(implicit s: State): Char =
+    s.sc.advance()
 
   /**
     * Peeks the previous character that state was on if available.
     */
-  private def previous()(implicit s: State): Option[Char] = {
-    if (s.current.offset == 0) {
-      None
-    } else {
-      Some(s.src.data(s.current.offset - 1))
-    }
-  }
+  private def previous()(implicit s: State): Option[Char] =
+    s.sc.previous
 
   /**
     * Peeks the character before the previous that state was on if available.
     */
-  private def previousPrevious()(implicit s: State): Option[Char] = {
-    if (s.current.offset <= 1) {
-      None
-    } else {
-      Some(s.src.data(s.current.offset - 2))
-    }
-  }
+  private def previousPrevious()(implicit s: State): Option[Char] =
+    s.sc.nth(-2)
 
   /**
     * Peeks the character that is `n` characters before the current if available
     */
   private def previousN(n: Int)(implicit s: State): Option[Char] = {
-    if (s.current.offset <= n) {
-      None
-    } else {
-      Some(s.src.data(s.current.offset - (n + 1)))
-    }
+    s.sc.nth(-(n + 1))
   }
 
   /**
@@ -243,22 +207,17 @@ object Lexer {
     * Since `advance` cannot move past EOF peek will always be in bounds.
     */
   private def peek()(implicit s: State): Char = {
-    if (s.current.offset >= s.src.data.length) {
+    if (s.sc.getOffset >= s.src.data.length) {
       return s.src.data.last
     }
-    s.src.data(s.current.offset)
+    s.sc.peek
   }
 
   /**
     * Peeks the character after the one that state is sitting on if available.
     */
-  private def peekPeek()(implicit s: State): Option[Char] = {
-    if (s.current.offset >= s.src.data.length - 1) {
-      None
-    } else {
-      Some(s.src.data(s.current.offset + 1))
-    }
-  }
+  private def peekPeek()(implicit s: State): Option[Char] =
+    s.sc.nth(1)
 
   /**
     * A helper function wrapping peek, with special handling for escaped characters.
@@ -269,7 +228,7 @@ object Lexer {
     while (p == '\\') {
       advance()
       // This check is for a source that ends on a '\'.
-      if (s.current.offset >= s.src.data.length - 1) {
+      if (s.sc.getOffset >= s.src.data.length - 1) {
         return None
       }
       advance()
@@ -281,9 +240,8 @@ object Lexer {
   /**
     * Checks if the current position has landed on end-of-file
     */
-  private def eof()(implicit s: State): Boolean = {
-    s.current.offset >= s.src.data.length
-  }
+  private def eof()(implicit s: State): Boolean =
+    s.sc.eof
 
   /**
     * A helper function for producing a `SourceLocation` starting at `s.start`.
@@ -306,8 +264,8 @@ object Lexer {
     */
   private def sourceLocationAtCurrent(length: Int = 1)(implicit s: State): SourceLocation = {
     // A state is zero-indexed while a SourcePosition is one-indexed.
-    val line = s.current.line + 1
-    val column = s.current.column + 1
+    val line = s.sc.getLine + 1
+    val column = s.sc.getColumn + 1
     val sp1 = SourcePosition(s.src, line, column.toShort)
     val sp2 = SourcePosition(s.src, line, (column + length).toShort)
     SourceLocation(isReal = true, sp1, sp2)
@@ -322,14 +280,10 @@ object Lexer {
     // If we are currently at the start of a line, create a non-existent position and the
     // end of the previous line as the exclusive end position.
     // This should not happen for zero-width tokens at the start of lines.
-    val end = if (s.current.column == 0 && s.start.offset != s.current.offset) {
-      new Position(s.current.line - 1, s.prevWidth + 1, s.current.offset)
-    } else {
-      new Position(s.current.line, s.current.column, s.current.offset)
-    }
-    val e = SourcePosition(s.src, end.line + 1, (end.column + 1).toShort)
-    s.tokens.append(Token(kind, s.src, s.start.offset, s.current.offset, b, e))
-    s.start = new Position(s.current.line, s.current.column, s.current.offset)
+    val (endLine, endColumn) = if (s.start.offset != s.sc.getOffset) s.sc.getExclusiveEndPosition else s.sc.getPosition
+    val e = SourcePosition(s.src, endLine + 1, (endColumn + 1).toShort)
+    s.tokens.append(Token(kind, s.src, s.start.offset, s.sc.getOffset, b, e))
+    s.resetStart()
   }
 
   /**
@@ -375,7 +329,7 @@ object Lexer {
       case '$' if peek().isUpper => acceptBuiltIn()
       case '$' if peek().isLower =>
         // Don't include the $ sign in the name
-        s.start = new Position(s.current.line, s.current.column, s.current.offset)
+        s.resetStart()
         acceptName(isUpper = false)
       case '\"' => acceptString()
       case '\'' => acceptChar()
@@ -548,8 +502,8 @@ object Lexer {
   private def isSeparated(keyword: String, allowDot: Boolean = false)(implicit s: State): Boolean = {
     def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_' || !allowDot && c == '.')
 
-    val leftIndex = s.current.offset - 2
-    val rightIndex = s.current.offset + keyword.length - 1
+    val leftIndex = s.sc.getOffset - 2
+    val rightIndex = s.sc.getOffset + keyword.length - 1
     val isSeperatedLeft = leftIndex < 0 || isSep(s.src.data(leftIndex))
     val isSeperatedRight = rightIndex > s.src.data.length - 1 || isSep(s.src.data(rightIndex))
     isSeperatedLeft && isSeperatedRight
@@ -561,8 +515,8 @@ object Lexer {
     * Note that __comparison includes current__.
     */
   private def isSeparatedOperator(keyword: String)(implicit s: State): Boolean = {
-    val leftIndex = s.current.offset - 2
-    val rightIndex = s.current.offset + keyword.length - 1
+    val leftIndex = s.sc.getOffset - 2
+    val rightIndex = s.sc.getOffset + keyword.length - 1
     val isSeperatedLeft = leftIndex < 0 || isUserOp(s.src.data(leftIndex)).isEmpty
     val isSeperatedRight = rightIndex > s.src.data.length - 1 || isUserOp(s.src.data(rightIndex)).isEmpty
     isSeperatedLeft && isSeperatedRight
@@ -574,12 +528,12 @@ object Lexer {
     */
   private def isMatchPrev(keyword: String)(implicit s: State): Boolean = {
     // Check if the keyword can appear before eof.
-    if (s.current.offset + keyword.length - 1 > s.src.data.length) {
+    if (s.sc.getOffset + keyword.length - 1 > s.src.data.length) {
       return false
     }
 
     // Check if the next n characters in source matches those of keyword one at a time.
-    val start = s.current.offset - 1
+    val start = s.sc.getOffset - 1
     var matches = true
     var offset = 0
     while (matches && offset < keyword.length) {
@@ -603,32 +557,8 @@ object Lexer {
     * Checks whether the following substring matches a keyword.
     * Will advance the current position past the keyword if there is a match.
     */
-  private def isMatchCurrent(keyword: String)(implicit s: State): Boolean = {
-    // Check if the keyword can appear before eof.
-    if (s.current.offset + keyword.length > s.src.data.length) {
-      return false
-    }
-
-    // Check if the next n characters in source matches those of keyword one at a time.
-    val start = s.current.offset
-    var matches = true
-    var offset = 0
-    while (matches && offset < keyword.length) {
-      if (s.src.data(start + offset) != keyword(offset)) {
-        matches = false
-      } else {
-        offset += 1
-      }
-    }
-
-    if (matches) {
-      for (_ <- 0 until keyword.length) {
-        advance()
-      }
-    }
-
-    matches
-  }
+  private def isMatchCurrent(keyword: String)(implicit s: State): Boolean =
+    s.sc.advanceIfMatch(keyword)
 
   /**
     * Checks whether the following substring matches a operator.
@@ -705,14 +635,8 @@ object Lexer {
   /**
     * Moves current position past all whitespace characters.
     */
-  private def whitespace()(implicit s: State): Unit = {
-    while (!eof()) {
-      if (!peek().isWhitespace) {
-        return
-      }
-      advance()
-    }
-  }
+  private def whitespace()(implicit s: State): Unit =
+    s.sc.advanceWhitespace()
 
   /**
     * Moves current position past a name (both upper- and lower-case).
@@ -908,7 +832,7 @@ object Lexer {
     while (!eof()) {
       whitespace()
       if (!eof()) {
-        s.start = new Position(s.current.line, s.current.column, s.current.offset)
+        s.resetStart()
         val kind = scanToken()
 
         // Handle nested block expressions like `"my favorite number is ${ {40 + 2} }!"`.
@@ -1087,7 +1011,7 @@ object Lexer {
             case _ if isMatchCurrent("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
             case _ =>
               error.getOrElse(TokenKind.LiteralInt32)
-        }
+          }
       }
     }
     // The very last char of the file was a digit so return the appropriate token.
@@ -1191,5 +1115,153 @@ object Lexer {
 
     copy
   }
+
+  /**
+    * A class to iterate through an array of characters while maintaining the line and column index
+    * of the cursor.
+    */
+  private class StringCursor(val data: Array[Char]) {
+
+    /** The cursor pointing into `data`. */
+    private var offset: Int = 0
+
+    /** The line index of `offset`. */
+    private var line: Int = 0
+
+    /** The column index of `offset` */
+    private var column: Int = 0
+
+    /** The max column index of the previous line or `0` if there is no previous line. */
+    private var prevLineMaxColumn = 0
+
+    /** Returns the current line index. */
+    def getLine: Int = line
+
+    /** Returns the current column index. */
+    def getColumn: Int = column
+
+    /** Returns the current source offset. */
+    def getOffset: Int = offset
+
+    /** Returns `(line, column)`. */
+    def getPosition: (Int, Int) = (line, column)
+
+    /**
+      * Returns `(line, column)` where non-existent positions are preferred instead of the first
+      * position of the next line.
+      *
+      * In this example, the current position is on 'v' (1,0) but this function will then return
+      * the position just after 'Example' (0, 7). This is sometimes preferable for exclusive
+      * end positions of ranges.
+      *
+      * {{{
+      *   Example
+      *   v
+      * }}}
+      */
+    def getExclusiveEndPosition: (Int, Int) = {
+      if (line <= 0 || column > 0) {
+        (line, column)
+      } else {
+        (line - 1, prevLineMaxColumn + 1)
+      }
+    }
+
+    /**
+      * Advances cursor one char forward, returning the char it was previously sitting on.
+      *
+      * If the cursor has advanced past the content, EOF is returned (`'\u0000'`).
+      */
+    def advance(): Char = {
+      if (offset >= data.length) {
+        '\u0000'
+      } else {
+        val c = data(offset)
+        if (c == '\n') {
+          prevLineMaxColumn = column
+          line += 1
+          column = 0
+        } else {
+          column += 1
+        }
+        offset += 1
+        c
+      }
+    }
+
+    /** Peeks the character that is `n` characters ahead of the cursor if available. */
+    def nth(n: Int): Option[Char] = {
+      val index = offset + n
+      if (0 <= index && index < data.length) {
+        Some(data(index))
+      } else {
+        None
+      }
+    }
+
+    /** Peeks the previous character if available. */
+    def previous: Option[Char] = nth(-1)
+
+    /**
+      * Peeks the character that cursor is currently sitting on without advancing.
+      *
+      * If the cursor has advanced past the content, EOF is returned (`'\u0000'`).
+      */
+    def peek: Char = {
+      if (offset < data.length) {
+        data(offset)
+      } else {
+        '\u0000' // EOF char
+      }
+    }
+
+    /** Returns true if the cursor has moved past the end. */
+    def eof: Boolean = offset >= data.length
+
+    /** Continuously advance past whitespace characters. */
+    def advanceWhitespace(): Unit = {
+      // This is finite since EOF is not whitespace.
+      while (this.peek.isWhitespace) {
+        advance()
+      }
+    }
+
+    /**
+      * Advance the cursor past `s` if it matches the current content.
+      *
+      * Returns true if the cursor was advanced.
+      */
+    def advanceIfMatch(s: String): Boolean = {
+      if (this.offset + s.length > data.length) {
+        return false
+      }
+
+      var sIndex = 0
+      while (sIndex < s.length) {
+        if (data(this.offset + sIndex) != s(sIndex)) {
+          return false
+        }
+        sIndex += 1
+      }
+
+      for (_ <- 0 until s.length) {
+        advance()
+      }
+
+      true
+    }
+
+    /** Returns a copy of `this`, pointing to the same underlying array. */
+    def copy(): StringCursor = {
+      val sc = new StringCursor(data)
+      sc.offset = offset
+      sc.line = line
+      sc.column = column
+      sc.prevLineMaxColumn = prevLineMaxColumn
+      sc
+    }
+
+  }
+
 }
 

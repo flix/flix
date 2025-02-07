@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Ok, Err}
+import org.eclipse.lsp4j
 import org.json4s.{JString, JValue}
 
 sealed trait CodeActionKind {
@@ -30,6 +31,18 @@ sealed trait CodeActionKind {
     case CodeActionKind.Source => JString("source")
     case CodeActionKind.SourceOrganizeImports => JString("source.organizeImports")
     case CodeActionKind.SourceFixAll => JString("source.fixAll")
+  }
+
+  def toLsp4j: String = this match {
+    case CodeActionKind.Empty => lsp4j.CodeActionKind.Empty
+    case CodeActionKind.QuickFix => lsp4j.CodeActionKind.QuickFix
+    case CodeActionKind.Refactor => lsp4j.CodeActionKind.Refactor
+    case CodeActionKind.RefactorExtract => lsp4j.CodeActionKind.RefactorExtract
+    case CodeActionKind.RefactorInline => lsp4j.CodeActionKind.RefactorInline
+    case CodeActionKind.RefactorRewrite => lsp4j.CodeActionKind.RefactorRewrite
+    case CodeActionKind.Source => lsp4j.CodeActionKind.Source
+    case CodeActionKind.SourceOrganizeImports => lsp4j.CodeActionKind.SourceOrganizeImports
+    case CodeActionKind.SourceFixAll => lsp4j.CodeActionKind.SourceFixAll
   }
 }
 

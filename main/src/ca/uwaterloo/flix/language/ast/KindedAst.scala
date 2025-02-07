@@ -25,7 +25,7 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 object KindedAst {
 
-  val empty: Root = Root(Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Map.empty, AvailableClasses.empty)
+  val empty: Root = Root(Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Map.empty, AvailableClasses.empty, Map.empty)
 
   case class Root(traits: Map[Symbol.TraitSym, Trait],
                   instances: ListMap[Symbol.TraitSym, Instance],
@@ -38,7 +38,8 @@ object KindedAst {
                   uses: ListMap[Symbol.ModuleSym, UseOrImport],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  availableClasses: AvailableClasses)
+                  availableClasses: AvailableClasses,
+                  tokens: Map[Source, Array[Token]])
 
   case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[AssocTypeSig], sigs: Map[Symbol.SigSym, Sig], laws: List[Def], loc: SourceLocation)
 

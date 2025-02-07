@@ -27,7 +27,8 @@ object NamedAst {
                   units: Map[Source, CompilationUnit],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  availableClasses: AvailableClasses)
+                  availableClasses: AvailableClasses,
+                  tokens: Map[Source, Array[Token]])
 
   case class CompilationUnit(usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation)
 

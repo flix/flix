@@ -247,21 +247,10 @@ object CompletionUtils {
   }
 
   /**
-    * Parse given `qn` based on the character immediately following the location.
-    * If the character is a dot, we move the ident to the namespace.
-    * Otherwise, we will just take namespace and ident out of qn.
-    *
-    * Example:
-    *   - Source "A.B.C", QName(["A", "B"], "C") -> ("A.B", "C")
-    *   - Source "A.B.C.", QName(["A", "B"], "C") -> ("A.B.C", "")
+    * Get the namespace and ident from the qualified name.
     */
   def getNamespaceAndIdentFromQName(qn: QName): (List[String], String) = {
-    val ident = if (qn.trailingDot) "" else qn.ident.name
-    val namespace = qn.namespace.idents.map(_.name) ++ {
-      if (qn.trailingDot) List(qn.ident.name)
-      else Nil
-    }
-    (namespace, ident)
+    (qn.namespace.idents.map(_.name), qn.ident.name)
   }
 
   /**
