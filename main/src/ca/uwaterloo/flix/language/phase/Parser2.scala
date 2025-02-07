@@ -705,8 +705,9 @@ object Parser2 {
               loc = currentSourceLocation()
             )
             val mark = open()
+            advance()
             close(mark, TreeKind.TrailingDot)
-            advanceWithError(error)
+            s.errors.append(error)
             continue = false
           } else {
             advance() // Eat the dot
@@ -725,8 +726,9 @@ object Parser2 {
             loc = currentSourceLocation()
           )
           val mark = open()
+          advance()
           close(mark, TreeKind.TrailingDot)
-          advanceWithError(error)
+          s.errors.append(error)
           continue = false
         case _ => continue = false
       }

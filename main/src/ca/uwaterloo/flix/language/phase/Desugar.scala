@@ -1342,8 +1342,8 @@ object Desugar {
     @tailrec
     def flatten(exp: WeededAst.Expr, acc: List[WeededAst.Expr]): (List[WeededAst.Expr], Option[WeededAst.Expr]) = exp match {
       case WeededAst.Expr.FCons(e1, e2, _) => flatten(e2, e1 :: acc)
-      case WeededAst.Expr.Ambiguous(Name.QName(nname, Name.Ident("Nil", _), _, _), _) if nname.idents == "List" :: Nil => (acc.reverse, None)
-      case WeededAst.Expr.Ambiguous(Name.QName(nname, Name.Ident("Nil", _), _, _), _) if nname.idents.isEmpty => (acc.reverse, None)
+      case WeededAst.Expr.Ambiguous(Name.QName(nname, Name.Ident("Nil", _), _), _) if nname.idents == "List" :: Nil => (acc.reverse, None)
+      case WeededAst.Expr.Ambiguous(Name.QName(nname, Name.Ident("Nil", _), _), _) if nname.idents.isEmpty => (acc.reverse, None)
       case _ => (acc.reverse, Some(exp))
     }
 
