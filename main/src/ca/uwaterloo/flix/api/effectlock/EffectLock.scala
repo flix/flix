@@ -26,7 +26,7 @@ import scala.collection.immutable.SortedSet
 
 object EffectLock {
   def println(s: Object): Unit = {
-    if (true) {
+    if (false) {
       Predef.println(s)
     }
   }
