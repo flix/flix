@@ -3269,15 +3269,12 @@ object Weeder2 {
     * But for enum variants, two variants are duplicates if they share names.
     */
   private def getDuplicates[A, K](items: Seq[A], groupBy: A => K): List[(A, A)] = {
-    val duplicates = items.groupBy(groupBy).collect { case (_, is) if is.length > 1 => is }
-    val pairs = duplicates.map(dups => {
-      for {
-        (x, idxX) <- dups.zipWithIndex
-        (y, idxY) <- dups.zipWithIndex
-        if (idxX + 1) == idxY
-      } yield (x, y)
-    })
-    List.from(pairs.flatten)
+    val groups = items.groupBy(groupBy)
+    for {
+      (_, group) <- groups.toList
+      // if a group has a nonempty tail, then everything in the tail is a duplicate of the head
+      duplicate <- group.tail
+    } yield (group.head, duplicate)
   }
 
   /**
