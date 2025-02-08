@@ -1,5 +1,8 @@
 # Changelog
 
+Version 0.57.1:
+- Compiler: sync semantic tokens (thanks Chenhao!)
+
 Version 0.57.0:
 - Compiler: Added new type inference implementation (thanks Matt!)
 - Compiler: Improved incremental compilation (thanks Chenhao!)
