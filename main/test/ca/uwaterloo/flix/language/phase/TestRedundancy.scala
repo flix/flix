@@ -1580,10 +1580,10 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |def hof(f: a -> b \ e, x: a): b \ e = f(x)
         |
         |def f(): Unit =
-        |    hof(x -> (x, Ref.fresh(21, Static));
+        |    hof(x -> (x, Ref.fresh(21, Static)));
         |    ()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.UnderAppliedFunction](result)
   }
 
