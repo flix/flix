@@ -636,8 +636,11 @@ object SemanticTokensProvider {
          _ : Constant.Float32 |
          _ : Constant.Float64 |
          _ : Constant.BigDecimal => Iterator(SemanticToken(SemanticTokenType.Number, Nil, constant.loc))
-    case _: Constant.Regex => Iterator(SemanticToken(SemanticTokenType.Regexp, Nil, constant.loc))
-    case _ => Iterator(SemanticToken(SemanticTokenType.Type, Nil, constant.loc))
+    case _ : Constant.Regex => Iterator(SemanticToken(SemanticTokenType.Regexp, Nil, constant.loc))
+    case _ : Constant.Bool |
+         Constant.Unit |
+         Constant.Null |
+         Constant.RecordEmpty => Iterator(SemanticToken(SemanticTokenType.Type, Nil, constant.loc))
   }
 
   /**
