@@ -23,9 +23,9 @@ object ZhegalkinCache {
     * Controls what caches are enabled.
     */
   var EnableInterCstCache: Boolean = false
-  var EnableUnionCache: Boolean = true
+  var EnableUnionCache: Boolean = false
   var EnableInterCache: Boolean = true
-  var EnableXorCache: Boolean = true
+  var EnableXorCache: Boolean = false
 
   /**
    * A cache that represents the intersection of the given Zhegalkin constant and expression.
