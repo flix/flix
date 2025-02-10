@@ -19,10 +19,11 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Modifier, Resolution}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
+import java.util
 import scala.annotation.tailrec
 
 object CompletionUtils {
@@ -287,4 +288,39 @@ object CompletionUtils {
       }.mkString("[", ", ", "]")
     }
   }
+
+
+  /**
+    * Checks if the given spec is public.
+    */
+  def isPublic(defn: TypedAst.Def): Boolean = defn.spec.mod.isPublic && !defn.spec.ann.isInternal
+  def isPublic(defn: Symbol.DefnSym)(implicit root: TypedAst.Root): Boolean = root.defs.get(defn).exists(isPublic)
+
+  /**
+    * Checks if the given trait is public.
+    */
+  def isPublic(trt: TypedAst.Trait): Boolean = trt.mod.isPublic && !trt.ann.isInternal
+  def isPublic(trt: Symbol.TraitSym)(implicit root: TypedAst.Root): Boolean = root.traits.get(trt).exists(isPublic)
+
+  /**
+    * Checks if the given effect is public.
+    */
+  def isPublic(eff: TypedAst.Effect): Boolean = eff.mod.isPublic && !eff.ann.isInternal
+  def isPublic(eff: Symbol.EffectSym)(implicit root: TypedAst.Root): Boolean = root.effects.get(eff).exists(isPublic)
+
+  /**
+    * Checks if the given enum is public.
+    */
+  def isPublic(enm: TypedAst.Enum): Boolean = enm.mod.isPublic && !enm.ann.isInternal
+  def isPublic(enumMap: Symbol.EnumSym)(implicit root: TypedAst.Root): Boolean = root.enums.get(enumMap).exists(isPublic)
+
+  /**
+    * Checks if the given restrictable enum is public.
+    */
+  def isPublic(enm: TypedAst.RestrictableEnum): Boolean = enm.mod.isPublic && !enm.ann.isInternal
+
+  /**
+    * Checks if the given type alias is public.
+    */
+  def isPublic(alias: TypedAst.TypeAlias): Boolean = alias.mod.isPublic && !alias.ann.isInternal
 }
