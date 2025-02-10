@@ -5,8 +5,6 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 
 object TrustValidation {
 
-  sealed trait TrustError
-
   def run(root: TypedAst.Root)(implicit flix: Flix): List[TrustError] = {
     List.empty
   }
