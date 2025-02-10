@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Name.QName
+import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
@@ -249,7 +249,7 @@ object CompletionUtils {
   /**
     * Get the namespace and ident from the qualified name.
     */
-  def getNamespaceAndIdentFromQName(qn: QName): (List[String], String) = {
+  def getNamespaceAndIdentFromQName(qn: Name.QName): (List[String], String) = {
     (qn.namespace.idents.map(_.name), qn.ident.name)
   }
 

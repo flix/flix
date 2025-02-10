@@ -27,7 +27,7 @@ object UseCompleter {
     val moduleSym = Symbol.mkModuleSym(namespace)
     root.modules.get(moduleSym).collect{
       case mod:  Symbol.ModuleSym if fuzzyMatch(ident, mod.ns.last) => ModCompletion(mod)
-      case enum: Symbol.EnumSym   if fuzzyMatch(ident, enum.name)   => UseEnumCompletion(enum.toString)
+      case enm:  Symbol.EnumSym   if fuzzyMatch(ident, enm.name)    => UseEnumCompletion(enm.toString)
       case eff:  Symbol.EffectSym if fuzzyMatch(ident, eff.name)    => UseEffCompletion(eff.toString)
       case defn: Symbol.DefnSym   if fuzzyMatch(ident, defn.name)   => UseDefCompletion(defn.toString)
       case trt:  Symbol.TraitSym  if fuzzyMatch(ident, trt.name)    => UseTrtCompletion(trt.toString)
