@@ -21,7 +21,6 @@ import org.json4s.*
 
 import scala.jdk.CollectionConverters.SeqHasAsJava
 
-
 /**
   * Represents a `CompletionList` in LSP.
   *
