@@ -19,6 +19,8 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+
+import org.eclipse.lsp4j
 import org.json4s.JsonDSL.*
 import org.json4s.*
 
@@ -206,4 +208,13 @@ case class LocationLink(originSelectionRange: Range, targetUri: String, targetRa
       ("targetUri" -> targetUri) ~
       ("targetRange" -> targetRange.toJSON) ~
       ("targetSelectionRange" -> targetSelectionRange.toJSON)
+
+  def toLsp4j: lsp4j.LocationLink = {
+    val locationLink = new lsp4j.LocationLink()
+    locationLink.setOriginSelectionRange(originSelectionRange.toLsp4j)
+    locationLink.setTargetUri(targetUri)
+    locationLink.setTargetRange(targetRange.toLsp4j)
+    locationLink.setTargetSelectionRange(targetSelectionRange.toLsp4j)
+    locationLink
+  }
 }
