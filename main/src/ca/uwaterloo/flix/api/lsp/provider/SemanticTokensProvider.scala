@@ -333,7 +333,37 @@ object SemanticTokensProvider {
 
     case Expr.Use(_, _, exp, _) => visitExp(exp) // TODO NS-REFACTOR add token for sym
 
-    case Expr.Cst(_, _, _) => Iterator.empty
+    case Expr.Cst(cst, _, loc) => cst match {
+      case Constant.Unit => Iterator(SemanticToken(SemanticTokenType.Type, Nil, loc))
+
+      case Constant.Null => Iterator(SemanticToken(SemanticTokenType.Type, Nil, loc))
+
+      case Constant.Bool(_) => Iterator(SemanticToken(SemanticTokenType.Type, Nil, loc))
+
+      case Constant.Char(_) => Iterator(SemanticToken(SemanticTokenType.String, Nil, loc))
+
+      case Constant.Float32(_) => Iterator(SemanticToken(SemanticTokenType.Number, Nil, loc))
+
+      case Constant.Float64(_) => Iterator(SemanticToken(SemanticTokenType.Number, Nil, loc))
+
+      case Constant.BigDecimal(_) => Iterator(SemanticToken(SemanticTokenType.Number, Nil, loc))
+
+      case Constant.Int8(_) => Iterator(SemanticToken(SemanticTokenType.Number, Nil, loc))
+
+      case Constant.Int16(_) => Iterator(SemanticToken(SemanticTokenType.Number, Nil, loc))
+
+      case Constant.Int32(_) => Iterator(SemanticToken(SemanticTokenType.Number, Nil, loc))
+
+      case Constant.Int64(_) => Iterator(SemanticToken(SemanticTokenType.Number, Nil, loc))
+
+      case Constant.BigInt(_) => Iterator(SemanticToken(SemanticTokenType.Number, Nil, loc))
+
+      case Constant.Str(_) => Iterator(SemanticToken(SemanticTokenType.String, Nil, loc))
+
+      case Constant.Regex(_) => Iterator(SemanticToken(SemanticTokenType.Regexp, Nil, loc))
+
+      case Constant.RecordEmpty => Iterator(SemanticToken(SemanticTokenType.Type, Nil, loc))
+    }
 
     case Expr.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp)

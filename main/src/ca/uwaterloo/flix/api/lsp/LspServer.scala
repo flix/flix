@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Range
-import ca.uwaterloo.flix.api.lsp.provider.{CodeActionProvider, HighlightProvider, HoverProvider, SemanticTokensProvider}
+import ca.uwaterloo.flix.api.lsp.provider.{CodeActionProvider, CompletionProvider, HighlightProvider, HoverProvider, SemanticTokensProvider}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.api.lsp.{Position, PublishDiagnosticsParams}
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -49,6 +49,13 @@ object LspServer {
 
     System.err.println(s"LSP Server Terminated.")
   }
+
+  /**
+    * The trigger characters for completion.
+    * By default, the client will only trigger completion requests on [a-zA-Z].
+    * These are the additional trigger characters.
+    */
+  private val TriggerChars = List("#", ".", "/", "?")
 
   private class FlixLanguageServer(o: Options) extends LanguageServer with LanguageClientAware {
     /**
@@ -115,6 +122,7 @@ object LspServer {
         )
       )
       serverCapabilities.setCodeActionProvider(true)
+      serverCapabilities.setCompletionProvider(new CompletionOptions(true, TriggerChars.asJava))
       serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)// TODO: make it incremental
 
       serverCapabilities
@@ -239,6 +247,14 @@ object LspServer {
         .map(messages.Either.forRight[Command, CodeAction])
         .asJava
       CompletableFuture.completedFuture(codeActions)
+    }
+
+    override def completion(params: CompletionParams): CompletableFuture[messages.Either[util.List[CompletionItem], CompletionList]] = {
+      val uri = params.getTextDocument.getUri
+      val source = flixLanguageServer.sources(uri)
+      val pos = Position.fromLsp4j(params.getPosition)
+      val completions = CompletionProvider.autoComplete(uri, pos, source, flixLanguageServer.currentErrors)(flixLanguageServer.flix, flixLanguageServer.root)
+      CompletableFuture.completedFuture(messages.Either.forRight[util.List[CompletionItem], CompletionList](completions.toLsp4j))
     }
 
     /**

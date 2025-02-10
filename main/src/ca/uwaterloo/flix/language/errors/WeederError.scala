@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
+import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -981,9 +982,10 @@ object WeederError {
   /**
     * An error raised to indicate an illegal intrinsic.
     *
+    * @param qn  the qualified name of the illegal intrinsic.
     * @param loc the location where the illegal intrinsic occurs.
     */
-  case class UnqualifiedUse(loc: SourceLocation) extends WeederError {
+  case class UnqualifiedUse(qn: Name.QName, loc: SourceLocation) extends WeederError {
     def summary: String = "Unqualified use."
 
     def message(formatter: Formatter): String = {
