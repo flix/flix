@@ -15,8 +15,12 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import org.eclipse.lsp4j
+import org.eclipse.lsp4j.jsonrpc.messages
 import org.json4s.JsonDSL.*
 import org.json4s.*
+
+import scala.jdk.CollectionConverters.SeqHasAsJava
 
 /**
   * Companion object of [[CompletionItem]].
@@ -68,4 +72,19 @@ case class CompletionItem(
       ("insertTextFormat" -> insertTextFormat.toInt) ~
       ("additionalTextEdits" -> additionalTextEdits.map(_.toJSON)) ~
       ("commitCharacters" -> commitCharacters)
+
+  def toLsp4j: lsp4j.CompletionItem = {
+    val ci = new lsp4j.CompletionItem()
+    ci.setLabel(label)
+    ci.setSortText(sortText)
+    ci.setFilterText(filterText.orNull)
+    ci.setTextEdit(messages.Either.forLeft(textEdit.toLsp4j))
+    ci.setDetail(detail.orNull)
+    ci.setDocumentation(documentation.orNull)
+    ci.setKind(kind.toLsp4j)
+    ci.setInsertTextFormat(insertTextFormat.toLsp4j)
+    ci.setAdditionalTextEdits(additionalTextEdits.map(_.toLsp4j).asJava)
+    ci.setCommitCharacters(commitCharacters.asJava)
+    ci
+  }
 }
