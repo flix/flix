@@ -636,7 +636,7 @@ object Lexer {
     * Moves current position past all whitespace characters.
     */
   private def whitespace()(implicit s: State): Unit =
-    s.sc.advanceWhitespace()
+    s.sc.advanceWhile(_.isWhitespace)
 
   /**
     * Moves current position past a name (both upper- and lower-case).
@@ -668,12 +668,7 @@ object Lexer {
     * IE. "Χαίρετε"
     */
   private def acceptGreekName()(implicit s: State): TokenKind = {
-    while (!eof()) {
-      if (!isGreekNameChar(peek())) {
-        return TokenKind.NameGreek
-      }
-      advance()
-    }
+    s.sc.advanceWhile(isGreekNameChar)
     TokenKind.NameGreek
   }
 
@@ -691,12 +686,7 @@ object Lexer {
     * IE. "⊆"
     */
   private def acceptMathName()(implicit s: State): TokenKind = {
-    while (!eof()) {
-      if (!isMathNameChar(peek())) {
-        return TokenKind.NameMath
-      }
-      advance()
-    }
+    s.sc.advanceWhile(isMathNameChar)
     TokenKind.NameMath
   }
 
@@ -712,12 +702,7 @@ object Lexer {
     * Moves current position past a named hole. IE. "?foo".
     */
   private def acceptNamedHole()(implicit s: State): TokenKind = {
-    while (!eof()) {
-      if (!peek().isLetter && !peek().isDigit) {
-        return TokenKind.HoleNamed
-      }
-      advance()
-    }
+    s.sc.advanceWhile(c => c.isLetter || c.isDigit)
     TokenKind.HoleNamed
   }
 
@@ -750,13 +735,7 @@ object Lexer {
     * of the characters in [[isUserOp]].
     */
   private def acceptUserDefinedOp()(implicit s: State): TokenKind = {
-    while (!eof()) {
-      if (isUserOp(peek()).isEmpty) {
-        return TokenKind.UserDefinedOperator
-      } else {
-        advance()
-      }
-    }
+    s.sc.advanceWhile(c => isUserOp(c).isDefined)
     TokenKind.UserDefinedOperator
   }
 
@@ -1173,7 +1152,7 @@ object Lexer {
       * If the cursor has advanced past the content, EOF is returned (`'\u0000'`).
       */
     def advance(): Char = {
-      if (offset >= data.length) {
+      if (this.eof) {
         '\u0000'
       } else {
         val c = data(offset)
@@ -1208,7 +1187,7 @@ object Lexer {
       * If the cursor has advanced past the content, EOF is returned (`'\u0000'`).
       */
     def peek: Char = {
-      if (offset < data.length) {
+      if (this.inBounds) {
         data(offset)
       } else {
         '\u0000' // EOF char
@@ -1218,13 +1197,8 @@ object Lexer {
     /** Returns true if the cursor has moved past the end. */
     def eof: Boolean = offset >= data.length
 
-    /** Continuously advance past whitespace characters. */
-    def advanceWhitespace(): Unit = {
-      // This is finite since EOF is not whitespace.
-      while (this.peek.isWhitespace) {
-        advance()
-      }
-    }
+    /** Returns true if the cursor has not reached end of file. */
+    def inBounds: Boolean = offset < data.length
 
     /**
       * Advance the cursor past `s` if it matches the current content.
@@ -1249,6 +1223,13 @@ object Lexer {
       }
 
       true
+    }
+
+    /** Continuously advance the cursor while `p` returns true. */
+    def advanceWhile(p: Char => Boolean): Unit = {
+      while (this.inBounds && p(data(offset))) {
+        advance()
+      }
     }
 
     /** Returns a copy of `this`, pointing to the same underlying array. */
