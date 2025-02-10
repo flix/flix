@@ -90,7 +90,7 @@ object BootstrapError {
     }
   }
 
-  case class TrustError() extends BootstrapError {
+  case object TrustError extends BootstrapError {
     override def message(f: Formatter): String = "TrustError"
   }
 }

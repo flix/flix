@@ -918,13 +918,19 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   // TODO: Maybe consider just moving this into checkTrust and return failure if this is not the case
   def isProjectMode: Boolean = this.optManifest.isDefined
 
-  def checkTrust(root: TypedAst.Root)(implicit out: PrintStream, flix: Flix): Validation[Unit, BootstrapError.TrustError] = {
+  def checkTrust(root: TypedAst.Root)(implicit out: PrintStream, flix: Flix): Validation[Unit, BootstrapError.TrustError.type] = {
+    // TODO: 1. Find each library in the toml file
+    // TODO: 2. For each library, find its permission
+    // TODO: 3. Pair each TrustValidation with its corresponding library
+    // TODO: 4. Check that each "error" is allowed within the permission level of the corresponding library
+    // TODO: 5. Report each violation.
+    // TODO: 6. Update error message formatting
     out.println("Validating library permissions...")
     val errors = TrustValidation.run(root)
     if (errors.isEmpty) {
       Validation.Success(())
     } else {
-      Validation.Failure(Chain.from(errors.map(_ => BootstrapError.TrustError())))
+      Validation.Failure(Chain.from(errors.map(_ => BootstrapError.TrustError)))
     }
   }
 }
