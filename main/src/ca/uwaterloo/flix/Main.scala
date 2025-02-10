@@ -123,7 +123,7 @@ object Main {
     // check if command was passed.
     try {
       implicit val formatter: Formatter = Formatter.getDefault
-      implicit val out: PrintStream = System.err
+      implicit val out: PrintStream = System.out
 
       cmdOpts.command match {
         case Command.None =>
