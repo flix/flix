@@ -10,16 +10,16 @@ import ca.uwaterloo.flix.util.ParOps
 object TrustValidation {
 
   def run(root: TypedAst.Root)(implicit flix: Flix): List[TrustError] = {
-    val defErrors = ParOps.parMap(root.defs.values)(visitDef).flatten.toList
+    val traitErrors = ParOps.parMap(root.traits.values)(visitTrait).flatten.toList
     val instanceErrors = ParOps.parMap(root.instances.values)(visitInstance).flatten.toList
     val signatureErrors = ParOps.parMap(root.sigs.values)(visitSig).flatten.toList
-    val traitErrors = ParOps.parMap(root.traits.values)(visitTrait).flatten.toList
-    defErrors ::: instanceErrors ::: signatureErrors ::: traitErrors
+    val defErrors = ParOps.parMap(root.defs.values)(visitDef).flatten.toList
+    traitErrors ::: instanceErrors ::: signatureErrors ::: defErrors
   }
 
-  private def visitDef(defn0: TypedAst.Def): List[TrustError] = defn0 match {
-    case TypedAst.Def(_, _, exp, loc) if isLibrary(loc) => visitExp(exp)(loc)
-    case TypedAst.Def(_, _, _, _) => List.empty
+  private def visitTrait(trait0: TypedAst.Trait): List[TrustError] = trait0 match {
+    case TypedAst.Trait(_, _, _, _, _, _, _, sigs, laws, loc) if isLibrary(loc) => sigs.flatMap(visitSig) ::: laws.flatMap(visitDef)
+    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, _) => List.empty
   }
 
   private def visitInstance(instance0: TypedAst.Instance): List[TrustError] = instance0 match {
@@ -32,9 +32,9 @@ object TrustValidation {
     case TypedAst.Sig(_, _, _, _) => List.empty
   }
 
-  private def visitTrait(trait0: TypedAst.Trait): List[TrustError] = trait0 match {
-    case TypedAst.Trait(_, _, _, _, _, _, _, sigs, laws, loc) if isLibrary(loc) => sigs.flatMap(visitSig) ::: laws.flatMap(visitDef)
-    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, _) => List.empty
+  private def visitDef(defn0: TypedAst.Def): List[TrustError] = defn0 match {
+    case TypedAst.Def(_, _, exp, loc) if isLibrary(loc) => visitExp(exp)(loc)
+    case TypedAst.Def(_, _, _, _) => List.empty
   }
 
   private def visitExp(expr0: TypedAst.Expr)(implicit loc0: SourceLocation): List[TrustError] = expr0 match {
