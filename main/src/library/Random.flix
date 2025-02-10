@@ -19,17 +19,17 @@
 pub eff Random {
 
     ///
-    /// Returns a pseudorandom boolean.
+    /// Returns a pseudorandom boolean value with equal probability of being `true` or `false`.
     ///
     def randomBool(): Bool
 
     ///
-    /// Returns a pseudorandom 32-bit floating-point number.
+    /// Returns a pseudorandom 32-bit floating-point number in the range [0.0, 1.0].
     ///
     def randomFloat32(): Float32
 
     ///
-    /// Returns a pseudorandom 64-bit floating-point number.
+    /// Returns a pseudorandom 64-bit floating-point number in the range [0.0, 1.0].
     ///
     def randomFloat64(): Float64
 
@@ -44,7 +44,7 @@ pub eff Random {
     def randomInt64(): Int64
 
     ///
-    /// Returns a Gaussian distributed 64-bit floating point number.
+    /// Returns 64-bit floating point number following a standard normal (Gaussian) distribution.
     ///
     def randomGaussian(): Float64
 
