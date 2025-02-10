@@ -108,8 +108,8 @@ object LspServer {
       serverCapabilities.setSemanticTokensProvider(
         new SemanticTokensWithRegistrationOptions(
           new SemanticTokensLegend(
-            List("class", "enum", "enumMember", "function", "interface", "operator", "parameter", "property", "method", "namespace", "type", "typeParameter", "variable").asJava,
-            List("declaration", "definition").asJava
+            SemanticTokenType.getWholeList.asJava,
+            SemanticTokenModifier.getWholeList.asJava
           ),
           true
         )
