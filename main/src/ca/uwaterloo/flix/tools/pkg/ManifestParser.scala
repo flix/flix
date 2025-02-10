@@ -404,7 +404,11 @@ object ManifestParser {
     // Ensure the permissions is a string.
     if (!depTbl.isString(key)) {
       val perms = depTbl.get(key)
-      Err(ManifestError.FlixDependencyPermissionTypeError(Some(p), key, perms))
+      if (perms == null) {
+        Ok(Permissions.FlixOnly)
+      } else {
+        Err(ManifestError.FlixDependencyPermissionTypeError(Some(p), key, perms))
+      }
     } else {
       val permRaw = depTbl.getString(key)
       Permissions.fromString(permRaw) match {
