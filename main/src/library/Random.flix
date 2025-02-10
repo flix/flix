@@ -44,7 +44,7 @@ pub eff Random {
     def randomInt64(): Int64
 
     ///
-    /// Returns 64-bit floating point number following a standard normal (Gaussian) distribution.
+    /// Returns a 64-bit floating point number following a standard normal (Gaussian) distribution.
     ///
     def randomGaussian(): Float64
 
