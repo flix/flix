@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.Main.Command.PlainLsp
+import ca.uwaterloo.flix.Main.Command.{Check, PlainLsp}
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
@@ -352,6 +352,11 @@ object Main {
               errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
+
+        case Command.CheckPermissions =>
+          out.println("TODO")
+          System.exit(0)
+
         case Command.Zhegalkin =>
           ZheglakinPerf.run(options.XPerfN)
       }
@@ -443,6 +448,8 @@ object Main {
 
     case object EffectUpgrade extends Command
 
+    case object CheckPermissions extends Command
+
     case object Zhegalkin extends Command
 
   }
@@ -522,9 +529,11 @@ object Main {
 
       cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
 
-      cmd("effect-lock").action((_, c) => c.copy(command = Command.EffectLock))
+      cmd("effect-lock").action((_, c) => c.copy(command = Command.EffectLock)).hidden()
 
-      cmd("effect-upgrade").action((_, c) => c.copy(command = Command.EffectUpgrade))
+      cmd("effect-upgrade").action((_, c) => c.copy(command = Command.EffectUpgrade)).hidden()
+
+      cmd("check-permissions").action((_, c) => c.copy(command = Command.CheckPermissions)).hidden()
 
       cmd("Xzhegalkin").action((_, c) => c.copy(command = Command.Zhegalkin)).children(
         opt[Int]("n")
