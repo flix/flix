@@ -10,9 +10,13 @@ sealed trait TrustError
 
 object TrustError {
 
+  case class InstanceOfUse(expr: TypedAst.Expr.InstanceOf, loc: SourceLocation) extends TrustError
+
   case class CheckedCastUse(exp: TypedAst.Expr.CheckedCast, loc: SourceLocation) extends TrustError
 
   case class UncheckedCastUse(exp: TypedAst.Expr.UncheckedCast, loc: SourceLocation) extends TrustError
+
+  case class UnsafeUse(exp: TypedAst.Expr.Unsafe, loc: SourceLocation) extends TrustError
 
   case class TryCatchUse(exp: TypedAst.Expr.TryCatch, loc: SourceLocation) extends TrustError
 
