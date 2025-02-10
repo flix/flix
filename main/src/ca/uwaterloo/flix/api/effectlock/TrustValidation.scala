@@ -3,19 +3,38 @@ package ca.uwaterloo.flix.api.effectlock
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Expr
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
+import ca.uwaterloo.flix.language.ast.shared.Input
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 import ca.uwaterloo.flix.util.ParOps
 
 object TrustValidation {
 
   def run(root: TypedAst.Root)(implicit flix: Flix): List[TrustError] = {
-    val defErrors = ParOps.parMap(root.defs.values)(visitDef).flatten
-    // todo: instances, sigs, traits
-    defErrors.toList
+    val defErrors = ParOps.parMap(root.defs.values)(visitDef).flatten.toList
+    val instanceErrors = ParOps.parMap(root.instances.values)(visitInstance).flatten.toList
+    val signatureErrors = ParOps.parMap(root.sigs.values)(visitSig).flatten.toList
+    val traitErrors = ParOps.parMap(root.traits.values)(visitTrait).flatten.toList
+    defErrors ::: instanceErrors ::: signatureErrors ::: traitErrors
   }
 
-  private def visitDef(defn0: TypedAst.Def): List[TrustError] = {
-    visitExp(defn0.exp)(defn0.loc)
+  private def visitDef(defn0: TypedAst.Def): List[TrustError] = defn0 match {
+    case TypedAst.Def(_, _, exp, loc) if isLibrary(loc) => visitExp(exp)(loc)
+    case TypedAst.Def(_, _, _, _) => List.empty
+  }
+
+  private def visitInstance(instance0: TypedAst.Instance): List[TrustError] = instance0 match {
+    case TypedAst.Instance(_, _, _, _, _, _, _, defs, _, loc) if isLibrary(loc) => defs.flatMap(visitDef)
+    case TypedAst.Instance(_, _, _, _, _, _, _, _, _, _) => List.empty
+  }
+
+  private def visitSig(sig0: TypedAst.Sig): List[TrustError] = sig0 match {
+    case TypedAst.Sig(_, _, Some(exp), loc) if isLibrary(loc) => visitExp(exp)(loc)
+    case TypedAst.Sig(_, _, _, _) => List.empty
+  }
+
+  private def visitTrait(trait0: TypedAst.Trait): List[TrustError] = trait0 match {
+    case TypedAst.Trait(_, _, _, _, _, _, _, sigs, laws, loc) if isLibrary(loc) => sigs.flatMap(visitSig) ::: laws.flatMap(visitDef)
+    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, _) => List.empty
   }
 
   private def visitExp(expr0: TypedAst.Expr)(implicit loc0: SourceLocation): List[TrustError] = expr0 match {
@@ -269,6 +288,14 @@ object TrustValidation {
         case Body.Guard(exp, _) => visitExp(exp)
       }
       headErrors ::: bodyErrors
+  }
+
+  private def isLibrary(loc0: SourceLocation): Boolean = loc0.sp1.source.input match {
+    case Input.Text(_, _, _) => false
+    case Input.TxtFile(_, _) => false
+    case Input.PkgFile(_, _) => true // TODO maybe consider flipping this to false?
+    case Input.FileInPackage(_, _, _, _) => true
+    case Input.Unknown => false
   }
 
 }
