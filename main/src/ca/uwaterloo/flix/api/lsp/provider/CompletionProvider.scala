@@ -92,7 +92,7 @@ object CompletionProvider {
         case err: TypeError.MethodNotFound => InvokeMethodCompleter.getCompletions(err.tpe, err.methodName)
         case err: ParseError => err.sctx match {
           // Expressions.
-          case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(ctx) ++ KeywordCompleter.getConstraintKeywords
+          case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(uri) ++ KeywordCompleter.getConstraintKeywords
           case _: SyntacticContext.Expr => ExprCompleter.getCompletions(ctx)
 
           // Declarations.
