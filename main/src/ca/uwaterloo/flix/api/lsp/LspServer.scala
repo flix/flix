@@ -87,6 +87,13 @@ object LspServer {
     private val flixWorkspaceService = new FlixWorkspaceService(this, flixLanguageClient)
 
     /**
+      * The trigger characters for completion.
+      * By default, the client will only trigger completion requests on [a-zA-Z].
+      * These are the additional trigger characters.
+      */
+    private val triggerChars = List("#", ".", "/", "?")
+
+    /**
       * Initializes the language server.
       *
       * During the initialization, we should:
@@ -115,7 +122,7 @@ object LspServer {
         )
       )
       serverCapabilities.setCodeActionProvider(true)
-      serverCapabilities.setCompletionProvider(new CompletionOptions(true, List("#", ".", "/", "?").asJava))
+      serverCapabilities.setCompletionProvider(new CompletionOptions(true, triggerChars.asJava))
       serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)// TODO: make it incremental
 
       serverCapabilities
