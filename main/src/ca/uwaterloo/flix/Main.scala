@@ -360,7 +360,7 @@ object Main {
                 val flix = new Flix().setFormatter(formatter)
                 flix.setOptions(options)
                 flatMapN(bootstrap.check(flix)) {
-                  root => bootstrap.checkTrust(root)
+                  root => bootstrap.checkTrust(root)(out, flix)
                 }
               } else {
                 Validation.Failure(BootstrapError.GeneralError(List("No manifest file found")))
