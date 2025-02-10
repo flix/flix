@@ -18,7 +18,7 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.Main.Command.{Check, PlainLsp}
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
-import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
+import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.ast.shared.SymUse
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZheglakinPerf
@@ -354,8 +354,24 @@ object Main {
           }
 
         case Command.CheckPermissions =>
-          out.println("TODO")
-          System.exit(0)
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+            bootstrap =>
+              if (bootstrap.isProjectMode) {
+                val flix = new Flix().setFormatter(formatter)
+                flix.setOptions(options)
+                flatMapN(bootstrap.check(flix)) {
+                  root => bootstrap.checkTrust(root)
+                }
+              } else {
+                Validation.Failure(BootstrapError.GeneralError(List("No manifest file found")))
+              }
+          }.toResult match {
+            case Result.Ok(_) =>
+              System.exit(0)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
 
         case Command.Zhegalkin =>
           ZheglakinPerf.run(options.XPerfN)

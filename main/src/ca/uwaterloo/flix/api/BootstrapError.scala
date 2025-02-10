@@ -89,4 +89,8 @@ object BootstrapError {
          |""".stripMargin
     }
   }
+
+  case class TrustError() extends BootstrapError {
+    override def message(f: Formatter): String = "TrustError"
+  }
 }

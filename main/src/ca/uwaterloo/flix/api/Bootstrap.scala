@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getEffectLockFile, getManifestFile, getPkgFile}
-import ca.uwaterloo.flix.api.effectlock.EffectLock
+import ca.uwaterloo.flix.api.effectlock.{EffectLock, TrustValidation}
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialization
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialization.{Library, NamedTypeSchemes}
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
@@ -913,5 +913,18 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   private def resolveLibName(path: Path): String = {
     path.getParent.getParent.getFileName.toString
+  }
+
+  // TODO: Maybe consider just moving this into checkTrust and return failure if this is not the case
+  def isProjectMode: Boolean = this.optManifest.isDefined
+
+  def checkTrust(root: TypedAst.Root)(implicit out: PrintStream, flix: Flix): Validation[Unit, BootstrapError.TrustError] = {
+    out.println("Validating library permissions...")
+    val errors = TrustValidation.run(root)
+    if (errors.isEmpty) {
+      Validation.Success(())
+    } else {
+      Validation.Failure(Chain.from(errors.map(_ => BootstrapError.TrustError())))
+    }
   }
 }
