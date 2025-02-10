@@ -2,6 +2,10 @@ package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 
+/**
+  * TODO maybe we can just remove this type entirely and return a list of expressions in TrustValidation
+  * however this allows the caller to easily filter out the errors instead of pattern matching on the entire ast.
+  */
 sealed trait TrustError
 
 object TrustError {
