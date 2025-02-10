@@ -47,9 +47,13 @@ object CompletionProvider {
   def autoComplete(uri: String, pos: Position, source: String, currentErrors: List[CompilationMessage])(implicit flix: Flix, root: TypedAst.Root): CompletionList = {
     val completionItems = getCompletionContext(source, uri, pos, currentErrors).map {ctx =>
       errorsAt(ctx.uri, ctx.pos, currentErrors).flatMap({
-        case WeederError.UnqualifiedUse(_) => UseCompleter.getCompletions(ctx)
+        case err: WeederError.UnqualifiedUse =>
+          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
+          UseCompleter.getCompletions(ctx.uri, namespace, ident)
         case WeederError.UndefinedAnnotation(_, _) => KeywordCompleter.getModKeywords
-        case ResolutionError.UndefinedUse(_, _, _, _) => UseCompleter.getCompletions(ctx)
+        case err: ResolutionError.UndefinedUse =>
+          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
+          UseCompleter.getCompletions(ctx.uri, namespace, ident)
         case err: ResolutionError.UndefinedTag =>
           val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
           EnumCompleter.getCompletions(err, namespace, ident) ++
@@ -101,7 +105,7 @@ object CompletionProvider {
           case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
 
           // Uses.
-          case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
+          //case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
 
           // With.
           case SyntacticContext.WithClause => WithCompleter.getCompletions(ctx)

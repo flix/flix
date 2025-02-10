@@ -306,6 +306,14 @@ object Symbol {
   }
 
   /**
+   * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
+   */
+  def mkEffectSym(fqn: String): EffectSym = split(fqn) match {
+      case None => new EffectSym(Nil, fqn, SourceLocation.Unknown)
+      case Some((ns, name)) => new EffectSym(ns, name, SourceLocation.Unknown)
+    }
+
+  /**
     * Returns the operation symbol for the given name `ident` in the effect associated with the given effect symbol `effectSym`.
     */
   def mkOpSym(effectSym: EffectSym, ident: Name.Ident): OpSym = {

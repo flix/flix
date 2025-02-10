@@ -456,17 +456,25 @@ sealed trait Completion {
         sortText      = name,
         textEdit      = TextEdit(context.range, name),
         documentation = None,
-        kind          = CompletionItemKind.Method
+        kind          = CompletionItemKind.Function
       )
 
-    case Completion.UseEnumTagCompletion(sym, caze) =>
-      val name = s"${sym.toString}.${caze.sym.name}"
+    case Completion.UseTrtCompletion(name) =>
       CompletionItem(
         label         = name,
-        sortText      = Priority.toSortText(Priority.Lower, name),
+        sortText      = name,
         textEdit      = TextEdit(context.range, name),
         documentation = None,
-        kind          = CompletionItemKind.Method
+        kind          = CompletionItemKind.Interface
+      )
+
+    case Completion.UseEnumTagCompletion(name) =>
+      CompletionItem(
+        label         = name,
+        sortText      = name,
+        textEdit      = TextEdit(context.range, name),
+        documentation = None,
+        kind          = CompletionItemKind.EnumMember
       )
 
     case Completion.UseOpCompletion(name) =>
@@ -864,12 +872,19 @@ object Completion {
   case class UseDefCompletion(name: String) extends Completion
 
   /**
+    * Represents a Use Trait completion.
+    *
+    * @param name the name of the use enum tag completion.
+    */
+  case class UseTrtCompletion(name: String) extends Completion
+
+  /**
     * Represents a Use Enum Tag completion
     *
     * @param enumSym the sym of the enum.
     * @param caze    the case of the enum.
     */
-  case class UseEnumTagCompletion(enumSym: EnumSym, caze: TypedAst.Case) extends Completion
+  case class UseEnumTagCompletion(name: String) extends Completion
 
   /**
     * Represents a Use Op completion.
