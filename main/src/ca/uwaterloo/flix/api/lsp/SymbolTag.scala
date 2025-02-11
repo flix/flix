@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import org.eclipse.lsp4j
 import org.json4s.JsonAST.{JInt, JValue}
 
 /**
@@ -24,6 +25,8 @@ trait SymbolTag {
   def toJSON: JValue = this match {
     case SymbolTag.Deprecated => JInt(1)
   }
+
+  def toLsp4j: lsp4j.SymbolTag = lsp4j.SymbolTag.Deprecated
 }
 
 object SymbolTag {
