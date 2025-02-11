@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Range
-import ca.uwaterloo.flix.api.lsp.provider.{CodeActionProvider, CompletionProvider, FindReferencesProvider, HighlightProvider, HoverProvider, SemanticTokensProvider}
+import ca.uwaterloo.flix.api.lsp.provider.{CodeActionProvider, CompletionProvider, FindReferencesProvider, GotoProvider, HighlightProvider, HoverProvider, SemanticTokensProvider}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.api.lsp.{Position, PublishDiagnosticsParams}
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -124,6 +124,7 @@ object LspServer {
       serverCapabilities.setCodeActionProvider(true)
       serverCapabilities.setCompletionProvider(new CompletionOptions(true, TriggerChars.asJava))
       serverCapabilities.setReferencesProvider(true)
+      serverCapabilities.setDefinitionProvider(true)
       serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)// TODO: make it incremental
 
       serverCapabilities
@@ -250,19 +251,19 @@ object LspServer {
       CompletableFuture.completedFuture(codeActions)
     }
 
-    override def references(params: ReferenceParams): CompletableFuture[util.List[_ <: Location]] = {
-      val uri = params.getTextDocument.getUri
-      val pos = Position.fromLsp4j(params.getPosition)
-      val references = FindReferencesProvider.findRefs(uri, pos)(flixLanguageServer.root)
-      CompletableFuture.completedFuture(references.map(_.toLsp4j).toList.asJava)
-    }
-
     override def completion(params: CompletionParams): CompletableFuture[messages.Either[util.List[CompletionItem], CompletionList]] = {
       val uri = params.getTextDocument.getUri
       val source = flixLanguageServer.sources(uri)
       val pos = Position.fromLsp4j(params.getPosition)
       val completions = CompletionProvider.autoComplete(uri, pos, source, flixLanguageServer.currentErrors)(flixLanguageServer.flix, flixLanguageServer.root)
       CompletableFuture.completedFuture(messages.Either.forRight[util.List[CompletionItem], CompletionList](completions.toLsp4j))
+    }
+
+    override def definition(params: DefinitionParams): CompletableFuture[messages.Either[util.List[_ <: Location], util.List[_ <: LocationLink]]] = {
+      val uri = params.getTextDocument.getUri
+      val pos = Position.fromLsp4j(params.getPosition)
+      val definition = GotoProvider.processGoto(uri, pos)(flixLanguageServer.root)
+      CompletableFuture.completedFuture(messages.Either.forRight(definition.map(_.toLsp4j).toList.asJava))
     }
 
     /**
@@ -293,6 +294,13 @@ object LspServer {
       val semanticTokens = new lsp4j.SemanticTokens()
       semanticTokens.setData(tokens.map(Int.box).asJava)
       CompletableFuture.completedFuture(semanticTokens)
+    }
+
+    override def references(params: ReferenceParams): CompletableFuture[util.List[_ <: Location]] = {
+      val uri = params.getTextDocument.getUri
+      val pos = Position.fromLsp4j(params.getPosition)
+      val references = FindReferencesProvider.findRefs(uri, pos)(flixLanguageServer.root)
+      CompletableFuture.completedFuture(references.map(_.toLsp4j).toList.asJava)
     }
   }
 
