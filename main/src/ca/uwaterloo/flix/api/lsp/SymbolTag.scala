@@ -26,7 +26,9 @@ trait SymbolTag {
     case SymbolTag.Deprecated => JInt(1)
   }
 
-  def toLsp4j: lsp4j.SymbolTag = lsp4j.SymbolTag.Deprecated
+  def toLsp4j: lsp4j.SymbolTag = this match {
+    case SymbolTag.Deprecated => lsp4j.SymbolTag.Deprecated
+  }
 }
 
 object SymbolTag {
