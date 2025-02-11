@@ -311,6 +311,8 @@ object LspServer {
       val pos = Position.fromLsp4j(params.getPosition)
       RenameProvider.processRename(newName, uri, pos)(flixLanguageServer.root) match {
         case Some(rename) => CompletableFuture.completedFuture(rename.toLsp4j)
+
+        // If nothing is found it's OK to return the empty WorkspaceEdit.
         case None => CompletableFuture.completedFuture(new WorkspaceEdit())
       }
     }
