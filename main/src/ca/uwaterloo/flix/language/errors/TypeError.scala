@@ -498,7 +498,7 @@ object TypeError {
          |Nevertheless, 'checked_cast' is way to use sub-typing in a safe manner, for example:
          |
          |    let s = "Hello World";
-         |    let o: ##java.lang.Object = checked_cast(s);
+         |    let o: Object = checked_cast(s);
          |""".stripMargin
     )
   }
