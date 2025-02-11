@@ -125,6 +125,7 @@ object LspServer {
       serverCapabilities.setCompletionProvider(new CompletionOptions(true, TriggerChars.asJava))
       serverCapabilities.setReferencesProvider(true)
       serverCapabilities.setDefinitionProvider(true)
+      serverCapabilities.setImplementationProvider(true)
       serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)// TODO: make it incremental
 
       serverCapabilities
@@ -301,6 +302,13 @@ object LspServer {
       val pos = Position.fromLsp4j(params.getPosition)
       val references = FindReferencesProvider.findRefs(uri, pos)(flixLanguageServer.root)
       CompletableFuture.completedFuture(references.map(_.toLsp4j).toList.asJava)
+    }
+
+    override def implementation(params: ImplementationParams): CompletableFuture[messages.Either[util.List[_ <: Location], util.List[_ <: LocationLink]]] = {
+      val uri = params.getTextDocument.getUri
+      val pos = Position.fromLsp4j(params.getPosition)
+      val implementation = GotoProvider.processGoto(uri, pos)(flixLanguageServer.root)
+      CompletableFuture.completedFuture(messages.Either.forRight(implementation.map(_.toLsp4j).toList.asJava))
     }
   }
 
