@@ -108,12 +108,4 @@ object PackageError {
   case class ManifestParseError(e: ManifestError) extends PackageError {
     override def message(f: Formatter): String = e.message(f)
   }
-
-  case object MissingManifest extends PackageError {
-    override def message(f: Formatter): String =
-      s"""
-         |Cannot build a package without a `flix.toml` file.
-         |""".stripMargin
-  }
-
 }

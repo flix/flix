@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageError, PackageModules, ReleaseError}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
@@ -632,17 +632,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def buildPkg()(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
 
-    // Check that there is a `flix.toml` file.
-    if (!Files.exists(getManifestFile(projectPath))) {
-      return Validation.Failure(BootstrapError.FileError(s"Cannot create a Flix package without a `${formatter.red("flix.toml")}` file."))
-    }
-
     // Create the artifact directory, if it does not exist.
     Files.createDirectories(getArtifactDirectory(projectPath))
 
     val manifest = optManifest match {
       case Some(m) => m
-      case None => return Validation.Failure(BootstrapError.FlixPackageError(PackageError.MissingManifest))
+      case None => return Validation.Failure(BootstrapError.FileError(s"Cannot create a Flix package without a `${formatter.red("flix.toml")}` file."))
     }
 
     val pkgFile = Bootstrap.getPkgFile(projectPath, manifest.name)
