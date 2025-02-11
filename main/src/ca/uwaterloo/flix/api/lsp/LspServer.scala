@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Range
-import ca.uwaterloo.flix.api.lsp.provider.{CodeActionProvider, CompletionProvider, FindReferencesProvider, GotoProvider, HighlightProvider, HoverProvider, InlayHintProvider, SemanticTokensProvider}
+import ca.uwaterloo.flix.api.lsp.provider.{CodeActionProvider, CompletionProvider, FindReferencesProvider, GotoProvider, HighlightProvider, HoverProvider, InlayHintProvider, RenameProvider, SemanticTokensProvider}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.api.lsp.{Position, PublishDiagnosticsParams}
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -126,6 +126,7 @@ object LspServer {
       serverCapabilities.setReferencesProvider(true)
       serverCapabilities.setDefinitionProvider(true)
       serverCapabilities.setImplementationProvider(true)
+      serverCapabilities.setRenameProvider(new RenameOptions(false))
       serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)// TODO: make it incremental
 
       serverCapabilities
@@ -302,6 +303,16 @@ object LspServer {
       val pos = Position.fromLsp4j(params.getPosition)
       val references = FindReferencesProvider.findRefs(uri, pos)(flixLanguageServer.root)
       CompletableFuture.completedFuture(references.map(_.toLsp4j).toList.asJava)
+    }
+
+    override def rename(params: RenameParams): CompletableFuture[WorkspaceEdit] = {
+      val newName = params.getNewName
+      val uri = params.getTextDocument.getUri
+      val pos = Position.fromLsp4j(params.getPosition)
+      RenameProvider.processRename(newName, uri, pos)(flixLanguageServer.root) match {
+        case Some(rename) => CompletableFuture.completedFuture(rename.toLsp4j)
+        case None => CompletableFuture.completedFuture(new WorkspaceEdit())
+      }
     }
 
     override def implementation(params: ImplementationParams): CompletableFuture[messages.Either[util.List[_ <: Location], util.List[_ <: LocationLink]]] = {
