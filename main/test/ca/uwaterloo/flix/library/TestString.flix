@@ -258,7 +258,7 @@ def trim06(): Bool = "" == String.trim("  ")
 @test
 def lineSeparator01(): Bool =
     let newline = String.lineSeparator();
-    Char.isWhiteSpace(String.charAt(0, newline)) == true
+    Char.isWhitespace(String.charAt(0, newline)) == true
 
 @test
 def lineSeparator02(): Bool =
