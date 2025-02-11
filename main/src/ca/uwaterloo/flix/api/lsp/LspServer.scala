@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Range
-import ca.uwaterloo.flix.api.lsp.provider.{CodeActionProvider, CompletionProvider, HighlightProvider, HoverProvider, SemanticTokensProvider}
+import ca.uwaterloo.flix.api.lsp.provider.{CodeActionProvider, CompletionProvider, FindReferencesProvider, HighlightProvider, HoverProvider, SemanticTokensProvider}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.api.lsp.{Position, PublishDiagnosticsParams}
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -123,6 +123,7 @@ object LspServer {
       )
       serverCapabilities.setCodeActionProvider(true)
       serverCapabilities.setCompletionProvider(new CompletionOptions(true, TriggerChars.asJava))
+      serverCapabilities.setReferencesProvider(true)
       serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)// TODO: make it incremental
 
       serverCapabilities
@@ -247,6 +248,13 @@ object LspServer {
         .map(messages.Either.forRight[Command, CodeAction])
         .asJava
       CompletableFuture.completedFuture(codeActions)
+    }
+
+    override def references(params: ReferenceParams): CompletableFuture[util.List[_ <: Location]] = {
+      val uri = params.getTextDocument.getUri
+      val pos = Position.fromLsp4j(params.getPosition)
+      val references = FindReferencesProvider.findRefs(uri, pos)(flixLanguageServer.root)
+      CompletableFuture.completedFuture(references.map(_.toLsp4j).toList.asJava)
     }
 
     override def completion(params: CompletionParams): CompletableFuture[messages.Either[util.List[CompletionItem], CompletionList]] = {
