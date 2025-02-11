@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Range
-import ca.uwaterloo.flix.api.lsp.provider.{CodeActionProvider, CompletionProvider, FindReferencesProvider, GotoProvider, HighlightProvider, HoverProvider, SemanticTokensProvider}
+import ca.uwaterloo.flix.api.lsp.provider.{CodeActionProvider, CompletionProvider, FindReferencesProvider, GotoProvider, HighlightProvider, HoverProvider, InlayHintProvider, SemanticTokensProvider}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.api.lsp.{Position, PublishDiagnosticsParams}
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -309,6 +309,13 @@ object LspServer {
       val pos = Position.fromLsp4j(params.getPosition)
       val implementation = GotoProvider.processGoto(uri, pos)(flixLanguageServer.root)
       CompletableFuture.completedFuture(messages.Either.forRight(implementation.map(_.toLsp4j).toList.asJava))
+    }
+
+    override def inlayHint(params: InlayHintParams): CompletableFuture[util.List[InlayHint]] = {
+      val uri = params.getTextDocument.getUri
+      val range = Range.fromLsp4j(params.getRange)
+      val hints = InlayHintProvider.getInlayHints(uri, range)
+      CompletableFuture.completedFuture(hints.map(_.toLsp4j).asJava)
     }
   }
 
