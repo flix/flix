@@ -931,7 +931,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       Validation.Failure(Chain.from(errors))
     }
   }
-  
+
   /**
     * Assumes that the AST can only contain library functions if the library is defined in the manifest file.
     */
@@ -957,23 +957,30 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   private def validateTrustLevels(lib: String, permissions: Permissions, suspiciousLibExprs: List[effectlock.SuspiciousExpr]): List[BootstrapError.TrustError.type] = permissions match {
+    // TODO: Use lib name for error reporting
     case Permissions.FlixOnly => suspiciousLibExprs.map(_ => BootstrapError.TrustError) // if it is empty then no alarms were raised
-    case Permissions.Restricted => suspiciousLibExprs.flatMap {
-      case SuspiciousExpr.InstanceOfUse(expr, loc) => ???
-      case SuspiciousExpr.CheckedCastUse(expr, loc) => ???
-      case SuspiciousExpr.UncheckedCastUse(expr, loc) => ???
-      case SuspiciousExpr.UnsafeUse(expr, loc) => ???
-      case SuspiciousExpr.TryCatchUse(expr, loc) => ???
-      case SuspiciousExpr.ThrowUse(expr, loc) => ???
-      case SuspiciousExpr.InvokeConstructorUse(expr, loc) => ???
-      case SuspiciousExpr.InvokeMethodUse(expr, loc) => ???
-      case SuspiciousExpr.InvokeStaticMethodUse(expr, loc) => ???
-      case SuspiciousExpr.GetFieldUse(expr, loc) => ???
-      case SuspiciousExpr.PutFieldUse(expr, loc) => ???
-      case SuspiciousExpr.GetStaticFieldUse(expr, loc) => ???
-      case SuspiciousExpr.PutStaticFieldUse(expr, loc) => ???
-      case SuspiciousExpr.NewObjectUse(expr, loc) => ???
-    }
+    case Permissions.Restricted => suspiciousLibExprs.flatMap(validationSuspiciousExpr)
     case Permissions.All => List.empty
   }
+
+  /**
+    * Validates suspicious expressions according to the [[Permissions.Restricted]] level.
+    */
+  private def validationSuspiciousExpr(expr0: SuspiciousExpr): Option[BootstrapError.TrustError.type] = expr0 match {
+    case SuspiciousExpr.InstanceOfUse(expr, loc) => Some(BootstrapError.TrustError)
+    case SuspiciousExpr.CheckedCastUse(expr, loc) => Some(BootstrapError.TrustError)
+    case SuspiciousExpr.UncheckedCastUse(expr, loc) => Some(BootstrapError.TrustError)
+    case SuspiciousExpr.UnsafeUse(expr, loc) => None
+    case SuspiciousExpr.TryCatchUse(expr, loc) => None
+    case SuspiciousExpr.ThrowUse(expr, loc) => None
+    case SuspiciousExpr.InvokeConstructorUse(expr, loc) => Some(BootstrapError.TrustError)
+    case SuspiciousExpr.InvokeMethodUse(expr, loc) => Some(BootstrapError.TrustError)
+    case SuspiciousExpr.InvokeStaticMethodUse(expr, loc) => Some(BootstrapError.TrustError)
+    case SuspiciousExpr.GetFieldUse(expr, loc) => Some(BootstrapError.TrustError)
+    case SuspiciousExpr.PutFieldUse(expr, loc) => Some(BootstrapError.TrustError)
+    case SuspiciousExpr.GetStaticFieldUse(expr, loc) => Some(BootstrapError.TrustError)
+    case SuspiciousExpr.PutStaticFieldUse(expr, loc) => Some(BootstrapError.TrustError)
+    case SuspiciousExpr.NewObjectUse(expr, loc) => Some(BootstrapError.TrustError)
+  }
+
 }
