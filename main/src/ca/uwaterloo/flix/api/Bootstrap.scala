@@ -927,7 +927,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val libPermissions = libs.keys.map(l => (l, getPermissions(l))).toMap
     // TODO: 3. Pair each TrustValidation with its corresponding library
     val suspiciousExprs = TrustValidation.run(root)
-    val suspiciousLibExprs: ListMap[String, effectlock.TrustError] = ListMap.from(suspiciousExprs.map {
+    val suspiciousLibExprs: ListMap[String, effectlock.SuspiciousExpr] = ListMap.from(suspiciousExprs.map {
       case expr => findMatchingLib(libs, getLib(expr.loc)) -> expr // TODO: May not be strict equality, maybe we have resolve library thing?
     })
     // TODO: 4. Check that each "error" is allowed within the permission level of the corresponding library
@@ -948,5 +948,5 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   private def findMatchingLib(libs: ListMap[String, TypedAst.Def], lib: String): String = ???
 
-  private def validateTrustLevels(libPermissions: Map[String, Permissions], suspiciousLibExprs: ListMap[String, effectlock.TrustError]): List[BootstrapError.TrustError.type] = ???
+  private def validateTrustLevels(libPermissions: Map[String, Permissions], suspiciousLibExprs: ListMap[String, effectlock.SuspiciousExpr]): List[BootstrapError.TrustError.type] = ???
 }
