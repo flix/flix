@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Token, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.IteratorOps
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
@@ -45,6 +45,12 @@ object SemanticTokensProvider {
     val traitTokens = root.traits.values.flatMap {
       case decl if include(uri, decl.sym.loc) => visitTrait(decl)
       case _ => Nil
+    }
+
+    val keywordTokens = root.tokens.values.flatten.collect{
+      case Token(kind, _, _, _, sp1, sp2) if kind.isKeyword =>
+        val loc = SourceLocation(isReal = true, sp1, sp2)
+        SemanticToken(SemanticTokenType.Keyword, Nil, loc)
     }
 
     //
@@ -98,7 +104,7 @@ object SemanticTokensProvider {
     //
     // Collect all tokens into one list.
     //
-    val allTokens = (traitTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ structTokens ++ typeAliasTokens ++ effectTokens).toList
+    val allTokens = (traitTokens ++ keywordTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ structTokens ++ typeAliasTokens ++ effectTokens).toList
 
     //
     // We keep all tokens that are: (i) single-line tokens, (ii) have the same source as `uri`, and (iii) come from real source locations.
