@@ -50,7 +50,7 @@ object SemanticTokensProvider {
     //
     // Construct an iterator of the semantic tokens from keywords.
     //
-    val keywordTokens = for{
+    val keywordTokens = for {
       (src, tokens) <- root.tokens.toList
       if src.name == uri
       Token(kind, _, _, _, sp1, sp2) <- tokens
