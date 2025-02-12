@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Nicola Dardanis
+ * Copyright 2025 Chenhao Gao
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,42 +15,47 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import org.eclipse.lsp4j
 import org.json4s.JsonDSL.*
 import org.json4s.*
 
+import scala.jdk.CollectionConverters.SeqHasAsJava
+
 /**
-  * Represents a `SymbolInformation` in LSP.
+  * Represents a `WorkspaceSymbol` in LSP.
   * Provides information about programming constructs like variables, classes, interfaces etc.
   *
   * @param name           The name of this symbol.
   * @param kind           The kind of this symbol.
   * @param tags           Tags for this symbol.
-  * @param deprecated     Indicates if this symbol is deprecated. (@deprecated Use tags instead)
-  * @param location       The location of this symbol. The location's range is used by a tool
-  *                       to reveal the location in the editor. If the symbol is selected in the
-  *                       tool the range's start information is used to position the cursor. So
-  *                       the range usually spans more then the actual symbol's name and does
-  *                       normally include things like visibility modifiers.
-  *                       The range doesn't have to denote a node range in the sense of a abstract
-  *                       syntax tree. It can therefore not be used to re-construct a hierarchy of
-  *                       the symbols.
   * @param containerName  The name of the symbol containing this symbol. This information is for
   *                       user interface purposes (e.g. to render a qualifier in the user interface
   *                       if necessary). It can't be used to re-infer a hierarchy for the document
   *                       symbols.
+  * @param location       The location of this symbol. Whether a server is allowed to
+  *                       return a location without a range depends on the client
+  *                       capability `workspace.symbol.resolveSupport`.
   */
-case class SymbolInformation(name: String,
-                             kind: SymbolKind,
-                             tags: List[SymbolTag] = Nil,
-                             deprecated: Boolean = false,
-                             location: Location,
-                             containerName: Option[String]) {
-
+case class WorkspaceSymbol(name: String,
+                           kind: SymbolKind,
+                           tags: List[SymbolTag] = Nil,
+                           containerName: Option[String],
+                           location: Location,
+                           ) {
   def toJSON: JValue =
     ("name" -> name) ~
       ("kind" -> JInt(kind.toInt)) ~
-      ("location" -> location.toJSON) ~
       ("tags" -> tags.map(_.toJSON)) ~
-      ("deprecated" -> deprecated) ~
-      ("containerName" -> containerName.orNull)
+      ("containerName" -> containerName.orNull) ~
+      ("location" -> location.toJSON)
+
+  def toLsp4j: lsp4j.WorkspaceSymbol = {
+    val ws = new lsp4j.WorkspaceSymbol()
+    ws.setName(name)
+    ws.setKind(kind.toLsp4j)
+    ws.setTags(tags.map(_.toLsp4j).asJava)
+    ws.setContainerName(containerName.orNull)
+    ws.setLocation(lsp4j.jsonrpc.messages.Either.forLeft(location.toLsp4j))
+    ws
+  }
 }
