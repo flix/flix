@@ -16,22 +16,21 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getEffectLockFile, getManifestFile, getPkgFile}
-import ca.uwaterloo.flix.api.effectlock.{EffectLock, TrustValidation}
+import ca.uwaterloo.flix.api.effectlock.{EffectLock, SuspiciousExpr, TrustValidation}
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialization
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialization.{Library, NamedTypeSchemes}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext}
-import ca.uwaterloo.flix.language.errors.NameError.SuspiciousTypeVarName
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, Permissions, ReleaseError}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, Permissions, ReleaseError}
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
-import ca.uwaterloo.flix.util.{FileOps, Formatter, Result, Validation}
+import ca.uwaterloo.flix.util.{FileOps, Formatter, InternalCompilerException, Result, Validation}
 
 import java.io.PrintStream
 import java.nio.file.*
@@ -921,17 +920,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   def checkTrust(root: TypedAst.Root)(implicit out: PrintStream, flix: Flix): Validation[Unit, BootstrapError.TrustError.type] = {
     out.println("Validating library permissions...")
-    // TODO: 1. Find each library in the toml file
-    val libs = getLibs(root)
-    // TODO: 2. For each library, find its permission
-    val libPermissions = libs.keys.map(l => (l, getPermissions(l))).toMap
-    // TODO: 3. Pair each TrustValidation with its corresponding library
+    val libs = getLibs
     val suspiciousExprs = TrustValidation.run(root)
-    val suspiciousLibExprs: ListMap[String, effectlock.SuspiciousExpr] = ListMap.from(suspiciousExprs.map {
-      case expr => findMatchingLib(libs, getLib(expr.loc)) -> expr // TODO: May not be strict equality, maybe we have resolve library thing?
-    })
-    // TODO: 4. Check that each "error" is allowed within the permission level of the corresponding library
-    val errors = validateTrustLevels(libPermissions, suspiciousLibExprs)
+    val suspiciousLibExprs = pairWithLib(suspiciousExprs)
+    val errors = libs.flatMap { case (l, p) => validateTrustLevels(l, p, suspiciousLibExprs.get(l)) }
+
     // TODO: 6. Update error message formatting
     if (errors.isEmpty) {
       Validation.Success(())
@@ -940,13 +933,32 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  private def getLibs(root: TypedAst.Root): ListMap[String, TypedAst.Def] = ???
 
-  private def getLib(location: SourceLocation): String = ???
+  /**
+    * Assumes that the AST can only contain library functions if the library is defined in the manifest file.
+    */
+  private def getLibs: Map[String, Permissions] = {
+    val manifest = optManifest.getOrElse(throw InternalCompilerException("expected manifest file", SourceLocation.Unknown))
+    manifest.dependencies.collect {
+      case Dependency.FlixDependency(_, _, libName, _, permissions) => (libName, permissions)
+    }.toMap
+  }
 
-  private def getPermissions(str: String): Permissions = ???
+  private def libFromLoc(loc: SourceLocation): String = loc.sp1.source.input match {
+    case Input.Text(_, _, _) => throw InternalCompilerException("expected library input", loc)
+    case Input.TxtFile(_, _) => throw InternalCompilerException("expected library input", loc)
+    case Input.PkgFile(packagePath, _) => resolveLibName(packagePath) // TODO: May break
+    case Input.FileInPackage(packagePath, _, _, _) => resolveLibName(packagePath)
+    case Input.Unknown => throw InternalCompilerException("expected library input", loc)
+  }
 
-  private def findMatchingLib(libs: ListMap[String, TypedAst.Def], lib: String): String = ???
+  private def pairWithLib(suspiciousExprs: List[SuspiciousExpr]): ListMap[String, SuspiciousExpr] = {
+    ListMap.from(suspiciousExprs.map {
+      case expr => libFromLoc(expr.loc) -> expr
+    })
+  }
 
-  private def validateTrustLevels(libPermissions: Map[String, Permissions], suspiciousLibExprs: ListMap[String, effectlock.SuspiciousExpr]): List[BootstrapError.TrustError.type] = ???
+  private def validateTrustLevels(lib: String, permissions: Permissions, suspiciousLibExprs: List[effectlock.SuspiciousExpr]): List[BootstrapError.TrustError.type] = {
+    ???
+  }
 }

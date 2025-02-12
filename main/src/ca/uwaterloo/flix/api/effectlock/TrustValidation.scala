@@ -293,7 +293,7 @@ object TrustValidation {
   private def isLibrary(loc0: SourceLocation): Boolean = loc0.sp1.source.input match {
     case Input.Text(_, _, _) => false
     case Input.TxtFile(_, _) => false
-    case Input.PkgFile(_, _) => true // TODO maybe consider flipping this to false?
+    case Input.PkgFile(_, _) => false // TODO maybe consider flipping this to false?
     case Input.FileInPackage(_, _, _, _) => true
     case Input.Unknown => false
   }
