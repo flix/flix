@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ca.uwaterloo.flix.api.lsp
 
 import org.eclipse.lsp4j
@@ -49,4 +48,14 @@ case class WorkspaceSymbol(name: String,
       ("tags" -> tags.map(_.toJSON)) ~
       ("containerName" -> containerName.orNull) ~
       ("location" -> location.toJSON)
+
+  def toLsp4j: lsp4j.WorkspaceSymbol = {
+    val ws = new lsp4j.WorkspaceSymbol()
+    ws.setName(name)
+    ws.setKind(kind.toLsp4j)
+    ws.setTags(tags.map(_.toLsp4j).asJava)
+    ws.setContainerName(containerName.orNull)
+    ws.setLocation(lsp4j.jsonrpc.messages.Either.forLeft(location.toLsp4j))
+    ws
+  }
 }

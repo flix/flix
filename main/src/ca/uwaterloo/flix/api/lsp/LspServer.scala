@@ -352,7 +352,7 @@ object LspServer {
     override def symbol(params: WorkspaceSymbolParams): CompletableFuture[messages.Either[util.List[_ <: SymbolInformation], util.List[_ <: WorkspaceSymbol]]] = {
       val query = params.getQuery
       val symbols = SymbolProvider.processWorkspaceSymbols(query)(flixLanguageServer.root)
-      CompletableFuture.completedFuture(messages.Either.forLeft(symbols.map(_.toLsp4j).asJava))
+      CompletableFuture.completedFuture(messages.Either.forRight(symbols.map(_.toLsp4j).asJava))
     }
   }
 }
