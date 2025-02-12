@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Range
-import ca.uwaterloo.flix.api.lsp.provider.{CodeActionProvider, CompletionProvider, FindReferencesProvider, GotoProvider, HighlightProvider, HoverProvider, InlayHintProvider, RenameProvider, SemanticTokensProvider}
+import ca.uwaterloo.flix.api.lsp.provider.{CodeActionProvider, CompletionProvider, FindReferencesProvider, GotoProvider, HighlightProvider, HoverProvider, InlayHintProvider, RenameProvider, SemanticTokensProvider, SymbolProvider}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.api.lsp.{Position, PublishDiagnosticsParams}
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -127,6 +127,7 @@ object LspServer {
       serverCapabilities.setDefinitionProvider(true)
       serverCapabilities.setImplementationProvider(true)
       serverCapabilities.setRenameProvider(new RenameOptions(false))
+      serverCapabilities.setDocumentSymbolProvider(true)
       serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)// TODO: make it incremental
 
       serverCapabilities
@@ -329,6 +330,12 @@ object LspServer {
       val range = Range.fromLsp4j(params.getRange)
       val hints = InlayHintProvider.getInlayHints(uri, range)
       CompletableFuture.completedFuture(hints.map(_.toLsp4j).asJava)
+    }
+
+    override def documentSymbol(params: DocumentSymbolParams): CompletableFuture[util.List[messages.Either[SymbolInformation, DocumentSymbol]]] = {
+      val uri = params.getTextDocument.getUri
+      val symbols = SymbolProvider.processDocumentSymbols(uri)(flixLanguageServer.root)
+      CompletableFuture.completedFuture(symbols.map(_.toLsp4j).map(messages.Either.forRight[SymbolInformation, DocumentSymbol]).asJava)
     }
   }
 
