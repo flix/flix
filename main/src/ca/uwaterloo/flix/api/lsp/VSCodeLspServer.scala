@@ -65,6 +65,16 @@ import scala.collection.mutable
 class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSocketAddress("localhost", port)) {
 
   /**
+    * A flag to control debugging. When enabled, prints information about slow requests.
+    */
+  private val EnableDebug: Boolean = true
+
+  /**
+    * The maximum acceptable latency, in nanoseconds, before a request is considered slow. Used only for debugging.
+    */
+  private val MaxLatency: Long = 100_000_000 // 100ms
+
+  /**
     * The custom date format to use for logging.
     */
   private val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
@@ -117,10 +127,16 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   override def onMessage(ws: WebSocket, data: String): Unit = try {
     parseRequest(data) match {
       case Ok(request) =>
+        val t = System.nanoTime()
         val result = processRequest(request)(ws)
         if (ws.isOpen) {
           val jsonCompact = JsonMethods.compact(JsonMethods.render(result))
           // val jsonPretty = JsonMethods.pretty(JsonMethods.render(result))
+
+          val e = System.nanoTime() - t
+          if (EnableDebug && e > MaxLatency) {
+            System.err.println(s">> Slow request: '${request.getClass.getSimpleName}' took ${e / 1_000_000} ms.")
+          }
           ws.send(jsonCompact)
         }
       case Err(msg) => log(msg)(ws)
