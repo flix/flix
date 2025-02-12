@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2023 Magnus Madsen, 2025 Jakob Schneider Villumsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,18 +19,18 @@ import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getEffectLockFile,
 import ca.uwaterloo.flix.api.effectlock.{EffectLock, TrustValidation}
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialization
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialization.{Library, NamedTypeSchemes}
-import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, Permissions, ReleaseError}
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
-import ca.uwaterloo.flix.util.{FileOps, Formatter, InternalCompilerException, Result, Validation}
+import ca.uwaterloo.flix.util.{FileOps, Formatter, Result, Validation}
 
 import java.io.PrintStream
 import java.nio.file.*
@@ -920,7 +920,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   def checkTrust(root: TypedAst.Root)(implicit out: PrintStream, flix: Flix): Validation[Unit, BootstrapError.TrustError.type] = {
     // TODO: 1. Find each library in the toml file
+    val libs = getLibs(root)
     // TODO: 2. For each library, find its permission
+    val libPermissions = libs.keys.map(l => (l, getPermissions(l)))
     // TODO: 3. Pair each TrustValidation with its corresponding library
     // TODO: 4. Check that each "error" is allowed within the permission level of the corresponding library
     // TODO: 5. Report each violation.
@@ -933,4 +935,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       Validation.Failure(Chain.from(errors.map(_ => BootstrapError.TrustError)))
     }
   }
+
+  private def getLibs(root: TypedAst.Root): ListMap[String, TypedAst.Def] = ???
+
+  private def getPermissions(str: String): Permissions = ???
 }
