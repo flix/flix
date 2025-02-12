@@ -358,7 +358,7 @@ object UnkindedType {
   }
 
   /**
-    * Returns the ##java.lang.Object type.
+    * Returns the java.lang.Object type.
     */
   def mkObject(loc: SourceLocation): UnkindedType = {
     val obj = Class.forName("java.lang.Object")

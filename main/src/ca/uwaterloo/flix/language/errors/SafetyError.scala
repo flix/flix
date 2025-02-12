@@ -417,7 +417,7 @@ object SafetyError {
       import formatter.*
       s""">> Invalid 'this' parameter for method '${red(name)}''.
          |
-         |Expected 'this' type is ${cyan(s"##${clazz.getName}")}, but the first argument is declared as type ${cyan(illegalThisType.toString)}
+         |Expected 'this' type is ${cyan(s"${clazz.getName}")}, but the first argument is declared as type ${cyan(illegalThisType.toString)}
          |
          |${code(loc, "the method occurs here.")}
          |""".stripMargin
@@ -492,7 +492,7 @@ object SafetyError {
       import formatter.*
       s""">> Missing 'this' parameter for method '${red(name)}''.
          |
-         |The 'this' parameter should have type ${cyan(s"##${clazz.getName}")}
+         |The 'this' parameter should have type ${cyan(s"${clazz.getName}")}
          |
          |${code(loc, "the method occurs here.")}
          |""".stripMargin

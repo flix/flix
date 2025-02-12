@@ -15,8 +15,11 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import org.eclipse.lsp4j
 import org.json4s.JsonDSL.*
 import org.json4s.JValue
+
+import scala.jdk.CollectionConverters.SeqHasAsJava
 
 /**
   * Represent `InlayHint` in LSP.
@@ -55,4 +58,16 @@ case class InlayHint(position: Position, label: String, kind: Option[InlayHintKi
       ("tooltip" -> tooltip) ~
       ("paddingLeft" -> paddingLeft) ~
       ("paddingRight" -> paddingRight)
+
+  def toLsp4j: lsp4j.InlayHint = {
+    val inlayHint = new lsp4j.InlayHint()
+    inlayHint.setPosition(position.toLsp4j)
+    inlayHint.setLabel(label)
+    inlayHint.setKind(kind.map(_.toLsp4j).orNull)
+    inlayHint.setTextEdits(textEdits.map(_.toLsp4j).asJava)
+    inlayHint.setTooltip(tooltip)
+    inlayHint.setPaddingLeft(paddingLeft)
+    inlayHint.setPaddingRight(paddingRight)
+    inlayHint
+  }
 }

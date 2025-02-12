@@ -61,13 +61,14 @@ object FindReferencesProvider {
     * @param root The root AST node of the Flix project.
     * @return     A Set of SourceLocations.
     */
-  def findRefs(uri: String, pos: Position)(implicit root: Root): Set[SourceLocation] = {
+  def findRefs(uri: String, pos: Position)(implicit root: Root): Set[Location] = {
     val left = searchLeftOfCursor(uri, pos).flatMap(getOccurs)
     val right = searchRightOfCursor(uri, pos).flatMap(getOccurs)
 
     right.orElse(left)
       .map(_.filter(isInProject))
       .getOrElse(Set.empty)
+      .map(Location.from)
   }
 
   /**

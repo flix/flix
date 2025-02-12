@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Range
-import ca.uwaterloo.flix.api.lsp.provider.{CodeActionProvider, CompletionProvider, HighlightProvider, HoverProvider, SemanticTokensProvider}
+import ca.uwaterloo.flix.api.lsp.provider.{CodeActionProvider, CompletionProvider, FindReferencesProvider, GotoProvider, HighlightProvider, HoverProvider, InlayHintProvider, RenameProvider, SemanticTokensProvider, SymbolProvider}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.api.lsp.{Position, PublishDiagnosticsParams}
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -123,6 +123,11 @@ object LspServer {
       )
       serverCapabilities.setCodeActionProvider(true)
       serverCapabilities.setCompletionProvider(new CompletionOptions(true, TriggerChars.asJava))
+      serverCapabilities.setReferencesProvider(true)
+      serverCapabilities.setDefinitionProvider(true)
+      serverCapabilities.setImplementationProvider(true)
+      serverCapabilities.setRenameProvider(new RenameOptions(false))
+      serverCapabilities.setDocumentSymbolProvider(true)
       serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)// TODO: make it incremental
 
       serverCapabilities
@@ -257,6 +262,13 @@ object LspServer {
       CompletableFuture.completedFuture(messages.Either.forRight[util.List[CompletionItem], CompletionList](completions.toLsp4j))
     }
 
+    override def definition(params: DefinitionParams): CompletableFuture[messages.Either[util.List[_ <: Location], util.List[_ <: LocationLink]]] = {
+      val uri = params.getTextDocument.getUri
+      val pos = Position.fromLsp4j(params.getPosition)
+      val definition = GotoProvider.processGoto(uri, pos)(flixLanguageServer.root)
+      CompletableFuture.completedFuture(messages.Either.forRight(definition.map(_.toLsp4j).toList.asJava))
+    }
+
     /**
       * Returns the hover information for the given position in the given document.
       *
@@ -285,6 +297,45 @@ object LspServer {
       val semanticTokens = new lsp4j.SemanticTokens()
       semanticTokens.setData(tokens.map(Int.box).asJava)
       CompletableFuture.completedFuture(semanticTokens)
+    }
+
+    override def references(params: ReferenceParams): CompletableFuture[util.List[_ <: Location]] = {
+      val uri = params.getTextDocument.getUri
+      val pos = Position.fromLsp4j(params.getPosition)
+      val references = FindReferencesProvider.findRefs(uri, pos)(flixLanguageServer.root)
+      CompletableFuture.completedFuture(references.map(_.toLsp4j).toList.asJava)
+    }
+
+    override def rename(params: RenameParams): CompletableFuture[WorkspaceEdit] = {
+      val newName = params.getNewName
+      val uri = params.getTextDocument.getUri
+      val pos = Position.fromLsp4j(params.getPosition)
+      RenameProvider.processRename(newName, uri, pos)(flixLanguageServer.root) match {
+        case Some(rename) => CompletableFuture.completedFuture(rename.toLsp4j)
+
+        // If nothing is found it's OK to return the empty WorkspaceEdit.
+        case None => CompletableFuture.completedFuture(new WorkspaceEdit())
+      }
+    }
+
+    override def implementation(params: ImplementationParams): CompletableFuture[messages.Either[util.List[_ <: Location], util.List[_ <: LocationLink]]] = {
+      val uri = params.getTextDocument.getUri
+      val pos = Position.fromLsp4j(params.getPosition)
+      val implementation = GotoProvider.processGoto(uri, pos)(flixLanguageServer.root)
+      CompletableFuture.completedFuture(messages.Either.forRight(implementation.map(_.toLsp4j).toList.asJava))
+    }
+
+    override def inlayHint(params: InlayHintParams): CompletableFuture[util.List[InlayHint]] = {
+      val uri = params.getTextDocument.getUri
+      val range = Range.fromLsp4j(params.getRange)
+      val hints = InlayHintProvider.getInlayHints(uri, range)
+      CompletableFuture.completedFuture(hints.map(_.toLsp4j).asJava)
+    }
+
+    override def documentSymbol(params: DocumentSymbolParams): CompletableFuture[util.List[messages.Either[SymbolInformation, DocumentSymbol]]] = {
+      val uri = params.getTextDocument.getUri
+      val symbols = SymbolProvider.processDocumentSymbols(uri)(flixLanguageServer.root)
+      CompletableFuture.completedFuture(symbols.map(_.toLsp4j).map(messages.Either.forRight[SymbolInformation, DocumentSymbol]).asJava)
     }
   }
 
