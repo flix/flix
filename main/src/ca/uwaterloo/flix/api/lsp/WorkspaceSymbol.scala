@@ -16,8 +16,11 @@
 
 package ca.uwaterloo.flix.api.lsp
 
+import org.eclipse.lsp4j
 import org.json4s.JsonDSL.*
 import org.json4s.*
+
+import scala.jdk.CollectionConverters.SeqHasAsJava
 
 /**
   * Represents a `WorkspaceSymbol` in LSP.

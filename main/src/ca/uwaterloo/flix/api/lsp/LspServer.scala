@@ -128,6 +128,7 @@ object LspServer {
       serverCapabilities.setImplementationProvider(true)
       serverCapabilities.setRenameProvider(new RenameOptions(false))
       serverCapabilities.setDocumentSymbolProvider(true)
+      serverCapabilities.setWorkspaceSymbolProvider(true)
       serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)// TODO: make it incremental
 
       serverCapabilities
@@ -346,6 +347,12 @@ object LspServer {
 
     override def didChangeWatchedFiles(didChangeWatchedFilesParams: DidChangeWatchedFilesParams): Unit = {
       System.err.println(s"didChangeWatchedFiles: $didChangeWatchedFilesParams")
+    }
+
+    override def symbol(params: WorkspaceSymbolParams): CompletableFuture[messages.Either[util.List[_ <: SymbolInformation], util.List[_ <: WorkspaceSymbol]]] = {
+      val query = params.getQuery
+      val symbols = SymbolProvider.processWorkspaceSymbols(query)(flixLanguageServer.root)
+      CompletableFuture.completedFuture(messages.Either.forLeft(symbols.map(_.toLsp4j).asJava))
     }
   }
 }
