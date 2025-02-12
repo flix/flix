@@ -40,23 +40,23 @@ object SemanticTokensProvider {
     //
 
     //
+    // Construct an iterator of the semantic tokens from keywords.
+    //
+    val relativeTokens = root.tokens.toList.filter{case (src, _) => src.name == uri}
+    val keywordTokens = for {
+      (_, tokens) <- relativeTokens
+      Token(kind, _, _, _, sp1, sp2) <- tokens
+      if kind.isKeyword
+      loc = SourceLocation(isReal = true, sp1, sp2)
+    } yield SemanticToken(SemanticTokenType.Keyword, Nil, loc)
+
+    //
     // Construct an iterator of the semantic tokens from traits.
     //
     val traitTokens = root.traits.values.flatMap {
       case decl if include(uri, decl.sym.loc) => visitTrait(decl)
       case _ => Nil
     }
-
-    //
-    // Construct an iterator of the semantic tokens from keywords.
-    //
-    val keywordTokens = for {
-      (src, tokens) <- root.tokens.toList
-      if src.name == uri
-      Token(kind, _, _, _, sp1, sp2) <- tokens
-      if kind.isKeyword
-      loc = SourceLocation(isReal = true, sp1, sp2)
-    } yield SemanticToken(SemanticTokenType.Keyword, Nil, loc)
 
     //
     // Construct an iterator of the semantic tokens from instances.
