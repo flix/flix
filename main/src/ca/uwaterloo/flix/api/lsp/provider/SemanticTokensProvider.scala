@@ -45,8 +45,7 @@ object SemanticTokensProvider {
     val sourceOpt = root.tokens.keys.find(_.name == uri)
     val keywordTokens = sourceOpt match {
       case Some(source) =>
-        val tokens = root.tokens(source)
-        tokens.iterator.collect {
+        root.tokens(source).iterator.collect {
           case Token(kind, _, _, _, sp1, sp2) if kind.isKeyword =>
             val loc = SourceLocation(isReal = true, sp1, sp2)
             SemanticToken(SemanticTokenType.Keyword, Nil, loc)
