@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.api.effectlock.serialization.Serialization
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialization.{Library, NamedTypeSchemes}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext}
+import ca.uwaterloo.flix.language.errors.NameError.SuspiciousTypeVarName
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
@@ -919,24 +920,33 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def isProjectMode: Boolean = this.optManifest.isDefined
 
   def checkTrust(root: TypedAst.Root)(implicit out: PrintStream, flix: Flix): Validation[Unit, BootstrapError.TrustError.type] = {
+    out.println("Validating library permissions...")
     // TODO: 1. Find each library in the toml file
     val libs = getLibs(root)
     // TODO: 2. For each library, find its permission
-    val libPermissions = libs.keys.map(l => (l, getPermissions(l)))
+    val libPermissions = libs.keys.map(l => (l, getPermissions(l))).toMap
     // TODO: 3. Pair each TrustValidation with its corresponding library
+    val suspiciousExprs = TrustValidation.run(root)
+    val suspiciousLibExprs: ListMap[String, effectlock.TrustError] = ListMap.from(suspiciousExprs.map {
+      case expr => findMatchingLib(libs, getLib(expr.loc)) -> expr // TODO: May not be strict equality, maybe we have resolve library thing?
+    })
     // TODO: 4. Check that each "error" is allowed within the permission level of the corresponding library
-    // TODO: 5. Report each violation.
+    val errors = validateTrustLevels(libPermissions, suspiciousLibExprs)
     // TODO: 6. Update error message formatting
-    out.println("Validating library permissions...")
-    val errors = TrustValidation.run(root)
     if (errors.isEmpty) {
       Validation.Success(())
     } else {
-      Validation.Failure(Chain.from(errors.map(_ => BootstrapError.TrustError)))
+      Validation.Failure(Chain.from(errors))
     }
   }
 
   private def getLibs(root: TypedAst.Root): ListMap[String, TypedAst.Def] = ???
 
+  private def getLib(location: SourceLocation): String = ???
+
   private def getPermissions(str: String): Permissions = ???
+
+  private def findMatchingLib(libs: ListMap[String, TypedAst.Def], lib: String): String = ???
+
+  private def validateTrustLevels(libPermissions: Map[String, Permissions], suspiciousLibExprs: ListMap[String, effectlock.TrustError]): List[BootstrapError.TrustError.type] = ???
 }
