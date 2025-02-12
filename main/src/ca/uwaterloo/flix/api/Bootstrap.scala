@@ -920,10 +920,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   def checkTrust(root: TypedAst.Root)(implicit out: PrintStream, flix: Flix): Validation[Unit, BootstrapError.TrustError.type] = {
     out.println("Validating library permissions...")
-    val libs = getLibs
     val suspiciousExprs = TrustValidation.run(root)
     val suspiciousLibExprs = pairWithLib(suspiciousExprs)
-    val errors = libs.flatMap { case (l, p) => validateTrustLevels(l, p, suspiciousLibExprs.get(l)) }
+    val errors = getLibs.flatMap { case (l, p) => validateTrustLevels(l, p, suspiciousLibExprs.get(l)) }
 
     // TODO: 6. Update error message formatting
     if (errors.isEmpty) {
