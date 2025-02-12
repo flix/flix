@@ -47,11 +47,16 @@ object SemanticTokensProvider {
       case _ => Nil
     }
 
-    val keywordTokens = root.tokens.values.flatten.collect{
-      case Token(kind, _, _, _, sp1, sp2) if kind.isKeyword =>
-        val loc = SourceLocation(isReal = true, sp1, sp2)
-        SemanticToken(SemanticTokenType.Keyword, Nil, loc)
-    }
+    //
+    // Construct an iterator of the semantic tokens from keywords.
+    //
+    val keywordTokens = for{
+      (src, tokens) <- root.tokens.toList
+      if src.name == uri
+      Token(kind, _, _, _, sp1, sp2) <- tokens
+      if kind.isKeyword
+      loc = SourceLocation(isReal = true, sp1, sp2)
+    } yield SemanticToken(SemanticTokenType.Keyword, Nil, loc)
 
     //
     // Construct an iterator of the semantic tokens from instances.
