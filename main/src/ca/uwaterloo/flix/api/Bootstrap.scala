@@ -931,8 +931,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       Validation.Failure(Chain.from(errors))
     }
   }
-
-
+  
   /**
     * Assumes that the AST can only contain library functions if the library is defined in the manifest file.
     */
@@ -957,7 +956,24 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     })
   }
 
-  private def validateTrustLevels(lib: String, permissions: Permissions, suspiciousLibExprs: List[effectlock.SuspiciousExpr]): List[BootstrapError.TrustError.type] = {
-    ???
+  private def validateTrustLevels(lib: String, permissions: Permissions, suspiciousLibExprs: List[effectlock.SuspiciousExpr]): List[BootstrapError.TrustError.type] = permissions match {
+    case Permissions.FlixOnly => suspiciousLibExprs.map(_ => BootstrapError.TrustError) // if it is empty then no alarms were raised
+    case Permissions.Restricted => suspiciousLibExprs.flatMap {
+      case SuspiciousExpr.InstanceOfUse(expr, loc) => ???
+      case SuspiciousExpr.CheckedCastUse(expr, loc) => ???
+      case SuspiciousExpr.UncheckedCastUse(expr, loc) => ???
+      case SuspiciousExpr.UnsafeUse(expr, loc) => ???
+      case SuspiciousExpr.TryCatchUse(expr, loc) => ???
+      case SuspiciousExpr.ThrowUse(expr, loc) => ???
+      case SuspiciousExpr.InvokeConstructorUse(expr, loc) => ???
+      case SuspiciousExpr.InvokeMethodUse(expr, loc) => ???
+      case SuspiciousExpr.InvokeStaticMethodUse(expr, loc) => ???
+      case SuspiciousExpr.GetFieldUse(expr, loc) => ???
+      case SuspiciousExpr.PutFieldUse(expr, loc) => ???
+      case SuspiciousExpr.GetStaticFieldUse(expr, loc) => ???
+      case SuspiciousExpr.PutStaticFieldUse(expr, loc) => ???
+      case SuspiciousExpr.NewObjectUse(expr, loc) => ???
+    }
+    case Permissions.All => List.empty
   }
 }
