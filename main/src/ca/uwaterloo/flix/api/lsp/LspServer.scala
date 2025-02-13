@@ -116,11 +116,14 @@ object LspServer {
 
       clientCapabilities = initializeParams.getCapabilities
 
-      loadFlixProject(initializeParams.getWorkspaceFolders)
+      loadFlixProject(initializeParams.getWorkspaceFolders.asScala.toList)
 
       CompletableFuture.completedFuture(new InitializeResult(mkServerCapabilities()))
     }
 
+    /**
+      * Returns an iterator of all files in the given path, visited recursively.
+      */
     private def getRecursiveFilesIterator(path: Path): Iterator[Path] = {
       if (Files.exists(path) && Files.isDirectory(path))
         Files.walk(path).iterator().asScala
@@ -128,9 +131,13 @@ object LspServer {
         Iterator.empty
     }
 
+    /**
+      * Checks if the given path is a regular file with the expected extension.
+      */
     private def checkExt(p: Path, expectedExt: String): Boolean = {
       Files.isRegularFile(p) && p.getFileName.toString.endsWith(expectedExt)
     }
+
     /**
       * Loads all Flix resources in the workspace, including:
       *   - Flix source files (*.flix, src/**/*.flix, test/**/*.flix).
@@ -138,57 +145,78 @@ object LspServer {
       *   - Flix package files (lib/**/*.fpkg).
       *   - flix.toml file (from the root of the workspace).
       */
-    private def loadFlixProject(roots: util.List[WorkspaceFolder]): Unit = {
+    private def loadFlixProject(roots: List[WorkspaceFolder]): Unit = {
       for {
-        root <- roots.asScala
+        root <- roots
         path = Paths.get(root.getName)
         if Files.exists(path) && Files.isDirectory(path)
       } {
-        // Load the flix.toml file from the root of workspace if it exists.
-        val flixTomlPath = path.resolve("flix.toml")
-        if (Files.exists(flixTomlPath))
-          flixToml = Some(Files.readString(flixTomlPath))
+        loadFlixToml(path)
+        loadFlixSources(path)
+        loadJarsAndFkgs(path)
+      }
+    }
 
+    /**
+      * Loads the flix.toml file from the given path.
+      */
+    private def loadFlixToml(path: Path): Unit = {
+      val flixTomlPath = path.resolve("flix.toml")
+      if (Files.exists(flixTomlPath)) {
+        flixToml = Some(Files.readString(flixTomlPath))
+      }
+    }
 
-        // Load all Flix source files in the workspace.
-        // We will load *.flix, src/**/*.flix and test/**/*.flix.
-        val flixFileCandidates = Files.list(path).iterator().asScala ++
-          getRecursiveFilesIterator(path.resolve("src")) ++
-          getRecursiveFilesIterator(path.resolve("test"))
+    /**
+      * Loads all Flix source files in the workspace. including:
+      *   - *.flix
+      *   - src/**/*.flix
+      *   - test/**/*.flix
+      */
+    private def loadFlixSources(path: Path): Unit = {
+      val flixFileCandidates = Files.list(path).iterator().asScala ++
+        getRecursiveFilesIterator(path.resolve("src")) ++
+        getRecursiveFilesIterator(path.resolve("test"))
 
-        flixFileCandidates.foreach {
-          case p =>
-            if (checkExt(p, ".flix")) {
+      flixFileCandidates.foreach {
+        case p =>
+          if (checkExt(p, ".flix")) {
             val source = Files.readString(p)
             addSourceCode(p.toUri.toString, source)
           }
-        }
-
-        getRecursiveFilesIterator(path.resolve("lib"))
-          .foreach{ case p =>
-            // Load all JAR files in the workspace, the pattern should be lib/**/*.jar.
-            if (checkExt(p, ".jar"))
-              flix.addJar(p)
-            // Load all Flix package files in the workspace, the pattern should be lib/**/*.fpkg.
-            if (checkExt(p, ".fpkg")) {
-              // Copy from VSCodeLspServer
-              val uri = p.toUri.toString
-              val data = Files.readAllBytes(p)
-              val inputStream = new ZipInputStream(new ByteArrayInputStream(data))
-              var entry = inputStream.getNextEntry
-              while (entry != null) {
-                val name = entry.getName
-                if (name.endsWith(".flix")) {
-                  val bytes = StreamOps.readAllBytes(inputStream)
-                  val src = new String(bytes, Charset.forName("UTF-8"))
-                  addSourceCode(s"$uri/$name", src)
-                }
-                entry = inputStream.getNextEntry
-              }
-              inputStream.close()
-            }
-          }
       }
+    }
+
+    /**
+      * Loads all JAR files and Flix package files in the workspace, including:
+      *   - lib/**/*.jar
+      *   - lib/**/*.fpkg
+      */
+    private def loadJarsAndFkgs(path: Path) = {
+      getRecursiveFilesIterator(path.resolve("lib"))
+        .foreach{ case p =>
+          // Load all JAR files in the workspace, the pattern should be lib/**/*.jar.
+          if (checkExt(p, ".jar"))
+            flix.addJar(p)
+          // Load all Flix package files in the workspace, the pattern should be lib/**/*.fpkg.
+          if (checkExt(p, ".fpkg")) {
+            // Copy from VSCodeLspServer
+            val uri = p.toUri.toString
+            val data = Files.readAllBytes(p)
+            val inputStream = new ZipInputStream(new ByteArrayInputStream(data))
+            var entry = inputStream.getNextEntry
+            while (entry != null) {
+              val name = entry.getName
+              if (name.endsWith(".flix")) {
+                val bytes = StreamOps.readAllBytes(inputStream)
+                val src = new String(bytes, Charset.forName("UTF-8"))
+                addSourceCode(s"$uri/$name", src)
+              }
+              entry = inputStream.getNextEntry
+            }
+            inputStream.close()
+          }
+        }
     }
 
     private def mkServerCapabilities(): ServerCapabilities = {
