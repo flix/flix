@@ -25,15 +25,19 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{Options, StreamOps}
 import org.eclipse.lsp4j
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
 
+import java.io.ByteArrayInputStream
+import java.nio.charset.Charset
+import java.nio.file.{Files, Path, Paths}
 import java.util
 import java.util.concurrent.CompletableFuture
+import java.util.zip.ZipInputStream
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
@@ -90,6 +94,8 @@ object LspServer {
       */
     private var clientCapabilities: ClientCapabilities = _
 
+    private var flixToml: String = _
+
     private val flixTextDocumentService = new FlixTextDocumentService(this, flixLanguageClient)
     private val flixWorkspaceService = new FlixWorkspaceService(this, flixLanguageClient)
 
@@ -105,7 +111,71 @@ object LspServer {
 
       clientCapabilities = initializeParams.getCapabilities
 
+      loadFlixProject(initializeParams.getWorkspaceFolders)
+
       CompletableFuture.completedFuture(new InitializeResult(mkServerCapabilities()))
+    }
+
+    private def loadFlixProject(roots: util.List[WorkspaceFolder]): Unit = {
+      for {
+        root <- roots.asScala
+        path = Paths.get(root.getName)
+        if Files.exists(path) && Files.isDirectory(path)
+      } {
+        // Load the flix.toml file if it exists.
+        val flixTomlPath = path.resolve("flix.toml")
+        if (Files.exists(flixTomlPath))
+          flixToml = Files.readString(flixTomlPath)
+
+       def getRecursiveFilesIterator(path: Path): Iterator[Path] = {
+         if (Files.exists(path) && Files.isDirectory(path))
+            Files.walk(path).iterator().asScala
+         else
+           Iterator.empty
+       }
+
+        def checkExt(p: Path, expectedExt: String): Boolean = {
+           Files.isRegularFile(p) && p.getFileName.toString.endsWith(expectedExt)
+        }
+
+        // Load all Flix source files in the workspace.
+        val flixFileCandidates = Files.list(path).iterator().asScala ++
+          getRecursiveFilesIterator(path.resolve("src")) ++
+          getRecursiveFilesIterator(path.resolve("test"))
+
+        flixFileCandidates.foreach {
+          case p =>
+            if (checkExt(p, ".flix")) {
+            val source = Files.readString(p)
+            addSourceCode(p.toUri.toString, source)
+          }
+        }
+
+        getRecursiveFilesIterator(path.resolve("lib"))
+          .foreach{ case p =>
+            // Load all JAR files in the workspace.
+            if (checkExt(p, ".jar"))
+              flix.addJar(p)
+            // Load all Flix package files in the workspace.
+            if (checkExt(p, ".fpkg")) {
+              // Copy from VSCodeLspServer
+              val uri = p.toUri.toString
+              val data = Files.readAllBytes(p)
+              val inputStream = new ZipInputStream(new ByteArrayInputStream(data))
+              var entry = inputStream.getNextEntry
+              while (entry != null) {
+                val name = entry.getName
+                if (name.endsWith(".flix")) {
+                  val bytes = StreamOps.readAllBytes(inputStream)
+                  val src = new String(bytes, Charset.forName("UTF-8"))
+                  addSourceCode(s"$uri/$name", src)
+                }
+                entry = inputStream.getNextEntry
+              }
+              inputStream.close()
+            }
+          }
+      }
     }
 
     private def mkServerCapabilities(): ServerCapabilities = {
@@ -165,6 +235,7 @@ object LspServer {
       */
     def processCheck(): Unit = {
       try {
+        System.err.println(sources)
         val diagnostics = flix.check() match {
           // Case 1: Compilation was successful or partially successful so that we have the root and errors.
           case (Some(root), errors) =>
