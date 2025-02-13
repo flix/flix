@@ -90,7 +90,7 @@ object BootstrapError {
     }
   }
 
-  case object TrustError extends BootstrapError {
-    override def message(f: Formatter): String = "TrustError"
+  case class TrustError(loc: SourceLocation) extends BootstrapError {
+    override def message(f: Formatter): String = s"TrustError at $loc"
   }
 }

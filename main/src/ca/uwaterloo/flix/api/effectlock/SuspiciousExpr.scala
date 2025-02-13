@@ -8,37 +8,36 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
   */
 sealed trait SuspiciousExpr {
   val expr: TypedAst.Expr
-  val loc: SourceLocation
 }
 
 object SuspiciousExpr {
 
-  case class InstanceOfUse(expr: TypedAst.Expr.InstanceOf, loc: SourceLocation) extends SuspiciousExpr
+  case class InstanceOfUse(expr: TypedAst.Expr.InstanceOf) extends SuspiciousExpr
 
-  case class CheckedCastUse(expr: TypedAst.Expr.CheckedCast, loc: SourceLocation) extends SuspiciousExpr
+  case class CheckedCastUse(expr: TypedAst.Expr.CheckedCast) extends SuspiciousExpr
 
-  case class UncheckedCastUse(expr: TypedAst.Expr.UncheckedCast, loc: SourceLocation) extends SuspiciousExpr
+  case class UncheckedCastUse(expr: TypedAst.Expr.UncheckedCast) extends SuspiciousExpr
 
-  case class UnsafeUse(expr: TypedAst.Expr.Unsafe, loc: SourceLocation) extends SuspiciousExpr
+  case class UnsafeUse(expr: TypedAst.Expr.Unsafe) extends SuspiciousExpr
 
-  case class TryCatchUse(expr: TypedAst.Expr.TryCatch, loc: SourceLocation) extends SuspiciousExpr
+  case class TryCatchUse(expr: TypedAst.Expr.TryCatch) extends SuspiciousExpr
 
-  case class ThrowUse(expr: TypedAst.Expr.Throw, loc: SourceLocation) extends SuspiciousExpr
+  case class ThrowUse(expr: TypedAst.Expr.Throw) extends SuspiciousExpr
 
-  case class InvokeConstructorUse(expr: TypedAst.Expr.InvokeConstructor, loc: SourceLocation) extends SuspiciousExpr
+  case class InvokeConstructorUse(expr: TypedAst.Expr.InvokeConstructor) extends SuspiciousExpr
 
-  case class InvokeMethodUse(expr: TypedAst.Expr.InvokeMethod, loc: SourceLocation) extends SuspiciousExpr
+  case class InvokeMethodUse(expr: TypedAst.Expr.InvokeMethod) extends SuspiciousExpr
 
-  case class InvokeStaticMethodUse(expr: TypedAst.Expr.InvokeStaticMethod, loc: SourceLocation) extends SuspiciousExpr
+  case class InvokeStaticMethodUse(expr: TypedAst.Expr.InvokeStaticMethod) extends SuspiciousExpr
 
-  case class GetFieldUse(expr: TypedAst.Expr.GetField, loc: SourceLocation) extends SuspiciousExpr
+  case class GetFieldUse(expr: TypedAst.Expr.GetField) extends SuspiciousExpr
 
-  case class PutFieldUse(expr: TypedAst.Expr.PutField, loc: SourceLocation) extends SuspiciousExpr
+  case class PutFieldUse(expr: TypedAst.Expr.PutField) extends SuspiciousExpr
 
-  case class GetStaticFieldUse(expr: TypedAst.Expr.GetStaticField, loc: SourceLocation) extends SuspiciousExpr
+  case class GetStaticFieldUse(expr: TypedAst.Expr.GetStaticField) extends SuspiciousExpr
 
-  case class PutStaticFieldUse(expr: TypedAst.Expr.PutStaticField, loc: SourceLocation) extends SuspiciousExpr
+  case class PutStaticFieldUse(expr: TypedAst.Expr.PutStaticField) extends SuspiciousExpr
 
-  case class NewObjectUse(expr: TypedAst.Expr.NewObject, loc: SourceLocation) extends SuspiciousExpr
+  case class NewObjectUse(expr: TypedAst.Expr.NewObject) extends SuspiciousExpr
 
 }

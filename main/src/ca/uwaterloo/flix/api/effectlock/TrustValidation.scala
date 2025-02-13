@@ -28,16 +28,16 @@ object TrustValidation {
   }
 
   private def visitSig(sig0: TypedAst.Sig): List[SuspiciousExpr] = sig0 match {
-    case TypedAst.Sig(_, _, Some(exp), loc) if isLibrary(loc) => visitExp(exp)(loc)
+    case TypedAst.Sig(_, _, Some(exp), loc) if isLibrary(loc) => visitExp(exp)
     case TypedAst.Sig(_, _, _, _) => List.empty
   }
 
   private def visitDef(defn0: TypedAst.Def): List[SuspiciousExpr] = defn0 match {
-    case TypedAst.Def(_, _, exp, loc) if isLibrary(loc) => visitExp(exp)(loc)
+    case TypedAst.Def(_, _, exp, loc) if isLibrary(loc) => visitExp(exp)
     case TypedAst.Def(_, _, _, _) => List.empty
   }
 
-  private def visitExp(expr0: TypedAst.Expr)(implicit loc0: SourceLocation): List[SuspiciousExpr] = expr0 match {
+  private def visitExp(expr0: TypedAst.Expr): List[SuspiciousExpr] = expr0 match {
     case Expr.Cst(_, _, _) =>
       List.empty
 
@@ -161,30 +161,30 @@ object TrustValidation {
       visitExp(exp)
 
     case Expr.InstanceOf(exp, clazz, loc) =>
-      val err = SuspiciousExpr.InstanceOfUse(Expr.InstanceOf(exp, clazz, loc), loc0)
+      val err = SuspiciousExpr.InstanceOfUse(Expr.InstanceOf(exp, clazz, loc))
       err :: visitExp(exp)
 
     case Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
-      val err = SuspiciousExpr.CheckedCastUse(Expr.CheckedCast(cast, exp, tpe, eff, loc), loc0)
+      val err = SuspiciousExpr.CheckedCastUse(Expr.CheckedCast(cast, exp, tpe, eff, loc))
       err :: visitExp(exp)
 
     case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
-      val err = SuspiciousExpr.UncheckedCastUse(Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc), loc0)
+      val err = SuspiciousExpr.UncheckedCastUse(Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc))
       err :: visitExp(exp)
 
     case Expr.Unsafe(exp, runEff, tpe, eff, loc) =>
-      val err = SuspiciousExpr.UnsafeUse(Expr.Unsafe(exp, runEff, tpe, eff, loc), loc0)
+      val err = SuspiciousExpr.UnsafeUse(Expr.Unsafe(exp, runEff, tpe, eff, loc))
       err :: visitExp(exp)
 
     case Expr.Without(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
-      val err = SuspiciousExpr.TryCatchUse(Expr.TryCatch(exp, rules, tpe, eff, loc), loc0)
+      val err = SuspiciousExpr.TryCatchUse(Expr.TryCatch(exp, rules, tpe, eff, loc))
       err :: visitExp(exp) ::: rules.flatMap(r => visitExp(r.exp))
 
     case Expr.Throw(exp, tpe, eff, loc) =>
-      val err = SuspiciousExpr.ThrowUse(Expr.Throw(exp, tpe, eff, loc), loc0)
+      val err = SuspiciousExpr.ThrowUse(Expr.Throw(exp, tpe, eff, loc))
       err :: visitExp(exp)
 
     case Expr.Handler(_, rules, _, _, _, _, _) =>
@@ -197,36 +197,36 @@ object TrustValidation {
       exps.flatMap(visitExp)
 
     case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
-      val err = SuspiciousExpr.InvokeConstructorUse(Expr.InvokeConstructor(constructor, exps, tpe, eff, loc), loc0)
+      val err = SuspiciousExpr.InvokeConstructorUse(Expr.InvokeConstructor(constructor, exps, tpe, eff, loc))
       err :: exps.flatMap(visitExp)
 
     case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
-      val err = SuspiciousExpr.InvokeMethodUse(Expr.InvokeMethod(method, exp, exps, tpe, eff, loc), loc0)
+      val err = SuspiciousExpr.InvokeMethodUse(Expr.InvokeMethod(method, exp, exps, tpe, eff, loc))
       err :: visitExp(exp) ::: exps.flatMap(visitExp)
 
     case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
-      val err = SuspiciousExpr.InvokeStaticMethodUse(Expr.InvokeStaticMethod(method, exps, tpe, eff, loc), loc0)
+      val err = SuspiciousExpr.InvokeStaticMethodUse(Expr.InvokeStaticMethod(method, exps, tpe, eff, loc))
       err :: exps.flatMap(visitExp)
 
     case Expr.GetField(field, exp, tpe, eff, loc) =>
-      val err = SuspiciousExpr.GetFieldUse(Expr.GetField(field, exp, tpe, eff, loc), loc0)
+      val err = SuspiciousExpr.GetFieldUse(Expr.GetField(field, exp, tpe, eff, loc))
       err :: visitExp(exp)
 
 
     case Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
-      val err = SuspiciousExpr.PutFieldUse(Expr.PutField(field, exp1, exp2, tpe, eff, loc), loc0)
+      val err = SuspiciousExpr.PutFieldUse(Expr.PutField(field, exp1, exp2, tpe, eff, loc))
       err :: visitExp(exp1) ::: visitExp(exp2)
 
     case Expr.GetStaticField(field, tpe, eff, loc) =>
-      val err = SuspiciousExpr.GetStaticFieldUse(Expr.GetStaticField(field, tpe, eff, loc), loc0)
+      val err = SuspiciousExpr.GetStaticFieldUse(Expr.GetStaticField(field, tpe, eff, loc))
       List(err)
 
     case Expr.PutStaticField(field, exp, tpe, eff, loc) =>
-      val err = SuspiciousExpr.PutStaticFieldUse(Expr.PutStaticField(field, exp, tpe, eff, loc), loc0)
+      val err = SuspiciousExpr.PutStaticFieldUse(Expr.PutStaticField(field, exp, tpe, eff, loc))
       err :: visitExp(exp)
 
     case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
-      val err = SuspiciousExpr.NewObjectUse(Expr.NewObject(name, clazz, tpe, eff, methods, loc), loc0)
+      val err = SuspiciousExpr.NewObjectUse(Expr.NewObject(name, clazz, tpe, eff, methods, loc))
       err :: methods.flatMap(m => visitExp(m.exp))
 
     case Expr.NewChannel(exp, _, _, _) =>
@@ -277,7 +277,7 @@ object TrustValidation {
     case Expr.Error(_, _, _) => List.empty
   }
 
-  private def visitConstraint(constr0: TypedAst.Constraint)(implicit loc0: SourceLocation): List[SuspiciousExpr] = constr0 match {
+  private def visitConstraint(constr0: TypedAst.Constraint): List[SuspiciousExpr] = constr0 match {
     case TypedAst.Constraint(_, head, body, _) =>
       val headErrors = head match {
         case Head.Atom(_, _, terms, _, _) => terms.flatMap(visitExp)
