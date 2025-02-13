@@ -94,12 +94,6 @@ object LspServer {
       */
     private var clientCapabilities: ClientCapabilities = _
 
-    /**
-      * The flix.toml file content.
-      * We will only try to load flix.toml from the root of the workspace.
-      */
-    private var flixToml: Option[String] = None
-
     private val flixTextDocumentService = new FlixTextDocumentService(this, flixLanguageClient)
     private val flixWorkspaceService = new FlixWorkspaceService(this, flixLanguageClient)
 
@@ -108,7 +102,7 @@ object LspServer {
       *
       * During the initialization, we should:
       * - Store the client capabilities.
-      * - Load all Flix resources, including source files JAR files, flix.toml and flix package files.
+      * - Load all Flix resources, including source files JAR files and flix package files.
       * - Return the server capabilities.
       */
     override def initialize(initializeParams: InitializeParams): CompletableFuture[InitializeResult] = {
@@ -143,7 +137,6 @@ object LspServer {
       *   - Flix source files (*.flix, src/**/*.flix, test/**/*.flix).
       *   - JAR files (lib/**/*.jar).
       *   - Flix package files (lib/**/*.fpkg).
-      *   - flix.toml file (from the root of the workspace).
       */
     private def loadFlixProject(roots: List[WorkspaceFolder]): Unit = {
       for {
@@ -151,19 +144,8 @@ object LspServer {
         path = Paths.get(root.getName)
         if Files.exists(path) && Files.isDirectory(path)
       } {
-        loadFlixToml(path)
         loadFlixSources(path)
         loadJarsAndFkgs(path)
-      }
-    }
-
-    /**
-      * Loads the flix.toml file from the given path.
-      */
-    private def loadFlixToml(path: Path): Unit = {
-      val flixTomlPath = path.resolve("flix.toml")
-      if (Files.exists(flixTomlPath)) {
-        flixToml = Some(Files.readString(flixTomlPath))
       }
     }
 
