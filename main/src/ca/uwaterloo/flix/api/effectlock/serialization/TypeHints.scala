@@ -84,7 +84,7 @@ object TypeHints {
     STC.Intersection.getClass,
     STC.Difference.getClass,
     STC.SymmetricDiff.getClass,
-    // classOf[SerializableTypeConstructor.Effect],
+    classOf[STC.Effect],
     // classOf[SerializableTypeConstructor.CaseComplement],
     // classOf[SerializableTypeConstructor.CaseUnion],
     // classOf[SerializableTypeConstructor.CaseIntersection],
