@@ -48,7 +48,7 @@ object Serialization {
       Some(toLibs(deser))
     }
     catch {
-      case _: Exception => None
+      case _: Exception => None // TODO: Include error by returning Validation or Result
     }
   }
 
