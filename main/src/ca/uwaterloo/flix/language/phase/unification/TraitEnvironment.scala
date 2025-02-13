@@ -54,47 +54,6 @@ object TraitEnvironment {
   }
 
   /**
-    * Returns true iff the given type constraint holds under the given trait environment.
-    */
-  def holds(tconstr: TraitConstraint, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit scope: Scope, flix: Flix): Boolean = {
-    byInst(tconstr, traitEnv, eqEnv).toResult match {
-      case Result.Ok(_) => true
-      case Result.Err(_) => false
-    }
-  }
-
-  /**
-    * Returns the list of constraints that hold if the given constraint `tconstr` holds, using the constraints on available instances.
-    */
-  private def byInst(tconstr: TraitConstraint, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit scope: Scope, flix: Flix): Validation[List[TraitConstraint], UnificationError] = tconstr match {
-    case TraitConstraint(head, arg, _) =>
-
-      val matchingInstanceOpt = traitEnv.getInstance(head.sym, arg)
-
-      val renv = RigidityEnv.ofRigidVars(arg.typeVars.map(_.sym))
-
-      def tryInst(inst: Instance): Validation[List[TraitConstraint], UnificationError] = {
-        val substOpt = Unification.fullyUnifyTypes(inst.tpe, arg, renv, eqEnv)
-        substOpt match {
-          case Some(subst) => Validation.Success(inst.tconstrs.map(subst.apply))
-          // if there are leftover constraints, then we can't be sure that this is the right instance
-          case None => Validation.Failure(UnificationError.MismatchedTypes(inst.tpe, arg))
-        }
-      }
-
-      val tconstrGroups = matchingInstanceOpt.map(tryInst).map(_.toResult).collect {
-        case Result.Ok(tconstrs) => tconstrs
-      }
-
-      tconstrGroups match {
-        case None => Validation.Failure(UnificationError.NoMatchingInstance(tconstr))
-        case Some(tconstrs) =>
-          // apply the base tconstr location to the new tconstrs
-          Validation.Success(tconstrs.map(_.copy(loc = tconstr.loc)))
-      }
-  }
-
-  /**
     * Returns the list of constraints that hold if the given constraint `tconstr` holds, using the super traits of the constraint.
     *
     * E.g. if we have 3 traits: `A`, `B`, `C` where
