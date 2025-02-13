@@ -41,3 +41,27 @@ object SuspiciousExpr {
   case class NewObjectUse(expr: TypedAst.Expr.NewObject) extends SuspiciousExpr
 
 }
+
+
+/*
+
+sealed trait SuspiciousExpr {
+  def loc: SourceLocation
+}
+
+object SuspiciousExpr {
+
+  case class Cast(loc: SourceLocation) extends SuspiciousExpr
+
+  case class FieldUse(field: Field, loc: SourceLocation) extends SuspiciousExpr
+
+  case class MethodUse(method: Method, loc: SourceLocation) extends SuspiciousExpr
+
+  case class ConstructorUse(constructor: Constructor[?], loc: SourceLocation) extends SuspiciousExpr
+
+  case class ClassUse(clazz: Class[?], loc: SourceLocation) extends SuspiciousExpr
+
+  case class PackageUse(pkg: Package, loc: SourceLocation) extends SuspiciousExpr
+
+}
+ */
