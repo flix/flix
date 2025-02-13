@@ -39,16 +39,30 @@ object SemanticTokensProvider {
     // This class uses iterators over lists to ensure fast append (!)
     //
 
+    val sourceOpt = root.tokens.keys.find(_.name == uri)
+
     //
     // Construct an iterator of the semantic tokens from keywords.
     //
-    val sourceOpt = root.tokens.keys.find(_.name == uri)
     val keywordTokens = sourceOpt match {
       case Some(source) =>
         root.tokens(source).iterator.collect {
           case Token(kind, _, _, _, sp1, sp2) if kind.isKeyword =>
             val loc = SourceLocation(isReal = true, sp1, sp2)
             SemanticToken(SemanticTokenType.Keyword, Nil, loc)
+        }
+      case None => Iterator.empty
+    }
+
+    //
+    // Construct an iterator of the semantic tokens from comments.
+    //
+    val commentTokens = sourceOpt match {
+      case Some(source) =>
+        root.tokens(source).iterator.collect {
+          case Token(kind, _, _, _, sp1, sp2) if kind.isComment =>
+            val loc = SourceLocation(isReal = true, sp1, sp2)
+            SemanticToken(SemanticTokenType.Comment, Nil, loc)
         }
       case None => Iterator.empty
     }
@@ -112,7 +126,7 @@ object SemanticTokensProvider {
     //
     // Collect all tokens into one list.
     //
-    val allTokens = (traitTokens ++ keywordTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ structTokens ++ typeAliasTokens ++ effectTokens).toList
+    val allTokens = (keywordTokens ++ commentTokens ++ traitTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ structTokens ++ typeAliasTokens ++ effectTokens).toList
 
     //
     // We keep all tokens that are: (i) single-line tokens, (ii) have the same source as `uri`, and (iii) come from real source locations.
