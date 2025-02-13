@@ -35,7 +35,9 @@ object SymbolProvider {
     val sigs = root.sigs.values.collect { case sig if sig.sym.name.startsWith(query) => mkSigWorkspaceSymbol(sig) }
     val effs = root.effects.values.filter(_.sym.name.startsWith(query)).flatMap(mkEffectWorkspaceSymbol)
     val structs = root.structs.values.filter(_.sym.name.startsWith(query)).flatMap(mkStructWorkspaceSymbol)
-    (traits ++ defs ++ enums ++ sigs ++ effs ++ structs).toList
+    (traits ++ defs ++ enums ++ sigs ++ effs ++ structs).toList.filter{
+      case WorkspaceSymbol(_, _, _, _, loc) => loc.uri.startsWith("file://")
+    }
   }
 
   /**
