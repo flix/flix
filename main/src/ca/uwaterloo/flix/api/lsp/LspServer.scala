@@ -25,19 +25,16 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
-import ca.uwaterloo.flix.util.{Options, StreamOps}
+import ca.uwaterloo.flix.util.Options
 import org.eclipse.lsp4j
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
 
-import java.io.ByteArrayInputStream
-import java.nio.charset.Charset
 import java.nio.file.{Files, Path, Paths}
 import java.util
 import java.util.concurrent.CompletableFuture
-import java.util.zip.ZipInputStream
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
@@ -182,21 +179,9 @@ object LspServer {
             flix.addJar(p)
           // Load all Flix package files in the workspace, the pattern should be lib/**/*.fpkg.
           if (checkExt(p, ".fpkg")) {
-            // Copy from VSCodeLspServer
-            val uri = p.toUri.toString
-            val data = Files.readAllBytes(p)
-            val inputStream = new ZipInputStream(new ByteArrayInputStream(data))
-            var entry = inputStream.getNextEntry
-            while (entry != null) {
-              val name = entry.getName
-              if (name.endsWith(".flix")) {
-                val bytes = StreamOps.readAllBytes(inputStream)
-                val src = new String(bytes, Charset.forName("UTF-8"))
-                addSourceCode(s"$uri/$name", src)
-              }
-              entry = inputStream.getNextEntry
-            }
-            inputStream.close()
+                        val uri = p.toUri.toString
+                        val data = Files.readAllBytes(p)
+            flix.addFpkg(uri, data, sources)
           }
         }
     }

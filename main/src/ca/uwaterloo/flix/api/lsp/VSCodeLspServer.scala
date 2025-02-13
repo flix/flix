@@ -35,13 +35,10 @@ import org.json4s.*
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 
-import java.io.ByteArrayInputStream
 import java.net.{InetSocketAddress, URI}
-import java.nio.charset.Charset
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.zip.ZipInputStream
 import scala.collection.mutable
 
 /**
@@ -211,19 +208,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.AddPkg(id, uri, data) =>
-      // TODO: Possibly move into Input class?
-      val inputStream = new ZipInputStream(new ByteArrayInputStream(data))
-      var entry = inputStream.getNextEntry
-      while (entry != null) {
-        val name = entry.getName
-        if (name.endsWith(".flix")) {
-          val bytes = StreamOps.readAllBytes(inputStream)
-          val src = new String(bytes, Charset.forName("UTF-8"))
-          addSourceCode(s"$uri/$name", src)
-        }
-        entry = inputStream.getNextEntry
-      }
-      inputStream.close()
+      flix.addFpkg(uri, data, sources)
 
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 

@@ -30,10 +30,11 @@ import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.{Chain, MultiMap}
 import ca.uwaterloo.flix.util.tc.Debug
 
+import java.io.ByteArrayInputStream
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
 import java.util.concurrent.ForkJoinPool
-import java.util.zip.ZipFile
+import java.util.zip.{ZipFile, ZipInputStream}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
@@ -395,6 +396,23 @@ class Flix {
       throw new IllegalArgumentException(s"'$p' must be a *.pkg file.")
 
     addInput(p.toString, Input.PkgFile(p, sctx))
+    this
+  }
+
+  def addFpkg(uri: String, data: Array[Byte], sources: mutable.Map[String, String]): Flix = {
+    val inputStream = new ZipInputStream(new ByteArrayInputStream(data))
+    var entry = inputStream.getNextEntry
+    while (entry != null) {
+      val name = entry.getName
+      if (name.endsWith(".flix")) {
+        val bytes = StreamOps.readAllBytes(inputStream)
+        val src = new String(bytes, Charset.forName("UTF-8"))
+        addSourceCode(s"$uri/$name", src)(SecurityContext.AllPermissions)
+        sources += (s"$uri/$name" -> src)
+      }
+      entry = inputStream.getNextEntry
+    }
+    inputStream.close()
     this
   }
 
