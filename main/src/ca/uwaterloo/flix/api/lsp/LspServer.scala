@@ -94,7 +94,11 @@ object LspServer {
       */
     private var clientCapabilities: ClientCapabilities = _
 
-    private var flixToml: String = _
+    /**
+      * The flix.toml file content.
+      * We will only try to load flix.toml from the root of the workspace.
+      */
+    private var flixToml: Option[String] = None
 
     private val flixTextDocumentService = new FlixTextDocumentService(this, flixLanguageClient)
     private val flixWorkspaceService = new FlixWorkspaceService(this, flixLanguageClient)
@@ -117,6 +121,23 @@ object LspServer {
       CompletableFuture.completedFuture(new InitializeResult(mkServerCapabilities()))
     }
 
+    private def getRecursiveFilesIterator(path: Path): Iterator[Path] = {
+      if (Files.exists(path) && Files.isDirectory(path))
+        Files.walk(path).iterator().asScala
+      else
+        Iterator.empty
+    }
+
+    private def checkExt(p: Path, expectedExt: String): Boolean = {
+      Files.isRegularFile(p) && p.getFileName.toString.endsWith(expectedExt)
+    }
+    /**
+      * Loads all Flix resources in the workspace, including:
+      *   - Flix source files (*.flix, src/**/*.flix, test/**/*.flix).
+      *   - JAR files (lib/**/*.jar).
+      *   - Flix package files (lib/**/*.fpkg).
+      *   - flix.toml file (from the root of the workspace).
+      */
     private def loadFlixProject(roots: util.List[WorkspaceFolder]): Unit = {
       for {
         root <- roots.asScala
@@ -126,18 +147,8 @@ object LspServer {
         // Load the flix.toml file from the root of workspace if it exists.
         val flixTomlPath = path.resolve("flix.toml")
         if (Files.exists(flixTomlPath))
-          flixToml = Files.readString(flixTomlPath)
+          flixToml = Some(Files.readString(flixTomlPath))
 
-       def getRecursiveFilesIterator(path: Path): Iterator[Path] = {
-         if (Files.exists(path) && Files.isDirectory(path))
-            Files.walk(path).iterator().asScala
-         else
-           Iterator.empty
-       }
-
-        def checkExt(p: Path, expectedExt: String): Boolean = {
-           Files.isRegularFile(p) && p.getFileName.toString.endsWith(expectedExt)
-        }
 
         // Load all Flix source files in the workspace.
         // We will load *.flix, src/**/*.flix and test/**/*.flix.
@@ -237,7 +248,6 @@ object LspServer {
       */
     def processCheck(): Unit = {
       try {
-        System.err.println(sources)
         val diagnostics = flix.check() match {
           // Case 1: Compilation was successful or partially successful so that we have the root and errors.
           case (Some(root), errors) =>
