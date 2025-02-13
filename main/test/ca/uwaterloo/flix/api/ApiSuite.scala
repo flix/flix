@@ -20,5 +20,6 @@ import org.scalatest.Suites
 
 class ApiSuite extends Suites(
   new LspSuite,
-  new EffectLockSuite
+  new EffectLockSuite,
+  new TrustValidationSuite,
 )
