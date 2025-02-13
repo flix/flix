@@ -349,7 +349,7 @@ object SemanticTokensProvider {
       )
   }
 
-  private def visitAnnotations(annotations: Annotations) = annotations.iterator.map(visitAnnotation)
+  private def visitAnnotations(annotations: Annotations) = annotations.annotations.iterator.map(visitAnnotation)
 
   private def visitAnnotation(annotation: Annotation): SemanticToken = SemanticToken(SemanticTokenType.Modifier, Nil, annotation.loc)
 

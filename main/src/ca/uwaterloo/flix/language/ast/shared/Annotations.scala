@@ -85,6 +85,4 @@ case class Annotations(annotations: List[Annotation]) {
     * Returns `true` if `this` sequence contains the `@Test` annotation.
     */
   def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
-
-  def iterator: Iterator[Annotation] = annotations.iterator
 }
