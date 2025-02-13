@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.effectlock.Reachability
+import ca.uwaterloo.flix.api.effectlock.{Reachability, TrustValidation}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
@@ -914,5 +914,17 @@ class Flix {
       case (acc, _) => acc
     }
     (reachable, uses)
+  }
+
+  def validateTrust(root: TypedAst.Root): List[effectlock.SuspiciousExpr] = {
+    // Mark this object as implicit.
+    implicit val flix: Flix = this
+
+    // Initialize fork-join thread pool.
+    initForkJoinPool()
+    val result = TrustValidation.run(root)
+    shutdownForkJoinPool()
+
+    result
   }
 }

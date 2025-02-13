@@ -922,7 +922,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   def checkTrust(root: TypedAst.Root)(implicit out: PrintStream, flix: Flix): Validation[Unit, BootstrapError.TrustError] = {
     out.println("Validating library permissions...")
-    val suspiciousExprs = TrustValidation.run(root)
+    val suspiciousExprs = flix.validateTrust(root)
     val suspiciousLibExprs = pairWithLib(suspiciousExprs)
     val errors = getLibs.flatMap { case (l, p) => validateTrustLevels(l, p, suspiciousLibExprs.get(l)) }
 
