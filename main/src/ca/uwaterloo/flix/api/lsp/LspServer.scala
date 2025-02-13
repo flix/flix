@@ -104,6 +104,7 @@ object LspServer {
       *
       * During the initialization, we should:
       * - Store the client capabilities.
+      * - Load all Flix resources, including source files JAR files, flix.toml and flix package files.
       * - Return the server capabilities.
       */
     override def initialize(initializeParams: InitializeParams): CompletableFuture[InitializeResult] = {
@@ -122,7 +123,7 @@ object LspServer {
         path = Paths.get(root.getName)
         if Files.exists(path) && Files.isDirectory(path)
       } {
-        // Load the flix.toml file if it exists.
+        // Load the flix.toml file from the root of workspace if it exists.
         val flixTomlPath = path.resolve("flix.toml")
         if (Files.exists(flixTomlPath))
           flixToml = Files.readString(flixTomlPath)
@@ -139,6 +140,7 @@ object LspServer {
         }
 
         // Load all Flix source files in the workspace.
+        // We will load *.flix, src/**/*.flix and test/**/*.flix.
         val flixFileCandidates = Files.list(path).iterator().asScala ++
           getRecursiveFilesIterator(path.resolve("src")) ++
           getRecursiveFilesIterator(path.resolve("test"))
@@ -153,10 +155,10 @@ object LspServer {
 
         getRecursiveFilesIterator(path.resolve("lib"))
           .foreach{ case p =>
-            // Load all JAR files in the workspace.
+            // Load all JAR files in the workspace, the pattern should be lib/**/*.jar.
             if (checkExt(p, ".jar"))
               flix.addJar(p)
-            // Load all Flix package files in the workspace.
+            // Load all Flix package files in the workspace, the pattern should be lib/**/*.fpkg.
             if (checkExt(p, ".fpkg")) {
               // Copy from VSCodeLspServer
               val uri = p.toUri.toString
