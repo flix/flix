@@ -1,15 +1,27 @@
 package ca.uwaterloo.flix.api.effectlock
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{BootstrapError, Flix}
 import ca.uwaterloo.flix.language.ast.TypedAst.Expr
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.shared.Input
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.language.phase.typer.PrimitiveEffects
+import ca.uwaterloo.flix.tools.pkg.{Dependency, Permissions}
+import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+
+import java.lang.reflect.{Constructor, Method}
+import java.nio.file.Path
 
 object TrustValidation {
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): List[SuspiciousExpr] = {
+  def run(root: TypedAst.Root, dependencies: Set[Dependency.FlixDependency])(implicit flix: Flix): List[BootstrapError.TrustError] = {
+    val suspiciousExprs = findSuspiciousExprs(root)
+    val suspiciousLibExprs = pairWithLib(suspiciousExprs)
+    dependencies.toList.flatMap(l => validateTrustLevels(l, suspiciousLibExprs.get(l.projectName))) // can use parmap
+  }
+
+  private def findSuspiciousExprs(root: TypedAst.Root)(implicit flix: Flix): List[SuspiciousExpr] = {
     val traitErrors = ParOps.parMap(root.traits.values)(visitTrait).flatten.toList
     val instanceErrors = ParOps.parMap(root.instances.values)(visitInstance).flatten.toList
     val signatureErrors = ParOps.parMap(root.sigs.values)(visitSig).flatten.toList
@@ -298,4 +310,155 @@ object TrustValidation {
     case Input.Unknown => false
   }
 
+  private def libFromLoc(loc: SourceLocation): String = loc.sp1.source.input match {
+    case Input.Text(_, _, _) => throw InternalCompilerException("expected library input", loc)
+    case Input.TxtFile(_, _) => throw InternalCompilerException("expected library input", loc)
+    case Input.PkgFile(packagePath, _) => resolveLibName(packagePath) // TODO: May break
+    case Input.FileInPackage(packagePath, _, _, _) => resolveLibName(packagePath)
+    case Input.Unknown => throw InternalCompilerException("expected library input", loc)
+  }
+
+  private def pairWithLib(suspiciousExprs: List[SuspiciousExpr]): ListMap[String, SuspiciousExpr] = {
+    ListMap.from(suspiciousExprs.map {
+      case expr => libFromLoc(expr.expr.loc) -> expr
+    })
+  }
+
+  private def validateTrustLevels(dependency: Dependency.FlixDependency, suspiciousLibExprs: List[SuspiciousExpr]): List[BootstrapError.TrustError] = dependency.permissions match {
+    // TODO: Use lib name for error reporting
+    case Permissions.FlixOnly => suspiciousLibExprs.map(e => BootstrapError.TrustError(e.expr.loc)) // if it is empty then no alarms were raised
+    case Permissions.Restricted => suspiciousLibExprs.flatMap(validationSuspiciousExpr(TrustedJvmBase.get))
+    case Permissions.All => List.empty
+  }
+
+  /**
+    * Validates suspicious expressions according to the [[Permissions.Restricted]] level.
+    */
+  private def validationSuspiciousExpr(trustedBase: TrustedJvmBase)(expr0: SuspiciousExpr): Option[BootstrapError.TrustError] = expr0 match {
+    // TODO: Move to TrustValidation
+    case SuspiciousExpr.InstanceOfUse(expr) =>
+      val safe = trustedBase.contains(expr.clazz)
+      if (safe) {
+        None
+      } else {
+        Some(BootstrapError.TrustError(expr.loc))
+      }
+
+    case SuspiciousExpr.CheckedCastUse(expr) =>
+      Some(BootstrapError.TrustError(expr.loc))
+
+    case SuspiciousExpr.UncheckedCastUse(expr) =>
+      Some(BootstrapError.TrustError(expr.loc))
+
+    case SuspiciousExpr.UnsafeUse(expr) =>
+      None
+
+    case SuspiciousExpr.TryCatchUse(expr) =>
+      val safe = expr.rules.forall(r => trustedBase.contains(r.clazz)) // Maybe sequence options?
+      if (safe) {
+        None
+      } else {
+        Some(BootstrapError.TrustError(expr.loc)) // TODO: Report error for each occurrence
+      }
+
+    case SuspiciousExpr.ThrowUse(expr) =>
+      None
+
+    case SuspiciousExpr.InvokeConstructorUse(expr) =>
+      val safe = trustedBase.contains(expr.constructor)
+      if (safe) {
+        None
+      } else {
+        Some(BootstrapError.TrustError(expr.loc))
+      }
+
+    case SuspiciousExpr.InvokeMethodUse(expr) =>
+      val safe = trustedBase.contains(expr.method)
+      if (safe) {
+        None
+      } else {
+        Some(BootstrapError.TrustError(expr.loc))
+      }
+
+    case SuspiciousExpr.InvokeStaticMethodUse(expr) =>
+      val safe = trustedBase.contains(expr.method)
+      if (safe) {
+        None
+      } else {
+        Some(BootstrapError.TrustError(expr.loc))
+      }
+
+    case SuspiciousExpr.GetFieldUse(expr) =>
+      val safe = trustedBase.contains(expr.field.getDeclaringClass)
+      if (safe) {
+        None
+      } else {
+        Some(BootstrapError.TrustError(expr.loc))
+      }
+
+    case SuspiciousExpr.PutFieldUse(expr) =>
+      val safe = trustedBase.contains(expr.field.getDeclaringClass)
+      if (safe) {
+        None
+      } else {
+        Some(BootstrapError.TrustError(expr.loc))
+      }
+
+    case SuspiciousExpr.GetStaticFieldUse(expr) =>
+      val safe = trustedBase.contains(expr.field.getDeclaringClass)
+      if (safe) {
+        None
+      } else {
+        Some(BootstrapError.TrustError(expr.loc))
+      }
+
+    case SuspiciousExpr.PutStaticFieldUse(expr) =>
+      val safe = trustedBase.contains(expr.field.getDeclaringClass)
+      if (safe) {
+        None
+      } else {
+        Some(BootstrapError.TrustError(expr.loc))
+      }
+
+    case SuspiciousExpr.NewObjectUse(expr) =>
+      val safe = trustedBase.contains(expr.clazz)
+      if (safe) {
+        None
+      } else {
+        Some(BootstrapError.TrustError(expr.loc))
+      }
+  }
+
+  private case class TrustedJvmBase(methods: Set[Method], constructors: Set[Constructor[?]], classes: Set[Class[?]], packages: Set[Package]) {
+    def contains(method: Method): Boolean = {
+      methods.contains(method) || contains(method.getDeclaringClass)
+    }
+
+    def contains(constructor: Constructor[?]): Boolean = {
+      constructors.contains(constructor) || contains(constructor.getDeclaringClass)
+    }
+
+    def contains(clazz: Class[?]): Boolean = {
+      classes.contains(clazz) || contains(clazz.getPackage)
+    }
+
+    def contains(pkg: Package): Boolean = {
+      packages.contains(pkg)
+    }
+
+  }
+
+  private object TrustedJvmBase {
+    def get: TrustedJvmBase = {
+      val methods = PrimitiveEffects.getAnnotatedMethods
+      val constructors = PrimitiveEffects.getAnnotatedConstructors
+      val classes = PrimitiveEffects.getAnnotatedClasses
+      val packages = PrimitiveEffects.getAnnotatedPackages
+      TrustedJvmBase(methods, constructors, classes, packages)
+    }
+  }
+
+  private def resolveLibName(path: Path): String = {
+    path.getParent.getParent.normalize().getFileName.toString
+  }
 }

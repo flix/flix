@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
+import ca.uwaterloo.flix.tools.pkg.Dependency
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MultiMap}
@@ -916,13 +917,13 @@ class Flix {
     (reachable, uses)
   }
 
-  def validateTrust(root: TypedAst.Root): List[effectlock.SuspiciousExpr] = {
+  def validateTrust(root: TypedAst.Root, dependencies: Set[Dependency.FlixDependency]): List[BootstrapError.TrustError] = {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
     // Initialize fork-join thread pool.
     initForkJoinPool()
-    val result = TrustValidation.run(root)
+    val result = TrustValidation.run(root, dependencies)
     shutdownForkJoinPool()
 
     result
