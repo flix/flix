@@ -113,9 +113,9 @@ object ConstraintSolverInterface {
     */
   private def toTypeErrors(constr: TypeConstraint, renv: RigidityEnv, subst: SubstitutionTree)(implicit flix: Flix): List[TypeError] = constr match {
     case TypeConstraint.Equality(Type.UnresolvedJvmType(member, _), _, prov) =>
-      List(mkErrorFromUnresolvedJvmMember(member, renv, prov.loc))
+      List(mkErrorFromUnresolvedJvmMember(member, renv, subst, prov.loc))
     case TypeConstraint.Equality(_, Type.UnresolvedJvmType(member, _), prov) =>
-      List(mkErrorFromUnresolvedJvmMember(member, renv, prov.loc))
+      List(mkErrorFromUnresolvedJvmMember(member, renv, subst, prov.loc))
 
     case TypeConstraint.Equality(_, _, Provenance.ExpectType(expected, actual, loc)) =>
       List(TypeError.UnexpectedType(expected = subst(expected), inferred = subst(actual), renv, loc))
@@ -127,9 +127,9 @@ object ConstraintSolverInterface {
       List(TypeError.MismatchedTypes(subst(baseTpe1), subst(baseTpe2), tpe1, tpe2, renv, loc))
 
     case TypeConstraint.Equality(tpe1, tpe2, prov) =>
-      List(TypeError.MismatchedTypes(tpe1, tpe2, tpe1, tpe2, renv, prov.loc))
+      List(TypeError.MismatchedTypes(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
 
-    case TypeConstraint.Trait(sym, tpe, loc) => List(TypeError.MissingInstance(sym, tpe, renv, loc))
+    case TypeConstraint.Trait(sym, tpe, loc) => List(TypeError.MissingInstance(sym, subst(tpe), renv, loc))
 
     case TypeConstraint.Purification(sym, _, _, _, nested) =>
       nested.flatMap(toTypeErrors(_, renv, subst.branches.getOrElse(sym, SubstitutionTree.empty)))
@@ -138,11 +138,11 @@ object ConstraintSolverInterface {
   /**
     * Creates an appropriate error from the unresolved Jvm member.
     */
-  private def mkErrorFromUnresolvedJvmMember(member: Type.JvmMember, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = member match {
-    case JvmMember.JvmConstructor(clazz, tpes) => TypeError.ConstructorNotFound(clazz, tpes, renv, loc)
-    case JvmMember.JvmField(base, tpe, name) => TypeError.FieldNotFound(base, name, tpe, loc)
-    case JvmMember.JvmMethod(tpe, name, tpes) => TypeError.MethodNotFound(name, tpe, tpes, loc)
-    case JvmMember.JvmStaticMethod(clazz, name, tpes) => TypeError.StaticMethodNotFound(clazz, name, tpes, renv, loc)
+  private def mkErrorFromUnresolvedJvmMember(member: Type.JvmMember, renv: RigidityEnv, subst: SubstitutionTree, loc: SourceLocation)(implicit flix: Flix): TypeError = member match {
+    case JvmMember.JvmConstructor(clazz, tpes) => TypeError.ConstructorNotFound(clazz, tpes.map(subst.apply), renv, loc)
+    case JvmMember.JvmField(base, tpe, name) => TypeError.FieldNotFound(base, name, subst(tpe), loc)
+    case JvmMember.JvmMethod(tpe, name, tpes) => TypeError.MethodNotFound(name, subst(tpe), tpes.map(subst.apply), loc)
+    case JvmMember.JvmStaticMethod(clazz, name, tpes) => TypeError.StaticMethodNotFound(clazz, name, tpes.map(subst.apply), renv, loc)
   }
 
   /**
