@@ -174,7 +174,7 @@ object PatMatch {
 
       case Expr.Match(exp, rules, _, _, _) =>
         visitExp(exp)
-        rules.foreach{r =>
+        rules.foreach { r =>
           visitExp(r.exp)
           r.guard.foreach(visitExp)
         }
@@ -296,7 +296,7 @@ object PatMatch {
         visitExp(exp2)
 
       case Expr.SelectChannel(rules, default, _, _, _) =>
-        rules.foreach{r =>
+        rules.foreach { r =>
           visitExp(r.exp)
           visitExp(r.chan)
         }
@@ -426,7 +426,7 @@ object PatMatch {
        * exhaustive. So we create a "Specialized" matrix for "Some" with {True, False} as rows and check that.
        */
       val checkAll: List[Exhaustiveness] = sigma.map(c => {
-        val res: Exhaustiveness = findNonMatchingPat(specialize(c, rules, root), countCtorArgs(c) + n - 1, ??? /* MATT what type here? */, root)
+        val res: Exhaustiveness = findNonMatchingPat(specialize(c, rules, root), countCtorArgs(c) + n - 1, ??? /* MATT what type here? */ , root)
         res match {
           case Exhaustive => Exhaustive
           case NonExhaustive(ctors) => NonExhaustive(rebuildPattern(c, ctors))
@@ -438,7 +438,7 @@ object PatMatch {
       /* If the constructors are not complete, then we will fall to the wild/default case. In that case, we need to
        * check for non matching patterns in the wild/default matrix.
        */
-      findNonMatchingPat(defaultMatrix(rules), n - 1, ??? /* MATT what type here? */, root) match {
+      findNonMatchingPat(defaultMatrix(rules), n - 1, ??? /* MATT what type here? */ , root) match {
         case Exhaustive => Exhaustive
         case NonExhaustive(ctors) => sigma match {
           // If sigma is not empty, pick one of the missing constructors and return it
@@ -609,17 +609,16 @@ object PatMatch {
     * Wildcards are exhaustive, but we need to do some additional checking in that case (@see defaultMatrix)
     *
     * @param ctors The ctors that we match with
-    * @param tpe MATT todo
+    * @param tpe   MATT todo
     * @param root  Root of the expression tree
     * @return
     */
   private def missingFromSig(ctors: List[TyCon], root: TypedAst.Root): List[TyCon] = {
     // Enumerate all the constructors that we need to cover
     def getAllCtors(x: TyCon): List[TyCon] = x match {
-      // For built in constructors, we can add all the options since we know them a priori
-      case TyCon.Unit => List(TyCon.Unit)
-      case TyCon.True => List(TyCon.True, TyCon.False)
-      case TyCon.False => List(TyCon.True, TyCon.False)
+      // For built-in constructors, we can add all the options since we know them a priori
+      case TyCon.Cst(Constant.Unit) => List(TyCon.Cst(Constant.Unit))
+      case TyCon.Cst(Constant.Bool(_)) => List(TyCon.Cst(Constant.Bool(true)), TyCon.Cst(Constant.Bool(false)))
       case a: TyCon.Tuple => List(a)
       case a: TyCon.Record => List(a)
 
@@ -853,4 +852,30 @@ object PatMatch {
   private def mergeAllExhaustive(l: List[Exhaustiveness]): Exhaustiveness = {
     l.foldRight(Exhaustive: Exhaustiveness)(mergeExhaustive)
   }
+
+
+  sealed trait Constructors
+
+  object Constructors {
+    case class Finite(tycons: List[TyCon]) extends Constructors
+    case object Infinite extends Constructors
+  }
+
+  /**
+    * Companion object for [[SharedContext]]
+    */
+  private object SharedContext {
+
+    /**
+      * Returns a fresh shared context.
+      */
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+  }
+
+  /**
+    * A global shared context. Must be thread-safe.
+    *
+    * @param errors the [[NonExhaustiveMatchError]]s in the AST, if any.
+    */
+  private case class SharedContext(errors: ConcurrentLinkedQueue[NonExhaustiveMatchError])
 }
