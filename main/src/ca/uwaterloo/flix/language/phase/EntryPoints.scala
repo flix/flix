@@ -18,9 +18,10 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, TraitSymUse}
-import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, SubstitutionTree, TypeConstraint}
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps, Result}
@@ -320,8 +321,13 @@ object EntryPoints {
         case Result.Ok(false) =>
           val unknownTraitSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
           val traitSym = root.traits.getOrElse(unknownTraitSym, throw InternalCompilerException(s"'$unknownTraitSym' trait not found", defn.sym.loc)).sym
-          val constraint = TraitConstraint(TraitSymUse(traitSym, SourceLocation.Unknown), resultType, SourceLocation.Unknown)
-          val hasToString = TraitEnvironment.holds(constraint, root.traitEnv, root.eqEnv)
+          val constraint = TypeConstraint.Trait(traitSym, resultType, SourceLocation.Unknown)
+          val hasToString = ConstraintSolver2.solveAll(List(constraint), SubstitutionTree.empty)(Scope.Top, RigidityEnv.empty, root.traitEnv, root.eqEnv, flix) match {
+            // If we could reduce all the way, it has ToString
+            case (Nil, _) => true
+            // If not, there is no ToString instance
+            case (_ :: _, _) => false
+          }
           if (hasToString) None
           else Some(EntryPointError.IllegalMainEntryPointResult(resultType, resultType.loc))
         case Result.Err(ErrorOrMalformed) =>
