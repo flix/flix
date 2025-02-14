@@ -136,11 +136,10 @@ object LspServer {
       *   - test/**/*.flix
       */
     private def loadFlixSources(path: Path): Unit = {
-      val flixSources = {
+      val flixSources =
         FileOps.getFilesIn(path, 1) ++
         FileOps.getFilesIn(path.resolve("src"), Int.MaxValue) ++
         FileOps.getFilesIn(path.resolve("test"), Int.MaxValue)
-      }
 
       flixSources.foreach { case p =>
         if (FileOps.checkExt(p, ".flix")) {
