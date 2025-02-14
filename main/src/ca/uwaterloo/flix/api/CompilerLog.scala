@@ -28,7 +28,7 @@ object CompilerLog {
     val p = Paths.get("./compiler.log")
     if (Files.exists(p) && Files.isRegularFile(p) && Files.isWritable(p)) {
       val writer = Files.newBufferedWriter(p)
-      writer.append(s"[$getTimeStamp()] $m")
+      writer.append(s"[$getTimeStamp] $m")
       writer.newLine()
       writer.close()
     }
