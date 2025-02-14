@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
+import java.io.IOException
 import java.nio.file.{Files, Paths}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -22,15 +23,19 @@ import java.time.format.DateTimeFormatter
 object CompilerLog {
 
   /**
-    * Logs the given message `m` to the `compiler.log` file if it exists.
+    * Appends the given message `m` to the `compiler.log` file, if it exists.
     */
   def log(m: String): Unit = {
     val p = Paths.get("./compiler.log")
     if (Files.exists(p) && Files.isRegularFile(p) && Files.isWritable(p)) {
-      val writer = Files.newBufferedWriter(p)
-      writer.append(s"[$getTimeStamp] $m")
-      writer.newLine()
-      writer.close()
+      try {
+        val writer = Files.newBufferedWriter(p)
+        writer.append(s"[${getTimeStamp()}] $m")
+        writer.newLine()
+        writer.close()
+      } catch {
+        case ex: IOException => ex.printStackTrace()
+      }
     }
   }
 
