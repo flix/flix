@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{FileOps, Options}
 import org.eclipse.lsp4j
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages
@@ -113,23 +113,6 @@ object LspServer {
     }
 
     /**
-      * Returns an iterator of all files in the given path, visited recursively.
-      */
-    private def getRecursiveFilesIterator(path: Path): Iterator[Path] = {
-      if (Files.exists(path) && Files.isDirectory(path))
-        Files.walk(path).iterator().asScala
-      else
-        Iterator.empty
-    }
-
-    /**
-      * Checks if the given path is a regular file with the expected extension.
-      */
-    private def checkExt(p: Path, expectedExt: String): Boolean = {
-      Files.isRegularFile(p) && p.getFileName.toString.endsWith(expectedExt)
-    }
-
-    /**
       * Loads all Flix resources in the workspace, including:
       *   - Flix source files (*.flix, src/**/*.flix, test/**/*.flix).
       *   - JAR files (lib/**/*.jar).
@@ -153,16 +136,17 @@ object LspServer {
       *   - test/**/*.flix
       */
     private def loadFlixSources(path: Path): Unit = {
-      val flixFileCandidates = Files.list(path).iterator().asScala ++
-        getRecursiveFilesIterator(path.resolve("src")) ++
-        getRecursiveFilesIterator(path.resolve("test"))
+      val flixSources = {
+        FileOps.getFilesIn(path, 1) ++
+        FileOps.getFilesIn(path.resolve("src"), Int.MaxValue) ++
+        FileOps.getFilesIn(path.resolve("test"), Int.MaxValue)
+      }
 
-      flixFileCandidates.foreach {
-        case p =>
-          if (checkExt(p, ".flix")) {
-            val source = Files.readString(p)
-            addSourceCode(p.toUri.toString, source)
-          }
+      flixSources.foreach { case p =>
+        if (FileOps.checkExt(p, ".flix")) {
+          val source = Files.readString(p)
+          addSourceCode(p.toUri.toString, source)
+        }
       }
     }
 
@@ -172,13 +156,13 @@ object LspServer {
       *   - lib/**/*.fpkg
       */
     private def loadJarsAndFkgs(path: Path) = {
-      getRecursiveFilesIterator(path.resolve("lib"))
+      FileOps.getFilesIn(path.resolve("lib"), Int.MaxValue)
         .foreach{ case p =>
           // Load all JAR files in the workspace, the pattern should be lib/**/*.jar.
-          if (checkExt(p, ".jar"))
+          if (FileOps.checkExt(p, ".jar"))
             flix.addJar(p)
           // Load all Flix package files in the workspace, the pattern should be lib/**/*.fpkg.
-          if (checkExt(p, ".fpkg")) {
+          if (FileOps.checkExt(p, ".fpkg")) {
             flix.addPkg(p)(SecurityContext.AllPermissions)
           }
         }
