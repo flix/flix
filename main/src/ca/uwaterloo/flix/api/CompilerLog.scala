@@ -44,7 +44,7 @@ object CompilerLog {
     */
   private def getTimeStamp(): String = {
     val now = LocalDateTime.now()
-    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
     now.format(formatter)
   }
 
