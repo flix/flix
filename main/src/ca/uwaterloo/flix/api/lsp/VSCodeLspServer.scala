@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider.*
-import ca.uwaterloo.flix.api.{CrashHandler, Flix, Version}
+import ca.uwaterloo.flix.api.{CompilerLog, CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
@@ -63,6 +63,11 @@ import scala.collection.mutable
   * NB: All errors must be printed to std err.
   */
 class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSocketAddress("localhost", port)) {
+
+  /**
+    * The maximum acceptable latency -- in nanoseconds -- before a request is considered slow.
+    */
+  private val MaxLatencyNS: Long = 100_000_000 // 100ms
 
   /**
     * The custom date format to use for logging.
@@ -117,10 +122,16 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   override def onMessage(ws: WebSocket, data: String): Unit = try {
     parseRequest(data) match {
       case Ok(request) =>
+        val t = System.nanoTime()
         val result = processRequest(request)(ws)
         if (ws.isOpen) {
           val jsonCompact = JsonMethods.compact(JsonMethods.render(result))
           // val jsonPretty = JsonMethods.pretty(JsonMethods.render(result))
+
+          val e = System.nanoTime() - t
+          if (e > MaxLatencyNS) {
+            CompilerLog.log(s"Slow request: '${request.getClass.getSimpleName}' took ${e / 1_000_000} ms.")
+          }
           ws.send(jsonCompact)
         }
       case Err(msg) => log(msg)(ws)
@@ -265,7 +276,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       if (highlights.isEmpty)
         ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this highlight.")
       else
-          ("id" -> id) ~("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON).toList))
+        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON).toList))
 
     case Request.Hover(id, uri, pos) =>
       HoverProvider.processHover(uri, pos)(root, flix) match {
