@@ -38,7 +38,7 @@ import org.json4s.native.JsonMethods.parse
 import java.io.ByteArrayInputStream
 import java.net.{InetSocketAddress, URI}
 import java.nio.charset.Charset
-import java.nio.file.{Path, Paths}
+import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.ZipInputStream
