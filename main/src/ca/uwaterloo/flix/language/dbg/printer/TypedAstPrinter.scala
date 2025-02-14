@@ -67,7 +67,7 @@ object TypedAstPrinter {
     case Expr.VectorLit(exps, _, _, _) => DocAst.Expr.VectorLit(exps.map(print))
     case Expr.VectorLoad(exp1, exp2, _, _, _) => DocAst.Expr.VectorLoad(print(exp1), print(exp2))
     case Expr.VectorLength(exp, _) => DocAst.Expr.VectorLength(print(exp))
-    case Expr.Ascribe(exp, tpe, _, _) => DocAst.Expr.AscriptionTpe(print(exp), TypePrinter.print(tpe))
+    case Expr.Ascribe(exp, tpe, _, _, _, _) => DocAst.Expr.AscriptionTpe(print(exp), TypePrinter.print(tpe))
     case Expr.InstanceOf(exp, clazz, _) => DocAst.Expr.InstanceOf(print(exp), clazz)
     case Expr.CheckedCast(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.UncheckedCast(_, _, _, _, _, _) => DocAst.Expr.Unknown

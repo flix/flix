@@ -427,7 +427,7 @@ object Visitor {
       case Expr.VectorLength(exp, _) =>
         visitExpr(exp)
 
-      case Expr.Ascribe(exp, _, _, _) =>
+      case Expr.Ascribe(exp, _, _, _, _, _) =>
         visitExpr(exp)
 
       case Expr.InstanceOf(exp, _, _) =>

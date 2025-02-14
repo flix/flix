@@ -346,10 +346,10 @@ object TypeReconstruction {
       val e = visitExp(exp)
       TypedAst.Expr.VectorLength(e, loc)
 
-    case KindedAst.Expr.Ascribe(exp, _, _, tvar, loc) =>
+    case KindedAst.Expr.Ascribe(exp, declaredType, declaredEff, tvar, loc) =>
       val e = visitExp(exp)
       val eff = e.eff
-      TypedAst.Expr.Ascribe(e, subst(tvar), eff, loc)
+      TypedAst.Expr.Ascribe(e, subst(tvar), eff, declaredType, declaredEff, loc)
 
     case KindedAst.Expr.InstanceOf(exp, clazz, loc) =>
       val e1 = visitExp(exp)

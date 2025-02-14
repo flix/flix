@@ -626,7 +626,7 @@ object Redundancy {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.Ascribe(exp, _, _, _) =>
+    case Expr.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expr.InstanceOf(exp, _, _) =>

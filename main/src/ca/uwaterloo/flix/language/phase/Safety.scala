@@ -227,7 +227,7 @@ object Safety {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Ascribe(exp, _, _, _) =>
+    case Expr.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp)
 
     case Expr.InstanceOf(exp, _, _) =>
