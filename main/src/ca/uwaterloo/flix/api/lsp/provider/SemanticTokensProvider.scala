@@ -1037,8 +1037,7 @@ object SemanticTokensProvider {
     var prevLine = 0
     var prevCol = 0
 
-    implicit val tokenOrdering: Ordering[SemanticToken] = Ordering.by(_.loc)
-    for (token <- SortedSet.empty.concat(tokens)) {
+    for (token <- tokens.sortBy(_.loc)) {
       var relLine = token.loc.beginLine - 1
       var relCol = token.loc.beginCol - 1
 
