@@ -23,8 +23,6 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Token, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.IteratorOps
-import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL.*
 
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable.ArrayBuffer
@@ -40,6 +38,19 @@ object SemanticTokensProvider {
     //
 
     val sourceOpt = root.tokens.keys.find(_.name == uri)
+
+    //
+    // Construct an iterator of the semantic tokens from modifiers.
+    //
+    val modifierTokens = sourceOpt match {
+      case Some(source) =>
+        root.tokens(source).iterator.collect {
+          case Token(kind, _, _, _, sp1, sp2) if kind.isModifier =>
+            val loc = SourceLocation(isReal = true, sp1, sp2)
+            SemanticToken(SemanticTokenType.Modifier, Nil, loc)
+        }
+      case None => Iterator.empty
+    }
 
     //
     // Construct an iterator of the semantic tokens from keywords.
@@ -126,7 +137,7 @@ object SemanticTokensProvider {
     //
     // Collect all tokens into one list.
     //
-    val allTokens = (keywordTokens ++ commentTokens ++ traitTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ structTokens ++ typeAliasTokens ++ effectTokens).toList
+    val allTokens = (modifierTokens ++ keywordTokens ++ commentTokens ++ traitTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ structTokens ++ typeAliasTokens ++ effectTokens).toList
 
     //
     // We keep all tokens that are: (i) single-line tokens, (ii) have the same source as `uri`, and (iii) come from real source locations.
@@ -1026,8 +1037,7 @@ object SemanticTokensProvider {
     var prevLine = 0
     var prevCol = 0
 
-    implicit val tokenOrdering: Ordering[SemanticToken] = Ordering.by(_.loc)
-    for (token <- SortedSet.empty.concat(tokens)) {
+    for (token <- tokens.sortBy(_.loc)) {
       var relLine = token.loc.beginLine - 1
       var relCol = token.loc.beginCol - 1
 
