@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api
 
 import java.io.IOException
-import java.nio.file.{Files, Paths}
+import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -29,7 +29,7 @@ object CompilerLog {
     val p = Paths.get("./compiler.log")
     if (Files.exists(p) && Files.isRegularFile(p) && Files.isWritable(p)) {
       try {
-        val writer = Files.newBufferedWriter(p)
+        val writer = Files.newBufferedWriter(p, StandardOpenOption.APPEND)
         writer.append(s"[${getTimeStamp()}] $m")
         writer.newLine()
         writer.close()
