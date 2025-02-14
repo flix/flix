@@ -399,23 +399,6 @@ class Flix {
     this
   }
 
-  def addFpkg(uri: String, data: Array[Byte], sources: mutable.Map[String, String]): Flix = {
-    val inputStream = new ZipInputStream(new ByteArrayInputStream(data))
-    var entry = inputStream.getNextEntry
-    while (entry != null) {
-      val name = entry.getName
-      if (name.endsWith(".flix")) {
-        val bytes = StreamOps.readAllBytes(inputStream)
-        val src = new String(bytes, Charset.forName("UTF-8"))
-        addSourceCode(s"$uri/$name", src)(SecurityContext.AllPermissions)
-        sources += (s"$uri/$name" -> src)
-      }
-      entry = inputStream.getNextEntry
-    }
-    inputStream.close()
-    this
-  }
-
   /**
     * Removes the given path `p` as a Flix source file.
     */

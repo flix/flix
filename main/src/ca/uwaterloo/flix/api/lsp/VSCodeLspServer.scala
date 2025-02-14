@@ -36,7 +36,7 @@ import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 
 import java.net.{InetSocketAddress, URI}
-import java.nio.file.Path
+import java.nio.file.{Path, Paths}
 import java.text.SimpleDateFormat
 import java.util.Date
 import scala.collection.mutable
@@ -207,8 +207,9 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       remSourceCode(uri)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
-    case Request.AddPkg(id, uri, data) =>
-      flix.addFpkg(uri, data, sources)
+    case Request.AddPkg(id, uri, _) =>
+      val path = Paths.get(URI.create(uri))
+      flix.addPkg(path)(SecurityContext.AllPermissions)
 
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 

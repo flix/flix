@@ -179,9 +179,7 @@ object LspServer {
             flix.addJar(p)
           // Load all Flix package files in the workspace, the pattern should be lib/**/*.fpkg.
           if (checkExt(p, ".fpkg")) {
-                        val uri = p.toUri.toString
-                        val data = Files.readAllBytes(p)
-            flix.addFpkg(uri, data, sources)
+            flix.addPkg(p)(SecurityContext.AllPermissions)
           }
         }
     }
