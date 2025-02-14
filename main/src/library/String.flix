@@ -738,7 +738,7 @@ mod String {
     ///
     /// Returns `true` if `s` is empty.
     ///
-    pub def isWhiteSpace(s: String): Bool =
+    pub def isWhitespace(s: String): Bool =
         forAll(Char.isWhitespace, s)
 
     ///
