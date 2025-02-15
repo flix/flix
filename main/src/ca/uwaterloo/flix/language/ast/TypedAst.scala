@@ -193,7 +193,7 @@ object TypedAst {
       def tpe: Type = Type.Int32
     }
 
-    case class Ascribe(exp: Expr, tpe: Type, expectedType: Option[Type], eff: Type, expectedEff: Option[Type], loc: SourceLocation) extends Expr
+    case class Ascribe(exp: Expr, expectedType: Option[Type], expectedEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class InstanceOf(exp: Expr, clazz: java.lang.Class[?], loc: SourceLocation) extends Expr {
       def eff: Type = exp.eff

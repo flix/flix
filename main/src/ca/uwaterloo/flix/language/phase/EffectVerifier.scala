@@ -258,7 +258,7 @@ object EffectVerifier {
       expectType(expected, actual, loc)
     case Expr.VectorLength(exp, loc) =>
       visitExp(exp)
-    case Expr.Ascribe(exp, tpe, expectedType, eff, expectedEff, loc) =>
+    case Expr.Ascribe(exp, expectedType, expectedEff, tpe, eff, loc) =>
       visitExp(exp)
     case Expr.InstanceOf(exp, clazz, loc) =>
       visitExp(exp)

@@ -349,7 +349,7 @@ object TypeReconstruction {
     case KindedAst.Expr.Ascribe(exp, expectedType, expectedEff, tvar, loc) =>
       val e = visitExp(exp)
       val eff = e.eff
-      TypedAst.Expr.Ascribe(e, subst(tvar), expectedType, eff, expectedEff, loc)
+      TypedAst.Expr.Ascribe(e, expectedType, expectedEff, subst(tvar), eff, loc)
 
     case KindedAst.Expr.InstanceOf(exp, clazz, loc) =>
       val e1 = visitExp(exp)
