@@ -64,6 +64,8 @@ object ZheglakinPerf {
 
     // Collect all Boolean effect equation systems.
     val buffer = mutable.ArrayBuffer.empty[List[Equation]]
+
+    EffUnification3.EnableSmartSubeffecting = false
     val flix = new Flix()
     flix.addListener {
       case FlixEvent.SolveEffEquations(eqns) =>
@@ -73,6 +75,7 @@ object ZheglakinPerf {
       case _ => // nop
     }
     val (_, errors) = flix.check()
+    assert(buffer.nonEmpty)
     assert(errors.isEmpty)
     val allEquationSystems = buffer.toList
 
