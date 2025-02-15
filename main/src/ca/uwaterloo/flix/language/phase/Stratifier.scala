@@ -275,9 +275,9 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.VectorLength(e, loc)
 
-    case Expr.Ascribe(exp, tpe, eff, declaredType, declaredEff, loc) =>
+    case Expr.Ascribe(exp, tpe, expectedType, eff, expectedEff, loc) =>
       val e = visitExp(exp)
-      Expr.Ascribe(e, tpe, eff, declaredType, declaredEff, loc)
+      Expr.Ascribe(e, tpe, expectedType, eff, expectedEff, loc)
 
     case Expr.InstanceOf(exp, clazz, loc) =>
       val e = visitExp(exp)
