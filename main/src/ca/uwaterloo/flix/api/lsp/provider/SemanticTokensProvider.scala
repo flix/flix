@@ -563,8 +563,8 @@ object SemanticTokensProvider {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Ascribe(exp, tpe, _, _) =>
-      visitExp(exp) ++ visitType(tpe)
+    case Expr.Ascribe(exp, expectedType, expectedEff, _, _, _) =>
+      visitExp(exp) ++ expectedType.map(visitType).getOrElse(Iterator.empty) ++ expectedEff.map(visitType).getOrElse(Iterator.empty)
 
     case Expr.InstanceOf(exp, _, _) =>
       visitExp(exp)
