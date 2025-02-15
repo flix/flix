@@ -101,17 +101,16 @@ object SetUnification {
     */
   def solve(l: List[Equation])(implicit listener: SolverListener): (List[Equation], SetSubstitution) = {
     val state = new State(l)
-    val trivialPhaseName = Phase.Trivial
 
     if (EnableRewriteRules) {
-      runWithState(state, runRule(constantAssignment), Phase.ConstantPropagation)
-      runWithState(state, runRule(trivial), trivialPhaseName)
+      runWithState(state, runRule(constantPropagation), Phase.ConstantPropagation)
+      runWithState(state, runRule(trivial), Phase.Trivial)
       runWithState(state, runRule(variableAlias), Phase.VariablePropagation)
-      runWithState(state, runRule(trivial), trivialPhaseName)
+      runWithState(state, runRule(trivial), Phase.Trivial)
       runWithState(state, runRule(variableAssignment), Phase.VariableAssignment)
-      runWithState(state, runRule(trivial), trivialPhaseName)
+      runWithState(state, runRule(trivial), Phase.Trivial)
       runWithState(state, reflexiveAndDuplicate, Phase.ReflexiveAndDuplicate)
-      runWithState(state, runRule(trivial), trivialPhaseName)
+      runWithState(state, runRule(trivial), Phase.Trivial)
     }
 
     sveAll(state.eqs) match {
@@ -254,22 +253,23 @@ object SetUnification {
   private def trivial(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
     val Equation(f1, f2, _, _) = eq
 
-    def error(): Option[(List[Equation], SetSubstitution)] = {
-      Some((List(eq.toUnsolvable), SetSubstitution.empty))
-    }
-
     def success(): Option[(List[Equation], SetSubstitution)] = {
       Some((Nil, SetSubstitution.empty))
     }
 
+    def error(): Option[(List[Equation], SetSubstitution)] = {
+      Some((List(eq.toUnsolvable), SetSubstitution.empty))
+    }
+
     (f1, f2) match {
-      // Equations that are solved.
+      // Equations that are trivial.
       case (Univ, Univ) => success()
       case (Empty, Empty) => success()
       case (Cst(c1), Cst(c2)) if c1 == c2 => success()
       case (Var(x1), Var(x2)) if x1 == x2 => success()
       case (ElemSet(e1), ElemSet(e2)) if e1 == e2 => success()
-      // Equations that are Unsolvable.
+
+      // Equations that are in conflict.
       case (Univ, Empty) => error()
       case (Univ, ElemSet(_)) => error()
       case (Univ, Cst(_)) => error()
@@ -284,7 +284,8 @@ object SetUnification {
       case (Cst(_), Empty) => error()
       case (Cst(_), ElemSet(_)) => error()
       case (Cst(c1), Cst(c2)) if c1 != c2 => error()
-      // Equations that are not trivial.
+
+      // Equations that are neither trivial nor in obvious conflict.
       case _ => None // Cannot do anything.
     }
   }
@@ -303,7 +304,7 @@ object SetUnification {
     *
     * This also applies to the symmetric equations.
     */
-  private def constantAssignment(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+  private def constantPropagation(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
     val Equation(f1, f2, _, loc) = eq
     (f1, f2) match {
       // x ~ f, where f is ground
