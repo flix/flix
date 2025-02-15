@@ -19,7 +19,6 @@ import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
 import ca.uwaterloo.flix.util.collection.SortedBimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -35,17 +34,24 @@ object EffUnification3 {
   var EnableSmartSubeffecting: Boolean = true
 
   /**
-    * Tries to solve the system of effect equality constraints `eqs`.
+    * Computes an MGU for **ALL* equations in `eqns`.
     *
-    * Returns `(eqs', subst)` where `eqs'` are the remaining equations that were not solved and
-    * `subst` is a most general unifier of the equations that were solved. Equations in `eqs'` are
-    * not always unsolvable, maybe they just need more resolution of associated types for example.
+    * Returns `Result.Ok(s)` if *ALL* equations in `eqns` where solvable.
+    *   The returned substitution `s` is an MGU for `eqns`.
+    *
+    * Returns `Result.Err(l)` if *a single equation* in `eqns` is unsolvable.
+    *   The returned list `l` is a non-empty list of equations that were unsolvable (i.e. in conflict).
+    *   The equations in `l` are derived from `eqns` but are not a strict subset of `eqns`.
+    *   That is, an equation in `l` may not directly correspond to any equation in `eqns`. However, their source locations are valid.
+    *
+    * Returns `Result.Err(eqns)` if `eqns` contains an equation that is ill-kinded. Hence, it is better to handle ill-kinded equations elsewhere.
+    *
+    * Note: Treats `Type.Error` as a constant, i.e. only equal to itself. Hence, it is better to drop equations that contain `Type.Error`.
     */
-  def unifyAll(eqs: List[(Type, Type, SourceLocation)], scope: Scope, renv: RigidityEnv)(implicit flix: Flix): (List[(Type, Type, SourceLocation)], Substitution) = {
-
+  def unifyAll(eqs: List[(Type, Type, SourceLocation)], scope: Scope, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, List[(Type, Type, SourceLocation)]] = {
     // Performance: Nothing to do if the equation list is empty
     if (eqs.isEmpty) {
-      return (Nil, Substitution.empty)
+      return Result.Ok( Substitution.empty)
     }
 
     // Add to implicit context.
@@ -65,7 +71,7 @@ object EffUnification3 {
         val (unsolvedEqns, resultSubst) = SetUnification.solve(equations)
         if (unsolvedEqns.isEmpty) {
           // We have found a valid solution without subeffecting. Return it immediately.
-          return (fromSetEquations(unsolvedEqns), fromSetSubst(resultSubst)(withSlack = false, m = bimap))
+          return Result.Ok(fromSetSubst(resultSubst)(withSlack = false, m = bimap))
         }
         // Otherwise we fall through.
       } catch {
@@ -80,11 +86,15 @@ object EffUnification3 {
       val equations = toEquations(eqs, withSlack = true)
       flix.emitEvent(FlixEvent.SolveEffEquations(equations))
       val (unsolvedEqns, resultSubst) = SetUnification.solve(equations)
-      (fromSetEquations(unsolvedEqns), fromSetSubst(resultSubst)(withSlack = true, m = bimap))
+      if (unsolvedEqns.isEmpty) {
+        Result.Ok(fromSetSubst(resultSubst)(withSlack = true, m = bimap))
+      } else {
+        Result.Err(fromSetEquations(unsolvedEqns))
+      }
     } catch {
       case InvalidType =>
         // The effect equations are invalid.
-        (eqs, Substitution.empty)
+        Result.Err(eqs)
     }
   }
 
