@@ -48,10 +48,15 @@ object SetUnification {
 
   object Phase {
     final case object ConstantPropagation extends Phase
+
     final case object VariablePropagation extends Phase
+
     final case object VariableAssignment extends Phase
+
     final case object ReflexiveAndDuplicate extends Phase
+
     final case object SuccessiveVariableElimination extends Phase
+
     final case object Trivial extends Phase
   }
 
@@ -296,11 +301,9 @@ object SetUnification {
     * If no progress can be made, [[None]] is returned.
     *
     *   - `x ~ f` where [[SetFormula.isGround]] on `f` is true, becomes `({}, [x -> f])`
-    *   - `!x ~ f` where [[SetFormula.isGround]] on `f` is true, becomes `({}, [x -> !f])`
-    *   - `f1 ∩ f2 ∩ .. ~ univ` becomes `({f1 ~ univ, f2 ~ univ, ..}, [])`
     *   - `f1 ∪ f2 ∪ .. ~ empty` becomes `({f1 ~ empty, f2 ~ empty, ..}, [])`
-    *   - `f1 ~ f2` where [[SetFormula.isGround]] is true on both sides, becomes `({}, [])` if it
-    *     holds or `({f1 ~error f2}, [])` if it does not.
+    *
+    * The cases are determined by careful profiling.
     *
     * This also applies to the symmetric equations.
     */
@@ -317,30 +320,6 @@ object SetUnification {
       // Symmetric case.
       case (f, Var(x)) if f.isGround =>
         Some((Nil, SetSubstitution.singleton(x, f)))
-
-      // !x ~ f, where f is ground
-      // ---
-      // {},
-      // [x -> !f]
-      case (Compl(Var(x)), f) if f.isGround =>
-        Some((Nil, SetSubstitution.singleton(x, mkCompl(f))))
-
-      // Symmetric case.
-      case (f, Compl(Var(x))) if f.isGround =>
-        Some((Nil, SetSubstitution.singleton(x, mkCompl(f))))
-
-      // f1 ∩ f2 ∩ .. ~ univ
-      // ---
-      // {f1 ~ univ, f2 ~ univ, ..},
-      // []
-      case (Inter(l), Univ) =>
-        val eqs = l.toList.map(Equation.mk(_, Univ, loc))
-        Some((eqs, SetSubstitution.empty))
-
-      // Symmetric case.
-      case (Univ, Inter(l)) =>
-        val eqs = l.toList.map(Equation.mk(_, Univ, loc))
-        Some((eqs, SetSubstitution.empty))
 
       // f1 ∪ f2 ∪ .. ~ empty
       // ---
@@ -456,11 +435,11 @@ object SetUnification {
   }
 
   /**
-   * Attempts to solve all the given equations `eqs` using the SVE algorithm.
-   *
-   * Returns `Result.Ok(s)` with a complete substitution `s` if all equations were solved.
-   * Returns `Result.Err(l)` with a list of unsolveable equations. (At least one equation is unsolveable.)
-   */
+    * Attempts to solve all the given equations `eqs` using the SVE algorithm.
+    *
+    * Returns `Result.Ok(s)` with a complete substitution `s` if all equations were solved.
+    * Returns `Result.Err(l)` with a list of unsolveable equations. (At least one equation is unsolveable.)
+    */
   private def sveAll(eqs: List[Equation]): Result[SetSubstitution, List[Equation]] = {
     // Return immediately if there are no equations to solve.
     if (eqs.isEmpty) {
