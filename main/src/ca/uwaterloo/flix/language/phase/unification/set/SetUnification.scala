@@ -382,7 +382,6 @@ object SetUnification {
     * If no progress can be made, [[None]] is returned.
     *
     *   - `x ~ f` where `f` does not contain `x` becomes `({}, [x -> f])`
-    *   - `!x ~ f` where `f` does not contain `x` becomes `({}, [x -> !f])`
     *
     * This also applies to the symmetric equations.
     */
@@ -399,17 +398,6 @@ object SetUnification {
       // Symmetric case.
       case (f, v@Var(x)) if !f.contains(v) =>
         Some((Nil, SetSubstitution.singleton(x, f)))
-
-      // !x ~ f, where f does not contain x
-      // ---
-      // {},
-      // [x -> !f]
-      case (Compl(v@Var(x)), f) if !f.contains(v) =>
-        Some((Nil, SetSubstitution.singleton(x, mkCompl(f))))
-
-      // Symmetric case.
-      case (f, Compl(v@Var(x))) if !f.contains(v) =>
-        Some((Nil, SetSubstitution.singleton(x, mkCompl(f))))
 
       case _ =>
         // Cannot do anything.
