@@ -25,7 +25,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestSetUnification extends AnyFunSuite with TestUtils {
 
-  implicit val listener: SolverListener = SolverListener.DoNothing
+  implicit val listener: SolverListener = SolverListener.stringListener(println)
 
   def mkEq(f1: SetFormula, f2: SetFormula): Equation = Equation.mk(f1, f2, SourceLocation.Unknown)
 
@@ -251,6 +251,30 @@ class TestSetUnification extends AnyFunSuite with TestUtils {
       mkEq(Var(34), Var(33)),
       mkEq(Var(19), Var(17)),
       mkEq(Var(34), Var(20))
+    )
+    val (eqs, _) = SetUnification.solve(input)
+    assert(eqs.isEmpty)
+  }
+
+  test("RedBlackTree.findLeft") {
+    val input = List(
+      mkEq(Cst(19), Union(TwoList(Var(6), Var(18), List()))),
+      mkEq(Var(8), Empty),
+      mkEq(Var(8), Var(0)),
+      mkEq(Var(7), Cst(19)),
+      mkEq(Var(1), Union(TwoList(Var(7), Var(0), List()))),
+      mkEq(Var(9), Var(2)),
+      mkEq(Var(11), Var(3)),
+      mkEq(Var(13), Var(11)),
+      mkEq(Union(TwoList(Var(2), Var(10), List())), Union(TwoList(Var(1), Var(3), List(Var(12))))),
+      mkEq(Var(13), Var(4)),
+      mkEq(Var(9), Var(14)),
+      mkEq(Var(14), Var(5)),
+      mkEq(Var(11), Union(TwoList(Var(4), Var(5), List(Var(15))))),
+      mkEq(Var(9), Union(TwoList(Var(2), Var(10), List()))),
+      mkEq(Var(17), Var(11)),
+      mkEq(Var(16), Union(TwoList(Var(2), Var(10), List()))),
+      mkEq(Var(17), Var(6))
     )
     val (eqs, _) = SetUnification.solve(input)
     assert(eqs.isEmpty)
