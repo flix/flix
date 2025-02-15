@@ -110,7 +110,7 @@ object SetUnification {
     if (EnableRewriteRules) {
       runWithState(state, runRule(constantPropagation), Phase.ConstantPropagation)
       runWithState(state, runRule(trivial), Phase.Trivial)
-      runWithState(state, runRule(variableAlias), Phase.VariablePropagation)
+      runWithState(state, runRule(variablePropagation), Phase.VariablePropagation)
       runWithState(state, runRule(trivial), Phase.Trivial)
       runWithState(state, runRule(variableAssignment), Phase.VariableAssignment)
       runWithState(state, runRule(trivial), Phase.Trivial)
@@ -303,7 +303,7 @@ object SetUnification {
     *   - `x ~ f` where [[SetFormula.isGround]] on `f` is true, becomes `({}, [x -> f])`
     *   - `f1 ∪ f2 ∪ .. ~ empty` becomes `({f1 ~ empty, f2 ~ empty, ..}, [])`
     *
-    * The cases are determined by careful profiling.
+    * The cases were determined by careful profiling.
     *
     * This also applies to the symmetric equations.
     */
@@ -347,13 +347,12 @@ object SetUnification {
     *
     *   - `x1 ~ x1` becomes `({}, [])`
     *   - `x1 ~ x2` becomes `({}, [x1 -> x2])`
-    *   - `!x1 ~ !x1` becomes `({}, [])`
-    *   - `!x1 ~ !x2` becomes `({}, [x1 -> x2])`
     *
-    * There is a binding-bias towards lower variables, such that `x1 ~ x2` and `x2 ~ x1` both
-    * become `({}, [x1 -> x2])`.
+    * The cases were determined by careful profiling.
+    *
+    * There is a binding-bias towards lower variables, such that `x1 ~ x2` and `x2 ~ x1` both become `({}, [x1 -> x2])`.
     */
-  private def variableAlias(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
+  private def variablePropagation(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
     val Equation(f1, f2, _, _) = eq
     (f1, f2) match {
       // x1 ~ x1
@@ -369,22 +368,6 @@ object SetUnification {
       // [x1 -> x2]
       case (x0@Var(_), y0@Var(_)) =>
         val (x, y) = if (x0.x > y0.x) (y0, x0) else (x0, y0)
-        Some((Nil, SetSubstitution.singleton(x.x, y)))
-
-      // !x1 ~ !x1
-      // ---
-      // {},
-      // []
-      case (Compl(Var(x)), Compl(Var(y))) if x == y =>
-        Some((Nil, SetSubstitution.empty))
-
-      // !x1 ~ !x2
-      // ---
-      // {},
-      // [x1 -> x2]
-      case (Compl(x0@Var(_)), Compl(y0@Var(_))) =>
-        // Make this rule stable on symmetric equations.
-        val (x, y) = if (x0.x < y0.x) (x0, y0) else (y0, x0)
         Some((Nil, SetSubstitution.singleton(x.x, y)))
 
       case _ =>
