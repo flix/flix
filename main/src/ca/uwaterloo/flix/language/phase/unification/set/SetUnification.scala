@@ -258,37 +258,23 @@ object SetUnification {
   private def trivial(eq: Equation): Option[(List[Equation], SetSubstitution)] = {
     val Equation(f1, f2, _, _) = eq
 
-    def success(): Option[(List[Equation], SetSubstitution)] = {
-      Some((Nil, SetSubstitution.empty))
-    }
-
-    def error(): Option[(List[Equation], SetSubstitution)] = {
-      Some((List(eq.toUnsolvable), SetSubstitution.empty))
-    }
+    val success = Some((Nil, SetSubstitution.empty))
+    val failure = Some((List(eq.toUnsolvable), SetSubstitution.empty))
 
     (f1, f2) match {
       // Equations that are trivial.
-      case (Univ, Univ) => success()
-      case (Empty, Empty) => success()
-      case (Cst(c1), Cst(c2)) if c1 == c2 => success()
-      case (Var(x1), Var(x2)) if x1 == x2 => success()
-      case (ElemSet(e1), ElemSet(e2)) if e1 == e2 => success()
+      case (Univ, Univ) => success
+      case (Empty, Empty) => success
+      case (Cst(c1), Cst(c2)) if c1 == c2 => success
+      case (Var(x1), Var(x2)) if x1 == x2 => success
+      case (ElemSet(e1), ElemSet(e2)) if e1 == e2 => success
 
       // Equations that are in conflict.
-      case (Univ, Empty) => error()
-      case (Univ, ElemSet(_)) => error()
-      case (Univ, Cst(_)) => error()
-      case (Empty, Univ) => error()
-      case (Empty, ElemSet(_)) => error()
-      case (Empty, Cst(_)) => error()
-      case (ElemSet(_), Univ) => error()
-      case (ElemSet(e), Empty) if e.nonEmpty => error()
-      case (ElemSet(i1), ElemSet(i2)) if i1 != i2 => error()
-      case (ElemSet(_), Cst(_)) => error()
-      case (Cst(_), Univ) => error()
-      case (Cst(_), Empty) => error()
-      case (Cst(_), ElemSet(_)) => error()
-      case (Cst(c1), Cst(c2)) if c1 != c2 => error()
+      // The cases here were determined by careful profiling.
+      case (Empty, Cst(_)) => failure
+      case (Cst(_), Empty) => failure
+      case (ElemSet(_), Empty) => failure
+      case (Empty, ElemSet(_)) => failure
 
       // Equations that are neither trivial nor in obvious conflict.
       case _ => None // Cannot do anything.
@@ -448,7 +434,7 @@ object SetUnification {
       Result.Ok(SetSubstitution(m))
     } catch {
       case _: BoolUnificationException =>
-        // SVE failed. We give up. We indiscriminately mark all equations as unsolveable.
+        // SVE failed. We give up. We indiscriminately mark all equations as unsolvable.
         Result.Err(eqs.map(_.toUnsolvable))
     }
   }
