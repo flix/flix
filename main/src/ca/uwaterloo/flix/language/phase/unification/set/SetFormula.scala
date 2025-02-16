@@ -39,7 +39,7 @@ sealed trait SetFormula {
 
   import SetFormula.*
 
-  /** Faster alternative to `this.variables.contains(v)`. */
+  /** Faster alternative to `this.varsOf.contains(v)`. */
   final def contains(v: Var): Boolean = this match {
     case Univ => false
     case Empty => false
@@ -49,22 +49,20 @@ sealed trait SetFormula {
     case Compl(f) => f.contains(v)
     case Inter(l) => l.exists(f => f.contains(v))
     case Union(l) => l.exists(f => f.contains(v))
-    case Xor(other) =>
-      other.exists(_.contains(v))
+    case Xor(other) => other.exists(_.contains(v))
   }
 
-  /** `true` if `this` contains neither [[Var]] nor [[Cst]]. */
-  final lazy val isGround: Boolean = this match {
+  /** `true` if `this` contains no variables. */
+  final def isGround: Boolean = this match {
     case Univ => true
     case Empty => true
-    case Cst(_) => false
+    case Cst(_) => true
     case Var(_) => false
     case ElemSet(_) => true
     case Compl(f) => f.isGround
     case Inter(l) => l.forall(_.isGround)
     case Union(l) => l.forall(_.isGround)
-    case Xor(other) =>
-      other.forall(_.isGround)
+    case Xor(l) => l.forall(_.isGround)
   }
 
   /**
@@ -79,7 +77,7 @@ sealed trait SetFormula {
     case Compl(f) => f.cstsOf
     case Inter(l) => l.toList.map(_.cstsOf).reduce(_ ++ _)
     case Union(l) => l.toList.map(_.cstsOf).reduce(_ ++ _)
-    case Xor(other) => other.foldLeft(SortedSet.empty[Int]) {
+    case Xor(l) => l.foldLeft(SortedSet.empty[Int]) {
       case (acc, f) => acc ++ f.cstsOf
     }
   }
