@@ -210,16 +210,18 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     // Case 3: Merge the two substitutions.
 
     // Add all bindings in `that`. (Applying the current substitution).
-    var result = Map.empty[Symbol.KindedTypeVarSym, Type]
-    for ((x, t) <- that.m) {
-      val tpe = this.apply(t)
-      result = result.updated(x, tpe)
+    var result = that.m
+    for ((x, tpe) <- that.m) {
+      val t = this.apply(tpe)
+      if (!(t eq tpe)) {
+        result = result.updated(x, t)
+      }
     }
 
     // Add all bindings in `this` that are not in `that`.
-    for ((x, t) <- this.m) {
+    for ((x, tpe) <- this.m) {
       if (!that.m.contains(x)) {
-        result = result.updated(x, t)
+        result = result.updated(x, tpe)
       }
     }
 
