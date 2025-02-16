@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.language.phase.unification.set.SetUnification
+import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.collection.ListMap
 
 import scala.annotation.tailrec
@@ -397,15 +398,15 @@ object ConstraintSolver2 {
 
     // First solve all the top-level constraints together
     val (leftovers1, subst1) = EffUnification3.unifyAll(eqs, scope, renv) match {
-      // If we solved everything, then we can use the new substitution.
-      case (Nil, subst) =>
+      case Result.Ok(subst) =>
+        // If we solved everything, then we can use the new substitution.
         // We only mark progress if there was something to solve.
         if (eqConstrs.nonEmpty) {
           progress.markProgress()
         }
         (Nil, subst)
-      // Otherwise, throw away everything.
-      case (_ :: _, _) =>
+      case Result.Err(unsolved_UNUSED) => // TODO: Why not use these equations?
+        // Otherwise, throw away everything.
         (eqConstrs, Substitution.empty)
     }
 
