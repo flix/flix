@@ -209,20 +209,14 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
 
     // Case 3: Merge the two substitutions.
 
-    // Performance: Use of mutability improve performance.
-    import scala.collection.mutable
-    val mutMap = mutable.Map.empty[Symbol.KindedTypeVarSym, Type]
-
     // Add all bindings in `that`. (Applying the current substitution).
+    var result = Map.empty[Symbol.KindedTypeVarSym, Type]
     for ((x, t) <- that.m) {
       val tpe = this.apply(t)
-      mutMap.update(x, tpe)
+      result = result.updated(x, tpe)
     }
 
-    // Performance: We now switch back to building the immutable map in `result`.
-
     // Add all bindings in `this` that are not in `that`.
-    var result = mutMap.toMap
     for ((x, t) <- this.m) {
       if (!that.m.contains(x)) {
         result = result.updated(x, t)
