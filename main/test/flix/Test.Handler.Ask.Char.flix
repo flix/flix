@@ -10,7 +10,7 @@ mod Test.Handler.Ask.Char {
     def sample(limit: Char): List[Char] =
         run {
             generator('a'); Nil
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = if (x == limit) Nil else x :: k()
         }
 

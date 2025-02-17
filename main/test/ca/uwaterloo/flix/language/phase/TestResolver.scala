@@ -530,7 +530,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("UndefinedEffect.01") {
     val input =
       """
-        |def f(): Unit = run () with E {
+        |def f(): Unit = run () with handler E {
         |    def op() = ()
         |}
         |""".stripMargin
@@ -543,7 +543,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |eff E
         |
-        |def f(): Unit = run () with E {
+        |def f(): Unit = run () with handler E {
         |    def op() = ()
         |}
         |""".stripMargin
@@ -639,7 +639,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[TypeError.ConstructorNotFound](result)
   }
 
-  test("UndefinedJvmClass.01") {
+  test("UndefinedJvmImport.01") {
     val input =
       raw"""
            |import foo.bar.Baz
@@ -648,10 +648,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmClass](result)
+    expectError[ResolutionError.UndefinedJvmImport](result)
   }
 
-  test("UndefinedJvmClass.02") {
+  test("UndefinedJvmImport.02") {
     val input =
       raw"""
            |import foo.bar.Baz
@@ -661,10 +661,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmClass](result)
+    expectError[ResolutionError.UndefinedJvmImport](result)
   }
 
-  test("UndefinedJvmClass.03") {
+  test("UndefinedJvmImport.03") {
     val input =
       raw"""
            |import foo.bar.Baz
@@ -673,7 +673,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmClass](result)
+    expectError[ResolutionError.UndefinedJvmImport](result)
   }
 
   test("UndefinedJvmMethod.01") {
@@ -1342,6 +1342,21 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
+  test("UndefinedTypeVar.Where.01") {
+    // https://github.com/flix/flix/issues/8409
+    val input =
+      """
+        |trait Trait[t] {
+        |    type Tpe: Type
+        |}
+        |
+        |def foo(): Unit where Trait.Tpe[a] ~ Int32 =
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
   test("UndefinedTypeVar.Expression.01") {
     val input =
       """
@@ -1618,7 +1633,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |
         |def foo(): Unit = {
-        |    run checked_ecast(()) with E {
+        |    run checked_ecast(()) with handler E {
         |        def op(x, y, cont) = ()
         |    }
         |}
@@ -1943,7 +1958,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |def foo(): Unit = {
         |    run {
         |      E.op()
-        |    } with E {
+        |    } with handler E {
         |    }
         |}
         |""".stripMargin
@@ -1962,7 +1977,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |def foo(): Unit = {
         |    run {
         |      E.op1()
-        |    } with E {
+        |    } with handler E {
         |      def op1(k): Unit = k()
         |    }
         |}

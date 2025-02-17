@@ -93,6 +93,11 @@ class Flix {
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
 
   /**
+    * A cache of error messages for incremental compilation.
+    */
+  private var cachedErrors: List[CompilationMessage] = Nil
+
+  /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
     *
     * The core library *must* be present for any program to compile.
@@ -123,7 +128,6 @@ class Flix {
     // Built-in
     "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),
     "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
-    "Sendable.flix" -> LocalResource.get("/src/library/Sendable.flix"),
     "Order.flix" -> LocalResource.get("/src/library/Order.flix"),
 
     // Lattices
@@ -256,7 +260,6 @@ class Flix {
     "Fixpoint/Ast/PrecedenceGraph.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/PrecedenceGraph.flix"),
     "Fixpoint/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Ram.flix"),
 
-    "App.flix" -> LocalResource.get("/src/library/App.flix"),
     "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
     "Clock.flix" -> LocalResource.get("/src/library/Clock.flix"),
     "Http.flix" -> LocalResource.get("/src/library/Http.flix"),
@@ -269,7 +272,9 @@ class Flix {
     "FileReadWithResult.flix" -> LocalResource.get("/src/library/FileReadWithResult.flix"),
     "FileWrite.flix" -> LocalResource.get("/src/library/FileWrite.flix"),
     "FileWriteWithResult.flix" -> LocalResource.get("/src/library/FileWriteWithResult.flix"),
+    "ProcessHandle.flix" -> LocalResource.get("/src/library/ProcessHandle.flix"),
     "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
+    "ProcessWithResult.flix" -> LocalResource.get("/src/library/ProcessWithResult.flix"),
     "Severity.flix" -> LocalResource.get("/src/library/Severity.flix"),
     "TimeUnit.flix" -> LocalResource.get("/src/library/TimeUnit.flix"),
 
@@ -341,7 +346,7 @@ class Flix {
       throw new IllegalArgumentException("'text' must be non-null.")
     if (sctx == null)
       throw new IllegalArgumentException("'sctx' must be non-null.")
-    addInput(name, Input.Text(name, text, stable = false, sctx))
+    addInput(name, Input.Text(name, text, sctx))
     this
   }
 
@@ -351,7 +356,7 @@ class Flix {
   def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
-    remInput(name, Input.Text(name, "", stable = false, /* unused */ SecurityContext.NoPermissions))
+    remInput(name, Input.Text(name, "", /* unused */ SecurityContext.NoPermissions))
     this
   }
 
@@ -442,7 +447,7 @@ class Flix {
     case None => // nop
     case Some(_) =>
       changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
-      inputs += name -> Input.Text(name, "", stable = false, /* unused */ SecurityContext.NoPermissions)
+      inputs += name -> Input.Text(name, "", /* unused */ SecurityContext.NoPermissions)
   }
 
   /**
@@ -509,6 +514,13 @@ class Flix {
       AstPrinter.resetPhaseFile()
     }
 
+    // We mark all inputs that contains compilation errors as dirty.
+    // Hence if a file contains an error it will be recompiled -- giving it a chance to disappear.
+    for (e <- cachedErrors) {
+      val i = e.loc.sp1.source.input
+      changeSet = changeSet.markChanged(i, cachedTyperAst.dependencyGraph)
+    }
+
     // The default entry point
     val entryPoint = flix.options.entryPoint
 
@@ -559,31 +571,28 @@ class Flix {
 
             EffectVerifier.run(afterTyper)
 
-            val (afterRegions, regionErrors) = Regions.run(afterTyper)
-            errors ++= regionErrors
-
-            val (afterEntryPoint, entryPointErrors) = EntryPoints.run(afterRegions)
+            val (afterEntryPoint, entryPointErrors) = EntryPoints.run(afterTyper)
             errors ++= entryPointErrors
 
             val (afterInstances, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
             errors ++= instanceErrors
 
-            val (afterPredDeps, predDepErrors) = PredDeps.run(afterInstances)
+            val (afterPredDeps, predDepErrors) = PredDeps.run(afterInstances, cachedTyperAst, changeSet)
             errors ++= predDepErrors
 
             val (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
             errors ++= stratificationErrors
 
-            val (afterPatMatch, patMatchErrors) = PatMatch.run(afterStratifier)
+            val (afterPatMatch, patMatchErrors) = PatMatch.run(afterStratifier, cachedTyperAst, changeSet)
             errors ++= patMatchErrors
 
             val (afterRedundancy, redundancyErrors) = Redundancy.run(afterPatMatch)
             errors ++= redundancyErrors
 
-            val (afterSafety, safetyErrors) = Safety.run(afterRedundancy)
+            val (_, safetyErrors) = Safety.run(afterRedundancy, cachedTyperAst, changeSet)
             errors ++= safetyErrors
 
-            val (afterDependencies, _) = Dependencies.run(afterSafety)
+            val (afterDependencies, _) = Dependencies.run(afterRedundancy, cachedTyperAst, changeSet)
 
             if (options.incremental) {
               this.cachedLexerTokens = afterLexer
@@ -594,8 +603,11 @@ class Flix {
               this.cachedResolverAst = afterResolver
               this.cachedTyperAst = afterDependencies
 
-              // We mark the change set as empty because compilation was successful.
-              changeSet = ChangeSet.Dirty(Set.empty)
+              // We record that no files are dirty in the change set.
+              this.changeSet = ChangeSet.Dirty(Set.empty)
+
+              // We save all the current errors.
+              this.cachedErrors = errors.toList
             }
 
             Some(afterDependencies)
@@ -784,7 +796,7 @@ class Flix {
     * Returns the inputs for the given list of (path, text) pairs.
     */
   private def getLibraryInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
-    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, stable = true, SecurityContext.AllPermissions) :: xs
+    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, SecurityContext.AllPermissions) :: xs
   }
 
   /**

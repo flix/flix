@@ -35,12 +35,12 @@ object SyntaxTree {
   /**
     * A root containing syntax trees for multiple sources.
     */
-  case class Root(units: Map[Source, Tree])
+  case class Root(units: Map[Source, Tree], tokens: Map[Source, Array[Token]])
 
   /**
     * The empty SyntaxTree
     */
-  val empty: Root = Root(Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty)
 
   /**
     * A marker trait for a child node in a syntax tree.
@@ -114,6 +114,8 @@ object SyntaxTree {
     case object Root extends TreeKind
 
     case object StructField extends TreeKind
+
+    case object TrailingDot extends TreeKind
 
     case object TypeParameter extends TreeKind
 
@@ -235,6 +237,8 @@ object SyntaxTree {
       case object ForFragmentLet extends Expr
 
       case object GetField extends Expr
+
+      case object Handler extends Expr
 
       case object Hole extends Expr
 
@@ -407,8 +411,6 @@ object SyntaxTree {
       case object EffectSet extends Type
 
       case object Function extends Type
-
-      case object Native extends Type
 
       case object PredicateWithAlias extends Type
 

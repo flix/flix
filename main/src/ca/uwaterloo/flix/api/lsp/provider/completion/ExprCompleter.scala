@@ -1,5 +1,6 @@
 /*
  * Copyright 2023 Magnus Madsen
+ * Copyright 2025 Chenhao Gao
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,15 +23,10 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 object ExprCompleter {
 
   def getCompletions(context: CompletionContext)(implicit flix: Flix, root: TypedAst.Root): Iterable[Completion] = {
-      DefCompleter.getCompletions(context) ++
       LabelCompleter.getCompletions(context) ++
       KeywordCompleter.getExprKeywords ++
-      SignatureCompleter.getCompletions(context) ++
-      EnumTagCompleter.getCompletions(context) ++
       ExprSnippetCompleter.getCompletions() ++
-      ModuleCompleter.getCompletions(context) ++
-      HoleCompletion.getHoleCompletion(context, root) ++
-      OpCompleter.getCompletions(context)
+      HoleCompletion.getHoleCompletion(context, root)
   }
 
 }

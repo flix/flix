@@ -185,7 +185,7 @@ object Redundancy {
   private def checkRedundantTraitConstraints()(implicit root: Root, flix: Flix): List[RedundancyError] = {
     val defErrors = ParOps.parMap(root.defs.values)(defn => redundantTraitConstraints(defn.spec.declaredScheme.tconstrs))
     val classErrors = ParOps.parMap(root.traits.values)(trt => redundantTraitConstraints(trt.superTraits))
-    val instErrors = ParOps.parMap(root.instances.values.flatten)(inst => redundantTraitConstraints(inst.tconstrs))
+    val instErrors = ParOps.parMap(root.instances.values)(inst => redundantTraitConstraints(inst.tconstrs))
     val sigErrors = ParOps.parMap(root.sigs.values)(sig => redundantTraitConstraints(sig.spec.declaredScheme.tconstrs))
 
     (defErrors.flatten ++ classErrors.flatten ++ instErrors.flatten ++ sigErrors.flatten).toList
@@ -199,7 +199,7 @@ object Redundancy {
       (tconstr1, i1) <- tconstrs.zipWithIndex
       (tconstr2, i2) <- tconstrs.zipWithIndex
       // don't compare a constraint against itself
-      if i1 != i2 && TraitEnvironment.entails(tconstr1, tconstr2, TraitEnv(root.traitEnv))
+      if i1 != i2 && TraitEnvironment.entails(tconstr1, tconstr2, root.traitEnv)
     } yield RedundancyError.RedundantTraitConstraint(tconstr1, tconstr2, tconstr2.loc)
   }
 
@@ -569,9 +569,6 @@ object Redundancy {
     case Expr.Tuple(elms, _, _, _) =>
       visitExps(elms, env0, rc)
 
-    case Expr.RecordEmpty(_, _) =>
-      Used.empty
-
     case Expr.RecordSelect(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
@@ -629,7 +626,7 @@ object Redundancy {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.Ascribe(exp, _, _, _) =>
+    case Expr.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expr.InstanceOf(exp, _, _) =>
@@ -664,8 +661,15 @@ object Redundancy {
         case _ => visitExp(exp, env0, rc)
       }
 
-    case Expr.Without(exp, effUse, _, _, _) =>
-      sctx.effSyms.put(effUse.sym, ())
+    case Expr.Unsafe(exp, runEff, _, _, loc) =>
+      (runEff, exp.eff) match {
+        case (Type.Pure, _) => visitExp(exp, env0, rc) + UselessUnsafe(loc)
+        case (_, Type.Pure) => visitExp(exp, env0, rc) + RedundantUnsafe(loc)
+        case _ => visitExp(exp, env0, rc)
+      }
+
+    case Expr.Without(exp, sym, _, _, _) =>
+      sctx.effSyms.put(sym.sym, ())
       visitExp(exp, env0, rc)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
@@ -683,17 +687,18 @@ object Redundancy {
     case Expr.Throw(exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.TryWith(exp, effUse, rules, _, _, _) =>
-      sctx.effSyms.put(effUse.sym, ())
-      val usedExp = visitExp(exp, env0, rc)
-      val usedRules = rules.foldLeft(Used.empty) {
+    case Expr.Handler(sym, rules, _, _, _, _, _) =>
+      sctx.effSyms.put(sym.sym, ())
+      rules.foldLeft(Used.empty) {
         case (acc, HandlerRule(_, fparams, body)) =>
           val usedBody = visitExp(body, env0, rc)
           val syms = fparams.map(_.bnd.sym)
           val dead = syms.filter(deadVarSym(_, usedBody))
           acc ++ usedBody ++ dead.map(UnusedVarSym.apply)
       }
-      usedExp ++ usedRules
+
+    case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+      visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc)
 
     case Expr.Do(opUse, exps, _, _, _) =>
       sctx.effSyms.put(opUse.sym.eff, ())
@@ -888,7 +893,6 @@ object Redundancy {
     case Pattern.Tuple(elms, _, _) => visitPats(elms)
     case Pattern.Record(pats, pat, _, _) =>
       visitPats(pats.map(_.pat)) ++ visitPat(pat)
-    case Pattern.RecordEmpty(_, _) => Used.empty
     case Pattern.Error(_, _) => Used.empty
   }
 
@@ -1029,7 +1033,6 @@ object Redundancy {
       }
       val patVal = freeVars(pat)
       patsVal ++ patVal
-    case Pattern.RecordEmpty(_, _) => Set.empty
     case Pattern.Error(_, _) => Set.empty
   }
 

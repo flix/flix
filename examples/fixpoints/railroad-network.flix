@@ -19,11 +19,11 @@ def safeConnects(src: n, links: f[(n, n)]): {safe = Vector[n], unsafe1 = Vector[
         Cutpoint(x, a, b) :- Connected(a, b), Station(x), not Circumvent(x, a, b).
 
         // Stations `a` and `b` are linked without using station `x`.
-        Circumvent(x, a, b) :- Linked(a, b), if x != a, Station(x), if x != b.
+        Circumvent(x, a, b) :- Linked(a, b), if (x != a), Station(x), if (x != b).
         Circumvent(x, a, b) :- Circumvent(x, a, c), Circumvent(x, c, b).
 
         // Check the cutpoint is neither station `a` or `b`.
-        HasICutPoint(a, b) :- Cutpoint(x, a, b), if x != a, if x != b.
+        HasICutPoint(a, b) :- Cutpoint(x, a, b), if (x != a), if (x != b).
         // Stations are safely connected if there is no cutpoints.
         SafelyConnected(a, b) :- Connected(a, b), not HasICutPoint(a, b).
         // The set of stations not safely connected are unsafely connected.

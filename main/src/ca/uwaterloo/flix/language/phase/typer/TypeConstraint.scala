@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 
 
 /**
@@ -24,19 +24,12 @@ import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
 sealed trait TypeConstraint {
 
   /**
-    * The index indicates the order in which constraints will be evaluated.
-    * A constraint with a lower index is reduced first if possible.
+    * Returns the sum of the sizes of all the types in this constraint.
     */
-  lazy val index: (Int, Int, Int) = this match {
-    case TypeConstraint.Equality(_: Type.Var, Type.Pure, _) => (0, 0, 0)
-    case TypeConstraint.Equality(Type.Pure, _: Type.Var, _) => (0, 0, 0)
-    case TypeConstraint.Equality(tvar1: Type.Var, tvar2: Type.Var, _) if tvar1 != tvar2 => (0, 0, 0)
-    case TypeConstraint.Purification(_, _, _, _, _) => (0, 0, 0)
-    case TypeConstraint.Equality(tpe1, tpe2, _) =>
-      val tvars = tpe1.typeVars ++ tpe2.typeVars
-      val effTvars = tvars.filter(_.kind == Kind.Eff)
-      (1, effTvars.size, tvars.size)
-    case TypeConstraint.Trait(_, _, _) => (2, 0, 0)
+  def size: Int = this match {
+    case TypeConstraint.Equality(tpe1, tpe2, _) => tpe1.size + tpe2.size
+    case TypeConstraint.Trait(_, tpe, _) => tpe.size
+    case TypeConstraint.Purification(_, eff1, eff2, _, nested) => eff1.size + eff2.size + nested.map(_.size).sum
   }
 
   override def toString: String = this match {
@@ -81,7 +74,7 @@ object TypeConstraint {
     *   eff1 ~ eff2[sym ↦ Pure] ∧ nested
     * }}}
     */
-  case class Purification(sym: Symbol.KindedTypeVarSym, eff1: Type, eff2: Type, prov: Provenance, nested: List[TypeConstraint]) extends TypeConstraint {
+  case class Purification(sym: Symbol.RegionSym, eff1: Type, eff2: Type, prov: Provenance, nested: List[TypeConstraint]) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 

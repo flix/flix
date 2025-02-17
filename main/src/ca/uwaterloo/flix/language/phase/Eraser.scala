@@ -123,7 +123,6 @@ object Eraser {
         case AtomicOp.Index(_) =>
           castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.Tuple => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.RecordEmpty => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.RecordSelect(_) =>
           castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.RecordExtend(_) => ApplyAtomic(op, es, t, purity, loc)

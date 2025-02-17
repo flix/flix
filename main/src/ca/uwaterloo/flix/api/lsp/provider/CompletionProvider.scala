@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.api.lsp.provider.completion.*
+import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.getNamespaceAndIdentFromQName
 import ca.uwaterloo.flix.api.lsp.provider.completion.semantic.{GetStaticFieldCompleter, InvokeStaticMethodCompleter}
 import ca.uwaterloo.flix.api.lsp.provider.completion.syntactic.{ExprSnippetCompleter, KeywordCompleter}
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -43,97 +44,87 @@ import org.json4s.JsonDSL.*
   */
 object CompletionProvider {
 
-  def autoComplete(uri: String, pos: Position, source: String, currentErrors: List[CompilationMessage])(implicit flix: Flix, root: TypedAst.Root): JObject = {
-    getCompletionContext(source, uri, pos, currentErrors) match {
-      case None =>
-        // We were not able to compute the completion context. Return no suggestions.
-        ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, Nil).toJSON)
+  def autoComplete(uri: String, pos: Position, source: String, currentErrors: List[CompilationMessage])(implicit flix: Flix, root: TypedAst.Root): CompletionList = {
+    val completionItems = getCompletionContext(source, uri, pos, currentErrors).map {ctx =>
+      errorsAt(ctx.uri, ctx.pos, currentErrors).flatMap({
+        case err: WeederError.UnqualifiedUse =>
+          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
+          UseCompleter.getCompletions(ctx.uri, namespace, ident)
+        case WeederError.UndefinedAnnotation(_, _) => KeywordCompleter.getModKeywords
+        case err: ResolutionError.UndefinedUse =>
+          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
+          UseCompleter.getCompletions(ctx.uri, namespace, ident)
+        case err: ResolutionError.UndefinedTag =>
+          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
+          EnumCompleter.getCompletions(err, namespace, ident) ++
+            EnumTagCompleter.getCompletions(err, namespace, ident) ++
+            ModuleCompleter.getCompletions(err, namespace, ident)
+        case err: ResolutionError.UndefinedName =>
+          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
+          AutoImportCompleter.getCompletions(err) ++
+            LocalScopeCompleter.getCompletions(err) ++
+            ExprCompleter.getCompletions(ctx) ++
+            DefCompleter.getCompletions(err, namespace, ident) ++
+            EnumCompleter.getCompletions(err, namespace, ident) ++
+            EffectCompleter.getCompletions(err, namespace, ident) ++
+            OpCompleter.getCompletions(err, namespace, ident) ++
+            SignatureCompleter.getCompletions(err, namespace, ident) ++
+            EnumTagCompleter.getCompletions(err, namespace, ident) ++
+            ModuleCompleter.getCompletions(err, namespace, ident)
+        case err: ResolutionError.UndefinedType =>
+          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
+          TypeBuiltinCompleter.getCompletions ++
+            AutoImportCompleter.getCompletions(err) ++
+            LocalScopeCompleter.getCompletions(err) ++
+            EnumCompleter.getCompletions(err, namespace, ident) ++
+            StructCompleter.getCompletions(err, namespace, ident) ++
+            EffectCompleter.getCompletions(err, namespace, ident) ++
+            TypeAliasCompleter.getCompletions(err, namespace, ident) ++
+            ModuleCompleter.getCompletions(err, namespace, ident)
+        case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err) ++ InvokeStaticMethodCompleter.getCompletions(err)
+        case err: ResolutionError.UndefinedJvmImport => ImportCompleter.getCompletions(err)
+        case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
+        case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err)
+        case err: ResolutionError.UndefinedOp =>
+          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qname)
+          OpCompleter.getCompletions(err, namespace, ident)
+        case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err) ++ InvokeMethodCompleter.getCompletions(err.tpe, err.fieldName)
+        case err: TypeError.MethodNotFound => InvokeMethodCompleter.getCompletions(err.tpe, err.methodName)
+        case err: ParseError => err.sctx match {
+          // Expressions.
+          case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(uri) ++ KeywordCompleter.getConstraintKeywords
+          case _: SyntacticContext.Expr => ExprCompleter.getCompletions(ctx)
 
-      case Some(ctx) =>
-        // We were able to compute the completion context. Compute suggestions.
-        val sctx = getSyntacticContext(uri, pos, currentErrors)
-        val syntacticCompletions = getSyntacticCompletions(sctx, ctx)(flix, root)
-        val semanticCompletions = getSemanticCompletions(ctx, currentErrors)(root)
-        val completions = syntacticCompletions ++ semanticCompletions
-        val completionItems = completions.map(comp => comp.toCompletionItem(ctx))
-        ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, completionItems).toJSON)
-    }
-  }
+          // Declarations.
+          case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
+          case SyntacticContext.Decl.Effect => KeywordCompleter.getEffectKeywords
+          case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(ctx) ++ KeywordCompleter.getInstanceKeywords
+          case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
+          case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
+          case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
+          case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
 
-  private def getSyntacticCompletions(sctx: SyntacticContext, ctx: CompletionContext)(implicit flix: Flix, root: TypedAst.Root): Iterable[Completion] = {
-    sctx match {
-      //
-      // Expressions.
-      //
-      case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(ctx) ++ KeywordCompleter.getConstraintKeywords
-      case SyntacticContext.Expr.InvokeMethod(tpe, name) => InvokeMethodCompleter.getCompletions(tpe, name)
-      case SyntacticContext.Expr.StaticFieldOrMethod(e) => GetStaticFieldCompleter.getCompletions(e) ++ InvokeStaticMethodCompleter.getCompletions(e)
-      case SyntacticContext.Expr.StructAccess(e) => StructFieldCompleter.getCompletions(e, root)
-      case _: SyntacticContext.Expr => ExprCompleter.getCompletions(ctx)
+          // Uses.
+          //case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
 
-      //
-      // Declarations.
-      //
-      case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
-      case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(ctx) ++ KeywordCompleter.getInstanceKeywords
-      case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
-      case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
-      case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
-      case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
+          // With.
+          case SyntacticContext.WithClause => WithCompleter.getCompletions(ctx)
 
-      //
-      // Types.
-      //
-      case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(ctx)
+          // Try-with handler.
+          case SyntacticContext.WithHandler => WithHandlerCompleter.getCompletions(ctx)
 
-      //
-      // Patterns.
-      //
-      case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(ctx) ++ EnumTagCompleter.getCompletions(ctx)
+          // Unknown syntactic context. The program could be correct-- in which case it is hard to offer suggestions.
+          case SyntacticContext.Unknown =>
+            // Special case: A program with a hole is correct, but we should offer some completion suggestions.
+            HoleCompletion.getHoleCompletion(ctx, root)
 
-      //
-      // Uses.
-      //
-      case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
+          case _ => Nil
+        }
 
-      //
-      // With.
-      //
-      case SyntacticContext.WithClause =>
-        // A with context could also be just a type context.
-        TypeCompleter.getCompletions(ctx) ++ WithCompleter.getCompletions(ctx)
-
-      //
-      // Try-with handler.
-      //
-      case SyntacticContext.WithHandler => WithHandlerCompleter.getCompletions(ctx)
-
-      //
-      // Unknown syntactic context. The program could be correct-- in which case it is hard to offer suggestions.
-      //
-      case SyntacticContext.Unknown =>
-        // Special case: A program with a hole is correct, but we should offer some completion suggestions.
-        HoleCompletion.getHoleCompletion(ctx, root)
-
-      case _ => Nil
-    }
-  }
-
-  private def getSemanticCompletions(ctx: CompletionContext, errors: List[CompilationMessage])(implicit root: TypedAst.Root): Iterable[Completion] = {
-    errorsAt(ctx.uri, ctx.pos, errors).flatMap({
-
-      //
-      // Imports.
-      //
-      case err: ResolutionError.UndefinedJvmClass => ImportCompleter.getCompletions(err)
-      case err: ResolutionError.UndefinedName => AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err)
-      case err: ResolutionError.UndefinedType =>
-        AutoImportCompleter.getCompletions(err) ++ LocalScopeCompleter.getCompletions(err) ++ AutoUseCompleter.getCompletions(err) ++ EffSymCompleter.getCompletions(err)
-      case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err)
-      case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err)
-
-      case _ => Nil
-    })
+        case _ => HoleCompletion.getHoleCompletion(ctx, root)
+      }).map(comp => comp.toCompletionItem(ctx))
+    }.getOrElse(Nil)
+    CompletionList(isIncomplete = true, completionItems)
   }
 
   /**
@@ -160,7 +151,6 @@ object CompletionProvider {
       }
       // Remember positions are one-indexed.
       val range = Range(Position(y + 1, start + 1), Position(y + 1, end + 1))
-      val sctx = getSyntacticContext(uri, pos, errors)
       CompletionContext(uri, pos, range, word, previousWord, prefix)
     }
   }
@@ -201,33 +191,6 @@ object CompletionProvider {
   private def getSecondLastWord(s: String): String = {
     s.reverse.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
   }
-
-  /**
-    * Optionally returns the syntactic context from the given list of errors.
-    *
-    * We have to check that the syntax error occurs after the position of the completion.
-    */
-  private def getSyntacticContext(uri: String, pos: Position, errors: List[CompilationMessage]): SyntacticContext =
-    errorsAt(uri, pos, errors).map({
-      // We can have multiple errors, so we rank them, and pick the highest priority.
-      case WeederError.UnqualifiedUse(_) => (1, SyntacticContext.Use)
-      case ResolutionError.UndefinedUse(_, _, _, _) => (1, SyntacticContext.Use)
-      case ResolutionError.UndefinedName(_, _, _, _) => (2, SyntacticContext.Expr.OtherExpr)
-      case ResolutionError.UndefinedNameUnrecoverable(_, _, _, _) => (2, SyntacticContext.Expr.OtherExpr)
-      case ResolutionError.UndefinedType(_, _, _, _) => (1, SyntacticContext.Type.OtherType)
-      case ResolutionError.UndefinedTag(_, _,  _, _) => (1, SyntacticContext.Pat.OtherPat)
-      case WeederError.UnappliedIntrinsic(_, _) => (5, SyntacticContext.Expr.OtherExpr)
-      case WeederError.UndefinedAnnotation(_, _) => (1, SyntacticContext.Decl.Module)
-      case err: ResolutionError.UndefinedJvmStaticField => (1, SyntacticContext.Expr.StaticFieldOrMethod(err))
-      case err: TypeError.MethodNotFound => (1, SyntacticContext.Expr.InvokeMethod(err.tpe, err.methodName))
-      case err: TypeError.FieldNotFound => (1, SyntacticContext.Expr.InvokeMethod(err.tpe, err.fieldName))
-      case err: ResolutionError.UndefinedStructField => (1, SyntacticContext.Expr.StructAccess(err))
-      case err: ParseError => (5, err.sctx)
-      case _ => (999, SyntacticContext.Unknown)
-    }).minByOption(_._1) match {
-      case None => SyntacticContext.Unknown
-      case Some((_, sctx)) => sctx
-    }
 
   /**
     * Filters the list of errors to only those that occur at the given position.

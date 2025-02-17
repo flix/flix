@@ -16,10 +16,11 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.Main.Command.{Check, PlainLsp}
+import ca.uwaterloo.flix.Main.Command.PlainLsp
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZheglakinPerf
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
 import ca.uwaterloo.flix.util.Validation.flatMapN
@@ -317,6 +318,9 @@ object Main {
         case Command.CompilerMemory =>
           CompilerMemory.run(options)
 
+        case Command.Zhegalkin =>
+          ZheglakinPerf.run(options.XPerfN)
+
       }
     }
 
@@ -402,6 +406,8 @@ object Main {
 
     case object CompilerMemory extends Command
 
+    case object Zhegalkin extends Command
+
   }
 
   /**
@@ -450,14 +456,8 @@ object Main {
 
       cmd("repl").action((_, c) => c.copy(command = Command.Repl)).text("  starts a repl for the current project, or provided Flix source files.")
 
-      cmd("lsp-plain").text("  starts the Plain-LSP server.")
+      cmd("lsp").text("  starts the Plain-LSP server.")
         .action((_, c) => c.copy(command = Command.PlainLsp))
-
-      cmd("lsp").text("  starts the LSP server and listens on the given port.")
-        .children(
-          arg[Int]("port").action((port, c) => c.copy(command = Command.VSCodeLsp(port)))
-            .required()
-        )
 
       cmd("lsp-vscode").text("  starts the VSCode-LSP server and listens on the given port.")
         .children(
@@ -484,6 +484,12 @@ object Main {
       ).hidden()
 
       cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
+
+      cmd("Xzhegalkin").action((_, c) => c.copy(command = Command.Zhegalkin)).children(
+        opt[Int]("n")
+          .action((v, c) => c.copy(XPerfN = Some(v)))
+          .text("number of compilations")
+      ).hidden()
 
       note("")
 

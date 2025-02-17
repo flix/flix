@@ -315,25 +315,25 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  test("NoMatchingInstance.07") {
+  test("NoMatchingInstance.Location.01") {
     val input =
       """
         |trait C[a] {
-        |    pub def foo(x: a): Int32
+        |    pub def f(x: a): Unit
         |}
         |
-        |enum E[_: Eff] {
-        |    case E(Int32)
+        |instance C[MyBox[a]] with C[a] {
+        |    pub def f(x: MyBox[a]): Unit = ???
         |}
         |
-        |instance C[E[Pure]] {
-        |    pub def foo(x: E[Pure]): Int32 = 1
-        |}
+        |enum MyBox[a](a)
         |
-        |def bar(): Int32 = C.foo(E.E(123))    // E(123) has type E[_], not E[Pure]
+        |def foo(): Unit = {
+        |  C.f(MyBox.MyBox(123)) // ERROR
+        |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
+    expectError[TypeError.MissingInstance](result)
   }
 
   test("NoMatchingInstance.Relation.01") {
@@ -363,34 +363,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def foo(x: E, y: E): Bool = x == y
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError](result)
-  }
-
-  test("MissingSendable.01") {
-    val input =
-      """
-        |enum NotSendable(Int32)
-        |enum TrySendable[a](a) with Sendable
-        |
-        |def requiresSendable(x: a): a with Sendable[a] = x
-        |
-        |def foo(): TrySendable[NotSendable] = requiresSendable(TrySendable.TrySendable(NotSendable.NotSendable(42)))
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError](result)
-  }
-
-  test("MissingSendable.02") {
-    val input =
-      """
-        |enum NotSendable(Int32)
-        |enum TrySendable[a, b](a, b) with Sendable
-        |
-        |def requiresSendable(x: a): a with Sendable[a] = x
-        |
-        |def foo(): TrySendable[NotSendable, NotSendable] = requiresSendable(TrySendable.TrySendable(NotSendable.NotSendable(42), NotSendable.NotSendable(43)))
-      """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
@@ -686,8 +658,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("Test.MismatchedEff.Without.01") {
+  test("Test.MismatchedEff.Without.01") {
     val input =
       """
         |eff E {
@@ -700,8 +671,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("Test.MismatchedEff.Apply.02") {
+  test("Test.MismatchedEff.Apply.02") {
     val input =
       """
         |eff E {
@@ -716,8 +686,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("Test.GeneralizationError.Eff.01") {
+  test("Test.GeneralizationError.Eff.01") {
     val input =
       """
         |eff E {
@@ -1249,9 +1218,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let _ = try {
+        |    let _ = run {
         |        Gen.gen()
-        |    } with Gen {
+        |    } with handler Gen {
         |        def gen(k) = k("a")
         |    };
         |    Gen.gen();
@@ -1261,7 +1230,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  ignore("TestIOAndCustomEffect.03") {
+  test("TestIOAndCustomEffect.03") {
     val input =
       """
         |eff Gen {
@@ -1273,10 +1242,10 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let _ = try {
+        |    let _ = run {
         |        Gen.gen();
         |        AskTell.askTell(42)
-        |    } with Gen {
+        |    } with handler Gen {
         |        def gen(k) = k("a")
         |    };
         |    ()
@@ -1297,10 +1266,10 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let _ = try {
+        |    let _ = run {
         |        Gen.gen();
         |        AskTell.askTell(42)
-        |    } with Gen {
+        |    } with handler Gen {
         |        def gen(k) = k("a")
         |    };
         |    Gen.gen();
@@ -1322,10 +1291,10 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let _ = try {
+        |    let _ = run {
         |        Gen.gen();
         |        AskTell.askTell(42)
-        |    } with Gen {
+        |    } with handler Gen {
         |        def gen(k) = k("a")
         |    };
         |    AskTell.askTell(42);
@@ -1347,10 +1316,10 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let _ = try {
+        |    let _ = run {
         |        Gen.gen();
         |        AskTell.askTell(42)
-        |    } with Gen {
+        |    } with handler Gen {
         |        def gen(k) = k("a")
         |    };
         |    Gen.gen();
@@ -1372,9 +1341,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let _ = try {
+        |    let _ = run {
         |        Gen.gen()
-        |    } with Gen {
+        |    } with handler Gen {
         |        def gen(k) = k("a")
         |    };
         |    AskTell.askTell(42);
@@ -1384,7 +1353,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  ignore("TestIOAndCustomEffect.08") {
+  test("TestIOAndCustomEffect.08") {
     val input =
       """
         |eff Gen {
@@ -1396,9 +1365,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let _ = try {
+        |    let _ = run {
         |        Gen.gen()
-        |    } with Gen {
+        |    } with handler Gen {
         |        def gen(k) = AskTell.askTell(k("a"))
         |    };
         |    ()
@@ -1720,5 +1689,15 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.ModDefs, Subeffecting.Lambdas)))
     expectError[TypeError](result)
+  }
+
+  test("ErrorType.01") {
+    // There should be no type error because Abc does not resolve.
+    val input =
+      """
+        |def foo(): Abc = "hello"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
   }
 }

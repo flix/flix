@@ -32,6 +32,8 @@ object SyntacticContext {
   object Decl {
     case object Enum extends Decl
 
+    case object Effect extends Decl
+
     case object Instance extends Decl
 
     case object Module extends Decl
@@ -48,13 +50,7 @@ object SyntacticContext {
   object Expr {
     case object Constraint extends Expr
 
-    case class InvokeMethod(tpe: ca.uwaterloo.flix.language.ast.Type, name: Name.Ident) extends Expr
-
     case object New extends Expr
-
-    case class StaticFieldOrMethod(e: ResolutionError.UndefinedJvmStaticField) extends Expr
-
-    case class StructAccess(e: ResolutionError.UndefinedStructField) extends Expr
 
     case object OtherExpr extends Expr
   }

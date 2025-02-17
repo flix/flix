@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, Name, RigidityEnv, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver.ResolutionResult
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.{Equality, Provenance}
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -31,31 +30,35 @@ object SchemaConstraintSolver {
   /**
     * Unifies the two given schema row types.
     */
-  def solve(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): ResolutionResult = (tpe1, tpe2) match {
+  def solve(tpe1: Type, tpe2: Type, scope: Scope, renv: RigidityEnv, prov: Provenance)(implicit progress: Progress, flix: Flix): (List[TypeConstraint], Substitution) = (tpe1, tpe2) match {
 
     // ----------
     // ρ ~ ρ => ∅
     case (t1, t2) if t1 == t2 =>
-      ResolutionResult.elimination
+      progress.markProgress()
+      (Nil, Substitution.empty)
 
     //    α ∉ fv(ρ)
     // ----------------
     // α ~ ρ  =>  {α ↦ ρ}
-    case (Type.Var(sym, _), tpe) if !tpe.typeVars.exists(_.sym == sym) && renv.isFlexible(sym) =>
-      ResolutionResult.newSubst(Substitution.singleton(sym, tpe))
+    case (Type.Var(sym, _), tpe) if !tpe.typeVars.exists(_.sym == sym) && renv.isFlexible(sym)(scope) =>
+      progress.markProgress()
+      (Nil, Substitution.singleton(sym, tpe))
 
     //    α ∉ fv(ρ)
     // ----------------
     //  ρ ~ α  =>  {α ↦ ρ}
-    case (tpe, Type.Var(sym, _)) if !tpe.typeVars.exists(_.sym == sym) && renv.isFlexible(sym) =>
-      ResolutionResult.newSubst(Substitution.singleton(sym, tpe))
+    case (tpe, Type.Var(sym, _)) if !tpe.typeVars.exists(_.sym == sym) && renv.isFlexible(sym)(scope) =>
+      progress.markProgress()
+      (Nil, Substitution.singleton(sym, tpe))
 
     // If labels match, then we compare the label types and rest of the row.
     //
     // -------------------------------------------------------------
     // ( ℓ : τ₁  | ρ₁ ) ~ ( ℓ : τ₂  | ρ₂ )  =>  { τ₁ ~ τ₂, ρ₁ ~ ρ₂ }
     case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label1), _), t1, _), rest1, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label2), _), t2, _), rest2, _)) if label1 == label2 =>
-      ResolutionResult.constraints(List(Equality(t1, t2, prov), Equality(rest1, rest2, prov)), progress = true)
+      progress.markProgress()
+      (List(TypeConstraint.Equality(t1, t2, prov), TypeConstraint.Equality(rest1, rest2, prov)), Substitution.empty)
 
     // If labels do not match, then we pivot the right row to make them match.
     //
@@ -63,18 +66,19 @@ object SchemaConstraintSolver {
     // -------------------------------------------------
     // { ℓ : τ₁ | ρ₁ } ~ ρ₂  => { τ₁ ~ τ₃, ρ₁ ~ ρ₃ } ; S
     case (r1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label), _), t1, _), rest1, _), r2) =>
-      pivot(r2, label, t1, r1.typeVars.map(_.sym), renv) match {
+      pivot(r2, label, t1, r1.typeVars.map(_.sym))(scope, renv, flix) match {
         case Some((Type.Apply(Type.Apply(_, t3, _), rest3, _), subst)) =>
-          ResolutionResult(subst, List(Equality(t1, t3, prov), Equality(rest1, rest3, prov)), progress = true)
+          progress.markProgress()
+          (List(TypeConstraint.Equality(t1, t3, prov), TypeConstraint.Equality(rest1, rest3, prov)), subst)
 
         case None =>
-          ResolutionResult.constraints(List(Equality(tpe1, tpe2, prov)), progress = false)
+          (List(TypeConstraint.Equality(tpe1, tpe2, prov)), Substitution.empty)
 
         case Some((t, _)) => throw InternalCompilerException("unexpected result from pivot: " + t, t.loc)
       }
 
     // If nothing matches, we give up and return the constraints as we got them.
-    case _ => ResolutionResult.constraints(List(Equality(tpe1, tpe2, prov)), progress = false)
+    case _ => (List(TypeConstraint.Equality(tpe1, tpe2, prov)), Substitution.empty)
   }
 
   /**
@@ -82,7 +86,7 @@ object SchemaConstraintSolver {
     *
     * Returns None if no such pivot is possible.
     */
-  private def pivot(row: Type, hdLabel: Name.Pred, hdTpe: Type, tvars: Set[Symbol.KindedTypeVarSym], renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Option[(Type, Substitution)] = row match {
+  private def pivot(row: Type, hdLabel: Name.Pred, hdTpe: Type, tvars: Set[Symbol.KindedTypeVarSym])(implicit scope: Scope, renv: RigidityEnv, flix: Flix): Option[(Type, Substitution)] = row match {
 
     // If head labels match, then there is nothing to do. We return the same row.
     //
@@ -97,7 +101,7 @@ object SchemaConstraintSolver {
     // ---------------------------------------------------------
     // { ℓ₁ : τ₁ | ρ₁ } ~~{ℓ₂ : τ₂}~~> { ℓ₂ : τ₃, ℓ₁ : τ₁ | ρ₃ }
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label), _), tpe, _), rest, loc) =>
-      pivot(rest, hdLabel, hdTpe, tvars, renv).map {
+      pivot(rest, hdLabel, hdTpe, tvars).map {
         case (Type.Apply(newHead, rest, _), subst) =>
           // The new row from the recursive call has the selected label at the head.
           // Now we just swap the new row's head with ours, to keep the selected label on top.

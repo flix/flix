@@ -18,7 +18,9 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, AssocTypeDef, Scope}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
+import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.JvmUtils
 import ca.uwaterloo.flix.util.collection.ListMap
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
@@ -30,7 +32,7 @@ object TypeReduction2 {
   /**
     * Performs various reduction rules on the given type.
     */
-  def reduce(tpe0: Type, scope: Scope, renv: RigidityEnv)(implicit progress: Progress, eqenv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): Type = tpe0 match {
+  def reduce(tpe0: Type, scope: Scope, renv: RigidityEnv)(implicit progress: Progress, eqenv: EqualityEnv, flix: Flix): Type = tpe0 match {
     case t: Type.Var => t
 
     case t: Type.Cst => t
@@ -46,38 +48,46 @@ object TypeReduction2 {
 
     case Type.Alias(_, _, tpe, _) => tpe
 
-    case Type.AssocType(AssocTypeConstructor(sym, _), tpe, _, _) =>
+    case Type.AssocType(AssocTypeSymUse(sym, _), tpe, _, _) =>
+      val t = reduce(tpe, scope, renv)
 
       // Get all the associated types from the context
-      val assocs = eqenv(sym)
+      val assocOpt = eqenv.getAssocDef(sym, t)
 
       // Find the instance that matches
-      val matches = assocs.flatMap {
-        case AssocTypeDef(assocTpe, ret) =>
+      val matches = assocOpt.flatMap {
+        case AssocTypeDef(tparams, assocTpe0, ret0) =>
+
+
           // We fully rigidify `tpe`, because we need the substitution to go from instance type to constraint type.
           // For example, if our constraint is ToString[Map[Int32, a]] and our instance is ToString[Map[k, v]],
           // then we want the substitution to include "v -> a" but NOT "a -> v".
-          val assocRenv = tpe.typeVars.map(_.sym).foldLeft(renv)(_.markRigid(_))
+          val assocRenv = t.typeVars.map(_.sym).foldLeft(renv)(_.markRigid(_))
+
+
+          // Refresh the flexible variables in the instance
+          // (variables may be rigid if the instance comes from a constraint on the definition)
+          val assocVarMap = tparams.map {
+            case fromSym => fromSym -> Type.freshVar(fromSym.kind, fromSym.loc)(scope, flix)
+          }.toMap
+          val assocSubst = Substitution(assocVarMap)
+          val assocTpe = assocSubst(assocTpe0)
+          val ret = assocSubst(ret0)
 
           // Instantiate all the instance constraints according to the substitution.
-          ConstraintSolver2.fullyUnify(tpe, assocTpe, scope, assocRenv).map {
+          ConstraintSolver2.fullyUnify(t, assocTpe, scope, assocRenv).map {
             case subst => subst(ret)
           }
       }
 
-      // TODO CONSTR-SOLVER-2 ought to be exactly 0 or 1; should check in Resolver
       matches match {
         // Case 1: No match. Can't reduce the type.
-        case Nil => tpe0
+        case None => tpe0
 
         // Case 2: One match. Use it.
-        case newTpe :: Nil =>
+        case Some(newTpe) =>
           progress.markProgress()
           newTpe
-
-        // Case 3: Multiple matches. Give back the original type.
-        // TODO CONSTR-SOLVER-2 Right resiliency strategy?
-        case _ :: _ :: _ => tpe0
       }
 
     case Type.JvmToType(tpe, loc) =>
@@ -107,7 +117,7 @@ object TypeReduction2 {
           progress.markProgress()
           PrimitiveEffects.getMethodEffs(method, loc)
 
-        case t => Type.JvmToType(t, loc)
+        case t => Type.JvmToEff(t, loc)
       }
 
     case unresolved@Type.UnresolvedJvmType(member, loc) =>

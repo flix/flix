@@ -16,18 +16,23 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.shared.{Instance, TraitContext}
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeHead}
 import ca.uwaterloo.flix.util.InternalCompilerException
+
 
 /**
   * The trait environment stores information about traits.
   */
+object TraitEnv {
+  val empty: TraitEnv = TraitEnv(Map.empty)
+}
+
 case class TraitEnv(private val m: Map[Symbol.TraitSym, TraitContext]) {
 
   /**
     * Returns the instances of the given trait.
     */
-  def getInstances(sym: Symbol.TraitSym): List[Instance] = {
+  def getInstances(sym: Symbol.TraitSym): Map[TypeHead, Instance] = {
     m(sym).instances
   }
 
@@ -36,8 +41,21 @@ case class TraitEnv(private val m: Map[Symbol.TraitSym, TraitContext]) {
     *
     * Returns None if the symbol is not in the TraitEnv.
     */
-  def getInstancesOpt(sym: Symbol.TraitSym): Option[List[Instance]] = {
+  def getInstancesOpt(sym: Symbol.TraitSym): Option[Map[TypeHead, Instance]] = {
     m.get(sym).map(_.instances)
+  }
+
+  /**
+    * Returns the instance corresponding to the given type, if it exists.
+    *
+    * Does not reduce the type.
+    */
+  def getInstance(sym: Symbol.TraitSym, tpe: Type): Option[Instance] = {
+    for {
+      context <- m.get(sym)
+      head <- TypeHead.fromType(tpe)
+      inst <- context.instances.get(head)
+    } yield inst
   }
 
   /**
@@ -80,19 +98,32 @@ case class TraitEnv(private val m: Map[Symbol.TraitSym, TraitContext]) {
     *   instance Eq[b]
     *   instance Order[b]
     * }}}
+    *
+    * The environment is returned unchanged if the type does not have a normal head (type constructor or variable).
     */
   def addInstance(sym: Symbol.TraitSym, tpe: Type): TraitEnv = {
-    val syms = getTransitiveSuperTraits(sym) + sym
-    val newM = syms.foldLeft(m) {
-      case (acc, s) =>
-        val inst = Instance(tpe, Nil)
-        val context = m.get(s) match {
-          case Some(TraitContext(supers, insts)) => TraitContext(supers, inst :: insts)
-          case None => throw InternalCompilerException(s"unexpected unknown trait sym: $sym", sym.loc)
+    TypeHead.fromType(tpe) match {
+      // Resiliency: Ignore this instance if it's not well-formed
+      case None => this
+
+      case Some(head) =>
+        val syms = getTransitiveSuperTraits(sym) + sym
+        val newM = syms.foldLeft(m) {
+          case (acc, s) =>
+            // tparams are Nil because we are adding instances directly, but not schemas of instances
+            val tparams = Nil
+            val inst = Instance(tparams, tpe, Nil)
+            val context = m.get(s) match {
+              case Some(TraitContext(supers, insts0)) =>
+                val insts = insts0 + (head -> inst)
+                TraitContext(supers, insts)
+              case None => throw InternalCompilerException(s"unexpected unknown trait sym: $sym", sym.loc)
+            }
+            acc + (s -> context)
         }
-        acc + (s -> context)
+        TraitEnv(newM)
+
     }
-    TraitEnv(newM)
   }
 
   /**

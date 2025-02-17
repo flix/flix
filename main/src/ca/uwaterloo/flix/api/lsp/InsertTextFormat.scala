@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import org.eclipse.lsp4j
+
 /**
   * Represents an `InsertTextFormat` in LSP.
   */
@@ -22,6 +24,11 @@ sealed trait InsertTextFormat {
   def toInt: Int = this match {
     case InsertTextFormat.PlainText => 1
     case InsertTextFormat.Snippet => 2
+  }
+
+  def toLsp4j: lsp4j.InsertTextFormat = this match {
+    case InsertTextFormat.PlainText => lsp4j.InsertTextFormat.PlainText
+    case InsertTextFormat.Snippet => lsp4j.InsertTextFormat.Snippet
   }
 }
 

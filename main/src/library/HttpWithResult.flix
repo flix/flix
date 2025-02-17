@@ -96,7 +96,7 @@ mod HttpWithResult {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - HttpWithResult) + {Net, IO} = x ->
         run {
             f(x)
-        } with HttpWithResult {
+        } with handler HttpWithResult {
             def request(method, url, headers, body, k) =
                 try {
                     let bodyPublisher = match body {
@@ -131,5 +131,12 @@ mod HttpWithResult {
                     case ex: IOException              => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
         }
+
+    ///
+    /// Runs the `HttpWithResult` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `HttpWithResult` effect using the `IO` effect.
+    ///
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - HttpWithResult) + {Net, IO} = handle(f)()
 
 }

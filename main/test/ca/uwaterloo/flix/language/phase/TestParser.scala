@@ -746,7 +746,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): Bool =
         |    let result = run {
         |        mutual1(10)
-        |    } with AskTell ;
+        |    } with handler AskTell ;
         |    Assert.eq(Some(84), result)
         |def main(): Int32 = 123
         |""".stripMargin
@@ -1105,6 +1105,37 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     val input =
       """
         |def foo(x: Int32): (Int32, Int32) = (x, |)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("MinusCase.NoBrace.01") {
+    val input =
+      """
+        |def foo(): Int32 = match 0 {
+        |  case -
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("MinusCase.YesBrace.01") {
+    val input =
+      """
+        |def foo(): Int32 = match 0 {
+        |  case -
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("MinusCase.Capital.01") {
+    val input =
+      """
+        |def foo(): Int32 = match 0 {
+        |  case -ABC
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)

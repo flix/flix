@@ -1,5 +1,6 @@
 {
   "constructors": {
+    "java.math.BigInteger": "NonDet, IO",
     "java.net.InetSocketAddress": "Net, IO"
   }
 }

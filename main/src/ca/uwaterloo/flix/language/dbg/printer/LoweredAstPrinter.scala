@@ -106,7 +106,7 @@ object LoweredAstPrinter {
       val rulesD = rules.map {
         case LoweredAst.HandlerRule(op, fparams, exp) => (op.sym, fparams.map(printFormalParam), print(exp))
       }
-      DocAst.Expr.TryWith(expD, effD, rulesD)
+      DocAst.Expr.RunWithHandler(expD, effD, rulesD)
     case Expr.Do(op, exps, tpe, eff, loc) => DocAst.Expr.Do(op.sym, exps.map(print))
     case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val methodsD = methods.map {
@@ -125,7 +125,6 @@ object LoweredAstPrinter {
     case Pattern.Tag(sym, pats, tpe, loc) => DocAst.Expr.Tag(sym.sym, pats.map(printPattern))
     case Pattern.Tuple(elms, tpe, loc) => DocAst.Expr.Tuple(elms.map(printPattern))
     case Pattern.Record(pats, pat, tpe, loc) => printRecordPattern(pats, pat)
-    case Pattern.RecordEmpty(_, _) => DocAst.Expr.RecordEmpty
   }
 
   /**

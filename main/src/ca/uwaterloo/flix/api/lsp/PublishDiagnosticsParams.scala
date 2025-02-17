@@ -20,6 +20,9 @@ import ca.uwaterloo.flix.language.errors.CodeHint
 import ca.uwaterloo.flix.util.Formatter
 import org.json4s.JsonDSL.*
 import org.json4s.*
+import org.eclipse.lsp4j
+
+import scala.jdk.CollectionConverters.*
 
 /**
   * Companion object of [[PublishDiagnosticsParams]].
@@ -62,4 +65,11 @@ object PublishDiagnosticsParams {
   */
 case class PublishDiagnosticsParams(uri: String, diagnostics: List[Diagnostic]) {
   def toJSON: JValue = ("uri" -> uri) ~ ("diagnostics" -> diagnostics.map(_.toJSON))
+
+  def toLsp4j: lsp4j.PublishDiagnosticsParams = {
+    val params = new lsp4j.PublishDiagnosticsParams()
+    params.setUri(uri)
+    params.setDiagnostics(diagnostics.map(_.toLsp4j).asJava)
+    params
+  }
 }

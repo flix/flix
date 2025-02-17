@@ -1,5 +1,6 @@
 /*
  * Copyright 2021 Jacob Harris Cryer Kragh, Magnus Madsen
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +21,8 @@ import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Token, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.IteratorOps
-import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL.*
 
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable.ArrayBuffer
@@ -33,10 +32,51 @@ object SemanticTokensProvider {
   /**
     * Processes a request for (full) semantic tokens.
     */
-  def provideSemanticTokens(uri: String)(implicit root: Root): JObject = {
+  def provideSemanticTokens(uri: String)(implicit root: Root): List[Int] = {
     //
     // This class uses iterators over lists to ensure fast append (!)
     //
+
+    val sourceOpt = root.tokens.keys.find(_.name == uri)
+
+    //
+    // Construct an iterator of the semantic tokens from modifiers.
+    //
+    val modifierTokens = sourceOpt match {
+      case Some(source) =>
+        root.tokens(source).iterator.collect {
+          case Token(kind, _, _, _, sp1, sp2) if kind.isModifier =>
+            val loc = SourceLocation(isReal = true, sp1, sp2)
+            SemanticToken(SemanticTokenType.Modifier, Nil, loc)
+        }
+      case None => Iterator.empty
+    }
+
+    //
+    // Construct an iterator of the semantic tokens from keywords.
+    //
+    val keywordTokens = sourceOpt match {
+      case Some(source) =>
+        root.tokens(source).iterator.collect {
+          case Token(kind, _, _, _, sp1, sp2) if kind.isKeyword =>
+            val loc = SourceLocation(isReal = true, sp1, sp2)
+            SemanticToken(SemanticTokenType.Keyword, Nil, loc)
+        }
+      case None => Iterator.empty
+    }
+
+    //
+    // Construct an iterator of the semantic tokens from comments.
+    //
+    val commentTokens = sourceOpt match {
+      case Some(source) =>
+        root.tokens(source).iterator.collect {
+          case Token(kind, _, _, _, sp1, sp2) if kind.isComment =>
+            val loc = SourceLocation(isReal = true, sp1, sp2)
+            SemanticToken(SemanticTokenType.Comment, Nil, loc)
+        }
+      case None => Iterator.empty
+    }
 
     //
     // Construct an iterator of the semantic tokens from traits.
@@ -50,11 +90,9 @@ object SemanticTokensProvider {
     // Construct an iterator of the semantic tokens from instances.
     //
     val instanceTokens = root.instances.values.flatMap {
-      case instances => instances.flatMap {
         case instance if include(uri, instance.trt.loc) => visitInstance(instance)
         case _ => Nil
       }
-    }
 
     //
     // Construct an iterator of the semantic tokens from defs.
@@ -99,7 +137,7 @@ object SemanticTokensProvider {
     //
     // Collect all tokens into one list.
     //
-    val allTokens = (traitTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ structTokens ++ typeAliasTokens ++ effectTokens).toList
+    val allTokens = (modifierTokens ++ keywordTokens ++ commentTokens ++ traitTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ structTokens ++ typeAliasTokens ++ effectTokens).toList
 
     //
     // We keep all tokens that are: (i) single-line tokens, (ii) have the same source as `uri`, and (iii) come from real source locations.
@@ -114,12 +152,7 @@ object SemanticTokensProvider {
     //
     // Encode the semantic tokens as a list of integers.
     //
-    val encodedTokens = encodeSemanticTokens(filteredTokens)
-
-    //
-    // Construct the JSON result.
-    //
-    ("result" -> ("data" -> encodedTokens))
+    encodeSemanticTokens(filteredTokens)
   }
 
   /**
@@ -131,9 +164,10 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given trait `traitDecl`.
     */
   private def visitTrait(traitDecl: TypedAst.Trait): Iterator[SemanticToken] = traitDecl match {
-    case TypedAst.Trait(_, _, _, sym, tparam, superTraits, assocs, signatures, laws, _) =>
+    case TypedAst.Trait(_, ann, _, sym, tparam, superTraits, assocs, signatures, laws, _) =>
       val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
       IteratorOps.all(
+        visitAnnotations(ann),
         Iterator(t),
         superTraits.flatMap(visitTraitConstraint),
         assocs.flatMap(visitAssocTypeSig),
@@ -147,10 +181,11 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given instance `inst0`.
     */
   private def visitInstance(inst0: TypedAst.Instance): Iterator[SemanticToken] = inst0 match {
-    case TypedAst.Instance(_, _, _, sym, tpe, tconstrs, assocs, defs, _, _) =>
+    case TypedAst.Instance(_, ann, _, sym, tpe, tconstrs, assocs, defs, _, _) =>
       // NB: we use SemanticTokenType.Class because the OOP "Class" most directly corresponds to the FP "Instance"
       val t = SemanticToken(SemanticTokenType.Class, Nil, sym.loc)
       IteratorOps.all(
+        visitAnnotations(ann),
         Iterator(t),
         visitType(tpe),
         assocs.flatMap(visitAssocTypeDef),
@@ -165,9 +200,10 @@ object SemanticTokensProvider {
     * Returns tokens for the symbol, the type parameters, the derivations, and the cases.
     */
   private def visitEnum(enum0: TypedAst.Enum): Iterator[SemanticToken] = enum0 match {
-    case TypedAst.Enum(_, _, _, sym, tparams, derives, cases, _) =>
+    case TypedAst.Enum(_, ann, _, sym, tparams, derives, cases, _) =>
       val t = SemanticToken(SemanticTokenType.Enum, Nil, sym.loc)
       IteratorOps.all(
+        visitAnnotations(ann),
         Iterator(t),
         visitTypeParams(tparams),
         Iterator(derives.traits *).map {
@@ -196,9 +232,10 @@ object SemanticTokensProvider {
     * Returns tokens for the symbol, the type parameters, and the fields.
     */
   private def visitStruct(struct0: TypedAst.Struct): Iterator[SemanticToken] = struct0 match {
-    case TypedAst.Struct(_, _, _, sym, tparams, _, fields, _) =>
+    case TypedAst.Struct(_, ann, _, sym, tparams, _, fields, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, sym.loc)
       IteratorOps.all(
+        visitAnnotations(ann),
         Iterator(t),
         visitTypeParams(tparams),
         fields.foldLeft(Iterator.empty[SemanticToken]) {
@@ -246,8 +283,9 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given `spec`.
     */
   private def visitSpec(spec: Spec): Iterator[SemanticToken] = spec match {
-    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs) =>
+    case Spec(_, ann, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs) =>
       IteratorOps.all(
+        visitAnnotations(ann),
         visitTypeParams(tparams),
         visitFormalParams(fparams),
         tconstrs.iterator.flatMap(visitTraitConstraint),
@@ -261,9 +299,10 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given type alias `typeAlias0`.
     */
   private def visitTypeAlias(typeAlias0: TypedAst.TypeAlias): Iterator[SemanticToken] = typeAlias0 match {
-    case TypedAst.TypeAlias(_, _, _, sym, tparams, tpe, _) =>
+    case TypedAst.TypeAlias(_, ann, _, sym, tparams, tpe, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, sym.loc)
       IteratorOps.all(
+        visitAnnotations(ann),
         Iterator(t),
         visitTypeParams(tparams),
         visitType(tpe),
@@ -300,9 +339,10 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given effect.
     */
   private def visitEffect(effect: TypedAst.Effect): Iterator[SemanticToken] = effect match {
-    case TypedAst.Effect(_, _, _, sym, ops, _) =>
+    case TypedAst.Effect(_, ann, _, sym, ops, _) =>
       val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
       IteratorOps.all(
+        visitAnnotations(ann),
         Iterator(t),
         ops.flatMap(visitOp),
       )
@@ -319,6 +359,10 @@ object SemanticTokensProvider {
         visitSpec(spec),
       )
   }
+
+  private def visitAnnotations(annotations: Annotations) = annotations.annotations.iterator.map(visitAnnotation)
+
+  private def visitAnnotation(annotation: Annotation): SemanticToken = SemanticToken(SemanticTokenType.Modifier, Nil, annotation.loc)
 
   /**
     * Returns all semantic tokens in the given expression `exp0`.
@@ -339,7 +383,37 @@ object SemanticTokensProvider {
 
     case Expr.Use(_, _, exp, _) => visitExp(exp) // TODO NS-REFACTOR add token for sym
 
-    case Expr.Cst(_, _, _) => Iterator.empty
+    case Expr.Cst(cst, _, loc) => cst match {
+      case Constant.Unit => Iterator(SemanticToken(SemanticTokenType.Type, Nil, loc))
+
+      case Constant.Null => Iterator(SemanticToken(SemanticTokenType.Type, Nil, loc))
+
+      case Constant.Bool(_) => Iterator(SemanticToken(SemanticTokenType.Type, Nil, loc))
+
+      case Constant.Char(_) => Iterator(SemanticToken(SemanticTokenType.String, Nil, loc))
+
+      case Constant.Float32(_) => Iterator(SemanticToken(SemanticTokenType.Number, Nil, loc))
+
+      case Constant.Float64(_) => Iterator(SemanticToken(SemanticTokenType.Number, Nil, loc))
+
+      case Constant.BigDecimal(_) => Iterator(SemanticToken(SemanticTokenType.Number, Nil, loc))
+
+      case Constant.Int8(_) => Iterator(SemanticToken(SemanticTokenType.Number, Nil, loc))
+
+      case Constant.Int16(_) => Iterator(SemanticToken(SemanticTokenType.Number, Nil, loc))
+
+      case Constant.Int32(_) => Iterator(SemanticToken(SemanticTokenType.Number, Nil, loc))
+
+      case Constant.Int64(_) => Iterator(SemanticToken(SemanticTokenType.Number, Nil, loc))
+
+      case Constant.BigInt(_) => Iterator(SemanticToken(SemanticTokenType.Number, Nil, loc))
+
+      case Constant.Str(_) => Iterator(SemanticToken(SemanticTokenType.String, Nil, loc))
+
+      case Constant.Regex(_) => Iterator(SemanticToken(SemanticTokenType.Regexp, Nil, loc))
+
+      case Constant.RecordEmpty => Iterator(SemanticToken(SemanticTokenType.Type, Nil, loc))
+    }
 
     case Expr.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp)
@@ -439,8 +513,6 @@ object SemanticTokensProvider {
     case Expr.Tuple(exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.RecordEmpty(_, _) => Iterator.empty
-
     case Expr.RecordSelect(exp, label, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Property, Nil, label.loc)
       Iterator(t) ++ visitExp(exp)
@@ -491,8 +563,8 @@ object SemanticTokensProvider {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Ascribe(exp, tpe, _, _) =>
-      visitExp(exp) ++ visitType(tpe)
+    case Expr.Ascribe(exp, expectedType, expectedEff, _, _, _) =>
+      visitExp(exp) ++ expectedType.map(visitType).getOrElse(Iterator.empty) ++ expectedEff.map(visitType).getOrElse(Iterator.empty)
 
     case Expr.InstanceOf(exp, _, _) =>
       visitExp(exp)
@@ -500,11 +572,14 @@ object SemanticTokensProvider {
     case Expr.CheckedCast(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.UncheckedCast(exp, _, _, tpe, _, _) =>
-      visitExp(exp) ++ visitType(tpe)
+    case Expr.UncheckedCast(exp, declaredType, declaredEff, _, _, _) =>
+      visitExp(exp) ++ declaredType.map(visitType).getOrElse(Iterator())  ++ declaredEff.map(visitType).getOrElse(Iterator())
 
-    case Expr.Without(exp, eff, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)
+    case Expr.Unsafe(exp, runEff, _, _, _) =>
+      visitType(runEff) ++ visitExp(exp)
+
+    case Expr.Without(exp, sym, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, sym.qname.loc)
       Iterator(t) ++ visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
@@ -517,10 +592,10 @@ object SemanticTokensProvider {
     case Expr.Throw(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.TryWith(exp, eff, rules, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)
+    case Expr.Handler(sym, rules, _, _, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, sym.qname.loc)
       val st1 = Iterator(t)
-      val st2 = rules.foldLeft(visitExp(exp)) {
+      val st2 = rules.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, HandlerRule(op, fparams, exp)) =>
           val st = SemanticToken(SemanticTokenType.Type, Nil, op.loc)
           val t1 = Iterator(st)
@@ -528,6 +603,9 @@ object SemanticTokensProvider {
           acc ++ t1 ++ t2 ++ visitExp(exp)
       }
       st1 ++ st2
+
+    case Expr.RunWith(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Do(op, exps, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
@@ -660,8 +738,6 @@ object SemanticTokensProvider {
       val tVal = visitType(tpe)
       patsVal ++ patVal ++ tVal
 
-    case Pattern.RecordEmpty(_, _) => Iterator.empty
-
     case Pattern.Error(_, _) => Iterator.empty
   }
 
@@ -748,6 +824,7 @@ object SemanticTokensProvider {
     case TypeConstructor.True => true
     case TypeConstructor.False => true
     case TypeConstructor.Effect(_) => true
+    case TypeConstructor.Region(_) => true
     case TypeConstructor.RegionToStar => true
 
     // invisible
@@ -789,15 +866,15 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given type constraint `tc0`.
     */
   private def visitTraitConstraint(tc0: TraitConstraint): Iterator[SemanticToken] = tc0 match {
-    case TraitConstraint(head, arg, _) =>
-      visitTraitConstraintHead(head) ++ visitType(arg)
+    case TraitConstraint(symUse, arg, _) =>
+      visitTraitSymUse(symUse) ++ visitType(arg)
   }
 
   /**
     * Returns all semantic tokens in the given type constraint head `head0`.
     */
-  private def visitTraitConstraintHead(head0: TraitConstraint.Head): Iterator[SemanticToken] = head0 match {
-    case TraitConstraint.Head(_, loc) =>
+  private def visitTraitSymUse(head0: TraitSymUse): Iterator[SemanticToken] = head0 match {
+    case TraitSymUse(_, loc) =>
       val o = SemanticTokenType.Class
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
@@ -808,14 +885,14 @@ object SemanticTokensProvider {
     */
   private def visitEqualityConstraint(ec0: EqualityConstraint): Iterator[SemanticToken] = ec0 match {
     case EqualityConstraint(cst, tpe1, tpe2, _) =>
-      visitAssocTypeConstructor(cst) ++ visitType(tpe1) ++ visitType(tpe2)
+      visitAssocTypeSymUse(cst) ++ visitType(tpe1) ++ visitType(tpe2)
   }
 
   /**
     * Returns all semantic tokens in the given associated type constructor `cst`.
     */
-  private def visitAssocTypeConstructor(cst: AssocTypeConstructor): Iterator[SemanticToken] = cst match {
-    case AssocTypeConstructor(_, loc) =>
+  private def visitAssocTypeSymUse(symUse: AssocTypeSymUse): Iterator[SemanticToken] = symUse match {
+    case AssocTypeSymUse(_, loc) =>
       val o = SemanticTokenType.Type
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
@@ -960,8 +1037,7 @@ object SemanticTokensProvider {
     var prevLine = 0
     var prevCol = 0
 
-    implicit val tokenOrdering: Ordering[SemanticToken] = Ordering.by(_.loc)
-    for (token <- SortedSet.empty.concat(tokens)) {
+    for (token <- tokens.sortBy(_.loc)) {
       var relLine = token.loc.beginLine - 1
       var relCol = token.loc.beginCol - 1
 

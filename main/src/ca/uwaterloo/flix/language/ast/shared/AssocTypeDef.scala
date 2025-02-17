@@ -15,11 +15,11 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.{Type, Symbol}
 
 /**
   * Represents the definition of an associated type.
   * If this associated type is named `Assoc`, then
   * Assoc[arg] = ret.
   */
-case class AssocTypeDef(arg: Type, ret: Type)
+case class AssocTypeDef(tparams: List[Symbol.KindedTypeVarSym], arg: Type, ret: Type)

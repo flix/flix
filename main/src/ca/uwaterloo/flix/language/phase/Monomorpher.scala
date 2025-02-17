@@ -18,13 +18,15 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, AssocTypeDef, Scope}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
 import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
+import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps}
-import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{CofiniteEffSet, CofiniteSet, InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.SortedSet
@@ -97,7 +99,7 @@ object Monomorpher {
       *
       * The smart constructor ensures that all types in the substitution are grounded.
       */
-    def mk(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit flix: Flix): StrictSubstitution = {
+    def mk(s: Substitution, eqEnv: EqualityEnv)(implicit flix: Flix): StrictSubstitution = {
       val m = s.m.map {
         case (sym, tpe) => sym -> simplify(tpe.map(default), eqEnv, isGround = true)
       }
@@ -117,7 +119,7 @@ object Monomorpher {
     *   - No type aliases
     *   - Equivalent types are uniquely represented (e.g. fields in records types are alphabetized)
     */
-  private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit flix: Flix) {
+  private case class StrictSubstitution(s: Substitution, eqEnv: EqualityEnv)(implicit flix: Flix) {
 
     /**
       * Applies `this` substitution to the given type `tpe`, returning a normalized type.
@@ -126,9 +128,13 @@ object Monomorpher {
       */
     def apply(tpe0: Type): Type = tpe0 match {
       case v@Type.Var(sym, _) => s.m.get(sym) match {
-          case None => default(v) // Case 1: Variable unbound. Use the default type.
-          case Some(t) => t       // Case 2: Variable in subst. Note: All types in the *StrictSubstitution* are already normalized.
-        }
+        case None => default(v) // Case 1: Variable unbound. Use the default type.
+        case Some(t) => t // Case 2: Variable in subst. Note: All types in the *StrictSubstitution* are already normalized.
+      }
+
+      // We map regions to IO
+      case Type.Cst(TypeConstructor.Region(_), _) =>
+        Type.IO
 
       case cst@Type.Cst(_, _) =>
         // Maintain and exploit reference equality for performance.
@@ -141,9 +147,9 @@ object Monomorpher {
         // Remove the Alias and continue.
         apply(t)
 
-      case Type.AssocType(cst, arg0, _, _) =>
-        // Remove the associated type.
-        val reducedType = infallibleReduceAssocType(cst, apply(arg0), eqEnv)
+      case Type.AssocType(symUse, arg0, kind, loc) =>
+        val arg = apply(arg0)
+        val reducedType = TypeReduction2.reduce(Type.AssocType(symUse, arg, kind, loc), Scope.Top, RigidityEnv.empty)(Progress(), eqEnv, flix)
         // `reducedType` is ground, but might need normalization.
         simplify(reducedType, eqEnv, isGround = true)
 
@@ -400,11 +406,10 @@ object Monomorpher {
   /**
     * Creates a table for fast lookup of instances.
     */
-  private def mkFastInstanceLookup(instances: Map[Symbol.TraitSym, List[Instance]]): Map[(Symbol.TraitSym, TypeConstructor), Instance] = {
-    for {
-      (sym, insts) <- instances
-      inst <- insts
-    } yield (sym, inst.tpe.typeConstructor.get) -> inst
+  private def mkFastInstanceLookup(instances: ListMap[Symbol.TraitSym, Instance]): Map[(Symbol.TraitSym, TypeConstructor), Instance] = {
+    instances.map {
+      case (sym, inst) => ((sym, inst.tpe.typeConstructor.get), inst)
+    }.toMap
   }
 
   /** Visit a struct field, simplifying its polymorphic type. */
@@ -540,9 +545,7 @@ object Monomorpher {
     case LoweredAst.Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
-      // forcedly mark the region variable as IO inside the region
-      val subst1 = subst.unbind(regionVar.sym) + (regionVar.sym -> Type.IO)
-      MonoAst.Expr.Scope(freshSym, regionVar, visitExp(exp, env1, subst1), subst(tpe), subst(eff), loc)
+      MonoAst.Expr.Scope(freshSym, regionVar, visitExp(exp, env1, subst), subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1, env0, subst)
@@ -582,7 +585,7 @@ object Monomorpher {
       ListOps.findMap(rules) {
         case LoweredAst.TypeMatchRule(sym, t, body0) =>
           // try to unify
-          Unification.fullyUnifyTypes(expTpe, subst.nonStrict(t), renv, root.eqEnv) match {
+          ConstraintSolver2.fullyUnify(expTpe, subst.nonStrict(t), Scope.Top, renv)(root.eqEnv, flix) match {
             // Case 1: types don't unify; just continue
             case None => None
             // Case 2: types unify; use the substitution in the body
@@ -682,7 +685,6 @@ object Monomorpher {
       val (p, env1) = visitPat(pat, subst)
       val finalEnv = env1 :: envs
       (MonoAst.Pattern.Record(ps, p, subst(tpe), loc), combineEnvs(finalEnv))
-    case LoweredAst.Pattern.RecordEmpty(tpe, loc) => (MonoAst.Pattern.RecordEmpty(subst(tpe), loc), Map.empty)
   }
 
   /**
@@ -724,7 +726,7 @@ object Monomorpher {
     val trt = root.traits(sym.trt)
 
     // find out what we're specializing the sig to by unifying with the type
-    val subst = Unification.unifyTypesIgnoreLeftoverAssocs(sig.spec.declaredScheme.base, tpe, RigidityEnv.empty, root.eqEnv).get
+    val subst = ConstraintSolver2.fullyUnify(sig.spec.declaredScheme.base, tpe, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix).get
     val specialization = subst.m(trt.tparam.sym)
     val tycon = specialization.typeConstructor.get
 
@@ -802,7 +804,7 @@ object Monomorpher {
     * This is equivalent to `envs.reduce(_ ++ _)` without crashing on empty lists.
     */
   private def combineEnvs(envs: List[Map[Symbol.VarSym, Symbol.VarSym]]): Map[Symbol.VarSym, Symbol.VarSym] = {
-    envs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]){
+    envs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
       case (acc, m) => acc ++ m
     }
   }
@@ -837,7 +839,7 @@ object Monomorpher {
     * Unifies `tpe1` and `tpe2` which must be unifiable.
     */
   private def infallibleUnify(tpe1: Type, tpe2: Type, sym: Symbol.DefnSym)(implicit root: LoweredAst.Root, flix: Flix): StrictSubstitution = {
-    Unification.unifyTypesIgnoreLeftoverAssocs(tpe1, tpe2, RigidityEnv.empty, root.eqEnv) match {
+    ConstraintSolver2.fullyUnify(tpe1, tpe2, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix) match {
       case Some(subst) =>
         StrictSubstitution.mk(subst, root.eqEnv)
       case None =>
@@ -845,24 +847,19 @@ object Monomorpher {
     }
   }
 
-  /** Reduces the given associated type and crashes if it is not possible. */
-  private def infallibleReduceAssocType(cst: AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef])(implicit flix: Flix): Type = {
-    EqualityEnvironment.reduceAssocType(cst, arg, eqEnv) match {
-      case Ok(t) => t
-      case Err(_) => throw InternalCompilerException("Unexpected associated type reduction failure", arg.loc)
-    }
-  }
-
   /**
     * Removes [[Type.Alias]] and [[Type.AssocType]], or crashes if some [[Type.AssocType]] is not
     * reducible.
     */
-  private def simplify(tpe: Type, eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], isGround: Boolean)(implicit flix: Flix): Type = tpe match {
+  private def simplify(tpe: Type, eqEnv: EqualityEnv, isGround: Boolean)(implicit flix: Flix): Type = tpe match {
     case v@Type.Var(_, _) => v
     case c@Type.Cst(_, _) => c
     case app@Type.Apply(_, _, _) => normalizeApply(simplify(_, eqEnv, isGround), app, isGround)
     case Type.Alias(_, _, tpe, _) => simplify(tpe, eqEnv, isGround)
-    case Type.AssocType(cst, arg0, _, _) => simplify(infallibleReduceAssocType(cst, simplify(arg0, eqEnv, isGround), eqEnv), eqEnv, isGround)
+    case Type.AssocType(symUse, arg0, kind, loc) =>
+      val arg = simplify(arg0, eqEnv, isGround)
+      val t = TypeReduction2.reduce(Type.AssocType(symUse, arg, kind, loc), Scope.Top, RigidityEnv.empty)(Progress(), eqEnv, flix)
+      simplify(t, eqEnv, isGround)
     case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
     case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
     case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
@@ -900,7 +897,7 @@ object Monomorpher {
 
       case (x, y) =>
         // Maintain and exploit reference equality for performance.
-        if ((x eq tpe1) && (y eq tpe2)) app else Type.Apply(x, y, loc)
+        app.renew(x, y, loc)
     }
   }
 
@@ -910,28 +907,31 @@ object Monomorpher {
   }
 
   /** Evaluates a ground, simplified effect type */
-  private def eval(eff: Type): CofiniteEffSet = eff match {
-    case Type.Univ => CofiniteEffSet.universe
-    case Type.Pure => CofiniteEffSet.empty
+  private def eval(eff: Type): CofiniteSet[Symbol.EffectSym] = eff match {
+    case Type.Univ => CofiniteSet.universe
+    case Type.Pure => CofiniteSet.empty
     case Type.Cst(TypeConstructor.Effect(sym), _) =>
-      CofiniteEffSet.mkSet(sym)
+      CofiniteSet.mkSet(sym)
+    case Type.Cst(TypeConstructor.Region(_), _) =>
+      // We map regions to IO
+      CofiniteSet.mkSet(Symbol.IO)
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _) =>
-      CofiniteEffSet.complement(eval(y))
+      CofiniteSet.complement(eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) =>
-      CofiniteEffSet.union(eval(x), eval(y))
+      CofiniteSet.union(eval(x), eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _) =>
-      CofiniteEffSet.intersection(eval(x), eval(y))
+      CofiniteSet.intersection(eval(x), eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _) =>
-      CofiniteEffSet.difference(eval(x), eval(y))
+      CofiniteSet.difference(eval(x), eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
-      CofiniteEffSet.xor(eval(x), eval(y))
+      CofiniteSet.xor(eval(x), eval(y))
     case other => throw InternalCompilerException(s"Unexpected effect $other", other.loc)
   }
 
   /** Returns the [[Type]] representation of `set` with `loc`. */
-  private def evalToType(set: CofiniteEffSet, loc: SourceLocation): Type = set match {
-    case CofiniteEffSet.Set(s) => Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc)
-    case CofiniteEffSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc), loc)
+  private def evalToType(set: CofiniteSet[Symbol.EffectSym], loc: SourceLocation): Type = set match {
+    case CofiniteSet.Set(s) => Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc)
+    case CofiniteSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc), loc)
   }
 
   /** Returns the normalized default type for the kind of `tpe0`. */
@@ -952,4 +952,13 @@ object Monomorpher {
     case Kind.Error => throw InternalCompilerException(s"Unexpected type '$tpe0'.", tpe0.loc)
   }
 
+  /**
+    * An instance of [[CofiniteSet.SingletonValues]] for effect symbols.
+    */
+  private implicit val EffectSymSingletonValues: CofiniteSet.SingletonValues[Symbol.EffectSym] = {
+    new CofiniteSet.SingletonValues[Symbol.EffectSym] {
+      override val empty: CofiniteSet[Symbol.EffectSym] = CofiniteSet.Set(SortedSet.empty)
+      override val universe: CofiniteSet[Symbol.EffectSym] = CofiniteSet.Compl(SortedSet.empty)
+    }
+  }
 }

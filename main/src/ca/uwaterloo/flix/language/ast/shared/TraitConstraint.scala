@@ -15,26 +15,20 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
+import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 
 import java.util.Objects
 
-case object TraitConstraint {
-  /**
-    * Represents the head (located class) of a type constraint.
-    */
-  case class Head(sym: Symbol.TraitSym, loc: SourceLocation)
-}
-
 /**
   * Represents that the type `arg` must belong to trait `sym`.
   */
-case class TraitConstraint(head: TraitConstraint.Head, arg: Type, loc: SourceLocation) {
+case class TraitConstraint(symUse: TraitSymUse, arg: Type, loc: SourceLocation) {
   override def equals(o: Any): Boolean = o match {
     case that: TraitConstraint =>
-      this.head.sym == that.head.sym && this.arg == that.arg
+      this.symUse.sym == that.symUse.sym && this.arg == that.arg
     case _ => false
   }
 
-  override def hashCode(): Int = Objects.hash(head.sym, arg)
+  override def hashCode(): Int = Objects.hash(symUse.sym, arg)
 }

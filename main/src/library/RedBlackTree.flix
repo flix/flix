@@ -30,7 +30,7 @@
 /// 3. Every path from the root to a leaf contains the same
 /// number of black nodes.
 ///
-pub enum RedBlackTree[k, v] with Sendable {
+pub enum RedBlackTree[k, v] {
 
     ///
     /// A black leaf.

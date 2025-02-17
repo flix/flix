@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 import java.nio.file.{Files, Path}
+import java.util.concurrent.{Executors, TimeUnit, TimeoutException}
 
 /**
   * Debugging utilities for typing constraints.
@@ -60,9 +61,9 @@ object Debug {
   /**
     * Records the given typing constraints and substitution as a dot graph.
     */
-  def recordGraph(tconstrs: List[TypeConstraint], subst: Substitution): Unit = {
+  def recordGraph(tconstrs: List[TypeConstraint], subst: SubstitutionTree, label: String): Unit = {
     if (record) {
-      val dot = toDotWithSubst(tconstrs, subst)
+      val dot = toDotWithSubst(tconstrs, subst, label)
       val fileName = s"${index.toString.reverse.padTo(4, '0').reverse}.dot"
       val path = graphDir.resolve(fileName)
       Files.writeString(path, dot)
@@ -75,7 +76,7 @@ object Debug {
     */
   def toDot(constrs: List[TypeConstraint]): String = {
     val contents = constrs.map(toSubDot)
-    val edges = constrs.map { constr => s"root -> ${dotId(constr)};" }
+    val edges = constrs.map { constr => s"root -> ${constraintId(constr)};" }
     format((
       "digraph Constraints {" ::
         "rankdir = \"LR\";" ::
@@ -89,29 +90,10 @@ object Debug {
   /**
     * Generates a GraphViz (dot) string representing the given constraints and substitution.
     */
-  def toDotWithSubst(constrs: List[TypeConstraint], subst: Substitution): String = {
+  def toDotWithSubst(constrs: List[TypeConstraint], tree: SubstitutionTree, label: String): String = {
     val contents = constrs.map(toSubDot)
-    val edges = constrs.map { constr => s"root -> ${dotId(constr)};" }
-    val substPart = subst.m.toList.sortBy(_._1).flatMap {
-      case (sym, tpe) =>
-        val tvar = Type.Var(sym, SourceLocation.Unknown)
-        val from = System.nanoTime()
-        val to = System.nanoTime()
-        List(
-          s"""$from [label = "$tvar"];""",
-          s"""$to [label = "$tpe"];""",
-          s"$from -> $to;"
-        )
-    }
-    val substSubgraph =
-      "subgraph cluster_Subst {" ::
-        "label = \"Substitution\";" ::
-        "style = \"filled\";" ::
-        "invisL [style=\"invis\"];" :: // these invisible boxes help align the substitution
-        "invisR [style=\"invis\"];" ::
-        "invisL -> invisR [style=\"invis\"];" ::
-        substPart :::
-        List("}")
+    val edges = constrs.map { constr => s"root -> ${constraintId(constr)};" }
+    val substSubgraph = toTreeSubDot(tree)
 
     val constrsSubgraph =
       "subgraph Constraints {" ::
@@ -120,34 +102,99 @@ object Debug {
         edges :::
         List("}")
 
+    val labelLine = s"label=\"$label\"";
+
     format((
       "digraph Constraints {" ::
+        labelLine ::
+        "labelloc=t;" ::
+        "compound=true;" ::
         "rankdir = \"LR\";" ::
         "node [shape=\"box\"];" ::
         substSubgraph :::
         constrsSubgraph :::
-        "invisR -> root [style=\"invis\"];" ::
         List("}")
       ).mkString("\n"))
+  }
+
+  /**
+    * Executes the function `f`, timing out after `limitMs` milliseconds.
+    */
+  def runWithTimeout[A](limitMs: Int)(f: () => A): Option[A] = {
+    val executor = Executors.newSingleThreadExecutor();
+    val future = executor.submit(() => f())
+    try {
+      Some(future.get(limitMs, TimeUnit.MILLISECONDS))
+    } catch {
+      case _: TimeoutException => None
+    } finally {
+      executor.shutdown()
+    }
   }
 
   /**
     * Generates a GraphViz (dot) string representing a fragment of the constraint graph.
     */
   private def toSubDot(constr: TypeConstraint): String = constr match {
-    case TypeConstraint.Equality(tpe1, tpe2, _) => s"""${dotId(constr)} [label = "$tpe1 ~ $tpe2"];"""
-    case TypeConstraint.Trait(sym, tpe, _) => s"""${dotId(constr)} [label = "$sym[$tpe]"];"""
+    case TypeConstraint.Equality(tpe1, tpe2, _) => s"""${constraintId(constr)} [label = "$tpe1 ~ $tpe2"];"""
+    case TypeConstraint.Trait(sym, tpe, _) => s"""${constraintId(constr)} [label = "$sym[$tpe]"];"""
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) =>
-      val header = s"""${dotId(constr)} [label = "$eff1 ~ ($eff2)[$sym ↦ Pure]"];"""
+      val header = s"""${constraintId(constr)} [label = "$eff1 ~ ($eff2)[$sym ↦ Pure]"];"""
       val children = nested.map(toSubDot)
-      val edges = nested.map { child => s"${dotId(constr)} -> ${dotId(child)};" }
+      val edges = nested.map { child => s"${constraintId(constr)} -> ${constraintId(child)};" }
       (header :: children ::: edges).mkString("\n")
+  }
+
+  /**
+    * Generates a GraphViz (dot) string representing a fragment of the substitution tree graph.
+    */
+  private def toTreeSubDot(tree: SubstitutionTree): List[String] = tree match {
+    case SubstitutionTree(subst, branches) =>
+
+      val header = List(
+        s"subgraph cluster_${treeId{tree}} {",
+        "label=\"\";",
+        s"handle_${treeId{tree}} [shape=point, style=invis]" // create a dummy node for connecting clusters
+      )
+
+      val contents = subst.m.toList.sortBy(_._1).flatMap {
+        case (sym, tpe) =>
+          val tvar = Type.Var(sym, SourceLocation.Unknown)
+          val from = System.nanoTime()
+          val to = System.nanoTime()
+          List(
+            s"""$from [label = "$tvar"];""",
+            s"""$to [label = "$tpe"];""",
+            s"$from -> $to;"
+          )
+      }
+      val footer = List("}")
+
+      val children = branches.toList.sortBy(_._1).flatMap {
+        case (sym, child) =>
+          // visit the child
+          val childLines = toTreeSubDot(child)
+
+          // connect the child to the parent
+          val connection = List(
+            s"handle_${treeId(tree)} -> handle_${treeId(child)} [ltail=cluster_${treeId(tree)}, lhead=cluster_${treeId(child)}, label=\"$sym\"]"
+          )
+
+          childLines ::: connection
+      }
+
+      header ::: contents ::: footer ::: children
   }
 
   /**
     * Returns a probably-unique ID for the constraint.
     */
-  private def dotId(constr: TypeConstraint): Int = System.identityHashCode(constr: TypeConstraint)
+  private def constraintId(constr: TypeConstraint): Int = System.identityHashCode(constr)
+
+  /**
+    * Returns a probably-unique ID for the substitution tree.
+    */
+  private def treeId(tree: SubstitutionTree): Int = System.identityHashCode(tree)
 
 
   /**

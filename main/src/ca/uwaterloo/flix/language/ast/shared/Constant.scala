@@ -48,4 +48,6 @@ object Constant {
   case class Str(lit: java.lang.String) extends Constant
 
   case class Regex(lit: java.util.regex.Pattern) extends Constant
+
+  case object RecordEmpty extends Constant
 }

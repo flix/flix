@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 package ca.uwaterloo.flix.api.lsp
+
+import org.eclipse.lsp4j
 import org.json4s.{JInt, JValue}
 
 /**
@@ -23,6 +25,11 @@ sealed trait InlayHintKind {
   def toJSON: JValue = this match {
     case InlayHintKind.Type => JInt(1)
     case InlayHintKind.Parameter => JInt(2)
+  }
+
+  def toLsp4j: lsp4j.InlayHintKind = this match {
+    case InlayHintKind.Type => lsp4j.InlayHintKind.Type
+    case InlayHintKind.Parameter => lsp4j.InlayHintKind.Parameter
   }
 }
 

@@ -361,6 +361,8 @@ object Simplifier {
             // The row types themselves return monotype records, so we do nothing here.
             visitType(elm)
 
+          case TypeConstructor.Region(_) => MonoType.Unit
+
           case TypeConstructor.True => MonoType.Unit
           case TypeConstructor.False => MonoType.Unit
           case TypeConstructor.Not => MonoType.Unit
@@ -523,6 +525,8 @@ object Simplifier {
             val List(elm) = tpe.typeArguments
             Type.mkRecord(visitPolyType(elm), loc)
 
+          case TypeConstructor.Region(_) => Type.mkUnit(loc)
+
           case TypeConstructor.True => Type.mkUnit(loc)
           case TypeConstructor.False => Type.mkUnit(loc)
           case TypeConstructor.Not => Type.mkUnit(loc)
@@ -635,6 +639,13 @@ object Simplifier {
         val strClass = Class.forName("java.lang.String")
         val objClass = Class.forName("java.lang.Object")
         val method = strClass.getMethod("equals", objClass)
+        val op = AtomicOp.InvokeMethod(method)
+        return SimplifiedAst.Expr.ApplyAtomic(op, List(e1, e2), MonoType.Bool, Purity.combine(e1.purity, e2.purity), loc)
+
+      case (MonoType.BigInt, _) =>
+        val bigIntClass = Class.forName("java.math.BigInteger")
+        val objClass = Class.forName("java.lang.Object")
+        val method = bigIntClass.getMethod("equals", objClass)
         val op = AtomicOp.InvokeMethod(method)
         return SimplifiedAst.Expr.ApplyAtomic(op, List(e1, e2), MonoType.Bool, Purity.combine(e1.purity, e2.purity), loc)
 
@@ -764,7 +775,12 @@ object Simplifier {
         */
       case (Nil, Nil) =>
         val g = visitExp(guard)
-        SimplifiedAst.Expr.IfThenElse(g, succ, fail, succ.tpe, g.purity, g.loc)
+        // Only produce IfThenElse if g is non-trivial
+        g match {
+          case SimplifiedAst.Expr.Cst(Constant.Bool(true), _, _) => succ
+          case SimplifiedAst.Expr.Cst(Constant.Bool(false), _, _) => fail
+          case e => SimplifiedAst.Expr.IfThenElse(e, succ, fail, succ.tpe, g.purity, g.loc)
+        }
 
       /**
         * Matching a wildcard is guaranteed to succeed.

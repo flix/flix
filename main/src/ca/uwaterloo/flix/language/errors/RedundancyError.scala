@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt.{FormatTraitConstraint, FormatType}
@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.util.Formatter
   * A common super-type for redundancy errors.
   */
 trait RedundancyError extends CompilationMessage {
-  val kind: String = "Redundancy Error"
+  val kind: CompilationMessageKind = CompilationMessageKind.RedundancyError
 }
 
 object RedundancyError {
@@ -172,6 +172,42 @@ object RedundancyError {
       s""">> Redundant effect cast. The expression is already pure.
          |
          |${code(loc, "redundant cast.")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that `unsafely {} run exp` was used.
+    *
+    * @param loc the source location of the unsafe run.
+    */
+  case class UselessUnsafe(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant effect removal, it is removing nothing."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Redundant effect removal, it is removing nothing.
+         |
+         |${code(loc, "redundant unsafe run.")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that unsafely run was used on a pure expression.
+    *
+    * @param loc the source location of the unsafe run.
+    */
+  case class RedundantUnsafe(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant unsafe run, the expression is pure."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Redundant unsafe run, the expression is pure.
+         |
+         |${code(loc, "redundant unsafe run.")}
          |
          |""".stripMargin
     }

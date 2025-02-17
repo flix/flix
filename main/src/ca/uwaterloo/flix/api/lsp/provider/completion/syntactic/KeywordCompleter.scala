@@ -62,6 +62,8 @@ object KeywordCompleter {
       Completion.KeywordCompletion("@Test"            , Priority.Low),
       Completion.KeywordCompletion("trait"            , Priority.High),
       Completion.KeywordCompletion("type"             , Priority.Higher),
+      // U
+      Completion.KeywordCompletion("use"              , Priority.Default),
       // W
       Completion.KeywordCompletion("with"             , Priority.Default),
     )
@@ -72,6 +74,14 @@ object KeywordCompleter {
   def getEnumKeywords: List[Completion] =
     List(
       Completion.KeywordCompletion("case", Priority.Default)
+    )
+
+  /**
+    * Effect keywords. These are keywords that can appear within the declaration of an effect.
+    */
+  def getEffectKeywords: List[Completion] =
+    List(
+      Completion.KeywordCompletion("def", Priority.Default)
     )
 
   /**
@@ -96,6 +106,8 @@ object KeywordCompleter {
       Completion.KeywordCompletion("force"       , Priority.High),
       Completion.KeywordCompletion("foreach"     , Priority.Lower),
       Completion.KeywordCompletion("from"        , Priority.Highest),
+      // H
+      Completion.KeywordCompletion("handler", Priority.Default),
       // I
       Completion.KeywordCompletion("if"          , Priority.Higher),
       Completion.KeywordCompletion("inject"      , Priority.Low),

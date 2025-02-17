@@ -41,17 +41,7 @@ mod Channel {
     ///
     /// Blocks until the message is enqueued.
     ///
-    pub def send(m: t, sender: Sender[t]): Unit \ Chan with Sendable[t] = $CHANNEL_PUT$(sender, m)
-
-    ///
-    /// Sends the message `m` on the given channel `s`.
-    ///
-    /// Blocks until the message is enqueued.
-    ///
-    /// Identical to `send` but doesn't require `Sendable`.
-    /// It is up to programmer to ensure that race conditions cannot arise due to concurrent access to `m`.
-    ///
-    pub def unsafeSend(m: t, sender: Sender[t]): Unit \ Chan = $CHANNEL_PUT$(sender, m)
+    pub def send(m: t, sender: Sender[t]): Unit \ Chan = $CHANNEL_PUT$(sender, m)
 
     ///
     /// Returns a channel that receives the `Unit` message after duration `d`.

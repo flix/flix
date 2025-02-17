@@ -16,16 +16,15 @@
 
 package ca.uwaterloo.flix.language.phase.unification.set
 
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
+import scala.collection.immutable.IntMap
 
-private object SetSubstitution {
+object SetSubstitution {
 
   /** The empty substitution (`[]`). */
-  val empty: SetSubstitution = SetSubstitution(Map.empty)
+  val empty: SetSubstitution = SetSubstitution(IntMap.empty)
 
   /** Returns the singleton substitution of `x` mapped to `t` (`[x -> t]`). */
-  def singleton(x: Int, t: SetFormula): SetSubstitution = SetSubstitution(Map(x -> t))
+  def singleton(x: Int, t: SetFormula): SetSubstitution = SetSubstitution(IntMap(x -> t))
 
 }
 
@@ -38,62 +37,41 @@ private object SetSubstitution {
   * Substitutions are written `[x -> t1, y -> t2, ..]`.
   * Any individual pair, `x -> t1`, is called a binding or a mapping.
   */
-case class SetSubstitution(m: Map[Int, SetFormula]) {
+case class SetSubstitution(m: IntMap[SetFormula]) {
 
   /** Returns `true` if `this` is the empty substitution (`[]`). */
   def isEmpty: Boolean = m.isEmpty
 
   /** Applies `this` substitution to `f`. Replaces [[SetFormula.Var]] according to `this`. */
-  def apply(f: SetFormula): SetFormula =
-    if (m.isEmpty) f else {
-      applyInternal(f)
+  def apply(f: SetFormula): SetFormula = {
+    def visit(f0: SetFormula): SetFormula = f0 match {
+      // Maintain and exploit reference equality for performance.
+      case SetFormula.Univ => SetFormula.Univ
+
+      case SetFormula.Empty => SetFormula.Empty
+
+      case SetFormula.Cst(_) => f0
+
+      case SetFormula.ElemSet(_) => f0
+
+      case SetFormula.Var(x) => m.getOrElse(x, f0)
+
+      case SetFormula.Compl(f1) =>
+        val inner = visit(f1)
+        if (inner eq f1) f0 else SetFormula.mkCompl(inner)
+
+      case SetFormula.Inter(l) => SetFormula.Inter(l.map(visit))
+
+      case SetFormula.Union(l) => SetFormula.Union(l.map(visit))
+
+      case SetFormula.Xor(l) => SetFormula.mkXorAll(l.map(visit))
     }
 
-  /** Applies `this` substitution to `f`. */
-  private def applyInternal(f: SetFormula): SetFormula = f match {
-    // Maintain and exploit reference equality for performance.
-    case SetFormula.Univ => SetFormula.Univ
-    case SetFormula.Empty => SetFormula.Empty
-    case cst@SetFormula.Cst(_) => cst
-    case elemSet@SetFormula.ElemSet(_) => elemSet
-
-    case variable@SetFormula.Var(x) => m.getOrElse(x, variable)
-
-    case compl@SetFormula.Compl(f1) =>
-      val f1Applied = applyInternal(f1)
-      if (f1Applied eq f1) compl else SetFormula.mkCompl(f1Applied)
-
-    case inter@SetFormula.Inter(_, _, varsPos, _, _, varsNeg, Nil)
-      if varsPos.forall(v => !this.m.contains(v.x)) && varsNeg.forall(v => !this.m.contains(v.x)) =>
-      inter
-
-    case SetFormula.Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
-      val ts = ListBuffer.empty[SetFormula]
-      for (x <- varsPos) {
-        val x1 = applyInternal(x)
-        if (x1 == SetFormula.Empty) return SetFormula.Empty
-        ts += x1
-      }
-      for (x <- varsNeg) {
-        val x1 = applyInternal(x)
-        if (x1 == SetFormula.Univ) return SetFormula.Empty
-        ts += SetFormula.mkCompl(x1)
-      }
-      for (e <- elemPos) ts += e
-      for (cst <- cstsPos) ts += cst
-      for (e <- elemNeg) ts += SetFormula.mkCompl(e)
-      for (cst <- cstsNeg) ts += SetFormula.mkCompl(cst)
-      for (t <- other) {
-        val t1 = applyInternal(t)
-        if (t1 == SetFormula.Empty) return SetFormula.Empty
-        ts += t1
-      }
-      SetFormula.mkInterAll(ts.toList)
-
-    case SetFormula.Union(l) => SetFormula.Union(l.map(applyInternal))
-
-    case SetFormula.Xor(other) =>
-      SetFormula.mkXorDirectAll(other.map(applyInternal))
+    if (m.isEmpty) {
+      f
+    } else {
+      visit(f)
+    }
   }
 
   /** Applies `this` to both sides of `eq`. */
@@ -114,15 +92,26 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
 
   /** Returns a combined substitution, first applying `that` and then applying `this`. */
   def @@(that: SetSubstitution): SetSubstitution = {
-    if (this.m.isEmpty) that
-    else if (that.m.isEmpty) this
+    if (this.m.isEmpty)
+      that
+    else if (that.m.isEmpty)
+      this
     else {
-      val result = mutable.Map.empty[Int, SetFormula]
+      var result = IntMap.empty[SetFormula]
+
       // Add all bindings in `that` with `this` applied to the result.
-      for ((x, f) <- that.m) result.update(x, this.apply(f))
+      for ((x, f) <- that.m) {
+        result = result.updated(x, this.apply(f))
+      }
+
       // Add all bindings in `this` that are not in `that`.
-      for ((x, f) <- this.m) if (!that.m.contains(x)) result.update(x, f)
-      SetSubstitution(result.toMap)
+      for ((x, f) <- this.m) {
+        if (!that.m.contains(x)) {
+          result = result.updated(x, f)
+        }
+      }
+
+      SetSubstitution(result)
     }
   }
 
