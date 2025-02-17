@@ -1112,69 +1112,6 @@ object Type {
   }
 
   /**
-    * Attempts to simplify all effects in the given type `tpe`.
-    *
-    * The function works for all types, but simplifications only happen for large unions.
-    */
-  def simplifyEffectUnions(tpe0: Type): Type = {
-    // We want to simplify a formula like:
-    // ((Net + IO + ((((Logger + Logger + Logger + HttpWithResult + Logger + Logger + FileWriteWithResult) & (~FileWriteWithResult)) + IO) & (~HttpWithResult))) & (~Logger)) + IO
-
-    case object AbortNonUnion extends RuntimeException
-
-    def visitEff(t: Type): (Set[Type.Var], Set[Type.Cst]) = t match {
-      case x@Var(_, _) => (Set(x), Set.empty)
-
-      case x@Cst(tc, _) => tc match {
-        case TypeConstructor.Pure => (Set.empty, Set.empty)
-        case TypeConstructor.Effect(_) => (Set.empty, Set(x))
-        case _ => throw AbortNonUnion
-      }
-
-      case Apply(Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) =>
-        val (tvars1, effs1) = visitEff(tpe1)
-        val (tvars2, effs2) = visitEff(tpe2)
-        (tvars1 ++ tvars2, effs1 ++ effs2)
-
-      case Apply(Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) =>
-        tpe2 match {
-          case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x@Type.Cst(TypeConstructor.Effect(_), _), _) =>
-            // ef & (~FileWriteWithResult)
-            val (tvars, effs) = visitEff(tpe1)
-            (tvars, effs - x)
-          case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x@Type.Var(_, _), _) =>
-            // ef & (~x)
-            val (tvars, effs) = visitEff(tpe1)
-            (tvars - x, effs)
-          case _ =>
-            throw AbortNonUnion
-        }
-
-      case _ =>  throw AbortNonUnion
-    }
-
-    def visitType(t: Type): Type = t.kind match {
-      case Kind.Eff =>
-        try {
-          val (tvars, effSyms) = visitEff(t)
-          val b1 = tvars.foldLeft(Type.Pure: Type)(mkUnion(_, _, SourceLocation.Unknown))
-          effSyms.foldLeft(b1)(mkUnion(_, _, SourceLocation.Unknown))
-        } catch {
-        case AbortNonUnion => t
-      }
-      case _ => t match {
-        case Apply(tpe1, tpe2, loc) =>
-          val t1 = visitType(tpe1)
-          val t2 = visitType(tpe2)
-          Apply(t1, t2, loc)
-        case _ => t
-      }
-    }
-
-    visitType(tpe0)
-  }
-
-  /**
     * Returns the type `And(tpe1, tpe2)`.
     */
   def mkAnd(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
