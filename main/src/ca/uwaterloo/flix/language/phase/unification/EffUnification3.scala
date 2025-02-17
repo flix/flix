@@ -396,7 +396,11 @@ object EffUnification3 {
   /**
     * Simplifies the given effect `tpe` by conversion to - and back from - a Zhegalkin polynomial.
     *
-    * Note: The type `tpe` *MUST* be an effect. Otherwise, exceptions will be thrown.
+    * WARNING:
+    * - The type `tpe` *MUST* have kind `Eff`.
+    * - The type `tpe` *MUST* be well-kinded. Do not use this function for ill-kinded effects!
+    *
+    * The type `tpe` may contain `Type.Error`.
     */
   def simplify(tpe: Type): Type = {
     implicit val scope: Scope = Scope.Top
