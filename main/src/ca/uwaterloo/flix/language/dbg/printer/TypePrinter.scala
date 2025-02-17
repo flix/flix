@@ -26,7 +26,7 @@ object TypePrinter {
 
   /** Returns the [[DocAst.Type]] representation of `tpe`. */
   def print(tpe: Type): DocAst.Type = {
-    val (base, args) = tpe.fullApply
+    val (base, args) = tpe.asFullApply
     // Make the well-kinded types pretty.
     (base, args) match {
       case (Type.Var(sym, _), _) => mkApp(DocAst.Type.Var(sym), args.map(print))
@@ -83,7 +83,7 @@ object TypePrinter {
       case (Type.JvmToEff(tpe, _), _) => mkApp(mkApp(DocAst.Type.AsIs("JvmToEff"), List(print(tpe))), args.map(print))
       case (Type.UnresolvedJvmType(member, _), _) => mkApp(mkApp(printJvmMember(member), List(print(tpe))), args.map(print))
       case (Type.Apply(_, _, _), _) =>
-        // `Type.fullApply` does not return Apply as base.
+        // `Type.asFullApply` does not return Apply as base.
         DocAst.Type.Meta("bug in TypePrinter")
     }
   }

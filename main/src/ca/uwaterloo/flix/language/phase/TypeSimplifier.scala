@@ -21,7 +21,7 @@ object TypeSimplifier {
     if (tpe.kind == Kind.Eff) {
       return toFormula(tpe)(new Counter(0)).toType(tpe.loc)
     }
-    val (base0, args0) = tpe.fullApply
+    val (base0, args0) = tpe.asFullApply
     base0 match {
       case tvar@Type.Var(_, _) =>
         val base = tvar
@@ -52,7 +52,7 @@ object TypeSimplifier {
         val args = args0.map(simplify)
         Type.mkApply(base, args, tpe.loc)
       case Type.Apply(_, _, _) =>
-        // `tpe.fullApply` never returns `Type.Apply` as the base.
+        // `tpe.asFullApply` never returns `Type.Apply` as the base.
         // Leave the input as is to avoid potentially throwing exceptions.
         tpe
     }
@@ -60,7 +60,7 @@ object TypeSimplifier {
 
   /** Convert well-formed formulas into [[Formula]], leaving nonsense as [[Chunk]]. */
   private def toFormula(tpe: Type)(implicit c: Counter): Union = {
-    val (base0, args0) = tpe.fullApply
+    val (base0, args0) = tpe.asFullApply
     (base0, args0) match {
       case (Type.Var(sym, _), List()) => Union(List(Intersection(List(Var(sym, isCompl = false)))))
       case (Type.Cst(TypeConstructor.Pure, _), Nil) => Empty
@@ -100,7 +100,7 @@ object TypeSimplifier {
         val args = args0.map(simplify)
         mkChunk(base, args, tpe.loc)
       case (app@Type.Apply(_, _, _), _) =>
-        // `tpe.fullApply` never returns `Type.Apply` as the base.
+        // `tpe.asFullApply` never returns `Type.Apply` as the base.
         // Leave the input as is to avoid potentially throwing exceptions.
         mkChunk(app, args0.map(simplify), tpe.loc)
     }

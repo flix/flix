@@ -186,8 +186,10 @@ sealed trait Type {
     * Returns e.g. `App(App(Tuple, Char), Char)` as `(Tuple, List(Char, Char))`.
     *
     * A more performant version of `(t.baseType, t.typeArguments)`.
+    *
+    * The base type will never have [[Type.Apply]] as its outermost constructor.
     */
-  def fullApply: (Type, List[Type]) = {
+  def asFullApply: (Type, List[Type]) = {
     @tailrec
     def helper(tpe0: Type, acc: List[Type]): (Type, List[Type]) = tpe0 match {
       case Type.Apply(tpe1, tpe2, _) => helper(tpe1, tpe2 :: acc)
