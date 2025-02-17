@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.api.lsp.provider.completion.*
-import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.getNamespaceAndIdentFromQName
 import ca.uwaterloo.flix.api.lsp.provider.completion.semantic.{GetStaticFieldCompleter, InvokeStaticMethodCompleter}
 import ca.uwaterloo.flix.api.lsp.provider.completion.syntactic.{ExprSnippetCompleter, KeywordCompleter}
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -26,8 +25,6 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SyntacticContext
 import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError, WeederError}
 import ca.uwaterloo.flix.language.phase.Lexer
-import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL.*
 
 /**
   * CompletionProvider
@@ -48,46 +45,40 @@ object CompletionProvider {
     val completionItems = getCompletionContext(source, uri, pos, currentErrors).map {ctx =>
       errorsAt(ctx.uri, ctx.pos, currentErrors).flatMap({
         case err: WeederError.UnqualifiedUse =>
-          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
-          UseCompleter.getCompletions(ctx.uri, namespace, ident)
+          UseCompleter.getCompletions(ctx.uri, err)
         case WeederError.UndefinedAnnotation(_, _) => KeywordCompleter.getModKeywords
         case err: ResolutionError.UndefinedUse =>
-          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
-          UseCompleter.getCompletions(ctx.uri, namespace, ident)
+          UseCompleter.getCompletions(ctx.uri, err)
         case err: ResolutionError.UndefinedTag =>
-          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
-          EnumCompleter.getCompletions(err, namespace, ident) ++
-            EnumTagCompleter.getCompletions(err, namespace, ident) ++
-            ModuleCompleter.getCompletions(err, namespace, ident)
+          EnumCompleter.getCompletions(err) ++
+            EnumTagCompleter.getCompletions(err) ++
+            ModuleCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedName =>
-          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
           AutoImportCompleter.getCompletions(err) ++
             LocalScopeCompleter.getCompletions(err) ++
             ExprCompleter.getCompletions(ctx) ++
-            DefCompleter.getCompletions(err, namespace, ident) ++
-            EnumCompleter.getCompletions(err, namespace, ident) ++
-            EffectCompleter.getCompletions(err, namespace, ident) ++
-            OpCompleter.getCompletions(err, namespace, ident) ++
-            SignatureCompleter.getCompletions(err, namespace, ident) ++
-            EnumTagCompleter.getCompletions(err, namespace, ident) ++
-            ModuleCompleter.getCompletions(err, namespace, ident)
+            DefCompleter.getCompletions(err) ++
+            EnumCompleter.getCompletions(err) ++
+            EffectCompleter.getCompletions(err) ++
+            OpCompleter.getCompletions(err) ++
+            SignatureCompleter.getCompletions(err) ++
+            EnumTagCompleter.getCompletions(err) ++
+            ModuleCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedType =>
-          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
           TypeBuiltinCompleter.getCompletions ++
             AutoImportCompleter.getCompletions(err) ++
             LocalScopeCompleter.getCompletions(err) ++
-            EnumCompleter.getCompletions(err, namespace, ident) ++
-            StructCompleter.getCompletions(err, namespace, ident) ++
-            EffectCompleter.getCompletions(err, namespace, ident) ++
-            TypeAliasCompleter.getCompletions(err, namespace, ident) ++
-            ModuleCompleter.getCompletions(err, namespace, ident)
+            EnumCompleter.getCompletions(err) ++
+            StructCompleter.getCompletions(err) ++
+            EffectCompleter.getCompletions(err) ++
+            TypeAliasCompleter.getCompletions(err) ++
+            ModuleCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err) ++ InvokeStaticMethodCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedJvmImport => ImportCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
         case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedOp =>
-          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qname)
-          OpCompleter.getCompletions(err, namespace, ident)
+          OpCompleter.getCompletions(err)
         case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err) ++ InvokeMethodCompleter.getCompletions(err.tpe, err.fieldName)
         case err: TypeError.MethodNotFound => InvokeMethodCompleter.getCompletions(err.tpe, err.methodName)
         case err: ParseError => err.sctx match {
