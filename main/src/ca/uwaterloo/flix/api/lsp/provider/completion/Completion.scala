@@ -359,8 +359,11 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.SigCompletion(sig, ap, qualified, inScope) =>
-      val qualifiedName = sig.sym.toString
+    case Completion.SigCompletion(sig, namespace, ap, qualified, inScope) =>
+      val qualifiedName =  if (namespace.nonEmpty)
+        s"$namespace.${sig.sym.name}"
+      else
+        sig.sym.toString
       val name = if (qualified) qualifiedName else sig.sym.name
       val snippet = CompletionUtils.getApplySnippet(name, sig.spec.fparams)(context)
       val description = if(!qualified) {
@@ -819,7 +822,7 @@ object Completion {
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the signature is inScope.
     */
-  case class SigCompletion(sig: TypedAst.Sig, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class SigCompletion(sig: TypedAst.Sig, namespace: String,  ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents an Enum Tag completion
