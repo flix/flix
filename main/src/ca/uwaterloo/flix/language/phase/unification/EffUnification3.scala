@@ -398,7 +398,7 @@ object EffUnification3 {
     *
     * Note: `tpe` must be an effect.
     */
-  def simplify(tpe: Type, scope: Scope, renv: RigidityEnv): Type = {
+  def simplify(tpe: Type, scope: Scope = Scope.Top, renv: RigidityEnv = RigidityEnv.empty): Type = {
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe)(scope, renv))
 
     val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
