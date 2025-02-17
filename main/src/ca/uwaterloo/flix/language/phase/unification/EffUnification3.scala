@@ -398,8 +398,10 @@ object EffUnification3 {
     *
     * Note: `tpe` must be an effect.
     */
-  def simplify(tpe: Type, scope: Scope = Scope.Top, renv: RigidityEnv = RigidityEnv.empty): Type = {
-    implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe)(scope, renv))
+  def simplify(tpe: Type): Type = {
+    implicit val scope: Scope = Scope.Top
+    implicit val renv: RigidityEnv = RigidityEnv.empty
+    implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe))
 
     val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
     val z = Zhegalkin.toZhegalkin(f0)
