@@ -67,7 +67,7 @@ object TypeSimplifier {
     toFormula(tpe)(new Counter).toType(tpe.loc)
   }
 
-  /** Convert well-formed formulas into [[Formula]], leaving nonsense as [[Chunk]]. */
+  /** Convert well-formed formulas into [[Formula]], leaving nonsense as [[ChunkVar]]. */
   private def toFormula(tpe: Type)(implicit c: Counter): Union = {
     val (base0, args0) = tpe.asFullApply
     (base0, args0) match {
@@ -83,45 +83,46 @@ object TypeSimplifier {
       case (v@Type.Var(_, _), _) =>
         val base = v
         val args = args0.map(simplify)
-        chunk(base, args, tpe.loc)
+        chunkVar(base, args, tpe.loc)
       case (cst@Type.Cst(_, _), _) =>
         val base = cst
         val args = args0.map(simplify)
-        chunk(base, args, tpe.loc)
+        chunkVar(base, args, tpe.loc)
       case (Type.Alias(cst, aliasArgs, tpe, loc), _) =>
         val base = Type.Alias(cst, aliasArgs.map(simplify), simplify(tpe), loc)
         val args = args0.map(simplify)
-        chunk(base, args, tpe.loc)
+        chunkVar(base, args, tpe.loc)
       case (Type.AssocType(cst, arg, kind, loc), _) =>
         val base = Type.AssocType(cst, simplify(arg), kind, loc)
         val args = args0.map(simplify)
-        chunk(base, args, tpe.loc)
+        chunkVar(base, args, tpe.loc)
       case (Type.JvmToType(tpe, loc), _) =>
         val base = Type.JvmToType(simplify(tpe), loc)
         val args = args0.map(simplify)
-        chunk(base, args, tpe.loc)
+        chunkVar(base, args, tpe.loc)
       case (Type.JvmToEff(tpe, loc), _) =>
         val base = Type.JvmToEff(simplify(tpe), loc)
         val args = args0.map(simplify)
-        chunk(base, args, tpe.loc)
+        chunkVar(base, args, tpe.loc)
       case (jvmType@Type.UnresolvedJvmType(_, _), _) =>
         val base = jvmType
         val args = args0.map(simplify)
-        chunk(base, args, tpe.loc)
+        chunkVar(base, args, tpe.loc)
       case (app@Type.Apply(_, _, _), _) =>
         // `tpe.asFullApply` never returns `Type.Apply` as the base.
-        // Leave the input as is to avoid potentially throwing exceptions.
-        chunk(app, args0.map(simplify), tpe.loc)
+        // Leave the input as is to avoid throwing exceptions.
+        chunkVar(app, args0.map(simplify), tpe.loc)
     }
   }
 
   private sealed trait Formula {
+    /** Converts `this` into a type with location `loc`. */
     def toType(loc: SourceLocation): Type = this match {
       case Var(sym, isCompl) =>
         if (isCompl) Type.mkComplement(Type.Var(sym, loc), loc)
         else Type.Var(sym, loc)
       case Eff(s) => TypeSimplifier.toType(s, loc)
-      case Chunk(tpe, _, isCompl) =>
+      case ChunkVar(tpe, _, isCompl) =>
         if (isCompl) Type.mkComplement(tpe, loc)
         else tpe
       case Union(List(one)) => one.toType(loc)
@@ -140,6 +141,7 @@ object TypeSimplifier {
         Type.mkDifference(Type.mkIntersection(pos.map(_.toType(loc)), loc), negUnion, loc)
     }
 
+    /** Returns the string representation of `this`. */
     override def toString: String = this match {
       case Eff(s) => s match {
         case CofiniteEffSet.empty => "Empty"
@@ -150,34 +152,46 @@ object TypeSimplifier {
       case Var(sym, isCompl) =>
         if (isCompl) s"!${sym.toString}"
         else sym.toString
-      case Chunk(_, id, isCompl) =>
-        if (isCompl) s"!chunk$id"
-        else s"chunk$id"
+      case ChunkVar(_, id, isCompl) =>
+        if (isCompl) s"!chunkVar$id"
+        else s"chunkVar$id"
       case Union(fs) => fs.mkString(" ∪ ")
       case Intersection(fs) => fs.mkString(" ∩ ")
     }
   }
 
-  class Counter(private var i: Int = 0) {
+  /** A mutable counter class, that start at 1. */
+  private class Counter(private var i: Int = 0) {
     def next(): Int = {
       i += 1
       i
     }
   }
 
+  /** Atoms are the singular sub-parts of [[Formula]]s (e.g. concrete effects or variables). */
   private sealed trait Atom extends Formula
 
+  /** Unknowns are [[Atom]]s with unknown set evaluations (e.g. variables). */
   private sealed trait Unknown extends Atom {
     def isCompl: Boolean
   }
 
+  /** A concrete co-finite effect set (e.g. `{Crash, IO}` or `-{Flip}`). */
   private case class Eff(s: CofiniteEffSet) extends Atom
 
+  /** A variable that is potentially complemented. */
   private case class Var(sym: Symbol.KindedTypeVarSym, isCompl: Boolean) extends Unknown
 
-  private case class Chunk(private val tpe: Type, val id: Int, val isCompl: Boolean) extends Unknown {
+  /**
+    * A variable that represents some arbitrary type with equivalence defined by `id` and `isCompl`.
+    *
+    * This allows formulas with "broken" parts, like `IO + ef + Error` or even malformed formulas
+    * like `IO + List[Int32]`. The types are given an identifier such that equivalence with itself
+    * remains known, even if the atom is duplicated.
+    */
+  private case class ChunkVar(private val tpe: Type, id: Int, isCompl: Boolean) extends Unknown {
     override def equals(obj: Any): Boolean = obj match {
-      case Chunk(_, id, isCompl) => id == this.id && isCompl == this.isCompl
+      case ChunkVar(_, id, isCompl) => id == this.id && isCompl == this.isCompl
       case _ => false
     }
 
@@ -186,12 +200,12 @@ object TypeSimplifier {
     }
   }
 
-  /** An empty union is equivalent to the empty set. */
+  /** A non-empty union of intersections. */
   private case class Union(fs: List[Intersection]) extends Formula {
     assert(fs.nonEmpty)
   }
 
-  /** An empty intersection is equivalent to the universe set. */
+  /** A non-empty intersection of atoms. */
   private case class Intersection(fs: List[Atom]) extends Formula {
     assert(fs.nonEmpty)
 
@@ -201,8 +215,8 @@ object TypeSimplifier {
       fs.foreach {
         case Var(sym, isCompl) if us.contains(Var(sym, !isCompl)) => return (CofiniteEffSet.empty, Nil)
         case v@Var(_, _) => us.add(v)
-        case Chunk(tpe, id, isCompl) if us.contains(Chunk(tpe, id, !isCompl)) => return (CofiniteEffSet.empty, Nil)
-        case c@Chunk(_, _, _) => us.add(c)
+        case ChunkVar(tpe, id, isCompl) if us.contains(ChunkVar(tpe, id, !isCompl)) => return (CofiniteEffSet.empty, Nil)
+        case c@ChunkVar(_, _, _) => us.add(c)
         case Eff(s) =>
           ces = CofiniteEffSet.intersection(ces, s)
           if (ces.isEmpty) return (ces, Nil)
@@ -211,22 +225,26 @@ object TypeSimplifier {
     }
   }
 
+  /** The universe formula as a [[Union]]. */
   private val Univ: Union = Union(List(Intersection(List(Eff(CofiniteEffSet.universe)))))
 
+  /** The empty formula as a [[Union]]. */
   private val Empty: Union = Union(List(Intersection(List(Eff(CofiniteEffSet.empty)))))
 
+  /** A singular effect as a [[Union]]. */
   private def eff(sym: Symbol.EffectSym): Union = {
     Union(List(Intersection(List(Eff(CofiniteEffSet.mkSet(sym))))))
   }
 
-  private def chunk(base: Type, args: List[Type], loc: SourceLocation)(implicit c: Counter): Union = {
-    Union(List(Intersection(List(Chunk(Type.mkApply(base, args, loc), c.next(), isCompl = false)))))
+  /** A singular type as a [[Union]], interpreted as a variable of unknown effect meaning. */
+  private def chunkVar(base: Type, args: List[Type], loc: SourceLocation)(implicit c: Counter): Union = {
+    Union(List(Intersection(List(ChunkVar(Type.mkApply(base, args, loc), c.next(), isCompl = false)))))
   }
 
   private def compl(f: Atom): Atom = f match {
     case Var(sym, isCompl) => Var(sym, !isCompl)
     case Eff(sym) => Eff(CofiniteEffSet.complement(sym))
-    case Chunk(tpe, id, isCompl) => Chunk(tpe, id, !isCompl)
+    case ChunkVar(tpe, id, isCompl) => ChunkVar(tpe, id, !isCompl)
   }
 
   private def compl(f: Intersection): Union = f match {
