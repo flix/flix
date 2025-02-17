@@ -403,6 +403,7 @@ object EffUnification3 {
     * The type `tpe` may contain `Type.Error`.
     */
   def simplify(tpe: Type): Type = {
+    // We can use an arbitrary scope and renv because we don't do any unification.
     implicit val scope: Scope = Scope.Top
     implicit val renv: RigidityEnv = RigidityEnv.empty
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe))
