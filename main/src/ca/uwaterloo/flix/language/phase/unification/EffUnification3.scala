@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin
 import ca.uwaterloo.flix.util.collection.SortedBimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -390,6 +391,21 @@ object EffUnification3 {
         Type.AssocType(AssocTypeSymUse(sym, loc), toType(arg0, loc), Kind.Eff, loc)
       case Atom.Error(id) => Type.Cst(TypeConstructor.Error(id, Kind.Eff), loc)
     }
+  }
+
+  /**
+    * Returns a simplified version of the effect set formula `tpe`.
+    *
+    * Note: `tpe` must be an effect.
+    */
+  def simplify(tpe: Type, scope: Scope, renv: RigidityEnv): Type = {
+    implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe)(scope, renv))
+
+    val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
+    val z = Zhegalkin.toZhegalkin(f0)
+    val f1 = Zhegalkin.toSetFormula(z)
+
+    fromSetFormula(f1, tpe.loc)
   }
 
   /**
