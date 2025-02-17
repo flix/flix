@@ -269,6 +269,25 @@ object ConstraintSolver2 {
 
   /**
     * Removes constraints containing errors.
+    *
+    * We don't eliminate constraints with errors that are part of syntactic types.
+    * This is to allow partial solutions. For example, if we have:
+    * {{{
+    *   a -> Error ~ String -> Bool
+    * }}}
+    * then we don't eliminate this constraint because we can later break it down to
+    * {{{
+    *       a ~ String
+    *   Error ~ Bool
+    * }}}
+    * then `a ~ String` can be solved and `Error ~ Bool` can be eliminated.
+    *
+    * If the types are non-syntactic, then we eliminate the constraint.
+    * For example, if we have:
+    * {{{
+    *   IO ∪ Error ~ IO ∩ a
+    * }}}
+    * then we eliminate the constraint because we cannot simply break it down.
     */
   private def eliminateErrors(constr: TypeConstraint, progress: Progress): List[TypeConstraint] = constr match {
     case TypeConstraint.Equality(tpe1, tpe2, _) if isEliminable(tpe1) || isEliminable(tpe2) => Nil
@@ -284,6 +303,9 @@ object ConstraintSolver2 {
 
   /**
     * Returns true if type constraints containing this type can be eliminated.
+    * They can be eliminated if:
+    * - the type is syntactic and IS an error type, or
+    * - the type is non-syntactic and CONTAINS an error type
     */
   private def isEliminable(tpe: Type): Boolean = {
     if (isSyntactic(tpe.kind)) {
