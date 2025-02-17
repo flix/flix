@@ -50,7 +50,7 @@ object HoverProvider {
     val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(tpe)(root)
     val markup =
       s"""```flix
-         |${FormatType.formatType(tpe)}$lowerAndUpperBounds
+         |${FormatType.formatType(tpe, minimizeEffs = true)}$lowerAndUpperBounds
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -113,11 +113,11 @@ object HoverProvider {
 
   private def formatTypAndEff(tpe0: Type, eff0: Type)(implicit flix: Flix): String = {
     // TODO deduplicate with CompletionProvider
-    val t = FormatType.formatType(tpe0)
+    val t = FormatType.formatType(tpe0, minimizeEffs = true)
 
     val p = eff0 match {
       case Type.Cst(TypeConstructor.Pure, _) => ""
-      case eff => raw" \ " + FormatType.formatType(eff)
+      case eff => raw" \ " + FormatType.formatType(eff, minimizeEffs = true)
     }
 
     s"$t$p"
