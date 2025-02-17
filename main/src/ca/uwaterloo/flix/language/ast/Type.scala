@@ -1116,7 +1116,7 @@ object Type {
     *
     * The function works for all types, but simplifications only happen for large unions.
     */
-  def simplify(tpe0: Type): Type = {
+  def simplifyEffectUnions(tpe0: Type): Type = {
     // We want to simplify a formula like:
     // ((Net + IO + ((((Logger + Logger + Logger + HttpWithResult + Logger + Logger + FileWriteWithResult) & (~FileWriteWithResult)) + IO) & (~HttpWithResult))) & (~Logger)) + IO
 
