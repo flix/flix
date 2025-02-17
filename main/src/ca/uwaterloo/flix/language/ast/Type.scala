@@ -1126,6 +1126,7 @@ object Type {
       case x@Var(_, _) => (Set(x), Set.empty)
 
       case x@Cst(tc, _) => tc match {
+        case TypeConstructor.Pure => (Set.empty, Set.empty)
         case TypeConstructor.Effect(_) => (Set.empty, Set(x))
         case _ => throw AbortNonUnion
       }
