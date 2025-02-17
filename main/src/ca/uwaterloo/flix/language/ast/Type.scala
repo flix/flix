@@ -1149,11 +1149,7 @@ object Type {
             throw Abort
         }
 
-      case Alias(_, _, _, _) =>  throw Abort
-      case AssocType(_, _, _, _) =>  throw Abort
-      case JvmToType(_, _) =>  throw Abort
-      case JvmToEff(_, _) =>  throw Abort
-      case UnresolvedJvmType(_, _) => throw Abort
+      case _ =>  throw Abort
     }
 
     def visitType(t: Type): Type = t.kind match {
