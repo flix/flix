@@ -64,7 +64,7 @@ object TypeSimplifier {
 
   /** Simplifies `tpe` as an effect, also simplifying each non-formula subtype within `tpe`. */
   private def simplifyEffect(tpe: Type): Type = {
-    toFormula(tpe)(new Counter(0)).toType(tpe.loc)
+    toFormula(tpe)(new Counter).toType(tpe.loc)
   }
 
   /** Convert well-formed formulas into [[Formula]], leaving nonsense as [[Chunk]]. */
@@ -158,7 +158,7 @@ object TypeSimplifier {
     }
   }
 
-  class Counter(var i: Int) {
+  class Counter(private var i: Int = 0) {
     def next(): Int = {
       i += 1
       i
@@ -206,7 +206,6 @@ object TypeSimplifier {
         case Eff(s) =>
           ces = CofiniteEffSet.intersection(ces, s)
           if (ces.isEmpty) return (ces, Nil)
-        case _ => ??? // unreachable
       }
       (ces, us.toList)
     }
@@ -228,7 +227,6 @@ object TypeSimplifier {
     case Var(sym, isCompl) => Var(sym, !isCompl)
     case Eff(sym) => Eff(CofiniteEffSet.complement(sym))
     case Chunk(tpe, id, isCompl) => Chunk(tpe, id, !isCompl)
-    case _ => ??? // unreachable
   }
 
   private def compl(f: Intersection): Union = f match {
