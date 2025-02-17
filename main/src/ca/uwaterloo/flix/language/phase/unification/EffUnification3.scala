@@ -394,9 +394,9 @@ object EffUnification3 {
   }
 
   /**
-    * Returns a simplified version of the effect set formula `tpe`.
+    * Simplifies the given effect `tpe` by conversion to - and back from - a Zhegalkin polynomial.
     *
-    * Note: `tpe` must be an effect.
+    * Note: The type `tpe` *MUST* be an effect. Otherwise, exceptions will be thrown.
     */
   def simplify(tpe: Type): Type = {
     implicit val scope: Scope = Scope.Top
