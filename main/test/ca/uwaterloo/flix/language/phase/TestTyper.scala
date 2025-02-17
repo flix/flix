@@ -1690,4 +1690,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibMin.copy(xsubeffecting = Set(Subeffecting.ModDefs, Subeffecting.Lambdas)))
     expectError[TypeError](result)
   }
+
+  test("ErrorType.01") {
+    // There should be no type error because Abc does not resolve.
+    val input =
+      """
+        |def foo(): Abc = "hello"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
 }
