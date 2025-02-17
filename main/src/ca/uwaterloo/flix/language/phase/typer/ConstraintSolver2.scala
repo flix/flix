@@ -405,9 +405,13 @@ object ConstraintSolver2 {
           progress.markProgress()
         }
         (Nil, subst)
-      case Result.Err(unsolved_UNUSED) => // TODO: Why not use these equations?
-        // Otherwise, throw away everything.
-        (eqConstrs, Substitution.empty)
+      case Result.Err(unsolved) =>
+        // Otherwise we failed. Return the evidence of failure.
+        val newConstrs = unsolved.map {
+          // TODO need better provenance than match
+          case (tpe1, tpe2, loc) => TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(tpe1, tpe2, loc))
+        }
+        (newConstrs, Substitution.empty)
     }
 
     val tree0 = SubstitutionTree.shallow(subst1)
