@@ -246,16 +246,16 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unable to unify the types '${formatType(fullType1, Some(renv))}' and '${formatType(fullType2, Some(renv))}'."
+    def summary: String = s"Unable to unify the types '${formatType(fullType1, Some(renv), minimizeEffs = true)}' and '${formatType(fullType2, Some(renv), minimizeEffs = true)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unable to unify the types: '${red(formatType(baseType1, Some(renv)))}' and '${red(formatType(baseType2, Some(renv)))}'.
+      s""">> Unable to unify the types: '${red(formatType(baseType1, Some(renv), minimizeEffs = true))}' and '${red(formatType(baseType2, Some(renv), minimizeEffs = true))}'.
          |
          |${code(loc, "mismatched types.")}
          |
-         |Type One: ${formatType(fullType1, Some(renv))}
-         |Type Two: ${formatType(fullType2, Some(renv))}
+         |Type One: ${formatType(fullType1, Some(renv), minimizeEffs = true)}
+         |Type Two: ${formatType(fullType2, Some(renv), minimizeEffs = true)}
          |""".stripMargin
     }
   }

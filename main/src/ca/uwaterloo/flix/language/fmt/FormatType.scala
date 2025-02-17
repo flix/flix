@@ -28,12 +28,17 @@ object FormatType {
     *
     * Performs alpha renaming if the rigidity environment is present.
     */
-  def formatType(tpe: Type, renv: Option[RigidityEnv] = None)(implicit flix: Flix): String = {
+  def formatType(tpe: Type, renv: Option[RigidityEnv] = None, minimizeEffs: Boolean = false)(implicit flix: Flix): String = {
     val renamed = renv match {
       case None => tpe
       case Some(env) => alphaRename(tpe, env)
     }
-    formatTypeWithOptions(renamed, flix.getFormatOptions)
+    val minimized = if (minimizeEffs) {
+      Type.simplifyEffects(renamed)
+    } else {
+      renamed
+    }
+    formatTypeWithOptions(minimized, flix.getFormatOptions)
   }
 
   /**
