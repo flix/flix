@@ -19,33 +19,31 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTagCompletion
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Case, Enum}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.errors.ResolutionError
-
-import scala.collection.mutable.ArrayBuffer
 
 object EnumTagCompleter {
   /**
     * Returns a List of Completion for Tag for UndefinedName.
     */
-  def getCompletions(err: ResolutionError.UndefinedName, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    getCompletions(err.loc.source.name, err.ap, err.env, namespace, ident)
+  def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    getCompletions(err.loc.source.name, err.ap, err.env, err.qn)
   }
 
   /**
     * Returns a List of Completion for Tag for UndefinedTag.
     */
-  def getCompletions(err: ResolutionError.UndefinedTag, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    getCompletions(err.loc.source.name, err.ap, err.env, namespace, ident)
+  def getCompletions(err: ResolutionError.UndefinedTag)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    getCompletions(err.loc.source.name, err.ap, err.env, err.qn)
   }
 
-  private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    if (namespace.nonEmpty)
-        fullyQualifiedCompletion(uri, ap, namespace, ident) ++ partiallyQualifiedCompletions(uri, ap, env, namespace, ident)
+  private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    if (qn.namespace.nonEmpty)
+        fullyQualifiedCompletion(uri, ap, qn) ++ partiallyQualifiedCompletions(uri, ap, env, qn)
     else
       root.enums.values.flatMap(enm =>
         enm.cases.values.collect{
-          case tag if matchesTag(enm, tag, namespace, ident, uri, qualified = false) =>
+          case tag if matchesTag(enm, tag, qn, uri, qualified = false) =>
             EnumTagCompletion(tag, Nil, ap, qualified = false, inScope = inScope(tag, env))
         }
       )
@@ -56,10 +54,10 @@ object EnumTagCompleter {
     *
     * We will assume the user is trying to type a fully qualified name and will only match against fully qualified names.
     */
-  private def fullyQualifiedCompletion(uri: String, ap: AnchorPosition, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
+  private def fullyQualifiedCompletion(uri: String, ap: AnchorPosition, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
     root.enums.values.flatMap(enm =>
       enm.cases.values.collect{
-        case tag if matchesTag(enm, tag, namespace, ident, uri, qualified = true) =>
+        case tag if matchesTag(enm, tag, qn, uri, qualified = true) =>
           EnumTagCompletion(tag, Nil,  ap, qualified = true, inScope = true)
       }
     )
@@ -73,13 +71,13 @@ object EnumTagCompleter {
     *
     * We need to first find the fully qualified namespace by looking up the local environment, then use it to provide completions.
     */
-  private def partiallyQualifiedCompletions(uri: String, ap: AnchorPosition, env: LocalScope, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
+  private def partiallyQualifiedCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
     for {
-      case Resolution.Declaration(Enum(_, _, _, enumSym, _, _, _, _)) <- env.get(namespace.mkString("."))
+      case Resolution.Declaration(Enum(_, _, _, enumSym, _, _, _, _)) <- env.get(qn.namespace.toString)
       enm <- root.enums.get(enumSym).toList
       tag <- enm.cases.values
-      if matchesTag(enm, tag, namespace, ident, uri, qualified = false)
-    } yield EnumTagCompletion(tag, namespace, ap, qualified = true, inScope = true)
+      if matchesTag(enm, tag, qn, uri, qualified = false)
+    } yield EnumTagCompletion(tag, qn.namespace.parts, ap, qualified = true, inScope = true)
   }
 
   private def inScope(tag: TypedAst.Case, scope: LocalScope): Boolean = {
@@ -97,13 +95,13 @@ object EnumTagCompleter {
     *
     * For visibility, we just need to check the parent enum.
     */
-  private def matchesTag(enm: TypedAst.Enum, tag: TypedAst.Case, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
+  private def matchesTag(enm: TypedAst.Enum, tag: TypedAst.Case, qn: Name.QName, uri: String, qualified: Boolean): Boolean = {
     val isPublic = enm.mod.isPublic && !enm.ann.isInternal
     val isInFile = enm.loc.source.name == uri
     val isMatch = if (qualified)
-      CompletionUtils.matchesQualifiedName(tag.sym.namespace, tag.sym.name, namespace, ident)
+      CompletionUtils.matchesQualifiedName(tag.sym.namespace, tag.sym.name, qn)
     else
-      CompletionUtils.fuzzyMatch(ident, tag.sym.name)
+      CompletionUtils.fuzzyMatch(qn.ident.name, tag.sym.name)
     isMatch && (isPublic || isInFile)
   }
 }

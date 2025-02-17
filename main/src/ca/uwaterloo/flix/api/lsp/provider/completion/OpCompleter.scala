@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.OpCompletion
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Op
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
@@ -26,11 +26,11 @@ object OpCompleter {
   /**
     * Returns a List of Completion for Op for UndefinedOp.
     */
-  def getCompletions(err: ResolutionError.UndefinedOp, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
+  def getCompletions(err: ResolutionError.UndefinedOp)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
     val uri = err.loc.source.name
     root.effects.values.flatMap(eff =>
       eff.ops.collect {
-        case op if matchesOp(eff, op, namespace, ident, uri, qualified = false) =>
+        case op if matchesOp(eff, op, err.qn, uri, qualified = false) =>
           OpCompletion(op, err.ap, qualified = false, inScope = true, isHandler = true)
       }
     )
@@ -39,22 +39,22 @@ object OpCompleter {
   /**
     * Returns a List of Completion for Op for UndefinedName.
     */
-  def getCompletions(err: ResolutionError.UndefinedName, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
-    getCompletions(err.loc.source.name, err.ap, err.env, namespace, ident)
+  def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
+    getCompletions(err.loc.source.name, err.ap, err.env, err.qn)
   }
 
-  private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
-    if (namespace.nonEmpty) {
+  private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
+    if (qn.namespace.nonEmpty) {
       root.effects.values.flatMap(eff =>
         eff.ops.collect {
-          case op if matchesOp(eff, op, namespace, ident, uri, qualified = true) =>
+          case op if matchesOp(eff, op, qn, uri, qualified = true) =>
             OpCompletion(op, ap, qualified = true, inScope = true, isHandler = false)
         }
       )
     } else {
       root.effects.values.flatMap(eff =>
         eff.ops.collect {
-          case op if matchesOp(eff, op, namespace, ident, uri, qualified = false) =>
+          case op if matchesOp(eff, op, qn, uri, qualified = false) =>
             OpCompletion(op, ap, qualified = false, inScope(op, env), isHandler = false)
         }
       )
@@ -76,13 +76,13 @@ object OpCompleter {
     *
     * For visibility, we just need to check if the parent effect.
     */
-  private def matchesOp(eff: TypedAst.Effect, op: TypedAst.Op, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
+  private def matchesOp(eff: TypedAst.Effect, op: TypedAst.Op, qn: Name.QName, uri: String, qualified: Boolean): Boolean = {
     val isPublic = eff.mod.isPublic && !eff.ann.isInternal
     val isInFile = eff.loc.source.name == uri
     val isMatch = if (qualified)
-      CompletionUtils.matchesQualifiedName(op.sym.namespace, op.sym.name, namespace, ident)
+      CompletionUtils.matchesQualifiedName(op.sym.namespace, op.sym.name, qn)
     else
-      CompletionUtils.fuzzyMatch(ident, op.sym.name)
+      CompletionUtils.fuzzyMatch(qn.ident.name, op.sym.name)
     isMatch && (isPublic || isInFile)
   }
 }

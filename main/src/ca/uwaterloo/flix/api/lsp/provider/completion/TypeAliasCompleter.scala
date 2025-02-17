@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.TypeAliasCompletion
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.TypeAlias
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
@@ -28,19 +28,19 @@ object TypeAliasCompleter {
     * Whether the returned completions are qualified is based on whether the name in the error is qualified.
     * When providing completions for unqualified enums that is not in scope, we will also automatically use the enum.
     */
-  def getCompletions(err: ResolutionError.UndefinedType, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    getCompletions(err.qn.loc.source.name, err.ap, err.env, namespace, ident)
+  def getCompletions(err: ResolutionError.UndefinedType)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn)
   }
 
-  private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    if (namespace.nonEmpty)
+  private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    if (qn.namespace.nonEmpty)
       root.typeAliases.values.collect{
-        case typeAlias if matchesEffect(typeAlias, namespace, ident, uri, qualified = true) =>
+        case typeAlias if matchesEffect(typeAlias, qn, uri, qualified = true) =>
           TypeAliasCompletion(typeAlias, ap, qualified = true, inScope = true)
       }
     else
       root.typeAliases.values.collect({
-        case typeAlias if matchesEffect(typeAlias, namespace, ident, uri, qualified = false) =>
+        case typeAlias if matchesEffect(typeAlias, qn, uri, qualified = false) =>
           TypeAliasCompletion(typeAlias, ap, qualified = false, inScope = inScope(typeAlias, env))
       })
   }
@@ -63,13 +63,13 @@ object TypeAliasCompleter {
     * Checks if the definition matches the QName.
     * Names should match and the definition should be available.
     */
-  private def matchesEffect(typeAlias: TypedAst.TypeAlias, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
+  private def matchesEffect(typeAlias: TypedAst.TypeAlias, qn: Name.QName, uri: String, qualified: Boolean): Boolean = {
     val isPublic = typeAlias.mod.isPublic && !typeAlias.ann.isInternal
     val isInFile = typeAlias.sym.loc.source.name == uri
     val isMatch = if (qualified) {
-      CompletionUtils.matchesQualifiedName(typeAlias.sym.namespace, typeAlias.sym.name, namespace, ident)
+      CompletionUtils.matchesQualifiedName(typeAlias.sym.namespace, typeAlias.sym.name, qn)
     } else
-      CompletionUtils.fuzzyMatch(ident, typeAlias.sym.name)
+      CompletionUtils.fuzzyMatch(qn.ident.name, typeAlias.sym.name)
     isMatch && (isPublic || isInFile)
   }
 }

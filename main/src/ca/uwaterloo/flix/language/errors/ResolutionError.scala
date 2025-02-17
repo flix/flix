@@ -859,12 +859,12 @@ object ResolutionError {
     * @param qname the qualified name of the operation.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedOp(qname: Name.QName, ap: AnchorPosition, env: LocalScope, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Undefined operation '${qname.toString}'."
+  case class UndefinedOp(qn: Name.QName, ap: AnchorPosition, env: LocalScope, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined operation '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
-      s""">> Undefined operation '${red(qname.toString)}'.
+      s""">> Undefined operation '${red(qn.toString)}'.
          |
          |${code(loc, "operation not found")}
          |

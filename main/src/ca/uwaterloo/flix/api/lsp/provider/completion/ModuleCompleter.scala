@@ -16,7 +16,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, Symbol, TypedAst}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ModuleCompletion
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Namespace
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
@@ -28,27 +28,27 @@ object ModuleCompleter {
     * Whether the returned completions are qualified is based on whether the name in the error is qualified.
     * When providing completions for unqualified enums that is not in scope, we will also automatically use the module.
     */
-  def getCompletions(err: ResolutionError.UndefinedType, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    getCompletions(err.ap, err.env, namespace, ident)
+  def getCompletions(err: ResolutionError.UndefinedType)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    getCompletions(err.ap, err.env, err.qn)
   }
 
-  def getCompletions(err: ResolutionError.UndefinedName, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    getCompletions(err.ap, err.env, namespace, ident)
+  def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    getCompletions(err.ap, err.env, err.qn)
   }
 
-  def getCompletions(err: ResolutionError.UndefinedTag, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    getCompletions(err.ap, err.env, namespace, ident)
+  def getCompletions(err: ResolutionError.UndefinedTag)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    getCompletions(err.ap, err.env, err.qn)
   }
 
-  private def getCompletions(ap: AnchorPosition, env: LocalScope, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    if (namespace.nonEmpty)
+  private def getCompletions(ap: AnchorPosition, env: LocalScope, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    if (qn.namespace.nonEmpty)
       root.modules.keys.collect{
-        case module if module.ns.nonEmpty && matchesModule(module, namespace, ident, qualified = true) =>
+        case module if module.ns.nonEmpty && matchesModule(module, qn, qualified = true) =>
           ModuleCompletion(module, ap, qualified = true, inScope = true)
       }
     else
       root.modules.keys.collect({
-        case module if module.ns.nonEmpty && matchesModule(module, namespace, ident, qualified = false) =>
+        case module if module.ns.nonEmpty && matchesModule(module, qn, qualified = false) =>
           ModuleCompletion(module, ap, qualified = false, inScope = inScope(module, env))
       })
   }
@@ -74,11 +74,11 @@ object ModuleCompleter {
     *
     * Note: module.ns is required to be non-empty.
     */
-  private def matchesModule(module: Symbol.ModuleSym, namespace: List[String], ident: String, qualified: Boolean): Boolean = {
+  private def matchesModule(module: Symbol.ModuleSym, qn: Name.QName, qualified: Boolean): Boolean = {
     if (qualified) {
-      CompletionUtils.matchesQualifiedName(module.ns.dropRight(1), module.ns.last, namespace, ident)
+      CompletionUtils.matchesQualifiedName(module.ns.dropRight(1), module.ns.last, qn)
     } else
-      CompletionUtils.fuzzyMatch(ident, module.ns.last)
+      CompletionUtils.fuzzyMatch(qn.ident.name, module.ns.last)
   }
 
 }

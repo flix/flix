@@ -248,21 +248,14 @@ object CompletionUtils {
   }
 
   /**
-    * Get the namespace and ident from the qualified name.
-    */
-  def getNamespaceAndIdentFromQName(qn: Name.QName): (List[String], String) = {
-    (qn.namespace.idents.map(_.name), qn.ident.name)
-  }
-
-  /**
    * Checks if the namespace and ident from the error matches the qualified name.
    * We require a full match on the namespace and a fuzzy match on the ident.
    *
    * Example:
    *   matchesQualifiedName(["A", "B"], "fooBar", ["A", "B"], "fB") => true
    */
-  def matchesQualifiedName(targetNamespace: List[String], targetIdent:String, namespace: List[String], ident: String): Boolean = {
-    targetNamespace == namespace && fuzzyMatch(ident, targetIdent)
+  def matchesQualifiedName(targetNamespace: List[String], targetIdent:String, qn: Name.QName): Boolean = {
+    targetNamespace == qn.namespace.parts && fuzzyMatch(qn.ident.name, targetIdent)
   }
 
   /**
