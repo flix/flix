@@ -17,13 +17,11 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
-import ca.uwaterloo.flix.language.phase.unification.set.SetUnification
 import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.collection.ListMap
 
 import scala.annotation.tailrec
 
@@ -160,17 +158,20 @@ object ConstraintSolver2 {
               (s, p) => s.flatMap(breakDownConstraints(_, p))
             }
             .flatMap(eliminateIdentities(_, progress))
+            .flatMap(eliminateErrors(_, progress))
             .map(reduceTypes(_, progress))
             .flatMapSubst(makeSubstitution(_, progress))
             .exhaustively(progress) {
               (s, p) => s.flatMap(breakDownConstraints(_, p))
             }
             .flatMap(eliminateIdentities(_, progress))
+            .flatMap(eliminateErrors(_, progress))
             .map(reduceTypes(_, progress))
             .exhaustively(progress) {
               (s, p) => s.flatMap(breakDownConstraints(_, p))
             }
             .flatMap(eliminateIdentities(_, progress))
+            .flatMap(eliminateErrors(_, progress))
             .map(reduceTypes(_, progress))
             .flatMapSubst(recordUnification(_, progress))
             .flatMapSubst(schemaUnification(_, progress))
@@ -264,6 +265,37 @@ object ConstraintSolver2 {
 
     case c: TypeConstraint.Trait =>
       List(c)
+  }
+
+  /**
+    * Removes constraints containing errors.
+    */
+  private def eliminateErrors(constr: TypeConstraint, progress: Progress): List[TypeConstraint] = constr match {
+    case TypeConstraint.Equality(tpe1, tpe2, _) if isEliminable(tpe1) || isEliminable(tpe2) => Nil
+
+    case TypeConstraint.Trait(_, tpe, _) if isEliminable(tpe) => Nil
+
+    case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
+      val nested = nested0.flatMap(eliminateErrors(_, progress))
+      List(TypeConstraint.Purification(sym, eff1, eff2, prov, nested))
+
+    case c => List(c)
+  }
+
+  /**
+    * Returns true if type constraints containing this type can be eliminated.
+    */
+  private def isEliminable(tpe: Type): Boolean = {
+    if (isSyntactic(tpe.kind)) {
+      // Syntactic kinds can only be eliminated after breaking them up.
+      tpe match {
+        case Type.Cst(TypeConstructor.Error(_, _), _) => true
+        case _ => false
+      }
+    } else {
+      // Non-syntactic kinds don't get broken up, so the must be eliminated eagerly.
+      Type.hasError(tpe)
+    }
   }
 
   /**
