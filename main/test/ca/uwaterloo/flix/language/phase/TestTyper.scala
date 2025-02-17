@@ -1218,9 +1218,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let _ = try {
+        |    let _ = run {
         |        Gen.gen()
-        |    } with Gen {
+        |    } with handler Gen {
         |        def gen(k) = k("a")
         |    };
         |    Gen.gen();
@@ -1242,10 +1242,10 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let _ = try {
+        |    let _ = run {
         |        Gen.gen();
         |        AskTell.askTell(42)
-        |    } with Gen {
+        |    } with handler Gen {
         |        def gen(k) = k("a")
         |    };
         |    ()
@@ -1266,10 +1266,10 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let _ = try {
+        |    let _ = run {
         |        Gen.gen();
         |        AskTell.askTell(42)
-        |    } with Gen {
+        |    } with handler Gen {
         |        def gen(k) = k("a")
         |    };
         |    Gen.gen();
@@ -1291,10 +1291,10 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let _ = try {
+        |    let _ = run {
         |        Gen.gen();
         |        AskTell.askTell(42)
-        |    } with Gen {
+        |    } with handler Gen {
         |        def gen(k) = k("a")
         |    };
         |    AskTell.askTell(42);
@@ -1316,10 +1316,10 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let _ = try {
+        |    let _ = run {
         |        Gen.gen();
         |        AskTell.askTell(42)
-        |    } with Gen {
+        |    } with handler Gen {
         |        def gen(k) = k("a")
         |    };
         |    Gen.gen();
@@ -1341,9 +1341,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let _ = try {
+        |    let _ = run {
         |        Gen.gen()
-        |    } with Gen {
+        |    } with handler Gen {
         |        def gen(k) = k("a")
         |    };
         |    AskTell.askTell(42);
@@ -1365,9 +1365,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let _ = try {
+        |    let _ = run {
         |        Gen.gen()
-        |    } with Gen {
+        |    } with handler Gen {
         |        def gen(k) = AskTell.askTell(k("a"))
         |    };
         |    ()
