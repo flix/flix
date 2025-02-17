@@ -1120,14 +1120,14 @@ object Type {
     // We want to simplify a formula like:
     // ((Net + IO + ((((Logger + Logger + Logger + HttpWithResult + Logger + Logger + FileWriteWithResult) & (~FileWriteWithResult)) + IO) & (~HttpWithResult))) & (~Logger)) + IO
 
-    case object Abort extends RuntimeException
+    case object AbortNonUnion extends RuntimeException
 
     def visitEff(t: Type): (Set[Type.Var], Set[Type.Cst]) = t match {
       case x@Var(_, _) => (Set(x), Set.empty)
 
       case x@Cst(tc, _) => tc match {
         case TypeConstructor.Effect(_) => (Set.empty, Set(x))
-        case _ => (Set.empty, Set.empty)
+        case _ => throw AbortNonUnion
       }
 
       case Apply(Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) =>
@@ -1146,10 +1146,10 @@ object Type {
             val (tvars, effs) = visitEff(tpe1)
             (tvars - x, effs)
           case _ =>
-            throw Abort
+            throw AbortNonUnion
         }
 
-      case _ =>  throw Abort
+      case _ =>  throw AbortNonUnion
     }
 
     def visitType(t: Type): Type = t.kind match {
@@ -1159,7 +1159,7 @@ object Type {
           val b1 = tvars.foldLeft(Type.Pure: Type)(mkUnion(_, _, SourceLocation.Unknown))
           effSyms.foldLeft(b1)(mkUnion(_, _, SourceLocation.Unknown))
         } catch {
-        case Abort => t
+        case AbortNonUnion => t
       }
       case _ => t match {
         case Apply(tpe1, tpe2, loc) =>
