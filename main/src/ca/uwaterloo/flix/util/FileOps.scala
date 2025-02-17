@@ -111,7 +111,32 @@ object FileOps {
   def getFlixFilesIn(path: String, depth: Int): List[Path] = {
     Files.walk(Paths.get(path), depth)
       .iterator().asScala
-      .filter(p => Files.isRegularFile(p) && p.toString.endsWith(".flix"))
+      .filter(checkExt(_, "flix"))
       .toList.sorted
+  }
+
+  /**
+    * Returns an iterator of all files in the given path, visited recursively.
+    * The depth parameter is the maximum number of levels of directories to visit.
+    *   Use a depth of 0 to only visit the given directory.
+    *   Use a depth of 1 to only visit the files in the given directory.
+    *   Use a depth of MaxValue to visit all files in the directory and its subdirectories.
+    */
+  def getFilesIn(path: Path, depth: Int): List[Path] = {
+    if (Files.exists(path) && Files.isDirectory(path))
+      Files.walk(path, depth).iterator()
+        .asScala
+        .filter(Files.isRegularFile(_))
+        .toList
+    else
+      List.empty
+  }
+
+  /**
+    * Checks if the given path is a regular file with the expected extension.
+    */
+  def checkExt(p: Path, expectedExt: String): Boolean = {
+    val ext = if (expectedExt.startsWith(".")) expectedExt else s".$expectedExt"
+    Files.isRegularFile(p) && p.getFileName.toString.endsWith(ext)
   }
 }

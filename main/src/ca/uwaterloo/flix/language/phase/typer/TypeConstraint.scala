@@ -15,29 +15,13 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 
 
 /**
   * A constraint generated via type inference.
   */
 sealed trait TypeConstraint {
-
-  /**
-    * The index indicates the order in which constraints will be evaluated.
-    * A constraint with a lower index is reduced first if possible.
-    */
-  lazy val index: (Int, Int, Int) = this match {
-    case TypeConstraint.Equality(_: Type.Var, Type.Pure, _) => (0, 0, 0)
-    case TypeConstraint.Equality(Type.Pure, _: Type.Var, _) => (0, 0, 0)
-    case TypeConstraint.Equality(tvar1: Type.Var, tvar2: Type.Var, _) if tvar1 != tvar2 => (0, 0, 0)
-    case TypeConstraint.Purification(_, _, _, _, _) => (0, 0, 0)
-    case TypeConstraint.Equality(tpe1, tpe2, _) =>
-      val tvars = tpe1.typeVars ++ tpe2.typeVars
-      val effTvars = tvars.filter(_.kind == Kind.Eff)
-      (1, effTvars.size, tvars.size)
-    case TypeConstraint.Trait(_, _, _) => (2, 0, 0)
-  }
 
   /**
     * Returns the sum of the sizes of all the types in this constraint.

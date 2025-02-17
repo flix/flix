@@ -25,13 +25,14 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{FileOps, Options}
 import org.eclipse.lsp4j
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
 
+import java.nio.file.{Files, Path, Paths}
 import java.util
 import java.util.concurrent.CompletableFuture
 import scala.collection.mutable
@@ -98,6 +99,7 @@ object LspServer {
       *
       * During the initialization, we should:
       * - Store the client capabilities.
+      * - Load all Flix resources, including source files JAR files and flix package files.
       * - Return the server capabilities.
       */
     override def initialize(initializeParams: InitializeParams): CompletableFuture[InitializeResult] = {
@@ -105,7 +107,64 @@ object LspServer {
 
       clientCapabilities = initializeParams.getCapabilities
 
+      loadFlixProject(initializeParams.getWorkspaceFolders.asScala.toList)
+
       CompletableFuture.completedFuture(new InitializeResult(mkServerCapabilities()))
+    }
+
+    /**
+      * Loads all Flix resources in the workspace, including:
+      *   - Flix source files (*.flix, src/**/*.flix, test/**/*.flix).
+      *   - JAR files (lib/**/*.jar).
+      *   - Flix package files (lib/**/*.fpkg).
+      */
+    private def loadFlixProject(roots: List[WorkspaceFolder]): Unit = {
+      for {
+        root <- roots
+        path = Paths.get(root.getName)
+        if Files.exists(path) && Files.isDirectory(path)
+      } {
+        loadFlixSources(path)
+        loadJarsAndFkgs(path)
+      }
+    }
+
+    /**
+      * Loads all Flix source files in the workspace. including:
+      *   - *.flix
+      *   - src/**/*.flix
+      *   - test/**/*.flix
+      */
+    private def loadFlixSources(path: Path): Unit = {
+      val flixSources =
+        FileOps.getFilesIn(path, 1) ++
+        FileOps.getFilesIn(path.resolve("src"), Int.MaxValue) ++
+        FileOps.getFilesIn(path.resolve("test"), Int.MaxValue)
+
+      flixSources.foreach { case p =>
+        if (FileOps.checkExt(p, ".flix")) {
+          val source = Files.readString(p)
+          addSourceCode(p.toUri.toString, source)
+        }
+      }
+    }
+
+    /**
+      * Loads all JAR files and Flix package files in the workspace, including:
+      *   - lib/**/*.jar
+      *   - lib/**/*.fpkg
+      */
+    private def loadJarsAndFkgs(path: Path) = {
+      FileOps.getFilesIn(path.resolve("lib"), Int.MaxValue)
+        .foreach{ case p =>
+          // Load all JAR files in the workspace, the pattern should be lib/**/*.jar.
+          if (FileOps.checkExt(p, ".jar"))
+            flix.addJar(p)
+          // Load all Flix package files in the workspace, the pattern should be lib/**/*.fpkg.
+          if (FileOps.checkExt(p, ".fpkg")) {
+            flix.addPkg(p)(SecurityContext.AllPermissions)
+          }
+        }
     }
 
     private def mkServerCapabilities(): ServerCapabilities = {

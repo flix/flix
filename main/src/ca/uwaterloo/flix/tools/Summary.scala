@@ -234,7 +234,7 @@ object Summary {
     case Expr.VectorLit(exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.VectorLoad(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.VectorLength(exp, _) => countCheckedEcasts(exp)
-    case Expr.Ascribe(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.Ascribe(exp, _, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.InstanceOf(exp, _, _) => countCheckedEcasts(exp)
     case Expr.CheckedCast(CheckedCastType.EffectCast, exp, _, _, _) => 1 + countCheckedEcasts(exp)
     case Expr.CheckedCast(CheckedCastType.TypeCast, exp, _, _, _) => countCheckedEcasts(exp)

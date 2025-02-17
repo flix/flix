@@ -54,89 +54,6 @@ object TraitEnvironment {
   }
 
   /**
-    * Returns true iff the given type constraint holds under the given trait environment.
-    */
-  def holds(tconstr: TraitConstraint, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit scope: Scope, flix: Flix): Boolean = {
-    byInst(tconstr, traitEnv, eqEnv).toResult match {
-      case Result.Ok(_) => true
-      case Result.Err(_) => false
-    }
-  }
-
-  /**
-    * Removes the type constraints which are entailed by the others in the list.
-    */
-  private def simplify(tconstrs0: List[TraitConstraint], traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit scope: Scope, flix: Flix): List[TraitConstraint] = {
-
-    @tailrec
-    def loop(tconstrs0: List[TraitConstraint], acc: List[TraitConstraint]): List[TraitConstraint] = tconstrs0 match {
-      // Case 0: no tconstrs left to process, we're done
-      case Nil => acc
-      case head :: tail => entail(acc ++ tail, head, traitEnv, eqEnv) match {
-        // Case 1: `head` is entailed by the other type constraints, skip it
-        case Result.Ok(_) => loop(tail, acc)
-        // Case 2: `head` is not entailed, add it to the list
-        case Result.Err(_) => loop(tail, head :: acc)
-      }
-    }
-
-    loop(tconstrs0, Nil)
-  }
-
-  /**
-    * Normalizes a list of type constraints, converting to head-normal form and removing semantic duplicates.
-    */
-  def reduce(tconstrs0: List[TraitConstraint], traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit scope: Scope, flix: Flix): Validation[List[TraitConstraint], UnificationError] = {
-    val tconstrs1 = tconstrs0.map {
-      case TraitConstraint(head, tpe, loc) => TraitConstraint(head, Type.eraseAliases(tpe), loc)
-    }
-    val normalization = Validation.sequence(tconstrs1.map(toHeadNormalForm(_, traitEnv, eqEnv)))
-    Validation.mapN(normalization)(tconstrs => simplify(tconstrs.flatten, traitEnv, eqEnv))
-  }
-
-  /**
-    * Converts the type constraint to head-normal form, i.e. `a[X1, Xn]`, where `a` is a variable and `n >= 0`.
-    */
-  private def toHeadNormalForm(tconstr: TraitConstraint, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit scope: Scope, flix: Flix): Validation[List[TraitConstraint], UnificationError] = {
-    if (isHeadNormalForm(tconstr.arg)) {
-      Validation.Success(List(tconstr))
-    } else {
-      byInst(tconstr, traitEnv, eqEnv)
-    }
-  }
-
-  /**
-    * Returns the list of constraints that hold if the given constraint `tconstr` holds, using the constraints on available instances.
-    */
-  private def byInst(tconstr: TraitConstraint, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit scope: Scope, flix: Flix): Validation[List[TraitConstraint], UnificationError] = tconstr match {
-    case TraitConstraint(head, arg, _) =>
-
-      val matchingInstanceOpt = traitEnv.getInstance(head.sym, arg)
-
-      val renv = RigidityEnv.ofRigidVars(arg.typeVars.map(_.sym))
-
-      def tryInst(inst: Instance): Validation[List[TraitConstraint], UnificationError] = {
-        val substOpt = Unification.fullyUnifyTypes(inst.tpe, arg, renv, eqEnv)
-        substOpt match {
-          case Some(subst) => Validation.Success(inst.tconstrs.map(subst.apply))
-          // if there are leftover constraints, then we can't be sure that this is the right instance
-          case None => Validation.Failure(UnificationError.MismatchedTypes(inst.tpe, arg))
-        }
-      }
-
-      val tconstrGroups = matchingInstanceOpt.map(tryInst).map(_.toResult).collect {
-        case Result.Ok(tconstrs) => tconstrs
-      }
-
-      tconstrGroups match {
-        case None => Validation.Failure(UnificationError.NoMatchingInstance(tconstr))
-        case Some(tconstrs) =>
-          // apply the base tconstr location to the new tconstrs
-          Validation.Success(tconstrs.map(_.copy(loc = tconstr.loc)))
-      }
-  }
-
-  /**
     * Returns the list of constraints that hold if the given constraint `tconstr` holds, using the super traits of the constraint.
     *
     * E.g. if we have 3 traits: `A`, `B`, `C` where
@@ -159,12 +76,5 @@ object TraitEnvironment {
       // recurse on the super traits of each direct super trait
       superTrait => bySuper(TraitConstraint(TraitSymUse(superTrait, tconstr.loc), tconstr.arg, tconstr.loc), traitEnv)
     }
-  }
-
-  /**
-    * Returns true iff this type is in head-normal form.
-    */
-  private def isHeadNormalForm(tpe: Type): Boolean = {
-    tpe.typeConstructor.isEmpty
   }
 }

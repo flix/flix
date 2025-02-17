@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
-import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{ParOps, Result}
 
@@ -275,9 +274,9 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.VectorLength(e, loc)
 
-    case Expr.Ascribe(exp, tpe, eff, loc) =>
+    case Expr.Ascribe(exp, expectedType, expectedEff, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.Ascribe(e, tpe, eff, loc)
+      Expr.Ascribe(e, expectedType, expectedEff, tpe, eff, loc)
 
     case Expr.InstanceOf(exp, clazz, loc) =>
       val e = visitExp(exp)
