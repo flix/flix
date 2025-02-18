@@ -1289,16 +1289,15 @@ object Parser2 {
       if (at(TokenKind.ParenL)) {
         parameters(SyntacticContext.Decl.Module)
       }
-      if (eat(TokenKind.Colon)) {
-        val typeLoc = currentSourceLocation()
+      expect(TokenKind.Colon, SyntacticContext.Type.Eff)
+      val typeLoc = currentSourceLocation()
+      Type.ttype()
+      // Check for illegal effect
+      if (at(TokenKind.Backslash)) {
+        val mark = open()
+        eat(TokenKind.Backslash)
         Type.ttype()
-        // Check for illegal effect
-        if (at(TokenKind.Backslash)) {
-          val mark = open()
-          eat(TokenKind.Backslash)
-          Type.ttype()
-          closeWithError(mark, WeederError.IllegalEffectfulOperation(typeLoc))
-        }
+        closeWithError(mark, WeederError.IllegalEffectfulOperation(typeLoc))
       }
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
