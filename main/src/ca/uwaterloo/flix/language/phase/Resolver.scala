@@ -2132,7 +2132,7 @@ object Resolver {
             Validation.Success(trt)
         }
       case None =>
-        Validation.Failure(ResolutionError.UndefinedTrait(qname, AnchorPosition.mkImportOrUseAnchor(ns0), ns0, qname.loc))
+        Validation.Failure(ResolutionError.IncompleteInstance(qname, AnchorPosition.mkImportOrUseAnchor(ns0), env, qname.loc))
     }
   }
 

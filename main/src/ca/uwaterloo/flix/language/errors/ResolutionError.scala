@@ -629,6 +629,19 @@ object ResolutionError {
 
   }
 
+  case class IncompleteInstance(qn: Name.QName, ap: AnchorPosition, env: LocalScope, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Incomplete instance."
+
+    def message(formatter: Formatter): String = messageWithLink {
+      import formatter.*
+      s""">> Incomplete instance '${red(qn.toString)}'.
+         |
+         |${code(loc, "incomplete instance.")}
+         |
+         |""".stripMargin
+    }
+  }
+
   /**
     * Undefined associated type error.
     *
