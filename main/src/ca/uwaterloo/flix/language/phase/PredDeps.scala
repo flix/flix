@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.shared.LabelledPrecedenceGraph.{Label, LabelledEdge}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, LabelledPrecedenceGraph}
-import ca.uwaterloo.flix.language.ast.{ChangeSet, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -44,7 +44,7 @@ object PredDeps {
 
     val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
     val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
-    val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances)(ParOps.parMapValueList(_)(visitInstance))
+    val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (inst: TypedAst.Instance) => inst.tpe.typeConstructor)(ParOps.parMapValueList(_)(visitInstance))
 
     val g = LabelledPrecedenceGraph(sctx.edges.asScala.toVector)
     (root.copy(defs = defs, traits = traits, instances = instances, precedenceGraph = g), List.empty)
