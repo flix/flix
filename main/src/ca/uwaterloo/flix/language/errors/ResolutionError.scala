@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
-import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, UnkindedType}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, TraitUseKind, UnkindedType}
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 /**
@@ -629,19 +629,6 @@ object ResolutionError {
 
   }
 
-  case class IncompleteInstance(qn: Name.QName, ap: AnchorPosition, env: LocalScope, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Incomplete instance."
-
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Incomplete instance '${red(qn.toString)}'.
-         |
-         |${code(loc, "incomplete instance.")}
-         |
-         |""".stripMargin
-    }
-  }
-
   /**
     * Undefined associated type error.
     *
@@ -969,20 +956,20 @@ object ResolutionError {
   }
 
   /**
-    * Undefined Class Error.
+    * Undefined Trait Error.
     *
-    * @param qn  the unresolved class.
+    * @param qn  the unresolved trait.
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedTrait(qn: Name.QName, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedTrait(qn: Name.QName, traitUseKind: TraitUseKind, ap: AnchorPosition, env: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined class: '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
-      s""">> Undefined class '${red(qn.toString)}'.
+      s""">> Undefined trait '${red(qn.toString)}, ${traitUseKind}'.
          |
-         |${code(loc, "class not found")}
+         |${code(loc, "trait not found")}
          |
          |""".stripMargin
     }
