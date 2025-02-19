@@ -34,15 +34,31 @@ object TraitCompleter {
 
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName, traitUsageKind: TraitUsageKind)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
-      root.traits.values.collect{
+      root.traits.values.flatMap {
         case trt if matchesTrait(trt, qn, uri, qualified = true) =>
-          TraitCompletion(trt, traitUsageKind, ap, qualified = true, inScope = true)
+          getTraitCompletions(trt, traitUsageKind, ap, qualified = true, inScope = inScope(trt, env))
       }
     else
-      root.traits.values.collect({
+      root.traits.values.flatMap({
         case trt if matchesTrait(trt, qn, uri, qualified = false) =>
-          TraitCompletion(trt, traitUsageKind, ap, qualified = false, inScope = inScope(trt, env))
+          getTraitCompletions(trt, traitUsageKind, ap, qualified = false, inScope = inScope(trt, env))
       })
+  }
+
+  /**
+   * Returns a list of completions for the given trait.
+   * If the trait is derivable, we will only provide completions for derivation.
+   */
+  private def getTraitCompletions(trt: TypedAst.Trait, traitUsageKind: TraitUsageKind, ap: AnchorPosition, qualified: Boolean, inScope: Boolean): List[TraitCompletion] = {
+    val derivable_traits = List("Eq", "Order", "ToString", "Sendable", "Coerce")
+    traitUsageKind match {
+      case TraitUsageKind.Derivation if derivable_traits.contains(trt.sym.name) =>
+        TraitCompletion(trt, traitUsageKind, ap, qualified = true, inScope = true) :: Nil
+      case TraitUsageKind.Derivation =>
+        Nil
+      case _ =>
+        TraitCompletion(trt, traitUsageKind, ap, qualified = true, inScope = true) :: Nil
+    }
   }
 
   /**
