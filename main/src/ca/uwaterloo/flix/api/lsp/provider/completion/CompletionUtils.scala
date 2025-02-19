@@ -17,9 +17,8 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.language.ast.{Declaration, Name, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Modifier, Resolution}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
@@ -282,38 +281,44 @@ object CompletionUtils {
     }
   }
 
+  /**
+    * Checks if the given class is public.
+    */
+  def isAvailable(decl: Declaration): Boolean =
+    !decl.ann.isInternal && decl.mod.isPublic
 
   /**
-    * Checks if the given spec is public.
+    * Checks if the given def is public.
     */
-  def isPublic(defn: TypedAst.Def): Boolean = defn.spec.mod.isPublic && !defn.spec.ann.isInternal
-  def isPublic(defn: Symbol.DefnSym)(implicit root: TypedAst.Root): Boolean = root.defs.get(defn).exists(isPublic)
+  def isAvailable(defn: TypedAst.Def): Boolean = isAvailable(defn.spec)
 
   /**
-    * Checks if the given trait is public.
+    * Checks if the given sig is public.
     */
-  def isPublic(trt: TypedAst.Trait): Boolean = trt.mod.isPublic && !trt.ann.isInternal
-  def isPublic(trt: Symbol.TraitSym)(implicit root: TypedAst.Root): Boolean = root.traits.get(trt).exists(isPublic)
+  def isAvailable(sig: TypedAst.Sig): Boolean = isAvailable(sig.spec)
 
   /**
-    * Checks if the given effect is public.
+    * Checks if the given op is public.
     */
-  def isPublic(eff: TypedAst.Effect): Boolean = eff.mod.isPublic && !eff.ann.isInternal
-  def isPublic(eff: Symbol.EffectSym)(implicit root: TypedAst.Root): Boolean = root.effects.get(eff).exists(isPublic)
+  def isAvailable(op: TypedAst.Op): Boolean = isAvailable(op.spec)
 
   /**
-    * Checks if the given enum is public.
+    * Checks if the def of the given symbol is public.
     */
-  def isPublic(enm: TypedAst.Enum): Boolean = enm.mod.isPublic && !enm.ann.isInternal
-  def isPublic(enumMap: Symbol.EnumSym)(implicit root: TypedAst.Root): Boolean = root.enums.get(enumMap).exists(isPublic)
+  def isAvailable(defn: Symbol.DefnSym)(implicit root: TypedAst.Root): Boolean = root.defs.get(defn).exists(isAvailable)
 
   /**
-    * Checks if the given restrictable enum is public.
+    * Checks if the trait of the given symbol is public.
     */
-  def isPublic(enm: TypedAst.RestrictableEnum): Boolean = enm.mod.isPublic && !enm.ann.isInternal
+  def isAvailable(trt: Symbol.TraitSym)(implicit root: TypedAst.Root): Boolean = root.traits.get(trt).exists(isAvailable)
 
   /**
-    * Checks if the given type alias is public.
+    * Checks if the effect of the given symbol is public.
     */
-  def isPublic(alias: TypedAst.TypeAlias): Boolean = alias.mod.isPublic && !alias.ann.isInternal
+  def isAvailable(eff: Symbol.EffectSym)(implicit root: TypedAst.Root): Boolean = root.effects.get(eff).exists(isAvailable)
+
+  /**
+    * Checks if the enum of the given symbol is public.
+    */
+  def isAvailable(enumMap: Symbol.EnumSym)(implicit root: TypedAst.Root): Boolean = root.enums.get(enumMap).exists(isAvailable)
 }

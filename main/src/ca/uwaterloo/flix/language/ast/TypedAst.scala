@@ -24,11 +24,9 @@ import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 
 import java.lang.reflect.{Constructor, Field, Method}
 
-sealed trait HasAvailable {
+sealed trait Declaration {
   val ann: Annotations
   val mod: Modifiers
-
-  def available: Boolean = !ann.isInternal && mod.isPublic
 }
 
 object TypedAst {
@@ -56,9 +54,9 @@ object TypedAst {
                   dependencyGraph: DependencyGraph,
                   tokens: Map[Source, Array[Token]])
 
-  case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[AssocTypeSig], sigs: List[Sig], laws: List[Def], loc: SourceLocation) extends HasAvailable
+  case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[AssocTypeSig], sigs: List[Sig], laws: List[Def], loc: SourceLocation) extends Declaration
 
-  case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: TraitSymUse, tpe: Type, tconstrs: List[TraitConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation) extends Sourceable with HasAvailable {
+  case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: TraitSymUse, tpe: Type, tconstrs: List[TraitConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation) extends Sourceable with Declaration {
     override def src: Source = loc.source
   }
 
@@ -66,27 +64,23 @@ object TypedAst {
 
   case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr, loc: SourceLocation)
 
-  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint]) extends HasAvailable
+  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint]) extends Declaration
 
-  case class Enum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Derivations, cases: Map[Symbol.CaseSym, Case], loc: SourceLocation) extends HasAvailable
+  case class Enum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Derivations, cases: Map[Symbol.CaseSym, Case], loc: SourceLocation) extends Declaration
 
-  case class Struct(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], sc: Scheme, fields: Map[Symbol.StructFieldSym, StructField], loc: SourceLocation) extends HasAvailable
+  case class Struct(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], sc: Scheme, fields: Map[Symbol.StructFieldSym, StructField], loc: SourceLocation) extends Declaration
 
-  case class RestrictableEnum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Derivations, cases: Map[Symbol.RestrictableCaseSym, RestrictableCase], loc: SourceLocation) extends HasAvailable
+  case class RestrictableEnum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Derivations, cases: Map[Symbol.RestrictableCaseSym, RestrictableCase], loc: SourceLocation) extends Declaration
 
-  case class TypeAlias(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypeParam], tpe: Type, loc: SourceLocation) extends HasAvailable
-
-  // TODO ASSOC-TYPES can probably be combined with KindedAst.AssocTypeSig
-  case class AssocTypeSig(doc: Doc, mod: Modifiers, sym: Symbol.AssocTypeSym, tparam: TypeParam, kind: Kind, tpe: Option[Type], loc: SourceLocation) {
-    def available: Boolean = mod.isPublic
-  }
+  case class TypeAlias(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypeParam], tpe: Type, loc: SourceLocation) extends Declaration
 
   // TODO ASSOC-TYPES can probably be combined with KindedAst.AssocTypeSig
-  case class AssocTypeDef(doc: Doc, mod: Modifiers, sym: AssocTypeSymUse, arg: Type, tpe: Type, loc: SourceLocation) {
-    def available: Boolean = mod.isPublic
-  }
+  case class AssocTypeSig(doc: Doc, mod: Modifiers, sym: Symbol.AssocTypeSym, tparam: TypeParam, kind: Kind, tpe: Option[Type], loc: SourceLocation)
 
-  case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation) extends HasAvailable
+  // TODO ASSOC-TYPES can probably be combined with KindedAst.AssocTypeSig
+  case class AssocTypeDef(doc: Doc, mod: Modifiers, sym: AssocTypeSymUse, arg: Type, tpe: Type, loc: SourceLocation)
+
+  case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation) extends Declaration
 
   case class Op(sym: Symbol.OpSym, spec: Spec, loc: SourceLocation)
 

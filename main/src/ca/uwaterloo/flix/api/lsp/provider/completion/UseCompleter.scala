@@ -38,10 +38,10 @@ object UseCompleter {
     val moduleSym = Symbol.mkModuleSym(namespace)
     root.modules.get(moduleSym).collect{
       case mod:  Symbol.ModuleSym if fuzzyMatch(ident, mod.ns.last) => ModCompletion(mod)
-      case enm:  Symbol.EnumSym   if fuzzyMatch(ident, enm.name)  && CompletionUtils.isPublic(enm)  => UseEnumCompletion(enm.toString)
-      case eff:  Symbol.EffectSym if fuzzyMatch(ident, eff.name)  && CompletionUtils.isPublic(eff)  => UseEffCompletion(eff.toString)
-      case defn: Symbol.DefnSym   if fuzzyMatch(ident, defn.name) && CompletionUtils.isPublic(defn) => UseDefCompletion(defn.toString)
-      case trt:  Symbol.TraitSym  if fuzzyMatch(ident, trt.name)  && CompletionUtils.isPublic(trt)  => UseTrtCompletion(trt.toString)
+      case enm:  Symbol.EnumSym   if fuzzyMatch(ident, enm.name)  && CompletionUtils.isAvailable(enm)  => UseEnumCompletion(enm.toString)
+      case eff:  Symbol.EffectSym if fuzzyMatch(ident, eff.name)  && CompletionUtils.isAvailable(eff)  => UseEffCompletion(eff.toString)
+      case defn: Symbol.DefnSym   if fuzzyMatch(ident, defn.name) && CompletionUtils.isAvailable(defn) => UseDefCompletion(defn.toString)
+      case trt:  Symbol.TraitSym  if fuzzyMatch(ident, trt.name)  && CompletionUtils.isAvailable(trt)  => UseTrtCompletion(trt.toString)
     } ++ getSigCompletions(uri, qn) ++ getOpCompletions(qn) ++ getTagCompletions(qn)
   }
 
@@ -50,7 +50,7 @@ object UseCompleter {
     */
   private def getSigCompletions(uri: String, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
     val traitSym = Symbol.mkTraitSym(qn.namespace.toString)
-    root.traits.get(traitSym).filter(CompletionUtils.isPublic).map(_.sigs.collect {
+    root.traits.get(traitSym).filter(CompletionUtils.isAvailable).map(_.sigs.collect {
       case sig if fuzzyMatch(qn.ident.name, sig.sym.name) && (sig.spec.mod.isPublic || sig.sym.loc.source.name == uri) =>
         UseSignatureCompletion(sig.sym.toString)
     }).getOrElse(Nil)
@@ -61,7 +61,7 @@ object UseCompleter {
     */
   private def getOpCompletions(qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
     val effectSym = Symbol.mkEffectSym(qn.namespace.toString)
-    root.effects.get(effectSym).filter(CompletionUtils.isPublic).map(_.ops.collect {
+    root.effects.get(effectSym).filter(CompletionUtils.isAvailable).map(_.ops.collect {
       case op if fuzzyMatch(qn.ident.name, op.sym.name) => UseOpCompletion(op.sym.toString)
     }).getOrElse(Nil)
   }
@@ -71,7 +71,7 @@ object UseCompleter {
     */
   private def getTagCompletions(qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
     val enumSym = Symbol.mkEnumSym(qn.namespace.toString)
-    root.enums.get(enumSym).filter(CompletionUtils.isPublic).map(_.cases.values.collect {
+    root.enums.get(enumSym).filter(CompletionUtils.isAvailable).map(_.cases.values.collect {
       case tag if fuzzyMatch(qn.ident.name, tag.sym.name) => UseEnumTagCompletion(tag.sym.toString)
     }).getOrElse(Nil)
   }
