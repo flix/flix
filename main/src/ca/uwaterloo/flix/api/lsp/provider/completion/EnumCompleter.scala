@@ -29,27 +29,27 @@ object EnumCompleter {
     * When providing completions for unqualified enums that is not in scope, we will also automatically use the enum.
     */
   def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn)
+    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn, withTypeParameters = true)
   }
 
   def getCompletions(err: ResolutionError.UndefinedTag)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn)
+    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn, withTypeParameters = false)
   }
 
   def getCompletions(err: ResolutionError.UndefinedType)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn)
+    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn, withTypeParameters = true)
   }
 
-  private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
+  private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName, withTypeParameters: Boolean)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
       root.enums.values.collect{
         case enum if matchesEnum(enum, qn, uri, qualified = true) =>
-          EnumCompletion(enum, ap, qualified = true, inScope = true)
+          EnumCompletion(enum, ap, qualified = true, inScope = true, withTypeParameters = withTypeParameters)
       }
     else
       root.enums.values.collect({
         case enum if matchesEnum(enum, qn, uri, qualified = false) =>
-          EnumCompletion(enum, ap, qualified = false, inScope = inScope(enum, env))
+          EnumCompletion(enum, ap, qualified = false, inScope = inScope(enum, env), withTypeParameters = withTypeParameters)
       })
   }
 
