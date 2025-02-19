@@ -250,21 +250,29 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.EnumCompletion(enm, ap, qualified, inScope) =>
+    case Completion.EnumCompletion(enm, ap, qualified, inScope, withTypeParameters) =>
       val qualifiedName = enm.sym.toString
-      val label = if (qualified) qualifiedName else enm.sym.name
+      val name = if (qualified) qualifiedName else enm.sym.name
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
       val labelDetails = CompletionItemLabelDetails(None, description)
       val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
       val priority = if (inScope) Priority.High else Priority.Lower
+      val snippet = if ( withTypeParameters )
+        name + CompletionUtils.formatTParamsSnippet(enm.tparams)
+      else
+        name
+      val label = if ( withTypeParameters )
+        name + CompletionUtils.formatTParams(enm.tparams)
+      else
+        name
       CompletionItem(
         label               = label,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, qualifiedName),
         filterText          = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
-        textEdit            = TextEdit(context.range, label),
+        textEdit            = TextEdit(context.range, snippet),
         documentation       = Some(enm.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Enum,
@@ -767,8 +775,9 @@ object Completion {
     * @param ap        the anchor position for the use statement.
     * @param qualified indicate whether to use a qualified label.
     * @param inScope   indicate whether to the enum is inScope.
+    * @param withTypeParameters indicate whether to include type parameters in the completion.
     */
-  case class EnumCompletion(enm: TypedAst.Enum, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class EnumCompletion(enm: TypedAst.Enum, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, withTypeParameters: Boolean) extends Completion
 
   /**
    * Represents a Enum completion
