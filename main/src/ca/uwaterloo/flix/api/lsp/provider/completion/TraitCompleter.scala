@@ -42,11 +42,13 @@ object TraitCompleter {
       root.traits.values.flatMap {
         case trt if matchesTrait(trt, qn, uri, qualified = true) =>
           getTraitCompletions(trt, traitUsageKind, ap, qualified = true, inScope = inScope(trt, env))
+        case _ => Nil
       }
     else
       root.traits.values.flatMap({
         case trt if matchesTrait(trt, qn, uri, qualified = false) =>
           getTraitCompletions(trt, traitUsageKind, ap, qualified = false, inScope = inScope(trt, env))
+        case _ => Nil
       })
   }
 
