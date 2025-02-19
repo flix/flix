@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.TraitCompletion
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Trait
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
-import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution, TraitUsageKind}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object TraitCompleter {
@@ -29,19 +29,19 @@ object TraitCompleter {
    * When providing completions for unqualified enums that is not in scope, we will also automatically use the enum.
    */
   def getCompletions(err: ResolutionError.UndefinedTrait)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn)
+    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn, err.traitUseKind)
   }
 
-  private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
+  private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName, traitUsageKind: TraitUsageKind)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
       root.traits.values.collect{
         case trt if matchesTrait(trt, qn, uri, qualified = true) =>
-          TraitCompletion(trt, ap, qualified = true, inScope = true)
+          TraitCompletion(trt, traitUsageKind, ap, qualified = true, inScope = true)
       }
     else
       root.traits.values.collect({
         case trt if matchesTrait(trt, qn, uri, qualified = false) =>
-          TraitCompletion(trt, ap, qualified = false, inScope = inScope(trt, env))
+          TraitCompletion(trt, traitUsageKind, ap, qualified = false, inScope = inScope(trt, env))
       })
   }
 
