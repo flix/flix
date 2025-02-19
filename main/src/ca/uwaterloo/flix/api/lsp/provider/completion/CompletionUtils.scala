@@ -166,8 +166,8 @@ object CompletionUtils {
     *   - fuzzyMatch("fBrT", "fooBarTest") = false
     *   - fuzzyMatch("fTB",  "fooBarTest") = false
     *
-    * @param query  The query string, usually from the user input.
-    * @param key    The key string, usually from the completion item.
+    * @param query The query string, usually from the user input.
+    * @param key   The key string, usually from the completion item.
     */
   def fuzzyMatch(query: String, key: String): Boolean = {
     @tailrec
@@ -180,6 +180,7 @@ object CompletionUtils {
         else
           matchSegments(query, kTail)
     }
+
     matchSegments(splitByCamelCase(query), splitByCamelCase(key))
   }
 
@@ -193,20 +194,20 @@ object CompletionUtils {
   }
 
   /**
-   * Checks if the namespace and ident from the error matches the qualified name.
-   * We require a full match on the namespace and a fuzzy match on the ident.
-   *
-   * Example:
-   *   matchesQualifiedName(["A", "B"], "fooBar", ["A", "B"], "fB") => true
-   */
-  def matchesQualifiedName(targetNamespace: List[String], targetIdent:String, qn: Name.QName): Boolean = {
+    * Checks if the namespace and ident from the error matches the qualified name.
+    * We require a full match on the namespace and a fuzzy match on the ident.
+    *
+    * Example:
+    * matchesQualifiedName(["A", "B"], "fooBar", ["A", "B"], "fB") => true
+    */
+  def matchesQualifiedName(targetNamespace: List[String], targetIdent: String, qn: Name.QName): Boolean = {
     targetNamespace == qn.namespace.parts && fuzzyMatch(qn.ident.name, targetIdent)
   }
 
   /**
-   * Format type params in the right form to be displayed in the list of completions
-   * e.g. "[a, b, c]"
-   */
+    * Format type params in the right form to be displayed in the list of completions
+    * e.g. "[a, b, c]"
+    */
   def formatTParams(tparams: List[TypedAst.TypeParam]): String = {
     tparams match {
       case Nil => ""
@@ -215,9 +216,9 @@ object CompletionUtils {
   }
 
   /**
-   * Format type params in the right form to be inserted as a snippet
-   * e.g. "[${1:a}, ${2:b}, ${3:c}]"
-   */
+    * Format type params in the right form to be inserted as a snippet
+    * e.g. "[${1:a}, ${2:b}, ${3:c}]"
+    */
   def formatTParamsSnippet(tparams: List[TypedAst.TypeParam]): String = {
     tparams match {
       case Nil => ""
