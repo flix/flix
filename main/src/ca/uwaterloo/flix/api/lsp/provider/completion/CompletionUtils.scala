@@ -17,12 +17,13 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Declaration, Name, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
-import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Modifier, Resolution}
+import ca.uwaterloo.flix.language.ast.TypedAst.Decl
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
-import java.util
 import scala.annotation.tailrec
 
 object CompletionUtils {
@@ -281,10 +282,11 @@ object CompletionUtils {
     }
   }
 
+
   /**
     * Checks if the given class is public.
     */
-  def isAvailable(decl: Declaration): Boolean =
+  def isAvailable(decl: Decl): Boolean =
     !decl.ann.isInternal && decl.mod.isPublic
 
   /**
