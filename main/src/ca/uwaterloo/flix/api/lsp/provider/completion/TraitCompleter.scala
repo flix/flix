@@ -41,7 +41,7 @@ object TraitCompleter {
     if (qn.namespace.nonEmpty)
       root.traits.values.flatMap {
         case trt if matchesTrait(trt, qn, uri, qualified = true) =>
-          getTraitCompletions(trt, traitUsageKind, ap, qualified = true, inScope = inScope(trt, env))
+          getTraitCompletions(trt, traitUsageKind, ap, qualified = true, inScope = true)
         case _ => Nil
       }
     else
@@ -59,11 +59,11 @@ object TraitCompleter {
   private def getTraitCompletions(trt: TypedAst.Trait, traitUsageKind: TraitUsageKind, ap: AnchorPosition, qualified: Boolean, inScope: Boolean): List[TraitCompletion] = {
     traitUsageKind match {
       case TraitUsageKind.Derivation if derivable_traits.contains(trt.sym.name) =>
-        TraitCompletion(trt, traitUsageKind, ap, qualified = true, inScope = true) :: Nil
+        TraitCompletion(trt, traitUsageKind, ap, qualified = qualified, inScope = inScope) :: Nil
       case TraitUsageKind.Derivation =>
         Nil
       case _ =>
-        TraitCompletion(trt, traitUsageKind, ap, qualified = true, inScope = true) :: Nil
+        TraitCompletion(trt, traitUsageKind, ap, qualified = qualified, inScope = inScope) :: Nil
     }
   }
 
