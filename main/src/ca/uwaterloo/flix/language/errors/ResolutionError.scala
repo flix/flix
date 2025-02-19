@@ -967,7 +967,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
-      s""">> Undefined trait '${red(qn.toString)}, ${traitUseKind}'.
+      s""">> Undefined trait '${red(qn.toString)}'.
          |
          |${code(loc, "trait not found")}
          |
