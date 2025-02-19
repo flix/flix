@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
-import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, TraitUseKind, UnkindedType}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, TraitUsageKind, UnkindedType}
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 /**
@@ -962,7 +962,7 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedTrait(qn: Name.QName, traitUseKind: TraitUseKind, ap: AnchorPosition, env: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedTrait(qn: Name.QName, traitUseKind: TraitUsageKind, ap: AnchorPosition, env: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined class: '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {

@@ -16,27 +16,27 @@
 
 package ca.uwaterloo.flix.language.ast
 
-sealed trait TraitUseKind
+sealed trait TraitUsageKind
 
 /**
-  * Represents the kind of a trait use.
+  * Represents the kind of trait use.
   * Used to indicate the context of an undefined trait
   */
-object TraitUseKind {
+object TraitUsageKind {
   /**
     * Represents a trait use in an instance declaration
     * e.g. instance E...
     */
-  case object Implementation extends TraitUseKind
+  case object Implementation extends TraitUsageKind
   /**
     * Represents a trait use in a derivation
     * e.g. enum Color with E...
     */
-  case object Derivation extends TraitUseKind
+  case object Derivation extends TraitUsageKind
   /**
     * Represents a trait use in a constraint
     * e.g. def f(a: t) : Unit with E...
     * e.g. trait Foo[t] with E...
     */
-  case object Constraint extends TraitUseKind
+  case object Constraint extends TraitUsageKind
 }
