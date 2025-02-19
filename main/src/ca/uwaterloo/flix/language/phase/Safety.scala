@@ -269,9 +269,9 @@ object Safety {
       checkThrow(exp)
 
     case Expr.Handler(sym, rules, _, _, _, _, _) =>
-      // Check for [[PrimitiveEffectInTryWith]]
+      // Check for [[PrimitiveEffectInRunWith]]
       if (Symbol.isPrimitiveEff(sym.sym)) {
-        sctx.errors.add(PrimitiveEffectInTryWith(sym.sym, sym.qname.loc))
+        sctx.errors.add(PrimitiveEffectInRunWith(sym.sym, sym.qname.loc))
       }
       rules.foreach(rule => visitExp(rule.exp))
 

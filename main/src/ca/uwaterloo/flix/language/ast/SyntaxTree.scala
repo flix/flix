@@ -348,7 +348,7 @@ object SyntaxTree {
 
       case object RunWithBodyExpr extends Expr
 
-      case object TryWithRuleFragment extends Expr
+      case object RunWithRuleFragment extends Expr
 
       case object Tuple extends Expr
 

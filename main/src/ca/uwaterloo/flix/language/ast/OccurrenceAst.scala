@@ -78,7 +78,7 @@ object OccurrenceAst {
 
     case class TryCatch(exp: OccurrenceAst.Expr, rules: List[OccurrenceAst.CatchRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
 
-    case class TryWith(exp: OccurrenceAst.Expr, effUse: EffectSymUse, rules: List[HandlerRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
+    case class RunWith(exp: OccurrenceAst.Expr, effUse: EffectSymUse, rules: List[HandlerRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
 
     case class Do(op: OpSymUse, exps: List[OccurrenceAst.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
 

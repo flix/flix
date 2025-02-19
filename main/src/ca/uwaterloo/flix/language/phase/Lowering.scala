@@ -609,9 +609,9 @@ object Lowering {
       val bodyThunkType = Type.mkArrowWithEffect(Type.Unit, bodyEff, bt, loc.asSynthetic)
       val bodyVar = LoweredAst.Expr.Var(bodySym, bodyThunkType, loc.asSynthetic)
       val body = LoweredAst.Expr.ApplyClo(bodyVar, LoweredAst.Expr.Cst(Constant.Unit, Type.Unit, loc.asSynthetic), bt, bodyEff, loc.asSynthetic)
-      val tryWith = LoweredAst.Expr.TryWith(body, sym, rs, bt, handledEff, loc)
+      val RunWith = LoweredAst.Expr.RunWith(body, sym, rs, bt, handledEff, loc)
       val param = LoweredAst.FormalParam(bodySym, Modifiers.Empty, bodyThunkType, TypeSource.Inferred, loc.asSynthetic)
-      LoweredAst.Expr.Lambda(param, tryWith, t, loc)
+      LoweredAst.Expr.Lambda(param, RunWith, t, loc)
 
     case TypedAst.Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
       // run exp1 with exp2
@@ -1905,7 +1905,7 @@ object Lowering {
 
     case LoweredAst.Expr.TryCatch(_, _, _, _, _) => ??? // TODO
 
-    case LoweredAst.Expr.TryWith(exp, sym, rules, tpe, eff, loc) =>
+    case LoweredAst.Expr.RunWith(exp, sym, rules, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       val rs = rules.map {
         case LoweredAst.HandlerRule(op, fparams, hexp) =>
@@ -1913,7 +1913,7 @@ object Lowering {
           val he = substExp(hexp, subst)
           LoweredAst.HandlerRule(op, fps, he)
       }
-      LoweredAst.Expr.TryWith(e, sym, rs, tpe, eff, loc)
+      LoweredAst.Expr.RunWith(e, sym, rs, tpe, eff, loc)
 
     case LoweredAst.Expr.Do(sym, exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
