@@ -24,10 +24,15 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 object TraitCompleter {
 
   /**
-   * Returns a List of Completion for traits.
-   * Whether the returned completions are qualified is based on whether the name in the error is qualified.
-   * When providing completions for unqualified enums that is not in scope, we will also automatically use the enum.
-   */
+    * List of derivable traits.
+    */
+  private val derivable_traits = List("Eq", "Order", "ToString", "Sendable", "Coerce")
+
+  /**
+    * Returns a List of Completion for traits.
+    * Whether the returned completions are qualified is based on whether the name in the error is qualified.
+    * When providing completions for unqualified enums that is not in scope, we will also automatically use the enum.
+    */
   def getCompletions(err: ResolutionError.UndefinedTrait)(implicit root: TypedAst.Root): Iterable[Completion] = {
     getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn, err.traitUseKind)
   }
@@ -46,11 +51,10 @@ object TraitCompleter {
   }
 
   /**
-   * Returns a list of completions for the given trait.
-   * If the trait is derivable, we will only provide completions for derivation.
-   */
+    * Returns a list of completions for the given trait.
+    * If the trait is derivable, we will only provide completions for derivation.
+    */
   private def getTraitCompletions(trt: TypedAst.Trait, traitUsageKind: TraitUsageKind, ap: AnchorPosition, qualified: Boolean, inScope: Boolean): List[TraitCompletion] = {
-    val derivable_traits = List("Eq", "Order", "ToString", "Sendable", "Coerce")
     traitUsageKind match {
       case TraitUsageKind.Derivation if derivable_traits.contains(trt.sym.name) =>
         TraitCompletion(trt, traitUsageKind, ap, qualified = true, inScope = true) :: Nil
@@ -62,9 +66,9 @@ object TraitCompleter {
   }
 
   /**
-   * Checks if the definition is in scope.
-   * If we can find the definition in the scope or the definition is in the root namespace, it is in scope.
-   */
+    * Checks if the definition is in scope.
+    * If we can find the definition in the scope or the definition is in the root namespace, it is in scope.
+    */
   private def inScope(struct: TypedAst.Trait, scope: LocalScope): Boolean = {
     val thisName = struct.sym.toString
     val isResolved = scope.m.values.exists(_.exists {
@@ -76,9 +80,9 @@ object TraitCompleter {
   }
 
   /**
-   * Checks if the definition matches the QName.
-   * Names should match and the definition should be available.
-   */
+    * Checks if the definition matches the QName.
+    * Names should match and the definition should be available.
+    */
   private def matchesTrait(struct: TypedAst.Trait, qn: Name.QName, uri: String, qualified: Boolean): Boolean = {
     val isPublic = struct.mod.isPublic && !struct.ann.isInternal
     val isInFile = struct.sym.loc.source.name == uri
