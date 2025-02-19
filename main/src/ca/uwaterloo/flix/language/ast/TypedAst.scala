@@ -24,11 +24,6 @@ import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 
 import java.lang.reflect.{Constructor, Field, Method}
 
-sealed trait Declaration {
-  val ann: Annotations
-  val mod: Modifiers
-}
-
 object TypedAst {
 
   val empty: Root = Root(ListMap.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Set.empty, Map.empty, TraitEnv.empty, EqualityEnv.empty, AvailableClasses.empty, LabelledPrecedenceGraph.empty, DependencyGraph.empty, Map.empty)
@@ -53,6 +48,11 @@ object TypedAst {
                   precedenceGraph: LabelledPrecedenceGraph,
                   dependencyGraph: DependencyGraph,
                   tokens: Map[Source, Array[Token]])
+
+  sealed trait Declaration {
+    val ann: Annotations
+    val mod: Modifiers
+  }
 
   case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[AssocTypeSig], sigs: List[Sig], laws: List[Def], loc: SourceLocation) extends Declaration
 
