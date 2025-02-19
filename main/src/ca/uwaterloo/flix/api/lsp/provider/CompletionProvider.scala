@@ -75,9 +75,7 @@ object CompletionProvider {
             ModuleCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err) ++ InvokeStaticMethodCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedJvmImport => ImportCompleter.getCompletions(err)
-        case err: ResolutionError.UndefinedTrait =>
-          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
-          TraitCompleter.getCompletions(err, namespace, ident)
+        case err: ResolutionError.UndefinedTrait => TraitCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
         case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedOp =>
