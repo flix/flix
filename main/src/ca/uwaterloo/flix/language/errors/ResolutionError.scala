@@ -958,9 +958,12 @@ object ResolutionError {
   /**
     * Undefined Trait Error.
     *
-    * @param qn  the unresolved trait.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
+    * @param qn           the unresolved trait.
+    * @param traitUseKind the kind of trait use.
+    * @param ap           the anchor position.
+    * @param env          the variables in the scope.
+    * @param ns           the current namespace.
+    * @param loc          the location where the error occurred.
     */
   case class UndefinedTrait(qn: Name.QName, traitUseKind: TraitUsageKind, ap: AnchorPosition, env: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined trait: '${qn.toString}'."
