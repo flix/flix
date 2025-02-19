@@ -110,8 +110,8 @@ object VarOffsets {
           visitExp(exp, i3)
       }
 
-    case Expr.TryWith(exp, _, _, _, _, _, _) =>
-      // The expressions in TryWith are not executed here (concretely they're
+    case Expr.RunWith(exp, _, _, _, _, _, _) =>
+      // The expressions in RunWith are not executed here (concretely they're
       // always closures) and should not have var offsets here.
       // They don't contain binders so visiting them does nothing.
       visitExp(exp, i0)

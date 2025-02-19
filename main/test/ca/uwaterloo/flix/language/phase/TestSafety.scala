@@ -429,17 +429,17 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.MissingDefaultTypeMatchCase](result)
   }
 
-  test("TestBaseEffectInTryWith.01") {
+  test("TestBaseEffectInRunWith.01") {
     val input =
       """
         |def f(): Unit =
         |    run println("Hello, World!") with handler IO {}
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.PrimitiveEffectInTryWith](result)
+    expectError[SafetyError.PrimitiveEffectInRunWith](result)
   }
 
-  test("TestBaseEffectInTryWith.02") {
+  test("TestBaseEffectInRunWith.02") {
     val input =
       """
         |def f(): Unit =
@@ -448,10 +448,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def g(): Unit \ Exec = ???
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.PrimitiveEffectInTryWith](result)
+    expectError[SafetyError.PrimitiveEffectInRunWith](result)
   }
 
-  test("TestBaseEffectInTryWith.03") {
+  test("TestBaseEffectInRunWith.03") {
     val input =
       """
         |def f(): Unit =
@@ -460,10 +460,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def g(): Unit \ FsRead = ???
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.PrimitiveEffectInTryWith](result)
+    expectError[SafetyError.PrimitiveEffectInRunWith](result)
   }
 
-  test("TestBaseEffectInTryWith.04") {
+  test("TestBaseEffectInRunWith.04") {
     val input =
       """
         |def f(): Unit =
@@ -472,10 +472,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def g(): Unit \ FsWrite = ???
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.PrimitiveEffectInTryWith](result)
+    expectError[SafetyError.PrimitiveEffectInRunWith](result)
   }
 
-  test("TestBaseEffectInTryWith.05") {
+  test("TestBaseEffectInRunWith.05") {
     val input =
       """
         |def f(): Unit =
@@ -484,10 +484,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def g(): Unit \ Net = ???
     """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.PrimitiveEffectInTryWith](result)
+    expectError[SafetyError.PrimitiveEffectInRunWith](result)
   }
 
-  test("TestBaseEffectInTryWith.06") {
+  test("TestBaseEffectInRunWith.06") {
     val input =
       """
         |def f(): Unit =
@@ -496,10 +496,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def g(): Unit \ NonDet = ???
     """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.PrimitiveEffectInTryWith](result)
+    expectError[SafetyError.PrimitiveEffectInRunWith](result)
   }
 
-  test("TestBaseEffectInTryWith.07") {
+  test("TestBaseEffectInRunWith.07") {
     val input =
       """
         |def f(): Unit =
@@ -508,7 +508,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def g(): Unit \ Sys = ???
     """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.PrimitiveEffectInTryWith](result)
+    expectError[SafetyError.PrimitiveEffectInRunWith](result)
   }
 
   test("ImpossibleCast.01") {

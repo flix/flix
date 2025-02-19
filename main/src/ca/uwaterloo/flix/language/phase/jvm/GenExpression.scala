@@ -1366,7 +1366,7 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       mv.visitLabel(afterTryAndCatch)
 
-    case Expr.TryWith(exp, effUse, rules, ct, _, _, _) =>
+    case Expr.RunWith(exp, effUse, rules, ct, _, _, _) =>
       // exp is a Unit -> exp.tpe closure
       val effectJvmName = JvmOps.getEffectDefinitionClassType(effUse.sym).name
       val ins = {

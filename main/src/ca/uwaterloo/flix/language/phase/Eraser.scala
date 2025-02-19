@@ -177,8 +177,8 @@ object Eraser {
       Scope(sym, visitExp(exp), visitType(tpe), purity, loc)
     case TryCatch(exp, rules, tpe, purity, loc) =>
       TryCatch(visitExp(exp), rules.map(visitCatchRule), visitType(tpe), purity, loc)
-    case TryWith(exp, effUse, rules, ct, tpe, purity, loc) =>
-      val tw = TryWith(visitExp(exp), effUse, rules.map(visitHandlerRule), ct, box(tpe), purity, loc)
+    case RunWith(exp, effUse, rules, ct, tpe, purity, loc) =>
+      val tw = RunWith(visitExp(exp), effUse, rules.map(visitHandlerRule), ct, box(tpe), purity, loc)
       castExp(unboxExp(tw, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case Do(op, exps, tpe, purity, loc) =>
       Do(op, exps.map(visitExp), visitType(tpe), purity, loc)

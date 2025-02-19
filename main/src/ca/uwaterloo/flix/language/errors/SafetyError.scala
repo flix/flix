@@ -390,7 +390,7 @@ object SafetyError {
     * @param sym the effect symbol.
     * @param loc the location where the error occurred.
     */
-  case class PrimitiveEffectInTryWith(sym: Symbol.EffectSym, loc: SourceLocation) extends SafetyError {
+  case class PrimitiveEffectInRunWith(sym: Symbol.EffectSym, loc: SourceLocation) extends SafetyError {
     override def summary: String = s"The ${sym.name} effect cannot be handled."
 
     override def message(formatter: Formatter): String = {

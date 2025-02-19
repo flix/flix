@@ -61,7 +61,7 @@ object ReducedAstPrinter {
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case ReducedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
     })
-    case Expr.TryWith(exp, effUse, rules, _, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map {
+    case Expr.RunWith(exp, effUse, rules, _, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map {
       case ReducedAst.HandlerRule(op, fparams, exp) =>
         (op.sym, fparams.map(printFormalParam), print(exp))
     })

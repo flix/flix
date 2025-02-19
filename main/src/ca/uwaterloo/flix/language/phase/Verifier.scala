@@ -505,7 +505,7 @@ object Verifier {
       val t = visitExpr(exp)
       checkEq(tpe, t, loc)
 
-    case Expr.TryWith(exp, effUse, rules, _, tpe, _, loc) =>
+    case Expr.RunWith(exp, effUse, rules, _, tpe, _, loc) =>
       val exptype = visitExpr(exp) match {
         case MonoType.Arrow(List(MonoType.Unit), t) => t
         case e => failMismatchedShape(e, "Arrow(List(Unit), _)", exp.loc)

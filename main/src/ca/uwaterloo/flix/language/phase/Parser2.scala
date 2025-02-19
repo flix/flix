@@ -2553,7 +2553,7 @@ object Parser2 {
       Decl.parameters(SyntacticContext.Expr.OtherExpr)
       expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
       expression()
-      close(mark, TreeKind.Expr.TryWithRuleFragment)
+      close(mark, TreeKind.Expr.RunWithRuleFragment)
     }
 
     private def throwExpr()(implicit s: State): Mark.Closed = {

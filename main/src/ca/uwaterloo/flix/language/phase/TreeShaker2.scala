@@ -102,7 +102,7 @@ object TreeShaker2 {
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case Expr.TryWith(exp, _, rules, _, _, _) =>
+    case Expr.RunWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
     case Expr.Do(_, exps, _, _, _) =>
