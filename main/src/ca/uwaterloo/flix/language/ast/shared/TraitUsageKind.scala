@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.ast
+package ca.uwaterloo.flix.language.ast.shared
 
 sealed trait TraitUsageKind
 
