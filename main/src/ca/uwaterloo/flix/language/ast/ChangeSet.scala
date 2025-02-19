@@ -67,6 +67,10 @@ sealed trait ChangeSet {
     * Otherwise, it is stale.
     *
     * The type of the value in the map must be the same, since when checking stale, we need to check if the value is in the fresh map.
+    *
+    * @param newMap      the new map
+    * @param oldMap      the old map
+    * @param idExtractor a function to extract the id from the value, which is used to check if two values are the same
     */
   def partitionOnValues[K, V <: Sourceable, ID](newMap: ListMap[K, V], oldMap: ListMap[K, V], idExtractor: V => ID): (ListMap[K, V], ListMap[K, V]) = this match {
     case ChangeSet.Everything =>
