@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolUnificationException, SveAlgorithm}
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{TooComplex, Zhegalkin, ZhegalkinAlgebra, ZhegalkinExpr}
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{TooComplexException, Zhegalkin, ZhegalkinAlgebra, ZhegalkinExpr}
 import ca.uwaterloo.flix.util.Result
 
 import scala.collection.immutable.IntMap
@@ -418,7 +418,7 @@ object SetUnification {
           val y = Zhegalkin.toZhegalkin(f2)
           (x, y)
         } catch {
-          case m: TooComplex =>
+          case m: TooComplexException =>
             // The equation was too complex to translate into a Zhegalin polynomial. Mark it as failed and abort.
             return Result.Err(List(eq.toTimeout(m.getMessage)))
         }
