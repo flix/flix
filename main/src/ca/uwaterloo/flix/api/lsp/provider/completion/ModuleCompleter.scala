@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.language.ast.{Name, Symbol, TypedAst}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ModuleCompletion
-import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Namespace
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Effect, Enum, Namespace, Struct, Trait}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
@@ -62,7 +62,11 @@ object ModuleCompleter {
   private def inScope(module: Symbol.ModuleSym, scope: LocalScope): Boolean = {
     val thisName = module.toString
     val isResolved = scope.m.values.exists(_.exists {
-      case Resolution.Declaration(Namespace(thatName, _, _, _)) => thisName == thatName.toString
+      case Resolution.Declaration(Namespace(thatName, _, _, _)) => thatName.toString == thisName
+      case Resolution.Declaration(Trait(_, _, _, thatName, _, _, _, _, _, _)) => thatName.toString == thisName
+      case Resolution.Declaration(Enum(_, _, _, thatName, _, _, _, _)) => thatName.toString == thisName
+      case Resolution.Declaration(Struct(_, _, _, thatName, _, _, _, _)) => thatName.toString == thisName
+      case Resolution.Declaration(Effect(_, _, _, thatName, _, _)) => thatName.toString == thisName
       case _ => false
     })
     val isRoot = module.ns.length <= 1
