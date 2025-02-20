@@ -37,6 +37,10 @@ object TraitCompleter {
     getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn, err.traitUseKind)
   }
 
+  def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn, TraitUsageKind.Call)
+  }
+
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName, traitUsageKind: TraitUsageKind)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
       root.traits.values.flatMap {
@@ -58,12 +62,14 @@ object TraitCompleter {
     */
   private def getTraitCompletions(trt: TypedAst.Trait, traitUsageKind: TraitUsageKind, ap: AnchorPosition, qualified: Boolean, inScope: Boolean): List[Completion] = {
     traitUsageKind match {
+      case TraitUsageKind.Call =>
+        TraitCompletion(trt, ap, qualified = qualified, inScope = inScope, withTypeParameter = false) :: Nil
+      case TraitUsageKind.Constraint =>
+        TraitCompletion(trt, ap, qualified = qualified, inScope = inScope, withTypeParameter = true) :: Nil
       case TraitUsageKind.Derivation if derivable_traits.contains(trt.sym.name) =>
         TraitCompletion(trt, ap, qualified = qualified, inScope = inScope, withTypeParameter = false) :: Nil
       case TraitUsageKind.Derivation =>
         Nil
-      case TraitUsageKind.Constraint =>
-        TraitCompletion(trt, ap, qualified = qualified, inScope = inScope, withTypeParameter = true) :: Nil
       case TraitUsageKind.Implementation =>
        InstanceCompletion(trt, ap, qualified = qualified, inScope = inScope) :: Nil
     }

@@ -24,6 +24,12 @@ sealed trait TraitUsageKind
   */
 object TraitUsageKind {
   /**
+    * Represents a trait use in a call
+    * e.g. let res = E...
+    */
+  case object Call extends TraitUsageKind
+
+  /**
     * Represents a trait use in a constraint
     * e.g. def f(a: t) : Unit with E...
     * e.g. trait Foo[t] with E...

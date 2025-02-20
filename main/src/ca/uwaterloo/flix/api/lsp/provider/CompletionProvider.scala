@@ -63,6 +63,7 @@ object CompletionProvider {
             OpCompleter.getCompletions(err) ++
             SignatureCompleter.getCompletions(err) ++
             EnumTagCompleter.getCompletions(err) ++
+            TraitCompleter.getCompletions(err) ++
             ModuleCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedType =>
           TypeBuiltinCompleter.getCompletions ++
