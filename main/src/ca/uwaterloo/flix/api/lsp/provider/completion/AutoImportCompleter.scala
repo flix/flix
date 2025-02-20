@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.CompletionItemLabelDetails
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.AutoImportCompletion
-import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
 import ca.uwaterloo.flix.language.errors.ResolutionError
