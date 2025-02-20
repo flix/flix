@@ -33,7 +33,7 @@ object Safety {
 
     val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
     val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
-    val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (inst: TypedAst.Instance) => inst.tpe.typeConstructor)(ParOps.parMapValueList(_)(visitInstance))
+    val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList(_)(visitInstance))
 
     (root.copy(defs = defs, traits = traits, instances = instances), sctx.errors.asScala.toList)
   }
