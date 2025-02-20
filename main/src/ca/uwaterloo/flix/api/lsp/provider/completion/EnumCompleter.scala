@@ -29,7 +29,7 @@ object EnumCompleter {
     * When providing completions for unqualified enums that is not in scope, we will also automatically use the enum.
     */
   def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn, withTypeParameters = true)
+    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn, withTypeParameters = false)
   }
 
   def getCompletions(err: ResolutionError.UndefinedTag)(implicit root: TypedAst.Root): Iterable[Completion] = {
