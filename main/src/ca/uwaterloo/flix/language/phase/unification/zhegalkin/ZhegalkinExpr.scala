@@ -128,15 +128,17 @@ object ZhegalkinExpr {
       }
       val allTermsNonDup = seen.toList
 
-      // Merge coefficients: (c1 ∩ x1 ∩ x2) ⊕ (c2 ∩ x1 ∩ x2) = (c1 ∩ c2) ∩ x1 ∩ x2
-      val termsGroupedByVarSet = allTermsNonDup.groupBy(_.vars).toList
-      val mergedTerms = termsGroupedByVarSet.map {
-        case (vars, l) =>
-          val mergedCst: ZhegalkinCst = l.foldLeft(ZhegalkinCst.empty) { // Neutral element for Xor.
-            case (acc, t) => ZhegalkinCst.mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A.
-          }
-          ZhegalkinTerm(mergedCst, vars)
+      val m = mutable.Map.empty[SortedSet[ZhegalkinVar], ZhegalkinCst]
+      for (ZhegalkinTerm(cst, vars) <- allTermsNonDup) {
+        // The neutral element for Xor is Ø.
+        val acc = m.getOrElse(vars, ZhegalkinCst.empty)
+        m.put(vars, ZhegalkinCst.mkXor(cst, acc))
       }
+
+      val mergedTerms = m.foldRight(Nil: List[ZhegalkinTerm]) {
+        case ((vars, cst), acc) => ZhegalkinTerm(cst, vars) :: acc
+      }
+
       mkZhegalkinExpr(c, mergedTerms)
   }
 
