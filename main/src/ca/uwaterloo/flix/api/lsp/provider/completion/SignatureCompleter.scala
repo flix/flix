@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.SigCompletion
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Namespace, Sig, Trait}
-import ca.uwaterloo.flix.language.ast.Symbol.mkTraitSym
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -74,7 +74,7 @@ object SignatureCompleter {
     val namespaceTail = qn.namespace.idents.tail.map(_.name).mkString(".")
     val fullyQualifiedTrait = if (namespaceTail.isEmpty) fullyQualifiedNamespaceHead else s"$fullyQualifiedNamespaceHead.$namespaceTail"
     for {
-      trt <- root.traits.get(mkTraitSym(fullyQualifiedTrait)).toList
+      trt <- root.traits.get(Symbol.mkTraitSym(fullyQualifiedTrait)).toList
       sig <- trt.sigs
       if CompletionUtils.isAvailable(trt) && CompletionUtils.matchesName(sig.sym, qn, qualified = false)
     } yield SigCompletion(sig, qn.namespace.toString, ap, qualified = true, inScope = true)
