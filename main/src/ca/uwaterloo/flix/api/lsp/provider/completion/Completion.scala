@@ -443,76 +443,13 @@ sealed trait Completion {
         kind             = CompletionItemKind.Snippet
       )
 
-    case Completion.UseEnumCompletion(name) =>
+    case Completion.UseCompletion(name, kind) =>
       CompletionItem(
         label         = name,
         sortText      = name,
         textEdit      = TextEdit(context.range, name),
         documentation = None,
-        kind          = CompletionItemKind.Enum
-      )
-
-    case Completion.UseEffCompletion(name) =>
-      CompletionItem(
-        label         = name,
-        sortText      = name,
-        textEdit      = TextEdit(context.range, name),
-        documentation = None,
-        kind          = CompletionItemKind.Enum
-      )
-
-    case Completion.UseDefCompletion(name) =>
-      CompletionItem(
-        label         = name,
-        sortText      = name,
-        textEdit      = TextEdit(context.range, name),
-        documentation = None,
-        kind          = CompletionItemKind.Function
-      )
-
-    case Completion.UseTrtCompletion(name) =>
-      CompletionItem(
-        label         = name,
-        sortText      = name,
-        textEdit      = TextEdit(context.range, name),
-        documentation = None,
-        kind          = CompletionItemKind.Interface
-      )
-
-    case Completion.UseEnumTagCompletion(name) =>
-      CompletionItem(
-        label         = name,
-        sortText      = name,
-        textEdit      = TextEdit(context.range, name),
-        documentation = None,
-        kind          = CompletionItemKind.EnumMember
-      )
-
-    case Completion.UseOpCompletion(name) =>
-      CompletionItem(
-        label         = name,
-        sortText      = name,
-        textEdit      = TextEdit(context.range, name),
-        documentation = None,
-        kind          = CompletionItemKind.Method
-      )
-
-    case Completion.UseSignatureCompletion(name) =>
-      CompletionItem(
-        label         = name,
-        sortText      = name,
-        textEdit      = TextEdit(context.range, name),
-        documentation = None,
-        kind          = CompletionItemKind.Method
-      )
-
-    case Completion.ModCompletion(modSym) =>
-      val name = modSym.toString
-      CompletionItem(
-        label    = name,
-        sortText = Priority.toSortText(Priority.Default, name),
-        textEdit = TextEdit(context.range, name),
-        kind     = CompletionItemKind.Module
+        kind          = kind
       )
 
     case Completion.FieldCompletion(ident, field) =>
@@ -863,54 +800,12 @@ object Completion {
   case class InstanceCompletion(trt: TypedAst.Trait, completion: String) extends Completion
 
   /**
-    * Represents a Use Enum completion.
+    * Represents a Use completion.
     *
-    * @param name the name of the use enum completion.
+    * @param name               the name of the use completion.
+    * @param completionItemKind the kind of the completion.
     */
-  case class UseEnumCompletion(name: String) extends Completion
-
-  /**
-    * Represents a Use Effect completion.
-    *
-    * @param name the name of the use effect completion.
-    */
-  case class UseEffCompletion(name: String) extends Completion
-
-  /**
-    * Represents a Use Def completion.
-    *
-    * @param name the name of the use def completion.
-    */
-  case class UseDefCompletion(name: String) extends Completion
-
-  /**
-    * Represents a Use Trait completion.
-    *
-    * @param name the name of the use enum tag completion.
-    */
-  case class UseTrtCompletion(name: String) extends Completion
-
-  /**
-    * Represents a Use Enum Tag completion
-    *
-    * @param enumSym the sym of the enum.
-    * @param caze    the case of the enum.
-    */
-  case class UseEnumTagCompletion(name: String) extends Completion
-
-  /**
-    * Represents a Use Op completion.
-    *
-    * @param name the name of the use op completion.
-    */
-  case class UseOpCompletion(name: String) extends Completion
-
-  /**
-    * Represents a Use Signature completion.
-    *
-    * @param name the name of the use signature completion.
-    */
-  case class UseSignatureCompletion(name: String) extends Completion
+  case class UseCompletion(name: String, completionItemKind: CompletionItemKind) extends Completion
 
   /**
    * Represents a struct field completion.
@@ -918,13 +813,6 @@ object Completion {
    * @param field the candidate field.
    */
   case class StructFieldCompletion(field: String, symLoc: SourceLocation, tpe: Type) extends Completion
-
-  /**
-    * Represents a Module completion.
-    *
-    * @param modSym the module symbol.
-    */
-  case class ModCompletion(modSym: ModuleSym) extends Completion
 
   /**
    * Represents a Java field completion.
