@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumCompletion
-import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.{fuzzyMatch, matchesQualifiedName}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Enum
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
@@ -43,12 +42,12 @@ object EnumCompleter {
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName, withTypeParameters: Boolean)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
       root.enums.values.collect{
-        case enum if matchesEnum(enum, qn, uri, qualified = true) =>
+        case enum if CompletionUtils.isAvailable(enum) && CompletionUtils.matchesName(enum.sym, qn, qualified = true) =>
           EnumCompletion(enum, ap, qualified = true, inScope = true, withTypeParameters = withTypeParameters)
       }
     else
       root.enums.values.collect({
-        case enum if matchesEnum(enum, qn, uri, qualified = false) =>
+        case enum if CompletionUtils.isAvailable(enum) && CompletionUtils.matchesName(enum.sym, qn, qualified = false) =>
           EnumCompletion(enum, ap, qualified = false, inScope = inScope(enum, env), withTypeParameters = withTypeParameters)
       })
   }
@@ -65,19 +64,5 @@ object EnumCompleter {
     })
     val isRoot = decl.sym.namespace.isEmpty
     isRoot || isResolved
-  }
-
-  /**
-   * Checks if the definition matches the QName.
-   * Names should match and the definition should be available.
-   */
-  private def matchesEnum(enm: TypedAst.Enum, qn: Name.QName, uri: String, qualified: Boolean): Boolean = {
-    val isPublic = enm.mod.isPublic && !enm.ann.isInternal
-    val isInFile = enm.sym.loc.source.name == uri
-    val isMatch = if (qualified)
-      matchesQualifiedName(enm.sym.namespace, enm.sym.name, qn)
-    else
-      fuzzyMatch(qn.ident.name, enm.sym.name)
-    isMatch && (isPublic || isInFile)
   }
 }

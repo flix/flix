@@ -43,7 +43,7 @@ object EnumTagCompleter {
     else
       root.enums.values.flatMap(enm =>
         enm.cases.values.collect{
-          case tag if matchesTag(enm, tag, qn, uri, qualified = false) =>
+          case tag if CompletionUtils.isAvailable(enm) && CompletionUtils.matchesName(tag.sym, qn, qualified = false) =>
             EnumTagCompletion(tag, Nil, ap, qualified = false, inScope = inScope(tag, env))
         }
       )
@@ -57,7 +57,7 @@ object EnumTagCompleter {
   private def fullyQualifiedCompletion(uri: String, ap: AnchorPosition, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
     root.enums.values.flatMap(enm =>
       enm.cases.values.collect{
-        case tag if matchesTag(enm, tag, qn, uri, qualified = true) =>
+        case tag if CompletionUtils.isAvailable(enm) && CompletionUtils.matchesName(tag.sym, qn, qualified = true) =>
           EnumTagCompletion(tag, Nil,  ap, qualified = true, inScope = true)
       }
     )
@@ -76,7 +76,7 @@ object EnumTagCompleter {
       case Resolution.Declaration(Enum(_, _, _, enumSym, _, _, _, _)) <- env.get(qn.namespace.toString)
       enm <- root.enums.get(enumSym).toList
       tag <- enm.cases.values
-      if matchesTag(enm, tag, qn, uri, qualified = false)
+      if CompletionUtils.isAvailable(enm) && CompletionUtils.matchesName(tag.sym, qn, qualified = false)
     } yield EnumTagCompletion(tag, qn.namespace.parts, ap, qualified = true, inScope = true)
   }
 
@@ -90,18 +90,4 @@ object EnumTagCompleter {
     isRoot || isResolved
   }
 
-  /**
-    * Returns `true` if the given signature `sig` should be included in the suggestions.
-    *
-    * For visibility, we just need to check the parent enum.
-    */
-  private def matchesTag(enm: TypedAst.Enum, tag: TypedAst.Case, qn: Name.QName, uri: String, qualified: Boolean): Boolean = {
-    val isPublic = enm.mod.isPublic && !enm.ann.isInternal
-    val isInFile = enm.loc.source.name == uri
-    val isMatch = if (qualified)
-      CompletionUtils.matchesQualifiedName(tag.sym.namespace, tag.sym.name, qn)
-    else
-      CompletionUtils.fuzzyMatch(qn.ident.name, tag.sym.name)
-    isMatch && (isPublic || isInFile)
-  }
 }

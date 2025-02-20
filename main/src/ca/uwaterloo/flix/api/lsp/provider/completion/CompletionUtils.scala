@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
 import ca.uwaterloo.flix.language.ast.TypedAst.Decl
-import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
+import ca.uwaterloo.flix.language.ast.shared.{LocalScope, QualifiedSym, Resolution}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
 import scala.annotation.tailrec
@@ -268,4 +268,18 @@ object CompletionUtils {
     * Checks if the enum of the given symbol is public.
     */
   def isAvailable(enumMap: Symbol.EnumSym)(implicit root: TypedAst.Root): Boolean = root.enums.get(enumMap).exists(isAvailable)
+
+  /**
+    * Checks if the sym and the given qualified name matches.
+    *
+    * @param sym        The symbol to check, usually from root.
+    * @param qn         The qualified name to check, usually from user input.
+    * @param qualified  Whether the qualified name is qualified.
+    */
+  def matchesName(sym: QualifiedSym, qn: Name.QName, qualified: Boolean): Boolean = {
+    if (qualified) {
+      CompletionUtils.matchesQualifiedName(sym.namespace, sym.name, qn)
+    } else
+      CompletionUtils.fuzzyMatch(qn.ident.name, sym.name)
+  }
 }
