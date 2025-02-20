@@ -394,7 +394,7 @@ sealed trait Completion {
 
     case Completion.EnumTagCompletion(tag, namespace, ap, qualified, inScope) =>
       val qualifiedName = if (namespace.nonEmpty)
-        namespace.mkString(".") + "." + tag.sym.name
+        s"$namespace.${tag.sym.name}"
       else
         tag.sym.toString
       val name = if (qualified) qualifiedName else tag.sym.name
@@ -779,7 +779,7 @@ object Completion {
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the signature is inScope.
     */
-  case class EnumTagCompletion(tag: TypedAst.Case, namespace: List[String], ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class EnumTagCompletion(tag: TypedAst.Case, namespace: String, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents a Module completion
