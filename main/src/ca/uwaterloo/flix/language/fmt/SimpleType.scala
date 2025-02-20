@@ -369,6 +369,7 @@ object SimpleType {
           case RegionAction.Alloc => "GetAlloc"
           case RegionAction.Read => "GetRead"
           case RegionAction.Write => "GetWrite"
+          case RegionAction.Lock => "GetLock"
         }
         Apply(SimpleType.Name(name), List(visit(tpe)))
 

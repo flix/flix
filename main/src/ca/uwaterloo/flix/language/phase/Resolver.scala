@@ -2368,9 +2368,11 @@ object Resolver {
         case "Alloc" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToEff(Some(RegionAction.Alloc)), loc))
         case "Read" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToEff(Some(RegionAction.Read)), loc))
         case "Write" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToEff(Some(RegionAction.Write)), loc))
+        case "Lock" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToEff(Some(RegionAction.Lock)), loc))
         case "GetAlloc" => Validation.Success(UnkindedType.UnappliedGetEff(RegionAction.Alloc, loc))
         case "GetRead" => Validation.Success(UnkindedType.UnappliedGetEff(RegionAction.Read, loc))
         case "GetWrite" => Validation.Success(UnkindedType.UnappliedGetEff(RegionAction.Write, loc))
+        case "GetLock" => Validation.Success(UnkindedType.UnappliedGetEff(RegionAction.Lock, loc))
 
         // Disambiguate type.
         case _ => // typeName

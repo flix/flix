@@ -1475,6 +1475,9 @@ object Type {
     case UnresolvedJvmType(member, loc) =>
       val m = member.map(simplifyEffects)
       UnresolvedJvmType(m, loc)
+    case GetEff(action, tpe, loc) =>
+      val t = simplifyEffects(tpe)
+      GetEff(action, t, loc)
   }
 
 }

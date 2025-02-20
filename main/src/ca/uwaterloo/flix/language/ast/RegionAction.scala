@@ -22,6 +22,7 @@ sealed trait RegionAction extends Ordered[RegionAction] {
       case RegionAction.Alloc => 0
       case RegionAction.Read => 1
       case RegionAction.Write => 2
+      case RegionAction.Lock => 3
     }
 
     ordinal(this).compare(ordinal(that))
@@ -32,4 +33,5 @@ object RegionAction {
   case object Alloc extends RegionAction
   case object Read extends RegionAction
   case object Write extends RegionAction
+  case object Lock extends RegionAction
 }
