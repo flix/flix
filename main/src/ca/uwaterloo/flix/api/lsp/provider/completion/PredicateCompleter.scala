@@ -17,11 +17,10 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
-import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Consumer, Visitor}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.PredicateCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
 object PredicateCompleter {

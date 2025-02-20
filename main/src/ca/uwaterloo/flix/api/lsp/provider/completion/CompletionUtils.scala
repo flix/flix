@@ -17,10 +17,9 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
 import ca.uwaterloo.flix.language.ast.TypedAst.Decl
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
@@ -31,15 +30,6 @@ object CompletionUtils {
   private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit
 
   private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams.head.tpe)
-
-  def getParamsLabelForEnumTags(cas: TypedAst.Case)(implicit flix: Flix): String = {
-    cas.tpes.length match {
-      case 0 => ""
-      case _ => s"(${cas.tpes.map(FormatType.formatType(_)).mkString(", ")})"
-    }
-  }
-
-  def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = name + getLabelForSpec(spec)
 
   def getLabelForSpec(spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
     case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _) =>
@@ -133,51 +123,6 @@ object CompletionUtils {
     */
   def getFilterTextForName(name: String): String = {
     s"$name("
-  }
-
-  def getNestedModules(word: String)(implicit root: TypedAst.Root): List[Symbol.ModuleSym] = {
-    ModuleSymFragment.parseModuleSym(word) match {
-      case ModuleSymFragment.Complete(modSym) =>
-        root.modules.get(modSym).collect {
-          case sym: Symbol.ModuleSym => sym
-        }
-      case ModuleSymFragment.Partial(modSym, suffix) =>
-        root.modules.get(modSym).collect {
-          case sym: Symbol.ModuleSym if matches(sym, suffix) => sym
-        }
-      case _ => Nil
-    }
-  }
-
-  /**
-   * Returns `true` if the given module `sym` matches the given `suffix`.
-   *
-   * (Aaa.Bbb.Ccc, Cc) => true
-   * (Aaa.Bbb.Ccc, Dd) => false
-   * (/, Cc)           => true
-   */
-  private def matches(sym: Symbol.ModuleSym, suffix: String): Boolean = {
-    if (sym.isRoot) {
-      true
-    } else {
-      sym.ns.last.startsWith(suffix) // We know that ns cannot be empty because it is not the root.
-    }
-  }
-
-  /**
-    * Filters the definitions in the given `root` by the given `word` and `env`.
-    * If `whetherInScope` is `true`, we return the matched defs in the root module or in the scope
-    * If `whetherInScope` is `false`, we return the matched defs not in the root module and not in the scope
-    */
-  def filterDefsByScope(word: String, root: TypedAst.Root, env: LocalScope, whetherInScope: Boolean): Iterable[TypedAst.Def] = {
-    val matchedDefs = root.defs.filter{case (_, decl) => matchesDef(decl, word)}
-    val rootModuleMatches = matchedDefs.collect{
-        case (sym, decl) if whetherInScope && sym.namespace.isEmpty => decl
-    }
-    val scopeMatches = matchedDefs.collect{
-      case (sym, decl) if sym.namespace.nonEmpty && checkScope(decl, env, whetherInScope) => decl
-    }
-    rootModuleMatches ++ scopeMatches
   }
 
   /**
