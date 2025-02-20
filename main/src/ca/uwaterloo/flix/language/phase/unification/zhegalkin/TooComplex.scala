@@ -19,3 +19,4 @@ package ca.uwaterloo.flix.language.phase.unification.zhegalkin
   * An exception thrown to indicate that a Zhegalkin polynomial is too complex.
   */
 class TooComplex(msg: String) extends RuntimeException(msg)
+
