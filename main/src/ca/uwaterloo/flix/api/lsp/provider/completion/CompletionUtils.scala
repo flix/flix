@@ -277,10 +277,73 @@ object CompletionUtils {
     * @param qn         The qualified name to check, usually from user input.
     * @param qualified  Whether the qualified name is qualified.
     */
+  private def fmtType(tpe: Type, holes: Map[Symbol, String])(implicit flix: Flix): String = {
+    val replaced = holes.foldLeft(tpe) { case (t, (sym, hole)) => replaceText(sym, t, hole) }
+    FormatType.formatType(replaced)
+  }
+
+  /**
+    * Formats the given associated type `assoc`.
+    */
+  private def fmtAssocType(assoc: TypedAst.AssocTypeSig, holes: Map[Symbol, String]): String = {
+    s"    type ${assoc.sym.name} = ${holes(assoc.sym)}"
+  }
+
+  /**
+    * Formats the given formal parameters in `spec`.
+    */
+  private def fmtFormalParams(spec: TypedAst.Spec, holes: Map[Symbol, String])(implicit flix: Flix): String =
+    spec.fparams.map(fparam => s"${fparam.bnd.sym.text}: ${fmtType(fparam.tpe, holes)}").mkString(", ")
+
+  /**
+    * Formats the given signature `sig`.
+    */
+  private def fmtSignature(sig: TypedAst.Sig, holes: Map[Symbol, String])(implicit flix: Flix): String = {
+    val fparams = fmtFormalParams(sig.spec, holes)
+    val retTpe = fmtType(sig.spec.retTpe, holes)
+    val eff = sig.spec.eff match {
+      case Type.Cst(TypeConstructor.Pure, _) => ""
+      case e => raw" \ " + fmtType(e, holes)
+    }
+    s"    pub def ${sig.sym.name}($fparams): $retTpe$eff = ???"
+  }
+
+  def fmtInstanceSnippet(trt: TypedAst.Trait, qualified: Boolean)(implicit flix: Flix): String = {
+    val instanceHole = "${1:t}"
+    val holes: Map[Symbol, String] = {
+      (trt.tparam.sym -> instanceHole) +:
+        trt.assocs.zipWithIndex.map { case (a, i) => a.sym -> s"$$${i + 2}" }
+    }.toMap
+
+    val traitName = if (qualified) trt.sym.toString else trt.sym.name
+    val signatures = trt.sigs.filter(_.exp.isEmpty)
+
+    val body = {
+      trt.assocs.map(a => fmtAssocType(a, holes)) ++
+        signatures.map(s => fmtSignature(s, holes))
+    }.mkString("\n\n")
+
+    s"$traitName[$instanceHole] {\n\n$body\n\n}\n"
+  }
+
+  /**
+    * Formats the given trait `trt`.
+    */
+  def fmtTrait(trt: TypedAst.Trait): String = {
+    s"trait ${trt.sym.name}[${trt.tparam.name.name}]"
+  }
+
+  /**
+    * Checks if the sym and the given qualified name matches.
+    *
+    * @param sym        The symbol to check, usually from root.
+    * @param qn         The qualified name to check, usually from user input.
+    * @param qualified  Whether the qualified name is qualified.
+    */
   def matchesName(sym: QualifiedSym, qn: Name.QName, qualified: Boolean): Boolean = {
     if (qualified) {
       matchesQualifiedName(sym.namespace, sym.name, qn)
     } else
-     fuzzyMatch(qn.ident.name, sym.name)
+      fuzzyMatch(qn.ident.name, sym.name)
   }
 }

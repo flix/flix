@@ -332,7 +332,7 @@ sealed trait Completion {
       val labelDetails = CompletionItemLabelDetails(None, description)
       val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
       val priority: Priority = if (inScope) Priority.High else Priority.Lower
-      val snippet = CompletionUtils.fmtInstanceSnippet(trt)
+      val snippet = CompletionUtils.fmtInstanceSnippet(trt, qualified = qualified)
       CompletionItem(
         label               = label,
         labelDetails        = Some(labelDetails),
