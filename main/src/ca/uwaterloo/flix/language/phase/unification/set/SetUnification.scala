@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolUnificationException, SveAlgorithm}
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinExpr}
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{TooComplexException, Zhegalkin, ZhegalkinAlgebra, ZhegalkinExpr}
 import ca.uwaterloo.flix.util.Result
 
 import scala.collection.immutable.IntMap
@@ -126,7 +126,7 @@ object SetUnification {
         state.subst = s @@ state.subst
       case Result.Err(eqs) =>
         // Failure: We found a conflict.
-        // Store the unsolveable equations and reset the partial substitution.
+        // Store the unsolvable equations and reset the partial substitution.
         state.eqs = eqs
         state.subst = SetSubstitution.empty
     }
@@ -408,17 +408,24 @@ object SetUnification {
       return Result.Err(eqs.map(_.toUnsolvable))
     }
 
-    // Convert all equations to Zhegalkin polynomials.
     implicit val alg: BoolAlg[ZhegalkinExpr] = ZhegalkinAlgebra
+
+    // Convert all equations to Zhegalkin polynomials.
     val l = eqs.map {
-      case Equation(f1, f2, _, _) =>
-        val x = Zhegalkin.toZhegalkin(f1)
-        val y = Zhegalkin.toZhegalkin(f2)
-        (x, y)
+      case eq@Equation(f1, f2, _, _) =>
+        try {
+          val x = Zhegalkin.toZhegalkin(f1)
+          val y = Zhegalkin.toZhegalkin(f2)
+          (x, y)
+        } catch {
+          case m: TooComplexException =>
+            // The equation was too complex to translate into a Zhegalin polynomial. Mark it as failed and abort.
+            return Result.Err(List(eq.toTimeout(m.getMessage)))
+        }
     }
 
+    // Solve *ALL* equations via SVE and obtain the substitution.
     try {
-      // Solve *ALL* equations via SVE and obtain the substitution.
       val subst = SveAlgorithm.sveAll(l)
 
       // Reconstruct a set substitution.
