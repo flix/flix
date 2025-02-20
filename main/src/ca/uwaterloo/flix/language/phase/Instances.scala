@@ -41,7 +41,7 @@ object Instances {
   def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (TypedAst.Root, List[InstanceError]) = {
     implicit val sctx: SharedContext = SharedContext.mk()
     flix.phaseNew("Instances") {
-      val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances)(ParOps.parMapValueList2(_)(checkInstancesOfTrait(_, root)))
+      val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList2(_)(checkInstancesOfTrait(_, root)))
       val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
       (root.copy(instances = instances, traits = traits), sctx.errors.asScala.toList)
     }
