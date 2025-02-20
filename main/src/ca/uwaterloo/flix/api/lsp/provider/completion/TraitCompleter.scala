@@ -38,7 +38,7 @@ object TraitCompleter {
   }
 
   def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn, TraitUsageKind.Call)
+    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn, TraitUsageKind.Expr)
   }
 
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName, traitUsageKind: TraitUsageKind)(implicit root: TypedAst.Root): Iterable[Completion] = {
@@ -62,7 +62,7 @@ object TraitCompleter {
     */
   private def getTraitCompletions(trt: TypedAst.Trait, traitUsageKind: TraitUsageKind, ap: AnchorPosition, qualified: Boolean, inScope: Boolean): List[Completion] = {
     traitUsageKind match {
-      case TraitUsageKind.Call =>
+      case TraitUsageKind.Expr =>
         TraitCompletion(trt, ap, qualified = qualified, inScope = inScope, withTypeParameter = false) :: Nil
       case TraitUsageKind.Constraint =>
         TraitCompletion(trt, ap, qualified = qualified, inScope = inScope, withTypeParameter = true) :: Nil

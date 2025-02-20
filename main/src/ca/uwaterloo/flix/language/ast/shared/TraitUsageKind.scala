@@ -24,10 +24,10 @@ sealed trait TraitUsageKind
   */
 object TraitUsageKind {
   /**
-    * Represents a trait use in a call
+    * Represents a trait use in an expression
     * e.g. let res = E...
     */
-  case object Call extends TraitUsageKind
+  case object Expr extends TraitUsageKind
 
   /**
     * Represents a trait use in a constraint
