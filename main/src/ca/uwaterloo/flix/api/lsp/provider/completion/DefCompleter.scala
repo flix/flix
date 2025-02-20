@@ -16,9 +16,8 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
-import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.{fuzzyMatch, matchesQualifiedName}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
-import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
@@ -31,12 +30,12 @@ object DefCompleter {
   def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] ={
     if (err.qn.namespace.nonEmpty)
       root.defs.values.collect{
-        case decl if matchesDef(decl, err.qn, err.loc.source.name, qualified = true) =>
+        case decl if CompletionUtils.isAvailable(decl.spec) && CompletionUtils.matchesName(decl.sym, err.qn, qualified = true) =>
           DefCompletion(decl, err.ap, qualified = true, inScope = true)
       }
     else
       root.defs.values.collect{
-        case decl if matchesDef(decl, err.qn, err.loc.source.name, qualified = false) =>
+        case decl if CompletionUtils.isAvailable(decl.spec) && CompletionUtils.matchesName(decl.sym, err.qn, qualified = false) =>
           DefCompletion(decl, err.ap, qualified = false, inScope = inScope(decl, err.env))
       }
   }
@@ -54,19 +53,4 @@ object DefCompleter {
     val isRoot = decl.sym.namespace.isEmpty
     isRoot || isResolved
   }
-
-  /**
-    * Checks if the definition matches the QName.
-    * Names should match and the definition should be available.
-    */
-  private def matchesDef(decl: TypedAst.Def, qn: Name.QName, uri: String, qualified: Boolean): Boolean = {
-    val isPublic = decl.spec.mod.isPublic && !decl.spec.ann.isInternal
-    val isInFile = decl.sym.loc.source.name == uri
-    val isMatch = if (qualified)
-      matchesQualifiedName(decl.sym.namespace, decl.sym.name, qn)
-    else
-      fuzzyMatch(qn.ident.name, decl.sym.name)
-    isMatch && (isPublic || isInFile)
-  }
-
 }

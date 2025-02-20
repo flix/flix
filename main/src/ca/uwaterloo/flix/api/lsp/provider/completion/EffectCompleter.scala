@@ -23,12 +23,12 @@ object EffectCompleter {
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
       root.effects.values.collect{
-        case effect if matchesEffect(effect, qn, uri, qualified = true) =>
+        case effect if CompletionUtils.isAvailable(effect) && CompletionUtils.matchesName(effect.sym, qn, qualified = true) =>
           EffectCompletion(effect, ap, qualified = true, inScope = true)
       }
     else
       root.effects.values.collect({
-        case effect if matchesEffect(effect, qn, uri, qualified = false) =>
+        case effect if CompletionUtils.isAvailable(effect) && CompletionUtils.matchesName(effect.sym, qn, qualified = false) =>
           EffectCompletion(effect, ap, qualified = false, inScope = inScope(effect, env))
       })
   }
@@ -45,19 +45,5 @@ object EffectCompleter {
     })
     val isRoot = effect.sym.namespace.isEmpty
     isRoot || isResolved
-  }
-
-  /**
-    * Checks if the definition matches the QName.
-    * Names should match and the definition should be available.
-    */
-  private def matchesEffect(effect: TypedAst.Effect, qn: Name.QName, uri: String, qualified: Boolean): Boolean = {
-    val isPublic = effect.mod.isPublic && !effect.ann.isInternal
-    val isInFile = effect.sym.loc.source.name == uri
-    val isMatch = if (qualified) {
-      CompletionUtils.matchesQualifiedName(effect.sym.namespace, effect.sym.name, qn)
-    } else
-      CompletionUtils.fuzzyMatch(qn.ident.name, effect.sym.name)
-    isMatch && (isPublic || isInFile)
   }
 }

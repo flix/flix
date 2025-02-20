@@ -37,7 +37,7 @@ object SignatureCompleter {
     } else
       root.traits.values.flatMap(trt =>
         trt.sigs.collect {
-          case sig if matchesSig(trt, sig, qn, uri, qualified = false) =>
+          case sig if CompletionUtils.isAvailable(trt) && CompletionUtils.matchesName(sig.sym, qn, qualified = false) =>
             SigCompletion(sig, "", ap, qualified = false, inScope = inScope(sig, env))
         }
       )
@@ -51,7 +51,7 @@ object SignatureCompleter {
   private def fullyQualifiedCompletion(uri: String, ap: AnchorPosition, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
     root.traits.values.flatMap(trt =>
       trt.sigs.collect {
-        case sig if matchesSig(trt, sig, qn, uri, qualified = true) =>
+        case sig if CompletionUtils.isAvailable(trt) && CompletionUtils.matchesName(sig.sym, qn, qualified = true) =>
           SigCompletion(sig, "", ap, qualified = true, inScope = true)
       }
     )
@@ -76,7 +76,7 @@ object SignatureCompleter {
     for {
       trt <- root.traits.get(mkTraitSym(fullyQualifiedTrait)).toList
       sig <- trt.sigs
-      if matchesSig(trt, sig, qn, uri, qualified = false)
+      if CompletionUtils.isAvailable(trt) && CompletionUtils.matchesName(sig.sym, qn, qualified = false)
     } yield SigCompletion(sig, qn.namespace.toString, ap, qualified = true, inScope = true)
   }
 
@@ -88,20 +88,5 @@ object SignatureCompleter {
     })
     val isRoot = sig.sym.namespace.isEmpty
     isRoot || isResolved
-  }
-
-  /**
-    * Returns `true` if the given signature `sig` should be included in the suggestions.
-    *
-    * For visibility, we just need to check the parent trait.
-    */
-  private def matchesSig(trt: TypedAst.Trait, sig: TypedAst.Sig, qn: Name.QName, uri: String, qualified: Boolean): Boolean = {
-    val isPublic = trt.mod.isPublic && !trt.ann.isInternal
-    val isInFile = trt.loc.source.name == uri
-    val isMatch = if (qualified)
-      CompletionUtils.matchesQualifiedName(sig.sym.namespace, sig.sym.name, qn)
-    else
-      CompletionUtils.fuzzyMatch(qn.ident.name, sig.sym.name)
-    isMatch && (isPublic || isInFile)
   }
 }

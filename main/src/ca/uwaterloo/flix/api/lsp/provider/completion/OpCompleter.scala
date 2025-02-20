@@ -30,7 +30,7 @@ object OpCompleter {
     val uri = err.loc.source.name
     root.effects.values.flatMap(eff =>
       eff.ops.collect {
-        case op if matchesOp(eff, op, err.qn, uri, qualified = false) =>
+        case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, err.qn, qualified = false) =>
           OpCompletion(op, err.ap, qualified = false, inScope = true, isHandler = true)
       }
     )
@@ -47,14 +47,14 @@ object OpCompleter {
     if (qn.namespace.nonEmpty) {
       root.effects.values.flatMap(eff =>
         eff.ops.collect {
-          case op if matchesOp(eff, op, qn, uri, qualified = true) =>
+          case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = true) =>
             OpCompletion(op, ap, qualified = true, inScope = true, isHandler = false)
         }
       )
     } else {
       root.effects.values.flatMap(eff =>
         eff.ops.collect {
-          case op if matchesOp(eff, op, qn, uri, qualified = false) =>
+          case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false) =>
             OpCompletion(op, ap, qualified = false, inScope(op, env), isHandler = false)
         }
       )
@@ -69,20 +69,5 @@ object OpCompleter {
     })
     val isRoot = op.sym.namespace.isEmpty
     isRoot || isResolved
-  }
-
-  /**
-    * Returns `true` if the given effect operation `op` should be included in the suggestions.
-    *
-    * For visibility, we just need to check if the parent effect.
-    */
-  private def matchesOp(eff: TypedAst.Effect, op: TypedAst.Op, qn: Name.QName, uri: String, qualified: Boolean): Boolean = {
-    val isPublic = eff.mod.isPublic && !eff.ann.isInternal
-    val isInFile = eff.loc.source.name == uri
-    val isMatch = if (qualified)
-      CompletionUtils.matchesQualifiedName(op.sym.namespace, op.sym.name, qn)
-    else
-      CompletionUtils.fuzzyMatch(qn.ident.name, op.sym.name)
-    isMatch && (isPublic || isInFile)
   }
 }
