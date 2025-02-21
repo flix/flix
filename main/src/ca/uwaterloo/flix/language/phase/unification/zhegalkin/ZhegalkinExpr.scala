@@ -126,11 +126,7 @@ object ZhegalkinExpr {
           seen.add(t)
         }
       }
-
       val allTermsNonDup = seen.toList
-      if (allTermsNonDup.length > 1000) {
-        throw new TooComplexException("Number of Zhegalkin terms exceeds: 1000. Inference too complex.")
-      }
 
       // Merge coefficients: (c1 ∩ x1 ∩ x2) ⊕ (c2 ∩ x1 ∩ x2) = (c1 ∩ c2) ∩ x1 ∩ x2
       val termsGroupedByVarSet = allTermsNonDup.groupBy(_.vars).toList
