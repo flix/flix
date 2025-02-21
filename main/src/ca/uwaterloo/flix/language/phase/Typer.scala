@@ -87,6 +87,14 @@ object Typer {
       }.toSet
       val syms = syms0 ++ namespaces
 
+      val constructs_with_companion_module = traits.keys ++ enums.keys ++ structs.keys ++ effects.keys
+      // The companion modules, empty by default.
+      val companion_modules =
+        for {
+          sym <- constructs_with_companion_module
+          modSym = new Symbol.ModuleSym(sym.namespace :+ sym.name)
+        } yield modSym -> Iterable.empty
+
       val groups = syms.groupBy {
         case sym: Symbol.DefnSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
         case sym: Symbol.EnumSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
