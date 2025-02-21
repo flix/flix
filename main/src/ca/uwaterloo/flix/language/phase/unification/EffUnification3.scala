@@ -76,7 +76,7 @@ object EffUnification3 {
         }
         // Otherwise we fall through.
       } catch {
-        case InvalidType => // We fall through.
+        case InvalidType() => // We fall through.
       }
     }
 
@@ -93,7 +93,7 @@ object EffUnification3 {
         Result.Err(fromSetEquations(unsolvedEqns))
       }
     } catch {
-      case InvalidType =>
+      case InvalidType() =>
         // The effect equations are invalid.
         Result.Err(eqs)
     }
@@ -119,7 +119,7 @@ object EffUnification3 {
   /**
     * Translates `eq` into a equation of [[SetFormula]].
     *
-    * Throws [[InvalidType]] for types not convertible to [[SetFormula]].
+    * Throws [[InvalidType()]] for types not convertible to [[SetFormula]].
     */
   private def toEquation(eq: (Type, Type, SourceLocation), withSlack: Boolean)(implicit scope: Scope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): Equation = {
     val (tpe1, tpe2, loc) = eq
@@ -129,7 +129,7 @@ object EffUnification3 {
   /**
     * Returns `t` as a [[SetFormula]].
     *
-    * Throws [[InvalidType]] if `t` is not valid.
+    * Throws [[InvalidType()]] if `t` is not valid.
     */
   private def toSetFormula(t: Type)(implicit withSlack: Boolean, scope: Scope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): SetFormula = t match {
     case Type.Univ => SetFormula.Univ
@@ -202,7 +202,7 @@ object EffUnification3 {
 
     case Type.Alias(_, _, tpe, _) => toSetFormula(tpe)
 
-    case _ => throw InvalidType
+    case _ => throw InvalidType()
   }
 
   /** Returns [[Substitution]] where each mapping in `s` is converted to [[Type]]. */
@@ -343,26 +343,38 @@ object EffUnification3 {
     /** Represents an error type. */
     case class Error(id: Int) extends Atom
 
-    /** Returns the [[Atom]] representation of `t` or throws [[InvalidType]]. */
+    /** Returns the [[Atom]] representation of `t` or throws [[InvalidType()]]. */
     def fromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.Var(sym, _) => Atom.VarFlex(sym)
       case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
       case Type.Cst(TypeConstructor.Region(sym), _) => Atom.Region(sym)
-      case assoc@Type.AssocType(_, _, _, _) => assocFromType(assoc)
-      case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(action), _), tpe2, _) => Atom.RegionToEff(action, fromType(tpe2)) // MATT do we need to delegate like assocFromType?
-      case Type.GetEff(action, tpe, _) => Atom.GetEff(action, fromType(tpe))
+      case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) => Atom.Assoc(sym, fromNestedType(arg))
+      case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(action), _), tpe2, _) => Atom.RegionToEff(action, fromNestedType(tpe2))
+      case Type.GetEff(action, tpe, _) => Atom.GetEff(action, fromNestedType(tpe))
       case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
       case Type.Alias(_, _, tpe, _) => fromType(tpe)
-      case _ => throw InvalidType
+      case _ => throw InvalidType()
     }
 
-    /** Returns the [[Atom]] representation of `t` or throws [[InvalidType]]. */
+    /** Returns the [[Atom]] representation of `t` or throws [[InvalidType()]]. */
     private def assocFromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) => Atom.Assoc(sym, assocFromType(arg))
       case Type.Alias(_, _, tpe, _) => assocFromType(tpe)
-      case _ => throw InvalidType
+      case _ => throw InvalidType()
+    }
+
+    private def fromNestedType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
+      case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
+      case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
+      case Type.Cst(TypeConstructor.Region(sym), _) => Atom.Region(sym)
+      case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) => Atom.Assoc(sym, fromNestedType(arg))
+      case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(action), _), tpe2, _) => Atom.RegionToEff(action, fromNestedType(tpe2))
+      case Type.GetEff(action, tpe, _) => Atom.GetEff(action, fromNestedType(tpe))
+      case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
+      case Type.Alias(_, _, tpe, _) => fromNestedType(tpe)
+      case _ => throw InvalidType()
     }
 
     /**
@@ -442,15 +454,19 @@ object EffUnification3 {
     */
   def simplify(tpe: Type): Type = {
     // We can use an arbitrary scope and renv because we don't do any unification.
-    implicit val scope: Scope = Scope.Top
-    implicit val renv: RigidityEnv = RigidityEnv.empty
-    implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe))
+    try {
+      implicit val scope: Scope = Scope.Top
+      implicit val renv: RigidityEnv = RigidityEnv.empty
+      implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe))
 
-    val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
-    val z = Zhegalkin.toZhegalkin(f0)
-    val f1 = Zhegalkin.toSetFormula(z)
+        val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
+        val z = Zhegalkin.toZhegalkin(f0)
+        val f1 = Zhegalkin.toSetFormula(z)
 
-    fromSetFormula(f1, tpe.loc)
+        fromSetFormula(f1, tpe.loc)
+    } catch {
+      case InvalidType() => tpe
+    }
   }
 
   /**
@@ -459,6 +475,6 @@ object EffUnification3 {
     * This exception should not leak outside this phase - it should always be caught. It is used to
     * avoid having [[Option]] types on recursive functions.
     */
-  private case object InvalidType extends RuntimeException
+  private case class InvalidType() extends RuntimeException
 
 }
