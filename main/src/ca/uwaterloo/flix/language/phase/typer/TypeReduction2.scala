@@ -154,21 +154,6 @@ object TypeReduction2 {
             case _ => unresolved
           }
       }
-
-    case Type.GetEff(action, tpe, loc) =>
-      reduce(tpe, scope, renv) match {
-        case t@Type.Cst(TypeConstructor.Region(sym), _) => getEff(action, sym.prop, t, loc)
-        case t@Type.Cst(TypeConstructor.GenericRegion(prop), _) => getEff(action, prop, t, loc)
-        case t => Type.GetEff(action, t, loc)
-      }
-  }
-
-  // MATT docs
-  private def getEff(action: RegionAction, prop: RegionProperty, reg: Type, loc: SourceLocation): Type = (action, prop) match {
-    case (a, RegionProperty.Shared) => Type.mkUnion(Type.mkRegionToEff(Some(a), reg, loc), Type.Cst(TypeConstructor.Effect(Symbol.NonDet), loc), loc)
-    case (RegionAction.Lock, _) => Type.mkPure(loc)
-    case (a, RegionProperty.Default) => Type.mkRegionToEff(Some(a), reg, loc)
-    case (_, RegionProperty.LowFidelity) => Type.mkRegionToEff(None, reg, loc)
   }
 
   /** Tries to find a constructor of `clazz` that takes arguments of type `ts`. */
@@ -349,7 +334,6 @@ object TypeReduction2 {
     case Type.Apply(t1, t2, _) => isKnown(t1) && isKnown(t2)
     case Type.Alias(_, _, t, _) => isKnown(t)
     case Type.AssocType(_, _, _, _) => false
-    case Type.GetEff(_, _, _) => false
   }
 
   /** A lookup result of a Java field. */

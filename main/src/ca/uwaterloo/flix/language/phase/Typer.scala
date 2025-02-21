@@ -422,7 +422,6 @@ object Typer {
       case Type.JvmToType(tpe, _) => getAssocTypes(tpe)
       case Type.JvmToEff(tpe, _) => getAssocTypes(tpe)
       case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.flatMap(getAssocTypes)
-      case Type.GetEff(_, tpe, _) => getAssocTypes(tpe)
     }
 
     spec0 match {

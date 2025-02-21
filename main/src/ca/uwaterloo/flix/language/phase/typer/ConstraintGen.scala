@@ -509,7 +509,7 @@ object ConstraintGen {
       case Expr.ArrayLit(exps, exp, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Region, loc)
         val regionType = Type.mkRegionToStar(regionVar, loc)
-        val regionEff = Type.GetEff(RegionAction.Alloc, regionVar, loc)
+        val regionEff = Type.GetEff(RegionAction.Alloc, regionVar, loc) // MATT
         val (tpes, effs) = exps.map(visitExp).unzip
         val (tpe, eff) = visitExp(exp)
         c.expectType(expected = regionType, actual = tpe, exp.loc)

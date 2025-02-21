@@ -39,7 +39,6 @@ sealed trait UnkindedType {
     case t: UnkindedType.RestrictableEnum => t
     case t: UnkindedType.UnappliedAlias => t
     case t: UnkindedType.UnappliedAssocType => t
-    case t: UnkindedType.UnappliedGetEff => t
     case t: UnkindedType.CaseSet => t
     case UnkindedType.Apply(tpe1, tpe2, loc) => UnkindedType.Apply(tpe1.map(f), tpe2.map(f), loc)
     case UnkindedType.Arrow(eff, arity, loc) => UnkindedType.Arrow(eff.map(_.map(f)), arity, loc)
@@ -49,7 +48,6 @@ sealed trait UnkindedType {
     case UnkindedType.Ascribe(tpe, kind, loc) => UnkindedType.Ascribe(tpe.map(f), kind, loc)
     case UnkindedType.Alias(cst, args, tpe, loc) => UnkindedType.Alias(cst, args.map(_.map(f)), tpe.map(f), loc)
     case UnkindedType.AssocType(cst, arg, loc) => UnkindedType.AssocType(cst, arg.map(f), loc)
-    case UnkindedType.GetEff(action, tpe, loc) => UnkindedType.GetEff(action, tpe.map(f), loc)
     case t: UnkindedType.Error => t
   }
 
@@ -89,7 +87,6 @@ sealed trait UnkindedType {
     case UnkindedType.RestrictableEnum(_, _) => SortedSet.empty
     case UnkindedType.UnappliedAlias(_, _) => SortedSet.empty
     case UnkindedType.UnappliedAssocType(_, _) => SortedSet.empty
-    case UnkindedType.UnappliedGetEff(_, _) => SortedSet.empty
     case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.definiteTypeVars ++ tpe2.definiteTypeVars
     case UnkindedType.Arrow(eff, _, _) => eff.iterator.flatMap(_.definiteTypeVars).to(SortedSet)
     case UnkindedType.CaseSet(_, _) => SortedSet.empty
@@ -102,7 +99,6 @@ sealed trait UnkindedType {
     case UnkindedType.Alias(_, _, tpe, _) => tpe.definiteTypeVars
     // For associated types we cannot yet reduce, so we are conservative and say none.
     case UnkindedType.AssocType(_, _, _) => SortedSet.empty
-    case UnkindedType.GetEff(_, _, _) => SortedSet.empty
 
     case UnkindedType.Error(_) => SortedSet.empty
   }
@@ -170,13 +166,6 @@ object UnkindedType {
     override def hashCode(): Int = Objects.hash(sym)
   }
 
-  // MATT docs
-  case class GetEff(action: RegionAction, tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
-    override def equals(that: Any): Boolean = that match {
-      case GetEff(action2, tpe2, _) => action == action2 && tpe == tpe2
-    }
-  }
-
   /**
     * An unapplied alias.
     * Only exists temporarily in the Resolver until it's converted to an [[Alias]].
@@ -203,17 +192,6 @@ object UnkindedType {
     }
 
     override def hashCode(): Int = Objects.hash(sym)
-  }
-
-
-  // MATT docs
-  case class UnappliedGetEff(action: RegionAction, loc: SourceLocation) extends UnkindedType {
-    override def equals(that: Any): Boolean = that match {
-      case UnappliedGetEff(action2, _) => action == action2
-      case _ => false
-    }
-
-    override def hashCode(): Int = Objects.hash(action)
   }
 
   /**
@@ -568,10 +546,8 @@ object UnkindedType {
     case Ascribe(tpe, kind, loc) => Ascribe(eraseAliases(tpe), kind, loc)
     case Alias(_, _, tpe, _) => eraseAliases(tpe)
     case AssocType(cst, arg, loc) => AssocType(cst, eraseAliases(arg), loc) // TODO ASSOC-TYPES check that this is valid
-    case GetEff(action, tpe, loc) => GetEff(action, eraseAliases(tpe), loc)
     case tpe: UnkindedType.Error => tpe
     case UnappliedAlias(_, loc) => throw InternalCompilerException("unexpected unapplied alias", loc)
     case UnappliedAssocType(_, loc) => throw InternalCompilerException("unexpected unapplied associated type", loc)
-    case UnappliedGetEff(_, loc) => throw InternalCompilerException("unexpected unapplied GetEff", loc)
   }
 }

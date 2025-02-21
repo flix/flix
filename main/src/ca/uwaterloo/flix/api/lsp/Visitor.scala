@@ -703,7 +703,6 @@ object Visitor {
       case Type.JvmToType(t, _) => visitType(t)
       case Type.JvmToEff(t, _) => visitType(t)
       case Type.UnresolvedJvmType(_, _) => ()
-      case Type.GetEff(_, tpe, _) => visitType(tpe)
     }
   }
 

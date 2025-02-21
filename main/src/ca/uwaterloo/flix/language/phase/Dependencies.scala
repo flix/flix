@@ -536,7 +536,6 @@ object Dependencies {
     case Type.Cst(TypeConstructor.Struct(sym, _), loc) => addDependency(sym.loc, loc)
     case Type.Cst(_, _) => ()
     case Type.Var(_, _) => ()
-    case Type.GetEff(_, tpe, _) => visitType(tpe)
   }
 
   private def visitSymUse(use: SymUse)(implicit sctx: SharedContext): Unit = use match {

@@ -62,10 +62,6 @@ object InstanceCompleter {
             Type.AssocType(cst, args, kind, loc)
           }
 
-        case Type.GetEff(action, t0, loc) =>
-          val t = replaceText(oldSym, t0, newText)
-          Type.GetEff(action, t, loc)
-
         // Jvm types should not be exposed to the user.
         case t: Type.JvmToType => t
         case t: Type.JvmToEff => t

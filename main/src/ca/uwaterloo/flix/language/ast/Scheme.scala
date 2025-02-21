@@ -97,9 +97,6 @@ object Scheme {
 
       case Type.UnresolvedJvmType(member, loc) =>
         Type.UnresolvedJvmType(member.map(visitType), loc)
-
-      case Type.GetEff(action, tpe, loc) =>
-        Type.GetEff(action, visitType(tpe), loc)
     }
 
     val newBase = visitType(baseType)
