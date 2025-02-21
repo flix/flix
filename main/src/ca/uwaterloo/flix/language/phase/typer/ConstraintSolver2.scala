@@ -290,6 +290,8 @@ object ConstraintSolver2 {
   private def eliminateErrors(constr: TypeConstraint, progress: Progress): List[TypeConstraint] = constr match {
     case TypeConstraint.Equality(tpe1, tpe2, _) if isEliminable(tpe1) || isEliminable(tpe2) => Nil
 
+    case TypeConstraint.Conflicted(tpe1, tpe2, _) if isEliminable(tpe1) || isEliminable(tpe2) => Nil
+
     case TypeConstraint.Trait(_, tpe, _) if isEliminable(tpe) => Nil
 
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
