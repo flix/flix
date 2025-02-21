@@ -206,8 +206,7 @@ object ConstraintSolver2 {
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
       val nested = nested0.map(purifyEmptyRegion(_, progress))
       TypeConstraint.Purification(sym, eff1, eff2, prov, nested)
-    case c: TypeConstraint.Trait => c
-    case c: TypeConstraint.Equality => c
+    case c => c
   }
 
   /**
@@ -263,8 +262,7 @@ object ConstraintSolver2 {
       val nested = nested0.flatMap(eliminateIdentities(_, progress))
       List(TypeConstraint.Purification(sym, eff1, eff2, prov, nested))
 
-    case c: TypeConstraint.Trait =>
-      List(c)
+    case c => List(c)
   }
 
   /**
@@ -346,6 +344,7 @@ object ConstraintSolver2 {
   private def contextReduction(constr: TypeConstraint, progress: Progress)(implicit scope: Scope, renv0: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): List[TypeConstraint] = constr match {
     // Case 1: Non-trait constraint. Do nothing.
     case c: TypeConstraint.Equality => List(c)
+    case c: TypeConstraint.Conflicted => List(c)
 
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
       val nested = nested0.flatMap(contextReduction(_, progress)(scope.enter(sym), renv0, trenv, eqenv, flix))
@@ -536,6 +535,7 @@ object ConstraintSolver2 {
       TypeConstraint.Trait(sym, reduce(tpe, scope, renv)(progress, eqenv, flix), loc)
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested) =>
       TypeConstraint.Purification(sym, reduce(eff1, scope, renv)(progress, eqenv, flix), reduce(eff2, scope, renv)(progress, eqenv, flix), prov, nested.map(reduceTypes(_, progress)(scope.enter(sym), renv, eqenv, flix)))
+    case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
   }
 
   /**
