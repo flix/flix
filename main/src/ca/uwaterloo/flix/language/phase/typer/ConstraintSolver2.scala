@@ -446,12 +446,8 @@ object ConstraintSolver2 {
       case other => Right(other)
     }
 
-    val eqs = eqConstrs.map {
-      case TypeConstraint.Equality(tpe1, tpe2, prov) => (tpe1, tpe2, prov.loc)
-    }
-
     // First solve all the top-level constraints together
-    val (leftovers1, subst1) = EffUnification3.unifyAll(eqs, scope, renv) match {
+    val (leftovers1, subst1) = EffUnification3.unifyAll(eqConstrs, scope, renv) match {
       case Result.Ok(subst) =>
         // If we solved everything, then we can use the new substitution.
         // We only mark progress if there was something to solve.
@@ -461,11 +457,7 @@ object ConstraintSolver2 {
         (Nil, subst)
       case Result.Err(unsolved) =>
         // Otherwise we failed. Return the evidence of failure.
-        val newConstrs = unsolved.map {
-          // TODO need better provenance than match
-          case (tpe1, tpe2, loc) => TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(tpe1, tpe2, loc))
-        }
-        (newConstrs, Substitution.empty)
+        (unsolved, Substitution.empty)
     }
 
     val tree0 = SubstitutionTree.shallow(subst1)
