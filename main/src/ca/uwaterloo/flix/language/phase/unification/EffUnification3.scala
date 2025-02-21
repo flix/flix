@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
+import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin
 import ca.uwaterloo.flix.util.collection.SortedBimap
@@ -97,6 +98,7 @@ object EffUnification3 {
     } catch {
       case InvalidType =>
         // The effect equations are invalid.
+        // We don't call these conflicted because TypeReduction may make these valid later.
         Result.Err(eqs)
     }
   }
@@ -233,10 +235,15 @@ object EffUnification3 {
     */
   private def fromSetEquations(l: List[Equation])(implicit m: SortedBimap[Atom, Int]): List[TypeConstraint] =
     l.map {
-      case Equation(f1, f2, _, loc) =>
+      case Equation(f1, f2, status, loc) =>
         val t1 = fromSetFormula(f1, loc)
         val t2 = fromSetFormula(f2, loc)
-        TypeConstraint.Equality(t1, t2, Provenance.Match(t1, t2, loc))
+        val prov = status match {
+          case Status.Pending => Provenance.Match(t1, t2, loc)
+          case Status.Unsolvable => Provenance.Match(t1, t2, loc)
+          case Status.Timeout(msg) => Provenance.Timeout(msg, loc)
+        }
+        TypeConstraint.Conflicted(t1, t2, prov)
     }
 
   /**

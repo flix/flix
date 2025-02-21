@@ -148,6 +148,9 @@ object ConstraintSolverInterface {
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
       List(TypeError.MismatchedTypes(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
 
+    case TypeConstraint.Conflicted(_, _, Provenance.Timeout(msg, loc)) =>
+      List(TypeError.TooComplex(msg, loc))
+
     case TypeConstraint.Trait(sym, tpe, loc) => List(TypeError.MissingInstance(sym, subst(tpe), renv, loc))
 
     case TypeConstraint.Purification(sym, _, _, _, nested) =>
