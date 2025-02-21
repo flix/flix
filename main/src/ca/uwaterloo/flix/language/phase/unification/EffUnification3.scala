@@ -403,9 +403,9 @@ object EffUnification3 {
     * The type `tpe` may contain `Type.Error`.
     */
   def simplify(tpe: Type): Type = {
-    // The type is too complex to simplify via Zhegalkin polynomials.
+    // Check if type is too complex to simplify via Zhegalkin polynomials.
     if (tpe.typeVars.size > SetUnification.MaxVars) {
-      // We return the type unchanged.
+      // The type is too complex, we return it unchanged.
       return tpe
     }
 

@@ -29,7 +29,7 @@ object SetUnification {
   /**
    * The maximum number of variables an equation may contain before it is considered too complex.
    */
-  val MaxVars: Int = 14 // Up to 2^14 = 16384 terms per Zhegalkin polynomial.
+  val MaxVars: Int = 12 // Up to 2^12 = 4,096 terms per Zhegalkin polynomial.
 
   /**
     * Enable simple rewrite rules.
@@ -415,9 +415,9 @@ object SetUnification {
 
     // Return immediately if there is an equation that has too many variables.
     for (eq <- eqs) {
-      val vars = eq.f1.varsOf ++ eq.f2.varsOf
-      if (vars.size > MaxVars) {
-        return Result.Err(List(eq.toTimeout(s"Unification too complex: The equation contains ${vars.size} variables which exceeds the limit of $MaxVars.")))
+      val allVars = eq.f1.varsOf ++ eq.f2.varsOf
+      if (allVars.size > MaxVars) {
+        return Result.Err(List(eq.toTimeout(s"Unification too complex: The equation contains ${allVars.size} variables which exceeds the limit of $MaxVars.")))
       }
     }
 
