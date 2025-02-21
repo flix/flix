@@ -686,7 +686,7 @@ object Weeder2 {
       tree.children.headOption.flatMap {
         case token: Token =>
           token.text match {
-            case "%default" => Some(RegionFlavor.Default)
+            case "%default" => Some(RegionFlavor.HighFidelity)
             case "%lofi" => Some(RegionFlavor.LowFidelity)
             case "%shared" => Some(RegionFlavor.Shared)
             case _ => None // MATT add error
