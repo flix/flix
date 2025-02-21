@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
-import ca.uwaterloo.flix.language.ast.{Kind, RegionAction, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, RegionAction, RegionFlavor, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin
 import ca.uwaterloo.flix.util.collection.SortedBimap
@@ -286,7 +286,10 @@ object EffUnification3 {
       case (Atom.VarFlex(sym1), Atom.VarFlex(sym2)) => sym1.id - sym2.id
       case (Atom.VarRigid(sym1), Atom.VarRigid(sym2)) => sym1.id - sym2.id
       case (Atom.Eff(sym1), Atom.Eff(sym2)) => sym1.compare(sym2)
-      case (Atom.Region(sym1), Atom.Region(sym2)) => sym1.compare(sym2)
+      case (Atom.RegionId(sym1), Atom.RegionId(sym2)) => sym1.compare(sym2)
+      case (Atom.RegionIdToRegion(flav1, arg1), Atom.RegionIdToRegion(flav2, arg2)) =>
+        val flavCmp = flav1.compare(flav2)
+        if (flavCmp != 0) flavCmp else arg1.compare(arg2)
       case (Atom.Assoc(sym1, arg1), Atom.Assoc(sym2, arg2)) =>
         val symCmp = sym1.compare(sym2)
         if (symCmp != 0) symCmp else arg1.compare(arg2)
@@ -298,10 +301,11 @@ object EffUnification3 {
         def ordinal(a: Atom): Int = a match {
           case Atom.VarFlex(_) => 0
           case Atom.VarRigid(_) => 1
-          case Atom.Region(_) => 2
+          case Atom.RegionId(_) => 2
           case Atom.Eff(_) => 3
           case Atom.Assoc(_, _) => 4
           case Atom.RegionToEff(_, _) => 5
+          case Atom.RegionIdToRegion(_, _) => 6
           case Atom.Error(_) => 7
         }
 
@@ -322,8 +326,11 @@ object EffUnification3 {
     /** Represents an associated effect. */
     case class Assoc(sym: Symbol.AssocTypeSym, arg: Atom) extends Atom
 
-    /** Represents a region.  */
-    case class Region(sym: Symbol.RegionSym) extends Atom
+    /** Represents a region identifier.  */
+    case class RegionId(sym: Symbol.RegionSym) extends Atom
+
+    /** Represents a conversion from region ID to region */
+    case class RegionIdToRegion(flav: RegionFlavor, arg: Atom) extends Atom
 
     /** Represents a region converted to an effect. */
     case class RegionToEff(action: Option[RegionAction], arg: Atom) extends Atom
@@ -336,9 +343,10 @@ object EffUnification3 {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.Var(sym, _) => Atom.VarFlex(sym)
       case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
-      case Type.Cst(TypeConstructor.RegionId(sym), _) => Atom.Region(sym)
+      case Type.Cst(TypeConstructor.RegionId(sym), _) => Atom.RegionId(sym)
       case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) => Atom.Assoc(sym, fromNestedType(arg))
       case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(action), _), tpe2, _) => Atom.RegionToEff(action, fromNestedType(tpe2))
+      case Type.Apply(Type.Cst(TypeConstructor.RegionIdToRegion(action), _), tpe2, _) => Atom.RegionIdToRegion(action, fromNestedType(tpe2))
       case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
       case Type.Alias(_, _, tpe, _) => fromType(tpe)
       case _ => throw InvalidType()
@@ -355,9 +363,10 @@ object EffUnification3 {
     private def fromNestedType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
-      case Type.Cst(TypeConstructor.RegionId(sym), _) => Atom.Region(sym)
+      case Type.Cst(TypeConstructor.RegionId(sym), _) => Atom.RegionId(sym)
       case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) => Atom.Assoc(sym, fromNestedType(arg))
       case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(action), _), tpe2, _) => Atom.RegionToEff(action, fromNestedType(tpe2))
+      case Type.Apply(Type.Cst(TypeConstructor.RegionIdToRegion(flav), _), tpe2, _) => Atom.RegionIdToRegion(flav, fromNestedType(tpe2))
       case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
       case Type.Alias(_, _, tpe, _) => fromNestedType(tpe)
       case _ => throw InvalidType()
@@ -381,9 +390,10 @@ object EffUnification3 {
       case Type.Var(sym, _) if renv.isRigid(sym) => SortedSet(Atom.VarRigid(sym))
       case Type.Var(sym, _) => SortedSet(Atom.VarFlex(sym))
       case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(Atom.Eff(sym))
-      case Type.Cst(TypeConstructor.RegionId(sym), _) => SortedSet(Atom.Region(sym))
+      case Type.Cst(TypeConstructor.RegionId(sym), _) => SortedSet(Atom.RegionId(sym))
       case Type.Cst(TypeConstructor.Error(id, _), _) => SortedSet(Atom.Error(id))
       case regToEff@Type.Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), _, _) => SortedSet.from(getNestedAtoms(regToEff))
+      case regIdToRegion@Type.Apply(Type.Cst(TypeConstructor.RegionIdToRegion(_), _), _, _) => SortedSet.from(getNestedAtoms(regIdToRegion))
       case Type.Apply(tpe1, tpe2, _) => getAtoms(tpe1) ++ getAtoms(tpe2)
       case Type.Alias(_, _, tpe, _) => getAtoms(tpe)
       case assoc@Type.AssocType(_, _, _, _) => SortedSet.from(getNestedAtoms(assoc))
@@ -403,7 +413,9 @@ object EffUnification3 {
       case Type.Alias(_, _, tpe, _) => getNestedAtoms(tpe)
       case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(action), _), arg, _) =>
         getNestedAtoms(arg).map(Atom.RegionToEff(action, _))
-      case Type.Cst(TypeConstructor.RegionId(sym), _) => Some(Atom.Region(sym))
+      case Type.Apply(Type.Cst(TypeConstructor.RegionIdToRegion(action), _), arg, _) =>
+        getNestedAtoms(arg).map(Atom.RegionIdToRegion(action, _))
+      case Type.Cst(TypeConstructor.RegionId(sym), _) => Some(Atom.RegionId(sym))
       case _ => None
     }
 
@@ -413,7 +425,9 @@ object EffUnification3 {
       */
     def toType(atom: Atom, loc: SourceLocation)(implicit m: SortedBimap[Atom, Int]): Type = atom match {
       case Atom.Eff(sym) => Type.Cst(TypeConstructor.Effect(sym), loc)
-      case Atom.Region(sym) => Type.Cst(TypeConstructor.RegionId(sym), loc)
+      case Atom.RegionId(sym) => Type.Cst(TypeConstructor.RegionId(sym), loc)
+      case Atom.RegionIdToRegion(flav, arg0) =>
+        Type.Apply(Type.Cst(TypeConstructor.RegionIdToRegion(flav), loc), toType(arg0, loc), loc)
       case Atom.RegionToEff(action, arg0) =>
         Type.Apply(Type.Cst(TypeConstructor.RegionToEff(action), loc), toType(arg0, loc), loc)
       case Atom.VarRigid(sym) => Type.Var(sym, loc)
