@@ -824,7 +824,8 @@ object SemanticTokensProvider {
     case TypeConstructor.True => true
     case TypeConstructor.False => true
     case TypeConstructor.Effect(_) => true
-    case TypeConstructor.Region(_) => true
+    case TypeConstructor.RegionId(_) => true
+    case TypeConstructor.RegionIdToRegion(_) => true
     case TypeConstructor.RegionToStar => true
     case TypeConstructor.RegionToEff(_) => true
 

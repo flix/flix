@@ -70,6 +70,11 @@ object Kind {
   case object Eff extends Kind
 
   /**
+    * Represents the kind of region identifiers
+    */
+  case object RegionId extends Kind
+
+  /**
     * Represents the kind of regions.
     */
   case object Region extends Kind
@@ -161,6 +166,7 @@ object Kind {
     case WildCaseSet => false
     case Star => false
     case Eff => false
+    case RegionId => false
     case Region => false
     case Bool => false
     case RecordRow => false

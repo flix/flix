@@ -133,7 +133,7 @@ object Monomorpher {
       }
 
       // We map regions to generic regions
-      case Type.Cst(TypeConstructor.Region(sym), loc) =>
+      case Type.Cst(TypeConstructor.RegionId(sym), loc) =>
         Type.Cst(TypeConstructor.GenericRegion(sym.flav), loc)
 
       case cst@Type.Cst(_, _) =>
@@ -912,7 +912,7 @@ object Monomorpher {
     case Type.Pure => CofiniteSet.empty
     case Type.Cst(TypeConstructor.Effect(sym), _) =>
       CofiniteSet.mkSet(EffectOrRegion.Effect(sym))
-    case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), Type.Cst(TypeConstructor.Region(sym), _), _) => // MATT handle action
+    case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), Type.Cst(TypeConstructor.RegionId(sym), _), _) => // MATT handle action
       CofiniteSet.mkSet(EffectOrRegion.Region(sym.flav))
     case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), Type.Cst(TypeConstructor.GenericRegion(prop), _), _) => // MATT handle action
       CofiniteSet.mkSet(EffectOrRegion.Region(prop))
@@ -947,6 +947,7 @@ object Monomorpher {
     case Kind.Wild => Type.mkAnyType(tpe0.loc)
     case Kind.WildCaseSet => Type.mkAnyType(tpe0.loc)
     case Kind.Star => Type.mkAnyType(tpe0.loc)
+    case Kind.RegionId => Type.mkAnyType(tpe0.loc)
     case Kind.Region => Type.mkAnyType(tpe0.loc)
     case Kind.Eff =>
       // If an effect variable is free, we may assume its Pure due to the subst. lemma.

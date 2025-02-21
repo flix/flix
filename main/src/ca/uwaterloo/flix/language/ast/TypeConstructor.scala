@@ -458,10 +458,14 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represents a region.
+    * A type constructor that represents a region identifier.
     */
-  case class Region(sym: Symbol.RegionSym) extends TypeConstructor {
+  case class RegionId(sym: Symbol.RegionSym) extends TypeConstructor {
     def kind: Kind = Kind.Region
+  }
+
+  case class RegionIdToRegion(flav: RegionFlavor) extends TypeConstructor {
+    def kind: Kind = Kind.RegionId ->: Kind.Region
   }
 
   /**

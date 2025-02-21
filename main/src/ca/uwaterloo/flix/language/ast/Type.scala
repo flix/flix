@@ -1208,7 +1208,19 @@ object Type {
     * Returns a region type with the given symbol.
     */
   def mkRegion(sym: Symbol.RegionSym, loc: SourceLocation): Type = {
-    Type.Cst(TypeConstructor.Region(sym), loc)
+    Type.Cst(TypeConstructor.RegionId(sym), loc)
+  }
+
+  // MATT docs
+  def getEff(action: RegionAction, reg: Type, loc: SourceLocation): Type = {
+    val trtSym = new Symbol.TraitSym(Nil, "IsRegion", SourceLocation.Unknown)
+    val sym = action match {
+      case RegionAction.Alloc => new Symbol.AssocTypeSym(trtSym, "GetAlloc", loc)
+      case RegionAction.Read => new Symbol.AssocTypeSym(trtSym, "GetRead", loc)
+      case RegionAction.Write => new Symbol.AssocTypeSym(trtSym, "GetWrite", loc)
+      case RegionAction.Lock => new Symbol.AssocTypeSym(trtSym, "GetLock", loc)
+    }
+    Type.AssocType(AssocTypeSymUse(sym, loc), reg, Kind.Eff, loc)
   }
 
   /**
@@ -1386,7 +1398,7 @@ object Type {
     * Replaces the given region in the type with the Pure effect.
     */
   def purifyRegion(tpe0: Type, sym: Symbol.RegionSym): Type = tpe0 match {
-    case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), Cst(TypeConstructor.Region(sym1), _), _) if sym == sym1 =>
+    case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), Cst(TypeConstructor.RegionId(sym1), _), _) if sym == sym1 =>
       Type.Pure
     case t: Cst => t
     case t: Var => t

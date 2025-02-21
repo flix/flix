@@ -12,6 +12,7 @@ object KindPrinter {
     case Kind.Star => Type.AsIs("Type")
     case Kind.Eff => Type.AsIs("Eff")
     case Kind.Region => Type.AsIs("Region")
+    case Kind.RegionId => Type.AsIs("RegionId")
     case Kind.Bool => Type.AsIs("Bool")
     case Kind.RecordRow => Type.AsIs("RecordRow")
     case Kind.SchemaRow => Type.AsIs("SchemaRow")

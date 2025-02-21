@@ -624,7 +624,8 @@ object SimpleType {
           }
 
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
-        case TypeConstructor.Region(sym) => mkApply(SimpleType.Region(sym.text), t.typeArguments.map(visit))
+        case TypeConstructor.RegionId(sym) => mkApply(SimpleType.Region(sym.text), t.typeArguments.map(visit))
+        case TypeConstructor.RegionIdToRegion(flav) => mkApply(SimpleType.Name(flav.toString), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(RegionToStar, t.typeArguments.map(visit))
         case TypeConstructor.RegionToEff(action) => mkApply(SimpleType.Name(action.map(_.toString).getOrElse("Heap")), t.typeArguments.map(visit))
         case TypeConstructor.RegionWithoutRegion => mkApply(RegionWithoutRegion, t.typeArguments.map(visit))

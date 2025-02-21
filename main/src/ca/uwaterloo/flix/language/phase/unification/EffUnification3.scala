@@ -158,7 +158,7 @@ object EffUnification3 {
       case Some(x) => SetFormula.mkElemSet(x)
     }
 
-    case tpe@Type.Cst(TypeConstructor.Region(_), _) => m.getForward(Atom.fromType(tpe)) match {
+    case tpe@Type.Cst(TypeConstructor.RegionId(_), _) => m.getForward(Atom.fromType(tpe)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
       case Some(x) => SetFormula.mkElemSet(x)
     }
@@ -336,7 +336,7 @@ object EffUnification3 {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.Var(sym, _) => Atom.VarFlex(sym)
       case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
-      case Type.Cst(TypeConstructor.Region(sym), _) => Atom.Region(sym)
+      case Type.Cst(TypeConstructor.RegionId(sym), _) => Atom.Region(sym)
       case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) => Atom.Assoc(sym, fromNestedType(arg))
       case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(action), _), tpe2, _) => Atom.RegionToEff(action, fromNestedType(tpe2))
       case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
@@ -355,7 +355,7 @@ object EffUnification3 {
     private def fromNestedType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
-      case Type.Cst(TypeConstructor.Region(sym), _) => Atom.Region(sym)
+      case Type.Cst(TypeConstructor.RegionId(sym), _) => Atom.Region(sym)
       case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) => Atom.Assoc(sym, fromNestedType(arg))
       case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(action), _), tpe2, _) => Atom.RegionToEff(action, fromNestedType(tpe2))
       case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
@@ -381,7 +381,7 @@ object EffUnification3 {
       case Type.Var(sym, _) if renv.isRigid(sym) => SortedSet(Atom.VarRigid(sym))
       case Type.Var(sym, _) => SortedSet(Atom.VarFlex(sym))
       case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(Atom.Eff(sym))
-      case Type.Cst(TypeConstructor.Region(sym), _) => SortedSet(Atom.Region(sym))
+      case Type.Cst(TypeConstructor.RegionId(sym), _) => SortedSet(Atom.Region(sym))
       case Type.Cst(TypeConstructor.Error(id, _), _) => SortedSet(Atom.Error(id))
       case regToEff@Type.Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), _, _) => SortedSet.from(getNestedAtoms(regToEff))
       case Type.Apply(tpe1, tpe2, _) => getAtoms(tpe1) ++ getAtoms(tpe2)
@@ -403,7 +403,7 @@ object EffUnification3 {
       case Type.Alias(_, _, tpe, _) => getNestedAtoms(tpe)
       case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(action), _), arg, _) =>
         getNestedAtoms(arg).map(Atom.RegionToEff(action, _))
-      case Type.Cst(TypeConstructor.Region(sym), _) => Some(Atom.Region(sym))
+      case Type.Cst(TypeConstructor.RegionId(sym), _) => Some(Atom.Region(sym))
       case _ => None
     }
 
@@ -413,7 +413,7 @@ object EffUnification3 {
       */
     def toType(atom: Atom, loc: SourceLocation)(implicit m: SortedBimap[Atom, Int]): Type = atom match {
       case Atom.Eff(sym) => Type.Cst(TypeConstructor.Effect(sym), loc)
-      case Atom.Region(sym) => Type.Cst(TypeConstructor.Region(sym), loc)
+      case Atom.Region(sym) => Type.Cst(TypeConstructor.RegionId(sym), loc)
       case Atom.RegionToEff(action, arg0) =>
         Type.Apply(Type.Cst(TypeConstructor.RegionToEff(action), loc), toType(arg0, loc), loc)
       case Atom.VarRigid(sym) => Type.Var(sym, loc)
