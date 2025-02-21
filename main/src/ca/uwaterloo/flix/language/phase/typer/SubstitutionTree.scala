@@ -63,6 +63,16 @@ class SubstitutionTree private(val root: Substitution, val branches: Map[Symbol.
         // We use the root as a fallback (as all branches are supersets of root)
         val subtree = branches.getOrElse(sym, this)
         TypeConstraint.Purification(sym, root(eff1), subtree(eff2), prov, nested.map(subtree.apply))
+
+      case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
+        // Check whether the substitution has to be applied.
+        val t1 = if (tpe1.typeVars.isEmpty) tpe1 else root(tpe1)
+        val t2 = if (tpe2.typeVars.isEmpty) tpe2 else root(tpe2)
+        // Performance: Reuse this, if possible.
+        if ((t1 eq tpe1) && (t2 eq tpe2))
+          constr
+        else
+          TypeConstraint.Conflicted(t1, t2, prov)
     }
   }
 

@@ -129,6 +129,25 @@ object ConstraintSolverInterface {
     case TypeConstraint.Equality(tpe1, tpe2, prov) =>
       List(TypeError.MismatchedTypes(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
 
+    // TODO We have simply duplicated equality here.
+    // TODO We should establish invariants on conflicted/equality cases.
+    case TypeConstraint.Conflicted(Type.UnresolvedJvmType(member, _), _, prov) =>
+      List(mkErrorFromUnresolvedJvmMember(member, renv, subst, prov.loc))
+    case TypeConstraint.Conflicted(_, Type.UnresolvedJvmType(member, _), prov) =>
+      List(mkErrorFromUnresolvedJvmMember(member, renv, subst, prov.loc))
+
+    case TypeConstraint.Conflicted(_, _, Provenance.ExpectType(expected, actual, loc)) =>
+      List(TypeError.UnexpectedType(expected = subst(expected), inferred = subst(actual), renv, loc))
+
+    case TypeConstraint.Conflicted(_, _, Provenance.ExpectArgument(expected, actual, sym, num, loc)) =>
+      List(TypeError.UnexpectedArg(sym, num, expected = subst(expected), actual = subst(actual), renv, loc))
+
+    case TypeConstraint.Conflicted(tpe1, tpe2, Provenance.Match(baseTpe1, baseTpe2, loc)) =>
+      List(TypeError.MismatchedTypes(subst(baseTpe1), subst(baseTpe2), tpe1, tpe2, renv, loc))
+
+    case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
+      List(TypeError.MismatchedTypes(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
+
     case TypeConstraint.Trait(sym, tpe, loc) => List(TypeError.MissingInstance(sym, subst(tpe), renv, loc))
 
     case TypeConstraint.Purification(sym, _, _, _, nested) =>

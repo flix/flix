@@ -30,12 +30,14 @@ sealed trait TypeConstraint {
     case TypeConstraint.Equality(tpe1, tpe2, _) => tpe1.size + tpe2.size
     case TypeConstraint.Trait(_, tpe, _) => tpe.size
     case TypeConstraint.Purification(_, eff1, eff2, _, nested) => eff1.size + eff2.size + nested.map(_.size).sum
+    case TypeConstraint.Conflicted(tpe1, tpe2, _) => tpe1.size + tpe2.size
   }
 
   override def toString: String = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => s"$tpe1 ~ $tpe2"
     case TypeConstraint.Trait(sym, tpe, _) => s"$sym[$tpe]"
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
+    case TypeConstraint.Conflicted(tpe1, tpe2, _) => s"$tpe1 ≁ $tpe2"
   }
 
   def loc: SourceLocation
@@ -75,6 +77,13 @@ object TypeConstraint {
     * }}}
     */
   case class Purification(sym: Symbol.RegionSym, eff1: Type, eff2: Type, prov: Provenance, nested: List[TypeConstraint]) extends TypeConstraint {
+    def loc: SourceLocation = prov.loc
+  }
+
+  /**
+    * A type constraint indicating that `tpe1` and `tpe2` cannot be unified.
+    */
+  case class Conflicted(tpe1: Type, tpe2: Type, prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 
