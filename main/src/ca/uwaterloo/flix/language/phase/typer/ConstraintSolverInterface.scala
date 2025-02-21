@@ -145,6 +145,9 @@ object ConstraintSolverInterface {
     case TypeConstraint.Conflicted(tpe1, tpe2, Provenance.Match(baseTpe1, baseTpe2, loc)) =>
       List(TypeError.MismatchedTypes(subst(baseTpe1), subst(baseTpe2), tpe1, tpe2, renv, loc))
 
+    case TypeConstraint.Conflicted(_, _, Provenance.Timeout(msg, loc)) =>
+      List(TypeError.TooComplex(msg, loc))
+
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
       List(TypeError.MismatchedTypes(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
 

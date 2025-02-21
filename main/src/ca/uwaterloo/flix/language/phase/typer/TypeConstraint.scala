@@ -112,5 +112,11 @@ object TypeConstraint {
       * The constraint indicates that the types must match.
       */
     case class Match(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Provenance
+
+    /**
+      * Indicates the conflict arose from a timeout
+      */
+    // TODO this is an abuse of provenance. We should instead have a separate "conflict reason" type.
+    case class Timeout(msg: String, loc: SourceLocation) extends Provenance
   }
 }
