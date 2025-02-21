@@ -504,7 +504,7 @@ object TypeConstructor {
     * A region after monomorphization is reduced to its property.
     */
   @IntroducedBy(Monomorpher.getClass)
-  case class GenericRegion(prop: RegionProperty) extends TypeConstructor {
+  case class GenericRegion(flav: RegionFlavor) extends TypeConstructor {
     def kind: Kind = Kind.Region
   }
 

@@ -551,7 +551,7 @@ object Desugar {
 
     case WeededAst.Expr.Scope(prop, ident, exp, loc) => // MATT propogate prop
       val e = visitExp(exp)
-      Expr.Scope(prop.getOrElse(RegionProperty.Default), ident, e, loc)
+      Expr.Scope(prop.getOrElse(RegionFlavor.Default), ident, e, loc)
 
     case WeededAst.Expr.Match(exp, rules, loc) =>
       val e = visitExp(exp)
@@ -1127,7 +1127,7 @@ object Desugar {
         DesugaredAst.Expr.Match(e1, List(matchRule), loc1.asSynthetic)
     }
 
-    val scope = DesugaredAst.Expr.Scope(RegionProperty.Default, regIdent, foreachExp, loc0) // MATT using default region prop here
+    val scope = DesugaredAst.Expr.Scope(RegionFlavor.Default, regIdent, foreachExp, loc0) // MATT using default region prop here
 
     // We add an ascription to Unit because inference across region boundaries is limited.
     DesugaredAst.Expr.Ascribe(scope, Some(DesugaredAst.Type.Unit(loc0.asSynthetic)), None, loc0.asSynthetic)
@@ -1260,7 +1260,7 @@ object Desugar {
     val resultExp = mkApplyFqn(fqnCollect, List(loop), loc0)
 
     // Wrap in region
-    DesugaredAst.Expr.Scope(RegionProperty.Default, regionIdent, resultExp, loc0) // MATT using default region prop here
+    DesugaredAst.Expr.Scope(RegionFlavor.Default, regionIdent, resultExp, loc0) // MATT using default region prop here
   }
 
   /**

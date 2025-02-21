@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{ChangeSet, Name, ReadAst, RegionProperty, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, Name, ReadAst, RegionFlavor, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.WeederError
@@ -676,19 +676,19 @@ object Weeder2 {
     }
 
     // MATT docs
-    def pickRegionTagOpt(tree: Tree)(implicit sctx: SharedContext): Option[RegionProperty] = {
+    def pickRegionTagOpt(tree: Tree)(implicit sctx: SharedContext): Option[RegionFlavor] = {
       val optTag = tryPick(TreeKind.RegionTag, tree)
       optTag.flatMap(tokenToRegionTag)
     }
 
     // MATT docs
-    private def tokenToRegionTag(tree: Tree)(implicit sctx: SharedContext): Option[RegionProperty] = {
+    private def tokenToRegionTag(tree: Tree)(implicit sctx: SharedContext): Option[RegionFlavor] = {
       tree.children.headOption.flatMap {
         case token: Token =>
           token.text match {
-            case "%default" => Some(RegionProperty.Default)
-            case "%lofi" => Some(RegionProperty.LowFidelity)
-            case "%shared" => Some(RegionProperty.Shared)
+            case "%default" => Some(RegionFlavor.Default)
+            case "%lofi" => Some(RegionFlavor.LowFidelity)
+            case "%shared" => Some(RegionFlavor.Shared)
             case _ => None // MATT add error
           }
         case _ => None

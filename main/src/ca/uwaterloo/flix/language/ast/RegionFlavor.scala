@@ -16,24 +16,24 @@
 package ca.uwaterloo.flix.language.ast
 
 // MATT docs
-sealed trait RegionProperty extends Ordered[RegionProperty] {
-  override def compare(that: RegionProperty): Int = (this, that) match {
-    case (RegionProperty.Default, RegionProperty.Default) => 0
-    case (RegionProperty.LowFidelity, RegionProperty.LowFidelity) => 0
-    case (RegionProperty.Shared, RegionProperty.Shared) => 0
+sealed trait RegionFlavor extends Ordered[RegionFlavor] {
+  override def compare(that: RegionFlavor): Int = (this, that) match {
+    case (RegionFlavor.Default, RegionFlavor.Default) => 0
+    case (RegionFlavor.LowFidelity, RegionFlavor.LowFidelity) => 0
+    case (RegionFlavor.Shared, RegionFlavor.Shared) => 0
     case _ =>
-      def ordinal(x: RegionProperty): Int = x match {
-        case RegionProperty.Default => 0
-        case RegionProperty.LowFidelity => 1
-        case RegionProperty.Shared => 2
+      def ordinal(x: RegionFlavor): Int = x match {
+        case RegionFlavor.Default => 0
+        case RegionFlavor.LowFidelity => 1
+        case RegionFlavor.Shared => 2
       }
 
       ordinal(this).compare(ordinal(that))
   }
 }
 
-object RegionProperty {
-  case object Default extends RegionProperty
-  case object LowFidelity extends RegionProperty
-  case object Shared extends RegionProperty
+object RegionFlavor {
+  case object Default extends RegionFlavor
+  case object LowFidelity extends RegionFlavor
+  case object Shared extends RegionFlavor
 }

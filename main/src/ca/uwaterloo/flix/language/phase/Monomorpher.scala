@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
-import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RegionAction, RegionProperty, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RegionAction, RegionFlavor, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
@@ -134,7 +134,7 @@ object Monomorpher {
 
       // We map regions to generic regions
       case Type.Cst(TypeConstructor.Region(sym), loc) =>
-        Type.Cst(TypeConstructor.GenericRegion(sym.prop), loc)
+        Type.Cst(TypeConstructor.GenericRegion(sym.flav), loc)
 
       case cst@Type.Cst(_, _) =>
         // Maintain and exploit reference equality for performance.
@@ -913,7 +913,7 @@ object Monomorpher {
     case Type.Cst(TypeConstructor.Effect(sym), _) =>
       CofiniteSet.mkSet(EffectOrRegion.Effect(sym))
     case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), Type.Cst(TypeConstructor.Region(sym), _), _) => // MATT handle action
-      CofiniteSet.mkSet(EffectOrRegion.Region(sym.prop))
+      CofiniteSet.mkSet(EffectOrRegion.Region(sym.flav))
     case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), Type.Cst(TypeConstructor.GenericRegion(prop), _), _) => // MATT handle action
       CofiniteSet.mkSet(EffectOrRegion.Region(prop))
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _) =>
@@ -989,6 +989,6 @@ object Monomorpher {
   private object EffectOrRegion {
     case class Effect(sym: Symbol.EffectSym) extends EffectOrRegion
 
-    case class Region(prop: RegionProperty) extends EffectOrRegion
+    case class Region(flav: RegionFlavor) extends EffectOrRegion
   }
 }
