@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{TooComplexException, Zhegalkin}
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin
 import ca.uwaterloo.flix.util.collection.SortedBimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -407,7 +407,13 @@ object EffUnification3 {
     *
     * The type `tpe` may contain `Type.Error`.
     */
-  def simplify(tpe: Type): Type = try {
+  def simplify(tpe: Type): Type = {
+    // Check if type is too complex to simplify via Zhegalkin polynomials.
+    if (tpe.typeVars.size > SetUnification.MaxVars) {
+      // The type is too complex, we return it unchanged.
+      return tpe
+    }
+
     // We can use an arbitrary scope and renv because we don't do any unification.
     implicit val scope: Scope = Scope.Top
     implicit val renv: RigidityEnv = RigidityEnv.empty
@@ -418,10 +424,6 @@ object EffUnification3 {
     val f1 = Zhegalkin.toSetFormula(z)
 
     fromSetFormula(f1, tpe.loc)
-  } catch {
-    case _: TooComplexException =>
-      // The effect is too complex to represent as a Zhegalkin polynomial, so we return it as-is.
-      tpe
   }
 
   /**
