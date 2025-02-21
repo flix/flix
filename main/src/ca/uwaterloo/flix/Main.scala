@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.Main.Command.PlainLsp
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZheglakinPerf
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
 import ca.uwaterloo.flix.util.Validation.flatMapN
@@ -319,7 +319,7 @@ object Main {
           CompilerMemory.run(options)
 
         case Command.Zhegalkin =>
-          ZheglakinPerf.run(options.XPerfN)
+          ZhegalkinPerf.run(options.XPerfN)
 
       }
     }
