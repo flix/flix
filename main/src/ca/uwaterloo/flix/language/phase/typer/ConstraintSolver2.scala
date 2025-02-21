@@ -536,6 +536,7 @@ object ConstraintSolver2 {
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested) =>
       TypeConstraint.Purification(sym, reduce(eff1, scope, renv)(progress, eqenv, flix), reduce(eff2, scope, renv)(progress, eqenv, flix), prov, nested.map(reduceTypes(_, progress)(scope.enter(sym), renv, eqenv, flix)))
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
+      TypeConstraint.Conflicted(reduce(tpe1, scope, renv)(progress, eqenv, flix), reduce(tpe2, scope, renv)(progress, eqenv, flix), prov)
   }
 
   /**
@@ -561,15 +562,13 @@ object ConstraintSolver2 {
       progress.markProgress()
       (Nil, SubstitutionTree.singleton(sym, tpe1))
 
-    case c: TypeConstraint.Equality => (List(c), SubstitutionTree.empty)
-
-    case c: TypeConstraint.Trait => (List(c), SubstitutionTree.empty)
-
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
       val (nested, branch) = foldSubstitution(nested0)(makeSubstitution(_, progress)(scope.enter(sym), renv))
       val c = TypeConstraint.Purification(sym, eff1, eff2, prov, nested)
       val tree = SubstitutionTree.oneBranch(sym, branch)
       (List(c), tree)
+
+    case c => (List(c), SubstitutionTree.empty)
   }
 
   /**
