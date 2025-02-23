@@ -1,7 +1,8 @@
 # Changelog
 
 Version 0.58.0:
-- Added support for plain LSP (thanks Chenhao!)
+- Compiler: Added support for plain LSP (thanks Chenhao!)
+- Compiler: Significantly improved performance of type inference (thanks Magnus!)
 
 Version 0.57.1:
 - Compiler: Extend list of semantic tokens (thanks Chenhao!)
