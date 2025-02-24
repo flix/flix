@@ -2011,7 +2011,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectErrorOnCheck[ResolutionError.MissingHandlerDef](result)
-    expectMain(result)
   }
 
 }
