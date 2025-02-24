@@ -657,10 +657,12 @@ object ResolutionError {
     * Undefined Effect Error.
     *
     * @param qn  the unresolved effect.
+    * @param ap  then anchor position.
     * @param ns  the current namespace.
+    * @param env the local scope.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedEffect(qn: Name.QName, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedEffect(qn: Name.QName, ap: AnchorPosition, env: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined effect '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
