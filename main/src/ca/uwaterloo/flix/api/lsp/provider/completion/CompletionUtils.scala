@@ -17,10 +17,10 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
 import ca.uwaterloo.flix.language.ast.TypedAst.Decl
-import ca.uwaterloo.flix.language.ast.shared.{LocalScope, QualifiedSym, Resolution}
+import ca.uwaterloo.flix.language.ast.shared.{LocalScope, QualifiedSym, Resolution, Scope, VarText}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
 import scala.annotation.tailrec
@@ -269,6 +269,45 @@ object CompletionUtils {
     * Checks if the enum of the given symbol is public.
     */
   def isAvailable(enumMap: Symbol.EnumSym)(implicit root: TypedAst.Root): Boolean = root.enums.get(enumMap).exists(isAvailable)
+
+  /**
+    * Replaces the given symbol with a variable named by the given `newText`.
+    */
+  private def replaceText(oldSym: Symbol, tpe: Type, newText: String)(implicit flix: Flix): Type = {
+    implicit val scope: Scope = Scope.Top
+    tpe match {
+      case Type.Var(sym, loc) if oldSym == sym => Type.Var(sym.withText(VarText.SourceText(newText)), loc)
+      case Type.Var(_, _) => tpe
+      case Type.Cst(_, _) => tpe
+
+      case Type.Apply(tpe1, tpe2, loc) =>
+        val t1 = replaceText(oldSym, tpe1, newText)
+        val t2 = replaceText(oldSym, tpe2, newText)
+        Type.Apply(t1, t2, loc)
+
+      case Type.Alias(cst, args0, tpe0, loc) =>
+        if (oldSym == cst.sym) {
+          Type.freshVar(Kind.Star, loc, text = VarText.SourceText(newText))
+        } else {
+          val args = args0.map(replaceText(oldSym, _, newText))
+          val t = replaceText(oldSym, tpe0, newText)
+          Type.Alias(cst, args, t, loc)
+        }
+
+      case Type.AssocType(cst, args0, kind, loc) =>
+        if (oldSym == cst.sym) {
+          Type.freshVar(Kind.Star, loc, text = VarText.SourceText(newText))
+        } else {
+          val args = args0.map(replaceText(oldSym, _, newText))
+          Type.AssocType(cst, args, kind, loc)
+        }
+
+      // Jvm types should not be exposed to the user.
+      case t: Type.JvmToType => t
+      case t: Type.JvmToEff => t
+      case t: Type.UnresolvedJvmType => t
+    }
+  }
 
   /**
     * Checks if the sym and the given qualified name matches.

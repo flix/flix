@@ -474,18 +474,6 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.InstanceCompletion(trt, completion) =>
-      val traitSym = trt.sym
-      CompletionItem(
-        label            = s"$traitSym[...]",
-        sortText         = Priority.toSortText(Priority.Highest, traitSym.toString),
-        textEdit         = TextEdit(context.range, completion),
-        detail           = Some(CompletionUtils.fmtTrait(trt)),
-        documentation    = Some(trt.doc.text),
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind             = CompletionItemKind.Snippet
-      )
-
     case Completion.UseCompletion(name, kind) =>
       CompletionItem(
         label         = name,
