@@ -1998,12 +1998,16 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("ResolutionError.MissingHandlerDef.03") {
     val input =
       """
-        |def foo(): Bool =
-        |    let result = run {
-        |        mutual1(10)
-        |    } with handler AskTell ;
-        |    Assert.eq(Some(84), result)
-        |def main(): Int32 = 123
+        |eff E {
+        |    def op1(): Unit
+        |    def op2(): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run {
+        |      E.op1()
+        |    } with handler E
+        |}
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectErrorOnCheck[ResolutionError.MissingHandlerDef](result)
