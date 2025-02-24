@@ -1018,12 +1018,12 @@ object Lexer {
   private def acceptRegionTag()(implicit s: State): TokenKind = {
     while (!eof()) {
       if (!peek().isLetter) {
-        return TokenKind.RegionTag
+        return TokenKind.RegionFlavor
       } else {
         advance()
       }
     }
-    TokenKind.RegionTag
+    TokenKind.RegionFlavor
   }
 
   /**

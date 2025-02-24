@@ -549,9 +549,9 @@ object Desugar {
       val e2 = visitExp(exp2)
       Expr.LocalDef(ident, fps, e1, e2, loc)
 
-    case WeededAst.Expr.Scope(prop, ident, exp, loc) => // MATT propogate prop
+    case WeededAst.Expr.Scope(flav, ident, exp, loc) =>
       val e = visitExp(exp)
-      Expr.Scope(prop.getOrElse(RegionFlavor.HighFidelity), ident, e, loc)
+      Expr.Scope(flav.getOrElse(RegionFlavor.LowFidelity), ident, e, loc)
 
     case WeededAst.Expr.Match(exp, rules, loc) =>
       val e = visitExp(exp)

@@ -1322,12 +1322,12 @@ object Parser2 {
       close(mark, TreeKind.AnnotationList)
     }
 
-    def regionTagOpt()(implicit s: State): Mark.Closed = { // MATT maybe move out of Decl
+    def regionFlavorOpt()(implicit s: State): Mark.Closed = { // MATT maybe move out of Decl
       val mark = open()
-      if (at(TokenKind.RegionTag) && !eof()) {
+      if (at(TokenKind.RegionFlavor) && !eof()) {
         advance()
       }
-      close(mark, TreeKind.RegionTag)
+      close(mark, TreeKind.RegionFlavor)
     }
 
     def docComment()(implicit s: State): Mark.Closed = {
@@ -1913,7 +1913,7 @@ object Parser2 {
       assert(at(TokenKind.KeywordRegion))
       val mark = open()
       expect(TokenKind.KeywordRegion, SyntacticContext.Expr.OtherExpr)
-      Decl.regionTagOpt()
+      Decl.regionFlavorOpt()
       nameUnqualified(NAME_VARIABLE, SyntacticContext.Expr.OtherExpr)
       if (at(TokenKind.CurlyL)) {
         block()

@@ -114,7 +114,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordQuery => "'query'"
       case TokenKind.KeywordRedef => "'redef'"
       case TokenKind.KeywordRegion => "'region'"
-      case TokenKind.RegionTag => "'region tag'"
+      case TokenKind.RegionFlavor => "'region tag'"
       case TokenKind.KeywordRestrictable => "'restrictable'"
       case TokenKind.KeywordRun => "'run'"
       case TokenKind.KeywordRvadd => "'rvadd'"
@@ -370,7 +370,7 @@ sealed trait TokenKind {
          | TokenKind.ParenL
          | TokenKind.ParenR
          | TokenKind.Plus
-         | TokenKind.RegionTag
+         | TokenKind.RegionFlavor
          | TokenKind.Semi
          | TokenKind.SetHash
          | TokenKind.Slash
@@ -631,7 +631,7 @@ sealed trait TokenKind {
          | TokenKind.LiteralDebugStringR
          | TokenKind.LiteralStringInterpolationR
          | TokenKind.ParenR
-         | TokenKind.RegionTag
+         | TokenKind.RegionFlavor
          | TokenKind.Semi
          | TokenKind.Slash
          | TokenKind.Star
@@ -1088,7 +1088,7 @@ object TokenKind {
 
   case object Plus extends TokenKind
 
-  case object RegionTag extends TokenKind
+  case object RegionFlavor extends TokenKind
 
   case object Semi extends TokenKind
 

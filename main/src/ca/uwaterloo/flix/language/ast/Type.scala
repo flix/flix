@@ -1207,8 +1207,13 @@ object Type {
   /**
     * Returns a region type with the given symbol.
     */
-  def mkRegion(sym: Symbol.RegionSym, loc: SourceLocation): Type = {
+  def mkRegionId(sym: Symbol.RegionSym, loc: SourceLocation): Type = {
     Type.Cst(TypeConstructor.RegionId(sym), loc)
+  }
+
+  // MATT
+  def mkRegion(sym: Symbol.RegionSym, loc: SourceLocation): Type = {
+    Apply(Cst(TypeConstructor.RegionIdToRegion(sym.flav), loc), mkRegionId(sym, loc), loc)
   }
 
   // MATT docs

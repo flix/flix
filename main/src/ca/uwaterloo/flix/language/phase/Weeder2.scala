@@ -677,7 +677,7 @@ object Weeder2 {
 
     // MATT docs
     def pickRegionTagOpt(tree: Tree)(implicit sctx: SharedContext): Option[RegionFlavor] = {
-      val optTag = tryPick(TreeKind.RegionTag, tree)
+      val optTag = tryPick(TreeKind.RegionFlavor, tree)
       optTag.flatMap(tokenToRegionTag)
     }
 
@@ -686,8 +686,8 @@ object Weeder2 {
       tree.children.headOption.flatMap {
         case token: Token =>
           token.text match {
-            case "%default" => Some(RegionFlavor.HighFidelity)
             case "%lofi" => Some(RegionFlavor.LowFidelity)
+            case "%hifi" => Some(RegionFlavor.HighFidelity)
             case "%shared" => Some(RegionFlavor.Shared)
             case _ => None // MATT add error
           }
