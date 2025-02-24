@@ -1763,7 +1763,6 @@ object Resolver {
             Result.Ok((symUse, rules))
         }
       case Result.Err(error) =>
-        sctx.errors.add(error)
         Validation.Success(Result.Err(error))
     }
   }
