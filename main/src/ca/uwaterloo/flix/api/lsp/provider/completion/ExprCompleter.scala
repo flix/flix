@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 object ExprCompleter {
 
   def getCompletions(context: CompletionContext)(implicit flix: Flix, root: TypedAst.Root): Iterable[Completion] = {
-      LabelCompleter.getCompletions(context) ++
       KeywordCompleter.getExprKeywords ++
       ExprSnippetCompleter.getCompletions() ++
       HoleCompletion.getHoleCompletion(context, root)
