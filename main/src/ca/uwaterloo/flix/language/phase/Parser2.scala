@@ -2488,11 +2488,10 @@ object Parser2 {
           delimiterR = TokenKind.CurlyR,
           context = SyntacticContext.Expr.OtherExpr
         )
-        close(mark, TreeKind.Expr.Handler)
       } else {
-        val token = nth(0)
-        closeWithError(mark, ParseError.UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)), Some(token), SyntacticContext.WithHandler, loc = currentSourceLocation()))
+        s.errors.append(ParseError.UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)) , actual = Some(nth(0)), sctx = SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation()))
       }
+      close(mark, TreeKind.Expr.Handler)
     }
 
     private def tryExpr()(implicit s: State): Mark.Closed = {

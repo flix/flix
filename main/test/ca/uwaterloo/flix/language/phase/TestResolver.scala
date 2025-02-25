@@ -538,6 +538,15 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedEffect](result)
   }
 
+ test("UndefinedEffect.02") {
+   val input =
+     """
+       |def f(): Unit = run () with handler Ef
+       |""".stripMargin
+   val result = compile(input, Options.TestWithLibNix)
+   expectError[ResolutionError.UndefinedEffect](result)
+ }
+
   test("UndefinedOp.01") {
     val input =
       """
@@ -1985,4 +1994,23 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.MissingHandlerDef](result)
   }
+
+  test("ResolutionError.MissingHandlerDef.03") {
+    val input =
+      """
+        |eff E {
+        |    def op1(): Unit
+        |    def op2(): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    run {
+        |      E.op1()
+        |    } with handler E
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibNix)
+    expectErrorOnCheck[ResolutionError.MissingHandlerDef](result)
+  }
+
 }
