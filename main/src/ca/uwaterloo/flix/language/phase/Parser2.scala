@@ -2488,6 +2488,8 @@ object Parser2 {
           delimiterR = TokenKind.CurlyR,
           context = SyntacticContext.Expr.OtherExpr
         )
+      } else {
+        s.errors.append(ParseError.UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)) , actual = Some(nth(0)), sctx = SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation()))
       }
       close(mark, TreeKind.Expr.Handler)
     }
