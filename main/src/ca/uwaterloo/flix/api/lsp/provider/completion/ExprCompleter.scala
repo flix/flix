@@ -22,10 +22,9 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 
 object ExprCompleter {
 
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, root: TypedAst.Root): Iterable[Completion] = {
+  def getCompletions: Iterable[Completion] = {
       KeywordCompleter.getExprKeywords ++
-      ExprSnippetCompleter.getCompletions() ++
-      HoleCompletion.getHoleCompletion(context, root)
+      ExprSnippetCompleter.getCompletions()
   }
 
 }
