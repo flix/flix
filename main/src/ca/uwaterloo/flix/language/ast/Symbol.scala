@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, QualifiedSym, Scope, Source, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, ModuleKind, QualifiedSym, Scope, Source, VarText}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
@@ -237,7 +237,7 @@ object Symbol {
   /**
     * Returns the module symbol for the given fully qualified name.
     */
-  def mkModuleSym(fqn: List[String]): ModuleSym = new ModuleSym(fqn)
+  def mkModuleSym(fqn: List[String]): ModuleSym = new ModuleSym(fqn, ModuleKind.Standalone)
 
   /**
     * Returns the trait symbol for the given name `ident` in the given namespace `ns`.
@@ -957,11 +957,19 @@ object Symbol {
   /**
     * Module symbol.
     */
-  final class ModuleSym(val ns: List[String]) extends Symbol {
+  final class ModuleSym(val ns: List[String], val kind : ModuleKind) extends Symbol {
     /**
       * Returns `true` if this is the root module.
       */
     def isRoot: Boolean = ns.isEmpty
+
+    /**
+      * Returns `true` if this is a standalone module.
+      */
+    def isStandalone: Boolean = kind match {
+      case ModuleKind.Standalone => true
+      case _ => false
+    }
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
