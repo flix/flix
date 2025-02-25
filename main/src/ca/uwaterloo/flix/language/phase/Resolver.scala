@@ -2368,8 +2368,8 @@ object Resolver {
         case "Write" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToEff(Some(RegionAction.Write)), loc))
         case "Lock" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToEff(Some(RegionAction.Lock)), loc))
         case "Shared" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionIdToRegion(RegionFlavor.Shared), loc))
-        case "Lofi" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionIdToRegion(RegionFlavor.LowFidelity), loc))
-        case "Hifi" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionIdToRegion(RegionFlavor.HighFidelity), loc))
+        case "Lofi" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionIdToRegion(RegionFlavor.Lofi), loc))
+        case "Hifi" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionIdToRegion(RegionFlavor.Hifi), loc))
 
         // Disambiguate type.
         case _ => // typeName

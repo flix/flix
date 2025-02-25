@@ -1403,7 +1403,7 @@ object Type {
     * Replaces the given region in the type with the Pure effect.
     */
   def purifyRegion(tpe0: Type, sym: Symbol.RegionSym): Type = tpe0 match {
-    case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), Cst(TypeConstructor.RegionId(sym1), _), _) if sym == sym1 =>
+    case Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), Apply(Cst(TypeConstructor.RegionIdToRegion(_), _), Cst(TypeConstructor.RegionId(sym1), _), _), _) if sym == sym1 =>
       Type.Pure
     case t: Cst => t
     case t: Var => t

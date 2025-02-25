@@ -18,13 +18,13 @@ package ca.uwaterloo.flix.language.ast
 // MATT docs
 sealed trait RegionFlavor extends Ordered[RegionFlavor] {
   override def compare(that: RegionFlavor): Int = (this, that) match {
-    case (RegionFlavor.HighFidelity, RegionFlavor.HighFidelity) => 0
-    case (RegionFlavor.LowFidelity, RegionFlavor.LowFidelity) => 0
+    case (RegionFlavor.Hifi, RegionFlavor.Hifi) => 0
+    case (RegionFlavor.Lofi, RegionFlavor.Lofi) => 0
     case (RegionFlavor.Shared, RegionFlavor.Shared) => 0
     case _ =>
       def ordinal(x: RegionFlavor): Int = x match {
-        case RegionFlavor.HighFidelity => 0
-        case RegionFlavor.LowFidelity => 1
+        case RegionFlavor.Hifi => 0
+        case RegionFlavor.Lofi => 1
         case RegionFlavor.Shared => 2
       }
 
@@ -33,7 +33,7 @@ sealed trait RegionFlavor extends Ordered[RegionFlavor] {
 }
 
 object RegionFlavor {
-  case object HighFidelity extends RegionFlavor
-  case object LowFidelity extends RegionFlavor
+  case object Hifi extends RegionFlavor
+  case object Lofi extends RegionFlavor
   case object Shared extends RegionFlavor
 }
