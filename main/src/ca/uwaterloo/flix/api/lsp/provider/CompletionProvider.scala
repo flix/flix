@@ -63,6 +63,7 @@ object CompletionProvider {
             OpCompleter.getCompletions(err) ++
             SignatureCompleter.getCompletions(err) ++
             EnumTagCompleter.getCompletions(err) ++
+            TraitCompleter.getCompletions(err) ++
             ModuleCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedType =>
           TypeBuiltinCompleter.getCompletions ++
@@ -75,6 +76,7 @@ object CompletionProvider {
             ModuleCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err) ++ InvokeStaticMethodCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedJvmImport => ImportCompleter.getCompletions(err)
+        case err: ResolutionError.UndefinedTrait => TraitCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
         case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedOp =>
@@ -89,17 +91,10 @@ object CompletionProvider {
           // Declarations.
           case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
           case SyntacticContext.Decl.Effect => KeywordCompleter.getEffectKeywords
-          case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(ctx) ++ KeywordCompleter.getInstanceKeywords
           case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
           case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
           case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
           case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
-
-          // Uses.
-          //case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
-
-          // With.
-          case SyntacticContext.WithClause => WithCompleter.getCompletions(ctx)
 
           // Try-with handler.
           case SyntacticContext.WithHandler => WithHandlerCompleter.getCompletions(ctx)

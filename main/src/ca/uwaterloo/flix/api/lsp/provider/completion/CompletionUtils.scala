@@ -17,10 +17,10 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
 import ca.uwaterloo.flix.language.ast.TypedAst.Decl
-import ca.uwaterloo.flix.language.ast.shared.{LocalScope, QualifiedSym, Resolution}
+import ca.uwaterloo.flix.language.ast.shared.{LocalScope, QualifiedSym, Resolution, Scope, VarText}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
 import scala.annotation.tailrec
@@ -166,8 +166,8 @@ object CompletionUtils {
     *   - fuzzyMatch("fBrT", "fooBarTest") = false
     *   - fuzzyMatch("fTB",  "fooBarTest") = false
     *
-    * @param query  The query string, usually from the user input.
-    * @param key    The key string, usually from the completion item.
+    * @param query The query string, usually from the user input.
+    * @param key   The key string, usually from the completion item.
     */
   def fuzzyMatch(query: String, key: String): Boolean = {
     @tailrec
@@ -180,6 +180,7 @@ object CompletionUtils {
         else
           matchSegments(query, kTail)
     }
+
     matchSegments(splitByCamelCase(query), splitByCamelCase(key))
   }
 
@@ -193,20 +194,20 @@ object CompletionUtils {
   }
 
   /**
-   * Checks if the namespace and ident from the error matches the qualified name.
-   * We require a full match on the namespace and a fuzzy match on the ident.
-   *
-   * Example:
-   *   matchesQualifiedName(["A", "B"], "fooBar", ["A", "B"], "fB") => true
-   */
-  def matchesQualifiedName(targetNamespace: List[String], targetIdent:String, qn: Name.QName): Boolean = {
+    * Checks if the namespace and ident from the error matches the qualified name.
+    * We require a full match on the namespace and a fuzzy match on the ident.
+    *
+    * Example:
+    * matchesQualifiedName(["A", "B"], "fooBar", ["A", "B"], "fB") => true
+    */
+  def matchesQualifiedName(targetNamespace: List[String], targetIdent: String, qn: Name.QName): Boolean = {
     targetNamespace == qn.namespace.parts && fuzzyMatch(qn.ident.name, targetIdent)
   }
 
   /**
-   * Format type params in the right form to be displayed in the list of completions
-   * e.g. "[a, b, c]"
-   */
+    * Format type params in the right form to be displayed in the list of completions
+    * e.g. "[a, b, c]"
+    */
   def formatTParams(tparams: List[TypedAst.TypeParam]): String = {
     tparams match {
       case Nil => ""
@@ -215,9 +216,9 @@ object CompletionUtils {
   }
 
   /**
-   * Format type params in the right form to be inserted as a snippet
-   * e.g. "[${1:a}, ${2:b}, ${3:c}]"
-   */
+    * Format type params in the right form to be inserted as a snippet
+    * e.g. "[${1:a}, ${2:b}, ${3:c}]"
+    */
   def formatTParamsSnippet(tparams: List[TypedAst.TypeParam]): String = {
     tparams match {
       case Nil => ""
@@ -270,6 +271,108 @@ object CompletionUtils {
   def isAvailable(enumMap: Symbol.EnumSym)(implicit root: TypedAst.Root): Boolean = root.enums.get(enumMap).exists(isAvailable)
 
   /**
+    * Replaces the given symbol with a variable named by the given `newText`.
+    */
+  private def replaceText(oldSym: Symbol, tpe: Type, newText: String)(implicit flix: Flix): Type = {
+    implicit val scope: Scope = Scope.Top
+    tpe match {
+      case Type.Var(sym, loc) if oldSym == sym => Type.Var(sym.withText(VarText.SourceText(newText)), loc)
+      case Type.Var(_, _) => tpe
+      case Type.Cst(_, _) => tpe
+
+      case Type.Apply(tpe1, tpe2, loc) =>
+        val t1 = replaceText(oldSym, tpe1, newText)
+        val t2 = replaceText(oldSym, tpe2, newText)
+        Type.Apply(t1, t2, loc)
+
+      case Type.Alias(cst, args0, tpe0, loc) =>
+        if (oldSym == cst.sym) {
+          Type.freshVar(Kind.Star, loc, text = VarText.SourceText(newText))
+        } else {
+          val args = args0.map(replaceText(oldSym, _, newText))
+          val t = replaceText(oldSym, tpe0, newText)
+          Type.Alias(cst, args, t, loc)
+        }
+
+      case Type.AssocType(cst, args0, kind, loc) =>
+        if (oldSym == cst.sym) {
+          Type.freshVar(Kind.Star, loc, text = VarText.SourceText(newText))
+        } else {
+          val args = args0.map(replaceText(oldSym, _, newText))
+          Type.AssocType(cst, args, kind, loc)
+        }
+
+      // Jvm types should not be exposed to the user.
+      case t: Type.JvmToType => t
+      case t: Type.JvmToEff => t
+      case t: Type.UnresolvedJvmType => t
+    }
+  }
+
+  /**
+    * Checks if the sym and the given qualified name matches.
+    *
+    * @param sym        The symbol to check, usually from root.
+    * @param qn         The qualified name to check, usually from user input.
+    * @param qualified  Whether the qualified name is qualified.
+    */
+  private def fmtType(tpe: Type, holes: Map[Symbol, String])(implicit flix: Flix): String = {
+    val replaced = holes.foldLeft(tpe) { case (t, (sym, hole)) => replaceText(sym, t, hole) }
+    FormatType.formatType(replaced)
+  }
+
+  /**
+    * Formats the given associated type `assoc`.
+    */
+  private def fmtAssocType(assoc: TypedAst.AssocTypeSig, holes: Map[Symbol, String]): String = {
+    s"    type ${assoc.sym.name} = ${holes(assoc.sym)}"
+  }
+
+  /**
+    * Formats the given formal parameters in `spec`.
+    */
+  private def fmtFormalParams(spec: TypedAst.Spec, holes: Map[Symbol, String])(implicit flix: Flix): String =
+    spec.fparams.map(fparam => s"${fparam.bnd.sym.text}: ${fmtType(fparam.tpe, holes)}").mkString(", ")
+
+  /**
+    * Formats the given signature `sig`.
+    */
+  private def fmtSignature(sig: TypedAst.Sig, holes: Map[Symbol, String])(implicit flix: Flix): String = {
+    val fparams = fmtFormalParams(sig.spec, holes)
+    val retTpe = fmtType(sig.spec.retTpe, holes)
+    val eff = sig.spec.eff match {
+      case Type.Cst(TypeConstructor.Pure, _) => ""
+      case e => raw" \ " + fmtType(e, holes)
+    }
+    s"    pub def ${sig.sym.name}($fparams): $retTpe$eff = ???"
+  }
+
+  def fmtInstanceSnippet(trt: TypedAst.Trait, qualified: Boolean)(implicit flix: Flix): String = {
+    val instanceHole = "${1:t}"
+    val holes: Map[Symbol, String] = {
+      (trt.tparam.sym -> instanceHole) +:
+        trt.assocs.zipWithIndex.map { case (a, i) => a.sym -> s"$$${i + 2}" }
+    }.toMap
+
+    val traitName = if (qualified) trt.sym.toString else trt.sym.name
+    val signatures = trt.sigs.filter(_.exp.isEmpty)
+
+    val body = {
+      trt.assocs.map(a => fmtAssocType(a, holes)) ++
+        signatures.map(s => fmtSignature(s, holes))
+    }.mkString("\n\n")
+
+    s"$traitName[$instanceHole] {\n\n$body\n\n}\n"
+  }
+
+  /**
+    * Formats the given trait `trt`.
+    */
+  def fmtTrait(trt: TypedAst.Trait): String = {
+    s"trait ${trt.sym.name}[${trt.tparam.name.name}]"
+  }
+
+  /**
     * Checks if the sym and the given qualified name matches.
     *
     * @param sym        The symbol to check, usually from root.
@@ -280,6 +383,6 @@ object CompletionUtils {
     if (qualified) {
       matchesQualifiedName(sym.namespace, sym.name, qn)
     } else
-     fuzzyMatch(qn.ident.name, sym.name)
+      fuzzyMatch(qn.ident.name, sym.name)
   }
 }
