@@ -29,7 +29,6 @@ import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentMap}
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 object Dependencies {
@@ -41,18 +40,12 @@ object Dependencies {
     *   - SymUse
     *   - Instance
     */
-  def run(root: Root, oldRoot: Root, changeSet: ChangeSet, cachedDefDeps: ConcurrentMap[DefnSym, Unit])(implicit flix: Flix): (Root, (List[RedundancyError], ConcurrentMap[DefnSym, Unit])) = flix.phaseNew("Dependencies") {
-    implicit val sctx: SharedContext = SharedContext.mk()
-    val defMaps = mutable.Map.empty[DefnSym, Unit]
-    cachedDefDeps.forEach((k, _) => defMaps.put(k, ()))
-    val (_, freshDefs) = changeSet.partition(defMaps.toMap, defMaps.toMap)
-    freshDefs.foreach{case (k, _) => sctx.defDeps.put(k, ())}
+  def run(root: Root, oldRoot: Root, changeSet: ChangeSet, cachedDefDeps: ConcurrentMap[DefnSym, SymUse.DefSymUse])(implicit flix: Flix): (Root, (List[RedundancyError], ConcurrentMap[DefnSym, SymUse.DefSymUse])) = flix.phaseNew("Dependencies") {
+    implicit val sctx: SharedContext = SharedContext.mk(cachedDefDeps, changeSet)
     val effects = changeSet.updateStaleValues(root.effects, oldRoot.effects)(ParOps.parMapValues(_)(visitEff))
     val enums = changeSet.updateStaleValues(root.enums, oldRoot.enums)(ParOps.parMapValues(_)(visitEnum))
     val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
     val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList(_)(visitInstance))
-//    ParOps.parMapValues(root.defs)(visitDef)
-//    ParOps.parMapValueList(root.instances)(visitInstance)
     val structs = changeSet.updateStaleValues(root.structs, oldRoot.structs)(ParOps.parMapValues(_)(visitStruct))
     val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
     val typeAliases = changeSet.updateStaleValues(root.typeAliases, oldRoot.typeAliases)(ParOps.parMapValues(_)(visitTypeAlias))
@@ -91,13 +84,12 @@ object Dependencies {
     * Returns `true` if the given definition `decl` is unused according to `used`.
     */
   private def deadDef(decl: TypedAst.Def)(implicit sctx: SharedContext, root: Root): Boolean = {
-    val res = !decl.spec.ann.isTest &&
+    !decl.spec.ann.isTest &&
       !decl.spec.mod.isPublic &&
       !decl.spec.ann.isExport &&
       !isMain(decl.sym) &&
       !decl.sym.name.startsWith("_") &&
       !sctx.defDeps.containsKey(decl.sym)
-    res
   }
 
   /**
@@ -193,7 +185,7 @@ object Dependencies {
 
     case Expr.ApplyDef(symUse, exps, itpe, tpe, eff, _) =>
       if (!rc.defn.contains(symUse.sym)) {
-        sctx.defDeps.put(symUse.sym, ())
+        sctx.defDeps.put(symUse.sym, symUse)
       }
       visitSymUse(symUse)
       exps.foreach(visitExp)
@@ -773,10 +765,13 @@ object Dependencies {
   }
 
   private object SharedContext {
-    def mk(): SharedContext = SharedContext(
-      new ConcurrentHashMap(),
-      new ConcurrentHashMap()
-    )
+    def mk(cachedDefDeps: ConcurrentMap[DefnSym, SymUse.DefSymUse], changeSet: ChangeSet): SharedContext = {
+      val (_, freshDefs) = changeSet.partition(cachedDefDeps, cachedDefDeps)
+      SharedContext(
+        freshDefs,
+        new ConcurrentHashMap()
+      )
+    }
   }
 
   /**
@@ -785,8 +780,7 @@ object Dependencies {
     * However, since we are in a concurrent setting, we prefer to simply compute the set of edges `Set[(Input, Input)]`.
     * However, since Java has no `ConcurrentSet[t]` we instead use  `ConcurrentMap[(Input, Input), Unit]` to record the edges.
     */
-  private case class SharedContext(defDeps: ConcurrentMap[Symbol.DefnSym, Unit], deps: ConcurrentMap[(Input, Input), Unit])
-
+  private case class SharedContext(defDeps: ConcurrentMap[Symbol.DefnSym, SymUse.DefSymUse], deps: ConcurrentMap[(Input, Input), Unit])
 
   /**
     * Companion object for [[RecursionContext]].

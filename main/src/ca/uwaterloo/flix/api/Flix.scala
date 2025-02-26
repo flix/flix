@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
+import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source, SymUse}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
@@ -91,7 +91,7 @@ class Flix {
   private var cachedKinderAst: KindedAst.Root = KindedAst.empty
   private var cachedResolverAst: ResolvedAst.Root = ResolvedAst.empty
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
-  private var cachedDefDeps: ConcurrentMap[Symbol.DefnSym, Unit] = new ConcurrentHashMap()
+  private var cachedDefDeps: ConcurrentMap[Symbol.DefnSym, SymUse.DefSymUse] = new ConcurrentHashMap()
 
   /**
     * A cache of error messages for incremental compilation.

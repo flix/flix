@@ -18,6 +18,9 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.shared.{DependencyGraph, Input}
 import ca.uwaterloo.flix.util.collection.ListMap
 
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentMap}
+import scala.jdk.CollectionConverters.{ConcurrentMapHasAsScala, MapHasAsJava}
+
 sealed trait ChangeSet {
 
   /**
@@ -53,6 +56,25 @@ sealed trait ChangeSet {
       val stale = newMap.filter(kv => !fresh.contains(kv._1))
 
       (stale, fresh)
+  }
+
+  /**
+    * Returns two maps: `stale` and `fresh` according to the given `newMap` and `oldMap`.
+    *
+    * A fresh key is one that can be reused.
+    * A stale key is one that must be re-compiled.
+    * A key that is neither fresh nor stale can be deleted.
+    *
+    * An entry is fresh if it is in `oldMap` and it is not dirty (i.e. has not changed).
+    * An entry is stale if it is not fresh and it is in `newMap`.
+    *
+    * Note that the union of stale and fresh does not have to equal `newMap` or `oldMap`.
+    * This happens if a key is deleted. Then it does not occur `newMap` but it occurs in `oldMap`.
+    * However, it is neither fresh nor stale. It should simply be forgotten.
+    */
+  def partition[K <: Sourceable, V1, V2](newMap: ConcurrentMap[K, V1], oldMap: ConcurrentMap[K, V2]): (ConcurrentMap[K, V1], ConcurrentMap[K, V2]) = {
+    val (stale, fresh) = partition(newMap.asScala.toMap, oldMap.asScala.toMap)
+    (new ConcurrentHashMap(stale.asJava), new ConcurrentHashMap(fresh.asJava))
   }
 
   /**
