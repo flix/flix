@@ -990,7 +990,7 @@ object Parser2 {
               while (!nth(0).isFirstInstance && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
-              val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.Instance, loc = loc)
+              val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Unknown, loc = loc)
               closeWithError(errMark, error, Some(at))
           }
         }
@@ -3195,10 +3195,10 @@ object Parser2 {
              | TokenKind.KeywordRvnot => unaryType()
         // TODO: Static is used as a type name in Prelude.flix. That requires special handling here.
         // If we remove this rule, remove KeywordStaticUppercase from FIRST_TYPE too.
-        case TokenKind.KeywordStaticUppercase => nameUnqualified(Set(TokenKind.KeywordStaticUppercase), SyntacticContext.Type.OtherType)
+        case TokenKind.KeywordStaticUppercase => nameUnqualified(Set(TokenKind.KeywordStaticUppercase), SyntacticContext.Unknown)
         case t =>
           val mark = open()
-          val error = UnexpectedToken(expected = NamedTokenSet.Type, actual = Some(t), SyntacticContext.Type.OtherType, loc = currentSourceLocation())
+          val error = UnexpectedToken(expected = NamedTokenSet.Type, actual = Some(t), SyntacticContext.Unknown, loc = currentSourceLocation())
           closeWithError(mark, error)
       }
       close(mark, TreeKind.Type.Type)
@@ -3208,7 +3208,7 @@ object Parser2 {
 
     private def variableType()(implicit s: State): Mark.Closed = {
       val mark = open()
-      expectAny(TYPE_VAR, SyntacticContext.Type.OtherType)
+      expectAny(TYPE_VAR, SyntacticContext.Unknown)
       close(mark, TreeKind.Type.Variable)
     }
 
@@ -3216,7 +3216,7 @@ object Parser2 {
 
     private def constantType()(implicit s: State): Mark.Closed = {
       val mark = open()
-      expectAny(TYPE_CONSTANT, SyntacticContext.Type.OtherType)
+      expectAny(TYPE_CONSTANT, SyntacticContext.Unknown)
       close(mark, TreeKind.Type.Constant)
     }
 
@@ -3243,7 +3243,7 @@ object Parser2 {
         checkForItem = NAME_FIELD.contains,
         breakWhen = _.isRecoverType,
         optionallyWith = Some((TokenKind.Bar, variableType)),
-        context = SyntacticContext.Type.OtherType
+        context = SyntacticContext.Unknown
       )
       close(mark, TreeKind.Type.RecordRow)
     }
@@ -3256,7 +3256,7 @@ object Parser2 {
         getItem = () => ttype(),
         checkForItem = _.isFirstType,
         breakWhen = _.isRecoverType,
-        context = SyntacticContext.Type.OtherType
+        context = SyntacticContext.Unknown
       )
       close(mark, TreeKind.Type.Tuple)
     }
@@ -3292,7 +3292,7 @@ object Parser2 {
             delimiterL = TokenKind.CurlyL,
             delimiterR = TokenKind.CurlyR,
             optionallyWith = Some((TokenKind.Bar, variableType)),
-            context = SyntacticContext.Type.OtherType
+            context = SyntacticContext.Unknown
           )
           close(mark, TreeKind.Type.Record)
       }
@@ -3300,8 +3300,8 @@ object Parser2 {
 
     private def recordField()(implicit s: State): Mark.Closed = {
       val mark = open()
-      nameUnqualified(NAME_FIELD, SyntacticContext.Type.OtherType)
-      expect(TokenKind.Equal, SyntacticContext.Type.OtherType)
+      nameUnqualified(NAME_FIELD, SyntacticContext.Unknown)
+      expect(TokenKind.Equal, SyntacticContext.Unknown)
       ttype()
       close(mark, TreeKind.Type.RecordFieldFragment)
     }
@@ -3315,7 +3315,7 @@ object Parser2 {
         breakWhen = _.isRecoverType,
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR,
-        context = SyntacticContext.Type.Eff
+        context = SyntacticContext.Unknown
       )
       close(mark, TreeKind.Type.EffectSet)
     }
@@ -3330,8 +3330,8 @@ object Parser2 {
         delimiterL = TokenKind.HashCurlyL,
         delimiterR = TokenKind.CurlyR,
         breakWhen = _.isRecoverType,
-        optionallyWith = Some(TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE, SyntacticContext.Type.OtherType)),
-        context = SyntacticContext.Type.OtherType
+        optionallyWith = Some(TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE, SyntacticContext.Unknown)),
+        context = SyntacticContext.Unknown
       )
       close(mark, TreeKind.Type.Schema)
     }
@@ -3345,15 +3345,15 @@ object Parser2 {
         checkForItem = NAME_PREDICATE.contains,
         delimiterL = TokenKind.HashParenL,
         breakWhen = _.isRecoverType,
-        optionallyWith = Some(TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE, SyntacticContext.Type.OtherType)),
-        context = SyntacticContext.Type.OtherType
+        optionallyWith = Some(TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE, SyntacticContext.Unknown)),
+        context = SyntacticContext.Unknown
       )
       close(mark, TreeKind.Type.SchemaRow)
     }
 
     private def schemaTerm()(implicit s: State): Mark.Closed = {
       val mark = open()
-      nameAllowQualified(NAME_PREDICATE, context = SyntacticContext.Type.OtherType)
+      nameAllowQualified(NAME_PREDICATE, context = SyntacticContext.Unknown)
       if (at(TokenKind.BracketL)) {
         arguments()
         close(mark, TreeKind.Type.PredicateWithAlias)
@@ -3363,7 +3363,7 @@ object Parser2 {
           getItem = () => ttype(),
           checkForItem = _.isFirstType,
           breakWhen = _.isRecoverType,
-          context = SyntacticContext.Type.OtherType,
+          context = SyntacticContext.Unknown,
           optionallyWith = Some(TokenKind.Semi, () => {
             val mark = open()
             ttype()
@@ -3379,12 +3379,12 @@ object Parser2 {
       val mark = open()
       zeroOrMore(
         namedTokenSet = NamedTokenSet.FromKinds(NAME_DEFINITION),
-        getItem = () => nameAllowQualified(NAME_DEFINITION, context = SyntacticContext.Type.OtherType),
+        getItem = () => nameAllowQualified(NAME_DEFINITION, context = SyntacticContext.Unknown),
         checkForItem = NAME_DEFINITION.contains,
         breakWhen = _.isRecoverType,
         delimiterL = TokenKind.AngleL,
         delimiterR = TokenKind.AngleR,
-        context = SyntacticContext.Type.OtherType
+        context = SyntacticContext.Unknown
       )
       close(mark, TreeKind.Type.CaseSet)
     }
@@ -3395,7 +3395,7 @@ object Parser2 {
       val mark = open()
       val op = nth(0)
       val markOp = open()
-      expectAny(FIRST_TYPE_UNARY, SyntacticContext.Type.OtherType)
+      expectAny(FIRST_TYPE_UNARY, SyntacticContext.Unknown)
       close(markOp, TreeKind.Operator)
       ttype(left = op)
       close(mark, TreeKind.Type.Unary)
@@ -3404,14 +3404,14 @@ object Parser2 {
     def kind()(implicit s: State): Mark.Closed = {
       def kindFragment(): Unit = {
         val inParens = eat(TokenKind.ParenL)
-        nameUnqualified(NAME_KIND, SyntacticContext.Type.OtherType)
+        nameUnqualified(NAME_KIND, SyntacticContext.Unknown)
         // Check for arrow kind
         if (eat(TokenKind.ArrowThinR)) {
           kind()
         }
         // consume ')' is necessary
         if (inParens) {
-          expect(TokenKind.ParenR, SyntacticContext.Type.OtherType)
+          expect(TokenKind.ParenR, SyntacticContext.Unknown)
         }
       }
 
