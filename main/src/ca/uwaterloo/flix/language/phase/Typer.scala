@@ -103,6 +103,23 @@ object Typer {
       val modules = syms.foldLeft(companionModules) {
         case (acc, sym) =>
           sym match {
+            case sym: Symbol.DefnSym => addToModuleMap(sym, acc)
+            case sym: Symbol.EnumSym => addToModuleMap(sym, acc)
+            case sym: Symbol.StructSym => addToModuleMap(sym, acc)
+            case sym: Symbol.StructFieldSym => addToModuleMap(sym, acc)
+            case sym: Symbol.RestrictableEnumSym => addToModuleMap(sym, acc)
+            case sym: Symbol.TraitSym => addToModuleMap(sym, acc)
+            case sym: Symbol.TypeAliasSym => addToModuleMap(sym, acc)
+            case sym: Symbol.EffectSym => addToModuleMap(sym, acc)
+
+            case sym: Symbol.ModuleSym =>
+              val mod = new Symbol.ModuleSym(sym.ns.init, ModuleKind.Standalone)
+              val set = acc.getOrElse(mod, Set.empty)
+              acc.updated(mod, set + sym)
+
+            case sym: Symbol.SigSym => addToModuleMap(sym, acc)
+            case sym: Symbol.OpSym => addToModuleMap(sym, acc)
+            case sym: Symbol.AssocTypeSym => addToModuleMap(sym, acc)
             case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
             case sym: Symbol.RestrictableCaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
             case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
@@ -111,20 +128,18 @@ object Typer {
             case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
             case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol: $sym", SourceLocation.Unknown)
             case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-            case sym: Symbol.ModuleSym =>
-              val mod = new Symbol.ModuleSym(sym.ns.init, ModuleKind.Standalone)
-              val set = acc.getOrElse(mod, Set.empty)
-              acc.updated(mod, set + sym)
-            case sym: QualifiedSym =>
-              val mod = new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-              val set = acc.getOrElse(mod, Set.empty)
-              acc.updated(mod, set + sym)
           }
       }
 
       modules.map{
         case (mod, syms) => mod -> syms.toList
       }
+  }
+
+  private def addToModuleMap(qualifiedSym: QualifiedSym, moduleMap: Map[ModuleSym, Set[Symbol]]) = {
+    val mod = new Symbol.ModuleSym(qualifiedSym.namespace, ModuleKind.Standalone)
+    val set = moduleMap.getOrElse(mod, Set.empty)
+    moduleMap.updated(mod, set + qualifiedSym)
   }
 
   /**
