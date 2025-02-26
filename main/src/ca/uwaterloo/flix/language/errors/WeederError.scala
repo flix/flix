@@ -813,6 +813,24 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that an argument list is missing a kind.
+    *
+    * @param loc the location of the argument list.
+    */
+  case class MissingArgumentList(loc: SourceLocation) extends WeederError {
+    def summary: String = "An argument list is required here"
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Missing argument list. An argument list is required here.
+         |
+         |${code(loc, "missing argument list.")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that the formal parameter lacks a type declaration.
     *
     * @param name the name of the parameter.

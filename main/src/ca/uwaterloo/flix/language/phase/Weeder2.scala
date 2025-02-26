@@ -1808,9 +1808,16 @@ object Weeder2 {
 
     private def visitInvokeConstructorExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeConstructor)
-      mapN(Types.pickType(tree), pickRawArguments(tree, synctx = SyntacticContext.Expr.New)) {
-        (tpe, exps) =>
-          tpe match {
+      val expsValidation = tryPick(TreeKind.ArgumentList, tree) match {
+        case None =>
+          val error = WeederError.MissingArgumentList(tree.loc)
+          sctx.errors.add(error)
+          Validation.Success(List.empty)
+        case Some(argumentList) =>
+          visitMethodArguments(argumentList)
+      }
+      mapN(Types.pickType(tree), expsValidation) {
+        (tpe, exps) => tpe match {
             case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
               Expr.InvokeConstructor(qname.ident, exps, tree.loc)
             case _ =>
