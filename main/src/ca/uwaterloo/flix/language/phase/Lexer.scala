@@ -640,22 +640,16 @@ object Lexer {
     * which is the reason this function will return a `TokenKind`.
     */
   private def acceptName(isUpper: Boolean)(implicit s: State): TokenKind = {
-    val kind = if (isUpper) {
-      TokenKind.NameUpperCase
+    s.sc.advanceWhile(c => c.isLetter || c.isDigit || c == '_' || c == '!' || c == '$')
+    if (s.sc.advanceIfMatch('?')) {
+      TokenKind.HoleVariable
     } else {
-      TokenKind.NameLowerCase
-    }
-    while (!eof()) {
-      val p = peek()
-      if (p == '?') {
-        advance()
-        return TokenKind.HoleVariable
-      } else if (!p.isLetter && !p.isDigit && p != '_' && p != '!' && p != '$') {
-        return kind
+      if (isUpper) {
+        TokenKind.NameUpperCase
+      } else {
+        TokenKind.NameLowerCase
       }
-      advance()
     }
-    kind
   }
 
   /**
@@ -1219,6 +1213,20 @@ object Lexer {
       }
 
       true
+    }
+
+    /**
+      * Advance the cursor past `c` if it matches the current char.
+      *
+      * Returns true if the cursor was advanced.
+      */
+    def advanceIfMatch(c: Char): Boolean = {
+      if (this.inBounds && data(offset) == c) {
+        advance()
+        true
+      } else {
+        false
+      }
     }
 
     /** Continuously advance the cursor while `p` returns true. */
