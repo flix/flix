@@ -56,7 +56,7 @@ object CompletionProvider {
         case err: ResolutionError.UndefinedName =>
           AutoImportCompleter.getCompletions(err) ++
             LocalScopeCompleter.getCompletions(err) ++
-            ExprCompleter.getCompletions(ctx) ++
+            KeywordCompleter.getExprKeywords ++
             DefCompleter.getCompletions(err) ++
             EnumCompleter.getCompletions(err) ++
             EffectCompleter.getCompletions(err) ++
@@ -86,7 +86,8 @@ object CompletionProvider {
         case err: ParseError => err.sctx match {
           // Expressions.
           case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(uri) ++ KeywordCompleter.getConstraintKeywords
-          case _: SyntacticContext.Expr => ExprCompleter.getCompletions(ctx)
+          case _: SyntacticContext.Expr => KeywordCompleter.getExprKeywords
+
 
           // Declarations.
           case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
@@ -95,9 +96,6 @@ object CompletionProvider {
           case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
           case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
           case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
-
-          // Try-with handler.
-          case SyntacticContext.WithHandler => WithHandlerCompleter.getCompletions(ctx)
 
           // Unknown syntactic context. The program could be correct-- in which case it is hard to offer suggestions.
           case SyntacticContext.Unknown =>
