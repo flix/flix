@@ -92,8 +92,8 @@ object Typer {
       val companion_modules =
         for {
           sym <- constructs_with_companion_module
-          modSym = new Symbol.ModuleSym(sym.namespace :+ sym.name)
-        } yield modSym -> Iterable.empty
+          modSym = new Symbol.ModuleSym(sym.namespace :+ sym.name, ModuleKind.Companion)
+        } yield modSym -> List.empty[Symbol]
 
       val groups = syms.groupBy {
         case sym: Symbol.DefnSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
@@ -121,8 +121,8 @@ object Typer {
         case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
       }
 
-      groups.map {
-        case (k, v) => (k, v.toList)
+      groups.foldLeft(companion_modules.toMap) {
+        case (acc, (mod, syms)) => acc.updated(mod, syms.toList)
       }
   }
 
