@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.StructCompletion
-import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.{fuzzyMatch, matchesQualifiedName}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Struct
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
@@ -36,12 +35,12 @@ object StructCompleter {
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
       root.structs.values.collect{
-        case struct if matchesStruct(struct, qn, uri, qualified = true) =>
+        case struct if CompletionUtils.isAvailable(struct) && CompletionUtils.matchesName(struct.sym, qn, qualified = true) =>
           StructCompletion(struct, ap, qualified = true, inScope = true)
       }
     else
       root.structs.values.collect({
-        case struct if matchesStruct(struct, qn, uri, qualified = false) =>
+        case struct if CompletionUtils.isAvailable(struct) && CompletionUtils.matchesName(struct.sym, qn, qualified = false) =>
           StructCompletion(struct, ap, qualified = false, inScope = inScope(struct, env))
       })
   }
@@ -58,19 +57,5 @@ object StructCompleter {
     })
     val isRoot = struct.sym.namespace.isEmpty
     isRoot || isResolved
-  }
-
-  /**
-   * Checks if the definition matches the QName.
-   * Names should match and the definition should be available.
-   */
-  private def matchesStruct(struct: TypedAst.Struct, qn: Name.QName, uri: String, qualified: Boolean): Boolean = {
-    val isPublic = struct.mod.isPublic && !struct.ann.isInternal
-    val isInFile = struct.sym.loc.source.name == uri
-    val isMatch = if (qualified)
-      matchesQualifiedName(struct.sym.namespace, struct.sym.name, qn)
-    else
-      fuzzyMatch(qn.ident.name, struct.sym.name)
-    isMatch && (isPublic || isInFile)
   }
 }

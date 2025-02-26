@@ -35,12 +35,12 @@ object TypeAliasCompleter {
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
       root.typeAliases.values.collect{
-        case typeAlias if matchesEffect(typeAlias, qn, uri, qualified = true) =>
+        case typeAlias if CompletionUtils.isAvailable(typeAlias) && CompletionUtils.matchesName(typeAlias.sym, qn, qualified = true) =>
           TypeAliasCompletion(typeAlias, ap, qualified = true, inScope = true)
       }
     else
       root.typeAliases.values.collect({
-        case typeAlias if matchesEffect(typeAlias, qn, uri, qualified = false) =>
+        case typeAlias if CompletionUtils.isAvailable(typeAlias) && CompletionUtils.matchesName(typeAlias.sym, qn, qualified = false) =>
           TypeAliasCompletion(typeAlias, ap, qualified = false, inScope = inScope(typeAlias, env))
       })
   }
@@ -57,19 +57,5 @@ object TypeAliasCompleter {
     })
     val isRoot = typeAlias.sym.namespace.isEmpty
     isRoot || isResolved
-  }
-
-  /**
-    * Checks if the definition matches the QName.
-    * Names should match and the definition should be available.
-    */
-  private def matchesEffect(typeAlias: TypedAst.TypeAlias, qn: Name.QName, uri: String, qualified: Boolean): Boolean = {
-    val isPublic = typeAlias.mod.isPublic && !typeAlias.ann.isInternal
-    val isInFile = typeAlias.sym.loc.source.name == uri
-    val isMatch = if (qualified) {
-      CompletionUtils.matchesQualifiedName(typeAlias.sym.namespace, typeAlias.sym.name, qn)
-    } else
-      CompletionUtils.fuzzyMatch(qn.ident.name, typeAlias.sym.name)
-    isMatch && (isPublic || isInFile)
   }
 }

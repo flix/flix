@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.{FileOps, Options, Subeffecting}
 import java.nio.file.Paths
 import scala.collection.mutable
 
-object ZheglakinPerf {
+object ZhegalkinPerf {
 
   private val RQ1 = "RQ1: Characteristics of the Boolean Equation Systems"
   private val RQ2 = "RQ2: Performance Gain of with Rewrite Rules"
@@ -52,8 +52,8 @@ object ZheglakinPerf {
 
     rq1(r)
     rq2()
-    rq3(r)
     rq4(r)
+    rq3(r)
   }
 
 

@@ -442,7 +442,7 @@ object Resolver {
       flatMapN(tparamsVal) {
         case tparams =>
           val env = env0 ++ mkTypeParamEnv(tparams)
-          val traitVal = lookupTraitForImplementation(trt0, env, ns0, root)
+          val traitVal = lookupTraitForImplementation(trt0, TraitUsageKind.Implementation, env, ns0, root)
           val tpeVal = resolveType(tpe0, None, Wildness.ForbidWild, env, taenv, ns0, root)(Scope.Top, sctx, flix)
           val optTconstrsVal = traverse(tconstrs0)(resolveTraitConstraint(_, env, taenv, ns0, root))
           flatMapN(traitVal, tpeVal, optTconstrsVal) {
@@ -1763,7 +1763,6 @@ object Resolver {
             Result.Ok((symUse, rules))
         }
       case Result.Err(error) =>
-        sctx.errors.add(error)
         Validation.Success(Result.Err(error))
     }
   }
@@ -2034,7 +2033,7 @@ object Resolver {
     */
   private def resolveTraitConstraint(tconstr0: NamedAst.TraitConstraint, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[Option[ResolvedAst.TraitConstraint], ResolutionError] = tconstr0 match {
     case NamedAst.TraitConstraint(trt0, tpe0, loc) =>
-      val optTrait = lookupTrait(trt0, env, ns0, root)
+      val optTrait = lookupTrait(trt0, TraitUsageKind.Constraint, env, ns0, root)
       val tpeVal = resolveType(tpe0, None, Wildness.ForbidWild, env, taenv, ns0, root)(Scope.Top, sctx, flix)
 
       mapN(tpeVal) {
@@ -2069,7 +2068,7 @@ object Resolver {
     */
   private def resolveSuperTrait(tconstr0: NamedAst.TraitConstraint, env: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.TraitConstraint, ResolutionError] = tconstr0 match {
     case NamedAst.TraitConstraint(trt0, tpe0, loc) =>
-      val traitVal = lookupTraitForImplementation(trt0, env, ns0, root)
+      val traitVal = lookupTraitForImplementation(trt0, TraitUsageKind.Constraint, env, ns0, root)
       val tpeVal = resolveType(tpe0, None, Wildness.ForbidWild, env, taenv, ns0, root)(Scope.Top, sctx, flix)
 
       mapN(traitVal, tpeVal) {
@@ -2105,7 +2104,7 @@ object Resolver {
     * Performs name resolution on the given of derivation `derive0`.
     */
   private def resolveDerivation(derive0: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Option[Derivation] = {
-    lookupTrait(derive0, env, ns0, root).map {
+    lookupTrait(derive0, TraitUsageKind.Derivation, env, ns0, root).map {
       trt => Derivation(trt.sym, derive0.loc)
     }
   }
@@ -2113,7 +2112,7 @@ object Resolver {
   /**
     * Finds the trait with the qualified name `qname` in the namespace `ns0`, for the purposes of implementation.
     */
-  private def lookupTraitForImplementation(qname: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.Trait, ResolutionError] = {
+  private def lookupTraitForImplementation(qname: Name.QName, traitUseKind: TraitUsageKind, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Validation[NamedAst.Declaration.Trait, ResolutionError] = {
     val traitOpt = tryLookupName(qname, env, ns0, root)
     traitOpt.collectFirst {
       case Resolution.Declaration(trt: NamedAst.Declaration.Trait) => trt
@@ -2132,14 +2131,14 @@ object Resolver {
             Validation.Success(trt)
         }
       case None =>
-        Validation.Failure(ResolutionError.UndefinedTrait(qname, AnchorPosition.mkImportOrUseAnchor(ns0), ns0, qname.loc))
+        Validation.Failure(ResolutionError.UndefinedTrait(qname, traitUseKind, AnchorPosition.mkImportOrUseAnchor(ns0), env, ns0, qname.loc))
     }
   }
 
   /**
     * Finds the trait with the qualified name `qname` in the namespace `ns0`.
     */
-  private def lookupTrait(qname: Name.QName, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Option[NamedAst.Declaration.Trait] = {
+  private def lookupTrait(qname: Name.QName, traitUseKind: TraitUsageKind, env: LocalScope, ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext): Option[NamedAst.Declaration.Trait] = {
     val traitOpt = tryLookupName(qname, env, ns0, root)
     traitOpt.collectFirst {
       case Resolution.Declaration(trt: NamedAst.Declaration.Trait) => trt
@@ -2155,7 +2154,7 @@ object Resolver {
             Some(trt)
         }
       case None =>
-        val error = ResolutionError.UndefinedTrait(qname, AnchorPosition.mkImportOrUseAnchor(ns0), ns0, qname.loc)
+        val error = ResolutionError.UndefinedTrait(qname, traitUseKind, AnchorPosition.mkImportOrUseAnchor(ns0), env, ns0, qname.loc)
         sctx.errors.add(error)
         None
     }
@@ -2813,7 +2812,7 @@ object Resolver {
     }
 
     effOpt match {
-      case None => Result.Err(ResolutionError.UndefinedEffect(qname, AnchorPosition.mkImportOrUseAnchor(ns0), ns0, qname.loc))
+      case None => Result.Err(ResolutionError.UndefinedEffect(qname, AnchorPosition.mkImportOrUseAnchor(ns0), env, ns0,  qname.loc))
       case Some(decl) => Result.Ok(decl)
     }
   }

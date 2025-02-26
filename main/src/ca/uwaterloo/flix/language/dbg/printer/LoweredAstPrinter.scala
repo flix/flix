@@ -100,7 +100,7 @@ object LoweredAstPrinter {
         case LoweredAst.CatchRule(sym, clazz, body) => (sym, clazz, print(body))
       }
       DocAst.Expr.TryCatch(expD, rulesD)
-    case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
+    case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
       val expD = print(exp)
       val effD = effUse.sym
       val rulesD = rules.map {

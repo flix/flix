@@ -243,31 +243,27 @@ object Lexer {
   private def eof()(implicit s: State): Boolean =
     s.sc.eof
 
-  /**
-    * A helper function for producing a `SourceLocation` starting at `s.start`.
-    *
-    * @param length the length that the source location should span
-    */
-  private def sourceLocationAtStart(length: Int = 1)(implicit s: State): SourceLocation = {
-    // A state is zero-indexed while a SourcePosition is one-indexed.
-    val line = s.start.line + 1
-    val column = s.start.column + 1
-    val sp1 = SourcePosition(s.src, line, column.toShort)
-    val sp2 = SourcePosition(s.src, line, (column + length).toShort)
-    SourceLocation(isReal = true, sp1, sp2)
+  /** Returns a single-width [[SourceLocation]] starting at [[State.start]]. */
+  private def sourceLocationAtStart()(implicit s: State): SourceLocation = {
+    sourceLocationFromZeroIndex(s.src, line = s.start.line, column = s.start.column)
+  }
+
+  /** Returns a single-width [[SourceLocation]] starting at the current position. */
+  private def sourceLocationAtCurrent()(implicit s: State): SourceLocation = {
+    sourceLocationFromZeroIndex(s.src, line = s.sc.getLine, column = s.sc.getColumn)
   }
 
   /**
-    * A helper function for producing a `SourceLocation` starting at `s.current`.
-    *
-    * @param length the length that the source location should span
+    * Returns a single-width [[SourceLocation]] with the `src` and the zero-indexed `line` and
+    * `column`.
     */
-  private def sourceLocationAtCurrent(length: Int = 1)(implicit s: State): SourceLocation = {
-    // A state is zero-indexed while a SourcePosition is one-indexed.
-    val line = s.sc.getLine + 1
-    val column = s.sc.getColumn + 1
-    val sp1 = SourcePosition(s.src, line, column.toShort)
-    val sp2 = SourcePosition(s.src, line, (column + length).toShort)
+  private def sourceLocationFromZeroIndex(src: Source, line: Int, column: Int): SourceLocation = {
+    // SourcePosition is one-indexed - so correct line and column.
+    val lineFixed = line + 1
+    val columnFixed = column + 1
+    val sp1 = SourcePosition(src, lineFixed, columnFixed.toShort)
+    // It is safe not consider line breaks because `columnFixed + 1` is an exclusive index.
+    val sp2 = SourcePosition(src, lineFixed, (columnFixed + 1).toShort)
     SourceLocation(isReal = true, sp1, sp2)
   }
 

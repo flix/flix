@@ -227,7 +227,7 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.TryCatch(e, rs, t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
+    case MonoAst.Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
         case MonoAst.HandlerRule(sym, fparams, body) =>
@@ -236,7 +236,7 @@ object Simplifier {
           SimplifiedAst.HandlerRule(sym, fps, b)
       }
       val t = visitType(tpe)
-      SimplifiedAst.Expr.TryWith(e, effUse, rs, t, simplifyEffect(eff), loc)
+      SimplifiedAst.Expr.RunWith(e, effUse, rs, t, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.Do(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)

@@ -111,7 +111,7 @@ class TestChangeSet extends AnyFunSuite {
     val newMap = ListMap(3 -> List(src3), 4 -> List(src4, src5))
 
     val cs = ChangeSet.Everything
-    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap)
+    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap, (v1: MySourceable, v2: MySourceable) => v1 == v2)
 
     assert(staleMap == newMap)
     assert(freshMap == ListMap.empty)
@@ -122,7 +122,7 @@ class TestChangeSet extends AnyFunSuite {
     val newMap = ListMap(1 -> List(src1, src2), 2 -> List(src2))
 
     val cs = ChangeSet.Everything.markChanged(input1, dg1)
-    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap)
+    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap, (v1: MySourceable, v2: MySourceable) => v1 == v2)
 
     assert(staleMap == ListMap(1 -> List(src1)))
     assert(freshMap == ListMap(1 -> List(src2), 2 -> List(src2)))
@@ -133,7 +133,7 @@ class TestChangeSet extends AnyFunSuite {
     val newMap = ListMap(1 -> List(src1, src2), 2 -> List(src2), 3 -> List(src3), 4 -> List(src4), 5 -> List(src5))
 
     val cs = ChangeSet.Everything.markChanged(input1, dg2)
-    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap)
+    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap, (v1: MySourceable, v2: MySourceable) => v1 == v2)
 
     assert(staleMap == ListMap(1 -> List(src2, src1), 2 -> List(src2), 3 -> List(src3), 4 -> List(src4), 5 -> List(src5)))
     assert(freshMap == ListMap.empty)
@@ -144,7 +144,7 @@ class TestChangeSet extends AnyFunSuite {
     val newMap = ListMap(1 -> List(src1, src2), 2 -> List(src2, src3), 3 -> List(src4))
 
     val cs = ChangeSet.Everything.markChanged(input3, dg1)
-    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap)
+    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap, (v1: MySourceable, v2: MySourceable) => v1 == v2)
 
     assert(staleMap == ListMap(2 -> List(src3), 3 -> List(src4)))
     assert(freshMap == ListMap(1 -> List(src2, src1), 2 -> List(src2)))
@@ -155,7 +155,7 @@ class TestChangeSet extends AnyFunSuite {
     val newMap = ListMap(1 -> List(src1, src2), 2 -> List(src2))
 
     val cs = ChangeSet.Everything.markChanged(input3, dg1).markChanged(input4, dg1)
-    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap)
+    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap, (v1: MySourceable, v2: MySourceable) => v1 == v2)
 
     assert(staleMap == ListMap.empty)
     assert(freshMap == ListMap(1 -> List(src2, src1), 2 -> List(src2)))
@@ -166,7 +166,7 @@ class TestChangeSet extends AnyFunSuite {
     val newMap = ListMap(1 -> List(src1, src2), 2 -> List(src2), 3 -> List(src4, src5))
 
     val cs = ChangeSet.Everything.markChanged(input3, dg1).markChanged(input5, dg1)
-    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap)
+    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap, (v1: MySourceable, v2: MySourceable) => v1 == v2)
 
     assert(staleMap == ListMap(3 -> List(src5)))
     assert(freshMap == ListMap(1 -> List(src2, src1), 2 -> List(src2), 3 -> List(src4)))
@@ -177,7 +177,7 @@ class TestChangeSet extends AnyFunSuite {
     val newMap = ListMap(1 -> List(src1, src2), 2 -> List(src2), 3 -> List(src4, src5))
 
     val cs = ChangeSet.Everything.markChanged(input1, dg1).markChanged(input3, dg1).markChanged(input4, dg1)
-    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap)
+    val (staleMap, freshMap) = cs.partitionOnValues(newMap, oldMap, (v1: MySourceable, v2: MySourceable) => v1 == v2)
 
     assert(staleMap == ListMap(1 -> List(src1), 3 -> List(src4)))
     assert(freshMap == ListMap(1 -> List(src2), 2 -> List(src2), 3 -> List(src5)))

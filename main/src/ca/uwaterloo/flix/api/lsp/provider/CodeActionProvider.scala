@@ -40,7 +40,7 @@ object CodeActionProvider {
   }
 
   private def getActionsFromErrors(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = errors.flatMap {
-    case ResolutionError.UndefinedEffect(qn, ap,  _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedEffect(qn, ap,  _, _, loc) if overlaps(range, loc) =>
       mkUseEffect(qn.ident, uri, ap)
 
     case ResolutionError.UndefinedStruct(qn, ap, loc) if overlaps(range, loc) =>
@@ -52,7 +52,7 @@ object CodeActionProvider {
     case ResolutionError.UndefinedName(qn, ap, env, loc) if overlaps(range, loc) =>
       mkFixMisspelling(qn, loc, env, uri) ++ mkUseDef(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap) ++ mkNewDef(qn.ident.name, uri, ap)
 
-    case ResolutionError.UndefinedTrait(qn, ap,  _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedTrait(qn, _, ap, _, _, loc) if overlaps(range, loc) =>
       mkUseTrait(qn.ident, uri, ap)
 
     case ResolutionError.UndefinedTag(name, ap, _, _, loc) if overlaps(range, loc) =>
@@ -104,7 +104,7 @@ object CodeActionProvider {
     */
   private def mkUseDef(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
     val syms = root.defs.collect {
-      case (sym, defn) if CompletionUtils.isPublic(defn) => sym
+      case (sym, defn) if CompletionUtils.isAvailable(defn) => sym
     }
     mkUseSym(ident, syms.map(_.name), syms, uri, ap)
   }
@@ -114,7 +114,7 @@ object CodeActionProvider {
     */
   private def mkUseTrait(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
     val syms = root.traits.collect {
-      case (sym, trt) if CompletionUtils.isPublic(trt) => sym
+      case (sym, trt) if CompletionUtils.isAvailable(trt) => sym
     }
     mkUseSym(ident, syms.map(_.name), syms, uri, ap)
   }
@@ -124,7 +124,7 @@ object CodeActionProvider {
     */
   private def mkUseEffect(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
     val syms = root.effects.collect {
-      case (sym, eff) if CompletionUtils.isPublic(eff) => sym
+      case (sym, eff) if CompletionUtils.isAvailable(eff) => sym
     }
     mkUseSym(ident, syms.map(_.name), syms, uri, ap)
   }
@@ -146,7 +146,7 @@ object CodeActionProvider {
     * }}}
     */
   private def mkUseTag(tagName: String, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
-    val candidateEnums = root.enums.filter{ case (_, enm) => enm.cases.keys.exists(_.name == tagName) && CompletionUtils.isPublic(enm)}
+    val candidateEnums = root.enums.filter{ case (_, enm) => enm.cases.keys.exists(_.name == tagName) && CompletionUtils.isAvailable(enm)}
     candidateEnums.keys.map{ enumName =>
       CodeAction(
         title = s"use '$enumName.$tagName'",
@@ -174,7 +174,7 @@ object CodeActionProvider {
     * }}}
     */
   private def mkQualifyTag(tagName: String, uri: String, loc: SourceLocation)(implicit root: Root): List[CodeAction] = {
-    val candidateEnums = root.enums.filter{ case (_, enm) => enm.cases.keys.exists(_.name == tagName) && CompletionUtils.isPublic(enm)}
+    val candidateEnums = root.enums.filter{ case (_, enm) => enm.cases.keys.exists(_.name == tagName) && CompletionUtils.isAvailable(enm)}
     candidateEnums.keys.map{ enumName =>
       CodeAction(
         title = s"Prefix with '$enumName.'",
@@ -189,17 +189,17 @@ object CodeActionProvider {
     * Returns a code action that proposes to `use` a type.
     */
   private def mkUseType(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
-    val enumNames = root.enums.collect { case (sym, enm) if CompletionUtils.isPublic(enm) => sym.name }
-    val enumSyms = root.enums.collect { case (sym, enm) if CompletionUtils.isPublic(enm) => sym }
+    val enumNames = root.enums.collect { case (sym, enm) if CompletionUtils.isAvailable(enm) => sym.name }
+    val enumSyms = root.enums.collect { case (sym, enm) if CompletionUtils.isAvailable(enm) => sym }
 
-    val restrictableEnumNames = root.restrictableEnums.collect { case (sym, enm) if CompletionUtils.isPublic(enm) => sym.name }
-    val restrictableEnumSyms = root.restrictableEnums.collect { case (sym, enm) if CompletionUtils.isPublic(enm) => sym }
+    val restrictableEnumNames = root.restrictableEnums.collect { case (sym, enm) if CompletionUtils.isAvailable(enm) => sym.name }
+    val restrictableEnumSyms = root.restrictableEnums.collect { case (sym, enm) if CompletionUtils.isAvailable(enm) => sym }
 
-    val traitNames = root.traits.collect { case (sym, trt) if CompletionUtils.isPublic(trt) => sym.name }
-    val traitSyms = root.traits.collect { case (sym, trt) if CompletionUtils.isPublic(trt) => sym }
+    val traitNames = root.traits.collect { case (sym, trt) if CompletionUtils.isAvailable(trt) => sym.name }
+    val traitSyms = root.traits.collect { case (sym, trt) if CompletionUtils.isAvailable(trt) => sym }
 
-    val typeAliasNames = root.typeAliases.collect { case (sym, alias) if CompletionUtils.isPublic(alias) => sym.name }
-    val typeAliasSyms = root.typeAliases.collect { case (sym, alias) if CompletionUtils.isPublic(alias) => sym }
+    val typeAliasNames = root.typeAliases.collect { case (sym, alias) if CompletionUtils.isAvailable(alias) => sym.name }
+    val typeAliasSyms = root.typeAliases.collect { case (sym, alias) if CompletionUtils.isAvailable(alias) => sym }
 
     val names = enumNames ++ restrictableEnumNames ++ traitNames ++ typeAliasNames
     val syms = enumSyms ++ restrictableEnumSyms ++ traitSyms ++ typeAliasSyms

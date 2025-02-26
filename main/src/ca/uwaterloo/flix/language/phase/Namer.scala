@@ -773,7 +773,7 @@ object Namer {
       NamedAst.Expr.Throw(e, loc)
 
     case DesugaredAst.Expr.Handler(qname, rules, loc) =>
-      val rs = rules.map(visitTryWithRule(_, ns0))
+      val rs = rules.map(visitRunWithRule(_, ns0))
       NamedAst.Expr.Handler(qname, rs, loc)
 
     case DesugaredAst.Expr.RunWith(exp1, exp2, loc) =>
@@ -926,7 +926,7 @@ object Namer {
   /**
     * Performs naming on the given handler rule `rule0`.
     */
-  private def visitTryWithRule(rule0: DesugaredAst.HandlerRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.HandlerRule = rule0 match {
+  private def visitRunWithRule(rule0: DesugaredAst.HandlerRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.HandlerRule = rule0 match {
     case DesugaredAst.HandlerRule(op, fparams, body0) =>
       val fps = fparams.map(visitFormalParam)
       val b = visitExp(body0, ns0)

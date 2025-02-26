@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Hover, MarkupContent, MarkupKind, Position, Range, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, OpSymUse, SigSymUse}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt.*
 import ca.uwaterloo.flix.language.phase.unification.SetFormula
 
@@ -35,7 +35,7 @@ object HoverProvider {
   }
 
   private def hoverAny(x: AnyRef)(implicit root: Root, flix: Flix): Option[Hover] = x match {
-    case tpe: Type => hoverKind(tpe)
+    case tpe: Type => hoverKind(tpe.kind, tpe.loc)
     case (varSym: Symbol.VarSym, tpe: Type) => hoverType(tpe, varSym.loc)
     case exp: Expr => hoverTypeAndEff(exp.tpe, exp.eff, exp.loc)
     case Binder(sym, tpe) => hoverType(tpe, sym.loc)
@@ -43,6 +43,7 @@ object HoverProvider {
     case SigSymUse(sym, loc) => hoverSig(sym, loc)
     case OpSymUse(symUse, loc) => hoverOp(symUse, loc)
     case FormalParam(_, _, tpe, _, loc) => hoverType(tpe, loc)
+    case TypeParam(_, sym, _) => hoverKind(sym.kind, sym.loc)
     case _ => None
   }
 
@@ -50,7 +51,7 @@ object HoverProvider {
     val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(tpe)(root)
     val markup =
       s"""```flix
-         |${FormatType.formatType(tpe)}$lowerAndUpperBounds
+         |${FormatType.formatType(tpe, minimizeEffs = true)}$lowerAndUpperBounds
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -113,24 +114,24 @@ object HoverProvider {
 
   private def formatTypAndEff(tpe0: Type, eff0: Type)(implicit flix: Flix): String = {
     // TODO deduplicate with CompletionProvider
-    val t = FormatType.formatType(tpe0)
+    val t = FormatType.formatType(tpe0, minimizeEffs = true)
 
     val p = eff0 match {
       case Type.Cst(TypeConstructor.Pure, _) => ""
-      case eff => raw" \ " + FormatType.formatType(eff)
+      case eff => raw" \ " + FormatType.formatType(eff, minimizeEffs = true)
     }
 
     s"$t$p"
   }
 
-  private def hoverKind(t: Type): Option[Hover] = {
+  private def hoverKind(k: Kind, loc: SourceLocation): Option[Hover] = {
     val markup =
       s"""```flix
-         |${FormatKind.formatKind(t.kind)}
+         |${FormatKind.formatKind(k)}
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
-    val range = Range.from(t.loc)
+    val range = Range.from(loc)
     Some(Hover(contents, range))
   }
 }

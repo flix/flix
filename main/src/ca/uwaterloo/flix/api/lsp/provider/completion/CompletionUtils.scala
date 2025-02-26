@@ -17,13 +17,12 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Modifier, Resolution}
+import ca.uwaterloo.flix.language.ast.TypedAst.Decl
+import ca.uwaterloo.flix.language.ast.shared.{LocalScope, QualifiedSym, Resolution, Scope, VarText}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
-import java.util
 import scala.annotation.tailrec
 
 object CompletionUtils {
@@ -31,15 +30,6 @@ object CompletionUtils {
   private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit
 
   private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams.head.tpe)
-
-  def getParamsLabelForEnumTags(cas: TypedAst.Case)(implicit flix: Flix): String = {
-    cas.tpes.length match {
-      case 0 => ""
-      case _ => s"(${cas.tpes.map(FormatType.formatType(_)).mkString(", ")})"
-    }
-  }
-
-  def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = name + getLabelForSpec(spec)
 
   def getLabelForSpec(spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
     case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _) =>
@@ -135,51 +125,6 @@ object CompletionUtils {
     s"$name("
   }
 
-  def getNestedModules(word: String)(implicit root: TypedAst.Root): List[Symbol.ModuleSym] = {
-    ModuleSymFragment.parseModuleSym(word) match {
-      case ModuleSymFragment.Complete(modSym) =>
-        root.modules.get(modSym).collect {
-          case sym: Symbol.ModuleSym => sym
-        }
-      case ModuleSymFragment.Partial(modSym, suffix) =>
-        root.modules.get(modSym).collect {
-          case sym: Symbol.ModuleSym if matches(sym, suffix) => sym
-        }
-      case _ => Nil
-    }
-  }
-
-  /**
-   * Returns `true` if the given module `sym` matches the given `suffix`.
-   *
-   * (Aaa.Bbb.Ccc, Cc) => true
-   * (Aaa.Bbb.Ccc, Dd) => false
-   * (/, Cc)           => true
-   */
-  private def matches(sym: Symbol.ModuleSym, suffix: String): Boolean = {
-    if (sym.isRoot) {
-      true
-    } else {
-      sym.ns.last.startsWith(suffix) // We know that ns cannot be empty because it is not the root.
-    }
-  }
-
-  /**
-    * Filters the definitions in the given `root` by the given `word` and `env`.
-    * If `whetherInScope` is `true`, we return the matched defs in the root module or in the scope
-    * If `whetherInScope` is `false`, we return the matched defs not in the root module and not in the scope
-    */
-  def filterDefsByScope(word: String, root: TypedAst.Root, env: LocalScope, whetherInScope: Boolean): Iterable[TypedAst.Def] = {
-    val matchedDefs = root.defs.filter{case (_, decl) => matchesDef(decl, word)}
-    val rootModuleMatches = matchedDefs.collect{
-        case (sym, decl) if whetherInScope && sym.namespace.isEmpty => decl
-    }
-    val scopeMatches = matchedDefs.collect{
-      case (sym, decl) if sym.namespace.nonEmpty && checkScope(decl, env, whetherInScope) => decl
-    }
-    rootModuleMatches ++ scopeMatches
-  }
-
   /**
     * When `whetherInScope` is `true`, we check if the given definition `decl` is in the scope.
     * When `whetherInScope` is `false`, we check if the given definition `decl` is not in the scope.
@@ -221,8 +166,8 @@ object CompletionUtils {
     *   - fuzzyMatch("fBrT", "fooBarTest") = false
     *   - fuzzyMatch("fTB",  "fooBarTest") = false
     *
-    * @param query  The query string, usually from the user input.
-    * @param key    The key string, usually from the completion item.
+    * @param query The query string, usually from the user input.
+    * @param key   The key string, usually from the completion item.
     */
   def fuzzyMatch(query: String, key: String): Boolean = {
     @tailrec
@@ -235,6 +180,7 @@ object CompletionUtils {
         else
           matchSegments(query, kTail)
     }
+
     matchSegments(splitByCamelCase(query), splitByCamelCase(key))
   }
 
@@ -248,20 +194,20 @@ object CompletionUtils {
   }
 
   /**
-   * Checks if the namespace and ident from the error matches the qualified name.
-   * We require a full match on the namespace and a fuzzy match on the ident.
-   *
-   * Example:
-   *   matchesQualifiedName(["A", "B"], "fooBar", ["A", "B"], "fB") => true
-   */
-  def matchesQualifiedName(targetNamespace: List[String], targetIdent:String, qn: Name.QName): Boolean = {
+    * Checks if the namespace and ident from the error matches the qualified name.
+    * We require a full match on the namespace and a fuzzy match on the ident.
+    *
+    * Example:
+    * matchesQualifiedName(["A", "B"], "fooBar", ["A", "B"], "fB") => true
+    */
+  def matchesQualifiedName(targetNamespace: List[String], targetIdent: String, qn: Name.QName): Boolean = {
     targetNamespace == qn.namespace.parts && fuzzyMatch(qn.ident.name, targetIdent)
   }
 
   /**
-   * Format type params in the right form to be displayed in the list of completions
-   * e.g. "[a, b, c]"
-   */
+    * Format type params in the right form to be displayed in the list of completions
+    * e.g. "[a, b, c]"
+    */
   def formatTParams(tparams: List[TypedAst.TypeParam]): String = {
     tparams match {
       case Nil => ""
@@ -270,9 +216,9 @@ object CompletionUtils {
   }
 
   /**
-   * Format type params in the right form to be inserted as a snippet
-   * e.g. "[${1:a}, ${2:b}, ${3:c}]"
-   */
+    * Format type params in the right form to be inserted as a snippet
+    * e.g. "[${1:a}, ${2:b}, ${3:c}]"
+    */
   def formatTParamsSnippet(tparams: List[TypedAst.TypeParam]): String = {
     tparams match {
       case Nil => ""
@@ -284,36 +230,159 @@ object CompletionUtils {
 
 
   /**
-    * Checks if the given spec is public.
+    * Checks if the given class is public.
     */
-  def isPublic(defn: TypedAst.Def): Boolean = defn.spec.mod.isPublic && !defn.spec.ann.isInternal
-  def isPublic(defn: Symbol.DefnSym)(implicit root: TypedAst.Root): Boolean = root.defs.get(defn).exists(isPublic)
+  def isAvailable(decl: Decl): Boolean =
+    !decl.ann.isInternal && decl.mod.isPublic
 
   /**
-    * Checks if the given trait is public.
+    * Checks if the given def is public.
     */
-  def isPublic(trt: TypedAst.Trait): Boolean = trt.mod.isPublic && !trt.ann.isInternal
-  def isPublic(trt: Symbol.TraitSym)(implicit root: TypedAst.Root): Boolean = root.traits.get(trt).exists(isPublic)
+  def isAvailable(defn: TypedAst.Def): Boolean = isAvailable(defn.spec)
 
   /**
-    * Checks if the given effect is public.
+    * Checks if the given sig is public.
     */
-  def isPublic(eff: TypedAst.Effect): Boolean = eff.mod.isPublic && !eff.ann.isInternal
-  def isPublic(eff: Symbol.EffectSym)(implicit root: TypedAst.Root): Boolean = root.effects.get(eff).exists(isPublic)
+  def isAvailable(sig: TypedAst.Sig): Boolean = isAvailable(sig.spec)
 
   /**
-    * Checks if the given enum is public.
+    * Checks if the given op is public.
     */
-  def isPublic(enm: TypedAst.Enum): Boolean = enm.mod.isPublic && !enm.ann.isInternal
-  def isPublic(enumMap: Symbol.EnumSym)(implicit root: TypedAst.Root): Boolean = root.enums.get(enumMap).exists(isPublic)
+  def isAvailable(op: TypedAst.Op): Boolean = isAvailable(op.spec)
 
   /**
-    * Checks if the given restrictable enum is public.
+    * Checks if the def of the given symbol is public.
     */
-  def isPublic(enm: TypedAst.RestrictableEnum): Boolean = enm.mod.isPublic && !enm.ann.isInternal
+  def isAvailable(defn: Symbol.DefnSym)(implicit root: TypedAst.Root): Boolean = root.defs.get(defn).exists(isAvailable)
 
   /**
-    * Checks if the given type alias is public.
+    * Checks if the trait of the given symbol is public.
     */
-  def isPublic(alias: TypedAst.TypeAlias): Boolean = alias.mod.isPublic && !alias.ann.isInternal
+  def isAvailable(trt: Symbol.TraitSym)(implicit root: TypedAst.Root): Boolean = root.traits.get(trt).exists(isAvailable)
+
+  /**
+    * Checks if the effect of the given symbol is public.
+    */
+  def isAvailable(eff: Symbol.EffectSym)(implicit root: TypedAst.Root): Boolean = root.effects.get(eff).exists(isAvailable)
+
+  /**
+    * Checks if the enum of the given symbol is public.
+    */
+  def isAvailable(enumMap: Symbol.EnumSym)(implicit root: TypedAst.Root): Boolean = root.enums.get(enumMap).exists(isAvailable)
+
+  /**
+    * Replaces the given symbol with a variable named by the given `newText`.
+    */
+  private def replaceText(oldSym: Symbol, tpe: Type, newText: String)(implicit flix: Flix): Type = {
+    implicit val scope: Scope = Scope.Top
+    tpe match {
+      case Type.Var(sym, loc) if oldSym == sym => Type.Var(sym.withText(VarText.SourceText(newText)), loc)
+      case Type.Var(_, _) => tpe
+      case Type.Cst(_, _) => tpe
+
+      case Type.Apply(tpe1, tpe2, loc) =>
+        val t1 = replaceText(oldSym, tpe1, newText)
+        val t2 = replaceText(oldSym, tpe2, newText)
+        Type.Apply(t1, t2, loc)
+
+      case Type.Alias(cst, args0, tpe0, loc) =>
+        if (oldSym == cst.sym) {
+          Type.freshVar(Kind.Star, loc, text = VarText.SourceText(newText))
+        } else {
+          val args = args0.map(replaceText(oldSym, _, newText))
+          val t = replaceText(oldSym, tpe0, newText)
+          Type.Alias(cst, args, t, loc)
+        }
+
+      case Type.AssocType(cst, args0, kind, loc) =>
+        if (oldSym == cst.sym) {
+          Type.freshVar(Kind.Star, loc, text = VarText.SourceText(newText))
+        } else {
+          val args = args0.map(replaceText(oldSym, _, newText))
+          Type.AssocType(cst, args, kind, loc)
+        }
+
+      // Jvm types should not be exposed to the user.
+      case t: Type.JvmToType => t
+      case t: Type.JvmToEff => t
+      case t: Type.UnresolvedJvmType => t
+    }
+  }
+
+  /**
+    * Checks if the sym and the given qualified name matches.
+    *
+    * @param sym        The symbol to check, usually from root.
+    * @param qn         The qualified name to check, usually from user input.
+    * @param qualified  Whether the qualified name is qualified.
+    */
+  private def fmtType(tpe: Type, holes: Map[Symbol, String])(implicit flix: Flix): String = {
+    val replaced = holes.foldLeft(tpe) { case (t, (sym, hole)) => replaceText(sym, t, hole) }
+    FormatType.formatType(replaced)
+  }
+
+  /**
+    * Formats the given associated type `assoc`.
+    */
+  private def fmtAssocType(assoc: TypedAst.AssocTypeSig, holes: Map[Symbol, String]): String = {
+    s"    type ${assoc.sym.name} = ${holes(assoc.sym)}"
+  }
+
+  /**
+    * Formats the given formal parameters in `spec`.
+    */
+  private def fmtFormalParams(spec: TypedAst.Spec, holes: Map[Symbol, String])(implicit flix: Flix): String =
+    spec.fparams.map(fparam => s"${fparam.bnd.sym.text}: ${fmtType(fparam.tpe, holes)}").mkString(", ")
+
+  /**
+    * Formats the given signature `sig`.
+    */
+  private def fmtSignature(sig: TypedAst.Sig, holes: Map[Symbol, String])(implicit flix: Flix): String = {
+    val fparams = fmtFormalParams(sig.spec, holes)
+    val retTpe = fmtType(sig.spec.retTpe, holes)
+    val eff = sig.spec.eff match {
+      case Type.Cst(TypeConstructor.Pure, _) => ""
+      case e => raw" \ " + fmtType(e, holes)
+    }
+    s"    pub def ${sig.sym.name}($fparams): $retTpe$eff = ???"
+  }
+
+  def fmtInstanceSnippet(trt: TypedAst.Trait, qualified: Boolean)(implicit flix: Flix): String = {
+    val instanceHole = "${1:t}"
+    val holes: Map[Symbol, String] = {
+      (trt.tparam.sym -> instanceHole) +:
+        trt.assocs.zipWithIndex.map { case (a, i) => a.sym -> s"$$${i + 2}" }
+    }.toMap
+
+    val traitName = if (qualified) trt.sym.toString else trt.sym.name
+    val signatures = trt.sigs.filter(_.exp.isEmpty)
+
+    val body = {
+      trt.assocs.map(a => fmtAssocType(a, holes)) ++
+        signatures.map(s => fmtSignature(s, holes))
+    }.mkString("\n\n")
+
+    s"$traitName[$instanceHole] {\n\n$body\n\n}\n"
+  }
+
+  /**
+    * Formats the given trait `trt`.
+    */
+  def fmtTrait(trt: TypedAst.Trait): String = {
+    s"trait ${trt.sym.name}[${trt.tparam.name.name}]"
+  }
+
+  /**
+    * Checks if the sym and the given qualified name matches.
+    *
+    * @param sym        The symbol to check, usually from root.
+    * @param qn         The qualified name to check, usually from user input.
+    * @param qualified  Whether the qualified name is qualified.
+    */
+  def matchesName(sym: QualifiedSym, qn: Name.QName, qualified: Boolean): Boolean = {
+    if (qualified) {
+      matchesQualifiedName(sym.namespace, sym.name, qn)
+    } else
+      fuzzyMatch(qn.ident.name, sym.name)
+  }
 }

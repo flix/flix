@@ -637,7 +637,7 @@ object Monomorpher {
       }
       MonoAst.Expr.TryCatch(e, rs, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.TryWith(exp, effect, rules, tpe, eff, loc) =>
+    case LoweredAst.Expr.RunWith(exp, effect, rules, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
       val rs = rules map {
         case LoweredAst.HandlerRule(op, fparams0, body0) =>
@@ -646,7 +646,7 @@ object Monomorpher {
           val body = visitExp(body0, env1, subst)
           MonoAst.HandlerRule(op, fparams, body)
       }
-      MonoAst.Expr.TryWith(e, effect, rs, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.RunWith(e, effect, rs, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.Do(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))

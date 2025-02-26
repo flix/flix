@@ -19,6 +19,9 @@ import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
+import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin
 import ca.uwaterloo.flix.util.collection.SortedBimap
@@ -30,29 +33,29 @@ import scala.collection.immutable.SortedSet
 object EffUnification3 {
 
   /**
-   * Controls whether to enable solve-and-retry for subeffecting.
-   */
+    * Controls whether to enable solve-and-retry for subeffecting.
+    */
   var EnableSmartSubeffecting: Boolean = true
 
   /**
     * Computes an MGU for **ALL* equations in `eqns`.
     *
     * Returns `Result.Ok(s)` if *ALL* equations in `eqns` where solvable.
-    *   The returned substitution `s` is an MGU for `eqns`.
+    * The returned substitution `s` is an MGU for `eqns`.
     *
     * Returns `Result.Err(l)` if *a single equation* in `eqns` is unsolvable.
-    *   The returned list `l` is a non-empty list of equations that were unsolvable (i.e. in conflict).
-    *   The equations in `l` are derived from `eqns` but are not a strict subset of `eqns`.
-    *   That is, an equation in `l` may not directly correspond to any equation in `eqns`. However, their source locations are valid.
+    * The returned list `l` is a non-empty list of equations that were unsolvable (i.e. in conflict).
+    * The equations in `l` are derived from `eqns` but are not a strict subset of `eqns`.
+    * That is, an equation in `l` may not directly correspond to any equation in `eqns`. However, their source locations are valid.
     *
     * Returns `Result.Err(eqns)` if `eqns` contains an equation that is ill-kinded. Hence, it is better to handle ill-kinded equations elsewhere.
     *
     * Note: Treats `Type.Error` as a constant, i.e. only equal to itself. Hence, it is better to drop equations that contain `Type.Error`.
     */
-  def unifyAll(eqs: List[(Type, Type, SourceLocation)], scope: Scope, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, List[(Type, Type, SourceLocation)]] = {
+  def unifyAll(eqs: List[TypeConstraint.Equality], scope: Scope, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, List[TypeConstraint]] = {
     // Performance: Nothing to do if the equation list is empty
     if (eqs.isEmpty) {
-      return Result.Ok( Substitution.empty)
+      return Result.Ok(Substitution.empty)
     }
 
     // Add to implicit context.
@@ -61,7 +64,7 @@ object EffUnification3 {
     implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.DoNothing
 
     // Choose a unique number for each atom.
-    implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(getAtomsFromEquations(eqs))
+    implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(getAtomsFromConstraints(eqs))
 
     //
     // Phase 1: Try to solve without subeffecting.
@@ -95,6 +98,7 @@ object EffUnification3 {
     } catch {
       case InvalidType =>
         // The effect equations are invalid.
+        // We don't call these conflicted because TypeReduction may make these valid later.
         Result.Err(eqs)
     }
   }
@@ -104,16 +108,16 @@ object EffUnification3 {
     SortedBimap.from(atoms.toList.zipWithIndex)
 
   /** Returns the union of [[Atom]]s for each [[Type]] in `eqs` using [[Atom.getAtoms]]. */
-  private def getAtomsFromEquations(eqs: List[(Type, Type, SourceLocation)])(implicit scope: Scope, renv: RigidityEnv): SortedSet[Atom] = {
+  private def getAtomsFromConstraints(eqs: List[TypeConstraint.Equality])(implicit scope: Scope, renv: RigidityEnv): SortedSet[Atom] = {
     eqs.foldLeft(SortedSet.empty[Atom]) {
-      case (acc, (t1, t2, _)) => acc ++ Atom.getAtoms(t1) ++ Atom.getAtoms(t2)
+      case (acc, TypeConstraint.Equality(t1, t2, _)) => acc ++ Atom.getAtoms(t1) ++ Atom.getAtoms(t2)
     }
   }
 
   /**
-   * Returns the given list of type equations as a list of set equations.
-   */
-  private def toEquations(l: List[(Type, Type, SourceLocation)], withSlack: Boolean)(implicit scope: Scope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): List[Equation] =
+    * Returns the given list of type equations as a list of set equations.
+    */
+  private def toEquations(l: List[TypeConstraint.Equality], withSlack: Boolean)(implicit scope: Scope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): List[Equation] =
     l.map(e => toEquation(e, withSlack))
 
   /**
@@ -121,9 +125,9 @@ object EffUnification3 {
     *
     * Throws [[InvalidType]] for types not convertible to [[SetFormula]].
     */
-  private def toEquation(eq: (Type, Type, SourceLocation), withSlack: Boolean)(implicit scope: Scope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): Equation = {
-    val (tpe1, tpe2, loc) = eq
-    Equation.mk(toSetFormula(tpe1)(withSlack = withSlack, scope, renv, m), toSetFormula(tpe2)(withSlack = withSlack, scope, renv, m), loc)
+  private def toEquation(eq: TypeConstraint.Equality, withSlack: Boolean)(implicit scope: Scope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): Equation = {
+    val TypeConstraint.Equality(tpe1, tpe2, prov) = eq
+    Equation.mk(toSetFormula(tpe1)(withSlack = withSlack, scope, renv, m), toSetFormula(tpe2)(withSlack = withSlack, scope, renv, m), prov.loc)
   }
 
   /**
@@ -227,11 +231,19 @@ object EffUnification3 {
   }
 
   /**
-   * Returns the given list of equations as a list of type equalities.
-   */
-  private def fromSetEquations(l: List[Equation])(implicit m: SortedBimap[Atom, Int]): List[(Type, Type, SourceLocation)] =
+    * Returns the given list of equations as a list of type equalities.
+    */
+  private def fromSetEquations(l: List[Equation])(implicit m: SortedBimap[Atom, Int]): List[TypeConstraint] =
     l.map {
-      case Equation(f1, f2, _, loc) => (fromSetFormula(f1, loc), fromSetFormula(f2, loc), loc)
+      case Equation(f1, f2, status, loc) =>
+        val t1 = fromSetFormula(f1, loc)
+        val t2 = fromSetFormula(f2, loc)
+        val prov = status match {
+          case Status.Pending => Provenance.Match(t1, t2, loc)
+          case Status.Unsolvable => Provenance.Match(t1, t2, loc)
+          case Status.Timeout(msg) => Provenance.Timeout(msg, loc)
+        }
+        TypeConstraint.Conflicted(t1, t2, prov)
     }
 
   /**
@@ -313,7 +325,7 @@ object EffUnification3 {
     /** Represents an associated effect. */
     case class Assoc(sym: Symbol.AssocTypeSym, arg: Atom) extends Atom
 
-    /** Represents a region.  */
+    /** Represents a region. */
     case class Region(sym: Symbol.RegionSym) extends Atom
 
     /** Represents an error type. */
@@ -403,6 +415,12 @@ object EffUnification3 {
     * The type `tpe` may contain `Type.Error`.
     */
   def simplify(tpe: Type): Type = {
+    // Check if type is too complex to simplify via Zhegalkin polynomials.
+    if (tpe.typeVars.size > SetUnification.MaxVars) {
+      // The type is too complex, we return it unchanged.
+      return tpe
+    }
+
     // We can use an arbitrary scope and renv because we don't do any unification.
     implicit val scope: Scope = Scope.Top
     implicit val renv: RigidityEnv = RigidityEnv.empty

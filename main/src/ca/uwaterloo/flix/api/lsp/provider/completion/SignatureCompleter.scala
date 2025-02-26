@@ -17,7 +17,8 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.SigCompletion
-import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Sig
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Namespace, Sig, Trait}
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -31,20 +32,52 @@ object SignatureCompleter {
   }
 
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    if (qn.namespace.nonEmpty)
+    if (qn.namespace.nonEmpty) {
+      fullyQualifiedCompletion(uri, ap, qn) ++ partiallyQualifiedCompletions(uri, ap, env, qn)
+    } else
       root.traits.values.flatMap(trt =>
         trt.sigs.collect {
-          case sig if matchesSig(trt, sig, qn, uri, qualified = true) =>
-            SigCompletion(sig, ap, qualified = true, inScope = true)
+          case sig if CompletionUtils.isAvailable(trt) && CompletionUtils.matchesName(sig.sym, qn, qualified = false) =>
+            SigCompletion(sig, "", ap, qualified = false, inScope = inScope(sig, env))
         }
       )
-    else
-      root.traits.values.flatMap(trt =>
-        trt.sigs.collect {
-          case sig if matchesSig(trt, sig, qn, uri, qualified = false) =>
-            SigCompletion(sig, ap, qualified = false, inScope = inScope(sig, env))
-        }
-      )
+  }
+
+  /**
+    * Returns a List of Completion for Sig for fully qualified names.
+    *
+    * We assume the user is trying to type a fully qualified name and will only match against fully qualified names.
+    */
+  private def fullyQualifiedCompletion(uri: String, ap: AnchorPosition, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    root.traits.values.flatMap(trt =>
+      trt.sigs.collect {
+        case sig if CompletionUtils.isAvailable(trt) && CompletionUtils.matchesName(sig.sym, qn, qualified = true) =>
+          SigCompletion(sig, "", ap, qualified = true, inScope = true)
+      }
+    )
+  }
+
+  /**
+    * Returns a List of Completion for Sig for partially qualified names.
+    *
+    * Example:
+    *   - If `Foo.Bar.Addable.add` is fully qualified, then `Addable.add` is partially qualified
+    *
+    * We assume the user is trying to type a partially qualified name and will only match against partially qualified names.
+    */
+  private def partiallyQualifiedCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    val fullyQualifiedNamespaceHead = env.resolve(qn.namespace.idents.head.name) match {
+      case Some(Resolution.Declaration(Trait(_, _, _, name, _, _, _, _, _, _))) => name.toString
+      case Some(Resolution.Declaration(Namespace(name, _, _, _))) => name.toString
+      case _ => return Nil
+    }
+    val namespaceTail = qn.namespace.idents.tail.map(_.name).mkString(".")
+    val fullyQualifiedTrait = if (namespaceTail.isEmpty) fullyQualifiedNamespaceHead else s"$fullyQualifiedNamespaceHead.$namespaceTail"
+    for {
+      trt <- root.traits.get(Symbol.mkTraitSym(fullyQualifiedTrait)).toList
+      sig <- trt.sigs
+      if CompletionUtils.isAvailable(trt) && CompletionUtils.matchesName(sig.sym, qn, qualified = false)
+    } yield SigCompletion(sig, qn.namespace.toString, ap, qualified = true, inScope = true)
   }
 
   private def inScope(sig: TypedAst.Sig, scope: LocalScope): Boolean = {
@@ -55,20 +88,5 @@ object SignatureCompleter {
     })
     val isRoot = sig.sym.namespace.isEmpty
     isRoot || isResolved
-  }
-
-  /**
-    * Returns `true` if the given signature `sig` should be included in the suggestions.
-    *
-    * For visibility, we just need to check the parent trait.
-    */
-  private def matchesSig(trt: TypedAst.Trait, sig: TypedAst.Sig, qn: Name.QName, uri: String, qualified: Boolean): Boolean = {
-    val isPublic = trt.mod.isPublic && !trt.ann.isInternal
-    val isInFile = trt.loc.source.name == uri
-    val isMatch = if (qualified)
-      CompletionUtils.matchesQualifiedName(sig.sym.namespace, sig.sym.name, qn)
-    else
-      CompletionUtils.fuzzyMatch(qn.ident.name, sig.sym.name)
-    isMatch && (isPublic || isInFile)
   }
 }

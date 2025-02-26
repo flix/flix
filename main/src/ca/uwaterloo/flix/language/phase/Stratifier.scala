@@ -308,7 +308,7 @@ object Stratifier {
       Expr.Throw(e, tpe, eff, loc)
 
     case Expr.Handler(sym, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
-      val rs = rules.map(visitTryWithRule)
+      val rs = rules.map(visitRunWithRule)
       Expr.Handler(sym, rs, bodyTpe, bodyEff, handledEff, tpe, loc)
 
     case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
@@ -455,7 +455,7 @@ object Stratifier {
       CatchRule(sym, clazz, e1)
   }
 
-  private def visitTryWithRule(rule: HandlerRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): HandlerRule = rule match {
+  private def visitRunWithRule(rule: HandlerRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): HandlerRule = rule match {
     case HandlerRule(op, fparams, exp1) =>
       val e1 = visitExp(exp1)
       HandlerRule(op, fparams, e1)

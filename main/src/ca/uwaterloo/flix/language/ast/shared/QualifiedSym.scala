@@ -1,5 +1,4 @@
 /*
- * Copyright 2023 Magnus Madsen
  * Copyright 2025 Chenhao Gao
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,18 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.provider.completion.syntactic.{KeywordCompleter, ExprSnippetCompleter}
-import ca.uwaterloo.flix.language.ast.TypedAst
+package ca.uwaterloo.flix.language.ast.shared
 
-object ExprCompleter {
-
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, root: TypedAst.Root): Iterable[Completion] = {
-      KeywordCompleter.getExprKeywords ++
-      ExprSnippetCompleter.getCompletions() ++
-      HoleCompletion.getHoleCompletion(context, root)
-  }
-
+trait QualifiedSym{
+  def namespace: List[String]
+  def name: String
 }

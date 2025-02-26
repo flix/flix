@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{AssocTypeDef, AssocTypeSig, Case, Effect, Enum, Namespace, Op, Sig, Struct, StructField, TypeAlias}
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{AssocTypeDef, AssocTypeSig, StructField}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.ast.shared.Resolution
 import ca.uwaterloo.flix.language.ast.TypedAst

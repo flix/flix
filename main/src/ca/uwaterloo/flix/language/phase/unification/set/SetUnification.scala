@@ -27,6 +27,11 @@ import scala.collection.mutable
 object SetUnification {
 
   /**
+   * The maximum number of variables an equation may contain before it is considered too complex.
+   */
+  val MaxVars: Int = 12 // Up to 2^12 = 4,096 terms per Zhegalkin polynomial.
+
+  /**
     * Enable simple rewrite rules.
     */
   var EnableRewriteRules: Boolean = true
@@ -126,7 +131,7 @@ object SetUnification {
         state.subst = s @@ state.subst
       case Result.Err(eqs) =>
         // Failure: We found a conflict.
-        // Store the unsolveable equations and reset the partial substitution.
+        // Store the unsolvable equations and reset the partial substitution.
         state.eqs = eqs
         state.subst = SetSubstitution.empty
     }
@@ -408,6 +413,14 @@ object SetUnification {
       return Result.Err(eqs.map(_.toUnsolvable))
     }
 
+    // Return immediately if there is an equation that has too many variables.
+    for (eq <- eqs) {
+      val allVars = eq.f1.varsOf ++ eq.f2.varsOf
+      if (allVars.size > MaxVars) {
+        return Result.Err(List(eq.toTimeout(s"Unification too complex: The equation contains ${allVars.size} variables which exceeds the limit of $MaxVars.")))
+      }
+    }
+
     // Convert all equations to Zhegalkin polynomials.
     implicit val alg: BoolAlg[ZhegalkinExpr] = ZhegalkinAlgebra
     val l = eqs.map {
@@ -417,8 +430,8 @@ object SetUnification {
         (x, y)
     }
 
+    // Solve *ALL* equations via SVE and obtain the substitution.
     try {
-      // Solve *ALL* equations via SVE and obtain the substitution.
       val subst = SveAlgorithm.sveAll(l)
 
       // Reconstruct a set substitution.

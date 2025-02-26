@@ -1289,16 +1289,15 @@ object Parser2 {
       if (at(TokenKind.ParenL)) {
         parameters(SyntacticContext.Decl.Module)
       }
-      if (eat(TokenKind.Colon)) {
-        val typeLoc = currentSourceLocation()
+      expect(TokenKind.Colon, SyntacticContext.Type.Eff)
+      val typeLoc = currentSourceLocation()
+      Type.ttype()
+      // Check for illegal effect
+      if (at(TokenKind.Backslash)) {
+        val mark = open()
+        eat(TokenKind.Backslash)
         Type.ttype()
-        // Check for illegal effect
-        if (at(TokenKind.Backslash)) {
-          val mark = open()
-          eat(TokenKind.Backslash)
-          Type.ttype()
-          closeWithError(mark, WeederError.IllegalEffectfulOperation(typeLoc))
-        }
+        closeWithError(mark, WeederError.IllegalEffectfulOperation(typeLoc))
       }
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
@@ -2489,11 +2488,10 @@ object Parser2 {
           delimiterR = TokenKind.CurlyR,
           context = SyntacticContext.Expr.OtherExpr
         )
-        close(mark, TreeKind.Expr.Handler)
       } else {
-        val token = nth(0)
-        closeWithError(mark, ParseError.UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)), Some(token), SyntacticContext.WithHandler, loc = currentSourceLocation()))
+        s.errors.append(ParseError.UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)) , actual = Some(nth(0)), sctx = SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation()))
       }
+      close(mark, TreeKind.Expr.Handler)
     }
 
     private def tryExpr()(implicit s: State): Mark.Closed = {
@@ -2553,7 +2551,7 @@ object Parser2 {
       Decl.parameters(SyntacticContext.Expr.OtherExpr)
       expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
       expression()
-      close(mark, TreeKind.Expr.TryWithRuleFragment)
+      close(mark, TreeKind.Expr.RunWithRuleFragment)
     }
 
     private def throwExpr()(implicit s: State): Mark.Closed = {

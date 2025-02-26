@@ -33,7 +33,7 @@ object Safety {
 
     val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
     val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
-    val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances)(ParOps.parMapValueList(_)(visitInstance))
+    val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList(_)(visitInstance))
 
     (root.copy(defs = defs, traits = traits, instances = instances), sctx.errors.asScala.toList)
   }
@@ -269,9 +269,9 @@ object Safety {
       checkThrow(exp)
 
     case Expr.Handler(sym, rules, _, _, _, _, _) =>
-      // Check for [[PrimitiveEffectInTryWith]]
+      // Check for [[PrimitiveEffectInRunWith]]
       if (Symbol.isPrimitiveEff(sym.sym)) {
-        sctx.errors.add(PrimitiveEffectInTryWith(sym.sym, sym.qname.loc))
+        sctx.errors.add(PrimitiveEffectInRunWith(sym.sym, sym.qname.loc))
       }
       rules.foreach(rule => visitExp(rule.exp))
 

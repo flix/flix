@@ -1718,7 +1718,7 @@ object Weeder2 {
       val maybeWith = pickAll(TreeKind.Expr.RunWithBodyExpr, tree)
       flatMapN(
         pickExpr(tree),
-        traverse(maybeWith)(visitTryWithBody),
+        traverse(maybeWith)(visitRunWithBody),
       ) {
         // Bad case: run expr
         case (_, Nil) =>
@@ -1737,8 +1737,8 @@ object Weeder2 {
 
     private def visitHandlerExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Handler)
-      val rules = pickAll(TreeKind.Expr.TryWithRuleFragment, tree)
-      mapN(pickQName(tree), /* This qname is an effect */ traverse(rules)(visitTryWithRule)) {
+      val rules = pickAll(TreeKind.Expr.RunWithRuleFragment, tree)
+      mapN(pickQName(tree), /* This qname is an effect */ traverse(rules)(visitRunWithRule)) {
         (eff, handlers) => Expr.Handler(eff, handlers, tree.loc)
       }
     }
@@ -1782,13 +1782,13 @@ object Weeder2 {
       }
     }
 
-    private def visitTryWithBody(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+    private def visitRunWithBody(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.RunWithBodyExpr)
       pickExpr(tree)
     }
 
-    private def visitTryWithRule(tree: Tree)(implicit sctx: SharedContext): Validation[HandlerRule, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.TryWithRuleFragment)
+    private def visitRunWithRule(tree: Tree)(implicit sctx: SharedContext): Validation[HandlerRule, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.RunWithRuleFragment)
       mapN(
         pickNameIdent(tree),
         Decls.pickFormalParameters(tree, Presence.Forbidden),

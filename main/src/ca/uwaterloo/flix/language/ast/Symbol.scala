@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope, Source, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, QualifiedSym, Scope, Source, VarText}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
@@ -467,7 +467,7 @@ object Symbol {
   /**
     * Definition Symbol.
     */
-  final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Locatable with Symbol {
+  final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Locatable with Symbol with QualifiedSym {
 
     /**
       * Returns the name of `this` symbol.
@@ -499,7 +499,7 @@ object Symbol {
   /**
     * Enum Symbol.
     */
-  final class EnumSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol {
+  final class EnumSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
 
     /**
       * Returns the name of `this` symbol.
@@ -533,7 +533,7 @@ object Symbol {
   /**
    * Struct Symbol.
    */
-  final class StructSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol {
+  final class StructSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
     /**
       * Returns the name of `this` symbol.
       */
@@ -566,7 +566,7 @@ object Symbol {
   /**
     * Restrictable Enum Symbol.
     */
-  final class RestrictableEnumSym(val namespace: List[String], val name: String, cases: List[Name.Ident], val loc: SourceLocation) extends Symbol {
+  final class RestrictableEnumSym(val namespace: List[String], val name: String, cases: List[Name.Ident], val loc: SourceLocation) extends Symbol with QualifiedSym {
 
     // NB: it is critical that this be either a lazy val or a def, since otherwise `this` is not fully instantiated
 
@@ -597,7 +597,7 @@ object Symbol {
   /**
     * Case Symbol.
     */
-  final class CaseSym(val enumSym: Symbol.EnumSym, val name: String, val loc: SourceLocation) extends Symbol {
+  final class CaseSym(val enumSym: Symbol.EnumSym, val name: String, val loc: SourceLocation) extends Symbol with QualifiedSym {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -625,7 +625,7 @@ object Symbol {
   /**
    * Struct Field Symbol.
    */
-  final class StructFieldSym(val structSym: Symbol.StructSym, val name: String, val idx: Int, val loc: SourceLocation) extends Symbol {
+  final class StructFieldSym(val structSym: Symbol.StructSym, val name: String, val idx: Int, val loc: SourceLocation) extends Symbol with QualifiedSym {
 
     /**
      * Returns `true` if this symbol is equal to `that` symbol.
@@ -654,7 +654,7 @@ object Symbol {
   /**
     * Restrictable Case Symbol.
     */
-  final class RestrictableCaseSym(val enumSym: Symbol.RestrictableEnumSym, val name: String, val loc: SourceLocation) extends Symbol with Ordered[RestrictableCaseSym] {
+  final class RestrictableCaseSym(val enumSym: Symbol.RestrictableEnumSym, val name: String, val loc: SourceLocation) extends Symbol with Ordered[RestrictableCaseSym] with QualifiedSym {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -688,7 +688,7 @@ object Symbol {
   /**
     * Trait Symbol.
     */
-  final class TraitSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Symbol {
+  final class TraitSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -716,7 +716,7 @@ object Symbol {
   /**
     * Signature Symbol.
     */
-  final class SigSym(val trt: Symbol.TraitSym, val name: String, val loc: SourceLocation) extends Sourceable with Symbol {
+  final class SigSym(val trt: Symbol.TraitSym, val name: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -772,7 +772,7 @@ object Symbol {
   /**
     * Hole Symbol.
     */
-  final class HoleSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Symbol {
+  final class HoleSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Symbol with QualifiedSym {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -795,7 +795,7 @@ object Symbol {
   /**
     * TypeAlias Symbol.
     */
-  final class TypeAliasSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Symbol {
+  final class TypeAliasSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -823,7 +823,7 @@ object Symbol {
   /**
     * Associated Type Symbol.
     */
-  final class AssocTypeSym(val trt: Symbol.TraitSym, val name: String, val loc: SourceLocation) extends Symbol with Ordered[AssocTypeSym] {
+  final class AssocTypeSym(val trt: Symbol.TraitSym, val name: String, val loc: SourceLocation) extends Symbol with Ordered[AssocTypeSym] with QualifiedSym {
 
     /**
       * The symbol's namespace.
@@ -862,7 +862,7 @@ object Symbol {
   /**
     * Effect symbol.
     */
-  final class EffectSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Ordered[EffectSym] with Symbol {
+  final class EffectSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Ordered[EffectSym] with Symbol with QualifiedSym {
 
     /**
       * Returns the source of `this`.
@@ -900,7 +900,7 @@ object Symbol {
   /**
     * Effect Operation Symbol.
     */
-  final class OpSym(val eff: Symbol.EffectSym, val name: String, val loc: SourceLocation) extends Symbol {
+  final class OpSym(val eff: Symbol.EffectSym, val name: String, val loc: SourceLocation) extends Symbol with QualifiedSym {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */

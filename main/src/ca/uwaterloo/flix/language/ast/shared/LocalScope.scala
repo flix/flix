@@ -62,4 +62,12 @@ case class LocalScope(env: ListMap[String, Resolution]){
     * Returns the local scope extended with the additional mapping from `name` to `res`.
     */
   def +(kv: (String, Resolution)): LocalScope = LocalScope(env + kv)
+
+  /**
+    * Returns the local scope extended with the additional mapping from `name` to `res`.
+    *
+    * Currently, we just take the first resolution in the list of resolutions.
+    */
+  def resolve(name: String): Option[Resolution] =
+    env.get(name).headOption
 }

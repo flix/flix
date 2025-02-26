@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
 import ca.uwaterloo.flix.language.ast.shared.VarText.Absent
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
+import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
@@ -1430,6 +1431,35 @@ object Type {
           val ts = tpes.map(purifyRegion(_, sym))
           JvmMember.JvmStaticMethod(clazz, name, ts)
       }
+      UnresolvedJvmType(m, loc)
+  }
+
+  /**
+    * Simplifies the effect in the given type.
+    */
+  def simplifyEffects(tpe0: Type): Type = tpe0 match {
+    case t if t.kind == Kind.Eff => EffUnification3.simplify(t)
+    case t: Type.Var => t
+    case t: Cst => t
+    case t@Apply(tpe1, tpe2, loc) =>
+      val t1 = simplifyEffects(tpe1)
+      val t2 = simplifyEffects(tpe2)
+      t.renew(t1, t2, loc)
+    case Alias(symUse, args, tpe, loc) =>
+      val as = args.map(simplifyEffects)
+      val t = simplifyEffects(tpe)
+      Alias(symUse, as, t, loc)
+    case AssocType(symUse, arg, kind, loc) =>
+      val a = simplifyEffects(arg)
+      AssocType(symUse, a, kind, loc)
+    case JvmToType(tpe, loc) =>
+      val t = simplifyEffects(tpe)
+      JvmToType(t, loc)
+    case JvmToEff(tpe, loc) =>
+      val t = simplifyEffects(tpe)
+      JvmToEff(t, loc)
+    case UnresolvedJvmType(member, loc) =>
+      val m = member.map(simplifyEffects)
       UnresolvedJvmType(m, loc)
   }
 
