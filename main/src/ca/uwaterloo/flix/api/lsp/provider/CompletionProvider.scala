@@ -58,7 +58,7 @@ object CompletionProvider {
         case err: ResolutionError.UndefinedName =>
           AutoImportCompleter.getCompletions(err) ++
             LocalScopeCompleter.getCompletions(err) ++
-            ExprCompleter.getCompletions(ctx) ++
+            KeywordCompleter.getExprKeywords ++
             DefCompleter.getCompletions(err) ++
             EnumCompleter.getCompletions(err) ++
             EffectCompleter.getCompletions(err) ++
@@ -88,7 +88,8 @@ object CompletionProvider {
         case err: ParseError => err.sctx match {
           // Expressions.
           case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(uri) ++ KeywordCompleter.getConstraintKeywords
-          case _: SyntacticContext.Expr => ExprCompleter.getCompletions(ctx)
+          case _: SyntacticContext.Expr => KeywordCompleter.getExprKeywords
+
 
           // Declarations.
           case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
