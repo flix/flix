@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.{Kind, Type}
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -35,6 +36,18 @@ object TypeSimplifier {
     } catch {
       case _: InternalCompilerException => tpe
     }
+  }
+
+  /** Simplifies types inside `tc` with [[simplify]]. */
+  def simplifyConstraint(tc: TypeConstraint): TypeConstraint = tc match {
+    case TypeConstraint.Equality(tpe1, tpe2, prov) =>
+      TypeConstraint.Equality(TypeSimplifier.simplify(tpe1), TypeSimplifier.simplify(tpe2), prov)
+    case TypeConstraint.Trait(sym, tpe, loc) =>
+      TypeConstraint.Trait(sym, TypeSimplifier.simplify(tpe), loc)
+    case TypeConstraint.Purification(sym, tpe1, tpe2, prov, nested) =>
+      TypeConstraint.Purification(sym, TypeSimplifier.simplify(tpe1), TypeSimplifier.simplify(tpe2), prov, nested.map(simplify))
+    case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
+      TypeConstraint.Conflicted(TypeSimplifier.simplify(tpe1), TypeSimplifier.simplify(tpe2), prov)
   }
 
   /**
