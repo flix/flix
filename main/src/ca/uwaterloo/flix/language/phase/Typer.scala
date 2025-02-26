@@ -136,6 +136,9 @@ object Typer {
       }
   }
 
+  /**
+    * Adds the given qualified symbol to the set of symbols for the given module in the given map.
+    */
   private def addToModuleMap(qualifiedSym: QualifiedSym, moduleMap: Map[ModuleSym, Set[Symbol]]) = {
     val mod = new Symbol.ModuleSym(qualifiedSym.namespace, ModuleKind.Standalone)
     val set = moduleMap.getOrElse(mod, Set.empty)
