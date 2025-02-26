@@ -64,11 +64,11 @@ object TypeSimplifier {
 
   /** Simplifies `tpe` as an effect, also simplifying each non-formula subtype within `tpe`. */
   private def simplifyEffect(tpe: Type): Type = {
-    toFormula(tpe)(new Counter).toType(tpe.loc)
+    toFormula(tpe).toType(tpe.loc)
   }
 
   /** Convert well-formed formulas into [[Formula]], leaving nonsense as [[ChunkVar]]. */
-  private def toFormula(tpe: Type)(implicit c: Counter): Union = {
+  private def toFormula(tpe: Type): Union = {
     val (base0, args0) = tpe.asFullApply
     (base0, args0) match {
       case (Type.Var(sym, _), List()) => Union(List(Intersection(List(Var(sym, isCompl = false)))))
@@ -122,7 +122,7 @@ object TypeSimplifier {
         if (isCompl) Type.mkComplement(Type.Var(sym, loc), loc)
         else Type.Var(sym, loc)
       case Eff(s) => TypeSimplifier.toType(s, loc)
-      case ChunkVar(tpe, _, isCompl) =>
+      case ChunkVar(tpe, isCompl) =>
         if (isCompl) Type.mkComplement(tpe, loc)
         else tpe
       case Union(List(one)) => one.toType(loc)
@@ -152,19 +152,11 @@ object TypeSimplifier {
       case Var(sym, isCompl) =>
         if (isCompl) s"!${sym.toString}"
         else sym.toString
-      case ChunkVar(_, id, isCompl) =>
-        if (isCompl) s"!chunkVar$id"
-        else s"chunkVar$id"
+      case ChunkVar(_, isCompl) =>
+        if (isCompl) s"!chunkVar"
+        else s"chunkVar"
       case Union(fs) => fs.mkString(" ∪ ")
       case Intersection(fs) => fs.mkString(" ∩ ")
-    }
-  }
-
-  /** A mutable counter class, that start at 1. */
-  private class Counter(private var i: Int = 0) {
-    def next(): Int = {
-      i += 1
-      i
     }
   }
 
@@ -189,14 +181,14 @@ object TypeSimplifier {
     * like `IO + List[Int32]`. The types are given an identifier such that equivalence with itself
     * remains known, even if the atom is duplicated.
     */
-  private case class ChunkVar(private val tpe: Type, id: Int, isCompl: Boolean) extends Unknown {
+  private case class ChunkVar(private val tpe: Type, isCompl: Boolean) extends Unknown {
     override def equals(obj: Any): Boolean = obj match {
-      case ChunkVar(_, id, isCompl) => id == this.id && isCompl == this.isCompl
+      case ChunkVar(tpe, isCompl) => (tpe eq this.tpe) && isCompl == this.isCompl
       case _ => false
     }
 
     override def hashCode(): Int = {
-      Objects.hash(id, isCompl)
+      Objects.hash(tpe, isCompl)
     }
   }
 
@@ -215,8 +207,8 @@ object TypeSimplifier {
       fs.foreach {
         case Var(sym, isCompl) if us.contains(Var(sym, !isCompl)) => return (CofiniteEffSet.empty, Nil)
         case v@Var(_, _) => us.add(v)
-        case ChunkVar(tpe, id, isCompl) if us.contains(ChunkVar(tpe, id, !isCompl)) => return (CofiniteEffSet.empty, Nil)
-        case c@ChunkVar(_, _, _) => us.add(c)
+        case ChunkVar(tpe, isCompl) if us.contains(ChunkVar(tpe, !isCompl)) => return (CofiniteEffSet.empty, Nil)
+        case c@ChunkVar(_, _) => us.add(c)
         case Eff(s) =>
           ces = CofiniteEffSet.intersection(ces, s)
           if (ces.isEmpty) return (ces, Nil)
@@ -237,14 +229,14 @@ object TypeSimplifier {
   }
 
   /** A singular type as a [[Union]], interpreted as a variable of unknown effect meaning. */
-  private def chunkVar(base: Type, args: List[Type], loc: SourceLocation)(implicit c: Counter): Union = {
-    Union(List(Intersection(List(ChunkVar(Type.mkApply(base, args, loc), c.next(), isCompl = false)))))
+  private def chunkVar(base: Type, args: List[Type], loc: SourceLocation): Union = {
+    Union(List(Intersection(List(ChunkVar(Type.mkApply(base, args, loc), isCompl = false)))))
   }
 
   private def compl(f: Atom): Atom = f match {
     case Var(sym, isCompl) => Var(sym, !isCompl)
     case Eff(sym) => Eff(CofiniteEffSet.complement(sym))
-    case ChunkVar(tpe, id, isCompl) => ChunkVar(tpe, id, !isCompl)
+    case ChunkVar(tpe, isCompl) => ChunkVar(tpe, !isCompl)
   }
 
   private def compl(f: Intersection): Union = f match {
