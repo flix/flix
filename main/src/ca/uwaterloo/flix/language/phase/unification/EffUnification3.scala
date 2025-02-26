@@ -414,9 +414,9 @@ object EffUnification3 {
     *
     * The type `tpe` may contain `Type.Error`.
     */
-  def simplify(tpe: Type): Type = {
+  def simplify(tpe: Type): Type = try {
     // Check if type is too complex to simplify via Zhegalkin polynomials.
-    if (tpe.typeVars.size > SetUnification.MaxVars / 2) {
+    if (tpe.typeVars.size > SetUnification.MaxVars) {
       // The type is too complex, we return it unchanged.
       return tpe
     }
@@ -426,17 +426,15 @@ object EffUnification3 {
     implicit val renv: RigidityEnv = RigidityEnv.empty
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe))
 
-    try {
-      val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
-      val z = Zhegalkin.toZhegalkin(f0)
-      val f1 = Zhegalkin.toSetFormula(z)
+    val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
+    val z = Zhegalkin.toZhegalkin(f0)
+    val f1 = Zhegalkin.toSetFormula(z)
 
-      fromSetFormula(f1, tpe.loc)
-    } catch {
-      case _: InvalidType =>
-        // The type is invalid. We cannot simplify it.
-        tpe
-    }
+    fromSetFormula(f1, tpe.loc)
+  } catch {
+    case _: InvalidType =>
+      // The type is invalid. We cannot simplify it.
+      tpe
   }
 
   /**
