@@ -79,7 +79,7 @@ object EffUnification3 {
         }
         // Otherwise we fall through.
       } catch {
-        case InvalidType => // We fall through.
+        case InvalidType(_) => // We fall through.
       }
     }
 
@@ -96,7 +96,7 @@ object EffUnification3 {
         Result.Err(fromSetEquations(unsolvedEqns))
       }
     } catch {
-      case InvalidType =>
+      case InvalidType(_) =>
         // The effect equations are invalid.
         // We don't call these conflicted because TypeReduction may make these valid later.
         Result.Err(eqs)
@@ -196,7 +196,7 @@ object EffUnification3 {
 
     case Type.Alias(_, _, tpe, _) => toSetFormula(tpe)
 
-    case _ => throw InvalidType
+    case _ => throw InvalidType(t)
   }
 
   /** Returns [[Substitution]] where each mapping in `s` is converted to [[Type]]. */
@@ -341,7 +341,7 @@ object EffUnification3 {
       case assoc@Type.AssocType(_, _, _, _) => assocFromType(assoc)
       case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
       case Type.Alias(_, _, tpe, _) => fromType(tpe)
-      case _ => throw InvalidType
+      case _ => throw InvalidType(t)
     }
 
     /** Returns the [[Atom]] representation of `t` or throws [[InvalidType]]. */
@@ -349,7 +349,7 @@ object EffUnification3 {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) => Atom.Assoc(sym, assocFromType(arg))
       case Type.Alias(_, _, tpe, _) => assocFromType(tpe)
-      case _ => throw InvalidType
+      case _ => throw InvalidType(t)
     }
 
     /**
@@ -431,10 +431,11 @@ object EffUnification3 {
       val z = Zhegalkin.toZhegalkin(f0)
       val f1 = Zhegalkin.toSetFormula(z)
 
-      fromSetFormula(f1, tpe.loc)
-    } catch {
-      case EffUnification3.InvalidType => tpe
-    }
+    fromSetFormula(f1, tpe.loc)
+  } catch {
+    case _: InvalidType =>
+      // The type is invalid. We cannot simplify it.
+      tpe
   }
 
   /**
@@ -443,6 +444,6 @@ object EffUnification3 {
     * This exception should not leak outside this phase - it should always be caught. It is used to
     * avoid having [[Option]] types on recursive functions.
     */
-  private case object InvalidType extends RuntimeException
+  private case class InvalidType(tpe: Type) extends RuntimeException
 
 }
