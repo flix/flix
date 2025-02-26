@@ -363,6 +363,27 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
+    case Completion.HandlerCompletion(effect, ap, qualified, inScope) =>
+      val qualifiedName = effect.sym.toString
+      val name = if (qualified) qualifiedName else effect.sym.name
+      val description = if(!qualified) {
+        Some(if (inScope) qualifiedName else s"use $qualifiedName")
+      } else None
+      val opStrings = effect.ops.map(CompletionUtils.fmtOp)
+      val snippet = s"$name {\n${opStrings.mkString("\n")}\n}"
+      val labelDetails = CompletionItemLabelDetails(None, description)
+      val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
+      val priority: Priority = if (inScope) Priority.High else Priority.Lower
+      CompletionItem(
+        label               = name,
+        labelDetails        = Some(labelDetails),
+        sortText            = Priority.toSortText(priority, name),
+        textEdit            = TextEdit(context.range, snippet),
+        documentation       = Some(effect.doc.text),
+        kind                = CompletionItemKind.Event,
+        additionalTextEdits = additionalTextEdit
+      )
+
     case Completion.TypeAliasCompletion(typeAlias, ap, qualified, inScope) =>
       val qualifiedName = typeAlias.sym.toString
       val name = if (qualified) qualifiedName else typeAlias.sym.name
@@ -740,7 +761,7 @@ object Completion {
   case class DefCompletion(decl: TypedAst.Def, ap: AnchorPosition, qualified:Boolean, inScope: Boolean) extends Completion
 
   /**
-    * Represents a Enum completion
+    * Represents an Enum completion
     *
     * @param enm      the enum construct.
     * @param ap        the anchor position for the use statement.
@@ -782,14 +803,24 @@ object Completion {
   case class InstanceCompletion(trt: TypedAst.Trait, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
-    * Represents a Enum completion
+    * Represents an Effect completion
     *
     * @param effect    the effect construct.
     * @param ap        the anchor position for the use statement.
     * @param qualified indicate whether to use a qualified label.
-    * @param inScope   indicate whether to the enum is inScope.
+    * @param inScope   indicate whether to the effect is inScope.
     */
   case class EffectCompletion(effect: TypedAst.Effect, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+
+  /**
+    * Represents a handler completion
+    *
+    * @param effect    the related effect.
+    * @param ap        the anchor position for the use statement.
+    * @param qualified indicate whether to use a qualified label.
+    * @param inScope   indicate whether to the related effect is inScope.
+    */
+  case class HandlerCompletion(effect: TypedAst.Effect, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents a TypeAlias completion

@@ -385,4 +385,12 @@ object CompletionUtils {
     } else
       fuzzyMatch(qn.ident.name, sym.name)
   }
+
+  /**
+    * Formats the given Op
+    */
+  def fmtOp(op: TypedAst.Op): String = {
+    val fparamsString = (op.spec.fparams.collect{ case p if p.tpe != Type.Unit => p.bnd.sym.text} :+ "k").mkString(", ")
+    s"    def ${op.sym.name}($fparamsString) = ???"
+  }
 }

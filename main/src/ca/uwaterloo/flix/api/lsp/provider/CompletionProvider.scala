@@ -47,6 +47,8 @@ object CompletionProvider {
         case err: WeederError.UnqualifiedUse =>
           UseCompleter.getCompletions(ctx.uri, err)
         case WeederError.UndefinedAnnotation(_, _) => KeywordCompleter.getModKeywords
+        case err: ResolutionError.UndefinedEffect =>
+          EffectCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedUse =>
           UseCompleter.getCompletions(ctx.uri, err)
         case err: ResolutionError.UndefinedTag =>
@@ -95,9 +97,6 @@ object CompletionProvider {
           case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
           case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
           case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
-
-          // Try-with handler.
-          case SyntacticContext.WithHandler => WithHandlerCompleter.getCompletions(ctx)
 
           // Unknown syntactic context. The program could be correct-- in which case it is hard to offer suggestions.
           case SyntacticContext.Unknown =>
