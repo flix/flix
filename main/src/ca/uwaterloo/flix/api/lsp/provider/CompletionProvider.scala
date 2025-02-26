@@ -88,7 +88,7 @@ object CompletionProvider {
         case err: ParseError => err.sctx match {
           // Expressions.
           case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(uri) ++ KeywordCompleter.getConstraintKeywords
-          case _: SyntacticContext.Expr => ExprCompleter.getCompletions(ctx)
+          case SyntacticContext.Expr.OtherExpr => ExprCompleter.getCompletions(ctx)
 
           // Declarations.
           case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
@@ -97,11 +97,6 @@ object CompletionProvider {
           case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
           case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
           case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
-
-          // Unknown syntactic context. The program could be correct-- in which case it is hard to offer suggestions.
-          case SyntacticContext.Unknown =>
-            // Special case: A program with a hole is correct, but we should offer some completion suggestions.
-            HoleCompletion.getHoleCompletion(ctx, root)
 
           case _ => Nil
         }
