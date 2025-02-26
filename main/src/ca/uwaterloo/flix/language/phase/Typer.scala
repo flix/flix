@@ -93,14 +93,14 @@ object Typer {
       val companionModules = constructsWithCompanionModule.foldLeft(Map.empty[ModuleSym, Set[Symbol]]) {
         case (acc, sym) =>
           val companionModule = new Symbol.ModuleSym(sym.namespace :+ sym.name, ModuleKind.Companion)
-          val parentMod = new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-          val set = acc.getOrElse(parentMod, Set.empty)
+          val parentModule = new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
+          val set = acc.getOrElse(parentModule, Set.empty)
           // Add the companion module to the set of symbols for its parent module
           // Also, add the companion module with a default empty set of symbols
-          acc.updated(parentMod, set + companionModule).updated(companionModule, Set.empty)
+          acc.updated(parentModule, set + companionModule).updated(companionModule, Set.empty)
       }
 
-      val mods = syms.foldLeft(companionModules) {
+      val modules = syms.foldLeft(companionModules) {
         case (acc, sym) =>
           sym match {
             case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
@@ -122,7 +122,7 @@ object Typer {
           }
       }
 
-      mods.map{
+      modules.map{
         case (mod, syms) => mod -> syms.toList
       }
   }
