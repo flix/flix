@@ -544,9 +544,9 @@ object Main {
       opt[Unit]("Xbenchmark-incremental").action((_, c) => c.copy(xbenchmarkIncremental = true)).
         text("[experimental] benchmarks the performance of each compiler phase in incremental mode.")
 
-      // Xuse-surface-simplifier
-      opt[Unit]("Xuse-surface-simplifier").action((_, c) => c.copy(xsolveWithUserFacingSimplifier = true)).
-        text("[experimental] use the user-facing type simplifier on all constraints (for testing).")
+      // Xsolve-with-user-facing-simplifier
+      opt[Unit]("Xsolve-with-user-facing-simplifier").action((_, c) => c.copy(xsolveWithUserFacingSimplifier = true)).
+        text("[experimental] use the user-facing type simplifier on all constraints during typing (for testing).")
 
       // Xbenchmark-phases
       opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
