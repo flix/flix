@@ -84,7 +84,7 @@ object Resolver {
     val usesVal = root.uses.map {
       case (ns, uses0) =>
         mapN(traverse(uses0)(visitUseOrImport(_, ns, root))) {
-          u => new Symbol.ModuleSym(ns.parts) -> u
+          u => new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone) -> u
         }
     }
 

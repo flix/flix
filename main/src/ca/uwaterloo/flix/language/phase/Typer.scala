@@ -82,26 +82,26 @@ object Typer {
       }.flatMap {
         fullNs =>
           fullNs.inits.collect {
-            case ns@(_ :: _) => new Symbol.ModuleSym(ns)
+            case ns@(_ :: _) => new Symbol.ModuleSym(ns, ModuleKind.Standalone)
           }
       }.toSet
       val syms = syms0 ++ namespaces
 
       val groups = syms.groupBy {
-        case sym: Symbol.DefnSym => new Symbol.ModuleSym(sym.namespace)
-        case sym: Symbol.EnumSym => new Symbol.ModuleSym(sym.namespace)
-        case sym: Symbol.StructSym => new Symbol.ModuleSym(sym.namespace)
-        case sym: Symbol.StructFieldSym => new Symbol.ModuleSym(sym.namespace)
-        case sym: Symbol.RestrictableEnumSym => new Symbol.ModuleSym(sym.namespace)
-        case sym: Symbol.TraitSym => new Symbol.ModuleSym(sym.namespace)
-        case sym: Symbol.TypeAliasSym => new Symbol.ModuleSym(sym.namespace)
-        case sym: Symbol.EffectSym => new Symbol.ModuleSym(sym.namespace)
+        case sym: Symbol.DefnSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
+        case sym: Symbol.EnumSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
+        case sym: Symbol.StructSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
+        case sym: Symbol.StructFieldSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
+        case sym: Symbol.RestrictableEnumSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
+        case sym: Symbol.TraitSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
+        case sym: Symbol.TypeAliasSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
+        case sym: Symbol.EffectSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
 
-        case sym: Symbol.SigSym => new Symbol.ModuleSym(sym.trt.namespace :+ sym.trt.name)
-        case sym: Symbol.OpSym => new Symbol.ModuleSym(sym.eff.namespace :+ sym.eff.name)
-        case sym: Symbol.AssocTypeSym => new Symbol.ModuleSym(sym.trt.namespace :+ sym.trt.name)
+        case sym: Symbol.SigSym => new Symbol.ModuleSym(sym.trt.namespace :+ sym.trt.name, ModuleKind.Standalone)
+        case sym: Symbol.OpSym => new Symbol.ModuleSym(sym.eff.namespace :+ sym.eff.name, ModuleKind.Standalone)
+        case sym: Symbol.AssocTypeSym => new Symbol.ModuleSym(sym.trt.namespace :+ sym.trt.name, ModuleKind.Standalone)
 
-        case sym: Symbol.ModuleSym => new Symbol.ModuleSym(sym.ns.init)
+        case sym: Symbol.ModuleSym => new Symbol.ModuleSym(sym.ns.init, ModuleKind.Standalone)
 
         case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.RestrictableCaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
@@ -116,7 +116,6 @@ object Typer {
       groups.map {
         case (k, v) => (k, v.toList)
       }
-
   }
 
   /**

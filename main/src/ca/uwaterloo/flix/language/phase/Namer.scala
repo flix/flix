@@ -97,7 +97,7 @@ object Namer {
       val ns = Name.NName(ns0.idents :+ ident, ident.loc)
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val ds = decls.map(visitDecl(_, ns))
-      val sym = new Symbol.ModuleSym(ns.parts)
+      val sym = new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone)
       NamedAst.Declaration.Namespace(sym, usesAndImports, ds, loc)
   }
 
