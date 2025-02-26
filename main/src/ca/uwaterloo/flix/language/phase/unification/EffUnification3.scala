@@ -431,11 +431,12 @@ object EffUnification3 {
       val z = Zhegalkin.toZhegalkin(f0)
       val f1 = Zhegalkin.toSetFormula(z)
 
-    fromSetFormula(f1, tpe.loc)
-  } catch {
-    case _: InvalidType =>
-      // The type is invalid. We cannot simplify it.
-      tpe
+      fromSetFormula(f1, tpe.loc)
+    } catch {
+      case _: InvalidType =>
+        // The type is invalid. We cannot simplify it.
+        tpe
+    }
   }
 
   /**
