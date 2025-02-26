@@ -9,9 +9,9 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 object TypeSimplifier {
 
   /**
-    * Simplifies types and effects intended for user readability.
+    * Simplifies types and effects - intended for user readability.
     *
-    * This function will never crash.
+    * This function will never crash and works for any type, no matter how ill-kinded.
     */
   def simplify(tpe: Type): Type = {
     try {
@@ -22,9 +22,10 @@ object TypeSimplifier {
   }
 
   /**
-    * Simplifies all effects occuring in `tpe0`.
+    * Simplifies all effects in `tpe0`.
     *
-    * Might throw [[InternalCompilerException]] for non-well-kinded effects.
+    * Might throw [[InternalCompilerException]] for non-well-kinded effects
+    * because of [[EffUnification3.simplify]].
     */
   private def simplifyInternal(tpe0: Type): Type = tpe0 match {
     case t if t.kind == Kind.Eff => EffUnification3.simplify(t)
