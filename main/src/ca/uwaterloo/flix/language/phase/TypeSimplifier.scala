@@ -16,14 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, Type}
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
-import ca.uwaterloo.flix.language.phase.unification.EffUnification3.{Atom, fromSetFormula, mkBidirectionalVarMap, toSetFormula}
-import ca.uwaterloo.flix.language.phase.unification.set.SetUnification
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin
 import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.collection.SortedBimap
 
 
 /** This type simplification is purely focused on user readability. */
