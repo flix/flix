@@ -32,7 +32,7 @@ import ca.uwaterloo.flix.util.tc.Debug
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
-import java.util.concurrent.{ConcurrentHashMap, ConcurrentMap, ForkJoinPool}
+import java.util.concurrent.ForkJoinPool
 import java.util.zip.ZipFile
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -91,7 +91,7 @@ class Flix {
   private var cachedKinderAst: KindedAst.Root = KindedAst.empty
   private var cachedResolverAst: ResolvedAst.Root = ResolvedAst.empty
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
-  private var cachedDefDeps: ConcurrentMap[Symbol.DefnSym, SymUse.DefSymUse] = new ConcurrentHashMap()
+  private var cachedDefDeps: Map[Symbol.DefnSym, SymUse.DefSymUse] = Map.empty
 
   /**
     * A cache of error messages for incremental compilation.

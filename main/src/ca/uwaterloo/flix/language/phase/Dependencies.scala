@@ -30,6 +30,7 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentMap}
 import scala.collection.mutable.ListBuffer
+import scala.jdk.CollectionConverters.{ConcurrentMapHasAsScala, MapHasAsJava}
 
 object Dependencies {
   /**
@@ -40,7 +41,7 @@ object Dependencies {
     *   - SymUse
     *   - Instance
     */
-  def run(root: Root, oldRoot: Root, changeSet: ChangeSet, cachedDefDeps: ConcurrentMap[DefnSym, SymUse.DefSymUse])(implicit flix: Flix): (Root, (List[RedundancyError], ConcurrentMap[DefnSym, SymUse.DefSymUse])) = flix.phaseNew("Dependencies") {
+  def run(root: Root, oldRoot: Root, changeSet: ChangeSet, cachedDefDeps: Map[DefnSym, SymUse.DefSymUse])(implicit flix: Flix): (Root, (List[RedundancyError], Map[DefnSym, SymUse.DefSymUse])) = flix.phaseNew("Dependencies") {
     implicit val sctx: SharedContext = SharedContext.mk(cachedDefDeps, changeSet)
     val effects = changeSet.updateStaleValues(root.effects, oldRoot.effects)(ParOps.parMapValues(_)(visitEff))
     val enums = changeSet.updateStaleValues(root.enums, oldRoot.enums)(ParOps.parMapValues(_)(visitEnum))
@@ -64,7 +65,7 @@ object Dependencies {
       structs = structs,
       traits = traits,
       typeAliases = typeAliases,
-    ), (errors, sctx.defDeps))
+    ), (errors, sctx.defDeps.asScala.toMap))
   }
 
   /**
@@ -765,10 +766,10 @@ object Dependencies {
   }
 
   private object SharedContext {
-    def mk(cachedDefDeps: ConcurrentMap[DefnSym, SymUse.DefSymUse], changeSet: ChangeSet): SharedContext = {
+    def mk(cachedDefDeps: Map[DefnSym, SymUse.DefSymUse], changeSet: ChangeSet): SharedContext = {
       val (_, freshDefs) = changeSet.partition(cachedDefDeps, cachedDefDeps)
       SharedContext(
-        freshDefs,
+        new ConcurrentHashMap(freshDefs.asJava),
         new ConcurrentHashMap()
       )
     }
