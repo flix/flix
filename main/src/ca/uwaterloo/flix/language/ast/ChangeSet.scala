@@ -18,9 +18,6 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.shared.{DependencyGraph, Input}
 import ca.uwaterloo.flix.util.collection.ListMap
 
-import java.util.concurrent.{ConcurrentHashMap, ConcurrentMap}
-import scala.jdk.CollectionConverters.{ConcurrentMapHasAsScala, MapHasAsJava}
-
 sealed trait ChangeSet {
 
   /**
