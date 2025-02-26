@@ -949,6 +949,34 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MismatchedTypeParameters](result)
   }
 
+  test("MissingArgumentList.01") {
+    val input =
+      """
+        |struct Person[r] {
+        |    name: String,
+        |    age: Int32
+        |}
+        |
+        |def f(): Person[r] = new Per
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MissingArgumentList](result)
+  }
+
+  test("MissingArgumentList.02") {
+    val input =
+      """
+        |struct Person[r] {
+        |    name: String,
+        |    age: Int32
+        |}
+        |
+        |def f(): Person[r] = new Person
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MissingArgumentList](result)
+  }
+
   test("MissingFormalParamAscription.01") {
     val input =
       """

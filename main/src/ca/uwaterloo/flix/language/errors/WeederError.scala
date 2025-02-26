@@ -813,24 +813,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that the formal parameter lacks a type declaration.
-    *
-    * @param name the name of the parameter.
-    * @param loc  the location of the formal parameter.
-    */
-  case class MissingFormalParamAscription(name: String, loc: SourceLocation) extends WeederError {
-    def summary: String = "Missing type ascription. Type ascriptions are required for parameters here."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> The formal parameter '${red(name)}' must have a declared type.
-         |
-         |${code(loc, "has no declared type.")}
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate that an argument list is missing a kind.
     *
     * @param loc the location of the argument list.
@@ -844,6 +826,24 @@ object WeederError {
          |
          |${code(loc, "missing argument list.")}
          |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that the formal parameter lacks a type declaration.
+    *
+    * @param name the name of the parameter.
+    * @param loc  the location of the formal parameter.
+    */
+  case class MissingFormalParamAscription(name: String, loc: SourceLocation) extends WeederError {
+    def summary: String = "Missing type ascription. Type ascriptions are required for parameters here."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> The formal parameter '${red(name)}' must have a declared type.
+         |
+         |${code(loc, "has no declared type.")}
          |""".stripMargin
     }
   }
