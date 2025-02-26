@@ -129,8 +129,7 @@ object ConstraintSolver2 {
     * Solves the given constraint set as far as possible.
     */
   def solveAll(constrs0: List[TypeConstraint], initialSubst: SubstitutionTree)(implicit scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
-    val constrs1 = constrs0.map(initialSubst.apply)
-    val constrs = if (flix.options.xsolveWithUserFacingSimplifier) constrs1.map(TypeSimplifier.simplifyConstraint) else constrs1
+    val constrs = constrs0.map(initialSubst.apply)
     val soup = new Soup(constrs, initialSubst)
     val progress = Progress()
     val res = soup.exhaustively(progress)(solveOne)
