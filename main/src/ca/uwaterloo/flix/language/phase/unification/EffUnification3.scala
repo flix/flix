@@ -426,11 +426,15 @@ object EffUnification3 {
     implicit val renv: RigidityEnv = RigidityEnv.empty
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe))
 
-    val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
-    val z = Zhegalkin.toZhegalkin(f0)
-    val f1 = Zhegalkin.toSetFormula(z)
+    try {
+      val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
+      val z = Zhegalkin.toZhegalkin(f0)
+      val f1 = Zhegalkin.toSetFormula(z)
 
-    fromSetFormula(f1, tpe.loc)
+      fromSetFormula(f1, tpe.loc)
+    } catch {
+      case EffUnification3.InvalidType => tpe
+    }
   }
 
   /**
