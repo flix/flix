@@ -53,9 +53,7 @@ object Dependencies {
 
     val errors = checkUnusedDefs()(sctx, root)
 
-    var deps = MultiMap.empty[Input, Input]
-    sctx.deps.forEach((k, _) => deps = deps + k)
-    val dg = DependencyGraph(deps)
+    val dg = sctx.buildDependencyGraph()
     (root.copy(
       dependencyGraph = dg,
       defs = defs,
@@ -188,7 +186,6 @@ object Dependencies {
       if (!rc.defn.contains(symUse.sym)) {
         sctx.defDeps.put(symUse.sym, symUse)
       }
-      visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(itpe)
       visitType(tpe)
@@ -781,7 +778,16 @@ object Dependencies {
     * However, since we are in a concurrent setting, we prefer to simply compute the set of edges `Set[(Input, Input)]`.
     * However, since Java has no `ConcurrentSet[t]` we instead use  `ConcurrentMap[(Input, Input), Unit]` to record the edges.
     */
-  private case class SharedContext(defDeps: ConcurrentMap[Symbol.DefnSym, SymUse.DefSymUse], deps: ConcurrentMap[(Input, Input), Unit])
+  private case class SharedContext(defDeps: ConcurrentMap[Symbol.DefnSym, SymUse.DefSymUse], deps: ConcurrentMap[(Input, Input), Unit]) {
+    def buildDependencyGraph(): DependencyGraph = {
+      var defMap = MultiMap.empty[Input, Input]
+      deps.forEach((k, _) => defMap = defMap + k)
+      defDeps.forEach{ (defn, deffUse) =>
+        defMap = defMap + (deffUse.sym.loc.source.input -> defn.loc.source.input)
+      }
+      DependencyGraph(defMap)
+    }
+  }
 
   /**
     * Companion object for [[RecursionContext]].
