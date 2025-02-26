@@ -833,7 +833,7 @@ object WeederError {
   /**
     * An error raised to indicate that an argument list is missing a kind.
     *
-    * @param loc the location of the type parameter.
+    * @param loc the location of the argument list.
     */
   case class MissingArgumentList(loc: SourceLocation) extends WeederError {
     def summary: String = "An argument list is required here"
