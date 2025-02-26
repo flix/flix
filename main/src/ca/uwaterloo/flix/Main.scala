@@ -97,7 +97,7 @@ object Main {
       assumeYes = cmdOpts.assumeYes,
       xnoverify = cmdOpts.xnoverify,
       xnooptimizer = cmdOpts.xnooptimizer,
-      xsolveWithUserFacingSimplifier = cmdOpts.xsolveWithUserFacingSimplifier,
+      xsolveWithUserFacingSimplifier = Options.Default.xsolveWithUserFacingSimplifier,
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
       xsummary = cmdOpts.xsummary,
@@ -354,7 +354,6 @@ object Main {
                      xnodeprecated: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
                      xnooptimizer: Boolean = false,
-                     xsolveWithUserFacingSimplifier: Boolean = false,
                      xprintphases: Boolean = false,
                      xsummary: Boolean = false,
                      xfuzzer: Boolean = false,
@@ -543,10 +542,6 @@ object Main {
       // Xbenchmark-incremental
       opt[Unit]("Xbenchmark-incremental").action((_, c) => c.copy(xbenchmarkIncremental = true)).
         text("[experimental] benchmarks the performance of each compiler phase in incremental mode.")
-
-      // Xsolve-with-user-facing-simplifier
-      opt[Unit]("Xsolve-with-user-facing-simplifier").action((_, c) => c.copy(xsolveWithUserFacingSimplifier = true)).
-        text("[experimental] use the user-facing type simplifier on all constraints during typing (for testing).")
 
       // Xbenchmark-phases
       opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
