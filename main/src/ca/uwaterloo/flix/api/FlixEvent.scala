@@ -15,9 +15,11 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
+import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
+import ca.uwaterloo.flix.language.ast.{KindedAst, RigidityEnv}
+import ca.uwaterloo.flix.language.phase.typer.InfResult
 import ca.uwaterloo.flix.language.phase.unification.set.Equation
+import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, TraitEnv}
 
 /**
   * A common super-type for Flix events.
@@ -29,11 +31,11 @@ object FlixEvent {
   /**
     * An event that is fired when new type constraints are collected for the given def symbol `sym`.
     */
-  case class NewConstraintsDef(sym: Symbol.DefnSym, tconstrs: List[TypeConstraint]) extends FlixEvent
+  case class NewConstraintsDef(defn: KindedAst.Def, infResult: InfResult, renv: RigidityEnv, tconstrs: List[TraitConstraint], tenv: TraitEnv, eqEnv: EqualityEnv, root: KindedAst.Root) extends FlixEvent
 
   /**
-   * An event that is fired when a new system of Boolean equation is about to be solved.
-   */
+    * An event that is fired when a new system of Boolean equation is about to be solved.
+    */
   case class SolveEffEquations(econstrs: List[Equation]) extends FlixEvent
 
 }
