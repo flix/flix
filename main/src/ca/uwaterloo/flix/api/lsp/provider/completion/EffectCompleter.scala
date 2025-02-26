@@ -13,23 +13,27 @@ object EffectCompleter {
     * When providing completions for unqualified enums that is not in scope, we will also automatically use the enum.
     */
   def getCompletions(err: ResolutionError.UndefinedType)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn)
+    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn, inHandler = false)
+  }
+
+  def getCompletions(err: ResolutionError.UndefinedEffect)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn, inHandler = true)
   }
 
   def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn)
+    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn, inHandler = false)
   }
 
-  private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
+  private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName, inHandler: Boolean)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
       root.effects.values.collect{
         case effect if CompletionUtils.isAvailable(effect) && CompletionUtils.matchesName(effect.sym, qn, qualified = true) =>
-          EffectCompletion(effect, ap, qualified = true, inScope = true)
+          EffectCompletion(effect, ap, qualified = true, inScope = true, inHandler = inHandler)
       }
     else
       root.effects.values.collect({
         case effect if CompletionUtils.isAvailable(effect) && CompletionUtils.matchesName(effect.sym, qn, qualified = false) =>
-          EffectCompletion(effect, ap, qualified = false, inScope = inScope(effect, env))
+          EffectCompletion(effect, ap, qualified = false, inScope = inScope(effect, env), inHandler = inHandler)
       })
   }
 

@@ -344,12 +344,17 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.EffectCompletion(effect, ap, qualified, inScope) =>
+    case Completion.EffectCompletion(effect, ap, qualified, inScope, inHandler) =>
       val qualifiedName = effect.sym.toString
       val name = if (qualified) qualifiedName else effect.sym.name
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
+      val snippet = if (inHandler) {
+        val opStrings = effect.ops.map(CompletionUtils.fmtOp)
+        s"$name {\n${opStrings.mkString("\n")}\n}"
+      } else
+          name
       val labelDetails = CompletionItemLabelDetails(None, description)
       val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
       val priority: Priority = if (inScope) Priority.High else Priority.Lower
@@ -357,7 +362,7 @@ sealed trait Completion {
         label               = name,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, name),
+        textEdit            = TextEdit(context.range, snippet),
         documentation       = Some(effect.doc.text),
         kind                = CompletionItemKind.Event,
         additionalTextEdits = additionalTextEdit
@@ -788,8 +793,9 @@ object Completion {
     * @param ap        the anchor position for the use statement.
     * @param qualified indicate whether to use a qualified label.
     * @param inScope   indicate whether to the enum is inScope.
+    * @param inHandler indicate whether the completion happens in a handler.
     */
-  case class EffectCompletion(effect: TypedAst.Effect, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class EffectCompletion(effect: TypedAst.Effect, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, inHandler: Boolean) extends Completion
 
   /**
     * Represents a TypeAlias completion
