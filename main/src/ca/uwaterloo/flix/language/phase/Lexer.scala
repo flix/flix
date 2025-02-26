@@ -697,26 +697,14 @@ object Lexer {
   }
 
 
-  /**
-    * Moves current position past an infix function.
-    */
+  /** Moves current position past an infix function. */
   private def acceptInfixFunction()(implicit s: State): TokenKind = {
-    while (!eof()) {
-      val p = peek()
-      if (p == '`') {
-        advance()
-        return TokenKind.InfixFunction
-      }
-
-      if (p != '.' && p != '!' && !p.isLetter && !p.isDigit && !isMathNameChar(p) && !isGreekNameChar(p)) {
-        // check for chars that are not allowed in function names,
-        // to handle cases like '`my function` or `my/**/function`'
-        return TokenKind.Err(LexerError.UnterminatedInfixFunction(sourceLocationAtStart()))
-      }
-
-      advance()
+    s.sc.advanceWhile(c => c == '.' || c == '!' || c.isLetter || c.isDigit || isMathNameChar(c) || isGreekNameChar(c))
+    if (s.sc.advanceIfMatch('`')) {
+      TokenKind.InfixFunction
+    } else {
+      TokenKind.Err(LexerError.UnterminatedInfixFunction(sourceLocationAtStart()))
     }
-    TokenKind.Err(LexerError.UnterminatedInfixFunction(sourceLocationAtStart()))
   }
 
   /**
