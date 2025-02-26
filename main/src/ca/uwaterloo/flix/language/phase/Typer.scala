@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.Symbol.ModuleSym
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -89,41 +90,40 @@ object Typer {
 
       val constructsWithCompanionModule = traits.keys ++ enums.keys ++ structs.keys ++ effects.keys
 
-      // The companion modules, empty by default.
-      val companionModules = constructsWithCompanionModule.map {
-        sym =>
-          val modSym = new Symbol.ModuleSym(sym.namespace :+ sym.name, ModuleKind.Companion)
-          modSym -> List.empty[Symbol]
+      val companionModules = constructsWithCompanionModule.foldLeft(Map.empty[ModuleSym, Set[Symbol]]) {
+        case (acc, sym) =>
+          val companionModule = new Symbol.ModuleSym(sym.namespace :+ sym.name, ModuleKind.Companion)
+          val parentMod = new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
+          val set = acc.getOrElse(parentMod, Set.empty)
+          // Add the companion module to the set of symbols for its parent module
+          // Also, add the companion module with a default empty set of symbols
+          acc.updated(parentMod, set + companionModule).updated(companionModule, Set.empty)
       }
 
-      val groups = syms.groupBy {
-        case sym: Symbol.DefnSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-        case sym: Symbol.EnumSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-        case sym: Symbol.StructSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-        case sym: Symbol.StructFieldSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-        case sym: Symbol.RestrictableEnumSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-        case sym: Symbol.TraitSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-        case sym: Symbol.TypeAliasSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-        case sym: Symbol.EffectSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-
-        case sym: Symbol.SigSym => new Symbol.ModuleSym(sym.trt.namespace :+ sym.trt.name, ModuleKind.Standalone)
-        case sym: Symbol.OpSym => new Symbol.ModuleSym(sym.eff.namespace :+ sym.eff.name, ModuleKind.Standalone)
-        case sym: Symbol.AssocTypeSym => new Symbol.ModuleSym(sym.trt.namespace :+ sym.trt.name, ModuleKind.Standalone)
-
-        case sym: Symbol.ModuleSym => new Symbol.ModuleSym(sym.ns.init, ModuleKind.Standalone)
-
-        case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.RestrictableCaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.RegionSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol: $sym", SourceLocation.Unknown)
-        case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+      val mods = syms.foldLeft(companionModules) {
+        case (acc, sym) =>
+          sym match {
+            case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+            case sym: Symbol.RestrictableCaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+            case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+            case sym: Symbol.RegionSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+            case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+            case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+            case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol: $sym", SourceLocation.Unknown)
+            case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+            case sym: Symbol.ModuleSym =>
+              val mod = new Symbol.ModuleSym(sym.ns.init, ModuleKind.Standalone)
+              val set = acc.getOrElse(mod, Set.empty)
+              acc.updated(mod, set + sym)
+            case sym: QualifiedSym =>
+              val mod = new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
+              val set = acc.getOrElse(mod, Set.empty)
+              acc.updated(mod, set + sym)
+          }
       }
 
-      groups.foldLeft(companionModules.toMap) {
-        case (acc, (mod, syms)) => acc.updated(mod, syms.toList)
+      mods.map{
+        case (mod, syms) => mod -> syms.toList
       }
   }
 
