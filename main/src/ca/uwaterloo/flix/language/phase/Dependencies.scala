@@ -16,16 +16,21 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Symbol.DefnSym
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.{ChangeSet, Scheme, SourceLocation, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern, RestrictableChoosePattern, Root}
 import ca.uwaterloo.flix.language.ast.shared.{DependencyGraph, EqualityConstraint, Input, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.language.errors.RedundancyError
+import ca.uwaterloo.flix.language.errors.RedundancyError.UnusedDefSym
 import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentMap}
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 object Dependencies {
   /**
@@ -36,15 +41,23 @@ object Dependencies {
     *   - SymUse
     *   - Instance
     */
-  def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, Unit) = flix.phaseNew("Dependencies") {
-    implicit val sctx: SharedContext = SharedContext(new ConcurrentHashMap[(Input, Input), Unit]())
-    val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
+  def run(root: Root, oldRoot: Root, changeSet: ChangeSet, cachedDefDeps: ConcurrentMap[DefnSym, Unit])(implicit flix: Flix): (Root, (List[RedundancyError], ConcurrentMap[DefnSym, Unit])) = flix.phaseNew("Dependencies") {
+    implicit val sctx: SharedContext = SharedContext.mk()
+    val defMaps = mutable.Map.empty[DefnSym, Unit]
+    cachedDefDeps.forEach((k, _) => defMaps.put(k, ()))
+    val (_, freshDefs) = changeSet.partition(defMaps.toMap, defMaps.toMap)
+    freshDefs.foreach{case (k, _) => sctx.defDeps.put(k, ())}
     val effects = changeSet.updateStaleValues(root.effects, oldRoot.effects)(ParOps.parMapValues(_)(visitEff))
     val enums = changeSet.updateStaleValues(root.enums, oldRoot.enums)(ParOps.parMapValues(_)(visitEnum))
+    val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
     val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList(_)(visitInstance))
+//    ParOps.parMapValues(root.defs)(visitDef)
+//    ParOps.parMapValueList(root.instances)(visitInstance)
     val structs = changeSet.updateStaleValues(root.structs, oldRoot.structs)(ParOps.parMapValues(_)(visitStruct))
     val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
     val typeAliases = changeSet.updateStaleValues(root.typeAliases, oldRoot.typeAliases)(ParOps.parMapValues(_)(visitTypeAlias))
+
+    val errors = checkUnusedDefs()(sctx, root)
 
     var deps = MultiMap.empty[Input, Input]
     sctx.deps.forEach((k, _) => deps = deps + k)
@@ -57,9 +70,41 @@ object Dependencies {
       instances = instances,
       structs = structs,
       traits = traits,
-      typeAliases = typeAliases
-    ), ())
+      typeAliases = typeAliases,
+    ), (errors, sctx.defDeps))
   }
+
+  /**
+    * Checks for unused definition symbols.
+    */
+  private def checkUnusedDefs()(implicit sctx: SharedContext, root: Root): List[RedundancyError] = {
+    val result = new ListBuffer[RedundancyError]
+    for ((_, defn) <- root.defs) {
+      if (deadDef(defn)) {
+        result += UnusedDefSym(defn.sym)
+      }
+    }
+    result.toList
+  }
+
+  /**
+    * Returns `true` if the given definition `decl` is unused according to `used`.
+    */
+  private def deadDef(decl: TypedAst.Def)(implicit sctx: SharedContext, root: Root): Boolean = {
+    val res = !decl.spec.ann.isTest &&
+      !decl.spec.mod.isPublic &&
+      !decl.spec.ann.isExport &&
+      !isMain(decl.sym) &&
+      !decl.sym.name.startsWith("_") &&
+      !sctx.defDeps.containsKey(decl.sym)
+    res
+  }
+
+  /**
+    * Returns `true` if the given symbol `sym` is the entry point.
+    */
+  private def isMain(sym: Symbol.DefnSym)(implicit root: Root): Boolean =
+    root.mainEntryPoint.contains(sym)
 
   /**
     * Adds a dependency between the source and destination locations.
@@ -70,6 +115,7 @@ object Dependencies {
   }
 
   private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext): TypedAst.Def =  {
+    implicit val rc = RecursionContext.ofDef(defn.sym)
     visitExp(defn.exp)
     visitSpec(defn.spec)
     defn
@@ -86,6 +132,7 @@ object Dependencies {
   }
 
   private def visitInstance(instance: TypedAst.Instance)(implicit sctx: SharedContext): TypedAst.Instance = {
+    instance.defs.foreach(visitDef)
     addDependency(instance.trt.sym.loc, instance.loc)
     instance
   }
@@ -109,7 +156,7 @@ object Dependencies {
     typeAlias
   }
 
-  private def visitExp(exp0: Expr)(implicit sctx: SharedContext): Unit = exp0 match {
+  private def visitExp(exp0: Expr)(implicit rc: RecursionContext, sctx: SharedContext): Unit = exp0 match {
     case Expr.Cst(_, tpe, _) =>
       visitType(tpe)
 
@@ -145,6 +192,9 @@ object Dependencies {
       visitType(eff)
 
     case Expr.ApplyDef(symUse, exps, itpe, tpe, eff, _) =>
+      if (!rc.defn.contains(symUse.sym)) {
+        sctx.defDeps.put(symUse.sym, ())
+      }
       visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(itpe)
@@ -186,7 +236,7 @@ object Dependencies {
     case Expr.LocalDef(bnd, fparams, exp1, exp2, tpe, eff, _) =>
       visitBinder(bnd)
       fparams.foreach(visitFormalParam)
-      visitExp(exp1)
+      visitExp(exp1)(rc.withVar(bnd.sym), sctx)
       visitExp(exp2)
       visitType(tpe)
       visitType(eff)
@@ -584,7 +634,7 @@ object Dependencies {
     visitType(fparam.tpe)
   }
 
-  private def visitMatchRule(r: TypedAst.MatchRule)(implicit sctx: SharedContext): Unit = {
+  private def visitMatchRule(r: TypedAst.MatchRule)(implicit rc: RecursionContext , sctx: SharedContext): Unit = {
     visitPattern(r.pat)
     visitExp(r.exp)
     r.guard.toList.foreach(visitExp)
@@ -614,18 +664,18 @@ object Dependencies {
     visitType(pattern.tpe)
   }
 
-  private def visitTypeMatchRule(matchRule: TypedAst.TypeMatchRule)(implicit sctx: SharedContext): Unit = {
+  private def visitTypeMatchRule(matchRule: TypedAst.TypeMatchRule)(implicit rc: RecursionContext , sctx: SharedContext): Unit = {
     visitBinder(matchRule.bnd)
     visitType(matchRule.tpe)
     visitExp(matchRule.exp)
   }
 
-  private def visitRestrictableChooseRule(rule: TypedAst.RestrictableChooseRule)(implicit sctx: SharedContext): Unit = {
+  private def visitRestrictableChooseRule(rule: TypedAst.RestrictableChooseRule)(implicit rc: RecursionContext , sctx: SharedContext): Unit = {
     visitExp(rule.exp)
     visitRestrictableChoosePattern(rule.pat)
   }
 
-  private def visitRestrictableChoosePattern(pattern: TypedAst.RestrictableChoosePattern)(implicit sctx: SharedContext): Unit = pattern match {
+  private def visitRestrictableChoosePattern(pattern: TypedAst.RestrictableChoosePattern)(implicit rc: RecursionContext , sctx: SharedContext): Unit = pattern match {
     case RestrictableChoosePattern.Tag(sym, pats, tpe, _) =>
       visitSymUse(sym)
       pats.foreach(visitVarOrWild)
@@ -634,7 +684,7 @@ object Dependencies {
       visitType(tpe)
   }
 
-  private def visitVarOrWild(pattern: TypedAst.RestrictableChoosePattern.VarOrWild)(implicit sctx: SharedContext): Unit = pattern match {
+  private def visitVarOrWild(pattern: TypedAst.RestrictableChoosePattern.VarOrWild)(implicit rc: RecursionContext , sctx: SharedContext): Unit = pattern match {
     case RestrictableChoosePattern.Var(bnd, tpe, _) =>
       visitBinder(bnd)
       visitType(tpe)
@@ -644,42 +694,42 @@ object Dependencies {
       visitType(tpe)
   }
 
-  private def visitCatchRule(catchRule: TypedAst.CatchRule)(implicit sctx: SharedContext): Unit = {
+  private def visitCatchRule(catchRule: TypedAst.CatchRule)(implicit rc: RecursionContext , sctx: SharedContext): Unit = {
     visitBinder(catchRule.bnd)
     visitExp(catchRule.exp)
   }
 
-  private def visitHandlerRule(handlerRule: TypedAst.HandlerRule)(implicit sctx: SharedContext): Unit = {
+  private def visitHandlerRule(handlerRule: TypedAst.HandlerRule)(implicit rc: RecursionContext , sctx: SharedContext): Unit = {
     visitSymUse(handlerRule.op)
     visitExp(handlerRule.exp)
     handlerRule.fparams.foreach(visitFormalParam)
   }
 
-  private def visitJvmMethod(method: TypedAst.JvmMethod)(implicit sctx: SharedContext): Unit = {
+  private def visitJvmMethod(method: TypedAst.JvmMethod)(implicit rc: RecursionContext , sctx: SharedContext): Unit = {
     visitType(method.retTpe)
     visitType(method.eff)
     visitExp(method.exp)
     method.fparams.foreach(visitFormalParam)
   }
 
-  private def visitSelectChannelRule(rule: TypedAst.SelectChannelRule)(implicit sctx: SharedContext): Unit = {
+  private def visitSelectChannelRule(rule: TypedAst.SelectChannelRule)(implicit rc: RecursionContext , sctx: SharedContext): Unit = {
     visitBinder(rule.bnd)
     visitExp(rule.chan)
     visitExp(rule.exp)
   }
 
-  private def visitParYieldFragment(fragment: TypedAst.ParYieldFragment)(implicit sctx: SharedContext): Unit = {
+  private def visitParYieldFragment(fragment: TypedAst.ParYieldFragment)(implicit rc: RecursionContext , sctx: SharedContext): Unit = {
     visitExp(fragment.exp)
     visitPattern(fragment.pat)
   }
 
-  private def visitConstrait(constraint: TypedAst.Constraint)(implicit sctx: SharedContext): Unit = {
+  private def visitConstrait(constraint: TypedAst.Constraint)(implicit rc: RecursionContext , sctx: SharedContext): Unit = {
     visitHead(constraint.head)
     constraint.cparams.foreach(visitContraintParam)
     constraint.body.foreach(visitConstraintBody)
   }
 
-  private def visitHead(head: TypedAst.Predicate.Head)(implicit sctx: SharedContext): Unit = head match {
+  private def visitHead(head: TypedAst.Predicate.Head)(implicit rc: RecursionContext , sctx: SharedContext): Unit = head match {
     case TypedAst.Predicate.Head.Atom(_, _, terms, tpe, _) => visitType(tpe)
       terms.foreach(visitExp)
   }
@@ -689,7 +739,7 @@ object Dependencies {
     visitBinder(cp.bnd)
   }
 
-  private def visitConstraintBody(cb: Body)(implicit sctx: SharedContext): Unit = cb match {
+  private def visitConstraintBody(cb: Body)(implicit rc: RecursionContext , sctx: SharedContext): Unit = cb match {
     case Body.Atom(_, _, _, _, terms, tpe, _) =>
       terms.foreach(visitPattern)
       visitType(tpe)
@@ -717,8 +767,16 @@ object Dependencies {
     assoc.tpe.toList.foreach(visitType)
 
   private def visitSig(sig: TypedAst.Sig)(implicit sctx: SharedContext): Unit = {
+    implicit val rc = RecursionContext.ofSig(sig.sym)
     visitSpec(sig.spec)
     sig.exp.toList.foreach(visitExp)
+  }
+
+  private object SharedContext {
+    def mk(): SharedContext = SharedContext(
+      new ConcurrentHashMap(),
+      new ConcurrentHashMap()
+    )
   }
 
   /**
@@ -727,5 +785,32 @@ object Dependencies {
     * However, since we are in a concurrent setting, we prefer to simply compute the set of edges `Set[(Input, Input)]`.
     * However, since Java has no `ConcurrentSet[t]` we instead use  `ConcurrentMap[(Input, Input), Unit]` to record the edges.
     */
-  private case class SharedContext(deps: ConcurrentMap[(Input, Input), Unit])
+  private case class SharedContext(defDeps: ConcurrentMap[Symbol.DefnSym, Unit], deps: ConcurrentMap[(Input, Input), Unit])
+
+
+  /**
+    * Companion object for [[RecursionContext]].
+    */
+  private object RecursionContext {
+    /**
+      * Initializes a context under the given definition.
+      */
+    def ofDef(defn: Symbol.DefnSym): RecursionContext = RecursionContext(defn = Some(defn), sig = None, vars = Set.empty)
+
+    /**
+      * Initializes a context under the given signature.
+      */
+    def ofSig(sig: Symbol.SigSym): RecursionContext = RecursionContext(defn = None, sig = Some(sig), vars = Set.empty)
+  }
+
+  /**
+    * Tracks the context of the explored expression, recalling the definition, signature,
+    * or recursive variable under which it is defined.
+    */
+  private case class RecursionContext(defn: Option[Symbol.DefnSym], sig: Option[Symbol.SigSym], vars: Set[Symbol.VarSym]) {
+    /**
+      * Adds the given variable to the context.
+      */
+    def withVar(v: Symbol.VarSym): RecursionContext = this.copy(vars = this.vars + v)
+  }
 }

@@ -70,7 +70,6 @@ object Redundancy {
     val errors = errorsFromDefs ++
       errorsFromInst ++
       errorsFromSigs ++
-      checkUnusedDefs()(sctx, root) ++
       checkUnusedEffects()(sctx, root) ++
       checkUnusedEnumsAndTags()(sctx, root) ++
       checkUnusedTypeParamsEnums()(root) ++
