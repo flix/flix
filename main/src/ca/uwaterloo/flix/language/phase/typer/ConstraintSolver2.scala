@@ -141,7 +141,7 @@ object ConstraintSolver2 {
         TypeConstraint.Conflicted(TypeSimplifier.simplify(tpe1), TypeSimplifier.simplify(tpe2), prov)
     }
 
-    val constrs = constrs0.map(initialSubst.apply).map(c => if (flix.options.xUseSurfaceSimplifier) simplify(c) else c)
+    val constrs = constrs0.map(initialSubst.apply).map(c => if (flix.options.xsolvewithuserfacingsimplifier) simplify(c) else c)
     val soup = new Soup(constrs, initialSubst)
     val progress = Progress()
     val res = soup.exhaustively(progress)(solveOne)
