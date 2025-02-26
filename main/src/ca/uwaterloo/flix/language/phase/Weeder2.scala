@@ -1813,18 +1813,19 @@ object Weeder2 {
           val error = WeederError.MissingArgumentList(tree.loc)
           sctx.errors.add(error)
           Validation.Success(List.empty)
-        case Some(argumentList) => visitMethodArguments(argumentList)
+        case Some(argumentList) =>
+          visitMethodArguments(argumentList)
       }
-          mapN(Types.pickType(tree), expsValidation) {
-            (tpe, exps) => tpe match {
-                case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
-                  Expr.InvokeConstructor(qname.ident, exps, tree.loc)
-                case _ =>
-                  val error = IllegalQualifiedName(tree.loc)
-                  sctx.errors.add(error)
-                  Expr.Error(error)
-              }
+      mapN(Types.pickType(tree), expsValidation) {
+        (tpe, exps) => tpe match {
+            case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
+              Expr.InvokeConstructor(qname.ident, exps, tree.loc)
+            case _ =>
+              val error = IllegalQualifiedName(tree.loc)
+              sctx.errors.add(error)
+              Expr.Error(error)
           }
+      }
     }
 
     private def visitInvokeMethodExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
