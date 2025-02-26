@@ -8,7 +8,7 @@ class TestTypeSimplifier extends AnyFunSuite with TestUtils {
 
   test("RunWithSimplifier") {
     val input = "def main(): Bool = true"
-    val result = compile(input, Options.TestWithLibAll.copy(xsolvewithuserfacingsimplifier = true))
+    val result = compile(input, Options.TestWithLibAll.copy(xsolveWithUserFacingSimplifier = true))
     expectSuccess(result)
   }
 
