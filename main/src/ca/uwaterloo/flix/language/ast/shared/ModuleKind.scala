@@ -13,23 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ca.uwaterloo.flix.language.ast.shared
 
 /**
-  * Represents the kind of module.
+  * Represents the kind of a module.
   */
-sealed trait ModuleKind {}
+sealed trait ModuleKind
 
 object ModuleKind {
   /**
-    * A Companion modules comes with a flix construct.
-    * To be specific, it is a module that is associated with an effect, enum, struct or trait.
+    * A module associated with an effect, enum, struct, or trait.
     */
   case object Companion extends ModuleKind
 
   /**
-    * A Standalone module.
+    * A standalone module.
     */
   case object Standalone extends ModuleKind
 }

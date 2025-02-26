@@ -957,7 +957,7 @@ object Symbol {
   /**
     * Module symbol.
     */
-  final class ModuleSym(val ns: List[String], val kind : ModuleKind) extends Symbol {
+  final class ModuleSym(val ns: List[String], val kind: ModuleKind) extends Symbol {
     /**
       * Returns `true` if this is the root module.
       */
