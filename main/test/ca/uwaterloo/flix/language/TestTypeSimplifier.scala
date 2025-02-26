@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
 import ca.uwaterloo.flix.language.ast.{KindedAst, RigidityEnv}
 import ca.uwaterloo.flix.language.phase.TypeSimplifier
-import ca.uwaterloo.flix.language.phase.Typer.checkAssocTypes
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolverInterface, InfResult}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, TraitEnv}
 import ca.uwaterloo.flix.util.Options
@@ -32,6 +31,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 class TestTypeSimplifier extends AnyFunSuite with TestUtils {
 
   test("TypeCheckWithSimplifier") {
+    // Collect all the def constraint sets.
     val constraints = new ConcurrentLinkedQueue[(KindedAst.Def, InfResult, RigidityEnv, List[TraitConstraint], TraitEnv, EqualityEnv, KindedAst.Root)]()
     implicit val flix: Flix = new Flix().setOptions(Options.DefaultTest)
     flix.addListener {
@@ -41,11 +41,12 @@ class TestTypeSimplifier extends AnyFunSuite with TestUtils {
     }
     expectSuccess(flix.compile())
 
+    // Recheck that each constraint set can still be solved when using the simplifier on all types.
     constraints.forEach {
       case (defn, infResult0, renv, tconstrs, tenv, eqEnv, root) =>
         val infResult = infResult0.copy(constrs = infResult0.constrs.map(TypeSimplifier.simplifyConstraint))
         val (_, errs) = ConstraintSolverInterface.visitDef(defn, infResult, renv, tconstrs, tenv, eqEnv, root)
-        // checkAssocTypes should also be checked but that is a private method
+        // `checkAssocTypes` should also be checked but that is a private method.
         if (errs.nonEmpty) {
           fail(s"Expected no type checking errors, found ${errs.size} errors (first is: ${errs.head.summary})")
         }
