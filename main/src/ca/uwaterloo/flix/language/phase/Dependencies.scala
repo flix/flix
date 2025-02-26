@@ -97,14 +97,6 @@ object Dependencies {
   private def isMain(sym: Symbol.DefnSym)(implicit root: Root): Boolean =
     root.mainEntryPoint.contains(sym)
 
-  /**
-    * Adds a dependency between the source and destination locations.
-    * The value is fixed to () since it doesn't matter.
-    */
-  private def addDependency(src: SourceLocation, dst: SourceLocation)(implicit sctx: SharedContext): Unit = {
-    sctx.deps.put((src.sp1.source.input, dst.sp1.source.input), ())
-  }
-
   private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext): TypedAst.Def =  {
     implicit val rc = RecursionContext.ofDef(defn.sym)
     visitExp(defn.exp)
@@ -124,7 +116,7 @@ object Dependencies {
 
   private def visitInstance(instance: TypedAst.Instance)(implicit sctx: SharedContext): TypedAst.Instance = {
     instance.defs.foreach(visitDef)
-    addDependency(instance.trt.sym.loc, instance.loc)
+    sctx.addDependency(instance.trt.sym.loc, instance.loc)
     instance
   }
 
@@ -566,30 +558,29 @@ object Dependencies {
       visitType(tpe1)
       visitType(tpe2)
     case Type.Alias(cst, args, _, loc) =>
-      addDependency(cst.loc, loc)
+      sctx.addDependency(cst.loc, loc)
       args.foreach(visitType)
     case Type.AssocType(_, arg, _, _) => visitType(arg)
     case Type.JvmToType(tpe, _) => visitType(tpe)
     case Type.JvmToEff(tpe, _) => visitType(tpe)
     case Type.UnresolvedJvmType(_, _) => ()
-    case Type.Cst(TypeConstructor.Enum(sym, _), loc) => addDependency(sym.loc, loc)
-    case Type.Cst(TypeConstructor.Struct(sym, _), loc) => addDependency(sym.loc, loc)
+    case Type.Cst(TypeConstructor.Enum(sym, _), loc) => sctx.addDependency(sym.loc, loc)
+    case Type.Cst(TypeConstructor.Struct(sym, _), loc) => sctx.addDependency(sym.loc, loc)
     case Type.Cst(_, _) => ()
     case Type.Var(_, _) => ()
   }
 
   private def visitSymUse(use: SymUse)(implicit sctx: SharedContext): Unit = use match {
-    case SymUse.AssocTypeSymUse(sym, loc) => addDependency(sym.loc, loc)
-    case SymUse.CaseSymUse(sym, loc) => addDependency(sym.loc, loc)
-    case SymUse.DefSymUse(sym, loc) => addDependency(sym.loc, loc)
-    case SymUse.EffectSymUse(sym, qname) => addDependency(sym.loc, qname.loc)
-    case SymUse.OpSymUse(sym, loc) => addDependency(sym.loc, loc)
-    case SymUse.SigSymUse(sym, loc) => addDependency(sym.loc, loc)
-    case SymUse.StructFieldSymUse(sym, loc) => addDependency(sym.loc, loc)
-    case SymUse.TraitSymUse(sym, loc) => addDependency(sym.loc, loc)
+    case SymUse.AssocTypeSymUse(sym, loc) => sctx.addDependency(sym.loc, loc)
+    case SymUse.CaseSymUse(sym, loc) => sctx.addDependency(sym.loc, loc)
+    case SymUse.DefSymUse(sym, loc) => sctx.addDependency(sym.loc, loc)
+    case SymUse.EffectSymUse(sym, qname) => sctx.addDependency(sym.loc, qname.loc)
+    case SymUse.OpSymUse(sym, loc) => sctx.addDependency(sym.loc, loc)
+    case SymUse.SigSymUse(sym, loc) => sctx.addDependency(sym.loc, loc)
+    case SymUse.StructFieldSymUse(sym, loc) => sctx.addDependency(sym.loc, loc)
+    case SymUse.TraitSymUse(sym, loc) => sctx.addDependency(sym.loc, loc)
     case _ => ()
   }
-
 
   private def visitSpec(spec: TypedAst.Spec)(implicit sctx: SharedContext): Unit = spec match {
     case TypedAst.Spec(_, _, _, _, fparams, declaredScheme, retTpe, eff, tconstrs, econstrs) =>
@@ -779,12 +770,18 @@ object Dependencies {
     * However, since Java has no `ConcurrentSet[t]` we instead use  `ConcurrentMap[(Input, Input), Unit]` to record the edges.
     */
   private case class SharedContext(defDeps: ConcurrentMap[Symbol.DefnSym, SymUse.DefSymUse], deps: ConcurrentMap[(Input, Input), Unit]) {
+    /**
+      * Adds a dependency between the source and destination locations.
+      * The value is fixed to () since it doesn't matter.
+      */
+    def addDependency(src: SourceLocation, dst: SourceLocation): Unit = {
+      deps.put((src.sp1.source.input, dst.sp1.source.input), ())
+    }
+
     def buildDependencyGraph(): DependencyGraph = {
       var defMap = MultiMap.empty[Input, Input]
+      defDeps.forEach((defn, defnUse) => addDependency(defn.loc, defnUse.loc))
       deps.forEach((k, _) => defMap = defMap + k)
-      defDeps.forEach{ (defn, deffUse) =>
-        defMap = defMap + (deffUse.sym.loc.source.input -> defn.loc.source.input)
-      }
       DependencyGraph(defMap)
     }
   }
