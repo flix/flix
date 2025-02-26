@@ -804,19 +804,19 @@ object Parser2 {
   private def use()(implicit s: State): Mark.Closed = {
     assert(at(TokenKind.KeywordUse))
     val mark = open()
-    expect(TokenKind.KeywordUse, SyntacticContext.Use)
-    nameAllowQualified(NAME_USE, context = SyntacticContext.Use)
+    expect(TokenKind.KeywordUse, SyntacticContext.Unknown)
+    nameAllowQualified(NAME_USE, context = SyntacticContext.Unknown)
     // handle use many case
     if (at(TokenKind.DotCurlyL)) {
       val mark = open()
       oneOrMore(
         namedTokenSet = NamedTokenSet.Name,
-        getItem = () => aliasedName(NAME_USE, SyntacticContext.Use),
+        getItem = () => aliasedName(NAME_USE, SyntacticContext.Unknown),
         checkForItem = NAME_USE.contains,
         breakWhen = _.isRecoverUseOrImport,
         delimiterL = TokenKind.DotCurlyL,
         delimiterR = TokenKind.CurlyR,
-        context = SyntacticContext.Use
+        context = SyntacticContext.Unknown
       ) match {
         case Some(err) => closeWithError(open(), err)
         case None =>
@@ -829,19 +829,19 @@ object Parser2 {
   private def iimport()(implicit s: State): Mark.Closed = {
     assert(at(TokenKind.KeywordImport))
     val mark = open()
-    expect(TokenKind.KeywordImport, SyntacticContext.Import)
-    nameAllowQualified(NAME_JAVA, tail = Set(), context = SyntacticContext.Import)
+    expect(TokenKind.KeywordImport, SyntacticContext.Unknown)
+    nameAllowQualified(NAME_JAVA, tail = Set(), context = SyntacticContext.Unknown)
     // handle import many case
     if (at(TokenKind.DotCurlyL)) {
       val mark = open()
       oneOrMore(
         namedTokenSet = NamedTokenSet.Name,
-        getItem = () => aliasedName(NAME_JAVA, SyntacticContext.Import),
+        getItem = () => aliasedName(NAME_JAVA, SyntacticContext.Unknown),
         checkForItem = NAME_JAVA.contains,
         breakWhen = _.isRecoverUseOrImport,
         delimiterL = TokenKind.DotCurlyL,
         delimiterR = TokenKind.CurlyR,
-        context = SyntacticContext.Import
+        context = SyntacticContext.Unknown
       ) match {
         case Some(err) => closeWithError(open(), err)
         case None =>
@@ -959,20 +959,20 @@ object Parser2 {
 
     private def instanceDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordInstance))
-      expect(TokenKind.KeywordInstance, SyntacticContext.Decl.Instance)
-      nameAllowQualified(NAME_DEFINITION, context = SyntacticContext.Decl.Instance)
+      expect(TokenKind.KeywordInstance, SyntacticContext.Unknown)
+      nameAllowQualified(NAME_DEFINITION, context = SyntacticContext.Unknown)
       if (!eat(TokenKind.BracketL)) {
         // Produce an error for missing type parameter.
-        expect(TokenKind.BracketL, SyntacticContext.Decl.Instance, hint = Some("Instances must have a type parameter."))
+        expect(TokenKind.BracketL, SyntacticContext.Unknown, hint = Some("Instances must have a type parameter."))
       } else {
         Type.ttype()
-        expect(TokenKind.BracketR, SyntacticContext.Decl.Instance)
+        expect(TokenKind.BracketR, SyntacticContext.Unknown)
       }
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
       if (at(TokenKind.CurlyL)) {
-        expect(TokenKind.CurlyL, SyntacticContext.Decl.Instance)
+        expect(TokenKind.CurlyL, SyntacticContext.Unknown)
         var continue = true
         while (continue && !eof()) {
           val docMark = docComment()
@@ -994,7 +994,7 @@ object Parser2 {
               closeWithError(errMark, error, Some(at))
           }
         }
-        expect(TokenKind.CurlyR, SyntacticContext.Decl.Instance)
+        expect(TokenKind.CurlyR, SyntacticContext.Unknown)
       }
       close(mark, TreeKind.Decl.Instance)
     }
@@ -1101,7 +1101,7 @@ object Parser2 {
           getItem = () => Type.ttype(),
           checkForItem = _.isFirstType,
           breakWhen = _.isRecoverType,
-          context = SyntacticContext.Type.OtherType
+          context = SyntacticContext.Unknown
         ) match {
           case Some(error) => closeWithError(mark, error)
           case None => close(mark, TreeKind.Type.Tuple)
@@ -1289,7 +1289,7 @@ object Parser2 {
       if (at(TokenKind.ParenL)) {
         parameters(SyntacticContext.Decl.Module)
       }
-      expect(TokenKind.Colon, SyntacticContext.Type.Eff)
+      expect(TokenKind.Colon, SyntacticContext.Unknown)
       val typeLoc = currentSourceLocation()
       Type.ttype()
       // Check for illegal effect
@@ -1474,7 +1474,7 @@ object Parser2 {
         if (at(TokenKind.CurlyL)) {
           oneOrMore(
             namedTokenSet = NamedTokenSet.Effect,
-            getItem = () => nameAllowQualified(NAME_EFFECT, context = SyntacticContext.Type.Eff),
+            getItem = () => nameAllowQualified(NAME_EFFECT, context = SyntacticContext.Unknown),
             checkForItem = NAME_EFFECT.contains,
             breakWhen = _.isRecoverExpr,
             delimiterL = TokenKind.CurlyL,
@@ -2476,7 +2476,7 @@ object Parser2 {
       assert(at(TokenKind.KeywordHandler))
       val mark = open()
       expect(TokenKind.KeywordHandler, SyntacticContext.Expr.OtherExpr)
-      nameAllowQualified(NAME_EFFECT, context = SyntacticContext.WithHandler)
+      nameAllowQualified(NAME_EFFECT, context = SyntacticContext.Unknown)
       if (at(TokenKind.CurlyL)) {
         zeroOrMore(
           namedTokenSet = NamedTokenSet.WithRule,
@@ -2913,7 +2913,7 @@ object Parser2 {
         case TokenKind.Minus => unaryPat()
         case t =>
           val mark = open()
-          val error = UnexpectedToken(expected = NamedTokenSet.Pattern, actual = Some(t), SyntacticContext.Pat.OtherPat, loc = currentSourceLocation())
+          val error = UnexpectedToken(expected = NamedTokenSet.Pattern, actual = Some(t), SyntacticContext.Unknown, loc = currentSourceLocation())
           closeWithError(mark, error)
       }
       // Handle FCons
@@ -2927,7 +2927,7 @@ object Parser2 {
 
     private def variablePat()(implicit s: State): Mark.Closed = {
       val mark = open()
-      nameUnqualified(NAME_VARIABLE, SyntacticContext.Pat.OtherPat)
+      nameUnqualified(NAME_VARIABLE, SyntacticContext.Unknown)
       close(mark, TreeKind.Pattern.Variable)
     }
 
@@ -2939,7 +2939,7 @@ object Parser2 {
 
     private def tagPat()(implicit s: State): Mark.Closed = {
       val mark = open()
-      nameAllowQualified(NAME_TAG, context = SyntacticContext.Pat.OtherPat)
+      nameAllowQualified(NAME_TAG, context = SyntacticContext.Unknown)
       if (at(TokenKind.ParenL)) {
         tuplePat()
       }
@@ -2954,7 +2954,7 @@ object Parser2 {
         getItem = pattern,
         checkForItem = _.isFirstPattern,
         breakWhen = _.isRecoverExpr,
-        context = SyntacticContext.Pat.OtherPat
+        context = SyntacticContext.Unknown
       )
       close(mark, TreeKind.Pattern.Tuple)
     }
@@ -2970,14 +2970,14 @@ object Parser2 {
         delimiterR = TokenKind.CurlyR,
         optionallyWith = Some((TokenKind.Bar, () => pattern())),
         breakWhen = _.isRecoverExpr,
-        context = SyntacticContext.Pat.OtherPat
+        context = SyntacticContext.Unknown
       )
       close(mark, TreeKind.Pattern.Record)
     }
 
     private def recordField()(implicit s: State): Mark.Closed = {
       val mark = open()
-      nameUnqualified(NAME_FIELD, SyntacticContext.Pat.OtherPat)
+      nameUnqualified(NAME_FIELD, SyntacticContext.Unknown)
       if (eat(TokenKind.Equal)) {
         pattern()
       }
@@ -3085,7 +3085,7 @@ object Parser2 {
         delimiterL = TokenKind.BracketL,
         delimiterR = TokenKind.BracketR,
         breakWhen = _.isRecoverType,
-        context = SyntacticContext.Type.OtherType
+        context = SyntacticContext.Unknown
       )
       close(mark, TreeKind.Type.ArgumentList)
     }
@@ -3105,7 +3105,7 @@ object Parser2 {
         delimiterL = TokenKind.BracketL,
         delimiterR = TokenKind.BracketR,
         breakWhen = _.isRecoverType,
-        context = SyntacticContext.Type.OtherType
+        context = SyntacticContext.Unknown
       ) match {
         case Some(error) => closeWithError(mark, error)
         case None => close(mark, TreeKind.TypeParameterList)
@@ -3114,9 +3114,9 @@ object Parser2 {
 
     private def parameter()(implicit s: State): Mark.Closed = {
       val mark = open()
-      nameUnqualified(NAME_VARIABLE ++ NAME_TYPE, SyntacticContext.Type.OtherType)
+      nameUnqualified(NAME_VARIABLE ++ NAME_TYPE, SyntacticContext.Unknown)
       if (at(TokenKind.Colon)) {
-        expect(TokenKind.Colon, SyntacticContext.Type.OtherType)
+        expect(TokenKind.Colon, SyntacticContext.Unknown)
         Type.kind()
       }
       close(mark, TreeKind.Parameter)
@@ -3125,14 +3125,14 @@ object Parser2 {
     def constraints()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordWith))
       val mark = open()
-      expect(TokenKind.KeywordWith, SyntacticContext.WithClause)
+      expect(TokenKind.KeywordWith, SyntacticContext.Unknown)
       // Note, Can't use zeroOrMore here since there's are no delimiterR.
       var continue = true
       while (continue && !eof()) {
         if (atAny(NAME_DEFINITION)) {
           constraint()
         } else {
-          val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(NAME_DEFINITION), actual = Some(nth(0)), SyntacticContext.WithClause, loc = currentSourceLocation())
+          val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(NAME_DEFINITION), actual = Some(nth(0)), SyntacticContext.Unknown, loc = currentSourceLocation())
           closeWithError(open(), error)
           continue = false
         }
@@ -3145,24 +3145,24 @@ object Parser2 {
 
     private def constraint()(implicit s: State): Mark.Closed = {
       val mark = open()
-      nameAllowQualified(NAME_DEFINITION, context = SyntacticContext.WithClause)
-      expect(TokenKind.BracketL, SyntacticContext.WithClause)
+      nameAllowQualified(NAME_DEFINITION, context = SyntacticContext.Unknown)
+      expect(TokenKind.BracketL, SyntacticContext.Unknown)
       Type.ttype()
-      expect(TokenKind.BracketR, SyntacticContext.WithClause)
+      expect(TokenKind.BracketR, SyntacticContext.Unknown)
       close(mark, TreeKind.Type.Constraint)
     }
 
     def derivations()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordWith))
       val mark = open()
-      expect(TokenKind.KeywordWith, SyntacticContext.WithClause)
+      expect(TokenKind.KeywordWith, SyntacticContext.Unknown)
       // Note, Can't use zeroOrMore here since there's are no delimiterR.
       var continue = true
       while (continue && !eof()) {
         if (atAny(NAME_QNAME)) {
-          nameAllowQualified(NAME_QNAME, context = SyntacticContext.WithClause)
+          nameAllowQualified(NAME_QNAME, context = SyntacticContext.Unknown)
         } else {
-          val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(NAME_QNAME), actual = Some(nth(0)), SyntacticContext.WithClause, loc = currentSourceLocation())
+          val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(NAME_QNAME), actual = Some(nth(0)), SyntacticContext.Unknown, loc = currentSourceLocation())
           closeWithError(open(), error)
           continue = false
         }
@@ -3177,10 +3177,10 @@ object Parser2 {
       // If a new type is added here, remember to add it to TYPE_FIRST too.
       val mark = open()
       nth(0) match {
-        case TokenKind.NameUpperCase => nameAllowQualified(NAME_TYPE, context = SyntacticContext.Type.OtherType)
+        case TokenKind.NameUpperCase => nameAllowQualified(NAME_TYPE, context = SyntacticContext.Unknown)
         case TokenKind.NameMath
              | TokenKind.NameGreek
-             | TokenKind.Underscore => nameUnqualified(NAME_VARIABLE, SyntacticContext.Type.OtherType)
+             | TokenKind.Underscore => nameUnqualified(NAME_VARIABLE, SyntacticContext.Unknown)
         case TokenKind.NameLowerCase => variableType()
         case TokenKind.KeywordUniv
              | TokenKind.KeywordFalse
