@@ -131,12 +131,14 @@ object ConstraintSolver2 {
   def solveAll(constrs0: List[TypeConstraint], initialSubst: SubstitutionTree)(implicit scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
     /** Minimize `t0` using [[TypeSimplifier.simplify]]. */
     def simplify(t0: TypeConstraint): TypeConstraint = t0 match {
-      case TypeConstraint.Purification(sym, tpe1, tpe2, prov, nested) =>
-        TypeConstraint.Purification(sym, TypeSimplifier.simplify(tpe1), TypeSimplifier.simplify(tpe2), prov, nested.map(simplify))
       case TypeConstraint.Equality(tpe1, tpe2, prov) =>
         TypeConstraint.Equality(TypeSimplifier.simplify(tpe1), TypeSimplifier.simplify(tpe2), prov)
       case TypeConstraint.Trait(sym, tpe, loc) =>
         TypeConstraint.Trait(sym, TypeSimplifier.simplify(tpe), loc)
+      case TypeConstraint.Purification(sym, tpe1, tpe2, prov, nested) =>
+        TypeConstraint.Purification(sym, TypeSimplifier.simplify(tpe1), TypeSimplifier.simplify(tpe2), prov, nested.map(simplify))
+      case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
+        TypeConstraint.Conflicted(TypeSimplifier.simplify(tpe1), TypeSimplifier.simplify(tpe2), prov)
     }
 
     val constrs = constrs0.map(initialSubst.apply).map(c => if (flix.options.xUseSurfaceSimplifier) simplify(c) else c)
