@@ -41,8 +41,8 @@ object Dependencies {
     *   - SymUse
     *   - Instance
     */
-  def run(root: Root, oldRoot: Root, changeSet: ChangeSet, cachedDefDeps: Map[DefnSym, SymUse.DefSymUse])(implicit flix: Flix): (Root, (List[RedundancyError], Map[DefnSym, SymUse.DefSymUse])) = flix.phaseNew("Dependencies") {
-    implicit val sctx: SharedContext = SharedContext.mk(cachedDefDeps, changeSet)
+  def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, List[RedundancyError]) = flix.phaseNew("Dependencies") {
+    implicit val sctx: SharedContext = SharedContext.mk(oldRoot.dependencyGraph, changeSet)
     val effects = changeSet.updateStaleValues(root.effects, oldRoot.effects)(ParOps.parMapValues(_)(visitEff))
     val enums = changeSet.updateStaleValues(root.enums, oldRoot.enums)(ParOps.parMapValues(_)(visitEnum))
     val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
@@ -63,7 +63,7 @@ object Dependencies {
       structs = structs,
       traits = traits,
       typeAliases = typeAliases,
-    ), (errors, sctx.defDeps.asScala.toMap))
+    ), errors)
   }
 
   /**
@@ -754,8 +754,8 @@ object Dependencies {
   }
 
   private object SharedContext {
-    def mk(cachedDefDeps: Map[DefnSym, SymUse.DefSymUse], changeSet: ChangeSet): SharedContext = {
-      val (_, freshDefs) = changeSet.partition(cachedDefDeps, cachedDefDeps)
+    def mk(dependencyGraph: DependencyGraph, changeSet: ChangeSet): SharedContext = {
+      val (_, freshDefs) = changeSet.partition(dependencyGraph.defDeps)
       SharedContext(
         new ConcurrentHashMap(freshDefs.asJava),
         new ConcurrentHashMap()
@@ -779,10 +779,10 @@ object Dependencies {
     }
 
     def buildDependencyGraph(): DependencyGraph = {
-      var defMap = MultiMap.empty[Input, Input]
+      var allDeps = MultiMap.empty[Input, Input]
       defDeps.forEach((defn, defnUse) => addDependency(defn.loc, defnUse.loc))
-      deps.forEach((k, _) => defMap = defMap + k)
-      DependencyGraph(defMap)
+      deps.forEach((k, _) => allDeps = allDeps + k)
+      DependencyGraph(defDeps.asScala.toMap, allDeps)
     }
   }
 

@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
+import ca.uwaterloo.flix.language.ast.Symbol.DefnSym
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 /**
@@ -24,7 +25,7 @@ object DependencyGraph {
   /**
     * The empty dependency graph.
     */
-  val empty: DependencyGraph = DependencyGraph(MultiMap.empty)
+  val empty: DependencyGraph = DependencyGraph(Map.empty, MultiMap.empty)
 }
 
 /**
@@ -32,7 +33,7 @@ object DependencyGraph {
   *
   * If the graph contains an edge `src -> dst` that means that if `src` changes then `dst` must be recomputed.
   */
-case class DependencyGraph(deps: MultiMap[Input, Input]) {
+case class DependencyGraph(defDeps: Map[DefnSym, SymUse.DefSymUse], deps: MultiMap[Input, Input]) {
 
   /**
     * Returns all inputs that are transitively dirty (including `i`).

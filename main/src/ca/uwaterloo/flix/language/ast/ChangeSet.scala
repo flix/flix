@@ -56,6 +56,28 @@ sealed trait ChangeSet {
   }
 
   /**
+    * Returns two maps: `stale` and `fresh` according to the given `map`.
+    *
+    * A fresh key is one that can be reused.
+    * A stale key is one that must be re-compiled.
+    *
+    * An entry is stale if its key is dirty (i.e. has changed).
+    * Otherwise, it is fresh.
+    */
+  def partition[K <: Sourceable, V1](map: Map[K, V1]): (Map[K, V1], Map[K, V1]) = this match {
+    case ChangeSet.Everything =>
+      (map, Map.empty)
+
+    case ChangeSet.Dirty(dirty) =>
+      map.foldLeft((Map.empty[K, V1], Map.empty[K, V1])) { case ((stale, fresh), (k, v)) =>
+        if (dirty.contains(k.src.input))
+          (stale + (k -> v), fresh)
+        else
+          (stale, fresh + (k -> v))
+      }
+  }
+
+  /**
     * Returns two maps: `stale` and `fresh` according to the given `newMap` and `oldMap`, the value of the map is a list of Sourceable.
     *
     * A fresh item in the value list is one that can be reused.
