@@ -33,7 +33,7 @@ import org.eclipse.lsp4j.launch.LSPLauncher
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
 
 import java.nio.file.{Files, Path, Paths}
-import java.util
+import java.{lang, util}
 import java.util.concurrent.CompletableFuture
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
@@ -106,8 +106,12 @@ object LspServer {
       System.err.println(s"initialize: $initializeParams")
 
       clientCapabilities = initializeParams.getCapabilities
-
-      loadFlixProject(initializeParams.getWorkspaceFolders.asScala.toList)
+      if (initializeParams.getWorkspaceFolders != null)
+        loadFlixProject(initializeParams.getWorkspaceFolders.asScala.toList)
+      else {
+        flixLanguageClient.showMessage(new MessageParams(MessageType.Error, "Please provide WorkspaceFolders in the initialization options."))
+        System.err.println("Please provide WorkspaceFolders in the initialization options.")
+      }
 
       CompletableFuture.completedFuture(new InitializeResult(mkServerCapabilities()))
     }
