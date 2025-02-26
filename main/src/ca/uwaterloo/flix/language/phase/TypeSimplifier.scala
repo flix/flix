@@ -41,13 +41,13 @@ object TypeSimplifier {
   /** Simplifies types inside `tc` with [[simplify]]. */
   def simplifyConstraint(tc: TypeConstraint): TypeConstraint = tc match {
     case TypeConstraint.Equality(tpe1, tpe2, prov) =>
-      TypeConstraint.Equality(TypeSimplifier.simplify(tpe1), TypeSimplifier.simplify(tpe2), prov)
+      TypeConstraint.Equality(simplify(tpe1), simplify(tpe2), prov)
     case TypeConstraint.Trait(sym, tpe, loc) =>
-      TypeConstraint.Trait(sym, TypeSimplifier.simplify(tpe), loc)
+      TypeConstraint.Trait(sym, simplify(tpe), loc)
     case TypeConstraint.Purification(sym, tpe1, tpe2, prov, nested) =>
-      TypeConstraint.Purification(sym, TypeSimplifier.simplify(tpe1), TypeSimplifier.simplify(tpe2), prov, nested.map(simplify))
+      TypeConstraint.Purification(sym, simplify(tpe1), simplify(tpe2), prov, nested.map(simplifyConstraint))
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
-      TypeConstraint.Conflicted(TypeSimplifier.simplify(tpe1), TypeSimplifier.simplify(tpe2), prov)
+      TypeConstraint.Conflicted(simplify(tpe1), simplify(tpe2), prov)
   }
 
   /**
