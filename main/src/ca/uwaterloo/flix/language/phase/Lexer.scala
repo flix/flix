@@ -991,9 +991,11 @@ object Lexer {
 
   /** Moves current position past a line-comment or a line of a doc-comment. */
   private def acceptLineOrDocComment()(implicit s: State): TokenKind = {
-    // A doc comment leads with 3 slashes, for example `//// example` is a doc comment.
-    // Note that the calling code has already consumed one `/`.
-    val kind = if (s.sc.advanceIfMatch("//")) TokenKind.CommentDoc else TokenKind.CommentLine
+    // A doc comment leads with exactly 3 slashes, for example `//// example` is NOT a doc comment.
+    val kind = (peek(), peekPeek()) match {
+      case ('/', Some(c)) if c != '/' => TokenKind.CommentDoc
+      case _ => TokenKind.CommentLine
+    }
     s.sc.advanceWhile(c => c != '\n')
     kind
   }
