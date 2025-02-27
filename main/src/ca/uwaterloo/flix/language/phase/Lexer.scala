@@ -975,17 +975,9 @@ object Lexer {
     error.getOrElse(TokenKind.LiteralInt32)
   }
 
-  /**
-    * Moves current position past an annotation. IE. "@Test".
-    */
+  /** Moves current position past an annotation. IE. "@Test". */
   private def acceptAnnotation()(implicit s: State): TokenKind = {
-    while (!eof()) {
-      if (!peek().isLetter) {
-        return TokenKind.Annotation
-      } else {
-        advance()
-      }
-    }
+    s.sc.advanceWhile(_.isLetter)
     TokenKind.Annotation
   }
 
