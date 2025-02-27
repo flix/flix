@@ -989,15 +989,17 @@ object Lexer {
     TokenKind.Annotation
   }
 
-  /** Moves current position past a line-comment or a line of a doc-comment. */
+  /**
+    * Moves current position past a line-comment or a line of a doc-comment.
+    *
+    * N.B.: The content just before the current position is assumed to be "X//"
+    * where `X != '/'` if it exists.
+    */
   private def acceptLineOrDocComment()(implicit s: State): TokenKind = {
     // A doc comment leads with exactly 3 slashes, for example `//// example` is NOT a doc comment.
-    val kind = (peek(), peekPeek()) match {
-      case ('/', Some(c)) if c != '/' => TokenKind.CommentDoc
-      case _ => TokenKind.CommentLine
-    }
+    val slashCount = s.sc.advanceWhileWithCount(_ == '/')
     s.sc.advanceWhile(c => c != '\n')
-    kind
+    if (slashCount == 1) TokenKind.CommentDoc else TokenKind.CommentLine
   }
 
   /**
@@ -1212,6 +1214,15 @@ object Lexer {
       while (this.inBounds && p(data(offset))) {
         advance()
       }
+    }
+
+    /** Continuously advance the cursor while `p` returns true. Returns the number of advances. */
+    def advanceWhileWithCount(p: Char => Boolean): Int = {
+      val startingOffset = offset
+      while (this.inBounds && p(data(offset))) {
+        advance()
+      }
+      offset - startingOffset
     }
 
     /** Returns a copy of `this`, pointing to the same underlying array. */
