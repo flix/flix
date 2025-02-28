@@ -63,7 +63,7 @@ mod MutList {
     }
 
     ///
-    /// Returns an empty empty mutable list with a default capacity.
+    /// Returns an empty mutable list with a default capacity.
     ///
     pub def empty(rc: Region[r]): MutList[a, r] \ r =
         new MutList @ rc {r = rc, values = Array.empty(rc, minCapacity()), length = 0}
