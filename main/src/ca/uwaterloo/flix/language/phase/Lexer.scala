@@ -307,9 +307,7 @@ object Lexer {
       case '\\' => TokenKind.Backslash
       case _ if isMatchPrev(".{") => TokenKind.DotCurlyL
       case '.' =>
-        if (peek() == '.' && peekPeek().contains('.')) {
-          advance()
-          advance()
+        if (s.sc.advanceIfMatch("..")) {
           TokenKind.DotDotDot
         } else if (previousPrevious().exists(_.isWhitespace)) {
           // If the dot is prefixed with whitespace we treat that as an error.
