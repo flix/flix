@@ -995,31 +995,25 @@ object Lexer {
   }
 
   /**
-    * Moves current position past a block-comment.
-    * Note that block-comments can be nested, in which case we need to handle multiple terminating "* /".
-    * This is done be counting the nesting level and enforcing a max nesting level.
-    * If this level is reached a `TokenKind.Err` is returned.
-    * A block-comment might also be unterminated if there is less terminations than levels of nesting.
-    * In this case a `TokenKind.Err` is returned as well.
+    * Moves current position past a block-comment. Note that block-comments can be nested.
+    * If the max nesting level is reached a `TokenKind.Err` is immediately returned.
+    * A block-comment is unterminated if there are less terminations than levels of nesting.
     */
   private def acceptBlockComment()(implicit s: State): TokenKind = {
     var level = 1
-    while (!eof()) {
-      (peek(), peekPeek()) match {
-        case ('/', Some('*')) =>
-          level += 1
-          if (level >= BlockCommentMaxNestingLevel) {
-            return TokenKind.Err(LexerError.BlockCommentTooDeep(sourceLocationAtCurrent()))
-          }
-          advance()
-        case ('*', Some('/')) =>
-          level -= 1
-          advance()
-          advance()
-          if (level == 0) {
-            return TokenKind.CommentBlock
-          }
-        case _ => advance()
+    while (s.sc.inBounds) {
+      if (s.sc.advanceIfMatch("/*")) {
+        level += 1
+        if (level >= BlockCommentMaxNestingLevel) {
+          return TokenKind.Err(LexerError.BlockCommentTooDeep(sourceLocationAtCurrent()))
+        }
+      } else if (s.sc.advanceIfMatch("*/")) {
+        level -= 1
+        if (level == 0) {
+          return TokenKind.CommentBlock
+        }
+      } else {
+        s.sc.advance()
       }
     }
     TokenKind.Err(LexerError.UnterminatedBlockComment(sourceLocationAtStart()))
