@@ -489,31 +489,24 @@ object Lexer {
   }
 
   /**
-    * Check that the potential keyword is sufficiently separated, taking care not to go out-of-bounds.
+    * Check that the potential keyword is sufficiently separated.
     * A keyword is separated if it is surrounded by anything __but__ a character, digit a dot or underscore.
     * Note that __comparison includes current__.
     */
   private def isSeparated(keyword: String, allowDot: Boolean = false)(implicit s: State): Boolean = {
     def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_' || !allowDot && c == '.')
-
-    val leftIndex = s.sc.getOffset - 2
-    val rightIndex = s.sc.getOffset + keyword.length - 1
-    val isSeperatedLeft = leftIndex < 0 || isSep(s.src.data(leftIndex))
-    val isSeperatedRight = rightIndex > s.src.data.length - 1 || isSep(s.src.data(rightIndex))
-    isSeperatedLeft && isSeperatedRight
+    s.sc.nthIsPOrOutOfBounds(-2, isSep) && s.sc.nthIsPOrOutOfBounds(keyword.length - 1, isSep)
   }
 
   /**
-    * Check that the potential operator is sufficiently separated, taking care not to go out-of-bounds.
+    * Check that the potential operator is sufficiently separated.
     * An operator is separated if it is surrounded by anything __but__ another valid user operator character.
     * Note that __comparison includes current__.
     */
   private def isSeparatedOperator(keyword: String)(implicit s: State): Boolean = {
-    val leftIndex = s.sc.getOffset - 2
-    val rightIndex = s.sc.getOffset + keyword.length - 1
-    val isSeperatedLeft = leftIndex < 0 || isUserOp(s.src.data(leftIndex)).isEmpty
-    val isSeperatedRight = rightIndex > s.src.data.length - 1 || isUserOp(s.src.data(rightIndex)).isEmpty
-    isSeperatedLeft && isSeperatedRight
+    /** Returns true if the n offset character is a separator or if n is out of bounds. */
+    def isSep(c: Char) = isUserOp(c).isEmpty
+    s.sc.nthIsPOrOutOfBounds(-2, isSep) && s.sc.nthIsPOrOutOfBounds(keyword.length - 1, isSep)
   }
 
   /**
@@ -1207,6 +1200,16 @@ object Lexer {
         advance()
       }
       offset - startingOffset
+    }
+
+    /** Faster equivalent of `nth(n).map(p).getOrElse(true)`. */
+    def nthIsPOrOutOfBounds(n: Int, p: Char => Boolean): Boolean = {
+      val index = offset + n
+      if (0 <= index && index < data.length) {
+        p(data(index))
+      } else {
+        true
+      }
     }
 
     /** Returns a copy of `this`, pointing to the same underlying array. */
