@@ -491,31 +491,31 @@ object Lexer {
   }
 
   /**
-    * Check that the potential keyword is sufficiently separated, taking care not to go out-of-bounds.
+    * Check that the potential keyword is sufficiently separated.
     * A keyword is separated if it is surrounded by anything __but__ a character, digit a dot or underscore.
     * Note that __comparison includes current__.
     */
   private def isSeparated(keyword: String, allowDot: Boolean = false)(implicit s: State): Boolean = {
-    def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_' || !allowDot && c == '.')
-
-    val leftIndex = s.sc.getOffset - 2
-    val rightIndex = s.sc.getOffset + keyword.length - 1
-    val isSeperatedLeft = leftIndex < 0 || isSep(s.src.data(leftIndex))
-    val isSeperatedRight = rightIndex > s.src.data.length - 1 || isSep(s.src.data(rightIndex))
-    isSeperatedLeft && isSeperatedRight
+    /** Returns true if the n offset character is a separator or if n is out of bounds. */
+    def isSep(n: Int) = s.sc.nth(n) match {
+      case Some(c) => !(c.isLetter || c.isDigit || c == '_' || !allowDot && c == '.')
+      case None => true
+    }
+    isSep(-2) && isSep(keyword.length - 1)
   }
 
   /**
-    * Check that the potential operator is sufficiently separated, taking care not to go out-of-bounds.
+    * Check that the potential operator is sufficiently separated.
     * An operator is separated if it is surrounded by anything __but__ another valid user operator character.
     * Note that __comparison includes current__.
     */
   private def isSeparatedOperator(keyword: String)(implicit s: State): Boolean = {
-    val leftIndex = s.sc.getOffset - 2
-    val rightIndex = s.sc.getOffset + keyword.length - 1
-    val isSeperatedLeft = leftIndex < 0 || isUserOp(s.src.data(leftIndex)).isEmpty
-    val isSeperatedRight = rightIndex > s.src.data.length - 1 || isUserOp(s.src.data(rightIndex)).isEmpty
-    isSeperatedLeft && isSeperatedRight
+    /** Returns true if the n offset character is a separator or if n is out of bounds. */
+    def isSep(n: Int) = s.sc.nth(n) match {
+      case Some(c) => isUserOp(c).isEmpty
+      case None => true
+    }
+    isSep(-2) && isSep(keyword.length - 1)
   }
 
   /**
