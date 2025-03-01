@@ -1046,7 +1046,7 @@ object Lexer {
     * A class to iterate through an array of characters while maintaining the line and column index
     * of the cursor.
     */
-  private class StringCursor(val data: Array[Char]) {
+  private final class StringCursor(val data: Array[Char]) {
 
     /** The cursor pointing into `data`. */
     private var offset: Int = 0
