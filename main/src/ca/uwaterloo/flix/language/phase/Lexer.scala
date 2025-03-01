@@ -494,12 +494,8 @@ object Lexer {
     * Note that __comparison includes current__.
     */
   private def isSeparated(keyword: String, allowDot: Boolean = false)(implicit s: State): Boolean = {
-    /** Returns true if the n offset character is a separator or if n is out of bounds. */
-    def isSep(n: Int) = s.sc.nth(n) match {
-      case Some(c) => !(c.isLetter || c.isDigit || c == '_' || !allowDot && c == '.')
-      case None => true
-    }
-    isSep(-2) && isSep(keyword.length - 1)
+    def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_' || !allowDot && c == '.')
+    s.sc.nthIsPOrOutOfBounds(-2, isSep) && s.sc.nthIsPOrOutOfBounds(keyword.length - 1, isSep)
   }
 
   /**
@@ -509,11 +505,8 @@ object Lexer {
     */
   private def isSeparatedOperator(keyword: String)(implicit s: State): Boolean = {
     /** Returns true if the n offset character is a separator or if n is out of bounds. */
-    def isSep(n: Int) = s.sc.nth(n) match {
-      case Some(c) => isUserOp(c).isEmpty
-      case None => true
-    }
-    isSep(-2) && isSep(keyword.length - 1)
+    def isSep(c: Char) = isUserOp(c).isEmpty
+    s.sc.nthIsPOrOutOfBounds(-2, isSep) && s.sc.nthIsPOrOutOfBounds(keyword.length - 1, isSep)
   }
 
   /**
@@ -1207,6 +1200,16 @@ object Lexer {
         advance()
       }
       offset - startingOffset
+    }
+
+    /** Faster equivalent of `nth(n).map(p).getOrElse(true)`. */
+    def nthIsPOrOutOfBounds(n: Int, p: Char => Boolean): Boolean = {
+      val index = offset + n
+      if (0 <= index && index < data.length) {
+        p(data(index))
+      } else {
+        true
+      }
     }
 
     /** Returns a copy of `this`, pointing to the same underlying array. */
