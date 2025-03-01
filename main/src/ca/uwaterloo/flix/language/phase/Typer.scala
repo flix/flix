@@ -188,12 +188,12 @@ object Typer {
     val infRenv = context.getRigidityEnv
     val infTconstrs = context.getTypeConstraints
 
-    flix.emitEvent(FlixEvent.NewConstraintsDef(defn.sym, infTconstrs))
 
     // SUB-EFFECTING: Check if the open flag is set (i.e. if we should enable subeffecting).
     val eff = if (open) Type.mkUnion(eff0, Type.freshEffSlackVar(eff0.loc), eff0.loc) else eff0
 
     val infResult = InfResult(infTconstrs, tpe, eff, infRenv)
+    flix.emitEvent(FlixEvent.NewConstraintsDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root))
     val (subst, constraintErrors) = ConstraintSolverInterface.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
     constraintErrors.foreach(sctx.errors.add)
     checkAssocTypes(defn.spec, tconstrs0, traitEnv)
