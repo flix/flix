@@ -327,6 +327,7 @@ object Lexer {
         acceptName(isUpper = false)
       case '\"' => acceptString()
       case '\'' => acceptChar()
+      case '`' if previousPrevious().contains('.') => acceptEscapedName()
       case '`' => acceptInfixFunction()
       case _ if isMatchPrev("#{") => TokenKind.HashCurlyL
       case _ if isMatchPrev("#(") => TokenKind.HashParenL
@@ -495,7 +496,7 @@ object Lexer {
     */
   private def isSeparated(keyword: String, allowDot: Boolean = false)(implicit s: State): Boolean = {
     def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_' || !allowDot && c == '.')
-    s.sc.nthIsPOrOutOfBounds(-2, isSep) && s.sc.nthIsPOrOutOfBounds(keyword.length - 1, isSep)
+    s.sc.nthIsPOrOutOfBounds(keyword.length - 1, isSep)
   }
 
   /**
@@ -687,6 +688,18 @@ object Lexer {
     TokenKind.HoleNamed
   }
 
+  /** Moves the current position past an escaped name. */
+  private def acceptEscapedName()(implicit s: State): TokenKind = {
+    val next = peek()
+    if (next.isLetter && next.isLower) {
+      s.sc.advanceWhile(c => c.isLetter || c.isDigit || c == '_' || c == '!' || c == '$')
+    }
+    if (s.sc.advanceIfMatch('`')) {
+      TokenKind.NameEscaped
+    } else {
+      TokenKind.Err(LexerError.UnterminatedEscapedName(sourceLocationAtStart()))
+    }
+  }
 
   /** Moves current position past an infix function. */
   private def acceptInfixFunction()(implicit s: State): TokenKind = {

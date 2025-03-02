@@ -124,6 +124,15 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateStructField](result)
   }
 
+  test("EmptyEscapedName.01") {
+    val input =
+      """
+        |def f(o: Object): String = o.``
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.EmptyEscapedName](result)
+  }
+
   test("EmptyForFragment.01") {
     val input =
       """

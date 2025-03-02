@@ -145,6 +145,34 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that an escaped name is empty.
+    *
+    * @param loc the location of the escaped name.
+    */
+  case class EmptyEscapedName(loc: SourceLocation) extends WeederError {
+    def summary: String = "An escaped name cannot be empty."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> An escaped name cannot be empty.
+         |
+         |${code(loc, "Escaped name does not contain anything.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      s"""A loop must contain a collection comprehension.
+         |
+         |A minimal loop is written as follows:
+         |
+         |    foreach (x <- xs) yield x
+         |
+         |""".stripMargin
+    })
+  }
+
+  /**
     * An error raised to indicate that a loop does not contain any fragments.
     *
     * @param loc the location of the for-loop with no fragments.

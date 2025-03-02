@@ -3146,6 +3146,11 @@ object Weeder2 {
     */
   private def tokenToIdent(tree: Tree)(implicit sctx: SharedContext): Name.Ident = {
     tree.children.headOption match {
+      case Some(token@Token(TokenKind.NameEscaped, _, _, _, sp1, sp2)) =>
+        val content = token.text.stripPrefix("`").stripSuffix("`")
+        val loc = SourceLocation(isReal = true, sp1, sp2)
+        if (content.isEmpty) sctx.errors.add(EmptyEscapedName(loc))
+        Name.Ident(content, loc)
       case Some(token@Token(_, _, _, _, sp1, sp2)) =>
         Name.Ident(token.text, SourceLocation(isReal = true, sp1, sp2))
       // If child is an ErrorTree, that means the parse already reported and error.

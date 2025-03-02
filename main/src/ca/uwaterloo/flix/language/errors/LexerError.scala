@@ -249,6 +249,24 @@ object LexerError {
   }
 
   /**
+    * An error raised when an unterminated escaped name is encountered.
+    *
+    * @param loc The location of the opening '&#96;'.
+    */
+  case class UnterminatedEscapedName(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Unterminated escaped name."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Missing '`' in escaped name.
+         |
+         |${code(loc, "Escaped name starts here.")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised when an unterminated char is encountered.
     *
     * @param loc The location of the opening `'`.
