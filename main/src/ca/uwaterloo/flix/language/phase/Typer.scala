@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.Symbol.ModuleSym
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -87,35 +88,61 @@ object Typer {
       }.toSet
       val syms = syms0 ++ namespaces
 
-      val groups = syms.groupBy {
-        case sym: Symbol.DefnSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-        case sym: Symbol.EnumSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-        case sym: Symbol.StructSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-        case sym: Symbol.StructFieldSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-        case sym: Symbol.RestrictableEnumSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-        case sym: Symbol.TraitSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-        case sym: Symbol.TypeAliasSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-        case sym: Symbol.EffectSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
+      val constructsWithCompanionModule = traits.keys ++ enums.keys ++ structs.keys ++ effects.keys
 
-        case sym: Symbol.SigSym => new Symbol.ModuleSym(sym.trt.namespace :+ sym.trt.name, ModuleKind.Standalone)
-        case sym: Symbol.OpSym => new Symbol.ModuleSym(sym.eff.namespace :+ sym.eff.name, ModuleKind.Standalone)
-        case sym: Symbol.AssocTypeSym => new Symbol.ModuleSym(sym.trt.namespace :+ sym.trt.name, ModuleKind.Standalone)
-
-        case sym: Symbol.ModuleSym => new Symbol.ModuleSym(sym.ns.init, ModuleKind.Standalone)
-
-        case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.RestrictableCaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.RegionSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol: $sym", SourceLocation.Unknown)
-        case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+      val companionModules = constructsWithCompanionModule.foldLeft(Map.empty[ModuleSym, Set[Symbol]]) {
+        case (acc, sym) =>
+          val companionModule = new Symbol.ModuleSym(sym.namespace :+ sym.name, ModuleKind.Companion)
+          val parentModule = new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
+          val set = acc.getOrElse(parentModule, Set.empty)
+          // Add the companion module to the set of symbols for its parent module
+          // Also, add the companion module with a default empty set of symbols
+          acc.updated(parentModule, set + companionModule).updated(companionModule, Set.empty)
       }
 
-      groups.map {
-        case (k, v) => (k, v.toList)
+      val modules = syms.foldLeft(companionModules) {
+        case (acc, sym) =>
+          sym match {
+            case sym: Symbol.DefnSym => addToModuleMap(sym, acc)
+            case sym: Symbol.EnumSym => addToModuleMap(sym, acc)
+            case sym: Symbol.StructSym => addToModuleMap(sym, acc)
+            case sym: Symbol.StructFieldSym => addToModuleMap(sym, acc)
+            case sym: Symbol.RestrictableEnumSym => addToModuleMap(sym, acc)
+            case sym: Symbol.TraitSym => addToModuleMap(sym, acc)
+            case sym: Symbol.TypeAliasSym => addToModuleMap(sym, acc)
+            case sym: Symbol.EffectSym => addToModuleMap(sym, acc)
+
+            case sym: Symbol.ModuleSym =>
+              val mod = new Symbol.ModuleSym(sym.ns.init, ModuleKind.Standalone)
+              val set = acc.getOrElse(mod, Set.empty)
+              acc.updated(mod, set + sym)
+
+            case sym: Symbol.SigSym => addToModuleMap(sym, acc)
+            case sym: Symbol.OpSym => addToModuleMap(sym, acc)
+            case sym: Symbol.AssocTypeSym => addToModuleMap(sym, acc)
+            case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+            case sym: Symbol.RestrictableCaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+            case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+            case sym: Symbol.RegionSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+            case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+            case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+            case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol: $sym", SourceLocation.Unknown)
+            case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+          }
       }
+
+      modules.map{
+        case (mod, syms) => mod -> syms.toList
+      }
+  }
+
+  /**
+    * Adds the given qualified symbol to the set of symbols for the given module in the given map.
+    */
+  private def addToModuleMap(qualifiedSym: QualifiedSym, moduleMap: Map[ModuleSym, Set[Symbol]]) = {
+    val mod = new Symbol.ModuleSym(qualifiedSym.namespace, ModuleKind.Standalone)
+    val set = moduleMap.getOrElse(mod, Set.empty)
+    moduleMap.updated(mod, set + qualifiedSym)
   }
 
   /**
