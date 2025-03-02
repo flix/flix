@@ -174,6 +174,30 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.UnterminatedBuiltIn](result)
   }
 
+  test("LexerError.UnterminatedEscapedName.01") {
+    val input = "x.`test"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedEscapedName](result)
+  }
+
+  test("LexerError.UnterminatedEscapedName.02") {
+    val input = "x.`a_"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedEscapedName](result)
+  }
+
+  test("LexerError.UnterminatedEscapedName.03") {
+    val input = "x.`a$"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedEscapedName](result)
+  }
+
+  test("LexerError.UnterminatedEscapedName.04") {
+    val input = "x.`"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedEscapedName](result)
+  }
+
   test("LexerError.UnterminatedChar.01") {
     val input = "'a"
     val result = compile(input, Options.TestWithLibNix)

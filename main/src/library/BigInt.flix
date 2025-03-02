@@ -133,25 +133,25 @@ mod BigInt {
     /// Returns the bitwise AND of `x` and `y`.
     ///
     pub def bitwiseAnd(x: BigInt, y: BigInt): BigInt =
-        unsafe x.and(y)
+        unsafe x.`and`(y)
 
     ///
     /// Returns the bitwise NOT of `x`.
     ///
     pub def bitwiseNot(x: BigInt): BigInt =
-        unsafe x.not()
+        unsafe x.`not`()
 
     ///
     /// Returns the bitwise OR of `x` and `y`.
     ///
     pub def bitwiseOr(x: BigInt, y: BigInt): BigInt =
-        unsafe x.or(y)
+        unsafe x.`or`(y)
 
     ///
     /// Returns the bitwise XOR of `x` and `y`.
     ///
     pub def bitwiseXor(x: BigInt, y: BigInt): BigInt =
-        unsafe x.xor(y)
+        unsafe x.`xor`(y)
 
     ///
     /// Return a string representation of `x`.
