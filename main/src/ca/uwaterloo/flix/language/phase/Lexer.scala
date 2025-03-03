@@ -34,10 +34,6 @@ import scala.util.Random
   * See `LexerError` for all error states.
   */
 object Lexer {
-  /**
-    * The maximal allowed nesting level of block-comments.
-    */
-  private val BlockCommentMaxNestingLevel = 32
 
   /**
     * The maximal allowed nesting level of string interpolation.
@@ -995,9 +991,6 @@ object Lexer {
     while (s.sc.inBounds) {
       if (s.sc.advanceIfMatch("/*")) {
         level += 1
-        if (level >= BlockCommentMaxNestingLevel) {
-          return TokenKind.Err(LexerError.BlockCommentTooDeep(sourceLocationAtCurrent()))
-        }
       } else if (s.sc.advanceIfMatch("*/")) {
         level -= 1
         if (level == 0) {
