@@ -1,5 +1,9 @@
 # Changelog
 
+Version 0.58.1:
+- Compiler: Fixed a crash in type inference (thanks Magnus!)
+- Compiler: Fixed a crash plain LSP provider (thanks Chenhao!)
+
 Version 0.58.0:
 - Compiler: Added support for plain LSP (thanks Chenhao!)
 - Compiler: Significantly improved performance of type inference (thanks Magnus!)
