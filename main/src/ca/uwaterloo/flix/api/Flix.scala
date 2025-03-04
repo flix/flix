@@ -147,7 +147,7 @@ class Flix {
     "Debug.flix" -> LocalResource.get("/src/library/Debug.flix"),
 
     // References
-    "Ref.flix" -> LocalResource.get("/src/library/Ref.flix"),
+//    "Ref.flix" -> LocalResource.get("/src/library/Ref.flix"),
   )
 
   /**

@@ -62,7 +62,7 @@ object Resolver {
     "Bool" -> Kind.Bool,
     "Eff" -> Kind.Eff,
     "Type" -> Kind.Star,
-    "Region" -> Kind.Eff,
+    "Region" -> Kind.Region,
     "RecordRow" -> Kind.RecordRow,
     "SchemaRow" -> Kind.SchemaRow,
     "Predicate" -> Kind.Predicate
@@ -2329,7 +2329,7 @@ object Resolver {
       case NamedAst.Type.Var(ident, loc) =>
         lookupLowerType(ident, wildness, env) match {
           case Result.Ok(LowerType.Var(sym)) => Validation.Success(UnkindedType.Var(sym, loc))
-          case Result.Ok(LowerType.Region(sym)) => Validation.Success(UnkindedType.Cst(TypeConstructor.Region(sym), loc))
+          case Result.Ok(LowerType.Region(sym)) => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionId(sym), loc))
           case Result.Err(error) =>
             // Note: We assume the default type variable has kind Star.
             sctx.errors.add(error)
@@ -2361,6 +2361,12 @@ object Resolver {
         case "Array" => Validation.Success(UnkindedType.Cst(TypeConstructor.Array, loc))
         case "Vector" => Validation.Success(UnkindedType.Cst(TypeConstructor.Vector, loc))
         case "Region" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToStar, loc))
+        case "Heap" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToEff(None), loc))
+        case "Alloc" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToEff(Some(RegionAction.Alloc)), loc))
+        case "Read" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToEff(Some(RegionAction.Read)), loc))
+        case "Write" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToEff(Some(RegionAction.Write)), loc))
+        case "Lock" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToEff(Some(RegionAction.Lock)), loc))
+        case name if name.startsWith("Region_") => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionIdToRegion(RegionFlavor(name.stripPrefix("Region_"))), loc))
 
         // Disambiguate type.
         case _ => // typeName

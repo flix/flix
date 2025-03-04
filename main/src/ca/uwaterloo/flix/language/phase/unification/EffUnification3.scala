@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, RegionAction, RegionFlavor, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
@@ -123,7 +123,7 @@ object EffUnification3 {
   /**
     * Translates `eq` into a equation of [[SetFormula]].
     *
-    * Throws [[InvalidType]] for types not convertible to [[SetFormula]].
+    * Throws [[InvalidType()]] for types not convertible to [[SetFormula]].
     */
   private def toEquation(eq: TypeConstraint.Equality, withSlack: Boolean)(implicit scope: Scope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): Equation = {
     val TypeConstraint.Equality(tpe1, tpe2, prov) = eq
@@ -133,7 +133,7 @@ object EffUnification3 {
   /**
     * Returns `t` as a [[SetFormula]].
     *
-    * Throws [[InvalidType]] if `t` is not valid.
+    * Throws [[InvalidType()]] if `t` is not valid.
     */
   private def toSetFormula(t: Type)(implicit withSlack: Boolean, scope: Scope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): SetFormula = t match {
     case Type.Univ => SetFormula.Univ
@@ -162,13 +162,18 @@ object EffUnification3 {
       case Some(x) => SetFormula.mkElemSet(x)
     }
 
-    case tpe@Type.Cst(TypeConstructor.Region(_), _) => m.getForward(Atom.fromType(tpe)) match {
+    case tpe@Type.Cst(TypeConstructor.RegionId(_), _) => m.getForward(Atom.fromType(tpe)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
       case Some(x) => SetFormula.mkElemSet(x)
     }
 
     case tpe@Type.AssocType(_, _, _, _) => m.getForward(Atom.fromType(tpe)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound associated type: '$tpe'.", tpe.loc)
+      case Some(x) => SetFormula.Cst(x)
+    }
+
+    case tpe@Type.Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), _, _) => m.getForward(Atom.fromType(tpe)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound region: '$tpe'.", tpe.loc)
       case Some(x) => SetFormula.Cst(x)
     }
 
@@ -293,19 +298,27 @@ object EffUnification3 {
       case (Atom.VarFlex(sym1), Atom.VarFlex(sym2)) => sym1.id - sym2.id
       case (Atom.VarRigid(sym1), Atom.VarRigid(sym2)) => sym1.id - sym2.id
       case (Atom.Eff(sym1), Atom.Eff(sym2)) => sym1.compare(sym2)
-      case (Atom.Region(sym1), Atom.Region(sym2)) => sym1.compare(sym2)
+      case (Atom.RegionId(sym1), Atom.RegionId(sym2)) => sym1.compare(sym2)
+      case (Atom.RegionIdToRegion(flav1, arg1), Atom.RegionIdToRegion(flav2, arg2)) =>
+        val flavCmp = flav1.compare(flav2)
+        if (flavCmp != 0) flavCmp else arg1.compare(arg2)
       case (Atom.Assoc(sym1, arg1), Atom.Assoc(sym2, arg2)) =>
         val symCmp = sym1.compare(sym2)
         if (symCmp != 0) symCmp else arg1.compare(arg2)
+      case (Atom.RegionToEff(action1, arg1), Atom.RegionToEff(action2, arg2)) =>
+        val actionCmp = action1.compare(action2)
+        if (actionCmp != 0) actionCmp else arg1.compare(arg2)
       case (Atom.Error(id1), Atom.Error(id2)) => id1 - id2
       case _ =>
         def ordinal(a: Atom): Int = a match {
           case Atom.VarFlex(_) => 0
           case Atom.VarRigid(_) => 1
-          case Atom.Region(_) => 2
+          case Atom.RegionId(_) => 2
           case Atom.Eff(_) => 3
           case Atom.Assoc(_, _) => 4
-          case Atom.Error(_) => 5
+          case Atom.RegionToEff(_, _) => 5
+          case Atom.RegionIdToRegion(_, _) => 6
+          case Atom.Error(_) => 7
         }
 
         ordinal(this) - ordinal(that)
@@ -325,26 +338,33 @@ object EffUnification3 {
     /** Represents an associated effect. */
     case class Assoc(sym: Symbol.AssocTypeSym, arg: Atom) extends Atom
 
-    /** Represents a region. */
-    case class Region(sym: Symbol.RegionSym) extends Atom
+    /** Represents a region identifier. */
+    case class RegionId(sym: Symbol.RegionSym) extends Atom
+
+    /** Represents a conversion from region ID to region */
+    case class RegionIdToRegion(flav: RegionFlavor, arg: Atom) extends Atom
+
+    /** Represents a region converted to an effect. */
+    case class RegionToEff(action: Option[RegionAction], arg: Atom) extends Atom
 
     /** Represents an error type. */
     case class Error(id: Int) extends Atom
 
-    /** Returns the [[Atom]] representation of `t` or throws [[InvalidType]]. */
-    @tailrec
+    /** Returns the [[Atom]] representation of `t` or throws [[InvalidType()]]. */
     def fromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.Var(sym, _) => Atom.VarFlex(sym)
       case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
-      case Type.Cst(TypeConstructor.Region(sym), _) => Atom.Region(sym)
-      case assoc@Type.AssocType(_, _, _, _) => assocFromType(assoc)
+      case Type.Cst(TypeConstructor.RegionId(sym), _) => Atom.RegionId(sym)
+      case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) => Atom.Assoc(sym, fromNestedType(arg))
+      case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(action), _), tpe2, _) => Atom.RegionToEff(action, fromNestedType(tpe2))
+      case Type.Apply(Type.Cst(TypeConstructor.RegionIdToRegion(action), _), tpe2, _) => Atom.RegionIdToRegion(action, fromNestedType(tpe2))
       case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
       case Type.Alias(_, _, tpe, _) => fromType(tpe)
       case _ => throw InvalidType(t)
     }
 
-    /** Returns the [[Atom]] representation of `t` or throws [[InvalidType]]. */
+    /** Returns the [[Atom]] representation of `t` or throws [[InvalidType()]]. */
     private def assocFromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) => Atom.Assoc(sym, assocFromType(arg))
@@ -370,23 +390,32 @@ object EffUnification3 {
       case Type.Var(sym, _) if renv.isRigid(sym) => SortedSet(Atom.VarRigid(sym))
       case Type.Var(sym, _) => SortedSet(Atom.VarFlex(sym))
       case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(Atom.Eff(sym))
-      case Type.Cst(TypeConstructor.Region(sym), _) => SortedSet(Atom.Region(sym))
+      case Type.Cst(TypeConstructor.RegionId(sym), _) => SortedSet(Atom.RegionId(sym))
       case Type.Cst(TypeConstructor.Error(id, _), _) => SortedSet(Atom.Error(id))
+      case regToEff@Type.Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), _, _) => SortedSet.from(getNestedAtoms(regToEff))
+      case regIdToRegion@Type.Apply(Type.Cst(TypeConstructor.RegionIdToRegion(_), _), _, _) => SortedSet.from(getNestedAtoms(regIdToRegion))
       case Type.Apply(tpe1, tpe2, _) => getAtoms(tpe1) ++ getAtoms(tpe2)
       case Type.Alias(_, _, tpe, _) => getAtoms(tpe)
-      case assoc@Type.AssocType(_, _, _, _) => SortedSet.from(getAssocAtoms(assoc))
+      case assoc@Type.AssocType(_, _, _, _) => SortedSet.from(getNestedAtoms(assoc))
       case _ => SortedSet.empty
     }
 
     /**
       * Returns the [[Atom]] of `t` if it is a valid associated [[Atom]] (according to
       * [[Atom.assocFromType]]). Invalid or unrelated types return [[None]].
+      *
+      * // MATT update this doc
       */
-    private def getAssocAtoms(t: Type)(implicit scope: Scope, renv: RigidityEnv): Option[Atom] = t match {
+    private def getNestedAtoms(t: Type)(implicit scope: Scope, renv: RigidityEnv): Option[Atom] = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Some(Atom.VarRigid(sym))
       case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) =>
-        getAssocAtoms(arg).map(Atom.Assoc(sym, _))
-      case Type.Alias(_, _, tpe, _) => getAssocAtoms(tpe)
+        getNestedAtoms(arg).map(Atom.Assoc(sym, _))
+      case Type.Alias(_, _, tpe, _) => getNestedAtoms(tpe)
+      case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(action), _), arg, _) =>
+        getNestedAtoms(arg).map(Atom.RegionToEff(action, _))
+      case Type.Apply(Type.Cst(TypeConstructor.RegionIdToRegion(action), _), arg, _) =>
+        getNestedAtoms(arg).map(Atom.RegionIdToRegion(action, _))
+      case Type.Cst(TypeConstructor.RegionId(sym), _) => Some(Atom.RegionId(sym))
       case _ => None
     }
 
@@ -396,7 +425,11 @@ object EffUnification3 {
       */
     def toType(atom: Atom, loc: SourceLocation)(implicit m: SortedBimap[Atom, Int]): Type = atom match {
       case Atom.Eff(sym) => Type.Cst(TypeConstructor.Effect(sym), loc)
-      case Atom.Region(sym) => Type.Cst(TypeConstructor.Region(sym), loc)
+      case Atom.RegionId(sym) => Type.Cst(TypeConstructor.RegionId(sym), loc)
+      case Atom.RegionIdToRegion(flav, arg0) =>
+        Type.Apply(Type.Cst(TypeConstructor.RegionIdToRegion(flav), loc), toType(arg0, loc), loc)
+      case Atom.RegionToEff(action, arg0) =>
+        Type.Apply(Type.Cst(TypeConstructor.RegionToEff(action), loc), toType(arg0, loc), loc)
       case Atom.VarRigid(sym) => Type.Var(sym, loc)
       case Atom.VarFlex(sym) => Type.Var(sym, loc)
       case Atom.Assoc(sym, arg0) =>
@@ -422,13 +455,14 @@ object EffUnification3 {
     }
 
     // We can use an arbitrary scope and renv because we don't do any unification.
-    implicit val scope: Scope = Scope.Top
-    implicit val renv: RigidityEnv = RigidityEnv.empty
-    implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe))
+    try {
+      implicit val scope: Scope = Scope.Top
+      implicit val renv: RigidityEnv = RigidityEnv.empty
+      implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe))
 
-    val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
-    val z = Zhegalkin.toZhegalkin(f0)
-    val f1 = Zhegalkin.toSetFormula(z)
+        val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
+        val z = Zhegalkin.toZhegalkin(f0)
+        val f1 = Zhegalkin.toSetFormula(z)
 
     fromSetFormula(f1, tpe.loc)
   } catch {

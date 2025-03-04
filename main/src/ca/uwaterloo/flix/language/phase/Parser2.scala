@@ -1321,6 +1321,14 @@ object Parser2 {
       close(mark, TreeKind.AnnotationList)
     }
 
+    def regionFlavorOpt()(implicit s: State): Mark.Closed = { // MATT maybe move out of Decl
+      val mark = open()
+      if (at(TokenKind.RegionTag) && !eof()) {
+        advance()
+      }
+      close(mark, TreeKind.RegionFlavor)
+    }
+
     def docComment()(implicit s: State): Mark.Closed = {
       // Let `open` handle consuming the doc-comments, since it is already capable of doing so.
       val mark = open()
@@ -1904,6 +1912,7 @@ object Parser2 {
       assert(at(TokenKind.KeywordRegion))
       val mark = open()
       expect(TokenKind.KeywordRegion, SyntacticContext.Expr.OtherExpr)
+      Decl.regionFlavorOpt()
       nameUnqualified(NAME_VARIABLE, SyntacticContext.Expr.OtherExpr)
       if (at(TokenKind.CurlyL)) {
         block()

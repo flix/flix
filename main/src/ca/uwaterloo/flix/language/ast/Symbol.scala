@@ -150,8 +150,8 @@ object Symbol {
   /**
     * Returns a fresh region sym with the given text.
     */
-  def freshRegionSym(ident: Ident)(implicit flix: Flix): RegionSym = {
-    new RegionSym(flix.genSym.freshId(), ident.name, ident.loc)
+  def freshRegionSym(ident: Ident, flav: RegionFlavor)(implicit flix: Flix): RegionSym = {
+    new RegionSym(flix.genSym.freshId(), ident.name, flav, ident.loc)
   }
 
   /**
@@ -928,7 +928,7 @@ object Symbol {
   /**
     * Region symbol.
     */
-  final class RegionSym(val id: Int, val text: String, val loc: SourceLocation) extends Symbol with Ordered[RegionSym] {
+  final class RegionSym(val id: Int, val text: String, val flav: RegionFlavor, val loc: SourceLocation) extends Symbol with Ordered[RegionSym] {
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.

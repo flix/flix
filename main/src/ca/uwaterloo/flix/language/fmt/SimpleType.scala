@@ -364,6 +364,7 @@ object SimpleType {
         case JvmMember.JvmField(_, tpe, name) => SimpleType.JvmUnresolvedField(visit(tpe), name.name)
         case JvmMember.JvmStaticMethod(clazz, name, tpes) => SimpleType.JvmUnresolvedStaticMethod(clazz.getSimpleName, name.name, tpes.map(visit))
       }
+
       case Type.Cst(tc, _) => tc match {
         case TypeConstructor.Void => Void
         case TypeConstructor.AnyType => AnyType
@@ -623,9 +624,12 @@ object SimpleType {
           }
 
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
-        case TypeConstructor.Region(sym) => mkApply(SimpleType.Region(sym.text), t.typeArguments.map(visit))
+        case TypeConstructor.RegionId(sym) => mkApply(SimpleType.Region(sym.text), t.typeArguments.map(visit))
+        case TypeConstructor.RegionIdToRegion(flav) => mkApply(SimpleType.Name(flav.toString), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(RegionToStar, t.typeArguments.map(visit))
+        case TypeConstructor.RegionToEff(action) => mkApply(SimpleType.Name(action.map(_.toString).getOrElse("Heap")), t.typeArguments.map(visit))
         case TypeConstructor.RegionWithoutRegion => mkApply(RegionWithoutRegion, t.typeArguments.map(visit))
+        case TypeConstructor.GenericRegion(prop) => mkApply(SimpleType.Name("GenericRegion"), t.typeArguments.map(visit))
 
         case TypeConstructor.Error(_, _) => SimpleType.Error
       }

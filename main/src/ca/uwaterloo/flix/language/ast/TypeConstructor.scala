@@ -287,7 +287,7 @@ object TypeConstructor {
     /**
       * The shape of an array is `Array[t, l]`.
       */
-    def kind: Kind = Kind.Star ->: Kind.Eff ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Region ->: Kind.Star
   }
 
   /**
@@ -458,10 +458,14 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represents a region.
+    * A type constructor that represents a region identifier.
     */
-  case class Region(sym: Symbol.RegionSym) extends TypeConstructor {
-    def kind: Kind = Kind.Eff
+  case class RegionId(sym: Symbol.RegionSym) extends TypeConstructor {
+    def kind: Kind = Kind.RegionId
+  }
+
+  case class RegionIdToRegion(flav: RegionFlavor) extends TypeConstructor {
+    def kind: Kind = Kind.RegionId ->: Kind.Region
   }
 
   /**
@@ -471,7 +475,17 @@ object TypeConstructor {
     /**
       * The shape of a star-kind region is Region[l].
       */
-    def kind: Kind = Kind.Eff ->: Kind.Star
+    def kind: Kind = Kind.Region ->: Kind.Star
+  }
+
+  /**
+    * A type constructor that converts a region to an Eff type.
+    */
+  case class RegionToEff(action: Option[RegionAction]) extends TypeConstructor {
+    /**
+      * The shape of an effect-kind region is Heap[l].
+      */
+    def kind: Kind = Kind.Region ->: Kind.Eff
   }
 
   /**
@@ -488,6 +502,14 @@ object TypeConstructor {
       * The shape of a region is RegionWithoutRegion.
       */
     def kind: Kind = Kind.Star
+  }
+
+  /**
+    * A region after monomorphization is reduced to its property.
+    */
+  @IntroducedBy(Monomorpher.getClass)
+  case class GenericRegion(flav: RegionFlavor) extends TypeConstructor {
+    def kind: Kind = Kind.Region
   }
 
   /**

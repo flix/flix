@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
-import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RegionAction, RegionFlavor, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
@@ -132,9 +132,9 @@ object Monomorpher {
         case Some(t) => t // Case 2: Variable in subst. Note: All types in the *StrictSubstitution* are already normalized.
       }
 
-      // We map regions to IO
-      case Type.Cst(TypeConstructor.Region(_), _) =>
-        Type.IO
+      // We map regions to generic regions
+      case Type.Cst(TypeConstructor.RegionId(sym), loc) =>
+        Type.Cst(TypeConstructor.GenericRegion(sym.flav), loc)
 
       case cst@Type.Cst(_, _) =>
         // Maintain and exploit reference equality for performance.
@@ -907,14 +907,15 @@ object Monomorpher {
   }
 
   /** Evaluates a ground, simplified effect type */
-  private def eval(eff: Type): CofiniteSet[Symbol.EffectSym] = eff match {
+  private def eval(eff: Type): CofiniteSet[EffectOrRegion] = eff match {
     case Type.Univ => CofiniteSet.universe
     case Type.Pure => CofiniteSet.empty
     case Type.Cst(TypeConstructor.Effect(sym), _) =>
-      CofiniteSet.mkSet(sym)
-    case Type.Cst(TypeConstructor.Region(_), _) =>
-      // We map regions to IO
-      CofiniteSet.mkSet(Symbol.IO)
+      CofiniteSet.mkSet(EffectOrRegion.Effect(sym))
+    case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), Type.Cst(TypeConstructor.RegionId(sym), _), _) => // MATT handle action
+      CofiniteSet.mkSet(EffectOrRegion.Region(sym.flav))
+    case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(_), _), Type.Cst(TypeConstructor.GenericRegion(prop), _), _) => // MATT handle action
+      CofiniteSet.mkSet(EffectOrRegion.Region(prop))
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _) =>
       CofiniteSet.complement(eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) =>
@@ -929,9 +930,16 @@ object Monomorpher {
   }
 
   /** Returns the [[Type]] representation of `set` with `loc`. */
-  private def evalToType(set: CofiniteSet[Symbol.EffectSym], loc: SourceLocation): Type = set match {
-    case CofiniteSet.Set(s) => Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc)
-    case CofiniteSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc), loc)
+  private def evalToType(set: CofiniteSet[EffectOrRegion], loc: SourceLocation): Type = set match {
+    case CofiniteSet.Set(s) => Type.mkUnion(s.toList.map(effectOrRegionToType(_, loc)), loc)
+    case CofiniteSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(effectOrRegionToType(_, loc)), loc), loc)
+  }
+
+  // MATT docs
+  private def effectOrRegionToType(effOrReg: EffectOrRegion, loc: SourceLocation): Type = effOrReg match {
+    case EffectOrRegion.Effect(sym) => Type.Cst(TypeConstructor.Effect(sym), loc)
+    // MATT defaulting action to Heap but should take from prop or something
+    case EffectOrRegion.Region(prop) => Type.Apply(Type.Cst(TypeConstructor.RegionToEff(None), loc), Type.Cst(TypeConstructor.GenericRegion(prop), loc), loc)
   }
 
   /** Returns the normalized default type for the kind of `tpe0`. */
@@ -939,6 +947,8 @@ object Monomorpher {
     case Kind.Wild => Type.mkAnyType(tpe0.loc)
     case Kind.WildCaseSet => Type.mkAnyType(tpe0.loc)
     case Kind.Star => Type.mkAnyType(tpe0.loc)
+    case Kind.RegionId => Type.mkAnyType(tpe0.loc)
+    case Kind.Region => Type.mkAnyType(tpe0.loc)
     case Kind.Eff =>
       // If an effect variable is free, we may assume its Pure due to the subst. lemma.
       Type.Pure
@@ -955,10 +965,31 @@ object Monomorpher {
   /**
     * An instance of [[CofiniteSet.SingletonValues]] for effect symbols.
     */
-  private implicit val EffectSymSingletonValues: CofiniteSet.SingletonValues[Symbol.EffectSym] = {
-    new CofiniteSet.SingletonValues[Symbol.EffectSym] {
-      override val empty: CofiniteSet[Symbol.EffectSym] = CofiniteSet.Set(SortedSet.empty)
-      override val universe: CofiniteSet[Symbol.EffectSym] = CofiniteSet.Compl(SortedSet.empty)
+  private implicit val EffectOrRegionSingletonValues: CofiniteSet.SingletonValues[EffectOrRegion] = {
+    new CofiniteSet.SingletonValues[EffectOrRegion] {
+      override val empty: CofiniteSet[EffectOrRegion] = CofiniteSet.Set(SortedSet.empty)
+      override val universe: CofiniteSet[EffectOrRegion] = CofiniteSet.Compl(SortedSet.empty)
     }
+  }
+
+  private sealed trait EffectOrRegion extends Ordered[EffectOrRegion] {
+    override def compare(that: EffectOrRegion): Int = (this, that) match {
+      case (EffectOrRegion.Effect(sym1), EffectOrRegion.Effect(sym2)) => sym1.compare(sym2)
+      case (EffectOrRegion.Region(prop1), EffectOrRegion.Region(prop2)) => prop1.compare(prop2)
+
+      case _ =>
+        def ordinal(x: EffectOrRegion): Int = x match {
+          case _: EffectOrRegion.Region => 0
+          case _: EffectOrRegion.Effect => 1
+        }
+
+        ordinal(this).compare(ordinal(that))
+    }
+  }
+
+  private object EffectOrRegion {
+    case class Effect(sym: Symbol.EffectSym) extends EffectOrRegion
+
+    case class Region(flav: RegionFlavor) extends EffectOrRegion
   }
 }
