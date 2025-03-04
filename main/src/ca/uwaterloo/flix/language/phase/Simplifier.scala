@@ -341,6 +341,9 @@ object Simplifier {
             // Remove the type argument.
             MonoType.Region
 
+          case TypeConstructor.RegionToEff(_) =>
+            MonoType.Unit
+
           case TypeConstructor.Tuple(_) =>
             val targs = tpe.typeArguments
             MonoType.Tuple(targs.map(visitType))
@@ -361,7 +364,9 @@ object Simplifier {
             // The row types themselves return monotype records, so we do nothing here.
             visitType(elm)
 
-          case TypeConstructor.Region(_) => MonoType.Unit
+          case TypeConstructor.RegionIdToRegion(_) => MonoType.Unit
+
+          case TypeConstructor.RegionId(_) => MonoType.Unit
 
           case TypeConstructor.True => MonoType.Unit
           case TypeConstructor.False => MonoType.Unit
@@ -416,6 +421,9 @@ object Simplifier {
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.RegionWithoutRegion =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.GenericRegion(prop) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
         }
     }
@@ -506,6 +514,9 @@ object Simplifier {
             // Remove the type argument.
             Type.Cst(TypeConstructor.RegionWithoutRegion, loc)
 
+          case TypeConstructor.RegionToEff(_) =>
+            Type.mkUnit(loc)
+
           case TypeConstructor.Tuple(_) =>
             val targs = tpe.typeArguments
             Type.mkTuple(targs.map(visitPolyType), loc)
@@ -525,7 +536,8 @@ object Simplifier {
             val List(elm) = tpe.typeArguments
             Type.mkRecord(visitPolyType(elm), loc)
 
-          case TypeConstructor.Region(_) => Type.mkUnit(loc)
+          case TypeConstructor.RegionId(_) => Type.mkUnit(loc)
+          case TypeConstructor.RegionIdToRegion(_) => Type.mkUnit(loc)
 
           case TypeConstructor.True => Type.mkUnit(loc)
           case TypeConstructor.False => Type.mkUnit(loc)
@@ -579,6 +591,9 @@ object Simplifier {
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.RegionWithoutRegion =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.GenericRegion(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
         }
 

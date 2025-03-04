@@ -85,9 +85,12 @@ object TypeConstructorPrinter {
     case TypeConstructor.CaseUnion(_) => DocAst.Type.AsIs("CaseUnion")
     case TypeConstructor.CaseIntersection(_) => DocAst.Type.AsIs("CaseIntersection")
     case TypeConstructor.CaseSet(syms, _) => DocAst.Type.CaseSet(syms)
-    case TypeConstructor.Region(sym) => DocAst.Type.AsIs(sym.toString)
+    case TypeConstructor.RegionId(sym) => DocAst.Type.AsIs(sym.toString)
+    case TypeConstructor.RegionIdToRegion(flav) => DocAst.Type.AsIs(flav.toString)
     case TypeConstructor.RegionToStar => DocAst.Type.AsIs("Region")
+    case TypeConstructor.RegionToEff(action) => DocAst.Type.AsIs(action.map(_.toString).getOrElse("Heap"))
     case TypeConstructor.RegionWithoutRegion => DocAst.Type.AsIs("RegionWithoutRegion")
+    case TypeConstructor.GenericRegion(prop) => DocAst.Type.AsIs("GenericRegion(" + prop + ")")
     case TypeConstructor.Error(_, _) => DocAst.Type.Error
   }
 

@@ -27,6 +27,8 @@ object FormatKind {
     case Kind.WildCaseSet => s"CaseSet[???]"
     case Kind.Star => "Type"
     case Kind.Eff => "Eff"
+    case Kind.Region => "Region"
+    case Kind.RegionId => "RegionId"
     case Kind.Bool => "Bool"
     case Kind.RecordRow => "RecordRow"
     case Kind.SchemaRow => "SchemaRow"

@@ -92,6 +92,11 @@ object ConstraintSolver2 {
       }
     }
 
+    def recordGraph(label: String = ""): Soup = {
+      Debug.recordGraph(constrs, tree, label)
+      this
+    }
+
     /**
       * Creates a new [[Soup]], but reuses this one if the arguments are the same.
       */
@@ -157,6 +162,7 @@ object ConstraintSolver2 {
             .exhaustively(progress) {
               (s, p) => s.flatMap(breakDownConstraints(_, p))
             }
+            .recordGraph("after breakDownConstraints")
             .flatMap(eliminateIdentities(_, progress))
             .flatMap(eliminateErrors(_, progress))
             .map(reduceTypes(_, progress))
@@ -177,6 +183,7 @@ object ConstraintSolver2 {
             .flatMapSubst(schemaUnification(_, progress))
             .map(purifyEmptyRegion(_, progress))
       }
+      .recordGraph("before BlockEffectUnification")
       .blockApply(blockEffectUnification(_, progress))
       .flatMapSubst(caseSetUnification(_, progress))
       .flatMapSubst(booleanUnification(_, progress))
@@ -628,6 +635,8 @@ object ConstraintSolver2 {
   private def isSyntactic(k: Kind): Boolean = k match {
     case Kind.Star => true
     case Kind.Predicate => true
+    case Kind.RegionId => true
+    case Kind.Region => true
 
     case Kind.Arrow(_, k2) => isSyntactic(k2)
 
