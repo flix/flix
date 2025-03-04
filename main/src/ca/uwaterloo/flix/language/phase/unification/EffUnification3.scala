@@ -364,11 +364,15 @@ object EffUnification3 {
       case _ => throw InvalidType(t)
     }
 
-    /** Returns the [[Atom]] representation of `t` or throws [[InvalidType()]]. */
-    private def assocFromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
+    private def fromNestedType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
-      case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) => Atom.Assoc(sym, assocFromType(arg))
-      case Type.Alias(_, _, tpe, _) => assocFromType(tpe)
+      case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
+      case Type.Cst(TypeConstructor.RegionId(sym), _) => Atom.RegionId(sym)
+      case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) => Atom.Assoc(sym, fromNestedType(arg))
+      case Type.Apply(Type.Cst(TypeConstructor.RegionToEff(action), _), tpe2, _) => Atom.RegionToEff(action, fromNestedType(tpe2))
+      case Type.Apply(Type.Cst(TypeConstructor.RegionIdToRegion(action), _), tpe2, _) => Atom.RegionIdToRegion(action, fromNestedType(tpe2))
+      case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
+      case Type.Alias(_, _, tpe, _) => fromNestedType(tpe)
       case _ => throw InvalidType(t)
     }
 
@@ -455,29 +459,27 @@ object EffUnification3 {
     }
 
     // We can use an arbitrary scope and renv because we don't do any unification.
-    try {
-      implicit val scope: Scope = Scope.Top
-      implicit val renv: RigidityEnv = RigidityEnv.empty
-      implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe))
+    implicit val scope: Scope = Scope.Top
+    implicit val renv: RigidityEnv = RigidityEnv.empty
+    implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe))
 
-      val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
-      val z = Zhegalkin.toZhegalkin(f0)
-      val f1 = Zhegalkin.toSetFormula(z)
+    val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
+    val z = Zhegalkin.toZhegalkin(f0)
+    val f1 = Zhegalkin.toSetFormula(z)
 
-      fromSetFormula(f1, tpe.loc)
-    } catch {
-      case _: InvalidType =>
-        // The type is invalid. We cannot simplify it.
-        tpe
-    }
+    fromSetFormula(f1, tpe.loc)
+  } catch {
+    case _: InvalidType =>
+      // The type is invalid. We cannot simplify it.
+      tpe
   }
 
-  /**
-    * An exception used for partial functions that convert [[Type]] into [[Atom]].
-    *
-    * This exception should not leak outside this phase - it should always be caught. It is used to
-    * avoid having [[Option]] types on recursive functions.
-    */
-  private case class InvalidType(tpe: Type) extends RuntimeException
+/**
+  * An exception used for partial functions that convert [[Type]] into [[Atom]].
+  *
+  * This exception should not leak outside this phase - it should always be caught. It is used to
+  * avoid having [[Option]] types on recursive functions.
+  */
+private case class InvalidType(tpe: Type) extends RuntimeException
 
 }
