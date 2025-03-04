@@ -17,6 +17,8 @@
 
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.language.ast.Symbol
+
 import scala.collection.immutable.SortedSet
 
 /**
@@ -61,16 +63,34 @@ object CofiniteSet {
     * the same object will be returned every time [[CofiniteSet.empty]] or [[CofiniteSet.universe]] is called.
     *
     * This avoids allocation of new objects every time an empty or universal set is created.
+    *
+    * Reusable instances of this trait should be added to the [[SingletonValues]] companion object,
+    * because that is where Scala looks for implicits (after checking in local scope).
     */
   trait SingletonValues[T] {
     val empty: CofiniteSet[T]
     val universe: CofiniteSet[T]
   }
 
-  implicit object IntSingletonValues extends SingletonValues[Int] {
-    override val empty: CofiniteSet[Int] = Set(SortedSet.empty)
-    override val universe: CofiniteSet[Int] = Compl(SortedSet.empty)
+  object SingletonValues {
+
+    /**
+      * An instance of [[CofiniteSet.SingletonValues]] for integers.
+      */
+    implicit object IntSingletonValues extends SingletonValues[Int] {
+      override val empty: CofiniteSet[Int] = Set(SortedSet.empty)
+      override val universe: CofiniteSet[Int] = Compl(SortedSet.empty)
+    }
+
+    /**
+      * An instance of [[CofiniteSet.SingletonValues]] for effect symbols.
+      */
+    implicit object EffectSymSingletonValues extends CofiniteSet.SingletonValues[Symbol.EffectSym] {
+      override val empty: CofiniteSet[Symbol.EffectSym] = CofiniteSet.Set(SortedSet.empty)
+      override val universe: CofiniteSet[Symbol.EffectSym] = CofiniteSet.Compl(SortedSet.empty)
+    }
   }
+
 
   /** Represents a finite set. */
   case class Set[T](s: SortedSet[T]) extends CofiniteSet[T]
