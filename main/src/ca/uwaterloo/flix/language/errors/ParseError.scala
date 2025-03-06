@@ -262,7 +262,7 @@ object ParseError {
     * @param hint     Optional hint with more details about the error
     * @param loc      The source location.
     */
-  case class UnexpectedToken(expected: NamedTokenSet, actual: Option[TokenKind], sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError {
+  case class UnexpectedToken(expected: NamedTokenSet, actual: Option[TokenKind], sctx: SyntacticContext = SyntacticContext.Unknown, hint: Option[String] = None, loc: SourceLocation) extends ParseError {
     override val kind: CompilationMessageKind.ParseError = CompilationMessageKind.ParseError(sctx)
 
     def summary: String = {
