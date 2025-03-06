@@ -257,12 +257,14 @@ object LspServer {
       * We need to publish empty diagnostics for sources that do not have any diagnostics to clear previous diagnostics.
       */
     private def publishDiagnostics(diagnostics: List[PublishDiagnosticsParams]): Unit = {
-      val sourcesWithDiagnostics = diagnostics.map(d => d.uri).toSet
+      // We do not publish diagnostics for errors from the library
+      val validDiagnostics = diagnostics.filter(_.uri.startsWith("file://"))
+      val sourcesWithDiagnostics = validDiagnostics.map(d => d.uri).toSet
       val sourcesWithoutDiagnostics = sources.keySet.diff(sourcesWithDiagnostics)
       sourcesWithoutDiagnostics.foreach { source =>
         flixLanguageClient.publishDiagnostics(PublishDiagnosticsParams(source, Nil).toLsp4j)
       }
-      diagnostics.foreach { diagnostic =>
+      validDiagnostics.foreach { diagnostic =>
         flixLanguageClient.publishDiagnostics(diagnostic.toLsp4j)
       }
     }
