@@ -18,15 +18,13 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
-import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps}
-import ca.uwaterloo.flix.util.{CofiniteEffSet, CofiniteSet, InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{CofiniteSet, InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.SortedSet
@@ -950,15 +948,5 @@ object Monomorpher {
     case Kind.Arrow(_, _) => Type.mkAnyType(tpe0.loc)
     case Kind.Jvm => throw InternalCompilerException(s"Unexpected type: '$tpe0'.", tpe0.loc)
     case Kind.Error => throw InternalCompilerException(s"Unexpected type '$tpe0'.", tpe0.loc)
-  }
-
-  /**
-    * An instance of [[CofiniteSet.SingletonValues]] for effect symbols.
-    */
-  private implicit val EffectSymSingletonValues: CofiniteSet.SingletonValues[Symbol.EffectSym] = {
-    new CofiniteSet.SingletonValues[Symbol.EffectSym] {
-      override val empty: CofiniteSet[Symbol.EffectSym] = CofiniteSet.Set(SortedSet.empty)
-      override val universe: CofiniteSet[Symbol.EffectSym] = CofiniteSet.Compl(SortedSet.empty)
-    }
   }
 }

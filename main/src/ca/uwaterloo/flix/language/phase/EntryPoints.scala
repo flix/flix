@@ -17,14 +17,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, TraitSymUse}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, SubstitutionTree, TypeConstraint}
-import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
-import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps, Result}
+import ca.uwaterloo.flix.util.{CofiniteSet, InternalCompilerException, ParOps, Result}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
@@ -363,8 +361,8 @@ object EntryPoints {
         case s =>
           // Check that it is a set is a subset of the primitive effects.
           // s ⊆ prim <=> s - prim = {}
-          val primEffs = CofiniteEffSet.mkSet(Symbol.PrimitiveEffs)
-          CofiniteEffSet.difference(s, primEffs).isEmpty
+          val primEffs = CofiniteSet.mkSet(Symbol.PrimitiveEffs)
+          CofiniteSet.difference(s, primEffs).isEmpty
       }
     }
 
@@ -372,32 +370,32 @@ object EntryPoints {
       * Evaluates `eff` if it is well-formed and has no type variables,
       * associated types, or error types.
       */
-    private def eval(eff: Type): Result[CofiniteEffSet, ErrorOrMalformed.type] = eff match {
+    private def eval(eff: Type): Result[CofiniteSet[Symbol.EffectSym], ErrorOrMalformed.type] = eff match {
       case Type.Cst(tc, _) => tc match {
-        case TypeConstructor.Pure => Result.Ok(CofiniteEffSet.empty)
-        case TypeConstructor.Univ => Result.Ok(CofiniteEffSet.universe)
-        case TypeConstructor.Effect(sym) => Result.Ok(CofiniteEffSet.mkSet(sym))
+        case TypeConstructor.Pure => Result.Ok(CofiniteSet.empty)
+        case TypeConstructor.Univ => Result.Ok(CofiniteSet.universe)
+        case TypeConstructor.Effect(sym) => Result.Ok(CofiniteSet.mkSet(sym))
         case _ => Result.Err(ErrorOrMalformed)
       }
       case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x0, _) =>
         Result.mapN(eval(x0)) {
-          case x => CofiniteEffSet.complement(x)
+          case x => CofiniteSet.complement(x)
         }
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x0, _), y0, _) =>
         Result.mapN(eval(x0), eval(y0)) {
-          case (x, y) => CofiniteEffSet.union(x, y)
+          case (x, y) => CofiniteSet.union(x, y)
         }
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x0, _), y0, _) =>
         Result.mapN(eval(x0), eval(y0)) {
-          case (x, y) => CofiniteEffSet.intersection(x, y)
+          case (x, y) => CofiniteSet.intersection(x, y)
         }
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x0, _), y0, _) =>
         Result.mapN(eval(x0), eval(y0)) {
-          case (x, y) => CofiniteEffSet.difference(x, y)
+          case (x, y) => CofiniteSet.difference(x, y)
         }
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x0, _), y0, _) =>
         Result.mapN(eval(x0), eval(y0)) {
-          case (x, y) => CofiniteEffSet.xor(x, y)
+          case (x, y) => CofiniteSet.xor(x, y)
         }
       case Type.Alias(_, _, tpe, _) => eval(tpe)
       case Type.Var(_, _) => Result.Err(ErrorOrMalformed)
