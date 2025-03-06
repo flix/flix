@@ -98,7 +98,7 @@ object CompletionProvider {
                 case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
                 case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
 
-              case _ => Nil
+              case SyntacticContext.Unknown => Nil
             }
             case _ => Nil
           })
