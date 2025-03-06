@@ -118,7 +118,7 @@ case class SourceLocation(isReal: Boolean, sp1: SourcePosition, sp2: SourcePosit
   /**
     * Returns a string representation of `this` source location with the line and column numbers.
     */
-  def format: String = s"${source.name}:$beginLine:$beginCol-$endLine:$endCol"
+  def format: String = s"${source.name}:$beginLine:$beginCol"
 
   /**
     * Returns the source text of the source location.
