@@ -19,7 +19,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
-import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
+import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.ListMap
 
@@ -42,14 +43,14 @@ object EffectVerifier {
     if (flix.options.xverifyeffects) {
       ParOps.parMapValues(root.defs)(visitDef(_)(root.eqEnv, flix))
       ParOps.parMapValues(root.sigs)(visitSig(_)(root.eqEnv, flix))
-      ParOps.parMapValues(root.instances)(ins => ins.foreach(visitInstance(_)(root.eqEnv, flix)))
+      ParOps.parMap(root.instances.values)(visitInstance(_)(root.eqEnv, flix))
     }
   }
 
   /**
     * Verifies the effects in the given definition.
     */
-  def visitDef(defn: Def)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): Unit = {
+  def visitDef(defn: Def)(implicit eqEnv: EqualityEnv, flix: Flix): Unit = {
     visitExp(defn.exp)
     expectType(expected = defn.spec.eff, defn.exp.eff, defn.exp.loc)
   }
@@ -57,7 +58,7 @@ object EffectVerifier {
   /**
     * Verifies the effects in the given signature.
     */
-  def visitSig(sig: Sig)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): Unit =
+  def visitSig(sig: Sig)(implicit eqEnv: EqualityEnv, flix: Flix): Unit =
     sig.exp match {
       case Some(exp) =>
         visitExp(exp)
@@ -68,13 +69,13 @@ object EffectVerifier {
   /**
     * Verifies the effects in the given instance.
     */
-  def visitInstance(ins: Instance)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): Unit =
+  def visitInstance(ins: Instance)(implicit eqEnv: EqualityEnv, flix: Flix): Unit =
     ins.defs.foreach(visitDef)
 
   /**
     * Verifies the effects in the given expression
     */
-  def visitExp(e: Expr)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): Unit = e match {
+  def visitExp(e: Expr)(implicit eqEnv: EqualityEnv, flix: Flix): Unit = e match {
     case Expr.Cst(cst, tpe, loc) => ()
     case Expr.Var(sym, tpe, loc) => ()
     case Expr.Hole(sym, tpe, eff, loc) => ()
@@ -132,9 +133,9 @@ object EffectVerifier {
       val actual = eff
       expectType(expected, actual, loc)
     case Expr.Region(tpe, loc) => ()
-    case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
+    case Expr.Scope(sym, regSym, exp, tpe, eff, loc) =>
       visitExp(exp)
-      val expected = Substitution.singleton(regionVar.sym, Type.Pure)(exp.eff)
+      val expected = Type.purifyRegion(exp.eff, regSym)
       val actual = eff
       expectType(expected, actual, loc)
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
@@ -188,7 +189,6 @@ object EffectVerifier {
       val expected = Type.mkUnion(elms.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.RecordEmpty(tpe, loc) => ()
     case Expr.RecordSelect(exp, label, tpe, eff, loc) =>
       visitExp(exp)
       val expected = exp.eff
@@ -258,7 +258,7 @@ object EffectVerifier {
       expectType(expected, actual, loc)
     case Expr.VectorLength(exp, loc) =>
       visitExp(exp)
-    case Expr.Ascribe(exp, tpe, eff, loc) =>
+    case Expr.Ascribe(exp, expectedType, expectedEff, tpe, eff, loc) =>
       visitExp(exp)
     case Expr.InstanceOf(exp, clazz, loc) =>
       visitExp(exp)
@@ -271,7 +271,7 @@ object EffectVerifier {
       val expected = Type.mkDifference(exp.eff, runEff, loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Without(exp, effUse, tpe, eff, loc) =>
+    case Expr.Without(exp, sym, tpe, eff, loc) =>
       visitExp(exp)
       val expected = exp.eff
       val actual = eff
@@ -285,9 +285,13 @@ object EffectVerifier {
     case Expr.Throw(exp, eff, _, loc) =>
       visitExp(exp)
       expectType(eff, Type.mkUnion(exp.eff, Type.IO, loc), loc)
-    case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
-      visitExp(exp)
+    case Expr.Handler(sym, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
       rules.foreach { r => visitExp(r.exp) }
+      // TODO effect stuff
+      ()
+    case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+      visitExp(exp1)
+      visitExp(exp2)
       // TODO effect stuff
       ()
     case Expr.Do(op, exps, tpe, eff, loc) =>
@@ -393,10 +397,10 @@ object EffectVerifier {
   /**
     * Throws an exception if the actual type does not match the expected type.
     */
-  private def expectType(expected: Type, actual: Type, loc: SourceLocation)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, AssocTypeDef], flix: Flix): Unit = {
+  private def expectType(expected: Type, actual: Type, loc: SourceLocation)(implicit eqEnv: EqualityEnv, flix: Flix): Unit = {
     // mark everything as rigid
     val renv = RigidityEnv.ofRigidVars(expected.typeVars.map(_.sym) ++ actual.typeVars.map(_.sym))
-    if (!Unification.unifiesWith(expected, actual, renv, eqEnv)) {
+    if (ConstraintSolver2.fullyUnify(expected, actual, Scope.Top, renv).isEmpty) {
       throw InternalCompilerException(s"Expected type $expected but found $actual", loc)
     }
   }

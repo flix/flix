@@ -15,8 +15,8 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.shared.{Scope, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -52,18 +52,20 @@ class TypeContext {
 
     /**
       * The constraints generated for the scope.
+      *
+      * Note: The initial size of the array buffer has been determined by careful profiling.
       */
-    private val constrs: mutable.ListBuffer[TypeConstraint] = mutable.ListBuffer.empty
+    private val constrs: mutable.ArrayBuffer[TypeConstraint] = new mutable.ArrayBuffer(initialSize = 48)
 
     /**
       * Adds the given constraint to the constraint set.
       */
-    def add(constr: TypeConstraint): Unit = this.constrs.addOne(constr)
+    def add(constr: TypeConstraint): Unit = this.constrs.append(constr)
 
     /**
       * Adds all the given constraints to the constraint set.
       */
-    def addAll(constrs: Iterable[TypeConstraint]): Unit = this.constrs.addAll(constrs)
+    def addAll(constrs: Iterable[TypeConstraint]): Unit = this.constrs.appendAll(constrs)
 
     /**
       * Returns the generated constraints.
@@ -203,6 +205,20 @@ class TypeContext {
   }
 
   /**
+    * Adds the given equality constraints to the context.
+    */
+  def addEqualityConstraints(econstrs0: List[EqualityConstraint], loc: SourceLocation): Unit = {
+    val econstrs = econstrs0.map {
+      case EqualityConstraint(symUse, tpe1, tpe2, loc) =>
+        val t1 = Type.AssocType(symUse, tpe1, tpe2.kind, loc)
+        val t2 = tpe2
+        val prov = Provenance.Match(t1, t2, loc)
+        TypeConstraint.Equality(t1, t2, prov)
+    }
+    currentScopeConstraints.addAll(econstrs)
+  }
+
+  /**
     * Marks the given type variable as rigid in the context.
     */
   def rigidify(sym: Symbol.KindedTypeVarSym): Unit = {
@@ -216,11 +232,10 @@ class TypeContext {
     * the region symbol is marked as rigid,
     * and we get a fresh empty set of constraints for the new scope.
     */
-  def enterRegion(sym: Symbol.KindedTypeVarSym): Unit = {
+  def enterRegion(sym: Symbol.RegionSym): Unit = {
     val newScope = currentScopeConstraints.scope.enter(sym)
       // save the info from the parent region
     constraintStack.push(currentScopeConstraints)
-    renv = renv.markRigid(sym)
     currentScopeConstraints = ScopeConstraints.emptyForScope(newScope)
   }
 

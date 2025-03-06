@@ -87,7 +87,7 @@ object Summary {
   /** Returns a function summary for every function */
   private def defSummaries(root: Root): List[DefSummary] = {
     val defs = root.defs.values.map(defSummary(_, isInstance = false))
-    val instances = root.instances.values.flatten.flatMap(_.defs.map(defSummary(_, isInstance = true)))
+    val instances = root.instances.values.flatMap(_.defs.map(defSummary(_, isInstance = true)))
     val traits = root.traits.values.flatMap(_.sigs.flatMap(defSummary))
     (defs ++ instances ++ traits).toList
   }
@@ -218,7 +218,6 @@ object Summary {
     case Expr.Tag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.RestrictableTag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.Tuple(exps, _, _, _) => exps.map(countCheckedEcasts).sum
-    case Expr.RecordEmpty(_, _) => 0
     case Expr.RecordSelect(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.RecordExtend(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.RecordRestrict(_, exp, _, _, _) => countCheckedEcasts(exp)
@@ -235,7 +234,7 @@ object Summary {
     case Expr.VectorLit(exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.VectorLoad(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.VectorLength(exp, _) => countCheckedEcasts(exp)
-    case Expr.Ascribe(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.Ascribe(exp, _, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.InstanceOf(exp, _, _) => countCheckedEcasts(exp)
     case Expr.CheckedCast(CheckedCastType.EffectCast, exp, _, _, _) => 1 + countCheckedEcasts(exp)
     case Expr.CheckedCast(CheckedCastType.TypeCast, exp, _, _, _) => countCheckedEcasts(exp)
@@ -246,9 +245,10 @@ object Summary {
       case TypedAst.CatchRule(_, _, exp) => countCheckedEcasts(exp)
     }.sum
     case Expr.Throw(exp, _, _, _) => countCheckedEcasts(exp)
-    case Expr.TryWith(exp, _, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
+    case Expr.Handler(_, rules, _, _, _, _, _) => rules.map {
       case TypedAst.HandlerRule(_, _, exp) => countCheckedEcasts(exp)
     }.sum
+    case Expr.RunWith(exp1, exp2, _, _, _) => countCheckedEcasts(exp1) + countCheckedEcasts(exp2)
     case Expr.Do(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.InvokeConstructor(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.InvokeMethod(_, exp, exps, _, _, _) => (exp :: exps).map(countCheckedEcasts).sum

@@ -116,7 +116,7 @@ object ClosureConv {
       }
       Expr.TryCatch(e, rs, tpe, purity, loc)
 
-    case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+    case Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
       // Lift the body and all the rule expressions
       val expLoc = exp.loc.asSynthetic
       val freshSym = Symbol.freshVarSym("_closureConv", BoundBy.FormalParam, expLoc)
@@ -128,7 +128,7 @@ object ClosureConv {
           val clo = mkLambdaClosure(fparams, body, cloType, opUse.loc)
           HandlerRule(opUse, fparams, clo)
       }
-      Expr.TryWith(e, effUse, rs, tpe, purity, loc)
+      Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
     case Expr.Do(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
@@ -236,7 +236,7 @@ object ClosureConv {
         acc ++ filterBoundVar(freeVars(exp), sym)
     }
 
-    case Expr.TryWith(exp, _, rules, _, _, _) => rules.foldLeft(freeVars(exp)) {
+    case Expr.RunWith(exp, _, rules, _, _, _) => rules.foldLeft(freeVars(exp)) {
       case (acc, HandlerRule(_, fparams, exp)) =>
         acc ++ filterBoundParams(freeVars(exp), fparams)
     }
@@ -373,7 +373,7 @@ object ClosureConv {
         }
         Expr.TryCatch(e, rs, tpe, purity, loc)
 
-      case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      case Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
         // TODO AE do we need to do something here?
         val e = visitExp(exp)
         val rs = rules map {
@@ -382,7 +382,7 @@ object ClosureConv {
             val b = visitExp(body)
             HandlerRule(sym, fs, b)
         }
-        Expr.TryWith(e, effUse, rs, tpe, purity, loc)
+        Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
       case Expr.Do(op, exps, tpe, purity, loc) =>
         val es = exps.map(visitExp)
@@ -596,14 +596,14 @@ object ClosureConv {
         }
         Expr.TryCatch(e, rs, tpe, purity, loc)
 
-      case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      case Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
         val e = visit(exp)
         val rs = rules.map {
           case HandlerRule(op, fparams, exp1) =>
             val e1 = visit(exp1)
             HandlerRule(op, fparams, e1)
         }
-        Expr.TryWith(e, effUse, rs, tpe, purity, loc)
+        Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
       case Expr.Do(op, exps, tpe, purity, loc) =>
         val es = exps.map(visit)

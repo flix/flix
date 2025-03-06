@@ -227,7 +227,7 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.TryCatch(e, rs, t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
+    case MonoAst.Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
         case MonoAst.HandlerRule(sym, fparams, body) =>
@@ -236,7 +236,7 @@ object Simplifier {
           SimplifiedAst.HandlerRule(sym, fps, b)
       }
       val t = visitType(tpe)
-      SimplifiedAst.Expr.TryWith(e, effUse, rs, t, simplifyEffect(eff), loc)
+      SimplifiedAst.Expr.RunWith(e, effUse, rs, t, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.Do(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -360,6 +360,8 @@ object Simplifier {
             val List(elm) = tpe.typeArguments
             // The row types themselves return monotype records, so we do nothing here.
             visitType(elm)
+
+          case TypeConstructor.Region(_) => MonoType.Unit
 
           case TypeConstructor.True => MonoType.Unit
           case TypeConstructor.False => MonoType.Unit
@@ -522,6 +524,8 @@ object Simplifier {
           case TypeConstructor.Record =>
             val List(elm) = tpe.typeArguments
             Type.mkRecord(visitPolyType(elm), loc)
+
+          case TypeConstructor.Region(_) => Type.mkUnit(loc)
 
           case TypeConstructor.True => Type.mkUnit(loc)
           case TypeConstructor.False => Type.mkUnit(loc)
@@ -771,7 +775,12 @@ object Simplifier {
         */
       case (Nil, Nil) =>
         val g = visitExp(guard)
-        SimplifiedAst.Expr.IfThenElse(g, succ, fail, succ.tpe, g.purity, g.loc)
+        // Only produce IfThenElse if g is non-trivial
+        g match {
+          case SimplifiedAst.Expr.Cst(Constant.Bool(true), _, _) => succ
+          case SimplifiedAst.Expr.Cst(Constant.Bool(false), _, _) => fail
+          case e => SimplifiedAst.Expr.IfThenElse(e, succ, fail, succ.tpe, g.purity, g.loc)
+        }
 
       /**
         * Matching a wildcard is guaranteed to succeed.

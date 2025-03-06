@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Position, Visitor}
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypedAst}
-import ca.uwaterloo.flix.language.phase.unification.Unification
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 
 object HoleCompletion {
 
@@ -42,7 +42,7 @@ object HoleCompletion {
           .map(root.defs(_))
           .filter(_.spec.mod.isPublic)
           .zipWithIndex
-          .map { case (decl, idx) => Completion.HoleCompletion( sym, decl, f"$idx%09d", loc) }
+          .map { case (decl, idx) => Completion.HoleCompletion(sym, decl, f"$idx%09d", loc) }
       case _ => Nil
     }
   }
@@ -71,7 +71,7 @@ object HoleCompletion {
           SourceLocation.Unknown
         )
         // TODO modify to take renv as a parameter
-        Unification.fullyUnifyTypes(matchType, lastArrow, RigidityEnv.empty, root.eqEnv)(Scope.Top, flix) match {
+        ConstraintSolver2.fullyUnify(matchType, lastArrow, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix) match {
           case Some(subst) =>
             // Track the size of all the types in the substitution.
             // A smaller substitution means a more precise unification match.

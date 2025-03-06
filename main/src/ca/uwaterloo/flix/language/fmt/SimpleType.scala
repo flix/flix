@@ -20,6 +20,8 @@ import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.VarText
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import java.lang.reflect.{Constructor, Field, Method}
+
 /**
   * A well-kinded type in an easily-printable format.
   */
@@ -95,7 +97,7 @@ object SimpleType {
 
   case object True extends SimpleType
 
-  case object Region extends SimpleType
+  case object RegionToStar extends SimpleType
 
   case object RegionWithoutRegion extends SimpleType
 
@@ -261,18 +263,19 @@ object SimpleType {
 
   case class JvmToEff(tpe: SimpleType) extends SimpleType
 
-  case class JvmConstructor(name: String, tpes: List[SimpleType]) extends SimpleType
+  case class JvmUnresolvedConstructor(name: String, tpes: List[SimpleType]) extends SimpleType
 
-  case class JvmField(tpe: SimpleType, name: String) extends SimpleType
+  case class JvmUnresolvedField(tpe: SimpleType, name: String) extends SimpleType
 
-  case class JvmMethod(tpe: SimpleType, name: String, tpes: List[SimpleType]) extends SimpleType
+  case class JvmUnresolvedMethod(tpe: SimpleType, name: String, tpes: List[SimpleType]) extends SimpleType
 
-  case class JvmStaticMethod(clazz: String, name: String, tpes: List[SimpleType]) extends SimpleType
+  case class JvmUnresolvedStaticMethod(clazz: String, name: String, tpes: List[SimpleType]) extends SimpleType
 
-  /**
-    * A field type.
-    */
-  case class FieldType(tpe: SimpleType) extends SimpleType
+  case class JvmConstructor(constructor: Constructor[?]) extends SimpleType
+
+  case class JvmField(field: Field) extends SimpleType
+
+  case class JvmMethod(method: Method) extends SimpleType
 
   //////////////////////
   // Miscellaneous Types
@@ -291,13 +294,17 @@ object SimpleType {
   /**
     * A type variable.
     */
-  case class Var(id: Int, kind: Kind, isRegion: Boolean, text: VarText) extends SimpleType
+  case class Var(id: Int, kind: Kind, text: VarText) extends SimpleType
 
   /**
     * A tuple.
     */
   case class Tuple(tpes: List[SimpleType]) extends SimpleType
 
+  /**
+    * A region.
+    */
+  case class Region(name: String) extends SimpleType
 
   /**
     * An error type.
@@ -342,7 +349,7 @@ object SimpleType {
 
     def visit(t: Type): SimpleType = t.baseType match {
       case Type.Var(sym, _) =>
-        mkApply(Var(sym.id, sym.kind, sym.isRegion, sym.text), t.typeArguments.map(visit))
+        mkApply(Var(sym.id, sym.kind, sym.text), t.typeArguments.map(visit))
       case Type.Alias(cst, args, _, _) =>
         mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(visit))
       case Type.AssocType(cst, arg, _, _) =>
@@ -352,10 +359,10 @@ object SimpleType {
       case Type.JvmToEff(tpe, _) =>
         mkApply(SimpleType.JvmToEff(visit(tpe)), t.typeArguments.map(visit))
       case Type.UnresolvedJvmType(member, _) => member match {
-        case JvmMember.JvmConstructor(clazz, tpes) => SimpleType.JvmConstructor(clazz.getSimpleName, tpes.map(visit))
-        case JvmMember.JvmMethod(tpe, name, tpes) => SimpleType.JvmMethod(visit(tpe), name.name, tpes.map(visit))
-        case JvmMember.JvmField(_, tpe, name) => SimpleType.JvmField(visit(tpe), name.name)
-        case JvmMember.JvmStaticMethod(clazz, name, tpes) => SimpleType.JvmStaticMethod(clazz.getSimpleName, name.name, tpes.map(visit))
+        case JvmMember.JvmConstructor(clazz, tpes) => SimpleType.JvmUnresolvedConstructor(clazz.getSimpleName, tpes.map(visit))
+        case JvmMember.JvmMethod(tpe, name, tpes) => SimpleType.JvmUnresolvedMethod(visit(tpe), name.name, tpes.map(visit))
+        case JvmMember.JvmField(_, tpe, name) => SimpleType.JvmUnresolvedField(visit(tpe), name.name)
+        case JvmMember.JvmStaticMethod(clazz, name, tpes) => SimpleType.JvmUnresolvedStaticMethod(clazz.getSimpleName, name.name, tpes.map(visit))
       }
       case Type.Cst(tc, _) => tc match {
         case TypeConstructor.Void => Void
@@ -475,10 +482,10 @@ object SimpleType {
         case TypeConstructor.Enum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.Struct(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.RestrictableEnum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
-        case TypeConstructor.Native(clazz) => Name(clazz.getName)
-        case TypeConstructor.JvmConstructor(constructor) => Name(constructor.getName)
-        case TypeConstructor.JvmMethod(method) => Name(method.getName)
-        case TypeConstructor.JvmField(field) => Name(field.getName)
+        case TypeConstructor.Native(clazz) => mkApply(Name(clazz.getName), t.typeArguments.map(visit))
+        case TypeConstructor.JvmConstructor(constructor) => mkApply(JvmConstructor(constructor), t.typeArguments.map(visit))
+        case TypeConstructor.JvmMethod(method) => mkApply(JvmMethod(method), t.typeArguments.map(visit))
+        case TypeConstructor.JvmField(field) => mkApply(JvmField(field), t.typeArguments.map(visit))
         case TypeConstructor.Tuple(l) =>
           val tpes = t.typeArguments.map(visit).padTo(l, Hole)
           Tuple(tpes)
@@ -616,7 +623,8 @@ object SimpleType {
           }
 
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
-        case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))
+        case TypeConstructor.Region(sym) => mkApply(SimpleType.Region(sym.text), t.typeArguments.map(visit))
+        case TypeConstructor.RegionToStar => mkApply(RegionToStar, t.typeArguments.map(visit))
         case TypeConstructor.RegionWithoutRegion => mkApply(RegionWithoutRegion, t.typeArguments.map(visit))
 
         case TypeConstructor.Error(_, _) => SimpleType.Error

@@ -69,7 +69,7 @@ def main(): Unit \ IO =
         ShortestDist(a, c; sum(d1, d2)) :- ShortestDist(a, b; d1), ShortestDist(b, c; d2).
 
         // If you can get from a->a with negative distance, then it is part of a negative cycle
-        ShortestDist(a, a; Dist.Top) :- ShortestDist(a, a; d), if negativeDist(d).
+        ShortestDist(a, a; Dist.Top) :- ShortestDist(a, a; d), if (negativeDist(d)).
 
         // Example input data
         Edge("a", "b", 1).

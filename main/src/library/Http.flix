@@ -113,7 +113,7 @@ mod Http {
     pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Http) + {Net, IO} = x ->
         run {
             Ok(f(x))
-        } with Http {
+        } with handler Http {
             def request(method, url, headers, body, k) =
                 try {
                     let bodyPublisher = match body {
@@ -148,5 +148,12 @@ mod Http {
                     case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
         }
+
+    ///
+    /// Runs the `Http` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `Http` effect using the `IO` effect.
+    ///
+    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ (ef - Http) + {Net, IO} = handle(f)()
 
 }

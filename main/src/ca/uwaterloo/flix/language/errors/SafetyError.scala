@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.FormatType
@@ -9,7 +9,7 @@ import ca.uwaterloo.flix.util.Formatter
 
 /** A common super-type for safety errors. */
 sealed trait SafetyError extends CompilationMessage {
-  val kind: String = "Safety Error"
+  val kind: CompilationMessageKind = CompilationMessageKind.SafetyError
 }
 
 object SafetyError {
@@ -390,7 +390,7 @@ object SafetyError {
     * @param sym the effect symbol.
     * @param loc the location where the error occurred.
     */
-  case class PrimitiveEffectInTryWith(sym: Symbol.EffectSym, loc: SourceLocation) extends SafetyError {
+  case class PrimitiveEffectInRunWith(sym: Symbol.EffectSym, loc: SourceLocation) extends SafetyError {
     override def summary: String = s"The ${sym.name} effect cannot be handled."
 
     override def message(formatter: Formatter): String = {
@@ -417,7 +417,7 @@ object SafetyError {
       import formatter.*
       s""">> Invalid 'this' parameter for method '${red(name)}''.
          |
-         |Expected 'this' type is ${cyan(s"##${clazz.getName}")}, but the first argument is declared as type ${cyan(illegalThisType.toString)}
+         |Expected 'this' type is ${cyan(s"${clazz.getName}")}, but the first argument is declared as type ${cyan(illegalThisType.toString)}
          |
          |${code(loc, "the method occurs here.")}
          |""".stripMargin
@@ -492,7 +492,7 @@ object SafetyError {
       import formatter.*
       s""">> Missing 'this' parameter for method '${red(name)}''.
          |
-         |The 'this' parameter should have type ${cyan(s"##${clazz.getName}")}
+         |The 'this' parameter should have type ${cyan(s"${clazz.getName}")}
          |
          |${code(loc, "the method occurs here.")}
          |""".stripMargin

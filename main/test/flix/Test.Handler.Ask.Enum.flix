@@ -10,7 +10,7 @@ mod Test.Handler.Ask.Enum {
     def sample(limit: Int32): List[Option[Int32]] =
         run {
             generator(0); Nil
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = if (x == limit) Nil else Some(x) :: k()
         }
 

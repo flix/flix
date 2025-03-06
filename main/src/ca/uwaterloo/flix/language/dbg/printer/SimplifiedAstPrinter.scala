@@ -65,7 +65,7 @@ object SimplifiedAstPrinter {
       case SimplifiedAst.CatchRule(sym, clazz, exp) =>
         (sym, clazz, print(exp))
     })
-    case TryWith(exp, effUse, rules, _, _, _) => DocAst.Expr.TryWith(print(exp), effUse.sym, rules.map {
+    case RunWith(exp, effUse, rules, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map {
       case SimplifiedAst.HandlerRule(op, fparams, exp) =>
         (op.sym, fparams.map(printFormalParam), print(exp))
     })

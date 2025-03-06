@@ -34,9 +34,8 @@ object Zhegalkin {
     case ElemSet(s) =>
       ZhegalkinExpr(ZhegalkinCst.mkCst(CofiniteIntSet.mkSet(s)), Nil)
     case Compl(f) => ZhegalkinExpr.mkCompl(toZhegalkin(f))
-    case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
-      val terms = SetFormula.subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).toList
-      val polys = terms.map(toZhegalkin)
+    case Inter(l) =>
+      val polys = l.toList.map(toZhegalkin)
       polys.reduce(ZhegalkinExpr.mkInter)
     case Union(l) =>
       val polys = l.toList.map(toZhegalkin)
@@ -66,14 +65,14 @@ object Zhegalkin {
           case (acc, zvar) if !zvar.flexible => SetFormula.mkInter(acc, SetFormula.Cst(zvar.id))
           case (acc, _) => acc
         }
-        SetFormula.mkInterAll(List(visitCst(cst), flexVars, rigidVars))
+        SetFormula.mkInter3(visitCst(cst), flexVars, rigidVars)
     }
 
     z match {
       case ZhegalkinExpr(cst, terms) =>
         // `c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn`
         terms.foldLeft(visitCst(cst): SetFormula) {
-          case (acc, term) => SetFormula.mkXorDirect(acc, visitTerm(term))
+          case (acc, term) => SetFormula.mkXor2(acc, visitTerm(term))
         }
     }
   }

@@ -39,11 +39,47 @@ object SveAlgorithm {
   }
 
   /**
-    * Performs success variable elimination on the given boolean expression `f`.
+    * Performs success variable elimination on the given list of Boolean equations `l`.
+    *
+    * @throws `BoolUnificationException` if SVE fails.
+    */
+  def sveAll[F](l: List[(F, F)])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
+    var subst = BoolSubstitution.empty[F]
+    var rest = l
+    while (rest.nonEmpty) {
+      val (f1, f2) = rest.head
+      val q = alg.mkXor(f1, f2)
+      val s1 = sveOne(q)
+      rest = rest.tail.map(p => (s1(p._1), s1(p._2)))
+      subst = s1 @@ subst
+    }
+    subst
+  }
+
+  /**
+    * Performs success variable elimination on the given Boolean expression `f`.
+    *
+    * Eliminates all free variables in `f`.
+    *
+    * Uses the SVE cache, if enabled.
+    *
+    * @throws `BoolUnificationException` if SVE fails.
+    */
+  private def sveOne[F](f: F)(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
+    alg.lookupOrComputeSVE(f, _ => {
+      val fvs = alg.freeVars(f).toList
+      successiveVariableElimination(f, fvs)
+    })
+  }
+
+  /**
+    * Performs success variable elimination on the given Boolean expression `f`.
     *
     * `flexvs` is the list of remaining flexible variables in the expression.
+    *
+    * @throws `BoolUnificationException` if SVE fails.
     */
-  def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = flexvs match {
+  private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
       if (alg.isEquivBot(f))

@@ -1,5 +1,26 @@
 # Changelog
 
+Version 0.58.1:
+- Compiler: Fixed a crash in type and effect inference (thanks Magnus!)
+- Compiler: Fixed a crash in plain LSP provider (thanks Chenhao!)
+
+Version 0.58.0:
+- Compiler: Added support for plain LSP (thanks Chenhao!)
+- Compiler: Significantly improved performance of type inference (thanks Magnus!)
+
+Version 0.57.1:
+- Compiler: Extend list of semantic tokens (thanks Chenhao!)
+
+Version 0.57.0:
+- Compiler: Added new type inference implementation (thanks Matt!)
+- Compiler: Improved incremental compilation (thanks Chenhao!)
+- LSP: Improved dot autocompletion (thanks Chenhao!)
+
+Version 0.56.0:
+- Language: Added support for first-class handlers (thanks Jonathan!)
+- Library: Extended the `Process` effect (thanks Maxim!)
+- Compiler: Improved support for incremental compilation (thanks Magnus!)
+
 Version 0.55.0:
 - Compiler: Introduced fuzzy match for LSP completions (thanks Chenhao!)
 - Compiler: Improved performance of LSP API (thanks Alexander!)

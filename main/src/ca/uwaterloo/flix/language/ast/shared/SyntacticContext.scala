@@ -32,7 +32,7 @@ object SyntacticContext {
   object Decl {
     case object Enum extends Decl
 
-    case object Instance extends Decl
+    case object Effect extends Decl
 
     case object Module extends Decl
 
@@ -48,32 +48,8 @@ object SyntacticContext {
   object Expr {
     case object Constraint extends Expr
 
-    case object New extends Expr
-
     case object OtherExpr extends Expr
   }
-
-  case object Import extends SyntacticContext
-
-  sealed trait Pat extends SyntacticContext
-
-  object Pat {
-    case object OtherPat extends Pat
-  }
-
-  sealed trait Type extends SyntacticContext
-
-  object Type {
-    case object Eff extends Type
-
-    case object OtherType extends Type
-  }
-
-  case object Use extends SyntacticContext
-
-  case object WithClause extends SyntacticContext
-
-  case object WithHandler extends SyntacticContext
 
   case object Unknown extends SyntacticContext
 

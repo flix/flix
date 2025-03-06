@@ -32,7 +32,7 @@ object ImplementationProvider {
 
     val links = for {
       traitSym <- traitAt(uri, position)
-      inst <- root.instances.getOrElse(traitSym, Nil)
+      inst <- root.instances.get(traitSym)
     } yield LocationLink.fromInstanceTraitSymUse(inst.trt, traitSym.loc)
 
     links.toList

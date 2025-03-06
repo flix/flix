@@ -53,7 +53,6 @@ object TypedAstPrinter {
     case Expr.Tag(sym, exps, _, _, _) => DocAst.Expr.Tag(sym.sym, exps.map(print))
     case Expr.RestrictableTag(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Tuple(elms, _, _, _) => DocAst.Expr.Tuple(elms.map(print))
-    case Expr.RecordEmpty(_, _) => DocAst.Expr.RecordEmpty
     case Expr.RecordSelect(exp, label, _, _, _) => DocAst.Expr.RecordSelect(label, print(exp))
     case Expr.RecordExtend(label, exp1, exp2, _, _, _) => DocAst.Expr.RecordExtend(label, print(exp1), print(exp2))
     case Expr.RecordRestrict(label, exp, _, _, _) => DocAst.Expr.RecordRestrict(label, print(exp))
@@ -68,7 +67,7 @@ object TypedAstPrinter {
     case Expr.VectorLit(exps, _, _, _) => DocAst.Expr.VectorLit(exps.map(print))
     case Expr.VectorLoad(exp1, exp2, _, _, _) => DocAst.Expr.VectorLoad(print(exp1), print(exp2))
     case Expr.VectorLength(exp, _) => DocAst.Expr.VectorLength(print(exp))
-    case Expr.Ascribe(exp, tpe, _, _) => DocAst.Expr.AscriptionTpe(print(exp), TypePrinter.print(tpe))
+    case Expr.Ascribe(exp, _, _, tpe, _, _) => DocAst.Expr.AscriptionTpe(print(exp), TypePrinter.print(tpe))
     case Expr.InstanceOf(exp, clazz, _) => DocAst.Expr.InstanceOf(print(exp), clazz)
     case Expr.CheckedCast(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.UncheckedCast(_, _, _, _, _, _) => DocAst.Expr.Unknown
@@ -76,7 +75,8 @@ object TypedAstPrinter {
     case Expr.Without(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map(printCatchRule))
     case Expr.Throw(exp, _, _, _) => DocAst.Expr.Throw(print(exp))
-    case Expr.TryWith(exp, _Use, rules, _, _, _) => DocAst.Expr.TryWith(print(exp), _Use.sym, rules.map(printHandlerRule))
+    case Expr.Handler(sym, rules, _, _, _, _, _) => DocAst.Expr.Handler(sym.sym, rules.map(printHandlerRule))
+    case Expr.RunWith(exp1, exp2, _, _, _) => DocAst.Expr.RunWith(print(exp1), print(exp2))
     case Expr.Do(op, exps, _, _, _) => DocAst.Expr.Do(op.sym, exps.map(print))
     case Expr.InvokeConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(constructor, exps.map(print))
     case Expr.InvokeMethod(method, exp, exps, _, _, _) => DocAst.Expr.JavaInvokeMethod(method, print(exp), exps.map(print))
@@ -143,7 +143,6 @@ object TypedAstPrinter {
     case Pattern.Tag(sym, pats, _, _) => DocAst.Expr.Tag(sym.sym, pats.map(printPattern))
     case Pattern.Tuple(elms, _, _) => DocAst.Expr.Tuple(elms.map(printPattern))
     case Pattern.Record(pats, pat, _, _) => printRecordPattern(pats, pat)
-    case Pattern.RecordEmpty(_, _) => DocAst.Expr.RecordEmpty
     case Pattern.Error(_, _) => DocAst.Expr.Error
   }
 

@@ -34,7 +34,7 @@ mod TestMutDisjointSets {
 
     @Test
     def makeSet02(): Bool = region rc {
-        let s = MutDisjointSets.empty(rc);
+        let s: MutDisjointSets[Int32, _] = MutDisjointSets.empty(rc);
         foreach (x <- List.range(0, 10)) {
             MutDisjointSets.makeSet(x, s)
         };

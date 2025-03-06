@@ -75,55 +75,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
-  test("DuplicateTag.01") {
-    val input =
-      """enum Color {
-        |  case Red,
-        |  case Red
-        |}
-    """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateTag](result)
-  }
-
-  test("DuplicateTag.02") {
-    val input =
-      """enum Color {
-        |  case Red,
-        |  case Blu,
-        |  case Red
-        |}
-    """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateTag](result)
-  }
-
-  test("DuplicateTag.03") {
-    val input =
-      """enum Color {
-        |  case Red,
-        |  case Blu,
-        |  case Red
-        |  case Blu
-        |}
-    """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateTag](result)
-  }
-
-  test("DuplicateTag.04") {
-    val input =
-      """enum Color {
-        |  case Red,
-        |  case Blu,
-        |  case Blu,
-        |  case Ylw
-        |}
-    """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateTag](result)
-  }
-
   test("DuplicateStructField.01") {
     val input =
       """struct Person[r] {
@@ -587,7 +538,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): String =
-        |    run ??? with Fail {
+        |    run ??? with handler Fail {
         |        def fail(x: String) = "hello"
         |    }
         |""".stripMargin
@@ -599,7 +550,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): String =
-        |    run ??? with Fail {
+        |    run ??? with handler Fail {
         |        def fail(x: a) = "hello"
         |    }
         |""".stripMargin
@@ -611,7 +562,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): String =
-        |    run ??? with Fail {
+        |    run ??? with handler Fail {
         |        def fail(_: Int32) = "hello"
         |    }
         |""".stripMargin
@@ -996,6 +947,34 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MismatchedTypeParameters](result)
+  }
+
+  test("MissingArgumentList.01") {
+    val input =
+      """
+        |struct Person[r] {
+        |    name: String,
+        |    age: Int32
+        |}
+        |
+        |def f(): Person[r] = new Per
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MissingArgumentList](result)
+  }
+
+  test("MissingArgumentList.02") {
+    val input =
+      """
+        |struct Person[r] {
+        |    name: String,
+        |    age: Int32
+        |}
+        |
+        |def f(): Person[r] = new Person
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MissingArgumentList](result)
   }
 
   test("MissingFormalParamAscription.01") {

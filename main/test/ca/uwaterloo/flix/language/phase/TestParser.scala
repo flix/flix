@@ -746,7 +746,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): Bool =
         |    let result = run {
         |        mutual1(10)
-        |    } with AskTell ;
+        |    } with handler AskTell ;
         |    Assert.eq(Some(84), result)
         |def main(): Int32 = 123
         |""".stripMargin
@@ -922,6 +922,28 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalEffectTypeParams](result)
+  }
+
+  test("IllegalOperationWithOutReturnType.01") {
+    val input =
+      """
+        |eff E{
+        |    def op()
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("IllegalOperationWithOutReturnType.02") {
+    val input =
+      """
+        |eff E{
+        |    def op():
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
   }
 
   test("IllegalEffectfulOperation.01") {

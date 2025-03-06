@@ -262,7 +262,7 @@ object Inliner {
       }
       LiftedAst.Expr.TryCatch(e, rs, tpe, purity, loc)
 
-    case OccurrenceAst.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+    case OccurrenceAst.Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       val rs = rules.map {
         case OccurrenceAst.HandlerRule(op, fparams, exp) =>
@@ -270,7 +270,7 @@ object Inliner {
           val e = visitExp(exp, subst0)
           LiftedAst.HandlerRule(op, fps, e)
       }
-      LiftedAst.Expr.TryWith(e, effUse, rs, tpe, purity, loc)
+      LiftedAst.Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
     case OccurrenceAst.Expr.Do(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp(_, subst0))
@@ -423,7 +423,7 @@ object Inliner {
       }
       LiftedAst.Expr.TryCatch(e, rs, tpe, purity, loc)
 
-    case OccurrenceAst.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+    case OccurrenceAst.Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
       val rs = rules.map {
         case OccurrenceAst.HandlerRule(op, fparams, exp) =>
@@ -431,7 +431,7 @@ object Inliner {
           val e = substituteExp(exp, env0)
           LiftedAst.HandlerRule(op, fps, e)
       }
-      LiftedAst.Expr.TryWith(e, effUse, rs, tpe, purity, loc)
+      LiftedAst.Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
     case OccurrenceAst.Expr.Do(op, exps, tpe, purity, loc) =>
       val es = exps.map(substituteExp(_, env0))

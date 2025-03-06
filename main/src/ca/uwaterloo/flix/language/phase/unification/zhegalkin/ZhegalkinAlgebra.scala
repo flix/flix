@@ -15,11 +15,22 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
-import ca.uwaterloo.flix.language.phase.unification.shared.BoolAlg
+import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolSubstitution}
 
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentMap}
 import scala.collection.immutable.SortedSet
 
 object ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
+
+  /**
+   * Controls if the SVE cache is enabled.
+   */
+  var EnableSVECache: Boolean = false
+
+  /**
+   * A cache of SVE queries: a map from the query to its MGU (if it exists).
+   */
+  private val cachedSVE: ConcurrentMap[ZhegalkinExpr, BoolSubstitution[ZhegalkinExpr]] = new ConcurrentHashMap()
 
   override def isEquivBot(f: ZhegalkinExpr): Boolean = ZhegalkinExpr.isEmpty(f)
 
@@ -43,5 +54,17 @@ object ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
   override def freeVars(f: ZhegalkinExpr): SortedSet[Int] = f.freeVars.map(_.id)
 
   override def map(f: ZhegalkinExpr)(fn: Int => ZhegalkinExpr): ZhegalkinExpr = f.map(fn)
+
+  def lookupOrComputeSVE(q: ZhegalkinExpr, sve: ZhegalkinExpr => BoolSubstitution[ZhegalkinExpr]): BoolSubstitution[ZhegalkinExpr] = {
+    if (!EnableSVECache) {
+      return sve(q)
+    }
+
+    cachedSVE.computeIfAbsent(q, _ => sve(q))
+  }
+
+  def clearCache(): Unit = {
+    cachedSVE.clear()
+  }
 
 }

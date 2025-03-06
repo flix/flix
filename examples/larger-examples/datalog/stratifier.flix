@@ -43,7 +43,7 @@ mod Stratifier {
                 NegativeDependencyEdge(ph, pb),
                 Stratum(pb; pbs),
                 Stratum(ph; phs),
-                if pbs < numberOfPredicates.
+                if (pbs < numberOfPredicates).
                 // allow one level of strata above the bound for a stratification check later
         };
         let solution = solve facts, rules;

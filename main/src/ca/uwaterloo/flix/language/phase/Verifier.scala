@@ -1,5 +1,6 @@
 /*
  * Copyright 2023 Magnus Madsen
+ * Copyright 2024 Alexander Dybdahl Troelsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +63,7 @@ object Verifier {
       case Constant.BigInt(_) => check(expected = MonoType.BigInt)(actual = tpe, loc)
       case Constant.Str(_) => check(expected = MonoType.String)(actual = tpe, loc)
       case Constant.Regex(_) => check(expected = MonoType.Regex)(actual = tpe, loc)
+      case Constant.RecordEmpty => check(expected = MonoType.RecordEmpty)(actual = tpe, loc)
     }
 
     case Expr.Var(sym, tpe1, loc) => env.get(sym) match {
@@ -336,9 +338,6 @@ object Verifier {
         case AtomicOp.MatchError =>
           tpe
 
-        case AtomicOp.RecordEmpty =>
-          check(expected = MonoType.RecordEmpty)(actual = tpe, loc)
-
         case AtomicOp.RecordExtend(label) =>
           val List(t1, t2) = ts
           removeFromRecordType(tpe, label.name, loc) match {
@@ -506,14 +505,14 @@ object Verifier {
       val t = visitExpr(exp)
       checkEq(tpe, t, loc)
 
-    case Expr.TryWith(exp, effUse, rules, _, tpe, _, loc) =>
+    case Expr.RunWith(exp, effUse, rules, _, tpe, _, loc) =>
       val exptype = visitExpr(exp) match {
         case MonoType.Arrow(List(MonoType.Unit), t) => t
         case e => failMismatchedShape(e, "Arrow(List(Unit), _)", exp.loc)
       }
 
       val effect = root.effects.getOrElse(effUse.sym,
-        throw InternalCompilerException(s"Unknown effect sym: '${effUse.sym}'", effUse.loc))
+        throw InternalCompilerException(s"Unknown effect sym: '${effUse.sym}'", effUse.qname.loc))
       val ops = effect.ops.map(op => op.sym -> op).toMap
 
       for (rule <- rules) {

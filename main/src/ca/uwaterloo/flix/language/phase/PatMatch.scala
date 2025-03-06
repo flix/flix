@@ -19,12 +19,16 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ParYieldFragment, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.language.fmt.FormatConstant
+import ca.uwaterloo.flix.util.ParOps
+
+import java.util.concurrent.ConcurrentLinkedQueue
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
   * The Pattern Exhaustiveness phase checks pattern matches for exhaustiveness
@@ -51,34 +55,7 @@ object PatMatch {
   private sealed trait TyCon
 
   private object TyCon {
-
-    case object Unit extends TyCon
-
-    case object True extends TyCon
-
-    case object False extends TyCon
-
-    case object Char extends TyCon
-
-    case object BigDecimal extends TyCon
-
-    case object BigInt extends TyCon
-
-    case object Int8 extends TyCon
-
-    case object Int16 extends TyCon
-
-    case object Int32 extends TyCon
-
-    case object Int64 extends TyCon
-
-    case object Float32 extends TyCon
-
-    case object Float64 extends TyCon
-
-    case object Str extends TyCon
-
-    case object Regex extends TyCon
+    case class Cst(cst: Constant) extends TyCon
 
     case object Wild extends TyCon
 
@@ -91,8 +68,6 @@ object PatMatch {
     case class Enum(sym: Symbol.CaseSym, args: List[TyCon]) extends TyCon
 
     case class Record(labels: List[(Name.Label, TyCon)], tail: TyCon) extends TyCon
-
-    case object RecordEmpty extends TyCon
   }
 
   /**
@@ -109,22 +84,32 @@ object PatMatch {
   /**
     * Returns an error message if a pattern match is not exhaustive
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): (Root, List[NonExhaustiveMatchError]) =
+  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, List[NonExhaustiveMatchError]) =
     flix.phaseNew("PatMatch") {
       implicit val r: TypedAst.Root = root
+      implicit val sctx: SharedContext = SharedContext.mk()
 
-      val classDefExprs = root.traits.values.flatMap(_.sigs).flatMap(_.exp)
-      val classDefErrs = ParOps.parMap(classDefExprs)(visitExp).flatten
+      val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
+      val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
+      val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList(_)(visitInstance))
 
-      val defErrs = ParOps.parMap(root.defs.values)(defn => visitExp(defn.exp)).flatten
-      val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(defn => visitExp(defn.exp)).flatten
-      // Only need to check sigs with implementations
-      val sigsErrs = root.sigs.values.flatMap(_.exp).flatMap(visitExp)
-
-      val errors = classDefErrs ++ defErrs ++ instanceDefErrs ++ sigsErrs
-
-      (root, errors.toList)
+      (root.copy(defs = defs, traits = traits, instances = instances), sctx.errors.asScala.toList)
     }
+
+  private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): TypedAst.Def = {
+    visitExp(defn.exp)
+    defn
+  }
+
+  private def visitTrait(trt: TypedAst.Trait)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): TypedAst.Trait = {
+    trt.sigs.flatMap(_.exp).foreach(visitExp)
+    trt
+  }
+
+  private def visitInstance(inst: TypedAst.Instance)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): TypedAst.Instance = {
+    inst.defs.foreach(visitDef)
+    inst
+  }
 
   /**
     * Check that all patterns in an expression are exhaustive
@@ -132,137 +117,239 @@ object PatMatch {
     * @param tast The expression to check
     * @param root The AST root
     */
-  private def visitExp(tast: TypedAst.Expr)(implicit root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = {
+  private def visitExp(tast: TypedAst.Expr)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = {
     tast match {
-      case Expr.Var(_, _, _) => Nil
-      case Expr.Hole(_, _, _, _) => Nil
+      case Expr.Var(_, _, _) => ()
+
+      case Expr.Hole(_, _, _, _) => ()
+
       case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
+
       case Expr.OpenAs(_, exp, _, _) => visitExp(exp)
+
       case Expr.Use(_, _, exp, _) => visitExp(exp)
-      case Expr.Cst(_, _, _) => Nil
+
+      case Expr.Cst(_, _, _) => ()
+
       case Expr.Lambda(_, body, _, _) => visitExp(body)
-      case Expr.ApplyClo(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
-      case Expr.ApplyDef(_, exps, _, _, _, _) => exps.flatMap(visitExp)
-      case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.flatMap(visitExp)
-      case Expr.ApplySig(_, exps, _, _, _, _) => exps.flatMap(visitExp)
+
+      case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+
+      case Expr.ApplyDef(_, exps, _, _, _, _) => exps.foreach(visitExp)
+
+      case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.foreach(visitExp)
+
+      case Expr.ApplySig(_, exps, _, _, _, _) => exps.foreach(visitExp)
+
       case Expr.Unary(_, exp, _, _, _) => visitExp(exp)
-      case Expr.Binary(_, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
-      case Expr.Let(_, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
-      case Expr.LocalDef(_, _, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
-      case Expr.Region(_, _) => Nil
+
+      case Expr.Binary(_, exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+
+      case Expr.Let(_, exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+
+      case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+
+      case Expr.Region(_, _) => ()
+
       case Expr.Scope(_, _, exp, _, _, _) => visitExp(exp)
-      case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => List(exp1, exp2, exp3).flatMap(visitExp)
-      case Expr.Stm(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
+
+      case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+        visitExp(exp3)
+
+      case Expr.Stm(exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+
       case Expr.Discard(exp, _, _) => visitExp(exp)
 
       case Expr.Match(exp, rules, _, _, _) =>
-        val ruleExps = rules.map(_.exp)
-        val guards = rules.flatMap(_.guard)
-        val expsErrs = (exp :: ruleExps ::: guards).flatMap(visitExp)
-        val rulesErrs = checkRules(exp, rules, root)
-        expsErrs ::: rulesErrs
+        visitExp(exp)
+        rules.foreach{r =>
+          visitExp(r.exp)
+          r.guard.foreach(visitExp)
+        }
+        checkRules(exp, rules, root)
 
       case Expr.TypeMatch(exp, rules, _, _, _) =>
-        val ruleExps = rules.map(_.exp)
-        val expsErrs = (exp :: ruleExps).flatMap(visitExp)
-        expsErrs
+        visitExp(exp)
+        rules.foreach(r => visitExp(r.exp))
 
       case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
-        val ruleExps = rules.map(_.exp)
-        (exp :: ruleExps).flatMap(visitExp)
+        visitExp(exp)
+        rules.foreach(r => visitExp(r.exp))
 
-      case Expr.Tag(_, exps, _, _, _) => exps.flatMap(visitExp)
-      case Expr.RestrictableTag(_, exps, _, _, _) => exps.flatMap(visitExp)
-      case Expr.Tuple(elms, _, _, _) => elms.flatMap(visitExp)
-      case Expr.RecordEmpty(_, _) => Nil
+      case Expr.Tag(_, exps, _, _, _) => exps.foreach(visitExp)
+
+      case Expr.RestrictableTag(_, exps, _, _, _) => exps.foreach(visitExp)
+
+      case Expr.Tuple(elms, _, _, _) => elms.foreach(visitExp)
+
       case Expr.RecordSelect(base, _, _, _, _) => visitExp(base)
-      case Expr.RecordExtend(_, value, rest, _, _, _) => List(value, rest).flatMap(visitExp)
+
+      case Expr.RecordExtend(_, value, rest, _, _, _) =>
+        visitExp(value)
+        visitExp(rest)
+
       case Expr.RecordRestrict(_, rest, _, _, _) => visitExp(rest)
-      case Expr.ArrayLit(exps, exp, _, _, _) => (exp :: exps).flatMap(visitExp)
-      case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) => List(exp1, exp2, exp3).flatMap(visitExp)
-      case Expr.ArrayLoad(base, index, _, _, _) => List(base, index).flatMap(visitExp)
-      case Expr.ArrayStore(base, index, elm, _, _) => List(base, index, elm).flatMap(visitExp)
+
+      case Expr.ArrayLit(exps, exp, _, _, _) =>
+        visitExp(exp)
+        exps.foreach(visitExp)
+
+      case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+        visitExp(exp3)
+
+      case Expr.ArrayLoad(base, index, _, _, _) =>
+        visitExp(base)
+        visitExp(index)
+
+      case Expr.ArrayStore(base, index, elm, _, _) =>
+        visitExp(base)
+        visitExp(index)
+        visitExp(elm)
+
       case Expr.ArrayLength(base, _, _) => visitExp(base)
-      case Expr.StructNew(_, fields, region, t, _, _) =>
-        val fieldExps = fields.map { case (_, v) => v }
-        (region :: fieldExps).flatMap(visitExp)
-      case Expr.StructGet(e, _, _, _, _) => visitExp(e)
-      case Expr.StructPut(e1, _, e2, _, _, _) => List(e1, e2).flatMap(visitExp)
-      case Expr.VectorLit(exps, _, _, _) => exps.flatMap(visitExp)
-      case Expr.VectorLoad(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
+
+      case Expr.StructNew(_, fields, region, _, _, _) =>
+        visitExp(region)
+        fields.foreach { case (_, v) => visitExp(v) }
+
+      case Expr.StructGet(exp, _, _, _, _) => visitExp(exp)
+
+      case Expr.StructPut(exp1, _, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+
+      case Expr.VectorLit(exps, _, _, _) => exps.foreach(visitExp)
+
+      case Expr.VectorLoad(exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+
       case Expr.VectorLength(exp, _) => visitExp(exp)
-      case Expr.Ascribe(exp, _, _, _) => visitExp(exp)
+
+      case Expr.Ascribe(exp, _, _, _, _, _) => visitExp(exp)
+
       case Expr.InstanceOf(exp, _, _) => visitExp(exp)
+
       case Expr.CheckedCast(_, exp, _, _, _) => visitExp(exp)
+
       case Expr.UncheckedCast(exp, _, _, _, _, _) => visitExp(exp)
+
       case Expr.Unsafe(exp, _, _, _, _) => visitExp(exp)
+
       case Expr.Without(exp, _, _, _, _) => visitExp(exp)
 
       case Expr.TryCatch(exp, rules, _, _, _) =>
-        val ruleExps = rules.map(_.exp)
-        (exp :: ruleExps).flatMap(visitExp)
+        visitExp(exp)
+        rules.foreach(r => visitExp(r.exp))
 
       case TypedAst.Expr.Throw(exp, _, _, _) => visitExp(exp)
 
-      case Expr.TryWith(exp, _, rules, _, _, _) =>
-        val ruleExps = rules.map(_.exp)
-        (exp :: ruleExps).flatMap(visitExp)
+      case Expr.Handler(_, rules, _, _, _, _, _) =>
+        rules.foreach(r => visitExp(r.exp))
 
-      case Expr.Do(_, exps, _, _, _) => exps.flatMap(visitExp)
-      case Expr.InvokeConstructor(_, args, _, _, _) => args.flatMap(visitExp)
-      case Expr.InvokeMethod(_, exp, args, _, _, _) => (exp :: args).flatMap(visitExp)
-      case Expr.InvokeStaticMethod(_, args, _, _, _) => args.flatMap(visitExp)
+      case Expr.RunWith(exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+
+      case Expr.Do(_, exps, _, _, _) => exps.foreach(visitExp)
+
+      case Expr.InvokeConstructor(_, args, _, _, _) => args.foreach(visitExp)
+
+      case Expr.InvokeMethod(_, exp, args, _, _, _) =>
+        visitExp(exp)
+        args.foreach(visitExp)
+
+      case Expr.InvokeStaticMethod(_, args, _, _, _) => args.foreach(visitExp)
+
       case Expr.GetField(_, exp, _, _, _) => visitExp(exp)
-      case Expr.PutField(_, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
-      case Expr.GetStaticField(_, _, _, _) => Nil
+
+      case Expr.PutField(_, exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+
+      case Expr.GetStaticField(_, _, _, _) => ()
+
       case Expr.PutStaticField(_, exp, _, _, _) => visitExp(exp)
-      case Expr.NewObject(_, _, _, _, methods, _) => methods.flatMap(m => visitExp(m.exp))
+
+      case Expr.NewObject(_, _, _, _, methods, _) => methods.foreach(m => visitExp(m.exp))
+
       case Expr.NewChannel(exp, _, _, _) => visitExp(exp)
+
       case Expr.GetChannel(exp, _, _, _) => visitExp(exp)
-      case Expr.PutChannel(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
+
+      case Expr.PutChannel(exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
 
       case Expr.SelectChannel(rules, default, _, _, _) =>
-        val ruleExps = rules.map(_.exp)
-        val chans = rules.map(_.chan)
-        (ruleExps ::: chans ::: default.toList).flatMap(visitExp)
+        rules.foreach{r =>
+          visitExp(r.exp)
+          visitExp(r.chan)
+        }
+        default.foreach(visitExp)
 
-      case Expr.Spawn(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
+      case Expr.Spawn(exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
 
       case Expr.ParYield(frags, exp, _, _, loc) =>
-        val fragsExps = frags.map(_.exp)
-        val expsErrs = (exp :: fragsExps).flatMap(visitExp)
-        val fragsErrs = checkFrags(frags, root, loc)
-        expsErrs ::: fragsErrs
+        visitExp(exp)
+        frags.foreach(f => visitExp(f.exp))
+        checkFrags(frags, root, loc)
 
       case Expr.Lazy(exp, _, _) => visitExp(exp)
+
       case Expr.Force(exp, _, _, _) => visitExp(exp)
-      case Expr.FixpointConstraintSet(cs, _, _) => cs.flatMap(visitConstraint)
+
+      case Expr.FixpointConstraintSet(cs, _, _) => cs.foreach(visitConstraint)
+
       case Expr.FixpointLambda(_, exp, _, _, _) => visitExp(exp)
-      case Expr.FixpointMerge(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
+
+      case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+
       case Expr.FixpointSolve(exp, _, _, _) => visitExp(exp)
+
       case Expr.FixpointFilter(_, exp, _, _, _) => visitExp(exp)
+
       case Expr.FixpointInject(exp, _, _, _, _) => visitExp(exp)
+
       case Expr.FixpointProject(_, exp, _, _, _) => visitExp(exp)
-      case Expr.Error(_, _, _) => Nil
+
+      case Expr.Error(_, _, _) => ()
     }
   }
 
   /**
     * Performs exhaustive checking on the given constraint `c`.
     */
-  private def visitConstraint(c0: TypedAst.Constraint)(implicit root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = c0 match {
+  private def visitConstraint(c0: TypedAst.Constraint)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = c0 match {
     case TypedAst.Constraint(_, head0, body0, _) =>
-      val headErrs = visitHeadPred(head0)
-      val bodyErrs = body0.flatMap(visitBodyPred)
-      headErrs ::: bodyErrs
+      visitHeadPred(head0)
+      body0.foreach(visitBodyPred)
   }
 
-  private def visitHeadPred(h0: TypedAst.Predicate.Head)(implicit root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = h0 match {
-    case TypedAst.Predicate.Head.Atom(_, _, terms, _, _) => terms.flatMap(visitExp)
+  private def visitHeadPred(h0: TypedAst.Predicate.Head)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = h0 match {
+    case TypedAst.Predicate.Head.Atom(_, _, terms, _, _) => terms.foreach(visitExp)
   }
 
-  private def visitBodyPred(b0: TypedAst.Predicate.Body)(implicit root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = b0 match {
-    case TypedAst.Predicate.Body.Atom(_, _, _, _, _, _, _) => Nil
+  private def visitBodyPred(b0: TypedAst.Predicate.Body)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = b0 match {
+    case TypedAst.Predicate.Body.Atom(_, _, _, _, _, _, _) => ()
     case TypedAst.Predicate.Body.Guard(exp, _) => visitExp(exp)
     case TypedAst.Predicate.Body.Functional(_, exp, _) => visitExp(exp)
   }
@@ -275,11 +362,11 @@ object PatMatch {
     * @param loc   the source location of the ParYield expression.
     * @return
     */
-  private def checkFrags(frags: List[ParYieldFragment], root: TypedAst.Root, loc: SourceLocation): List[NonExhaustiveMatchError] = {
+  private def checkFrags(frags: List[ParYieldFragment], root: TypedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     // Call findNonMatchingPat for each pattern individually
-    frags.flatMap(f => findNonMatchingPat(List(List(f.pat)), 1, root) match {
-      case Exhaustive => Nil
-      case NonExhaustive(ctors) => NonExhaustiveMatchError(prettyPrintCtor(ctors.head), loc) :: Nil
+    frags.foreach(f => findNonMatchingPat(List(List(f.pat)), 1, root) match {
+      case Exhaustive => ()
+      case NonExhaustive(ctors) => sctx.errors.add(NonExhaustiveMatchError(prettyPrintCtor(ctors.head), loc))
     })
   }
 
@@ -291,13 +378,13 @@ object PatMatch {
     * @param rules The rules to check
     * @return
     */
-  private def checkRules(exp: TypedAst.Expr, rules: List[TypedAst.MatchRule], root: TypedAst.Root): List[NonExhaustiveMatchError] = {
+  private def checkRules(exp: TypedAst.Expr, rules: List[TypedAst.MatchRule], root: TypedAst.Root)(implicit sctx: SharedContext): Unit = {
     // Filter down to the unguarded rules.
     // Guarded rules cannot contribute to exhaustiveness (the guard could be e.g. `false`)
     val unguardedRules = rules.filter(r => r.guard.isEmpty)
     findNonMatchingPat(unguardedRules.map(r => List(r.pat)), 1, root) match {
-      case Exhaustive => Nil
-      case NonExhaustive(ctors) => List(NonExhaustiveMatchError(prettyPrintCtor(ctors.head), exp.loc))
+      case Exhaustive => ()
+      case NonExhaustive(ctors) => sctx.errors.add(NonExhaustiveMatchError(prettyPrintCtor(ctors.head), exp.loc))
     }
   }
 
@@ -310,7 +397,7 @@ object PatMatch {
     * @param root  The AST root of the expression
     * @return If no such pattern exists, returns Exhaustive, else returns NonExhaustive(a matching pattern)
     */
-  private def findNonMatchingPat(rules: List[List[Pattern]], n: Int, root: TypedAst.Root): Exhaustiveness = {
+  private def findNonMatchingPat(rules: List[List[Pattern]], n: Int, root: TypedAst.Root)(implicit sctx: SharedContext): Exhaustiveness = {
     if (n == 0) {
       if (rules.isEmpty) {
         return NonExhaustive(List.empty[TyCon])
@@ -345,7 +432,7 @@ object PatMatch {
           case NonExhaustive(ctors) => NonExhaustive(rebuildPattern(c, ctors))
         }
       })
-      checkAll.foldRight(Exhaustive: Exhaustiveness)(mergeExhaustive)
+      mergeAllExhaustive(checkAll)
 
     } else {
       /* If the constructors are not complete, then we will fall to the wild/default case. In that case, we need to
@@ -395,51 +482,51 @@ object PatMatch {
     // First figure out how many arguments are needed by the ctor
     val numArgs = countCtorArgs(ctor)
 
-    def specializeRow(pat: List[TypedAst.Pattern], acc: List[List[TypedAst.Pattern]]) = pat.head match {
+    def specializeRow(pat: List[TypedAst.Pattern]): Option[List[Pattern]] = pat.head match {
       // A wild constructor is the same as the constructor
       // with all its arguments as wild
       case a: TypedAst.Pattern.Wild =>
-        (List.fill(numArgs)(a) ::: pat.tail) :: acc
+        Some(List.fill(numArgs)(a) ::: pat.tail)
       case a: TypedAst.Pattern.Var =>
-        (List.fill(numArgs)(a) ::: pat.tail) :: acc
+        Some(List.fill(numArgs)(a) ::: pat.tail)
 
       // If it's a pattern with the constructor that we are
       // specializing for, we break it up into it's arguments
       // If it's not our constructor, we ignore it
-      case TypedAst.Pattern.Tag(CaseSymUse(sym, _), exps, _, _) =>
+      case TypedAst.Pattern.Tag(CaseSymUse(sym, _), pats, _, _) =>
         ctor match {
           case TyCon.Enum(ctorSym, _) =>
             if (sym == ctorSym) {
-              (exps ::: pat.tail) :: acc
+              Some(pats ::: pat.tail)
             } else {
-              acc
+              None
             }
-          case _ => acc
+          case _ => None
         }
-      case TypedAst.Pattern.Tuple(elms, _, _) =>
+      case TypedAst.Pattern.Tuple(pats, _, _) =>
         if (ctor.isInstanceOf[TyCon.Tuple]) {
-          (elms ::: pat.tail) :: acc
+          Some(pats ::: pat.tail)
         } else {
-          acc
+          None
         }
       case TypedAst.Pattern.Record(pats, tail, _, _) => ctor match {
         case TyCon.Record(_, _) =>
           val ps = pats.map(_.pat)
           val p = tail match {
-            case TypedAst.Pattern.RecordEmpty(_, _) => Nil
+            case TypedAst.Pattern.Cst(Constant.RecordEmpty, _, _) => Nil
             case _ => List(tail)
           }
-          (ps ::: p ::: pat.tail) :: acc
-        case _ => acc
+          Some(ps ::: p ::: pat.tail)
+        case _ => None
       }
       // Also handle the non tag constructors
       case p =>
         if (patToCtor(p) == ctor) {
-          (p :: pat.tail) :: acc
-        } else acc
+          Some(pat.tail)
+        } else None
     }
 
-    rules.foldRight(List.empty[List[TypedAst.Pattern]])(specializeRow)
+    rules.flatMap(specializeRow)
   }
 
   /**
@@ -461,15 +548,18 @@ object PatMatch {
     *
     */
   private def defaultMatrix(rules: List[List[TypedAst.Pattern]]): List[List[TypedAst.Pattern]] = {
-    val defaultRow = (pat: List[TypedAst.Pattern], acc: List[List[TypedAst.Pattern]]) => pat.headOption match {
-      // If it's a wild card, we take the rest of the pattern
-      case Some(_: TypedAst.Pattern.Wild) => pat.tail :: acc
-      case Some(_: TypedAst.Pattern.Var) => pat.tail :: acc
+    def defaultRow(pat: List[TypedAst.Pattern]): Option[List[TypedAst.Pattern]] = {
+      pat.headOption.flatMap {
+        // If it's a wild card, we take the rest of the pattern
+        case _: TypedAst.Pattern.Wild => Some(pat.tail)
+        case _: TypedAst.Pattern.Var => Some(pat.tail)
 
-      // If it's a constructor, we don't include a row
-      case _ => acc
+        // If it's a constructor, we don't include a row
+        case _ => None
+      }
     }
-    rules.foldRight(List.empty[List[TypedAst.Pattern]])(defaultRow)
+
+    rules.flatMap(defaultRow)
   }
 
 
@@ -491,14 +581,15 @@ object PatMatch {
     *
     */
   private def rootCtors(rules: List[List[TypedAst.Pattern]]): List[TyCon] = {
-    def rootCtor(pat: List[TypedAst.Pattern], pats: List[TypedAst.Pattern]) = pat.headOption match {
-      case Some(_: Pattern.Wild) => pats
-      case Some(_: Pattern.Var) => pats
-      case Some(p) => p :: pats
-      case None => pats
+    def rootCtor(pat: List[TypedAst.Pattern]): Option[TyCon] = {
+      pat.headOption.flatMap {
+        case _: Pattern.Wild => None
+        case _: Pattern.Var => None
+        case p => Some(patToCtor(p))
+      }
     }
 
-    rules.foldRight(List.empty[TypedAst.Pattern])(rootCtor).map(patToCtor)
+    rules.flatMap(rootCtor)
   }
 
   /**
@@ -523,13 +614,10 @@ object PatMatch {
     */
   private def missingFromSig(ctors: List[TyCon], root: TypedAst.Root): List[TyCon] = {
     // Enumerate all the constructors that we need to cover
-    def getAllCtors(x: TyCon, xs: List[TyCon]) = x match {
-      // For built in constructors, we can add all the options since we know them a priori
-      case TyCon.Unit => TyCon.Unit :: xs
-      case TyCon.True => TyCon.True :: TyCon.False :: xs
-      case TyCon.False => TyCon.True :: TyCon.False :: xs
-      case a: TyCon.Tuple => a :: xs
-      case a: TyCon.Record => a :: xs
+    def getAllCtors(x: TyCon): List[TyCon] = x match {
+      // Structural types have just one constructor
+      case a: TyCon.Tuple => List(a)
+      case a: TyCon.Record => List(a)
 
       // For Enums, we have to figure out what base enum is, then look it up in the enum definitions to get the
       // other cases
@@ -537,22 +625,28 @@ object PatMatch {
         root.enums(sym.enumSym).cases.map {
           case (otherSym, caze) => TyCon.Enum(otherSym, List.fill(caze.tpes.length)(TyCon.Wild))
         }
-      }.toList ::: xs
+      }.toList
+
+      // For Unit and Bool constants are enumerable
+      case TyCon.Cst(Constant.Unit) => List(TyCon.Cst(Constant.Unit))
+      case TyCon.Cst(Constant.Bool(_)) => List(TyCon.Cst(Constant.Bool(true)), TyCon.Cst(Constant.Bool(false)))
 
       /* For numeric types, we consider them as "infinite" types union
        * Int = ...| -1 | 0 | 1 | 2 | 3 | ...
        * The only way we get a match is through a wild. Technically, you could, for example, cover a Char by
        * having a case for [0 255], but we'll ignore that case for now
        */
-      case _ => TyCon.Wild :: xs
+      case _ => List(TyCon.Wild)
     }
 
-    val expCtors = ctors.foldRight(List.empty[TyCon])(getAllCtors)
+    val expCtors = ctors.flatMap(getAllCtors)
     /* We cover the needed constructors if there is a wild card in the
      * root constructor set, or if we match every constructor for the
      * expression
      */
-    expCtors.foldRight(List.empty[TyCon])((x, xs) => if (ctors.exists(y => sameCtor(x, y))) xs else x :: xs)
+    expCtors.filterNot {
+      ctor => ctors.exists(y => sameCtor(ctor, y))
+    }
   }
 
   /**
@@ -562,30 +656,16 @@ object PatMatch {
     * @return The number of arguments for the constructor
     */
   private def countCtorArgs(ctor: TyCon): Int = ctor match {
-    case TyCon.Unit => 0
-    case TyCon.True => 0
-    case TyCon.False => 0
-    case TyCon.Char => 0
-    case TyCon.BigDecimal => 0
-    case TyCon.BigInt => 0
-    case TyCon.Int8 => 0
-    case TyCon.Int16 => 0
-    case TyCon.Int32 => 0
-    case TyCon.Int64 => 0
-    case TyCon.Float32 => 0
-    case TyCon.Float64 => 0
-    case TyCon.Str => 0
-    case TyCon.Regex => 0
+    case TyCon.Cst(_) => 0
     case TyCon.Wild => 0
     case TyCon.Tuple(args) => args.size
     case TyCon.Array => 0
     case TyCon.Vector => 0
     case TyCon.Enum(_, args) => args.length
     case TyCon.Record(labels, tail) => tail match {
-      case TyCon.RecordEmpty => labels.length
+      case TyCon.Cst(Constant.RecordEmpty) => labels.length
       case _ => labels.length + 1
     }
-    case TyCon.RecordEmpty => 0
   }
 
   /**
@@ -595,22 +675,9 @@ object PatMatch {
     * @return A human readable string of the constructor
     */
   private def prettyPrintCtor(ctor: TyCon): String = ctor match {
-    case TyCon.Unit => "Unit"
-    case TyCon.True => "True"
-    case TyCon.False => "False"
-    case TyCon.Char => "Char"
-    case TyCon.BigDecimal => "BigDecimal"
-    case TyCon.BigInt => "BigInt"
-    case TyCon.Int8 => "Int8"
-    case TyCon.Int16 => "Int16"
-    case TyCon.Int32 => "Int32"
-    case TyCon.Int64 => "Int64"
-    case TyCon.Float32 => "Float32"
-    case TyCon.Float64 => "Float64"
-    case TyCon.Str => "Str"
-    case TyCon.Regex => "Regex"
+    case TyCon.Cst(cst) => FormatConstant.formatConstant(cst)
     case TyCon.Wild => "_"
-    case TyCon.Tuple(args) => "(" + args.foldRight("")((x, xs) => if (xs == "") prettyPrintCtor(x) + xs else prettyPrintCtor(x) + ", " + xs) + ")"
+    case TyCon.Tuple(args) => args.map(prettyPrintCtor).mkString("(", ", ", ")")
     case TyCon.Array => "Array"
     case TyCon.Vector => "Vector"
     case TyCon.Enum(sym, args) => if (args.isEmpty) sym.name else sym.name + prettyPrintCtor(TyCon.Tuple(args))
@@ -619,11 +686,10 @@ object PatMatch {
         case (f, p) => s"$f = ${prettyPrintCtor(p)}"
       }.mkString(", ")
       val tailStr = tail match {
-        case TyCon.RecordEmpty => ""
+        case TyCon.Cst(Constant.RecordEmpty) => ""
         case r => s" | ${prettyPrintCtor(r)}"
       }
       "{ " + labelStr + tailStr + " }"
-    case TyCon.RecordEmpty => ""
   }
 
 
@@ -652,19 +718,7 @@ object PatMatch {
   private def patToCtor(pattern: TypedAst.Pattern): TyCon = pattern match {
     case Pattern.Wild(_, _) => TyCon.Wild
     case Pattern.Var(_, _, _) => TyCon.Wild
-    case Pattern.Cst(Constant.Unit, _, _) => TyCon.Unit
-    case Pattern.Cst(Constant.Bool(true), _, _) => TyCon.True
-    case Pattern.Cst(Constant.Bool(false), _, _) => TyCon.False
-    case Pattern.Cst(Constant.Char(_), _, _) => TyCon.Char
-    case Pattern.Cst(Constant.Float32(_), _, _) => TyCon.Float32
-    case Pattern.Cst(Constant.Float64(_), _, _) => TyCon.Float64
-    case Pattern.Cst(Constant.BigDecimal(_), _, _) => TyCon.BigDecimal
-    case Pattern.Cst(Constant.Int8(_), _, _) => TyCon.Int8
-    case Pattern.Cst(Constant.Int16(_), _, _) => TyCon.Int16
-    case Pattern.Cst(Constant.Int32(_), _, _) => TyCon.Int32
-    case Pattern.Cst(Constant.Int64(_), _, _) => TyCon.Int64
-    case Pattern.Cst(Constant.BigInt(_), _, _) => TyCon.BigInt
-    case Pattern.Cst(Constant.Str(_), _, _) => TyCon.Str
+    case Pattern.Cst(cst, _, _) => TyCon.Cst(cst)
     case Pattern.Tag(CaseSymUse(sym, _), pats, _, _) => TyCon.Enum(sym, pats.map(patToCtor))
     case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
     case Pattern.Record(pats, pat, _, _) =>
@@ -674,17 +728,8 @@ object PatMatch {
       }
       val pVal = patToCtor(pat)
       TyCon.Record(patsVal, pVal)
-    case Pattern.RecordEmpty(_, _) => TyCon.RecordEmpty
 
     case Pattern.Error(_, _) => TyCon.Wild
-
-    case Pattern.Cst(Constant.Regex(_), _, _) =>
-      // Resilience: OK to throw. We will have replaced the erroneous pattern by Pattern.Error.
-      throw InternalCompilerException("Unexpected Regex pattern", pattern.loc)
-
-    case Pattern.Cst(Constant.Null, _, _) =>
-      // Resilience: OK to throw. We will have replaced the erroneous pattern by Pattern.Error.
-      throw InternalCompilerException("Unexpected Null pattern", pattern.loc)
   }
 
   /**
@@ -708,7 +753,7 @@ object PatMatch {
       }.zip(all.take(labels.length))
       val t = all.takeRight(1).head
       TyCon.Record(ls, t) :: lst.drop(labels.length + 1)
-    case TyCon.RecordEmpty => lst
+    case TyCon.Cst(Constant.RecordEmpty) => lst
     case a => a :: lst
   }
 
@@ -726,4 +771,28 @@ object PatMatch {
       case (_, a: NonExhaustive) => a
     }
 
+  /**
+    * Merges all the exhaustivenesses in the list. Accumulates failures if they are there.
+    */
+  private def mergeAllExhaustive(l: List[Exhaustiveness]): Exhaustiveness = {
+    l.foldRight(Exhaustive: Exhaustiveness)(mergeExhaustive)
+  }
+
+  /**
+   * Companion object for [[SharedContext]]
+   */
+  private object SharedContext {
+
+    /**
+     * Returns a fresh shared context.
+     */
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+  }
+
+  /**
+   * A global shared context. Must be thread-safe.
+   *
+   * @param errors the [[NonExhaustiveMatchError]]s in the AST, if any.
+   */
+  private case class SharedContext(errors: ConcurrentLinkedQueue[NonExhaustiveMatchError])
 }

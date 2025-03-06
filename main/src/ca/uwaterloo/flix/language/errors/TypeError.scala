@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, BroadEqualityConstraint}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.{Formatter, Grammar}
   * A common super-type for type errors.
   */
 sealed trait TypeError extends CompilationMessage {
-  val kind: String = "Type Error"
+  val kind: CompilationMessageKind = CompilationMessageKind.TypeError
 }
 
 object TypeError {
@@ -41,7 +41,7 @@ object TypeError {
     * @param loc the location where the error occurred.
     */
   case class IrreducibleAssocType(sym: Symbol.AssocTypeSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    private val assocType: Type = Type.AssocType(AssocTypeConstructor(sym, SourceLocation.Unknown), tpe, Kind.Wild, SourceLocation.Unknown)
+    private val assocType: Type = Type.AssocType(AssocTypeSymUse(sym, SourceLocation.Unknown), tpe, Kind.Wild, SourceLocation.Unknown)
 
     def summary: String = s"Irreducible associated type: ${formatType(assocType)}"
 
@@ -131,27 +131,6 @@ object TypeError {
       s""">> Static Java method '$methodName' from class '${clazz.getName}' with arguments types (${tpes.mkString(", ")}) not found.
          |
          |${code(loc, s"Static Java method '$methodName' not found")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Mismatched Arity.
-    *
-    * @param tpe1 the first type.
-    * @param tpe2 the second type.
-    * @param renv the rigidity environment.
-    * @param loc  the location where the error occurred.
-    */
-  case class MismatchedArity(tpe1: Type, tpe2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unable to unify the types '${formatType(tpe1, Some(renv))}' and '${formatType(tpe2, Some(renv))}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unable to unify the types: '${red(formatType(tpe1, Some(renv)))}' and '${red(formatType(tpe2, Some(renv)))}'.
-         |
-         |${code(loc, "mismatched arity of types.")}
-         |
          |""".stripMargin
     }
   }
@@ -267,16 +246,16 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unable to unify the types '${formatType(fullType1, Some(renv))}' and '${formatType(fullType2, Some(renv))}'."
+    def summary: String = s"Unable to unify the types '${formatType(fullType1, Some(renv), minimizeEffs = true)}' and '${formatType(fullType2, Some(renv), minimizeEffs = true)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unable to unify the types: '${red(formatType(baseType1, Some(renv)))}' and '${red(formatType(baseType2, Some(renv)))}'.
+      s""">> Unable to unify the types: '${red(formatType(baseType1, Some(renv), minimizeEffs = true))}' and '${red(formatType(baseType2, Some(renv), minimizeEffs = true))}'.
          |
          |${code(loc, "mismatched types.")}
          |
-         |Type One: ${formatType(fullType1, Some(renv))}
-         |Type Two: ${formatType(fullType2, Some(renv))}
+         |Type One: ${formatType(fullType1, Some(renv), minimizeEffs = true)}
+         |Type Two: ${formatType(fullType2, Some(renv), minimizeEffs = true)}
          |""".stripMargin
     }
   }
@@ -519,7 +498,7 @@ object TypeError {
          |Nevertheless, 'checked_cast' is way to use sub-typing in a safe manner, for example:
          |
          |    let s = "Hello World";
-         |    let o: ##java.lang.Object = checked_cast(s);
+         |    let o: Object = checked_cast(s);
          |""".stripMargin
     )
   }
@@ -731,28 +710,6 @@ object TypeError {
     def summary: String = s"Unresolved static method"
 
     def message(formatter: Formatter): String = s"Unresolved static method"
-  }
-
-  /**
-    * Unsupported equality error.
-    *
-    * @param econstr the unsupported equality constraint.
-    * @param loc     the location where the error occurred.
-    */
-  case class UnsupportedEquality(econstr: BroadEqualityConstraint, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unsupported type equality: ${formatEqualityConstraint(econstr)}"
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unsupported type equality: ${formatEqualityConstraint(econstr)}
-         |
-         |${code(loc, "unsupported type equality.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      "Tip: Add an equality constraint to the function."
-    })
   }
 
   /**

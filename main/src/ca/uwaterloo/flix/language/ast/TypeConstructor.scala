@@ -458,6 +458,13 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represents a region.
+    */
+  case class Region(sym: Symbol.RegionSym) extends TypeConstructor {
+    def kind: Kind = Kind.Eff
+  }
+
+  /**
     * A type constructor that converts a region to a Star type.
     */
   case object RegionToStar extends TypeConstructor {

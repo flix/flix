@@ -33,11 +33,8 @@ object Desugar {
     */
   def run(root: WeededAst.Root, oldRoot: DesugaredAst.Root, changeSet: ChangeSet)(implicit flix: Flix): DesugaredAst.Root = flix.phase("Desugar") {
     // Compute the stale and fresh sources.
-    val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
-
-    val units = ParOps.parMapValues(stale)(visitUnit)
-    val allUnits = units ++ fresh
-    DesugaredAst.Root(allUnits, root.mainEntryPoint, root.availableClasses)
+    val units = changeSet.updateStaleValues(root.units, oldRoot.units)(ParOps.parMapValues(_)(visitUnit))
+    DesugaredAst.Root(units, root.mainEntryPoint, root.availableClasses, root.tokens)
   }
 
   /**
@@ -297,9 +294,6 @@ object Desugar {
     case WeededAst.Type.Schema(row, loc) =>
       val r = visitType(row)
       DesugaredAst.Type.Schema(r, loc)
-
-    case WeededAst.Type.Native(fqn, loc) =>
-      DesugaredAst.Type.Native(fqn, loc)
 
     case WeededAst.Type.Arrow(tparams, eff, tresult, loc) =>
       val tparams1 = tparams.map(visitType)
@@ -592,9 +586,6 @@ object Desugar {
     case WeededAst.Expr.Tuple(exps, loc) =>
       desugarTuple(exps, loc)
 
-    case WeededAst.Expr.RecordEmpty(loc) =>
-      Expr.RecordEmpty(loc)
-
     case WeededAst.Expr.RecordSelect(exp, label, loc) =>
       val e = visitExp(exp)
       Expr.RecordSelect(e, label, loc)
@@ -718,12 +709,14 @@ object Desugar {
       val e = visitExp(exp)
       Expr.Throw(e, loc)
 
-    case WeededAst.Expr.TryWith(exp, handlers, loc) =>
+    case WeededAst.Expr.Handler(eff, rules, loc) =>
+      val rs = rules.map(visitHandlerRule)
+      Expr.Handler(eff, rs, loc)
+
+    case WeededAst.Expr.RunWith(exp, exps, loc) =>
       val e = visitExp(exp)
-      handlers.foldLeft(e) {
-        case (acc, handler) =>
-          val rs = handler.rules.map(visitHandlerRule)
-          Expr.TryWith(acc, handler.eff, rs, loc)
+      exps.foldLeft(e) {
+        case (acc, e2) => Expr.RunWith(acc, visitExp(e2), loc)
       }
 
     case WeededAst.Expr.InvokeConstructor(className, exps, loc) =>
@@ -745,7 +738,7 @@ object Desugar {
       Expr.NewObject(t, ms, loc)
 
     case WeededAst.Expr.Static(loc) =>
-      val tpe = Type.mkRegion(Type.IO, loc)
+      val tpe = Type.mkRegionToStar(Type.IO, loc)
       DesugaredAst.Expr.Region(tpe, loc)
 
     case WeededAst.Expr.NewChannel(exp, loc) =>
@@ -873,9 +866,6 @@ object Desugar {
       val ps = pats.map(visitRecordLabelPattern)
       val p = visitPattern(pat)
       DesugaredAst.Pattern.Record(ps, p, loc)
-
-    case WeededAst.Pattern.RecordEmpty(loc) =>
-      DesugaredAst.Pattern.RecordEmpty(loc)
 
     case WeededAst.Pattern.Error(loc) =>
       DesugaredAst.Pattern.Error(loc)
@@ -1136,7 +1126,11 @@ object Desugar {
         val matchRule = DesugaredAst.MatchRule(p1, None, acc)
         DesugaredAst.Expr.Match(e1, List(matchRule), loc1.asSynthetic)
     }
-    DesugaredAst.Expr.Scope(regIdent, foreachExp, loc0)
+
+    val scope = DesugaredAst.Expr.Scope(regIdent, foreachExp, loc0)
+
+    // We add an ascription to Unit because inference across region boundaries is limited.
+    DesugaredAst.Expr.Ascribe(scope, Some(DesugaredAst.Type.Unit(loc0.asSynthetic)), None, loc0.asSynthetic)
   }
 
   /**

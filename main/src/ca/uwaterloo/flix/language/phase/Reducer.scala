@@ -144,7 +144,7 @@ object Reducer {
         }
         Expr.TryCatch(e, rs, tpe, purity, loc)
 
-      case Expr.TryWith(exp, effUse, rules, ct, tpe, purity, loc) =>
+      case Expr.RunWith(exp, effUse, rules, ct, tpe, purity, loc) =>
         if (ct == ExpPosition.NonTail) lctx.pcPoints += 1
         val e = visitExpr(exp)
         val rs = rules.map {
@@ -152,7 +152,7 @@ object Reducer {
             val e = visitExpr(exp)
             HandlerRule(op, fparams, e)
         }
-        Expr.TryWith(e, effUse, rs, ct, tpe, purity, loc)
+        Expr.RunWith(e, effUse, rs, ct, tpe, purity, loc)
 
       case Expr.Do(op, exps, tpe, purity, loc) =>
         lctx.pcPoints += 1

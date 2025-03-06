@@ -136,6 +136,16 @@ object Name {
     def parts: List[String] = idents.map(_.name)
 
     /**
+      * Returns if the namespace is empty.
+      */
+    def isEmpty: Boolean = idents.isEmpty
+
+    /**
+      * Returns if the namespace is non-empty.
+      */
+    def nonEmpty: Boolean = idents.nonEmpty
+
+    /**
       * Returns `true` if `this` namespace equals `that`.
       */
     override def equals(o: scala.Any): Boolean = o match {
@@ -157,15 +167,22 @@ object Name {
   /**
     * Qualified Name.
     *
-    * @param namespace the namespace
-    * @param ident     the identifier.
-    * @param loc       the source location of the qualified name.
+    * @param namespace    the namespace
+    * @param ident        the identifier.
+    * @param loc          the source location of the qualified name.
+    *
+    * Note that the ident could be empty if there is a trailing dot.
+    *
+    * Example:
+    *   - "A.B.Color" -> namespace = ["A", "B"], ident = "Color"
+    *   - "A.B." -> namespace = ["A", "B"], ident = ""
     */
   case class QName(namespace: NName, ident: Ident, loc: SourceLocation) {
     /**
       * Returns `true` if this name is unqualified (i.e. has no namespace).
       */
     def isUnqualified: Boolean = namespace.isRoot
+
 
     /**
       * Human readable representation.

@@ -124,6 +124,12 @@ object GenExpression {
         mv.visitMethodInsn(INVOKESTATIC, JvmName.Regex.toInternalName, "compile",
           AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Regex), false)
 
+      case Constant.RecordEmpty =>
+        // We get the JvmType of the class for the RecordEmpty
+        val classType = BackendObjType.RecordEmpty
+        // Instantiating a new object of tuple
+        mv.visitFieldInsn(GETSTATIC, classType.jvmName.toInternalName, BackendObjType.RecordEmpty.SingletonField.name, classType.toDescriptor)
+
     }
 
     case Expr.Var(sym, tpe, _) =>
@@ -617,12 +623,6 @@ object GenExpression {
         val constructorDescriptor = MethodDescriptor(tupleType.elms, VoidableType.Void)
         // Invoking the constructor
         mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", constructorDescriptor.toDescriptor, false)
-
-      case AtomicOp.RecordEmpty =>
-        // We get the JvmType of the class for the RecordEmpty
-        val classType = BackendObjType.RecordEmpty
-        // Instantiating a new object of tuple
-        mv.visitFieldInsn(GETSTATIC, classType.jvmName.toInternalName, BackendObjType.RecordEmpty.SingletonField.name, classType.toDescriptor)
 
       case AtomicOp.RecordSelect(field) =>
         val List(exp) = exps
@@ -1366,7 +1366,7 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       mv.visitLabel(afterTryAndCatch)
 
-    case Expr.TryWith(exp, effUse, rules, ct, _, _, _) =>
+    case Expr.RunWith(exp, effUse, rules, ct, _, _, _) =>
       // exp is a Unit -> exp.tpe closure
       val effectJvmName = JvmOps.getEffectDefinitionClassType(effUse.sym).name
       val ins = {
