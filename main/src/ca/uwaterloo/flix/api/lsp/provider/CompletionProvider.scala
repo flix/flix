@@ -45,7 +45,7 @@ object CompletionProvider {
     val completionItems  =
       getCompletionContext(source, pos).map {ctx =>
         val completions = if (currentErrors.isEmpty)
-          HoleCompletion.getHoleCompletion(uri, pos, root)
+          HoleCompleter.getHoleCompletion(uri, pos, root)
         else
         errorsAt(uri, pos, currentErrors).flatMap({
           case err: WeederError.UnqualifiedUse =>
