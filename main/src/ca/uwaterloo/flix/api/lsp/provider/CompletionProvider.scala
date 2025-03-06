@@ -98,9 +98,10 @@ object CompletionProvider {
                 case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
                 case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
 
-                case _ => Nil
-              }
-            })
+              case _ => Nil
+            }
+            case _ => Nil
+          })
         completions.map(comp => comp.toCompletionItem(ctx))
       }.getOrElse(Nil)
     CompletionList(isIncomplete = true, completionItems)
