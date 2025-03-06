@@ -21,10 +21,9 @@ import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Token, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Token, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.IteratorOps
 
-import scala.collection.immutable.SortedSet
 import scala.collection.mutable.ArrayBuffer
 
 object SemanticTokensProvider {
@@ -140,19 +139,34 @@ object SemanticTokensProvider {
     val allTokens = (modifierTokens ++ keywordTokens ++ commentTokens ++ traitTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ structTokens ++ typeAliasTokens ++ effectTokens).toList
 
     //
-    // We keep all tokens that are: (i) single-line tokens, (ii) have the same source as `uri`, and (iii) come from real source locations.
+    // We keep all tokens that are: (i) have the same source as `uri`, and (ii) come from real source locations.
     //
     // Note that the last criteria (automatically) excludes:
-    //   (a) tokens with unknown source locations,
-    //   (b) tokens that come from entities inside `uri` but that originate from different uris, and
-    //   (c) tokens that come from synthetic (generated) source code.
+    //   (a) tokens that come from entities inside `uri` but that originate from different uris, and
+    //   (b) tokens that come from synthetic (generated) source code.
     //
-    val filteredTokens = allTokens.filter(t => t.loc.isSingleLine && include(uri, t.loc) && !t.loc.isSynthetic)
+    val filteredTokens = allTokens.filter(t => include(uri, t.loc) && !t.loc.isSynthetic)
+
+    // For multiline tokens, we must split them into several single-line tokens
+    val splitTokens = filteredTokens.flatMap {
+      // Do nothing if it's single-line
+      case token@SemanticToken(_, _, loc) if loc.isSingleLine =>
+        token :: Nil
+      // Split the multiline token
+      case SemanticToken(tpe, modifiers, loc) =>
+        val tokens = for (line <- loc.sp1.line to loc.sp2.line) yield {
+          val begin = if (line == loc.sp1.line) loc.sp1.col else 1.toShort
+          val end = if (line == loc.sp2.line) loc.sp2.col else (loc.source.getLine(line).length + 1).toShort // Column is 1-indexed
+          val newLoc = SourceLocation(isReal = true, SourcePosition(loc.source, line, begin), SourcePosition(loc.source, line, end))
+          SemanticToken(tpe, modifiers, newLoc)
+        }
+        tokens.toList
+    }
 
     //
     // Encode the semantic tokens as a list of integers.
     //
-    encodeSemanticTokens(filteredTokens)
+    encodeSemanticTokens(splitTokens)
   }
 
   /**
