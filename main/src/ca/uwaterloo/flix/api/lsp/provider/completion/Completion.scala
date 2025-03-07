@@ -50,11 +50,11 @@ sealed trait Completion {
         kind             = CompletionItemKind.Keyword
       )
 
-    case Completion.KindCompletion(kind) =>
+    case Completion.KindCompletion(kind, range) =>
       CompletionItem(
         label    = kind,
         sortText = Priority.toSortText(Priority.Highest, kind),
-        textEdit = TextEdit(context.range, kind),
+        textEdit = TextEdit(range, kind),
         kind     = CompletionItemKind.TypeParameter
       )
 
@@ -545,9 +545,10 @@ object Completion {
   /**
     * Represents a completion for a kind.
     *
-    * @param kind the name of the kind.
+    * @param kind   the name of the kind.
+    * @param range  the range of the completion.
     */
-  case class KindCompletion(kind: String) extends Completion
+  case class KindCompletion(kind: String, range: Range) extends Completion
 
   /**
     * Represents a predicate completion.
