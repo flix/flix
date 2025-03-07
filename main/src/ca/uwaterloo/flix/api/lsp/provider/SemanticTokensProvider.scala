@@ -1033,20 +1033,21 @@ object SemanticTokensProvider {
     * Splits every multiline token in the given list into single-line tokens.
     */
   private def splitToken(tokens: List[SemanticToken]): List[SemanticToken] = {
-    tokens.flatMap {
+    val splitTokens = ArrayBuffer.empty[SemanticToken]
+    tokens.foreach {
       // Do nothing if it's single-line
       case token@SemanticToken(_, _, loc) if loc.isSingleLine =>
-        token :: Nil
+        splitTokens += token
       // Split the multiline token
       case SemanticToken(tpe, modifiers, loc) =>
-        val tokens = for (line <- loc.sp1.line to loc.sp2.line) yield {
+        for (line <- loc.sp1.line to loc.sp2.line) {
           val begin = if (line == loc.sp1.line) loc.sp1.col else 1.toShort
           val end = if (line == loc.sp2.line) loc.sp2.col else (loc.source.getLine(line).length + 1).toShort // Column is 1-indexed
           val newLoc = SourceLocation(isReal = true, SourcePosition(loc.source, line, begin), SourcePosition(loc.source, line, end))
-          SemanticToken(tpe, modifiers, newLoc)
+          splitTokens += SemanticToken(tpe, modifiers, newLoc)
         }
-        tokens.toList
     }
+    splitTokens.toList
   }
 
   /**
