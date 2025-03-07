@@ -42,8 +42,8 @@ import ca.uwaterloo.flix.language.phase.Lexer
 object CompletionProvider {
 
   def autoComplete(uri: String, pos: Position, source: String, currentErrors: List[CompilationMessage])(implicit flix: Flix, root: TypedAst.Root): CompletionList = {
-    val completionItems = getCompletionContext(source, pos).map {ctx =>
-      errorsAt(uri, pos, currentErrors).flatMap({
+    val ctx = getCompletionContext(source, pos)
+    val completionItems = errorsAt(uri, pos, currentErrors).flatMap({
         case err: WeederError.UnqualifiedUse =>
           UseCompleter.getCompletions(uri, err)
         case WeederError.UndefinedAnnotation(_, _) => KeywordCompleter.getModKeywords
@@ -108,28 +108,23 @@ object CompletionProvider {
 
         case _ => HoleCompletion.getHoleCompletion(uri, pos, root)
       }).map(comp => comp.toCompletionItem(ctx))
-    }.getOrElse(Nil)
     CompletionList(isIncomplete = true, completionItems)
   }
 
   /**
     * Find context from the source, and cursor position within it.
     */
-  private def getCompletionContext(source: String, pos: Position): Option[CompletionContext] = {
+  private def getCompletionContext(source: String, pos: Position): CompletionContext = {
     // Use zero-indexed lines and characters.
-    val x = pos.character - 1
-    val y = pos.line - 1
-    val lines = source.linesWithSeparators.toList
-    for (line <- lines.slice(y, y + 1).headOption) yield {
-      val (prefix, suffix) = line.splitAt(x)
-      val wordStart = prefix.reverse.takeWhile(isWordChar).reverse
-      val wordEnd = suffix.takeWhile(isWordChar)
-      val start = x - wordStart.length
-      val end = x + wordEnd.length
-      // Remember positions are one-indexed.
-      val range = Range(Position(y + 1, start + 1), Position(y + 1, end + 1))
-      CompletionContext(range)
-    }
+    val line = source.linesWithSeparators.toList.lift(pos.line - 1).get
+    val (prefix, suffix) = line.splitAt(pos.character -1)
+    // Find the word at the cursor position.
+    val wordStart = prefix.reverse.takeWhile(isWordChar)
+    val wordEnd = suffix.takeWhile(isWordChar)
+    val start = pos.character - wordStart.length
+    val end = pos.character + wordEnd.length
+    val range = Range(pos.copy(character = start), pos.copy(character = end))
+    CompletionContext(range)
   }
 
   /**
