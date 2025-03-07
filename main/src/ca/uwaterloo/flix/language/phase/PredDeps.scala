@@ -302,7 +302,7 @@ object PredDeps {
     case Expr.SelectChannel(rules, default, _, _, _) =>
       default.foreach(visitExp)
       rules.foreach{
-        case SelectChannelRule(_, exp1, exp2) =>
+        case SelectChannelRule(_, exp1, exp2, _) =>
           visitExp(exp1)
           visitExp(exp2)
       }

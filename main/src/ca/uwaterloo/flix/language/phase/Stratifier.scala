@@ -468,10 +468,10 @@ object Stratifier {
   }
 
   private def visitSelectChannelRule(rule: SelectChannelRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): SelectChannelRule = rule match {
-    case SelectChannelRule(sym, exp1, exp2) =>
+    case SelectChannelRule(sym, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      SelectChannelRule(sym, e1, e2)
+      SelectChannelRule(sym, e1, e2, loc)
   }
 
   private def visitParYieldFragment(frag: ParYieldFragment)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): ParYieldFragment = frag match {

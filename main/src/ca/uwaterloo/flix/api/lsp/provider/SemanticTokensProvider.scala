@@ -654,7 +654,7 @@ object SemanticTokensProvider {
 
     case Expr.SelectChannel(rules, default, _, _, _) =>
       val rs = rules.foldLeft(Iterator.empty[SemanticToken]) {
-        case (acc, SelectChannelRule(Binder(sym, _), chan, exp)) =>
+        case (acc, SelectChannelRule(Binder(sym, _), chan, exp, _)) =>
           val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
           acc ++ Iterator(t) ++ visitExp(chan) ++ visitExp(exp)
       }

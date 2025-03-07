@@ -937,12 +937,12 @@ object Namer {
     * Performs naming on the given select channel rule `rule0`.
     */
   private def visitSelectChannelRule(rule0: DesugaredAst.SelectChannelRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.SelectChannelRule = rule0 match {
-    case DesugaredAst.SelectChannelRule(ident, exp1, exp2) =>
+    case DesugaredAst.SelectChannelRule(ident, exp1, exp2 ,loc) =>
       // make a fresh variable symbol for the local recursive variable.
       val sym = Symbol.freshVarSym(ident, BoundBy.SelectRule)
       val e1 = visitExp(exp1, ns0)
       val e2 = visitExp(exp2, ns0)
-      NamedAst.SelectChannelRule(sym, e1, e2)
+      NamedAst.SelectChannelRule(sym, e1, e2, loc)
   }
 
   /**

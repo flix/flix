@@ -381,7 +381,7 @@ object TypedAst {
 
   case class TypeMatchRule(bnd: Binder, tpe: Type, exp: Expr)
 
-  case class SelectChannelRule(bnd: Binder, chan: Expr, exp: Expr)
+  case class SelectChannelRule(bnd: Binder, chan: Expr, exp: Expr, loc: SourceLocation)
 
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 

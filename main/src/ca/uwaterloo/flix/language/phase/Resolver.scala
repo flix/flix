@@ -1375,12 +1375,12 @@ object Resolver {
 
     case NamedAst.Expr.SelectChannel(rules, default, loc) =>
       val rulesVal = traverse(rules) {
-        case NamedAst.SelectChannelRule(sym, chan, body) =>
+        case NamedAst.SelectChannelRule(sym, chan, body, loc) =>
           val cVal = resolveExp(chan, env0)
           val env = env0 ++ mkVarEnv(sym)
           val bVal = resolveExp(body, env)
           mapN(cVal, bVal) {
-            case (c, b) => ResolvedAst.SelectChannelRule(sym, c, b)
+            case (c, b) => ResolvedAst.SelectChannelRule(sym, c, b, loc)
           }
       }
 

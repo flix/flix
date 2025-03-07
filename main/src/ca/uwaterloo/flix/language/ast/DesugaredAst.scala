@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
-import ca.uwaterloo.flix.util.collection.MultiMap
 
 object DesugaredAst {
 
@@ -394,7 +393,7 @@ object DesugaredAst {
 
   case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr)
 
-  case class SelectChannelRule(ident: Name.Ident, exp1: Expr, exp2: Expr)
+  case class SelectChannelRule(ident: Name.Ident, exp1: Expr, exp2: Expr, loc: SourceLocation)
 
   sealed trait TypeParam
 

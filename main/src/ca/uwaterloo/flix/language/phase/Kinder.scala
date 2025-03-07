@@ -832,10 +832,10 @@ object Kinder {
     * Performs kinding on the given select channel rule under the given kind environment.
     */
   private def visitSelectChannelRule(rule0: ResolvedAst.SelectChannelRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.SelectChannelRule = rule0 match {
-    case ResolvedAst.SelectChannelRule(sym, chan0, exp0) =>
+    case ResolvedAst.SelectChannelRule(sym, chan0, exp0, loc) =>
       val chan = visitExp(chan0, kenv, taenv, root)
       val exp = visitExp(exp0, kenv, taenv, root)
-      KindedAst.SelectChannelRule(sym, chan, exp)
+      KindedAst.SelectChannelRule(sym, chan, exp, loc)
   }
 
   /**

@@ -753,7 +753,7 @@ object Redundancy {
       }
 
       val rulesUsed = rules map {
-        case SelectChannelRule(Binder(sym, _), chan, body) =>
+        case SelectChannelRule(Binder(sym, _), chan, body, _) =>
           // Extend the environment with the symbol.
           val env1 = env0 + sym
 
