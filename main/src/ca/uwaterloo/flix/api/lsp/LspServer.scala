@@ -331,7 +331,7 @@ object LspServer {
       val uri = params.getTextDocument.getUri
       val source = flixLanguageServer.sources(uri)
       val pos = Position.fromLsp4j(params.getPosition)
-      val completions = CompletionProvider.autoComplete(uri, pos, source, flixLanguageServer.currentErrors)(flixLanguageServer.flix, flixLanguageServer.root)
+      val completions = CompletionProvider.autoComplete(uri, pos, source, flixLanguageServer.currentErrors)(flixLanguageServer.root, flixLanguageServer.flix)
       CompletableFuture.completedFuture(messages.Either.forRight[util.List[CompletionItem], CompletionList](completions.toLsp4j))
     }
 
