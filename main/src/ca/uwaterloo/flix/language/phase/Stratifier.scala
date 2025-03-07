@@ -456,9 +456,9 @@ object Stratifier {
   }
 
   private def visitRunWithRule(rule: HandlerRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): HandlerRule = rule match {
-    case HandlerRule(op, fparams, exp1) =>
+    case HandlerRule(op, fparams, exp1, loc) =>
       val e1 = visitExp(exp1)
-      HandlerRule(op, fparams, e1)
+      HandlerRule(op, fparams, e1, loc)
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): JvmMethod = method match {

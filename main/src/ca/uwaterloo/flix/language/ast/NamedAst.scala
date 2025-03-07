@@ -388,7 +388,7 @@ object NamedAst {
 
   case class CatchRule(sym: Symbol.VarSym, className: Name.Ident, exp: Expr)
 
-  case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr)
+  case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 

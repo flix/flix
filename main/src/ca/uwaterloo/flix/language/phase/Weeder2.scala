@@ -1797,7 +1797,7 @@ object Weeder2 {
         // Add extra resumption argument as a synthetic unit parameter when there is exactly one parameter.
         val hasSingleNonUnitParam = fparams.sizeIs == 1 && fparams.exists(_.ident.name != "_unit")
         val syntheticUnitParam = if (hasSingleNonUnitParam) List(Decls.unitFormalParameter(tree.loc.asSynthetic)) else List.empty
-        HandlerRule(ident, (syntheticUnitParam ++ fparams).sortBy(_.loc), expr)
+        HandlerRule(ident, (syntheticUnitParam ++ fparams).sortBy(_.loc), expr, tree.loc)
       })
     }
 

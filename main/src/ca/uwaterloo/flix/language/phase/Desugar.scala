@@ -930,10 +930,10 @@ object Desugar {
     * Desugars the given [[WeededAst.HandlerRule]] `rule0`.
     */
   private def visitHandlerRule(rule0: WeededAst.HandlerRule)(implicit flix: Flix): DesugaredAst.HandlerRule = rule0 match {
-    case WeededAst.HandlerRule(op, fparams, exp) =>
+    case WeededAst.HandlerRule(op, fparams, exp, loc) =>
       val fps = visitFormalParams(fparams)
       val e = visitExp(exp)
-      DesugaredAst.HandlerRule(op, fps, e)
+      DesugaredAst.HandlerRule(op, fps, e, loc)
   }
 
   /**

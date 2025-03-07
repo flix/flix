@@ -246,7 +246,7 @@ object Summary {
     }.sum
     case Expr.Throw(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.Handler(_, rules, _, _, _, _, _) => rules.map {
-      case TypedAst.HandlerRule(_, _, exp) => countCheckedEcasts(exp)
+      case TypedAst.HandlerRule(_, _, exp, _) => countCheckedEcasts(exp)
     }.sum
     case Expr.RunWith(exp1, exp2, _, _, _) => countCheckedEcasts(exp1) + countCheckedEcasts(exp2)
     case Expr.Do(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum

@@ -817,7 +817,7 @@ object Kinder {
     * Performs kinding on the given handler rule under the given kind environment.
     */
   private def visitHandlerRule(rule0: ResolvedAst.HandlerRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], hTvar: Type.Var, root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.HandlerRule = rule0 match {
-    case ResolvedAst.HandlerRule(symUse, fparams0, exp0) =>
+    case ResolvedAst.HandlerRule(symUse, fparams0, exp0, loc) =>
       // create a new type variable for the op return type (same as resume argument type)
       val tvar = Type.freshVar(Kind.Star, exp0.loc)
 
@@ -825,7 +825,7 @@ object Kinder {
 
       val fparams = fparams0.map(visitFormalParam(_, kenv, taenv, root))
       val exp = visitExp(exp0, kenv, taenv, root)
-      KindedAst.HandlerRule(symUse, fparams, exp, tvar)
+      KindedAst.HandlerRule(symUse, fparams, exp, tvar, loc)
   }
 
   /**

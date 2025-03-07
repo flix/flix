@@ -984,7 +984,7 @@ object Lowering {
     * Lowers the given handler rule `rule0`.
     */
   private def visitHandlerRule(rule0: TypedAst.HandlerRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.HandlerRule = rule0 match {
-    case TypedAst.HandlerRule(sym, fparams0, exp) =>
+    case TypedAst.HandlerRule(sym, fparams0, exp, loc) =>
       val fparams = fparams0.map(visitFormalParam)
       val e = visitExp(exp)
       LoweredAst.HandlerRule(sym, fparams, e)

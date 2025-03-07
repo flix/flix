@@ -632,10 +632,8 @@ object Visitor {
   }
 
   private def visitHandlerRule(rule: HandlerRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val HandlerRule(op, fparams, exp) = rule
-    // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since HandlerRules don't have locations
-    val insideRule = a.accept(op.loc) || fparams.map(_.loc).exists(a.accept) || a.accept(exp.loc)
-    if (!insideRule) { return }
+    val HandlerRule(op, fparams, exp, loc) = rule
+    if (!a.accept(loc)) { return }
 
     c.consumeHandlerRule(rule)
 
