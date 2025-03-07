@@ -33,40 +33,6 @@ sealed trait Completion {
     */
   def toCompletionItem(context: CompletionContext)(implicit flix: Flix): CompletionItem = this match {
 
-    case Completion.AutoUseEffCompletion(sym, doc, ap) =>
-      val name = sym.name
-      val qualifiedName = sym.toString
-      val additionalTextEdits = List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
-      val labelDetails = CompletionItemLabelDetails(
-        None,
-        Some(s" use $qualifiedName"))
-      CompletionItem(
-        label               = name,
-        labelDetails        = Some(labelDetails),
-        sortText            = Priority.toSortText(Priority.Lower, name),
-        textEdit            = TextEdit(context.range, name),
-        documentation       = Some(doc),
-        kind                = CompletionItemKind.Enum,
-        additionalTextEdits = additionalTextEdits
-      )
-
-    case Completion.AutoUseEnumCompletion(sym, doc, ap) =>
-      val name = sym.name
-      val qualifiedName = sym.toString
-      val additionalTextEdits = List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
-      val labelDetails = CompletionItemLabelDetails(
-        None,
-        Some(s" use $qualifiedName"))
-      CompletionItem(
-        label               = name,
-        labelDetails        = Some(labelDetails),
-        sortText            = Priority.toSortText(Priority.Lower, name),
-        textEdit            = TextEdit(context.range, name),
-        documentation       = Some(doc),
-        kind                = CompletionItemKind.Enum,
-        additionalTextEdits = additionalTextEdits
-      )
-
     case Completion.KeywordCompletion(name, priority) =>
       CompletionItem(
         label    = name,
@@ -90,15 +56,6 @@ sealed trait Completion {
         sortText = Priority.toSortText(Priority.Highest, kind),
         textEdit = TextEdit(context.range, kind),
         kind     = CompletionItemKind.TypeParameter
-      )
-
-    case Completion.LabelCompletion(label, prefix) =>
-      val name = s"$prefix#${label.name}"
-      CompletionItem(
-        label    = name,
-        sortText = Priority.toSortText(Priority.Highest, name),
-        textEdit = TextEdit(context.range, name),
-        kind     = CompletionItemKind.Variable
       )
 
     case Completion.PredicateCompletion(name, arity, detail) =>
@@ -127,26 +84,6 @@ sealed trait Completion {
         textEdit         = TextEdit(context.range, edit),
         insertTextFormat = InsertTextFormat.Snippet,
         kind             = CompletionItemKind.Enum
-      )
-
-    case Completion.WithCompletion(name, priority, textEdit, documentation, insertTextFormat) =>
-      CompletionItem(
-        label            = name,
-        sortText         = Priority.toSortText(priority, name),
-        textEdit         = textEdit,
-        documentation = documentation,
-        insertTextFormat = insertTextFormat,
-        kind = CompletionItemKind.Class
-      )
-
-    case Completion.WithHandlerCompletion(name, textEdit) =>
-      CompletionItem(
-        label            = name,
-        sortText         = Priority.toSortText(Priority.Highest, name),
-        textEdit         = textEdit,
-        documentation    = None,
-        insertTextFormat = InsertTextFormat.PlainText,
-        kind             = CompletionItemKind.Snippet
       )
 
     case Completion.ImportCompletion(name, isPackage) =>
@@ -613,14 +550,6 @@ object Completion {
   case class KindCompletion(kind: String) extends Completion
 
   /**
-    * Represents a label completion.
-    *
-    * @param label  the label.
-    * @param prefix the prefix.
-    */
-  case class LabelCompletion(label: Name.Label, prefix: String) extends Completion
-
-  /**
     * Represents a predicate completion.
     *
     * @param name   the name of the predicate.
@@ -646,26 +575,6 @@ object Completion {
   case class TypeBuiltinPolyCompletion(name: String, edit: String, priority: Priority) extends Completion
 
   /**
-    * Represents a With completion
-    *
-    * @param name             the name of the completion.
-    * @param priority         the priority of the completion.
-    * @param textEdit         the edit which is applied to a document when selecting this completion.
-    * @param documentation    a human-readable string that represents a doc-comment.
-    * @param insertTextFormat the format of the insert text.
-    */
-  case class WithCompletion(name: String, priority: Priority, textEdit: TextEdit, documentation: Option[String],
-                            insertTextFormat: InsertTextFormat) extends Completion
-
-  /**
-    * Represents a WithHandler completion
-    *
-    * @param name             the name of the completion.
-    * @param textEdit         the edit which is applied to a document when selecting this completion.
-    */
-  case class WithHandlerCompletion(name: String, textEdit: TextEdit) extends Completion
-
-  /**
     * Represents a package, class, or interface completion.
     *
     * @param name       the name to be completed.
@@ -683,24 +592,6 @@ object Completion {
     * @param priority      the priority of the completion.
     */
   case class AutoImportCompletion(name:String, qualifiedName: String, ap: AnchorPosition, labelDetails: CompletionItemLabelDetails, priority: Priority) extends Completion
-
-  /**
-   * Represents an auto-import completion.
-   *
-   * @param eff           the effect to complete and use.
-   * @param doc           the documentation associated with the effect.
-   * @param ap            the anchor position for the use statement.
-   */
-  case class AutoUseEffCompletion(sym: Symbol.EffectSym, doc: String, ap: AnchorPosition) extends Completion
-
-  /**
-   * Represents an auto-import completion.
-   *
-   * @param enum          the enum to complete and use.
-   * @param doc           the documentation associated with the effect.
-   * @param ap            the anchor position for the use statement.
-   */
-  case class AutoUseEnumCompletion(sym: Symbol.EnumSym, doc: String, ap: AnchorPosition) extends Completion
 
   /**
     * Represents a Snippet completion
