@@ -350,13 +350,15 @@ object Visitor {
       case Expr.Discard(exp, _, _) =>
         visitExpr(exp)
 
-      case Expr.Match(exp, rules, _, _, _) =>
+      case Expr.Match(exp, rules, _, _, loc) =>
         visitExpr(exp)
-        rules.foreach(visitMatchRule)
+        if (a.accept(loc))
+          rules.foreach(visitMatchRule)
 
-      case Expr.TypeMatch(exp, rules, _, _, _) =>
+      case Expr.TypeMatch(exp, rules, _, _, loc) =>
         visitExpr(exp)
-        rules.foreach(visitTypeMatchRule)
+        if (a.accept(loc))
+          rules.foreach(visitTypeMatchRule)
 
       case Expr.RestrictableChoose(_, _, _, _, _, _) => () // Not visited, unsupported feature.
 
@@ -450,16 +452,18 @@ object Visitor {
         visitExpr(exp)
         visitEffectSymUse(sym)
 
-      case Expr.TryCatch(exp, rules, _, _, _) =>
+      case Expr.TryCatch(exp, rules, _, _, loc) =>
         visitExpr(exp)
-        rules.foreach(visitCatchRule)
+        if (a.accept(loc))
+          rules.foreach(visitCatchRule)
 
       case Expr.Throw(exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.Handler(sym, rules, _, _, _, _, _) =>
+      case Expr.Handler(sym, rules, _, _, _, _, loc) =>
         visitEffectSymUse(sym)
-        rules.foreach(visitHandlerRule)
+        if (a.accept(loc))
+          rules.foreach(visitHandlerRule)
 
       case Expr.RunWith(exp1, exp2, _, _, _) =>
         visitExpr(exp1)
@@ -504,9 +508,10 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.SelectChannel(rules, default, _, _, _) =>
-        rules.foreach(visitSelectChannelRule)
+      case Expr.SelectChannel(rules, default, _, _, loc) =>
         default.foreach(visitExpr)
+        if (a.accept(loc))
+          rules.foreach(visitSelectChannelRule)
 
       case Expr.Spawn(exp1, exp2, _, _, _) =>
         visitExpr(exp1)
@@ -610,9 +615,6 @@ object Visitor {
 
   private def visitSelectChannelRule(rule: SelectChannelRule)(implicit a: Acceptor, c: Consumer): Unit = {
     val SelectChannelRule(bnd, chan, exp) = rule
-    // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since SelectChannelRule don't have locations
-    val insideRule = a.accept(chan.loc) || a.accept(exp.loc)
-    if (!insideRule) { return }
 
     c.consumeSelectChannelRule(rule)
 
@@ -633,9 +635,6 @@ object Visitor {
 
   private def visitHandlerRule(rule: HandlerRule)(implicit a: Acceptor, c: Consumer): Unit = {
     val HandlerRule(op, fparams, exp) = rule
-    // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since HandlerRules don't have locations
-    val insideRule = a.accept(op.loc) || fparams.map(_.loc).exists(a.accept) || a.accept(exp.loc)
-    if (!insideRule) { return }
 
     c.consumeHandlerRule(rule)
 
@@ -663,9 +662,6 @@ object Visitor {
 
   private def visitMatchRule(rule: MatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
     val MatchRule(pat, guard, exp) = rule
-    // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since MatchRules don't have locations
-    val insideRule = a.accept(pat.loc) || guard.map(_.loc).exists(a.accept) || a.accept(exp.loc)
-    if (!insideRule) { return }
 
     c.consumeMatchRule(rule)
 
@@ -676,9 +672,6 @@ object Visitor {
 
   private def visitTypeMatchRule(rule: TypeMatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
     val TypeMatchRule(bnd, tpe, exp) = rule
-    // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since TypeMatchRules don't have locations
-    val insideRule = a.accept(bnd.sym.loc) || a.accept(tpe.loc) || a.accept(exp.loc)
-    if (!insideRule) { return }
 
     c.consumeTypeMatchRule(rule)
 
@@ -720,9 +713,6 @@ object Visitor {
 
   private def visitCatchRule(rule: CatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
     val CatchRule(bnd, _, exp) = rule
-    // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since CatchRules don't have locations
-    val insideRule = a.accept(bnd.sym.loc) || a.accept(exp.loc)
-    if (!insideRule) { return }
 
     c.consumeCatchRule(rule)
 
