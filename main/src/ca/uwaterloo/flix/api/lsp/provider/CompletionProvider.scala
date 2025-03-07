@@ -90,13 +90,13 @@ object CompletionProvider {
               case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(uri) ++ KeywordCompleter.getConstraintKeywords
               case SyntacticContext.Expr.OtherExpr => KeywordCompleter.getExprKeywords
 
-                // Declarations.
-                case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
-                case SyntacticContext.Decl.Effect => KeywordCompleter.getEffectKeywords
-                case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
-                case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
-                case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
-                case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
+              // Declarations.
+              case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
+              case SyntacticContext.Decl.Effect => KeywordCompleter.getEffectKeywords
+              case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
+              case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
+              case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
+              case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
 
               case SyntacticContext.Unknown => Nil
             }
