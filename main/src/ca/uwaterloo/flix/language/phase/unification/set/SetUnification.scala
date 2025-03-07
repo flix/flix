@@ -47,6 +47,11 @@ object SetUnification {
   val ElimPerRule: mutable.Map[Phase, Int] = mutable.Map.empty
 
   /**
+   * Tracks the number of variables eliminated by each rewrite rule.
+   */
+  val VarElimPerRule: mutable.Map[Phase, Int] = mutable.Map.empty
+
+  /**
     * Represents the name of phase.
     */
   sealed trait Phase
@@ -145,14 +150,29 @@ object SetUnification {
   private def runWithState(state: State, f: List[Equation] => Option[(List[Equation], SetSubstitution)], phase: Phase)(implicit listener: SolverListener): Unit = {
     listener.onEnterPhase(phase.toString, state)
 
+    var numberOfVars: Int = 0
+    if (EnableStats) {
+      numberOfVars = state.eqs.map(_.varsOf.size).sum
+    }
+
     f(state.eqs) match {
       case Some((eqs, subst)) =>
 
         if (EnableStats) {
           synchronized {
-            val count = ElimPerRule.getOrElse(phase, 0)
-            val delta = state.eqs.length - eqs.length
-            ElimPerRule.put(phase, count + delta)
+            {
+              // Eliminated Constraints
+              val count = ElimPerRule.getOrElse(phase, 0)
+              val delta = state.eqs.length - eqs.length
+              ElimPerRule.put(phase, count + delta)
+            }
+
+            {
+              // Eliminated Vars
+              val count = VarElimPerRule.getOrElse(phase, 0)
+              val delta = numberOfVars - eqs.map(_.varsOf.size).sum
+              VarElimPerRule.put(phase,  count + delta)
+            }
           }
         }
 
@@ -411,6 +431,13 @@ object SetUnification {
     // Return immediately if there already is an equation that is unsolvable (i.e. in conflict).
     if (eqs.exists(_.isUnsolvable)) {
       return Result.Err(eqs.map(_.toUnsolvable))
+    }
+
+    if (EnableStats) {
+      // Eliminated Vars
+      val count = VarElimPerRule.getOrElse(Phase.SuccessiveVariableElimination, 0)
+      val delta = eqs.map(_.varsOf.size).sum
+      VarElimPerRule.put(Phase.SuccessiveVariableElimination,  count + delta)
     }
 
     // Return immediately if there is an equation that has too many variables.

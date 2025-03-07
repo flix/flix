@@ -188,18 +188,27 @@ object ZhegalkinPerf {
     assert(errors.isEmpty)
     SetUnification.EnableStats = false
 
-    val m = SetUnification.ElimPerRule.toMap
-    val trivial = m(Phase.Trivial)
-    val constProp = m(Phase.ConstantPropagation)
-    val varProp = m(Phase.VariablePropagation)
-    val varAssign = m(Phase.VariableAssignment)
-    val reflDupl = m(Phase.ReflexiveAndDuplicate)
-    val sve = m(Phase.SuccessiveVariableElimination)
+    val mc = SetUnification.ElimPerRule.toMap
+    val a1 = mc(Phase.Trivial)
+    val b1 = mc(Phase.ConstantPropagation)
+    val c1 = mc(Phase.VariablePropagation)
+    val d1 = mc(Phase.VariableAssignment)
+    val e1 = mc(Phase.ReflexiveAndDuplicate)
+    val f1 = mc(Phase.SuccessiveVariableElimination)
+
+    val me = SetUnification.VarElimPerRule.toMap
+    val a2 = me(Phase.Trivial)
+    val b2 = me(Phase.ConstantPropagation)
+    val c2 = me(Phase.VariablePropagation)
+    val d2 = me(Phase.VariableAssignment)
+    val e2 = me(Phase.ReflexiveAndDuplicate)
+    val f2 = me(Phase.SuccessiveVariableElimination)
 
     println("-" * 80)
     println("  Trivial | ConstProp |  VarProp |  VarAssign |  ReflDupl |    SVE")
     println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    println(f"$trivial%,9d & $constProp%,9d & $varProp%,8d & $varAssign%,10d & $reflDupl%,9d & $sve%,6d \\\\")
+    println(f"$a1%,9d & $b1%,9d & $c1%,8d & $d1%,10d & $e1%,9d & $f1%,6d \\\\")
+    println(f"$a2%,9d & $b2%,9d & $c2%,8d & $d2%,10d & $e2%,9d & $f2%,6d \\\\")
     println("-" * 80)
     println()
     println()
