@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.OpCompletion
-import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Op
-import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Effect, Namespace, Op}
+import ca.uwaterloo.flix.language.ast.{Symbol, Name, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
@@ -27,11 +27,10 @@ object OpCompleter {
     * Returns a List of Completion for Op for UndefinedOp.
     */
   def getCompletions(err: ResolutionError.UndefinedOp)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
-    val uri = err.loc.source.name
     root.effects.values.flatMap(eff =>
       eff.ops.collect {
         case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, err.qn, qualified = false) =>
-          OpCompletion(op, err.ap, qualified = false, inScope = true, isHandler = true)
+          OpCompletion(op, "", err.ap, qualified = false, inScope = true, isHandler = true)
       }
     )
   }
@@ -45,20 +44,52 @@ object OpCompleter {
 
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
     if (qn.namespace.nonEmpty) {
-      root.effects.values.flatMap(eff =>
-        eff.ops.collect {
-          case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = true) =>
-            OpCompletion(op, ap, qualified = true, inScope = true, isHandler = false)
-        }
-      )
+      fullyQualifiedCompletion(ap, qn) ++ partiallyQualifiedCompletions(ap, env, qn)
     } else {
       root.effects.values.flatMap(eff =>
         eff.ops.collect {
           case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false) =>
-            OpCompletion(op, ap, qualified = false, inScope(op, env), isHandler = false)
+            OpCompletion(op, "", ap, qualified = false, inScope(op, env), isHandler = false)
         }
       )
     }
+  }
+
+  /**
+    * Returns a List of Completion for Op for fully qualified names.
+    *
+    * We assume the user is trying to type a fully qualified name and will only match against fully qualified names.
+    */
+  private def fullyQualifiedCompletion(ap: AnchorPosition, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
+    root.effects.values.flatMap(eff =>
+      eff.ops.collect {
+        case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = true) =>
+          OpCompletion(op, "", ap, qualified = true, inScope = true, isHandler = false)
+      }
+    )
+  }
+
+  /**
+    * Returns a List of Completion for Op for partially qualified names.
+    *
+    * Example:
+    *   - If `Foo.Bar.Addable.add` is fully qualified, then `Addable.add` is partially qualified
+    *
+    * We assume the user is trying to type a partially qualified name and will only match against partially qualified names.
+    */
+  private def partiallyQualifiedCompletions(ap: AnchorPosition, env: LocalScope, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
+    val fullyQualifiedNamespaceHead = env.resolve(qn.namespace.idents.head.name) match {
+      case Some(Resolution.Declaration(Effect(_, _, _, name, _, _))) => name.toString
+      case Some(Resolution.Declaration(Namespace(name, _, _, _))) => name.toString
+      case _ => return Nil
+    }
+    val namespaceTail = qn.namespace.idents.tail.map(_.name).mkString(".")
+    val fullyQualifiedEffect = if (namespaceTail.isEmpty) fullyQualifiedNamespaceHead else s"$fullyQualifiedNamespaceHead.$namespaceTail"
+    for {
+      eff <- root.effects.get(Symbol.mkEffectSym(fullyQualifiedEffect)).toList
+      op <- eff.ops
+      if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false)
+    } yield OpCompletion(op, qn.namespace.toString, ap, qualified = true, inScope = true, isHandler = false)
   }
 
   private def inScope(op: TypedAst.Op, scope: LocalScope): Boolean = {
