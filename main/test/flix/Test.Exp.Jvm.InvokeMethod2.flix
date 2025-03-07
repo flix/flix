@@ -33,12 +33,12 @@ mod Test.Exp.Jvm.InvokeMethod {
    @test
    def testInvokeMethod_07(): Bool \ IO =
        let val = 150ii;
-       val.and(-100ii) == 148ii
+       val.`and`(-100ii) == 148ii
 
     @test
     def testInvokeMethod_08(): Bool \ IO =
        let val = 123488ii;
-       val.mod(23ii) == 1ii
+       val.`mod`(23ii) == 1ii
 
    @test
    def testInvokeMethod_09(): Bool \ IO =

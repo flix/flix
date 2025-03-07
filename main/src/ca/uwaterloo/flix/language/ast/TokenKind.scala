@@ -170,6 +170,7 @@ sealed trait TokenKind {
       case TokenKind.NameUpperCase => "<Name>"
       case TokenKind.NameMath => "<math name>"
       case TokenKind.NameGreek => "<greek name>"
+      case TokenKind.NameEscaped => "<Name>"
       case TokenKind.UserDefinedOperator => "<user-defined operator>"
       case TokenKind.Annotation => "<annotation>"
       case TokenKind.BuiltIn => "<built in>"
@@ -362,6 +363,7 @@ sealed trait TokenKind {
          | TokenKind.LiteralStringInterpolationR
          | TokenKind.MapHash
          | TokenKind.Minus
+         | TokenKind.NameEscaped
          | TokenKind.NameGreek
          | TokenKind.NameLowerCase
          | TokenKind.NameMath
@@ -628,6 +630,7 @@ sealed trait TokenKind {
          | TokenKind.KeywordYield
          | TokenKind.LiteralDebugStringR
          | TokenKind.LiteralStringInterpolationR
+         | TokenKind.NameEscaped
          | TokenKind.ParenR
          | TokenKind.Semi
          | TokenKind.Slash
@@ -1070,6 +1073,8 @@ object TokenKind {
   case object MapHash extends TokenKind
 
   case object Minus extends TokenKind
+
+  case object NameEscaped extends TokenKind
 
   case object NameGreek extends TokenKind
 
