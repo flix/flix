@@ -47,6 +47,15 @@ instance IndexableMut[MutList[a, r]] {
         MutList.put(v, i, t)
 }
 
+instance MutCollectable[MutList[a, r]] {
+    type Elm = a
+    type Aef = r
+    type Reg = r
+    pub def collect(rc: Region[r], iter: Iterator[a, ef, r1]): MutList[a, r] \ (ef + r + r1) =
+        Iterator.toMutList(rc, iter)
+
+}
+
 mod MutList {
 
     ///
