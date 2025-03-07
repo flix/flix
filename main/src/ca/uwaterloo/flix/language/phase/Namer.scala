@@ -927,10 +927,10 @@ object Namer {
     * Performs naming on the given handler rule `rule0`.
     */
   private def visitRunWithRule(rule0: DesugaredAst.HandlerRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.HandlerRule = rule0 match {
-    case DesugaredAst.HandlerRule(op, fparams, body0) =>
+    case DesugaredAst.HandlerRule(op, fparams, body0, loc) =>
       val fps = fparams.map(visitFormalParam)
       val b = visitExp(body0, ns0)
-      NamedAst.HandlerRule(op, fps, b)
+      NamedAst.HandlerRule(op, fps, b, loc)
   }
 
   /**

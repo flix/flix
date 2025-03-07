@@ -314,7 +314,7 @@ object KindedAst {
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
 
-  case class HandlerRule(symUse: OpSymUse, fparams: List[FormalParam], exp: Expr, tvar: Type.Var)
+  case class HandlerRule(symUse: OpSymUse, fparams: List[FormalParam], exp: Expr, tvar: Type.Var, loc: SourceLocation)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 

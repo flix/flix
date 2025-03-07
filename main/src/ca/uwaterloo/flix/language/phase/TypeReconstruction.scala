@@ -411,10 +411,10 @@ object TypeReconstruction {
 
     case KindedAst.Expr.Handler(effectSymUse, rules, tvar, evar1, evar2, loc) =>
       val rs = rules map {
-        case KindedAst.HandlerRule(opSymUse, fparams, hexp, _) =>
+        case KindedAst.HandlerRule(opSymUse, fparams, hexp, _, loc) =>
           val fps = fparams.map(visitFormalParam(_, subst))
           val he = visitExp(hexp)
-          TypedAst.HandlerRule(opSymUse, fps, he)
+          TypedAst.HandlerRule(opSymUse, fps, he, loc)
       }
       val bodyTpe = subst(tvar)
       val bodyEff = subst(evar1)

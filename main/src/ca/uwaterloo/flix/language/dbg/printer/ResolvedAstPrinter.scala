@@ -100,7 +100,7 @@ object ResolvedAstPrinter {
     })
     case Expr.Throw(exp, _) => DocAst.Expr.Throw(print(exp))
     case Expr.Handler(symUse, rules, _) => DocAst.Expr.Handler(symUse.sym, rules.map {
-      case ResolvedAst.HandlerRule(symUse, fparams, exp) => (symUse.sym, fparams.map(printFormalParam), print(exp))
+      case ResolvedAst.HandlerRule(symUse, fparams, exp, _) => (symUse.sym, fparams.map(printFormalParam), print(exp))
     })
     case Expr.RunWith(exp1, exp2, _) => DocAst.Expr.RunWith(print(exp1), print(exp2))
     case Expr.Do(symUse, exps, _) => DocAst.Expr.Do(symUse.sym, exps.map(print))

@@ -257,7 +257,7 @@ object PredDeps {
       visitExp(exp)
 
     case Expr.Handler(_, rules, _, _, _, _, _) =>
-      rules.foreach{ case HandlerRule(_, _, e) => visitExp(e) }
+      rules.foreach{ case HandlerRule(_, _, e, _) => visitExp(e) }
 
     case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1)

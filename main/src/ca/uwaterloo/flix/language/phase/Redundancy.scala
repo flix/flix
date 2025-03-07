@@ -690,7 +690,7 @@ object Redundancy {
     case Expr.Handler(sym, rules, _, _, _, _, _) =>
       sctx.effSyms.put(sym.sym, ())
       rules.foldLeft(Used.empty) {
-        case (acc, HandlerRule(_, fparams, body)) =>
+        case (acc, HandlerRule(_, fparams, body, _)) =>
           val usedBody = visitExp(body, env0, rc)
           val syms = fparams.map(_.bnd.sym)
           val dead = syms.filter(deadVarSym(_, usedBody))

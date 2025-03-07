@@ -299,7 +299,7 @@ object TypedAstOps {
 
     case Expr.Handler(_, rules, _, _, _, _, _) =>
       rules.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, HandlerRule(_, fparams, exp)) => acc ++ freeVars(exp) -- fparams.map(_.bnd.sym)
+        case (acc, HandlerRule(_, fparams, exp, _)) => acc ++ freeVars(exp) -- fparams.map(_.bnd.sym)
       }
 
     case Expr.RunWith(exp1, exp2, _, _, _) =>

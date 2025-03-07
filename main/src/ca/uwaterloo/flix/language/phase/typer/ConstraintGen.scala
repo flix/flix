@@ -1097,7 +1097,7 @@ object ConstraintGen {
     * @param continuationEffect the effect of the continuation
     */
   private def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type, continuationEffect: Type, loc: SourceLocation)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
-    case KindedAst.HandlerRule(symUse, actualFparams0, body, opTvar) =>
+    case KindedAst.HandlerRule(symUse, actualFparams0, body, opTvar, loc) =>
       val effect = root.effects(symUse.sym.eff)
       val ops = effect.ops.map(op => op.sym -> op).toMap
       // Don't need to generalize since ops are monomorphic
