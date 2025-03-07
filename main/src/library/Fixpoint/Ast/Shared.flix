@@ -55,7 +55,6 @@ mod Fixpoint.Ast.Shared {
     ///
     @Internal
     pub def lattice(): Denotation[t] with LowerBound[t], JoinLattice[t], MeetLattice[t] =
-        // TODO: Why are these type annotations necessary?
         Denotation.Latticenal(
             LowerBound.minValue(),
             (x, y) -> PartialOrder.lessEqual(x, y),
