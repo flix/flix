@@ -42,8 +42,8 @@ import ca.uwaterloo.flix.language.phase.Lexer
 object CompletionProvider {
 
   def autoComplete(uri: String, pos: Position, source: String, currentErrors: List[CompilationMessage])(implicit flix: Flix, root: TypedAst.Root): CompletionList = {
-    val ctx = getCompletionContext(source, pos)
-    val completionItems = errorsAt(uri, pos, currentErrors).flatMap({
+    val completionItems = getCompletionContext(source, pos).map { ctx =>
+      errorsAt(uri, pos, currentErrors).flatMap({
         case err: WeederError.UnqualifiedUse =>
           UseCompleter.getCompletions(uri, err)
         case WeederError.UndefinedAnnotation(_, _) => KeywordCompleter.getModKeywords
@@ -108,23 +108,25 @@ object CompletionProvider {
 
         case _ => HoleCompletion.getHoleCompletion(uri, pos, root)
       }).map(comp => comp.toCompletionItem(ctx))
+    }.getOrElse(Nil)
     CompletionList(isIncomplete = true, completionItems)
   }
 
   /**
     * Find context from the source, and cursor position within it.
     */
-  private def getCompletionContext(source: String, pos: Position): CompletionContext = {
+  private def getCompletionContext(source: String, pos: Position): Option[CompletionContext] = {
     // Use zero-indexed lines and characters.
-    val line = source.linesWithSeparators.toList.lift(pos.line - 1).get
-    val (prefix, suffix) = line.splitAt(pos.character -1)
-    // Find the word at the cursor position.
-    val wordStart = prefix.reverse.takeWhile(isWordChar)
-    val wordEnd = suffix.takeWhile(isWordChar)
-    val start = pos.character - wordStart.length
-    val end = pos.character + wordEnd.length
-    val range = Range(pos.copy(character = start), pos.copy(character = end))
-    CompletionContext(range)
+    source.linesWithSeparators.toList.lift(pos.line - 1).map { line =>
+      val (prefix, suffix) = line.splitAt(pos.character -1)
+      // Find the word at the cursor position.
+      val wordStart = prefix.reverse.takeWhile(isWordChar)
+      val wordEnd = suffix.takeWhile(isWordChar)
+      val start = pos.character - wordStart.length
+      val end = pos.character + wordEnd.length
+      val range = Range(pos.copy(character = start), pos.copy(character = end))
+      CompletionContext(range)
+    }
   }
 
   /**
@@ -147,21 +149,6 @@ object CompletionProvider {
     case '.' => true
     case '#' => true
     case _ => false
-  }
-
-  /**
-    * Returns the word at the end of a string, discarding trailing whitespace first
-    */
-  private def getLastWord(s: String): String = {
-    s.reverse.dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
-  }
-
-  /**
-    * Returns the second-to-last word at the end of a string, *not* discarding
-    * trailing whitespace first.
-    */
-  private def getSecondLastWord(s: String): String = {
-    s.reverse.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
   }
 
   /**
