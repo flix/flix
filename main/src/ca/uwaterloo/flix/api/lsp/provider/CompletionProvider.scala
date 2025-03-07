@@ -42,15 +42,15 @@ import ca.uwaterloo.flix.language.phase.Lexer
 object CompletionProvider {
 
   def autoComplete(uri: String, pos: Position, source: String, currentErrors: List[CompilationMessage])(implicit flix: Flix, root: TypedAst.Root): CompletionList = {
-    val completionItems = getCompletionContext(source, uri, pos, currentErrors).map {ctx =>
-      errorsAt(ctx.uri, ctx.pos, currentErrors).flatMap({
+    val completionItems = getCompletionContext(source, pos).map {ctx =>
+      errorsAt(uri, pos, currentErrors).flatMap({
         case err: WeederError.UnqualifiedUse =>
-          UseCompleter.getCompletions(ctx.uri, err)
+          UseCompleter.getCompletions(uri, err)
         case WeederError.UndefinedAnnotation(_, _) => KeywordCompleter.getModKeywords
         case err: ResolutionError.UndefinedEffect =>
           EffectCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedUse =>
-          UseCompleter.getCompletions(ctx.uri, err)
+          UseCompleter.getCompletions(uri, err)
         case err: ResolutionError.UndefinedTag =>
           EnumCompleter.getCompletions(err) ++
             EnumTagCompleter.getCompletions(err) ++
@@ -101,12 +101,12 @@ object CompletionProvider {
           // Unknown syntactic context. The program could be correct-- in which case it is hard to offer suggestions.
           case SyntacticContext.Unknown =>
             // Special case: A program with a hole is correct, but we should offer some completion suggestions.
-            HoleCompletion.getHoleCompletion(ctx, root)
+            HoleCompletion.getHoleCompletion(uri, pos, root)
 
           case _ => Nil
         }
 
-        case _ => HoleCompletion.getHoleCompletion(ctx, root)
+        case _ => HoleCompletion.getHoleCompletion(uri, pos, root)
       }).map(comp => comp.toCompletionItem(ctx))
     }.getOrElse(Nil)
     CompletionList(isIncomplete = true, completionItems)
@@ -115,7 +115,7 @@ object CompletionProvider {
   /**
     * Find context from the source, and cursor position within it.
     */
-  private def getCompletionContext(source: String, uri: String, pos: Position, errors: List[CompilationMessage]): Option[CompletionContext] = {
+  private def getCompletionContext(source: String, pos: Position): Option[CompletionContext] = {
     // Use zero-indexed lines and characters.
     val x = pos.character - 1
     val y = pos.line - 1
@@ -124,19 +124,11 @@ object CompletionProvider {
       val (prefix, suffix) = line.splitAt(x)
       val wordStart = prefix.reverse.takeWhile(isWordChar).reverse
       val wordEnd = suffix.takeWhile(isWordChar)
-      val word = wordStart + wordEnd
       val start = x - wordStart.length
       val end = x + wordEnd.length
-      val prevWord = getSecondLastWord(prefix)
-      val previousWord = if (prevWord.nonEmpty) {
-        prevWord
-      } else lines.slice(y - 1, y).headOption match {
-        case None => ""
-        case Some(s) => getLastWord(s)
-      }
       // Remember positions are one-indexed.
       val range = Range(Position(y + 1, start + 1), Position(y + 1, end + 1))
-      CompletionContext(uri, pos, range, word, previousWord, prefix)
+      CompletionContext(range)
     }
   }
 

@@ -17,10 +17,10 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Kind, Name, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
 import ca.uwaterloo.flix.language.ast.TypedAst.Decl
-import ca.uwaterloo.flix.language.ast.shared.{LocalScope, QualifiedSym, Resolution, Scope, VarText}
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
 import scala.annotation.tailrec
@@ -52,13 +52,11 @@ object CompletionUtils {
 
   /**
     * Generate a snippet which represents calling a function.
-    * Drops the last one or two arguments in the event that the function is in a pipeline
-    * (i.e. is preceeded by `|>`, `!>`, or `||>`)
     */
   def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): String = {
     val functionIsUnit = isUnitFunction(fparams)
 
-    val args = fparams.dropRight(paramsToDrop).zipWithIndex.map {
+    val args = fparams.zipWithIndex.map {
       case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
     }
     if (functionIsUnit)
@@ -82,28 +80,6 @@ object CompletionUtils {
       s"$name($${1:resume}) = "
     else
       s"$name(${args.mkString(", ")}) = "
-  }
-
-  /**
-    * Helper function for deciding if a snippet can be generated.
-    * Returns false if there are too few arguments.
-    */
-  def canApplySnippet(fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): Boolean = {
-    val functionIsUnit = isUnitFunction(fparams)
-
-    if (paramsToDrop > fparams.length || (functionIsUnit && paramsToDrop > 0)) false else true
-  }
-
-  /**
-    * Calculates how many params to drops in the event that the function is in a pipeline
-    * (i.e. is preceeded by `|>`, `!>`, or `||>`)
-    */
-  private def paramsToDrop(implicit context: CompletionContext): Int = {
-    context.previousWord match {
-      case "||>" => 2
-      case "|>" | "!>" => 1
-      case _ => 0
-    }
   }
 
   /**
@@ -310,11 +286,7 @@ object CompletionUtils {
   }
 
   /**
-    * Checks if the sym and the given qualified name matches.
-    *
-    * @param sym        The symbol to check, usually from root.
-    * @param qn         The qualified name to check, usually from user input.
-    * @param qualified  Whether the qualified name is qualified.
+    * Formats the given type `tpe`.
     */
   private def fmtType(tpe: Type, holes: Map[Symbol, String])(implicit flix: Flix): String = {
     val replaced = holes.foldLeft(tpe) { case (t, (sym, hole)) => replaceText(sym, t, hole) }
