@@ -24,7 +24,7 @@ import scala.jdk.CollectionConverters.SeqHasAsJava
 /**
   * Represents a `DocumentSymbol` in LSP.
   *
-  * @param name           The name of this symbol. Will be displayed in the user interface.
+  * @param name           The name of this symbol. Will be displayed in the user interface. Should be non-empty.
   * @param detail         More detail for this symbol, e.g the signature of a function.
   * @param kind           The kind of this symbol.
   * @param range          The range enclosing this symbol not including leading/trailing whitespace
