@@ -1938,7 +1938,7 @@ object Weeder2 {
         case (ident, qname, channel :: body :: Nil) => // Shape is correct
           val isRecvFunction = qname.toString == "Channel.recv" || qname.toString == "recv"
           if (isRecvFunction) {
-            Result.Ok(SelectChannelRule(ident, channel, body))
+            Result.Ok(SelectChannelRule(ident, channel, body, tree.loc))
           } else {
             val error = UnexpectedSelectChannelRuleFunction(qname)
             sctx.errors.add(error)

@@ -527,11 +527,11 @@ object TypeReconstruction {
 
     case KindedAst.Expr.SelectChannel(rules, default, tvar, evar, loc) =>
       val rs = rules map {
-        case KindedAst.SelectChannelRule(sym, chan, exp) =>
+        case KindedAst.SelectChannelRule(sym, chan, exp, loc) =>
           val c = visitExp(chan)
           val b = visitExp(exp)
           val bnd = TypedAst.Binder(sym, c.tpe)
-          TypedAst.SelectChannelRule(bnd, c, b)
+          TypedAst.SelectChannelRule(bnd, c, b, loc)
       }
       val d = default.map(visitExp(_))
       TypedAst.Expr.SelectChannel(rs, d, subst(tvar), subst(evar), loc)

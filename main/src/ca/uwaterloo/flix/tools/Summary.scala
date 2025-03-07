@@ -264,7 +264,7 @@ object Summary {
     case Expr.GetChannel(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.PutChannel(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.SelectChannel(rules, default, _, _, _) => default.map(countCheckedEcasts).sum + rules.map {
-      case TypedAst.SelectChannelRule(_, chan, exp) => countCheckedEcasts(chan) + countCheckedEcasts(exp)
+      case TypedAst.SelectChannelRule(_, chan, exp, _) => countCheckedEcasts(chan) + countCheckedEcasts(exp)
     }.sum
     case Expr.Spawn(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.ParYield(frags, exp, _, _, _) => countCheckedEcasts(exp) + frags.map {

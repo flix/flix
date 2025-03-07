@@ -328,7 +328,7 @@ object Safety {
 
     case Expr.SelectChannel(rules, default, _, _, _) =>
       rules.foreach {
-        case SelectChannelRule(_, chan, body) =>
+        case SelectChannelRule(_, chan, body, _) =>
           visitExp(chan)
           visitExp(body)
       }

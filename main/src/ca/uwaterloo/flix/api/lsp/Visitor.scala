@@ -609,10 +609,8 @@ object Visitor {
   }
 
   private def visitSelectChannelRule(rule: SelectChannelRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val SelectChannelRule(bnd, chan, exp) = rule
-    // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since SelectChannelRule don't have locations
-    val insideRule = a.accept(chan.loc) || a.accept(exp.loc)
-    if (!insideRule) { return }
+    val SelectChannelRule(bnd, chan, exp, loc) = rule
+    if (!a.accept(loc)) { return }
 
     c.consumeSelectChannelRule(rule)
 
