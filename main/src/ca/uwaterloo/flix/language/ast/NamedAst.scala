@@ -388,7 +388,7 @@ object NamedAst {
 
   case class CatchRule(sym: Symbol.VarSym, className: Name.Ident, exp: Expr)
 
-  case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr)
+  case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
@@ -396,7 +396,7 @@ object NamedAst {
 
   case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr)
 
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
+  case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr, loc: SourceLocation)
 
   sealed trait TypeParam {
     def name: Name.Ident

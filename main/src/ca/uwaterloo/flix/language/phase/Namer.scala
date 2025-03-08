@@ -927,22 +927,22 @@ object Namer {
     * Performs naming on the given handler rule `rule0`.
     */
   private def visitRunWithRule(rule0: DesugaredAst.HandlerRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.HandlerRule = rule0 match {
-    case DesugaredAst.HandlerRule(op, fparams, body0) =>
+    case DesugaredAst.HandlerRule(op, fparams, body0, loc) =>
       val fps = fparams.map(visitFormalParam)
       val b = visitExp(body0, ns0)
-      NamedAst.HandlerRule(op, fps, b)
+      NamedAst.HandlerRule(op, fps, b, loc)
   }
 
   /**
     * Performs naming on the given select channel rule `rule0`.
     */
   private def visitSelectChannelRule(rule0: DesugaredAst.SelectChannelRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.SelectChannelRule = rule0 match {
-    case DesugaredAst.SelectChannelRule(ident, exp1, exp2) =>
+    case DesugaredAst.SelectChannelRule(ident, exp1, exp2 ,loc) =>
       // make a fresh variable symbol for the local recursive variable.
       val sym = Symbol.freshVarSym(ident, BoundBy.SelectRule)
       val e1 = visitExp(exp1, ns0)
       val e2 = visitExp(exp2, ns0)
-      NamedAst.SelectChannelRule(sym, e1, e2)
+      NamedAst.SelectChannelRule(sym, e1, e2, loc)
   }
 
   /**

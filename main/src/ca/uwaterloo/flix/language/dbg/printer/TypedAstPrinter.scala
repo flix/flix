@@ -116,7 +116,7 @@ object TypedAstPrinter {
     * Returns the [[DocAst]] representation of `rule`.
     */
   private def printHandlerRule(rule: TypedAst.HandlerRule): (Symbol.OpSym, List[DocAst.Expr.AscriptionTpe], DocAst.Expr) = rule match {
-    case TypedAst.HandlerRule(op, fparams, exp) => (op.sym, fparams.map(printFormalParam), print(exp))
+    case TypedAst.HandlerRule(op, fparams, exp, loc) => (op.sym, fparams.map(printFormalParam), print(exp))
   }
 
   /**

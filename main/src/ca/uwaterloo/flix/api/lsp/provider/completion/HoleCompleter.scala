@@ -23,22 +23,22 @@ import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 
-object HoleCompletion {
+object HoleCompleter {
 
   /**
     * Gets completions for when the cursor position is on a hole expression with an expression
     */
-  def getHoleCompletion(ctx: CompletionContext, root: TypedAst.Root)(implicit flix: Flix): Iterable[Completion] = {
+  def getHoleCompletion(uri: String, pos: Position, root: TypedAst.Root)(implicit flix: Flix): Iterable[Completion] = {
     val stack = StackConsumer()
 
-    if (ctx.pos.character >= 2) {
-      val leftPos = Position(ctx.pos.line, ctx.pos.character - 1)
-      Visitor.visitRoot(root, stack, InsideAcceptor(ctx.uri, leftPos))
+    if (pos.character >= 2) {
+      val leftPos = Position(pos.line, pos.character - 1)
+      Visitor.visitRoot(root, stack, InsideAcceptor(uri, leftPos))
     }
 
     stack.getStack.headOption match {
       case Some(TypedAst.Expr.HoleWithExp(TypedAst.Expr.Var(sym, sourceType, _), targetType, _, loc)) =>
-        HoleCompletion.candidates(sourceType, targetType, root)
+        HoleCompleter.candidates(sourceType, targetType, root)
           .map(root.defs(_))
           .filter(_.spec.mod.isPublic)
           .zipWithIndex

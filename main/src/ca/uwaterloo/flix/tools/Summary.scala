@@ -246,7 +246,7 @@ object Summary {
     }.sum
     case Expr.Throw(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.Handler(_, rules, _, _, _, _, _) => rules.map {
-      case TypedAst.HandlerRule(_, _, exp) => countCheckedEcasts(exp)
+      case TypedAst.HandlerRule(_, _, exp, _) => countCheckedEcasts(exp)
     }.sum
     case Expr.RunWith(exp1, exp2, _, _, _) => countCheckedEcasts(exp1) + countCheckedEcasts(exp2)
     case Expr.Do(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
@@ -264,7 +264,7 @@ object Summary {
     case Expr.GetChannel(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.PutChannel(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.SelectChannel(rules, default, _, _, _) => default.map(countCheckedEcasts).sum + rules.map {
-      case TypedAst.SelectChannelRule(_, chan, exp) => countCheckedEcasts(chan) + countCheckedEcasts(exp)
+      case TypedAst.SelectChannelRule(_, chan, exp, _) => countCheckedEcasts(chan) + countCheckedEcasts(exp)
     }.sum
     case Expr.Spawn(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.ParYield(frags, exp, _, _, _) => countCheckedEcasts(exp) + frags.map {

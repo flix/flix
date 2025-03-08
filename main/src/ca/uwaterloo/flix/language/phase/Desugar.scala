@@ -930,10 +930,10 @@ object Desugar {
     * Desugars the given [[WeededAst.HandlerRule]] `rule0`.
     */
   private def visitHandlerRule(rule0: WeededAst.HandlerRule)(implicit flix: Flix): DesugaredAst.HandlerRule = rule0 match {
-    case WeededAst.HandlerRule(op, fparams, exp) =>
+    case WeededAst.HandlerRule(op, fparams, exp, loc) =>
       val fps = visitFormalParams(fparams)
       val e = visitExp(exp)
-      DesugaredAst.HandlerRule(op, fps, e)
+      DesugaredAst.HandlerRule(op, fps, e, loc)
   }
 
   /**
@@ -952,10 +952,10 @@ object Desugar {
     * Desugars the given [[WeededAst.SelectChannelRule]] `rule0`.
     */
   private def visitSelectChannelRule(rule0: WeededAst.SelectChannelRule)(implicit flix: Flix): DesugaredAst.SelectChannelRule = rule0 match {
-    case WeededAst.SelectChannelRule(ident, exp1, exp2) =>
+    case WeededAst.SelectChannelRule(ident, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      DesugaredAst.SelectChannelRule(ident, e1, e2)
+      DesugaredAst.SelectChannelRule(ident, e1, e2, loc)
   }
 
   /**

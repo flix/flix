@@ -49,7 +49,7 @@ object SymbolProvider {
     val traits = root.traits.values.collect { case t if t.sym.loc.source.name == uri => mkTraitDocumentSymbol(t) }
     val effs = root.effects.values.collect { case e if e.sym.loc.source.name == uri => mkEffectDocumentSymbol(e) }
     val structs = root.structs.values.collect { case s if s.sym.loc.source.name == uri => mkStructDocumentSymbol(s) }
-    (traits ++ defs ++ enums ++ effs ++ structs).toList
+    (traits ++ defs ++ enums ++ effs ++ structs).toList.filter(_.name.nonEmpty)
   }
 
   /**
@@ -73,7 +73,7 @@ object SymbolProvider {
       Range.from(sym.loc),
       Range.from(sym.loc),
       Nil,
-      signatures.map(mkSigDocumentSymbol) :+ mkTypeParamDocumentSymbol(tparam),
+      (signatures.map(mkSigDocumentSymbol) :+ mkTypeParamDocumentSymbol(tparam)).filter(_.name.nonEmpty),
     )
   }
 
@@ -125,7 +125,13 @@ object SymbolProvider {
    */
   private def mkStructDocumentSymbol(s: TypedAst.Struct): DocumentSymbol = s match {
     case TypedAst.Struct(doc, _, _, sym, tparams, _, fields, _) => DocumentSymbol(
-      sym.name, Some(doc.text), SymbolKind.Struct, Range.from(sym.loc), Range.from(sym.loc), Nil, fields.values.map(mkFieldDocumentSymbol).toList ++  tparams.map(mkTypeParamDocumentSymbol),
+      sym.name,
+      Some(doc.text),
+      SymbolKind.Struct,
+      Range.from(sym.loc),
+      Range.from(sym.loc),
+      Nil,
+      (fields.values.map(mkFieldDocumentSymbol).toList ++  tparams.map(mkTypeParamDocumentSymbol)).filter(_.name.nonEmpty),
     )
   }
 
@@ -165,7 +171,7 @@ object SymbolProvider {
       Range.from(loc),
       Range.from(loc),
       Nil,
-      cases.values.map(mkCaseDocumentSymbol).toList ++ tparams.map(mkTypeParamDocumentSymbol),
+      (cases.values.map(mkCaseDocumentSymbol).toList ++ tparams.map(mkTypeParamDocumentSymbol)).filter(_.name.nonEmpty)
     )
   }
 
@@ -218,7 +224,7 @@ object SymbolProvider {
       Range.from(sym.loc),
       Range.from(sym.loc),
       Nil,
-      ops.map(mkOpDocumentSymbol),
+      ops.map(mkOpDocumentSymbol).filter(_.name.nonEmpty),
     )
   }
 

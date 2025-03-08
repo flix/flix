@@ -343,8 +343,11 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.OpCompletion(op, ap, qualified, inScope, isHandler) =>
-      val qualifiedName = op.sym.toString
+    case Completion.OpCompletion(op, namespace, ap, qualified, inScope, isHandler) =>
+      val qualifiedName =  if (namespace.nonEmpty)
+        s"$namespace.${op.sym.name}"
+      else
+        op.sym.toString
       val name = if (qualified) qualifiedName else op.sym.name
       val snippet = if (isHandler)
           CompletionUtils.getOpHandlerSnippet(name, op.spec.fparams)(context)
@@ -728,12 +731,13 @@ object Completion {
     * Represents an Op completion
     *
     * @param op         the op.
+    * @param namespace  the namespace of the op, if not provided, we use the fully qualified name.
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the op is inScope.
     * @param isHandler  indicate whether the completion is in a handler.
     */
-  case class OpCompletion(op: TypedAst.Op, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, isHandler: Boolean) extends Completion
+  case class OpCompletion(op: TypedAst.Op, namespace: String, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, isHandler: Boolean) extends Completion
 
   /**
     * Represents a Signature completion

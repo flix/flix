@@ -690,7 +690,7 @@ object Redundancy {
     case Expr.Handler(sym, rules, _, _, _, _, _) =>
       sctx.effSyms.put(sym.sym, ())
       rules.foldLeft(Used.empty) {
-        case (acc, HandlerRule(_, fparams, body)) =>
+        case (acc, HandlerRule(_, fparams, body, _)) =>
           val usedBody = visitExp(body, env0, rc)
           val syms = fparams.map(_.bnd.sym)
           val dead = syms.filter(deadVarSym(_, usedBody))
@@ -753,7 +753,7 @@ object Redundancy {
       }
 
       val rulesUsed = rules map {
-        case SelectChannelRule(Binder(sym, _), chan, body) =>
+        case SelectChannelRule(Binder(sym, _), chan, body, _) =>
           // Extend the environment with the symbol.
           val env1 = env0 + sym
 

@@ -418,7 +418,7 @@ object WeededAst {
 
   case class CatchRule(ident: Name.Ident, className: Name.Ident, exp: Expr)
 
-  case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr)
+  case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
@@ -432,7 +432,7 @@ object WeededAst {
 
   case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr)
 
-  case class SelectChannelRule(ident: Name.Ident, exp1: Expr, exp2: Expr)
+  case class SelectChannelRule(ident: Name.Ident, exp1: Expr, exp2: Expr, loc: SourceLocation)
 
   sealed trait TypeParam
 

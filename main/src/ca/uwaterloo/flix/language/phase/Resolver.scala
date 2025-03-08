@@ -1375,12 +1375,12 @@ object Resolver {
 
     case NamedAst.Expr.SelectChannel(rules, default, loc) =>
       val rulesVal = traverse(rules) {
-        case NamedAst.SelectChannelRule(sym, chan, body) =>
+        case NamedAst.SelectChannelRule(sym, chan, body, loc) =>
           val cVal = resolveExp(chan, env0)
           val env = env0 ++ mkVarEnv(sym)
           val bVal = resolveExp(body, env)
           mapN(cVal, bVal) {
-            case (c, b) => ResolvedAst.SelectChannelRule(sym, c, b)
+            case (c, b) => ResolvedAst.SelectChannelRule(sym, c, b, loc)
           }
       }
 
@@ -1738,7 +1738,7 @@ object Resolver {
         checkEffectIsAccessible(decl, ns, qname.loc)
         val symUse = EffectSymUse(decl.sym, qname)
         val rulesVal = traverse(rules0) {
-          case NamedAst.HandlerRule(ident, fparams, body) =>
+          case NamedAst.HandlerRule(ident, fparams, body, loc) =>
             val opVal = findOpInEffect(ident, decl, ns, env0)
             val fparamsVal = traverse(fparams)(resolveFormalParam(_, env0, taenv, ns, root))
             flatMapN(opVal, fparamsVal) {
@@ -1748,7 +1748,7 @@ object Resolver {
                 val bodyVal = resolveExp(body, env)
                 mapN(bodyVal) {
                   case b =>
-                    ResolvedAst.HandlerRule(OpSymUse(o.sym, ident.loc), fp, b)
+                    ResolvedAst.HandlerRule(OpSymUse(o.sym, ident.loc), fp, b, loc)
                 }
             }
         }
