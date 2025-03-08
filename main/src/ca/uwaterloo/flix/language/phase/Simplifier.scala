@@ -69,7 +69,11 @@ object Simplifier {
   private def visitStruct(struct: MonoAst.Struct): SimplifiedAst.Struct = struct match {
     case MonoAst.Struct(_, ann, mod, sym, tparams0, fields0, loc) =>
       val tparams = tparams0.map(param => SimplifiedAst.TypeParam(param.name, param.sym, param.loc))
-      val fields = fields0.map(visitStructField)
+
+      // Note: The order of fields may have become scrambled. See #10057.
+      // We sort them here to re-establish the declaration order.
+      // This is a temporary solution until a better can be developed.
+      val fields = fields0.map(visitStructField).sortBy(_.sym.loc)
       SimplifiedAst.Struct(ann, mod, sym, tparams, fields, loc)
   }
 
