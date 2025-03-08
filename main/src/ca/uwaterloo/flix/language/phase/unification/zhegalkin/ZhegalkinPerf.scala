@@ -36,6 +36,8 @@ object ZhegalkinPerf {
 
   private val FullSubeffecting: Set[Subeffecting] = Set(Subeffecting.ModDefs, Subeffecting.InsDefs, Subeffecting.Lambdas)
 
+  private val DefaultOpts: Options = Options.Default.copy(xsubeffecting = FullSubeffecting)
+
   private case class Config(
                              rewriteRules: Boolean = false,
                              cacheInterCst: Boolean = false,
@@ -60,13 +62,12 @@ object ZhegalkinPerf {
   private def rq1(n: Int): Unit = {
     println(RQ1)
 
-    // TODO: What options should be used when we collect the constraints?
-
     // Collect all Boolean effect equation systems.
     val buffer = mutable.ArrayBuffer.empty[List[Equation]]
 
     EffUnification3.EnableSmartSubeffecting = false
     val flix = new Flix()
+    flix.setOptions(DefaultOpts)
     flix.addListener {
       case FlixEvent.SolveEffEquations(eqns) =>
         if (eqns.nonEmpty) {
@@ -184,6 +185,7 @@ object ZhegalkinPerf {
 
     SetUnification.EnableStats = true
     val flix = new Flix()
+    flix.setOptions(DefaultOpts)
     val (_, errors) = flix.check()
     assert(errors.isEmpty)
     SetUnification.EnableStats = false
