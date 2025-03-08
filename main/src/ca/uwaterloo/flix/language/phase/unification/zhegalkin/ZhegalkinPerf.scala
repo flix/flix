@@ -196,13 +196,13 @@ object ZhegalkinPerf {
     val e1 = mc(Phase.ReflexiveAndDuplicate)
     val f1 = mc(Phase.SuccessiveVariableElimination)
 
-    val me = SetUnification.VarElimPerRule.toMap
-    val a2 = me(Phase.Trivial)
-    val b2 = me(Phase.ConstantPropagation)
-    val c2 = me(Phase.VariablePropagation)
-    val d2 = me(Phase.VariableAssignment)
-    val e2 = me(Phase.ReflexiveAndDuplicate)
-    val f2 = me(Phase.SuccessiveVariableElimination)
+    val mv = SetUnification.VarElimPerRule.toMap
+    val a2 = mv(Phase.Trivial)
+    val b2 = mv(Phase.ConstantPropagation)
+    val c2 = mv(Phase.VariablePropagation)
+    val d2 = mv(Phase.VariableAssignment)
+    val e2 = mv(Phase.ReflexiveAndDuplicate)
+    val f2 = mv(Phase.SuccessiveVariableElimination)
 
     println("-" * 80)
     println("  Trivial | ConstProp |  VarProp |  VarAssign |  ReflDupl |    SVE")
