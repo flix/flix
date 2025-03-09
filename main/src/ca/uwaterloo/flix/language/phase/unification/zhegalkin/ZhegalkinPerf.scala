@@ -90,7 +90,7 @@ object ZhegalkinPerf {
         |df = pd.read_csv('data.txt')
         |
         |seaborn.stripplot(data=df, x="Constraints", size=4.0, jitter=0.5, alpha=0.4)
-        |plt.xlabel("Constraints")
+        |plt.xlabel("number of constraints")
         |plt.xlim(1, None)
         |plt.grid(True)
         |
@@ -99,14 +99,15 @@ object ZhegalkinPerf {
         |
         |
         |
-        |seaborn.scatterplot(data=df, x="Constraints", y="FlexVars", alpha=0.2)
-        |seaborn.scatterplot(data=df, x="Constraints", y="RigidVars", alpha=0.2)
-        |seaborn.scatterplot(data=df, x="Constraints", y="Effects", alpha=0.2)
-        |plt.ylabel("Constraints")
-        |plt.ylabel("Quantity")
+        |seaborn.scatterplot(data=df, x="Constraints", y="FlexVars", label="FlexVars", alpha=0.2)
+        |seaborn.scatterplot(data=df, x="Constraints", y="RigidVars", label="RigidVars", alpha=0.2)
+        |seaborn.scatterplot(data=df, x="Constraints", y="Effects", label="Effects", alpha=0.2)
+        |plt.xlabel("number of constraints")
+        |plt.ylabel("quantity")
         |plt.xlim(1, 60)
         |plt.ylim(1, 60)
         |plt.grid(True)
+        |plt.legend()
         |
         |plt.savefig('numberOfVarsPerSystem.png')
         |plt.show()
@@ -115,7 +116,8 @@ object ZhegalkinPerf {
         |
         |
         |seaborn.histplot(data=df[['RigidVars', 'Effects']], multiple='dodge', discrete=True, alpha=0.8, palette=seaborn.color_palette()[1:])
-        |plt.ylabel("Quantity")
+        |plt.xlabel("number of variables / effects")
+        |plt.ylabel("quantity")
         |plt.grid(True)
         |
         |plt.savefig('histogram.png')
