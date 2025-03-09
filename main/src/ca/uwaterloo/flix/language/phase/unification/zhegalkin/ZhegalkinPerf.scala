@@ -117,7 +117,7 @@ object ZhegalkinPerf {
         |
         |seaborn.histplot(data=df[['RigidVars', 'Effects']], multiple='dodge', discrete=True, alpha=0.8, palette=seaborn.color_palette()[1:])
         |plt.xlabel("number of variables / effects")
-        |plt.ylabel("quantity")
+        |plt.ylabel("number of constraint systems")
         |plt.grid(True)
         |
         |plt.savefig('histogram.png')
