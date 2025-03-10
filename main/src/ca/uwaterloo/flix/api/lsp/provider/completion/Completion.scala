@@ -86,7 +86,6 @@ sealed trait Completion {
       )
 
     case Completion.ImportCompletion(name, range, isPackage) =>
-      println(range)
       CompletionItem(
         label            = name,
         sortText         = Priority.toSortText(Priority.Highest, name),
@@ -130,11 +129,11 @@ sealed trait Completion {
         kind             = CompletionItemKind.Snippet
       )
 
-    case Completion.LocalVarCompletion(name) =>
+    case Completion.LocalVarCompletion(name, range) =>
       CompletionItem(
         label    = name,
         sortText = Priority.toSortText(Priority.High, name),
-        textEdit = TextEdit(context.range, name),
+        textEdit = TextEdit(range, name),
         kind     = CompletionItemKind.Variable
       )
 
@@ -626,9 +625,10 @@ object Completion {
   /**
     * Represents a Var completion
     *
-    * @param name the name of the variable to complete.
+    * @param name     the name of the variable to complete.
+    * @param range    the range for TextEdit.
     */
-  case class LocalVarCompletion(name: String) extends Completion
+  case class LocalVarCompletion(name: String, range: Range) extends Completion
 
   /**
     * Represents a Declaration completion
