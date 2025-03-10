@@ -84,6 +84,6 @@ instance Box[Int32] {
 
 instance Box[Int64] {
     type Boxed = Long
-    pub def box(x: Int64): Long = unsafe Long.valueOf(x)
-    pub def unbox(x: Long): Int64 = unsafe x.longValue()
+    pub def box(x: Int64): Long = Long.valueOf(x)
+    pub def unbox(x: Long): Int64 = x.longValue()
 }

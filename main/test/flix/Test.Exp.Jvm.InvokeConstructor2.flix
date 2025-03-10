@@ -41,7 +41,7 @@ mod Test.Exp.Jvm.InvokeConstructor {
         new Integer(123i32)
 
     @test
-    def testInvokeConstructor_08(): Long \ IO =
+    def testInvokeConstructor_08(): Long =
         new Long(123i64)
 
     @test
