@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
+import ca.uwaterloo.flix.language.ast.SourceLocation
+
 /**
   * A common super-type for syntactic contexts.
   *
@@ -27,29 +29,28 @@ object SyntacticContext {
   sealed trait Decl extends SyntacticContext
 
   object Decl {
-    case object Enum extends Decl
+    case class Enum(loc: SourceLocation) extends Decl
 
-    case object Effect extends Decl
+    case class Effect(loc: SourceLocation) extends Decl
 
-    case object Instance extends SyntacticContext
+    case class Instance(loc: SourceLocation) extends Decl
 
-    case object Module extends Decl
+    case class Module(loc: SourceLocation) extends Decl
 
-    case object Struct extends Decl
+    case class Struct(loc: SourceLocation) extends Decl
 
-    case object Trait extends Decl
+    case class Trait(loc: SourceLocation) extends Decl
 
-    case object Type extends Decl
+    case class Type(loc: SourceLocation) extends Decl
   }
 
   sealed trait Expr extends SyntacticContext
 
   object Expr {
-    case object Constraint extends Expr
+    case class Constraint(loc: SourceLocation) extends Expr
 
-    case object OtherExpr extends Expr
+    case class OtherExpr(loc: SourceLocation) extends Expr
   }
-
 
   case object Unknown extends SyntacticContext
 

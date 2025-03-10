@@ -22,8 +22,8 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
-import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError.*
+import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.Validation.*
 import ca.uwaterloo.flix.util.collection.{ArrayOps, Chain}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
@@ -545,7 +545,7 @@ object Weeder2 {
             // Single type parameter
             case head :: Nil => Validation.Success(head)
             // Multiple type parameters. Soft fail by picking the first parameter
-            case ts@(head :: _ :: _) =>
+            case ts@head :: _ :: _ =>
               val error = NonUnaryAssocType(ts.length, ident.loc)
               sctx.errors.add(error)
               Validation.Success(head)
@@ -683,7 +683,7 @@ object Weeder2 {
       })
 
       mapN(constraints) {
-        case maybeConstrs => maybeConstrs.getOrElse(List.empty).collect {
+        maybeConstrs => maybeConstrs.getOrElse(List.empty).collect {
           case Some(constr) => constr
         }
       }
@@ -778,7 +778,7 @@ object Weeder2 {
             }
           }
         case None =>
-          val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = None, SyntacticContext.Decl.Module, loc = tree.loc)
+          val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = None, SyntacticContext.Decl.Module(tree.loc), loc = tree.loc)
           sctx.errors.add(error)
           Validation.Success(List(unitFormalParameter(tree.loc)))
       }
@@ -788,7 +788,7 @@ object Weeder2 {
       expect(tree, TreeKind.Parameter)
       val mod = pickModifiers(tree)
       flatMapN(pickNameIdent(tree)) {
-        case ident =>
+        ident =>
           val maybeType = tryPick(TreeKind.Type.Type, tree)
           // Check for missing or illegal type ascription
           (maybeType, presence) match {
@@ -816,7 +816,7 @@ object Weeder2 {
         case Some(expr) => Validation.Success(expr)
         case None =>
           // Fall back on Expr.Error. Parser has reported an error here.
-          val err = UnexpectedToken(expected = NamedTokenSet.Expression, actual = None, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          val err = UnexpectedToken(expected = NamedTokenSet.Expression, actual = None, SyntacticContext.Expr.OtherExpr(tree.loc), loc = tree.loc)
           Validation.Success(Expr.Error(err))
       }
     }
@@ -1030,7 +1030,7 @@ object Weeder2 {
                | TokenKind.NameMath
                | TokenKind.NameGreek => mapN(pickNameIdent(tree))(ident => Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), tree.loc))
           case _ =>
-            val error = UnexpectedToken(expected = NamedTokenSet.Literal, actual = None, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+            val error = UnexpectedToken(expected = NamedTokenSet.Literal, actual = None, SyntacticContext.Expr.OtherExpr(tree.loc), loc = tree.loc)
             sctx.errors.add(error)
             Validation.Success(Expr.Error(error))
         }
@@ -1040,7 +1040,7 @@ object Weeder2 {
 
     private def visitApplyExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Apply)
-      flatMapN(pick(TreeKind.Expr.Expr, tree), pickArguments(tree, synctx = SyntacticContext.Expr.OtherExpr)) {
+      flatMapN(pick(TreeKind.Expr.Expr, tree), pickArguments(tree, synctx = SyntacticContext.Expr.OtherExpr(tree.loc))) {
         case (expr, args) =>
           val maybeIntrinsic = tryPick(TreeKind.Expr.Intrinsic, expr)
           maybeIntrinsic match {
@@ -1093,12 +1093,12 @@ object Weeder2 {
             case Expr.Ambiguous(qname, _) =>
               Expr.RecordExtend(Name.mkLabel(qname.ident), e2, Expr.Cst(Constant.RecordEmpty, tree.loc), tree.loc)
             case _ =>
-              val error = Malformed(NamedTokenSet.Name, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+              val error = Malformed(NamedTokenSet.Name, SyntacticContext.Expr.OtherExpr(tree.loc), loc = tree.loc)
               sctx.errors.add(error)
               Expr.Error(error)
           }
         case _ =>
-          val error = Malformed(NamedTokenSet.Name, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          val error = Malformed(NamedTokenSet.Name, SyntacticContext.Expr.OtherExpr(tree.loc), loc = tree.loc)
           sctx.errors.add(error)
           Expr.Error(error)
       }
@@ -1245,7 +1245,7 @@ object Weeder2 {
                   val error = UnexpectedToken(
                     NamedTokenSet.FromTreeKinds(Set(TreeKind.QName)),
                     None,
-                    SyntacticContext.Expr.OtherExpr,
+                    SyntacticContext.Expr.OtherExpr(exprs(1).loc),
                     hint = Some("Use a single unqualified Java type like 'Object' instead of 'java.lang.object'."),
                     loc = exprs(1).loc
                   )
@@ -1269,7 +1269,7 @@ object Weeder2 {
             (condition, tthen, eelse) => Expr.IfThenElse(condition, tthen, eelse, tree.loc)
           }
         case _ =>
-          val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.KeywordElse)), actual = None, SyntacticContext.Expr.OtherExpr, hint = Some("the else-branch is required in Flix."), tree.loc)
+          val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.KeywordElse)), actual = None, SyntacticContext.Expr.OtherExpr(tree.loc), hint = Some("the else-branch is required in Flix."), tree.loc)
           sctx.errors.add(error)
           Validation.Success(Expr.Error(error))
       }
@@ -1297,7 +1297,7 @@ object Weeder2 {
         case Expr.Stm(exp1, exp2, _) => (exp1, exp2)
         case e =>
           // Fall back on Expr.Error. Parser has reported an error here.
-          val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), SyntacticContext.Expr.OtherExpr, hint = Some("Internal definitions must be followed by an expression"), loc = e.loc)
+          val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), SyntacticContext.Expr.OtherExpr(e.loc), hint = Some("Internal definitions must be followed by an expression"), loc = e.loc)
           (e, Expr.Error(error))
       }
 
@@ -1327,7 +1327,7 @@ object Weeder2 {
       flatMapN(pickExpr(tree), traverse(rules)(visitMatchRule)) {
         // Case: no valid match rule found in match expr
         case (expr, Nil) =>
-          val error = NeedAtleastOne(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
+          val error = NeedAtleastOne(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr(expr.loc), loc = expr.loc)
           // Fall back on Expr.Error. Parser has reported an error here.
           Validation.Success(Expr.Error(error))
         case (expr, rules) => Validation.Success(Expr.Match(expr, rules, tree.loc))
@@ -1344,7 +1344,7 @@ object Weeder2 {
         case (pat, expr1 :: expr2 :: Nil) => Validation.Success(MatchRule(pat, Some(expr1), expr2))
         // Fall back on Expr.Error. Parser has reported an error here.
         case (_, _) =>
-          val error = Malformed(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          val error = Malformed(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr(tree.loc), loc = tree.loc)
           Validation.Success(MatchRule(Pattern.Error(tree.loc), None, Expr.Error(error)))
       }
     }
@@ -1526,7 +1526,7 @@ object Weeder2 {
             case Expr.Stm(exp1, exp2, _) => Validation.Success((exp1, exp2))
             // Fall back on Expr.Error. Parser has reported an error here.
             case e =>
-              val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordLet)), SyntacticContext.Expr.OtherExpr, hint = Some("let-bindings must be followed by an expression"), e.loc)
+              val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordLet)), SyntacticContext.Expr.OtherExpr(e.loc), hint = Some("let-bindings must be followed by an expression"), e.loc)
               Validation.Success((e, Expr.Error(error)))
           }
           mapN(exprs)(exprs => Expr.LetMatch(pattern, tpe, exprs._1, exprs._2, tree.loc))
@@ -1605,7 +1605,7 @@ object Weeder2 {
       mapN(traverse(exprs)(visitExpr), traverseOpt(scopeName)(visitScopeName)) {
         case (exprs, Some(scope)) => Expr.ArrayLit(exprs, scope, tree.loc)
         case (exprs, None) =>
-          val error = MissingScope(TokenKind.ArrayHash, SyntacticContext.Expr.OtherExpr, tree.loc)
+          val error = MissingScope(TokenKind.ArrayHash, SyntacticContext.Expr.OtherExpr(tree.loc), tree.loc)
           sctx.errors.add(error)
           Expr.ArrayLit(exprs, Expr.Error(error), tree.loc)
       }
@@ -1642,7 +1642,7 @@ object Weeder2 {
         case k :: v :: Nil => (k, v)
         // case: k =>
         case k :: Nil =>
-          val error = Malformed(NamedTokenSet.KeyValuePair, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          val error = Malformed(NamedTokenSet.KeyValuePair, SyntacticContext.Expr.OtherExpr(tree.loc), loc = tree.loc)
           sctx.errors.add(error)
           (k, Expr.Error(error))
         case xs => throw InternalCompilerException(s"Malformed KeyValue pair, found ${xs.length} expressions", tree.loc)
@@ -1709,7 +1709,7 @@ object Weeder2 {
           }
         case (_, Nil) =>
           // Fall back on Expr.Error, Parser has already reported this
-          Expr.Error(Malformed(NamedTokenSet.Effect, SyntacticContext.Expr.OtherExpr, None, tree.loc))
+          Expr.Error(Malformed(NamedTokenSet.Effect, SyntacticContext.Expr.OtherExpr(tree.loc), None, tree.loc))
       }
     }
 
@@ -1726,7 +1726,7 @@ object Weeder2 {
           val error = UnexpectedToken(
             expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordCatch, TokenKind.KeywordWith)),
             actual = None,
-            SyntacticContext.Expr.OtherExpr,
+            SyntacticContext.Expr.OtherExpr(tree.loc),
             loc = tree.loc)
           sctx.errors.add(error)
           Validation.Success(Expr.Error(error))
@@ -1756,7 +1756,7 @@ object Weeder2 {
           val error = UnexpectedToken(
             expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordCatch, TokenKind.KeywordWith)),
             actual = None,
-            SyntacticContext.Expr.OtherExpr,
+            SyntacticContext.Expr.OtherExpr(tree.loc),
             loc = tree.loc)
           sctx.errors.add(error)
           Validation.Success(Expr.Error(error))
@@ -1832,7 +1832,7 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.InvokeMethod)
       val baseExp = pickExpr(tree)
       val method = pickNameIdent(tree)
-      val argsExps = pickRawArguments(tree, synctx = SyntacticContext.Expr.OtherExpr)
+      val argsExps = pickRawArguments(tree, synctx = SyntacticContext.Expr.OtherExpr(tree.loc))
       mapN(baseExp, method, argsExps) {
         case (b, m, as) =>
           val result = Expr.InvokeMethod(b, m, as, tree.loc)
@@ -1956,7 +1956,7 @@ object Weeder2 {
         case (expr1, Some(expr2)) =>
           Expr.Spawn(expr1, expr2, tree.loc)
         case (expr1, None) =>
-          val error = MissingScope(TokenKind.KeywordSpawn, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          val error = MissingScope(TokenKind.KeywordSpawn, SyntacticContext.Expr.OtherExpr(tree.loc), loc = tree.loc)
           sctx.errors.add(error)
           Expr.Spawn(expr1, Expr.Error(error), tree.loc)
       }
@@ -2896,7 +2896,7 @@ object Weeder2 {
             case kind => throw InternalCompilerException(s"Parser passed unknown type operator '$kind'", tree.loc)
           }
 
-        case (_, operands) => throw InternalCompilerException(s"Type.Binary tree with ${operands.length} operands: ${operands}", tree.loc)
+        case (_, operands) => throw InternalCompilerException(s"Type.Binary tree with ${operands.length} operands: $operands", tree.loc)
       }
     }
 
@@ -3308,7 +3308,7 @@ object Weeder2 {
   /**
     * A global shared context. Must be thread-safe.
     *
-    * @param errors the [[WeederError]]s or [[ParserError]]s in the AST, if any.
+    * @param errors the [[WeederError]]s or [[ParseError]]s in the AST, if any.
     */
   private case class SharedContext(errors: ConcurrentLinkedQueue[CompilationMessage])
 
