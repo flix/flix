@@ -15,9 +15,6 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.Name
-import ca.uwaterloo.flix.language.errors.ResolutionError
-
 /**
   * A common super-type for syntactic contexts.
   *
@@ -33,6 +30,8 @@ object SyntacticContext {
     case object Enum extends Decl
 
     case object Effect extends Decl
+
+    case object Instance extends SyntacticContext
 
     case object Module extends Decl
 
@@ -51,7 +50,6 @@ object SyntacticContext {
     case object OtherExpr extends Expr
   }
 
-  case object Instance extends SyntacticContext
 
   case object Unknown extends SyntacticContext
 

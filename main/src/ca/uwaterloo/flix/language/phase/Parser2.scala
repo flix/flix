@@ -988,7 +988,7 @@ object Parser2 {
               while (!nth(0).isFirstInstance && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
-              val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Instance, loc = loc)
+              val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.Instance, loc = loc)
               closeWithError(errMark, error, Some(at))
           }
         }
@@ -1172,7 +1172,7 @@ object Parser2 {
       zeroOrMore(
         namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
         getItem = structField,
-        checkForItem = (token => NAME_FIELD.contains(token) || token.isModifier),
+        checkForItem = token => NAME_FIELD.contains(token) || token.isModifier,
         breakWhen = _.isRecoverExpr,
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR,
