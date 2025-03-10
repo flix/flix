@@ -5,6 +5,11 @@
     "java.lang.Double::resolveConstantDesc": "Sys, IO",
     "java.lang.Float::resolveConstantDesc": "Sys, IO",
     "java.lang.Short::describeConstable": "Sys, IO",
+    "java.lang.ClassLoader::getPlatformClassloader": "Sys, IO",
+    "java.lang.ClassLoader::getSystemClassLoader": "Env, IO",
+    "java.lang.ClassLoader::getSystemResource": "Env, FsRead, IO",
+    "java.lang.ClassLoader::getSystemResourceAsStream": "Env, FsRead, IO",
+    "java.lang.ClassLoader::getSystemResources": "Env, FsRead, IO",
 
     "java.lang.Runtime::addShutdownHook": "Exec, Sys, IO",
     "java.lang.Runtime::availableProcessors": "Env, IO",
