@@ -48,8 +48,8 @@ instance Iterable[Array[a, r]] {
 }
 
 mod Array {
-    import java.lang.System
     import java.lang.Object
+    import java.lang.System
     import java.util.Arrays
     import java.util.{Random => JRandom};
 
@@ -1556,10 +1556,9 @@ mod Array {
     ///   `dstPos + len` <= `length(dst)`.
     ///
     /// If `src` and `dst` refer to the same array the result will be as though the range was copied to a separate array before pasting to the `dst` array.
-
-    pub def copyInto(srcPos: { srcPos = Int32 }, dstPos: { dstPos = Int32 }, len: { len = Int32 }, src: { src = Array[a, r1] }, dst: { dst = Array[a, r2] }): Unit \ { r1, r2 } =
+    pub def copyInto(srcPos: { srcPos = Int32 }, dstPos: { dstPos = Int32 }, len: { len = Int32 }, src: { src = Array[a, r1] }, dst: Array[a, r2]): Unit \ { r1, r2 } =
         let srcObj: Object = checked_cast(src#src);
-        let dstObj: Object = checked_cast(dst#dst);
+        let dstObj: Object = checked_cast(dst);
         unchecked_cast(System.arraycopy(srcObj, srcPos#srcPos, dstObj, dstPos#dstPos, len#len) as _ \ { r1, r2 })
 
     ///
