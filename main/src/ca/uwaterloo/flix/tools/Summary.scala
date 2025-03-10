@@ -242,7 +242,7 @@ object Summary {
     case Expr.Unsafe(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.Without(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.TryCatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
-      case TypedAst.CatchRule(_, _, exp) => countCheckedEcasts(exp)
+      case TypedAst.CatchRule(_, _, exp, _) => countCheckedEcasts(exp)
     }.sum
     case Expr.Throw(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.Handler(_, rules, _, _, _, _, _) => rules.map {
