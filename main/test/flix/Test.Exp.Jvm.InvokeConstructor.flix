@@ -35,7 +35,7 @@ mod Test.Exp.Jvm.InvokeConstructor {
         new Byte(123i8)
 
     @test
-    def testInvokeConstructor06(): Short \ IO =
+    def testInvokeConstructor06(): Short =
         new Short(123i16)
 
     @test
