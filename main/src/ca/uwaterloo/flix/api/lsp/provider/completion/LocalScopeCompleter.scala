@@ -57,7 +57,7 @@ object LocalScopeCompleter {
     */
   private def mkDeclarationCompletionForExpr(k: String, v: List[Resolution])(implicit range:Range): Iterable[Completion] =
     v.collect {
-      case Resolution.Declaration(StructField(_, _, _, _)) => Completion.LocalDeclarationCompletion(k)
+      case Resolution.Declaration(StructField(_, _, _, _)) => Completion.LocalDeclarationCompletion(k, range)
     }
 
   /**
@@ -66,7 +66,7 @@ object LocalScopeCompleter {
   private def mkDeclarationCompletionForType(k: String, v: List[Resolution])(implicit range:Range): Iterable[Completion] =
     v.collect {
       case Resolution.Declaration(AssocTypeSig(_, _, _, _, _, _, _)) |
-           Resolution.Declaration(AssocTypeDef(_, _, _, _, _, _)) => Completion.LocalDeclarationCompletion(k)
+           Resolution.Declaration(AssocTypeDef(_, _, _, _, _, _)) => Completion.LocalDeclarationCompletion(k, range)
     }
 
   /**
@@ -74,7 +74,7 @@ object LocalScopeCompleter {
     */
   private def mkJavaClassCompletion(name: String, resolutions: List[Resolution])(implicit range:Range): Iterable[Completion] =
     resolutions.collect {
-      case Resolution.JavaClass(clazz) => Completion.LocalJavaClassCompletion(name, clazz)
+      case Resolution.JavaClass(clazz) => Completion.LocalJavaClassCompletion(name, range, clazz)
     }
 
   /**
@@ -91,5 +91,5 @@ object LocalScopeCompleter {
     * Tries to create a LocalDefCompletion for the given name and resolutions.
     */
   private def mkLocalDefCompletion(resolutions: List[Resolution])(implicit range:Range): Iterable[Completion] =
-    resolutions.collect{ case Resolution.LocalDef(sym, fparams) => (sym, fparams)}.map(Completion.LocalDefCompletion.tupled)
+    resolutions.collect{ case Resolution.LocalDef(sym, fparams) => Completion.LocalDefCompletion(sym, range, fparams)}
 }
