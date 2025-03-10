@@ -1258,12 +1258,12 @@ object Resolver {
 
     case NamedAst.Expr.TryCatch(exp, rules, loc) =>
       val rulesVal = traverse(rules) {
-        case NamedAst.CatchRule(sym, className, body) =>
+        case NamedAst.CatchRule(sym, className, body, loc) =>
           val env = env0 ++ mkVarEnv(sym)
           val clazzVal = lookupJvmClass2(className, ns0, env0, sym.loc).toValidation
           val bVal = resolveExp(body, env)
           mapN(clazzVal, bVal) {
-            case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b)
+            case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b, loc)
           }
       }
 

@@ -258,7 +258,7 @@ object Safety {
         sctx.errors.add(IllegalNestedTryCatch(loc))
       }
       visitExp(exp)(inTryCatch = true, renv, sctx, flix)
-      rules.foreach { case CatchRule(bnd, clazz, e) =>
+      rules.foreach { case CatchRule(bnd, clazz, e, loc) =>
         checkCatchClass(clazz, bnd.sym.loc)
         visitExp(e)
       }

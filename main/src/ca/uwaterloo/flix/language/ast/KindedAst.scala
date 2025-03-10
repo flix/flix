@@ -312,7 +312,7 @@ object KindedAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr, loc: SourceLocation)
 
   case class HandlerRule(symUse: OpSymUse, fparams: List[FormalParam], exp: Expr, tvar: Type.Var, loc: SourceLocation)
 

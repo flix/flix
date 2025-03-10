@@ -916,10 +916,10 @@ object Namer {
     * Performs naming on the given try-catch rule `rule0`.
     */
   private def visitTryCatchRule(rule0: DesugaredAst.CatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.CatchRule = rule0 match {
-    case DesugaredAst.CatchRule(ident, className, body) =>
+    case DesugaredAst.CatchRule(ident, className, body, loc) =>
       val sym = Symbol.freshVarSym(ident, BoundBy.CatchRule)
       val b = visitExp(body)
-      NamedAst.CatchRule(sym, className, b)
+      NamedAst.CatchRule(sym, className, b, loc)
   }
 
   /**

@@ -251,7 +251,7 @@ object PredDeps {
       visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
-      rules.foreach{ case CatchRule(_, _, e) => visitExp(e) }
+      rules.foreach{ case CatchRule(_, _, e, _) => visitExp(e) }
 
     case Expr.Throw(exp, _, _, _) =>
       visitExp(exp)

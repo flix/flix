@@ -675,7 +675,7 @@ object Redundancy {
     case Expr.TryCatch(exp, rules, _, _, _) =>
       val usedExp = visitExp(exp, env0, rc)
       val usedRules = rules.foldLeft(Used.empty) {
-        case (acc, CatchRule(bnd, _, body)) =>
+        case (acc, CatchRule(bnd, _, body, _)) =>
           val usedBody = visitExp(body, env0, rc)
           if (deadVarSym(bnd.sym, usedBody))
             acc ++ usedBody + UnusedVarSym(bnd.sym)

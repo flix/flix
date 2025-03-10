@@ -921,9 +921,9 @@ object Desugar {
     * Desugars the given [[WeededAst.CatchRule]] `rule0`.
     */
   private def visitCatchRule(rule0: WeededAst.CatchRule)(implicit flix: Flix): DesugaredAst.CatchRule = rule0 match {
-    case WeededAst.CatchRule(ident, className, exp) =>
+    case WeededAst.CatchRule(ident, className, exp, loc) =>
       val e = visitExp(exp)
-      DesugaredAst.CatchRule(ident, className, e)
+      DesugaredAst.CatchRule(ident, className, e, loc)
   }
 
   /**

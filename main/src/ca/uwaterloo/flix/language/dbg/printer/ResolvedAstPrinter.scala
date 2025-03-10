@@ -96,7 +96,7 @@ object ResolvedAstPrinter {
     case Expr.Unsafe(exp, runEff, _) => DocAst.Expr.Unsafe(print(exp), UnkindedTypePrinter.print(runEff))
     case Expr.Without(exp, symUse, _) => DocAst.Expr.Without(print(exp), symUse.sym)
     case Expr.TryCatch(exp, rules, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
-      case ResolvedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
+      case ResolvedAst.CatchRule(sym, clazz, exp, _) => (sym, clazz, print(exp))
     })
     case Expr.Throw(exp, _) => DocAst.Expr.Throw(print(exp))
     case Expr.Handler(symUse, rules, _) => DocAst.Expr.Handler(symUse.sym, rules.map {
