@@ -16,11 +16,11 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.lsp.Range
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTagCompletion
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Case, Enum, Namespace}
-import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
-import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object EnumTagCompleter {
@@ -45,7 +45,7 @@ object EnumTagCompleter {
       root.enums.values.flatMap(enm =>
         enm.cases.values.collect{
           case tag if CompletionUtils.isAvailable(enm) && CompletionUtils.matchesName(tag.sym, qn, qualified = false) =>
-            EnumTagCompletion(tag, "", ap, qualified = false, inScope = inScope(tag, env))
+            EnumTagCompletion(tag, Range.from(qn.loc), "", ap, qualified = false, inScope = inScope(tag, env))
         }
       )
   }
@@ -59,7 +59,7 @@ object EnumTagCompleter {
     root.enums.values.flatMap(enm =>
       enm.cases.values.collect{
         case tag if CompletionUtils.isAvailable(enm) && CompletionUtils.matchesName(tag.sym, qn, qualified = true) =>
-          EnumTagCompletion(tag, "",  ap, qualified = true, inScope = true)
+          EnumTagCompletion(tag, Range.from(qn.loc), "",  ap, qualified = true, inScope = true)
       }
     )
   }
@@ -84,7 +84,7 @@ object EnumTagCompleter {
       enm <- root.enums.get(Symbol.mkEnumSym(fullyQualifiedEnum)).toList
       tag <- enm.cases.values
       if CompletionUtils.isAvailable(enm) && CompletionUtils.matchesName(tag.sym, qn, qualified = false)
-    } yield EnumTagCompletion(tag, qn.namespace.toString, ap, qualified = true, inScope = true)
+    } yield EnumTagCompletion(tag, Range.from(qn.loc), qn.namespace.toString, ap, qualified = true, inScope = true)
   }
 
   private def inScope(tag: TypedAst.Case, scope: LocalScope): Boolean = {

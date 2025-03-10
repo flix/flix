@@ -373,7 +373,7 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.SigCompletion(sig, namespace, ap, qualified, inScope) =>
+    case Completion.SigCompletion(sig, range, namespace, ap, qualified, inScope) =>
       val qualifiedName =  if (namespace.nonEmpty)
         s"$namespace.${sig.sym.name}"
       else
@@ -390,7 +390,7 @@ sealed trait Completion {
         label               = name,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, snippet),
+        textEdit            = TextEdit(range, snippet),
         detail              = Some(FormatScheme.formatScheme(sig.spec.declaredScheme)(flix)),
         documentation       = Some(sig.spec.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
@@ -398,7 +398,7 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.EnumTagCompletion(tag, namespace, ap, qualified, inScope) =>
+    case Completion.EnumTagCompletion(tag, range, namespace, ap, qualified, inScope) =>
       val qualifiedName = if (namespace.nonEmpty)
         s"$namespace.${tag.sym.name}"
       else
@@ -414,12 +414,12 @@ sealed trait Completion {
         label               = name,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, name),
+        textEdit            = TextEdit(range, name),
         kind                = CompletionItemKind.EnumMember,
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.ModuleCompletion(module, ap, qualified, inScope) =>
+    case Completion.ModuleCompletion(module, range, ap, qualified, inScope) =>
       val qualifiedName = module.toString
       val name = if (qualified) qualifiedName else module.ns.last
       val description = if(!qualified) {
@@ -432,7 +432,7 @@ sealed trait Completion {
         label               = name,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, name),
+        textEdit            = TextEdit(range, name),
         kind                = CompletionItemKind.Module,
         additionalTextEdits = additionalTextEdit
       )
@@ -768,7 +768,7 @@ object Completion {
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the signature is inScope.
     */
-  case class SigCompletion(sig: TypedAst.Sig, namespace: String,  ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class SigCompletion(sig: TypedAst.Sig, range: Range, namespace: String,  ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents an Enum Tag completion
@@ -780,7 +780,7 @@ object Completion {
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the signature is inScope.
     */
-  case class EnumTagCompletion(tag: TypedAst.Case, namespace: String, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class EnumTagCompletion(tag: TypedAst.Case, range: Range, namespace: String, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents a Module completion
@@ -791,7 +791,7 @@ object Completion {
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the signature is inScope.
     */
-  case class ModuleCompletion(module: Symbol.ModuleSym, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class ModuleCompletion(module: Symbol.ModuleSym, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents a Use completion.
