@@ -15,10 +15,11 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.lsp.Range
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.{InstanceCompletion, TraitCompletion}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Trait
-import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution, TraitUsageKind}
+import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object TraitCompleter {
@@ -42,16 +43,17 @@ object TraitCompleter {
   }
 
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName, traitUsageKind: TraitUsageKind)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    val range = Range.from(qn.loc)
     if (qn.namespace.nonEmpty)
       root.traits.values.flatMap {
         case trt if matchesTrait(trt, qn, uri, qualified = true) =>
-          getTraitCompletions(trt, traitUsageKind, ap, qualified = true, inScope = true)
+          getTraitCompletions(trt, range, traitUsageKind, ap, qualified = true, inScope = true)
         case _ => Nil
       }
     else
       root.traits.values.flatMap({
         case trt if matchesTrait(trt, qn, uri, qualified = false) =>
-          getTraitCompletions(trt, traitUsageKind, ap, qualified = false, inScope = inScope(trt, env))
+          getTraitCompletions(trt, range, traitUsageKind, ap, qualified = false, inScope = inScope(trt, env))
         case _ => Nil
       })
   }
@@ -60,18 +62,18 @@ object TraitCompleter {
     * Returns a list of completions for the given trait.
     * If the trait is derivable, we will only provide completions for derivation.
     */
-  private def getTraitCompletions(trt: TypedAst.Trait, traitUsageKind: TraitUsageKind, ap: AnchorPosition, qualified: Boolean, inScope: Boolean): List[Completion] = {
+  private def getTraitCompletions(trt: TypedAst.Trait, range: Range, traitUsageKind: TraitUsageKind, ap: AnchorPosition, qualified: Boolean, inScope: Boolean): List[Completion] = {
     traitUsageKind match {
       case TraitUsageKind.Expr =>
-        TraitCompletion(trt, ap, qualified = qualified, inScope = inScope, withTypeParameter = false) :: Nil
+        TraitCompletion(trt, range, ap, qualified = qualified, inScope = inScope, withTypeParameter = false) :: Nil
       case TraitUsageKind.Constraint =>
-        TraitCompletion(trt, ap, qualified = qualified, inScope = inScope, withTypeParameter = true) :: Nil
+        TraitCompletion(trt, range, ap, qualified = qualified, inScope = inScope, withTypeParameter = true) :: Nil
       case TraitUsageKind.Derivation if derivable_traits.contains(trt.sym.name) =>
-        TraitCompletion(trt, ap, qualified = qualified, inScope = inScope, withTypeParameter = false) :: Nil
+        TraitCompletion(trt, range, ap, qualified = qualified, inScope = inScope, withTypeParameter = false) :: Nil
       case TraitUsageKind.Derivation =>
         Nil
       case TraitUsageKind.Implementation =>
-       InstanceCompletion(trt, ap, qualified = qualified, inScope = inScope) :: Nil
+       InstanceCompletion(trt, range, ap, qualified = qualified, inScope = inScope) :: Nil
     }
   }
 

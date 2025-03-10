@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.lsp.Range
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
 import ca.uwaterloo.flix.language.ast.TypedAst
@@ -28,15 +29,16 @@ object DefCompleter {
     * When providing completions for unqualified defs that is not in scope, we will also automatically use the def.
     */
   def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] ={
+    val range = Range.from(err.loc)
     if (err.qn.namespace.nonEmpty)
       root.defs.values.collect{
         case decl if CompletionUtils.isAvailable(decl.spec) && CompletionUtils.matchesName(decl.sym, err.qn, qualified = true) =>
-          DefCompletion(decl, err.ap, qualified = true, inScope = true)
+          DefCompletion(decl, range, err.ap, qualified = true, inScope = true)
       }
     else
       root.defs.values.collect{
         case decl if CompletionUtils.isAvailable(decl.spec) && CompletionUtils.matchesName(decl.sym, err.qn, qualified = false) =>
-          DefCompletion(decl, err.ap, qualified = false, inScope = inScope(decl, err.env))
+          DefCompletion(decl, range, err.ap, qualified = false, inScope = inScope(decl, err.env))
       }
   }
 

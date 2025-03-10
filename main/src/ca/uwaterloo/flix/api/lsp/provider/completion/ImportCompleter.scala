@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.lsp.Range
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ImportCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -23,20 +24,21 @@ object ImportCompleter {
 
   def getCompletions(err: ResolutionError.UndefinedJvmImport)(implicit root: TypedAst.Root): Iterable[ImportCompletion] = {
     val path = err.name.split('.').toList
+    val range = Range.from(err.loc)
     // Get completions for if we are currently typing the next package/class and if we have just finished typing a package
-    javaClassCompletionsFromPrefix(path)(root) ++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
+    javaClassCompletionsFromPrefix(path, range)(root) ++ javaClassCompletionsFromPrefix(path.dropRight(1), range)(root)
   }
 
   /**
     * Gets completions from a java path prefix
     */
-  private def javaClassCompletionsFromPrefix(prefix: List[String])(implicit root: TypedAst.Root): Iterable[ImportCompletion] = {
+  private def javaClassCompletionsFromPrefix(prefix: List[String], range: Range)(implicit root: TypedAst.Root): Iterable[ImportCompletion] = {
     root.availableClasses.byPackage(prefix).map(clazz => {
       val label = prefix match {
         case Nil => clazz
         case v => v.mkString("", ".", s".$clazz")
       }
-      Completion.ImportCompletion(label, isPackage = clazz.head.isLower)
+      Completion.ImportCompletion(label, range, isPackage = clazz.head.isLower)
     })
   }
 }

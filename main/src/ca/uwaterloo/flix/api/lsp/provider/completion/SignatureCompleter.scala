@@ -16,11 +16,11 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.lsp.Range
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.SigCompletion
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Namespace, Sig, Trait}
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
+import ca.uwaterloo.flix.language.ast.{Name, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object SignatureCompleter {
@@ -38,7 +38,7 @@ object SignatureCompleter {
       root.traits.values.flatMap(trt =>
         trt.sigs.collect {
           case sig if CompletionUtils.isAvailable(trt) && CompletionUtils.matchesName(sig.sym, qn, qualified = false) =>
-            SigCompletion(sig, "", ap, qualified = false, inScope = inScope(sig, env))
+            SigCompletion(sig, Range.from(qn.loc), "", ap, qualified = false, inScope = inScope(sig, env))
         }
       )
   }
@@ -52,7 +52,7 @@ object SignatureCompleter {
     root.traits.values.flatMap(trt =>
       trt.sigs.collect {
         case sig if CompletionUtils.isAvailable(trt) && CompletionUtils.matchesName(sig.sym, qn, qualified = true) =>
-          SigCompletion(sig, "", ap, qualified = true, inScope = true)
+          SigCompletion(sig, Range.from(qn.loc), "", ap, qualified = true, inScope = true)
       }
     )
   }
@@ -77,7 +77,7 @@ object SignatureCompleter {
       trt <- root.traits.get(Symbol.mkTraitSym(fullyQualifiedTrait)).toList
       sig <- trt.sigs
       if CompletionUtils.isAvailable(trt) && CompletionUtils.matchesName(sig.sym, qn, qualified = false)
-    } yield SigCompletion(sig, qn.namespace.toString, ap, qualified = true, inScope = true)
+    } yield SigCompletion(sig, Range.from(qn.loc), qn.namespace.toString, ap, qualified = true, inScope = true)
   }
 
   private def inScope(sig: TypedAst.Sig, scope: LocalScope): Boolean = {

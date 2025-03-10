@@ -15,10 +15,11 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.lsp.Range
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumCompletion
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Enum
-import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
+import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object EnumCompleter {
@@ -40,15 +41,16 @@ object EnumCompleter {
   }
 
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName, withTypeParameters: Boolean)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    val range = Range.from(qn.loc)
     if (qn.namespace.nonEmpty)
       root.enums.values.collect{
         case enum if CompletionUtils.isAvailable(enum) && CompletionUtils.matchesName(enum.sym, qn, qualified = true) =>
-          EnumCompletion(enum, ap, qualified = true, inScope = true, withTypeParameters = withTypeParameters)
+          EnumCompletion(enum, range, ap, qualified = true, inScope = true, withTypeParameters = withTypeParameters)
       }
     else
       root.enums.values.collect({
         case enum if CompletionUtils.isAvailable(enum) && CompletionUtils.matchesName(enum.sym, qn, qualified = false) =>
-          EnumCompletion(enum, ap, qualified = false, inScope = inScope(enum, env), withTypeParameters = withTypeParameters)
+          EnumCompletion(enum, range, ap, qualified = false, inScope = inScope(enum, env), withTypeParameters = withTypeParameters)
       })
   }
 

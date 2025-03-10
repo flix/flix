@@ -15,8 +15,9 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.CompletionItemLabelDetails
+import ca.uwaterloo.flix.api.lsp.{CompletionItemLabelDetails, Range}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.AutoImportCompletion
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -42,25 +43,26 @@ object AutoImportCompleter {
    *  }}}
    */
   def getCompletions(err: ResolutionError.UndefinedName)(implicit root: Root): Iterable[AutoImportCompletion] =
-    javaClassCompletionsByClass(err.qn.ident.name, err.ap, err.env)
+    javaClassCompletionsByClass(err.qn.ident.name, err.loc, err.ap, err.env)
 
   def getCompletions(err: ResolutionError.UndefinedType)(implicit root: Root): Iterable[AutoImportCompletion] =
-    javaClassCompletionsByClass(err.qn.ident.name, err.ap, err.env)
+    javaClassCompletionsByClass(err.qn.ident.name, err.loc, err.ap, err.env)
 
   /**
    * Gets completions from a java class prefix.
    *
    * Note: we will not propose completions for classes with a lowercase name.
    */
-  private def javaClassCompletionsByClass(prefix: String, ap: AnchorPosition, env: LocalScope)(implicit root: Root): Iterable[AutoImportCompletion] = {
+  private def javaClassCompletionsByClass(prefix: String, loc: SourceLocation, ap: AnchorPosition, env: LocalScope)(implicit root: Root): Iterable[AutoImportCompletion] = {
     if (!CompletionUtils.shouldComplete(prefix)) return Nil
+    val range = Range.from(loc)
     val availableClasses = root.availableClasses.byClass.m.filter(_._1.exists(_.isUpper))
     availableClasses.keys.filter(CompletionUtils.fuzzyMatch(prefix, _)).flatMap { className =>
-      availableClasses(className).collect { case namespace if (!env.m.contains(className)) =>
+      availableClasses(className).collect { case namespace if !env.m.contains(className) =>
         val qualifiedName = namespace.mkString(".") + "." + className
         val priority = mkPriority(qualifiedName)
         val labelDetails = CompletionItemLabelDetails(None, Some(s"import $qualifiedName"))
-          AutoImportCompletion(className, qualifiedName, ap, labelDetails, priority)
+          AutoImportCompletion(className, range, qualifiedName, ap, labelDetails, priority)
       }
     }
  }

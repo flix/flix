@@ -53,7 +53,7 @@ object CompletionUtils {
   /**
     * Generate a snippet which represents calling a function.
     */
-  def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): String = {
+  def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam]): String = {
     val functionIsUnit = isUnitFunction(fparams)
 
     val args = fparams.zipWithIndex.map {
@@ -70,7 +70,7 @@ object CompletionUtils {
   /**
     * Generate a snippet which represents defining an effect operation handler, with an extra `resume` as the last argument.
     */
-  def getOpHandlerSnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): String = {
+  def getOpHandlerSnippet(name: String, fparams: List[TypedAst.FormalParam]): String = {
     val functionIsUnit = isUnitFunction(fparams)
 
     val args = fparams.zipWithIndex.map {
@@ -245,6 +245,11 @@ object CompletionUtils {
     * Checks if the enum of the given symbol is public.
     */
   def isAvailable(enumMap: Symbol.EnumSym)(implicit root: TypedAst.Root): Boolean = root.enums.get(enumMap).exists(isAvailable)
+
+  /**
+    * Checks if the struct of the given symbol is public.
+    */
+  def isAvailable(struct: Symbol.StructSym)(implicit root: TypedAst.Root): Boolean = root.structs.get(struct).exists(isAvailable)
 
   /**
     * Replaces the given symbol with a variable named by the given `newText`.
