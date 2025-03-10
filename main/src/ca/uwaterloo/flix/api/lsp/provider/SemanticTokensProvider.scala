@@ -481,7 +481,7 @@ object SemanticTokensProvider {
     case Expr.Match(matchExp, rules, _, _, _) =>
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
-        case (acc, MatchRule(pat, guard, exp)) =>
+        case (acc, MatchRule(pat, guard, exp, loc)) =>
           acc ++ visitPat(pat) ++ guard.toList.flatMap(visitExp) ++ visitExp(exp)
       }
 

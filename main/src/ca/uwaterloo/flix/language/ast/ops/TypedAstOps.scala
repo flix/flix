@@ -195,7 +195,7 @@ object TypedAstOps {
 
     case Expr.Match(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, MatchRule(pat, guard, exp)) =>
+        case (acc, MatchRule(pat, guard, exp, loc)) =>
           acc ++ ((guard.map(freeVars).getOrElse(Map.empty) ++ freeVars(exp)) -- freeVars(pat).keys)
       }
 

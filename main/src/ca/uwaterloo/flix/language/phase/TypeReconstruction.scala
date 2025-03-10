@@ -198,15 +198,15 @@ object TypeReconstruction {
     case KindedAst.Expr.Match(matchExp, rules, loc) =>
       val e1 = visitExp(matchExp)
       val rs = rules map {
-        case KindedAst.MatchRule(pat, guard, exp) =>
+        case KindedAst.MatchRule(pat, guard, exp, loc) =>
           val p = visitPattern(pat)
           val g = guard.map(visitExp(_))
           val b = visitExp(exp)
-          TypedAst.MatchRule(p, g, b)
+          TypedAst.MatchRule(p, g, b, loc)
       }
       val tpe = rs.head.exp.tpe
       val eff = rs.foldLeft(e1.eff) {
-        case (acc, TypedAst.MatchRule(_, g, b)) => Type.mkUnion(g.map(_.eff).toList ::: List(b.eff, acc), loc)
+        case (acc, TypedAst.MatchRule(_, g, b, _)) => Type.mkUnion(g.map(_.eff).toList ::: List(b.eff, acc), loc)
       }
       TypedAst.Expr.Match(e1, rs, tpe, eff, loc)
 

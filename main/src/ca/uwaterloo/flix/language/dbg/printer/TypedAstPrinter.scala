@@ -130,7 +130,7 @@ object TypedAstPrinter {
     * Returns the [[DocAst]] representation of `rule`.
     */
   private def printMatchRule(rule: TypedAst.MatchRule): (DocAst.Expr, Option[DocAst.Expr], DocAst.Expr) = rule match {
-    case TypedAst.MatchRule(pat, guard, exp) => (printPattern(pat), guard.map(print), print(exp))
+    case TypedAst.MatchRule(pat, guard, exp, loc) => (printPattern(pat), guard.map(print), print(exp))
   }
 
   /**
