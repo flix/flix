@@ -49,7 +49,7 @@ object NamedAst {
 
     case class Enum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
 
-    case class Struct(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], indicesAndLocs: Map[Name.Label, (Int, SourceLocation)], loc: SourceLocation) extends Declaration
+    case class Struct(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation) extends Declaration
 
     case class StructField(mod: Modifiers, sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation) extends Declaration
 
