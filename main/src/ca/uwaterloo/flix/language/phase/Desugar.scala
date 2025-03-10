@@ -875,10 +875,10 @@ object Desugar {
     * Desugars the given [[WeededAst.TypeMatchRule]] `rule0`.
     */
   private def visitTypeMatchRule(rule0: WeededAst.TypeMatchRule)(implicit flix: Flix): DesugaredAst.TypeMatchRule = rule0 match {
-    case WeededAst.TypeMatchRule(ident, tpe, exp) =>
+    case WeededAst.TypeMatchRule(ident, tpe, exp, loc) =>
       val t = visitType(tpe)
       val e = visitExp(exp)
-      DesugaredAst.TypeMatchRule(ident, t, e)
+      DesugaredAst.TypeMatchRule(ident, t, e, loc)
   }
 
   /**

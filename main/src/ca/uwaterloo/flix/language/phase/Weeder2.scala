@@ -1360,7 +1360,7 @@ object Weeder2 {
     private def visitTypeMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[TypeMatchRule, CompilationMessage] = {
       expect(tree, TreeKind.Expr.TypeMatchRuleFragment)
       mapN(pickNameIdent(tree), pickExpr(tree), Types.pickType(tree)) {
-        (ident, expr, ttype) => TypeMatchRule(ident, ttype, expr)
+        (ident, expr, ttype) => TypeMatchRule(ident, ttype, expr, tree.loc)
       }
     }
 

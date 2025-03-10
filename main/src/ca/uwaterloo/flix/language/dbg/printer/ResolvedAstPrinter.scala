@@ -67,7 +67,7 @@ object ResolvedAstPrinter {
       case ResolvedAst.MatchRule(pat, guard, exp) => (printPattern(pat), guard.map(print), print(exp))
     })
     case Expr.TypeMatch(exp, rules, _) => DocAst.Expr.TypeMatch(print(exp), rules.map {
-      case ResolvedAst.TypeMatchRule(sym, tpe, exp) => (printVarSym(sym), UnkindedTypePrinter.print(tpe), print(exp))
+      case ResolvedAst.TypeMatchRule(sym, tpe, exp, loc) => (printVarSym(sym), UnkindedTypePrinter.print(tpe), print(exp))
     })
     case Expr.RestrictableChoose(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Tag(symUse, exps, _) => DocAst.Expr.Tag(symUse.sym, exps.map(print))

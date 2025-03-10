@@ -338,7 +338,7 @@ object ResolvedAst {
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
 
-  case class TypeMatchRule(sym: Symbol.VarSym, tpe: UnkindedType, exp: Expr)
+  case class TypeMatchRule(sym: Symbol.VarSym, tpe: UnkindedType, exp: Expr, loc: SourceLocation)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr, loc: SourceLocation)
 
