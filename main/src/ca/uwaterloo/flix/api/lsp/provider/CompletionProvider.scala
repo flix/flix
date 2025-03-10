@@ -115,17 +115,17 @@ object CompletionProvider {
     */
   private def getSyntacticCompletions(uri: String, e: ParseError)(implicit root: Root, flix: Flix): List[Completion] = e.sctx match {
     // Expressions.
-    case SyntacticContext.Expr.Constraint => (PredicateCompleter.getCompletions(uri) ++ KeywordCompleter.getConstraintKeywords).toList
-    case SyntacticContext.Expr.OtherExpr => KeywordCompleter.getExprKeywords
+    case SyntacticContext.Expr.Constraint(_) => (PredicateCompleter.getCompletions(uri) ++ KeywordCompleter.getConstraintKeywords).toList
+    case SyntacticContext.Expr.OtherExpr(_) => KeywordCompleter.getExprKeywords
 
     // Declarations.
-    case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
-    case SyntacticContext.Decl.Effect => KeywordCompleter.getEffectKeywords
-    case SyntacticContext.Decl.Instance => KeywordCompleter.getInstanceKeywords
-    case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
-    case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
-    case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
-    case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
+    case SyntacticContext.Decl.Enum(_) => KeywordCompleter.getEnumKeywords
+    case SyntacticContext.Decl.Effect(_) => KeywordCompleter.getEffectKeywords
+    case SyntacticContext.Decl.Instance(_) => KeywordCompleter.getInstanceKeywords
+    case SyntacticContext.Decl.Module(_) => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
+    case SyntacticContext.Decl.Struct(_) => KeywordCompleter.getStructKeywords
+    case SyntacticContext.Decl.Trait(_) => KeywordCompleter.getTraitKeywords
+    case SyntacticContext.Decl.Type(_) => KeywordCompleter.getTypeKeywords
 
     case SyntacticContext.Unknown => Nil
   }
