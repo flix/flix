@@ -48,6 +48,7 @@ instance Iterable[Array[a, r]] {
 }
 
 mod Array {
+    import java.lang.System
     import java.lang.Object
     import java.util.Arrays
     import java.util.{Random => JRandom};
@@ -1546,12 +1547,28 @@ mod Array {
         }
 
     ///
+    /// Copies the range between `srcPos` (inclusive) to `srcPos + len` (exclusive) of `src` into `dst` starting from `dstPos` (inclusive).
+    /// A valid range has the following properties:
+    ///   0 <= len.
+    ///   0 <= `srcPos`.
+    ///   0 <= `dstPos`.
+    ///   `srcPos + len` <= `length(src)`.
+    ///   `dstPos + len` <= `length(dst)`.
+    ///
+    /// If `src` and `dst` refer to the same array the result will be as though the range was copied to a separate array before pasting to the `dst` array.
+
+    pub def copyInto(srcPos: { srcPos = Int32 }, dstPos: { dstPos = Int32 }, len: { len = Int32 }, src: { src = Array[a, r1] }, dst: { dst = Array[a, r2] }): Unit \ { r1, r2 } =
+        let srcObj: Object = checked_cast(src#src);
+        let dstObj: Object = checked_cast(dst#dst);
+        unchecked_cast(System.arraycopy(srcObj, srcPos#srcPos, dstObj, dstPos#dstPos, len#len) as _ \ { r1, r2 })
+
+    ///
     /// Copies the range between `b` (inclusive) and `e` (exclusive) of a into an empty array.
     ///
     /// A valid range has the following properties:
     ///   - 0 <= `b` <= `length(a)`.
     ///   - `e` >= `b`.
-    /// If the range is valid and greater than the length of `a`, the resulting array with have the length of the range
+    /// If the range is valid and greater than the length of `a`, the resulting array will have the length of the range
     /// and include the specified range of `a`.
     ///
     pub def copyOfRange(_: Region[r2], b: Int32, e: Int32, a: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
