@@ -98,9 +98,9 @@ object PredDeps {
 
     case Expr.Var(_, _, _) => ()
 
-    case Expr.Hole(_, _, _, _) => ()
+    case Expr.Hole(_, _, _, _, _) => ()
 
-    case Expr.HoleWithExp(exp, _, _, _) =>
+    case Expr.HoleWithExp(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expr.OpenAs(_, exp, _, _) =>

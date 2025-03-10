@@ -37,7 +37,7 @@ object HoleCompleter {
     }
 
     stack.getStack.headOption match {
-      case Some(TypedAst.Expr.HoleWithExp(TypedAst.Expr.Var(sym, sourceType, _), targetType, _, loc)) =>
+      case Some(TypedAst.Expr.HoleWithExp(TypedAst.Expr.Var(sym, sourceType, _), env, targetType, _, loc)) =>
         HoleCompleter.candidates(sourceType, targetType, root)
           .map(root.defs(_))
           .filter(_.spec.mod.isPublic)

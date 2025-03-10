@@ -832,12 +832,12 @@ object Resolver {
         case None => Symbol.freshHoleSym(loc)
         case Some(name) => Symbol.mkHoleSym(ns0, name)
       }
-      Validation.Success(ResolvedAst.Expr.Hole(sym, loc))
+      Validation.Success(ResolvedAst.Expr.Hole(sym, env0, loc))
 
     case NamedAst.Expr.HoleWithExp(exp, loc) =>
       val eVal = resolveExp(exp, env0)
       mapN(eVal) {
-        case e => ResolvedAst.Expr.HoleWithExp(e, loc)
+        case e => ResolvedAst.Expr.HoleWithExp(e, env0, loc)
       }
 
     case NamedAst.Expr.Use(use, exp, loc) =>

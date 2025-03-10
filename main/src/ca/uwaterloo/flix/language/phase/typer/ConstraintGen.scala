@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, EqualityConstraint, Scope, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Scope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.{InternalCompilerException, Subeffecting}
@@ -49,12 +49,12 @@ object ConstraintGen {
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.Hole(_, tpe, eff, _) =>
+      case Expr.Hole(_, _, tpe, eff, _) =>
         val resTpe = tpe
         val resEff = eff
         (resTpe, resEff)
 
-      case Expr.HoleWithExp(exp, tvar, evar, loc) =>
+      case Expr.HoleWithExp(exp, _, tvar, evar, loc) =>
         // We ignore exp's type and allow the hole to have any type.
         // We allow the effect to be any superset of exp's effect.
         val (_, eff) = visitExp(exp)

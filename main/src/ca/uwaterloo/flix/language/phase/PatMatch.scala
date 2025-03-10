@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ParYieldFragment, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -121,9 +120,9 @@ object PatMatch {
     tast match {
       case Expr.Var(_, _, _) => ()
 
-      case Expr.Hole(_, _, _, _) => ()
+      case Expr.Hole(_, _, _, _, _) => ()
 
-      case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
+      case Expr.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
 
       case Expr.OpenAs(_, exp, _, _) => visitExp(exp)
 

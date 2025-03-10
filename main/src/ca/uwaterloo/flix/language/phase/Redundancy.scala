@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeC
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError.*
-import ca.uwaterloo.flix.language.phase.unification.{TraitEnv, TraitEnvironment}
+import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
 import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.ConcurrentHashMap
@@ -298,11 +298,11 @@ object Redundancy {
       case (true, true) => Used.empty + HiddenVarSym(sym, loc)
     }
 
-    case Expr.Hole(sym, _, _, _) =>
+    case Expr.Hole(sym, _, _, _, _) =>
       lctx.holeSyms += sym
       Used.empty
 
-    case Expr.HoleWithExp(exp, _, _, _) =>
+    case Expr.HoleWithExp(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expr.OpenAs(_, exp, _, _) =>
@@ -1009,8 +1009,8 @@ object Redundancy {
     * Returns true if the expression is a hole.
     */
   private def isHole(exp: Expr): Boolean = exp match {
-    case Expr.Hole(_, _, _, _) => true
-    case Expr.HoleWithExp(_, _, _, _) => true
+    case Expr.Hole(_, _, _, _, _) => true
+    case Expr.HoleWithExp(_, _, _, _, _) => true
     case _ => false
   }
 

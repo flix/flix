@@ -285,9 +285,9 @@ object Visitor {
     expr match {
       case Expr.Cst(_, _, _) => ()
       case Expr.Var(_, _, _) => ()
-      case Expr.Hole(_, _, _, _) => ()
+      case Expr.Hole(_, _, _, _, _) => ()
 
-      case Expr.HoleWithExp(exp, _, _, _) =>
+      case Expr.HoleWithExp(exp, _, _, _, _) =>
         visitExpr(exp)
 
       case Expr.OpenAs(_, _, _, _) => () // Not visited, unsupported feature.
