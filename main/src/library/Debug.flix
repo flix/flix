@@ -64,7 +64,7 @@ mod Debug {
             case y: Int32 =>
                 unsafe Integer.toString(y)
             case y: Int64 =>
-                unsafe Long.toString(y) + "i64"
+                Long.toString(y) + "i64"
             case y: BigInt =>
                 if (unsafe Objects.isNull(y)) {
                     "null"
