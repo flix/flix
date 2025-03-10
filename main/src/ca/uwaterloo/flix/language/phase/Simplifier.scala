@@ -180,7 +180,7 @@ object Simplifier {
           val fieldsDeclaredOrder = root.structs(sym).fields
           val fieldInitializations = givenFields.zip(fieldExps)
 
-          // Find new names and types.
+          // Find types and new names.
           val freshFieldNames = givenFields.map(
             sym => (sym, Symbol.freshVarSym(sym.name, BoundBy.Let, synthLoc))
           ).toMap

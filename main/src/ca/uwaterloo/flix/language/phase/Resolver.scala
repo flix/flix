@@ -1123,7 +1123,7 @@ object Resolver {
 
     case NamedAst.Expr.StructNew(name, fields, region, loc) =>
       lookupStruct(name, env0, ns0, root) match {
-        case Result.Ok(st0: NamedAst.Declaration.Struct) =>
+        case Result.Ok(st0) =>
           checkStructIsAccessible(st0, ns0, loc)
           val fieldsVal = traverse(fields) {
             case (f, e) =>
