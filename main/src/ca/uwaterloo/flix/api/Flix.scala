@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
+import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source, SymUse}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
@@ -593,7 +593,8 @@ class Flix {
             val (_, safetyErrors) = Safety.run(afterRedundancy, cachedTyperAst, changeSet)
             errors ++= safetyErrors
 
-            val (afterDependencies, _) = Dependencies.run(afterRedundancy, cachedTyperAst, changeSet)
+            val (afterDependencies, dependenciesErrors) = Dependencies.run(afterRedundancy, cachedTyperAst, changeSet)
+            errors ++= dependenciesErrors
 
             if (options.incremental) {
               this.cachedLexerTokens = afterLexer
