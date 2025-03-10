@@ -51,6 +51,8 @@ object SyntacticContext {
     case object OtherExpr extends Expr
   }
 
+  case object Instance extends SyntacticContext
+
   case object Unknown extends SyntacticContext
 
 }

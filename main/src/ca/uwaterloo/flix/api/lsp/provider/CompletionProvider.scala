@@ -126,6 +126,9 @@ object CompletionProvider {
     case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
     case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
 
+    // Instance
+    case SyntacticContext.Instance => KeywordCompleter.getInstanceKeywords
+
     case SyntacticContext.Unknown => Nil
   }
 
