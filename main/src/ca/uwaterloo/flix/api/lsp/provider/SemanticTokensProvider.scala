@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Token, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.IteratorOps
 
@@ -376,9 +376,9 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
-    case Expr.Hole(_, _, _, _) => Iterator.empty
+    case Expr.Hole(_, _, _, _, _) => Iterator.empty
 
-    case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
+    case Expr.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
 
     case Expr.OpenAs(RestrictableEnumSymUse(_, loc), exp, _, _) =>
       val t = SemanticToken(SemanticTokenType.Enum, Nil, loc)
@@ -481,7 +481,7 @@ object SemanticTokensProvider {
     case Expr.Match(matchExp, rules, _, _, _) =>
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
-        case (acc, MatchRule(pat, guard, exp)) =>
+        case (acc, MatchRule(pat, guard, exp, loc)) =>
           acc ++ visitPat(pat) ++ guard.toList.flatMap(visitExp) ++ visitExp(exp)
       }
 

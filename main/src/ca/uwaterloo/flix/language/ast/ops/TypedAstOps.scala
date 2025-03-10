@@ -40,8 +40,8 @@ object TypedAstOps {
   def sigSymsOf(exp0: Expr): Set[Symbol.SigSym] = exp0 match {
     case Expr.Cst(_, _, _) => Set.empty
     case Expr.Var(_, _, _) => Set.empty
-    case Expr.Hole(_, _, _, _) => Set.empty
-    case Expr.HoleWithExp(exp, _, _, _) => sigSymsOf(exp)
+    case Expr.Hole(_, _, _, _, _) => Set.empty
+    case Expr.HoleWithExp(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.OpenAs(_, exp, _, _) => sigSymsOf(exp)
     case Expr.Use(_, _, exp, _) => sigSymsOf(exp)
     case Expr.Lambda(_, exp, _, _) => sigSymsOf(exp)
@@ -133,9 +133,9 @@ object TypedAstOps {
 
     case Expr.Var(sym, tpe, _) => Map(sym -> tpe)
 
-    case Expr.Hole(_, _, _, _) => Map.empty
+    case Expr.Hole(_, _, _, _, _) => Map.empty
 
-    case Expr.HoleWithExp(exp, _, _, _) =>
+    case Expr.HoleWithExp(exp, _, _, _, _) =>
       freeVars(exp)
 
     case Expr.OpenAs(_, exp, _, _) =>
@@ -195,7 +195,7 @@ object TypedAstOps {
 
     case Expr.Match(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, MatchRule(pat, guard, exp)) =>
+        case (acc, MatchRule(pat, guard, exp, loc)) =>
           acc ++ ((guard.map(freeVars).getOrElse(Map.empty) ++ freeVars(exp)) -- freeVars(pat).keys)
       }
 

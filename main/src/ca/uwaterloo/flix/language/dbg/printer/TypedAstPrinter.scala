@@ -29,8 +29,8 @@ object TypedAstPrinter {
   private def print(e: TypedAst.Expr): DocAst.Expr = e match {
     case Expr.Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Expr.Var(sym, _, _) => printVar(sym)
-    case Expr.Hole(sym, _, _, _) => DocAst.Expr.Hole(sym)
-    case Expr.HoleWithExp(exp, _, _, _) => DocAst.Expr.HoleWithExp(print(exp))
+    case Expr.Hole(sym, _, _, _, _) => DocAst.Expr.Hole(sym)
+    case Expr.HoleWithExp(exp, _, _, _, _) => DocAst.Expr.HoleWithExp(print(exp))
     case Expr.OpenAs(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Use(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Lambda(fparam, exp, _, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
@@ -130,7 +130,7 @@ object TypedAstPrinter {
     * Returns the [[DocAst]] representation of `rule`.
     */
   private def printMatchRule(rule: TypedAst.MatchRule): (DocAst.Expr, Option[DocAst.Expr], DocAst.Expr) = rule match {
-    case TypedAst.MatchRule(pat, guard, exp) => (printPattern(pat), guard.map(print), print(exp))
+    case TypedAst.MatchRule(pat, guard, exp, loc) => (printPattern(pat), guard.map(print), print(exp))
   }
 
   /**

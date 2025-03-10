@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
-import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{ParOps, Result}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -104,11 +103,11 @@ object Stratifier {
 
     case Expr.Var(_, _, _) => exp0
 
-    case Expr.Hole(_, _, _, _) => exp0
+    case Expr.Hole(_, _, _, _, _) => exp0
 
-    case Expr.HoleWithExp(exp, tpe, eff, loc) =>
+    case Expr.HoleWithExp(exp, env, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.HoleWithExp(e, tpe, eff, loc)
+      Expr.HoleWithExp(e, env, tpe, eff, loc)
 
     case Expr.OpenAs(sym, exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -431,10 +430,10 @@ object Stratifier {
   }
 
   private def visitMatchRule(rule: MatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): MatchRule = rule match {
-    case MatchRule(pat, exp1, exp2) =>
+    case MatchRule(pat, exp1, exp2, loc) =>
       val e1 = exp1.map(visitExp)
       val e2 = visitExp(exp2)
-      MatchRule(pat, e1, e2)
+      MatchRule(pat, e1, e2, loc)
   }
 
   private def visitTypeMatchRule(rule: TypeMatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): TypeMatchRule = rule match {
