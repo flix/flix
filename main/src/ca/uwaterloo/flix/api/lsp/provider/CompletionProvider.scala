@@ -121,6 +121,7 @@ object CompletionProvider {
     // Declarations.
     case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
     case SyntacticContext.Decl.Effect => KeywordCompleter.getEffectKeywords
+    case SyntacticContext.Decl.Instance => KeywordCompleter.getInstanceKeywords
     case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
     case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
     case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords

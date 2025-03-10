@@ -98,9 +98,9 @@ object PredDeps {
 
     case Expr.Var(_, _, _) => ()
 
-    case Expr.Hole(_, _, _, _) => ()
+    case Expr.Hole(_, _, _, _, _) => ()
 
-    case Expr.HoleWithExp(exp, _, _, _) =>
+    case Expr.HoleWithExp(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expr.OpenAs(_, exp, _, _) =>
@@ -159,7 +159,7 @@ object PredDeps {
 
     case Expr.Match(exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach { case MatchRule(_, g, b) =>
+      rules.foreach { case MatchRule(_, g, b, _) =>
           g.foreach(visitExp)
           visitExp(b)
       }

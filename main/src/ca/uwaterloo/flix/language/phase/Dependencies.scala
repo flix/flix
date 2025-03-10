@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.{ChangeSet, Scheme, SourceLocation, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern, RestrictableChoosePattern, Root}
-import ca.uwaterloo.flix.language.ast.shared.{DependencyGraph, EqualityConstraint, Input, SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.MultiMap
@@ -116,11 +116,11 @@ object Dependencies {
     case Expr.Var(_, tpe, _) =>
       visitType(tpe)
 
-    case Expr.Hole(_, tpe, eff, _) =>
+    case Expr.Hole(_, _, tpe, eff, _) =>
       visitType(tpe)
       visitType(eff)
 
-    case Expr.HoleWithExp(exp, tpe, eff, _) =>
+    case Expr.HoleWithExp(exp, _, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)

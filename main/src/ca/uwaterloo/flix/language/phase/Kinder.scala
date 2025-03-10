@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Kind.WildCaseSet
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, DefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, DefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
@@ -336,16 +336,16 @@ object Kinder {
     case ResolvedAst.Expr.Var(sym, loc) =>
       KindedAst.Expr.Var(sym, loc)
 
-    case ResolvedAst.Expr.Hole(sym, loc) =>
+    case ResolvedAst.Expr.Hole(sym, env, loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val evar = Type.freshEffSlackVar(loc.asSynthetic)
-      KindedAst.Expr.Hole(sym, tvar, evar, loc)
+      KindedAst.Expr.Hole(sym, env, tvar, evar, loc)
 
-    case ResolvedAst.Expr.HoleWithExp(exp0, loc) =>
+    case ResolvedAst.Expr.HoleWithExp(exp0, env, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, root)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val evar = Type.freshEffSlackVar(loc.asSynthetic)
-      KindedAst.Expr.HoleWithExp(exp, tvar, evar, loc)
+      KindedAst.Expr.HoleWithExp(exp, env, tvar, evar, loc)
 
     case ResolvedAst.Expr.OpenAs(symUse, exp0, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, root)
@@ -776,11 +776,11 @@ object Kinder {
     * Performs kinding on the given match rule under the given kind environment.
     */
   private def visitMatchRule(rule0: ResolvedAst.MatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.MatchRule = rule0 match {
-    case ResolvedAst.MatchRule(pat0, guard0, exp0) =>
+    case ResolvedAst.MatchRule(pat0, guard0, exp0, loc) =>
       val pat = visitPattern(pat0, kenv, root)
       val guard = guard0.map(visitExp(_, kenv, taenv, root))
       val exp = visitExp(exp0, kenv, taenv, root)
-      KindedAst.MatchRule(pat, guard, exp)
+      KindedAst.MatchRule(pat, guard, exp, loc)
   }
 
   /**

@@ -285,9 +285,9 @@ object Visitor {
     expr match {
       case Expr.Cst(_, _, _) => ()
       case Expr.Var(_, _, _) => ()
-      case Expr.Hole(_, _, _, _) => ()
+      case Expr.Hole(_, _, _, _, _) => ()
 
-      case Expr.HoleWithExp(exp, _, _, _) =>
+      case Expr.HoleWithExp(exp, _, _, _, _) =>
         visitExpr(exp)
 
       case Expr.OpenAs(_, _, _, _) => () // Not visited, unsupported feature.
@@ -658,10 +658,8 @@ object Visitor {
   }
 
   private def visitMatchRule(rule: MatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val MatchRule(pat, guard, exp) = rule
-    // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since MatchRules don't have locations
-    val insideRule = a.accept(pat.loc) || guard.map(_.loc).exists(a.accept) || a.accept(exp.loc)
-    if (!insideRule) { return }
+    val MatchRule(pat, guard, exp, loc) = rule
+    if (!a.accept(loc)) { return }
 
     c.consumeMatchRule(rule)
 

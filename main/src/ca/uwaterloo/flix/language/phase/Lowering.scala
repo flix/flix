@@ -350,11 +350,11 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Var(sym, t, loc)
 
-    case TypedAst.Expr.Hole(sym, tpe, eff, loc) =>
+    case TypedAst.Expr.Hole(sym, env, tpe, eff, loc) =>
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, eff, loc)
 
-    case TypedAst.Expr.HoleWithExp(_, tpe, _, loc) =>
+    case TypedAst.Expr.HoleWithExp(_, env, tpe, _, loc) =>
       val sym = Symbol.freshHoleSym(loc)
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, Type.Pure, loc)
@@ -994,7 +994,7 @@ object Lowering {
     * Lowers the given match rule `rule0`.
     */
   private def visitMatchRule(rule0: TypedAst.MatchRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.MatchRule = rule0 match {
-    case TypedAst.MatchRule(pat, guard, exp) =>
+    case TypedAst.MatchRule(pat, guard, exp, loc) =>
       val p = visitPat(pat)
       val g = guard.map(visitExp)
       val e = visitExp(exp)

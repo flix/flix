@@ -832,12 +832,12 @@ object Resolver {
         case None => Symbol.freshHoleSym(loc)
         case Some(name) => Symbol.mkHoleSym(ns0, name)
       }
-      Validation.Success(ResolvedAst.Expr.Hole(sym, loc))
+      Validation.Success(ResolvedAst.Expr.Hole(sym, env0, loc))
 
     case NamedAst.Expr.HoleWithExp(exp, loc) =>
       val eVal = resolveExp(exp, env0)
       mapN(eVal) {
-        case e => ResolvedAst.Expr.HoleWithExp(e, loc)
+        case e => ResolvedAst.Expr.HoleWithExp(e, env0, loc)
       }
 
     case NamedAst.Expr.Use(use, exp, loc) =>
@@ -989,13 +989,13 @@ object Resolver {
 
     case NamedAst.Expr.Match(exp, rules, loc) =>
       val rulesVal = traverse(rules) {
-        case NamedAst.MatchRule(pat, guard, body) =>
+        case NamedAst.MatchRule(pat, guard, body, loc) =>
           val p = resolvePattern(pat, env0, ns0, root)
           val env = env0 ++ mkPatternEnv(p)
           val gVal = traverseOpt(guard)(resolveExp(_, env))
           val bVal = resolveExp(body, env)
           mapN(gVal, bVal) {
-            case (g, b) => ResolvedAst.MatchRule(p, g, b)
+            case (g, b) => ResolvedAst.MatchRule(p, g, b, loc)
           }
       }
 
@@ -3273,7 +3273,7 @@ object Resolver {
     * Returns the class reflection object for the given `className`.
     */
   private def lookupJvmClass2(className: Name.Ident, ns0: Name.NName, env0: LocalScope, loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError] = {
-    lookupJvmClass(className.name, ns0, loc) match {
+    lookupJvmClass(className.name, ns0, className.loc) match {
       case Result.Ok(clazz) => Result.Ok(clazz)
       case Result.Err(e) => env0.get(className.name) match {
         case List(Resolution.JavaClass(clazz)) => Result.Ok(clazz)
@@ -3356,7 +3356,7 @@ object Resolver {
     }
 
     case NamedAst.UseOrImport.Import(name, alias, loc) =>
-      val clazzVal = lookupJvmClass(name.toString, ns, loc).toValidation
+      val clazzVal = lookupJvmClass(name.toString, ns, name.loc).toValidation
       mapN(clazzVal) {
         case clazz => UseOrImport.Import(clazz, alias, loc)
       }
