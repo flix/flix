@@ -18,6 +18,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType.*
@@ -893,7 +894,7 @@ object Resolver {
         case ResolvedQName.Var(_) => visitApplyClo(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = false, env0, innerLoc, outerLoc)
-        case ResolvedQName.Error(error) => Validation.Success(ResolvedAst.Expr.Error(error))
+        case ResolvedQName.Error(m) => visitApplyError(m, exps, env0, outerLoc)
       }
 
     case app@NamedAst.Expr.Apply(NamedAst.Expr.Open(qname, innerLoc), exps, outerLoc) =>
@@ -1532,6 +1533,20 @@ object Resolver {
             case (acc, a) => ResolvedAst.Expr.ApplyClo(acc, a, loc.asSynthetic)
           }
       }
+  }
+
+  /**
+    * Resolves the exps and creates an ApplyClo node applying an error node to the exps.
+    */
+  private def visitApplyError(err: CompilationMessage, exps: List[NamedAst.Expr], env0: LocalScope, loc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
+    val expsVal = traverse(exps)(resolveExp(_, env0))
+    val exp: ResolvedAst.Expr = ResolvedAst.Expr.Error(err)
+    mapN(expsVal) {
+      case es =>
+        es.foldLeft(exp) {
+          case (acc, a) => ResolvedAst.Expr.ApplyClo(acc, a, loc.asSynthetic)
+        }
+    }
   }
 
   /**
@@ -2812,7 +2827,7 @@ object Resolver {
     }
 
     effOpt match {
-      case None => Result.Err(ResolutionError.UndefinedEffect(qname, AnchorPosition.mkImportOrUseAnchor(ns0), env, ns0,  qname.loc))
+      case None => Result.Err(ResolutionError.UndefinedEffect(qname, AnchorPosition.mkImportOrUseAnchor(ns0), env, ns0, qname.loc))
       case Some(decl) => Result.Ok(decl)
     }
   }
