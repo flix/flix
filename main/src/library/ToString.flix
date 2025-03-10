@@ -64,7 +64,7 @@ instance ToString[Int16] {
 }
 
 instance ToString[Int32] {
-    pub def toString(x: Int32): String = unsafe Integer.toString(x)
+    pub def toString(x: Int32): String = Integer.toString(x)
 }
 
 instance ToString[Int64] {

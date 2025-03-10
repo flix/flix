@@ -62,7 +62,7 @@ mod Debug {
             case y: Int16 =>
                 Short.toString(y) + "i16"
             case y: Int32 =>
-                unsafe Integer.toString(y)
+                Integer.toString(y)
             case y: Int64 =>
                 unsafe Long.toString(y) + "i64"
             case y: BigInt =>
