@@ -169,7 +169,7 @@ sealed trait Completion {
     case Completion.DefCompletion(decl, range, ap, qualified, inScope) =>
       val qualifiedName = decl.sym.toString
       val label = if (qualified) qualifiedName else decl.sym.name
-      val snippet = CompletionUtils.getApplySnippet(label, decl.spec.fparams)(context)
+      val snippet = CompletionUtils.getApplySnippet(label, decl.spec.fparams)
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
@@ -352,9 +352,9 @@ sealed trait Completion {
         op.sym.toString
       val name = if (qualified) qualifiedName else op.sym.name
       val snippet = if (isHandler)
-          CompletionUtils.getOpHandlerSnippet(name, op.spec.fparams)(context)
+          CompletionUtils.getOpHandlerSnippet(name, op.spec.fparams)
         else
-          CompletionUtils.getApplySnippet(name, op.spec.fparams)(context)
+          CompletionUtils.getApplySnippet(name, op.spec.fparams)
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
@@ -379,7 +379,7 @@ sealed trait Completion {
       else
         sig.sym.toString
       val name = if (qualified) qualifiedName else sig.sym.name
-      val snippet = CompletionUtils.getApplySnippet(name, sig.spec.fparams)(context)
+      val snippet = CompletionUtils.getApplySnippet(name, sig.spec.fparams)
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
