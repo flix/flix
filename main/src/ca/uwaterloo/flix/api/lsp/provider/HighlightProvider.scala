@@ -195,9 +195,9 @@ object HighlightProvider {
     case TypedAst.FormalParam(_, _, _, _, loc) => loc.isReal
     case TypedAst.PredicateParam(_, _, loc) => loc.isReal
     case TypedAst.JvmMethod(_, _, _, _, _, loc) => loc.isReal
-    case TypedAst.CatchRule(_, _, _) => true
+    case TypedAst.CatchRule(_, _, _, _) => true
     case TypedAst.HandlerRule(_, _, _, _) => true
-    case TypedAst.TypeMatchRule(_, _, _) => true
+    case TypedAst.TypeMatchRule(_, _, _, _) => true
     case TypedAst.SelectChannelRule(_, _, _, _) => true
     case TypedAst.TypeParam(_, _, loc) => loc.isReal
     case TypedAst.ParYieldFragment(_, _, loc) => loc.isReal

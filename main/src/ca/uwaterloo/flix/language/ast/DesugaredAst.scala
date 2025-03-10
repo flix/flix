@@ -377,7 +377,7 @@ object DesugaredAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 
-  case class CatchRule(ident: Name.Ident, className: Name.Ident, exp: Expr)
+  case class CatchRule(ident: Name.Ident, className: Name.Ident, exp: Expr, loc: SourceLocation)
 
   case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 
@@ -391,7 +391,7 @@ object DesugaredAst {
 
   case class MatchRule(pat: Pattern, exp1: Option[Expr], exp2: Expr)
 
-  case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr)
+  case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr, loc: SourceLocation)
 
   case class SelectChannelRule(ident: Name.Ident, exp1: Expr, exp2: Expr, loc: SourceLocation)
 

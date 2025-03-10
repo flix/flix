@@ -438,9 +438,9 @@ object Stratifier {
   }
 
   private def visitTypeMatchRule(rule: TypeMatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): TypeMatchRule = rule match {
-    case TypeMatchRule(sym, t, exp1) =>
+    case TypeMatchRule(sym, t, exp1, loc) =>
       val e1 = visitExp(exp1)
-      TypeMatchRule(sym, t, e1)
+      TypeMatchRule(sym, t, e1, loc)
   }
 
   private def visitRestrictableChooseRule(rule: RestrictableChooseRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): RestrictableChooseRule = rule match {
@@ -450,9 +450,9 @@ object Stratifier {
   }
 
   private def visitTryCatchRule(rule: CatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): CatchRule = rule match {
-    case CatchRule(sym, clazz, exp1) =>
+    case CatchRule(sym, clazz, exp1, loc) =>
       val e1 = visitExp(exp1)
-      CatchRule(sym, clazz, e1)
+      CatchRule(sym, clazz, e1, loc)
   }
 
   private def visitRunWithRule(rule: HandlerRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): HandlerRule = rule match {

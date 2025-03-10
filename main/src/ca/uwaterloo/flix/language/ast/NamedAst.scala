@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
 
+
 object NamedAst {
 
   case class Root(symbols: Map[Name.NName, Map[String, List[Declaration]]],
@@ -386,7 +387,7 @@ object NamedAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, className: Name.Ident, exp: Expr)
+  case class CatchRule(sym: Symbol.VarSym, className: Name.Ident, exp: Expr, loc: SourceLocation)
 
   case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 
@@ -394,7 +395,7 @@ object NamedAst {
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
 
-  case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr)
+  case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr, loc: SourceLocation)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr, loc: SourceLocation)
 
