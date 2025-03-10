@@ -17,8 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, CompletionItemLabelDetails, InsertTextFormat, Position, Range, TextEdit}
-import ca.uwaterloo.flix.language.ast.Symbol.ModuleSym
-import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, TraitUsageKind}
+import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
 
@@ -146,12 +145,15 @@ sealed trait Completion {
           kind     = CompletionItemKind.Enum
         )
 
-    case Completion.LocalJavaClassCompletion(name) =>
+    case Completion.LocalJavaClassCompletion(name, clazz) =>
+      val description = Option(clazz.getCanonicalName)
+      val labelDetails = CompletionItemLabelDetails(None, description)
       CompletionItem(
-        label    = name,
-        sortText = Priority.toSortText(Priority.High, name),
-        textEdit = TextEdit(context.range, name),
-        kind     = CompletionItemKind.Class
+        label         = name,
+        labelDetails  = Some(labelDetails),
+        sortText      = Priority.toSortText(Priority.High, name),
+        textEdit      = TextEdit(context.range, name),
+        kind          = CompletionItemKind.Class
       )
 
     case Completion.LocalDefCompletion(sym, fparams) =>
@@ -633,9 +635,10 @@ object Completion {
   /**
     * Represents a Java Class completion
     *
-    * @param name the name of the java class to complete.
+    * @param name  the name of the java class to complete.
+    * @param clazz the java class to complete.
     */
-  case class LocalJavaClassCompletion(name: String) extends Completion
+  case class LocalJavaClassCompletion(name: String, clazz: Class[?]) extends Completion
 
   /**
     * Represents a local def completion
