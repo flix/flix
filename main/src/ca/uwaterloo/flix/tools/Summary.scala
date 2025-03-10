@@ -188,8 +188,8 @@ object Summary {
   private def countCheckedEcasts(expr: TypedAst.Expr): Int = expr match {
     case Expr.Cst(_, _, _) => 0
     case Expr.Var(_, _, _) => 0
-    case Expr.Hole(_, _, _, _) => 0
-    case Expr.HoleWithExp(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.Hole(_, _, _, _, _) => 0
+    case Expr.HoleWithExp(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.OpenAs(_, exp, _, _) => countCheckedEcasts(exp)
     case Expr.Use(_, _, exp, _) => countCheckedEcasts(exp)
     case Expr.Lambda(_, exp, _, _) => countCheckedEcasts(exp)
@@ -210,7 +210,7 @@ object Summary {
       case TypedAst.MatchRule(_, guard, exp) => guard.map(countCheckedEcasts).sum + countCheckedEcasts(exp)
     }.sum
     case Expr.TypeMatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
-      case TypedAst.TypeMatchRule(_, _, exp) => countCheckedEcasts(exp)
+      case TypedAst.TypeMatchRule(_, _, exp, _) => countCheckedEcasts(exp)
     }.sum
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.RestrictableChooseRule(_, exp) => countCheckedEcasts(exp)
@@ -242,7 +242,7 @@ object Summary {
     case Expr.Unsafe(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.Without(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.TryCatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
-      case TypedAst.CatchRule(_, _, exp) => countCheckedEcasts(exp)
+      case TypedAst.CatchRule(_, _, exp, _) => countCheckedEcasts(exp)
     }.sum
     case Expr.Throw(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.Handler(_, rules, _, _, _, _, _) => rules.map {

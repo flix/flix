@@ -40,8 +40,8 @@ object TypedAstOps {
   def sigSymsOf(exp0: Expr): Set[Symbol.SigSym] = exp0 match {
     case Expr.Cst(_, _, _) => Set.empty
     case Expr.Var(_, _, _) => Set.empty
-    case Expr.Hole(_, _, _, _) => Set.empty
-    case Expr.HoleWithExp(exp, _, _, _) => sigSymsOf(exp)
+    case Expr.Hole(_, _, _, _, _) => Set.empty
+    case Expr.HoleWithExp(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.OpenAs(_, exp, _, _) => sigSymsOf(exp)
     case Expr.Use(_, _, exp, _) => sigSymsOf(exp)
     case Expr.Lambda(_, exp, _, _) => sigSymsOf(exp)
@@ -133,9 +133,9 @@ object TypedAstOps {
 
     case Expr.Var(sym, tpe, _) => Map(sym -> tpe)
 
-    case Expr.Hole(_, _, _, _) => Map.empty
+    case Expr.Hole(_, _, _, _, _) => Map.empty
 
-    case Expr.HoleWithExp(exp, _, _, _) =>
+    case Expr.HoleWithExp(exp, _, _, _, _) =>
       freeVars(exp)
 
     case Expr.OpenAs(_, exp, _, _) =>
@@ -201,7 +201,7 @@ object TypedAstOps {
 
     case Expr.TypeMatch(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, TypeMatchRule(bnd, _, exp)) => acc ++ (freeVars(exp) - bnd.sym)
+        case (acc, TypeMatchRule(bnd, _, exp, loc)) => acc ++ (freeVars(exp) - bnd.sym)
       }
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
@@ -292,7 +292,7 @@ object TypedAstOps {
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, CatchRule(bnd, _, exp)) => acc ++ freeVars(exp) - bnd.sym
+        case (acc, CatchRule(bnd, _, exp, _)) => acc ++ freeVars(exp) - bnd.sym
       }
 
     case Expr.Throw(exp, _, _, _) => freeVars(exp)

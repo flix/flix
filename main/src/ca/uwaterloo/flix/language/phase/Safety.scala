@@ -80,10 +80,10 @@ object Safety {
     case Expr.Var(_, _, _) =>
       ()
 
-    case Expr.Hole(_, _, _, _) =>
+    case Expr.Hole(_, _, _, _, _) =>
       ()
 
-    case Expr.HoleWithExp(exp, _, _, _) =>
+    case Expr.HoleWithExp(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expr.OpenAs(_, exp, _, _) =>
@@ -154,7 +154,7 @@ object Safety {
       // check whether the last case in the type match looks like `..: _`
       rules.lastOption match {
         // Use top scope since the rigidity check only cares if it's a syntactically known variable
-        case Some(TypeMatchRule(_, Type.Var(sym, _), _)) if renv.isFlexible(sym)(Scope.Top) =>
+        case Some(TypeMatchRule(_, Type.Var(sym, _), _, _)) if renv.isFlexible(sym)(Scope.Top) =>
           ()
         case Some(_) | None =>
           sctx.errors.add(SafetyError.MissingDefaultTypeMatchCase(exp.loc))
@@ -258,7 +258,7 @@ object Safety {
         sctx.errors.add(IllegalNestedTryCatch(loc))
       }
       visitExp(exp)(inTryCatch = true, renv, sctx, flix)
-      rules.foreach { case CatchRule(bnd, clazz, e) =>
+      rules.foreach { case CatchRule(bnd, clazz, e, loc) =>
         checkCatchClass(clazz, bnd.sym.loc)
         visitExp(e)
       }

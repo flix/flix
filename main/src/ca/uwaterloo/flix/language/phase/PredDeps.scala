@@ -98,9 +98,9 @@ object PredDeps {
 
     case Expr.Var(_, _, _) => ()
 
-    case Expr.Hole(_, _, _, _) => ()
+    case Expr.Hole(_, _, _, _, _) => ()
 
-    case Expr.HoleWithExp(exp, _, _, _) =>
+    case Expr.HoleWithExp(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expr.OpenAs(_, exp, _, _) =>
@@ -166,7 +166,7 @@ object PredDeps {
 
     case Expr.TypeMatch(exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach { case TypeMatchRule(_, _, b) => visitExp(b) }
+      rules.foreach { case TypeMatchRule(_, _, b, _) => visitExp(b) }
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
@@ -251,7 +251,7 @@ object PredDeps {
       visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
-      rules.foreach{ case CatchRule(_, _, e) => visitExp(e) }
+      rules.foreach{ case CatchRule(_, _, e, _) => visitExp(e) }
 
     case Expr.Throw(exp, _, _, _) =>
       visitExp(exp)

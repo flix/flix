@@ -18,11 +18,10 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.*
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
-import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
+import ca.uwaterloo.flix.language.phase.unification.EqualityEnv
 import ca.uwaterloo.flix.util.*
-import ca.uwaterloo.flix.util.collection.ListMap
 
 /**
   * Performs a re-checking of the effects in the program.
@@ -78,8 +77,8 @@ object EffectVerifier {
   def visitExp(e: Expr)(implicit eqEnv: EqualityEnv, flix: Flix): Unit = e match {
     case Expr.Cst(cst, tpe, loc) => ()
     case Expr.Var(sym, tpe, loc) => ()
-    case Expr.Hole(sym, tpe, eff, loc) => ()
-    case Expr.HoleWithExp(exp, tpe, eff, loc) =>
+    case Expr.Hole(sym, env, tpe, eff, loc) => ()
+    case Expr.HoleWithExp(exp, env, tpe, eff, loc) =>
       visitExp(exp)
     // TODO ?
     case Expr.OpenAs(symUse, exp, tpe, loc) =>

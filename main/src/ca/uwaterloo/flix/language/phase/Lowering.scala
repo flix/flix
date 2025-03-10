@@ -350,11 +350,11 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Var(sym, t, loc)
 
-    case TypedAst.Expr.Hole(sym, tpe, eff, loc) =>
+    case TypedAst.Expr.Hole(sym, env, tpe, eff, loc) =>
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, eff, loc)
 
-    case TypedAst.Expr.HoleWithExp(_, tpe, _, loc) =>
+    case TypedAst.Expr.HoleWithExp(_, env, tpe, _, loc) =>
       val sym = Symbol.freshHoleSym(loc)
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, Type.Pure, loc)
@@ -975,7 +975,7 @@ object Lowering {
     * Lowers the given catch rule `rule0`.
     */
   private def visitCatchRule(rule0: TypedAst.CatchRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.CatchRule = rule0 match {
-    case TypedAst.CatchRule(bnd, clazz, exp) =>
+    case TypedAst.CatchRule(bnd, clazz, exp, loc) =>
       val e = visitExp(exp)
       LoweredAst.CatchRule(bnd.sym, clazz, e)
   }
@@ -1005,7 +1005,7 @@ object Lowering {
     * Lowers the given match rule `rule0`.
     */
   private def visitTypeMatchRule(rule0: TypedAst.TypeMatchRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.TypeMatchRule = rule0 match {
-    case TypedAst.TypeMatchRule(bnd, tpe, exp) =>
+    case TypedAst.TypeMatchRule(bnd, tpe, exp, loc) =>
       val e = visitExp(exp)
       LoweredAst.TypeMatchRule(bnd.sym, tpe, e)
   }
