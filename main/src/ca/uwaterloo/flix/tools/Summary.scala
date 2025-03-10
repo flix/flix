@@ -188,8 +188,8 @@ object Summary {
   private def countCheckedEcasts(expr: TypedAst.Expr): Int = expr match {
     case Expr.Cst(_, _, _) => 0
     case Expr.Var(_, _, _) => 0
-    case Expr.Hole(_, _, _, _) => 0
-    case Expr.HoleWithExp(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.Hole(_, _, _, _, _) => 0
+    case Expr.HoleWithExp(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.OpenAs(_, exp, _, _) => countCheckedEcasts(exp)
     case Expr.Use(_, _, exp, _) => countCheckedEcasts(exp)
     case Expr.Lambda(_, exp, _, _) => countCheckedEcasts(exp)

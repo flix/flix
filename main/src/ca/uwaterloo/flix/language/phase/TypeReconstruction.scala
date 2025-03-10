@@ -16,9 +16,9 @@
  */
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant}
-import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
 
@@ -90,12 +90,12 @@ object TypeReconstruction {
     case KindedAst.Expr.Var(sym, loc) =>
       TypedAst.Expr.Var(sym, subst(sym.tvar), loc)
 
-    case KindedAst.Expr.Hole(sym, tpe, evar, loc) =>
-      TypedAst.Expr.Hole(sym, subst(tpe), subst(evar), loc)
+    case KindedAst.Expr.Hole(sym, env, tpe, evar, loc) =>
+      TypedAst.Expr.Hole(sym, env, subst(tpe), subst(evar), loc)
 
-    case KindedAst.Expr.HoleWithExp(exp, tvar, evar, loc) =>
+    case KindedAst.Expr.HoleWithExp(exp, env, tvar, evar, loc) =>
       val e = visitExp(exp)
-      TypedAst.Expr.HoleWithExp(e, subst(tvar), subst(evar), loc)
+      TypedAst.Expr.HoleWithExp(e, env, subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.OpenAs(symUse, exp, tvar, loc) =>
       val e = visitExp(exp)

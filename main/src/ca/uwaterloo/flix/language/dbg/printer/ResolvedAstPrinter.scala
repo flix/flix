@@ -44,8 +44,8 @@ object ResolvedAstPrinter {
   /** Returns the [[DocAst.Expr]] representation of `exp`. */
   private def print(exp: ResolvedAst.Expr): DocAst.Expr = exp match {
     case Expr.Var(sym, _) => printVarSym(sym)
-    case Expr.Hole(sym, _) => DocAst.Expr.Hole(sym)
-    case Expr.HoleWithExp(exp, _) => DocAst.Expr.HoleWithExp(print(exp))
+    case Expr.Hole(sym, _, _) => DocAst.Expr.Hole(sym)
+    case Expr.HoleWithExp(exp, _, _) => DocAst.Expr.HoleWithExp(print(exp))
     case Expr.OpenAs(_, _, _) => DocAst.Expr.Unknown
     case Expr.Use(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Cst(cst, _) => ConstantPrinter.print(cst)

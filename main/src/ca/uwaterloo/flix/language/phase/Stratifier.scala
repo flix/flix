@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
-import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{ParOps, Result}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -104,11 +103,11 @@ object Stratifier {
 
     case Expr.Var(_, _, _) => exp0
 
-    case Expr.Hole(_, _, _, _) => exp0
+    case Expr.Hole(_, _, _, _, _) => exp0
 
-    case Expr.HoleWithExp(exp, tpe, eff, loc) =>
+    case Expr.HoleWithExp(exp, env, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.HoleWithExp(e, tpe, eff, loc)
+      Expr.HoleWithExp(e, env, tpe, eff, loc)
 
     case Expr.OpenAs(sym, exp, tpe, loc) =>
       val e = visitExp(exp)

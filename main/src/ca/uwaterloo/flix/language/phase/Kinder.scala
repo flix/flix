@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Kind.WildCaseSet
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, DefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, DefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
@@ -336,16 +336,16 @@ object Kinder {
     case ResolvedAst.Expr.Var(sym, loc) =>
       KindedAst.Expr.Var(sym, loc)
 
-    case ResolvedAst.Expr.Hole(sym, loc) =>
+    case ResolvedAst.Expr.Hole(sym, env, loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val evar = Type.freshEffSlackVar(loc.asSynthetic)
-      KindedAst.Expr.Hole(sym, tvar, evar, loc)
+      KindedAst.Expr.Hole(sym, env, tvar, evar, loc)
 
-    case ResolvedAst.Expr.HoleWithExp(exp0, loc) =>
+    case ResolvedAst.Expr.HoleWithExp(exp0, env, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, root)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val evar = Type.freshEffSlackVar(loc.asSynthetic)
-      KindedAst.Expr.HoleWithExp(exp, tvar, evar, loc)
+      KindedAst.Expr.HoleWithExp(exp, env, tvar, evar, loc)
 
     case ResolvedAst.Expr.OpenAs(symUse, exp0, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, root)
