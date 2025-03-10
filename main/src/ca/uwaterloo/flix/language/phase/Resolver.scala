@@ -3273,7 +3273,7 @@ object Resolver {
     * Returns the class reflection object for the given `className`.
     */
   private def lookupJvmClass2(className: Name.Ident, ns0: Name.NName, env0: LocalScope, loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError] = {
-    lookupJvmClass(className.name, ns0, loc) match {
+    lookupJvmClass(className.name, ns0, className.loc) match {
       case Result.Ok(clazz) => Result.Ok(clazz)
       case Result.Err(e) => env0.get(className.name) match {
         case List(Resolution.JavaClass(clazz)) => Result.Ok(clazz)
@@ -3356,7 +3356,7 @@ object Resolver {
     }
 
     case NamedAst.UseOrImport.Import(name, alias, loc) =>
-      val clazzVal = lookupJvmClass(name.toString, ns, loc).toValidation
+      val clazzVal = lookupJvmClass(name.toString, ns, name.loc).toValidation
       mapN(clazzVal) {
         case clazz => UseOrImport.Import(clazz, alias, loc)
       }
