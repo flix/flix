@@ -3110,19 +3110,12 @@ object Weeder2 {
   }
 
   private def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
-    val idents = pickQNameIdents(tree)
-    mapN(idents) {
-      idents => Name.JavaName(idents, tree.loc)
+    mapN(pick(TreeKind.QName, tree)){
+      qname => Name.JavaName(pickAll(TreeKind.Ident, qname).flatMap(text), qname.loc)
     }
   }
 
-  private def pickQNameIdents(tree: Tree): Validation[List[String], CompilationMessage] = {
-    flatMapN(pick(TreeKind.QName, tree)) {
-      qname => mapN(traverse(pickAll(TreeKind.Ident, qname))(t => Validation.Success(text(t))))(_.flatten)
-    }
-  }
-
-  ////////////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////
   /// HELPERS ////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////
 
