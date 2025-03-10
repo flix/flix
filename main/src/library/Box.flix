@@ -66,8 +66,8 @@ instance Box[Float64] {
 
 instance Box[Int8] {
     type Boxed = Byte
-    pub def box(x: Int8): Byte = unsafe Byte.valueOf(x)
-    pub def unbox(x: Byte): Int8 = unsafe x.byteValue()
+    pub def box(x: Int8): Byte = Byte.valueOf(x)
+    pub def unbox(x: Byte): Int8 = x.byteValue()
 }
 
 instance Box[Int16] {

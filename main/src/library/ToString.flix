@@ -56,7 +56,7 @@ instance ToString[Float64] {
 }
 
 instance ToString[Int8] {
-    pub def toString(x: Int8): String = unsafe Byte.toString(x)
+    pub def toString(x: Int8): String = Byte.toString(x)
 }
 
 instance ToString[Int16] {
