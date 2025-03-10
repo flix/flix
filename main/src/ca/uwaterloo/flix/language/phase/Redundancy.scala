@@ -473,7 +473,7 @@ object Redundancy {
 
       // Visit each match rule.
       val usedRules = rules map {
-        case MatchRule(pat, guard, body) =>
+        case MatchRule(pat, guard, body, loc) =>
           // Compute the free variables in the pattern.
           val fvs = freeVars(pat)
 

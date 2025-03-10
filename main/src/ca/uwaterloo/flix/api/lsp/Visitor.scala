@@ -658,10 +658,8 @@ object Visitor {
   }
 
   private def visitMatchRule(rule: MatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val MatchRule(pat, guard, exp) = rule
-    // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since MatchRules don't have locations
-    val insideRule = a.accept(pat.loc) || guard.map(_.loc).exists(a.accept) || a.accept(exp.loc)
-    if (!insideRule) { return }
+    val MatchRule(pat, guard, exp, loc) = rule
+    if (!a.accept(loc)) { return }
 
     c.consumeMatchRule(rule)
 

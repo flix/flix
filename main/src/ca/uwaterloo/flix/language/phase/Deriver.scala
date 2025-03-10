@@ -153,7 +153,7 @@ object Deriver {
 
       // create a default rule
       // `case _ => false`
-      val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), None, KindedAst.Expr.Cst(Constant.Bool(false), loc))
+      val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), None, KindedAst.Expr.Cst(Constant.Bool(false), loc), loc)
 
       // group the match rules in an expression
       KindedAst.Expr.Match(
@@ -231,7 +231,7 @@ object Deriver {
         }
       }
 
-      KindedAst.MatchRule(pat, None, exp)
+      KindedAst.MatchRule(pat, None, exp, loc)
   }
 
   /**
@@ -342,7 +342,8 @@ object Deriver {
           Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Eff, loc),
           loc
-        )
+        ),
+        loc
       )
 
       // Wrap the cases in a match expression
@@ -395,7 +396,7 @@ object Deriver {
       val pats = tpes.map(_ => KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc))
       val pat = KindedAst.Pattern.Tag(CaseSymUse(sym, loc), pats, Type.freshVar(Kind.Star, loc), loc)
       val exp = KindedAst.Expr.Cst(Constant.Int32(index), loc)
-      KindedAst.MatchRule(pat, None, exp)
+      KindedAst.MatchRule(pat, None, exp, loc)
   }
 
   /**
@@ -458,7 +459,7 @@ object Deriver {
         case cmps => cmps.reduceRight(thenCompare)
       }
 
-      KindedAst.MatchRule(pat, None, exp)
+      KindedAst.MatchRule(pat, None, exp, loc)
   }
 
   /**
@@ -595,7 +596,7 @@ object Deriver {
         case exps => concatAll(tagPart :: mkStrExpr("(", loc) :: (exps :+ mkStrExpr(")", loc)), loc)
       }
 
-      KindedAst.MatchRule(pat, None, exp)
+      KindedAst.MatchRule(pat, None, exp, loc)
   }
 
   /**
@@ -729,7 +730,7 @@ object Deriver {
           )
       }
 
-      KindedAst.MatchRule(pat, None, exp)
+      KindedAst.MatchRule(pat, None, exp, loc)
   }
 
   /**
@@ -857,7 +858,7 @@ object Deriver {
         case xs@(_ :: _ :: _) => KindedAst.Expr.Tuple(xs, loc)
       }
 
-      KindedAst.MatchRule(pat, None, exp)
+      KindedAst.MatchRule(pat, None, exp, loc)
   }
 
   /**

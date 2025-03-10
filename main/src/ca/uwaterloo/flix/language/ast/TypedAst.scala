@@ -377,7 +377,7 @@ object TypedAst {
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
-  case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
+  case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr, loc: SourceLocation)
 
   case class TypeMatchRule(bnd: Binder, tpe: Type, exp: Expr, loc: SourceLocation)
 

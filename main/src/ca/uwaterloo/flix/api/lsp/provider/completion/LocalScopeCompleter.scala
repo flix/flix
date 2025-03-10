@@ -16,9 +16,8 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{AssocTypeDef, AssocTypeSig, StructField}
-import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.ast.shared.Resolution
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.errors.ResolutionError
 
 /**
   * Provides completions for items in local scope, including:
@@ -32,8 +31,8 @@ object LocalScopeCompleter {
     * Returns a list of completions for UndefinedName.
     * We will provide all sorts of completions except for Resolution.TypeVar
     */
-  def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] =
-   err.env.env.m.foldLeft((List.empty[Completion])){case (acc, (name, resolutions)) =>
+  def getCompletions(err: ResolutionError.UndefinedName): Iterable[Completion] =
+   err.env.env.m.foldLeft(List.empty[Completion]){case (acc, (name, resolutions)) =>
       acc ++ mkDeclarationCompletionForExpr(name, resolutions) ++ mkJavaClassCompletion(name, resolutions) ++
         mkVarCompletion(name, resolutions) ++ mkLocalDefCompletion(resolutions)
    }
@@ -43,7 +42,7 @@ object LocalScopeCompleter {
     * We will provide completions for Resolution.Declaration and Resolution.JavaClass
     */
   def getCompletions(err: ResolutionError.UndefinedType): Iterable[Completion] =
-    err.env.env.m.foldLeft((List.empty[Completion])){case (acc, (name, resolutions)) =>
+    err.env.env.m.foldLeft(List.empty[Completion]){case (acc, (name, resolutions)) =>
        acc ++ mkDeclarationCompletionForType(name, resolutions) ++ mkJavaClassCompletion(name, resolutions)
     }
 
@@ -67,11 +66,11 @@ object LocalScopeCompleter {
   /**
     * Tries to create a JavaClassCompletion for the given name and resolutions.
     */
-  private def mkJavaClassCompletion(name: String, resolutions: List[Resolution]): Iterable[Completion] =
-    if (resolutions.exists{
-      case Resolution.JavaClass(_) => true
-      case _ => false
-    }) Completion.LocalJavaClassCompletion(name) :: Nil else Nil
+  private def mkJavaClassCompletion(name: String, resolutions: List[Resolution]): Iterable[Completion] = {
+    resolutions.collect {
+      case Resolution.JavaClass(clazz) => Completion.LocalJavaClassCompletion(name, clazz)
+    }
+  }
 
   /**
     * Tries to create a VarCompletion for the given name and resolutions.
