@@ -776,11 +776,11 @@ object Kinder {
     * Performs kinding on the given match rule under the given kind environment.
     */
   private def visitMatchRule(rule0: ResolvedAst.MatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.MatchRule = rule0 match {
-    case ResolvedAst.MatchRule(pat0, guard0, exp0) =>
+    case ResolvedAst.MatchRule(pat0, guard0, exp0, loc) =>
       val pat = visitPattern(pat0, kenv, root)
       val guard = guard0.map(visitExp(_, kenv, taenv, root))
       val exp = visitExp(exp0, kenv, taenv, root)
-      KindedAst.MatchRule(pat, guard, exp)
+      KindedAst.MatchRule(pat, guard, exp, loc)
   }
 
   /**

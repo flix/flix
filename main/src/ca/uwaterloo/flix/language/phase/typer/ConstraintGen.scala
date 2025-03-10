@@ -1037,7 +1037,7 @@ object ConstraintGen {
     * Returns the pattern type, the body's type, and the body's effect
     */
   private def visitMatchRule(rule: KindedAst.MatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type, Type) = rule match {
-    case KindedAst.MatchRule(pat, guard, exp) =>
+    case KindedAst.MatchRule(pat, guard, exp, _) =>
       val patTpe = visitPattern(pat)
       guard.foreach {
         g =>
