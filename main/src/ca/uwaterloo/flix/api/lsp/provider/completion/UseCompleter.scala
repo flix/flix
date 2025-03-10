@@ -15,9 +15,9 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.{CompletionItemKind, Range}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.UseCompletion
 import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.fuzzyMatch
+import ca.uwaterloo.flix.api.lsp.{CompletionItemKind, Range}
 import ca.uwaterloo.flix.language.ast.{Name, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.{ResolutionError, WeederError}
 
@@ -39,11 +39,12 @@ object UseCompleter {
     val ident = qn.ident.name
     val moduleSym = Symbol.mkModuleSym(namespace)
     root.modules.get(moduleSym).collect{
-      case mod:  Symbol.ModuleSym if fuzzyMatch(ident, mod.ns.last) => UseCompletion(mod.toString, range, CompletionItemKind.Module)
-      case enm:  Symbol.EnumSym   if fuzzyMatch(ident, enm.name)  && CompletionUtils.isAvailable(enm)  => UseCompletion(enm.toString, range, CompletionItemKind.Enum)
-      case eff:  Symbol.EffectSym if fuzzyMatch(ident, eff.name)  && CompletionUtils.isAvailable(eff)  => UseCompletion(eff.toString, range, CompletionItemKind.Event)
-      case defn: Symbol.DefnSym   if fuzzyMatch(ident, defn.name) && CompletionUtils.isAvailable(defn) => UseCompletion(defn.toString, range, CompletionItemKind.Function)
-      case trt:  Symbol.TraitSym  if fuzzyMatch(ident, trt.name)  && CompletionUtils.isAvailable(trt)  => UseCompletion(trt.toString, range, CompletionItemKind.Interface)
+      case mod:  Symbol.ModuleSym   if fuzzyMatch(ident, mod.ns.last) => UseCompletion(mod.toString, range, CompletionItemKind.Module)
+      case enm:  Symbol.EnumSym     if fuzzyMatch(ident, enm.name)    && CompletionUtils.isAvailable(enm)     => UseCompletion(enm.toString, range, CompletionItemKind.Enum)
+      case eff:  Symbol.EffectSym   if fuzzyMatch(ident, eff.name)    && CompletionUtils.isAvailable(eff)     => UseCompletion(eff.toString, range, CompletionItemKind.Event)
+      case defn: Symbol.DefnSym     if fuzzyMatch(ident, defn.name)   && CompletionUtils.isAvailable(defn)    => UseCompletion(defn.toString, range, CompletionItemKind.Function)
+      case trt:  Symbol.TraitSym    if fuzzyMatch(ident, trt.name)    && CompletionUtils.isAvailable(trt)     => UseCompletion(trt.toString, range, CompletionItemKind.Interface)
+      case struct: Symbol.StructSym if fuzzyMatch(ident, struct.name) && CompletionUtils.isAvailable(struct)  => UseCompletion(struct.toString, range, CompletionItemKind.Struct)
     } ++ getSigCompletions(uri, qn) ++ getOpCompletions(qn) ++ getTagCompletions(qn)
   }
 

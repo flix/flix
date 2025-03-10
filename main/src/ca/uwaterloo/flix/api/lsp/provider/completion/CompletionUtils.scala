@@ -247,6 +247,11 @@ object CompletionUtils {
   def isAvailable(enumMap: Symbol.EnumSym)(implicit root: TypedAst.Root): Boolean = root.enums.get(enumMap).exists(isAvailable)
 
   /**
+    * Checks if the struct of the given symbol is public.
+    */
+  def isAvailable(struct: Symbol.StructSym)(implicit root: TypedAst.Root): Boolean = root.structs.get(struct).exists(isAvailable)
+
+  /**
     * Replaces the given symbol with a variable named by the given `newText`.
     */
   private def replaceText(oldSym: Symbol, tpe: Type, newText: String)(implicit flix: Flix): Type = {

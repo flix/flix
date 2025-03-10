@@ -576,9 +576,9 @@ object Completion {
   /**
     * Represents a type completion for a builtin polymorphic type.
     *
-    * @param name      the name of the type.
+    * @param name       the name of the type.
     * @param range      the range of the completion.
-    * @param priority  the priority of the type.
+    * @param priority   the priority of the type.
     */
   case class TypeBuiltinPolyCompletion(name: String, range: Range, edit: String, priority: Priority) extends Completion
 
@@ -594,12 +594,12 @@ object Completion {
   /**
     * Represents an auto-import completion.
     *
-    * @param name          the name to be completed under cursor.
-    * @param range      the range of the completion.
-    * @param qualifiedName the path of the java class we will auto-import.
-    * @param ap            the anchor position.
-    * @param labelDetails  to show the namespace of class we are going to import
-    * @param priority      the priority of the completion.
+    * @param name           the name to be completed under cursor.
+    * @param range          the range of the completion.
+    * @param qualifiedName  the path of the java class we will auto-import.
+    * @param ap             the anchor position.
+    * @param labelDetails   to show the namespace of class we are going to import
+    * @param priority       the priority of the completion.
     */
   case class AutoImportCompletion(name:String, range: Range, qualifiedName: String, ap: AnchorPosition, labelDetails: CompletionItemLabelDetails, priority: Priority) extends Completion
 
@@ -670,11 +670,11 @@ object Completion {
   /**
     * Represents an Enum completion
     *
-    * @param enm      the enum construct.
-    * @param range     the range for TextEdit.
-    * @param ap        the anchor position for the use statement.
-    * @param qualified indicate whether to use a qualified label.
-    * @param inScope   indicate whether to the enum is inScope.
+    * @param enm                the enum construct.
+    * @param range              the range for TextEdit.
+    * @param ap                 the anchor position for the use statement.
+    * @param qualified          indicate whether to use a qualified label.
+    * @param inScope            indicate whether to the enum is inScope.
     * @param withTypeParameters indicate whether to include type parameters in the completion.
     */
   case class EnumCompletion(enm: TypedAst.Enum, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, withTypeParameters: Boolean) extends Completion
@@ -706,7 +706,7 @@ object Completion {
     * Represents a trait completion
     *
     * @param trt            trait construct.
-    * @param range     the range for TextEdit.
+    * @param range          the range for TextEdit.
     * @param ap             the anchor position for the use statement.
     * @param qualified      indicate whether to use a qualified label.
     * @param inScope        indicate whether to the trait is inScope.
@@ -739,7 +739,7 @@ object Completion {
     * Represents a TypeAlias completion
     *
     * @param typeAlias  the type alias.
-    * @param range     the range for TextEdit.
+    * @param range      the range for TextEdit.
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the type alias is inScope.
@@ -750,7 +750,7 @@ object Completion {
     * Represents an Op completion
     *
     * @param op         the op.
-    * @param range     the range for TextEdit.
+    * @param range      the range for TextEdit.
     * @param namespace  the namespace of the op, if not provided, we use the fully qualified name.
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
@@ -763,7 +763,7 @@ object Completion {
     * Represents a Signature completion
     *
     * @param sig        the signature.
-    * @param range     the range for TextEdit.
+    * @param range      the range for TextEdit.
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the signature is inScope.
@@ -774,7 +774,7 @@ object Completion {
     * Represents an Enum Tag completion
     *
     * @param tag        the tag.
-    * @param range     the range for TextEdit.
+    * @param range      the range for TextEdit.
     * @param namespace  the namespace of the tag, if not provided, we use the fully qualified name.
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
@@ -785,8 +785,8 @@ object Completion {
   /**
     * Represents a Module completion
     *
-    * @param module        the module.
-    * @param range     the range for TextEdit.
+    * @param module     the module.
+    * @param range      the range for TextEdit.
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the signature is inScope.
@@ -797,7 +797,7 @@ object Completion {
     * Represents a Use completion.
     *
     * @param name               the name of the use completion.
-    * @param range     the range for TextEdit.
+    * @param range              the range for TextEdit.
     * @param completionItemKind the kind of the completion.
     */
   case class UseCompletion(name: String, range: Range, completionItemKind: CompletionItemKind) extends Completion
