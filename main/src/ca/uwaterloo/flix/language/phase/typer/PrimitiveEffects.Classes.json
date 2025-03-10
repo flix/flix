@@ -1,6 +1,7 @@
 {
   "classes": {
     "java.lang.Boolean": "",
+    "java.lang.Byte": "",
     "java.lang.Character": "",
     "java.lang.Double": "",
     "java.lang.Float": "",
