@@ -83,7 +83,7 @@ object CompletionProvider {
             ModuleCompleter.getCompletions(err)
 
         case err: ResolutionError.UndefinedType =>
-          TypeBuiltinCompleter.getCompletions ++
+          TypeBuiltinCompleter.getCompletions(err) ++
             AutoImportCompleter.getCompletions(err) ++
             LocalScopeCompleter.getCompletions(err) ++
             EnumCompleter.getCompletions(err) ++

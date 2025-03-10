@@ -68,28 +68,29 @@ sealed trait Completion {
         insertTextFormat = InsertTextFormat.Snippet
       )
 
-    case Completion.TypeBuiltinCompletion(name, priority) =>
+    case Completion.TypeBuiltinCompletion(name, range, priority) =>
       CompletionItem(
         label            = name,
         sortText         = Priority.toSortText(priority, name),
-        textEdit         = TextEdit(context.range, name),
+        textEdit         = TextEdit(range, name),
         insertTextFormat = InsertTextFormat.PlainText,
-        kind             = CompletionItemKind.Enum
+        kind             = CompletionItemKind.TypeParameter
       )
 
-    case Completion.TypeBuiltinPolyCompletion(name, edit, priority) =>
+    case Completion.TypeBuiltinPolyCompletion(name, range, edit, priority) =>
       CompletionItem(label = name,
         sortText         = Priority.toSortText(priority, name),
-        textEdit         = TextEdit(context.range, edit),
+        textEdit         = TextEdit(range, edit),
         insertTextFormat = InsertTextFormat.Snippet,
-        kind             = CompletionItemKind.Enum
+        kind             = CompletionItemKind.TypeParameter
       )
 
-    case Completion.ImportCompletion(name, isPackage) =>
+    case Completion.ImportCompletion(name, range, isPackage) =>
+      println(range)
       CompletionItem(
         label            = name,
         sortText         = Priority.toSortText(Priority.Highest, name),
-        textEdit         = TextEdit(context.range, name),
+        textEdit         = TextEdit(range, name),
         documentation    = None,
         insertTextFormat = InsertTextFormat.PlainText,
         kind             = {
@@ -98,12 +99,12 @@ sealed trait Completion {
         }
       )
 
-    case Completion.AutoImportCompletion(name, path, ap, labelDetails , priority) =>
+    case Completion.AutoImportCompletion(name, range, path, ap, labelDetails , priority) =>
       CompletionItem(
         label               = name,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, name),
+        textEdit            = TextEdit(range, name),
         insertTextFormat    = InsertTextFormat.PlainText,
         kind                = CompletionItemKind.Class,
         additionalTextEdits = List(Completion.mkTextEdit(ap, s"import $path"))
@@ -567,37 +568,41 @@ object Completion {
   /**
     * Represents a type completion for builtin
     *
-    * @param name             the name of the BuiltinType.
-    * @param priority         the priority of the BuiltinType.
+    * @param name       the name of the BuiltinType.
+    * @param range      the range of the completion.
+    * @param priority   the priority of the BuiltinType.
     */
-  case class TypeBuiltinCompletion(name: String, priority: Priority) extends Completion
+  case class TypeBuiltinCompletion(name: String, range: Range, priority: Priority) extends Completion
 
   /**
     * Represents a type completion for a builtin polymorphic type.
     *
     * @param name      the name of the type.
+    * @param range      the range of the completion.
     * @param priority  the priority of the type.
     */
-  case class TypeBuiltinPolyCompletion(name: String, edit: String, priority: Priority) extends Completion
+  case class TypeBuiltinPolyCompletion(name: String, range: Range, edit: String, priority: Priority) extends Completion
 
   /**
     * Represents a package, class, or interface completion.
     *
     * @param name       the name to be completed.
+    * @param range      the range of the completion.
     * @param isPackage  whether the completion is a package.
     */
-  case class ImportCompletion(name: String, isPackage: Boolean) extends Completion
+  case class ImportCompletion(name: String, range: Range, isPackage: Boolean) extends Completion
 
   /**
     * Represents an auto-import completion.
     *
     * @param name          the name to be completed under cursor.
+    * @param range      the range of the completion.
     * @param qualifiedName the path of the java class we will auto-import.
     * @param ap            the anchor position.
     * @param labelDetails  to show the namespace of class we are going to import
     * @param priority      the priority of the completion.
     */
-  case class AutoImportCompletion(name:String, qualifiedName: String, ap: AnchorPosition, labelDetails: CompletionItemLabelDetails, priority: Priority) extends Completion
+  case class AutoImportCompletion(name:String, range: Range, qualifiedName: String, ap: AnchorPosition, labelDetails: CompletionItemLabelDetails, priority: Priority) extends Completion
 
   /**
     * Represents a Snippet completion
