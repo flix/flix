@@ -131,16 +131,16 @@ mod TestBox {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def int8Unbox01(): Bool = unsafe unbox(Byte.valueOf(42i8)) == 42i8
+    def int8Unbox01(): Bool = unbox(Byte.valueOf(42i8)) == 42i8
 
     @test
-    def int8Unbox02(): Bool = unsafe unbox(Byte.valueOf(-128i8)) == -128i8
+    def int8Unbox02(): Bool = unbox(Byte.valueOf(-128i8)) == -128i8
 
     @test
-    def int8Box01(): Bool = unsafe box(42i8).equals(Byte.valueOf(42i8))
+    def int8Box01(): Bool = box(42i8).equals(Byte.valueOf(42i8))
 
     @test
-    def int8Box02(): Bool = unsafe box(-128i8).equals(Byte.valueOf(-128i8))
+    def int8Box02(): Bool = box(-128i8).equals(Byte.valueOf(-128i8))
 
     @test
     def int8RoundTrip01(): Bool = unbox(box(42i8)) == 42i8

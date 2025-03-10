@@ -29,7 +29,7 @@ mod Test.Exp.Jvm.InvokeConstructor {
         new Double(123.456f64)
 
     @test
-    def testInvokeConstructor_05(): Byte \ IO =
+    def testInvokeConstructor_05(): Byte =
         new Byte(123i8)
 
     @test

@@ -62,7 +62,7 @@ instance Hash[BigDecimal] {
 }
 
 instance Hash[Int8] {
-    pub def hash(x: Int8): Int32 = unsafe Byte.hashCode(x)
+    pub def hash(x: Int8): Int32 = Byte.hashCode(x)
 }
 
 instance Hash[Int16] {
