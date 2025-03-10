@@ -107,26 +107,26 @@ trait TestUtils {
 
     case Result.Err(errors) =>
       val expected = classTag.runtimeClass
+
+      // Get the expected error line from the first error
+      // It doesn't matter which error we use because we just need the source code
+      val expectedLine = getExpectedErrorLine(errors.head.get)
       val actuals = errors.map(e => (e, e.getClass)).toList
-      actuals.find(p => expected.isAssignableFrom(p._2)) match {
+      actuals.find {
+        case (message, actualClazz) => expected.isAssignableFrom(actualClazz) && expectedLine.forall(isOnLine(message, _))
+      } match {
         case Some((actual, _)) =>
           // Require known source location only on the expected error.
           if (actual.loc == SourceLocation.Unknown) {
             if (!allowUnknown) fail("Error contains unknown source location.")
           }
 
-          // Check that the error is where specified (according to the ERROR string)
-          getExpectedErrorLine(actual) match {
-            case None => () // fall through
-            case Some(expectedLine) =>
-              val startLine = actual.loc.sp1.line
-              val endLine = actual.loc.sp2.line
-              if (startLine != expectedLine || endLine != expectedLine) {
-                fail(s"Error was expected on line $expectedLine but found on lines $startLine - $endLine.")
-              }
+        case None =>
+          val onLineString = expectedLine match {
+            case None => ""
+            case Some(line) => s" on line $line"
           }
-
-        case None => fail(s"Expected an error of type ${expected.getSimpleName}, but found:\n\n${actuals.map(p => p._2.getName)}.")
+          fail(s"Expected an error of type ${expected.getSimpleName}${onLineString}, but found:\n\n${actuals.map(p => p._2.getName)}.")
       }
   }
 
@@ -143,5 +143,12 @@ trait TestUtils {
       case -1 => None
       case index => Some(index + 1)
     }
+  }
+
+  /**
+    * Returns true if the compilation message is ONLY on the given line.
+    */
+  private def isOnLine(error: CompilationMessage, line: Int) = {
+    error.loc.sp1.line == line && error.loc.sp2.line == line
   }
 }
