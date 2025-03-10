@@ -1,9 +1,10 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.lsp.Range
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.{EffectCompletion, HandlerCompletion}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Effect
-import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
+import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object EffectCompleter {
@@ -25,21 +26,22 @@ object EffectCompleter {
   }
 
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName, inHandler: Boolean)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    val range = Range.from(qn.loc)
     if (qn.namespace.nonEmpty)
       root.effects.values.collect{
         case effect if CompletionUtils.isAvailable(effect) && CompletionUtils.matchesName(effect.sym, qn, qualified = true) =>
           if (inHandler)
-            HandlerCompletion(effect, ap, qualified = true, inScope = true)
+            HandlerCompletion(effect, range, ap, qualified = true, inScope = true)
           else
-            EffectCompletion(effect, ap, qualified = true, inScope = true)
+            EffectCompletion(effect, range, ap, qualified = true, inScope = true)
       }
     else
       root.effects.values.collect({
         case effect if CompletionUtils.isAvailable(effect) && CompletionUtils.matchesName(effect.sym, qn, qualified = false) =>
           if (inHandler)
-            HandlerCompletion(effect, ap, qualified = false, inScope = inScope(effect, env))
+            HandlerCompletion(effect, range, ap, qualified = false, inScope = inScope(effect, env))
           else
-          EffectCompletion(effect, ap, qualified = false, inScope = inScope(effect, env))
+          EffectCompletion(effect, range, ap, qualified = false, inScope = inScope(effect, env))
       })
   }
 

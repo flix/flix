@@ -16,10 +16,11 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.lsp.Range
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.TypeAliasCompletion
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.TypeAlias
-import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
+import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object TypeAliasCompleter {
@@ -33,15 +34,16 @@ object TypeAliasCompleter {
   }
 
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    val range = Range.from(qn.loc)
     if (qn.namespace.nonEmpty)
       root.typeAliases.values.collect{
         case typeAlias if CompletionUtils.isAvailable(typeAlias) && CompletionUtils.matchesName(typeAlias.sym, qn, qualified = true) =>
-          TypeAliasCompletion(typeAlias, ap, qualified = true, inScope = true)
+          TypeAliasCompletion(typeAlias, range, ap, qualified = true, inScope = true)
       }
     else
       root.typeAliases.values.collect({
         case typeAlias if CompletionUtils.isAvailable(typeAlias) && CompletionUtils.matchesName(typeAlias.sym, qn, qualified = false) =>
-          TypeAliasCompletion(typeAlias, ap, qualified = false, inScope = inScope(typeAlias, env))
+          TypeAliasCompletion(typeAlias, range, ap, qualified = false, inScope = inScope(typeAlias, env))
       })
   }
 

@@ -16,10 +16,11 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.lsp.Range
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.OpCompletion
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Effect, Namespace, Op}
-import ca.uwaterloo.flix.language.ast.{Symbol, Name, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
+import ca.uwaterloo.flix.language.ast.{Name, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object OpCompleter {
@@ -30,7 +31,7 @@ object OpCompleter {
     root.effects.values.flatMap(eff =>
       eff.ops.collect {
         case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, err.qn, qualified = false) =>
-          OpCompletion(op, "", err.ap, qualified = false, inScope = true, isHandler = true)
+          OpCompletion(op, Range.from(err.loc), "", err.ap, qualified = false, inScope = true, isHandler = true)
       }
     )
   }
@@ -49,7 +50,7 @@ object OpCompleter {
       root.effects.values.flatMap(eff =>
         eff.ops.collect {
           case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false) =>
-            OpCompletion(op, "", ap, qualified = false, inScope(op, env), isHandler = false)
+            OpCompletion(op, Range.from(qn.loc), "", ap, qualified = false, inScope(op, env), isHandler = false)
         }
       )
     }
@@ -64,7 +65,7 @@ object OpCompleter {
     root.effects.values.flatMap(eff =>
       eff.ops.collect {
         case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = true) =>
-          OpCompletion(op, "", ap, qualified = true, inScope = true, isHandler = false)
+          OpCompletion(op, Range.from(qn.loc), "", ap, qualified = true, inScope = true, isHandler = false)
       }
     )
   }
@@ -89,7 +90,7 @@ object OpCompleter {
       eff <- root.effects.get(Symbol.mkEffectSym(fullyQualifiedEffect)).toList
       op <- eff.ops
       if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false)
-    } yield OpCompletion(op, qn.namespace.toString, ap, qualified = true, inScope = true, isHandler = false)
+    } yield OpCompletion(op, Range.from(qn.loc), qn.namespace.toString, ap, qualified = true, inScope = true, isHandler = false)
   }
 
   private def inScope(op: TypedAst.Op, scope: LocalScope): Boolean = {
