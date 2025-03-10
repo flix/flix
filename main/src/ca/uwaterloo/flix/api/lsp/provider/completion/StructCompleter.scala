@@ -15,10 +15,11 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.lsp.Range
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.StructCompletion
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Struct
-import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
+import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object StructCompleter {
@@ -33,15 +34,16 @@ object StructCompleter {
   }
 
   private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    val range = Range.from(qn.loc)
     if (qn.namespace.nonEmpty)
       root.structs.values.collect{
         case struct if CompletionUtils.isAvailable(struct) && CompletionUtils.matchesName(struct.sym, qn, qualified = true) =>
-          StructCompletion(struct, ap, qualified = true, inScope = true)
+          StructCompletion(struct, range, ap, qualified = true, inScope = true)
       }
     else
       root.structs.values.collect({
         case struct if CompletionUtils.isAvailable(struct) && CompletionUtils.matchesName(struct.sym, qn, qualified = false) =>
-          StructCompletion(struct, ap, qualified = false, inScope = inScope(struct, env))
+          StructCompletion(struct, range, ap, qualified = false, inScope = inScope(struct, env))
       })
   }
 

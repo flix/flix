@@ -217,7 +217,7 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.StructCompletion(struct, ap, qualified, inScope) =>
+    case Completion.StructCompletion(struct, range, ap, qualified, inScope) =>
       val qualifiedName = struct.sym.toString
       val name = if (qualified) qualifiedName else struct.sym.name
       val label = name + CompletionUtils.formatTParams(struct.tparams)
@@ -232,14 +232,14 @@ sealed trait Completion {
         label               = label,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, snippet),
+        textEdit            = TextEdit(range, snippet),
         documentation       = Some(struct.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Struct,
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.TraitCompletion(trt, ap, qualified, inScope, withTypeParameter) =>
+    case Completion.TraitCompletion(trt, range, ap, qualified, inScope, withTypeParameter) =>
       val qualifiedName = trt.sym.toString
       val name = if (qualified) qualifiedName else trt.sym.name
       val description = if(!qualified) {
@@ -254,14 +254,14 @@ sealed trait Completion {
         label               = label,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, snippet),
+        textEdit            = TextEdit(range, snippet),
         documentation       = Some(trt.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Interface,
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.InstanceCompletion(trt, ap, qualified, inScope) =>
+    case Completion.InstanceCompletion(trt, range, ap, qualified, inScope) =>
       val qualifiedName = trt.sym.toString
       val name = if (qualified) qualifiedName else trt.sym.name
       val label = name + CompletionUtils.formatTParams(List(trt.tparam))
@@ -276,7 +276,7 @@ sealed trait Completion {
         label               = label,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, snippet),
+        textEdit            = TextEdit(range, snippet),
         documentation       = Some(trt.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Interface,
@@ -683,37 +683,41 @@ object Completion {
     * Represents a struct completion
     *
     * @param struct    the struct construct.
+    * @param range     the range for TextEdit.
     * @param ap        the anchor position for the use statement.
     * @param qualified indicate whether to use a qualified label.
     * @param inScope   indicate whether to the enum is inScope.
     */
-  case class StructCompletion(struct: TypedAst.Struct, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class StructCompletion(struct: TypedAst.Struct, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents a trait completion
     *
     * @param trt                trait construct.
+    * @param range              the range for TextEdit.
     * @param ap                 the anchor position for the use statement.
     * @param qualified          indicate whether to use a qualified label.
     * @param inScope            indicate whether to the trait is inScope.
     * @param withTypeParameter  indicate whether to include the type parameter in the completion.
     */
-  case class TraitCompletion(trt: TypedAst.Trait, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, withTypeParameter: Boolean) extends Completion
+  case class TraitCompletion(trt: TypedAst.Trait, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, withTypeParameter: Boolean) extends Completion
 
   /**
     * Represents a trait completion
     *
     * @param trt            trait construct.
+    * @param range     the range for TextEdit.
     * @param ap             the anchor position for the use statement.
     * @param qualified      indicate whether to use a qualified label.
     * @param inScope        indicate whether to the trait is inScope.
     */
-  case class InstanceCompletion(trt: TypedAst.Trait, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class InstanceCompletion(trt: TypedAst.Trait, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents an Effect completion
     *
     * @param effect    the effect construct.
+    * @param range     the range for TextEdit.
     * @param ap        the anchor position for the use statement.
     * @param qualified indicate whether to use a qualified label.
     * @param inScope   indicate whether to the effect is inScope.
@@ -724,6 +728,7 @@ object Completion {
     * Represents a handler completion
     *
     * @param effect    the related effect.
+    * @param range     the range for TextEdit.
     * @param ap        the anchor position for the use statement.
     * @param qualified indicate whether to use a qualified label.
     * @param inScope   indicate whether to the related effect is inScope.
@@ -734,6 +739,7 @@ object Completion {
     * Represents a TypeAlias completion
     *
     * @param typeAlias  the type alias.
+    * @param range     the range for TextEdit.
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the type alias is inScope.
@@ -744,6 +750,7 @@ object Completion {
     * Represents an Op completion
     *
     * @param op         the op.
+    * @param range     the range for TextEdit.
     * @param namespace  the namespace of the op, if not provided, we use the fully qualified name.
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
@@ -756,6 +763,7 @@ object Completion {
     * Represents a Signature completion
     *
     * @param sig        the signature.
+    * @param range     the range for TextEdit.
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the signature is inScope.
@@ -766,6 +774,7 @@ object Completion {
     * Represents an Enum Tag completion
     *
     * @param tag        the tag.
+    * @param range     the range for TextEdit.
     * @param namespace  the namespace of the tag, if not provided, we use the fully qualified name.
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
@@ -777,6 +786,7 @@ object Completion {
     * Represents a Module completion
     *
     * @param module        the module.
+    * @param range     the range for TextEdit.
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the signature is inScope.
@@ -787,6 +797,7 @@ object Completion {
     * Represents a Use completion.
     *
     * @param name               the name of the use completion.
+    * @param range     the range for TextEdit.
     * @param completionItemKind the kind of the completion.
     */
   case class UseCompletion(name: String, completionItemKind: CompletionItemKind) extends Completion
@@ -795,6 +806,7 @@ object Completion {
    * Represents a struct field completion.
    *
    * @param field the candidate field.
+    * @param range     the range for TextEdit.
    */
   case class StructFieldCompletion(field: String, symLoc: SourceLocation, tpe: Type) extends Completion
 
@@ -802,6 +814,7 @@ object Completion {
    * Represents a Java field completion.
    *
    * @param ident  the partial field name.
+    * @param range     the range for TextEdit.
    * @param field the candidate field.
    */
   case class FieldCompletion(ident: Name.Ident, field: Field) extends Completion
@@ -810,6 +823,7 @@ object Completion {
     * Represents a Java method completion.
     *
     * @param ident  the partial method name.
+    * @param range     the range for TextEdit.
     * @param method the candidate method.
     */
   case class MethodCompletion(ident: Name.Ident, method: Method) extends Completion
@@ -818,6 +832,7 @@ object Completion {
     * Represents a hole completion.
     *
     * @param sym      the variable symbol being completed on.
+    * @param range     the range for TextEdit.
     * @param decl     the proposed def declaration to call.
     * @param priority the priority of the completion (multiple suggestions are possible and they are ranked).
     * @param loc      the source location of the hole.
