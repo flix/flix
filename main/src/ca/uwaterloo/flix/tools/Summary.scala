@@ -207,7 +207,7 @@ object Summary {
     case Expr.Stm(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.Discard(exp, _, _) => countCheckedEcasts(exp)
     case Expr.Match(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
-      case TypedAst.MatchRule(_, guard, exp) => guard.map(countCheckedEcasts).sum + countCheckedEcasts(exp)
+      case TypedAst.MatchRule(_, guard, exp, loc) => guard.map(countCheckedEcasts).sum + countCheckedEcasts(exp)
     }.sum
     case Expr.TypeMatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.TypeMatchRule(_, _, exp, _) => countCheckedEcasts(exp)

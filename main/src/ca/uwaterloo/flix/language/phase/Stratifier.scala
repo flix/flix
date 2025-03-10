@@ -430,10 +430,10 @@ object Stratifier {
   }
 
   private def visitMatchRule(rule: MatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): MatchRule = rule match {
-    case MatchRule(pat, exp1, exp2) =>
+    case MatchRule(pat, exp1, exp2, loc) =>
       val e1 = exp1.map(visitExp)
       val e2 = visitExp(exp2)
-      MatchRule(pat, e1, e2)
+      MatchRule(pat, e1, e2, loc)
   }
 
   private def visitTypeMatchRule(rule: TypeMatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): TypeMatchRule = rule match {

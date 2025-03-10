@@ -989,13 +989,13 @@ object Resolver {
 
     case NamedAst.Expr.Match(exp, rules, loc) =>
       val rulesVal = traverse(rules) {
-        case NamedAst.MatchRule(pat, guard, body) =>
+        case NamedAst.MatchRule(pat, guard, body, loc) =>
           val p = resolvePattern(pat, env0, ns0, root)
           val env = env0 ++ mkPatternEnv(p)
           val gVal = traverseOpt(guard)(resolveExp(_, env))
           val bVal = resolveExp(body, env)
           mapN(gVal, bVal) {
-            case (g, b) => ResolvedAst.MatchRule(p, g, b)
+            case (g, b) => ResolvedAst.MatchRule(p, g, b, loc)
           }
       }
 

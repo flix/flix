@@ -870,11 +870,11 @@ object Namer {
     * Performs naming on the given match rule `rule0`.
     */
   private def visitMatchRule(rule0: DesugaredAst.MatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.MatchRule = rule0 match {
-    case DesugaredAst.MatchRule(pat, exp1, exp2) =>
+    case DesugaredAst.MatchRule(pat, exp1, exp2, loc) =>
       val p = visitPattern(pat)
       val e1 = exp1.map(visitExp(_))
       val e2 = visitExp(exp2)
-      NamedAst.MatchRule(p, e1, e2)
+      NamedAst.MatchRule(p, e1, e2, loc)
   }
 
   /**
