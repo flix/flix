@@ -437,11 +437,11 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.UseCompletion(name, kind) =>
+    case Completion.UseCompletion(name, range, kind) =>
       CompletionItem(
         label         = name,
         sortText      = name,
-        textEdit      = TextEdit(context.range, name),
+        textEdit      = TextEdit(range, name),
         documentation = None,
         kind          = kind
       )
@@ -800,30 +800,27 @@ object Completion {
     * @param range     the range for TextEdit.
     * @param completionItemKind the kind of the completion.
     */
-  case class UseCompletion(name: String, completionItemKind: CompletionItemKind) extends Completion
+  case class UseCompletion(name: String, range: Range, completionItemKind: CompletionItemKind) extends Completion
 
   /**
-   * Represents a struct field completion.
-   *
-   * @param field the candidate field.
-    * @param range     the range for TextEdit.
-   */
+    * Represents a struct field completion.
+    *
+    * @param field the candidate field.
+    */
   case class StructFieldCompletion(field: String, symLoc: SourceLocation, tpe: Type) extends Completion
 
   /**
-   * Represents a Java field completion.
-   *
-   * @param ident  the partial field name.
-    * @param range     the range for TextEdit.
-   * @param field the candidate field.
-   */
+    * Represents a Java field completion.
+    *
+    * @param ident  the partial field name.
+    * @param field  the candidate field.
+    */
   case class FieldCompletion(ident: Name.Ident, field: Field) extends Completion
 
   /**
     * Represents a Java method completion.
     *
     * @param ident  the partial method name.
-    * @param range     the range for TextEdit.
     * @param method the candidate method.
     */
   case class MethodCompletion(ident: Name.Ident, method: Method) extends Completion
@@ -832,7 +829,6 @@ object Completion {
     * Represents a hole completion.
     *
     * @param sym      the variable symbol being completed on.
-    * @param range     the range for TextEdit.
     * @param decl     the proposed def declaration to call.
     * @param priority the priority of the completion (multiple suggestions are possible and they are ranked).
     * @param loc      the source location of the hole.
