@@ -6,6 +6,7 @@
     "java.lang.Double": "",
     "java.lang.Float": "",
     "java.lang.Short": "",
+    "java.lang.Character$Subset": "",
 
     "java.lang.Process": "Exec, IO",
     "java.lang.ProcessBuilder": "Exec, IO",
