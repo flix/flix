@@ -66,7 +66,7 @@ instance Hash[Int8] {
 }
 
 instance Hash[Int16] {
-    pub def hash(x: Int16): Int32 = unsafe Short.hashCode(x)
+    pub def hash(x: Int16): Int32 = Short.hashCode(x)
 }
 
 instance Hash[Int32] {

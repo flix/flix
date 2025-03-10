@@ -1055,7 +1055,7 @@ object ConstraintGen {
     * Returns the the body's type and the body's effect
     */
   private def visitTypeMatchRule(rule: KindedAst.TypeMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
-    case KindedAst.TypeMatchRule(sym, declTpe, exp) =>
+    case KindedAst.TypeMatchRule(sym, declTpe, exp, loc) =>
       // We mark all the type vars in the declared type as rigid.
       // This ensures we get a substitution from the actual type to the declared type.
       // This marking only really affects wildcards,
@@ -1075,7 +1075,7 @@ object ConstraintGen {
     * Returns the the body's type and the body's effect
     */
   private def visitCatchRule(rule: KindedAst.CatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
-    case KindedAst.CatchRule(sym, clazz, exp) =>
+    case KindedAst.CatchRule(sym, clazz, exp, loc) =>
       c.expectType(expected = Type.mkNative(clazz, sym.loc), sym.tvar, sym.loc)
       visitExp(exp)
   }

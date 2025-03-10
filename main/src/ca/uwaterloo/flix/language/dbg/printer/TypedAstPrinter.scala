@@ -123,7 +123,7 @@ object TypedAstPrinter {
     * Returns the [[DocAst]] representation of `rule`.
     */
   private def printCatchRule(rule: TypedAst.CatchRule): (Symbol.VarSym, Class[?], DocAst.Expr) = rule match {
-    case TypedAst.CatchRule(bnd, clazz, exp) => (bnd.sym, clazz, print(exp))
+    case TypedAst.CatchRule(bnd, clazz, exp, loc) => (bnd.sym, clazz, print(exp))
   }
 
   /**
