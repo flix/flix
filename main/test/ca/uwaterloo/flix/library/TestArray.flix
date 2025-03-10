@@ -5133,14 +5133,14 @@ mod TestArray {
     @test
     def copyInto11(): Bool = region rc {
         let src = Array#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10} @ rc;
-        Array.copyInto(srcPos = 0, dstPos = 5, len = 5, src = src, dst = src);
+        Array.copyInto(srcPos = 0, dstPos = 5, len = 5, src = src, src);
         src `sameElements` Array#{1, 2, 3, 4, 5, 1, 2, 3, 4, 5} @ rc
     }
 
     @test
     def copyInto12(): Bool = region rc {
         let src = Array#{1, 2, 3, 4, 5} @ rc;
-        Array.copyInto(srcPos = 0, dstPos = 1, len = 4, src = src, dst = src);
+        Array.copyInto(srcPos = 0, dstPos = 1, len = 4, src = src, src);
         src `sameElements` Array#{1, 1, 2, 3, 4} @ rc
     }
 
