@@ -31,11 +31,11 @@ mod Test.Exp.Jvm.InvokeConstructor {
         new Double(123.456f64)
 
     @test
-    def testInvokeConstructor05(): Byte \ IO =
+    def testInvokeConstructor05(): Byte =
         new Byte(123i8)
 
     @test
-    def testInvokeConstructor06(): Short \ IO =
+    def testInvokeConstructor06(): Short =
         new Short(123i16)
 
     @test

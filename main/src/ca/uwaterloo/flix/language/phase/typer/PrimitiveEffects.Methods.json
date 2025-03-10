@@ -1,8 +1,10 @@
 {
   "methods": {
     "java.lang.Boolean::getBoolean": "Env, IO",
+    "java.lang.Byte::describeConstable": "Sys, IO",
     "java.lang.Double::resolveConstantDesc": "Sys, IO",
     "java.lang.Float::resolveConstantDesc": "Sys, IO",
+    "java.lang.Short::describeConstable": "Sys, IO",
 
     "java.lang.Runtime::addShutdownHook": "Exec, Sys, IO",
     "java.lang.Runtime::availableProcessors": "Env, IO",

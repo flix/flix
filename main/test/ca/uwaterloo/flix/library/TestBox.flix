@@ -131,16 +131,16 @@ mod TestBox {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def int8Unbox01(): Bool = unsafe unbox(Byte.valueOf(42i8)) == 42i8
+    def int8Unbox01(): Bool = unbox(Byte.valueOf(42i8)) == 42i8
 
     @test
-    def int8Unbox02(): Bool = unsafe unbox(Byte.valueOf(-128i8)) == -128i8
+    def int8Unbox02(): Bool = unbox(Byte.valueOf(-128i8)) == -128i8
 
     @test
-    def int8Box01(): Bool = unsafe box(42i8).equals(Byte.valueOf(42i8))
+    def int8Box01(): Bool = box(42i8).equals(Byte.valueOf(42i8))
 
     @test
-    def int8Box02(): Bool = unsafe box(-128i8).equals(Byte.valueOf(-128i8))
+    def int8Box02(): Bool = box(-128i8).equals(Byte.valueOf(-128i8))
 
     @test
     def int8RoundTrip01(): Bool = unbox(box(42i8)) == 42i8
@@ -159,16 +159,16 @@ mod TestBox {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def int16Unbox01(): Bool = unsafe unbox(Short.valueOf(12345i16)) == 12345i16
+    def int16Unbox01(): Bool = unbox(Short.valueOf(12345i16)) == 12345i16
 
     @test
-    def int16Unbox02(): Bool = unsafe unbox(Short.valueOf(-32768i16)) == -32768i16
+    def int16Unbox02(): Bool = unbox(Short.valueOf(-32768i16)) == -32768i16
 
     @test
-    def int16Box01(): Bool = unsafe box(12345i16).equals(Short.valueOf(12345i16))
+    def int16Box01(): Bool = box(12345i16).equals(Short.valueOf(12345i16))
 
     @test
-    def int16Box02(): Bool = unsafe box(-32768i16).equals(Short.valueOf(-32768i16))
+    def int16Box02(): Bool = box(-32768i16).equals(Short.valueOf(-32768i16))
 
     @test
     def int16RoundTrip01(): Bool = unbox(box(12345i16)) == 12345i16

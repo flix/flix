@@ -117,6 +117,5 @@ mod Test.Exp.Effect {
     pub eff C
     def f(): Unit \ {A, B, C} - {B} + {C} = ???
     pub def g(): Unit \ ({A, B, C} - {B}) + {C} = f()
-    // TODO: enable with set effects
-    // pub def h(): Unit \ {A, C} = f()
+    pub def h(): Unit \ {A, C} = f()
 }

@@ -875,10 +875,10 @@ object Desugar {
     * Desugars the given [[WeededAst.TypeMatchRule]] `rule0`.
     */
   private def visitTypeMatchRule(rule0: WeededAst.TypeMatchRule)(implicit flix: Flix): DesugaredAst.TypeMatchRule = rule0 match {
-    case WeededAst.TypeMatchRule(ident, tpe, exp) =>
+    case WeededAst.TypeMatchRule(ident, tpe, exp, loc) =>
       val t = visitType(tpe)
       val e = visitExp(exp)
-      DesugaredAst.TypeMatchRule(ident, t, e)
+      DesugaredAst.TypeMatchRule(ident, t, e, loc)
   }
 
   /**
@@ -921,9 +921,9 @@ object Desugar {
     * Desugars the given [[WeededAst.CatchRule]] `rule0`.
     */
   private def visitCatchRule(rule0: WeededAst.CatchRule)(implicit flix: Flix): DesugaredAst.CatchRule = rule0 match {
-    case WeededAst.CatchRule(ident, className, exp) =>
+    case WeededAst.CatchRule(ident, className, exp, loc) =>
       val e = visitExp(exp)
-      DesugaredAst.CatchRule(ident, className, e)
+      DesugaredAst.CatchRule(ident, className, e, loc)
   }
 
   /**

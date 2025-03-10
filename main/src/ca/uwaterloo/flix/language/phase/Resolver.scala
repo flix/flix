@@ -1008,12 +1008,12 @@ object Resolver {
 
     case NamedAst.Expr.TypeMatch(exp, rules, loc) =>
       val rulesVal = traverse(rules) {
-        case NamedAst.TypeMatchRule(sym, tpe, body) =>
+        case NamedAst.TypeMatchRule(sym, tpe, body, loc) =>
           val tVal = resolveType(tpe, None, Wildness.AllowWild, env0, taenv, ns0, root)
           val env = env0 ++ mkVarEnv(sym)
           val bVal = resolveExp(body, env)
           mapN(tVal, bVal) {
-            case (t, b) => ResolvedAst.TypeMatchRule(sym, t, b)
+            case (t, b) => ResolvedAst.TypeMatchRule(sym, t, b, loc)
           }
       }
 
@@ -1259,12 +1259,12 @@ object Resolver {
 
     case NamedAst.Expr.TryCatch(exp, rules, loc) =>
       val rulesVal = traverse(rules) {
-        case NamedAst.CatchRule(sym, className, body) =>
+        case NamedAst.CatchRule(sym, className, body, loc) =>
           val env = env0 ++ mkVarEnv(sym)
           val clazzVal = lookupJvmClass2(className, ns0, env0, sym.loc).toValidation
           val bVal = resolveExp(body, env)
           mapN(clazzVal, bVal) {
-            case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b)
+            case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b, loc)
           }
       }
 

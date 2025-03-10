@@ -787,11 +787,11 @@ object Kinder {
     * Performs kinding on the given match rule under the given kind environment.
     */
   private def visitTypeMatchRule(rule0: ResolvedAst.TypeMatchRule, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.TypeMatchRule = rule0 match {
-    case ResolvedAst.TypeMatchRule(sym, tpe0, exp0) =>
+    case ResolvedAst.TypeMatchRule(sym, tpe0, exp0, loc) =>
       val kenv = inferType(tpe0, Kind.Star, kenv0, taenv, root)
       val tpe = visitType(tpe0, Kind.Star, kenv, taenv, root)
       val exp = visitExp(exp0, kenv, taenv, root)
-      KindedAst.TypeMatchRule(sym, tpe, exp)
+      KindedAst.TypeMatchRule(sym, tpe, exp, loc)
   }
 
   /**
@@ -808,9 +808,9 @@ object Kinder {
     * Performs kinding on the given catch rule under the given kind environment.
     */
   private def visitCatchRule(rule0: ResolvedAst.CatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.CatchRule = rule0 match {
-    case ResolvedAst.CatchRule(sym, clazz, exp0) =>
+    case ResolvedAst.CatchRule(sym, clazz, exp0, loc) =>
       val exp = visitExp(exp0, kenv, taenv, root)
-      KindedAst.CatchRule(sym, clazz, exp)
+      KindedAst.CatchRule(sym, clazz, exp, loc)
   }
 
   /**
