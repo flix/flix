@@ -60,7 +60,7 @@ instance ToString[Int8] {
 }
 
 instance ToString[Int16] {
-    pub def toString(x: Int16): String = unsafe Short.toString(x)
+    pub def toString(x: Int16): String = Short.toString(x)
 }
 
 instance ToString[Int32] {
