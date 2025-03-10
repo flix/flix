@@ -178,8 +178,8 @@ mod BinaryTree {
             };
             let leaf2 = new BinaryTree @ rc {
                 node_value = 9,
-                right = None
-                left = None,
+                right = None,
+                left = None
             };
             let leaf3 = new BinaryTree @ rc {
                 left = None,

@@ -159,7 +159,7 @@ mod BinaryTree {
         }
 
     @test
-    def binaryTree01(): Bool =
+    def binaryTree02(): Bool =
         region rc {
             let leaf = new BinaryTree @ rc {
                 right = None,
@@ -168,7 +168,7 @@ mod BinaryTree {
             };
             let innernode = new BinaryTree @ rc {
                 right = Some(leaf),
-                value = 4.
+                value = 4,
                 left = Some(leaf)
             };
             let tree = new BinaryTree @ rc {
