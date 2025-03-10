@@ -504,7 +504,7 @@ object Redundancy {
 
       // Visit each match rule.
       val usedRules = rules map {
-        case TypeMatchRule(bnd, _, body) =>
+        case TypeMatchRule(bnd, _, body, _) =>
           // Get the free var from the sym
           val fvs = Set(bnd.sym)
 

@@ -886,11 +886,11 @@ object Namer {
     * Performs naming on the given typematch rule `rule0`.
     */
   private def visitTypeMatchRule(rule0: DesugaredAst.TypeMatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.TypeMatchRule = rule0 match {
-    case DesugaredAst.TypeMatchRule(ident, tpe, body) =>
+    case DesugaredAst.TypeMatchRule(ident, tpe, body, loc) =>
       val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
       val t = visitType(tpe)
       val b = visitExp(body)
-      NamedAst.TypeMatchRule(sym, t, b)
+      NamedAst.TypeMatchRule(sym, t, b, loc)
   }
 
   /**

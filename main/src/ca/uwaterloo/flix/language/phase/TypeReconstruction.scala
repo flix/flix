@@ -213,15 +213,15 @@ object TypeReconstruction {
     case KindedAst.Expr.TypeMatch(matchExp, rules, loc) =>
       val e1 = visitExp(matchExp)
       val rs = rules map {
-        case KindedAst.TypeMatchRule(sym, tpe0, exp) =>
+        case KindedAst.TypeMatchRule(sym, tpe0, exp, loc) =>
           val t = subst(tpe0)
           val b = visitExp(exp)
           val bnd = TypedAst.Binder(sym, t)
-          TypedAst.TypeMatchRule(bnd, t, b)
+          TypedAst.TypeMatchRule(bnd, t, b, loc)
       }
       val tpe = rs.head.exp.tpe
       val eff = rs.foldLeft(e1.eff) {
-        case (acc, TypedAst.TypeMatchRule(_, _, b)) => Type.mkUnion(b.eff, acc, loc)
+        case (acc, TypedAst.TypeMatchRule(_, _, b, _)) => Type.mkUnion(b.eff, acc, loc)
       }
       TypedAst.Expr.TypeMatch(e1, rs, tpe, eff, loc)
 

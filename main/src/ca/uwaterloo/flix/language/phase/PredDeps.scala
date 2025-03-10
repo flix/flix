@@ -166,7 +166,7 @@ object PredDeps {
 
     case Expr.TypeMatch(exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach { case TypeMatchRule(_, _, b) => visitExp(b) }
+      rules.foreach { case TypeMatchRule(_, _, b, _) => visitExp(b) }
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)

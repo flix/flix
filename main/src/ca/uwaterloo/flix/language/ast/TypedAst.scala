@@ -379,7 +379,7 @@ object TypedAst {
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
 
-  case class TypeMatchRule(bnd: Binder, tpe: Type, exp: Expr)
+  case class TypeMatchRule(bnd: Binder, tpe: Type, exp: Expr, loc: SourceLocation)
 
   case class SelectChannelRule(bnd: Binder, chan: Expr, exp: Expr, loc: SourceLocation)
 

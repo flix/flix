@@ -430,7 +430,7 @@ object WeededAst {
 
   case class MatchRule(pat: Pattern, exp1: Option[Expr], exp2: Expr)
 
-  case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr)
+  case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr, loc: SourceLocation)
 
   case class SelectChannelRule(ident: Name.Ident, exp1: Expr, exp2: Expr, loc: SourceLocation)
 
