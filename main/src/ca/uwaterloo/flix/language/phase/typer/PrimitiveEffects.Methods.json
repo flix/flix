@@ -4,6 +4,9 @@
     "java.lang.Byte::describeConstable": "Sys, IO",
     "java.lang.Double::resolveConstantDesc": "Sys, IO",
     "java.lang.Float::resolveConstantDesc": "Sys, IO",
+    "java.lang.Long::describeConstable": "Sys, IO",
+    "java.lang.Long::getLong": "Env, IO",
+    "java.lang.Long::resolveConstantDesc": "Sys, IO",
     "java.lang.Short::describeConstable": "Sys, IO",
 
     "java.lang.Runtime::addShutdownHook": "Exec, Sys, IO",
