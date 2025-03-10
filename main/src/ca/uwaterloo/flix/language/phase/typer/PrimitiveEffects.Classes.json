@@ -6,7 +6,7 @@
     "java.lang.Double": "",
     "java.lang.Float": "",
     "java.lang.Short": "",
-
+    "java.lang.ClassLoader": "Exec, Sys, IO",
     "java.lang.Process": "Exec, IO",
     "java.lang.ProcessBuilder": "Exec, IO",
     "java.lang.ProcessHandle": "Exec, IO",
