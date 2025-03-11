@@ -40,6 +40,9 @@ object Lexer {
   /** The maximal allowed nesting level of string interpolation. */
   private val InterpolatedStringMaxNestingLevel = 32
 
+  /** The end-of-file character (`'\u0000'`). */
+  private val EOF = '\u0000'
+
   /** The characters allowed in a user defined operator mapped to their `TokenKind`s. */
   def isUserOp(c: Char): Option[TokenKind] = {
     c match {
@@ -1081,11 +1084,11 @@ object Lexer {
     /**
       * Advances cursor one char forward, returning the char it was previously sitting on.
       *
-      * If the cursor has advanced past the content, EOF is returned (`'\u0000'`).
+      * If the cursor has advanced past the content, [[EOF]] is returned.
       */
     def advance(): Char = {
       if (this.eof) {
-        '\u0000'
+        EOF
       } else {
         val c = data(offset)
         if (c == '\n') {
@@ -1116,13 +1119,13 @@ object Lexer {
     /**
       * Peeks the character that cursor is currently sitting on without advancing.
       *
-      * If the cursor has advanced past the content, EOF is returned (`'\u0000'`).
+      * If the cursor has advanced past the content, [[EOF]] is returned.
       */
     def peek: Char =
       if (this.inBounds) {
         data(offset)
       } else {
-        '\u0000' // EOF char
+        EOF
       }
 
     /** Returns true if the cursor has moved past the end. */
