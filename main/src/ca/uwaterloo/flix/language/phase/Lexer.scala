@@ -58,10 +58,6 @@ object Lexer {
     }
   }
 
-  /** Returns `true` if `c` is a hex decimal (i.e. on of these 0123456789abcdefABCDEF). */
-  private def isHexDigit(c: Char): Boolean =
-    '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
-
   /** The internal state of the lexer as it tokenizes a single source. */
   private class State(val src: Source) {
 
@@ -679,7 +675,7 @@ object Lexer {
   /** Moves current position past an infix function. */
   private def acceptInfixFunction()(implicit s: State): TokenKind = {
     s.sc.advanceWhile(
-      c =>c == '.' || c == '!' || c.isLetter || c.isDigit || isMathNameChar(c) || isGreekNameChar(c)
+      c => c == '.' || c == '!' || c.isLetter || c.isDigit || isMathNameChar(c) || isGreekNameChar(c)
     )
     if (s.sc.advanceIfMatch('`')) {
       TokenKind.InfixFunction
@@ -911,6 +907,9 @@ object Lexer {
     * If it is missing Flix defaults to `i32`.
     * */
   private def acceptHexNumber()(implicit s: State): TokenKind = {
+    /** Returns `true` if `c` is a hex decimal (i.e. on of these 0123456789abcdefABCDEF). */
+    def isHexDigit(c: Char): Boolean = '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
+
     advance() // Consume 'x'.
     var error: Option[TokenKind] = if (peek() == '_') {
       val loc = sourceLocationAtCurrent()
