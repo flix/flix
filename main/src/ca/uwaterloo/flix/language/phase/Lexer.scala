@@ -158,9 +158,9 @@ object Lexer {
   /** Lexes a single source (file) into an array of tokens. */
   def lex(src: Source): (Array[Token], List[LexerError]) = {
     implicit val s: State = new State(src)
-    while (!eof()) {
+    while (s.sc.inBounds) {
       whitespace()
-      if (!eof()) {
+      if (s.sc.inBounds) {
         s.resetStart()
         val k = scanToken()
         addToken(k)
@@ -590,7 +590,7 @@ object Lexer {
   private def acceptBuiltIn()(implicit s: State): TokenKind = {
     val checkpoint = s.save()
     var advanced = false
-    while (!eof()) {
+    while (s.sc.inBounds) {
       val p = peek()
 
       if (p == '$') {
@@ -704,7 +704,7 @@ object Lexer {
     */
   private def acceptString()(implicit s: State): TokenKind = {
     var kind: TokenKind = TokenKind.LiteralString
-    while (!eof()) {
+    while (s.sc.inBounds) {
       var p = escapedPeek()
       // Check for the beginning of a string interpolation.
       val prevPrev = previousPrevious()
@@ -768,9 +768,9 @@ object Lexer {
     addToken(if (isDebug) TokenKind.LiteralDebugStringL else TokenKind.LiteralStringInterpolationL)
     // Consume tokens until a terminating '}' is found.
     var blockNestingLevel = 0
-    while (!eof()) {
+    while (s.sc.inBounds) {
       whitespace()
-      if (!eof()) {
+      if (s.sc.inBounds) {
         s.resetStart()
         val kind = scanToken()
 
@@ -800,7 +800,7 @@ object Lexer {
     */
   private def acceptChar()(implicit s: State): TokenKind = {
     var prev = ' '
-    while (!eof()) {
+    while (s.sc.inBounds) {
       val p = escapedPeek()
       if (p.contains('\'')) {
         advance()
@@ -822,7 +822,7 @@ object Lexer {
     * If the regex  is unterminated a `TokenKind.Err` is returned.
     */
   private def acceptRegex()(implicit s: State): TokenKind = {
-    while (!eof()) {
+    while (s.sc.inBounds) {
       val p = escapedPeek()
       if (p.contains('"')) {
         advance()
@@ -844,7 +844,7 @@ object Lexer {
     var isDecimal = false
     var isScientificNotation = false
     var error: Option[TokenKind] = None
-    while (!eof()) {
+    while (s.sc.inBounds) {
       peek() match {
         case c if c.isDigit => advance()
         // 'e' mark scientific notation if not handling a hex number.
@@ -869,7 +869,7 @@ object Lexer {
           // Consume the whole sequence of '_'.
           advance()
           advance()
-          while (!eof() && peek() == '_') {
+          while (s.sc.inBounds && peek() == '_') {
             advance()
           }
           error = Some(TokenKind.Err(LexerError.DoubleUnderscoreInNumber(sourceLocationAtCurrent())))
@@ -919,7 +919,7 @@ object Lexer {
     } else {
       None
     }
-    while (!eof()) {
+    while (s.sc.inBounds) {
       peek() match {
         case c if isDigit(c) => advance()
         // '_' that is not in tail-position.
@@ -929,7 +929,7 @@ object Lexer {
           // Consume the whole sequence of '_'.
           advance()
           advance()
-          while (!eof() && peek() == '_') {
+          while (s.sc.inBounds && peek() == '_') {
             advance()
           }
           error = Some(TokenKind.Err(LexerError.DoubleUnderscoreInNumber(sourceLocationAtCurrent())))
