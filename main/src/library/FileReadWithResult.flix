@@ -117,9 +117,9 @@ mod FileReadWithResult {
     ///
     /// Handles the `FileReadWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `FileReadWithResult` effect using the `IO` effect.
+    /// In other words, re-interprets the `FileReadWithResult` effect using the `FsRead` and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - FileReadWithResult) + IO = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - FileReadWithResult) + { FsRead, IO } = x ->
         run {
             f(x)
         } with handler FileReadWithResult {
@@ -273,9 +273,9 @@ mod FileReadWithResult {
     ///
     /// Runs the `FileReadWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `FileReadWithResult` effect using the `IO` effect.
+    /// In other words, re-interprets the `FileReadWithResult` effect using the `FsRead` and `IO` effects.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - FileReadWithResult) + {IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - FileReadWithResult) + { FsRead, IO } = handle(f)()
 
     ///
     /// Returns the attributes of the given file `f`.
