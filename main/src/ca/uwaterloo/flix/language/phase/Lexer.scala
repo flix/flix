@@ -155,7 +155,7 @@ object Lexer {
   def lex(src: Source): (Array[Token], List[LexerError]) = {
     implicit val s: State = new State(src)
     while (!eof()) {
-      whitespace()
+      consumeWhitespace()
       if (!eof()) {
         s.resetStart()
         val k = scanToken()
@@ -596,7 +596,7 @@ object Lexer {
   }
 
   /** Moves current position past all whitespace characters. */
-  private def whitespace()(implicit s: State): Unit =
+  private def consumeWhitespace()(implicit s: State): Unit =
     s.sc.advanceWhile(_.isWhitespace)
 
   /**
@@ -754,7 +754,7 @@ object Lexer {
     // Consume tokens until a terminating '}' is found.
     var blockNestingLevel = 0
     while (!eof()) {
-      whitespace()
+      consumeWhitespace()
       if (!eof()) {
         s.resetStart()
         val kind = scanToken()
