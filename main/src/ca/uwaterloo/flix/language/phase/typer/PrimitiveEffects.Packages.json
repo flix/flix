@@ -2,6 +2,7 @@
   "packages": {
     "java.lang.constant": "Sys, IO",
     "java.lang.ref": "Sys, IO",
+    "java.lang.reflect": "Sys, IO",
     "java.net": "Net, IO",
     "java.util.random": "NonDet, IO"
   }
