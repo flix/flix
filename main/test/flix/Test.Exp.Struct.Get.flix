@@ -41,6 +41,35 @@ mod Get {
             s->cowboy
         }
 
+    // From https://github.com/flix/flix/issues/10057
+    pub struct Node[r] {
+        keys:       Int32,
+        children:   Option[Int32],
+        leaves:     Option[Int32],
+        size:       Int32,
+        parent:     Option[Int32]
+    }
+
+    mod Node {
+        @test
+        pub def empty(): Unit \ IO = region rc {
+            let node = new Node @ rc {
+                keys = 0,
+                children = None,
+                leaves = None,
+                size = 0,
+                parent = None
+            };
+            println(node->size) // Just to have an IO effect.
+        }
+    }
+
+    @test
+    def testStructGet06(): Unit \ IO = region _ {
+        Node.empty();
+        ()
+    }
+
     @test
     def testStructMultiGet01(): Bool =
         region rc {
