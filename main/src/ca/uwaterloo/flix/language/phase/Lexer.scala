@@ -213,24 +213,6 @@ object Lexer {
   private def peekPeek()(implicit s: State): Option[Char] =
     s.sc.nth(1)
 
-  /**
-    * A helper function wrapping peek, with special handling for escaped characters.
-    * This is useful for "\"" or `'\''`.
-    */
-  private def escapedPeek()(implicit s: State): Option[Char] = {
-    var p = peek()
-    while (p == '\\') {
-      advance()
-      // This check is for a source that ends on a '\'.
-      if (s.sc.getOffset >= s.src.data.length - 1) {
-        return None
-      }
-      advance()
-      p = peek()
-    }
-    Some(p)
-  }
-
   /** Checks if the current position has landed on end-of-file. */
   private def eof()(implicit s: State): Boolean =
     s.sc.eof
@@ -618,6 +600,16 @@ object Lexer {
     s.sc.advanceWhile(_.isWhitespace)
 
   /**
+    * Moves the current position past all pairs of `\` and any other character.
+    *
+    * This is useful to avoid `\'` and `\"` ending the lexing of literals.
+    */
+  private def consumeSingleEscapes()(implicit s: State): Unit =
+    while (s.sc.advanceIfMatch('\\')) {
+      advance()
+    }
+
+  /**
     * Moves current position past a name (both upper- and lower-case).
     * There are edge cases of variable holes (e.g. "x?"), and java names (e.g. "Map$Entry"),
     * which is the reason this function will return a `TokenKind`.
@@ -700,35 +692,33 @@ object Lexer {
   private def acceptString()(implicit s: State): TokenKind = {
     var kind: TokenKind = TokenKind.LiteralString
     while (!eof()) {
-      var p = escapedPeek()
+      consumeSingleEscapes()
+      // Note: `sc.peek` returns `EOF` if out of bounds, different from `peek`.
+      var p = s.sc.peek
       // Check for the beginning of a string interpolation.
       val prevPrev = previousPrevious()
       val prev = previous()
-      val isInterpolation = !prevPrev.contains('\\') && prev.contains('$') && p.contains('{')
-      val isDebug = !prevPrev.contains('\\') && prev.contains('%') && p.contains('{')
+      val isInterpolation = !prevPrev.contains('\\') && prev.contains('$') && p == '{'
+      val isDebug = !prevPrev.contains('\\') && prev.contains('%') && p == '{'
       if (isInterpolation || isDebug) {
         acceptStringInterpolation(isDebug) match {
           case e@TokenKind.Err(_) => return e
           case k =>
             // Resume regular string literal tokenization by resetting p and prev.
             kind = k
-            p = escapedPeek()
+            consumeSingleEscapes()
+            p = peek()
         }
       }
       // Check for termination.
-      if (p.contains('\"')) {
+      if (p == '\"') {
         advance()
         return kind
       }
       // Check if file ended on a '\', meaning that the string was unterminated.
-      if (p.isEmpty) {
+      if (p == '\n') {
         return TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
       }
-      // Check for multi-line string.
-      if (p.contains('\n')) {
-        return TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
-      }
-      // All is good, eat one char and continue.
       advance()
     }
     TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
@@ -796,13 +786,15 @@ object Lexer {
   private def acceptChar()(implicit s: State): TokenKind = {
     var prev = ' '
     while (!eof()) {
-      val p = escapedPeek()
-      if (p.contains('\'')) {
+      consumeSingleEscapes()
+      // Note: `sc.peek` returns `EOF` if out of bounds, different from `peek`.
+      val p = s.sc.peek
+      if (p == '\'') {
         advance()
         return TokenKind.LiteralChar
       }
 
-      if ((prev, p) == ('/', Some('*'))) {
+      if ((prev, p) == ('/', '*')) {
         // This handles block comment within a char.
         return TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
       }
@@ -818,8 +810,10 @@ object Lexer {
     */
   private def acceptRegex()(implicit s: State): TokenKind = {
     while (!eof()) {
-      val p = escapedPeek()
-      if (p.contains('"')) {
+      consumeSingleEscapes()
+      // Note: `sc.peek` returns `EOF` if out of bounds, different from `peek`.
+      val p = s.sc.peek
+      if (p == '"') {
         advance()
         return TokenKind.LiteralRegex
       }
