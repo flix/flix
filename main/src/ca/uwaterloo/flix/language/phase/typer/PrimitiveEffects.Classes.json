@@ -7,6 +7,7 @@
     "java.lang.Double": "",
     "java.lang.Float": "",
     "java.lang.Integer": "",
+    "java.lang.Long": "",
     "java.lang.Short": "",
 
     "java.lang.Process": "Exec, IO",
