@@ -187,16 +187,16 @@ mod TestBox {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def int32Unbox01(): Bool = unsafe unbox(Integer.valueOf(1234567890i32)) == 1234567890i32
+    def int32Unbox01(): Bool = unbox(Integer.valueOf(1234567890i32)) == 1234567890i32
 
     @test
-    def int32Unbox02(): Bool = unsafe unbox(Integer.valueOf(-2147483648i32)) == -2147483648i32
+    def int32Unbox02(): Bool = unbox(Integer.valueOf(-2147483648i32)) == -2147483648i32
 
     @test
-    def int32Box01(): Bool = unsafe box(1234567890i32).equals(Integer.valueOf(1234567890i32))
+    def int32Box01(): Bool = box(1234567890i32).equals(Integer.valueOf(1234567890i32))
 
     @test
-    def int32Box02(): Bool = unsafe box(-2147483648i32).equals(Integer.valueOf(-2147483648i32))
+    def int32Box02(): Bool = box(-2147483648i32).equals(Integer.valueOf(-2147483648i32))
 
     @test
     def int32RoundTrip01(): Bool = unbox(box(1234567890i32)) == 1234567890i32

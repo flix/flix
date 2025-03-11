@@ -37,7 +37,7 @@ mod Test.Exp.Jvm.InvokeConstructor {
         new Short(123i16)
 
     @test
-    def testInvokeConstructor_07(): Integer \ IO =
+    def testInvokeConstructor_07(): Integer =
         new Integer(123i32)
 
     @test
