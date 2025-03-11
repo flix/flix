@@ -503,7 +503,6 @@ object Lexer {
     * Note that __comparison includes current__.
     */
   private def isSeparatedOperator(keyword: String)(implicit s: State): Boolean = {
-    /** Returns true if the n offset character is a separator or if n is out of bounds. */
     def isSep(c: Char) = isUserOp(c).isEmpty
 
     s.sc.nthIsPOrOutOfBounds(-2, isSep) && s.sc.nthIsPOrOutOfBounds(keyword.length - 1, isSep)
