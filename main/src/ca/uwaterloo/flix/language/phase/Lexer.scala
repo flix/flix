@@ -907,7 +907,6 @@ object Lexer {
     * If it is missing Flix defaults to `i32`.
     * */
   private def acceptHexNumber()(implicit s: State): TokenKind = {
-    /** Returns `true` if `c` is a hex decimal (i.e. on of these 0123456789abcdefABCDEF). */
     def isHexDigit(c: Char): Boolean = '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
 
     advance() // Consume 'x'.
