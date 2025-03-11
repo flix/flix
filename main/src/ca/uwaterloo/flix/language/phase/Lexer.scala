@@ -58,8 +58,8 @@ object Lexer {
     }
   }
 
-  /** Since Flix support hex decimals, a 'digit' can also be some select characters. */
-  private def isDigit(c: Char): Boolean =
+  /** Returns `true` if `c` is a hex decimal (i.e. on of these 0123456789abcdefABCDEF). */
+  private def isHexDigit(c: Char): Boolean =
     '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
 
   /** The internal state of the lexer as it tokenizes a single source. */
@@ -468,7 +468,7 @@ object Lexer {
         } else TokenKind.Underscore
       case c if c.isLetter => acceptName(c.isUpper)
       case '0' if peek() == 'x' => acceptHexNumber()
-      case c if isDigit(c) => acceptNumber()
+      case c if c.isDigit => acceptNumber()
       // User defined operators.
       case _ if isUserOp(c).isDefined =>
         val p = peek()
@@ -921,9 +921,9 @@ object Lexer {
     }
     while (!eof()) {
       peek() match {
-        case c if isDigit(c) => advance()
+        case c if isHexDigit(c) => advance()
         // '_' that is not in tail-position.
-        case '_' if peekPeek().exists(isDigit) => advance()
+        case '_' if peekPeek().exists(isHexDigit) => advance()
         // Sequence of underscores.
         case '_' if peekPeek().contains('_') =>
           // Consume the whole sequence of '_'.
@@ -939,15 +939,13 @@ object Lexer {
           return TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
         // If this is reached an explicit number type might occur next.
         case c =>
+          // The `f32`, `f64`, and `ff` suffixes cannot happen since `f` is a valid hex number.
           return c match {
-            case _ if isMatchCurrent("f32") => error.getOrElse(TokenKind.LiteralFloat32)
-            case _ if isMatchCurrent("f64") => error.getOrElse(TokenKind.LiteralFloat64)
             case _ if isMatchCurrent("i8") => error.getOrElse(TokenKind.LiteralInt8)
             case _ if isMatchCurrent("i16") => error.getOrElse(TokenKind.LiteralInt16)
             case _ if isMatchCurrent("i32") => error.getOrElse(TokenKind.LiteralInt32)
             case _ if isMatchCurrent("i64") => error.getOrElse(TokenKind.LiteralInt64)
             case _ if isMatchCurrent("ii") => error.getOrElse(TokenKind.LiteralBigInt)
-            case _ if isMatchCurrent("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
             case _ =>
               error.getOrElse(TokenKind.LiteralInt32)
           }
