@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.{Scope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.Result
 import org.scalatest.funsuite.AnyFunSuite
 
 import scala.collection.immutable.SortedSet
@@ -406,20 +405,15 @@ class TestCaseSetUnification extends AnyFunSuite with TestUtils {
 
 
   private def mkTypeVarSym(name: String, enumSym: Symbol.RestrictableEnumSym): Symbol.KindedTypeVarSym = {
-    Symbol.freshKindedTypeVarSym(VarText.SourceText(name), Kind.CaseSet(enumSym), isRegion = false, loc)
+    Symbol.freshKindedTypeVarSym(VarText.SourceText(name), Kind.CaseSet(enumSym), isSlack = false, loc)
   }
 
   private def assertUnifies(tpe1: Type, tpe2: Type, renv: RigidityEnv, enumSym: Symbol.RestrictableEnumSym): Unit = {
-    assert(isOk(CaseSetUnification.unify(tpe1, tpe2, renv, enumSym.universe, enumSym)))
+    assert(CaseSetUnification.unify(tpe1, tpe2, renv, enumSym.universe, enumSym).isDefined)
   }
 
   private def assertDoesNotUnify(tpe1: Type, tpe2: Type, renv: RigidityEnv, enumSym: Symbol.RestrictableEnumSym): Unit = {
-    assert(!isOk(CaseSetUnification.unify(tpe1, tpe2, renv, enumSym.universe, enumSym)))
-  }
-
-  private def isOk[T, E](r: Result[T, E]) = r match {
-    case Result.Ok(_) => true
-    case Result.Err(_) => false
+    assert(CaseSetUnification.unify(tpe1, tpe2, renv, enumSym.universe, enumSym).isEmpty)
   }
 
 }

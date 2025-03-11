@@ -95,9 +95,9 @@ object TailPos {
           Expr.ApplySelfTail(sym, exps, tpe, purity, loc)
         }
 
-      case Expr.TryWith(exp, effUse, rules, _, tpe, purity, loc) =>
+      case Expr.RunWith(exp, effUse, rules, _, tpe, purity, loc) =>
         // Mark expression as tail position.
-        Expr.TryWith(exp, effUse, rules, ExpPosition.Tail, tpe, purity, loc)
+        Expr.RunWith(exp, effUse, rules, ExpPosition.Tail, tpe, purity, loc)
 
       // Non-tail expressions
       case Expr.ApplyAtomic(_, _, _, _, _) => exp0

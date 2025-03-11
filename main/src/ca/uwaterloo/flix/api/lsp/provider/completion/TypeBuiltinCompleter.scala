@@ -15,11 +15,6 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{InsertTextFormat, TextEdit}
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.TypeBuiltinCompletion
-import ca.uwaterloo.flix.language.ast.TypedAst
-
 object TypeBuiltinCompleter {
   private def polycompletion(name: String, params: List[String], p: Priority): Completion = {
     val edit = params.zipWithIndex.map { case (param, i) => s"$${${i + 1}:$param}"}.mkString(s"$name[", ", ", "]")

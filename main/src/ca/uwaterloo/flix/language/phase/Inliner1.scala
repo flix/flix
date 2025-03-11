@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.OccurrenceAst1.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur.*
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst1, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.{CofiniteEffSet, InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{CofiniteSet, InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -448,7 +448,7 @@ object Inliner1 {
         }
         MonoAst.Expr.TryCatch(e, rs, tpe, eff, loc)
 
-      case OccurrenceAst1.Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
+      case OccurrenceAst1.Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
         val e = visit(exp)
         val rs = rules.map {
           case OccurrenceAst1.HandlerRule(op, fparams, exp1) =>
@@ -457,7 +457,7 @@ object Inliner1 {
             val e1 = visitExp(exp1, varSubst1, subst0, inScopeSet0, context0)
             MonoAst.HandlerRule(op, fps, e1)
         }
-        MonoAst.Expr.TryWith(e, effUse, rs, tpe, eff, loc)
+        MonoAst.Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
       case OccurrenceAst1.Expr.Do(op, exps, tpe, eff, loc) =>
         val es = exps.map(visit)
@@ -530,8 +530,6 @@ object Inliner1 {
         val varSubst2 = varSubsts.foldLeft(varSubst1)(_ ++ _)
         (MonoAst.Pattern.Record(ps, p, tpe, loc), varSubst2)
 
-      case OccurrenceAst1.Pattern.RecordEmpty(tpe, loc) =>
-        (MonoAst.Pattern.RecordEmpty(tpe, loc), Map.empty)
     }
 
     def visitRecordLabelPattern(pattern0: OccurrenceAst1.Pattern.Record.RecordLabelPattern): (MonoAst.Pattern.Record.RecordLabelPattern, VarSubst) = pattern0 match {
@@ -713,7 +711,7 @@ object Inliner1 {
       }
       Expr.TryCatch(e, rs, tpe, eff, loc)
 
-    case MonoAst.Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
+    case MonoAst.Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
       val e = refreshBinders(exp)
       val rs = rules.map {
         case MonoAst.HandlerRule(op, fparams, exp1) =>
@@ -722,7 +720,7 @@ object Inliner1 {
           val e1 = refreshBinders(exp1)(subst2, flix)
           MonoAst.HandlerRule(op, fps, e1)
       }
-      Expr.TryWith(e, effUse, rs, tpe, eff, loc)
+      Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
     case MonoAst.Expr.Do(op, exps, tpe, eff, loc) =>
       val es = exps.map(refreshBinders)
@@ -773,8 +771,6 @@ object Inliner1 {
         val subst1 = substs.foldLeft(subst)(_ ++ _)
         (MonoAst.Pattern.Record(ps, p, tpe, loc), subst1)
 
-      case MonoAst.Pattern.RecordEmpty(tpe, loc) =>
-        (MonoAst.Pattern.RecordEmpty(tpe, loc), Map.empty)
     }
   }
 
@@ -841,28 +837,28 @@ object Inliner1 {
   }
 
   /** Evaluates a ground, simplified effect type */
-  private def eval(eff: Type): CofiniteEffSet = eff match {
-    case Type.Univ => CofiniteEffSet.universe
-    case Type.Pure => CofiniteEffSet.empty
+  private def eval(eff: Type): CofiniteSet[Symbol.EffectSym] = eff match {
+    case Type.Univ => CofiniteSet.universe
+    case Type.Pure => CofiniteSet.empty
     case Type.Cst(TypeConstructor.Effect(sym), _) =>
-      CofiniteEffSet.mkSet(sym)
+      CofiniteSet.mkSet(sym)
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _) =>
-      CofiniteEffSet.complement(eval(y))
+      CofiniteSet.complement(eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) =>
-      CofiniteEffSet.union(eval(x), eval(y))
+      CofiniteSet.union(eval(x), eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _) =>
-      CofiniteEffSet.intersection(eval(x), eval(y))
+      CofiniteSet.intersection(eval(x), eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _) =>
-      CofiniteEffSet.difference(eval(x), eval(y))
+      CofiniteSet.difference(eval(x), eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
-      CofiniteEffSet.xor(eval(x), eval(y))
+      CofiniteSet.xor(eval(x), eval(y))
     case other => throw InternalCompilerException(s"Unexpected effect $other", other.loc)
   }
 
   /** Returns the [[Type]] representation of `set` with `loc`. */
-  private def evalToType(set: CofiniteEffSet, loc: SourceLocation): Type = set match {
-    case CofiniteEffSet.Set(s) => Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc)
-    case CofiniteEffSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc), loc)
+  private def evalToType(set: CofiniteSet[Symbol.EffectSym], loc: SourceLocation): Type = set match {
+    case CofiniteSet.Set(s) => Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc)
+    case CofiniteSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc), loc)
   }
 
 
@@ -928,9 +924,9 @@ object Inliner1 {
         MonoAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, loc)
       }
 
-    case OccurrenceAst1.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
+    case OccurrenceAst1.Expr.Scope(sym, rsym, exp, tpe, eff, loc) =>
       val e = toMonoAstExpr(exp)
-      MonoAst.Expr.Scope(sym, rvar, e, tpe, eff, loc)
+      MonoAst.Expr.Scope(sym, rsym, e, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = toMonoAstExpr(exp1)
@@ -988,7 +984,7 @@ object Inliner1 {
       }
       MonoAst.Expr.TryCatch(e, rs, tpe, eff, loc)
 
-    case OccurrenceAst1.Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
+    case OccurrenceAst1.Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
       val e = toMonoAstExpr(exp)
       val rs = rules.map {
         case OccurrenceAst1.HandlerRule(op, fparams, exp1) =>
@@ -996,7 +992,7 @@ object Inliner1 {
           val e1 = toMonoAstExpr(exp1)
           MonoAst.HandlerRule(op, fps, e1)
       }
-      MonoAst.Expr.TryWith(e, effUse, rs, tpe, eff, loc)
+      MonoAst.Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
     case OccurrenceAst1.Expr.Do(op, exps, tpe, eff, loc) =>
       val es = exps.map(toMonoAstExpr)
@@ -1039,8 +1035,6 @@ object Inliner1 {
         val p = visit(pat)
         MonoAst.Pattern.Record(ps, p, tpe, loc)
 
-      case OccurrenceAst1.Pattern.RecordEmpty(tpe, loc) =>
-        MonoAst.Pattern.RecordEmpty(tpe, loc)
     }
 
     def visitRecordLabelPattern(pattern0: OccurrenceAst1.Pattern.Record.RecordLabelPattern): MonoAst.Pattern.Record.RecordLabelPattern = pattern0 match {

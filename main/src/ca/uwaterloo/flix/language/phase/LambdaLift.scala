@@ -213,7 +213,7 @@ object LambdaLift {
       }
       LiftedAst.Expr.TryCatch(e, rs, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+    case SimplifiedAst.Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
         case SimplifiedAst.HandlerRule(sym, fparams, body) =>
@@ -221,7 +221,7 @@ object LambdaLift {
           val b = visitExp(body)
           LiftedAst.HandlerRule(sym, fps, b)
       }
-      LiftedAst.Expr.TryWith(e, effUse, rs, tpe, purity, loc)
+      LiftedAst.Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
     case SimplifiedAst.Expr.Do(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)

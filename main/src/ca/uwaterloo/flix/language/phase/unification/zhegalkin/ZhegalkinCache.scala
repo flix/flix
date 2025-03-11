@@ -22,30 +22,58 @@ object ZhegalkinCache {
   /**
     * Controls what caches are enabled.
     */
-  private val EnableUnionCache: Boolean = true
-  private val EnableInterCache: Boolean = true
-  private val EnableXorCache: Boolean = true
+  var EnableInterCstCache: Boolean = false
+  var EnableUnionCache: Boolean = false
+  var EnableInterCache: Boolean = true
+  var EnableXorCache: Boolean = false
+
+  /**
+   * A cache that represents the intersection of the given Zhegalkin constant and expression.
+   *
+   * Note: initial size and load factor determined by profiling.
+   */
+  private val cachedInterCst: ConcurrentMap[(ZhegalkinCst, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap(1024, 0.5f)
 
   /**
     * A cache that represents the union of the two given Zhegalkin expressions.
+    *
+    * Note: initial size and load factor determined by profiling.
     */
-  private val cachedUnion: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap()
+  private val cachedUnion: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap(1024, 0.5f)
 
   /**
     * A cache that represents the intersection of the two given Zhegalkin expressions.
+    *
+    * Note: initial size and load factor determined by profiling.
     */
-  private val cachedInter: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap()
+  private val cachedInter: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap(2048, 0.5f)
 
   /**
     * A cache that represents the exclusive-or of the two given Zhegalkin expressions.
+    *
+    * Note: initial size and load factor determined by profiling.
     */
-  private val cachedXor: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap()
+  private val cachedXor: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap(8192, 0.5f)
+
+  /**
+   * Returns the intersection of the given Zhegalkin constant `c` and the expression `e`.
+   *
+   * Performs a lookup in the cache or computes the result.
+   */
+  @inline
+  def lookupOrComputeInterCst(c: ZhegalkinCst, e: ZhegalkinExpr, mkInter: (ZhegalkinCst, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
+    if (!EnableInterCstCache) {
+      return mkInter(c, e)
+    }
+    cachedInterCst.computeIfAbsent((c, e), _ => mkInter(c, e))
+  }
 
   /**
     * Returns the union of the two given Zhegalkin expressions `e1` and `e2`.
     *
     * Performs a lookup in the cache or computes the result.
     */
+  @inline
   def lookupOrComputeUnion(e1: ZhegalkinExpr, e2: ZhegalkinExpr, mkUnion: (ZhegalkinExpr, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
     if (!EnableUnionCache) {
       return mkUnion(e1, e2)
@@ -58,6 +86,7 @@ object ZhegalkinCache {
     *
     * Performs a lookup in the cache or computes the result.
     */
+  @inline
   def lookupOrComputeInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr, mkInter: (ZhegalkinExpr, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
     if (!EnableInterCache) {
       return mkInter(e1, e2)
@@ -70,6 +99,7 @@ object ZhegalkinCache {
     *
     * Performs a lookup in the cache or computes the result.
     */
+  @inline
   def lookupOrComputeXor(e1: ZhegalkinExpr, e2: ZhegalkinExpr, mkXor: (ZhegalkinExpr, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
     if (!EnableXorCache) {
       return mkXor(e1, e2)
@@ -82,9 +112,11 @@ object ZhegalkinCache {
     * Clears all caches.
     */
   def clearCaches(): Unit = {
+    cachedInterCst.clear()
     cachedUnion.clear()
     cachedInter.clear()
     cachedXor.clear()
+    ZhegalkinAlgebra.clearCache()
   }
 
 }

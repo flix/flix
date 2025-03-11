@@ -147,7 +147,7 @@ object Lowering {
 
     val defs = ParOps.parMapValues(root.defs)(visitDef)
     val sigs = ParOps.parMapValues(root.sigs)(visitSig)
-    val instances = ParOps.parMapValues(root.instances)(insts => insts.map(visitInstance))
+    val instances = ParOps.parMapValueList(root.instances)(visitInstance)
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val restrictableEnums = ParOps.parMapValues(root.restrictableEnums)(visitRestrictableEnum)
@@ -162,9 +162,7 @@ object Lowering {
       case (_, v) => v.sym -> v
     }
 
-    // EntryPoints should have set this to Some.
-    val entryPoints = root.entryPoints.get
-    LoweredAst.Root(traits, instances, sigs, defs, newEnums, structs, effects, aliases, root.mainEntryPoint, entryPoints, root.sources, root.traitEnv, root.eqEnv)
+    LoweredAst.Root(traits, instances, sigs, defs, newEnums, structs, effects, aliases, root.mainEntryPoint, root.entryPoints, root.sources, root.traitEnv, root.eqEnv)
   }
 
   /**
@@ -352,11 +350,11 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Var(sym, t, loc)
 
-    case TypedAst.Expr.Hole(sym, tpe, eff, loc) =>
+    case TypedAst.Expr.Hole(sym, env, tpe, eff, loc) =>
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, eff, loc)
 
-    case TypedAst.Expr.HoleWithExp(_, tpe, _, loc) =>
+    case TypedAst.Expr.HoleWithExp(_, env, tpe, _, loc) =>
       val sym = Symbol.freshHoleSym(loc)
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, Type.Pure, loc)
@@ -482,10 +480,6 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Tuple, es, t, eff, loc)
 
-    case TypedAst.Expr.RecordEmpty(tpe, loc) =>
-      val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.RecordEmpty, List.empty, t, Type.Pure, loc)
-
     case TypedAst.Expr.RecordSelect(exp, label, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -564,7 +558,7 @@ object Lowering {
       val b = visitExp(base)
       LoweredAst.Expr.VectorLength(b, loc)
 
-    case TypedAst.Expr.Ascribe(exp, tpe, eff, loc) =>
+    case TypedAst.Expr.Ascribe(exp, _, _, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       LoweredAst.Expr.Ascribe(e, t, eff, loc)
@@ -604,11 +598,29 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Throw, List(e), t, eff, loc)
 
-    case TypedAst.Expr.TryWith(exp, sym, rules, tpe, eff, loc) =>
-      val e = visitExp(exp)
+    case TypedAst.Expr.Handler(sym, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
+      // handler sym { rules }
+      // is lowered to
+      // handlerBody -> try handlerBody() with sym { rules }
+      val bodySym = Symbol.freshVarSym("handlerBody", BoundBy.FormalParam, loc.asSynthetic)
       val rs = rules.map(visitHandlerRule)
+      val bt = visitType(bodyTpe)
       val t = visitType(tpe)
-      LoweredAst.Expr.TryWith(e, sym, rs, t, eff, loc)
+      val bodyThunkType = Type.mkArrowWithEffect(Type.Unit, bodyEff, bt, loc.asSynthetic)
+      val bodyVar = LoweredAst.Expr.Var(bodySym, bodyThunkType, loc.asSynthetic)
+      val body = LoweredAst.Expr.ApplyClo(bodyVar, LoweredAst.Expr.Cst(Constant.Unit, Type.Unit, loc.asSynthetic), bt, bodyEff, loc.asSynthetic)
+      val RunWith = LoweredAst.Expr.RunWith(body, sym, rs, bt, handledEff, loc)
+      val param = LoweredAst.FormalParam(bodySym, Modifiers.Empty, bodyThunkType, TypeSource.Inferred, loc.asSynthetic)
+      LoweredAst.Expr.Lambda(param, RunWith, t, loc)
+
+    case TypedAst.Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+      // run exp1 with exp2
+      // is lowered to
+      // exp2(_runWith -> exp1)
+      val unitParam = LoweredAst.FormalParam(Symbol.freshVarSym("_runWith", BoundBy.FormalParam, loc.asSynthetic), Modifiers.Empty, Type.Unit, TypeSource.Inferred, loc.asSynthetic)
+      val thunkType = Type.mkArrowWithEffect(Type.Unit, exp1.eff, exp1.tpe, loc.asSynthetic)
+      val thunk = LoweredAst.Expr.Lambda(unitParam, visitExp(exp1), thunkType, loc.asSynthetic)
+      LoweredAst.Expr.ApplyClo(visitExp(exp2), thunk, tpe, eff, loc)
 
     case TypedAst.Expr.Do(sym, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -858,9 +870,6 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Pattern.Record(patsVal, patVal, t, loc)
 
-    case TypedAst.Pattern.RecordEmpty(tpe, loc) =>
-      LoweredAst.Pattern.RecordEmpty(visitType(tpe), loc)
-
     case TypedAst.Pattern.Error(_, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
   }
 
@@ -966,7 +975,7 @@ object Lowering {
     * Lowers the given catch rule `rule0`.
     */
   private def visitCatchRule(rule0: TypedAst.CatchRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.CatchRule = rule0 match {
-    case TypedAst.CatchRule(bnd, clazz, exp) =>
+    case TypedAst.CatchRule(bnd, clazz, exp, loc) =>
       val e = visitExp(exp)
       LoweredAst.CatchRule(bnd.sym, clazz, e)
   }
@@ -975,7 +984,7 @@ object Lowering {
     * Lowers the given handler rule `rule0`.
     */
   private def visitHandlerRule(rule0: TypedAst.HandlerRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.HandlerRule = rule0 match {
-    case TypedAst.HandlerRule(sym, fparams0, exp) =>
+    case TypedAst.HandlerRule(sym, fparams0, exp, loc) =>
       val fparams = fparams0.map(visitFormalParam)
       val e = visitExp(exp)
       LoweredAst.HandlerRule(sym, fparams, e)
@@ -985,7 +994,7 @@ object Lowering {
     * Lowers the given match rule `rule0`.
     */
   private def visitMatchRule(rule0: TypedAst.MatchRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.MatchRule = rule0 match {
-    case TypedAst.MatchRule(pat, guard, exp) =>
+    case TypedAst.MatchRule(pat, guard, exp, loc) =>
       val p = visitPat(pat)
       val g = guard.map(visitExp)
       val e = visitExp(exp)
@@ -996,7 +1005,7 @@ object Lowering {
     * Lowers the given match rule `rule0`.
     */
   private def visitTypeMatchRule(rule0: TypedAst.TypeMatchRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.TypeMatchRule = rule0 match {
-    case TypedAst.TypeMatchRule(bnd, tpe, exp) =>
+    case TypedAst.TypeMatchRule(bnd, tpe, exp, loc) =>
       val e = visitExp(exp)
       LoweredAst.TypeMatchRule(bnd.sym, tpe, e)
   }
@@ -1005,7 +1014,7 @@ object Lowering {
     * Lowers the given select channel rule `rule0`.
     */
   private def visitSelectChannelRule(rule0: TypedAst.SelectChannelRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.SelectChannelRule = rule0 match {
-    case TypedAst.SelectChannelRule(TypedAst.Binder(sym, _), chan, exp) =>
+    case TypedAst.SelectChannelRule(TypedAst.Binder(sym, _), chan, exp, _) =>
       val c = visitExp(chan)
       val e = visitExp(exp)
       LoweredAst.SelectChannelRule(sym, c, e)
@@ -1137,8 +1146,6 @@ object Lowering {
     case TypedAst.Pattern.Tuple(_, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
     case TypedAst.Pattern.Record(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
-
-    case TypedAst.Pattern.RecordEmpty(_, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
     case TypedAst.Pattern.Error(_, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
@@ -1693,7 +1700,7 @@ object Lowering {
         val loc = e.loc.asSynthetic
         val e1 = mkChannelExp(sym, e.tpe, loc) // The channel `ch`
         val e2 = mkPutChannel(e1, e, Type.IO, loc) // The put exp: `ch <- exp0`.
-        val e3 = LoweredAst.Expr.ApplyAtomic(AtomicOp.Region, List.empty, Type.mkRegion(Type.IO, loc), Type.Pure, loc)
+        val e3 = LoweredAst.Expr.ApplyAtomic(AtomicOp.Region, List.empty, Type.mkRegionToStar(Type.IO, loc), Type.Pure, loc)
         val e4 = LoweredAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(e2, e3), Type.Unit, Type.IO, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
         LoweredAst.Expr.Stm(e4, acc, acc.tpe, Type.mkUnion(e4.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
     }
@@ -1898,7 +1905,7 @@ object Lowering {
 
     case LoweredAst.Expr.TryCatch(_, _, _, _, _) => ??? // TODO
 
-    case LoweredAst.Expr.TryWith(exp, sym, rules, tpe, eff, loc) =>
+    case LoweredAst.Expr.RunWith(exp, sym, rules, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       val rs = rules.map {
         case LoweredAst.HandlerRule(op, fparams, hexp) =>
@@ -1906,7 +1913,7 @@ object Lowering {
           val he = substExp(hexp, subst)
           LoweredAst.HandlerRule(op, fps, he)
       }
-      LoweredAst.Expr.TryWith(e, sym, rs, tpe, eff, loc)
+      LoweredAst.Expr.RunWith(e, sym, rs, tpe, eff, loc)
 
     case LoweredAst.Expr.Do(sym, exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))

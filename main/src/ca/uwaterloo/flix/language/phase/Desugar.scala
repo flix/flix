@@ -33,11 +33,8 @@ object Desugar {
     */
   def run(root: WeededAst.Root, oldRoot: DesugaredAst.Root, changeSet: ChangeSet)(implicit flix: Flix): DesugaredAst.Root = flix.phase("Desugar") {
     // Compute the stale and fresh sources.
-    val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
-
-    val units = ParOps.parMapValues(stale)(visitUnit)
-    val allUnits = units ++ fresh
-    DesugaredAst.Root(allUnits, root.mainEntryPoint, root.availableClasses)
+    val units = changeSet.updateStaleValues(root.units, oldRoot.units)(ParOps.parMapValues(_)(visitUnit))
+    DesugaredAst.Root(units, root.mainEntryPoint, root.availableClasses, root.tokens)
   }
 
   /**
@@ -297,9 +294,6 @@ object Desugar {
     case WeededAst.Type.Schema(row, loc) =>
       val r = visitType(row)
       DesugaredAst.Type.Schema(r, loc)
-
-    case WeededAst.Type.Native(fqn, loc) =>
-      DesugaredAst.Type.Native(fqn, loc)
 
     case WeededAst.Type.Arrow(tparams, eff, tresult, loc) =>
       val tparams1 = tparams.map(visitType)
@@ -592,9 +586,6 @@ object Desugar {
     case WeededAst.Expr.Tuple(exps, loc) =>
       desugarTuple(exps, loc)
 
-    case WeededAst.Expr.RecordEmpty(loc) =>
-      Expr.RecordEmpty(loc)
-
     case WeededAst.Expr.RecordSelect(exp, label, loc) =>
       val e = visitExp(exp)
       Expr.RecordSelect(e, label, loc)
@@ -718,12 +709,14 @@ object Desugar {
       val e = visitExp(exp)
       Expr.Throw(e, loc)
 
-    case WeededAst.Expr.TryWith(exp, handlers, loc) =>
+    case WeededAst.Expr.Handler(eff, rules, loc) =>
+      val rs = rules.map(visitHandlerRule)
+      Expr.Handler(eff, rs, loc)
+
+    case WeededAst.Expr.RunWith(exp, exps, loc) =>
       val e = visitExp(exp)
-      handlers.foldLeft(e) {
-        case (acc, handler) =>
-          val rs = handler.rules.map(visitHandlerRule)
-          Expr.TryWith(acc, handler.eff, rs, loc)
+      exps.foldLeft(e) {
+        case (acc, e2) => Expr.RunWith(acc, visitExp(e2), loc)
       }
 
     case WeededAst.Expr.InvokeConstructor(className, exps, loc) =>
@@ -745,7 +738,7 @@ object Desugar {
       Expr.NewObject(t, ms, loc)
 
     case WeededAst.Expr.Static(loc) =>
-      val tpe = Type.mkRegion(Type.IO, loc)
+      val tpe = Type.mkRegionToStar(Type.IO, loc)
       DesugaredAst.Expr.Region(tpe, loc)
 
     case WeededAst.Expr.NewChannel(exp, loc) =>
@@ -841,11 +834,11 @@ object Desugar {
     * Desugars the given [[WeededAst.MatchRule]] `rule0`.
     */
   private def visitMatchRule(rule0: WeededAst.MatchRule)(implicit flix: Flix): DesugaredAst.MatchRule = rule0 match {
-    case WeededAst.MatchRule(pat, exp1, exp2) =>
+    case WeededAst.MatchRule(pat, exp1, exp2, loc) =>
       val p = visitPattern(pat)
       val e1 = exp1.map(visitExp)
       val e2 = visitExp(exp2)
-      DesugaredAst.MatchRule(p, e1, e2)
+      DesugaredAst.MatchRule(p, e1, e2, loc)
   }
 
   /**
@@ -874,9 +867,6 @@ object Desugar {
       val p = visitPattern(pat)
       DesugaredAst.Pattern.Record(ps, p, loc)
 
-    case WeededAst.Pattern.RecordEmpty(loc) =>
-      DesugaredAst.Pattern.RecordEmpty(loc)
-
     case WeededAst.Pattern.Error(loc) =>
       DesugaredAst.Pattern.Error(loc)
   }
@@ -885,10 +875,10 @@ object Desugar {
     * Desugars the given [[WeededAst.TypeMatchRule]] `rule0`.
     */
   private def visitTypeMatchRule(rule0: WeededAst.TypeMatchRule)(implicit flix: Flix): DesugaredAst.TypeMatchRule = rule0 match {
-    case WeededAst.TypeMatchRule(ident, tpe, exp) =>
+    case WeededAst.TypeMatchRule(ident, tpe, exp, loc) =>
       val t = visitType(tpe)
       val e = visitExp(exp)
-      DesugaredAst.TypeMatchRule(ident, t, e)
+      DesugaredAst.TypeMatchRule(ident, t, e, loc)
   }
 
   /**
@@ -931,19 +921,19 @@ object Desugar {
     * Desugars the given [[WeededAst.CatchRule]] `rule0`.
     */
   private def visitCatchRule(rule0: WeededAst.CatchRule)(implicit flix: Flix): DesugaredAst.CatchRule = rule0 match {
-    case WeededAst.CatchRule(ident, className, exp) =>
+    case WeededAst.CatchRule(ident, className, exp, loc) =>
       val e = visitExp(exp)
-      DesugaredAst.CatchRule(ident, className, e)
+      DesugaredAst.CatchRule(ident, className, e, loc)
   }
 
   /**
     * Desugars the given [[WeededAst.HandlerRule]] `rule0`.
     */
   private def visitHandlerRule(rule0: WeededAst.HandlerRule)(implicit flix: Flix): DesugaredAst.HandlerRule = rule0 match {
-    case WeededAst.HandlerRule(op, fparams, exp) =>
+    case WeededAst.HandlerRule(op, fparams, exp, loc) =>
       val fps = visitFormalParams(fparams)
       val e = visitExp(exp)
-      DesugaredAst.HandlerRule(op, fps, e)
+      DesugaredAst.HandlerRule(op, fps, e, loc)
   }
 
   /**
@@ -962,10 +952,10 @@ object Desugar {
     * Desugars the given [[WeededAst.SelectChannelRule]] `rule0`.
     */
   private def visitSelectChannelRule(rule0: WeededAst.SelectChannelRule)(implicit flix: Flix): DesugaredAst.SelectChannelRule = rule0 match {
-    case WeededAst.SelectChannelRule(ident, exp1, exp2) =>
+    case WeededAst.SelectChannelRule(ident, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      DesugaredAst.SelectChannelRule(ident, e1, e2)
+      DesugaredAst.SelectChannelRule(ident, e1, e2, loc)
   }
 
   /**
@@ -1133,10 +1123,14 @@ object Desugar {
         // Rewrite to pattern match
         val p1 = visitPattern(pat1)
         val e1 = visitExp(exp1)
-        val matchRule = DesugaredAst.MatchRule(p1, None, acc)
+        val matchRule = DesugaredAst.MatchRule(p1, None, acc, loc1.asSynthetic)
         DesugaredAst.Expr.Match(e1, List(matchRule), loc1.asSynthetic)
     }
-    DesugaredAst.Expr.Scope(regIdent, foreachExp, loc0)
+
+    val scope = DesugaredAst.Expr.Scope(regIdent, foreachExp, loc0)
+
+    // We add an ascription to Unit because inference across region boundaries is limited.
+    DesugaredAst.Expr.Ascribe(scope, Some(DesugaredAst.Type.Unit(loc0.asSynthetic)), None, loc0.asSynthetic)
   }
 
   /**
@@ -1176,7 +1170,7 @@ object Desugar {
         // Rewrite to pattern match
         val p1 = visitPattern(pat1)
         val e1 = visitExp(exp1)
-        val matchRule = DesugaredAst.MatchRule(p1, None, acc)
+        val matchRule = DesugaredAst.MatchRule(p1, None, acc, loc1.asSynthetic)
         DesugaredAst.Expr.Match(e1, List(matchRule), loc1.asSynthetic)
     }
   }
@@ -1256,7 +1250,7 @@ object Desugar {
         // Rewrite to pattern match
         val p1 = visitPattern(pat1)
         val e1 = visitExp(exp1)
-        val matchRule = DesugaredAst.MatchRule(p1, None, acc)
+        val matchRule = DesugaredAst.MatchRule(p1, None, acc, loc1.asSynthetic)
         DesugaredAst.Expr.Match(e1, List(matchRule), loc1.asSynthetic)
     }
 
@@ -1283,7 +1277,7 @@ object Desugar {
         DesugaredAst.Expr.Let(ident, withAscription(e1, t), e2, loc0)
       case _ =>
         // Full pattern match
-        val rule = DesugaredAst.MatchRule(p, None, e2)
+        val rule = DesugaredAst.MatchRule(p, None, e2, loc0)
         DesugaredAst.Expr.Match(withAscription(e1, t), List(rule), loc0)
     }
   }
@@ -1573,7 +1567,7 @@ object Desugar {
 
     // Construct the body of the lambda expression.
     val varOrRef = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0)
-    val rule = DesugaredAst.MatchRule(pat0, None, exp0)
+    val rule = DesugaredAst.MatchRule(pat0, None, exp0, loc0)
 
     val fparam = DesugaredAst.FormalParam(ident, Modifiers.Empty, None, loc0)
     val body = DesugaredAst.Expr.Match(varOrRef, List(rule), loc0)

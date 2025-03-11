@@ -113,7 +113,7 @@ mod FileWrite {
     pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - FileWrite) + IO = x ->
         run {
             Ok(f(x))
-        } with FileWrite {
+        } with handler FileWrite {
             def write(data, f, k) = {
                 try {
                     let bytes = data#str.getBytes(StandardCharsets.UTF_8);
@@ -251,5 +251,12 @@ mod FileWrite {
                 }
             }
         }
+
+    ///
+    /// Runs the `FileWrite` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `FileWrite` effect using the `IO` effect.
+    ///
+    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ (ef - FileWrite) + {IO} = handle(f)()
 
 }

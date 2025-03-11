@@ -69,7 +69,11 @@ object Simplifier {
   private def visitStruct(struct: MonoAst.Struct): SimplifiedAst.Struct = struct match {
     case MonoAst.Struct(_, ann, mod, sym, tparams0, fields0, loc) =>
       val tparams = tparams0.map(param => SimplifiedAst.TypeParam(param.name, param.sym, param.loc))
-      val fields = fields0.map(visitStructField)
+
+      // Note: The order of fields may have become scrambled. See #10057.
+      // We sort them here to re-establish the declaration order.
+      // This is a temporary solution until a better can be developed.
+      val fields = fields0.map(visitStructField).sortBy(_.sym.loc)
       SimplifiedAst.Struct(ann, mod, sym, tparams, fields, loc)
   }
 
@@ -227,7 +231,7 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.TryCatch(e, rs, t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
+    case MonoAst.Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
         case MonoAst.HandlerRule(sym, fparams, body) =>
@@ -236,7 +240,7 @@ object Simplifier {
           SimplifiedAst.HandlerRule(sym, fps, b)
       }
       val t = visitType(tpe)
-      SimplifiedAst.Expr.TryWith(e, effUse, rs, t, simplifyEffect(eff), loc)
+      SimplifiedAst.Expr.RunWith(e, effUse, rs, t, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.Do(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -360,6 +364,8 @@ object Simplifier {
             val List(elm) = tpe.typeArguments
             // The row types themselves return monotype records, so we do nothing here.
             visitType(elm)
+
+          case TypeConstructor.Region(_) => MonoType.Unit
 
           case TypeConstructor.True => MonoType.Unit
           case TypeConstructor.False => MonoType.Unit
@@ -522,6 +528,8 @@ object Simplifier {
           case TypeConstructor.Record =>
             val List(elm) = tpe.typeArguments
             Type.mkRecord(visitPolyType(elm), loc)
+
+          case TypeConstructor.Region(_) => Type.mkUnit(loc)
 
           case TypeConstructor.True => Type.mkUnit(loc)
           case TypeConstructor.False => Type.mkUnit(loc)

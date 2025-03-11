@@ -245,7 +245,7 @@ object OccurrenceAnalyzer {
       val o4 = o2.foldLeft(o1)((acc, o5) => combineAllSeq(acc, o5))
       (OccurrenceAst.Expr.TryCatch(e, rs, tpe, purity, loc), o4.copy(defs = o4.defs + (sym0 -> DontInline)).increaseSizeByOne())
 
-    case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+    case Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
       val (e, o1) = visitExp(sym0, exp)
       val (rs, o2) = rules.map {
         case LiftedAst.HandlerRule(op, fparams, exp) =>
@@ -254,7 +254,7 @@ object OccurrenceAnalyzer {
           (OccurrenceAst.HandlerRule(op, fps, e), o3)
       }.unzip
       val o4 = o2.foldLeft(o1)((acc, o5) => combineAllSeq(acc, o5))
-      (OccurrenceAst.Expr.TryWith(e, effUse, rs, tpe, purity, loc), o4.copy(defs = o4.defs + (sym0 -> DontInline)).increaseSizeByOne())
+      (OccurrenceAst.Expr.RunWith(e, effUse, rs, tpe, purity, loc), o4.copy(defs = o4.defs + (sym0 -> DontInline)).increaseSizeByOne())
 
     case Expr.Do(op, exps, tpe, purity, loc) =>
       val (es, o1) = visitExps(sym0, exps)

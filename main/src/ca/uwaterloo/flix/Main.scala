@@ -16,10 +16,11 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.Main.Command.{Check, PlainLsp}
+import ca.uwaterloo.flix.Main.Command.PlainLsp
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
 import ca.uwaterloo.flix.util.Validation.flatMapN
@@ -323,6 +324,9 @@ object Main {
         case Command.InlinerExperiments =>
           BenchmarkInliner.run(options)
 
+        case Command.Zhegalkin =>
+          ZhegalkinPerf.run(options.XPerfN)
+
       }
     }
 
@@ -413,6 +417,8 @@ object Main {
 
     case object InlinerExperiments extends Command
 
+    case object Zhegalkin extends Command
+
   }
 
   /**
@@ -492,6 +498,12 @@ object Main {
         .text("Runs experiments for the new inliner")
 
       cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
+
+      cmd("Xzhegalkin").action((_, c) => c.copy(command = Command.Zhegalkin)).children(
+        opt[Int]("n")
+          .action((v, c) => c.copy(XPerfN = Some(v)))
+          .text("number of compilations")
+      ).hidden()
 
       note("")
 

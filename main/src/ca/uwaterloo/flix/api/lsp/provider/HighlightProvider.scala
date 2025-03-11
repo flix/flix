@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.api.lsp.acceptors.{FileAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Acceptor, Consumer, DocumentHighlight, DocumentHighlightKind, Position, Range, ResponseStatus, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Root}
-import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.shared.{AliasConstructor, AssocTypeConstructor, SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, TypeAliasSymUse}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL.*
@@ -62,14 +62,14 @@ object HighlightProvider {
     * @return     A [[JObject]] representing an LSP highlight response. On success, contains [[DocumentHighlight]]
     *             for each occurrence of the symbol under the cursor.
     */
-  def processHighlight(uri: String, pos: Position)(implicit root: Root): JObject = {
+  def processHighlight(uri: String, pos: Position)(implicit root: Root): Set[DocumentHighlight] = {
     val highlightRight = searchRightOfCursor(uri, pos).flatMap(x => getOccurs(x, uri))
     val highlightLeft = searchLeftOfCursor(uri, pos).flatMap(x => getOccurs(x, uri))
 
     highlightRight
       .orElse(highlightLeft)
       .map(mkHighlights)
-      .getOrElse(mkNotFound(uri, pos))
+      .getOrElse(Set.empty)
   }
 
   /**
@@ -130,7 +130,7 @@ object HighlightProvider {
     *
     * Certain AST nodes are filtered out. We filter out [[TypedAst.Def]], [[TypedAst.Sig]],
     * [[TypedAst.Op]] and [[TypedAst.Enum]] nodes if the cursor is in them but _not_ in their [[Symbol]].
-    * Additionally, we filter out [[TypedAst.Expr.RecordEmpty]] nodes, since they're uninteresting
+    * Additionally, we filter out [[Constant.RecordEmpty]] nodes, since they're uninteresting
     * for highlighting and their [[SourceLocation]] overshadows [[TypedAst.Expr.RecordExtend]]
     * and [[TypedAst.Expr.RecordRestrict]] nodes. Lastly we filter out AST nodes with synthetic
     * [[SourceLocation]]s as these, like the previous, are uninteresting and might shadow other nodes.
@@ -195,17 +195,17 @@ object HighlightProvider {
     case TypedAst.FormalParam(_, _, _, _, loc) => loc.isReal
     case TypedAst.PredicateParam(_, _, loc) => loc.isReal
     case TypedAst.JvmMethod(_, _, _, _, _, loc) => loc.isReal
-    case TypedAst.CatchRule(_, _, _) => true
-    case TypedAst.HandlerRule(_, _, _) => true
-    case TypedAst.TypeMatchRule(_, _, _) => true
-    case TypedAst.SelectChannelRule(_, _, _) => true
+    case TypedAst.CatchRule(_, _, _, _) => true
+    case TypedAst.HandlerRule(_, _, _, _) => true
+    case TypedAst.TypeMatchRule(_, _, _, _) => true
+    case TypedAst.SelectChannelRule(_, _, _, _) => true
     case TypedAst.TypeParam(_, _, loc) => loc.isReal
     case TypedAst.ParYieldFragment(_, _, loc) => loc.isReal
 
     case SymUse.AssocTypeSymUse(_, loc) => loc.isReal
     case SymUse.CaseSymUse(_, loc) => loc.isReal
     case SymUse.DefSymUse(_, loc) => loc.isReal
-    case SymUse.EffectSymUse(_, loc) => loc.isReal
+    case SymUse.EffectSymUse(_, qname) => qname.loc.isReal
     case SymUse.LocalDefSymUse(_, loc) => loc.isReal
     case SymUse.OpSymUse(_, loc) => loc.isReal
     case SymUse.RestrictableCaseSymUse(_, loc) => loc.isReal
@@ -219,7 +219,7 @@ object HighlightProvider {
   }
 
   private def isNotEmptyRecord(x: AnyRef): Boolean = x match {
-    case TypedAst.Expr.RecordEmpty(_, _) => false
+    case TypedAst.Expr.Cst(Constant.RecordEmpty, _, _) => false
     case _ => true
   }
 
@@ -266,7 +266,6 @@ object HighlightProvider {
       // Assoc Types
       case TypedAst.AssocTypeSig(_, _, sym, _, _, _, _) => Some(getAssocTypeSymOccurs(sym))
       case SymUse.AssocTypeSymUse(sym, _) => Some(getAssocTypeSymOccurs(sym))
-      case Type.AssocType(AssocTypeConstructor(sym, _), _, _, _) => Some(getAssocTypeSymOccurs(sym))
       // Defs
       case TypedAst.Def(sym, _, _, _) => Some(getDefnSymOccurs(sym))
       case SymUse.DefSymUse(sym, _) => Some(getDefnSymOccurs(sym))
@@ -297,10 +296,9 @@ object HighlightProvider {
       // Traits
       case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => Some(getTraitSymOccurs(sym))
       case SymUse.TraitSymUse(sym, _) => Some(getTraitSymOccurs(sym))
-      case TraitConstraint.Head(sym, _) => Some(getTraitSymOccurs(sym))
       // Type Aliases
       case TypedAst.TypeAlias(_, _, _, sym, _, _, _) => Some(getTypeAliasSymOccurs(sym))
-      case Type.Alias(AliasConstructor(sym, _), _, _, _) => Some(getTypeAliasSymOccurs(sym))
+      case SymUse.TypeAliasSymUse(sym, _) => Some(getTypeAliasSymOccurs(sym))
       // Type Variables
       case TypedAst.TypeParam(_, sym, _) => Some(getTypeVarSymOccurs(sym))
       case Type.Var(sym, _) => Some(getTypeVarSymOccurs(sym))
@@ -371,9 +369,13 @@ object HighlightProvider {
 
     object EffectSymConsumer extends Consumer {
       override def consumeEff(eff: TypedAst.Effect): Unit = considerWrite(eff.sym, eff.sym.loc)
-      override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = considerRead(effUse.sym, effUse.loc)
+      override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = considerRead(effUse.sym, effUse.qname.loc)
       override def consumeType(tpe: Type): Unit = tpe match {
         case Type.Cst(TypeConstructor.Effect(sym), loc) => considerRead(sym, loc)
+        case _ => ()
+      }
+      override def consumeExpr(exp: Expr): Unit = exp match {
+        case Expr.Do(_, _, _, eff, loc) if eff.effects.contains(sym) => reads += loc
         case _ => ()
       }
     }
@@ -566,7 +568,6 @@ object HighlightProvider {
     object TraitSymConsumer extends Consumer {
       override def consumeTrait(traitt: TypedAst.Trait): Unit = considerWrite(traitt.sym, traitt.sym.loc)
       override def consumeTraitSymUse(symUse: SymUse.TraitSymUse): Unit = considerRead(symUse.sym, symUse.loc)
-      override def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = considerRead(tcHead.sym, tcHead.loc)
     }
 
     Visitor.visitRoot(root, TraitSymConsumer, acceptor)
@@ -589,7 +590,7 @@ object HighlightProvider {
     object TypeAliasSymConsumer extends Consumer {
       override def consumeTypeAlias(alias: TypedAst.TypeAlias): Unit = considerWrite(alias.sym, alias.sym.loc)
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Alias(AliasConstructor(sym, _), _, _, loc) => considerRead(sym, loc)
+        case Type.Alias(TypeAliasSymUse(sym, _), _, _, loc) => considerRead(sym, loc)
         case _ => ()
       }
     }
@@ -665,14 +666,12 @@ object HighlightProvider {
     * those created from `occurs.reads` have [[DocumentHighlightKind.Read]]
     *
     * @param occurs The [[Occurs]] to be highlighted.
-    * @return       LSP highlight response containing [[DocumentHighlight]] for every occurrence in `occurs`.
+    * @return       Set of [[DocumentHighlight]] for every occurrence in `occurs`.
     */
-  private def mkHighlights(occurs: Occurs): JObject = {
+  private def mkHighlights(occurs: Occurs): Set[DocumentHighlight] = {
     val writeHighlights = occurs.writes.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Write))
     val readHighlights = occurs.reads.map(loc => DocumentHighlight(Range.from(loc), DocumentHighlightKind.Read))
 
-    val highlights = writeHighlights ++ readHighlights
-
-    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON).toList))
+    writeHighlights ++ readHighlights
   }
 }

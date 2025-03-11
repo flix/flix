@@ -17,7 +17,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
         def f1() = Ask.ask(newAtomicInteger(42));
         let result = run {
             f1()
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
         };
         Assert.eq(84, toInt(result))
@@ -28,7 +28,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
         def f2() = f1();
         let result = run {
             f2()
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
         };
         Assert.eq(84, toInt(result))
@@ -40,7 +40,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
         def f3() = f2();
         let result = run {
             f3()
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
         };
         Assert.eq(84, toInt(result))
@@ -51,7 +51,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
         def r(x) = if (x == 0) f() else r(x - 1);
         let result = run {
             r(0)
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
         };
         Assert.eq(84, toInt(result))
@@ -62,7 +62,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
         def r(x) = if (x == 0) f() else r(x - 1);
         let result = run {
             r(1)
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
         };
         Assert.eq(84, toInt(result))
@@ -73,7 +73,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
         def r(x) = if (x == 0) f1() else r(x - 1);
         let result = run {
             r(10)
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
         };
         Assert.eq(84, toInt(result))
@@ -82,7 +82,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
     def testMutualRecursive01(): Bool =
         let result = run {
             mutual1(0)
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
         };
         Assert.eq(84, toInt(result))
@@ -91,7 +91,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
     def testMutualRecursive02(): Bool =
         let result = run {
             mutual1(1)
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
         };
         Assert.eq(84, toInt(result))
@@ -100,7 +100,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
     def testMutualRecursive03(): Bool =
         let result = run {
             mutual1(2)
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
         };
         Assert.eq(84, toInt(result))
@@ -109,7 +109,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
     def testMutualRecursive04(): Bool =
         let result = run {
             mutual1(3)
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
         };
         Assert.eq(84, toInt(result))
@@ -118,7 +118,7 @@ mod Test.Handler.MultiShot.AtomicInteger {
     def testMutualRecursive05(): Bool =
         let result = run {
             mutual1(10)
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = newAtomicInteger(toInt(k(x)) + toInt(k(x)))
         };
         Assert.eq(84, toInt(result))

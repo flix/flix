@@ -99,7 +99,7 @@ object ReducedAst {
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class TryWith(exp: Expr, effUse: EffectSymUse, rules: List[HandlerRule], ct: ExpPosition, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class RunWith(exp: Expr, effUse: EffectSymUse, rules: List[HandlerRule], ct: ExpPosition, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class Do(op: OpSymUse, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 

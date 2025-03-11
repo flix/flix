@@ -16,12 +16,13 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.KindCompletion
+import ca.uwaterloo.flix.api.lsp.Range
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object KindCompleter {
   def getCompletions(err: ResolutionError.UndefinedKind): List[Completion] = {
     val kinds = List("Type", "Eff", "Bool")
     kinds.collect{
-      case kind if kind.startsWith(err.qn.ident.name) => KindCompletion(kind)}
+      case kind if kind.startsWith(err.qn.ident.name) => KindCompletion(kind, Range.from(err.loc))}
   }
 }

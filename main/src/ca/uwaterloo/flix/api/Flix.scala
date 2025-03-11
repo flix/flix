@@ -190,7 +190,7 @@ class Flix {
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
     "MultiMap.flix" -> LocalResource.get("/src/library/MultiMap.flix"),
 
-    "MutQueue.flix" -> LocalResource.get("/src/library/MutQueue.flix"),
+    "MutPriorityQueue.flix" -> LocalResource.get("/src/library/MutPriorityQueue.flix"),
     "MutDeque.flix" -> LocalResource.get("/src/library/MutDeque.flix"),
     "MutDisjointSets.flix" -> LocalResource.get("/src/library/MutDisjointSets.flix"),
     "MutList.flix" -> LocalResource.get("/src/library/MutList.flix"),
@@ -224,6 +224,7 @@ class Flix {
     "Witherable.flix" -> LocalResource.get("/src/library/Witherable.flix"),
     "UnorderedFoldable.flix" -> LocalResource.get("/src/library/UnorderedFoldable.flix"),
     "Collectable.flix" -> LocalResource.get("/src/library/Collectable.flix"),
+    "MutCollectable.flix" -> LocalResource.get("/src/library/MutCollectable.flix"),
 
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 
@@ -260,7 +261,6 @@ class Flix {
     "Fixpoint/Ast/PrecedenceGraph.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/PrecedenceGraph.flix"),
     "Fixpoint/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Ram.flix"),
 
-    "App.flix" -> LocalResource.get("/src/library/App.flix"),
     "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
     "Clock.flix" -> LocalResource.get("/src/library/Clock.flix"),
     "Http.flix" -> LocalResource.get("/src/library/Http.flix"),
@@ -572,31 +572,28 @@ class Flix {
 
             EffectVerifier.run(afterTyper)
 
-            val (afterRegions, regionErrors) = Regions.run(afterTyper)
-            errors ++= regionErrors
-
-            val (afterEntryPoint, entryPointErrors) = EntryPoints.run(afterRegions)
+            val (afterEntryPoint, entryPointErrors) = EntryPoints.run(afterTyper)
             errors ++= entryPointErrors
 
             val (afterInstances, instanceErrors) = Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
             errors ++= instanceErrors
 
-            val (afterPredDeps, predDepErrors) = PredDeps.run(afterInstances)
+            val (afterPredDeps, predDepErrors) = PredDeps.run(afterInstances, cachedTyperAst, changeSet)
             errors ++= predDepErrors
 
             val (afterStratifier, stratificationErrors) = Stratifier.run(afterPredDeps)
             errors ++= stratificationErrors
 
-            val (afterPatMatch, patMatchErrors) = PatMatch.run(afterStratifier)
+            val (afterPatMatch, patMatchErrors) = PatMatch.run(afterStratifier, cachedTyperAst, changeSet)
             errors ++= patMatchErrors
 
             val (afterRedundancy, redundancyErrors) = Redundancy.run(afterPatMatch)
             errors ++= redundancyErrors
 
-            val (afterSafety, safetyErrors) = Safety.run(afterRedundancy)
+            val (_, safetyErrors) = Safety.run(afterRedundancy, cachedTyperAst, changeSet)
             errors ++= safetyErrors
 
-            val (afterDependencies, _) = Dependencies.run(afterSafety)
+            val (afterDependencies, _) = Dependencies.run(afterRedundancy, cachedTyperAst, changeSet)
 
             if (options.incremental) {
               this.cachedLexerTokens = afterLexer
@@ -606,6 +603,9 @@ class Flix {
               this.cachedKinderAst = afterKinder
               this.cachedResolverAst = afterResolver
               this.cachedTyperAst = afterDependencies
+
+              // We record that no files are dirty in the change set.
+              this.changeSet = ChangeSet.Dirty(Set.empty)
 
               // We save all the current errors.
               this.cachedErrors = errors.toList

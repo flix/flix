@@ -15,11 +15,15 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, Scope}
+import ca.uwaterloo.flix.api.{Flix, FlixEvent}
+import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin
 import ca.uwaterloo.flix.util.collection.SortedBimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -29,89 +33,73 @@ import scala.collection.immutable.SortedSet
 object EffUnification3 {
 
   /**
-    * Tries to solve the system of effect equality constraints `eqs`.
-    *
-    * Returns `(eqs', subst)` where `eqs'` are the remaining equations that were not solved and
-    * `subst` is a most general unifier of the equations that were solved. Equations in `eqs'` are
-    * not always unsolvable, maybe they just need more resolution of associated types for example.
+    * Controls whether to enable solve-and-retry for subeffecting.
     */
-  def unifyAll(
-                eqs: List[(Type, Type, SourceLocation)],
-                scope: Scope, renv: RigidityEnv,
-                opts: SetUnification.Options
-              )(implicit flix: Flix): (List[(Type, Type, SourceLocation)], Substitution) = {
-    // Add to implicit context.
-    implicit val scopeImplicit: Scope = scope
-    implicit val renvImplicit: RigidityEnv = renv
-    implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default
-    implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.DoNothing
-
-    // Choose a unique number for each atom.
-    implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(getAtomsFromEquations(eqs))
-
-    // Convert type equations into formula equations.
-    val equations = try {
-      eqs.map(toEquation)
-    } catch {
-      // If any equation is not convertible to formulas, then give up for the whole system.
-      // A more lenient approach would be to solve the convertible equations and give the rest back
-      // unchanged.
-      case InvalidType => return (eqs, Substitution.empty)
-    }
-
-    // Solve the equations and convert them back.
-    val (setEqs, setSubst) = SetUnification.solve(equations)
-    val typeEqs = setEqs.map(eq =>
-      (fromSetFormula(eq.f1, eq.loc), fromSetFormula(eq.f2, eq.loc), eq.loc)
-    )
-    val subst = fromSetSubst(setSubst)
-    (typeEqs, subst)
-  }
+  var EnableSmartSubeffecting: Boolean = true
 
   /**
-    * Tries to unify the two effects: `eff1` and `eff2`.
+    * Computes an MGU for **ALL* equations in `eqns`.
     *
-    *   - Returns [[Result.Err]] if the two effects are not unifiable (e.g. `Pure ~ IO`)
-    *   - Returns [[Result.Ok]] of [[None]] if the two effects are not simplified enough to solve
-    *     (e.g. `MyTrait.MyType[x] ~ Pure` where `x` is a flexible variable)
-    *   - Returns [[Result.Ok]] of [[Some]] of a substitution if the two effects could be unified.
-    *     The returned substitution is a most general unifier.
+    * Returns `Result.Ok(s)` if *ALL* equations in `eqns` where solvable.
+    * The returned substitution `s` is an MGU for `eqns`.
+    *
+    * Returns `Result.Err(l)` if *a single equation* in `eqns` is unsolvable.
+    * The returned list `l` is a non-empty list of equations that were unsolvable (i.e. in conflict).
+    * The equations in `l` are derived from `eqns` but are not a strict subset of `eqns`.
+    * That is, an equation in `l` may not directly correspond to any equation in `eqns`. However, their source locations are valid.
+    *
+    * Returns `Result.Err(eqns)` if `eqns` contains an equation that is ill-kinded. Hence, it is better to handle ill-kinded equations elsewhere.
+    *
+    * Note: Treats `Type.Error` as a constant, i.e. only equal to itself. Hence, it is better to drop equations that contain `Type.Error`.
     */
-  def unify(eff1: Type, eff2: Type, scope: Scope, renv: RigidityEnv)(implicit flix: Flix): Result[Option[Substitution], UnificationError] = {
+  def unifyAll(eqs: List[TypeConstraint.Equality], scope: Scope, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, List[TypeConstraint]] = {
+    // Performance: Nothing to do if the equation list is empty
+    if (eqs.isEmpty) {
+      return Result.Ok(Substitution.empty)
+    }
+
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
-    implicit val optsImplicit: SetUnification.Options = SetUnification.Options.default
     implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.DoNothing
 
     // Choose a unique number for each atom.
-    implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(eff1) ++ Atom.getAtoms(eff2))
+    implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(getAtomsFromConstraints(eqs))
 
-    // Convert the type equation into a formula equation.
-    val equation = try {
-      toEquation(eff1, eff2, eff1.loc)
-    } catch {
-      // If `eff1` and `eff2` are not convertible then we cannot make progress.
-      case InvalidType => return Result.Ok(None)
+    //
+    // Phase 1: Try to solve without subeffecting.
+    //
+    if (EnableSmartSubeffecting) {
+      try {
+        val equations = toEquations(eqs, withSlack = false)
+        val (unsolvedEqns, resultSubst) = SetUnification.solve(equations)
+        if (unsolvedEqns.isEmpty) {
+          // We have found a valid solution without subeffecting. Return it immediately.
+          return Result.Ok(fromSetSubst(resultSubst)(withSlack = false, m = bimap))
+        }
+        // Otherwise we fall through.
+      } catch {
+        case InvalidType(_) => // We fall through.
+      }
     }
 
-    SetUnification.solve(List(equation)) match {
-      case (Nil, subst) =>
-        // The equation was solved, return the substitution.
-        Result.Ok(Some(fromSetSubst(subst)))
-
-      case (eq :: _, _) =>
-        // The equation wasn't (completely) solved, return an error for the first unsolved equation.
-        val Equation(f1, f2, status, loc) = eq
-        status match {
-          case Status.Pending =>
-            // `SetUnification.solve` says it never returns pending equations.
-            throw InternalCompilerException(s"Unexpected pending formula $eq", eq.loc)
-          case Status.Unsolvable =>
-            Result.Err(UnificationError.MismatchedEffects(fromSetFormula(f1, loc), fromSetFormula(f2, loc)))
-          case Status.Timeout(msg) =>
-            Result.Err(UnificationError.TooComplex(msg, eq.loc))
-        }
+    //
+    // Phase 2: With subeffecting.
+    //
+    try {
+      val equations = toEquations(eqs, withSlack = true)
+      flix.emitEvent(FlixEvent.SolveEffEquations(equations))
+      val (unsolvedEqns, resultSubst) = SetUnification.solve(equations)
+      if (unsolvedEqns.isEmpty) {
+        Result.Ok(fromSetSubst(resultSubst)(withSlack = true, m = bimap))
+      } else {
+        Result.Err(fromSetEquations(unsolvedEqns))
+      }
+    } catch {
+      case InvalidType(_) =>
+        // The effect equations are invalid.
+        // We don't call these conflicted because TypeReduction may make these valid later.
+        Result.Err(eqs)
     }
   }
 
@@ -120,20 +108,26 @@ object EffUnification3 {
     SortedBimap.from(atoms.toList.zipWithIndex)
 
   /** Returns the union of [[Atom]]s for each [[Type]] in `eqs` using [[Atom.getAtoms]]. */
-  private def getAtomsFromEquations(eqs: List[(Type, Type, SourceLocation)])(implicit scope: Scope, renv: RigidityEnv): SortedSet[Atom] = {
+  private def getAtomsFromConstraints(eqs: List[TypeConstraint.Equality])(implicit scope: Scope, renv: RigidityEnv): SortedSet[Atom] = {
     eqs.foldLeft(SortedSet.empty[Atom]) {
-      case (acc, (t1, t2, _)) => acc ++ Atom.getAtoms(t1) ++ Atom.getAtoms(t2)
+      case (acc, TypeConstraint.Equality(t1, t2, _)) => acc ++ Atom.getAtoms(t1) ++ Atom.getAtoms(t2)
     }
   }
+
+  /**
+    * Returns the given list of type equations as a list of set equations.
+    */
+  private def toEquations(l: List[TypeConstraint.Equality], withSlack: Boolean)(implicit scope: Scope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): List[Equation] =
+    l.map(e => toEquation(e, withSlack))
 
   /**
     * Translates `eq` into a equation of [[SetFormula]].
     *
     * Throws [[InvalidType]] for types not convertible to [[SetFormula]].
     */
-  private def toEquation(eq: (Type, Type, SourceLocation))(implicit scope: Scope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): Equation = {
-    val (tpe1, tpe2, loc) = eq
-    Equation.mk(toSetFormula(tpe1), toSetFormula(tpe2), loc)
+  private def toEquation(eq: TypeConstraint.Equality, withSlack: Boolean)(implicit scope: Scope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): Equation = {
+    val TypeConstraint.Equality(tpe1, tpe2, prov) = eq
+    Equation.mk(toSetFormula(tpe1)(withSlack = withSlack, scope, renv, m), toSetFormula(tpe2)(withSlack = withSlack, scope, renv, m), prov.loc)
   }
 
   /**
@@ -141,7 +135,7 @@ object EffUnification3 {
     *
     * Throws [[InvalidType]] if `t` is not valid.
     */
-  private def toSetFormula(t: Type)(implicit scope: Scope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): SetFormula = t match {
+  private def toSetFormula(t: Type)(implicit withSlack: Boolean, scope: Scope, renv: RigidityEnv, m: SortedBimap[Atom, Int]): SetFormula = t match {
     case Type.Univ => SetFormula.Univ
     case Type.Pure => SetFormula.Empty
 
@@ -150,13 +144,25 @@ object EffUnification3 {
       m.getForward(atom) match {
         case None => throw InternalCompilerException(s"Unexpected unbound type variable: '$tpe'.", tpe.loc)
         case Some(x) => atom match {
-          case Atom.VarFlex(_) => SetFormula.Var(x) // A flexible variable is a real variable.
+          case Atom.VarFlex(sym) =>
+            if (sym.isSlack && !withSlack) {
+              // Special Case: We have a slack variable and we want to ignore it. Return the empty set.
+              SetFormula.Empty
+            } else {
+              // General Case: A flexible type variable is a real Set variable.
+              SetFormula.Var(x)
+            }
           case Atom.VarRigid(_) => SetFormula.Cst(x) // A rigid variable is a constant.
           case _ => throw InternalCompilerException(s"Unexpected atom representation ($atom) of variable ($tpe)", tpe.loc)
         }
       }
 
     case tpe@Type.Cst(TypeConstructor.Effect(_), _) => m.getForward(Atom.fromType(tpe)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
+      case Some(x) => SetFormula.mkElemSet(x)
+    }
+
+    case tpe@Type.Cst(TypeConstructor.Region(_), _) => m.getForward(Atom.fromType(tpe)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
       case Some(x) => SetFormula.mkElemSet(x)
     }
@@ -175,43 +181,70 @@ object EffUnification3 {
       SetFormula.mkCompl(toSetFormula(tpe1))
 
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) =>
-      SetFormula.mkUnion(toSetFormula(tpe1), toSetFormula(tpe2))
+      SetFormula.mkUnion2(toSetFormula(tpe1), toSetFormula(tpe2))
 
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) =>
       SetFormula.mkInter(toSetFormula(tpe1), toSetFormula(tpe2))
 
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), tpe1, _), tpe2, _) =>
-      SetFormula.mkDifference(toSetFormula(tpe1), toSetFormula(tpe2))
+      SetFormula.mkDiff2(toSetFormula(tpe1), toSetFormula(tpe2))
 
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), tpe1, _), tpe2, _) =>
       val f1 = toSetFormula(tpe1)
       val f2 = toSetFormula(tpe2)
-      SetFormula.mkXorDirect(f1, f2)
+      SetFormula.mkXor2(f1, f2)
 
     case Type.Alias(_, _, tpe, _) => toSetFormula(tpe)
 
-    case _ => throw InvalidType
+    case _ => throw InvalidType(t)
   }
 
   /** Returns [[Substitution]] where each mapping in `s` is converted to [[Type]]. */
-  private def fromSetSubst(s: SetSubstitution)(implicit m: SortedBimap[Atom, Int]): Substitution = {
+  private def fromSetSubst(s: SetSubstitution)(implicit withSlack: Boolean, m: SortedBimap[Atom, Int]): Substitution = {
     Substitution(s.m.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
       case (macc, (k, SetFormula.Var(x))) if k == x => macc
       case (macc, (k, v)) =>
         m.getBackward(k) match {
-          // A proper var. Add it to the substitution.
           case Some(Atom.VarFlex(sym)) =>
-            macc + (sym -> fromSetFormula(v, sym.loc))
-          // An error type. Don't add it to the substitution.
+            // A proper var. Add it to the substitution.
+            if (sym.isSlack && !withSlack) {
+              // Special Case: The slack variable was set to the empty set.
+              macc + (sym -> Type.Pure)
+            } else {
+              // General Case: The map determines the type variable.
+              macc + (sym -> fromSetFormula(v, sym.loc))
+            }
+
           case Some(Atom.Error(_)) =>
+            // An error type. Don't add it to the substitution.
             macc
-          // An invalid atom. Crash.
-          case Some(other) => throw InternalCompilerException(s"unexpected non-variable mapped to variable: $other", SourceLocation.Unknown)
-          // An unbound identifier. Crash.
-          case None => throw InternalCompilerException(s"Unexpected unbound substitution identifier '$k'", SourceLocation.Unknown)
+
+          case Some(a) =>
+            // An invalid atom. Crash.
+            throw InternalCompilerException(s"Unexpected atom '$a' for key '$k'.", SourceLocation.Unknown)
+
+          case None =>
+            // An unbound identifier. Crash.
+            throw InternalCompilerException(s"Unexpected unbound variable '$k'.", SourceLocation.Unknown)
         }
     })
   }
+
+  /**
+    * Returns the given list of equations as a list of type equalities.
+    */
+  private def fromSetEquations(l: List[Equation])(implicit m: SortedBimap[Atom, Int]): List[TypeConstraint] =
+    l.map {
+      case Equation(f1, f2, status, loc) =>
+        val t1 = fromSetFormula(f1, loc)
+        val t2 = fromSetFormula(f2, loc)
+        val prov = status match {
+          case Status.Pending => Provenance.Match(t1, t2, loc)
+          case Status.Unsolvable => Provenance.Match(t1, t2, loc)
+          case Status.Timeout(msg) => Provenance.Timeout(msg, loc)
+        }
+        TypeConstraint.Conflicted(t1, t2, prov)
+    }
 
   /**
     * Returns `f` as a type with location `loc`.
@@ -237,10 +270,13 @@ object EffUnification3 {
       })
       Type.mkUnion(elementTypes, loc)
     case SetFormula.Compl(f1) => Type.mkComplement(fromSetFormula(f1, loc), loc)
-    case inter@SetFormula.Inter(_, _, _, _, _, _, _) =>
-      Type.mkIntersection(inter.mapSubformulas(fromSetFormula(_, loc)), loc)
-    case union@SetFormula.Union(_) =>
-      Type.mkUnion(union.mapSubformulas(fromSetFormula(_, loc)), loc)
+
+    case SetFormula.Inter(l) =>
+      Type.mkIntersection(l.toList.map(fromSetFormula(_, loc)), loc)
+
+    case SetFormula.Union(l) =>
+      Type.mkUnion(l.toList.map(fromSetFormula(_, loc)), loc)
+
     case SetFormula.Xor(other) =>
       Type.mkSymmetricDiff(other.map(fromSetFormula(_, loc)), loc)
   }
@@ -257,6 +293,7 @@ object EffUnification3 {
       case (Atom.VarFlex(sym1), Atom.VarFlex(sym2)) => sym1.id - sym2.id
       case (Atom.VarRigid(sym1), Atom.VarRigid(sym2)) => sym1.id - sym2.id
       case (Atom.Eff(sym1), Atom.Eff(sym2)) => sym1.compare(sym2)
+      case (Atom.Region(sym1), Atom.Region(sym2)) => sym1.compare(sym2)
       case (Atom.Assoc(sym1, arg1), Atom.Assoc(sym2, arg2)) =>
         val symCmp = sym1.compare(sym2)
         if (symCmp != 0) symCmp else arg1.compare(arg2)
@@ -265,9 +302,10 @@ object EffUnification3 {
         def ordinal(a: Atom): Int = a match {
           case Atom.VarFlex(_) => 0
           case Atom.VarRigid(_) => 1
-          case Atom.Eff(_) => 2
-          case Atom.Assoc(_, _) => 3
-          case Atom.Error(_) => 4
+          case Atom.Region(_) => 2
+          case Atom.Eff(_) => 3
+          case Atom.Assoc(_, _) => 4
+          case Atom.Error(_) => 5
         }
 
         ordinal(this) - ordinal(that)
@@ -287,6 +325,9 @@ object EffUnification3 {
     /** Represents an associated effect. */
     case class Assoc(sym: Symbol.AssocTypeSym, arg: Atom) extends Atom
 
+    /** Represents a region. */
+    case class Region(sym: Symbol.RegionSym) extends Atom
+
     /** Represents an error type. */
     case class Error(id: Int) extends Atom
 
@@ -296,18 +337,19 @@ object EffUnification3 {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.Var(sym, _) => Atom.VarFlex(sym)
       case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
+      case Type.Cst(TypeConstructor.Region(sym), _) => Atom.Region(sym)
       case assoc@Type.AssocType(_, _, _, _) => assocFromType(assoc)
       case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
       case Type.Alias(_, _, tpe, _) => fromType(tpe)
-      case _ => throw InvalidType
+      case _ => throw InvalidType(t)
     }
 
     /** Returns the [[Atom]] representation of `t` or throws [[InvalidType]]. */
     private def assocFromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
-      case Type.AssocType(AssocTypeConstructor(sym, _), arg, _, _) => Atom.Assoc(sym, assocFromType(arg))
+      case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) => Atom.Assoc(sym, assocFromType(arg))
       case Type.Alias(_, _, tpe, _) => assocFromType(tpe)
-      case _ => throw InvalidType
+      case _ => throw InvalidType(t)
     }
 
     /**
@@ -328,6 +370,7 @@ object EffUnification3 {
       case Type.Var(sym, _) if renv.isRigid(sym) => SortedSet(Atom.VarRigid(sym))
       case Type.Var(sym, _) => SortedSet(Atom.VarFlex(sym))
       case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(Atom.Eff(sym))
+      case Type.Cst(TypeConstructor.Region(sym), _) => SortedSet(Atom.Region(sym))
       case Type.Cst(TypeConstructor.Error(id, _), _) => SortedSet(Atom.Error(id))
       case Type.Apply(tpe1, tpe2, _) => getAtoms(tpe1) ++ getAtoms(tpe2)
       case Type.Alias(_, _, tpe, _) => getAtoms(tpe)
@@ -341,7 +384,7 @@ object EffUnification3 {
       */
     private def getAssocAtoms(t: Type)(implicit scope: Scope, renv: RigidityEnv): Option[Atom] = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Some(Atom.VarRigid(sym))
-      case Type.AssocType(AssocTypeConstructor(sym, _), arg, _, _) =>
+      case Type.AssocType(AssocTypeSymUse(sym, _), arg, _, _) =>
         getAssocAtoms(arg).map(Atom.Assoc(sym, _))
       case Type.Alias(_, _, tpe, _) => getAssocAtoms(tpe)
       case _ => None
@@ -353,12 +396,45 @@ object EffUnification3 {
       */
     def toType(atom: Atom, loc: SourceLocation)(implicit m: SortedBimap[Atom, Int]): Type = atom match {
       case Atom.Eff(sym) => Type.Cst(TypeConstructor.Effect(sym), loc)
+      case Atom.Region(sym) => Type.Cst(TypeConstructor.Region(sym), loc)
       case Atom.VarRigid(sym) => Type.Var(sym, loc)
       case Atom.VarFlex(sym) => Type.Var(sym, loc)
       case Atom.Assoc(sym, arg0) =>
-        Type.AssocType(AssocTypeConstructor(sym, loc), toType(arg0, loc), Kind.Eff, loc)
+        Type.AssocType(AssocTypeSymUse(sym, loc), toType(arg0, loc), Kind.Eff, loc)
       case Atom.Error(id) => Type.Cst(TypeConstructor.Error(id, Kind.Eff), loc)
     }
+  }
+
+  /**
+    * Simplifies the given effect `tpe` by conversion to - and back from - a Zhegalkin polynomial.
+    *
+    * WARNING:
+    * - The type `tpe` *MUST* have kind `Eff`.
+    * - The type `tpe` *MUST* be well-kinded. Do not use this function for ill-kinded effects!
+    *
+    * The type `tpe` may contain `Type.Error`.
+    */
+  def simplify(tpe: Type): Type = try {
+    // Check if type is too complex to simplify via Zhegalkin polynomials.
+    if (tpe.typeVars.size > SetUnification.MaxVars) {
+      // The type is too complex, we return it unchanged.
+      return tpe
+    }
+
+    // We can use an arbitrary scope and renv because we don't do any unification.
+    implicit val scope: Scope = Scope.Top
+    implicit val renv: RigidityEnv = RigidityEnv.empty
+    implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe))
+
+    val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
+    val z = Zhegalkin.toZhegalkin(f0)
+    val f1 = Zhegalkin.toSetFormula(z)
+
+    fromSetFormula(f1, tpe.loc)
+  } catch {
+    case _: InvalidType =>
+      // The type is invalid. We cannot simplify it.
+      tpe
   }
 
   /**
@@ -367,6 +443,6 @@ object EffUnification3 {
     * This exception should not leak outside this phase - it should always be caught. It is used to
     * avoid having [[Option]] types on recursive functions.
     */
-  private case object InvalidType extends RuntimeException
+  private case class InvalidType(tpe: Type) extends RuntimeException
 
 }

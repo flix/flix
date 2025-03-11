@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider.*
-import ca.uwaterloo.flix.api.{CrashHandler, Flix, Version}
+import ca.uwaterloo.flix.api.{CompilerLog, CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
@@ -25,11 +25,10 @@ import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.*
-import ca.uwaterloo.flix.util.collection.Chain
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
-import org.json4s.JsonAST.{JString, JValue}
+import org.json4s.JsonAST.{JArray, JString, JValue}
 import org.json4s.JsonDSL.*
 import org.json4s.ParserUtil.ParseException
 import org.json4s.*
@@ -42,7 +41,6 @@ import java.nio.charset.Charset
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.concurrent.{ExecutorService, Executors, Future}
 import java.util.zip.ZipInputStream
 import scala.collection.mutable
 
@@ -67,6 +65,11 @@ import scala.collection.mutable
 class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSocketAddress("localhost", port)) {
 
   /**
+    * The maximum acceptable latency -- in nanoseconds -- before a request is considered slow.
+    */
+  private val MaxLatencyNS: Long = 100_000_000 // 100ms
+
+  /**
     * The custom date format to use for logging.
     */
   private val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
@@ -85,18 +88,6 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     * The current AST root. The root is null until the source code is compiled.
     */
   private var root: Root = TypedAst.empty
-
-  /**
-    * A thread pool, with a single thread, which we use to execute indexing operations.
-    */
-  private val indexingPool: ExecutorService = Executors.newFixedThreadPool(1)
-
-  /**
-    * A (possibly-null) volatile reference to a future that represents the latest indexing operation.
-    *
-    * Note: Multiple indexing operations may be pending in the thread pool. This field points to the latest submitted.
-    */
-  private var indexingFuture: Future[?] = _
 
   /**
     * The current compilation errors.
@@ -131,10 +122,16 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   override def onMessage(ws: WebSocket, data: String): Unit = try {
     parseRequest(data) match {
       case Ok(request) =>
+        val t = System.nanoTime()
         val result = processRequest(request)(ws)
         if (ws.isOpen) {
           val jsonCompact = JsonMethods.compact(JsonMethods.render(result))
           // val jsonPretty = JsonMethods.pretty(JsonMethods.render(result))
+
+          val e = System.nanoTime() - t
+          if (e > MaxLatencyNS) {
+            CompilerLog.log(s"Slow request: '${request.getClass.getSimpleName}' took ${e / 1_000_000} ms.")
+          }
           ws.send(jsonCompact)
         }
       case Err(msg) => log(msg)(ws)
@@ -189,7 +186,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       case JString("lsp/showAst") => Request.parseShowAst(json)
       case JString("lsp/codeAction") => Request.parseCodeAction(json)
 
-      case s => Err(s"Unsupported request: '$s'.")
+      case _ => Err(s"Unsupported request: '$s'.")
     }
   } catch {
     case ex: ParseException => Err(s"Malformed request. Unable to parse JSON: '${ex.getMessage}'.")
@@ -267,28 +264,40 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     case Request.Check(id) => processCheck(id)
 
     case Request.Codelens(id, uri) =>
-      ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(root)
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(CodeLensProvider.processCodeLens(uri)(root).map(_.toJSON)))
 
     case Request.Complete(id, uri, pos) =>
       // Find the source of the given URI (which should always exist).
       val sourceCode = sources(uri)
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sourceCode, currentErrors)(flix, root)
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionProvider.autoComplete(uri, pos, sourceCode, currentErrors)(root, flix).toJSON)
 
     case Request.Highlight(id, uri, pos) =>
-      ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(root)
+      val highlights = HighlightProvider.processHighlight(uri, pos)(root)
+      if (highlights.isEmpty)
+        ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this highlight.")
+      else
+        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON).toList))
 
     case Request.Hover(id, uri, pos) =>
-      ("id" -> id) ~ HoverProvider.processHover(uri, pos)(root, flix)
+      HoverProvider.processHover(uri, pos)(root, flix) match {
+        case Some(hover) => ("id" -> id) ~ hover.toJSON
+        case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this hover.")
+      }
 
     case Request.Goto(id, uri, pos) =>
-      ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(root)
+      GotoProvider.processGoto(uri, pos)(root) match {
+        case Some(location) => ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> location.toJSON)
+        case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
+      }
 
     case Request.Implementation(id, uri, pos) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root).map(_.toJSON))
 
     case Request.Rename(id, newName, uri, pos) =>
-      synchronouslyAwaitIndex()
-      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(root)
+      RenameProvider.processRename(newName, uri, pos)(root) match {
+        case Some(rename) => ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> rename.toJSON)
+        case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this rename.")
+      }
 
     case Request.DocumentSymbols(id, uri) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root).map(_.toJSON))
@@ -297,18 +306,18 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(root).map(_.toJSON))
 
     case Request.Uses(id, uri, pos) =>
-      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(root)
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> FindReferencesProvider.findRefs(uri, pos)(root).map(_.toJSON))
 
     case Request.SemanticTokens(id, uri) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ SemanticTokensProvider.provideSemanticTokens(uri)(root)
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("data" -> SemanticTokensProvider.provideSemanticTokens(uri)(root)))
 
     case Request.InlayHint(id, uri, range) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.getInlayHints(uri, range).map(_.toJSON))
 
     case Request.ShowAst(id) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ShowAstProvider.showAst()(flix))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("path" -> ShowAstProvider.showAst()(flix).toAbsolutePath.toString))
 
-    case Request.CodeAction(id, uri, range, context) =>
+    case Request.CodeAction(id, uri, range, _) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, currentErrors)(root).map(_.toJSON))
 
   }
@@ -323,19 +332,19 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     try {
       // Run the compiler up to the type checking phase.
       flix.check() match {
-        case (Some(root), Nil) =>
+        case (Some(r), Nil) =>
           // Case 1: Compilation was successful. Build the reverse index.
-          processSuccessfulCheck(requestId, root, List.empty, flix.options.explain, t)
+          processSuccessfulCheck(requestId, r, List.empty, flix.options.explain, t)
 
-        case (Some(root), errors) =>
+        case (Some(r), errors) =>
           // Case 2: Compilation had non-critical errors. Build the reverse index.
-          processSuccessfulCheck(requestId, root, errors, flix.options.explain, t)
+          processSuccessfulCheck(requestId, r, errors, flix.options.explain, t)
 
         case (None, errors) =>
           // Case 3: Compilation failed. Send back the error messages.
 
           // Update the current errors.
-          this.currentErrors = errors.toList
+          this.currentErrors = errors
 
           // Publish diagnostics.
           val results = PublishDiagnosticsParams.fromMessages(currentErrors, flix.options.explain)
@@ -356,7 +365,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   private def processSuccessfulCheck(requestId: String, root: Root, errors: List[CompilationMessage], explain: Boolean, t0: Long): JValue = {
     // Update the root and the errors.
     this.root = root
-    this.currentErrors = errors.toList
+    this.currentErrors = errors
 
     // Compute elapsed time.
     val e = System.nanoTime() - t0
@@ -370,15 +379,6 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     // Determine the status based on whether there are errors.
     val results = PublishDiagnosticsParams.fromMessages(currentErrors, explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
     ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
-  }
-
-  /**
-    * Synchronously wait for the most recent indexing operation to complete.
-    *
-    * This function is used to ensure the index is up-to-date before certain operations, e.g. rename.
-    */
-  private def synchronouslyAwaitIndex(): Unit = {
-    if (indexingFuture != null) indexingFuture.get()
   }
 
   /**

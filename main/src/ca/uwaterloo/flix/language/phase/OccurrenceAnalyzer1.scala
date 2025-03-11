@@ -279,9 +279,9 @@ object OccurrenceAnalyzer1 {
       val o5 = o4.countLocalDef
       (OccurrenceAst1.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), increment(o5))
 
-    case MonoAst.Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
+    case MonoAst.Expr.Scope(sym, rsym, exp, tpe, eff, loc) =>
       val (e, o1) = visitExp(exp)
-      (OccurrenceAst1.Expr.Scope(sym, rvar, e, tpe, eff, loc), increment(o1))
+      (OccurrenceAst1.Expr.Scope(sym, rsym, e, tpe, eff, loc), increment(o1))
 
     case MonoAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val (e1, o1) = visitExp(exp1)
@@ -336,11 +336,11 @@ object OccurrenceAnalyzer1 {
       val o3 = combineInfoBranch(o1, o2) :+ sym0 -> DontInline
       (OccurrenceAst1.Expr.TryCatch(e, rs, tpe, eff, loc), increment(o3))
 
-    case MonoAst.Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
+    case MonoAst.Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
       val (e, o1) = visitExp(exp)
       val (rs, o2) = visitTryWithRules(rules)
       val o3 = combineInfo(o1, o2) :+ sym0 -> DontInline
-      (OccurrenceAst1.Expr.TryWith(e, effUse, rs, tpe, eff, loc), increment(o3))
+      (OccurrenceAst1.Expr.RunWith(e, effUse, rs, tpe, eff, loc), increment(o3))
 
     case MonoAst.Expr.Do(op, exps, tpe, eff, loc) =>
       val (es, o) = visitExps(exps)
@@ -450,8 +450,6 @@ object OccurrenceAnalyzer1 {
       val syms = Set.from(listOfSyms.flatten) ++ syms0
       (OccurrenceAst1.Pattern.Record(ps, p, tpe, loc), syms)
 
-    case MonoAst.Pattern.RecordEmpty(tpe, loc) =>
-      (OccurrenceAst1.Pattern.RecordEmpty(tpe, loc), Set.empty)
   }
 
   private def visitRecordLabelPattern(pattern0: MonoAst.Pattern.Record.RecordLabelPattern)(implicit occurInfo: OccurInfo): (OccurrenceAst1.Pattern.Record.RecordLabelPattern, Set[VarSym]) = pattern0 match {

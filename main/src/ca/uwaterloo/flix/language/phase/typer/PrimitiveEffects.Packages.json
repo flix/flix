@@ -1,5 +1,9 @@
 {
   "packages": {
-    "java.lang.net": "Net, IO"
+    "java.lang.constant": "Sys, IO",
+    "java.lang.net": "Net, IO",
+    "java.lang.ref": "Sys, IO",
+    "java.lang.reflect": "Sys, IO",
+    "java.util.random": "NonDet, IO"
   }
 }

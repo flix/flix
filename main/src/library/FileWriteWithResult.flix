@@ -110,7 +110,7 @@ mod FileWriteWithResult {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - FileWriteWithResult) + IO = x ->
         run {
             f(x)
-        } with FileWriteWithResult {
+        } with handler FileWriteWithResult {
             def write(data, f, k) = {
                 let res = try {
                     let bytes = data#str.getBytes(StandardCharsets.UTF_8);
@@ -258,5 +258,12 @@ mod FileWriteWithResult {
                 k(res)
             }
         }
+
+    ///
+    /// Runs the `FileWriteWithResult` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `FileWriteWithResult` effect using the `IO` effect.
+    ///
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - FileWriteWithResult) + {IO} = handle(f)()
 
 }

@@ -58,7 +58,7 @@ object Visitor {
 
     root.enums.values.foreach(visitEnum)
 
-    root.instances.values.flatten.foreach(visitInstance)
+    root.instances.values.foreach(visitInstance)
 
     root.structs.values.foreach(visitStruct)
 
@@ -124,20 +124,13 @@ object Visitor {
   }
 
   private def visitTraitConstraint(tc: TraitConstraint)(implicit a: Acceptor, c: Consumer): Unit = {
-    val TraitConstraint(head, arg, loc) = tc
+    val TraitConstraint(symUse, arg, loc) = tc
     if (!a.accept(loc)) { return }
 
     c.consumeTraitConstraint(tc)
 
-    visitTraitConstraintHead(head)
+    visitTraitSymUse(symUse)
     visitType(arg)
-  }
-
-  private def visitTraitConstraintHead(tcHead: TraitConstraint.Head)(implicit a: Acceptor, c: Consumer): Unit = {
-    val TraitConstraint.Head(_, loc) = tcHead
-    if (!a.accept(loc)) { return }
-
-    c.consumeTraitConstraintHead(tcHead)
   }
 
   private def visitAssocTypeDef(tdefn: AssocTypeDef)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -256,21 +249,14 @@ object Visitor {
   }
 
   private def visitEqualityConstraint(ec: EqualityConstraint)(implicit a: Acceptor, c: Consumer): Unit = {
-    val EqualityConstraint(cst, tpe1, tpe2, loc) = ec
+    val EqualityConstraint(symUse, tpe1, tpe2, loc) = ec
     if (!a.accept(loc)) { return }
 
     c.consumeEqualityConstraint(ec)
 
-    visitAssocTypeConstructor(cst)
+    visitAssocTypeSymUse(symUse)
     visitType(tpe1)
     visitType(tpe2)
-  }
-
-  private def visitAssocTypeConstructor(tcst: AssocTypeConstructor)(implicit a: Acceptor, c: Consumer): Unit = {
-    val AssocTypeConstructor(_, loc) = tcst
-    if (!a.accept(loc)) { return }
-
-    c.consumeAssocTypeConstructor(tcst)
   }
 
   private def visitTypeAlias(alias: TypeAlias)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -299,9 +285,9 @@ object Visitor {
     expr match {
       case Expr.Cst(_, _, _) => ()
       case Expr.Var(_, _, _) => ()
-      case Expr.Hole(_, _, _, _) => ()
+      case Expr.Hole(_, _, _, _, _) => ()
 
-      case Expr.HoleWithExp(exp, _, _, _) =>
+      case Expr.HoleWithExp(exp, _, _, _, _) =>
         visitExpr(exp)
 
       case Expr.OpenAs(_, _, _, _) => () // Not visited, unsupported feature.
@@ -348,9 +334,8 @@ object Visitor {
 
       case Expr.Region(_, _) => ()
 
-      case Expr.Scope(bnd, regionVar, exp, _, _, _) =>
+      case Expr.Scope(bnd, _, exp, _, _, _) =>
         visitBinder(bnd)
-        visitType(regionVar)
         visitExpr(exp)
 
       case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -383,8 +368,6 @@ object Visitor {
 
       case Expr.Tuple(exps, _, _, _) =>
         exps.foreach(visitExpr)
-
-      case Expr.RecordEmpty(_, _) => ()
 
       case Expr.RecordSelect(exp, _, _, _, _) =>
         visitExpr(exp)
@@ -444,7 +427,7 @@ object Visitor {
       case Expr.VectorLength(exp, _) =>
         visitExpr(exp)
 
-      case Expr.Ascribe(exp, _, _, _) =>
+      case Expr.Ascribe(exp, _, _, _, _, _) =>
         visitExpr(exp)
 
       case Expr.InstanceOf(exp, _, _) =>
@@ -463,9 +446,9 @@ object Visitor {
         visitType(runEff)
         visitExpr(exp)
 
-      case Expr.Without(exp, effUse, _, _, _) =>
+      case Expr.Without(exp, sym, _, _, _) =>
         visitExpr(exp)
-        visitEffectSymUse(effUse)
+        visitEffectSymUse(sym)
 
       case Expr.TryCatch(exp, rules, _, _, _) =>
         visitExpr(exp)
@@ -474,10 +457,13 @@ object Visitor {
       case Expr.Throw(exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.TryWith(exp, effUse, rules, _, _, _) =>
-        visitExpr(exp)
-        visitEffectSymUse(effUse)
+      case Expr.Handler(sym, rules, _, _, _, _, _) =>
+        visitEffectSymUse(sym)
         rules.foreach(visitHandlerRule)
+
+      case Expr.RunWith(exp1, exp2, _, _, _) =>
+        visitExpr(exp1)
+        visitExpr(exp2)
 
       case Expr.Do(op, exps, _, _, _) =>
         visitOpSymUse(op)
@@ -598,8 +584,8 @@ object Visitor {
   }
 
   private def visitEffectSymUse(effUse: EffectSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
-    val EffectSymUse(_, loc) = effUse
-    if (!a.accept(loc)) { return }
+    val EffectSymUse(_, qname) = effUse
+    if (!a.accept(qname.loc)) { return }
 
     c.consumeEffectSymUse(effUse)
   }
@@ -623,10 +609,8 @@ object Visitor {
   }
 
   private def visitSelectChannelRule(rule: SelectChannelRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val SelectChannelRule(bnd, chan, exp) = rule
-    // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since SelectChannelRule don't have locations
-    val insideRule = a.accept(chan.loc) || a.accept(exp.loc)
-    if (!insideRule) { return }
+    val SelectChannelRule(bnd, chan, exp, loc) = rule
+    if (!a.accept(loc)) { return }
 
     c.consumeSelectChannelRule(rule)
 
@@ -646,10 +630,8 @@ object Visitor {
   }
 
   private def visitHandlerRule(rule: HandlerRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val HandlerRule(op, fparams, exp) = rule
-    // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since HandlerRules don't have locations
-    val insideRule = a.accept(op.loc) || fparams.map(_.loc).exists(a.accept) || a.accept(exp.loc)
-    if (!insideRule) { return }
+    val HandlerRule(op, fparams, exp, loc) = rule
+    if (!a.accept(loc)) { return }
 
     c.consumeHandlerRule(rule)
 
@@ -676,10 +658,8 @@ object Visitor {
   }
 
   private def visitMatchRule(rule: MatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val MatchRule(pat, guard, exp) = rule
-    // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since MatchRules don't have locations
-    val insideRule = a.accept(pat.loc) || guard.map(_.loc).exists(a.accept) || a.accept(exp.loc)
-    if (!insideRule) { return }
+    val MatchRule(pat, guard, exp, loc) = rule
+    if (!a.accept(loc)) { return }
 
     c.consumeMatchRule(rule)
 
@@ -689,10 +669,8 @@ object Visitor {
   }
 
   private def visitTypeMatchRule(rule: TypeMatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val TypeMatchRule(bnd, tpe, exp) = rule
-    // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since TypeMatchRules don't have locations
-    val insideRule = a.accept(bnd.sym.loc) || a.accept(tpe.loc) || a.accept(exp.loc)
-    if (!insideRule) { return }
+    val TypeMatchRule(bnd, tpe, exp, loc) = rule
+    if (!a.accept(loc)) { return }
 
     c.consumeTypeMatchRule(rule)
 
@@ -733,10 +711,8 @@ object Visitor {
   }
 
   private def visitCatchRule(rule: CatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val CatchRule(bnd, _, exp) = rule
-    // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since CatchRules don't have locations
-    val insideRule = a.accept(bnd.sym.loc) || a.accept(exp.loc)
-    if (!insideRule) { return }
+    val CatchRule(bnd, _, exp, loc) = rule
+    if (!a.accept(loc)) { return }
 
     c.consumeCatchRule(rule)
 
@@ -794,7 +770,6 @@ object Visitor {
     	case Record(pats, pat, _, _) =>
     	  pats.foreach(visitRecordLabelPattern)
     	  visitPattern(pat)
-    	case RecordEmpty(_, _) =>
     	case Pattern.Error(_, _) =>
     }
   }

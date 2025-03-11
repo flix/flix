@@ -47,6 +47,15 @@ instance IndexableMut[MutList[a, r]] {
         MutList.put(v, i, t)
 }
 
+instance MutCollectable[MutList[a, r]] {
+    type Elm = a
+    type Aef = r
+    type Reg = r
+    pub def collect(rc: Region[r], iter: Iterator[a, ef, r1]): MutList[a, r] \ (ef + r + r1) =
+        Iterator.toMutList(rc, iter)
+
+}
+
 mod MutList {
 
     ///
@@ -63,7 +72,7 @@ mod MutList {
     }
 
     ///
-    /// Returns an empty empty mutable list with a default capacity.
+    /// Returns an empty mutable list with a default capacity.
     ///
     pub def empty(rc: Region[r]): MutList[a, r] \ r =
         new MutList @ rc {r = rc, values = Array.empty(rc, minCapacity()), length = 0}

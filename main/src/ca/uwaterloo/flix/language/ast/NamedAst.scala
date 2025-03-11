@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
-import ca.uwaterloo.flix.util.collection.MultiMap
+
 
 object NamedAst {
 
@@ -28,7 +28,8 @@ object NamedAst {
                   units: Map[Source, CompilationUnit],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  availableClasses: AvailableClasses)
+                  availableClasses: AvailableClasses,
+                  tokens: Map[Source, Array[Token]])
 
   case class CompilationUnit(usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation)
 
@@ -124,7 +125,7 @@ object NamedAst {
 
     case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends Expr
 
-    case class Scope(sym: Symbol.VarSym, regionVar: Symbol.UnkindedTypeVarSym, exp: Expr, loc: SourceLocation) extends Expr
+    case class Scope(sym: Symbol.VarSym, regSym: Symbol.RegionSym, exp: Expr, loc: SourceLocation) extends Expr
 
     case class Match(exp: Expr, rules: List[MatchRule], loc: SourceLocation) extends Expr
 
@@ -133,8 +134,6 @@ object NamedAst {
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
-
-    case class RecordEmpty(loc: SourceLocation) extends Expr
 
     case class RecordSelect(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr
 
@@ -174,13 +173,15 @@ object NamedAst {
 
     case class Unsafe(exp: Expr, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Without(exp: Expr, eff: Name.QName, loc: SourceLocation) extends Expr
+    case class Without(exp: Expr, qname: Name.QName, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
 
     case class Throw(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class TryWith(exp: Expr, eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
+    case class Handler(qname: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
+
+    case class RunWith(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class InvokeConstructor(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -243,8 +244,6 @@ object NamedAst {
     case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
-
-    case class RecordEmpty(loc: SourceLocation) extends Pattern
 
     case class Error(loc: SourceLocation) extends Pattern
 
@@ -324,8 +323,6 @@ object NamedAst {
 
     case class Schema(row: Type, loc: SourceLocation) extends Type
 
-    case class Native(fqn: String, loc: SourceLocation) extends Type
-
     case class Arrow(tparams: List[Type], eff: Option[Type], tresult: Type, loc: SourceLocation) extends Type
 
     case class Apply(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Type
@@ -390,17 +387,17 @@ object NamedAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, className: String, exp: Expr)
+  case class CatchRule(sym: Symbol.VarSym, className: Name.Ident, exp: Expr, loc: SourceLocation)
 
-  case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr)
+  case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
-  case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
+  case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr, loc: SourceLocation)
 
-  case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr)
+  case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr, loc: SourceLocation)
 
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
+  case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr, loc: SourceLocation)
 
   sealed trait TypeParam {
     def name: Name.Ident

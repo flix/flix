@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{DocumentSymbol, Location, Range, SymbolInformation, SymbolKind}
+import ca.uwaterloo.flix.api.lsp.{DocumentSymbol, Location, Range, SymbolKind, WorkspaceSymbol}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.fmt.FormatKind.formatKind
@@ -28,14 +28,16 @@ object SymbolProvider {
     * As for now we just match the very beginning of the string with the query string,
     * but a more inclusive matching pattern can be implemented.
     */
-  def processWorkspaceSymbols(query: String)(implicit root: Root): List[SymbolInformation] = {
-    val enums = root.enums.values.filter(_.sym.name.startsWith(query)).flatMap(mkEnumSymbolInformation)
-    val defs = root.defs.values.collect { case d if d.sym.name.startsWith(query) => mkDefSymbolInformation(d) }
-    val traits = root.traits.values.collect { case t if t.sym.name.startsWith(query) => mkTraitSymbolInformation(t) }
-    val sigs = root.sigs.values.collect { case sig if sig.sym.name.startsWith(query) => mkSigSymbolInformation(sig) }
-    val effs = root.effects.values.filter(_.sym.name.startsWith(query)).flatMap(mkEffectSymbolInformation)
-    val structs = root.structs.values.filter(_.sym.name.startsWith(query)).flatMap(mkStructSymbolInformation)
-    (traits ++ defs ++ enums ++ sigs ++ effs ++ structs).toList
+  def processWorkspaceSymbols(query: String)(implicit root: Root): List[WorkspaceSymbol] = {
+    val enums = root.enums.values.filter(_.sym.name.startsWith(query)).flatMap(mkEnumWorkspaceSymbol)
+    val defs = root.defs.values.collect { case d if d.sym.name.startsWith(query) => mkDefWorkspaceSymbol(d) }
+    val traits = root.traits.values.collect { case t if t.sym.name.startsWith(query) => mkTraitWorkSpaceSymbol(t) }
+    val sigs = root.sigs.values.collect { case sig if sig.sym.name.startsWith(query) => mkSigWorkspaceSymbol(sig) }
+    val effs = root.effects.values.filter(_.sym.name.startsWith(query)).flatMap(mkEffectWorkspaceSymbol)
+    val structs = root.structs.values.filter(_.sym.name.startsWith(query)).flatMap(mkStructWorkspaceSymbol)
+    (traits ++ defs ++ enums ++ sigs ++ effs ++ structs).toList.filter{
+      case WorkspaceSymbol(_, _, _, _, loc) => loc.uri.startsWith("file://")
+    }
   }
 
   /**
@@ -47,15 +49,15 @@ object SymbolProvider {
     val traits = root.traits.values.collect { case t if t.sym.loc.source.name == uri => mkTraitDocumentSymbol(t) }
     val effs = root.effects.values.collect { case e if e.sym.loc.source.name == uri => mkEffectDocumentSymbol(e) }
     val structs = root.structs.values.collect { case s if s.sym.loc.source.name == uri => mkStructDocumentSymbol(s) }
-    (traits ++ defs ++ enums ++ effs ++ structs).toList
+    (traits ++ defs ++ enums ++ effs ++ structs).toList.filter(_.name.nonEmpty)
   }
 
   /**
     * Returns an Interface SymbolInformation from a Trait node.
     */
-  private def mkTraitSymbolInformation(t: TypedAst.Trait) = t match {
-    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => SymbolInformation(
-      sym.name, SymbolKind.Interface, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
+  private def mkTraitWorkSpaceSymbol(t: TypedAst.Trait) = t match {
+    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => WorkspaceSymbol(
+      sym.name, SymbolKind.Interface, Nil, None, Location(sym.loc.source.name, Range.from(sym.loc)),
     )
   }
 
@@ -71,7 +73,7 @@ object SymbolProvider {
       Range.from(sym.loc),
       Range.from(sym.loc),
       Nil,
-      signatures.map(mkSigDocumentSymbol) :+ mkTypeParamDocumentSymbol(tparam),
+      (signatures.map(mkSigDocumentSymbol) :+ mkTypeParamDocumentSymbol(tparam)).filter(_.name.nonEmpty),
     )
   }
 
@@ -96,25 +98,25 @@ object SymbolProvider {
   /**
     * Returns a Method SymbolInformation from a Sig node.
     */
-  private def mkSigSymbolInformation(s: TypedAst.Sig): SymbolInformation = s match {
-    case TypedAst.Sig(sym, _, _, _) => SymbolInformation(
-      sym.name, SymbolKind.Method, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
+  private def mkSigWorkspaceSymbol(s: TypedAst.Sig): WorkspaceSymbol = s match {
+    case TypedAst.Sig(sym, _, _, _) => WorkspaceSymbol(
+      sym.name, SymbolKind.Method, Nil, None, Location(sym.loc.source.name, Range.from(sym.loc)),
     )
   }
 
   /**
    * Returns a Method SymbolInformation from a Struct node.
    */
-  private def mkStructSymbolInformation(s: TypedAst.Struct): List[SymbolInformation] = s match {
+  private def mkStructWorkspaceSymbol(s: TypedAst.Struct): List[WorkspaceSymbol] = s match {
     case TypedAst.Struct(_, _, _, sym, _, _, fields, _) =>
-      fields.values.map(mkFieldSymbolInformation).toList :+ SymbolInformation(
-      sym.name, SymbolKind.Struct, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
+      fields.values.map(mkFieldWorkspaceSymbol).toList :+ WorkspaceSymbol(
+      sym.name, SymbolKind.Struct, Nil, None, Location(sym.loc.source.name, Range.from(sym.loc)),
     )
   }
 
-  private def mkFieldSymbolInformation(f: TypedAst.StructField): SymbolInformation = f match {
-    case TypedAst.StructField(sym, _, loc) => SymbolInformation(
-      sym.name, SymbolKind.Field, Nil, deprecated = false, Location(loc.source.name, Range.from(loc)), None,
+  private def mkFieldWorkspaceSymbol(f: TypedAst.StructField): WorkspaceSymbol = f match {
+    case TypedAst.StructField(sym, _, loc) => WorkspaceSymbol(
+      sym.name, SymbolKind.Field, Nil, None, Location(loc.source.name, Range.from(loc)),
     )
   }
 
@@ -123,7 +125,13 @@ object SymbolProvider {
    */
   private def mkStructDocumentSymbol(s: TypedAst.Struct): DocumentSymbol = s match {
     case TypedAst.Struct(doc, _, _, sym, tparams, _, fields, _) => DocumentSymbol(
-      sym.name, Some(doc.text), SymbolKind.Struct, Range.from(sym.loc), Range.from(sym.loc), Nil, fields.values.map(mkFieldDocumentSymbol).toList ++  tparams.map(mkTypeParamDocumentSymbol),
+      sym.name,
+      Some(doc.text),
+      SymbolKind.Struct,
+      Range.from(sym.loc),
+      Range.from(sym.loc),
+      Nil,
+      (fields.values.map(mkFieldDocumentSymbol).toList ++  tparams.map(mkTypeParamDocumentSymbol)).filter(_.name.nonEmpty),
     )
   }
 
@@ -145,9 +153,9 @@ object SymbolProvider {
   /**
     * Returns a Function SymbolInformation from a Def node.
     */
-  private def mkDefSymbolInformation(d: TypedAst.Def): SymbolInformation = d match {
-    case TypedAst.Def(sym, _, _, _) => SymbolInformation(
-      sym.name, SymbolKind.Function, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
+  private def mkDefWorkspaceSymbol(d: TypedAst.Def): WorkspaceSymbol = d match {
+    case TypedAst.Def(sym, _, _, _) => WorkspaceSymbol(
+      sym.name, SymbolKind.Function, Nil, None, Location(sym.loc.source.name, Range.from(sym.loc)),
     )
   }
 
@@ -163,7 +171,7 @@ object SymbolProvider {
       Range.from(loc),
       Range.from(loc),
       Nil,
-      cases.values.map(mkCaseDocumentSymbol).toList ++ tparams.map(mkTypeParamDocumentSymbol),
+      (cases.values.map(mkCaseDocumentSymbol).toList ++ tparams.map(mkTypeParamDocumentSymbol)).filter(_.name.nonEmpty)
     )
   }
 
@@ -180,28 +188,28 @@ object SymbolProvider {
     * Returns an Enum DocumentSymbol from an Enum node.
     * It navigates the AST and returns also the Cases of the enum to the returned List.
     */
-  private def mkEnumSymbolInformation(enum0: TypedAst.Enum): List[SymbolInformation] = enum0 match {
+  private def mkEnumWorkspaceSymbol(enum0: TypedAst.Enum): List[WorkspaceSymbol] = enum0 match {
     case TypedAst.Enum(_, _, _, sym, _, _, cases, loc) =>
-      cases.values.map(mkCaseSymbolInformation).toList :+ SymbolInformation(
-        sym.name, SymbolKind.Enum, Nil, deprecated = false, Location(loc.source.name, Range.from(loc)), None,
+      cases.values.map(mkCaseWorkspaecSymbol).toList :+ WorkspaceSymbol(
+        sym.name, SymbolKind.Enum, Nil, None, Location(loc.source.name, Range.from(loc)),
       )
   }
 
   /**
     * Returns an EnumMember SymbolInformation from a Case node.
     */
-  private def mkCaseSymbolInformation(c: TypedAst.Case): SymbolInformation = c match {
-    case TypedAst.Case(sym, _, _, loc) => SymbolInformation(
-      sym.name, SymbolKind.EnumMember, Nil, deprecated = false, Location(loc.source.name, Range.from(loc)), None)
+  private def mkCaseWorkspaecSymbol(c: TypedAst.Case): WorkspaceSymbol = c match {
+    case TypedAst.Case(sym, _, _, loc) => WorkspaceSymbol(
+      sym.name, SymbolKind.EnumMember, Nil, None, Location(loc.source.name, Range.from(loc)))
   }
 
   /**
     * Returns an Interface SymbolInformation from an Effect node.
     */
-  private def mkEffectSymbolInformation(effect: TypedAst.Effect): List[SymbolInformation] = effect match {
+  private def mkEffectWorkspaceSymbol(effect: TypedAst.Effect): List[WorkspaceSymbol] = effect match {
     case TypedAst.Effect(_, _, _, sym, ops, _) =>
-      ops.map(mkOpSymbolInformation) :+ SymbolInformation(
-        sym.name, SymbolKind.Interface, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None)
+      ops.map(mkOpWorkspaceSymbol) :+ WorkspaceSymbol(
+        sym.name, SymbolKind.Interface, Nil, None, Location(sym.loc.source.name, Range.from(sym.loc)))
   }
 
   /**
@@ -216,16 +224,16 @@ object SymbolProvider {
       Range.from(sym.loc),
       Range.from(sym.loc),
       Nil,
-      ops.map(mkOpDocumentSymbol),
+      ops.map(mkOpDocumentSymbol).filter(_.name.nonEmpty),
     )
   }
 
   /**
     * Returns an Function SymbolInformation from an Op node.
     */
-  private def mkOpSymbolInformation(op: TypedAst.Op): SymbolInformation = op match {
+  private def mkOpWorkspaceSymbol(op: TypedAst.Op): WorkspaceSymbol = op match {
     case TypedAst.Op(sym, _, _) =>
-      SymbolInformation(sym.name, SymbolKind.Function, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None)
+      WorkspaceSymbol(sym.name, SymbolKind.Function, Nil, None, Location(sym.loc.source.name, Range.from(sym.loc)))
   }
 
   /**

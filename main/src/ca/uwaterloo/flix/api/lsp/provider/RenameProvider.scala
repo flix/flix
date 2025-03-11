@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Consumer, Position, Range, ResponseStatus, TextEdit, Visitor, WorkspaceEdit}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, EqualityConstraint, SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
@@ -60,13 +60,12 @@ object RenameProvider {
     * @param root     The root AST node of the Flix project.
     * @return         A [[JObject]] representing a Rename LSP response.
     */
-  def processRename(newName: String, uri: String, pos: Position)(implicit root: Root): JObject = {
+  def processRename(newName: String, uri: String, pos: Position)(implicit root: Root): Option[WorkspaceEdit] = {
     val left = searchLeftOfCursor(uri, pos).flatMap(getOccurs)
     val right = searchRightOfCursor(uri, pos).flatMap(getOccurs)
 
     right.orElse(left)
       .map(rename(newName))
-      .getOrElse(mkNotFound(uri, pos))
   }
 
   /**
@@ -146,17 +145,17 @@ object RenameProvider {
     case TypedAst.FormalParam(_, _, _, _, loc) => loc.isReal
     case TypedAst.PredicateParam(_, _, loc) => loc.isReal
     case TypedAst.JvmMethod(_, _, _, _, _, loc) => loc.isReal
-    case TypedAst.CatchRule(_, _, _) => true
-    case TypedAst.HandlerRule(_, _, _) => true
-    case TypedAst.TypeMatchRule(_, _, _) => true
-    case TypedAst.SelectChannelRule(_, _, _) => true
+    case TypedAst.CatchRule(_, _, _, _) => true
+    case TypedAst.HandlerRule(_, _, _, _) => true
+    case TypedAst.TypeMatchRule(_, _, _, _) => true
+    case TypedAst.SelectChannelRule(_, _, _, _) => true
     case TypedAst.TypeParam(_, _, loc) => loc.isReal
     case TypedAst.ParYieldFragment(_, _, loc) => loc.isReal
 
     case SymUse.AssocTypeSymUse(_, loc) => loc.isReal
     case SymUse.CaseSymUse(_, loc) => loc.isReal
     case SymUse.DefSymUse(_, loc) => loc.isReal
-    case SymUse.EffectSymUse(_, loc) => loc.isReal
+    case SymUse.EffectSymUse(_, qname) => qname.loc.isReal
     case SymUse.LocalDefSymUse(_, loc) => loc.isReal
     case SymUse.OpSymUse(_, loc) => loc.isReal
     case SymUse.RestrictableCaseSymUse(_, loc) => loc.isReal
@@ -166,9 +165,7 @@ object RenameProvider {
     case SymUse.TraitSymUse(_, loc) => loc.isReal
 
     case TraitConstraint(_, _, loc) => loc.isReal
-    case TraitConstraint.Head(_, loc) => loc.isReal
 
-    case AssocTypeConstructor(_, loc) => loc.isReal
     case EqualityConstraint(_, _, _, loc) => loc.isReal
 
     case _: Symbol => true
@@ -234,7 +231,7 @@ object RenameProvider {
     *
     * NB: The occurrences must *NOT* overlap nor be repeated. Hence they are a set.
     */
-  private def rename(newName: String)(occurrences: Set[SourceLocation]): JObject = {
+  private def rename(newName: String)(occurrences: Set[SourceLocation]): WorkspaceEdit = {
     // Convert the set of occurrences to a sorted list.
     val targets = occurrences.toList.sorted
 
@@ -246,17 +243,6 @@ object RenameProvider {
       case (uri, locs) => uri -> locs.map(loc => TextEdit(Range.from(loc), newName))
     }
 
-    // Assemble the workspace edit.
-    val workspaceEdit = WorkspaceEdit(textEdits)
-
-    // Construct the JSON result.
-    ("status" -> ResponseStatus.Success) ~ ("result" -> workspaceEdit.toJSON)
+     WorkspaceEdit(textEdits)
   }
-
-  /**
-    * Returns a reply indicating that nothing was found at the `uri` and `pos`.
-    */
-  private def mkNotFound(uri: String, pos: Position): JObject =
-    ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
-
 }

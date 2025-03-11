@@ -18,13 +18,12 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
-import ca.uwaterloo.flix.util.collection.MultiMap
 
 object DesugaredAst {
 
-  val empty: Root = Root(Map.empty, None, AvailableClasses.empty)
+  val empty: Root = Root(Map.empty, None, AvailableClasses.empty, Map.empty)
 
-  case class Root(units: Map[Source, CompilationUnit], mainEntryPoint: Option[Symbol.DefnSym], availableClasses: AvailableClasses)
+  case class Root(units: Map[Source, CompilationUnit], mainEntryPoint: Option[Symbol.DefnSym], availableClasses: AvailableClasses, tokens: Map[Source, Array[Token]])
 
   case class CompilationUnit(usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation)
 
@@ -123,8 +122,6 @@ object DesugaredAst {
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class RecordEmpty(loc: SourceLocation) extends Expr
-
     case class RecordSelect(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr
 
     case class RecordExtend(label: Name.Label, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
@@ -169,7 +166,9 @@ object DesugaredAst {
 
     case class Throw(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class TryWith(exp: Expr, eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
+    case class Handler(eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
+
+    case class RunWith(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class InvokeConstructor(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -232,8 +231,6 @@ object DesugaredAst {
     case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
-
-    case class RecordEmpty(loc: SourceLocation) extends Pattern
 
     case class Error(loc: SourceLocation) extends Pattern
 
@@ -314,8 +311,6 @@ object DesugaredAst {
 
     case class Schema(row: Type, loc: SourceLocation) extends Type
 
-    case class Native(fqn: String, loc: SourceLocation) extends Type
-
     case class Arrow(tparams: List[Type], eff: Option[Type], tresult: Type, loc: SourceLocation) extends Type
 
     case class Apply(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Type
@@ -382,9 +377,9 @@ object DesugaredAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 
-  case class CatchRule(ident: Name.Ident, className: String, exp: Expr)
+  case class CatchRule(ident: Name.Ident, className: Name.Ident, exp: Expr, loc: SourceLocation)
 
-  case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr)
+  case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
@@ -394,11 +389,11 @@ object DesugaredAst {
 
   case class Constraint(head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 
-  case class MatchRule(pat: Pattern, exp1: Option[Expr], exp2: Expr)
+  case class MatchRule(pat: Pattern, exp1: Option[Expr], exp2: Expr, loc: SourceLocation)
 
-  case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr)
+  case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr, loc: SourceLocation)
 
-  case class SelectChannelRule(ident: Name.Ident, exp1: Expr, exp2: Expr)
+  case class SelectChannelRule(ident: Name.Ident, exp1: Expr, exp2: Expr, loc: SourceLocation)
 
   sealed trait TypeParam
 

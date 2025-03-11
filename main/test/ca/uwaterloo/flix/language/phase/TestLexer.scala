@@ -7,34 +7,6 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestLexer extends AnyFunSuite with TestUtils {
 
-  test("LexerError.BlockCommentTooDeep.01") {
-    val input = "/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* this is 32 levels deep */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.BlockCommentTooDeep](result)
-  }
-
-  test("LexerError.BlockCommentTooDeep.02") {
-    val input = "/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* // this is 33 levels deep */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.BlockCommentTooDeep](result)
-  }
-
-  test("LexerError.BlockCommentTooDeep.03") {
-    // Note: The innermost block-comment is unterminated,
-    // but the lexer should stop after bottoming out so this should still be a 'too deep' error.
-    val input = "/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* this is 32 levels deep and unclosed */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.BlockCommentTooDeep](result)
-  }
-
-  test("LexerError.BlockCommentTooDeep.04") {
-    // Note: The innermost block-comment is unterminated,
-    // but the lexer should stop after bottoming out so this should still be a 'too deep' error.
-    val input = "/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* this is unclosed and deep */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.BlockCommentTooDeep](result)
-  }
-
   test("LexerError.DoubleDottedNumber.01") {
     val input = "1.2.3"
     val result = compile(input, Options.TestWithLibNix)

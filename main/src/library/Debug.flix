@@ -48,9 +48,9 @@ mod Debug {
             case b: Bool =>  if (b) "true" else "false"
             case c: Char => "\'" + escape("${(c: Char)}") + "\'"
             case y: Float32 =>
-                unsafe Float.toString(y) + "f32"
+                Float.toString(y) + "f32"
             case y: Float64 =>
-                unsafe Double.toString(y)
+                Double.toString(y)
             case y: BigDecimal =>
                 if (unsafe Objects.isNull(y)) {
                     "null"
@@ -58,13 +58,13 @@ mod Debug {
                     unsafe y.toString() + "ff"
                 }
             case y: Int8 =>
-                unsafe Byte.toString(y) + "i8"
+                Byte.toString(y) + "i8"
             case y: Int16 =>
-                unsafe Short.toString(y) + "i16"
+                Short.toString(y) + "i16"
             case y: Int32 =>
-                unsafe Integer.toString(y)
+                Integer.toString(y)
             case y: Int64 =>
-                unsafe Long.toString(y) + "i64"
+                Long.toString(y) + "i64"
             case y: BigInt =>
                 if (unsafe Objects.isNull(y)) {
                     "null"

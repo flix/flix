@@ -16,6 +16,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
+import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils
 import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
@@ -39,25 +40,25 @@ object CodeActionProvider {
   }
 
   private def getActionsFromErrors(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = errors.flatMap {
-    case ResolutionError.UndefinedEffect(qn, ap,  _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedEffect(qn, ap,  _, _, loc) if overlaps(range, loc) =>
       mkUseEffect(qn.ident, uri, ap)
 
     case ResolutionError.UndefinedStruct(qn, ap, loc) if overlaps(range, loc) =>
       mkUseStruct(qn.ident, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
 
-    case ResolutionError.UndefinedJvmClass(name, ap, _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedJvmImport(name, ap, _, loc) if overlaps(range, loc) =>
       mkImportJava(Name.mkQName(name), uri, ap)
 
     case ResolutionError.UndefinedName(qn, ap, env, loc) if overlaps(range, loc) =>
       mkFixMisspelling(qn, loc, env, uri) ++ mkUseDef(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap) ++ mkNewDef(qn.ident.name, uri, ap)
 
-    case ResolutionError.UndefinedTrait(qn, ap,  _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedTrait(qn, _, ap, _, _, loc) if overlaps(range, loc) =>
       mkUseTrait(qn.ident, uri, ap)
 
-    case ResolutionError.UndefinedTag(name, ap, _, loc) if overlaps(range, loc) =>
-      mkUseTag(name, uri, ap) ++ mkQualifyTag(name, uri, loc)
+    case ResolutionError.UndefinedTag(name, ap, _, _, loc) if overlaps(range, loc) =>
+      mkUseTag(name.ident.name, uri, ap) ++ mkQualifyTag(name.ident.name, uri, loc)
 
-    case ResolutionError.UndefinedType(qn, ap, _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedType(qn, _, ap, _, loc) if overlaps(range, loc) =>
       mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap) ++ mkNewEnum(qn.ident.name, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
 
     case TypeError.MissingInstanceEq(tpe, _, loc) if overlaps(range, loc) =>
@@ -103,7 +104,7 @@ object CodeActionProvider {
     */
   private def mkUseDef(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
     val syms = root.defs.collect {
-      case (sym, defi) if isPublic(defi.spec) => sym
+      case (sym, defn) if CompletionUtils.isAvailable(defn) => sym
     }
     mkUseSym(ident, syms.map(_.name), syms, uri, ap)
   }
@@ -113,7 +114,7 @@ object CodeActionProvider {
     */
   private def mkUseTrait(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
     val syms = root.traits.collect {
-      case (sym, trt) if isPublic(trt) => sym
+      case (sym, trt) if CompletionUtils.isAvailable(trt) => sym
     }
     mkUseSym(ident, syms.map(_.name), syms, uri, ap)
   }
@@ -123,7 +124,7 @@ object CodeActionProvider {
     */
   private def mkUseEffect(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
     val syms = root.effects.collect {
-      case (sym, eff) if isPublic(eff) => sym
+      case (sym, eff) if CompletionUtils.isAvailable(eff) => sym
     }
     mkUseSym(ident, syms.map(_.name), syms, uri, ap)
   }
@@ -145,7 +146,7 @@ object CodeActionProvider {
     * }}}
     */
   private def mkUseTag(tagName: String, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
-    val candidateEnums = root.enums.filter{ case (_, enm) => enm.cases.keys.exists(_.name == tagName) && isPublic(enm)}
+    val candidateEnums = root.enums.filter{ case (_, enm) => enm.cases.keys.exists(_.name == tagName) && CompletionUtils.isAvailable(enm)}
     candidateEnums.keys.map{ enumName =>
       CodeAction(
         title = s"use '$enumName.$tagName'",
@@ -173,7 +174,7 @@ object CodeActionProvider {
     * }}}
     */
   private def mkQualifyTag(tagName: String, uri: String, loc: SourceLocation)(implicit root: Root): List[CodeAction] = {
-    val candidateEnums = root.enums.filter{ case (_, enm) => enm.cases.keys.exists(_.name == tagName) && isPublic(enm)}
+    val candidateEnums = root.enums.filter{ case (_, enm) => enm.cases.keys.exists(_.name == tagName) && CompletionUtils.isAvailable(enm)}
     candidateEnums.keys.map{ enumName =>
       CodeAction(
         title = s"Prefix with '$enumName.'",
@@ -188,53 +189,23 @@ object CodeActionProvider {
     * Returns a code action that proposes to `use` a type.
     */
   private def mkUseType(ident: Name.Ident, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
-    val enumNames = root.enums.collect { case (sym, enm) if isPublic(enm) => sym.name }
-    val enumSyms = root.enums.collect { case (sym, enm) if isPublic(enm) => sym }
+    val enumNames = root.enums.collect { case (sym, enm) if CompletionUtils.isAvailable(enm) => sym.name }
+    val enumSyms = root.enums.collect { case (sym, enm) if CompletionUtils.isAvailable(enm) => sym }
 
-    val restrictableEnumNames = root.restrictableEnums.collect { case (sym, enm) if isPublic(enm) => sym.name }
-    val restrictableEnumSyms = root.restrictableEnums.collect { case (sym, enm) if isPublic(enm) => sym }
+    val restrictableEnumNames = root.restrictableEnums.collect { case (sym, enm) if CompletionUtils.isAvailable(enm) => sym.name }
+    val restrictableEnumSyms = root.restrictableEnums.collect { case (sym, enm) if CompletionUtils.isAvailable(enm) => sym }
 
-    val traitNames = root.traits.collect { case (sym, trt) if isPublic(trt) => sym.name }
-    val traitSyms = root.traits.collect { case (sym, trt) if isPublic(trt) => sym }
+    val traitNames = root.traits.collect { case (sym, trt) if CompletionUtils.isAvailable(trt) => sym.name }
+    val traitSyms = root.traits.collect { case (sym, trt) if CompletionUtils.isAvailable(trt) => sym }
 
-    val typeAliasNames = root.typeAliases.collect { case (sym, alias) if isPublic(alias) => sym.name }
-    val typeAliasSyms = root.typeAliases.collect { case (sym, alias) if isPublic(alias) => sym }
+    val typeAliasNames = root.typeAliases.collect { case (sym, alias) if CompletionUtils.isAvailable(alias) => sym.name }
+    val typeAliasSyms = root.typeAliases.collect { case (sym, alias) if CompletionUtils.isAvailable(alias) => sym }
 
     val names = enumNames ++ restrictableEnumNames ++ traitNames ++ typeAliasNames
     val syms = enumSyms ++ restrictableEnumSyms ++ traitSyms ++ typeAliasSyms
 
     mkUseSym(ident, names, syms, uri, ap)
   }
-
-  /**
-    * Checks if the given spec is public.
-    */
-  private def isPublic(spec: TypedAst.Spec): Boolean = spec.mod.mod.contains(Modifier.Public)
-
-  /**
-    * Checks if the given trait is public.
-    */
-  private def isPublic(trt: TypedAst.Trait): Boolean = trt.mod.mod.contains(Modifier.Public)
-
-  /**
-    * Checks if the given effect is public.
-    */
-  private def isPublic(eff: TypedAst.Effect): Boolean = eff.mod.mod.contains(Modifier.Public)
-
-  /**
-    * Checks if the given enum is public.
-    */
-  private def isPublic(enm: TypedAst.Enum): Boolean = enm.mod.mod.contains(Modifier.Public)
-
-  /**
-    * Checks if the given restrictable enum is public.
-    */
-  private def isPublic(enm: TypedAst.RestrictableEnum): Boolean = enm.mod.mod.contains(Modifier.Public)
-
-  /**
-    * Checks if the given type alias is public.
-    */
-  private def isPublic(alias: TypedAst.TypeAlias): Boolean = alias.mod.mod.contains(Modifier.Public)
 
   /**
     * Returns a code action that proposes to `use` a struct.
@@ -515,7 +486,7 @@ object CodeActionProvider {
     * `None` otherwise.
     */
   private def mkDerive(e: TypedAst.Enum, trt: String, uri: String): Option[CodeAction] = {
-    val alreadyDerived = e.derives.traits.exists(d => d.trt.name == trt)
+    val alreadyDerived = e.derives.traits.exists(d => d.sym.name == trt)
     if (alreadyDerived)
       None
     else Some(

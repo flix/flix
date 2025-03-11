@@ -77,6 +77,14 @@ object KeywordCompleter {
     )
 
   /**
+    * Effect keywords. These are keywords that can appear within the declaration of an effect.
+    */
+  def getEffectKeywords: List[Completion] =
+    List(
+      Completion.KeywordCompletion("def", Priority.Default)
+    )
+
+  /**
     * Expression keywords. These are keywords that can appear within expressions (fx within the body of a function).
     */
   def getExprKeywords: List[Completion] =
@@ -98,6 +106,8 @@ object KeywordCompleter {
       Completion.KeywordCompletion("force"       , Priority.High),
       Completion.KeywordCompletion("foreach"     , Priority.Lower),
       Completion.KeywordCompletion("from"        , Priority.Highest),
+      // H
+      Completion.KeywordCompletion("handler", Priority.Default),
       // I
       Completion.KeywordCompletion("if"          , Priority.Higher),
       Completion.KeywordCompletion("inject"      , Priority.Low),

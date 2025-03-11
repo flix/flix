@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import java.util.Objects
 import scala.collection.immutable.SortedSet
+import scala.collection.mutable
 
 /** Companion object for [[ZhegalkinExpr]] */
 object ZhegalkinExpr {
@@ -114,7 +115,18 @@ object ZhegalkinExpr {
     case (ZhegalkinExpr(c1, ts1), ZhegalkinExpr(c2, ts2)) =>
       val c = ZhegalkinCst.mkXor(c1, c2)
       // Eliminate duplicates: a ⊕ a = 0
-      val allTermsNonDup = (ts1 ++ ts2).groupBy(identity).collect { case (k, v) if v.size % 2 != 0 => k }.toList
+
+      // We want to retain all terms that occur an odd number of times.
+      val seen = mutable.Set.empty[ZhegalkinTerm]
+      for (t <- ts1.iterator ++ ts2.iterator) {
+        if (seen.contains(t)) {
+          // The term is already there, so we remove it, since we have seen it an even number of times.
+          seen.remove(t)
+        } else {
+          seen.add(t)
+        }
+      }
+      val allTermsNonDup = seen.toList
 
       // Merge coefficients: (c1 ∩ x1 ∩ x2) ⊕ (c2 ∩ x1 ∩ x2) = (c1 ∩ c2) ∩ x1 ∩ x2
       val termsGroupedByVarSet = allTermsNonDup.groupBy(_.vars).toList
@@ -205,12 +217,20 @@ object ZhegalkinExpr {
 
   /**
     * Computes the intersection of the given Zhegalkin constant `c` and the given Zhegalkin expression `e`.
+    */
+  private def mkInterConstantExpr(c: ZhegalkinCst, e: ZhegalkinExpr): ZhegalkinExpr = {
+    // Perform a cache lookup or an actual computation.
+    ZhegalkinCache.lookupOrComputeInterCst(c, e, computeInterConstantExpr)
+  }
+
+  /**
+    * Computes the intersection of the given Zhegalkin constant `c` and the given Zhegalkin expression `e`.
     *
     * {{{
     *   c ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m) = (c ∩ c2) ⊕ (c ∩ t21) ⊕ (c ∩ t22) ⊕ ... ⊕ (c ∩ t2m)
     * }}}
     */
-  private def mkInterConstantExpr(c: ZhegalkinCst, e: ZhegalkinExpr): ZhegalkinExpr = e match {
+  private def computeInterConstantExpr(c: ZhegalkinCst, e: ZhegalkinExpr): ZhegalkinExpr = e match {
     case ZhegalkinExpr(c2, terms) =>
       val ts = terms.map(t => mkInterConstantTerm(c, t))
       mkZhegalkinExpr(c.inter(c2), ts)
