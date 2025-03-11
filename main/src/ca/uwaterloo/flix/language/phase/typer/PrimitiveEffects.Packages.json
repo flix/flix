@@ -1,6 +1,7 @@
 {
   "packages": {
     "java.lang.constant": "Sys, IO",
+    "java.io": "FsRead, FsWrite, IO",
     "java.lang.net": "Net, IO",
     "java.lang.ref": "Sys, IO",
     "java.util.random": "NonDet, IO"
