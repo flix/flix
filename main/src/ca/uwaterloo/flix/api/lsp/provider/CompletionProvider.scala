@@ -113,21 +113,24 @@ object CompletionProvider {
   /**
     * Returns completions based on the syntactic context.
     */
-  private def getSyntacticCompletions(uri: String, e: ParseError)(implicit root: Root, flix: Flix): List[Completion] = e.sctx match {
-    // Expressions.
-    case SyntacticContext.Expr.Constraint => (PredicateCompleter.getCompletions(uri) ++ KeywordCompleter.getConstraintKeywords).toList
-    case SyntacticContext.Expr.OtherExpr => KeywordCompleter.getExprKeywords
+  private def getSyntacticCompletions(uri: String, e: ParseError)(implicit root: Root, flix: Flix): List[Completion] = {
+    implicit val range: Range = Range.from(e.loc)
+    e.sctx match {
+      // Expressions.
+      case SyntacticContext.Expr.Constraint => (PredicateCompleter.getCompletions(uri) ++ KeywordCompleter.getConstraintKeywords).toList
+      case SyntacticContext.Expr.OtherExpr => KeywordCompleter.getExprKeywords
 
-    // Declarations.
-    case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
-    case SyntacticContext.Decl.Effect => KeywordCompleter.getEffectKeywords
-    case SyntacticContext.Decl.Instance => KeywordCompleter.getInstanceKeywords
-    case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
-    case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
-    case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
-    case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
+      // Declarations.
+      case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
+      case SyntacticContext.Decl.Effect => KeywordCompleter.getEffectKeywords
+      case SyntacticContext.Decl.Instance => KeywordCompleter.getInstanceKeywords
+      case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
+      case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
+      case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
+      case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
 
-    case SyntacticContext.Unknown => Nil
+      case SyntacticContext.Unknown => Nil
+    }
   }
 
   /**
