@@ -473,67 +473,73 @@ object BenchmarkInliner {
 
       val runs = scala.collection.mutable.ListBuffer.empty[Run]
       for ((o, name, prog) <- runConfigs) {
-        debug(s"Benchmarking $name")
-        debug("Benchmarking compiler")
-        val t0DebugCompiler = System.currentTimeMillis()
+        val compilationTimings = benchmarkCompilation(o, name, prog)
+        val (runningTimes, result) = benchmarkRunningTime(o, name, prog)
+        runs += collectRun(o, name, compilationTimings, runningTimes, result)
+        debug(s"Done benchmarking $name with inliner '${InlinerType.from(o)}' with ${o.inliner1Rounds} rounds")
+      }
+      ListMap.from(runs.map(r => (r.name, r)))
+    }
 
-        val compilationTimings = scala.collection.mutable.ListBuffer.empty[(Long, List[(String, Long)])]
+    private def benchmarkCompilation(o: Options, name: String, prog: String)(implicit sctx: SecurityContext): Seq[(Long, List[(String, Long)])] = {
+      debug(s"Benchmarking $name")
+      debug("Benchmarking compiler")
+      val t0DebugCompiler = System.currentTimeMillis()
+      val compilationTimings = scala.collection.mutable.ListBuffer.empty[(Long, List[(String, Long)])]
 
-        for (_ <- 1 to NumberOfCompilations) {
-          val flix = new Flix().setOptions(o)
-          // Clear caches.
-          ZhegalkinCache.clearCaches()
-          flix.addSourceCode(s"$name.flix", prog)
-          val result = flix.compile().unsafeGet
-          val phaseTimes = flix.phaseTimers.map { case PhaseTime(phase, time) => phase -> time }.toList
-          val timing = (result.totalTime, phaseTimes)
-          compilationTimings += timing
-        }
-
-        val tDebugDeltaCompiler = System.currentTimeMillis() - t0DebugCompiler
-        val debugTimeCompiler = tDebugDeltaCompiler.toDouble / 1000
-        debug(s"Took $debugTimeCompiler seconds")
-
-        debug("Benchmarking running time")
-        val t0DebugRunningTime = System.currentTimeMillis()
-
-        val runningTimes = scala.collection.mutable.ListBuffer.empty[Long]
+      for (_ <- 1 to NumberOfCompilations) {
         val flix = new Flix().setOptions(o)
         // Clear caches.
         ZhegalkinCache.clearCaches()
         flix.addSourceCode(s"$name.flix", prog)
         val result = flix.compile().unsafeGet
-        result.getMain match {
-          case Some(mainFunc) =>
-            for (_ <- 1 to NumberOfSamples) {
-              val t0 = System.nanoTime()
-              // Iterate the program NumberOfRuns time
-              for (_ <- 1 to NumberOfRuns) {
-                mainFunc(Array.empty)
-              }
-              val tDelta = System.nanoTime() - t0
-              runningTimes += tDelta
-            }
-          case None => throw new RuntimeException(s"undefined main method for program '$name'")
-        }
-
-        val tDebugDeltaRunningTime = System.currentTimeMillis() - t0DebugRunningTime
-        val debugTimeRunningTime = tDebugDeltaRunningTime.toDouble / 1000
-        debug(s"Took $debugTimeRunningTime seconds")
-
-        runs += collectRun(o, name, compilationTimings, runningTimes, result)
-        debug(s"Done benchmarking $name with inliner '${InlinerType.from(o)}' with ${o.inliner1Rounds} rounds")
+        val phaseTimes = flix.phaseTimers.map { case PhaseTime(phase, time) => phase -> time }.toList
+        val timing = (result.totalTime, phaseTimes)
+        compilationTimings += timing
       }
 
-      ListMap.from(runs.map(r => (r.name, r)))
+      val tDebugDeltaCompiler = System.currentTimeMillis() - t0DebugCompiler
+      val debugTimeCompiler = tDebugDeltaCompiler.toDouble / 1000
+      debug(s"Took $debugTimeCompiler seconds")
+      compilationTimings.toSeq
     }
 
-    private def collectRun(o: Options, name: String, compilationTimings: ListBuffer[(Long, List[(String, Long)])], runningTimes: ListBuffer[Long], result: CompilationResult): Run = {
+    private def benchmarkRunningTime(o: Options, name: String, prog: String)(implicit sctx: SecurityContext): (Seq[Long], CompilationResult) = {
+      debug("Benchmarking running time")
+      val t0DebugRunningTime = System.currentTimeMillis()
+
+      val runningTimes = scala.collection.mutable.ListBuffer.empty[Long]
+      val flix = new Flix().setOptions(o)
+      // Clear caches.
+      ZhegalkinCache.clearCaches()
+      flix.addSourceCode(s"$name.flix", prog)
+      val result = flix.compile().unsafeGet
+      result.getMain match {
+        case Some(mainFunc) =>
+          for (_ <- 1 to NumberOfSamples) {
+            val t0 = System.nanoTime()
+            // Iterate the program NumberOfRuns time
+            for (_ <- 1 to NumberOfRuns) {
+              mainFunc(Array.empty)
+            }
+            val tDelta = System.nanoTime() - t0
+            runningTimes += tDelta
+          }
+        case None => throw new RuntimeException(s"undefined main method for program '$name'")
+      }
+
+      val tDebugDeltaRunningTime = System.currentTimeMillis() - t0DebugRunningTime
+      val debugTimeRunningTime = tDebugDeltaRunningTime.toDouble / 1000
+      debug(s"Took $debugTimeRunningTime seconds")
+      (runningTimes.toSeq, result)
+    }
+
+    private def collectRun(o: Options, name: String, compilationTimings: Seq[(Long, List[(String, Long)])], runningTimes: Seq[Long], result: CompilationResult): Run = {
       val lines = result.getTotalLines
       val inlinerType = InlinerType.from(o)
       val inliningRounds = o.inliner1Rounds
-      val runningTime = median(runningTimes.toSeq).toLong
-      val compilationTime = median(compilationTimings.map(_._1).toSeq).toLong
+      val runningTime = median(runningTimes).toLong
+      val compilationTime = median(compilationTimings.map(_._1)).toLong
       val phaseTimings = compilationTimings.flatMap(_._2).foldLeft(Map.empty[String, Seq[Long]]) {
         case (acc, (phase, time)) => acc.get(phase) match {
           case Some(timings) => acc + (phase -> timings.appended(time))
