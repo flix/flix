@@ -96,7 +96,7 @@ object OccurrenceAnalyzer1 {
     * Performs occurrence analysis on the given AST `root`.
     */
   def run(root: MonoAst.Root)(implicit flix: Flix): OccurrenceAst1.Root = {
-    val defs = visitDefs(root.defs) // visitDefs call parMap internally and has additional handling
+    val defs = visitDefs(root.defs) // visitDefs calls parMap internally and has additional handling
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
