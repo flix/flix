@@ -62,7 +62,7 @@ object CompletionProvider {
       errorsAt(uri, pos, currentErrors).flatMap {
         case err: WeederError.UndefinedAnnotation => KeywordCompleter.getModKeywords
 
-        case err: WeederError.UnqualifiedUse => UseCompleter.getCompletions(uri, err)
+        case err: WeederError.UnqualifiedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
 
         case err: ResolutionError.UndefinedTag =>
           EnumCompleter.getCompletions(err) ++
@@ -99,7 +99,7 @@ object CompletionProvider {
         case err: ResolutionError.UndefinedOp => OpCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
         case err: ResolutionError.UndefinedTrait => TraitCompleter.getCompletions(err)
-        case err: ResolutionError.UndefinedUse => UseCompleter.getCompletions(uri, err)
+        case err: ResolutionError.UndefinedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
 
         case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err) ++ InvokeMethodCompleter.getCompletions(err.tpe, err.fieldName)
         case err: TypeError.MethodNotFound => InvokeMethodCompleter.getCompletions(err.tpe, err.methodName)
