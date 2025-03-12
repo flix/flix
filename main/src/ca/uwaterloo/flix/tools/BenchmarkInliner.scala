@@ -18,12 +18,15 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinCache
+import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
+import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{FileOps, LibLevel, LocalResource, Options, StatUtils}
 import org.json4s.{JValue, JsonAST}
 import org.json4s.JsonDSL.*
 
 import java.nio.file.Path
+import scala.collection.mutable.ListBuffer
 
 object BenchmarkInliner {
 
@@ -418,11 +421,11 @@ object BenchmarkInliner {
       debug(s"Running up to $MaxInliningRounds inlining rounds, drawing $NumberOfSamples samples of timing $NumberOfRuns runs of each program")
       val programExperiments = benchmark(opts)
 
-      val runningTimeStats = programExperiments.map {
+      val runningTimeStats = programExperiments.m.map {
         case (name, runs) => name -> stats(runs.map(_.runningTime))
       }
 
-      val compilationTimeStats = programExperiments.map {
+      val compilationTimeStats = programExperiments.m.map {
         case (name, runs) => name -> stats(runs.map(_.compilationTime))
       }
 
@@ -431,7 +434,7 @@ object BenchmarkInliner {
 
       ("timestamp" -> timestamp) ~
         ("programs" -> {
-          programExperiments.map {
+          programExperiments.m.map {
             case (name, runs) =>
               ("programName" -> name) ~ {
                 ("summary" -> {
@@ -456,13 +459,17 @@ object BenchmarkInliner {
         })
     }
 
-    private def benchmark(opts: Options): Map[String, List[Run]] = {
-      implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    private def mkConfigurations(opts: Options): List[(Options, String, String)] = {
       val o0 = opts.copy(xnooptimizer = true, xnooptimizer1 = true, lib = LibLevel.All, progress = false, incremental = false, inlinerRounds = 0, inliner1Rounds = 0)
       val o1 = opts.copy(xnooptimizer = false, xnooptimizer1 = true, lib = LibLevel.All, progress = false, incremental = false)
       val o2 = opts.copy(xnooptimizer = true, xnooptimizer1 = false, lib = LibLevel.All, progress = false, incremental = false)
       val allOptions = o0 :: (1 to MaxInliningRounds).map(r => o1.copy(inlinerRounds = r, inliner1Rounds = r)).toList ::: (1 to MaxInliningRounds).map(r => o2.copy(inlinerRounds = r, inliner1Rounds = r)).toList
-      val runConfigs = allOptions.flatMap(c => programs.map { case (name, prog) => (c, name, prog) })
+      allOptions.flatMap(c => programs.map { case (name, prog) => (c, name, prog) })
+    }
+
+    private def benchmark(opts: Options): ListMap[String, Run] = {
+      implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+      val runConfigs = mkConfigurations(opts)
 
       val runs = scala.collection.mutable.ListBuffer.empty[Run]
       for ((o, name, prog) <- runConfigs) {
@@ -514,29 +521,28 @@ object BenchmarkInliner {
         val debugTimeRunningTime = tDebugDeltaRunningTime.toDouble / 1000
         debug(s"Took $debugTimeRunningTime seconds")
 
-        val lines = result.getTotalLines
-        val inlinerType = InlinerType.from(o)
-        val inliningRounds = o.inliner1Rounds
-        val runningTime = median(runningTimes.toSeq).toLong
-        val compilationTime = median(compilationTimings.map(_._1).toSeq).toLong
-        val phaseTimings = compilationTimings.flatMap(_._2).foldLeft(Map.empty[String, Seq[Long]]) {
-          case (acc, (phase, time)) => acc.get(phase) match {
-            case Some(timings) => acc + (phase -> timings.appended(time))
-            case None => acc + (phase -> Seq(time))
-          }
-        }.map { case (phase, timings) => phase -> median(timings).toLong }.toList
-        val codeSize = result.codeSize
-
-        runs += Run(name, lines, inlinerType, inliningRounds, runningTime, compilationTime, phaseTimings, codeSize)
+        runs += collectRun(o, name, compilationTimings, runningTimes, result)
         debug(s"Done benchmarking $name with inliner '${InlinerType.from(o)}' with ${o.inliner1Rounds} rounds")
       }
 
-      runs.foldLeft(Map.empty[String, List[Run]]) {
-        case (acc, run) => acc.get(run.name) match {
-          case Some(runsOfProgram) => acc + (run.name -> (run :: runsOfProgram))
-          case None => acc + (run.name -> List(run))
+      ListMap.from(runs.map(r => (r.name, r)))
+    }
+
+    private def collectRun(o: Options, name: String, compilationTimings: ListBuffer[(Long, List[(String, Long)])], runningTimes: ListBuffer[Long], result: CompilationResult): Run = {
+      val lines = result.getTotalLines
+      val inlinerType = InlinerType.from(o)
+      val inliningRounds = o.inliner1Rounds
+      val runningTime = median(runningTimes.toSeq).toLong
+      val compilationTime = median(compilationTimings.map(_._1).toSeq).toLong
+      val phaseTimings = compilationTimings.flatMap(_._2).foldLeft(Map.empty[String, Seq[Long]]) {
+        case (acc, (phase, time)) => acc.get(phase) match {
+          case Some(timings) => acc + (phase -> timings.appended(time))
+          case None => acc + (phase -> Seq(time))
         }
-      }
+      }.map { case (phase, timings) => phase -> median(timings).toLong }.toList
+      val codeSize = result.codeSize
+
+      Run(name, lines, inlinerType, inliningRounds, runningTime, compilationTime, phaseTimings, codeSize)
     }
 
     private def listFilter: String = {
