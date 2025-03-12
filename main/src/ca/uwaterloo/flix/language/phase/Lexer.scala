@@ -928,10 +928,16 @@ object Lexer {
 
     // Consume a `(\h+_?)+` string.
     var trailingUnderscore = false
-    var digits = -1
-    while (digits != 0) {
+    var digits = 0
+    var continue = true
+    while (continue) {
       digits = s.sc.advanceWhileWithCount(isHexDigit)
-      if (digits != 0) trailingUnderscore = s.sc.advanceIfMatch('_')
+      if (digits != 0) {
+        trailingUnderscore = s.sc.advanceIfMatch('_')
+        continue = trailingUnderscore
+       } else {
+        continue = false
+      }
     }
 
     if (trailingUnderscore) {
@@ -946,8 +952,8 @@ object Lexer {
         TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
       }
     } else {
-      if (digits <= 0) {
-        // If `digits <= 0 && !trailingUnderscore`, that means the no digits are present
+      if (digits == 0) {
+        // If `digits == 0 && !trailingUnderscore`, that means the no digits are present
         // (e.g. `0xi32` or `0x{`).
         val c = s.sc.peek
         if (isNumberChar(c)) {
