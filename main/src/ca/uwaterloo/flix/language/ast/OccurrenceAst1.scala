@@ -22,25 +22,14 @@ import ca.uwaterloo.flix.language.ast.shared.*
 object OccurrenceAst1 {
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
-                  enums: Map[Symbol.EnumSym, Enum],
-                  structs: Map[Symbol.StructSym, Struct],
-                  effects: Map[Symbol.EffectSym, Effect],
+                  enums: Map[Symbol.EnumSym, MonoAst.Enum],
+                  structs: Map[Symbol.StructSym, MonoAst.Struct],
+                  effects: Map[Symbol.EffectSym, MonoAst.Effect],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(sym: Symbol.DefnSym, fparams: List[(FormalParam, Occur)], spec: Spec, exp: Expr, context: DefContext, loc: SourceLocation)
-
-  /** Formal parameters have been moved out since [[Def]] and [[Op]] now have different types of formal parameters. */
-  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, functionType: Type, retTpe: Type, eff: Type)
-
-  case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
-
-  case class Op(sym: Symbol.OpSym, fparams: List[FormalParam], spec: Spec, loc: SourceLocation)
-
-  case class Enum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: Map[Symbol.CaseSym, Case], loc: SourceLocation)
-
-  case class Struct(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation)
+  case class Def(sym: Symbol.DefnSym, fparams: List[(FormalParam, Occur)], spec: MonoAst.Spec, exp: Expr, context: DefContext, loc: SourceLocation)
 
   sealed trait Expr extends Product {
     def tpe: Type
@@ -204,13 +193,10 @@ object OccurrenceAst1 {
   }
 
   /**
-    * // TODO: Before doing the TODO below, check that the invariant is maintained in [[ca.uwaterloo.flix.language.phase.Inliner1]].
-    * // TODO: Either update this documentation or maintain the invariant in [[ca.uwaterloo.flix.language.phase.OccurrenceAnalyzer1]].
-    * `OccurDef` contains information that indicates whether or not a def should be inlined
-    * A def is `isDirectCall` if
-    * the expression consist of a single (non-self) call
+    * `OccurDef` contains information that indicates whether a def should be inlined.
+    * A def is `isDirectCall` if the expression consist of a single (non-self) call.
     * `occur` represents the number of times a def is references in the entire program.
-    * `size` denotes the cumulative weight of each expression in the body of the def
+    * `size` denotes the cumulative weight of each expression in the body of the def.
     */
   case class DefContext(isDirectCall: Boolean, occur: Occur, size: Int, localDefs: Int, isSelfRecursive: Boolean)
 
