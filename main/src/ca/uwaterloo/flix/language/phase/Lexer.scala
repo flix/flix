@@ -1179,19 +1179,6 @@ object Lexer {
         false
       }
 
-    /**
-      * Advance the cursor past `c` if `p(c)` returns true.
-      *
-      * Returns true if the cursor was advanced.
-      */
-    def advanceIfMatch(p: Char => Boolean): Boolean =
-      if (this.inBounds && p(data(offset))) {
-        advance()
-        true
-      } else {
-        false
-      }
-
     /** Continuously advance the cursor while `p` returns true. */
     def advanceWhile(p: Char => Boolean): Unit =
       while (this.inBounds && p(data(offset))) {
