@@ -901,52 +901,70 @@ object Lexer {
     * Moves current position past a hex number literal (e.g. "0x123i32" or "0xAB21CD").
     * It is optional to have a trailing type indicator on number literals.
     * If it is missing Flix defaults to `i32`.
-    * */
+    *
+    * A hex number is accepted by `0x(\h+_?)+\h+(i8|i16|i32|i64|ii)?` where `\h = [0-9a-z]`.
+    *
+    * Note that any characters in `[0-9a-zA-Z_.]` following a number should be treated as a error part
+    * of the same number, e.g., `0x32q` should be parsed as a single wrong number, and not a number
+    * (`0x32`) and a name (`q`).
+    */
   private def acceptHexNumber()(implicit s: State): TokenKind = {
     def isHexDigit(c: Char): Boolean = '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
 
-    advance() // Consume 'x'.
-    var error: Option[TokenKind] = if (peek() == '_') {
-      val loc = sourceLocationAtCurrent()
-      advance()
-      Some(TokenKind.Err(LexerError.HexLiteralStartsOnUnderscore(loc)))
-    } else {
-      None
-    }
-    while (!eof()) {
-      peek() match {
-        case c if isHexDigit(c) => advance()
-        // '_' that is not in tail-position.
-        case '_' if peekPeek().exists(isHexDigit) => advance()
-        // Sequence of underscores.
-        case '_' if peekPeek().contains('_') =>
-          // Consume the whole sequence of '_'.
-          advance()
-          advance()
-          while (!eof() && peek() == '_') {
-            advance()
-          }
-          error = Some(TokenKind.Err(LexerError.DoubleUnderscoreInNumber(sourceLocationAtCurrent())))
-        // Underscore in tail position.
-        case '_' =>
-          advance()
-          return TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
-        // If this is reached an explicit number type might occur next.
-        case c =>
-          // The `f32`, `f64`, and `ff` suffixes cannot happen since `f` is a valid hex number.
-          return c match {
-            case _ if isMatchCurrent("i8") => error.getOrElse(TokenKind.LiteralInt8)
-            case _ if isMatchCurrent("i16") => error.getOrElse(TokenKind.LiteralInt16)
-            case _ if isMatchCurrent("i32") => error.getOrElse(TokenKind.LiteralInt32)
-            case _ if isMatchCurrent("i64") => error.getOrElse(TokenKind.LiteralInt64)
-            case _ if isMatchCurrent("ii") => error.getOrElse(TokenKind.LiteralBigInt)
-            case _ =>
-              error.getOrElse(TokenKind.LiteralInt32)
-          }
+    def isNumberChar(c: Char): Boolean = c.isDigit || c.isLetter || c == '.' || c == '_'
+
+    def acceptTokenOrWrongSuffix(token: TokenKind): TokenKind = {
+      val c = s.sc.peek
+      if (isNumberChar(c)) {
+        val loc = sourceLocationAtCurrent()
+        s.sc.advanceWhile(isNumberChar)
+        TokenKind.Err(LexerError.ExpectedHexDigit(c, loc))
+      } else {
+        token
       }
     }
-    // The very last char of the file was a digit so return the appropriate token.
-    error.getOrElse(TokenKind.LiteralInt32)
+
+    advance() // Consume 'x'.
+
+    // Consume a `(\h+_?)+` string.
+    var trailingUnderscore = false
+    var digits = -1
+    while (digits != 0) {
+      digits = s.sc.advanceWhileWithCount(isHexDigit)
+      if (digits != 0) trailingUnderscore = s.sc.advanceIfMatch('_')
+    }
+
+    if (trailingUnderscore) {
+      // If there is a trailing underscore, then its either
+      // a trailing underscore (`0x123_+`) or an unexpected char (`0x123_g`).
+      val c = s.sc.peek
+      if (isNumberChar(c)) {
+        val loc = sourceLocationAtCurrent()
+        s.sc.advanceWhile(isNumberChar)
+        TokenKind.Err(LexerError.ExpectedHexDigit(c, loc))
+      } else {
+        TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
+      }
+    } else {
+      if (digits <= 0) {
+        // If `digits <= 0 && !trailingUnderscore`, that means the no digits are present
+        // (e.g. `0xi32` or `0x{`).
+        val c = s.sc.peek
+        if (isNumberChar(c)) {
+          val loc = sourceLocationAtCurrent()
+          s.sc.advanceWhile(isNumberChar)
+          TokenKind.Err(LexerError.ExpectedHexDigit(c, loc))
+        } else {
+          TokenKind.Err(LexerError.EmptyHexNumber(sourceLocationAtCurrent()))
+        }
+      } else if (s.sc.advanceIfMatch("i8")) acceptTokenOrWrongSuffix(TokenKind.LiteralInt8)
+      else if (s.sc.advanceIfMatch("i16")) acceptTokenOrWrongSuffix(TokenKind.LiteralInt16)
+      else if (s.sc.advanceIfMatch("i32")) acceptTokenOrWrongSuffix(TokenKind.LiteralInt32)
+      else if (s.sc.advanceIfMatch("i64")) acceptTokenOrWrongSuffix(TokenKind.LiteralInt64)
+      else if (s.sc.advanceIfMatch("ii")) acceptTokenOrWrongSuffix(TokenKind.LiteralBigInt)
+      else acceptTokenOrWrongSuffix(TokenKind.LiteralInt32)
+    }
+
   }
 
   /** Moves current position past an annotation (e.g. "@Test"). */
@@ -1155,6 +1173,19 @@ object Lexer {
       */
     def advanceIfMatch(c: Char): Boolean =
       if (this.inBounds && data(offset) == c) {
+        advance()
+        true
+      } else {
+        false
+      }
+
+    /**
+      * Advance the cursor past `c` if `p(c)` returns true.
+      *
+      * Returns true if the cursor was advanced.
+      */
+    def advanceIfMatch(p: Char => Boolean): Boolean =
+      if (this.inBounds && p(data(offset))) {
         advance()
         true
       } else {

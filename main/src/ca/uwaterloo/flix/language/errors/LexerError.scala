@@ -107,6 +107,22 @@ object LexerError {
   }
 
   /**
+    * An error raised when a hexadecimal number has no digits (e.g. `0xi32` or `0x+`.
+    */
+  case class EmptyHexNumber(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Hexadecimal number has no digits."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Hexadecimal number has no digits.
+         |
+         |${code(loc, "Here")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised when a period has whitespace before it.
     * This is problematic because we want to disallow tokens like: "Rectangle   .Shape".
     *
@@ -125,6 +141,22 @@ object LexerError {
     }
 
     override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised when a hexadecimal digit is required (e.g. `0x5af_ ` or `0x123i33`).
+    */
+  case class ExpectedHexDigit(found: Char, loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Expected a hexadecimal digit, found '$found'."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Expected a hexadecimal digit, found '$found'.
+         |
+         |${code(loc, "Here")}
+         |
+         |""".stripMargin
+    }
   }
 
   /**
