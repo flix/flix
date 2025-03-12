@@ -107,7 +107,7 @@ object LexerError {
   }
 
   /**
-    * An error raised when a hexadecimal number has no digits (e.g. `0xi32` or `0x+`.
+    * An error raised when a hexadecimal number has no digits (e.g. `0xi32` or `0x+`).
     */
   case class EmptyHexNumber(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Hexadecimal number has no digits."
