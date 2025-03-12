@@ -132,20 +132,18 @@ object OccurrenceAnalyzer1 {
       * Returns true if `expr0` is a function call.
       */
     def isDirectCall(expr0: OccurrenceAst1.Expr): Boolean = expr0 match {
-      case OccurrenceAst1.Expr.ApplyDef(_sym, _exps, _, _, _, _) => true
-      // sym != defn0.sym // && exps.forall(isTrivial) // see doc comment for DefContext
+      case OccurrenceAst1.Expr.ApplyDef(_, _, _, _, _, _) => true
 
-      case OccurrenceAst1.Expr.ApplyClo(clo, _exps, _, _, _) =>
+      case OccurrenceAst1.Expr.ApplyClo(clo, _, _, _, _) =>
         clo match {
-          case OccurrenceAst1.Expr.ApplyAtomic(AtomicOp.Closure(_sym), _, _, _, _) => true
-          // sym != defn0.sym // && exps.forall(isTrivial) // see doc comment for DefContext
+          case OccurrenceAst1.Expr.ApplyAtomic(AtomicOp.Closure(_), _, _, _, _) => true
           case _ => false
         }
       case _ => false
     }
 
     /**
-      * Returns true if `def0` occurs in `occurInfo` without being captured.
+      * Returns true if `def0` occurs in `occurInfo`.
       */
     def isSelfRecursive(occurInfo: OccurInfo): Boolean = occurInfo.defs.get(defn0.sym) match {
       case None => false

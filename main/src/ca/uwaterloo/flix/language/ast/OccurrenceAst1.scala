@@ -208,7 +208,7 @@ object OccurrenceAst1 {
     * // TODO: Either update this documentation or maintain the invariant in [[ca.uwaterloo.flix.language.phase.OccurrenceAnalyzer1]].
     * `OccurDef` contains information that indicates whether or not a def should be inlined
     * A def is `isDirectCall` if
-    * the expression consist of a single (non-self) call with trivial arguments
+    * the expression consist of a single (non-self) call
     * `occur` represents the number of times a def is references in the entire program.
     * `size` denotes the cumulative weight of each expression in the body of the def
     */
