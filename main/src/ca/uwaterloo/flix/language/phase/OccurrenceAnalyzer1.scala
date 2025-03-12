@@ -133,12 +133,6 @@ object OccurrenceAnalyzer1 {
       */
     def isDirectCall(expr0: OccurrenceAst1.Expr): Boolean = expr0 match {
       case OccurrenceAst1.Expr.ApplyDef(_, _, _, _, _, _) => true
-
-      case OccurrenceAst1.Expr.ApplyClo(clo, _, _, _, _) =>
-        clo match {
-          case OccurrenceAst1.Expr.ApplyAtomic(AtomicOp.Closure(_), _, _, _, _) => true
-          case _ => false
-        }
       case _ => false
     }
 
