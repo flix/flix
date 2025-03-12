@@ -70,7 +70,11 @@ object CompletionProvider {
             ModuleCompleter.getCompletions(err)
 
         case err: ResolutionError.UndefinedName =>
-          AutoImportCompleter.getCompletions(err) ++
+          val ap = err.ap
+          val env = err.env
+          val ident = err.qn.ident.name
+          val range = Range.from(err.loc)
+          AutoImportCompleter.getCompletions(ident, range, ap, env) ++
             LocalScopeCompleter.getCompletions(err) ++
             KeywordCompleter.getExprKeywords ++
             DefCompleter.getCompletions(err) ++
@@ -83,8 +87,12 @@ object CompletionProvider {
             ModuleCompleter.getCompletions(err)
 
         case err: ResolutionError.UndefinedType =>
+          val ap = err.ap
+          val env = err.env
+          val ident = err.qn.ident.name
+          val range = Range.from(err.loc)
           TypeBuiltinCompleter.getCompletions ++
-            AutoImportCompleter.getCompletions(err) ++
+            AutoImportCompleter.getCompletions(ident, range, ap, env) ++
             LocalScopeCompleter.getCompletions(err) ++
             EnumCompleter.getCompletions(err) ++
             StructCompleter.getCompletions(err) ++
