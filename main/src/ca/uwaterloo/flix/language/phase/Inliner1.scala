@@ -30,7 +30,6 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
   * The inliner optionally performs beta-reduction at call-sites.
-  * TODO: Improve this documentation
   */
 object Inliner1 {
 
@@ -237,15 +236,11 @@ object Inliner1 {
           inScopeSet0.get(sym1) match {
             case Some(Definition.LetBound(lambda, Occur.OnceInAbstraction)) =>
               sctx.inlinedVars.add((sym0, sym1))
-              //assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got '${lambda.tpe.arrowResultType}' at $loc, inlining '$sym1' into '$sym0'")
-              //assert(validSubEff(lambda.tpe.arrowEffectType, eff), s"expected '$eff', got '${lambda.tpe.arrowEffectType}' at $loc, inlining '$sym1' into '$sym0'")
               val e1 = refreshBinders(lambda)(Map.empty, flix)
               MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
             case Some(Definition.LetBound(lambda, Occur.Once)) =>
               sctx.inlinedVars.add((sym0, sym1))
-              //assert(lambda.tpe.arrowResultType == tpe, s"expected '$tpe', got '${lambda.tpe.arrowResultType}' at $loc, inlining '$sym1' into '$sym0'")
-              //assert(validSubEff(lambda.tpe.arrowEffectType, eff), s"expected '$eff', got '${lambda.tpe.arrowEffectType}' at $loc, inlining '$sym1' into '$sym0'")
               val e1 = refreshBinders(lambda)(Map.empty, flix)
               MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
@@ -270,10 +265,7 @@ object Inliner1 {
           case OccurrenceAst1.Expr.Lambda(fparam, body, _, _) =>
             // Direct application, e.g., (x -> x)(1)
             sctx.betaReductions.add((sym0, 1))
-            val e = inlineLocalAbstraction(body, List(fparam), List(e2))
-            //assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining lambda into '$sym0'")
-            //assert(validSubEff(e.eff, eff), s"expected '$eff', got '${e.eff}' at $loc, inlining lambda into '$sym0'")
-            e
+            inlineLocalAbstraction(body, List(fparam), List(e2))
 
           case _ =>
             val e1 = visit(exp1)
@@ -287,10 +279,7 @@ object Inliner1 {
         // then inline the body of `def1`
         if (canInlineDef(def1.context, context0)) {
           sctx.inlinedDefs.add((sym0, sym))
-          val e = inlineDef(def1.exp, def1.fparams, es)
-          //assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym' into '$sym0'")
-          //assert(validSubEff(e.eff, eff), s"expected '$eff', got '${e.eff}' at $loc, inlining '$sym' into '$sym0'")
-          e
+          inlineDef(def1.exp, def1.fparams, es)
         } else {
           MonoAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
         }
@@ -487,18 +476,8 @@ object Inliner1 {
     visit(exp00)
   }
 
-  private def validSubEff(eff1: Type, eff2: Type): Boolean = {
-    if (eff1 == Type.Pure) {
-      true
-    }
-    else {
-      eff1 == eff2
-    }
-  }
-
   private def visitPattern(pattern00: OccurrenceAst1.Pattern)(implicit flix: Flix): (MonoAst.Pattern, VarSubst) = {
 
-    // TODO: Figure out what to do with occurrence information in Pattern.Var
     def visit(pattern0: OccurrenceAst1.Pattern): (MonoAst.Pattern, VarSubst) = pattern0 match {
       case OccurrenceAst1.Pattern.Wild(tpe, loc) =>
         (MonoAst.Pattern.Wild(tpe, loc), Map.empty)
@@ -880,7 +859,7 @@ object Inliner1 {
     case _ => false
   }
 
-  def toMonoAstExpr(exp0: OccurrenceAst1.Expr): MonoAst.Expr = exp0 match {
+  private def toMonoAstExpr(exp0: OccurrenceAst1.Expr): MonoAst.Expr = exp0 match {
     case OccurrenceAst1.Expr.Cst(cst, tpe, loc) =>
       MonoAst.Expr.Cst(cst, tpe, loc)
 
