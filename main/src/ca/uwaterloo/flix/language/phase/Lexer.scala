@@ -911,14 +911,15 @@ object Lexer {
   private def acceptHexNumber()(implicit s: State): TokenKind = {
     def isHexDigit(c: Char): Boolean = '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
 
-    def isNumberChar(c: Char): Boolean = c.isDigit || c.isLetter || c == '.' || c == '_'
+    def isNumberLike(c: Char): Boolean = c.isDigit || c.isLetter || c == '.' || c == '_'
 
+    /** Returns `token` if no more number-like characters occur, otherwise an error token. */
     def acceptTokenOrWrongSuffix(token: TokenKind): TokenKind = {
       val c = s.sc.peek
-      if (isNumberChar(c)) {
+      if (isNumberLike(c)) {
         val loc = sourceLocationAtCurrent()
-        s.sc.advanceWhile(isNumberChar)
-        TokenKind.Err(LexerError.ExpectedHexDigit(c, loc))
+        s.sc.advanceWhile(isNumberLike)
+        TokenKind.Err(LexerError.MalformedHexNumber(c.toString, loc))
       } else {
         token
       }
@@ -935,42 +936,35 @@ object Lexer {
       if (digits != 0) {
         trailingUnderscore = s.sc.advanceIfMatch('_')
         continue = trailingUnderscore
-       } else {
+      } else {
         continue = false
       }
     }
 
-    if (trailingUnderscore) {
-      // If there is a trailing underscore, then its either
-      // a trailing underscore (`0x123_+`) or an unexpected char (`0x123_g`).
+    if (trailingUnderscore || digits == 0) {
+      // This case is for trailing underscores (e.g. `0xFF_`)and empty hex number (e.g. `0x` or
+      // `0xi32`).
+      val loc = sourceLocationAtCurrent()
       val c = s.sc.peek
-      if (isNumberChar(c)) {
-        val loc = sourceLocationAtCurrent()
-        s.sc.advanceWhile(isNumberChar)
-        TokenKind.Err(LexerError.ExpectedHexDigit(c, loc))
-      } else {
-        TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
+      s.sc.advanceWhile(isNumberLike)
+      val error = c match {
+        case EOF => LexerError.MalformedHexNumber("<end-of-file>", loc)
+        case _ if isNumberLike(c) => LexerError.MalformedHexNumber(c.toString, loc)
+        case _ => LexerError.UnterminatedHexNumber(loc)
       }
+      TokenKind.Err(error)
     } else {
-      if (digits == 0) {
-        // If `digits == 0 && !trailingUnderscore`, that means the no digits are present
-        // (e.g. `0xi32` or `0x{`).
-        val c = s.sc.peek
-        if (isNumberChar(c)) {
-          val loc = sourceLocationAtCurrent()
-          s.sc.advanceWhile(isNumberChar)
-          TokenKind.Err(LexerError.ExpectedHexDigit(c, loc))
-        } else {
-          TokenKind.Err(LexerError.EmptyHexNumber(sourceLocationAtCurrent()))
-        }
-      } else if (s.sc.advanceIfMatch("i8")) acceptTokenOrWrongSuffix(TokenKind.LiteralInt8)
+      if (s.sc.advanceIfMatch("i8")) acceptTokenOrWrongSuffix(TokenKind.LiteralInt8)
       else if (s.sc.advanceIfMatch("i16")) acceptTokenOrWrongSuffix(TokenKind.LiteralInt16)
       else if (s.sc.advanceIfMatch("i32")) acceptTokenOrWrongSuffix(TokenKind.LiteralInt32)
       else if (s.sc.advanceIfMatch("i64")) acceptTokenOrWrongSuffix(TokenKind.LiteralInt64)
       else if (s.sc.advanceIfMatch("ii")) acceptTokenOrWrongSuffix(TokenKind.LiteralBigInt)
-      else acceptTokenOrWrongSuffix(TokenKind.LiteralInt32)
+      else if (s.sc.peek == 'i') {
+        val loc = sourceLocationAtCurrent()
+        s.sc.advanceWhile(isNumberLike)
+        TokenKind.Err(LexerError.IncorrectHexNumberSuffix(onlyInt = true, loc))
+      } else acceptTokenOrWrongSuffix(TokenKind.LiteralInt32)
     }
-
   }
 
   /** Moves current position past an annotation (e.g. "@Test"). */
