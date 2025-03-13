@@ -420,7 +420,9 @@ object BenchmarkInliner {
 
     def run(opts: Options): JsonAST.JObject = {
       debug(s"Running up to $MaxInliningRounds inlining rounds, drawing $NumberOfSamples samples of timing $NumberOfRuns runs of each program")
-      val programExperiments = benchmark(opts)
+      // val programExperiments = benchmark(opts)
+      val fiveMinutes = 300_000L
+      val programExperiments = benchmarkWithGlobalMaxTime(opts, fiveMinutes)
 
       val runningTimeStats = programExperiments.m.map {
         case (name, runs) => name -> stats(runs.map(_.runningTime))
@@ -482,7 +484,7 @@ object BenchmarkInliner {
       ListMap.from(runs.map(r => (r.name, r)))
     }
 
-    private def benchmark2(opts: Options, maxSeconds: Long): ListMap[String, Run] = {
+    private def benchmarkWithGlobalMaxTime(opts: Options, maxSeconds: Long): ListMap[String, Run] = {
       implicit val sctx: SecurityContext = SecurityContext.AllPermissions
       val runConfigs = mkConfigurations(opts).map { case (o, _, _) => o }.toSet
       val configQueue = scala.collection.mutable.Queue.from(runConfigs)
