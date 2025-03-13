@@ -26,6 +26,7 @@ import org.json4s.{JValue, JsonAST}
 import org.json4s.JsonDSL.*
 
 import java.nio.file.Path
+import scala.collection.immutable.Queue
 import scala.collection.mutable.ListBuffer
 
 object BenchmarkInliner {
@@ -477,6 +478,38 @@ object BenchmarkInliner {
         val (runningTimes, result) = benchmarkRunningTime(o, name, prog)
         runs += collectRun(o, name, compilationTimings, runningTimes, result)
         debug(s"Done benchmarking $name with inliner '${InlinerType.from(o)}' with ${o.inliner1Rounds} rounds")
+      }
+      ListMap.from(runs.map(r => (r.name, r)))
+    }
+
+    private def benchmark2(opts: Options, maxSeconds: Long): ListMap[String, Run] = {
+      implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+      val runConfigs = mkConfigurations(opts).map { case (o, _, _) => o }.toSet
+      val configQueue = scala.collection.mutable.Queue.from(runConfigs)
+      val progs = scala.collection.mutable.Queue.from(programs)
+
+      var config = configQueue.dequeue()
+      var usedTime = 0L
+      val runs = scala.collection.mutable.ListBuffer.empty[Run]
+
+      while (usedTime < maxSeconds && configQueue.nonEmpty) {
+        val (name, prog) = progs.dequeue()
+        if (progs.isEmpty) {
+          progs.enqueueAll(programs)
+          config = configQueue.dequeue()
+        }
+
+        val t0 = System.currentTimeMillis()
+
+        val compilationTimings = benchmarkCompilation(config, name, prog)
+        val (runningTimes, result) = benchmarkRunningTime(config, name, prog)
+
+        val tDelta = System.currentTimeMillis() - t0
+
+        usedTime += tDelta
+        runs += collectRun(config, name, compilationTimings, runningTimes, result)
+        debug(s"Done benchmarking $name with inliner '${InlinerType.from(config)}' with ${config.inliner1Rounds} rounds")
+
       }
       ListMap.from(runs.map(r => (r.name, r)))
     }
