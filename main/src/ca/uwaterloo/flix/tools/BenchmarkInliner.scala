@@ -413,8 +413,8 @@ object BenchmarkInliner {
       "List.length" -> listLength,
       "List.reverse" -> listReverse,
       "List.filterMap" -> listFilterMap,
-      "FordFulkerson" -> fordFulkerson,
-      "parsers" -> parsers
+      // "FordFulkerson" -> fordFulkerson,
+      // "parsers" -> parsers
     )
 
     def run(opts: Options): JsonAST.JObject = {
