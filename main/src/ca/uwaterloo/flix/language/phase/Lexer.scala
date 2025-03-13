@@ -960,7 +960,7 @@ object Lexer {
       else if (s.sc.advanceIfMatch("ii")) acceptOrSuffixError(TokenKind.LiteralBigInt)
       else wrapAndConsume(LexerError.IncorrectHexNumberSuffix(sourceLocationAtCurrent()))
     } else if (isNumberLike(c)) {
-      wrapAndConsume(LexerError.IncorrectHexNumberSuffix(sourceLocationAtCurrent()))
+      wrapAndConsume(LexerError.MalformedHexNumber(c.toString, sourceLocationAtCurrent()))
     } else TokenKind.LiteralInt32
   }
 
