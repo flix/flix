@@ -902,11 +902,11 @@ object Lexer {
     * It is optional to have a trailing type indicator on number literals.
     * If it is missing Flix defaults to `i32`.
     *
-    * A hex number is accepted by `0x(\h+_?)+\h+(i8|i16|i32|i64|ii)?` where `\h = [0-9a-z]`.
+    * A hex number is accepted by `0x(\h+_?)+\h+(i8|i16|i32|i64|ii)?` where `\h = [0-9a-fA-F]`.
     *
-    * Note that any characters in `[0-9a-zA-Z_.]` following a number should be treated as a error part
-    * of the same number, e.g., `0x32q` should be parsed as a single wrong number, and not a number
-    * (`0x32`) and a name (`q`).
+    * Note that any characters in `[0-9a-zA-Z_.]` following a number should be treated as an error
+    * part of the same number, e.g., `0x32q` should be parsed as a single wrong number, and not a
+    * number (`0x32`) and a name (`q`).
     */
   private def acceptHexNumber()(implicit s: State): TokenKind = {
     def isHexDigit(c: Char): Boolean = '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
