@@ -299,7 +299,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
   }
 
   test("LexerError.HexLiteralContinuesAfterSuffix.01") {
-    // Check that lexing doesn't naively stop after i32 and lex `f` as a name
+    // Check that lexing doesn't naively stop after i32 and lex `f` as a name.
     val input =
       s"""
          |def f(): Int32 = 0xFFi32f
