@@ -103,7 +103,7 @@ object CompletionProvider {
         case err: ResolutionError.UndefinedEffect => EffectCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedJvmImport => ImportCompleter.getCompletions(err.name, Range.from(err.loc))
         case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err) ++ InvokeStaticMethodCompleter.getCompletions(err)
-        case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err)
+        case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err.qn.ident.name, Range.from(err.loc))
         case err: ResolutionError.UndefinedOp => OpCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
         case err: ResolutionError.UndefinedTrait => TraitCompleter.getCompletions(err)
