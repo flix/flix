@@ -40,6 +40,9 @@ object Lexer {
   /** The maximal allowed nesting level of string interpolation. */
   private val InterpolatedStringMaxNestingLevel = 32
 
+  /** The end-of-file character (`'\u0000'`). */
+  private val EOF = '\u0000'
+
   /** The characters allowed in a user defined operator mapped to their `TokenKind`s. */
   def isUserOp(c: Char): Option[TokenKind] = {
     c match {
@@ -57,10 +60,6 @@ object Lexer {
       case _ => None
     }
   }
-
-  /** Since Flix support hex decimals, a 'digit' can also be some select characters. */
-  private def isDigit(c: Char): Boolean =
-    '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
 
   /** The internal state of the lexer as it tokenizes a single source. */
   private class State(val src: Source) {
@@ -159,7 +158,7 @@ object Lexer {
   def lex(src: Source): (Array[Token], List[LexerError]) = {
     implicit val s: State = new State(src)
     while (!eof()) {
-      whitespace()
+      consumeWhitespace()
       if (!eof()) {
         s.resetStart()
         val k = scanToken()
@@ -216,24 +215,6 @@ object Lexer {
   /** Peeks the character after the one that state is sitting on if available. */
   private def peekPeek()(implicit s: State): Option[Char] =
     s.sc.nth(1)
-
-  /**
-    * A helper function wrapping peek, with special handling for escaped characters.
-    * This is useful for "\"" or `'\''`.
-    */
-  private def escapedPeek()(implicit s: State): Option[Char] = {
-    var p = peek()
-    while (p == '\\') {
-      advance()
-      // This check is for a source that ends on a '\'.
-      if (s.sc.getOffset >= s.src.data.length - 1) {
-        return None
-      }
-      advance()
-      p = peek()
-    }
-    Some(p)
-  }
 
   /** Checks if the current position has landed on end-of-file. */
   private def eof()(implicit s: State): Boolean =
@@ -468,7 +449,7 @@ object Lexer {
         } else TokenKind.Underscore
       case c if c.isLetter => acceptName(c.isUpper)
       case '0' if peek() == 'x' => acceptHexNumber()
-      case c if isDigit(c) => acceptNumber()
+      case c if c.isDigit => acceptNumber()
       // User defined operators.
       case _ if isUserOp(c).isDefined =>
         val p = peek()
@@ -503,7 +484,6 @@ object Lexer {
     * Note that __comparison includes current__.
     */
   private def isSeparatedOperator(keyword: String)(implicit s: State): Boolean = {
-    /** Returns true if the n offset character is a separator or if n is out of bounds. */
     def isSep(c: Char) = isUserOp(c).isEmpty
 
     s.sc.nthIsPOrOutOfBounds(-2, isSep) && s.sc.nthIsPOrOutOfBounds(keyword.length - 1, isSep)
@@ -619,8 +599,18 @@ object Lexer {
   }
 
   /** Moves current position past all whitespace characters. */
-  private def whitespace()(implicit s: State): Unit =
+  private def consumeWhitespace()(implicit s: State): Unit =
     s.sc.advanceWhile(_.isWhitespace)
+
+  /**
+    * Moves the current position past all pairs of `\` and any other character.
+    *
+    * This is useful to avoid `\'` and `\"` ending the lexing of literals.
+    */
+  private def consumeSingleEscapes()(implicit s: State): Unit =
+    while (s.sc.advanceIfMatch('\\')) {
+      advance()
+    }
 
   /**
     * Moves current position past a name (both upper- and lower-case).
@@ -679,7 +669,7 @@ object Lexer {
   /** Moves current position past an infix function. */
   private def acceptInfixFunction()(implicit s: State): TokenKind = {
     s.sc.advanceWhile(
-      c =>c == '.' || c == '!' || c.isLetter || c.isDigit || isMathNameChar(c) || isGreekNameChar(c)
+      c => c == '.' || c == '!' || c.isLetter || c.isDigit || isMathNameChar(c) || isGreekNameChar(c)
     )
     if (s.sc.advanceIfMatch('`')) {
       TokenKind.InfixFunction
@@ -705,35 +695,33 @@ object Lexer {
   private def acceptString()(implicit s: State): TokenKind = {
     var kind: TokenKind = TokenKind.LiteralString
     while (!eof()) {
-      var p = escapedPeek()
+      consumeSingleEscapes()
+      // Note: `sc.peek` returns `EOF` if out of bounds, different from `peek`.
+      var p = s.sc.peek
       // Check for the beginning of a string interpolation.
       val prevPrev = previousPrevious()
       val prev = previous()
-      val isInterpolation = !prevPrev.contains('\\') && prev.contains('$') && p.contains('{')
-      val isDebug = !prevPrev.contains('\\') && prev.contains('%') && p.contains('{')
+      val isInterpolation = !prevPrev.contains('\\') && prev.contains('$') && p == '{'
+      val isDebug = !prevPrev.contains('\\') && prev.contains('%') && p == '{'
       if (isInterpolation || isDebug) {
         acceptStringInterpolation(isDebug) match {
           case e@TokenKind.Err(_) => return e
           case k =>
             // Resume regular string literal tokenization by resetting p and prev.
             kind = k
-            p = escapedPeek()
+            consumeSingleEscapes()
+            p = peek()
         }
       }
       // Check for termination.
-      if (p.contains('\"')) {
+      if (p == '\"') {
         advance()
         return kind
       }
       // Check if file ended on a '\', meaning that the string was unterminated.
-      if (p.isEmpty) {
+      if (p == '\n') {
         return TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
       }
-      // Check for multi-line string.
-      if (p.contains('\n')) {
-        return TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
-      }
-      // All is good, eat one char and continue.
       advance()
     }
     TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
@@ -769,7 +757,7 @@ object Lexer {
     // Consume tokens until a terminating '}' is found.
     var blockNestingLevel = 0
     while (!eof()) {
-      whitespace()
+      consumeWhitespace()
       if (!eof()) {
         s.resetStart()
         val kind = scanToken()
@@ -801,13 +789,15 @@ object Lexer {
   private def acceptChar()(implicit s: State): TokenKind = {
     var prev = ' '
     while (!eof()) {
-      val p = escapedPeek()
-      if (p.contains('\'')) {
+      consumeSingleEscapes()
+      // Note: `sc.peek` returns `EOF` if out of bounds, different from `peek`.
+      val p = s.sc.peek
+      if (p == '\'') {
         advance()
         return TokenKind.LiteralChar
       }
 
-      if ((prev, p) == ('/', Some('*'))) {
+      if ((prev, p) == ('/', '*')) {
         // This handles block comment within a char.
         return TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
       }
@@ -823,8 +813,10 @@ object Lexer {
     */
   private def acceptRegex()(implicit s: State): TokenKind = {
     while (!eof()) {
-      val p = escapedPeek()
-      if (p.contains('"')) {
+      consumeSingleEscapes()
+      // Note: `sc.peek` returns `EOF` if out of bounds, different from `peek`.
+      val p = s.sc.peek
+      if (p == '"') {
         advance()
         return TokenKind.LiteralRegex
       }
@@ -911,6 +903,8 @@ object Lexer {
     * If it is missing Flix defaults to `i32`.
     * */
   private def acceptHexNumber()(implicit s: State): TokenKind = {
+    def isHexDigit(c: Char): Boolean = '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
+
     advance() // Consume 'x'.
     var error: Option[TokenKind] = if (peek() == '_') {
       val loc = sourceLocationAtCurrent()
@@ -921,9 +915,9 @@ object Lexer {
     }
     while (!eof()) {
       peek() match {
-        case c if isDigit(c) => advance()
+        case c if isHexDigit(c) => advance()
         // '_' that is not in tail-position.
-        case '_' if peekPeek().exists(isDigit) => advance()
+        case '_' if peekPeek().exists(isHexDigit) => advance()
         // Sequence of underscores.
         case '_' if peekPeek().contains('_') =>
           // Consume the whole sequence of '_'.
@@ -939,15 +933,13 @@ object Lexer {
           return TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
         // If this is reached an explicit number type might occur next.
         case c =>
+          // The `f32`, `f64`, and `ff` suffixes cannot happen since `f` is a valid hex number.
           return c match {
-            case _ if isMatchCurrent("f32") => error.getOrElse(TokenKind.LiteralFloat32)
-            case _ if isMatchCurrent("f64") => error.getOrElse(TokenKind.LiteralFloat64)
             case _ if isMatchCurrent("i8") => error.getOrElse(TokenKind.LiteralInt8)
             case _ if isMatchCurrent("i16") => error.getOrElse(TokenKind.LiteralInt16)
             case _ if isMatchCurrent("i32") => error.getOrElse(TokenKind.LiteralInt32)
             case _ if isMatchCurrent("i64") => error.getOrElse(TokenKind.LiteralInt64)
             case _ if isMatchCurrent("ii") => error.getOrElse(TokenKind.LiteralBigInt)
-            case _ if isMatchCurrent("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
             case _ =>
               error.getOrElse(TokenKind.LiteralInt32)
           }
@@ -1081,11 +1073,11 @@ object Lexer {
     /**
       * Advances cursor one char forward, returning the char it was previously sitting on.
       *
-      * If the cursor has advanced past the content, EOF is returned (`'\u0000'`).
+      * If the cursor has advanced past the content, [[EOF]] is returned.
       */
     def advance(): Char = {
       if (this.eof) {
-        '\u0000'
+        EOF
       } else {
         val c = data(offset)
         if (c == '\n') {
@@ -1116,13 +1108,13 @@ object Lexer {
     /**
       * Peeks the character that cursor is currently sitting on without advancing.
       *
-      * If the cursor has advanced past the content, EOF is returned (`'\u0000'`).
+      * If the cursor has advanced past the content, [[EOF]] is returned.
       */
     def peek: Char =
       if (this.inBounds) {
         data(offset)
       } else {
-        '\u0000' // EOF char
+        EOF
       }
 
     /** Returns true if the cursor has moved past the end. */
