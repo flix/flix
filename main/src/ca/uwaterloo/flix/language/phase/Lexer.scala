@@ -959,11 +959,9 @@ object Lexer {
       else if (s.sc.advanceIfMatch("i64")) acceptOrSuffixError(TokenKind.LiteralInt64)
       else if (s.sc.advanceIfMatch("ii")) acceptOrSuffixError(TokenKind.LiteralBigInt)
       else wrapAndConsume(LexerError.IncorrectHexNumberSuffix(sourceLocationAtCurrent()))
-    } else {
-      if (isNumberLike(c)) {
-        wrapAndConsume(LexerError.IncorrectHexNumberSuffix(sourceLocationAtCurrent()))
-      } else TokenKind.LiteralInt32
-    }
+    } else if (isNumberLike(c)) {
+      wrapAndConsume(LexerError.IncorrectHexNumberSuffix(sourceLocationAtCurrent()))
+    } else TokenKind.LiteralInt32
   }
 
   /** Moves current position past an annotation (e.g. "@Test"). */
