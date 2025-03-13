@@ -60,7 +60,7 @@ object CompletionProvider {
       HoleCompleter.getHoleCompletion(uri, pos, root).toList
     else
       errorsAt(uri, pos, currentErrors).flatMap {
-        case err: WeederError.UndefinedAnnotation => KeywordCompleter.getModKeywords
+        case err: WeederError.UndefinedAnnotation => KeywordCompleter.getModKeywords(Range.from(err.loc))
 
         case err: WeederError.UnqualifiedUse => UseCompleter.getCompletions(uri, err)
 
@@ -72,7 +72,7 @@ object CompletionProvider {
         case err: ResolutionError.UndefinedName =>
           AutoImportCompleter.getCompletions(err) ++
             LocalScopeCompleter.getCompletions(err) ++
-            KeywordCompleter.getExprKeywords ++
+            KeywordCompleter.getExprKeywords(Range.from(err.loc)) ++
             DefCompleter.getCompletions(err) ++
             EnumCompleter.getCompletions(err) ++
             EffectCompleter.getCompletions(err) ++
@@ -113,21 +113,24 @@ object CompletionProvider {
   /**
     * Returns completions based on the syntactic context.
     */
-  private def getSyntacticCompletions(uri: String, e: ParseError)(implicit root: Root, flix: Flix): List[Completion] = e.sctx match {
-    // Expressions.
-    case SyntacticContext.Expr.Constraint => (PredicateCompleter.getCompletions(uri) ++ KeywordCompleter.getConstraintKeywords).toList
-    case SyntacticContext.Expr.OtherExpr => KeywordCompleter.getExprKeywords
+  private def getSyntacticCompletions(uri: String, e: ParseError)(implicit root: Root, flix: Flix): List[Completion] = {
+    val range: Range = Range.from(e.loc)
+    e.sctx match {
+      // Expressions.
+      case SyntacticContext.Expr.Constraint => (PredicateCompleter.getCompletions(uri, range) ++ KeywordCompleter.getConstraintKeywords(range)).toList
+      case SyntacticContext.Expr.OtherExpr => KeywordCompleter.getExprKeywords(range)
 
-    // Declarations.
-    case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
-    case SyntacticContext.Decl.Effect => KeywordCompleter.getEffectKeywords
-    case SyntacticContext.Decl.Instance => KeywordCompleter.getInstanceKeywords
-    case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
-    case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
-    case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
-    case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
+      // Declarations.
+      case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords(range)
+      case SyntacticContext.Decl.Effect => KeywordCompleter.getEffectKeywords(range)
+      case SyntacticContext.Decl.Instance => KeywordCompleter.getInstanceKeywords(range)
+      case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords(range) ++ ExprSnippetCompleter.getCompletions(range)
+      case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords(range)
+      case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords(range)
+      case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords(range)
 
-    case SyntacticContext.Unknown => Nil
+      case SyntacticContext.Unknown => Nil
+    }
   }
 
   /**
