@@ -1,4 +1,10 @@
 mod Location {
+    use Error.WeatherError
+    use Json.getAtKey
+    use Json.JsonError.JsonError
+    use Json.FromJson.fromJsonAt
+    use Json.{JsonElement, JsonError}
+    use Json.Path.{Path, !!}
     
     pub enum Loc(String, String, Float64, Float64)
 
@@ -11,25 +17,37 @@ mod Location {
             "${city} (${country}) at ${lat}°${latDirection}, ${lon}°${lonDirection}"
 
     }
-
-    pub eff Location {
-        def getLocation(): Option[Loc]
+    
+    instance Json.FromJson[Loc] {
+    
+        pub def fromJsonAt(p: Path, json: JsonElement): Result[JsonError, Loc] = {
+            forM (
+                map <- fromJsonAt(p, json);
+                city <- getAtKey(p, "city", map);
+                country <- getAtKey(p, "country", map);
+                lat <- getAtKey(p, "lat", map);
+                lon <- getAtKey(p, "lon", map)
+            ) yield Loc.Loc(city, country, lat, lon)
+        }
+    
     }
 
-    pub def locationWithHttp(f: Unit -> a \ef ): a \ {ef - Location + HttpWithResult} = {
+    pub eff Location {
+        def getLocation(): Result[WeatherError, Loc]
+    }
+
+    pub def locationWithHttp(f: Unit -> a \ ef ): a \ {ef - Location + HttpWithResult + IO} = {
         run {
             f()
         } with handler Location {
             def getLocation(resume) = 
                 let url = "http://ip-api.com/json";
-                let locOpt = forM (
-                    resJson <- requestAndParse(url, Map.empty());
-                    lat <- getFloat64FromJObject("lat", resJson);
-                    lon <- getFloat64FromJObject("lon", resJson);
-                    city <- getStringFromJObject("city", resJson);
-                    country <- getStringFromJObject("country", resJson)
-                ) yield Loc.Loc(city, country, lat, lon);
-                resume(locOpt)
+                let loc = getAndParse(url, Map.empty()) |> Result.flatMap ( resJson ->
+                    fromJsonAt(Path.Root, resJson) |> Result.mapErr( err -> 
+                        WeatherError.JsonError(err)
+                    )
+                );
+                resume(loc)
         }
     }
 }

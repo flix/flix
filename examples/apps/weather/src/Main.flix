@@ -1,9 +1,12 @@
 def main(): Unit \ {Net, IO} = 
     run {
-        foreach (
-            loc <- Location.Location.getLocation();
-            weather <- Weather.Weather.getWeather(loc)
-        ) Display.Display.display(loc, weather)
+        match Location.Location.getLocation() {
+            case Err(err) => Logger.fatal(err)
+            case Ok(loc) => match Weather.Weather.getWeather(loc) {
+                case Err(err) => Logger.fatal(err)
+                case Ok(weather) => Display.Display.display(loc, weather)
+            }
+        }
     } with Weather.weatherWithHttpAndFile
     with Location.locationWithHttp
     with Display.displayWithIO
