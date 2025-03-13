@@ -166,9 +166,14 @@ object OccurrenceAst1 {
     case object Once extends Occur
 
     /**
-      * Represents a variable that occurs exactly once in the body of a lambda abstraction or local def.
+      * Represents a variable that occurs exactly once in the body of a lambda abstraction.
       */
-    case object OnceInAbstraction extends Occur
+    case object OnceInLambda extends Occur
+
+    /**
+      * Represents a variable that occurs exactly once in the body of a local def.
+      */
+    case object OnceInLocalDef extends Occur
 
     /**
       * Represents a variable that occurs in expressions more than once.

@@ -141,7 +141,8 @@ object OccurrenceAnalyzer2 {
       case Some(o) => o match {
         case Occur.Dead => false
         case Occur.Once => true
-        case Occur.OnceInAbstraction => true
+        case Occur.OnceInLambda => true
+        case Occur.OnceInLocalDef => true
         case Occur.Many => true
         case Occur.ManyBranch => true
         case Occur.DontInline => false
@@ -167,7 +168,7 @@ object OccurrenceAnalyzer2 {
 
     case Expr.Lambda((fp, _), exp, tpe, loc) =>
       val (e, o) = visitExp(exp)
-      val o1 = captureVars(o)
+      val o1 = captureVarsInLambda(o)
       val occur = o1.get(fp.sym)
       val o2 = o1 - fp.sym
       (OccurrenceAst1.Expr.Lambda((fp, occur), e, tpe, loc), increment(o2))
@@ -203,7 +204,7 @@ object OccurrenceAnalyzer2 {
 
     case Expr.LocalDef(sym, fps, exp1, exp2, tpe, eff, _, loc) =>
       val (e1, o10) = visitExp(exp1)
-      val o1 = captureVars(o10)
+      val o1 = captureVarsInLocalDef(o10)
       val (e2, o2) = visitExp(exp2)
       val o3 = combineInfo(o1, o2)
       val occur = o3.get(sym)
@@ -463,9 +464,16 @@ object OccurrenceAnalyzer2 {
   }
 
   // TODO: Add doc
-  private def captureVars(occurInfo: OccurInfo): OccurInfo = {
+  private def captureVarsInLambda(occurInfo: OccurInfo): OccurInfo = {
     update(occurInfo) {
-      case Once => OnceInAbstraction
+      case Once => OnceInLambda
+    }
+  }
+
+  // TODO: Add doc
+  private def captureVarsInLocalDef(occurInfo: OccurInfo): OccurInfo = {
+    update(occurInfo) {
+      case Once => OnceInLocalDef
     }
   }
 

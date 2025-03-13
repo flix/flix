@@ -184,7 +184,7 @@ object Inliner1 {
 
         def maybeInline(sym1: OutVar): MonoAst.Expr.ApplyClo = {
           inScopeSet0.get(sym1) match {
-            case Some(Definition.LetBound(lambda, Occur.OnceInAbstraction)) =>
+            case Some(Definition.LetBound(lambda, Occur.OnceInLocalDef)) =>
               sctx.inlinedVars.add((sym0, sym1))
               val e1 = refreshBinders(lambda)(Map.empty, flix)
               MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
@@ -718,7 +718,7 @@ object Inliner1 {
     */
   private def canInlineDef(ctx: DefContext, context: Context): Boolean = {
     val mayInline = ctx.occur != DontInline && ctx.occur != Dangerous && !ctx.isSelfRecursive && context != Context.Stop
-    val isSomewhereOnce = ctx.occur == Once || ctx.occur == OnceInAbstraction
+    val isSomewhereOnce = ctx.occur == Once || ctx.occur == OnceInLambda || ctx.occur == OnceInLocalDef
     val belowSoft = ctx.size - ctx.localDefs * 8 < SoftInlineThreshold
     val belowHard = ctx.size - ctx.localDefs * 8 < HardInlineThreshold
     val shouldInline = belowSoft || (ctx.isDirectCall && belowHard) || (isSomewhereOnce && belowHard)
