@@ -98,12 +98,12 @@ sealed trait Completion {
         }
       )
 
-    case Completion.AutoImportCompletion(name, path, ap, labelDetails , priority) =>
+    case Completion.AutoImportCompletion(name, path, range, ap, labelDetails , priority) =>
       CompletionItem(
         label               = name,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, name),
+        textEdit            = TextEdit(range, name),
         insertTextFormat    = InsertTextFormat.PlainText,
         kind                = CompletionItemKind.Class,
         additionalTextEdits = List(Completion.mkTextEdit(ap, s"import $path"))
@@ -593,11 +593,12 @@ object Completion {
     *
     * @param name          the name to be completed under cursor.
     * @param qualifiedName the path of the java class we will auto-import.
+    * @param range         the range of the completion.
     * @param ap            the anchor position.
     * @param labelDetails  to show the namespace of class we are going to import
     * @param priority      the priority of the completion.
     */
-  case class AutoImportCompletion(name:String, qualifiedName: String, ap: AnchorPosition, labelDetails: CompletionItemLabelDetails, priority: Priority) extends Completion
+  case class AutoImportCompletion(name:String, qualifiedName: String, range: Range, ap: AnchorPosition, labelDetails: CompletionItemLabelDetails, priority: Priority) extends Completion
 
   /**
     * Represents a Snippet completion
