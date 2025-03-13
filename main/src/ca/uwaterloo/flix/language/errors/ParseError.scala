@@ -25,9 +25,9 @@ import ca.uwaterloo.flix.util.Formatter
   * A common super-type for parser errors.
   */
 sealed trait ParseError extends CompilationMessage {
-  val sctx: SyntacticContext
-  val loc: SourceLocation
-  val kind: CompilationMessageKind = CompilationMessageKind.ParseError(sctx)
+  def kind: CompilationMessageKind = CompilationMessageKind.ParseError(sctx)
+  def sctx: SyntacticContext
+  def loc: SourceLocation
 }
 
 object ParseError {
