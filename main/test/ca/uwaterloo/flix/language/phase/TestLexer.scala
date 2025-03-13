@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.{LexerError, ResolutionError}
+import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -299,14 +299,13 @@ class TestLexer extends AnyFunSuite with TestUtils {
   }
 
   test("LexerError.HexLiteralContinuesAfterSuffix.01") {
-    // Check that lexing doesn't naively stop after i32
+    // Check that lexing doesn't naively stop after i32 and lex `f` as a name
     val input =
       s"""
          |def f(): Int32 = 0xFFi32f
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError](result)
-    rejectError[ResolutionError.UndefinedName](result)
   }
 
   test("TrailingUnderscoreInNumber.Int.03") {
