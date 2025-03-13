@@ -85,11 +85,11 @@ sealed trait Completion {
         kind             = CompletionItemKind.Enum
       )
 
-    case Completion.ImportCompletion(name, isPackage) =>
+    case Completion.ImportCompletion(name, range, isPackage) =>
       CompletionItem(
         label            = name,
         sortText         = Priority.toSortText(Priority.Highest, name),
-        textEdit         = TextEdit(context.range, name),
+        textEdit         = TextEdit(range, name),
         documentation    = None,
         insertTextFormat = InsertTextFormat.PlainText,
         kind             = {
@@ -584,9 +584,10 @@ object Completion {
     * Represents a package, class, or interface completion.
     *
     * @param name       the name to be completed.
+    * @param range      the range of the completion.
     * @param isPackage  whether the completion is a package.
     */
-  case class ImportCompletion(name: String, isPackage: Boolean) extends Completion
+  case class ImportCompletion(name: String, range: Range, isPackage: Boolean) extends Completion
 
   /**
     * Represents an auto-import completion.
