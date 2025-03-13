@@ -130,12 +130,12 @@ object LexerError {
   /**
     * An error raised when a hexadecimal number suffix is unrecognized.
     */
-  case class IncorrectHexNumberSuffix(onlyInt: Boolean, loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Incorrect hexadecimal number suffix"
+  case class IncorrectHexNumberSuffix(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Incorrect hexadecimal number suffix."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Incorrect hexadecimal number suffix
+      s""">> Incorrect hexadecimal number suffix.
          |
          |${code(loc, "Here")}
          |
