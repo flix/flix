@@ -327,7 +327,8 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.LocalDef(_, fparams, exp1, exp2, _, _, _) =>
+      case Expr.LocalDef(bnd, fparams, exp1, exp2, _, _, _) =>
+        visitBinder(bnd)
         fparams.foreach(visitFormalParam)
         visitExpr(exp1)
         visitExpr(exp2)
