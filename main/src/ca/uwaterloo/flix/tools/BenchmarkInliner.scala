@@ -489,14 +489,14 @@ object BenchmarkInliner {
 
         debug("Benchmarking compiler")
         val t0Compiler = System.nanoTime()
-        val compilationTimings = benchmarkCompilation(config, name, prog, maxNanos) // TODO: Subtract usedTime
+        val compilationTimings = benchmarkCompilation(config, name, prog, maxNanos - usedTime)
         val tDeltaCompiler = System.nanoTime() - t0Compiler
         usedTime += tDeltaCompiler
         debug(s"Took ${nanosToSeconds(tDeltaCompiler)} seconds")
 
         debug("Benchmarking running time")
         val t0RunningTime = System.nanoTime()
-        val (runningTimes, result) = benchmarkRunningTime(config, name, prog, maxNanos) // TODO: Subtract usedTime
+        val (runningTimes, result) = benchmarkRunningTime(config, name, prog, maxNanos - usedTime)
         val tDeltaRunningTime = System.nanoTime() - t0RunningTime
         usedTime += tDeltaRunningTime
 
