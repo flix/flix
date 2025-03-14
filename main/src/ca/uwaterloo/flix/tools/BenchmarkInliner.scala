@@ -330,7 +330,7 @@ object BenchmarkInliner {
     println("Done. Results written to 'build/perf'")
 
     val tDelta = System.nanoTime() - t0
-    val seconds = millisToSeconds(tDelta)
+    val seconds = nanosToSeconds(tDelta)
     debug(s"Took $seconds seconds total")
 
   }
@@ -433,7 +433,7 @@ object BenchmarkInliner {
       }
 
       // Timestamp (in seconds) when the experiment was run.
-      val timestamp = millisToSeconds(System.nanoTime())
+      val timestamp = nanosToSeconds(System.nanoTime())
 
       ("timestamp" -> timestamp) ~
         ("programs" -> {
@@ -534,7 +534,7 @@ object BenchmarkInliner {
       }
 
       val tDebugDeltaCompiler = System.nanoTime() - t0DebugCompiler
-      val debugTimeCompiler = millisToSeconds(tDebugDeltaCompiler)
+      val debugTimeCompiler = nanosToSeconds(tDebugDeltaCompiler)
       debug(s"Took $debugTimeCompiler seconds")
       compilationTimings.toSeq
     }
@@ -564,7 +564,7 @@ object BenchmarkInliner {
       }
 
       val tDebugDeltaRunningTime = System.nanoTime() - t0DebugRunningTime
-      val debugTimeRunningTime = millisToSeconds(tDebugDeltaRunningTime)
+      val debugTimeRunningTime = nanosToSeconds(tDebugDeltaRunningTime)
       debug(s"Took $debugTimeRunningTime seconds")
       (runningTimes.toSeq, result)
     }
@@ -1361,10 +1361,6 @@ object BenchmarkInliner {
         |
         |""".stripMargin
     }
-  }
-
-  private def millisToSeconds(t: Long): Double = {
-    t.toDouble / 1000
   }
 
   private def secondsToNanos(seconds: Long): Long = {
