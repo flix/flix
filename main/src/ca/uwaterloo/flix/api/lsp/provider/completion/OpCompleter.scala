@@ -40,7 +40,6 @@ object OpCompleter {
     * Returns a List of Completion for Op for UndefinedName.
     */
   def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, env: LocalScope)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
-    // If isHandler is true, there is no need to qualify the op.
     if (qn.namespace.nonEmpty) {
       fullyQualifiedCompletion(qn, range, ap) ++ partiallyQualifiedCompletions(qn, range, ap ,env)
     } else {
