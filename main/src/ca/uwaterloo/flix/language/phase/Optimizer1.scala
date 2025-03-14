@@ -31,6 +31,7 @@ object Optimizer1 {
     * Returns an optimized version of the given AST `root`.
     */
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer1") {
+    // TODO: Remove inliner1 and analyzer1. Just have converters to and from MonoAst
     if (flix.options.xnooptimizer1 || flix.options.inliner1Rounds < 1) {
       root
     } else {
