@@ -123,7 +123,9 @@ object CompletionProvider {
     */
   private def getSyntacticCompletions(uri: String, e: ParseError)(implicit root: Root, flix: Flix): List[Completion] = {
     val range: Range = Range.from(e.loc)
-    e.sctx match {
+    if (range.isEmpty)
+      Nil
+    else e.sctx match {
       // Expressions.
       case SyntacticContext.Expr.Constraint => (PredicateCompleter.getCompletions(uri, range) ++ KeywordCompleter.getConstraintKeywords(range)).toList
       case SyntacticContext.Expr.OtherExpr => KeywordCompleter.getExprKeywords(range)
