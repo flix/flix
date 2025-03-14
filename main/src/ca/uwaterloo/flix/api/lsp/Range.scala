@@ -17,10 +17,9 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Result
-
-import org.json4s.JsonDSL.*
-import org.json4s.*
 import org.eclipse.lsp4j
+import org.json4s.*
+import org.json4s.JsonDSL.*
 
 /**
   * Companion object of [[Range]].
@@ -73,6 +72,11 @@ case class Range(start: Position, end: Position) {
     */
   private def laterEnd(that: Range): Range =
     if (end > that.end) this else that
+
+  /**
+    * Returns the range that starts earlier and ends later.
+    */
+  def isEmpty: Boolean = start == end
 
   /**
     * Checks if this range overlaps with the other range.
