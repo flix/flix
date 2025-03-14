@@ -539,6 +539,35 @@ object BenchmarkInliner {
       compilationTimings.toSeq
     }
 
+    private def benchmarkCompilation2(o: Options, name: String, prog: String, maxTime: Long)(implicit sctx: SecurityContext): Seq[(Long, List[(String, Long)])] = {
+      debug(s"Benchmarking $name")
+      debug("Benchmarking compiler")
+      val t0DebugCompiler = System.nanoTime()
+      val compilationTimings = scala.collection.mutable.ListBuffer.empty[(Long, List[(String, Long)])]
+
+      var usedTime = 0L
+      var i = 0
+      while (usedTime < maxTime && i < NumberOfCompilations) {
+        val t0 = System.nanoTime()
+        val flix = new Flix().setOptions(o)
+        // Clear caches.
+        ZhegalkinCache.clearCaches()
+        flix.addSourceCode(s"$name.flix", prog)
+        val result = flix.compile().unsafeGet
+        val phaseTimes = flix.phaseTimers.map { case PhaseTime(phase, time) => phase -> time }.toList
+        val timing = (result.totalTime, phaseTimes)
+        compilationTimings += timing
+        i += 1
+        val tDelta = System.nanoTime() - t0
+        usedTime += tDelta
+      }
+
+      val tDebugDeltaCompiler = System.nanoTime() - t0DebugCompiler
+      val debugTimeCompiler = nanosToSeconds(tDebugDeltaCompiler)
+      debug(s"Took $debugTimeCompiler seconds")
+      compilationTimings.toSeq
+    }
+    
     private def benchmarkRunningTime(o: Options, name: String, prog: String)(implicit sctx: SecurityContext): (Seq[Long], CompilationResult) = {
       debug("Benchmarking running time")
       val t0DebugRunningTime = System.nanoTime()
