@@ -484,7 +484,7 @@ object BenchmarkInliner {
       ListMap.from(runs.map(r => (r.name, r)))
     }
 
-    private def benchmarkWithGlobalMaxTime(opts: Options, maxSeconds: Long): ListMap[String, Run] = {
+    private def benchmarkWithGlobalMaxTime(opts: Options, maxNanos: Long): ListMap[String, Run] = {
       implicit val sctx: SecurityContext = SecurityContext.AllPermissions
       val runConfigs = mkConfigurations(opts).map { case (o, _, _) => o }.toSet
       val configQueue = scala.collection.mutable.Queue.from(runConfigs)
@@ -494,21 +494,26 @@ object BenchmarkInliner {
       var usedTime = 0L
       val runs = scala.collection.mutable.ListBuffer.empty[Run]
 
-      while (usedTime < maxSeconds && configQueue.nonEmpty) {
+      while (usedTime < maxNanos && configQueue.nonEmpty) {
         val (name, prog) = progs.dequeue()
+        debug(s"Benchmarking $name")
         if (progs.isEmpty) {
           progs.enqueueAll(programs)
           config = configQueue.dequeue()
         }
 
-        val t0 = System.nanoTime()
+        debug("Benchmarking compiler")
+        val t0Compiler = System.nanoTime()
+        val compilationTimings = benchmarkCompilation2(config, name, prog, maxNanos)
+        val tDeltaCompiler = System.nanoTime() - t0Compiler
+        usedTime += tDeltaCompiler
+        debug(s"Took ${nanosToSeconds(tDeltaCompiler)} seconds")
 
-        val compilationTimings = benchmarkCompilation(config, name, prog)
+        val t0RunningTime = System.nanoTime()
         val (runningTimes, result) = benchmarkRunningTime(config, name, prog)
+        val tDeltaRunningTime = System.nanoTime() - t0RunningTime
+        usedTime += tDeltaRunningTime
 
-        val tDelta = System.nanoTime() - t0
-
-        usedTime += tDelta
         runs += collectRun(config, name, compilationTimings, runningTimes, result)
         debug(s"Done benchmarking $name with inliner '${InlinerType.from(config)}' with ${config.inliner1Rounds} rounds")
 
@@ -540,11 +545,7 @@ object BenchmarkInliner {
     }
 
     private def benchmarkCompilation2(o: Options, name: String, prog: String, maxTime: Long)(implicit sctx: SecurityContext): Seq[(Long, List[(String, Long)])] = {
-      debug(s"Benchmarking $name")
-      debug("Benchmarking compiler")
-      val t0DebugCompiler = System.nanoTime()
       val compilationTimings = scala.collection.mutable.ListBuffer.empty[(Long, List[(String, Long)])]
-
       var usedTime = 0L
       var i = 0
       while (usedTime < maxTime && i < NumberOfCompilations) {
@@ -558,16 +559,11 @@ object BenchmarkInliner {
         val timing = (result.totalTime, phaseTimes)
         compilationTimings += timing
         i += 1
-        val tDelta = System.nanoTime() - t0
-        usedTime += tDelta
+        usedTime += (System.nanoTime() - t0)
       }
-
-      val tDebugDeltaCompiler = System.nanoTime() - t0DebugCompiler
-      val debugTimeCompiler = nanosToSeconds(tDebugDeltaCompiler)
-      debug(s"Took $debugTimeCompiler seconds")
       compilationTimings.toSeq
     }
-    
+
     private def benchmarkRunningTime(o: Options, name: String, prog: String)(implicit sctx: SecurityContext): (Seq[Long], CompilationResult) = {
       debug("Benchmarking running time")
       val t0DebugRunningTime = System.nanoTime()
