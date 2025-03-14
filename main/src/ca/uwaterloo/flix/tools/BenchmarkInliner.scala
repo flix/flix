@@ -489,14 +489,14 @@ object BenchmarkInliner {
 
         debug("Benchmarking compiler")
         val t0Compiler = System.nanoTime()
-        val compilationTimings = benchmarkCompilation2(config, name, prog, maxNanos) // TODO: Subtract usedTime
+        val compilationTimings = benchmarkCompilation(config, name, prog, maxNanos) // TODO: Subtract usedTime
         val tDeltaCompiler = System.nanoTime() - t0Compiler
         usedTime += tDeltaCompiler
         debug(s"Took ${nanosToSeconds(tDeltaCompiler)} seconds")
 
         debug("Benchmarking running time")
         val t0RunningTime = System.nanoTime()
-        val (runningTimes, result) = benchmarkRunningTime2(config, name, prog, maxNanos) // TODO: Subtract usedTime
+        val (runningTimes, result) = benchmarkRunningTime(config, name, prog, maxNanos) // TODO: Subtract usedTime
         val tDeltaRunningTime = System.nanoTime() - t0RunningTime
         usedTime += tDeltaRunningTime
 
@@ -507,7 +507,7 @@ object BenchmarkInliner {
       ListMap.from(runs.map(r => (r.name, r)))
     }
 
-    private def benchmarkCompilation2(o: Options, name: String, prog: String, maxNanos: Long)(implicit sctx: SecurityContext): Seq[(Long, List[(String, Long)])] = {
+    private def benchmarkCompilation(o: Options, name: String, prog: String, maxNanos: Long)(implicit sctx: SecurityContext): Seq[(Long, List[(String, Long)])] = {
       val compilationTimings = scala.collection.mutable.ListBuffer.empty[(Long, List[(String, Long)])]
       var usedTime = 0L
       var i = 0
@@ -527,7 +527,7 @@ object BenchmarkInliner {
       compilationTimings.toSeq
     }
 
-    private def benchmarkRunningTime2(o: Options, name: String, prog: String, maxNanos: Long)(implicit sctx: SecurityContext): (Seq[Long], CompilationResult) = {
+    private def benchmarkRunningTime(o: Options, name: String, prog: String, maxNanos: Long)(implicit sctx: SecurityContext): (Seq[Long], CompilationResult) = {
       val runningTimes = scala.collection.mutable.ListBuffer.empty[Long]
       val flix = new Flix().setOptions(o)
       // Clear caches.
