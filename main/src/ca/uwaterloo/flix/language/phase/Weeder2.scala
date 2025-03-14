@@ -751,8 +751,8 @@ object Weeder2 {
       }
     }
 
-    def unitFormalParameter(loc: SourceLocation, name: String = "_unit"): FormalParam = FormalParam(
-      Name.Ident(name, SourceLocation.Unknown),
+    def unitFormalParameter(loc: SourceLocation): FormalParam = FormalParam(
+      Name.Ident("_unit", SourceLocation.Unknown),
       Modifiers(List.empty),
       Some(Type.Unit(loc)),
       loc
@@ -1804,9 +1804,7 @@ object Weeder2 {
 
             // The new param has the zero-width location of the actual argument.
             val loc = SourceLocation.zeroPoint(isReal = false, fparam.loc.sp1)
-            // We already have an argument, which could be called "_unit", so use a backup.
-            val name = if (fparam.ident.name == "_unit") "_unit1" else "_unit"
-            val unitParam = Decls.unitFormalParameter(loc, name = name)
+            val unitParam = Decls.unitFormalParameter(loc)
             HandlerRule(ident, List(unitParam, fparam), expr, tree.loc)
           case fparams =>
             HandlerRule(ident, fparams.sortBy(_.loc), expr, tree.loc)
