@@ -791,11 +791,11 @@ object Completion {
   case class StructFieldCompletion(field: String, symLoc: SourceLocation, tpe: Type) extends Completion
 
   /**
-   * Represents a Java field completion.
-   *
-   * @param ident  the partial field name.
-   * @param field the candidate field.
-   */
+    * Represents a Java field completion.
+    *
+    * @param ident  the partial field name.
+    * @param field the candidate field.
+    */
   case class FieldCompletion(ident: Name.Ident, field: Field) extends Completion
 
   /**

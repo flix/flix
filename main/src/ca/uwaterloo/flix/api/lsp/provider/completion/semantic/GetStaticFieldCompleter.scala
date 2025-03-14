@@ -17,13 +17,13 @@ package ca.uwaterloo.flix.api.lsp.provider.completion.semantic
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.FieldCompletion
-import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.util.JvmUtils
 
 object GetStaticFieldCompleter {
 
-  def getCompletions(e: ResolutionError.UndefinedJvmStaticField): List[Completion] = {
-    JvmUtils.getStaticFields(e.clazz).sortBy(_.getName).map(FieldCompletion(e.field, _))
+  def getCompletions(clazz: Class[?], field: Name.Ident): List[Completion] = {
+    JvmUtils.getStaticFields(clazz).sortBy(_.getName).map(FieldCompletion(field, _))
   }
 
 }
