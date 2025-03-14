@@ -283,7 +283,7 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.EffectCompletion(effect, ap, qualified, inScope) =>
+    case Completion.EffectCompletion(effect, range, ap, qualified, inScope) =>
       val qualifiedName = effect.sym.toString
       val name = if (qualified) qualifiedName else effect.sym.name
       val description = if(!qualified) {
@@ -296,13 +296,13 @@ sealed trait Completion {
         label               = name,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, name),
+        textEdit            = TextEdit(range, name),
         documentation       = Some(effect.doc.text),
         kind                = CompletionItemKind.Event,
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.HandlerCompletion(effect, ap, qualified, inScope) =>
+    case Completion.HandlerCompletion(effect, range, ap, qualified, inScope) =>
       val qualifiedName = effect.sym.toString
       val name = if (qualified) qualifiedName else effect.sym.name
       val description = if(!qualified) {
@@ -317,7 +317,7 @@ sealed trait Completion {
         label               = name,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, snippet),
+        textEdit            = TextEdit(range, snippet),
         documentation       = Some(effect.doc.text),
         kind                = CompletionItemKind.Event,
         additionalTextEdits = additionalTextEdit
@@ -709,21 +709,23 @@ object Completion {
     * Represents an Effect completion
     *
     * @param effect    the effect construct.
+    * @param range     the range of the completion.
     * @param ap        the anchor position for the use statement.
     * @param qualified indicate whether to use a qualified label.
     * @param inScope   indicate whether to the effect is inScope.
     */
-  case class EffectCompletion(effect: TypedAst.Effect, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class EffectCompletion(effect: TypedAst.Effect, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents a handler completion
     *
     * @param effect    the related effect.
+    * @param range     the range of the completion.
     * @param ap        the anchor position for the use statement.
     * @param qualified indicate whether to use a qualified label.
     * @param inScope   indicate whether to the related effect is inScope.
     */
-  case class HandlerCompletion(effect: TypedAst.Effect, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class HandlerCompletion(effect: TypedAst.Effect, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents a TypeAlias completion
