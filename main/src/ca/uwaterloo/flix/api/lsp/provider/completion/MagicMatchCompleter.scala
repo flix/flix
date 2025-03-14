@@ -44,11 +44,11 @@ object MagicMatchCompleter {
     *  case (Green, Square) => ???
     * }
     *
-    * @param baseLocation The base location of the completion.
     * @param tpe          The type of the expression.
     * @param range        The location of the completion.
+    * @param baseLocation The base location of the completion.
     */
-    def getCompletions(baseLocation: SourceLocation, tpe: Type, range: Range)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    def getCompletions(tpe: Type, range: Range, baseLocation: SourceLocation)(implicit root: TypedAst.Root): Iterable[Completion] = {
     for {
       baseExp <- baseLocation.text
       patternMatchBody <- mkPatternMatchBody(tpe)
