@@ -437,11 +437,11 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.UseCompletion(name, kind) =>
+    case Completion.UseCompletion(name, range, kind) =>
       CompletionItem(
         label         = name,
         sortText      = name,
-        textEdit      = TextEdit(context.range, name),
+        textEdit      = TextEdit(range, name),
         documentation = None,
         kind          = kind
       )
@@ -779,9 +779,10 @@ object Completion {
     * Represents a Use completion.
     *
     * @param name               the name of the use completion.
+    * @param range              the range of the completion.
     * @param completionItemKind the kind of the completion.
     */
-  case class UseCompletion(name: String, completionItemKind: CompletionItemKind) extends Completion
+  case class UseCompletion(name: String, range: Range, completionItemKind: CompletionItemKind) extends Completion
 
   /**
    * Represents a struct field completion.
