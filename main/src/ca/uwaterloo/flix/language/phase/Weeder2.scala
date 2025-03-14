@@ -751,8 +751,8 @@ object Weeder2 {
       }
     }
 
-    def unitFormalParameter(loc: SourceLocation): FormalParam = FormalParam(
-      Name.Ident("_unit", SourceLocation.Unknown),
+    def unitFormalParameter(loc: SourceLocation, name: String = "_unit"): FormalParam = FormalParam(
+      Name.Ident(name, SourceLocation.Unknown),
       Modifiers(List.empty),
       Some(Type.Unit(loc)),
       loc
@@ -1793,11 +1793,24 @@ object Weeder2 {
         pickNameIdent(tree),
         Decls.pickFormalParameters(tree, Presence.Forbidden),
         pickExpr(tree)
-      )((ident, fparams, expr) => {
-        // Add extra resumption argument as a synthetic unit parameter when there is exactly one parameter.
-        val hasSingleNonUnitParam = fparams.sizeIs == 1 && fparams.exists(_.ident.name != "_unit")
-        val syntheticUnitParam = if (hasSingleNonUnitParam) List(Decls.unitFormalParameter(tree.loc.asSynthetic)) else List.empty
-        HandlerRule(ident, (syntheticUnitParam ++ fparams).sortBy(_.loc), expr, tree.loc)
+      )((ident, fparams0, expr) => {
+        // `def f()` becomes `def f(_unit: Unit)` (via Decls.pickFormalParameters).
+        // `def f(x)` becomes `def f(_unit: Unit, x)`.
+        // `def f(x, y, ..)` is unchanged.
+        fparams0 match {
+          case fparam :: Nil =>
+            // Since a continuation argument must always be there, the underlying function needs a
+            // unit param. For example `def f(k)` becomes `def f(_unit: Unit, k)`.
+
+            // The new param has the zero-width location of the actual argument.
+            val loc = SourceLocation.zeroPoint(isReal = false, fparam.loc.sp1)
+            // We already have an argument, which could be called "_unit", so use a backup.
+            val name = if (fparam.ident.name == "_unit") "_unit1" else "_unit"
+            val unitParam = Decls.unitFormalParameter(loc, name = name)
+            HandlerRule(ident, List(unitParam, fparam), expr, tree.loc)
+          case fparams =>
+            HandlerRule(ident, fparams.sortBy(_.loc), expr, tree.loc)
+        }
       })
     }
 

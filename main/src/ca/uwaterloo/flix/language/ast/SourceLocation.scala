@@ -14,6 +14,10 @@ object SourceLocation {
     */
   val Unknown: SourceLocation = SourceLocation(isReal = true, SourcePosition.Unknown, SourcePosition.Unknown)
 
+  /** Returns the [[SourceLocation]] that refers the the zero-width location `sp`. */
+  def zeroPoint(isReal: Boolean, sp: SourcePosition): SourceLocation =
+    SourceLocation(isReal, sp, sp)
+
   implicit object Order extends Ordering[SourceLocation] {
 
     import scala.math.Ordered.orderingToOrdered
