@@ -32,19 +32,19 @@ sealed trait Completion {
     */
   def toCompletionItem(context: CompletionContext)(implicit flix: Flix): CompletionItem = this match {
 
-    case Completion.KeywordCompletion(name, priority) =>
+    case Completion.KeywordCompletion(name, range, priority) =>
       CompletionItem(
         label    = name,
         sortText = Priority.toSortText(priority, name),
-        textEdit = TextEdit(context.range, s"$name "),
+        textEdit = TextEdit(range, s"$name "),
         kind     = CompletionItemKind.Keyword
       )
 
-    case Completion.KeywordLiteralCompletion(name, priority) =>
+    case Completion.KeywordLiteralCompletion(name, range, priority) =>
       CompletionItem(
         label            = name,
         sortText         = Priority.toSortText(priority, name),
-        textEdit         = TextEdit(context.range, name),
+        textEdit         = TextEdit(range, name),
         insertTextFormat = InsertTextFormat.PlainText,
         kind             = CompletionItemKind.Keyword
       )
@@ -521,9 +521,10 @@ object Completion {
     * Represents a keyword completion.
     *
     * @param name      the name of the keyword.
+    * @param range     the range of the completion.
     * @param priority  the completion priority of the keyword.
     */
-  case class KeywordCompletion(name: String, priority: Priority) extends Completion
+  case class KeywordCompletion(name: String, range: Range, priority: Priority) extends Completion
 
   /**
     * Represents a keyword literal completion (i.e. `true`).
@@ -543,9 +544,10 @@ object Completion {
     * `f(fal)`  --->    `f(false˽)`
     *
     * @param literal   the literal keyword text.
+    * @param range     the range of the completion.
     * @param priority  the priority of the keyword.
     */
-  case class KeywordLiteralCompletion(literal: String, priority: Priority) extends Completion
+  case class KeywordLiteralCompletion(literal: String, range: Range, priority: Priority) extends Completion
 
   /**
     * Represents a completion for a kind.
