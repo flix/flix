@@ -520,7 +520,6 @@ object BenchmarkInliner {
       while (usedTime < maxNanos && i < NumberOfCompilations) {
         val t0 = System.nanoTime()
         val flix = new Flix().setOptions(o)
-        // Clear caches.
         ZhegalkinCache.clearCaches()
         flix.addSourceCode(s"$name.flix", prog)
         val result = flix.compile().unsafeGet
@@ -536,7 +535,6 @@ object BenchmarkInliner {
     private def benchmarkRunningTime(o: Options, name: String, prog: String, maxNanos: Long)(implicit sctx: SecurityContext): (Seq[Long], CompilationResult) = {
       val runningTimes = scala.collection.mutable.ListBuffer.empty[Long]
       val flix = new Flix().setOptions(o)
-      // Clear caches.
       ZhegalkinCache.clearCaches()
       flix.addSourceCode(s"$name.flix", prog)
       val result = flix.compile().unsafeGet
