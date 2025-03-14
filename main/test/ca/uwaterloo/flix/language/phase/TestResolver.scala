@@ -1977,4 +1977,19 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectErrorOnCheck[ResolutionError.MissingHandlerDef](result)
   }
 
+
+  test("ResolutionError.Regression.01") {
+    // Ensures we catch errors in arguments even if the function is not resolvable.
+    // See https://github.com/flix/flix/issues/10047
+    val input =
+      """
+        |def foo(): Unit = {
+        |    bar(
+        |       baz     // ERROR
+        |    )
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedName](result)
+  }
 }

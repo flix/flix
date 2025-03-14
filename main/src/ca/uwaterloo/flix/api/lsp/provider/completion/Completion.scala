@@ -85,11 +85,11 @@ sealed trait Completion {
         kind             = CompletionItemKind.Enum
       )
 
-    case Completion.ImportCompletion(name, isPackage) =>
+    case Completion.ImportCompletion(name, range, isPackage) =>
       CompletionItem(
         label            = name,
         sortText         = Priority.toSortText(Priority.Highest, name),
-        textEdit         = TextEdit(context.range, name),
+        textEdit         = TextEdit(range, name),
         documentation    = None,
         insertTextFormat = InsertTextFormat.PlainText,
         kind             = {
@@ -98,12 +98,12 @@ sealed trait Completion {
         }
       )
 
-    case Completion.AutoImportCompletion(name, path, ap, labelDetails , priority) =>
+    case Completion.AutoImportCompletion(name, path, range, ap, labelDetails , priority) =>
       CompletionItem(
         label               = name,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, name),
+        textEdit            = TextEdit(range, name),
         insertTextFormat    = InsertTextFormat.PlainText,
         kind                = CompletionItemKind.Class,
         additionalTextEdits = List(Completion.mkTextEdit(ap, s"import $path"))
@@ -437,11 +437,11 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.UseCompletion(name, kind) =>
+    case Completion.UseCompletion(name, range, kind) =>
       CompletionItem(
         label         = name,
         sortText      = name,
-        textEdit      = TextEdit(context.range, name),
+        textEdit      = TextEdit(range, name),
         documentation = None,
         kind          = kind
       )
@@ -584,20 +584,22 @@ object Completion {
     * Represents a package, class, or interface completion.
     *
     * @param name       the name to be completed.
+    * @param range      the range of the completion.
     * @param isPackage  whether the completion is a package.
     */
-  case class ImportCompletion(name: String, isPackage: Boolean) extends Completion
+  case class ImportCompletion(name: String, range: Range, isPackage: Boolean) extends Completion
 
   /**
     * Represents an auto-import completion.
     *
     * @param name          the name to be completed under cursor.
     * @param qualifiedName the path of the java class we will auto-import.
+    * @param range         the range of the completion.
     * @param ap            the anchor position.
     * @param labelDetails  to show the namespace of class we are going to import
     * @param priority      the priority of the completion.
     */
-  case class AutoImportCompletion(name:String, qualifiedName: String, ap: AnchorPosition, labelDetails: CompletionItemLabelDetails, priority: Priority) extends Completion
+  case class AutoImportCompletion(name:String, qualifiedName: String, range: Range, ap: AnchorPosition, labelDetails: CompletionItemLabelDetails, priority: Priority) extends Completion
 
   /**
     * Represents a Snippet completion
@@ -777,9 +779,10 @@ object Completion {
     * Represents a Use completion.
     *
     * @param name               the name of the use completion.
+    * @param range              the range of the completion.
     * @param completionItemKind the kind of the completion.
     */
-  case class UseCompletion(name: String, completionItemKind: CompletionItemKind) extends Completion
+  case class UseCompletion(name: String, range: Range, completionItemKind: CompletionItemKind) extends Completion
 
   /**
    * Represents a struct field completion.
@@ -789,11 +792,11 @@ object Completion {
   case class StructFieldCompletion(field: String, symLoc: SourceLocation, tpe: Type) extends Completion
 
   /**
-   * Represents a Java field completion.
-   *
-   * @param ident  the partial field name.
-   * @param field the candidate field.
-   */
+    * Represents a Java field completion.
+    *
+    * @param ident  the partial field name.
+    * @param field the candidate field.
+    */
   case class FieldCompletion(ident: Name.Ident, field: Field) extends Completion
 
   /**
