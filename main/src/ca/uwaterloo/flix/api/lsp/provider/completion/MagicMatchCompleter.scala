@@ -34,7 +34,7 @@ object MagicMatchCompleter {
     * }
     *
     * Example-2:
-    * Given an identifier `x` of a tuple type `(Color, Shape)` with cases `Red` and `Green` for `Color` and `Circle`, `Square` for `Shape` ,
+    * Given an identifier `x` of a tuple type `(Color, Shape)` with cases `Red` and `Green` for `Color` and `Circle`, `Square` for `Shape`,
     * typing `x.match` will trigger the completion to expand to:
     *
     * match x {
