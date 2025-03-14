@@ -499,6 +499,7 @@ object BenchmarkInliner {
         val (runningTimes, result) = benchmarkRunningTime(config, name, prog, maxNanos - usedTime)
         val tDeltaRunningTime = System.nanoTime() - t0RunningTime
         usedTime += tDeltaRunningTime
+        debug(s"Took ${nanosToSeconds(tDeltaRunningTime)} seconds")
 
         runs += collectRun(config, name, compilationTimings, runningTimes, result)
         debug(s"Done benchmarking $name with inliner '${InlinerType.from(config)}' with ${config.inliner1Rounds} rounds")
