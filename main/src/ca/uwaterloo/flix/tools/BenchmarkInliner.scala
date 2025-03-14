@@ -320,7 +320,7 @@ object BenchmarkInliner {
   def run(opts: Options): Unit = {
     FileOps.writeString(Path.of("./build/").resolve("perf/").resolve("plots.py"), Python)
 
-    val t0 = System.currentTimeMillis()
+    val t0 = System.nanoTime()
 
     println("Benchmarking inliner. This may take a while...")
 
@@ -329,8 +329,8 @@ object BenchmarkInliner {
 
     println("Done. Results written to 'build/perf'")
 
-    val tDelta = System.currentTimeMillis() - t0
-    val seconds = tDelta.toDouble / 1000
+    val tDelta = System.nanoTime() - t0
+    val seconds = millisToSeconds(tDelta)
     debug(s"Took $seconds seconds total")
 
   }
@@ -421,7 +421,7 @@ object BenchmarkInliner {
     def run(opts: Options): JsonAST.JObject = {
       debug(s"Running up to $MaxInliningRounds inlining rounds, drawing $NumberOfSamples samples of timing $NumberOfRuns runs of each program")
       // val programExperiments = benchmark(opts)
-      val fiveMinutes = 300_000L
+      val fiveMinutes = secondsToNanos(5L * 60L)
       val programExperiments = benchmarkWithGlobalMaxTime(opts, fiveMinutes)
 
       val runningTimeStats = programExperiments.m.map {
@@ -433,7 +433,7 @@ object BenchmarkInliner {
       }
 
       // Timestamp (in seconds) when the experiment was run.
-      val timestamp = System.currentTimeMillis() / 1000
+      val timestamp = millisToSeconds(System.nanoTime())
 
       ("timestamp" -> timestamp) ~
         ("programs" -> {
@@ -501,12 +501,12 @@ object BenchmarkInliner {
           config = configQueue.dequeue()
         }
 
-        val t0 = System.currentTimeMillis()
+        val t0 = System.nanoTime()
 
         val compilationTimings = benchmarkCompilation(config, name, prog)
         val (runningTimes, result) = benchmarkRunningTime(config, name, prog)
 
-        val tDelta = System.currentTimeMillis() - t0
+        val tDelta = System.nanoTime() - t0
 
         usedTime += tDelta
         runs += collectRun(config, name, compilationTimings, runningTimes, result)
@@ -519,7 +519,7 @@ object BenchmarkInliner {
     private def benchmarkCompilation(o: Options, name: String, prog: String)(implicit sctx: SecurityContext): Seq[(Long, List[(String, Long)])] = {
       debug(s"Benchmarking $name")
       debug("Benchmarking compiler")
-      val t0DebugCompiler = System.currentTimeMillis()
+      val t0DebugCompiler = System.nanoTime()
       val compilationTimings = scala.collection.mutable.ListBuffer.empty[(Long, List[(String, Long)])]
 
       for (_ <- 1 to NumberOfCompilations) {
@@ -533,15 +533,15 @@ object BenchmarkInliner {
         compilationTimings += timing
       }
 
-      val tDebugDeltaCompiler = System.currentTimeMillis() - t0DebugCompiler
-      val debugTimeCompiler = tDebugDeltaCompiler.toDouble / 1000
+      val tDebugDeltaCompiler = System.nanoTime() - t0DebugCompiler
+      val debugTimeCompiler = millisToSeconds(tDebugDeltaCompiler)
       debug(s"Took $debugTimeCompiler seconds")
       compilationTimings.toSeq
     }
 
     private def benchmarkRunningTime(o: Options, name: String, prog: String)(implicit sctx: SecurityContext): (Seq[Long], CompilationResult) = {
       debug("Benchmarking running time")
-      val t0DebugRunningTime = System.currentTimeMillis()
+      val t0DebugRunningTime = System.nanoTime()
 
       val runningTimes = scala.collection.mutable.ListBuffer.empty[Long]
       val flix = new Flix().setOptions(o)
@@ -563,8 +563,8 @@ object BenchmarkInliner {
         case None => throw new RuntimeException(s"undefined main method for program '$name'")
       }
 
-      val tDebugDeltaRunningTime = System.currentTimeMillis() - t0DebugRunningTime
-      val debugTimeRunningTime = tDebugDeltaRunningTime.toDouble / 1000
+      val tDebugDeltaRunningTime = System.nanoTime() - t0DebugRunningTime
+      val debugTimeRunningTime = millisToSeconds(tDebugDeltaRunningTime)
       debug(s"Took $debugTimeRunningTime seconds")
       (runningTimes.toSeq, result)
     }
@@ -1362,4 +1362,17 @@ object BenchmarkInliner {
         |""".stripMargin
     }
   }
+
+  private def millisToSeconds(t: Long): Double = {
+    t.toDouble / 1000
+  }
+
+  private def secondsToNanos(seconds: Long): Long = {
+    seconds * 1_000_000_000
+  }
+
+  private def nanosToSeconds(nanos: Long): Long = {
+    nanos / 1_000_000_000
+  }
+
 }
