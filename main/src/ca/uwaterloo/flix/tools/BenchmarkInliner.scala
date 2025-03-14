@@ -507,12 +507,11 @@ object BenchmarkInliner {
       ListMap.from(runs.map(r => (r.name, r)))
     }
 
-    private def benchmarkCompilation2(o: Options, name: String, prog: String, maxTime: Long)(implicit sctx: SecurityContext): Seq[(Long, List[(String, Long)])] = {
-      // TODO: Rename maxTime to maxNanos
+    private def benchmarkCompilation2(o: Options, name: String, prog: String, maxNanos: Long)(implicit sctx: SecurityContext): Seq[(Long, List[(String, Long)])] = {
       val compilationTimings = scala.collection.mutable.ListBuffer.empty[(Long, List[(String, Long)])]
       var usedTime = 0L
       var i = 0
-      while (usedTime < maxTime && i < NumberOfCompilations) {
+      while (usedTime < maxNanos && i < NumberOfCompilations) {
         val t0 = System.nanoTime()
         val flix = new Flix().setOptions(o)
         // Clear caches.
@@ -528,8 +527,7 @@ object BenchmarkInliner {
       compilationTimings.toSeq
     }
 
-    private def benchmarkRunningTime2(o: Options, name: String, prog: String, maxTime: Long)(implicit sctx: SecurityContext): (Seq[Long], CompilationResult) = {
-      // TODO: Rename maxTime to maxNanos
+    private def benchmarkRunningTime2(o: Options, name: String, prog: String, maxNanos: Long)(implicit sctx: SecurityContext): (Seq[Long], CompilationResult) = {
       val runningTimes = scala.collection.mutable.ListBuffer.empty[Long]
       val flix = new Flix().setOptions(o)
       // Clear caches.
@@ -540,10 +538,10 @@ object BenchmarkInliner {
         case Some(mainFunc) =>
           var usedTime = 0L
           var samples = 0
-          while (usedTime < maxTime && samples < NumberOfSamples) {
+          while (usedTime < maxNanos && samples < NumberOfSamples) {
             var sampleTime = 0L
             var runs = 0
-            while (usedTime < maxTime && runs < NumberOfRuns) {
+            while (usedTime < maxNanos && runs < NumberOfRuns) {
               val t0 = System.nanoTime()
               mainFunc(Array.empty)
               val tDelta = System.nanoTime() - t0
