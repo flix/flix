@@ -17,10 +17,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
 import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
 import ca.uwaterloo.flix.util.ParOps
 
@@ -1566,12 +1566,12 @@ object Desugar {
     val ident = Name.Ident("pat" + Flix.Delimiter + flix.genSym.freshId(), loc0.asSynthetic)
 
     // Construct the body of the lambda expression.
-    val varOrRef = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0)
-    val rule = DesugaredAst.MatchRule(pat0, None, exp0, loc0)
+    val varOrRef = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
+    val rule = DesugaredAst.MatchRule(pat0, None, exp0, loc0.asSynthetic)
 
-    val fparam = DesugaredAst.FormalParam(ident, Modifiers.Empty, None, loc0)
-    val body = DesugaredAst.Expr.Match(varOrRef, List(rule), loc0)
-    DesugaredAst.Expr.Lambda(fparam, body, loc0)
+    val fparam = DesugaredAst.FormalParam(ident, Modifiers.Empty, None, loc0.asSynthetic)
+    val body = DesugaredAst.Expr.Match(varOrRef, List(rule), loc0.asSynthetic)
+    DesugaredAst.Expr.Lambda(fparam, body, loc0.asSynthetic)
   }
 
   /**

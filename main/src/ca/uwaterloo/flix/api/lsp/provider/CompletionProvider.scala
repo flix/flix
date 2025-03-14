@@ -65,7 +65,11 @@ object CompletionProvider {
         case err: WeederError.UnqualifiedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
 
         case err: ResolutionError.UndefinedTag =>
-          EnumCompleter.getCompletions(err) ++
+          val ap = err.ap
+          val env = err.env
+          val qn = err.qn
+          val range = Range.from(err.loc)
+          EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = false) ++
             EnumTagCompleter.getCompletions(err) ++
             ModuleCompleter.getCompletions(err)
 
@@ -73,12 +77,13 @@ object CompletionProvider {
           val ap = err.ap
           val env = err.env
           val ident = err.qn.ident.name
+          val qn = err.qn
           val range = Range.from(err.loc)
           AutoImportCompleter.getCompletions(ident, range, ap, env) ++
             LocalScopeCompleter.getCompletions(err) ++
             KeywordCompleter.getExprKeywords(Range.from(err.loc)) ++
             DefCompleter.getCompletions(err) ++
-            EnumCompleter.getCompletions(err) ++
+            EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = false) ++
             EffectCompleter.getCompletions(err) ++
             OpCompleter.getCompletions(err) ++
             SignatureCompleter.getCompletions(err) ++
@@ -90,11 +95,12 @@ object CompletionProvider {
           val ap = err.ap
           val env = err.env
           val ident = err.qn.ident.name
+          val qn = err.qn
           val range = Range.from(err.loc)
           TypeBuiltinCompleter.getCompletions ++
             AutoImportCompleter.getCompletions(ident, range, ap, env) ++
             LocalScopeCompleter.getCompletions(err) ++
-            EnumCompleter.getCompletions(err) ++
+            EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = true) ++
             StructCompleter.getCompletions(err) ++
             EffectCompleter.getCompletions(err) ++
             TypeAliasCompleter.getCompletions(err) ++
