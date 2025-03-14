@@ -259,7 +259,6 @@ object Kinder {
     case ResolvedAst.Declaration.Def(sym, spec0, exp0, loc) =>
       flix.subtask(sym.toString, sample = true)
       val kenv = getKindEnvFromSpec(spec0, kenv0, taenv, root)
-      val henv = None
       val spec = visitSpec(spec0, Nil, kenv, taenv, root)
       val exp = visitExp(exp0, kenv, taenv, root)(Scope.Top, sctx, flix)
       KindedAst.Def(sym, spec, exp, loc)
@@ -271,7 +270,6 @@ object Kinder {
   private def visitSig(sig0: ResolvedAst.Declaration.Sig, traitTparam: KindedAst.TypeParam, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Sig = sig0 match {
     case ResolvedAst.Declaration.Sig(sym, spec0, exp0, loc) =>
       val kenv = getKindEnvFromSpec(spec0, kenv0, taenv, root)
-      val henv = None
       val spec = visitSpec(spec0, List(traitTparam.sym), kenv, taenv, root)
       val exp = exp0.map(visitExp(_, kenv, taenv, root)(Scope.Top, sctx, flix))
       KindedAst.Sig(sym, spec, exp, loc)
@@ -820,9 +818,6 @@ object Kinder {
     case ResolvedAst.HandlerRule(symUse, fparams0, exp0, loc) =>
       // create a new type variable for the op return type (same as resume argument type)
       val tvar = Type.freshVar(Kind.Star, exp0.loc)
-
-      val henv = Some((tvar, hTvar))
-
       val fparams = fparams0.map(visitFormalParam(_, kenv, taenv, root))
       val exp = visitExp(exp0, kenv, taenv, root)
       KindedAst.HandlerRule(symUse, fparams, exp, tvar, loc)
