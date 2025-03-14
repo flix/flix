@@ -462,31 +462,16 @@ object BenchmarkInliner {
         })
     }
 
-    private def mkConfigurations(opts: Options): List[(Options, String, String)] = {
+    private def mkConfigurations(opts: Options): List[Options] = {
       val o0 = opts.copy(xnooptimizer = true, xnooptimizer1 = true, lib = LibLevel.All, progress = false, incremental = false, inlinerRounds = 0, inliner1Rounds = 0)
       val o1 = opts.copy(xnooptimizer = false, xnooptimizer1 = true, lib = LibLevel.All, progress = false, incremental = false)
       val o2 = opts.copy(xnooptimizer = true, xnooptimizer1 = false, lib = LibLevel.All, progress = false, incremental = false)
-      val allOptions = o0 :: (1 to MaxInliningRounds).map(r => o1.copy(inlinerRounds = r, inliner1Rounds = r)).toList ::: (1 to MaxInliningRounds).map(r => o2.copy(inlinerRounds = r, inliner1Rounds = r)).toList
-      allOptions.flatMap(c => programs.map { case (name, prog) => (c, name, prog) })
-    }
-
-    private def benchmark(opts: Options): ListMap[String, Run] = {
-      implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-      val runConfigs = mkConfigurations(opts)
-
-      val runs = scala.collection.mutable.ListBuffer.empty[Run]
-      for ((o, name, prog) <- runConfigs) {
-        val compilationTimings = benchmarkCompilation(o, name, prog)
-        val (runningTimes, result) = benchmarkRunningTime(o, name, prog)
-        runs += collectRun(o, name, compilationTimings, runningTimes, result)
-        debug(s"Done benchmarking $name with inliner '${InlinerType.from(o)}' with ${o.inliner1Rounds} rounds")
-      }
-      ListMap.from(runs.map(r => (r.name, r)))
+      o0 :: (1 to MaxInliningRounds).map(r => o1.copy(inlinerRounds = r, inliner1Rounds = r)).toList ::: (1 to MaxInliningRounds).map(r => o2.copy(inlinerRounds = r, inliner1Rounds = r)).toList
     }
 
     private def benchmarkWithGlobalMaxTime(opts: Options, maxNanos: Long): ListMap[String, Run] = {
       implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-      val runConfigs = mkConfigurations(opts).map { case (o, _, _) => o }.toSet
+      val runConfigs = mkConfigurations(opts)
       val configQueue = scala.collection.mutable.Queue.from(runConfigs)
       val progs = scala.collection.mutable.Queue.from(programs)
 
@@ -504,13 +489,14 @@ object BenchmarkInliner {
 
         debug("Benchmarking compiler")
         val t0Compiler = System.nanoTime()
-        val compilationTimings = benchmarkCompilation2(config, name, prog, maxNanos)
+        val compilationTimings = benchmarkCompilation2(config, name, prog, maxNanos) // TODO: Subtract usedTime
         val tDeltaCompiler = System.nanoTime() - t0Compiler
         usedTime += tDeltaCompiler
         debug(s"Took ${nanosToSeconds(tDeltaCompiler)} seconds")
 
+        debug("Benchmarking running time")
         val t0RunningTime = System.nanoTime()
-        val (runningTimes, result) = benchmarkRunningTime(config, name, prog)
+        val (runningTimes, result) = benchmarkRunningTime2(config, name, prog, maxNanos) // TODO: Subtract usedTime
         val tDeltaRunningTime = System.nanoTime() - t0RunningTime
         usedTime += tDeltaRunningTime
 
@@ -521,30 +507,8 @@ object BenchmarkInliner {
       ListMap.from(runs.map(r => (r.name, r)))
     }
 
-    private def benchmarkCompilation(o: Options, name: String, prog: String)(implicit sctx: SecurityContext): Seq[(Long, List[(String, Long)])] = {
-      debug(s"Benchmarking $name")
-      debug("Benchmarking compiler")
-      val t0DebugCompiler = System.nanoTime()
-      val compilationTimings = scala.collection.mutable.ListBuffer.empty[(Long, List[(String, Long)])]
-
-      for (_ <- 1 to NumberOfCompilations) {
-        val flix = new Flix().setOptions(o)
-        // Clear caches.
-        ZhegalkinCache.clearCaches()
-        flix.addSourceCode(s"$name.flix", prog)
-        val result = flix.compile().unsafeGet
-        val phaseTimes = flix.phaseTimers.map { case PhaseTime(phase, time) => phase -> time }.toList
-        val timing = (result.totalTime, phaseTimes)
-        compilationTimings += timing
-      }
-
-      val tDebugDeltaCompiler = System.nanoTime() - t0DebugCompiler
-      val debugTimeCompiler = nanosToSeconds(tDebugDeltaCompiler)
-      debug(s"Took $debugTimeCompiler seconds")
-      compilationTimings.toSeq
-    }
-
     private def benchmarkCompilation2(o: Options, name: String, prog: String, maxTime: Long)(implicit sctx: SecurityContext): Seq[(Long, List[(String, Long)])] = {
+      // TODO: Rename maxTime to maxNanos
       val compilationTimings = scala.collection.mutable.ListBuffer.empty[(Long, List[(String, Long)])]
       var usedTime = 0L
       var i = 0
@@ -564,10 +528,8 @@ object BenchmarkInliner {
       compilationTimings.toSeq
     }
 
-    private def benchmarkRunningTime(o: Options, name: String, prog: String)(implicit sctx: SecurityContext): (Seq[Long], CompilationResult) = {
-      debug("Benchmarking running time")
-      val t0DebugRunningTime = System.nanoTime()
-
+    private def benchmarkRunningTime2(o: Options, name: String, prog: String, maxTime: Long)(implicit sctx: SecurityContext): (Seq[Long], CompilationResult) = {
+      // TODO: Rename maxTime to maxNanos
       val runningTimes = scala.collection.mutable.ListBuffer.empty[Long]
       val flix = new Flix().setOptions(o)
       // Clear caches.
@@ -576,21 +538,24 @@ object BenchmarkInliner {
       val result = flix.compile().unsafeGet
       result.getMain match {
         case Some(mainFunc) =>
-          for (_ <- 1 to NumberOfSamples) {
-            val t0 = System.nanoTime()
-            // Iterate the program NumberOfRuns time
-            for (_ <- 1 to NumberOfRuns) {
+          var usedTime = 0L
+          var samples = 0
+          while (usedTime < maxTime && samples < NumberOfSamples) {
+            var sampleTime = 0L
+            var runs = 0
+            while (usedTime < maxTime && runs < NumberOfRuns) {
+              val t0 = System.nanoTime()
               mainFunc(Array.empty)
+              val tDelta = System.nanoTime() - t0
+              sampleTime += tDelta
+              usedTime += tDelta
+              runs += 1
             }
-            val tDelta = System.nanoTime() - t0
-            runningTimes += tDelta
+            runningTimes += sampleTime
+            samples += 1
           }
         case None => throw new RuntimeException(s"undefined main method for program '$name'")
       }
-
-      val tDebugDeltaRunningTime = System.nanoTime() - t0DebugRunningTime
-      val debugTimeRunningTime = nanosToSeconds(tDebugDeltaRunningTime)
-      debug(s"Took $debugTimeRunningTime seconds")
       (runningTimes.toSeq, result)
     }
 
