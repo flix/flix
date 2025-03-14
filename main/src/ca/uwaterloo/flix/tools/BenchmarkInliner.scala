@@ -331,7 +331,7 @@ object BenchmarkInliner {
 
     val tDelta = System.nanoTime() - t0
     val seconds = nanosToSeconds(tDelta)
-    debug(s"Took $seconds seconds total")
+    debug(s"Took $seconds seconds total")(warmup = false)
 
   }
 
@@ -344,8 +344,8 @@ object BenchmarkInliner {
     FileOps.writeJSON(filePath, json)
   }
 
-  private def debug(s: String): Unit = {
-    if (Verbose) {
+  private def debug(s: String)(implicit warmup: Boolean): Unit = {
+    if (Verbose && !warmup) {
       println(s)
     }
   }
@@ -419,10 +419,14 @@ object BenchmarkInliner {
     )
 
     def run(opts: Options): JsonAST.JObject = {
-      debug(s"Running up to $MaxInliningRounds inlining rounds, drawing $NumberOfSamples samples of timing $NumberOfRuns runs of each program")
-      // val programExperiments = benchmark(opts)
-      val fiveMinutes = secondsToNanos(5L * 60L)
-      val programExperiments = benchmarkWithGlobalMaxTime(opts, fiveMinutes)
+      implicit val warmup: Boolean = false
+      val warmupTime = 5
+      debug(s"Warming up for $warmupTime minutes...")
+      benchmarkWithGlobalMaxTime(opts, minutesToNanos(warmupTime))(warmup = true)
+      debug(s"Running up to $MaxInliningRounds inlining rounds, drawing $NumberOfSamples samples of timing $NumberOfRuns runs of each program (total of ${programs.size} programs)")
+      val fiveMinutes = 5
+      debug(s"Max time is $fiveMinutes minutes")
+      val programExperiments = benchmarkWithGlobalMaxTime(opts, minutesToNanos(fiveMinutes))
 
       val runningTimeStats = programExperiments.m.map {
         case (name, runs) => name -> stats(runs.map(_.runningTime))
@@ -469,7 +473,7 @@ object BenchmarkInliner {
       o0 :: (1 to MaxInliningRounds).map(r => o1.copy(inlinerRounds = r, inliner1Rounds = r)).toList ::: (1 to MaxInliningRounds).map(r => o2.copy(inlinerRounds = r, inliner1Rounds = r)).toList
     }
 
-    private def benchmarkWithGlobalMaxTime(opts: Options, maxNanos: Long): ListMap[String, Run] = {
+    private def benchmarkWithGlobalMaxTime(opts: Options, maxNanos: Long)(implicit warmup: Boolean): ListMap[String, Run] = {
       implicit val sctx: SecurityContext = SecurityContext.AllPermissions
       val runConfigs = mkConfigurations(opts)
       val configQueue = scala.collection.mutable.Queue.from(runConfigs)
@@ -481,7 +485,7 @@ object BenchmarkInliner {
 
       while (usedTime < maxNanos && configQueue.nonEmpty) {
         val (name, prog) = progs.dequeue()
-        debug(s"Benchmarking $name")
+        debug(s"Benchmarking $name with inliner '${InlinerType.from(config)}' with ${config.inliner1Rounds} rounds")
         if (progs.isEmpty) {
           progs.enqueueAll(programs)
           config = configQueue.dequeue()
@@ -502,8 +506,6 @@ object BenchmarkInliner {
         debug(s"Took ${nanosToSeconds(tDeltaRunningTime)} seconds")
 
         runs += collectRun(config, name, compilationTimings, runningTimes, result)
-        debug(s"Done benchmarking $name with inliner '${InlinerType.from(config)}' with ${config.inliner1Rounds} rounds")
-
       }
       ListMap.from(runs.map(r => (r.name, r)))
     }
@@ -1352,12 +1354,20 @@ object BenchmarkInliner {
     }
   }
 
+  private def minutesToNanos(minutes: Long): Long = {
+    secondsToNanos(minutes * 60)
+  }
+
   private def secondsToNanos(seconds: Long): Long = {
     seconds * 1_000_000_000
   }
 
   private def nanosToSeconds(nanos: Long): Long = {
     nanos / 1_000_000_000
+  }
+
+  private def nanosToMinutes(nanos: Long): Long = {
+    nanosToSeconds(nanos) / 60
   }
 
 }
