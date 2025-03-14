@@ -85,7 +85,7 @@ object CompletionProvider {
             DefCompleter.getCompletions(err) ++
             EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = false) ++
             EffectCompleter.getCompletions(err) ++
-            OpCompleter.getCompletions(err) ++
+            OpCompleter.getCompletions(qn, range, ap, env) ++
             SignatureCompleter.getCompletions(err) ++
             EnumTagCompleter.getCompletions(err) ++
             TraitCompleter.getCompletions(err) ++
@@ -110,7 +110,7 @@ object CompletionProvider {
         case err: ResolutionError.UndefinedJvmImport => ImportCompleter.getCompletions(err.name, Range.from(err.loc))
         case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err.clazz, err.field) ++ InvokeStaticMethodCompleter.getCompletions(err.clazz, err.field)
         case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err.qn.ident.name, Range.from(err.loc))
-        case err: ResolutionError.UndefinedOp => OpCompleter.getCompletions(err)
+        case err: ResolutionError.UndefinedOp => OpCompleter.getCompletionsInHandler(err.qn, Range.from(err.loc), err.ap)
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
         case err: ResolutionError.UndefinedTrait => TraitCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
