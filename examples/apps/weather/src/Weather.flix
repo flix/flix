@@ -21,9 +21,9 @@ mod Weather {
         pub def fromJsonAt(p: Path, json: JsonElement): Result[JsonError, WeatherInfoPrimitive] = 
             forM (
                 resMap <- fromJsonAt(p, json);
-                currentMap <- getAtKey(p !! "current", "current", resMap);
-                wmoCodeNumber <- getAtKey(p !! "current" !! "weather_code", "weather_code", currentMap);
-                temp <- getAtKey(p !! "current" !! "temperature_2m", "temperature_2m", currentMap)
+                currentMap <- getAtKey(p, "current", resMap);
+                wmoCodeNumber <- getAtKey(p !! "current", "weather_code", currentMap);
+                temp <- getAtKey(p !! "current", "temperature_2m", currentMap)
             ) yield WeatherInfoPrimitive.WeatherInfoPrimitive(wmoCodeNumber, temp)
     
     }
@@ -47,13 +47,12 @@ mod Weather {
         match loadJson("data/description.json") {
             case Option.None        => Err(WeatherError.ParseWMOCodeError("File data/description.json doesn't exist."))
             case Option.Some(descriptions) => 
+                let nString = ToString.toString(n);
                 let res = forM (
                     descriptionsMap <- fromJsonAt(Path.Root, descriptions);
-                    description <- getAtKey(Path.Root !! ToString.toString(n), ToString.toString(n), descriptionsMap);
-                    descriptionMap <- fromJsonAt(Path.Root, description);
-                    dayDescription <- getAtKey(Path.Root !! ToString.toString(n) !! "day", "day", descriptionMap);
-                    dayDescriptionMap <- fromJsonAt(Path.Root, dayDescription);
-                    content <- getAtKey(Path.Root !! ToString.toString(n) !! "day" !! "description", "description", dayDescriptionMap)
+                    descriptionMap <- getAtKey(Path.Root, nString, descriptionsMap);
+                    dayDescriptionMap <- getAtKey(Path.Root !! nString, "day", descriptionMap);
+                    content <- getAtKey(Path.Root !! nString !! "day" , "description", dayDescriptionMap)
                 ) yield content;
                 res |> Result.mapErr( err ->
                     WeatherError.JsonError(err)
