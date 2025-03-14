@@ -15,9 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.api.lsp.{Position, Range}
-import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.api.lsp.Range
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 
 object MagicMatchCompleter {
 
@@ -35,7 +34,7 @@ object MagicMatchCompleter {
     * }
     *
     * Example-2:
-    * Given an identifier `x` of a tuple type `(Color, Shape)` with cases `Red` and `Green` for Color` and `Circle`, `Square` for `Shape`,
+    * Given an identifier `x` of a tuple type `(Color, Shape)` with cases `Red` and `Green` for `Color` and `Circle`, `Square` for `Shape` ,
     * typing `x.match` will trigger the completion to expand to:
     *
     * match x {
@@ -44,14 +43,17 @@ object MagicMatchCompleter {
     *  case (Green, Circle) => ???
     *  case (Green, Square) => ???
     * }
+    *
+    * @param baseLocation The base location of the completion.
+    * @param tpe          The type of the expression.
+    * @param range        The location of the completion.
     */
-  def getCompletions(err: TypeError.FieldNotFound)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    def getCompletions(baseLocation: SourceLocation, tpe: Type, range: Range)(implicit root: TypedAst.Root): Iterable[Completion] = {
     for {
-      baseExp <- err.base.text
-      patternMatchBody <- mkPatternMatchBody(err.tpe)
+      baseExp <- baseLocation.text
+      patternMatchBody <- mkPatternMatchBody(tpe)
     } yield {
       val name = s"$baseExp.match"
-      val range = sourceLocation2Range(err.loc)
       val snippet = s"match $baseExp {\n$patternMatchBody}"
       Completion.MagicMatchCompletion(name, range, snippet, "match expr { ... }")
     }
@@ -199,26 +201,13 @@ object MagicMatchCompleter {
       case Nil =>
         (s"$sym", index)
       case List(_) =>
-        (s"$sym($${${index}:_elem})", index + 1)
+        (s"$sym($${$index:_elem})", index + 1)
       case other =>
         val arity = other.length
         val elements = List.range(0, arity).map(i => s"$${${i + index}:_elem$i}").mkString(", ")
         (s"$sym($elements)",  index + arity)
     }
   }
-
-  /**
-    * Converts a [[SourceLocation]] to an [[Range]].
-    */
-  private def sourceLocation2Range(loc: SourceLocation): Range = {
-    Range(sourcePosition2Position(loc.sp1), sourcePosition2Position(loc.sp2))
-  }
-
-  /**
-    * Converts a [[SourcePosition]] to a [[Position]].
-    */
-  private def sourcePosition2Position(pos: SourcePosition): Position =
-    Position(pos.line, pos.col)
 
   /**
     * Returns the length of the given integer.

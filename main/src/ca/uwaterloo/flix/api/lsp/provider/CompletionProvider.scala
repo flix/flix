@@ -109,7 +109,7 @@ object CompletionProvider {
         case err: ResolutionError.UndefinedTrait => TraitCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
 
-        case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err) ++ InvokeMethodCompleter.getCompletions(err.tpe, err.fieldName)
+        case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err.base, err.tpe, Range.from(err.loc)) ++ InvokeMethodCompleter.getCompletions(err.tpe, err.fieldName)
         case err: TypeError.MethodNotFound => InvokeMethodCompleter.getCompletions(err.tpe, err.methodName)
 
         case err: ParseError => getSyntacticCompletions(uri, err)
