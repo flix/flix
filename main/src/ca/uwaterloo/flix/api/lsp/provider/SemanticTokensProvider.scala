@@ -602,8 +602,7 @@ object SemanticTokensProvider {
         case (acc, HandlerRule(op, fparams, exp ,loc)) =>
           val st = SemanticToken(SemanticTokenType.Type, Nil, op.loc)
           val t1 = Iterator(st)
-          val t2 = visitFormalParams(fparams)
-          acc ++ t1 ++ t2 ++ visitExp(exp)
+          acc ++ t1 ++ visitExp(exp)
       }
       st1 ++ st2
 
