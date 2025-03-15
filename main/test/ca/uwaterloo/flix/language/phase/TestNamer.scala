@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.NameError
+import ca.uwaterloo.flix.language.errors.{NameError, ResolutionError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -695,5 +695,19 @@ class TestNamer extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[NameError.SuspiciousTypeVarName](result)
+  }
+
+  test("Regression.01") {
+    // See https://github.com/flix/flix/issues/10116
+    // We ensure that duplicate names do not cause unrelated resolution errors
+    // We use the whole standard library to maximize diversity of resolutions.
+    val input =
+      """
+        |def foo(): Unit = ()
+        |def foo(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[NameError.DuplicateLowerName](result)
+    rejectError[ResolutionError.UndefinedUse](result)
   }
 }
