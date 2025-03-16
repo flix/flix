@@ -65,7 +65,11 @@ object CompletionProvider {
         case err: WeederError.UnqualifiedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
 
         case err: ResolutionError.UndefinedTag =>
-          EnumCompleter.getCompletions(err) ++
+          val ap = err.ap
+          val env = err.env
+          val qn = err.qn
+          val range = Range.from(err.loc)
+          EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = false) ++
             EnumTagCompleter.getCompletions(err) ++
             ModuleCompleter.getCompletions(err)
 
@@ -73,14 +77,15 @@ object CompletionProvider {
           val ap = err.ap
           val env = err.env
           val ident = err.qn.ident.name
+          val qn = err.qn
           val range = Range.from(err.loc)
           AutoImportCompleter.getCompletions(ident, range, ap, env) ++
             LocalScopeCompleter.getCompletions(err) ++
             KeywordCompleter.getExprKeywords(Range.from(err.loc)) ++
             DefCompleter.getCompletions(err) ++
-            EnumCompleter.getCompletions(err) ++
+            EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = false) ++
             EffectCompleter.getCompletions(err) ++
-            OpCompleter.getCompletions(err) ++
+            OpCompleter.getCompletions(qn, range, ap, env) ++
             SignatureCompleter.getCompletions(err) ++
             EnumTagCompleter.getCompletions(err) ++
             TraitCompleter.getCompletions(err) ++
@@ -90,11 +95,12 @@ object CompletionProvider {
           val ap = err.ap
           val env = err.env
           val ident = err.qn.ident.name
+          val qn = err.qn
           val range = Range.from(err.loc)
           TypeBuiltinCompleter.getCompletions ++
             AutoImportCompleter.getCompletions(ident, range, ap, env) ++
             LocalScopeCompleter.getCompletions(err) ++
-            EnumCompleter.getCompletions(err) ++
+            EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = true) ++
             StructCompleter.getCompletions(err) ++
             EffectCompleter.getCompletions(err) ++
             TypeAliasCompleter.getCompletions(err) ++
@@ -104,7 +110,7 @@ object CompletionProvider {
         case err: ResolutionError.UndefinedJvmImport => ImportCompleter.getCompletions(err.name, Range.from(err.loc))
         case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err.clazz, err.field) ++ InvokeStaticMethodCompleter.getCompletions(err.clazz, err.field)
         case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err.qn.ident.name, Range.from(err.loc))
-        case err: ResolutionError.UndefinedOp => OpCompleter.getCompletions(err)
+        case err: ResolutionError.UndefinedOp => OpCompleter.getCompletionsInHandler(err.qn, Range.from(err.loc), err.ap)
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
         case err: ResolutionError.UndefinedTrait => TraitCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
@@ -123,7 +129,9 @@ object CompletionProvider {
     */
   private def getSyntacticCompletions(uri: String, e: ParseError)(implicit root: Root, flix: Flix): List[Completion] = {
     val range: Range = Range.from(e.loc)
-    e.sctx match {
+    if (range.isEmpty)
+      Nil
+    else e.sctx match {
       // Expressions.
       case SyntacticContext.Expr.Constraint => (PredicateCompleter.getCompletions(uri, range) ++ KeywordCompleter.getConstraintKeywords(range)).toList
       case SyntacticContext.Expr.OtherExpr => KeywordCompleter.getExprKeywords(range)
