@@ -1,6 +1,6 @@
 ///
-/// An immutable concurrent B+ Tree implementation with
-/// keys of type `k` and values of type `v`.
+/// An immutable concurrent B+ Tree implementation with keys of type
+/// `k` and values of type `v`.
 ///
 /// A B+ Tree is an m-ary self-balancing search tree where each node
 /// is either an internal node or a leaf node. In contrast to binary
@@ -53,8 +53,8 @@ mod BPlusTree {
         import java.util.concurrent.locks.{ReentrantLock => JReentrantLock}
         use BPlusTree.Lock
 
-        // We use unchecked_casts here to remove the IO effect. It is replaced
-        // with an effect to a region to ensure that the code is not optimized away.
+        /// Unchecked casts are here used to remove the IO effect. It is replaced
+        /// with an effect to a region to ensure that the code is not optimized away.
 
         ///
         /// Returns a fresh lock.
@@ -277,13 +277,13 @@ mod BPlusTree {
     /// Lock invariants:
     ///     `lock` is the lock associated with the node. When it is held no other thread may modify the contents
     ///     The only exception to the previous rule is that the `parent` pointer is owned by the `lock` on the parent
-
+    ///
     pub struct Node[k, v, r] {
-        keys:       Array[k, r], // Acts as keys for internal nodes and values for leaves
+        keys:       Array[k, r],
         children:   Array[Node[k, v, r], r],
         values:     Array[v, r],
         lock:       Lock[r],
-        mut size:   Int32,      // Number of children / values
+        mut size:   Int32,
         mut parent: Option[Node[k, v, r]],
         mut next:   Option[Node[k, v, r]],
         isLeaf:     Bool
@@ -334,6 +334,7 @@ mod BPlusTree {
 
         ///
         /// Returns the leaf containing `key`. If no node contains `key` the first node with values less than `key` is returned.
+        ///
         /// Equivalent to `findLeaf` but is not thread-safe.
         ///
         pub def findLeafUnsafe(key: k, node: Node[k, v, r]): Node[k, v, r] \ r with Order[k] =
@@ -434,7 +435,7 @@ mod BPlusTree {
 
         ///
         /// Insert key-value pair `(key, val)` into the leaf `node`,
-        /// potentially causing a split and returning a new root
+        /// potentially causing a split and returning a new root.
         ///
         /// Lock invariants:
         /// - On invocation, the thread has a lock on `node`.
