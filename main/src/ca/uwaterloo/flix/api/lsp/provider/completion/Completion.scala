@@ -57,12 +57,12 @@ sealed trait Completion {
         kind     = CompletionItemKind.TypeParameter
       )
 
-    case Completion.PredicateCompletion(name, arity, detail) =>
+    case Completion.PredicateCompletion(name, arity, detail, range) =>
       val args = (1 until arity + 1).map(i => s"$${$i:x$i}").mkString(", ")
       CompletionItem(
         label            = s"$name/$arity",
         sortText         = Priority.toSortText(Priority.Lower, name),
-        textEdit         = TextEdit(context.range, s"$name($args)"),
+        textEdit         = TextEdit(range, s"$name($args)"),
         detail           = Some(detail),
         kind             = CompletionItemKind.Field,
         insertTextFormat = InsertTextFormat.Snippet
@@ -563,8 +563,9 @@ object Completion {
     * @param name   the name of the predicate.
     * @param arity  the arity of the predicate.
     * @param detail the type of the predicate.
+    * @param range  the range of the completion.
     */
-  case class PredicateCompletion(name: String, arity: Int, detail: String) extends Completion
+  case class PredicateCompletion(name: String, arity: Int, detail: String, range: Range) extends Completion
 
   /**
     * Represents a type completion for builtin
