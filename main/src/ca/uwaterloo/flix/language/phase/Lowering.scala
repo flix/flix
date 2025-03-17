@@ -534,13 +534,11 @@ object Lowering {
 
     case TypedAst.Expr.StructGet(exp0, field, tpe, eff, loc) =>
       val exp = visitExp(exp0)
-      val idx = field.sym.idx
       LoweredAst.Expr.ApplyAtomic(AtomicOp.StructGet(field.sym), List(exp), tpe, eff, loc)
 
     case TypedAst.Expr.StructPut(exp0, field, exp1, tpe, eff, loc) =>
       val struct = visitExp(exp0)
       val rhs = visitExp(exp1)
-      val idx = field.sym.idx
       LoweredAst.Expr.ApplyAtomic(AtomicOp.StructPut(field.sym), List(struct, rhs), tpe, eff, loc)
 
     case TypedAst.Expr.VectorLit(exps, tpe, eff, loc) =>

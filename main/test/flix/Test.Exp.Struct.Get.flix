@@ -35,6 +35,42 @@ mod Get {
         }
 
     @test
+    def testStructGet05(): Bool =
+        region rc {
+            let s = new Get @ rc { lstName = "Luke", cowboy = true, age = 42, fstName = "Lucky" };
+            s->cowboy
+        }
+
+    // From https://github.com/flix/flix/issues/10057
+    pub struct Node[r] {
+        keys:       Int32,
+        children:   Option[Int32],
+        leaves:     Option[Int32],
+        size:       Int32,
+        parent:     Option[Int32]
+    }
+
+    mod Node {
+        @test
+        pub def empty(): Unit \ IO = region rc {
+            let node = new Node @ rc {
+                keys = 0,
+                children = None,
+                leaves = None,
+                size = 0,
+                parent = None
+            };
+            println(node->size) // Just to have an IO effect.
+        }
+    }
+
+    @test
+    def testStructGet06(): Unit \ IO = region _ {
+        Node.empty();
+        ()
+    }
+
+    @test
     def testStructMultiGet01(): Bool =
         region rc {
             let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
@@ -79,6 +115,17 @@ mod Get {
         }
 
     @test
+    def testStructMultiGet05(): Bool =
+        region rc {
+            let s = new Get @ rc { lstName = "Luke", fstName = "Lucky", cowboy = true, age = 42 };
+            let lstName1 = s->lstName;
+            let fstName1 = s->fstName;
+            let lstName2 = s->lstName;
+            let fstName2 = s->fstName;
+            fstName1 == "Lucky" and fstName2 == "Lucky" and lstName1 == "Luke" and lstName2 == "Luke"
+        }
+
+    @test
     def testStructPureGet01(): Bool = {
         let f = region rc {
             let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
@@ -93,6 +140,14 @@ mod Get {
     def testStructPureGet02(): Bool = {
         region rc {
             let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
+            getLastName(s) == "Luke"
+        }
+    }
+
+    @test
+    def testStructPureGet03(): Bool = {
+        region rc {
+            let s = new Get @ rc { lstName = "Luke", age = 42, fstName = "Lucky", cowboy = true };
             getLastName(s) == "Luke"
         }
     }
@@ -128,6 +183,27 @@ mod BinaryTree {
                 left = Some(innernode),
                 right = Some(innernode),
                 value = 5
+            };
+            binaryTreeSum(Some(tree)) == 25
+        }
+
+    @test
+    def binaryTree02(): Bool =
+        region rc {
+            let leaf = new BinaryTree @ rc {
+                right = None,
+                left = None,
+                value = 3
+            };
+            let innernode = new BinaryTree @ rc {
+                right = Some(leaf),
+                value = 4,
+                left = Some(leaf)
+            };
+            let tree = new BinaryTree @ rc {
+                value = 5,
+                right = Some(innernode),
+                left = Some(innernode)
             };
             binaryTreeSum(Some(tree)) == 25
         }

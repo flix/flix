@@ -39,6 +39,14 @@ mod Person {
         }
 
     @test
+    def testStructPut05(): Bool =
+        region rc {
+            let s = new Person @ rc { age = 42, cowboy = true, fstName = "Lucky", lstName = "Luke" };
+            s->cowboy = false;
+            not s->cowboy and s->fstName == "Lucky" and s->lstName == "Luke" and s->age == 42
+        }
+
+    @test
     def testStructMultiPut01(): Bool =
         region rc {
             let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
@@ -75,6 +83,17 @@ mod Person {
     def testStructMultiPut04(): Bool =
         region rc {
             let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
+            s->lstName = "Uriel";
+            s->fstName = "Unlucky";
+            s->lstName = "Luke";
+            s->fstName = "Lucky";
+            s->fstName == "Lucky" and s->lstName == "Luke" and s->age == 42 and s->cowboy == true
+        }
+
+    @test
+    def testStructMultiPut05(): Bool =
+        region rc {
+            let s = new Person @ rc { cowboy = true, fstName = "Lucky", age = 42, lstName = "Luke" };
             s->lstName = "Uriel";
             s->fstName = "Unlucky";
             s->lstName = "Luke";
@@ -144,6 +163,48 @@ mod BinaryTree {
                 left = Some(innernode1),
                 right = Some(innernode2),
                 node_value = 5
+            };
+            doubleTree(Some(tree));
+            binaryTreeSum(Some(tree)) == 94
+        }
+
+    @test
+    def binaryTree02(): Bool \ IO =
+        region rc {
+            let leaf1 = new BinaryTree @ rc {
+                right = None,
+                left = None,
+                node_value = 10
+            };
+            let leaf2 = new BinaryTree @ rc {
+                node_value = 9,
+                right = None,
+                left = None
+            };
+            let leaf3 = new BinaryTree @ rc {
+                left = None,
+                right = None,
+                node_value = 8
+            };
+            let leaf4 = new BinaryTree @ rc {
+                left = None,
+                node_value = 7,
+                right = None
+            };
+            let innernode1 = new BinaryTree @ rc {
+                right = Some(leaf2),
+                left = Some(leaf1),
+                node_value = 4
+            };
+            let innernode2 = new BinaryTree @ rc {
+                node_value = 4,
+                right = Some(leaf4),
+                left = Some(leaf3)
+            };
+            let tree = new BinaryTree @ rc {
+                left = Some(innernode1),
+                node_value = 5,
+                right = Some(innernode2)
             };
             doubleTree(Some(tree));
             binaryTreeSum(Some(tree)) == 94
