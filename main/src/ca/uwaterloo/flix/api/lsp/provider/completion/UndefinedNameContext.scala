@@ -26,7 +26,7 @@ object UndefinedNameContextState {
   /**
     * Represents the start state.
     *
-    * In this state we should skip any number of Malformed and expect an undefined name.
+    * In this state we should expect an undefined name.
     */
   case object Start extends UndefinedNameContextState
 

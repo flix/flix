@@ -154,7 +154,6 @@ object CompletionProvider {
     * Returns the undefined name context from the stack.
     *
     * Transfer:
-    *   Start -- Malformed --> Start
     *   Start -- UndefinedName --> CanBeApplied
     *   CanBeApplied -- ApplyClo --> CanBeApplied
     *   CanBeApplied -- ApplyDef --> Done
@@ -162,7 +161,6 @@ object CompletionProvider {
     */
   private def getUndefinedNameContext(stack: List[AnyRef]): UndefinedNameContext = {
     stack.foldLeft((UndefinedNameContextState.Start: UndefinedNameContextState, UndefinedNameContext(None, pipelined = None))) {
-      case ((UndefinedNameContextState.Start, ctx), TypedAst.Expr.Error(_: ParseError.Malformed, _, _)) => (UndefinedNameContextState.Start, ctx)
       case ((UndefinedNameContextState.Start, ctx), TypedAst.Expr.Error(_: ResolutionError.UndefinedName, _, _)) => (UndefinedNameContextState.CanBeApplied, ctx)
       case ((UndefinedNameContextState.CanBeApplied, ctx), _: TypedAst.Expr.ApplyClo) => (UndefinedNameContextState.CanBeApplied, ctx.copy(applied = Some(ctx.applied.getOrElse(0) + 1)))
       case ((UndefinedNameContextState.CanBeApplied, ctx), TypedAst.Expr.ApplyDef(DefSymUse(sym, _), _, _, _, _, _)) =>
