@@ -1,6 +1,5 @@
-mod TestBTree {
+mod TestBPlusTree {
     import java.lang.Object
-    import java.util.concurrent.Helpers
     import java.util.Objects
     use Array.sameElements
     use BPlusTree.Node
@@ -17,27 +16,34 @@ mod TestBTree {
         nodeWorks and rootHasNoParent and rootIsUnlocked
 
     def testNodeInvariant(node: Node[k, v, r], order: Int32, isRightMost: Bool): Bool \ r with Order[k], Order[v] =
-        match Node.children(node) {
-        case Some(c) =>
+        match Node.isLeaf(node) {
+        case false =>
+            let c = Node.children(node);
             let size = Node.size(node);
             let keys = toLength(Array.toVector(Node.keys(node)), size - 1);
             let children = toLength(Array.toVector(c), size);
             let keysInOrder = isInOrder(keys);
-            let childrenWorks = Vector.forAll(x -> testNodeInvariant(x, order, false), toLength(children, size - 1))
-                                and testNodeInvariant(unwrap(Vector.last(children)), order, isRightMost);
-            let parentPointerCorrect = Vector.foldLeft(workingSoFar -> cur -> workingSoFar and ptrEqual(node, unwrap(Node.parent(cur))), true, children);
+            let childrenWorks = Vector.forAll(
+                x -> testNodeInvariant(x, order, false), toLength(children, size - 1)
+            ) and testNodeInvariant(unwrap(Vector.last(children)), order, isRightMost);
+            let parentPointerCorrect = Vector.foldLeft(
+                workingSoFar -> cur -> workingSoFar and ptrEqual(node, unwrap(Node.parent(cur))),
+                true, children);
             let nextPointerCorrect = applyPredicate(children, prev -> cur -> ptrEqual(unwrap(Node.next(prev)), cur));
             let lastHasNoNext = not isRightMost or Option.isEmpty(Node.next(unwrap(Vector.last(children))));
-            let noLeaves = Option.isEmpty(Node.values(node));
+            let noLeaves = Array.size(Node.values(node)) == 0;
             let nodeIsUnlocked = not BPlusTree.Lock.isLocked(Node.lock(node));
-            parentPointerCorrect and nextPointerCorrect and lastHasNoNext and noLeaves and keysInOrder and childrenWorks and nodeIsUnlocked
-        case None =>
+            parentPointerCorrect and nextPointerCorrect and
+                lastHasNoNext and noLeaves and keysInOrder and
+                childrenWorks and nodeIsUnlocked
+        case true =>
             let size = Node.size(node);
             let keys = toLength(Array.toVector(Node.keys(node)), size);
             let keysInOrder = isInOrder(toLength(keys, size));
             let sizeInRange = size <= order and 0 <= size;
+            let noChildren = Array.size(Node.children(node)) == 0;
             let leafIsUnlocked = not BPlusTree.Lock.isLocked(Node.lock(node));
-            sizeInRange and keysInOrder and leafIsUnlocked
+            sizeInRange and keysInOrder and leafIsUnlocked and noChildren
     }
 
     def toLength(v: Vector[v], length: Int32): Vector[v] =
@@ -58,15 +64,39 @@ mod TestBTree {
             case Some((_, bool)) => bool
         }
 
-    def listToMap(l: List[(k, v)]): Map[k, v] with Order[k], Order[v] = List.foldLeft(acc -> p -> let (x, y) = p; Map.insert(x, y, acc), Map#{}, l)
+    def listToMap(l: List[(k, v)]): Map[k, v] with Order[k], Order[v] =
+        List.foldLeft(acc -> p -> let (x, y) = p; Map.insert(x, y, acc), Map#{}, l)
 
     /////////////////////////////////////////////////////////////////////////////
-    // empty                                                                   //
+    // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
+
     @test
-    def empty01(): Bool = region rc {
-        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc, 120);
+    def isEmpty01(): Bool = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc, 3);
         BPlusTree.isEmpty(tree)
+    }
+
+    @test
+    def isEmpty02(): Bool = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc, 3);
+        BPlusTree.insert(1, 2, tree);
+        not BPlusTree.isEmpty(tree)
+    }
+
+    @test
+    def isEmpty03(): Bool = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc, 3);
+        let empty0 = BPlusTree.isEmpty(tree);
+        BPlusTree.insert(1, 2, tree);
+        let empty1 = BPlusTree.isEmpty(tree);
+        BPlusTree.insert(2, 3, tree);
+        let empty2 = BPlusTree.isEmpty(tree);
+        BPlusTree.insert(3, 4, tree);
+        let empty3 = BPlusTree.isEmpty(tree);
+        BPlusTree.insert(4, 5, tree);
+        let empty4 = BPlusTree.isEmpty(tree);
+        empty0 and not empty1 and not empty2 and not empty3 and not empty4
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -151,17 +181,18 @@ mod TestBTree {
     @test
     def insert06(): Bool = region rc {
         List.forAll(threads -> {
-            // let ref = Ref.fresh(rc, 0);
-            let tree: BPlusTree[Int32, Int32, rc]  = BPlusTree.empty(rc, 5);
-            let pairsList = Random.handleWithSeed(0i64, () -> Vector.map(_ -> getRandomListOfPairs(10_000), Vector.range(0, threads)))();
-            unchecked_cast(repeatN(() ->
-                Vector.forEach(list ->
-                    List.forEach(p -> {
-                        let (x, y) = p;
-                        BPlusTree.insert(x, y, tree)
-                    }, list),
-                pairsList), threads)
-            as _ \ rc);
+            let tree: BPlusTree[Int32, Int32, rc]  = BPlusTree.empty(rc, 10);
+            let pairsList = Random.handleWithSeed(0i64, () -> Vector.map(_ -> getRandomListOfPairs(10_000 / threads), Vector.range(0, threads)))();
+            let _: Unit = region rc2 {
+                unchecked_cast(
+                    Vector.forEach(list -> spawn unchecked_cast(() ->
+                        List.forEach(p -> {
+                            let (x, y) = p;
+                            BPlusTree.insert(x, y, tree)
+                        }, list) as Unit -> Unit \ IO)() @ rc2
+                    , pairsList)
+                as _ \ rc)
+            };
             Vector.forAll(list ->
                 List.forAll(p -> {
                     let (x, _) = p;
@@ -170,20 +201,81 @@ mod TestBTree {
         }, List.range(1, 11))
     }
 
-    def repeatN(f: Unit -> Unit \ r, n: Int32): Unit \ IO =
-        let f_ = unchecked_cast(f as Unit -> Unit \ IO);
-        let _: Unit = region rc {
-            if (n == 0) ()
-            else {
-                if (n == 1) {
-                    spawn f_() @ rc
-                } else {
-                spawn f_() @ rc;
-                repeatN(f, n-1); ()
-                }
-            }
-        };
-        ()
+    /////////////////////////////////////////////////////////////////////////////
+    // memberOfUnsafe                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def memberOfUnsafe01(): Bool = region rc {
+        let tree = BPlusTree.empty(rc, 3);
+        BPlusTree.insert(2, 3, tree);
+        BPlusTree.memberOfUnsafe(2, tree)
+    }
+
+    @test
+    def memberOfUnsafe02(): Bool = region rc {
+        let tree = BPlusTree.empty(rc, 3);
+        not BPlusTree.memberOfUnsafe(0, tree) and
+            not BPlusTree.memberOfUnsafe(1, tree) and
+            not BPlusTree.memberOfUnsafe(-1, tree)
+    }
+
+    @test
+    def memberOfUnsafe03(): Bool = region rc {
+        let tree = BPlusTree.empty(rc, 3);
+        BPlusTree.insert(1, 2, tree);
+        BPlusTree.memberOfUnsafe(1, tree) and
+            not BPlusTree.memberOfUnsafe(2, tree) and
+            not BPlusTree.memberOfUnsafe(0, tree)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // memberOf                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def memberOf01(): Bool = region rc {
+        let tree = BPlusTree.empty(rc, 3);
+        BPlusTree.insert(2, 3, tree);
+        BPlusTree.memberOf(2, tree)
+    }
+
+
+    @test
+    def memberOf02(): Bool = region rc {
+        let tree = BPlusTree.empty(rc, 3);
+        not BPlusTree.memberOf(0, tree) and
+            not BPlusTree.memberOf(1, tree) and
+            not BPlusTree.memberOf(-1, tree)
+    }
+
+    @test
+    def memberOf03(): Bool = region rc {
+        let tree = BPlusTree.empty(rc, 3);
+        BPlusTree.insert(1, 2, tree);
+        BPlusTree.memberOf(1, tree) and
+            not BPlusTree.memberOf(2, tree) and
+            not BPlusTree.memberOf(0, tree)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // containsPair                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def containsPair01(): Bool = region rc {
+        let tree = BPlusTree.empty(rc, 3);
+        not BPlusTree.containsPair(0, 0, tree) and
+            not BPlusTree.containsPair(0, 1, tree) and
+            not BPlusTree.containsPair(1, 0, tree)
+    }
+    @test
+    def containsPair04(): Bool = region rc {
+        let tree = BPlusTree.empty(rc, 3);
+        BPlusTree.insert(1, 2, tree);
+        BPlusTree.containsPair(1, 2, tree) and
+            not BPlusTree.containsPair(2, 1, tree) and
+            not BPlusTree.containsPair(1, 3, tree)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // rangeQueryWith                                                          //
