@@ -69,17 +69,18 @@ object BenchmarkInliner {
     "parsers" -> parsers
   )
 
-  def run(opts: Options): Unit = {
+  def run(opts: Options, micro: Boolean = true): Unit = {
     FileOps.writeString(Path.of("./build/").resolve("perf/").resolve("plots.py"), Python)
 
     val t0 = System.nanoTime()
 
     println("Benchmarking inliner. This may take a while...")
+    val programs = if (micro) MicroBenchmarks else MacroBenchmarks
+    val benchmarks = BenchmarkPrograms.run(programs, opts)
+    val outFileName = if (micro) "micro.json" else "macro.json"
+    writeFile(outFileName, benchmarks)
 
-    val programBenchmark = BenchmarkPrograms.run(opts)
-    writeFile("programsBenchmark.json", programBenchmark)
-
-    println("Done. Results written to 'build/perf'")
+    println(s"Done. Results written to 'build/perf/$outFileName'")
 
     val tDelta = System.nanoTime() - t0
     val seconds = nanosToSeconds(tDelta)
@@ -104,15 +105,15 @@ object BenchmarkInliner {
 
   private object BenchmarkPrograms {
 
-    def run(opts: Options): JsonAST.JObject = {
+    def run(programs: Map[String, String], opts: Options): JsonAST.JObject = {
       implicit val warmup: Boolean = false
 
       debug(s"Warming up for $WarmupTime minutes...")
-      benchmarkWithGlobalMaxTime(opts, minutesToNanos(WarmupTime))(warmup = true)
+      benchmarkWithGlobalMaxTime(programs, opts, minutesToNanos(WarmupTime))(warmup = true)
 
-      debug(s"Running up to $MaxInliningRounds inlining rounds, timing $NumberOfRuns runs of each program (total of ${MicroBenchmarks.size} programs)")
-      debug(s"Max individual time is $BenchmarkingTime minutes. It should take ${BenchmarkingTime * 2 * MicroBenchmarks.size} minutes")
-      val programExperiments = benchmarkWithIndividualMaxTime(opts, minutesToNanos(BenchmarkingTime))
+      debug(s"Running up to $MaxInliningRounds inlining rounds, timing $NumberOfRuns runs of each program (total of ${programs.size} programs)")
+      debug(s"Max individual time is $BenchmarkingTime minutes. It should take ${BenchmarkingTime * 2 * programs.size} minutes")
+      val programExperiments = benchmarkWithIndividualMaxTime(programs, opts, minutesToNanos(BenchmarkingTime))
 
       val runningTimeStats = programExperiments.m.map {
         case (name, runs) => name -> stats(runs.map(_.runningTime))
@@ -209,9 +210,9 @@ object BenchmarkInliner {
       o0 :: (1 to MaxInliningRounds).map(r => o1.copy(inlinerRounds = r, inliner1Rounds = r)).toList ::: (1 to MaxInliningRounds).map(r => o2.copy(inlinerRounds = r, inliner1Rounds = r)).toList
     }
 
-    private def benchmarkWithIndividualMaxTime(opts: Options, maxNanos: Long)(implicit warmup: Boolean): ListMap[String, Run] = {
+    private def benchmarkWithIndividualMaxTime(programs: Map[String, String], opts: Options, maxNanos: Long)(implicit warmup: Boolean): ListMap[String, Run] = {
       implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-      val runConfigs = mkConfigurations(opts).flatMap(o => MicroBenchmarks.map { case (name, prog) => (o, name, prog) })
+      val runConfigs = mkConfigurations(opts).flatMap(o => programs.map { case (name, prog) => (o, name, prog) })
       val runs = scala.collection.mutable.ListBuffer.empty[Run]
       for ((config, name, prog) <- runConfigs) {
         debug(s"Benchmarking $name with inliner '${InlinerType.from(config)}' with ${config.inliner1Rounds} rounds")
@@ -233,11 +234,11 @@ object BenchmarkInliner {
       ListMap.from(runs.map(r => (r.name, r)))
     }
 
-    private def benchmarkWithGlobalMaxTime(opts: Options, maxNanos: Long)(implicit warmup: Boolean): ListMap[String, Run] = {
+    private def benchmarkWithGlobalMaxTime(programs: Map[String, String], opts: Options, maxNanos: Long)(implicit warmup: Boolean): ListMap[String, Run] = {
       implicit val sctx: SecurityContext = SecurityContext.AllPermissions
       val runConfigs = mkConfigurations(opts)
       val configQueue = scala.collection.mutable.Queue.from(runConfigs)
-      val progs = scala.collection.mutable.Queue.from(MicroBenchmarks)
+      val progs = scala.collection.mutable.Queue.from(programs)
 
       var config = configQueue.dequeue()
       var usedTime = 0L
@@ -247,7 +248,7 @@ object BenchmarkInliner {
         val (name, prog) = progs.dequeue()
         debug(s"Benchmarking $name with inliner '${InlinerType.from(config)}' with ${config.inliner1Rounds} rounds")
         if (progs.isEmpty) {
-          progs.enqueueAll(MicroBenchmarks)
+          progs.enqueueAll(programs)
           config = configQueue.dequeue()
         }
 
