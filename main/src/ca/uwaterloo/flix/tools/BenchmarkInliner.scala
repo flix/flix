@@ -104,6 +104,54 @@ object BenchmarkInliner {
 
   private object BenchmarkPrograms {
 
+    def run(opts: Options): JsonAST.JObject = {
+      implicit val warmup: Boolean = false
+
+      debug(s"Warming up for $WarmupTime minutes...")
+      benchmarkWithGlobalMaxTime(opts, minutesToNanos(WarmupTime))(warmup = true)
+
+      debug(s"Running up to $MaxInliningRounds inlining rounds, timing $NumberOfRuns runs of each program (total of ${microBenchmarks.size} programs)")
+      debug(s"Max individual time is $BenchmarkingTime minutes. It should take ${BenchmarkingTime * 2 * microBenchmarks.size} minutes")
+      val programExperiments = benchmarkWithIndividualMaxTime(opts, minutesToNanos(BenchmarkingTime))
+
+      val runningTimeStats = programExperiments.m.map {
+        case (name, runs) => name -> stats(runs.map(_.runningTime))
+      }
+
+      val compilationTimeStats = programExperiments.m.map {
+        case (name, runs) => name -> stats(runs.map(_.compilationTime))
+      }
+
+      // Timestamp (in seconds) when the experiment was run.
+      val timestamp = nanosToSeconds(System.nanoTime())
+
+      ("timestamp" -> timestamp) ~
+        ("programs" -> {
+          programExperiments.m.map {
+            case (name, runs) =>
+              ("programName" -> name) ~ {
+                ("summary" -> {
+                  ("runningTime" -> {
+                    val stats = runningTimeStats.apply(name)
+                    ("best" -> stats.min) ~
+                      ("worst" -> stats.max) ~
+                      ("average" -> stats.average) ~
+                      ("median" -> stats.median)
+                  }) ~
+                    ("compilationTime" -> {
+                      val stats = compilationTimeStats.apply(name)
+                      ("best" -> stats.min) ~
+                        ("worst" -> stats.max) ~
+                        ("average" -> stats.average) ~
+                        ("median" -> stats.median)
+                    })
+                }) ~
+                  ("results" -> runs.map(_.toJson))
+              }
+          }
+        })
+    }
+
     private sealed trait InlinerType
 
     private object InlinerType {
@@ -152,54 +200,6 @@ object BenchmarkInliner {
 
     private def stats[T](xs: Seq[T])(implicit numeric: Numeric[T]): Stats[T] = {
       Stats(xs.min, xs.max, average(xs), median(xs))
-    }
-
-    def run(opts: Options): JsonAST.JObject = {
-      implicit val warmup: Boolean = false
-
-      debug(s"Warming up for $WarmupTime minutes...")
-      benchmarkWithGlobalMaxTime(opts, minutesToNanos(WarmupTime))(warmup = true)
-
-      debug(s"Running up to $MaxInliningRounds inlining rounds, timing $NumberOfRuns runs of each program (total of ${microBenchmarks.size} programs)")
-      debug(s"Max individual time is $BenchmarkingTime minutes. It should take ${BenchmarkingTime * 2 * microBenchmarks.size} minutes")
-      val programExperiments = benchmarkWithIndividualMaxTime(opts, minutesToNanos(BenchmarkingTime))
-
-      val runningTimeStats = programExperiments.m.map {
-        case (name, runs) => name -> stats(runs.map(_.runningTime))
-      }
-
-      val compilationTimeStats = programExperiments.m.map {
-        case (name, runs) => name -> stats(runs.map(_.compilationTime))
-      }
-
-      // Timestamp (in seconds) when the experiment was run.
-      val timestamp = nanosToSeconds(System.nanoTime())
-
-      ("timestamp" -> timestamp) ~
-        ("programs" -> {
-          programExperiments.m.map {
-            case (name, runs) =>
-              ("programName" -> name) ~ {
-                ("summary" -> {
-                  ("runningTime" -> {
-                    val stats = runningTimeStats.apply(name)
-                    ("best" -> stats.min) ~
-                      ("worst" -> stats.max) ~
-                      ("average" -> stats.average) ~
-                      ("median" -> stats.median)
-                  }) ~
-                    ("compilationTime" -> {
-                      val stats = compilationTimeStats.apply(name)
-                      ("best" -> stats.min) ~
-                        ("worst" -> stats.max) ~
-                        ("average" -> stats.average) ~
-                        ("median" -> stats.median)
-                    })
-                }) ~
-                  ("results" -> runs.map(_.toJson))
-              }
-          }
-        })
     }
 
     private def mkConfigurations(opts: Options): List[Options] = {
