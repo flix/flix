@@ -18,6 +18,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType.*
@@ -832,12 +833,12 @@ object Resolver {
         case None => Symbol.freshHoleSym(loc)
         case Some(name) => Symbol.mkHoleSym(ns0, name)
       }
-      Validation.Success(ResolvedAst.Expr.Hole(sym, loc))
+      Validation.Success(ResolvedAst.Expr.Hole(sym, env0, loc))
 
     case NamedAst.Expr.HoleWithExp(exp, loc) =>
       val eVal = resolveExp(exp, env0)
       mapN(eVal) {
-        case e => ResolvedAst.Expr.HoleWithExp(e, loc)
+        case e => ResolvedAst.Expr.HoleWithExp(e, env0, loc)
       }
 
     case NamedAst.Expr.Use(use, exp, loc) =>
@@ -893,7 +894,7 @@ object Resolver {
         case ResolvedQName.Var(_) => visitApplyClo(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = false, env0, innerLoc, outerLoc)
-        case ResolvedQName.Error(error) => Validation.Success(ResolvedAst.Expr.Error(error))
+        case ResolvedQName.Error(m) => visitApplyError(m, exps, env0, outerLoc)
       }
 
     case app@NamedAst.Expr.Apply(NamedAst.Expr.Open(qname, innerLoc), exps, outerLoc) =>
@@ -989,13 +990,13 @@ object Resolver {
 
     case NamedAst.Expr.Match(exp, rules, loc) =>
       val rulesVal = traverse(rules) {
-        case NamedAst.MatchRule(pat, guard, body) =>
+        case NamedAst.MatchRule(pat, guard, body, loc) =>
           val p = resolvePattern(pat, env0, ns0, root)
           val env = env0 ++ mkPatternEnv(p)
           val gVal = traverseOpt(guard)(resolveExp(_, env))
           val bVal = resolveExp(body, env)
           mapN(gVal, bVal) {
-            case (g, b) => ResolvedAst.MatchRule(p, g, b)
+            case (g, b) => ResolvedAst.MatchRule(p, g, b, loc)
           }
       }
 
@@ -1007,12 +1008,12 @@ object Resolver {
 
     case NamedAst.Expr.TypeMatch(exp, rules, loc) =>
       val rulesVal = traverse(rules) {
-        case NamedAst.TypeMatchRule(sym, tpe, body) =>
+        case NamedAst.TypeMatchRule(sym, tpe, body, loc) =>
           val tVal = resolveType(tpe, None, Wildness.AllowWild, env0, taenv, ns0, root)
           val env = env0 ++ mkVarEnv(sym)
           val bVal = resolveExp(body, env)
           mapN(tVal, bVal) {
-            case (t, b) => ResolvedAst.TypeMatchRule(sym, t, b)
+            case (t, b) => ResolvedAst.TypeMatchRule(sym, t, b, loc)
           }
       }
 
@@ -1258,12 +1259,12 @@ object Resolver {
 
     case NamedAst.Expr.TryCatch(exp, rules, loc) =>
       val rulesVal = traverse(rules) {
-        case NamedAst.CatchRule(sym, className, body) =>
+        case NamedAst.CatchRule(sym, className, body, loc) =>
           val env = env0 ++ mkVarEnv(sym)
           val clazzVal = lookupJvmClass2(className, ns0, env0, sym.loc).toValidation
           val bVal = resolveExp(body, env)
           mapN(clazzVal, bVal) {
-            case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b)
+            case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b, loc)
           }
       }
 
@@ -1532,6 +1533,20 @@ object Resolver {
             case (acc, a) => ResolvedAst.Expr.ApplyClo(acc, a, loc.asSynthetic)
           }
       }
+  }
+
+  /**
+    * Resolves the exps and creates an ApplyClo node applying an error node to the exps.
+    */
+  private def visitApplyError(err: CompilationMessage, exps: List[NamedAst.Expr], env0: LocalScope, loc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
+    val expsVal = traverse(exps)(resolveExp(_, env0))
+    val exp: ResolvedAst.Expr = ResolvedAst.Expr.Error(err)
+    mapN(expsVal) {
+      case es =>
+        es.foldLeft(exp) {
+          case (acc, a) => ResolvedAst.Expr.ApplyClo(acc, a, loc.asSynthetic)
+        }
+    }
   }
 
   /**
@@ -2812,7 +2827,7 @@ object Resolver {
     }
 
     effOpt match {
-      case None => Result.Err(ResolutionError.UndefinedEffect(qname, AnchorPosition.mkImportOrUseAnchor(ns0), env, ns0,  qname.loc))
+      case None => Result.Err(ResolutionError.UndefinedEffect(qname, AnchorPosition.mkImportOrUseAnchor(ns0), env, ns0, qname.loc))
       case Some(decl) => Result.Ok(decl)
     }
   }
@@ -3273,7 +3288,7 @@ object Resolver {
     * Returns the class reflection object for the given `className`.
     */
   private def lookupJvmClass2(className: Name.Ident, ns0: Name.NName, env0: LocalScope, loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError] = {
-    lookupJvmClass(className.name, ns0, loc) match {
+    lookupJvmClass(className.name, ns0, className.loc) match {
       case Result.Ok(clazz) => Result.Ok(clazz)
       case Result.Err(e) => env0.get(className.name) match {
         case List(Resolution.JavaClass(clazz)) => Result.Ok(clazz)
@@ -3356,7 +3371,7 @@ object Resolver {
     }
 
     case NamedAst.UseOrImport.Import(name, alias, loc) =>
-      val clazzVal = lookupJvmClass(name.toString, ns, loc).toValidation
+      val clazzVal = lookupJvmClass(name.toString, ns, name.loc).toValidation
       mapN(clazzVal) {
         case clazz => UseOrImport.Import(clazz, alias, loc)
       }

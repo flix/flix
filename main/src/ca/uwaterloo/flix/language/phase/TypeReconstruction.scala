@@ -16,9 +16,9 @@
  */
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant}
-import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
 
@@ -90,12 +90,12 @@ object TypeReconstruction {
     case KindedAst.Expr.Var(sym, loc) =>
       TypedAst.Expr.Var(sym, subst(sym.tvar), loc)
 
-    case KindedAst.Expr.Hole(sym, tpe, evar, loc) =>
-      TypedAst.Expr.Hole(sym, subst(tpe), subst(evar), loc)
+    case KindedAst.Expr.Hole(sym, env, tpe, evar, loc) =>
+      TypedAst.Expr.Hole(sym, env, subst(tpe), subst(evar), loc)
 
-    case KindedAst.Expr.HoleWithExp(exp, tvar, evar, loc) =>
+    case KindedAst.Expr.HoleWithExp(exp, env, tvar, evar, loc) =>
       val e = visitExp(exp)
-      TypedAst.Expr.HoleWithExp(e, subst(tvar), subst(evar), loc)
+      TypedAst.Expr.HoleWithExp(e, env, subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.OpenAs(symUse, exp, tvar, loc) =>
       val e = visitExp(exp)
@@ -198,30 +198,30 @@ object TypeReconstruction {
     case KindedAst.Expr.Match(matchExp, rules, loc) =>
       val e1 = visitExp(matchExp)
       val rs = rules map {
-        case KindedAst.MatchRule(pat, guard, exp) =>
+        case KindedAst.MatchRule(pat, guard, exp, loc) =>
           val p = visitPattern(pat)
           val g = guard.map(visitExp(_))
           val b = visitExp(exp)
-          TypedAst.MatchRule(p, g, b)
+          TypedAst.MatchRule(p, g, b, loc)
       }
       val tpe = rs.head.exp.tpe
       val eff = rs.foldLeft(e1.eff) {
-        case (acc, TypedAst.MatchRule(_, g, b)) => Type.mkUnion(g.map(_.eff).toList ::: List(b.eff, acc), loc)
+        case (acc, TypedAst.MatchRule(_, g, b, _)) => Type.mkUnion(g.map(_.eff).toList ::: List(b.eff, acc), loc)
       }
       TypedAst.Expr.Match(e1, rs, tpe, eff, loc)
 
     case KindedAst.Expr.TypeMatch(matchExp, rules, loc) =>
       val e1 = visitExp(matchExp)
       val rs = rules map {
-        case KindedAst.TypeMatchRule(sym, tpe0, exp) =>
+        case KindedAst.TypeMatchRule(sym, tpe0, exp, loc) =>
           val t = subst(tpe0)
           val b = visitExp(exp)
           val bnd = TypedAst.Binder(sym, t)
-          TypedAst.TypeMatchRule(bnd, t, b)
+          TypedAst.TypeMatchRule(bnd, t, b, loc)
       }
       val tpe = rs.head.exp.tpe
       val eff = rs.foldLeft(e1.eff) {
-        case (acc, TypedAst.TypeMatchRule(_, _, b)) => Type.mkUnion(b.eff, acc, loc)
+        case (acc, TypedAst.TypeMatchRule(_, _, b, _)) => Type.mkUnion(b.eff, acc, loc)
       }
       TypedAst.Expr.TypeMatch(e1, rs, tpe, eff, loc)
 
@@ -394,10 +394,10 @@ object TypeReconstruction {
     case KindedAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
-        case KindedAst.CatchRule(sym, clazz, body) =>
+        case KindedAst.CatchRule(sym, clazz, body, loc) =>
           val b = visitExp(body)
           val bnd = TypedAst.Binder(sym, Type.mkNative(clazz, SourceLocation.Unknown))
-          TypedAst.CatchRule(bnd, clazz, b)
+          TypedAst.CatchRule(bnd, clazz, b, loc)
       }
       val tpe = rs.head.exp.tpe
       val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)

@@ -72,18 +72,18 @@ instance Box[Int8] {
 
 instance Box[Int16] {
     type Boxed = Short
-    pub def box(x: Int16): Short = unsafe Short.valueOf(x)
-    pub def unbox(x: Short): Int16 = unsafe x.shortValue()
+    pub def box(x: Int16): Short = Short.valueOf(x)
+    pub def unbox(x: Short): Int16 = x.shortValue()
 }
 
 instance Box[Int32] {
     type Boxed = Integer
-    pub def box(x: Int32): Integer = unsafe Integer.valueOf(x)
-    pub def unbox(x: Integer): Int32 = unsafe x.intValue()
+    pub def box(x: Int32): Integer = Integer.valueOf(x)
+    pub def unbox(x: Integer): Int32 = x.intValue()
 }
 
 instance Box[Int64] {
     type Boxed = Long
-    pub def box(x: Int64): Long = unsafe Long.valueOf(x)
-    pub def unbox(x: Long): Int64 = unsafe x.longValue()
+    pub def box(x: Int64): Long = Long.valueOf(x)
+    pub def unbox(x: Long): Int64 = x.longValue()
 }

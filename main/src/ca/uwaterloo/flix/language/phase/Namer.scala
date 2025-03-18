@@ -875,22 +875,22 @@ object Namer {
     * Performs naming on the given match rule `rule0`.
     */
   private def visitMatchRule(rule0: DesugaredAst.MatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.MatchRule = rule0 match {
-    case DesugaredAst.MatchRule(pat, exp1, exp2) =>
+    case DesugaredAst.MatchRule(pat, exp1, exp2, loc) =>
       val p = visitPattern(pat)
       val e1 = exp1.map(visitExp(_))
       val e2 = visitExp(exp2)
-      NamedAst.MatchRule(p, e1, e2)
+      NamedAst.MatchRule(p, e1, e2, loc)
   }
 
   /**
     * Performs naming on the given typematch rule `rule0`.
     */
   private def visitTypeMatchRule(rule0: DesugaredAst.TypeMatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.TypeMatchRule = rule0 match {
-    case DesugaredAst.TypeMatchRule(ident, tpe, body) =>
+    case DesugaredAst.TypeMatchRule(ident, tpe, body, loc) =>
       val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
       val t = visitType(tpe)
       val b = visitExp(body)
-      NamedAst.TypeMatchRule(sym, t, b)
+      NamedAst.TypeMatchRule(sym, t, b, loc)
   }
 
   /**
@@ -916,10 +916,10 @@ object Namer {
     * Performs naming on the given try-catch rule `rule0`.
     */
   private def visitTryCatchRule(rule0: DesugaredAst.CatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.CatchRule = rule0 match {
-    case DesugaredAst.CatchRule(ident, className, body) =>
+    case DesugaredAst.CatchRule(ident, className, body, loc) =>
       val sym = Symbol.freshVarSym(ident, BoundBy.CatchRule)
       val b = visitExp(body)
-      NamedAst.CatchRule(sym, className, b)
+      NamedAst.CatchRule(sym, className, b, loc)
   }
 
   /**

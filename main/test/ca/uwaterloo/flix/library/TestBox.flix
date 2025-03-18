@@ -159,16 +159,16 @@ mod TestBox {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def int16Unbox01(): Bool = unsafe unbox(Short.valueOf(12345i16)) == 12345i16
+    def int16Unbox01(): Bool = unbox(Short.valueOf(12345i16)) == 12345i16
 
     @test
-    def int16Unbox02(): Bool = unsafe unbox(Short.valueOf(-32768i16)) == -32768i16
+    def int16Unbox02(): Bool = unbox(Short.valueOf(-32768i16)) == -32768i16
 
     @test
-    def int16Box01(): Bool = unsafe box(12345i16).equals(Short.valueOf(12345i16))
+    def int16Box01(): Bool = box(12345i16).equals(Short.valueOf(12345i16))
 
     @test
-    def int16Box02(): Bool = unsafe box(-32768i16).equals(Short.valueOf(-32768i16))
+    def int16Box02(): Bool = box(-32768i16).equals(Short.valueOf(-32768i16))
 
     @test
     def int16RoundTrip01(): Bool = unbox(box(12345i16)) == 12345i16
@@ -187,16 +187,16 @@ mod TestBox {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def int32Unbox01(): Bool = unsafe unbox(Integer.valueOf(1234567890i32)) == 1234567890i32
+    def int32Unbox01(): Bool = unbox(Integer.valueOf(1234567890i32)) == 1234567890i32
 
     @test
-    def int32Unbox02(): Bool = unsafe unbox(Integer.valueOf(-2147483648i32)) == -2147483648i32
+    def int32Unbox02(): Bool = unbox(Integer.valueOf(-2147483648i32)) == -2147483648i32
 
     @test
-    def int32Box01(): Bool = unsafe box(1234567890i32).equals(Integer.valueOf(1234567890i32))
+    def int32Box01(): Bool = box(1234567890i32).equals(Integer.valueOf(1234567890i32))
 
     @test
-    def int32Box02(): Bool = unsafe box(-2147483648i32).equals(Integer.valueOf(-2147483648i32))
+    def int32Box02(): Bool = box(-2147483648i32).equals(Integer.valueOf(-2147483648i32))
 
     @test
     def int32RoundTrip01(): Bool = unbox(box(1234567890i32)) == 1234567890i32
@@ -215,16 +215,16 @@ mod TestBox {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def int64Unbox01(): Bool = unsafe unbox(Long.valueOf(1234567890123456789i64)) == 1234567890123456789i64
+    def int64Unbox01(): Bool = unbox(Long.valueOf(1234567890123456789i64)) == 1234567890123456789i64
 
     @test
-    def int64Unbox02(): Bool = unsafe unbox(Long.valueOf(-9223372036854775808i64)) == -9223372036854775808i64
+    def int64Unbox02(): Bool = unbox(Long.valueOf(-9223372036854775808i64)) == -9223372036854775808i64
 
     @test
-    def int64Box01(): Bool = unsafe box(1234567890123456789i64).equals(Long.valueOf(1234567890123456789i64))
+    def int64Box01(): Bool = box(1234567890123456789i64).equals(Long.valueOf(1234567890123456789i64))
 
     @test
-    def int64Box02(): Bool = unsafe box(-9223372036854775808i64).equals(Long.valueOf(-9223372036854775808i64))
+    def int64Box02(): Bool = box(-9223372036854775808i64).equals(Long.valueOf(-9223372036854775808i64))
 
     @test
     def int64RoundTrip01(): Bool = unbox(box(1234567890123456789i64)) == 1234567890123456789i64

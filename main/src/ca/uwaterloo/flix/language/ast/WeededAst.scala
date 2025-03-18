@@ -416,7 +416,7 @@ object WeededAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 
-  case class CatchRule(ident: Name.Ident, className: Name.Ident, exp: Expr)
+  case class CatchRule(ident: Name.Ident, className: Name.Ident, exp: Expr, loc: SourceLocation)
 
   case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 
@@ -428,9 +428,9 @@ object WeededAst {
 
   case class Constraint(head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 
-  case class MatchRule(pat: Pattern, exp1: Option[Expr], exp2: Expr)
+  case class MatchRule(pat: Pattern, exp1: Option[Expr], exp2: Expr, loc: SourceLocation)
 
-  case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr)
+  case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr, loc: SourceLocation)
 
   case class SelectChannelRule(ident: Name.Ident, exp1: Expr, exp2: Expr, loc: SourceLocation)
 

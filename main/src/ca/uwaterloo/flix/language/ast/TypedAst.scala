@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, TraitEnv}
-import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
+import ca.uwaterloo.flix.util.collection.ListMap
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -102,9 +102,9 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    case class Hole(sym: Symbol.HoleSym, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Hole(sym: Symbol.HoleSym, env: LocalScope, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class HoleWithExp(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class HoleWithExp(exp: Expr, env: LocalScope, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class OpenAs(symUse: RestrictableEnumSymUse, exp: Expr, tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = exp.eff
@@ -371,15 +371,15 @@ object TypedAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
-  case class CatchRule(bnd: Binder, clazz: java.lang.Class[?], exp: Expr)
+  case class CatchRule(bnd: Binder, clazz: java.lang.Class[?], exp: Expr, loc: SourceLocation)
 
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
-  case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
+  case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr, loc: SourceLocation)
 
-  case class TypeMatchRule(bnd: Binder, tpe: Type, exp: Expr)
+  case class TypeMatchRule(bnd: Binder, tpe: Type, exp: Expr, loc: SourceLocation)
 
   case class SelectChannelRule(bnd: Binder, chan: Expr, exp: Expr, loc: SourceLocation)
 

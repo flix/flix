@@ -3,8 +3,12 @@
     "java.lang.Boolean": "",
     "java.lang.Byte": "",
     "java.lang.Character": "",
+    "java.lang.Character$Subset": "",
     "java.lang.Double": "",
     "java.lang.Float": "",
+    "java.lang.Integer": "",
+    "java.lang.Long": "",
+    "java.lang.Short": "",
 
     "java.lang.Process": "Exec, IO",
     "java.lang.ProcessBuilder": "Exec, IO",
@@ -40,6 +44,7 @@
     "java.net.spi.URLStreamHandlerProvider": "Net, IO",
 
     "java.lang.Runtime": "Sys, IO",
+    "java.lang.StackWalker": "Sys, IO",
     "java.lang.System": "Sys, IO",
     "java.util.Random": "NonDet, IO"
   }

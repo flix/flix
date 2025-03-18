@@ -1339,13 +1339,13 @@ object Weeder2 {
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
       flatMapN(Patterns.pickPattern(tree), traverse(exprs)(visitExpr)) {
         // case pattern => expr
-        case (pat, expr :: Nil) => Validation.Success(MatchRule(pat, None, expr))
+        case (pat, expr :: Nil) => Validation.Success(MatchRule(pat, None, expr, tree.loc))
         // case pattern if expr => expr
-        case (pat, expr1 :: expr2 :: Nil) => Validation.Success(MatchRule(pat, Some(expr1), expr2))
+        case (pat, expr1 :: expr2 :: Nil) => Validation.Success(MatchRule(pat, Some(expr1), expr2, tree.loc))
         // Fall back on Expr.Error. Parser has reported an error here.
         case (_, _) =>
           val error = Malformed(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
-          Validation.Success(MatchRule(Pattern.Error(tree.loc), None, Expr.Error(error)))
+          Validation.Success(MatchRule(Pattern.Error(tree.loc), None, Expr.Error(error), tree.loc))
       }
     }
 
@@ -1360,7 +1360,7 @@ object Weeder2 {
     private def visitTypeMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[TypeMatchRule, CompilationMessage] = {
       expect(tree, TreeKind.Expr.TypeMatchRuleFragment)
       mapN(pickNameIdent(tree), pickExpr(tree), Types.pickType(tree)) {
-        (ident, expr, ttype) => TypeMatchRule(ident, ttype, expr)
+        (ident, expr, ttype) => TypeMatchRule(ident, ttype, expr, tree.loc)
       }
     }
 
@@ -1774,11 +1774,11 @@ object Weeder2 {
     private def visitTryCatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[CatchRule, CompilationMessage] = {
       expect(tree, TreeKind.Expr.TryCatchRuleFragment)
       mapN(pickNameIdent(tree), pickQName(tree), pickExpr(tree)) {
-        case (ident, qname, expr) if qname.isUnqualified => CatchRule(ident, qname.ident, expr)
+        case (ident, qname, expr) if qname.isUnqualified => CatchRule(ident, qname.ident, expr, tree.loc)
         case (ident, qname, expr) =>
           val error = IllegalQualifiedName(qname.loc)
           sctx.errors.add(error)
-          CatchRule(ident, qname.ident, expr)
+          CatchRule(ident, qname.ident, expr, tree.loc)
       }
     }
 
@@ -1793,11 +1793,22 @@ object Weeder2 {
         pickNameIdent(tree),
         Decls.pickFormalParameters(tree, Presence.Forbidden),
         pickExpr(tree)
-      )((ident, fparams, expr) => {
-        // Add extra resumption argument as a synthetic unit parameter when there is exactly one parameter.
-        val hasSingleNonUnitParam = fparams.sizeIs == 1 && fparams.exists(_.ident.name != "_unit")
-        val syntheticUnitParam = if (hasSingleNonUnitParam) List(Decls.unitFormalParameter(tree.loc.asSynthetic)) else List.empty
-        HandlerRule(ident, (syntheticUnitParam ++ fparams).sortBy(_.loc), expr, tree.loc)
+      )((ident, fparams0, expr) => {
+        // `def f()` becomes `def f(_unit: Unit)` (via Decls.pickFormalParameters).
+        // `def f(x)` becomes `def f(_unit: Unit, x)`.
+        // `def f(x, y, ..)` is unchanged.
+        fparams0 match {
+          case fparam :: Nil =>
+            // Since a continuation argument must always be there, the underlying function needs a
+            // unit param. For example `def f(k)` becomes `def f(_unit: Unit, k)`.
+
+            // The new param has the zero-width location of the actual argument.
+            val loc = SourceLocation.zeroPoint(isReal = false, fparam.loc.sp1)
+            val unitParam = Decls.unitFormalParameter(loc)
+            HandlerRule(ident, List(unitParam, fparam), expr, tree.loc)
+          case fparams =>
+            HandlerRule(ident, fparams.sortBy(_.loc), expr, tree.loc)
+        }
       })
     }
 
@@ -3110,19 +3121,12 @@ object Weeder2 {
   }
 
   private def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
-    val idents = pickQNameIdents(tree)
-    mapN(idents) {
-      idents => Name.JavaName(idents, tree.loc)
+    mapN(pick(TreeKind.QName, tree)){
+      qname => Name.JavaName(pickAll(TreeKind.Ident, qname).flatMap(text), qname.loc)
     }
   }
 
-  private def pickQNameIdents(tree: Tree): Validation[List[String], CompilationMessage] = {
-    flatMapN(pick(TreeKind.QName, tree)) {
-      qname => mapN(traverse(pickAll(TreeKind.Ident, qname))(t => Validation.Success(text(t))))(_.flatten)
-    }
-  }
-
-  ////////////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////
   /// HELPERS ////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////
 

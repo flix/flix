@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Kind.WildCaseSet
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, DefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, DefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
@@ -259,7 +259,6 @@ object Kinder {
     case ResolvedAst.Declaration.Def(sym, spec0, exp0, loc) =>
       flix.subtask(sym.toString, sample = true)
       val kenv = getKindEnvFromSpec(spec0, kenv0, taenv, root)
-      val henv = None
       val spec = visitSpec(spec0, Nil, kenv, taenv, root)
       val exp = visitExp(exp0, kenv, taenv, root)(Scope.Top, sctx, flix)
       KindedAst.Def(sym, spec, exp, loc)
@@ -271,7 +270,6 @@ object Kinder {
   private def visitSig(sig0: ResolvedAst.Declaration.Sig, traitTparam: KindedAst.TypeParam, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Sig = sig0 match {
     case ResolvedAst.Declaration.Sig(sym, spec0, exp0, loc) =>
       val kenv = getKindEnvFromSpec(spec0, kenv0, taenv, root)
-      val henv = None
       val spec = visitSpec(spec0, List(traitTparam.sym), kenv, taenv, root)
       val exp = exp0.map(visitExp(_, kenv, taenv, root)(Scope.Top, sctx, flix))
       KindedAst.Sig(sym, spec, exp, loc)
@@ -336,16 +334,16 @@ object Kinder {
     case ResolvedAst.Expr.Var(sym, loc) =>
       KindedAst.Expr.Var(sym, loc)
 
-    case ResolvedAst.Expr.Hole(sym, loc) =>
+    case ResolvedAst.Expr.Hole(sym, env, loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val evar = Type.freshEffSlackVar(loc.asSynthetic)
-      KindedAst.Expr.Hole(sym, tvar, evar, loc)
+      KindedAst.Expr.Hole(sym, env, tvar, evar, loc)
 
-    case ResolvedAst.Expr.HoleWithExp(exp0, loc) =>
+    case ResolvedAst.Expr.HoleWithExp(exp0, env, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, root)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val evar = Type.freshEffSlackVar(loc.asSynthetic)
-      KindedAst.Expr.HoleWithExp(exp, tvar, evar, loc)
+      KindedAst.Expr.HoleWithExp(exp, env, tvar, evar, loc)
 
     case ResolvedAst.Expr.OpenAs(symUse, exp0, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, root)
@@ -776,22 +774,22 @@ object Kinder {
     * Performs kinding on the given match rule under the given kind environment.
     */
   private def visitMatchRule(rule0: ResolvedAst.MatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.MatchRule = rule0 match {
-    case ResolvedAst.MatchRule(pat0, guard0, exp0) =>
+    case ResolvedAst.MatchRule(pat0, guard0, exp0, loc) =>
       val pat = visitPattern(pat0, kenv, root)
       val guard = guard0.map(visitExp(_, kenv, taenv, root))
       val exp = visitExp(exp0, kenv, taenv, root)
-      KindedAst.MatchRule(pat, guard, exp)
+      KindedAst.MatchRule(pat, guard, exp, loc)
   }
 
   /**
     * Performs kinding on the given match rule under the given kind environment.
     */
   private def visitTypeMatchRule(rule0: ResolvedAst.TypeMatchRule, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.TypeMatchRule = rule0 match {
-    case ResolvedAst.TypeMatchRule(sym, tpe0, exp0) =>
+    case ResolvedAst.TypeMatchRule(sym, tpe0, exp0, loc) =>
       val kenv = inferType(tpe0, Kind.Star, kenv0, taenv, root)
       val tpe = visitType(tpe0, Kind.Star, kenv, taenv, root)
       val exp = visitExp(exp0, kenv, taenv, root)
-      KindedAst.TypeMatchRule(sym, tpe, exp)
+      KindedAst.TypeMatchRule(sym, tpe, exp, loc)
   }
 
   /**
@@ -808,9 +806,9 @@ object Kinder {
     * Performs kinding on the given catch rule under the given kind environment.
     */
   private def visitCatchRule(rule0: ResolvedAst.CatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.CatchRule = rule0 match {
-    case ResolvedAst.CatchRule(sym, clazz, exp0) =>
+    case ResolvedAst.CatchRule(sym, clazz, exp0, loc) =>
       val exp = visitExp(exp0, kenv, taenv, root)
-      KindedAst.CatchRule(sym, clazz, exp)
+      KindedAst.CatchRule(sym, clazz, exp, loc)
   }
 
   /**
@@ -820,9 +818,6 @@ object Kinder {
     case ResolvedAst.HandlerRule(symUse, fparams0, exp0, loc) =>
       // create a new type variable for the op return type (same as resume argument type)
       val tvar = Type.freshVar(Kind.Star, exp0.loc)
-
-      val henv = Some((tvar, hTvar))
-
       val fparams = fparams0.map(visitFormalParam(_, kenv, taenv, root))
       val exp = visitExp(exp0, kenv, taenv, root)
       KindedAst.HandlerRule(symUse, fparams, exp, tvar, loc)

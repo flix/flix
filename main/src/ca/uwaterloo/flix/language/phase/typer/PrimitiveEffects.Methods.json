@@ -4,6 +4,13 @@
     "java.lang.Byte::describeConstable": "Sys, IO",
     "java.lang.Double::resolveConstantDesc": "Sys, IO",
     "java.lang.Float::resolveConstantDesc": "Sys, IO",
+    "java.lang.Integer::describeConstable": "Sys, IO",
+    "java.lang.Integer::getInteger": "Env, IO",
+    "java.lang.Integer::resolveConstantDesc": "Sys, IO",
+    "java.lang.Long::describeConstable": "Sys, IO",
+    "java.lang.Long::getLong": "Env, IO",
+    "java.lang.Long::resolveConstantDesc": "Sys, IO",
+    "java.lang.Short::describeConstable": "Sys, IO",
 
     "java.lang.Runtime::addShutdownHook": "Exec, Sys, IO",
     "java.lang.Runtime::availableProcessors": "Env, IO",
@@ -20,7 +27,6 @@
     "java.lang.Runtime::runFinalization": "Sys, IO",
     "java.lang.Runtime::totalMemory": "Env, NonDet, IO",
     "java.lang.Runtime::version": "Env",
-
     "java.lang.System::console": "IO",
     "java.lang.System::currentTimeMillis": "IO",
     "java.lang.System::getenv": "Env, IO",

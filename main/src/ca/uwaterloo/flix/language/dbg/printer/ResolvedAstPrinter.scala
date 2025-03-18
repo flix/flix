@@ -44,8 +44,8 @@ object ResolvedAstPrinter {
   /** Returns the [[DocAst.Expr]] representation of `exp`. */
   private def print(exp: ResolvedAst.Expr): DocAst.Expr = exp match {
     case Expr.Var(sym, _) => printVarSym(sym)
-    case Expr.Hole(sym, _) => DocAst.Expr.Hole(sym)
-    case Expr.HoleWithExp(exp, _) => DocAst.Expr.HoleWithExp(print(exp))
+    case Expr.Hole(sym, _, _) => DocAst.Expr.Hole(sym)
+    case Expr.HoleWithExp(exp, _, _) => DocAst.Expr.HoleWithExp(print(exp))
     case Expr.OpenAs(_, _, _) => DocAst.Expr.Unknown
     case Expr.Use(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Cst(cst, _) => ConstantPrinter.print(cst)
@@ -64,10 +64,10 @@ object ResolvedAstPrinter {
     case Expr.Region(_, _) => DocAst.Expr.Region
     case Expr.Scope(sym, _, exp, _) => DocAst.Expr.Scope(printVarSym(sym), print(exp))
     case Expr.Match(exp, rules, _) => DocAst.Expr.Match(print(exp), rules.map {
-      case ResolvedAst.MatchRule(pat, guard, exp) => (printPattern(pat), guard.map(print), print(exp))
+      case ResolvedAst.MatchRule(pat, guard, exp, _) => (printPattern(pat), guard.map(print), print(exp))
     })
     case Expr.TypeMatch(exp, rules, _) => DocAst.Expr.TypeMatch(print(exp), rules.map {
-      case ResolvedAst.TypeMatchRule(sym, tpe, exp) => (printVarSym(sym), UnkindedTypePrinter.print(tpe), print(exp))
+      case ResolvedAst.TypeMatchRule(sym, tpe, exp, loc) => (printVarSym(sym), UnkindedTypePrinter.print(tpe), print(exp))
     })
     case Expr.RestrictableChoose(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Tag(symUse, exps, _) => DocAst.Expr.Tag(symUse.sym, exps.map(print))
@@ -96,7 +96,7 @@ object ResolvedAstPrinter {
     case Expr.Unsafe(exp, runEff, _) => DocAst.Expr.Unsafe(print(exp), UnkindedTypePrinter.print(runEff))
     case Expr.Without(exp, symUse, _) => DocAst.Expr.Without(print(exp), symUse.sym)
     case Expr.TryCatch(exp, rules, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
-      case ResolvedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
+      case ResolvedAst.CatchRule(sym, clazz, exp, _) => (sym, clazz, print(exp))
     })
     case Expr.Throw(exp, _) => DocAst.Expr.Throw(print(exp))
     case Expr.Handler(symUse, rules, _) => DocAst.Expr.Handler(symUse.sym, rules.map {

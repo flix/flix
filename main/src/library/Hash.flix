@@ -66,15 +66,15 @@ instance Hash[Int8] {
 }
 
 instance Hash[Int16] {
-    pub def hash(x: Int16): Int32 = unsafe Short.hashCode(x)
+    pub def hash(x: Int16): Int32 = Short.hashCode(x)
 }
 
 instance Hash[Int32] {
-    pub def hash(x: Int32): Int32 = unsafe Integer.hashCode(x)
+    pub def hash(x: Int32): Int32 = Integer.hashCode(x)
 }
 
 instance Hash[Int64] {
-    pub def hash(x: Int64): Int32 = unsafe Long.hashCode(x)
+    pub def hash(x: Int64): Int32 = Long.hashCode(x)
 }
 
 instance Hash[String] {

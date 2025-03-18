@@ -15,15 +15,16 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion.syntactic
 
+import ca.uwaterloo.flix.api.lsp.Range
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
 
 object ExprSnippetCompleter {
 
-  def getCompletions(): Iterable[Completion] = List(
+  def getCompletions(range: Range): Iterable[Completion] = List(
     // NB: Please keep the list alphabetically sorted.
     Completion.SnippetCompletion("main",
       "def main(): Unit \\ IO = \n    println(\"Hello World!\")",
-      "snippet for Hello World Program"),
+      "snippet for Hello World Program", range),
   )
 
 }

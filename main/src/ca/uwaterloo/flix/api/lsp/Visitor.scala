@@ -285,9 +285,9 @@ object Visitor {
     expr match {
       case Expr.Cst(_, _, _) => ()
       case Expr.Var(_, _, _) => ()
-      case Expr.Hole(_, _, _, _) => ()
+      case Expr.Hole(_, _, _, _, _) => ()
 
-      case Expr.HoleWithExp(exp, _, _, _) =>
+      case Expr.HoleWithExp(exp, _, _, _, _) =>
         visitExpr(exp)
 
       case Expr.OpenAs(_, _, _, _) => () // Not visited, unsupported feature.
@@ -327,7 +327,8 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.LocalDef(_, fparams, exp1, exp2, _, _, _) =>
+      case Expr.LocalDef(bnd, fparams, exp1, exp2, _, _, _) =>
+        visitBinder(bnd)
         fparams.foreach(visitFormalParam)
         visitExpr(exp1)
         visitExpr(exp2)
@@ -658,10 +659,8 @@ object Visitor {
   }
 
   private def visitMatchRule(rule: MatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val MatchRule(pat, guard, exp) = rule
-    // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since MatchRules don't have locations
-    val insideRule = a.accept(pat.loc) || guard.map(_.loc).exists(a.accept) || a.accept(exp.loc)
-    if (!insideRule) { return }
+    val MatchRule(pat, guard, exp, loc) = rule
+    if (!a.accept(loc)) { return }
 
     c.consumeMatchRule(rule)
 
@@ -671,10 +670,8 @@ object Visitor {
   }
 
   private def visitTypeMatchRule(rule: TypeMatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val TypeMatchRule(bnd, tpe, exp) = rule
-    // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since TypeMatchRules don't have locations
-    val insideRule = a.accept(bnd.sym.loc) || a.accept(tpe.loc) || a.accept(exp.loc)
-    if (!insideRule) { return }
+    val TypeMatchRule(bnd, tpe, exp, loc) = rule
+    if (!a.accept(loc)) { return }
 
     c.consumeTypeMatchRule(rule)
 
@@ -715,10 +712,8 @@ object Visitor {
   }
 
   private def visitCatchRule(rule: CatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
-    val CatchRule(bnd, _, exp) = rule
-    // TODO `insideRule` is a hack, should be removed eventually. Necessary for now since CatchRules don't have locations
-    val insideRule = a.accept(bnd.sym.loc) || a.accept(exp.loc)
-    if (!insideRule) { return }
+    val CatchRule(bnd, _, exp, loc) = rule
+    if (!a.accept(loc)) { return }
 
     c.consumeCatchRule(rule)
 
