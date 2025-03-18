@@ -15,6 +15,7 @@
  */
 
 package ca.uwaterloo.flix.api.lsp
+
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
 import ca.uwaterloo.flix.language.CompilationMessage
