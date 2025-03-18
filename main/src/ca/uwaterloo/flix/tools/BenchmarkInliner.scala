@@ -408,7 +408,7 @@ object BenchmarkInliner {
       Stats(xs.min, xs.max, average(xs), median(xs))
     }
 
-    private val programs: Map[String, String] = Map(
+    private val microBenchmarks: Map[String, String] = Map(
       "map10KLength" -> map10KLength,
       "map10KLengthOptimized" -> map10KLengthOptimized,
       "filterMap10K" -> filterMap10K,
@@ -420,8 +420,11 @@ object BenchmarkInliner {
       "List.length" -> listLength,
       "List.reverse" -> listReverse,
       "List.filterMap" -> listFilterMap,
-      // "FordFulkerson" -> fordFulkerson,
-      // "parsers" -> parsers
+    )
+
+    private val macroBenchmarks: Map[String, String] = Map(
+      "FordFulkerson" -> fordFulkerson,
+      "parsers" -> parsers
     )
 
     def run(opts: Options): JsonAST.JObject = {
@@ -430,8 +433,8 @@ object BenchmarkInliner {
       debug(s"Warming up for $WarmupTime minutes...")
       benchmarkWithGlobalMaxTime(opts, minutesToNanos(WarmupTime))(warmup = true)
 
-      debug(s"Running up to $MaxInliningRounds inlining rounds, timing $NumberOfRuns runs of each program (total of ${programs.size} programs)")
-      debug(s"Max individual time is $BenchmarkingTime minutes. It should take ${BenchmarkingTime * 2 * programs.size} minutes")
+      debug(s"Running up to $MaxInliningRounds inlining rounds, timing $NumberOfRuns runs of each program (total of ${microBenchmarks.size} programs)")
+      debug(s"Max individual time is $BenchmarkingTime minutes. It should take ${BenchmarkingTime * 2 * microBenchmarks.size} minutes")
       val programExperiments = benchmarkWithIndividualMaxTime(opts, minutesToNanos(BenchmarkingTime))
 
       val runningTimeStats = programExperiments.m.map {
@@ -481,7 +484,7 @@ object BenchmarkInliner {
 
     private def benchmarkWithIndividualMaxTime(opts: Options, maxNanos: Long)(implicit warmup: Boolean): ListMap[String, Run] = {
       implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-      val runConfigs = mkConfigurations(opts).flatMap(o => programs.map { case (name, prog) => (o, name, prog) })
+      val runConfigs = mkConfigurations(opts).flatMap(o => microBenchmarks.map { case (name, prog) => (o, name, prog) })
       val runs = scala.collection.mutable.ListBuffer.empty[Run]
       for ((config, name, prog) <- runConfigs) {
         debug(s"Benchmarking $name with inliner '${InlinerType.from(config)}' with ${config.inliner1Rounds} rounds")
@@ -507,7 +510,7 @@ object BenchmarkInliner {
       implicit val sctx: SecurityContext = SecurityContext.AllPermissions
       val runConfigs = mkConfigurations(opts)
       val configQueue = scala.collection.mutable.Queue.from(runConfigs)
-      val progs = scala.collection.mutable.Queue.from(programs)
+      val progs = scala.collection.mutable.Queue.from(microBenchmarks)
 
       var config = configQueue.dequeue()
       var usedTime = 0L
@@ -517,7 +520,7 @@ object BenchmarkInliner {
         val (name, prog) = progs.dequeue()
         debug(s"Benchmarking $name with inliner '${InlinerType.from(config)}' with ${config.inliner1Rounds} rounds")
         if (progs.isEmpty) {
-          progs.enqueueAll(programs)
+          progs.enqueueAll(microBenchmarks)
           config = configQueue.dequeue()
         }
 
