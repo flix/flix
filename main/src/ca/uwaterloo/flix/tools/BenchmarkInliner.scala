@@ -32,7 +32,6 @@ import scala.collection.mutable.ListBuffer
 object BenchmarkInliner {
 
   // TODO: Add function + flag for macro benchmarks
-  // TODO: Add function that assigns max time to each benchmark
 
   /**
     * Set this to `true` for additional details during benchmarking.
