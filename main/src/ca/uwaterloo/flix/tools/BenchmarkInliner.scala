@@ -33,22 +33,23 @@ object BenchmarkInliner {
 
   // TODO: Add function + flag for macro benchmarks
 
+  private val BenchmarkingTime: Int = 5
+
+  private val MaxInliningRounds: Int = 5
+
+  private val NumberOfCompilations: Int = 10
+
+  private val NumberOfRuns: Int = 1000
+
+
+  private val NumberOfSamples: Int = 1000
+
   /**
     * Set this to `true` for additional details during benchmarking.
     */
   private val Verbose: Boolean = true
 
-  private val NumberOfRuns: Int = 1000
-
-  private val NumberOfCompilations: Int = 10
-
-  private val NumberOfSamples: Int = 1000
-
-  private val MaxInliningRounds: Int = 5
-
   private val WarmupTime: Int = 5
-
-  private val BenchmarkingTime: Int = 5
 
   private val microBenchmarks: Map[String, String] = Map(
     "map10KLength" -> map10KLength,
