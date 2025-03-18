@@ -195,10 +195,10 @@ object CompletionUtils {
     * Format types in the right form to be displayed in the list of completions
     * e.g. "(Int32, String)"
     */
-  def formatTypes(tpes: List[Type]): String =
+  def formatTypes(tpes: List[Type])(implicit flix: Flix): String =
     tpes match {
       case Nil => ""
-      case _ => tpes.map(_.toString).mkString("(", ", ", ")")
+      case _ => tpes.map(FormatType.formatType(_)).mkString("(", ", ", ")")
     }
 
   /**
@@ -218,11 +218,11 @@ object CompletionUtils {
     * Format types in the right form to be inserted as a snippet
     * e.g. "(${1:Int32}, ${2:String})"
     */
-  def formatTypesSnippet(tpes: List[Type]): String =
+  def formatTypesSnippet(tpes: List[Type])(implicit flix: Flix): String =
     tpes match {
       case Nil => ""
       case _ => tpes.zipWithIndex.map {
-        case (tpe, idx) => "$" + s"{${idx + 1}:?$tpe}"
+        case (tpe, idx) => "$" + s"{${idx + 1}:?${FormatType.formatType(tpe)}}"
       }.mkString("(", ", ", ")")
     }
 
