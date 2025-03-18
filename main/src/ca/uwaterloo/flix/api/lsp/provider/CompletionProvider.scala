@@ -84,7 +84,7 @@ object CompletionProvider {
             KeywordCompleter.getExprKeywords(Range.from(err.loc)) ++
             DefCompleter.getCompletions(err) ++
             EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = false) ++
-            EffectCompleter.getCompletions(err) ++
+            EffectCompleter.getCompletions(qn, range, ap, env, inHandler = false) ++
             OpCompleter.getCompletions(qn, range, ap, env) ++
             SignatureCompleter.getCompletions(err) ++
             EnumTagCompleter.getCompletions(err) ++
@@ -102,15 +102,15 @@ object CompletionProvider {
             LocalScopeCompleter.getCompletions(err) ++
             EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = true) ++
             StructCompleter.getCompletions(err) ++
-            EffectCompleter.getCompletions(err) ++
+            EffectCompleter.getCompletions(qn, range, ap, env, inHandler = false) ++
             TypeAliasCompleter.getCompletions(err) ++
             ModuleCompleter.getCompletions(err)
 
-        case err: ResolutionError.UndefinedEffect => EffectCompleter.getCompletions(err)
+        case err: ResolutionError.UndefinedEffect => EffectCompleter.getCompletions(err.qn, Range.from(err.loc), err.ap, err.env, inHandler = true)
         case err: ResolutionError.UndefinedJvmImport => ImportCompleter.getCompletions(err.name, Range.from(err.loc))
         case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err.clazz, err.field) ++ InvokeStaticMethodCompleter.getCompletions(err.clazz, err.field)
         case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err.qn.ident.name, Range.from(err.loc))
-        case err: ResolutionError.UndefinedOp => OpCompleter.getCompletionsInHandler(err.qn, Range.from(err.loc), err.ap)
+        case err: ResolutionError.UndefinedOp => HandlerCompleter.getCompletions(err.qn, Range.from(err.loc))
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
         case err: ResolutionError.UndefinedTrait => TraitCompleter.getCompletions(err)
         case err: ResolutionError.UndefinedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))

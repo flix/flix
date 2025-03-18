@@ -57,12 +57,12 @@ sealed trait Completion {
         kind     = CompletionItemKind.TypeParameter
       )
 
-    case Completion.PredicateCompletion(name, arity, detail) =>
+    case Completion.PredicateCompletion(name, arity, detail, range) =>
       val args = (1 until arity + 1).map(i => s"$${$i:x$i}").mkString(", ")
       CompletionItem(
         label            = s"$name/$arity",
         sortText         = Priority.toSortText(Priority.Lower, name),
-        textEdit         = TextEdit(context.range, s"$name($args)"),
+        textEdit         = TextEdit(range, s"$name($args)"),
         detail           = Some(detail),
         kind             = CompletionItemKind.Field,
         insertTextFormat = InsertTextFormat.Snippet
@@ -109,11 +109,11 @@ sealed trait Completion {
         additionalTextEdits = List(Completion.mkTextEdit(ap, s"import $path"))
       )
 
-    case Completion.SnippetCompletion(name, snippet, documentation) =>
+    case Completion.SnippetCompletion(name, snippet, documentation, range) =>
       CompletionItem(
         label            = name,
         sortText         = Priority.toSortText(Priority.High, name),
-        textEdit         = TextEdit(context.range, snippet),
+        textEdit         = TextEdit(range, snippet),
         documentation    = Some(documentation),
         insertTextFormat = InsertTextFormat.Snippet,
         kind             = CompletionItemKind.Snippet
@@ -212,6 +212,7 @@ sealed trait Completion {
         sortText            = Priority.toSortText(priority, qualifiedName),
         filterText          = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
         textEdit            = TextEdit(range, snippet),
+        insertTextFormat    = InsertTextFormat.Snippet,
         documentation       = Some(enm.doc.text),
         kind                = CompletionItemKind.Enum,
         additionalTextEdits = additionalTextEdit
@@ -283,7 +284,7 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.EffectCompletion(effect, ap, qualified, inScope) =>
+    case Completion.EffectCompletion(effect, range, ap, qualified, inScope) =>
       val qualifiedName = effect.sym.toString
       val name = if (qualified) qualifiedName else effect.sym.name
       val description = if(!qualified) {
@@ -296,13 +297,13 @@ sealed trait Completion {
         label               = name,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, name),
+        textEdit            = TextEdit(range, name),
         documentation       = Some(effect.doc.text),
         kind                = CompletionItemKind.Event,
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.HandlerCompletion(effect, ap, qualified, inScope) =>
+    case Completion.HandlerCompletion(effect, range, ap, qualified, inScope) =>
       val qualifiedName = effect.sym.toString
       val name = if (qualified) qualifiedName else effect.sym.name
       val description = if(!qualified) {
@@ -317,7 +318,7 @@ sealed trait Completion {
         label               = name,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, snippet),
+        textEdit            = TextEdit(range, snippet),
         documentation       = Some(effect.doc.text),
         kind                = CompletionItemKind.Event,
         additionalTextEdits = additionalTextEdit
@@ -345,16 +346,13 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.OpCompletion(op, namespace, range, ap, qualified, inScope, isHandler) =>
+    case Completion.OpCompletion(op, namespace, range, ap, qualified, inScope) =>
       val qualifiedName =  if (namespace.nonEmpty)
         s"$namespace.${op.sym.name}"
       else
         op.sym.toString
       val name = if (qualified) qualifiedName else op.sym.name
-      val snippet = if (isHandler)
-          CompletionUtils.getOpHandlerSnippet(name, op.spec.fparams)(context)
-        else
-          CompletionUtils.getApplySnippet(name, op.spec.fparams)(context)
+      val snippet = CompletionUtils.getApplySnippet(name, op.spec.fparams)(context)
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
@@ -371,6 +369,22 @@ sealed trait Completion {
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Function,
         additionalTextEdits = additionalTextEdit
+      )
+
+    case Completion.OpHandlerCompletion(op, range) =>
+      val name = op.sym.name
+      val snippet = CompletionUtils.getOpHandlerSnippet(name, op.spec.fparams)(context)
+      val description = Some(name)
+      val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(op.spec)(flix)), description)
+      CompletionItem(
+        label               = name,
+        labelDetails        = Some(labelDetails),
+        sortText            = Priority.toSortText(Priority.High, name),
+        textEdit            = TextEdit(range, snippet),
+        detail              = Some(FormatScheme.formatScheme(op.spec.declaredScheme)(flix)),
+        documentation       = Some(op.spec.doc.text),
+        insertTextFormat    = InsertTextFormat.Snippet,
+        kind                = CompletionItemKind.Function,
       )
 
     case Completion.SigCompletion(sig, namespace, ap, qualified, inScope) =>
@@ -404,6 +418,8 @@ sealed trait Completion {
       else
         tag.sym.toString
       val name = if (qualified) qualifiedName else tag.sym.name
+      val snippet = name + CompletionUtils.formatTypesSnippet(tag.tpes)
+      val label = name + CompletionUtils.formatTypes(tag.tpes)
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
@@ -411,10 +427,11 @@ sealed trait Completion {
       val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
       val priority: Priority = if (inScope) Priority.High else Priority.Lower
       CompletionItem(
-        label               = name,
+        label               = label,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, name),
+        textEdit            = TextEdit(context.range, snippet),
+        insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.EnumMember,
         additionalTextEdits = additionalTextEdit
       )
@@ -563,8 +580,9 @@ object Completion {
     * @param name   the name of the predicate.
     * @param arity  the arity of the predicate.
     * @param detail the type of the predicate.
+    * @param range  the range of the completion.
     */
-  case class PredicateCompletion(name: String, arity: Int, detail: String) extends Completion
+  case class PredicateCompletion(name: String, arity: Int, detail: String, range: Range) extends Completion
 
   /**
     * Represents a type completion for builtin
@@ -609,8 +627,9 @@ object Completion {
     * @param name          the name of the snippet.
     * @param snippet       the snippet for TextEdit.
     * @param documentation a human-readable string that represents a doc-comment.
+    * @param range         the range of the completion.
     */
-  case class SnippetCompletion(name: String, snippet: String, documentation: String) extends Completion
+  case class SnippetCompletion(name: String, snippet: String, documentation: String, range: Range) extends Completion
 
   /**
     * Represents a Snippet completion
@@ -709,21 +728,23 @@ object Completion {
     * Represents an Effect completion
     *
     * @param effect    the effect construct.
+    * @param range     the range of the completion.
     * @param ap        the anchor position for the use statement.
     * @param qualified indicate whether to use a qualified label.
     * @param inScope   indicate whether to the effect is inScope.
     */
-  case class EffectCompletion(effect: TypedAst.Effect, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class EffectCompletion(effect: TypedAst.Effect, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents a handler completion
     *
     * @param effect    the related effect.
+    * @param range     the range of the completion.
     * @param ap        the anchor position for the use statement.
     * @param qualified indicate whether to use a qualified label.
     * @param inScope   indicate whether to the related effect is inScope.
     */
-  case class HandlerCompletion(effect: TypedAst.Effect, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class HandlerCompletion(effect: TypedAst.Effect, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents a TypeAlias completion
@@ -744,9 +765,16 @@ object Completion {
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the op is inScope.
-    * @param isHandler  indicate whether the completion is in a handler.
     */
-  case class OpCompletion(op: TypedAst.Op, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, isHandler: Boolean) extends Completion
+  case class OpCompletion(op: TypedAst.Op, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+
+  /**
+    * Represents an Op Handler completion
+    *
+    * @param op         the op.
+    * @param range      the range of the completion.
+    */
+  case class OpHandlerCompletion(op: TypedAst.Op,  range: Range) extends Completion
 
   /**
     * Represents a Signature completion
