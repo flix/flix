@@ -50,6 +50,25 @@ object BenchmarkInliner {
 
   private val BenchmarkingTime: Int = 5
 
+  private val microBenchmarks: Map[String, String] = Map(
+    "map10KLength" -> map10KLength,
+    "map10KLengthOptimized" -> map10KLengthOptimized,
+    "filterMap10K" -> filterMap10K,
+    "filterMap10KOptimized" -> filterMap10KOptimized,
+    "List.filter" -> listFilter,
+    "List.foldLeft" -> listFoldLeft,
+    "List.foldRight" -> listFoldRight,
+    "List.map" -> listMap,
+    "List.length" -> listLength,
+    "List.reverse" -> listReverse,
+    "List.filterMap" -> listFilterMap,
+  )
+
+  private val macroBenchmarks: Map[String, String] = Map(
+    "FordFulkerson" -> fordFulkerson,
+    "parsers" -> parsers
+  )
+
   def run(opts: Options): Unit = {
     FileOps.writeString(Path.of("./build/").resolve("perf/").resolve("plots.py"), Python)
 
@@ -134,25 +153,6 @@ object BenchmarkInliner {
     private def stats[T](xs: Seq[T])(implicit numeric: Numeric[T]): Stats[T] = {
       Stats(xs.min, xs.max, average(xs), median(xs))
     }
-
-    private val microBenchmarks: Map[String, String] = Map(
-      "map10KLength" -> map10KLength,
-      "map10KLengthOptimized" -> map10KLengthOptimized,
-      "filterMap10K" -> filterMap10K,
-      "filterMap10KOptimized" -> filterMap10KOptimized,
-      "List.filter" -> listFilter,
-      "List.foldLeft" -> listFoldLeft,
-      "List.foldRight" -> listFoldRight,
-      "List.map" -> listMap,
-      "List.length" -> listLength,
-      "List.reverse" -> listReverse,
-      "List.filterMap" -> listFilterMap,
-    )
-
-    private val macroBenchmarks: Map[String, String] = Map(
-      "FordFulkerson" -> fordFulkerson,
-      "parsers" -> parsers
-    )
 
     def run(opts: Options): JsonAST.JObject = {
       implicit val warmup: Boolean = false
@@ -379,781 +379,6 @@ object BenchmarkInliner {
       Run(name, lines, inlinerType, inliningRounds, runningTime, compilationTime, phaseTimings, codeSize)
     }
 
-    private def listFilter: String = {
-      """
-        |def main(): Unit \ IO = {
-        |    List.range(0, 10_000) |> List.filter(x -> Int32.modulo(x, 2) == 0) |> blackhole
-        |}
-        |
-        |def blackhole(t: a): Unit \ IO =
-        |    Ref.fresh(Static, t); ()
-        |
-        |""".stripMargin
-    }
-
-    private def listFoldLeft: String = {
-      """
-        |def main(): Unit \ IO = {
-        |    List.range(0, 10_000) |> List.foldLeft(Add.add, 0) |> blackhole
-        |}
-        |
-        |def blackhole(t: a): Unit \ IO =
-        |    Ref.fresh(Static, t); ()
-        |
-        |""".stripMargin
-    }
-
-    private def listFoldRight: String = {
-      """
-        |def main(): Unit \ IO = {
-        |    List.range(0, 10_000) |> List.foldRight(Add.add, 0) |> blackhole
-        |}
-        |
-        |def blackhole(t: a): Unit \ IO =
-        |    Ref.fresh(Static, t); ()
-        |
-        |""".stripMargin
-    }
-
-    private def listMap: String = {
-      """
-        |def main(): Unit \ IO = {
-        |    List.range(0, 10_000) |> List.map(x -> x + 1) |> blackhole
-        |}
-        |
-        |def blackhole(t: a): Unit \ IO =
-        |    Ref.fresh(Static, t); ()
-        |
-        |""".stripMargin
-    }
-
-    private def listLength: String = {
-      """
-        |def main(): Unit \ IO = {
-        |    List.range(0, 10_000) |> List.length |> blackhole
-        |}
-        |
-        |def blackhole(t: a): Unit \ IO =
-        |    Ref.fresh(Static, t); ()
-        |
-        |""".stripMargin
-    }
-
-    private def listReverse: String = {
-      """
-        |def main(): Unit \ IO = {
-        |    List.range(0, 10_000) |> List.reverse |> blackhole
-        |}
-        |
-        |def blackhole(t: a): Unit \ IO =
-        |    Ref.fresh(Static, t); ()
-        |
-        |""".stripMargin
-    }
-
-    private def listFilterMap: String = {
-      """
-        |def main(): Unit \ IO = {
-        |    List.range(0, 10_000) |> List.filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None) |> blackhole
-        |}
-        |
-        |def blackhole(t: a): Unit \ IO =
-        |    Ref.fresh(Static, t); ()
-        |
-        |""".stripMargin
-    }
-
-    private def map10KLength: String = {
-      """
-         def main(): Unit \ IO = {
-        |    let l1 = range(0, 10_000);
-        |    let l2 = map(x -> x + 1, l1);
-        |    let l3 = length(l2);
-        |    blackhole(l3)
-        |}
-        |
-        |pub def map(f: a -> b, l: List[a]) : List[b] = {
-        |    def mp(xs, acc) = match xs {
-        |        case Nil     => acc
-        |        case z :: zs => mp(zs, f(z) :: acc)
-        |    };
-        |    rev(mp(l, Nil))
-        |}
-        |
-        |pub def rev(l: List[a]): List[a] = {
-        |    def rv(xs, acc) = match xs {
-        |        case Nil     => acc
-        |        case z :: zs => rv(zs, z :: acc)
-        |    };
-        |    rv(l, Nil)
-        |}
-        |
-        |pub def range(bot: Int32, top: Int32): List[Int32] = {
-        |    def rng(i, acc) = if (i < bot) acc else rng(i - 1, i :: acc);
-        |    rng(top - 1, Nil)
-        |}
-        |
-        |pub def length(l: List[a]): Int32 = {
-        |    def len(xs, acc) = match xs {
-        |        case Nil     => acc
-        |        case _ :: zs => len(zs, acc + 1)
-        |    };
-        |    len(l, 0)
-        |}
-        |
-        |def blackhole(t: a): Unit \ IO =
-        |    Ref.fresh(Static, t); ()
-        |
-        |""".stripMargin
-    }
-
-    private def map10KLengthOptimized: String = {
-      """
-        |def main(): Unit \ IO = {
-        |    let top = 10_000 - 1;
-        |    let l1 = rng(top, Nil);
-        |    let l2 = mp(l1, Nil);
-        |    let l3 = rv(l2, Nil);
-        |    let l4 = ln(l3, 0);
-        |    blackhole(l4)
-        |}
-        |
-        |pub def mp(xs: List[Int32], acc: List[Int32]): List[Int32] = match xs {
-        |    case Nil     => acc
-        |    case z :: zs => mp(zs, z + 1 :: acc)
-        |}
-        |
-        |pub def rv(xs: List[a], acc: List[a]): List[a] = match xs {
-        |    case Nil     => acc
-        |    case z :: zs => rv(zs, z :: acc)
-        |}
-        |
-        |pub def ln(xs: List[a], acc: Int32): Int32 = match xs {
-        |    case Nil     => acc
-        |    case _ :: zs => ln(zs, acc + 1)
-        |}
-        |
-        |pub def rng(i: Int32, acc: List[Int32]): List[Int32] = if (i < 0) acc else rng(i - 1, i :: acc)
-        |
-        |def blackhole(t: a): Unit \ IO =
-        |    Ref.fresh(Static, t); ()
-        |
-        |""".stripMargin
-    }
-
-    private def filterMap10K: String = {
-      """
-        |def main(): Unit \ IO = {
-        |    let l1 = range(0, 10_000);
-        |    let l2 = filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None, l1);
-        |    blackhole(l2)
-        |}
-        |
-        |pub def filterMap(f: a -> Option[b] \ ef, l: List[a]): List[b] \ ef = {
-        |    def fmp(ll, acc) = match ll {
-        |        case Nil     => acc
-        |        case x :: xs => match f(x) {
-        |            case None    => fmp(xs, acc)
-        |            case Some(y) => fmp(xs, y :: acc)
-        |        }
-        |    };
-        |    rev(fmp(l, Nil))
-        |}
-        |
-        |pub def rev(l: List[a]): List[a] = {
-        |    def rv(xs, acc) = match xs {
-        |        case Nil     => acc
-        |        case z :: zs => rv(zs, z :: acc)
-        |    };
-        |    rv(l, Nil)
-        |}
-        |
-        |pub def range(bot: Int32, top: Int32): List[Int32] = {
-        |    def rng(i, acc) = if (i < bot) acc else rng(i - 1, i :: acc);
-        |    rng(top - 1, Nil)
-        |}
-        |
-        |def blackhole(t: a): Unit \ IO =
-        |    Ref.fresh(Static, t); ()
-        |
-        |""".stripMargin
-
-    }
-
-    private def filterMap10KOptimized: String = {
-      """
-        |def main(): Unit \ IO = {
-        |    let top = 10_000 - 1;
-        |    let l1 = rng(top, Nil);
-        |    let l2 = fmp(l1, Nil);
-        |    let l3 = rv(l2, Nil);
-        |    blackhole(l3)
-        |}
-        |
-        |pub def fmp(l: List[Int32], acc: List[Int32]): List[Int32] = match l {
-        |    case Nil     => acc
-        |    case x :: xs =>
-        |        if (Int32.remainder(x, 2) == 0)
-        |            fmp(xs, acc)
-        |        else
-        |            fmp(xs, x :: acc)
-        |}
-        |
-        |pub def rv(xs: List[a], acc: List[a]): List[a] = match xs {
-        |    case Nil     => acc
-        |    case z :: zs => rv(zs, z :: acc)
-        |}
-        |
-        |pub def rng(i: Int32, acc: List[Int32]): List[Int32] = if (i < 0) acc else rng(i - 1, i :: acc)
-        |
-        |def blackhole(t: a): Unit \ IO =
-        |    Ref.fresh(Static, t); ()
-        |
-        |""".stripMargin
-    }
-
-    private def fordFulkerson: String = {
-      """
-        |///
-        |/// The Ford-Fulkerson algorithm finds the maximum flow of a flow network.
-        |/// Here it is implemented using a combination of functional programming
-        |/// and datalog.
-        |///
-        |pub def main(): Unit \ IO =
-        |    FordFulkerson.exampleGraph01() |> FordFulkerson.maxFlow(0, 5) |> blackhole
-        |
-        |mod FordFulkerson {
-        |
-        |    use Path.{Path, Bot};
-        |
-        |    ///
-        |    /// Returns the maximum flow from `src` to `dst` in the flow network `g`.
-        |    /// N.B.: `g` is a directed graph with upper bounds / capacity on the edges.
-        |    /// No pre-assigned flow is allowed.
-        |    ///
-        |    /// The following assumptions also apply:
-        |    /// - `src` and `dst` is connected in `g`
-        |    /// - `g` contains no negative cycles
-        |    /// - `g` is labeled in ascending order from `src` to `sink`
-        |    /// - The label of `src` has the lowest value in the graph
-        |    /// - The label of `dst` has the highest value in the graph
-        |    ///
-        |    pub def maxFlow(src: t, dst: t, g: m[(t, Int32, t)]): Int32 \ Foldable.Aef[m] with Foldable[m], Order[t] =
-        |        def fordFulkerson(flowNetwork) = match augmentingPath(src, dst, flowNetwork) {
-        |            case None       => getMaxFlow(dst, flowNetwork)
-        |            case Some(path) =>
-        |                let incr = minCapacity(path, flowNetwork);
-        |                let updatedNetwork = increaseFlow(path, incr, flowNetwork);
-        |                fordFulkerson(updatedNetwork)
-        |        };
-        |        // Init with 0 flow
-        |        fordFulkerson(zeroFlow(g))
-        |
-        |    ///
-        |    /// Returns a flow network with zero flow.
-        |    ///
-        |    def zeroFlow(g: m[(t, Int32, t)]): Vector[(t, Int32, Int32, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] =
-        |        Foldable.toVector(g) |> Vector.map(match (x, y, z) -> (x, y, 0, z))
-        |
-        |    ///
-        |    /// Returns the sum of the flows on all directly ingoing edges to `dst`.
-        |    ///
-        |    def getMaxFlow(dst: t, g: m[(t, Int32, Int32, t)]): Int32 \ Foldable.Aef[m] with Foldable[m], Order[t] =
-        |        g
-        |        |> Foldable.toVector
-        |        |> Vector.filterMap(match (_, _, f, d) -> if (d == dst) Some(f) else None)
-        |        |> Vector.sum
-        |
-        |    ///
-        |    /// Returns an augmenting path if one exists.
-        |    ///
-        |    /// An edge is in an augmenting path if its flow can be increased, i.e., the flow is strictly less than the capacity,
-        |    /// or if it has non-zero flow.
-        |    ///
-        |    def augmentingPath(src: t, dst: t, g: m[(t, Int32, Int32, t)]): Option[Path[t]] \ Foldable.Aef[m] with Foldable[m], Order[t] =
-        |        let edges = inject g into Edge;
-        |        let rules = #{
-        |            Reach(x, y; init(y, x)) :- Edge(x, u, f, y),                 if (u - f) > 0. // Forward edge
-        |            Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(y, u, f, z), if (u - f) > 0. // Forward edge
-        |            Reach(x, y; init(y, x)) :- Edge(y, u, f, x),                 if f > 0.       // Back edge
-        |            Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(z, u, f, y), if f > 0.       // Back edge
-        |        };
-        |        let result = query edges, rules select fn from Reach(src, dst; fn);
-        |        Vector.head(result)
-        |
-        |    ///
-        |    /// Returns the most constraining capacity of `g` on the `Path` `p`.
-        |    ///
-        |    def minCapacity(p: Path[t], g: m[(t, Int32, Int32, t)]): Int32 \ Foldable.Aef[m] with Foldable[m], Order[t] =
-        |        let onPath = (s, d) -> isForwardEdge(s, d, p) or isBackEdge(s, d, p);
-        |        let optMin = g |> Foldable.filter(match (s, _, _, d) -> onPath(s, d))
-        |            |> List.map(match (_, u, f, _) -> u - f)
-        |            |> List.minimum;
-        |        match optMin {
-        |            case Some(u) => u
-        |            case None    => unreachable!() // This function is only called by `maxFlow` if an augmenting path was found
-        |        }
-        |
-        |    ///
-        |    /// Returns a new flow network where the edges in `g` on the `Path` `p` has been adjusted by `incr`.
-        |    ///
-        |    def increaseFlow(p: Path[t], incr: Int32, g: m[(t, Int32, Int32, t)]): Vector[(t, Int32, Int32, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] =
-        |        g
-        |        |> Foldable.toVector
-        |        |> Vector.map(match (s, u, f, d) ->
-        |            if (isForwardEdge(s, d, p))
-        |                (s, u, f + incr, d)
-        |            else if (isBackEdge(s, d, p))
-        |                (s, u, f - incr, d)
-        |            else
-        |                (s, u, f, d)
-        |        )
-        |
-        |    ///
-        |    /// Returns true if `src` is an edge pointing to `dst` on the `Path` `p`.
-        |    ///
-        |    def isForwardEdge(src: t, dst: t, p: Path[t]): Bool with Eq[t] =
-        |        match (indexOf(src, p), indexOf(dst, p)) { // A path is sorted in reverse order
-        |            case (Some(si), Some(di)) if di + 1 == si => true
-        |            case _ => false
-        |        }
-        |
-        |    ///
-        |    /// Returns true if `dst` is an edge pointing to `src` on the `Path` `p`.
-        |    ///
-        |    def isBackEdge(src: t, dst: t, p: Path[t]): Bool with Eq[t] =
-        |        match (indexOf(src, p), indexOf(dst, p)) { // A path is sorted in reverse order
-        |            case (Some(si), Some(di)) if si + 1 == di => true
-        |            case _ => false
-        |        }
-        |
-        |    pub enum Path[a] with ToString {
-        |        case Path(List[a])
-        |        case Bot // Infinitely long path
-        |    }
-        |
-        |    instance Eq[Path[a]] {
-        |        pub def eq(x: Path[a], y: Path[a]): Bool = match (x, y) {
-        |            case (Bot, Bot)           => true
-        |            case (Path(xs), Path(ys)) => List.length(xs) == List.length(ys)
-        |            case _                    => false
-        |        }
-        |    }
-        |
-        |    instance Order[Path[a]] {
-        |        pub def compare(x: Path[a], y: Path[a]): Comparison = match (x, y) {
-        |            case (Bot, Bot)           => Comparison.EqualTo
-        |            case (Bot, _)             => Comparison.LessThan
-        |            case (_, Bot)             => Comparison.GreaterThan
-        |            case (Path(xs), Path(ys)) => List.length(xs) <=> List.length(ys)
-        |        }
-        |    }
-        |
-        |    instance LowerBound[Path[a]] {
-        |        // The longest list
-        |        pub def minValue(): Path[a] = Bot
-        |    }
-        |
-        |    instance PartialOrder[Path[a]] {
-        |        pub def lessEqual(x: Path[a], y: Path[a]): Bool = match (x, y) {
-        |            case (Bot, _)             => true
-        |            case (Path(xs), Path(ys)) => List.length(xs) >= List.length(ys)
-        |            case _                    => false
-        |        }
-        |    }
-        |
-        |    instance JoinLattice[Path[a]] {
-        |        pub def leastUpperBound(x: Path[a], y: Path[a]): Path[a] = match (x, y) {
-        |            case (Bot, p)             => p
-        |            case (p, Bot)             => p
-        |            case (Path(xs), Path(ys)) => if (List.length(xs) <= List.length(ys)) x else y
-        |        }
-        |    }
-        |
-        |    instance MeetLattice[Path[a]] {
-        |        pub def greatestLowerBound(x: Path[a], y: Path[a]): Path[a] = match (x, y) {
-        |            case (Bot, _)             => Bot
-        |            case (_, Bot)             => Bot
-        |            case (Path(xs), Path(ys)) => if (List.length(xs) > List.length(ys)) x else y
-        |        }
-        |    }
-        |
-        |    ///
-        |    /// Returns a `Path` from `x` to `y`.
-        |    ///
-        |    pub def init(y: a, x: a): Path[a] =
-        |        Path(y :: x :: Nil)
-        |
-        |    ///
-        |    /// Extends the `Path` `p` with `z`.
-        |    ///
-        |    pub def cons(z: a, p: Path[a]): Path[a] = match p {
-        |        case Bot      => Bot
-        |        case Path(xs) => Path(z :: xs)
-        |    }
-        |
-        |    ///
-        |    /// Returns the index of `a` in the `Path` `p`.
-        |    /// Note that a `Path` is sorted in descending order.
-        |    ///
-        |    pub def indexOf(x: a, p: Path[a]): Option[Int32] with Eq[a] = match p {
-        |        case Bot      => None
-        |        case Path(xs) => List.indexOf(x, xs)
-        |    }
-        |
-        |    //////////////////////////////////////////
-        |    // Tests                                //
-        |    //////////////////////////////////////////
-        |
-        |    ///
-        |    /// Returns the following graph:
-        |    ///
-        |    /// ```
-        |    ///      1---2
-        |    ///     /|\  |\
-        |    ///    0 | \ | 5
-        |    ///     \|  \|/
-        |    ///      3---4
-        |    /// ```
-        |    ///
-        |    /// The edges are directed as follows (ordered from left to right, top to bottom):
-        |    ///
-        |    /// ```
-        |    /// 0 -> 1, capacity 10
-        |    /// 0 -> 3, capacity 10
-        |    /// 1 -> 3, capacity 2
-        |    /// 1 -> 2, capacity 4
-        |    /// 1 -> 4, capacity 8
-        |    /// 3 -> 4, capacity 9
-        |    /// 4 -> 2, capacity 6
-        |    /// 2 -> 5, capacity 10
-        |    /// 4 -> 5, capacity 10
-        |    /// ```
-        |    ///
-        |    /// The maximum flow is `19`.
-        |    ///
-        |    pub def exampleGraph01(): Set[(Int32, Int32, Int32)] =
-        |        Set#{ (0, 10, 1), (0, 10, 3), (1, 2, 3), (1, 4, 2), (1, 8, 4), (2, 10, 5), (3, 9, 4), (4, 6, 2), (4, 10, 5) }
-        |
-        |}
-        |
-        |def blackhole(t: a): Unit \ IO =
-        |    Ref.fresh(Static, t); ()
-        |
-        |""".stripMargin
-    }
-
-    private def parsers: String = {
-      """
-        |pub def main(): Unit \ IO = {
-        |    ArithParser.parse("1+((2/3+4*(5*(6/7)))+41)")
-        |    |> Option.map(eval)
-        |    |> blackhole
-        |}
-        |
-        |enum Exp with Eq, ToString {
-        |    case Num(Int32),
-        |    case Add(Exp, Exp),
-        |    case Sub(Exp, Exp),
-        |    case Mul(Exp, Exp),
-        |    case Div(Exp, Exp)
-        |}
-        |
-        |def eval(exp0: Exp): Int32 = match exp0 {
-        |    case Exp.Num(n)          => n
-        |    case Exp.Add(exp1, exp2) => eval(exp1) + eval(exp2)
-        |    case Exp.Sub(exp1, exp2) => eval(exp1) - eval(exp2)
-        |    case Exp.Mul(exp1, exp2) => eval(exp1) * eval(exp2)
-        |    case Exp.Div(exp1, exp2) => eval(exp1) / eval(exp2)
-        |}
-        |
-        |mod ArithParser {
-        |    use Parser.{nibble, number, literal, using, otherwise, then, thenIgnoringLeft, thenIgnoringRight};
-        |
-        |    pub def parse(s: String): Option[Exp] =
-        |        let prog = Parser.fromString(s) |> exp;
-        |        prog |> DelayList.head |> Option.map(fst)
-        |
-        |    // Each production rule ends with ... `using` func, where func is a function
-        |    // that produces the corresponding AST node.
-        |
-        |    def exp(input: Input[Char]): ParseResult[Exp, Char] = input |> (
-        |        ((term `thenIgnoringRight` literal('+') `then` term) `using` plus)  `otherwise`
-        |        ((term `thenIgnoringRight` literal('-') `then` term) `using` minus) `otherwise`
-        |        term
-        |    )
-        |
-        |    def term(input: Input[Char]): ParseResult[Exp, Char] = input |> (
-        |        ((factor `thenIgnoringRight` literal('*') `then` factor) `using` times)  `otherwise`
-        |        ((factor `thenIgnoringRight` literal('/') `then` factor) `using` divide) `otherwise`
-        |        factor
-        |    )
-        |
-        |    def factor(input: Input[Char]): ParseResult[Exp, Char] = input |> (
-        |        (nibble(number) `using` value) `otherwise`
-        |        (nibble(literal('(')) `thenIgnoringLeft` exp `thenIgnoringRight` nibble(literal(')')))
-        |    )
-        |
-        |    def value(nums: Input[Char]): Exp =
-        |        let optInt = Parser.stringify(nums) |> Int32.fromString;
-        |        match optInt {
-        |            case Some(n) => Exp.Num(n)
-        |            case None    => unreachable!()
-        |        }
-        |
-        |    def plus(exp: (Exp, Exp)): Exp = match exp {
-        |        case (left, right) => Exp.Add(left, right)
-        |    }
-        |
-        |    def minus(exp: (Exp, Exp)): Exp = match exp {
-        |        case (left, right) => Exp.Sub(left, right)
-        |    }
-        |
-        |    def times(exp: (Exp, Exp)): Exp = match exp {
-        |        case (left, right) => Exp.Mul(left, right)
-        |    }
-        |
-        |    def divide(exp: (Exp, Exp)): Exp = match exp {
-        |        case (left, right) => Exp.Div(left, right)
-        |    }
-        |}
-        |
-        |pub type alias Input[a] = DelayList[a]
-        |
-        |pub type alias ParseResult[a, b] = DelayList[(a, Input[b])]
-        |
-        |pub type alias Parser[a, b] = Input[b] -> ParseResult[a, b]
-        |
-        |mod Parser {
-        |
-        |    use DelayList.{ENil, ECons, LCons, LList};
-        |
-        |    ///
-        |    /// Returns a parser that always succeeds with value `b`
-        |    /// regardless of input.
-        |    ///
-        |    pub def succeed(a: a): Parser[a, b] =
-        |        inp -> ECons((a, inp), ENil)
-        |
-        |    ///
-        |    /// Returns a parser that always fails regardless of input.
-        |    ///
-        |    /// Equivalent to the empty string ϵ.
-        |    ///
-        |    pub def fail(_: Input[b]): ParseResult[a, b] =
-        |        ENil
-        |
-        |    ///
-        |    /// Returns a parser that succeeds with value `x`
-        |    /// if the input is non-empty and the first
-        |    /// element `x` of the input satisfies
-        |    /// the predicate `p(x)`.
-        |    ///
-        |    /// The parser fails otherwise.
-        |    ///
-        |    pub def satisfy(p: a -> Bool): Parser[a, a] =
-        |        inp -> match inp {
-        |            case ENil                 => fail(inp)
-        |            case ECons(x, xs) if p(x) => succeed(x,       xs)
-        |            case LCons(x, xs) if p(x) => succeed(x, force xs)
-        |            case LList(xs)            => LList(lazy satisfy(p, force xs))
-        |            case _                    => fail(inp)
-        |        }
-        |
-        |    ///
-        |    /// Returns a parser that succeeds with value `a`
-        |    /// if the first element of the input is equal to `a`.
-        |    ///
-        |    /// The parser fails otherwise.
-        |    ///
-        |    pub def literal(a: a): Parser[a, a] with Eq[a] =
-        |        satisfy(Eq.eq(a))
-        |
-        |    ///
-        |    /// Returns a parser that recognizes the alternation
-        |    /// of `p1` and `p2` (i.e. it recognizes both `p1` and `p2`).
-        |    ///
-        |    /// Equivalent to `p1` | `p2`.
-        |    ///
-        |    pub def otherwise(p1: Parser[a, b], p2: Parser[a, b]): Parser[a, b] =
-        |        inp -> DelayList.append(p1(inp), p2(inp))
-        |
-        |    ///
-        |    /// Returns a parser that recognizes the concatenation of
-        |    /// `p1` and `p2`.
-        |    ///
-        |    /// Equivalent to `p1p2`.
-        |    ///
-        |    pub def then(p1: Parser[a, b], p2: Parser[c, b]): Parser[(a, c), b] =
-        |        inp ->
-        |            forM (
-        |                (x1, rest1) <- p1(inp);
-        |                (x2, rest2) <- p2(rest1)
-        |            ) yield ((x1, x2), rest2)
-        |
-        |    ///
-        |    /// Returns a parser that recognizes the concatenation of
-        |    /// `p1` and `p2` but discards the result of `p1`.
-        |    ///
-        |    pub def thenIgnoringLeft(p1: Parser[a, b], p2: Parser[c, b]): Parser[c, b] =
-        |        (p1 `then` p2) `using` snd
-        |
-        |    ///
-        |    /// Returns a parser that recognizes the concatenation of
-        |    /// `p1` and `p2` but discards the result of `p2`.
-        |    ///
-        |    pub def thenIgnoringRight(p1: Parser[a, b], p2: Parser[c, b]): Parser[a, b] =
-        |        (p1 `then` p2) `using` fst
-        |
-        |    ///
-        |    /// Returns a parser that applies `f` to all recognized
-        |    /// values of `p`.
-        |    ///
-        |    /// Useful for producing AST nodes.
-        |    ///
-        |    pub def using(p: Parser[a, b], f: a -> c): Parser[c, b] =
-        |        inp ->
-        |            forM (
-        |                (x, rest) <- p(inp)
-        |            ) yield (f(x), rest)
-        |
-        |    ///
-        |    /// Returns a parser that recognizes zero or more repetitions
-        |    /// of `p`.
-        |    ///
-        |    /// Note that it always succeeds, so the result will always
-        |    /// be non-empty, but the rest of the inp may be empty as well as
-        |    /// the result.
-        |    /// I.e. both the recognized value of may be empty (but still exist) and
-        |    /// the unconsumed may be empty (but still exist).
-        |    ///
-        |    /// Equivalent to `p*`.
-        |    ///
-        |    pub def many(p: Parser[a, b]): Parser[DelayList[a], b] =
-        |        inp -> inp // Wrap in lambda so the recursive call does not immediately happen
-        |            |> (((p `then` many(p)) `using` cons) `otherwise` succeed(ENil))
-        |
-        |    ///
-        |    /// Returns a parser that recognizes one or more repetitions
-        |    /// of `p`.
-        |    ///
-        |    /// Note that unlike `many`, this parser may fail, i.e.
-        |    /// not recognize anything.
-        |    ///
-        |    /// Equivalent to `p+`.
-        |    ///
-        |    pub def some(p: Parser[a, b]): Parser[DelayList[a], b] =
-        |        (p `then` many(p)) `using` cons
-        |
-        |    ///
-        |    /// Returns a parser that recognizes numbers (consecutive integer characters).
-        |    ///
-        |    /// All possible parses of the number will be recognized.
-        |    ///
-        |    /// E.g. `123` is recognized as `123, 12, 1`.
-        |    ///
-        |    /// The longest match will be the first result.
-        |    ///
-        |    pub def number(inp: Input[Char]): ParseResult[DelayList[Char], Char] =
-        |        let digit = c -> '0' <= c and c <= '9';
-        |        inp |> some(satisfy(digit))
-        |
-        |    ///
-        |    /// Returns a parser that recognizes words
-        |    /// (consecutive non-integer, non-whitespace characters).
-        |    ///
-        |    /// All possible parses of the word will be recognized.
-        |    ///
-        |    /// E.g. `hello` is recognized as `hello, hell, hel, he, h`.
-        |    ///
-        |    /// The longest match will be the first result.
-        |    ///
-        |    pub def word(inp: Input[Char]): ParseResult[DelayList[Char], Char] =
-        |        let lowercase = c -> 'a' <= c and c <= 'z';
-        |        let uppercase = c -> 'A' <= c and c <= 'Z';
-        |        let letter = c -> lowercase(c) or uppercase(c);
-        |        inp |> some(satisfy(letter))
-        |
-        |    ///
-        |    /// Returns a parser that recognizes the sequence `lit`.
-        |    ///
-        |    /// This is generalization of `literal`.
-        |    ///
-        |    pub def literalSequence(lit: m[a]): Parser[DelayList[a], a] \ Foldable.Aef[m] with Eq[a], Foldable[m] =
-        |        literalSequenceHelper(Foldable.toList(lit))
-        |
-        |    ///
-        |    /// Helper for `literalSequence` which does not have the foldable associated effect.
-        |    ///
-        |    def literalSequenceHelper(lit: List[a]): Parser[DelayList[a], a] with Eq[a] =
-        |        inp -> inp // Wrap in lambda so the recursive call does not immediately happen
-        |            |> match lit {
-        |                case Nil     => succeed(ENil)
-        |                case x :: xs => (literal(x) `then` (literalSequenceHelper(xs))) `using` cons
-        |            }
-        |
-        |    ///
-        |    /// Returns parser that returns the the value `c` if `p` is succesful.
-        |    ///
-        |    pub def return(p: Parser[a, b], c: c): Parser[c, b] =
-        |        p `using` constant(c)
-        |
-        |    ///
-        |    /// Returns a parser that recognizes the string `s`.
-        |    ///
-        |    pub def string(s: String): Parser[DelayList[Char], Char] =
-        |        s |> (String.toList >> literalSequence)
-        |
-        |    ///
-        |    /// Returns a parser that ignores whitespace on both
-        |    /// sides of `p`.
-        |    ///
-        |    pub def nibble(p: Parser[a, Char]): Parser[a, Char] =
-        |        whitespace `thenIgnoringLeft` p `thenIgnoringRight` whitespace
-        |
-        |    ///
-        |    /// Returns a parser that recognizes whitespace.
-        |    ///
-        |    pub def whitespace(inp: Input[Char]): ParseResult[DelayList[Char], Char] =
-        |        let chars = String.toList(" \t\n");
-        |        inp |> (many(any(literal, chars)))
-        |
-        |    ///
-        |    /// Returns a parser that recognizes any of the elements in `syms`.
-        |    ///
-        |    pub def any(f: a -> Parser[b, c], syms: m[a]): Parser[b, c] \ Foldable.Aef[m] with Foldable[m] =
-        |        Foldable.foldRight(f >> otherwise, fail, syms)
-        |
-        |    ///
-        |    /// Returns the string `s` as an `Input` type.
-        |    ///
-        |    pub def fromString(s: String): Input[Char] =
-        |        String.toList(s) |> List.toDelayList
-        |
-        |    ///
-        |    /// Returns `chars` as a string.
-        |    ///
-        |    pub def stringify(chars: m[Char]): String \ Foldable.Aef[m] with Foldable[m] = region r {
-        |        let sb = StringBuilder.empty(r);
-        |        let ap = sb |> flip(StringBuilder.append);
-        |        Foldable.forEach(ap, chars);
-        |        StringBuilder.toString(sb)
-        |    }
-        |
-        |    ///
-        |    /// Returns the tuple as a list, i.e.
-        |    /// `(x, xs)` is returned as `x :: xs`.
-        |    ///
-        |    def cons(xs: (a, DelayList[a])): DelayList[a] =
-        |        ECons(fst(xs), snd(xs))
-        |
-        |}
-        |
-        |def blackhole(t: a): Unit \ IO =
-        |    Ref.fresh(Static, t); ()
-        |
-        |""".stripMargin
-    }
   }
 
   private def minutesToNanos(minutes: Long): Long = {
@@ -1170,6 +395,782 @@ object BenchmarkInliner {
 
   private def nanosToMinutes(nanos: Long): Long = {
     nanosToSeconds(nanos) / 60
+  }
+
+  private def listFilter: String = {
+    """
+      |def main(): Unit \ IO = {
+      |    List.range(0, 10_000) |> List.filter(x -> Int32.modulo(x, 2) == 0) |> blackhole
+      |}
+      |
+      |def blackhole(t: a): Unit \ IO =
+      |    Ref.fresh(Static, t); ()
+      |
+      |""".stripMargin
+  }
+
+  private def listFoldLeft: String = {
+    """
+      |def main(): Unit \ IO = {
+      |    List.range(0, 10_000) |> List.foldLeft(Add.add, 0) |> blackhole
+      |}
+      |
+      |def blackhole(t: a): Unit \ IO =
+      |    Ref.fresh(Static, t); ()
+      |
+      |""".stripMargin
+  }
+
+  private def listFoldRight: String = {
+    """
+      |def main(): Unit \ IO = {
+      |    List.range(0, 10_000) |> List.foldRight(Add.add, 0) |> blackhole
+      |}
+      |
+      |def blackhole(t: a): Unit \ IO =
+      |    Ref.fresh(Static, t); ()
+      |
+      |""".stripMargin
+  }
+
+  private def listMap: String = {
+    """
+      |def main(): Unit \ IO = {
+      |    List.range(0, 10_000) |> List.map(x -> x + 1) |> blackhole
+      |}
+      |
+      |def blackhole(t: a): Unit \ IO =
+      |    Ref.fresh(Static, t); ()
+      |
+      |""".stripMargin
+  }
+
+  private def listLength: String = {
+    """
+      |def main(): Unit \ IO = {
+      |    List.range(0, 10_000) |> List.length |> blackhole
+      |}
+      |
+      |def blackhole(t: a): Unit \ IO =
+      |    Ref.fresh(Static, t); ()
+      |
+      |""".stripMargin
+  }
+
+  private def listReverse: String = {
+    """
+      |def main(): Unit \ IO = {
+      |    List.range(0, 10_000) |> List.reverse |> blackhole
+      |}
+      |
+      |def blackhole(t: a): Unit \ IO =
+      |    Ref.fresh(Static, t); ()
+      |
+      |""".stripMargin
+  }
+
+  private def listFilterMap: String = {
+    """
+      |def main(): Unit \ IO = {
+      |    List.range(0, 10_000) |> List.filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None) |> blackhole
+      |}
+      |
+      |def blackhole(t: a): Unit \ IO =
+      |    Ref.fresh(Static, t); ()
+      |
+      |""".stripMargin
+  }
+
+  private def map10KLength: String = {
+    """
+         def main(): Unit \ IO = {
+      |    let l1 = range(0, 10_000);
+      |    let l2 = map(x -> x + 1, l1);
+      |    let l3 = length(l2);
+      |    blackhole(l3)
+      |}
+      |
+      |pub def map(f: a -> b, l: List[a]) : List[b] = {
+      |    def mp(xs, acc) = match xs {
+      |        case Nil     => acc
+      |        case z :: zs => mp(zs, f(z) :: acc)
+      |    };
+      |    rev(mp(l, Nil))
+      |}
+      |
+      |pub def rev(l: List[a]): List[a] = {
+      |    def rv(xs, acc) = match xs {
+      |        case Nil     => acc
+      |        case z :: zs => rv(zs, z :: acc)
+      |    };
+      |    rv(l, Nil)
+      |}
+      |
+      |pub def range(bot: Int32, top: Int32): List[Int32] = {
+      |    def rng(i, acc) = if (i < bot) acc else rng(i - 1, i :: acc);
+      |    rng(top - 1, Nil)
+      |}
+      |
+      |pub def length(l: List[a]): Int32 = {
+      |    def len(xs, acc) = match xs {
+      |        case Nil     => acc
+      |        case _ :: zs => len(zs, acc + 1)
+      |    };
+      |    len(l, 0)
+      |}
+      |
+      |def blackhole(t: a): Unit \ IO =
+      |    Ref.fresh(Static, t); ()
+      |
+      |""".stripMargin
+  }
+
+  private def map10KLengthOptimized: String = {
+    """
+      |def main(): Unit \ IO = {
+      |    let top = 10_000 - 1;
+      |    let l1 = rng(top, Nil);
+      |    let l2 = mp(l1, Nil);
+      |    let l3 = rv(l2, Nil);
+      |    let l4 = ln(l3, 0);
+      |    blackhole(l4)
+      |}
+      |
+      |pub def mp(xs: List[Int32], acc: List[Int32]): List[Int32] = match xs {
+      |    case Nil     => acc
+      |    case z :: zs => mp(zs, z + 1 :: acc)
+      |}
+      |
+      |pub def rv(xs: List[a], acc: List[a]): List[a] = match xs {
+      |    case Nil     => acc
+      |    case z :: zs => rv(zs, z :: acc)
+      |}
+      |
+      |pub def ln(xs: List[a], acc: Int32): Int32 = match xs {
+      |    case Nil     => acc
+      |    case _ :: zs => ln(zs, acc + 1)
+      |}
+      |
+      |pub def rng(i: Int32, acc: List[Int32]): List[Int32] = if (i < 0) acc else rng(i - 1, i :: acc)
+      |
+      |def blackhole(t: a): Unit \ IO =
+      |    Ref.fresh(Static, t); ()
+      |
+      |""".stripMargin
+  }
+
+  private def filterMap10K: String = {
+    """
+      |def main(): Unit \ IO = {
+      |    let l1 = range(0, 10_000);
+      |    let l2 = filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None, l1);
+      |    blackhole(l2)
+      |}
+      |
+      |pub def filterMap(f: a -> Option[b] \ ef, l: List[a]): List[b] \ ef = {
+      |    def fmp(ll, acc) = match ll {
+      |        case Nil     => acc
+      |        case x :: xs => match f(x) {
+      |            case None    => fmp(xs, acc)
+      |            case Some(y) => fmp(xs, y :: acc)
+      |        }
+      |    };
+      |    rev(fmp(l, Nil))
+      |}
+      |
+      |pub def rev(l: List[a]): List[a] = {
+      |    def rv(xs, acc) = match xs {
+      |        case Nil     => acc
+      |        case z :: zs => rv(zs, z :: acc)
+      |    };
+      |    rv(l, Nil)
+      |}
+      |
+      |pub def range(bot: Int32, top: Int32): List[Int32] = {
+      |    def rng(i, acc) = if (i < bot) acc else rng(i - 1, i :: acc);
+      |    rng(top - 1, Nil)
+      |}
+      |
+      |def blackhole(t: a): Unit \ IO =
+      |    Ref.fresh(Static, t); ()
+      |
+      |""".stripMargin
+
+  }
+
+  private def filterMap10KOptimized: String = {
+    """
+      |def main(): Unit \ IO = {
+      |    let top = 10_000 - 1;
+      |    let l1 = rng(top, Nil);
+      |    let l2 = fmp(l1, Nil);
+      |    let l3 = rv(l2, Nil);
+      |    blackhole(l3)
+      |}
+      |
+      |pub def fmp(l: List[Int32], acc: List[Int32]): List[Int32] = match l {
+      |    case Nil     => acc
+      |    case x :: xs =>
+      |        if (Int32.remainder(x, 2) == 0)
+      |            fmp(xs, acc)
+      |        else
+      |            fmp(xs, x :: acc)
+      |}
+      |
+      |pub def rv(xs: List[a], acc: List[a]): List[a] = match xs {
+      |    case Nil     => acc
+      |    case z :: zs => rv(zs, z :: acc)
+      |}
+      |
+      |pub def rng(i: Int32, acc: List[Int32]): List[Int32] = if (i < 0) acc else rng(i - 1, i :: acc)
+      |
+      |def blackhole(t: a): Unit \ IO =
+      |    Ref.fresh(Static, t); ()
+      |
+      |""".stripMargin
+  }
+
+  private def fordFulkerson: String = {
+    """
+      |///
+      |/// The Ford-Fulkerson algorithm finds the maximum flow of a flow network.
+      |/// Here it is implemented using a combination of functional programming
+      |/// and datalog.
+      |///
+      |pub def main(): Unit \ IO =
+      |    FordFulkerson.exampleGraph01() |> FordFulkerson.maxFlow(0, 5) |> blackhole
+      |
+      |mod FordFulkerson {
+      |
+      |    use Path.{Path, Bot};
+      |
+      |    ///
+      |    /// Returns the maximum flow from `src` to `dst` in the flow network `g`.
+      |    /// N.B.: `g` is a directed graph with upper bounds / capacity on the edges.
+      |    /// No pre-assigned flow is allowed.
+      |    ///
+      |    /// The following assumptions also apply:
+      |    /// - `src` and `dst` is connected in `g`
+      |    /// - `g` contains no negative cycles
+      |    /// - `g` is labeled in ascending order from `src` to `sink`
+      |    /// - The label of `src` has the lowest value in the graph
+      |    /// - The label of `dst` has the highest value in the graph
+      |    ///
+      |    pub def maxFlow(src: t, dst: t, g: m[(t, Int32, t)]): Int32 \ Foldable.Aef[m] with Foldable[m], Order[t] =
+      |        def fordFulkerson(flowNetwork) = match augmentingPath(src, dst, flowNetwork) {
+      |            case None       => getMaxFlow(dst, flowNetwork)
+      |            case Some(path) =>
+      |                let incr = minCapacity(path, flowNetwork);
+      |                let updatedNetwork = increaseFlow(path, incr, flowNetwork);
+      |                fordFulkerson(updatedNetwork)
+      |        };
+      |        // Init with 0 flow
+      |        fordFulkerson(zeroFlow(g))
+      |
+      |    ///
+      |    /// Returns a flow network with zero flow.
+      |    ///
+      |    def zeroFlow(g: m[(t, Int32, t)]): Vector[(t, Int32, Int32, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] =
+      |        Foldable.toVector(g) |> Vector.map(match (x, y, z) -> (x, y, 0, z))
+      |
+      |    ///
+      |    /// Returns the sum of the flows on all directly ingoing edges to `dst`.
+      |    ///
+      |    def getMaxFlow(dst: t, g: m[(t, Int32, Int32, t)]): Int32 \ Foldable.Aef[m] with Foldable[m], Order[t] =
+      |        g
+      |        |> Foldable.toVector
+      |        |> Vector.filterMap(match (_, _, f, d) -> if (d == dst) Some(f) else None)
+      |        |> Vector.sum
+      |
+      |    ///
+      |    /// Returns an augmenting path if one exists.
+      |    ///
+      |    /// An edge is in an augmenting path if its flow can be increased, i.e., the flow is strictly less than the capacity,
+      |    /// or if it has non-zero flow.
+      |    ///
+      |    def augmentingPath(src: t, dst: t, g: m[(t, Int32, Int32, t)]): Option[Path[t]] \ Foldable.Aef[m] with Foldable[m], Order[t] =
+      |        let edges = inject g into Edge;
+      |        let rules = #{
+      |            Reach(x, y; init(y, x)) :- Edge(x, u, f, y),                 if (u - f) > 0. // Forward edge
+      |            Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(y, u, f, z), if (u - f) > 0. // Forward edge
+      |            Reach(x, y; init(y, x)) :- Edge(y, u, f, x),                 if f > 0.       // Back edge
+      |            Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(z, u, f, y), if f > 0.       // Back edge
+      |        };
+      |        let result = query edges, rules select fn from Reach(src, dst; fn);
+      |        Vector.head(result)
+      |
+      |    ///
+      |    /// Returns the most constraining capacity of `g` on the `Path` `p`.
+      |    ///
+      |    def minCapacity(p: Path[t], g: m[(t, Int32, Int32, t)]): Int32 \ Foldable.Aef[m] with Foldable[m], Order[t] =
+      |        let onPath = (s, d) -> isForwardEdge(s, d, p) or isBackEdge(s, d, p);
+      |        let optMin = g |> Foldable.filter(match (s, _, _, d) -> onPath(s, d))
+      |            |> List.map(match (_, u, f, _) -> u - f)
+      |            |> List.minimum;
+      |        match optMin {
+      |            case Some(u) => u
+      |            case None    => unreachable!() // This function is only called by `maxFlow` if an augmenting path was found
+      |        }
+      |
+      |    ///
+      |    /// Returns a new flow network where the edges in `g` on the `Path` `p` has been adjusted by `incr`.
+      |    ///
+      |    def increaseFlow(p: Path[t], incr: Int32, g: m[(t, Int32, Int32, t)]): Vector[(t, Int32, Int32, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] =
+      |        g
+      |        |> Foldable.toVector
+      |        |> Vector.map(match (s, u, f, d) ->
+      |            if (isForwardEdge(s, d, p))
+      |                (s, u, f + incr, d)
+      |            else if (isBackEdge(s, d, p))
+      |                (s, u, f - incr, d)
+      |            else
+      |                (s, u, f, d)
+      |        )
+      |
+      |    ///
+      |    /// Returns true if `src` is an edge pointing to `dst` on the `Path` `p`.
+      |    ///
+      |    def isForwardEdge(src: t, dst: t, p: Path[t]): Bool with Eq[t] =
+      |        match (indexOf(src, p), indexOf(dst, p)) { // A path is sorted in reverse order
+      |            case (Some(si), Some(di)) if di + 1 == si => true
+      |            case _ => false
+      |        }
+      |
+      |    ///
+      |    /// Returns true if `dst` is an edge pointing to `src` on the `Path` `p`.
+      |    ///
+      |    def isBackEdge(src: t, dst: t, p: Path[t]): Bool with Eq[t] =
+      |        match (indexOf(src, p), indexOf(dst, p)) { // A path is sorted in reverse order
+      |            case (Some(si), Some(di)) if si + 1 == di => true
+      |            case _ => false
+      |        }
+      |
+      |    pub enum Path[a] with ToString {
+      |        case Path(List[a])
+      |        case Bot // Infinitely long path
+      |    }
+      |
+      |    instance Eq[Path[a]] {
+      |        pub def eq(x: Path[a], y: Path[a]): Bool = match (x, y) {
+      |            case (Bot, Bot)           => true
+      |            case (Path(xs), Path(ys)) => List.length(xs) == List.length(ys)
+      |            case _                    => false
+      |        }
+      |    }
+      |
+      |    instance Order[Path[a]] {
+      |        pub def compare(x: Path[a], y: Path[a]): Comparison = match (x, y) {
+      |            case (Bot, Bot)           => Comparison.EqualTo
+      |            case (Bot, _)             => Comparison.LessThan
+      |            case (_, Bot)             => Comparison.GreaterThan
+      |            case (Path(xs), Path(ys)) => List.length(xs) <=> List.length(ys)
+      |        }
+      |    }
+      |
+      |    instance LowerBound[Path[a]] {
+      |        // The longest list
+      |        pub def minValue(): Path[a] = Bot
+      |    }
+      |
+      |    instance PartialOrder[Path[a]] {
+      |        pub def lessEqual(x: Path[a], y: Path[a]): Bool = match (x, y) {
+      |            case (Bot, _)             => true
+      |            case (Path(xs), Path(ys)) => List.length(xs) >= List.length(ys)
+      |            case _                    => false
+      |        }
+      |    }
+      |
+      |    instance JoinLattice[Path[a]] {
+      |        pub def leastUpperBound(x: Path[a], y: Path[a]): Path[a] = match (x, y) {
+      |            case (Bot, p)             => p
+      |            case (p, Bot)             => p
+      |            case (Path(xs), Path(ys)) => if (List.length(xs) <= List.length(ys)) x else y
+      |        }
+      |    }
+      |
+      |    instance MeetLattice[Path[a]] {
+      |        pub def greatestLowerBound(x: Path[a], y: Path[a]): Path[a] = match (x, y) {
+      |            case (Bot, _)             => Bot
+      |            case (_, Bot)             => Bot
+      |            case (Path(xs), Path(ys)) => if (List.length(xs) > List.length(ys)) x else y
+      |        }
+      |    }
+      |
+      |    ///
+      |    /// Returns a `Path` from `x` to `y`.
+      |    ///
+      |    pub def init(y: a, x: a): Path[a] =
+      |        Path(y :: x :: Nil)
+      |
+      |    ///
+      |    /// Extends the `Path` `p` with `z`.
+      |    ///
+      |    pub def cons(z: a, p: Path[a]): Path[a] = match p {
+      |        case Bot      => Bot
+      |        case Path(xs) => Path(z :: xs)
+      |    }
+      |
+      |    ///
+      |    /// Returns the index of `a` in the `Path` `p`.
+      |    /// Note that a `Path` is sorted in descending order.
+      |    ///
+      |    pub def indexOf(x: a, p: Path[a]): Option[Int32] with Eq[a] = match p {
+      |        case Bot      => None
+      |        case Path(xs) => List.indexOf(x, xs)
+      |    }
+      |
+      |    //////////////////////////////////////////
+      |    // Tests                                //
+      |    //////////////////////////////////////////
+      |
+      |    ///
+      |    /// Returns the following graph:
+      |    ///
+      |    /// ```
+      |    ///      1---2
+      |    ///     /|\  |\
+      |    ///    0 | \ | 5
+      |    ///     \|  \|/
+      |    ///      3---4
+      |    /// ```
+      |    ///
+      |    /// The edges are directed as follows (ordered from left to right, top to bottom):
+      |    ///
+      |    /// ```
+      |    /// 0 -> 1, capacity 10
+      |    /// 0 -> 3, capacity 10
+      |    /// 1 -> 3, capacity 2
+      |    /// 1 -> 2, capacity 4
+      |    /// 1 -> 4, capacity 8
+      |    /// 3 -> 4, capacity 9
+      |    /// 4 -> 2, capacity 6
+      |    /// 2 -> 5, capacity 10
+      |    /// 4 -> 5, capacity 10
+      |    /// ```
+      |    ///
+      |    /// The maximum flow is `19`.
+      |    ///
+      |    pub def exampleGraph01(): Set[(Int32, Int32, Int32)] =
+      |        Set#{ (0, 10, 1), (0, 10, 3), (1, 2, 3), (1, 4, 2), (1, 8, 4), (2, 10, 5), (3, 9, 4), (4, 6, 2), (4, 10, 5) }
+      |
+      |}
+      |
+      |def blackhole(t: a): Unit \ IO =
+      |    Ref.fresh(Static, t); ()
+      |
+      |""".stripMargin
+  }
+
+  private def parsers: String = {
+    """
+      |pub def main(): Unit \ IO = {
+      |    ArithParser.parse("1+((2/3+4*(5*(6/7)))+41)")
+      |    |> Option.map(eval)
+      |    |> blackhole
+      |}
+      |
+      |enum Exp with Eq, ToString {
+      |    case Num(Int32),
+      |    case Add(Exp, Exp),
+      |    case Sub(Exp, Exp),
+      |    case Mul(Exp, Exp),
+      |    case Div(Exp, Exp)
+      |}
+      |
+      |def eval(exp0: Exp): Int32 = match exp0 {
+      |    case Exp.Num(n)          => n
+      |    case Exp.Add(exp1, exp2) => eval(exp1) + eval(exp2)
+      |    case Exp.Sub(exp1, exp2) => eval(exp1) - eval(exp2)
+      |    case Exp.Mul(exp1, exp2) => eval(exp1) * eval(exp2)
+      |    case Exp.Div(exp1, exp2) => eval(exp1) / eval(exp2)
+      |}
+      |
+      |mod ArithParser {
+      |    use Parser.{nibble, number, literal, using, otherwise, then, thenIgnoringLeft, thenIgnoringRight};
+      |
+      |    pub def parse(s: String): Option[Exp] =
+      |        let prog = Parser.fromString(s) |> exp;
+      |        prog |> DelayList.head |> Option.map(fst)
+      |
+      |    // Each production rule ends with ... `using` func, where func is a function
+      |    // that produces the corresponding AST node.
+      |
+      |    def exp(input: Input[Char]): ParseResult[Exp, Char] = input |> (
+      |        ((term `thenIgnoringRight` literal('+') `then` term) `using` plus)  `otherwise`
+      |        ((term `thenIgnoringRight` literal('-') `then` term) `using` minus) `otherwise`
+      |        term
+      |    )
+      |
+      |    def term(input: Input[Char]): ParseResult[Exp, Char] = input |> (
+      |        ((factor `thenIgnoringRight` literal('*') `then` factor) `using` times)  `otherwise`
+      |        ((factor `thenIgnoringRight` literal('/') `then` factor) `using` divide) `otherwise`
+      |        factor
+      |    )
+      |
+      |    def factor(input: Input[Char]): ParseResult[Exp, Char] = input |> (
+      |        (nibble(number) `using` value) `otherwise`
+      |        (nibble(literal('(')) `thenIgnoringLeft` exp `thenIgnoringRight` nibble(literal(')')))
+      |    )
+      |
+      |    def value(nums: Input[Char]): Exp =
+      |        let optInt = Parser.stringify(nums) |> Int32.fromString;
+      |        match optInt {
+      |            case Some(n) => Exp.Num(n)
+      |            case None    => unreachable!()
+      |        }
+      |
+      |    def plus(exp: (Exp, Exp)): Exp = match exp {
+      |        case (left, right) => Exp.Add(left, right)
+      |    }
+      |
+      |    def minus(exp: (Exp, Exp)): Exp = match exp {
+      |        case (left, right) => Exp.Sub(left, right)
+      |    }
+      |
+      |    def times(exp: (Exp, Exp)): Exp = match exp {
+      |        case (left, right) => Exp.Mul(left, right)
+      |    }
+      |
+      |    def divide(exp: (Exp, Exp)): Exp = match exp {
+      |        case (left, right) => Exp.Div(left, right)
+      |    }
+      |}
+      |
+      |pub type alias Input[a] = DelayList[a]
+      |
+      |pub type alias ParseResult[a, b] = DelayList[(a, Input[b])]
+      |
+      |pub type alias Parser[a, b] = Input[b] -> ParseResult[a, b]
+      |
+      |mod Parser {
+      |
+      |    use DelayList.{ENil, ECons, LCons, LList};
+      |
+      |    ///
+      |    /// Returns a parser that always succeeds with value `b`
+      |    /// regardless of input.
+      |    ///
+      |    pub def succeed(a: a): Parser[a, b] =
+      |        inp -> ECons((a, inp), ENil)
+      |
+      |    ///
+      |    /// Returns a parser that always fails regardless of input.
+      |    ///
+      |    /// Equivalent to the empty string ϵ.
+      |    ///
+      |    pub def fail(_: Input[b]): ParseResult[a, b] =
+      |        ENil
+      |
+      |    ///
+      |    /// Returns a parser that succeeds with value `x`
+      |    /// if the input is non-empty and the first
+      |    /// element `x` of the input satisfies
+      |    /// the predicate `p(x)`.
+      |    ///
+      |    /// The parser fails otherwise.
+      |    ///
+      |    pub def satisfy(p: a -> Bool): Parser[a, a] =
+      |        inp -> match inp {
+      |            case ENil                 => fail(inp)
+      |            case ECons(x, xs) if p(x) => succeed(x,       xs)
+      |            case LCons(x, xs) if p(x) => succeed(x, force xs)
+      |            case LList(xs)            => LList(lazy satisfy(p, force xs))
+      |            case _                    => fail(inp)
+      |        }
+      |
+      |    ///
+      |    /// Returns a parser that succeeds with value `a`
+      |    /// if the first element of the input is equal to `a`.
+      |    ///
+      |    /// The parser fails otherwise.
+      |    ///
+      |    pub def literal(a: a): Parser[a, a] with Eq[a] =
+      |        satisfy(Eq.eq(a))
+      |
+      |    ///
+      |    /// Returns a parser that recognizes the alternation
+      |    /// of `p1` and `p2` (i.e. it recognizes both `p1` and `p2`).
+      |    ///
+      |    /// Equivalent to `p1` | `p2`.
+      |    ///
+      |    pub def otherwise(p1: Parser[a, b], p2: Parser[a, b]): Parser[a, b] =
+      |        inp -> DelayList.append(p1(inp), p2(inp))
+      |
+      |    ///
+      |    /// Returns a parser that recognizes the concatenation of
+      |    /// `p1` and `p2`.
+      |    ///
+      |    /// Equivalent to `p1p2`.
+      |    ///
+      |    pub def then(p1: Parser[a, b], p2: Parser[c, b]): Parser[(a, c), b] =
+      |        inp ->
+      |            forM (
+      |                (x1, rest1) <- p1(inp);
+      |                (x2, rest2) <- p2(rest1)
+      |            ) yield ((x1, x2), rest2)
+      |
+      |    ///
+      |    /// Returns a parser that recognizes the concatenation of
+      |    /// `p1` and `p2` but discards the result of `p1`.
+      |    ///
+      |    pub def thenIgnoringLeft(p1: Parser[a, b], p2: Parser[c, b]): Parser[c, b] =
+      |        (p1 `then` p2) `using` snd
+      |
+      |    ///
+      |    /// Returns a parser that recognizes the concatenation of
+      |    /// `p1` and `p2` but discards the result of `p2`.
+      |    ///
+      |    pub def thenIgnoringRight(p1: Parser[a, b], p2: Parser[c, b]): Parser[a, b] =
+      |        (p1 `then` p2) `using` fst
+      |
+      |    ///
+      |    /// Returns a parser that applies `f` to all recognized
+      |    /// values of `p`.
+      |    ///
+      |    /// Useful for producing AST nodes.
+      |    ///
+      |    pub def using(p: Parser[a, b], f: a -> c): Parser[c, b] =
+      |        inp ->
+      |            forM (
+      |                (x, rest) <- p(inp)
+      |            ) yield (f(x), rest)
+      |
+      |    ///
+      |    /// Returns a parser that recognizes zero or more repetitions
+      |    /// of `p`.
+      |    ///
+      |    /// Note that it always succeeds, so the result will always
+      |    /// be non-empty, but the rest of the inp may be empty as well as
+      |    /// the result.
+      |    /// I.e. both the recognized value of may be empty (but still exist) and
+      |    /// the unconsumed may be empty (but still exist).
+      |    ///
+      |    /// Equivalent to `p*`.
+      |    ///
+      |    pub def many(p: Parser[a, b]): Parser[DelayList[a], b] =
+      |        inp -> inp // Wrap in lambda so the recursive call does not immediately happen
+      |            |> (((p `then` many(p)) `using` cons) `otherwise` succeed(ENil))
+      |
+      |    ///
+      |    /// Returns a parser that recognizes one or more repetitions
+      |    /// of `p`.
+      |    ///
+      |    /// Note that unlike `many`, this parser may fail, i.e.
+      |    /// not recognize anything.
+      |    ///
+      |    /// Equivalent to `p+`.
+      |    ///
+      |    pub def some(p: Parser[a, b]): Parser[DelayList[a], b] =
+      |        (p `then` many(p)) `using` cons
+      |
+      |    ///
+      |    /// Returns a parser that recognizes numbers (consecutive integer characters).
+      |    ///
+      |    /// All possible parses of the number will be recognized.
+      |    ///
+      |    /// E.g. `123` is recognized as `123, 12, 1`.
+      |    ///
+      |    /// The longest match will be the first result.
+      |    ///
+      |    pub def number(inp: Input[Char]): ParseResult[DelayList[Char], Char] =
+      |        let digit = c -> '0' <= c and c <= '9';
+      |        inp |> some(satisfy(digit))
+      |
+      |    ///
+      |    /// Returns a parser that recognizes words
+      |    /// (consecutive non-integer, non-whitespace characters).
+      |    ///
+      |    /// All possible parses of the word will be recognized.
+      |    ///
+      |    /// E.g. `hello` is recognized as `hello, hell, hel, he, h`.
+      |    ///
+      |    /// The longest match will be the first result.
+      |    ///
+      |    pub def word(inp: Input[Char]): ParseResult[DelayList[Char], Char] =
+      |        let lowercase = c -> 'a' <= c and c <= 'z';
+      |        let uppercase = c -> 'A' <= c and c <= 'Z';
+      |        let letter = c -> lowercase(c) or uppercase(c);
+      |        inp |> some(satisfy(letter))
+      |
+      |    ///
+      |    /// Returns a parser that recognizes the sequence `lit`.
+      |    ///
+      |    /// This is generalization of `literal`.
+      |    ///
+      |    pub def literalSequence(lit: m[a]): Parser[DelayList[a], a] \ Foldable.Aef[m] with Eq[a], Foldable[m] =
+      |        literalSequenceHelper(Foldable.toList(lit))
+      |
+      |    ///
+      |    /// Helper for `literalSequence` which does not have the foldable associated effect.
+      |    ///
+      |    def literalSequenceHelper(lit: List[a]): Parser[DelayList[a], a] with Eq[a] =
+      |        inp -> inp // Wrap in lambda so the recursive call does not immediately happen
+      |            |> match lit {
+      |                case Nil     => succeed(ENil)
+      |                case x :: xs => (literal(x) `then` (literalSequenceHelper(xs))) `using` cons
+      |            }
+      |
+      |    ///
+      |    /// Returns parser that returns the the value `c` if `p` is succesful.
+      |    ///
+      |    pub def return(p: Parser[a, b], c: c): Parser[c, b] =
+      |        p `using` constant(c)
+      |
+      |    ///
+      |    /// Returns a parser that recognizes the string `s`.
+      |    ///
+      |    pub def string(s: String): Parser[DelayList[Char], Char] =
+      |        s |> (String.toList >> literalSequence)
+      |
+      |    ///
+      |    /// Returns a parser that ignores whitespace on both
+      |    /// sides of `p`.
+      |    ///
+      |    pub def nibble(p: Parser[a, Char]): Parser[a, Char] =
+      |        whitespace `thenIgnoringLeft` p `thenIgnoringRight` whitespace
+      |
+      |    ///
+      |    /// Returns a parser that recognizes whitespace.
+      |    ///
+      |    pub def whitespace(inp: Input[Char]): ParseResult[DelayList[Char], Char] =
+      |        let chars = String.toList(" \t\n");
+      |        inp |> (many(any(literal, chars)))
+      |
+      |    ///
+      |    /// Returns a parser that recognizes any of the elements in `syms`.
+      |    ///
+      |    pub def any(f: a -> Parser[b, c], syms: m[a]): Parser[b, c] \ Foldable.Aef[m] with Foldable[m] =
+      |        Foldable.foldRight(f >> otherwise, fail, syms)
+      |
+      |    ///
+      |    /// Returns the string `s` as an `Input` type.
+      |    ///
+      |    pub def fromString(s: String): Input[Char] =
+      |        String.toList(s) |> List.toDelayList
+      |
+      |    ///
+      |    /// Returns `chars` as a string.
+      |    ///
+      |    pub def stringify(chars: m[Char]): String \ Foldable.Aef[m] with Foldable[m] = region r {
+      |        let sb = StringBuilder.empty(r);
+      |        let ap = sb |> flip(StringBuilder.append);
+      |        Foldable.forEach(ap, chars);
+      |        StringBuilder.toString(sb)
+      |    }
+      |
+      |    ///
+      |    /// Returns the tuple as a list, i.e.
+      |    /// `(x, xs)` is returned as `x :: xs`.
+      |    ///
+      |    def cons(xs: (a, DelayList[a])): DelayList[a] =
+      |        ECons(fst(xs), snd(xs))
+      |
+      |}
+      |
+      |def blackhole(t: a): Unit \ IO =
+      |    Ref.fresh(Static, t); ()
+      |
+      |""".stripMargin
   }
 
   private def Python: String =
