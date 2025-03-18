@@ -109,11 +109,11 @@ sealed trait Completion {
         additionalTextEdits = List(Completion.mkTextEdit(ap, s"import $path"))
       )
 
-    case Completion.SnippetCompletion(name, snippet, documentation) =>
+    case Completion.SnippetCompletion(name, snippet, documentation, range) =>
       CompletionItem(
         label            = name,
         sortText         = Priority.toSortText(Priority.High, name),
-        textEdit         = TextEdit(context.range, snippet),
+        textEdit         = TextEdit(range, snippet),
         documentation    = Some(documentation),
         insertTextFormat = InsertTextFormat.Snippet,
         kind             = CompletionItemKind.Snippet
@@ -613,8 +613,9 @@ object Completion {
     * @param name          the name of the snippet.
     * @param snippet       the snippet for TextEdit.
     * @param documentation a human-readable string that represents a doc-comment.
+    * @param range         the range of the completion.
     */
-  case class SnippetCompletion(name: String, snippet: String, documentation: String) extends Completion
+  case class SnippetCompletion(name: String, snippet: String, documentation: String, range: Range) extends Completion
 
   /**
     * Represents a Snippet completion
