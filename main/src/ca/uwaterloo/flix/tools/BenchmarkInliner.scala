@@ -46,6 +46,10 @@ object BenchmarkInliner {
 
   private val MaxInliningRounds: Int = 5
 
+  private val WarmupTime: Int = 5
+
+  private val BenchmarkingTime: Int = 5
+
   private val Python: String =
     """
       |# $ pip install matplotlib numpy
@@ -423,14 +427,12 @@ object BenchmarkInliner {
     def run(opts: Options): JsonAST.JObject = {
       implicit val warmup: Boolean = false
 
-      val warmupTime = 0
-      debug(s"Warming up for $warmupTime minutes...")
-      benchmarkWithGlobalMaxTime(opts, minutesToNanos(warmupTime))(warmup = true)
+      debug(s"Warming up for $WarmupTime minutes...")
+      benchmarkWithGlobalMaxTime(opts, minutesToNanos(WarmupTime))(warmup = true)
 
       debug(s"Running up to $MaxInliningRounds inlining rounds, timing $NumberOfRuns runs of each program (total of ${programs.size} programs)")
-      val benchmarkingTime = 1
-      debug(s"Max individual time is $benchmarkingTime minutes. It should take ${benchmarkingTime * 2 * programs.size} minutes")
-      val programExperiments = benchmarkWithIndividualMaxTime(opts, minutesToNanos(benchmarkingTime))
+      debug(s"Max individual time is $BenchmarkingTime minutes. It should take ${BenchmarkingTime * 2 * programs.size} minutes")
+      val programExperiments = benchmarkWithIndividualMaxTime(opts, minutesToNanos(BenchmarkingTime))
 
       val runningTimeStats = programExperiments.m.map {
         case (name, runs) => name -> stats(runs.map(_.runningTime))
