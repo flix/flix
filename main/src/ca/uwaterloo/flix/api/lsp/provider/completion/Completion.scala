@@ -346,16 +346,13 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.OpCompletion(op, namespace, range, ap, qualified, inScope, isHandler) =>
+    case Completion.OpCompletion(op, namespace, range, ap, qualified, inScope) =>
       val qualifiedName =  if (namespace.nonEmpty)
         s"$namespace.${op.sym.name}"
       else
         op.sym.toString
       val name = if (qualified) qualifiedName else op.sym.name
-      val snippet = if (isHandler)
-          CompletionUtils.getOpHandlerSnippet(name, op.spec.fparams)(context)
-        else
-          CompletionUtils.getApplySnippet(name, op.spec.fparams)(context)
+      val snippet = CompletionUtils.getApplySnippet(name, op.spec.fparams)(context)
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
@@ -372,6 +369,22 @@ sealed trait Completion {
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Function,
         additionalTextEdits = additionalTextEdit
+      )
+
+    case Completion.OpHandlerCompletion(op, range) =>
+      val name = op.sym.name
+      val snippet = CompletionUtils.getOpHandlerSnippet(name, op.spec.fparams)(context)
+      val description = Some(name)
+      val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(op.spec)(flix)), description)
+      CompletionItem(
+        label               = name,
+        labelDetails        = Some(labelDetails),
+        sortText            = Priority.toSortText(Priority.High, name),
+        textEdit            = TextEdit(range, snippet),
+        detail              = Some(FormatScheme.formatScheme(op.spec.declaredScheme)(flix)),
+        documentation       = Some(op.spec.doc.text),
+        insertTextFormat    = InsertTextFormat.Snippet,
+        kind                = CompletionItemKind.Function,
       )
 
     case Completion.SigCompletion(sig, namespace, ap, qualified, inScope) =>
@@ -752,9 +765,16 @@ object Completion {
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the op is inScope.
-    * @param isHandler  indicate whether the completion is in a handler.
     */
-  case class OpCompletion(op: TypedAst.Op, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, isHandler: Boolean) extends Completion
+  case class OpCompletion(op: TypedAst.Op, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+
+  /**
+    * Represents an Op Handler completion
+    *
+    * @param op         the op.
+    * @param range      the range of the completion.
+    */
+  case class OpHandlerCompletion(op: TypedAst.Op,  range: Range) extends Completion
 
   /**
     * Represents a Signature completion

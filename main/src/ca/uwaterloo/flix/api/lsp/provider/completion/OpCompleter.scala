@@ -24,19 +24,6 @@ import ca.uwaterloo.flix.language.ast.{Name, Symbol, TypedAst}
 
 object OpCompleter {
   /**
-    * Returns a List of Completion for Op for UndefinedType.
-    */
-  def getCompletionsInHandler(qn: Name.QName, range: Range, ap: AnchorPosition)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
-    val effSym = Symbol.mkEffectSym(qn.namespace.toString)
-    root.effects.get(effSym).toList.flatMap (eff =>
-      eff.ops.collect {
-        case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false) =>
-          OpCompletion(op, "", range, ap, qualified = false, inScope = true, isHandler = true)
-      }
-    )
-  }
-
-  /**
     * Returns a List of Completion for Op for UndefinedName.
     */
   def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, env: LocalScope)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
@@ -46,7 +33,7 @@ object OpCompleter {
       root.effects.values.flatMap(eff =>
         eff.ops.collect {
           case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false) =>
-            OpCompletion(op, "", range, ap, qualified = false, inScope(op, env), isHandler = false)
+            OpCompletion(op, "", range, ap, qualified = false, inScope(op, env))
         }
       )
     }
@@ -62,7 +49,7 @@ object OpCompleter {
     root.effects.get(effSym).toList.flatMap(eff =>
       eff.ops.collect {
         case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false) =>
-          OpCompletion(op, "", range, ap, qualified = true, inScope = true, isHandler = false)
+          OpCompletion(op, "", range, ap, qualified = true, inScope = true)
       }
     )
   }
@@ -87,7 +74,7 @@ object OpCompleter {
       eff <- root.effects.get(Symbol.mkEffectSym(fullyQualifiedEffect)).toList
       op <- eff.ops
       if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false)
-    } yield OpCompletion(op, qn.namespace.toString, range, ap, qualified = true, inScope = true, isHandler = false)
+    } yield OpCompletion(op, qn.namespace.toString, range, ap, qualified = true, inScope = true)
   }
 
   private def inScope(op: TypedAst.Op, scope: LocalScope): Boolean = {
