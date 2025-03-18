@@ -240,7 +240,7 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.TraitCompletion(trt, ap, qualified, inScope, withTypeParameter) =>
+    case Completion.TraitCompletion(trt, range, ap, qualified, inScope, withTypeParameter) =>
       val qualifiedName = trt.sym.toString
       val name = if (qualified) qualifiedName else trt.sym.name
       val description = if(!qualified) {
@@ -255,14 +255,14 @@ sealed trait Completion {
         label               = label,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, snippet),
+        textEdit            = TextEdit(range, snippet),
         documentation       = Some(trt.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Interface,
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.InstanceCompletion(trt, ap, qualified, inScope) =>
+    case Completion.InstanceCompletion(trt, range, ap, qualified, inScope) =>
       val qualifiedName = trt.sym.toString
       val name = if (qualified) qualifiedName else trt.sym.name
       val label = name + CompletionUtils.formatTParams(List(trt.tparam))
@@ -277,7 +277,7 @@ sealed trait Completion {
         label               = label,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, snippet),
+        textEdit            = TextEdit(range, snippet),
         documentation       = Some(trt.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Interface,
@@ -708,22 +708,24 @@ object Completion {
     * Represents a trait completion
     *
     * @param trt                trait construct.
+    * @param range              the range of the completion.
     * @param ap                 the anchor position for the use statement.
     * @param qualified          indicate whether to use a qualified label.
     * @param inScope            indicate whether to the trait is inScope.
     * @param withTypeParameter  indicate whether to include the type parameter in the completion.
     */
-  case class TraitCompletion(trt: TypedAst.Trait, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, withTypeParameter: Boolean) extends Completion
+  case class TraitCompletion(trt: TypedAst.Trait, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, withTypeParameter: Boolean) extends Completion
 
   /**
     * Represents a trait completion
     *
     * @param trt            trait construct.
+    * @param range          the range of the completion.
     * @param ap             the anchor position for the use statement.
     * @param qualified      indicate whether to use a qualified label.
     * @param inScope        indicate whether to the trait is inScope.
     */
-  case class InstanceCompletion(trt: TypedAst.Trait, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class InstanceCompletion(trt: TypedAst.Trait, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents an Effect completion
