@@ -49,7 +49,7 @@ object BenchmarkInliner {
     */
   private val Verbose: Boolean = true
 
-  private val WarmupTime: Int = 0
+  private val WarmupTime: Int = 5
 
   private val MicroBenchmarks: Map[String, String] = Map(
     "map10KLength" -> map10KLength,
