@@ -212,6 +212,7 @@ sealed trait Completion {
         sortText            = Priority.toSortText(priority, qualifiedName),
         filterText          = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
         textEdit            = TextEdit(range, snippet),
+        insertTextFormat    = InsertTextFormat.Snippet,
         documentation       = Some(enm.doc.text),
         kind                = CompletionItemKind.Enum,
         additionalTextEdits = additionalTextEdit
@@ -404,6 +405,8 @@ sealed trait Completion {
       else
         tag.sym.toString
       val name = if (qualified) qualifiedName else tag.sym.name
+      val snippet = name + CompletionUtils.formatTypesSnippet(tag.tpes)
+      val label = name + CompletionUtils.formatTypes(tag.tpes)
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
@@ -411,10 +414,11 @@ sealed trait Completion {
       val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
       val priority: Priority = if (inScope) Priority.High else Priority.Lower
       CompletionItem(
-        label               = name,
+        label               = label,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, name),
+        textEdit            = TextEdit(context.range, snippet),
+        insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.EnumMember,
         additionalTextEdits = additionalTextEdit
       )
