@@ -412,7 +412,7 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.EnumTagCompletion(tag, namespace, ap, qualified, inScope) =>
+    case Completion.EnumTagCompletion(tag, namespace, range, ap, qualified, inScope) =>
       val qualifiedName = if (namespace.nonEmpty)
         s"$namespace.${tag.sym.name}"
       else
@@ -430,7 +430,7 @@ sealed trait Completion {
         label               = label,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, snippet),
+        textEdit            = TextEdit(range, snippet),
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.EnumMember,
         additionalTextEdits = additionalTextEdit
@@ -791,11 +791,12 @@ object Completion {
     *
     * @param tag        the tag.
     * @param namespace  the namespace of the tag, if not provided, we use the fully qualified name.
+    * @param range      the range of the completion.
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the signature is inScope.
     */
-  case class EnumTagCompletion(tag: TypedAst.Case, namespace: String, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class EnumTagCompletion(tag: TypedAst.Case, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents a Module completion
