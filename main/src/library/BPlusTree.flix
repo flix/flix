@@ -452,29 +452,21 @@ mod BPlusTree {
         /// Returns `true` if the mapping `key` is contained in the leaf `node`.
         ///
         pub def leafContains(key: k, node: Node[k, v, r]): Bool \ r with Order[k] =
-            match node->isLeaf {
-                case true =>
-                    let index = binarySearch(key, node->size, node->keys);
-                    if (index < 0)
-                        false
-                    else
-                        true
-                case false => bug!("The contains method on nodes should only be used on leaves")
-            }
+            let index = binarySearch(key, node->size, node->keys);
+            if (index < 0)
+                false
+            else
+                true
 
         ///
         /// Returns `true` if the mapping `(key, val)` is contained in the leaf `node`.
         ///
         pub def leafContainsPair(key: k, val: v, node: Node[k, v, r]): Bool \ r with Order[k], Eq[v] =
-            match node->isLeaf {
-                case true =>
-                    let index1 = binarySearch(key, node->size, node->keys);
-                    if (index1 < 0)
-                        false
-                    else
-                        Array.get(index1, node->values) == val
-                case false => bug!("The contains method on nodes should only be used on leaves")
-            }
+            let index1 = binarySearch(key, node->size, node->keys);
+            if (index1 < 0)
+                false
+            else
+                Array.get(index1, node->values) == val
 
         ///
         /// Internal method to insert `key` and `val` in `node` at `insertionPoint`.
@@ -611,7 +603,7 @@ mod BPlusTree {
         ///
         /// Lock invariants:
         ///
-        /// - On invocation, the thread has a lock on `parent`.
+        /// - On invocation, the thread has a lock on `leftNode`.
         ///
         /// - On return, the thread only holds a lock if the return value is Some. In
         /// that case it holds a lock on the new root and the old root.
