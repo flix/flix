@@ -429,9 +429,9 @@ object BenchmarkInliner {
       benchmarkWithGlobalMaxTime(opts, minutesToNanos(warmupTime))(warmup = true)
 
       debug(s"Running up to $MaxInliningRounds inlining rounds, drawing $NumberOfSamples samples of timing $NumberOfRuns runs of each program (total of ${programs.size} programs)")
-      val fiveMinutes = 5
-      debug(s"Max time is $fiveMinutes minutes")
-      val programExperiments = benchmarkWithIndividualMaxTime(opts, minutesToNanos(fiveMinutes))
+      val benchmarkingTime = 5
+      debug(s"Max individual time is $benchmarkingTime minutes. It should take ${benchmarkingTime * 2 * programs.size} minutes")
+      val programExperiments = benchmarkWithIndividualMaxTime(opts, minutesToNanos(benchmarkingTime))
 
       val runningTimeStats = programExperiments.m.map {
         case (name, runs) => name -> stats(runs.map(_.runningTime))
