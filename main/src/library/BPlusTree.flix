@@ -1,39 +1,35 @@
 ///
-/// An immutable concurrent B+ Tree implementation with keys of type
-/// `k` and values of type `v`.
+/// A mutable concurrent B+ Tree implementation with keys of type `k` and values of type `v`.
 ///
-/// A B+ Tree is an m-ary self-balancing search tree where each node
-/// is either an internal node or a leaf node. In contrast to binary
-/// search trees, a B+ Tree of order `m` allows for nodes with at most
-/// `m` children and `m-1` keys. A B+ Tree maintains the sorted order
-/// of its keys by storing only keys in internal nodes and additionally
-/// values in leaf nodes. This implementation varies from the standard
-/// definition by also linking internal nodes. This is due to a use-case
-/// within Flix.
+/// A B+ Tree is an m-ary self-balancing search tree where each node is either an internal
+/// node or a leaf node. In contrast to binary search trees, a B+ Tree of order `m` only
+/// allows nodes with at most `m` children and `m-1` keys. A B+ Tree maintains the sorted
+/// order of its keys by only storing keys in internal nodes and values in leaf nodes.
 ///
 /// See below for more details:
+///
 /// - The Ubiquitous B-Tree (1979) by Douglas Comer
 ///   (https://dl.acm.org/doi/10.1145/356770.356776)
 ///
-///
 /// A BPlusTree satisfies the following.
 ///
-/// `root` is the root node of the tree, which upon creation of the
-/// tree is a leaf node. Through insertion into the tree, a new node may
-/// be created and propogated up to become the new root of the tree.
+/// `root` is the root node of the tree, which upon creation of the tree is a leaf node.
+/// Through insertion into the tree, a new node may be created and propagated up to become
+/// the new root of the tree.
 ///
-/// `order` is the order of the tree which determines the maximum
-/// number of children a node may have.
+/// `order` is the order of the tree which determines the maximum number of children a
+/// node may have. The order must be at least 3.
 ///
-/// `rootLock` is a lock on the `root` node which a thread must first
-/// acquire in order to insert into the tree. As the thread descends into
-/// the tree, `rootLock` is released to allow for other threads to insert.
+/// `rootLock` is a lock on the `root` pointer, which a thread must first acquire before
+/// accessing the root node. It must also be acquired before changing `root`. The node
+/// `root` has a separate lock concerning the contents of the node. The lock of `root`
+/// must first be acquired after successfully acquiring `rootLock`.
 ///
-/// `rc` is the region for the tree which is required for a mutable object.
+/// `rc` is the region for the tree.
 ///
 pub struct BPlusTree[k, v, r] {
     mut root: BPlusTree.Node[k, v, r],
-    order:    Int32, // The maximum number of children a node can have
+    order:    Int32,
     rootLock: BPlusTree.Lock[r],
     rc:       Region[r]
 }
@@ -42,9 +38,13 @@ mod BPlusTree {
     import java.util.concurrent.locks.{ReentrantLock => JReentrantLock}
 
     ///
-    /// The purpose of Lock is to provide a thin wrapper around Java's ReentrantLock without the IO effect
-    /// Only one thread can hold a lock at any given time, but calling lock on the same lock multiple times
-    /// only means that the holder must call unlock the same number of times before other threads can acquire the lock
+    /// The purpose of Lock is to provide a thin wrapper around Java's ReentrantLock
+    /// without the IO effect. Only one thread can hold a lock at any given time, but
+    /// calling lock on the same lock multiple times only means that the holder must call
+    /// unlock the same number of times before other threads can acquire the lock. Only
+    /// annotating a region effect to ReentrantLock is safe, since it can only
+    /// non-deterministically block a thread for some (potentially infinite) amount of
+    /// time. This is allowed under non-effectful behavior.
     ///
     @Internal
     pub enum Lock[_: Region](JReentrantLock)
@@ -53,8 +53,8 @@ mod BPlusTree {
         import java.util.concurrent.locks.{ReentrantLock => JReentrantLock}
         use BPlusTree.Lock
 
-        /// Unchecked casts are here used to remove the IO effect. It is replaced
-        /// with an effect to a region to ensure that the code is not optimized away.
+        /// Unchecked casts are here used to remove the IO effect. It is replaced with an
+        /// effect to a region to ensure that the code is not optimized away.
 
         ///
         /// Returns a fresh lock.
@@ -99,10 +99,9 @@ mod BPlusTree {
     /// Thread-safe.
     ///
     pub def containsPair(key: k, val: v, tree: BPlusTree[k, v, r]): Bool \ r with Order[k], Eq[v] =
-        let getRoot = () -> root(tree);
-        let leaf = Node.findLeaf(key, getRoot);
+        let leaf = BPlusTree.findLeaf(key, tree);
         let res = Node.leafContainsPair(key, val, leaf);
-        Lock.unlock(Node.lock(leaf));
+        Lock.unlock(Node.getLock(leaf));
         res
 
     ///
@@ -110,77 +109,73 @@ mod BPlusTree {
     ///
     /// Not thread-safe.
     ///
-    pub def containsPairUnsafe(key: k, val: v, tree: BPlusTree[k, v, r]): Bool \ r with Order[k], Eq[v] =
-        let leaf = Node.findLeafUnsafe(key, tree->root);
+    pub def containsPairThreadUnsafe(key: k, val: v, tree: BPlusTree[k, v, r]): Bool \ r with Order[k], Eq[v] =
+        let leaf = Node.findLeafThreadUnsafe(key, tree->root);
         Node.leafContainsPair(key, val, leaf)
 
     ///
-    /// Returns a fresh empty B+ tree of with nodes of size `order`.
+    /// Returns a fresh empty BPlusTree tree of `order` (the maximum keys/values per node).
     /// The order of the tree must be at least 3.
     ///
     pub def empty(rc: Region[r], order: Int32): BPlusTree[k, v, r] \ r with Order[k] =
         if (order < 3)
-            bug!("order of tree must be at least 3")
-        else
-            let node = new Node @ rc {
-                keys = Array.empty(rc, order),
-                children = Array.empty(rc, 0),
-                values = Array.empty(rc, order),
-                lock = Lock.mkLock(rc),
-                size = 0,
-                parent = None,
-                next = None,
-                isLeaf = true
-            };
+            bug!("BPlusTree.empty requires an order more than 2, found '${order}'.")
+        else {
+            let node = Node.mkLeaf(rc, Array.empty(rc, order), Array.empty(rc, order), 0, None, None);
             new BPlusTree @ rc {
                 root = node,
                 order = order,
                 rootLock = Lock.mkLock(rc),
                 rc = rc
             }
+        }
 
     ///
     /// Returns the lock of the root pointer of `tree`.
     ///
-    pub def lock(tree: BPlusTree[k, v, r]): Lock[r] = tree->rootLock
+    pub def getLock(tree: BPlusTree[k, v, r]): Lock[r] = tree->rootLock
 
     ///
     /// Returns the order of `tree`.
     ///
     pub def order(tree: BPlusTree[k, v, r]): Int32 = tree->order
 
+    pub def findLeaf(key: k, tree: BPlusTree[k, v, r]): Node[k, v, r] \ r with Order[k] =
+        Node.traverseDown(key, getLockedRoot(tree), tree)
+
     ///
-    /// Return the root of `tree` by acquiring the root lock.
+    /// Return the root of `tree` for testing purposes.
     ///
-    def root(tree: BPlusTree[k, v, r]): Node[k, v, r] \ r =
+    /// Thread-unsafe
+    ///
+    pub def getRootTesting(tree: BPlusTree[k, v, r]): Node[k, v, r] \ r = tree->root
+
+
+    ///
+    /// Return the root of `tree` and leaves the node locked.
+    ///
+    def getLockedRoot(tree: BPlusTree[k, v, r]): Node[k, v, r] \ r =
         Lock.lock(tree->rootLock);
         let rootNode = tree->root;
-        let success = Lock.tryLock(Node.lock(rootNode));
+        let success = Lock.tryLock(Node.getLock(rootNode));
         Lock.unlock(tree->rootLock);
         if(success)
             rootNode
         else {
             // Wait for the thread that was operating on the root to finish
-            Lock.lock(Node.lock(rootNode));
-            Lock.unlock(Node.lock(rootNode));
-            root(tree)
+            Lock.lock(Node.getLock(rootNode));
+            Lock.unlock(Node.getLock(rootNode));
+            getLockedRoot(tree)
         }
 
     ///
-    /// Returns the root of `tree`.
-    ///
-    /// Not thread-safe.
-    ///
-    pub def getRootUnsafe(tree: BPlusTree[k, v, r]): Node[k, v, r] \ r =  tree->root
-
-    ///
-    /// Updates the B+ tree `tree` with the key-value pair `(key, val)`. Replaces any existing key-value pair.
+    /// Updates the BPlusTree `tree` with the key-value pair `(key, val)`. Replaces any
+    /// existing key-value pair.
     ///
     /// Thread-safe.
     ///
     pub def insert(key: k, val: v, tree: BPlusTree[k, v, r]): Unit \ r with Order[k] =
-        let getRoot = () -> root(tree);
-        let leaf = Node.findLeaf(key, getRoot);
+        let leaf = BPlusTree.findLeaf(key, tree);
         let newRoot = Node.insertIntoLeaf(key, val, tree->order, tree->rc, leaf);
         match newRoot {
             case Some(root) =>
@@ -190,8 +185,8 @@ mod BPlusTree {
                 let oldRoot = tree->root;
                 tree->root = root;
                 Lock.unlock(tree->rootLock);
-                Lock.unlock(Node.lock(oldRoot));
-                Lock.unlock(Node.lock(root));
+                Lock.unlock(Node.getLock(oldRoot));
+                Lock.unlock(Node.getLock(root));
                 ()
             case None => ()
         }
@@ -201,21 +196,18 @@ mod BPlusTree {
     ///
     /// Thread-safe.
     ///
-    pub def isEmpty(tree: BPlusTree[k, v, r]): Bool \ r = match Node.isLeaf(tree->root) {
-        case false => false
-        case true => let root =
-            BPlusTree.root(tree);
-            let res = Node.isEmpty(root);
-            Lock.unlock(Node.lock(root));
-            res
-    }
+    pub def isEmpty(tree: BPlusTree[k, v, r]): Bool \ r =
+        let root = BPlusTree.getLockedRoot(tree);
+        let res = Node.isEmpty(root);
+        Lock.unlock(Node.getLock(root));
+        res
 
     ///
     /// Returns `true` if and only if `tree` is the empty tree.
     ///
     /// Not thread-safe.
     ///
-    pub def isEmptyUnsafe(tree: BPlusTree[k, v, r]): Bool \ r = match Node.isLeaf(tree->root) {
+    pub def isEmptyThreadUnsafe(tree: BPlusTree[k, v, r]): Bool \ r = match Node.isLeaf(tree->root) {
         case false => false
         case true => Node.isEmpty(tree->root)
     }
@@ -226,10 +218,9 @@ mod BPlusTree {
     /// Thread-safe.
     ///
     pub def memberOf(key: k, tree: BPlusTree[k, v, r]): Bool \ r with Order[k] =
-        let getRoot = () -> root(tree);
-        let leaf = Node.findLeaf(key, getRoot);
+        let leaf = BPlusTree.findLeaf(key, tree);
         let res = Node.leafContains(key, leaf);
-        Lock.unlock(Node.lock(leaf));
+        Lock.unlock(Node.getLock(leaf));
         res
 
     ///
@@ -237,12 +228,15 @@ mod BPlusTree {
     ///
     /// Not thread-safe.
     ///
-    pub def memberOfUnsafe(key: k, tree: BPlusTree[k, v, r]): Bool \ r with Order[k] =
-        let leaf = Node.findLeafUnsafe(key, tree->root);
+    pub def memberOfThreadUnsafe(key: k, tree: BPlusTree[k, v, r]): Bool \ r with Order[k] =
+        let leaf = Node.findLeafThreadUnsafe(key, tree->root);
         Node.leafContains(key, leaf)
 
     ///
-    /// Applies `f` to all key-value pairs from `tree` with keys between `min` and `max`.
+    /// Applies `f` in ascending order to all key-value pairs `(k, v)` in `tree` where
+    /// `min <= k <= max`.
+    ///
+    /// Not thread-safe.
     ///
     pub def rangeQueryWith(f: k -> v -> Unit \ ef, min: k, max: k, tree: BPlusTree[k, v, r]): Unit \ {r, ef} with Order[k] =
         Node.rangeQueryWith(f, min, max, tree->root)
@@ -255,28 +249,49 @@ mod BPlusTree {
     ///
     /// Returns a string representation of BPlusTree `tree`.
     ///
+    /// Not thread-safe
+    ///
     pub def toString(tree: BPlusTree[k, v, r]): String \ r with ToString[k], ToString[v] =
         Node.toString(0, tree->rc, tree->root)
 
     ///
-    /// The Node struct defines the tree, having either children or leaves depending on whether the node is a leaf or internal.
-    /// The following invariants hold for Node:
-    /// `parent` is `None` for the root and `Some(p)` for all other nodes where `p` is the parent node.
-    /// `next` is `None` for the rightmost nodes of the tree and `Some(p)` for all other nodes where `p` is the node directly to the right.
-    /// `isLeaf` describes whether a `Node` is a leaf or an internal node.
-    ///     If `isLeaf == true`
-    ///         `children` is of size 0
-    ///         `keys` and `values` have the same size (which should be the `order` of the tree)
-    ///         `keys[i]` should store the key for the value stored at `values[i]`
-    ///         `size` is the number of keys/values currently stored in the leaf
-    ///     If `isLeaf == false`
-    ///         `values` is of size 0
-    ///         `children` is of size `order` and `keys` have size `order - 1`
-    ///         `keys[i]` store the smallest value in the subtree store in `children[i+1]`
-    ///         `size` is the number of children currently stored in the leaf
+    /// The Node struct defines the tree, having either children or leaves depending on
+    /// whether the node is a leaf or internal. The following invariants hold for Node:
+    /// `parent` is `None` for the root and `Some(p)` for all other nodes where `p` is the
+    /// parent node. `next` is `None` for internal nodes and the rightmost leaf node and
+    /// `Some(p)` for all leaf-nodes where `p` is the node directly to the right. `isLeaf`
+    /// describes whether a `Node` is a leaf or an internal node.
+    ///
+    /// If `isLeaf == true`
+    ///
+    ///     `children` is of size 0
+    ///
+    ///     `keys` and `values` have the same size (which should be the `order` of
+    ///     the tree)
+    ///
+    ///     `keys[i]` should store the key for the value stored at `values[i]`
+    ///
+    ///     `size` is the number of keys/values currently stored in the leaf
+    ///
+    /// If `isLeaf == false`
+    ///
+    ///      `values` is of size 0
+    ///
+    ///      `children` is of size `order` and `keys` have size `order - 1`
+    ///
+    ///      `keys[i]` store the smallest key in the subtree `children[i+1]`
+    ///
+    ///      `size` is the number of children currently stored in the leaf
+    ///
     /// Lock invariants:
-    ///     `lock` is the lock associated with the node. When it is held no other thread may modify the contents
-    ///     The only exception to the previous rule is that the `parent` pointer is owned by the `lock` on the parent
+    ///
+    ///     `lock` is the lock associated with the node. When it is held no other thread
+    ///     may modify the contents The only exception to the previous rule is that the
+    ///     `parent` pointer is owned by the `lock` on the parent For the root node with
+    ///     parent None the parent pointer is owned by the `rootLock` on the tree. When
+    ///     going up the tree locks are forcefully acquired. When going down the tree if
+    ///     a lock cannot be acquired immediately all current locks will be released and
+    ///     the attempt restarted after the wanted lock has been released by the holder.
     ///
     pub struct Node[k, v, r] {
         keys:       Array[k, r],
@@ -294,26 +309,69 @@ mod BPlusTree {
         import java.util.Objects
         use BPlusTree.Lock
 
-        // Accessor methods
-        /// Provides access to the `children` field of `node`
+        /// Provides access to the `children` field of `node`.
         pub def children(node: Node[k, v, r]): Array[Node[k, v, r], r]  = node->children
-        /// Provides access to the `isLeaf` field of `node`
+        /// Provides access to the `isLeaf` field of `node`.
         pub def isLeaf(node: Node[k, v, r]): Bool  = node->isLeaf
-        /// Provides access to the `keys` field of `node`
+        /// Provides access to the `keys` field of `node`.
         pub def keys(node: Node[k, v, r]): Array[k, r] = node->keys
-        /// Provides access to the `lock` field of `node`
-        pub def lock(node: Node[k, v, r]): Lock[r] = node->lock
-        /// Provides access to the `next` field of `node`
+        /// Provides access to the `lock` field of `node`.
+        pub def getLock(node: Node[k, v, r]): Lock[r] = node->lock
+        /// Provides access to the `next` field of `node`.
         pub def next(node: Node[k, v, r]): Option[Node[k, v, r]] \ r = node->next
-        /// Provides access to the `parent` field of `node`
+        /// Provides access to the `parent` field of `node`.
         pub def parent(node: Node[k, v, r]): Option[Node[k, v, r]] \ r = node->parent
-        /// Provides access to the `size` field of `node`
+        /// Provides access to the `size` field of `node`.
         pub def size(node: Node[k, v, r]): Int32 \ r  = node->size
-        /// Provides access to the `values` field of `node`
+        /// Provides access to the `values` field of `node`.
         pub def values(node: Node[k, v, r]): Array[v, r]  = node->values
 
         ///
-        /// Returns a string representation of the given Node `node` starting with `indent` spaces.
+        /// Create a new leaf node.
+        ///
+        pub def mkLeaf(
+                rc: Region[r],
+                keys: Array[k, r],
+                values: Array[v, r],
+                size: Int32,
+                parent: Option[Node[k, v, r]],
+                next: Option[Node[k, v, r]]): Node[k, v, r] \ r =
+            new Node @ rc {
+                keys = keys,
+                children = Array.empty(rc, 0),
+                values = values,
+                lock = Lock.mkLock(rc),
+                size = size,
+                parent = parent,
+                next = next,
+                isLeaf = true
+            }
+
+        ///
+        /// Create a new internal node.
+        ///
+        def mkInternal(
+                rc: Region[r],
+                keys: Array[k, r],
+                children: Array[Node[k, v, r], r],
+                size: Int32,
+                parent: Option[Node[k, v, r]]): Node[k, v, r] \ r =
+            new Node @ rc {
+                keys = keys,
+                children = children,
+                values = Array.empty(rc, 0),
+                lock = Lock.mkLock(rc),
+                size = size,
+                parent = parent,
+                next = None,
+                isLeaf = false
+            }
+
+        ///
+        /// Returns a string representation of the given Node `node` starting with
+        /// `indent` spaces.
+        ///
+        /// Not thread-safe.
         ///
         pub def toString(indent: Int32, rc: Region[r], node: Node[k, v, r]): String \ r with ToString[k], ToString[v] =
             let indentString = String.repeat(indent, " ");
@@ -333,11 +391,12 @@ mod BPlusTree {
             }
 
         ///
-        /// Returns the leaf containing `key`. If no node contains `key` the first node with values less than `key` is returned.
+        /// Returns the leaf containing `key`. If no node contains `key` the rightmost
+        /// node with values strictly less than `key` is returned.
         ///
         /// Equivalent to `findLeaf` but is not thread-safe.
         ///
-        pub def findLeafUnsafe(key: k, node: Node[k, v, r]): Node[k, v, r] \ r with Order[k] =
+        pub def findLeafThreadUnsafe(key: k, node: Node[k, v, r]): Node[k, v, r] \ r with Order[k] =
             match node->isLeaf {
                 case false =>
                     let children = node->children;
@@ -346,48 +405,46 @@ mod BPlusTree {
                         Array.get(toInsertionPoint(index), children)
                     else
                         Array.get(index + 1, children);
-                    findLeafUnsafe(key, childToVisit)
+                    findLeafThreadUnsafe(key, childToVisit)
                 case true => node
             }
 
         ///
-        /// Returns the leaf containing `key`. If no node contains `key` the first node with values less than `key` is returned
-        /// `getRoot` should provide a safe way to get the root of the tree such that the lock on the root is held when it returns
-        /// The method is thread-safe and provides a lock on the returned value.
+        /// Traverse down through the tree while keeping the invariant that there is a
+        /// `lock` on `cur`. If acquiring a lock at any point fails release the locks you
+        /// hold and retry from the root.
         ///
-        pub def findLeaf(key: k, getRoot: Unit -> Node[k, v, r]  \ r): Node[k, v, r] \ r with Order[k] =
-            /// Traverse the tree while keeping the invariant that there is a `lock` on `cur`.
-            /// If aquiring a lock at any point fails release the locks you hold and retry from the top.
-            def traverse(cur: Node[k, v, r]): Node[k, v, r] \ r =
-                match cur->isLeaf {
-                    case false =>
-                        let children = cur->children;
-                        let index = binarySearch(key, cur->size - 1, cur->keys);
-                        let childToVisit = if (index < 0)
-                            Array.get(toInsertionPoint(index), children)
-                        else
-                            Array.get(index + 1, children);
-                        // Try to get a read-lock on the next child
-                        let childLock = childToVisit->lock;
-                        let success = Lock.tryLock(childLock);
-                        Lock.unlock(cur->lock);
-                        if(success)
-                            // Unlock the current node i.e. the parent of `childToVisit`
-                            traverse(childToVisit)
-                        else {
-                            // Give up and restart the attempt.
-                            // To allow for the potential writer we encountered to grab the lock
-                            // on the node lock the child node as a wait operation.
-                            Lock.lock(childLock);
-                            Lock.unlock(childLock);
-                            traverse(getRoot())
-                        }
-                    case true => cur
-                };
-            traverse(getRoot())
+        pub def traverseDown(key: k, cur: Node[k, v, r], tree: BPlusTree[k, v, r]): Node[k, v, r] \ r with Order[k] =
+            match cur->isLeaf {
+                case false =>
+                    let children = cur->children;
+                    let index = binarySearch(key, cur->size - 1, cur->keys);
+                    let childToVisit = if (index < 0)
+                        Array.get(toInsertionPoint(index), children)
+                    else
+                        Array.get(index + 1, children);
+                    // Try to get a read-lock on the next child
+                    let childLock = childToVisit->lock;
+                    let success = Lock.tryLock(childLock);
+                    Lock.unlock(cur->lock);
+                    if(success)
+                        // Unlock the current node i.e. the parent of `childToVisit`
+                        traverseDown(key, childToVisit, tree)
+                    else {
+                        // Give up and restart the attempt.
+                        // To allow for the potential writer we encountered to grab the lock
+                        // on the node lock the child node as a wait operation.
+                        Lock.lock(childLock);
+                        Lock.unlock(childLock);
+                        BPlusTree.findLeaf(key, tree)
+                    }
+                case true => cur
+            }
 
         ///
         /// Returns `true` if `node` is empty.
+        ///
+        /// Thread safe if and only if the caller has a lock on `node`.
         ///
         pub def isEmpty(node: Node[k, v, r]): Bool \ r = node->size == 0
 
@@ -423,6 +480,10 @@ mod BPlusTree {
         /// Internal method to insert `key` and `val` in `node` at `insertionPoint`.
         /// Increments the `size` of `node`.
         ///
+        /// Lock invariant:
+        ///
+        /// - On invocation, the thread has a lock on `node`.
+        ///
         def actualInsertLeaf(
                 key: k,
                 val: v,
@@ -434,26 +495,29 @@ mod BPlusTree {
             node->size = size + 1
 
         ///
-        /// Insert key-value pair `(key, val)` into the leaf `node`,
-        /// potentially causing a split and returning a new root.
+        /// Insert key-value pair `(key, val)` into the leaf `node`, potentially causing a
+        /// split and returning a new root.
         ///
         /// Lock invariants:
+        ///
         /// - On invocation, the thread has a lock on `node`.
-        /// - On return, the thread only holds a lock on `Some(node)`
+        ///
+        /// - On return, the thread has no lock on the tree if the returned value is None
+        ///     Otherwise it has a lock on the old root and `p` where `Some(p)` is returned
         ///
         pub def insertIntoLeaf(
                 key: k,
                 val: v,
                 order: Int32,
                 rc: Region[r],
-                node: Node[k, v, r]): Option[Node[k, v, r]] \ r with Order[k] =
+                node: Node[k, v, r]): Option[Node[k, v, r]] \ r with Order[k] = {
             let size = node->size;
             let index = binarySearch(key, size, node->keys);
-            if (index >= 0)
-                let _ = Array.put(val, index, node->values);
+            if (index >= 0) {
+                Array.put(val, index, node->values);
                 Lock.unlock(node->lock);
                 None
-            else
+            } else
                 let insertionPoint = toInsertionPoint(index);
                 if (size < order) {
                     actualInsertLeaf(key, val, insertionPoint, node);
@@ -461,23 +525,33 @@ mod BPlusTree {
                     None
                 } else
                     splitLeaf(node, key, val, insertionPoint, order, rc)
+        }
 
         ///
         /// Attempt to lock the parent of `node`.
         ///
         /// Lock invariants:
+        ///
         /// - On invocation, the thread has a lock on `node`.
-        /// - On return, the thread holds a lock on `node` and on `parent` given by `node->Some(parent)`
+        ///
+        /// - On return, the thread holds a lock on `node` and on `parent` given by
+        ///   `node->Some(parent)`
+        ///
         def lockParent(node: Node[k, v, r]): Unit \ r = match node->parent {
             case Some(parent) =>
                 let parentLock = parent->lock;
+                // After acquiring the lock on the parent in the following step we should
+                // be synchronized with the last thread that held the lock. We should
+                // therefore now be able to see every change they have made before
+                // releasing the lock. Reading the parent-pointer afterwards is therefore
+                // safe.
                 Lock.lock(parentLock);
                 // If some thread had a lock on your parent and changed your parent pointer retry
                 let possiblyNewParent = match node->parent {
                     case Some(v) => v
                     case None => bug!("Cannot happen (when there are no deletions). Parent pointer replaced by None")
                 };
-                let isSame = ptrEqual(possiblyNewParent, parent);
+                let isSame = equalByReference(possiblyNewParent, parent);
                 if (not isSame) {
                     Lock.unlock(parentLock);
                     lockParent(node)
@@ -485,14 +559,27 @@ mod BPlusTree {
             case None => ()
         }
 
+
+        def splitToRightLeaf(rc: Region[r], mid: Int32, order: Int32, leftLeaf: Node[k, v, r]): (Array[k, r], Array[v, r]) \ r = {
+            let rightKeys = Array.empty(rc, order);
+            let rightValues = Array.empty(rc, order);
+            Array.copyInto(srcPos = mid, dstPos = 0, len = order - mid, src = leftLeaf->keys, rightKeys);
+            Array.copyInto(srcPos = mid, dstPos = 0, len = order - mid, src = leftLeaf->values, rightValues);
+            (rightKeys, rightValues)
+        }
+
         ///
         /// Split `leftLeaf` into two leaves and push the middle key into the parent,
-        /// potentially causing the parent to split and return a new root
+        /// potentially causing the parent to split and return a new root. Should only
+        /// be called when `leftLeaf->size == order` and
+        /// `0 <= insertionPoint <= order + 1`.
         ///
         /// Lock invariants:
+        ///
         /// - On invocation, the thread has a lock on `leftNode`.
-        /// - On return, the thread only holds a lock if the return value is Some.
-        ///   In that case it holds a lock on the new root and the old root.
+        ///
+        /// - On return, the thread only holds a lock if the return value is Some. In
+        /// that case it holds a lock on the new root and the old root.
         def splitLeaf(
                 leftLeaf: Node[k, v, r],
                 key: k,
@@ -502,21 +589,9 @@ mod BPlusTree {
                 rc: Region[r]): Option[Node[k, v, r]] \ r with Order[k] =
             let prev_mid = order / 2;
             let (mid, insertInLeft) = if (insertionPoint <= prev_mid) (prev_mid, true) else (prev_mid + 1, false);
-            let rightKeys = Array.empty(rc, order);
-            let rightValues = Array.empty(rc, order);
-            Array.copyInto(srcPos = mid, dstPos = 0, len = order - mid, src = leftLeaf->keys, rightKeys);
-            Array.copyInto(srcPos = mid, dstPos = 0, len = order - mid, src = leftLeaf->values, rightValues);
+            let (rightKeys, rightValues) = splitToRightLeaf(rc, mid, order, leftLeaf);
             // Create a new leaf to store the right half
-            let rightLeaf = new Node @ rc {
-                keys = rightKeys,
-                children = Array.empty(rc, 0),
-                values = rightValues,
-                lock = Lock.mkLock(rc),
-                size = leftLeaf->size - mid,
-                parent = leftLeaf->parent,
-                next = leftLeaf->next,
-                isLeaf = true
-            };
+            let rightLeaf = mkLeaf(rc, rightKeys, rightValues, leftLeaf->size - mid, leftLeaf->parent, leftLeaf->next);
             // Update the old leaf's fields
             leftLeaf->next = Some(rightLeaf);
             leftLeaf->size = mid;
@@ -531,13 +606,15 @@ mod BPlusTree {
 
 
         ///
-        /// Split `leftNode` into two nodes with `newKey` inserted into the appropriate node
-        /// depending on `insertionPoint`.
+        /// Split `leftNode` into two nodes with `newKey` inserted into the appropriate
+        /// node depending on `insertionPoint`.
         ///
         /// Lock invariants:
+        ///
         /// - On invocation, the thread has a lock on `parent`.
-        /// - On return, the thread only holds a lock if the return value is Some.
-        ///   In that case it holds a lock on the new root and the old root.
+        ///
+        /// - On return, the thread only holds a lock if the return value is Some. In
+        /// that case it holds a lock on the new root and the old root.
         def splitInternal(
                 leftNode: Node[k, v, r],
                 insertedChild: Node[k, v, r],
@@ -552,7 +629,7 @@ mod BPlusTree {
             let rightChildren = Array.empty(rc, order);
             leftNode->size = mid;
             let keyOfRight = if (insertInLeft) {
-                let keyToPass_ = Array.get(mid - 1, leftNode->keys);
+                let keyToPass = Array.get(mid - 1, leftNode->keys);
                 let leftChildren = leftNode->children;
                 let leftKeys = leftNode->keys;
                 // No problems. Just copy everything from mid and forward. Finish by inserting the new element in old node.
@@ -561,7 +638,7 @@ mod BPlusTree {
                 arrayInsert(insertedChild, insertionPoint + 1, mid, leftChildren);
                 arrayInsert(newKey, insertionPoint, mid, leftKeys);
                 leftNode->size = mid + 1;
-                keyToPass_
+                keyToPass
             } else {
                 // Insert the new node in the new right node and copy the relevant elements of the leftNode (index>=mid).
                 let rightSizeWithoutNew = rightSize - 1;
@@ -585,17 +662,7 @@ mod BPlusTree {
                     Array.get(mid - 1, leftNode->keys)
                 }
             };
-            let rightNode = new Node @ rc {
-                keys = rightKeys,
-                children = rightChildren,
-                values = Array.empty(rc, 0),
-                lock = Lock.mkLock(rc),
-                size = rightSize,
-                parent = leftNode->parent,
-                next = leftNode->next,
-                isLeaf = false
-            };
-            leftNode->next = Some(rightNode);
+            let rightNode = mkInternal(rc, rightKeys, rightChildren, rightSize, leftNode->parent);
             Array.forEachWithIndex(i -> child ->
                 if (i < rightSize)
                     child->parent = Some(rightNode)
@@ -606,16 +673,19 @@ mod BPlusTree {
             pushKeyToParent(leftNode->parent, leftNode, rightNode, keyOfRight, order, rc)
 
         ///
-        /// Push the key `newKey` to `parent`.
-        /// If `parent` is `Some(node)`, insert `newKey` into node if there is room. Otherwise split
-        /// `node` and return a new root node.
+        /// Push the key `newKey` to `parent`. If `parent` is `Some(node)`, insert
+        /// `newKey` into `node` if `size + 1 <= order`. Otherwise split `node` and return
+        /// a new root.
         ///
-        /// If `parent` is `None`, create a new root node, insert `newKey` into it and return it.
+        /// If `parent` is `None`, create a new root node, insert `newKey` into it and
+        /// return it.
         ///
         /// Lock invariants:
+        ///
         /// - On invocation, the thread has a lock on `parent`, `leftChild` and `rightChild`.
-        /// - On return, the thread only holds a lock if the return value is Some.
-        ///   In that case it holds a lock on the new root and the old root.
+        ///
+        /// - On return, the thread only holds a lock if the return value is Some. In
+        /// that case it holds a lock on the new root and the old root.
         def pushKeyToParent(
                 parent: Option[Node[k, v, r]],
                 leftChild: Node[k, v, r],
@@ -647,16 +717,7 @@ mod BPlusTree {
                 Array.put(leftChild, 0, children);
                 Array.put(rightChild, 1, children);
                 Array.put(newKey, 0, keys);
-                let newRoot = new Node @ rc {
-                    keys = keys,
-                    children = children,
-                    values = Array.empty(rc, 0),
-                    lock = Lock.mkLock(rc),
-                    size = 2,
-                    parent = None,
-                    next = None,
-                    isLeaf = false
-                };
+                let newRoot = mkInternal(rc, keys, children, 2, None);
                 Lock.lock(newRoot->lock);
                 leftChild->parent = Some(newRoot);
                 rightChild->parent = Some(newRoot);
@@ -665,7 +726,8 @@ mod BPlusTree {
         }
 
         ///
-        /// Applies `f` to all key-value pairs `(k, v)` in the tree rooted in `node` where `min <= k <= max`.
+        /// Applies `f` in ascending order to all key-value pairs `(k, v)` in the tree
+        /// rooted in `node` where `min <= k <= max`.
         ///
         /// Not thread-safe.
         ///
@@ -674,7 +736,7 @@ mod BPlusTree {
                 min: k,
                 max: k,
                 node: Node[k, v, r1]): Unit \ r0 + r1 with Order[k] =
-            let minLeaf = findLeafUnsafe(min, node);
+            let minLeaf = findLeafThreadUnsafe(min, node);
             let index = binarySearch(min, minLeaf->size, minLeaf->keys);
             if(index < 0) {
                 let insertionPoint = toInsertionPoint(index);
@@ -685,9 +747,11 @@ mod BPlusTree {
                 traverseRight(f, index, max, minLeaf)
 
         ///
-        /// Applies `f` to key-value pairs `(k, v)` starting at `node->keys[index]` until `node->keys[index] > max`.
+        /// Applies `f` to key-value pairs `(k, v)` starting at
+        /// `node->keys[index]` until `node->keys[index] > max`. Uses the `next` pointer
+        /// to traverse to the next node.
         ///
-        /// Uses the `next` pointer to traverse to the next node.
+        /// Not thread-safe.
         ///
         def traverseRight(
                 f: k -> v -> Unit \ r0,
@@ -705,13 +769,9 @@ mod BPlusTree {
                 case None => ()
             }
 
-        /////////////////////////////////////////////////////////////////////////////
-        // Helper methods                                                          //
-        /////////////////////////////////////////////////////////////////////////////
-
         ///
-        /// Insert `x` at position `i` in array `arr` as though it currently has
-        /// `len` elements. Shifts elements at position `[i, .., len]` to `[i+1, .., len+1]`.
+        /// Insert `x` at position `i` in array `arr` as though it currently has `len`
+        /// elements. Shifts elements at position `[i, .., len]` to `[i+1, .., len+1]`.
         ///
         def arrayInsert(x: a, i: Int32, len: Int32, arr: Array[a, r]): Unit \ r =
             if (len == i)
@@ -723,13 +783,13 @@ mod BPlusTree {
         ///
         /// Returns `true` if the pointer of `o1` is equal to the pointer of `o2`.
         ///
-        def ptrEqual(o1: v, o2: v): Bool =
-            // Unchecked_cast is here used to transform the values to Object.
+        def equalByReference(o1: v, o2: v): Bool =
+            // Unchecked cast is here used to transform the values to Object.
             // The purpose is to be able to give them to a Java class which performs pointer comparison.
             let obj1 = unchecked_cast(o1 as Object);
             let obj2 = unchecked_cast(o2 as Object);
-            // Unchecked_cast is here used to remove the IO effect from interacting with Java.
-            unchecked_cast(Objects.equals(obj1, obj2) as _ \ {})
+            // Unchecked cast is here used to remove the IO effect from interacting with Java.
+            unchecked_cast((Objects.equals(obj1, obj2): _ \ IO) as _ \ {})
 
         ///
         /// Perform a binary search and return the index of `key` in `arr` if it exists.
@@ -753,8 +813,8 @@ mod BPlusTree {
                 f(0, length)
 
         ///
-        /// Returns the real insertion point of the result of binarySearch, assuming
-        /// that the result of binarySearch was negative.
+        /// Returns the real insertion point of the result of binarySearch, assuming that
+        /// the result of binarySearch was negative.
         ///
         def toInsertionPoint(i: Int32): Int32 = -i-1
 

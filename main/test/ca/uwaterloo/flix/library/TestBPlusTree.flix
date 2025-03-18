@@ -7,15 +7,15 @@ mod TestBPlusTree {
     /////////////////////////////////////////////////////////////////////////////
     // Test invariant about the BTree                                          //
     /////////////////////////////////////////////////////////////////////////////
-    def testTreeInvariant(tree: BPlusTree[k, v, r]): Bool \ r with Order[k], Order[v] =
-        let root = BPlusTree.getRootUnsafe(tree);
+    def testTreeInvariant(tree: BPlusTree[k, v, r]): Bool \ r with Order[k] =
+        let root = BPlusTree.getRootTesting(tree);
         let order = BPlusTree.order(tree);
         let nodeWorks = testNodeInvariant(root, order, true);
-        let rootIsUnlocked = not BPlusTree.Lock.isLocked(BPlusTree.lock(tree));
+        let rootIsUnlocked = not BPlusTree.Lock.isLocked(BPlusTree.getLock(tree));
         let rootHasNoParent = Option.isEmpty(Node.parent(root));
         nodeWorks and rootHasNoParent and rootIsUnlocked
 
-    def testNodeInvariant(node: Node[k, v, r], order: Int32, isRightMost: Bool): Bool \ r with Order[k], Order[v] =
+    def testNodeInvariant(node: Node[k, v, r], order: Int32, isRightMost: Bool): Bool \ r with Order[k] =
         match Node.isLeaf(node) {
         case false =>
             let c = Node.children(node);
@@ -29,10 +29,10 @@ mod TestBPlusTree {
             let parentPointerCorrect = Vector.foldLeft(
                 workingSoFar -> cur -> workingSoFar and ptrEqual(node, unwrap(Node.parent(cur))),
                 true, children);
-            let nextPointerCorrect = applyPredicate(children, prev -> cur -> ptrEqual(unwrap(Node.next(prev)), cur));
+            let nextPointerCorrect = not Node.isLeaf(unwrap(Vector.head(children))) or applyPredicate(children, prev -> cur -> ptrEqual(unwrap(Node.next(prev)), cur));
             let lastHasNoNext = not isRightMost or Option.isEmpty(Node.next(unwrap(Vector.last(children))));
             let noLeaves = Array.size(Node.values(node)) == 0;
-            let nodeIsUnlocked = not BPlusTree.Lock.isLocked(Node.lock(node));
+            let nodeIsUnlocked = not BPlusTree.Lock.isLocked(Node.getLock(node));
             parentPointerCorrect and nextPointerCorrect and
                 lastHasNoNext and noLeaves and keysInOrder and
                 childrenWorks and nodeIsUnlocked
@@ -42,7 +42,7 @@ mod TestBPlusTree {
             let keysInOrder = isInOrder(toLength(keys, size));
             let sizeInRange = size <= order and 0 <= size;
             let noChildren = Array.size(Node.children(node)) == 0;
-            let leafIsUnlocked = not BPlusTree.Lock.isLocked(Node.lock(node));
+            let leafIsUnlocked = not BPlusTree.Lock.isLocked(Node.getLock(node));
             sizeInRange and keysInOrder and leafIsUnlocked and noChildren
     }
 
@@ -64,7 +64,7 @@ mod TestBPlusTree {
             case Some((_, bool)) => bool
         }
 
-    def listToMap(l: List[(k, v)]): Map[k, v] with Order[k], Order[v] =
+    def listToMap(l: List[(k, v)]): Map[k, v] with Order[k] =
         List.foldLeft(acc -> p -> let (x, y) = p; Map.insert(x, y, acc), Map#{}, l)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -202,31 +202,31 @@ mod TestBPlusTree {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // memberOfUnsafe                                                          //
+    // memberOfThreadUnsafe                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def memberOfUnsafe01(): Bool = region rc {
         let tree = BPlusTree.empty(rc, 3);
         BPlusTree.insert(2, 3, tree);
-        BPlusTree.memberOfUnsafe(2, tree)
+        BPlusTree.memberOfThreadUnsafe(2, tree)
     }
 
     @test
     def memberOfUnsafe02(): Bool = region rc {
         let tree = BPlusTree.empty(rc, 3);
-        not BPlusTree.memberOfUnsafe(0, tree) and
-            not BPlusTree.memberOfUnsafe(1, tree) and
-            not BPlusTree.memberOfUnsafe(-1, tree)
+        not BPlusTree.memberOfThreadUnsafe(0, tree) and
+            not BPlusTree.memberOfThreadUnsafe(1, tree) and
+            not BPlusTree.memberOfThreadUnsafe(-1, tree)
     }
 
     @test
     def memberOfUnsafe03(): Bool = region rc {
         let tree = BPlusTree.empty(rc, 3);
         BPlusTree.insert(1, 2, tree);
-        BPlusTree.memberOfUnsafe(1, tree) and
-            not BPlusTree.memberOfUnsafe(2, tree) and
-            not BPlusTree.memberOfUnsafe(0, tree)
+        BPlusTree.memberOfThreadUnsafe(1, tree) and
+            not BPlusTree.memberOfThreadUnsafe(2, tree) and
+            not BPlusTree.memberOfThreadUnsafe(0, tree)
     }
 
     /////////////////////////////////////////////////////////////////////////////
