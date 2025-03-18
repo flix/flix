@@ -423,13 +423,15 @@ object BenchmarkInliner {
 
     def run(opts: Options): JsonAST.JObject = {
       implicit val warmup: Boolean = false
+
       val warmupTime = 5
       debug(s"Warming up for $warmupTime minutes...")
       benchmarkWithGlobalMaxTime(opts, minutesToNanos(warmupTime))(warmup = true)
+
       debug(s"Running up to $MaxInliningRounds inlining rounds, drawing $NumberOfSamples samples of timing $NumberOfRuns runs of each program (total of ${programs.size} programs)")
       val fiveMinutes = 5
       debug(s"Max time is $fiveMinutes minutes")
-      val programExperiments = benchmarkWithGlobalMaxTime(opts, minutesToNanos(fiveMinutes))
+      val programExperiments = benchmarkWithIndividualMaxTime(opts, minutesToNanos(fiveMinutes))
 
       val runningTimeStats = programExperiments.m.map {
         case (name, runs) => name -> stats(runs.map(_.runningTime))
@@ -474,6 +476,30 @@ object BenchmarkInliner {
       val o1 = opts.copy(xnooptimizer = false, xnooptimizer1 = true, lib = LibLevel.All, progress = false, incremental = false)
       val o2 = opts.copy(xnooptimizer = true, xnooptimizer1 = false, lib = LibLevel.All, progress = false, incremental = false)
       o0 :: (1 to MaxInliningRounds).map(r => o1.copy(inlinerRounds = r, inliner1Rounds = r)).toList ::: (1 to MaxInliningRounds).map(r => o2.copy(inlinerRounds = r, inliner1Rounds = r)).toList
+    }
+
+    private def benchmarkWithIndividualMaxTime(opts: Options, maxNanos: Long)(implicit warmup: Boolean): ListMap[String, Run] = {
+      implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+      val runConfigs = mkConfigurations(opts).flatMap(o => programs.map { case (name, prog) => (o, name, prog) })
+      val runs = scala.collection.mutable.ListBuffer.empty[Run]
+      for ((config, name, prog) <- runConfigs) {
+        debug(s"Benchmarking $name with inliner '${InlinerType.from(config)}' with ${config.inliner1Rounds} rounds")
+
+        debug("Benchmarking compiler")
+        val t0Compiler = System.nanoTime()
+        val compilationTimings = benchmarkCompilation(config, name, prog, maxNanos)
+        val tDeltaCompiler = System.nanoTime() - t0Compiler
+        debug(s"Took ${nanosToSeconds(tDeltaCompiler)} seconds")
+
+        debug("Benchmarking running time")
+        val t0RunningTime = System.nanoTime()
+        val (runningTimes, result) = benchmarkRunningTime(config, name, prog, maxNanos)
+        val tDeltaRunningTime = System.nanoTime() - t0RunningTime
+        debug(s"Took ${nanosToSeconds(tDeltaRunningTime)} seconds")
+
+        runs += collectRun(config, name, compilationTimings, runningTimes, result)
+      }
+      ListMap.from(runs.map(r => (r.name, r)))
     }
 
     private def benchmarkWithGlobalMaxTime(opts: Options, maxNanos: Long)(implicit warmup: Boolean): ListMap[String, Run] = {
