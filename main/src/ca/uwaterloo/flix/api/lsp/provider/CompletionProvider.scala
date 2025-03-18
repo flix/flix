@@ -82,7 +82,7 @@ object CompletionProvider {
           AutoImportCompleter.getCompletions(ident, range, ap, env) ++
             LocalScopeCompleter.getCompletions(err) ++
             KeywordCompleter.getExprKeywords(Range.from(err.loc)) ++
-            DefCompleter.getCompletions(err) ++
+            DefCompleter.getCompletions(qn, range, ap, env) ++
             EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = false) ++
             EffectCompleter.getCompletions(qn, range, ap, env, inHandler = false) ++
             OpCompleter.getCompletions(qn, range, ap, env) ++
