@@ -31,8 +31,6 @@ import scala.collection.mutable.ListBuffer
 
 object BenchmarkInliner {
 
-  // TODO: Add function + flag for macro benchmarks
-
   private val BenchmarkingTime: Int = 5
 
   private val MaxInliningRounds: Int = 5

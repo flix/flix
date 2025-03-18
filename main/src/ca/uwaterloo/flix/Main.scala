@@ -322,7 +322,7 @@ object Main {
           CompilerMemory.run(options)
 
         case Command.InlinerExperiments =>
-          BenchmarkInliner.run(options)
+          BenchmarkInliner.run(options, micro = true)
 
         case Command.Zhegalkin =>
           ZhegalkinPerf.run(options.XPerfN)
