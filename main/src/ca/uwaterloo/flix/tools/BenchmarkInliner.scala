@@ -41,7 +41,6 @@ object BenchmarkInliner {
 
   private val NumberOfRuns: Int = 1000
 
-
   private val NumberOfSamples: Int = 1000
 
   /**
