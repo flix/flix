@@ -166,7 +166,7 @@ sealed trait Completion {
         kind     = CompletionItemKind.Function
       )
 
-    case Completion.DefCompletion(decl, ap, qualified, inScope) =>
+    case Completion.DefCompletion(decl, range, ap, qualified, inScope) =>
       val qualifiedName = decl.sym.toString
       val label = if (qualified) qualifiedName else decl.sym.name
       val snippet = CompletionUtils.getApplySnippet(label, decl.spec.fparams)(context)
@@ -181,7 +181,7 @@ sealed trait Completion {
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, qualifiedName),
         filterText          = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
-        textEdit            = TextEdit(context.range, snippet),
+        textEdit            = TextEdit(range, snippet),
         detail              = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
         documentation       = Some(decl.spec.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
@@ -675,11 +675,12 @@ object Completion {
     * Represents a Def completion
     *
     * @param decl      the def decl.
+    * @param range     the range of the completion.
     * @param ap        the anchor position for the use statement.
     * @param qualified indicate whether to use a qualified label.
     * @param inScope   indicate whether to the def is inScope.
     */
-  case class DefCompletion(decl: TypedAst.Def, ap: AnchorPosition, qualified:Boolean, inScope: Boolean) extends Completion
+  case class DefCompletion(decl: TypedAst.Def, range: Range, ap: AnchorPosition, qualified:Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents an Enum completion

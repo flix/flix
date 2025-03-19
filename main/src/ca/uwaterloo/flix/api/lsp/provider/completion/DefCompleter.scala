@@ -15,11 +15,11 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.lsp.Range
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
-import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
-import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
+import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 
 object DefCompleter {
   /**
@@ -27,16 +27,16 @@ object DefCompleter {
     * Whether the returned completions are qualified is based on whether the UndefinaedName is qualified.
     * When providing completions for unqualified defs that is not in scope, we will also automatically use the def.
     */
-  def getCompletions(err: ResolutionError.UndefinedName)(implicit root: TypedAst.Root): Iterable[Completion] ={
-    if (err.qn.namespace.nonEmpty)
+  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, env: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] ={
+    if (qn.namespace.nonEmpty)
       root.defs.values.collect{
-        case decl if CompletionUtils.isAvailable(decl.spec) && CompletionUtils.matchesName(decl.sym, err.qn, qualified = true) =>
-          DefCompletion(decl, err.ap, qualified = true, inScope = true)
+        case decl if CompletionUtils.isAvailable(decl.spec) && CompletionUtils.matchesName(decl.sym, qn, qualified = true) =>
+          DefCompletion(decl, range, ap, qualified = true, inScope = true)
       }
     else
       root.defs.values.collect{
-        case decl if CompletionUtils.isAvailable(decl.spec) && CompletionUtils.matchesName(decl.sym, err.qn, qualified = false) =>
-          DefCompletion(decl, err.ap, qualified = false, inScope = inScope(decl, err.env))
+        case decl if CompletionUtils.isAvailable(decl.spec) && CompletionUtils.matchesName(decl.sym, qn, qualified = false) =>
+          DefCompletion(decl, range, ap, qualified = false, inScope = inScope(decl, env))
       }
   }
 
