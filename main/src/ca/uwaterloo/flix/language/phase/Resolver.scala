@@ -191,8 +191,8 @@ object Resolver {
     */
   private def semiResolveTypeAliasesInNamespace(ns0: NamedAst.Declaration.Namespace, defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = ns0 match {
     case NamedAst.Declaration.Namespace(sym, usesAndImports0, decls, _) =>
-      val ns = Name.mkUnlocatedNName(sym.ns)
-      val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, ns, root))
+      val ns0 = Name.mkUnlocatedNName(sym.ns)
+      val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, ns0, root))
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
           val scp = appendAllUseScp(defaultUses, usesAndImports, root)
@@ -202,7 +202,7 @@ object Resolver {
           val aliases0 = decls.collect {
             case alias: NamedAst.Declaration.TypeAlias => alias
           }
-          val aliasesVal = traverse(aliases0)(semiResolveTypeAlias(_, scp, ns, root))
+          val aliasesVal = traverse(aliases0)(semiResolveTypeAlias(_, scp, ns0, root))
           val nsVal = traverse(namespaces)(semiResolveTypeAliasesInNamespace(_, defaultUses, root))
           mapN(aliasesVal, nsVal) {
             case (aliases, ns) => aliases ::: ns.flatten
@@ -1261,7 +1261,7 @@ object Resolver {
       val rulesVal = traverse(rules) {
         case NamedAst.CatchRule(sym, className, body, ruleLoc) =>
           val scp = scp0 ++ mkVarScp(sym)
-          val clazzVal = lookupJvmClass2(className, ns0, scp0, sym.loc).toValidation
+          val clazzVal = lookupJvmClass2(className, ns0, scp0).toValidation
           val bVal = resolveExp(body, scp)
           mapN(clazzVal, bVal) {
             case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b, ruleLoc)
