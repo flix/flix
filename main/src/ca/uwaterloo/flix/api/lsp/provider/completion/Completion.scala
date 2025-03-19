@@ -129,39 +129,31 @@ sealed trait Completion {
         kind             = CompletionItemKind.Snippet
       )
 
-    case Completion.LocalVarCompletion(name) =>
+    case Completion.LocalVarCompletion(name, range) =>
       CompletionItem(
         label    = name,
         sortText = Priority.toSortText(Priority.High, name),
-        textEdit = TextEdit(context.range, name),
+        textEdit = TextEdit(range, name),
         kind     = CompletionItemKind.Variable
       )
 
-    case Completion.LocalDeclarationCompletion(name) =>
-        CompletionItem(
-          label    = name,
-          sortText = Priority.toSortText(Priority.High, name),
-          textEdit = TextEdit(context.range, name),
-          kind     = CompletionItemKind.Enum
-        )
-
-    case Completion.LocalJavaClassCompletion(name, clazz) =>
+    case Completion.LocalJavaClassCompletion(name, clazz, range) =>
       val description = Option(clazz.getCanonicalName)
       val labelDetails = CompletionItemLabelDetails(None, description)
       CompletionItem(
         label         = name,
         labelDetails  = Some(labelDetails),
         sortText      = Priority.toSortText(Priority.High, name),
-        textEdit      = TextEdit(context.range, name),
+        textEdit      = TextEdit(range, name),
         kind          = CompletionItemKind.Class
       )
 
-    case Completion.LocalDefCompletion(sym, fparams) =>
+    case Completion.LocalDefCompletion(sym, fparams, range) =>
       val snippet = sym.text + fparams.zipWithIndex.map{ case (fparam, idx) => s"$${${idx + 1}:${fparam.sym.text}}" }.mkString("(", ", ", ")")
       CompletionItem(
         label    = sym.text,
         sortText = Priority.toSortText(Priority.High, sym.text),
-        textEdit = TextEdit(context.range, snippet),
+        textEdit = TextEdit(range, snippet),
         insertTextFormat = InsertTextFormat.Snippet,
         kind     = CompletionItemKind.Function
       )
@@ -645,31 +637,27 @@ object Completion {
     * Represents a Var completion
     *
     * @param name the name of the variable to complete.
+    * @param range the range of the completion.
     */
-  case class LocalVarCompletion(name: String) extends Completion
-
-  /**
-    * Represents a Declaration completion
-    *
-    * @param name the name of the declaration to complete.
-    */
-  case class LocalDeclarationCompletion(name: String) extends Completion
+  case class LocalVarCompletion(name: String, range: Range) extends Completion
 
   /**
     * Represents a Java Class completion
     *
     * @param name  the name of the java class to complete.
     * @param clazz the java class to complete.
+    * @param range the range of the completion.
     */
-  case class LocalJavaClassCompletion(name: String, clazz: Class[?]) extends Completion
+  case class LocalJavaClassCompletion(name: String, clazz: Class[?], range: Range) extends Completion
 
   /**
     * Represents a local def completion
     *
     * @param sym     the symbol of the local function
     * @param fparams the formal parameters of the local function
+    * @param range   the range of the completion.
     */
-  case class LocalDefCompletion(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]) extends Completion
+  case class LocalDefCompletion(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam], range: Range) extends Completion
 
   /**
     * Represents a Def completion
