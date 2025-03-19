@@ -71,7 +71,7 @@ object CompletionProvider {
           val range = Range.from(err.loc)
           EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = false) ++
             EnumTagCompleter.getCompletions(qn, range, ap, env) ++
-            ModuleCompleter.getCompletions(err)
+            ModuleCompleter.getCompletions(qn, range, ap, env)
 
         case err: ResolutionError.UndefinedName =>
           val ap = err.ap
@@ -89,7 +89,7 @@ object CompletionProvider {
             SignatureCompleter.getCompletions(err) ++
             EnumTagCompleter.getCompletions(qn, range, ap, env) ++
             TraitCompleter.getCompletions(qn, TraitUsageKind.Expr, range, ap, env) ++
-            ModuleCompleter.getCompletions(err)
+            ModuleCompleter.getCompletions(qn, range, ap, env)
 
         case err: ResolutionError.UndefinedType =>
           val ap = err.ap
@@ -104,7 +104,7 @@ object CompletionProvider {
             StructCompleter.getCompletions(err) ++
             EffectCompleter.getCompletions(qn, range, ap, env, inHandler = false) ++
             TypeAliasCompleter.getCompletions(err) ++
-            ModuleCompleter.getCompletions(err)
+            ModuleCompleter.getCompletions(qn, range, ap, env)
 
         case err: ResolutionError.UndefinedEffect => EffectCompleter.getCompletions(err.qn, Range.from(err.loc), err.ap, err.env, inHandler = true)
         case err: ResolutionError.UndefinedJvmImport => ImportCompleter.getCompletions(err.name, Range.from(err.loc))
