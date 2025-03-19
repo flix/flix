@@ -103,7 +103,7 @@ object CompletionProvider {
             EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = true) ++
             StructCompleter.getCompletions(qn, range, ap, env) ++
             EffectCompleter.getCompletions(qn, range, ap, env, inHandler = false) ++
-            TypeAliasCompleter.getCompletions(err) ++
+            TypeAliasCompleter.getCompletions(qn, range, ap, env) ++
             ModuleCompleter.getCompletions(qn, range, ap, env)
 
         case err: ResolutionError.UndefinedEffect => EffectCompleter.getCompletions(err.qn, Range.from(err.loc), err.ap, err.env, inHandler = true)
