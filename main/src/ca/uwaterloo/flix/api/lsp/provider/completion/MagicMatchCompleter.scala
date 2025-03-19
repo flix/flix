@@ -46,7 +46,7 @@ object MagicMatchCompleter {
     *
     * @param tpe          The type of the expression.
     * @param range        The location of the completion.
-    * @param baseLocation The base location of the completion.
+    * @param baseLocation The location of the base expression, usually the expression before the '.'.
     */
     def getCompletions(tpe: Type, range: Range, baseLocation: SourceLocation)(implicit root: TypedAst.Root): Iterable[Completion] = {
     for {
@@ -63,13 +63,13 @@ object MagicMatchCompleter {
     * Returns the pattern match body for the given type.
     * Currently, only enums and tuples are supported.
     */
-  private def mkPatternMatchBody(tpe: Type)(implicit root: TypedAst.Root): Option[String] = {
-    tpe.typeConstructor match {
+  private def mkPatternMatchBody(tpe0: Type)(implicit root: TypedAst.Root): Option[String] = {
+    tpe0.typeConstructor match {
       case Some(TypeConstructor.Enum(sym, _)) =>
         val cases = root.enums(sym).cases
         if (cases.nonEmpty) Some(mkEnumMatchBody(cases)) else None
       case Some(TypeConstructor.Tuple(_)) =>
-        val memberList = tpe.typeArguments.zipWithIndex.map { case (tpe, idx) => type2member(tpe, idx) }
+        val memberList = tpe0.typeArguments.zipWithIndex.map { case (tpe, idx) => type2member(tpe, idx) }
         val memberCombinations = cartesianProduct(memberList)
         Some(mkTupleMatchBody(memberCombinations))
       case _ =>
@@ -100,7 +100,7 @@ object MagicMatchCompleter {
     */
   private def type2member(tpe: Type, idx: Int)(implicit root: TypedAst.Root): Member =
     getEnumSym(tpe) match {
-      case Some(sym) => root.enums(sym).cases.toList.map{case (sym, cas) => EnumMemberItem(sym, cas)}
+      case Some(sym1) => root.enums(sym1).cases.toList.map{case (sym, cas) => EnumMemberItem(sym, cas)}
       case None => OtherMemberItem(s"_member$idx") :: Nil
     }
 
