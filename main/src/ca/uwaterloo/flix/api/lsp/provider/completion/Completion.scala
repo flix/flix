@@ -387,7 +387,7 @@ sealed trait Completion {
         kind                = CompletionItemKind.Function,
       )
 
-    case Completion.SigCompletion(sig, namespace, ap, qualified, inScope) =>
+    case Completion.SigCompletion(sig, namespace, range, ap, qualified, inScope) =>
       val qualifiedName =  if (namespace.nonEmpty)
         s"$namespace.${sig.sym.name}"
       else
@@ -404,7 +404,7 @@ sealed trait Completion {
         label               = name,
         labelDetails        = Some(labelDetails),
         sortText            = Priority.toSortText(priority, name),
-        textEdit            = TextEdit(context.range, snippet),
+        textEdit            = TextEdit(range, snippet),
         detail              = Some(FormatScheme.formatScheme(sig.spec.declaredScheme)(flix)),
         documentation       = Some(sig.spec.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
@@ -783,11 +783,13 @@ object Completion {
     * Represents a Signature completion
     *
     * @param sig        the signature.
+    * @param namespace  the namespace of the signature, if not provided, we use the fully qualified name.
+    * @param range      the range of the completion.
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the signature is inScope.
     */
-  case class SigCompletion(sig: TypedAst.Sig, namespace: String,  ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class SigCompletion(sig: TypedAst.Sig, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents an Enum Tag completion

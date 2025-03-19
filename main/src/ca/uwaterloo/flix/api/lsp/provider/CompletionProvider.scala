@@ -86,7 +86,7 @@ object CompletionProvider {
             EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = false) ++
             EffectCompleter.getCompletions(qn, range, ap, env, inHandler = false) ++
             OpCompleter.getCompletions(qn, range, ap, env) ++
-            SignatureCompleter.getCompletions(err) ++
+            SignatureCompleter.getCompletions(qn, range, ap, env) ++
             EnumTagCompleter.getCompletions(qn, range, ap, env) ++
             TraitCompleter.getCompletions(qn, TraitUsageKind.Expr, range, ap, env) ++
             ModuleCompleter.getCompletions(qn, range, ap, env)
