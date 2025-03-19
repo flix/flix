@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolUnifica
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinExpr}
 import ca.uwaterloo.flix.util.Result
 
+import scala.annotation.nowarn
 import scala.collection.immutable.IntMap
 import scala.collection.mutable
 
