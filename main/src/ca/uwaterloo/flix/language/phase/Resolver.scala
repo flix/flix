@@ -1261,7 +1261,7 @@ object Resolver {
       val rulesVal = traverse(rules) {
         case NamedAst.CatchRule(sym, className, body, ruleLoc) =>
           val env = env0 ++ mkVarEnv(sym)
-          val clazzVal = lookupJvmClass2(className, ns0, env0, sym.loc).toValidation
+          val clazzVal = lookupJvmClass2(className, ns0, env0).toValidation
           val bVal = resolveExp(body, env)
           mapN(clazzVal, bVal) {
             case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b, ruleLoc)
