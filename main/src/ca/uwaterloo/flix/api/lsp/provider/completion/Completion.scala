@@ -68,19 +68,19 @@ sealed trait Completion {
         insertTextFormat = InsertTextFormat.Snippet
       )
 
-    case Completion.TypeBuiltinCompletion(name, priority) =>
+    case Completion.TypeBuiltinCompletion(name, range, priority) =>
       CompletionItem(
         label            = name,
         sortText         = Priority.toSortText(priority, name),
-        textEdit         = TextEdit(context.range, name),
+        textEdit         = TextEdit(range, name),
         insertTextFormat = InsertTextFormat.PlainText,
         kind             = CompletionItemKind.Enum
       )
 
-    case Completion.TypeBuiltinPolyCompletion(name, edit, priority) =>
+    case Completion.TypeBuiltinPolyCompletion(name, edit, range, priority) =>
       CompletionItem(label = name,
         sortText         = Priority.toSortText(priority, name),
-        textEdit         = TextEdit(context.range, edit),
+        textEdit         = TextEdit(range, edit),
         insertTextFormat = InsertTextFormat.Snippet,
         kind             = CompletionItemKind.Enum
       )
@@ -588,17 +588,20 @@ object Completion {
     * Represents a type completion for builtin
     *
     * @param name             the name of the BuiltinType.
+    * @param range            the range of the completion.
     * @param priority         the priority of the BuiltinType.
     */
-  case class TypeBuiltinCompletion(name: String, priority: Priority) extends Completion
+  case class TypeBuiltinCompletion(name: String, range: Range, priority: Priority) extends Completion
 
   /**
     * Represents a type completion for a builtin polymorphic type.
     *
     * @param name      the name of the type.
+    * @param edit      the edit to be applied.
+    * @param range     the range of the completion.
     * @param priority  the priority of the type.
     */
-  case class TypeBuiltinPolyCompletion(name: String, edit: String, priority: Priority) extends Completion
+  case class TypeBuiltinPolyCompletion(name: String, edit: String, range: Range, priority: Priority) extends Completion
 
   /**
     * Represents a package, class, or interface completion.
