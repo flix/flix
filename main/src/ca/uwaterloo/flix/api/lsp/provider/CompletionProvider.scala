@@ -81,7 +81,7 @@ object CompletionProvider {
           val range = Range.from(err.loc)
           AutoImportCompleter.getCompletions(ident, range, ap, env) ++
             LocalScopeCompleter.getCompletions(err) ++
-            KeywordCompleter.getExprKeywords(Range.from(err.loc)) ++
+            KeywordCompleter.getExprKeywords(range) ++
             DefCompleter.getCompletions(qn, range, ap, env) ++
             EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = false) ++
             EffectCompleter.getCompletions(qn, range, ap, env, inHandler = false) ++
