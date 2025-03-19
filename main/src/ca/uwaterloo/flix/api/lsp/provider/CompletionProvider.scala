@@ -101,7 +101,7 @@ object CompletionProvider {
             AutoImportCompleter.getCompletions(ident, range, ap, env) ++
             LocalScopeCompleter.getCompletions(err) ++
             EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = true) ++
-            StructCompleter.getCompletions(err) ++
+            StructCompleter.getCompletions(qn, range, ap, env) ++
             EffectCompleter.getCompletions(qn, range, ap, env, inHandler = false) ++
             TypeAliasCompleter.getCompletions(err) ++
             ModuleCompleter.getCompletions(qn, range, ap, env)
