@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.semantic.{GetStaticFieldCom
 import ca.uwaterloo.flix.api.lsp.provider.completion.syntactic.{ExprSnippetCompleter, KeywordCompleter}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.SyntacticContext
+import ca.uwaterloo.flix.language.ast.shared.{SyntacticContext, TraitUsageKind}
 import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError, WeederError}
 import ca.uwaterloo.flix.language.phase.Lexer
 
@@ -70,7 +70,7 @@ object CompletionProvider {
           val qn = err.qn
           val range = Range.from(err.loc)
           EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = false) ++
-            EnumTagCompleter.getCompletions(err) ++
+            EnumTagCompleter.getCompletions(qn, range, ap, env) ++
             ModuleCompleter.getCompletions(err)
 
         case err: ResolutionError.UndefinedName =>
@@ -82,13 +82,13 @@ object CompletionProvider {
           AutoImportCompleter.getCompletions(ident, range, ap, env) ++
             LocalScopeCompleter.getCompletions(err) ++
             KeywordCompleter.getExprKeywords(Range.from(err.loc)) ++
-            DefCompleter.getCompletions(err) ++
+            DefCompleter.getCompletions(qn, range, ap, env) ++
             EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = false) ++
             EffectCompleter.getCompletions(qn, range, ap, env, inHandler = false) ++
             OpCompleter.getCompletions(qn, range, ap, env) ++
             SignatureCompleter.getCompletions(err) ++
-            EnumTagCompleter.getCompletions(err) ++
-            TraitCompleter.getCompletions(err) ++
+            EnumTagCompleter.getCompletions(qn, range, ap, env) ++
+            TraitCompleter.getCompletions(qn, TraitUsageKind.Expr, range, ap, env) ++
             ModuleCompleter.getCompletions(err)
 
         case err: ResolutionError.UndefinedType =>
@@ -112,7 +112,7 @@ object CompletionProvider {
         case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err.qn.ident.name, Range.from(err.loc))
         case err: ResolutionError.UndefinedOp => HandlerCompleter.getCompletions(err.qn, Range.from(err.loc))
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
-        case err: ResolutionError.UndefinedTrait => TraitCompleter.getCompletions(err)
+        case err: ResolutionError.UndefinedTrait => TraitCompleter.getCompletions(err.qn, err.traitUseKind, Range.from(err.loc), err.ap, err.env)
         case err: ResolutionError.UndefinedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
 
         case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err) ++ InvokeMethodCompleter.getCompletions(err.tpe, err.fieldName)
@@ -174,7 +174,7 @@ object CompletionProvider {
   /**
     * Characters that may appear in a word.
     */
-  private def isLetter(c: Char) = c match {
+  private def isLetter(c0: Char) = c0 match {
     case c if c >= 'a' && c <= 'z' => true
     case c if c >= 'A' && c <= 'Z' => true
     case c if c >= '0' && c <= '9' => true

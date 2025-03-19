@@ -857,7 +857,7 @@ object Resolver {
               }
           }
 
-        case NamedAst.UseOrImport.Import(_, _, loc) => throw InternalCompilerException("unexpected import", loc)
+        case NamedAst.UseOrImport.Import(_, _, importLoc) => throw InternalCompilerException("unexpected import", importLoc)
       }
 
     case NamedAst.Expr.Cst(cst, loc) =>
@@ -990,13 +990,13 @@ object Resolver {
 
     case NamedAst.Expr.Match(exp, rules, loc) =>
       val rulesVal = traverse(rules) {
-        case NamedAst.MatchRule(pat, guard, body, loc) =>
+        case NamedAst.MatchRule(pat, guard, body, ruleLoc) =>
           val p = resolvePattern(pat, env0, ns0, root)
           val env = env0 ++ mkPatternEnv(p)
           val gVal = traverseOpt(guard)(resolveExp(_, env))
           val bVal = resolveExp(body, env)
           mapN(gVal, bVal) {
-            case (g, b) => ResolvedAst.MatchRule(p, g, b, loc)
+            case (g, b) => ResolvedAst.MatchRule(p, g, b, ruleLoc)
           }
       }
 
@@ -1008,12 +1008,12 @@ object Resolver {
 
     case NamedAst.Expr.TypeMatch(exp, rules, loc) =>
       val rulesVal = traverse(rules) {
-        case NamedAst.TypeMatchRule(sym, tpe, body, loc) =>
+        case NamedAst.TypeMatchRule(sym, tpe, body, ruleLoc) =>
           val tVal = resolveType(tpe, None, Wildness.AllowWild, env0, taenv, ns0, root)
           val env = env0 ++ mkVarEnv(sym)
           val bVal = resolveExp(body, env)
           mapN(tVal, bVal) {
-            case (t, b) => ResolvedAst.TypeMatchRule(sym, t, b, loc)
+            case (t, b) => ResolvedAst.TypeMatchRule(sym, t, b, ruleLoc)
           }
       }
 
@@ -1025,19 +1025,19 @@ object Resolver {
     case NamedAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
       val expVal = resolveExp(exp, env0)
       val rulesVal = traverse(rules) {
-        case NamedAst.RestrictableChooseRule(pat0, exp0) =>
+        case NamedAst.RestrictableChooseRule(pat0, body) =>
           val pVal = pat0 match {
-            case NamedAst.RestrictableChoosePattern.Tag(qname, pat, loc) =>
+            case NamedAst.RestrictableChoosePattern.Tag(qname, pat, tagLoc) =>
               val tagVal = lookupRestrictableTag(qname, env0, ns0, root)
               val pats = pat.map {
-                case NamedAst.RestrictableChoosePattern.Wild(loc) => ResolvedAst.RestrictableChoosePattern.Wild(loc)
-                case NamedAst.RestrictableChoosePattern.Var(sym, loc) => ResolvedAst.RestrictableChoosePattern.Var(sym, loc)
-                case NamedAst.RestrictableChoosePattern.Error(loc) => ResolvedAst.RestrictableChoosePattern.Error(loc)
+                case NamedAst.RestrictableChoosePattern.Wild(patLoc) => ResolvedAst.RestrictableChoosePattern.Wild(patLoc)
+                case NamedAst.RestrictableChoosePattern.Var(sym, patLoc) => ResolvedAst.RestrictableChoosePattern.Var(sym, patLoc)
+                case NamedAst.RestrictableChoosePattern.Error(patLoc) => ResolvedAst.RestrictableChoosePattern.Error(patLoc)
               }
               mapN(tagVal) {
-                case tag => ResolvedAst.RestrictableChoosePattern.Tag(RestrictableCaseSymUse(tag.sym, qname.loc), pats, loc)
+                case tag => ResolvedAst.RestrictableChoosePattern.Tag(RestrictableCaseSymUse(tag.sym, qname.loc), pats, tagLoc)
               }
-            case NamedAst.RestrictableChoosePattern.Error(loc) => Validation.Success(ResolvedAst.RestrictableChoosePattern.Error(loc))
+            case NamedAst.RestrictableChoosePattern.Error(tagLoc) => Validation.Success(ResolvedAst.RestrictableChoosePattern.Error(tagLoc))
           }
           val env = pat0 match {
             case NamedAst.RestrictableChoosePattern.Tag(_, pat, _) =>
@@ -1049,7 +1049,7 @@ object Resolver {
             case NamedAst.RestrictableChoosePattern.Error(_) => env0
           }
 
-          val eVal = resolveExp(exp0, env)
+          val eVal = resolveExp(body, env)
           flatMapN(pVal, eVal) {
             case (p, e) =>
               Validation.Success(ResolvedAst.RestrictableChooseRule(p, e))
@@ -1122,13 +1122,13 @@ object Resolver {
         b => ResolvedAst.Expr.ArrayLength(b, loc)
       }
 
-    case NamedAst.Expr.StructNew(name, fields, region, loc) =>
+    case NamedAst.Expr.StructNew(name, fields0, region0, loc) =>
       lookupStruct(name, env0, ns0, root) match {
         case Result.Ok(st0) =>
           checkStructIsAccessible(st0, ns0, loc)
-          val fieldsVal = traverse(fields) {
-            case (f, e) =>
-              val eVal = resolveExp(e, env0)
+          val fieldsVal = traverse(fields0) {
+            case (f, exp) =>
+              val eVal = resolveExp(exp, env0)
               val (idx, defLoc) = st0.indicesAndLocs.getOrElse(f, (0, SourceLocation.Unknown))
               val fieldSym = Symbol.mkStructFieldSym(st0.sym, idx, Name.Label(f.name, defLoc))
               val fieldSymUse = StructFieldSymUse(fieldSym, f.loc)
@@ -1136,13 +1136,13 @@ object Resolver {
                 case e => (fieldSymUse, e)
               }
           }
-          val regionVal = resolveExp(region, env0)
+          val regionVal = resolveExp(region0, env0)
           val structNew = mapN(fieldsVal, regionVal) {
             case (fields, region) =>
               ResolvedAst.Expr.StructNew(st0.sym, fields, region, loc)
           }
           // Potential errors
-          val providedFieldNames = fields.map { case (k, _) => Name.Label(k.name, k.loc) }
+          val providedFieldNames = fields0.map { case (k, _) => Name.Label(k.name, k.loc) }
           val expectedFieldNames = st0.fields.map(field => Name.Label(field.sym.name, field.sym.loc))
           val extraFields = providedFieldNames.diff(expectedFieldNames)
           val missingFields = expectedFieldNames.diff(providedFieldNames)
@@ -1164,10 +1164,10 @@ object Resolver {
           Validation.Success(ResolvedAst.Expr.Error(error))
       }
 
-    case NamedAst.Expr.StructGet(e, field0, loc) =>
+    case NamedAst.Expr.StructGet(exp, field0, loc) =>
       lookupStructField(field0, env0, ns0, root) match {
         case Result.Ok(field) =>
-          val eVal = resolveExp(e, env0)
+          val eVal = resolveExp(exp, env0)
           val symUse = StructFieldSymUse(field.sym, field0.loc)
           mapN(eVal) {
             case e => ResolvedAst.Expr.StructGet(e, symUse, loc)
@@ -1177,11 +1177,11 @@ object Resolver {
           Validation.Success(ResolvedAst.Expr.Error(error))
       }
 
-    case NamedAst.Expr.StructPut(e1, field0, e2, loc) =>
+    case NamedAst.Expr.StructPut(exp1, field0, exp2, loc) =>
       lookupStructField(field0, env0, ns0, root) match {
         case Result.Ok(field) =>
-          val e1Val = resolveExp(e1, env0)
-          val e2Val = resolveExp(e2, env0)
+          val e1Val = resolveExp(exp1, env0)
+          val e2Val = resolveExp(exp2, env0)
           val symUse = StructFieldSymUse(field.sym, field0.loc)
           if (!field.mod.isMutable) {
             val error = ResolutionError.ImmutableField(field.sym, field0.loc)
@@ -1259,12 +1259,12 @@ object Resolver {
 
     case NamedAst.Expr.TryCatch(exp, rules, loc) =>
       val rulesVal = traverse(rules) {
-        case NamedAst.CatchRule(sym, className, body, loc) =>
+        case NamedAst.CatchRule(sym, className, body, ruleLoc) =>
           val env = env0 ++ mkVarEnv(sym)
-          val clazzVal = lookupJvmClass2(className, ns0, env0, sym.loc).toValidation
+          val clazzVal = lookupJvmClass2(className, ns0, env0).toValidation
           val bVal = resolveExp(body, env)
           mapN(clazzVal, bVal) {
-            case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b, loc)
+            case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b, ruleLoc)
           }
       }
 
@@ -1376,12 +1376,12 @@ object Resolver {
 
     case NamedAst.Expr.SelectChannel(rules, default, loc) =>
       val rulesVal = traverse(rules) {
-        case NamedAst.SelectChannelRule(sym, chan, body, loc) =>
+        case NamedAst.SelectChannelRule(sym, chan, body, ruleLoc) =>
           val cVal = resolveExp(chan, env0)
           val env = env0 ++ mkVarEnv(sym)
           val bVal = resolveExp(body, env)
           mapN(cVal, bVal) {
-            case (c, b) => ResolvedAst.SelectChannelRule(sym, c, b, loc)
+            case (c, b) => ResolvedAst.SelectChannelRule(sym, c, b, ruleLoc)
           }
       }
 
@@ -1729,8 +1729,8 @@ object Resolver {
     * Performs name resolution on the given JvmMethod `method` in the namespace `ns0`.
     */
   private def visitJvmMethod(method: NamedAst.JvmMethod, env0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.JvmMethod, ResolutionError] = method match {
-    case NamedAst.JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
-      val fparamsVal = traverse(fparams)(resolveFormalParam(_, env0, taenv, ns0, root))
+    case NamedAst.JvmMethod(ident, fparams0, exp, tpe, eff, loc) =>
+      val fparamsVal = traverse(fparams0)(resolveFormalParam(_, env0, taenv, ns0, root))
       flatMapN(fparamsVal) {
         case fparams =>
           val env = env0 ++ mkFormalParamEnv(fparams)
@@ -2007,7 +2007,7 @@ object Resolver {
     case NamedAst.ConstraintParam(sym, loc) =>
       // Check if the cparam is in the environment
       env0(sym.text) collectFirst {
-        case Resolution.Var(sym) => sym
+        case Resolution.Var(varSym) => varSym
       } match {
         // Case 1: Already in the environment, this is not a constraint parameter.
         case Some(_) => None
@@ -3287,7 +3287,7 @@ object Resolver {
   /**
     * Returns the class reflection object for the given `className`.
     */
-  private def lookupJvmClass2(className: Name.Ident, ns0: Name.NName, env0: LocalScope, loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError] = {
+  private def lookupJvmClass2(className: Name.Ident, ns0: Name.NName, env0: LocalScope)(implicit flix: Flix): Result[Class[?], ResolutionError] = {
     lookupJvmClass(className.name, ns0, className.loc) match {
       case Result.Ok(clazz) => Result.Ok(clazz)
       case Result.Err(e) => env0.get(className.name) match {
@@ -3649,9 +3649,9 @@ object Resolver {
   /**
     * A type represented by a lowercase name.
     */
-  sealed trait LowerType
+  private sealed trait LowerType
 
-  object LowerType {
+  private object LowerType {
     case class Var(sym: Symbol.UnkindedTypeVarSym) extends LowerType
 
     case class Region(sym: Symbol.RegionSym) extends LowerType
