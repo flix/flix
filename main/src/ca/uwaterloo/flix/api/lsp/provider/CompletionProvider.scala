@@ -24,7 +24,6 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{SyntacticContext, TraitUsageKind}
 import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError, WeederError}
-import ca.uwaterloo.flix.language.phase.Lexer
 
 /**
   * CompletionProvider
@@ -41,15 +40,9 @@ import ca.uwaterloo.flix.language.phase.Lexer
   */
 object CompletionProvider {
 
-  def autoComplete(uri: String, pos: Position, source: String, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): CompletionList = {
-    getCompletionContext(source, pos) match {
-      case None =>
-        CompletionList(isIncomplete = true, Nil)
-
-      case Some(ctx) =>
-        val items = getCompletions(uri, pos, currentErrors)(root, flix).map(_.toCompletionItem(ctx))
-        CompletionList(isIncomplete = true, items)
-    }
+  def autoComplete(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): CompletionList = {
+      val items = getCompletions(uri, pos, currentErrors)(root, flix).map(_.toCompletionItem)
+      CompletionList(isIncomplete = true, items)
   }
 
   /**
@@ -147,45 +140,6 @@ object CompletionProvider {
 
       case SyntacticContext.Unknown => Nil
     }
-  }
-
-  /**
-    * Find context from the source, and cursor position within it.
-    */
-  private def getCompletionContext(source: String, pos: Position): Option[CompletionContext] = {
-    // Use zero-indexed lines and characters.
-    source.linesWithSeparators.toList.lift(pos.line - 1).map { line =>
-      val (prefix, suffix) = line.splitAt(pos.character - 1)
-      // Find the word at the cursor position.
-      val wordStart = prefix.reverse.takeWhile(isWordChar)
-      val wordEnd = suffix.takeWhile(isWordChar)
-      val start = pos.character - wordStart.length
-      val end = pos.character + wordEnd.length
-      val range = Range(pos.copy(character = start), pos.copy(character = end))
-      CompletionContext(range)
-    }
-  }
-
-  /**
-    * Characters that constitute a word.
-    */
-  private def isWordChar(c: Char) = isLetter(c) || Lexer.isMathNameChar(c) || Lexer.isGreekNameChar(c) || Lexer.isUserOp(c).isDefined
-
-  /**
-    * Characters that may appear in a word.
-    */
-  private def isLetter(c0: Char) = c0 match {
-    case c if c >= 'a' && c <= 'z' => true
-    case c if c >= 'A' && c <= 'Z' => true
-    case c if c >= '0' && c <= '9' => true
-    // We also include some special symbols. This is more permissive than the lexer, but that's OK.
-    case '_' => true
-    case '!' => true
-    case '@' => true
-    case '/' => true
-    case '.' => true
-    case '#' => true
-    case _ => false
   }
 
   /**

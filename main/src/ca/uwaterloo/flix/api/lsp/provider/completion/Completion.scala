@@ -30,7 +30,7 @@ sealed trait Completion {
   /**
     * Returns a LSP completion item for `this`.
     */
-  def toCompletionItem(context: CompletionContext)(implicit flix: Flix): CompletionItem = this match {
+  def toCompletionItem(implicit flix: Flix): CompletionItem = this match {
 
     case Completion.KeywordCompletion(name, range, priority) =>
       CompletionItem(
@@ -161,7 +161,7 @@ sealed trait Completion {
     case Completion.DefCompletion(decl, range, ap, qualified, inScope) =>
       val qualifiedName = decl.sym.toString
       val label = if (qualified) qualifiedName else decl.sym.name
-      val snippet = CompletionUtils.getApplySnippet(label, decl.spec.fparams)(context)
+      val snippet = CompletionUtils.getApplySnippet(label, decl.spec.fparams)
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
@@ -344,7 +344,7 @@ sealed trait Completion {
       else
         op.sym.toString
       val name = if (qualified) qualifiedName else op.sym.name
-      val snippet = CompletionUtils.getApplySnippet(name, op.spec.fparams)(context)
+      val snippet = CompletionUtils.getApplySnippet(name, op.spec.fparams)
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
@@ -365,7 +365,7 @@ sealed trait Completion {
 
     case Completion.OpHandlerCompletion(op, range) =>
       val name = op.sym.name
-      val snippet = CompletionUtils.getOpHandlerSnippet(name, op.spec.fparams)(context)
+      val snippet = CompletionUtils.getOpHandlerSnippet(name, op.spec.fparams)
       val description = Some(name)
       val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(op.spec)(flix)), description)
       CompletionItem(
@@ -385,7 +385,7 @@ sealed trait Completion {
       else
         sig.sym.toString
       val name = if (qualified) qualifiedName else sig.sym.name
-      val snippet = CompletionUtils.getApplySnippet(name, sig.spec.fparams)(context)
+      val snippet = CompletionUtils.getApplySnippet(name, sig.spec.fparams)
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
