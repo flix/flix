@@ -97,7 +97,7 @@ object CompletionProvider {
           val ident = err.qn.ident.name
           val qn = err.qn
           val range = Range.from(err.loc)
-          TypeBuiltinCompleter.getCompletions ++
+          TypeBuiltinCompleter.getCompletions(range) ++
             AutoImportCompleter.getCompletions(ident, range, ap, env) ++
             LocalScopeCompleter.getCompletions(err) ++
             EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = true) ++
