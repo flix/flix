@@ -147,5 +147,4 @@ object CompletionProvider {
     */
   private def errorsAt(uri: String, pos: Position, errors: List[CompilationMessage]): List[CompilationMessage] =
     errors.filter(err => uri == err.loc.source.name && pos.line <= err.loc.beginLine)
-
 }
