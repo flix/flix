@@ -16,16 +16,37 @@
 
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.fmt.FormatType
 
 import scala.jdk.CollectionConverters.SeqHasAsJava
 
 object SignatureInformation {
-  def from(defn: TypedAst.Def, activeParameter: Int): SignatureInformation = {
-    val label = defn.sym.toString
+  def from(defn: TypedAst.Def, activeParameter: Int)(implicit flix: Flix): SignatureInformation = {
+    val label = defn.sym.toString + getLabelForSpec(defn.spec)
     val documentation = defn.spec.doc.text
     val parameters = defn.spec.fparams.map(ParameterInformation.from)
     SignatureInformation(label, Some(documentation), parameters, activeParameter)
+  }
+
+  private def getLabelForSpec(spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
+    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _) =>
+      val args = if (fparams.length == 1 && fparams.head.tpe == Type.Unit)
+        Nil
+      else
+        fparams.map {
+          fparam => s"${fparam.bnd.sym.text}: ${FormatType.formatType(fparam.tpe)}"
+        }
+
+      val retTpe = FormatType.formatType(retTpe0)
+
+      val eff = eff0 match {
+        case Type.Cst(TypeConstructor.Pure, _) => ""
+        case p => raw" \ " + FormatType.formatType(p)
+      }
+
+      s"(${args.mkString(", ")}): $retTpe$eff"
   }
 }
 

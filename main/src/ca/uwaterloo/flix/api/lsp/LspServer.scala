@@ -393,7 +393,7 @@ object LspServer {
     override def signatureHelp(params: SignatureHelpParams): CompletableFuture[SignatureHelp] = {
       val uri = params.getTextDocument.getUri
       val pos = Position.fromLsp4j(params.getPosition)
-      val signatureHelp = SignatureHelpProvider.provideSignatureHelp(uri, pos)(flixLanguageServer.root)
+      val signatureHelp = SignatureHelpProvider.provideSignatureHelp(uri, pos)(flixLanguageServer.root, flixLanguageServer.flix)
       CompletableFuture.completedFuture(signatureHelp.map(_.toLsp4j).orNull)
     }
 

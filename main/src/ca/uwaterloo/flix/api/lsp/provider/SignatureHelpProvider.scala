@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.api.lsp.provider
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.acceptors.InsideAcceptor
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Position, SignatureHelp, SignatureInformation, Visitor}
@@ -26,7 +27,7 @@ object SignatureHelpProvider {
   /**
     * Provides signature help for the given position.
     */
-  def provideSignatureHelp(uri: String, pos: Position)(implicit root: Root): Option[SignatureHelp] = {
+  def provideSignatureHelp(uri: String, pos: Position)(implicit root: Root, flix: Flix): Option[SignatureHelp] = {
     val stack = StackConsumer()
 
     if (pos.character >= 2) {

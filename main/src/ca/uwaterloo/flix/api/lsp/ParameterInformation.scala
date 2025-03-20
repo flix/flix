@@ -16,11 +16,13 @@
 
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.fmt.FormatType
 
 object ParameterInformation {
-  def from(param: TypedAst.FormalParam): ParameterInformation = {
-    val label = param.bnd.sym.toString
+  def from(param: TypedAst.FormalParam)(implicit flix: Flix): ParameterInformation = {
+    val label = s"${param.bnd.sym}: ${FormatType.formatType(param.tpe)}"
     ParameterInformation(label, None)
   }
 }
