@@ -26,10 +26,27 @@ import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestCompletionProvider extends AnyFunSuite  {
+
+  test("No completions after complete keyword"){
+    checkInvariant(
+      token => token.kind.isKeyword,
+      identity,
+      assertEmptyCompletions
+    )
+  }
+
+  test("No completions after complete literal"){
+    checkInvariant(
+      token => token.kind.isLiteral,
+      identity,
+      assertEmptyCompletions
+    )
+  }
+
   /**
     * A list of programs to test invariants on.
     */
-  private val programs = List(
+  private val Programs = List(
     s"""
        |def main(): Unit \\ IO =
        |    run {
@@ -37,6 +54,7 @@ class TestCompletionProvider extends AnyFunSuite  {
        |        let name = Console.readln();
        |        Console.println("Hello $${name}")
        |    } with Console.runWithIO
+       |
        |""".stripMargin,
     s"""
        |def main(): Unit \\ IO =
@@ -44,20 +62,58 @@ class TestCompletionProvider extends AnyFunSuite  {
        |        let timestamp = Clock.currentTime(TimeUnit.Milliseconds);
        |        println("$${timestamp} ms since the epoc")
        |    } with Clock.runWithIO
+       |
+       |""".stripMargin,
+    s"""
+       |def main(): Unit \\ {Net, IO} =
+       |    run {
+       |        let url = "http://example.com/";
+       |        Logger.info("Downloading URL: '$${url}'");
+       |        match HttpWithResult.get(url, Map.empty()) {
+       |            case Result.Ok(response) =>
+       |                let file = "data.txt";
+       |                Logger.info("Saving response to file: '$${file}'");
+       |                let body = Http.Response.body(response);
+       |                match FileWriteWithResult.write(str = body, file) {
+       |                    case Result.Ok(_) =>
+       |                        Logger.info("Response saved to file: '$${file}'")
+       |                    case Result.Err(err) =>
+       |                        Logger.fatal("Unable to write file: '$${err}'")
+       |                }
+       |            case Result.Err(err) =>
+       |                Logger.fatal("Unable to download URL: '$${err}'")
+       |        }
+       |    } with FileWriteWithResult.runWithIO
+       |      with HttpWithResult.runWithIO
+       |      with Logger.runWithIO
+       |
+       |""".stripMargin,
+    s"""
+       |def parMap(f: a -> b, l: List[a]): List[b] = match l {
+       |    case Nil     => Nil
+       |    case x :: xs =>
+       |        par (r <- f(x); rs <- parMap(f, xs))
+       |            yield r :: rs
+       |}
+       |
+       |def main(): Unit \\ IO =
+       |    let l = List.range(1, 100);
+       |    println(parMap(x -> x + 1, l))
+       |
        |""".stripMargin
   )
 
   /**
     * The uri of the test source.
     */
-  private val uri = "<test>"
+  private val Uri = "<test>"
 
   /**
     * Compiles the given input string `s` with the given compilation options `o`.
     */
   private def compile(s: String, o: Options): (Root, Flix, List[CompilationMessage]) = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-    val flix = new Flix().setOptions(o).addSourceCode(uri, s)
+    val flix = new Flix().setOptions(o).addSourceCode(Uri, s)
     flix.check() match {
       case (Some(root), errors) => (root, flix, errors)
       case (None, _) => fail("Compilation failed: a root is expected.")
@@ -69,13 +125,13 @@ class TestCompletionProvider extends AnyFunSuite  {
     */
   private def mkSource(content: String): Source = {
     val sctx = SecurityContext.AllPermissions
-    val input = Input.Text(uri, content, sctx)
+    val input = Input.Text(Uri, content, sctx)
     Source(input, content.toCharArray)
   }
 
   /**
     * Checks the completion provider invariant for the given token filter, string transformer and completion assertion.
-    * For all the programs to be tested, we use the filter to select tokens to transform, apply the transformer to the selected tokens,
+    * For all the Programs to be tested, we use the filter to select tokens to transform, apply the transformer to the selected tokens,
     * call the completion provider with the transformed program and check the completions against the assertion.
     *
     * @param tokenFilter          the filter to select tokens to transform.
@@ -83,16 +139,19 @@ class TestCompletionProvider extends AnyFunSuite  {
     * @param completionAssertion  the assertion to check the completions against.
     */
   private def checkInvariant(tokenFilter: Token => Boolean, stringTransformer: String => String, completionAssertion: CompletionList => Unit ): Unit = {
-    programs.foreach { program =>
-      val (root, _, _) = compile(program, Options.Default)
+    Programs.foreach { program =>
+      // Compile the original program so that we can locate all target tokens.
+      val (root, flix, errors) = compile(program, Options.Default)
       val source = mkSource(program)
       val tokensToTransform = root.tokens(source).toList.filter(tokenFilter)
       tokensToTransform.foreach { token =>
         val replacingString = stringTransformer(token.text)
         val newProgram = program.substring(0, token.start) + replacingString + program.substring(token.end)
-        val (newRoot, newFlix, newErrors) = compile(newProgram, Options.Default)
+        val (newRoot, newFlix, newErrors) = if (stringTransformer != identity)
+          compile(newProgram, Options.Default)
+        else (root, flix, errors)
         val newPos = Position(token.sp1.line, token.sp1.col + replacingString.length) // position after the replacement
-        val completions = CompletionProvider.autoComplete(uri, newPos, newProgram, newErrors)(newRoot, newFlix)
+        val completions = CompletionProvider.autoComplete(Uri, newPos, newProgram, newErrors)(newRoot, newFlix)
         completionAssertion(completions)
       }
     }
@@ -109,12 +168,4 @@ class TestCompletionProvider extends AnyFunSuite  {
     * A function that returns the input string as is.
     */
   private def identity(s: String): String = s
-
-  test("No completions after complete keyword"){
-    checkInvariant(
-      token => token.kind.isKeyword,
-      identity,
-      assertEmptyCompletions
-    )
-  }
 }
