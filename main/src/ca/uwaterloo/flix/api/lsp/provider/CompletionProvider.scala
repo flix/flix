@@ -71,7 +71,7 @@ object CompletionProvider {
           val range = Range.from(err.loc)
           EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = false) ++
             EnumTagCompleter.getCompletions(qn, range, ap, env) ++
-            ModuleCompleter.getCompletions(err)
+            ModuleCompleter.getCompletions(qn, range, ap, env)
 
         case err: ResolutionError.UndefinedName =>
           val ap = err.ap
@@ -80,16 +80,16 @@ object CompletionProvider {
           val qn = err.qn
           val range = Range.from(err.loc)
           AutoImportCompleter.getCompletions(ident, range, ap, env) ++
-            LocalScopeCompleter.getCompletions(err) ++
-            KeywordCompleter.getExprKeywords(Range.from(err.loc)) ++
+            LocalScopeCompleter.getCompletionsExpr(range, env) ++
+            KeywordCompleter.getExprKeywords(range) ++
             DefCompleter.getCompletions(qn, range, ap, env) ++
             EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = false) ++
             EffectCompleter.getCompletions(qn, range, ap, env, inHandler = false) ++
             OpCompleter.getCompletions(qn, range, ap, env) ++
-            SignatureCompleter.getCompletions(err) ++
+            SignatureCompleter.getCompletions(qn, range, ap, env) ++
             EnumTagCompleter.getCompletions(qn, range, ap, env) ++
             TraitCompleter.getCompletions(qn, TraitUsageKind.Expr, range, ap, env) ++
-            ModuleCompleter.getCompletions(err)
+            ModuleCompleter.getCompletions(qn, range, ap, env)
 
         case err: ResolutionError.UndefinedType =>
           val ap = err.ap
@@ -97,14 +97,14 @@ object CompletionProvider {
           val ident = err.qn.ident.name
           val qn = err.qn
           val range = Range.from(err.loc)
-          TypeBuiltinCompleter.getCompletions ++
+          TypeBuiltinCompleter.getCompletions(range) ++
             AutoImportCompleter.getCompletions(ident, range, ap, env) ++
-            LocalScopeCompleter.getCompletions(err) ++
+            LocalScopeCompleter.getCompletionsType(range, env) ++
             EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = true) ++
-            StructCompleter.getCompletions(err) ++
+            StructCompleter.getCompletions(qn, range, ap, env) ++
             EffectCompleter.getCompletions(qn, range, ap, env, inHandler = false) ++
-            TypeAliasCompleter.getCompletions(err) ++
-            ModuleCompleter.getCompletions(err)
+            TypeAliasCompleter.getCompletions(qn, range, ap, env) ++
+            ModuleCompleter.getCompletions(qn, range, ap, env)
 
         case err: ResolutionError.UndefinedEffect => EffectCompleter.getCompletions(err.qn, Range.from(err.loc), err.ap, err.env, inHandler = true)
         case err: ResolutionError.UndefinedJvmImport => ImportCompleter.getCompletions(err.name, Range.from(err.loc))
@@ -115,7 +115,7 @@ object CompletionProvider {
         case err: ResolutionError.UndefinedTrait => TraitCompleter.getCompletions(err.qn, err.traitUseKind, Range.from(err.loc), err.ap, err.env)
         case err: ResolutionError.UndefinedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
 
-        case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err) ++ InvokeMethodCompleter.getCompletions(err.tpe, err.fieldName)
+        case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err.tpe, Range.from(err.loc), err.base) ++ InvokeMethodCompleter.getCompletions(err.tpe, err.fieldName)
         case err: TypeError.MethodNotFound => InvokeMethodCompleter.getCompletions(err.tpe, err.methodName)
 
         case err: ParseError => getSyntacticCompletions(uri, err)
