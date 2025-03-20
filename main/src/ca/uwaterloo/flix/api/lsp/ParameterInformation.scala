@@ -28,7 +28,7 @@ object ParameterInformation {
 case class ParameterInformation(label: String, documentation: Option[String]) {
   def toLsp4j: org.eclipse.lsp4j.ParameterInformation = {
     val param = new org.eclipse.lsp4j.ParameterInformation(label)
-    param.setDocumentation(documentation.map(new org.eclipse.lsp4j.MarkupContent(_, "markdown")).orNull)
+    param.setDocumentation(documentation.map(new org.eclipse.lsp4j.MarkupContent("markdown", _)).orNull)
     param
   }
 }

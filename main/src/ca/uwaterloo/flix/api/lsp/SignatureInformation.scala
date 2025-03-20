@@ -32,7 +32,7 @@ object SignatureInformation {
 case class SignatureInformation(label: String, documentation: Option[String], parameters: List[ParameterInformation], activeParameter: Int) {
   def toLsp4j: org.eclipse.lsp4j.SignatureInformation = {
     val sig = new org.eclipse.lsp4j.SignatureInformation(label)
-    sig.setDocumentation(documentation.map(new org.eclipse.lsp4j.MarkupContent(_, "markdown")).orNull)
+    sig.setDocumentation(documentation.map(doc => new org.eclipse.lsp4j.MarkupContent("markdown", doc)).orNull)
     sig.setParameters(parameters.map(_.toLsp4j).asJava)
     sig.setActiveParameter(activeParameter)
     sig
