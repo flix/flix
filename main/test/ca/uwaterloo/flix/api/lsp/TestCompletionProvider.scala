@@ -151,7 +151,7 @@ class TestCompletionProvider extends AnyFunSuite  {
           compile(newProgram, Options.Default)
         else (root, flix, errors)
         val newPos = Position(token.sp1.line, token.sp1.col + replacingString.length) // position after the replacement
-        val completions = CompletionProvider.autoComplete(Uri, newPos, newProgram, newErrors)(newRoot, newFlix)
+        val completions = CompletionProvider.autoComplete(Uri, newPos, newErrors)(newRoot, newFlix)
         completionAssertion(completions)
       }
     }
