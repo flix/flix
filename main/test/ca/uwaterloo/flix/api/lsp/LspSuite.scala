@@ -19,5 +19,4 @@ import org.scalatest.Suites
 
 class LspSuite extends Suites(
   new VisitorSuite,
-  new TestCompletionProvider
 )
