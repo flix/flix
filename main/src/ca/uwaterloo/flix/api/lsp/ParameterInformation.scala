@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.fmt.FormatType
 
 object ParameterInformation {
   def from(param: TypedAst.FormalParam)(implicit flix: Flix): ParameterInformation = {
-    val label = s"${param.bnd.sym}: ${FormatType.formatType(param.tpe)}"
+    val label = s"${param.bnd.sym.text}: ${FormatType.formatType(param.tpe)}"
     ParameterInformation(label, None)
   }
 }
