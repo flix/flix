@@ -1700,4 +1700,15 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     rejectError[TypeError](result)
   }
+
+  test("ErrorType.02") {
+    // There should be no type error because Abc does not resolve.
+    // Related issue: https://github.com/flix/flix/issues/10176
+    val input =
+      """
+        |def foo(): Abc = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
 }

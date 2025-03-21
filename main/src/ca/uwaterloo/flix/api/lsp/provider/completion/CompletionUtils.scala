@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
 import ca.uwaterloo.flix.language.ast.TypedAst.Decl
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Symbol, Type, TypeConstructor, TypedAst}
@@ -53,7 +52,7 @@ object CompletionUtils {
   /**
     * Generate a snippet which represents calling a function.
     */
-  def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): String = {
+  def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam]): String = {
     val functionIsUnit = isUnitFunction(fparams)
 
     val args = fparams.zipWithIndex.map {
@@ -70,7 +69,7 @@ object CompletionUtils {
   /**
     * Generate a snippet which represents defining an effect operation handler, with an extra `resume` as the last argument.
     */
-  def getOpHandlerSnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): String = {
+  def getOpHandlerSnippet(name: String, fparams: List[TypedAst.FormalParam]): String = {
     val functionIsUnit = isUnitFunction(fparams)
 
     val args = fparams.zipWithIndex.map {
@@ -99,31 +98,6 @@ object CompletionUtils {
     */
   def getFilterTextForName(name: String): String = {
     s"$name("
-  }
-
-  /**
-    * When `whetherInScope` is `true`, we check if the given definition `decl` is in the scope.
-    * When `whetherInScope` is `false`, we check if the given definition `decl` is not in the scope.
-    */
-  private def checkScope(decl: TypedAst.Def, scope: LocalScope, whetherInScope: Boolean): Boolean = {
-    val thisName = decl.sym.toString
-    val inScope = scope.m.values.exists(_.exists {
-      case Resolution.Declaration(Def(thatName, _, _, _)) => thisName == thatName.toString
-      case _ => false
-    })
-    if (whetherInScope) inScope else !inScope
-  }
-
-  /**
-    * Returns `true` if the given definition `decl` should be included in the suggestions.
-    */
-  private def matchesDef(decl: TypedAst.Def, word: String): Boolean = {
-    def isInternal(decl: TypedAst.Def): Boolean = decl.spec.ann.isInternal
-
-    val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
-    val isMatch = fuzzyMatch(word, decl.sym.text)
-
-    isMatch && isPublic
   }
 
   /**
@@ -357,13 +331,6 @@ object CompletionUtils {
     }.mkString("\n\n")
 
     s"$traitName[$instanceHole] {\n\n$body\n\n}\n"
-  }
-
-  /**
-    * Formats the given trait `trt`.
-    */
-  def fmtTrait(trt: TypedAst.Trait): String = {
-    s"trait ${trt.sym.name}[${trt.tparam.name.name}]"
   }
 
   /**
