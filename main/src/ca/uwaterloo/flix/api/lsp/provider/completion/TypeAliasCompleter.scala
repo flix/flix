@@ -28,7 +28,7 @@ object TypeAliasCompleter {
     * Whether the returned completions are qualified is based on whether the name in the error is qualified.
     * When providing completions for unqualified enums that is not in scope, we will also automatically use the enum.
     */
-  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, env: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] = {
+  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
       root.typeAliases.values.collect{
         case typeAlias if CompletionUtils.isAvailable(typeAlias) && CompletionUtils.matchesName(typeAlias.sym, qn, qualified = true) =>
@@ -37,7 +37,7 @@ object TypeAliasCompleter {
     else
       root.typeAliases.values.collect({
         case typeAlias if CompletionUtils.isAvailable(typeAlias) && CompletionUtils.matchesName(typeAlias.sym, qn, qualified = false) =>
-          TypeAliasCompletion(typeAlias, range, ap, qualified = false, inScope = inScope(typeAlias, env))
+          TypeAliasCompletion(typeAlias, range, ap, qualified = false, inScope = inScope(typeAlias, scp))
       })
   }
 

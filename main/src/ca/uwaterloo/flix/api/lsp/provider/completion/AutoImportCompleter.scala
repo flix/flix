@@ -15,9 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.CompletionItemLabelDetails
-import ca.uwaterloo.flix.api.lsp.Range
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.AutoImportCompletion
+import ca.uwaterloo.flix.api.lsp.{CompletionItemLabelDetails, Range}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
 
@@ -44,13 +43,13 @@ object AutoImportCompleter {
     * @param prefix the prefix of the class name, usually from the ident of a qname.
     * @param range  the range of the completion.
     * @param ap     the anchor position of the completion.
-    * @param env    the local scope.
+    * @param scp    the local scope.
     */
-  def getCompletions(prefix: String, range: Range, ap: AnchorPosition, env: LocalScope)(implicit root: Root): Iterable[AutoImportCompletion] = {
+  def getCompletions(prefix: String, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: Root): Iterable[AutoImportCompletion] = {
     if (!CompletionUtils.shouldComplete(prefix)) return Nil
     val availableClasses = root.availableClasses.byClass.m.filter(_._1.exists(_.isUpper))
     availableClasses.keys.filter(CompletionUtils.fuzzyMatch(prefix, _)).flatMap { className =>
-      availableClasses(className).collect { case namespace if (!env.m.contains(className)) =>
+      availableClasses(className).collect { case namespace if !scp.m.contains(className) =>
         val qualifiedName = namespace.mkString(".") + "." + className
         val priority = mkPriority(qualifiedName)
         val labelDetails = CompletionItemLabelDetails(None, Some(s"import $qualifiedName"))

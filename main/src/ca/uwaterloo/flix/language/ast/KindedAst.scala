@@ -75,9 +75,9 @@ object KindedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends Expr
 
-    case class Hole(sym: Symbol.HoleSym, env: LocalScope, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class Hole(sym: Symbol.HoleSym, scp: LocalScope, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class HoleWithExp(exp: Expr, env: LocalScope, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class HoleWithExp(exp: Expr, scp: LocalScope, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class OpenAs(symUse: RestrictableEnumSymUse, exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 

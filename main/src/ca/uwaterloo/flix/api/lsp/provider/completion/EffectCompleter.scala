@@ -12,7 +12,7 @@ object EffectCompleter {
     * Whether the returned completions are qualified is based on whether the name in the error is qualified.
     * When providing completions for unqualified enums that is not in scope, we will also automatically use the enum.
     */
-  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, env: LocalScope, inHandler: Boolean)(implicit root: TypedAst.Root): Iterable[Completion] = {
+  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope, inHandler: Boolean)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
       root.effects.values.collect{
         case effect if CompletionUtils.isAvailable(effect) && CompletionUtils.matchesName(effect.sym, qn, qualified = true) =>
@@ -25,9 +25,9 @@ object EffectCompleter {
       root.effects.values.collect({
         case effect if CompletionUtils.isAvailable(effect) && CompletionUtils.matchesName(effect.sym, qn, qualified = false) =>
           if (inHandler)
-            HandlerCompletion(effect, range, ap, qualified = false, inScope = inScope(effect, env))
+            HandlerCompletion(effect, range, ap, qualified = false, inScope = inScope(effect, scp))
           else
-          EffectCompletion(effect, range, ap, qualified = false, inScope = inScope(effect, env))
+          EffectCompletion(effect, range, ap, qualified = false, inScope = inScope(effect, scp))
       })
   }
 
