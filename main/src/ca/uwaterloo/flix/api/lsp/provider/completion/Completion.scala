@@ -30,7 +30,7 @@ sealed trait Completion {
   /**
     * Returns a LSP completion item for `this`.
     */
-  def toCompletionItem(implicit flix: Flix): CompletionItem = this match {
+  def toCompletionItem(undefinedNameContext: UndefinedNameContext)(implicit flix: Flix): CompletionItem = this match {
 
     case Completion.KeywordCompletion(name, range, priority) =>
       CompletionItem(
@@ -161,7 +161,13 @@ sealed trait Completion {
     case Completion.DefCompletion(decl, range, ap, qualified, inScope) =>
       val qualifiedName = decl.sym.toString
       val label = if (qualified) qualifiedName else decl.sym.name
-      val snippet = CompletionUtils.getApplySnippet(label, decl.spec.fparams)
+      val snippet = undefinedNameContext match {
+        case UndefinedNameContext(None, None) =>
+          CompletionUtils.getApplySnippet(label, decl.spec.fparams)
+        case UndefinedNameContext(None, Some(pipelined)) =>
+          CompletionUtils.getApplySnippet(label, decl.spec.fparams.dropRight(pipelined))
+        case UndefinedNameContext(Some(_), _) => label
+      }
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
