@@ -88,7 +88,7 @@ object ConstraintSolver2 {
         progress.markProgress()
         res.exhaustively(progress)(f)
       } else {
-        this
+        res
       }
     }
 
