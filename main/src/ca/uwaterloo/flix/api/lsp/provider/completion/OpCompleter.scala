@@ -26,14 +26,14 @@ object OpCompleter {
   /**
     * Returns a List of Completion for Op for UndefinedName.
     */
-  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, env: LocalScope)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
+  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
     if (qn.namespace.nonEmpty) {
-      fullyQualifiedCompletion(qn, range, ap) ++ partiallyQualifiedCompletions(qn, range, ap ,env)
+      fullyQualifiedCompletion(qn, range, ap) ++ partiallyQualifiedCompletions(qn, range, ap ,scp)
     } else {
       root.effects.values.flatMap(eff =>
         eff.ops.collect {
           case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false) =>
-            OpCompletion(op, "", range, ap, qualified = false, inScope(op, env))
+            OpCompletion(op, "", range, ap, qualified = false, inScope(op, scp))
         }
       )
     }
@@ -62,8 +62,8 @@ object OpCompleter {
     *
     * We assume the user is trying to type a partially qualified name and will only match against partially qualified names.
     */
-  private def partiallyQualifiedCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, env: LocalScope)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
-    val fullyQualifiedNamespaceHead = env.resolve(qn.namespace.idents.head.name) match {
+  private def partiallyQualifiedCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
+    val fullyQualifiedNamespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
       case Some(Resolution.Declaration(Effect(_, _, _, name, _, _))) => name.toString
       case Some(Resolution.Declaration(Namespace(name, _, _, _))) => name.toString
       case _ => return Nil

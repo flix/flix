@@ -30,8 +30,8 @@ object LocalScopeCompleter {
     * Returns a list of completions for UndefinedName.
     * We will provide all sorts of completions except for Resolution.TypeVar
     */
-  def getCompletionsExpr(range: Range, env: LocalScope): Iterable[Completion] =
-   env.env.m.foldLeft(List.empty[Completion]){case (acc, (name, resolutions)) =>
+  def getCompletionsExpr(range: Range, scp: LocalScope): Iterable[Completion] =
+   scp.scp.m.foldLeft(List.empty[Completion]){case (acc, (name, resolutions)) =>
       acc ++ mkJavaClassCompletion(name, resolutions, range) ++ mkVarCompletion(name, resolutions, range) ++ mkLocalDefCompletion(resolutions, range)
    }
 
@@ -39,8 +39,8 @@ object LocalScopeCompleter {
     * Returns a list of completions for UndefinedType.
     * We will provide completions for Resolution.Declaration and Resolution.JavaClass
     */
-  def getCompletionsType(range: Range, env: LocalScope): Iterable[Completion] =
-    env.env.m.foldLeft(List.empty[Completion]){case (acc, (name, resolutions)) =>
+  def getCompletionsType(range: Range, scp: LocalScope): Iterable[Completion] =
+    scp.scp.m.foldLeft(List.empty[Completion]){case (acc, (name, resolutions)) =>
        acc ++ mkJavaClassCompletion(name, resolutions, range)
     }
 

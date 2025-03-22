@@ -26,14 +26,14 @@ object EnumTagCompleter {
   /**
     * Returns a List of Completion for Tag for UndefinedName.
     */
-  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, env: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] = {
+  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
-        fullyQualifiedCompletion(qn, range, ap) ++ partiallyQualifiedCompletions(qn, range, ap, env)
+        fullyQualifiedCompletion(qn, range, ap) ++ partiallyQualifiedCompletions(qn, range, ap, scp)
     else
       root.enums.values.flatMap(enm =>
         enm.cases.values.collect{
           case tag if CompletionUtils.isAvailable(enm) && CompletionUtils.matchesName(tag.sym, qn, qualified = false) =>
-            EnumTagCompletion(tag, "", range, ap, qualified = false, inScope = inScope(tag, env))
+            EnumTagCompletion(tag, "", range, ap, qualified = false, inScope = inScope(tag, scp))
         }
       )
   }
@@ -58,10 +58,10 @@ object EnumTagCompleter {
     * Example:
     *   - If `Foo.Bar.Color.Red` is fully qualified, then `Color.Red` is partially qualified
     *
-    * We need to first find the fully qualified namespace by looking up the local environment, then use it to provide completions.
+    * We need to first find the fully qualified namespace by looking up the local scope, then use it to provide completions.
     */
-  private def partiallyQualifiedCompletions(qn: Name.QName, range: Range,ap: AnchorPosition, env: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    val fullyQualifiedNamespaceHead = env.resolve(qn.namespace.idents.head.name) match {
+  private def partiallyQualifiedCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    val fullyQualifiedNamespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
       case Some(Resolution.Declaration(Enum(_, _, _, sym, _, _, _, _))) => sym.toString
       case Some(Resolution.Declaration(Namespace(name, _, _, _))) => name.toString
       case _ => return Nil

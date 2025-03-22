@@ -28,7 +28,7 @@ object StructCompleter {
     * Whether the returned completions are qualified is based on whether the name in the error is qualified.
     * When providing completions for unqualified enums that is not in scope, we will also automatically use the enum.
     */
-  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, env: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] = {
+  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
       root.structs.values.collect{
         case struct if CompletionUtils.isAvailable(struct) && CompletionUtils.matchesName(struct.sym, qn, qualified = true) =>
@@ -37,7 +37,7 @@ object StructCompleter {
     else
       root.structs.values.collect({
         case struct if CompletionUtils.isAvailable(struct) && CompletionUtils.matchesName(struct.sym, qn, qualified = false) =>
-          StructCompletion(struct, range, ap, qualified = false, inScope = inScope(struct, env))
+          StructCompletion(struct, range, ap, qualified = false, inScope = inScope(struct, scp))
       })
   }
 

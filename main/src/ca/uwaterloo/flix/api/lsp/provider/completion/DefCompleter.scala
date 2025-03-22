@@ -27,7 +27,7 @@ object DefCompleter {
     * Whether the returned completions are qualified is based on whether the UndefinaedName is qualified.
     * When providing completions for unqualified defs that is not in scope, we will also automatically use the def.
     */
-  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, env: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] ={
+  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] ={
     if (qn.namespace.nonEmpty)
       root.defs.values.collect{
         case decl if CompletionUtils.isAvailable(decl.spec) && CompletionUtils.matchesName(decl.sym, qn, qualified = true) =>
@@ -36,7 +36,7 @@ object DefCompleter {
     else
       root.defs.values.collect{
         case decl if CompletionUtils.isAvailable(decl.spec) && CompletionUtils.matchesName(decl.sym, qn, qualified = false) =>
-          DefCompletion(decl, range, ap, qualified = false, inScope = inScope(decl, env))
+          DefCompletion(decl, range, ap, qualified = false, inScope = inScope(decl, scp))
       }
   }
 

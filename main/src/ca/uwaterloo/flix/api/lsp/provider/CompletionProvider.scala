@@ -59,53 +59,53 @@ object CompletionProvider {
 
         case err: ResolutionError.UndefinedTag =>
           val ap = err.ap
-          val env = err.env
+          val scp = err.scp
           val qn = err.qn
           val range = Range.from(err.loc)
-          EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = false) ++
-            EnumTagCompleter.getCompletions(qn, range, ap, env) ++
-            ModuleCompleter.getCompletions(qn, range, ap, env)
+          EnumCompleter.getCompletions(qn, range, ap, scp, withTypeParameters = false) ++
+            EnumTagCompleter.getCompletions(qn, range, ap, scp) ++
+            ModuleCompleter.getCompletions(qn, range, ap, scp)
 
         case err: ResolutionError.UndefinedName =>
           val ap = err.ap
-          val env = err.env
+          val scp = err.scp
           val ident = err.qn.ident.name
           val qn = err.qn
           val range = Range.from(err.loc)
-          AutoImportCompleter.getCompletions(ident, range, ap, env) ++
-            LocalScopeCompleter.getCompletionsExpr(range, env) ++
+          AutoImportCompleter.getCompletions(ident, range, ap, scp) ++
+            LocalScopeCompleter.getCompletionsExpr(range, scp) ++
             KeywordCompleter.getExprKeywords(range) ++
-            DefCompleter.getCompletions(qn, range, ap, env) ++
-            EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = false) ++
-            EffectCompleter.getCompletions(qn, range, ap, env, inHandler = false) ++
-            OpCompleter.getCompletions(qn, range, ap, env) ++
-            SignatureCompleter.getCompletions(qn, range, ap, env) ++
-            EnumTagCompleter.getCompletions(qn, range, ap, env) ++
-            TraitCompleter.getCompletions(qn, TraitUsageKind.Expr, range, ap, env) ++
-            ModuleCompleter.getCompletions(qn, range, ap, env)
+            DefCompleter.getCompletions(qn, range, ap, scp) ++
+            EnumCompleter.getCompletions(qn, range, ap, scp, withTypeParameters = false) ++
+            EffectCompleter.getCompletions(qn, range, ap, scp, inHandler = false) ++
+            OpCompleter.getCompletions(qn, range, ap, scp) ++
+            SignatureCompleter.getCompletions(qn, range, ap, scp) ++
+            EnumTagCompleter.getCompletions(qn, range, ap, scp) ++
+            TraitCompleter.getCompletions(qn, TraitUsageKind.Expr, range, ap, scp) ++
+            ModuleCompleter.getCompletions(qn, range, ap, scp)
 
         case err: ResolutionError.UndefinedType =>
           val ap = err.ap
-          val env = err.env
+          val scp = err.scp
           val ident = err.qn.ident.name
           val qn = err.qn
           val range = Range.from(err.loc)
           TypeBuiltinCompleter.getCompletions(range) ++
-            AutoImportCompleter.getCompletions(ident, range, ap, env) ++
-            LocalScopeCompleter.getCompletionsType(range, env) ++
-            EnumCompleter.getCompletions(qn, range, ap, env, withTypeParameters = true) ++
-            StructCompleter.getCompletions(qn, range, ap, env) ++
-            EffectCompleter.getCompletions(qn, range, ap, env, inHandler = false) ++
-            TypeAliasCompleter.getCompletions(qn, range, ap, env) ++
-            ModuleCompleter.getCompletions(qn, range, ap, env)
+            AutoImportCompleter.getCompletions(ident, range, ap, scp) ++
+            LocalScopeCompleter.getCompletionsType(range, scp) ++
+            EnumCompleter.getCompletions(qn, range, ap, scp, withTypeParameters = true) ++
+            StructCompleter.getCompletions(qn, range, ap, scp) ++
+            EffectCompleter.getCompletions(qn, range, ap, scp, inHandler = false) ++
+            TypeAliasCompleter.getCompletions(qn, range, ap, scp) ++
+            ModuleCompleter.getCompletions(qn, range, ap, scp)
 
-        case err: ResolutionError.UndefinedEffect => EffectCompleter.getCompletions(err.qn, Range.from(err.loc), err.ap, err.env, inHandler = true)
+        case err: ResolutionError.UndefinedEffect => EffectCompleter.getCompletions(err.qn, Range.from(err.loc), err.ap, err.scp, inHandler = true)
         case err: ResolutionError.UndefinedJvmImport => ImportCompleter.getCompletions(err.name, Range.from(err.loc))
         case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err.clazz, err.field) ++ InvokeStaticMethodCompleter.getCompletions(err.clazz, err.field)
         case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err.qn.ident.name, Range.from(err.loc))
         case err: ResolutionError.UndefinedOp => HandlerCompleter.getCompletions(err.qn, Range.from(err.loc))
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
-        case err: ResolutionError.UndefinedTrait => TraitCompleter.getCompletions(err.qn, err.traitUseKind, Range.from(err.loc), err.ap, err.env)
+        case err: ResolutionError.UndefinedTrait => TraitCompleter.getCompletions(err.qn, err.traitUseKind, Range.from(err.loc), err.ap, err.scp)
         case err: ResolutionError.UndefinedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
 
         case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err.tpe, Range.from(err.loc), err.base) ++ InvokeMethodCompleter.getCompletions(err.tpe, err.fieldName)
