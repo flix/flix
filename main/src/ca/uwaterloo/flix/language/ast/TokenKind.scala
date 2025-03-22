@@ -705,6 +705,28 @@ sealed trait TokenKind {
     case _ => false
   }
 
+  /**
+    * Checks if this token is a literal.
+    */
+  def isLiteral: Boolean = this match {
+    case TokenKind.LiteralBigDecimal
+         | TokenKind.LiteralBigInt
+         | TokenKind.LiteralChar
+         | TokenKind.LiteralDebugStringL
+         | TokenKind.LiteralDebugStringR
+         | TokenKind.LiteralFloat32
+         | TokenKind.LiteralFloat64
+         | TokenKind.LiteralInt8
+         | TokenKind.LiteralInt16
+         | TokenKind.LiteralInt32
+         | TokenKind.LiteralInt64
+         | TokenKind.LiteralRegex
+         | TokenKind.LiteralString
+         | TokenKind.LiteralStringInterpolationL
+         | TokenKind.LiteralStringInterpolationR => true
+    case _ => false
+  }
+
   /*
     * The following isRecover* functions represent sets of TokenKinds used for error-recovery in the parser.
     * When parsing sequences of expressions in a loop and an unexpected token is found,
