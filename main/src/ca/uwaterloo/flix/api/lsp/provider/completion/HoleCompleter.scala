@@ -28,7 +28,7 @@ object HoleCompleter {
   /**
     * Gets completions for when the cursor position is on a hole expression with an expression
     */
-  def getHoleCompletion(uri: String, pos: Position, root: TypedAst.Root)(implicit flix: Flix): Iterable[Completion] = {
+  def getHoleCompletion(uri: String, pos: Position)(implicit root: TypedAst.Root, flix: Flix): Iterable[Completion] = {
     val stack = StackConsumer()
 
     if (pos.character >= 2) {
