@@ -1,4 +1,4 @@
-mod Display{
+mod Display {
     use Location.Loc
     use Weather.WeatherInfo
 
@@ -6,7 +6,10 @@ mod Display{
         def display(loc: Loc, weather: WeatherInfo): Unit
     }
 
-    pub def displayWithIO(f: Unit -> a \ ef ): a \ {ef - Display + IO} =
+    ///
+    /// Handles display effect by printing to stdout
+    ///
+    pub def displayWithIO(f: Unit -> a \ ef): a \ ef - Display + IO =
         run {
             f()
         } with handler Display {

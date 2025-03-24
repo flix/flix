@@ -1,15 +1,10 @@
 mod Weather {
-    use Json.FromJson.fromNullableJson
-    use Error.WeatherError
-    use Json.FromJson
-    use Json.FromJson.fromJson
-    use Json.getAtKey
+    use Json.{FromJson, getAtKey, JsonElement, JsonError, Parse}
+    use Json.FromJson.{fromNullableJson, fromJson,fromJsonAt} 
     use Json.Path.{!!, Path}
-    use Json.FromJson.fromJsonAt
     use Location.Loc
-    use Json.{JsonElement, JsonError, Parse}
     use WeatherInfo.WeatherInfo
-    use Location.Loc.Loc
+    use WeatherError.WeatherError
     use WeatherInfoPrimitive.WeatherInfoPrimitive
     
     pub enum WeatherInfoPrimitive(Int32, Float64)
@@ -37,12 +32,20 @@ mod Weather {
 
     }
 
+    ///
+    /// Reads a json file and parse it to JsonEelement.
+    /// Any failure during the process will result in a None.
+    ///
     def loadJson(f: String): Option[JsonElement] \ FileReadWithResult =
         forM (
             descriptions <- FileReadWithResult.read(f) |> Result.toOption;
             json <- Parse.parse(descriptions)
         ) yield json
 
+    ///
+    /// Translates a WMOCode to corresponding weather condition.
+    /// We rely on data/description.json to translate.
+    ///
     def parseWMOCode(n: Int32): Result[WeatherError, String] \ FileReadWithResult =
         match loadJson("data/description.json") {
             case Option.None        => Err(WeatherError.ParseWMOCodeError("File data/description.json doesn't exist."))
@@ -63,14 +66,17 @@ mod Weather {
         def getWeather(loc: Loc): Result[WeatherError, WeatherInfo]
     }
     
-    pub def weatherWithHttpAndFile(f: Unit -> a \ ef ): a \ {ef - Weather + HttpWithResult + FileReadWithResult} = 
+    ///
+    /// Handles Weather effect by getting the weather for the given location from open-meteo and parse it.
+    ///
+    pub def weatherWithHttpAndFile(f: Unit -> a \ ef): a \ ef - Weather + HttpWithResult + FileReadWithResult = 
         run {
             f()
         } with handler Weather {
         def getWeather(loc, resume) = 
-            let Loc(_, _, lat, lon) = loc;
+            let Loc.Loc(_, _, lat, lon) = loc;
             let url = "https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code";
-            let weather = getAndParse(url, Map.empty()) |> Result.flatMap( resJson ->
+            let weather = Util.getAndParse(url, Map.empty()) |> Result.flatMap( resJson ->
                 match fromJson(resJson) {
                     case Result.Ok(weatherInfoPrimitive)  => 
                         let WeatherInfoPrimitive(wmo_code, temp) = weatherInfoPrimitive;

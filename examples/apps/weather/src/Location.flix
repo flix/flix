@@ -1,10 +1,9 @@
 mod Location {
-    use Error.WeatherError
-    use Json.getAtKey
     use Json.JsonError.JsonError
     use Json.FromJson.fromJsonAt
-    use Json.{JsonElement, JsonError}
     use Json.Path.{Path, !!}
+    use Json.{getAtKey, JsonElement, JsonError}
+    use WeatherError.WeatherError
     
     pub enum Loc(String, String, Float64, Float64)
 
@@ -36,13 +35,16 @@ mod Location {
         def getLocation(): Result[WeatherError, Loc]
     }
 
-    pub def locationWithHttp(f: Unit -> a \ ef ): a \ {ef - Location + HttpWithResult + IO} = {
+    ///
+    /// Handles Location effect by sending http request to ip-api.com
+    ///
+    pub def locationWithHttp(f: Unit -> a \ ef): a \ ef - Location + HttpWithResult + IO = {
         run {
             f()
         } with handler Location {
             def getLocation(resume) = 
                 let url = "http://ip-api.com/json";
-                let loc = getAndParse(url, Map.empty()) |> Result.flatMap ( resJson ->
+                let loc = Util.getAndParse(url, Map.empty()) |> Result.flatMap ( resJson ->
                     fromJsonAt(Path.Root, resJson) |> Result.mapErr( err -> 
                         WeatherError.JsonError(err)
                     )
