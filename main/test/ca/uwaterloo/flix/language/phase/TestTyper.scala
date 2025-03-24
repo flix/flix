@@ -686,6 +686,27 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("Test.MismatchedEff.Recursion.01") {
+    // Regression test. See https://github.com/flix/flix/issues/10185
+    val input =
+      """
+        |eff Something
+        |def foldRight(f: (a, b) -> b \ ef, s: b, l: List[a]): b \ ef - Something =
+        |    def loop(ll, k) = match ll {
+        |        case Nil     => k(s)
+        |        case x :: xs => loop(xs, ks -> k(f(x, ks)))
+        |    };
+        |    loop(l, x -> checked_ecast(x))
+        |
+        |enum List[a] {
+        |    case Nil
+        |    case Cons(a, List[a])
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
   test("Test.GeneralizationError.Eff.01") {
     val input =
       """
