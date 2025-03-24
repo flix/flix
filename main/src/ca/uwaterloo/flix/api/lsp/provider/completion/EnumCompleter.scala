@@ -27,7 +27,7 @@ object EnumCompleter {
     * Whether the returned completions are qualified is based on whether the name in the error is qualified.
     * When providing completions for unqualified enums that is not in scope, we will also automatically use the enum.
     */
-  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, env: LocalScope,  withTypeParameters: Boolean)(implicit root: TypedAst.Root): Iterable[Completion] = {
+  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope, withTypeParameters: Boolean)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
       root.enums.values.collect{
         case enum if CompletionUtils.isAvailable(enum) && CompletionUtils.matchesName(enum.sym, qn, qualified = true) =>
@@ -36,7 +36,7 @@ object EnumCompleter {
     else
       root.enums.values.collect({
         case enum if CompletionUtils.isAvailable(enum) && CompletionUtils.matchesName(enum.sym, qn, qualified = false) =>
-          EnumCompletion(enum, range, ap, qualified = false, inScope = inScope(enum, env), withTypeParameters = withTypeParameters)
+          EnumCompletion(enum, range, ap, qualified = false, inScope = inScope(enum, scp), withTypeParameters = withTypeParameters)
       })
   }
 
