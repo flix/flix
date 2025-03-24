@@ -1562,7 +1562,9 @@ object Resolver {
     val (directArgs, cloArgs) = exps.splitAt(arity)
 
     val fparamsPadding = mkFreshFparams(arity - directArgs.length, loc.asSynthetic)
-    val argsPadding = fparamsPadding.map(fp => ResolvedAst.Expr.Var(fp.sym, loc.asSynthetic))
+    val lastPos = loc.sp2.copy(col = (loc.sp2.col - 1).toShort)
+    val paddingLoc = loc.copy(sp1 = exps.lastOption.map(exp => exp.loc.sp2.copy(col = (exp.loc.sp2.col + 1).toShort)).getOrElse(lastPos), sp2 = lastPos)
+    val argsPadding = fparamsPadding.map(fp => ResolvedAst.Expr.Var(fp.sym, paddingLoc.asSynthetic))
 
     val fullArgs = directArgs ++ argsPadding
     val fullDefApplication = base(fullArgs)
