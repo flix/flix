@@ -15,13 +15,12 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import org.json4s.JsonDSL.*
-import org.json4s.*
-
 import org.eclipse.lsp4j
+import org.json4s.*
+import org.json4s.JsonDSL.*
 
 /**
   * Companion object for [[Position]].
@@ -46,6 +45,11 @@ object Position {
     */
   def fromLsp4j(pos: lsp4j.Position): Position =
     Position(pos.getLine + 1, pos.getCharacter + 1)
+
+  /**
+    * Returns a position from the given source position `pos`.
+    */
+  def from(pos: SourcePosition): Position = Position(pos.line, pos.col)
 
   /**
     * Tries to parse the given `json` value as a [[Position]].
