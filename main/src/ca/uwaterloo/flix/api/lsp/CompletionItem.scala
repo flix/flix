@@ -17,8 +17,8 @@ package ca.uwaterloo.flix.api.lsp
 
 import org.eclipse.lsp4j
 import org.eclipse.lsp4j.jsonrpc.messages
-import org.json4s.JsonDSL.*
 import org.json4s.*
+import org.json4s.JsonDSL.*
 
 import scala.jdk.CollectionConverters.SeqHasAsJava
 
@@ -58,7 +58,8 @@ case class CompletionItem(
   kind: CompletionItemKind,
   additionalTextEdits: List[TextEdit] = Nil,
   insertTextFormat: InsertTextFormat = InsertTextFormat.PlainText,
-  commitCharacters: List[String] = Nil) {
+  commitCharacters: List[String] = Nil,
+  command: Option[Command] = None) {
 
   def toJSON: JValue =
     ("label" -> label) ~
@@ -71,7 +72,8 @@ case class CompletionItem(
       ("kind" -> kind.toInt) ~
       ("insertTextFormat" -> insertTextFormat.toInt) ~
       ("additionalTextEdits" -> additionalTextEdits.map(_.toJSON)) ~
-      ("commitCharacters" -> commitCharacters)
+      ("commitCharacters" -> commitCharacters) ~
+      ("command" -> command.map(_.toJSON))
 
   def toLsp4j: lsp4j.CompletionItem = {
     val ci = new lsp4j.CompletionItem()

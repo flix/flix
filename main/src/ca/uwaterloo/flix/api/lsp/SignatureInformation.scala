@@ -19,6 +19,8 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
+import org.json4s.JValue
+import org.json4s.JsonDSL.*
 
 import scala.jdk.CollectionConverters.SeqHasAsJava
 
@@ -51,6 +53,13 @@ object SignatureInformation {
 }
 
 case class SignatureInformation(label: String, documentation: Option[String], parameters: List[ParameterInformation], activeParameter: Int) {
+  def toJSON: JValue = {
+    ("label" -> label) ~
+      ("documentation" -> documentation) ~
+      ("parameters" -> parameters.map(_.toJSON)) ~
+      ("activeParameter" -> activeParameter)
+  }
+
   def toLsp4j: org.eclipse.lsp4j.SignatureInformation = {
     val sig = new org.eclipse.lsp4j.SignatureInformation(label)
     sig.setDocumentation(documentation.map(doc => new org.eclipse.lsp4j.MarkupContent("markdown", doc)).orNull)
