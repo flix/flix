@@ -20,6 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.acceptors.InsideAcceptor
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.fmt.FormatType
 
 object LspUtil {
   /**
@@ -42,5 +44,30 @@ object LspUtil {
     }
 
     stack.getStack
+  }
+
+  /**
+    * Generates a user-friendly label for the given function specification.
+    *
+    * The label includes parameter names and types, return type, and effect (if applicable),
+    * formatted in a readable way.
+    */
+  def getLabelForSpec(spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
+    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _) =>
+      val args = if (fparams.length == 1 && fparams.head.tpe == Type.Unit)
+        Nil
+      else
+        fparams.map {
+          fparam => s"${fparam.bnd.sym.text}: ${FormatType.formatType(fparam.tpe)}"
+        }
+
+      val retTpe = FormatType.formatType(retTpe0)
+
+      val eff = eff0 match {
+        case Type.Cst(TypeConstructor.Pure, _) => ""
+        case p => raw" \ " + FormatType.formatType(p)
+      }
+
+      s"(${args.mkString(", ")}): $retTpe$eff"
   }
 }
