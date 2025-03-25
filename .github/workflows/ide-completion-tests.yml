@@ -1,4 +1,4 @@
-name: Completion Invariant
+name: IDE Completion Tests
 
 on: [ pull_request, merge_group ]
 
