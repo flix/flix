@@ -19,30 +19,12 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Token
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestCompletionProvider extends AnyFunSuite  {
-
-  test("No completions after complete keyword"){
-    checkInvariant(
-      token => token.kind.isKeyword,
-      identity,
-      assertEmptyCompletions
-    )
-  }
-
-  test("No completions after complete literal"){
-    checkInvariant(
-      token => token.kind.isLiteral,
-      identity,
-      assertEmptyCompletions
-    )
-  }
-
   /**
     * A list of programs to test invariants on.
     */
@@ -103,6 +85,30 @@ class TestCompletionProvider extends AnyFunSuite  {
        |""".stripMargin
   )
 
+  test("No completions after complete keyword"){
+    Programs.foreach{ program =>
+      val (root, flix, errors) = compile(program, Options.Default)
+      val source = mkSource(program)
+      val keywordTokens = root.tokens(source).toList.filter(_.kind.isKeyword)
+      keywordTokens.foreach{ token =>
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(token.sp2), errors)(root, flix)
+        assert(completions.items.isEmpty)
+      }
+    }
+  }
+
+  test("No completions after complete literal"){
+    Programs.foreach{ program =>
+      val (root, flix, errors) = compile(program, Options.Default)
+      val source = mkSource(program)
+      val keywordTokens = root.tokens(source).toList.filter(_.kind.isLiteral)
+      keywordTokens.foreach{ token =>
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(token.sp2), errors)(root, flix)
+        assert(completions.items.isEmpty)
+      }
+    }
+  }
+
   /**
     * The uri of the test source.
     */
@@ -128,44 +134,4 @@ class TestCompletionProvider extends AnyFunSuite  {
     val input = Input.Text(Uri, content, sctx)
     Source(input, content.toCharArray)
   }
-
-  /**
-    * Checks the completion provider invariant for the given token filter, string transformer and completion assertion.
-    * For all the Programs to be tested, we use the filter to select tokens to transform, apply the transformer to the selected tokens,
-    * call the completion provider with the transformed program and check the completions against the assertion.
-    *
-    * @param tokenFilter          the filter to select tokens to transform.
-    * @param stringTransformer    the transformer to apply to the selected tokens.
-    * @param completionAssertion  the assertion to check the completions against.
-    */
-  private def checkInvariant(tokenFilter: Token => Boolean, stringTransformer: String => String, completionAssertion: CompletionList => Unit ): Unit = {
-    Programs.foreach { program =>
-      // Compile the original program so that we can locate all target tokens.
-      val (root, flix, errors) = compile(program, Options.Default)
-      val source = mkSource(program)
-      val tokensToTransform = root.tokens(source).toList.filter(tokenFilter)
-      tokensToTransform.foreach { token =>
-        val replacingString = stringTransformer(token.text)
-        val newProgram = program.substring(0, token.start) + replacingString + program.substring(token.end)
-        val (newRoot, newFlix, newErrors) = if (stringTransformer != identity)
-          compile(newProgram, Options.Default)
-        else (root, flix, errors)
-        val newPos = Position(token.sp1.line, token.sp1.col + replacingString.length) // position after the replacement
-        val completions = CompletionProvider.autoComplete(Uri, newPos, newErrors)(newRoot, newFlix)
-        completionAssertion(completions)
-      }
-    }
-  }
-
-  /**
-    * Asserts that the given completions are empty.
-    */
-  private def assertEmptyCompletions(completions: CompletionList): Unit = {
-    assert(completions.items.isEmpty)
-  }
-
-  /**
-    * A function that returns the input string as is.
-    */
-  private def identity(s: String): String = s
 }
