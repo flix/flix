@@ -40,9 +40,7 @@ object SignatureHelpProvider {
       case TypedAst.Expr.ApplyDef(defnSymUse, exps, _, _, _, _) =>
         // Count the number of arguments applied
         // The number of arguments applied is the number of non-synthetic expressions
-        val argsNumApplied = exps.indexWhere { exp =>
-          pos.line == exp.loc.sp2.line && pos.character <= exp.loc.sp2.col && pos.character >= exp.loc.sp1.col
-        }
+        val argsNumApplied = exps.indexWhere(exp => pos.containedBy(exp.loc))
         val defn = root.defs(defnSymUse.sym)
         val signatureInfo = SignatureInformation.from(defn, argsNumApplied)
         SignatureHelp(List(signatureInfo), 0, 0)
