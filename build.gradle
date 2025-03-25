@@ -119,7 +119,7 @@ task testFuzzerSuite(dependsOn: ['testClasses'], type: JavaExec) {
     standardInput = System.in
 }
 
-task testCompletionInvariant(dependsOn: ['testClasses'], type: JavaExec) {
+task testIDECompletion(dependsOn: ['testClasses'], type: JavaExec) {
     mainClass = 'org.scalatest.tools.Runner'
     args = ['-s', 'ca.uwaterloo.flix.api.lsp.TestCompletionProvider', '-o']
     classpath = sourceSets.test.runtimeClasspath
