@@ -17,9 +17,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.acceptors.InsideAcceptor
-import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
-import ca.uwaterloo.flix.api.lsp.{Position, SignatureHelp, SignatureInformation, Visitor}
+import ca.uwaterloo.flix.api.lsp.{LspUtil, Position, SignatureHelp, SignatureInformation}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 
@@ -28,14 +26,7 @@ object SignatureHelpProvider {
     * Provides signature help for the given position.
     */
   def provideSignatureHelp(uri: String, pos: Position)(implicit root: Root, flix: Flix): Option[SignatureHelp] = {
-    val stack = StackConsumer()
-
-    if (pos.character >= 2) {
-      val leftPos = Position(pos.line, pos.character - 1)
-      Visitor.visitRoot(root, stack, InsideAcceptor(uri, leftPos))
-    }
-
-    stack.getStack.collectFirst {
+    LspUtil.getStack(uri, pos).collectFirst {
       // Find the nearest function application
       case TypedAst.Expr.ApplyDef(defnSymUse, exps, _, _, _, _) =>
         // Count the number of arguments applied
@@ -46,5 +37,4 @@ object SignatureHelpProvider {
         SignatureHelp(List(signatureInfo), 0, 0)
     }
   }
-
 }
