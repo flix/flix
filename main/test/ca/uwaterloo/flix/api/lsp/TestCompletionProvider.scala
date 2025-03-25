@@ -91,8 +91,12 @@ class TestCompletionProvider extends AnyFunSuite  {
       val source = mkSource(program)
       val keywordTokens = root.tokens(source).toList.filter(_.kind.isKeyword)
       keywordTokens.foreach{ token =>
-        val completions = CompletionProvider.autoComplete(Uri, Position.from(token.sp2), errors)(root, flix)
-        assert(completions.items.isEmpty)
+        // We will test all possible offsets in the keyword, including the start and end of the keyword
+        (0 to token.text.length).foreach{ offset =>
+          val pos = Position(token.sp1.line, token.sp1.col + offset)
+          val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, flix)
+          assert(completions.items.isEmpty)
+        }
       }
     }
   }
@@ -101,10 +105,15 @@ class TestCompletionProvider extends AnyFunSuite  {
     Programs.foreach{ program =>
       val (root, flix, errors) = compile(program, Options.Default)
       val source = mkSource(program)
-      val keywordTokens = root.tokens(source).toList.filter(_.kind.isLiteral)
+      // Find all the literal tokens that are on a single line
+      val keywordTokens = root.tokens(source).toList.filter(_.kind.isLiteral).filter(token => token.sp1.line == token.sp2.line)
       keywordTokens.foreach{ token =>
-        val completions = CompletionProvider.autoComplete(Uri, Position.from(token.sp2), errors)(root, flix)
-        assert(completions.items.isEmpty)
+        // We will test all possible offsets in the keyword, including the start and end of the keyword
+        (0 to token.text.length).foreach{ offset =>
+          val pos = Position(token.sp1.line, token.sp1.col + offset)
+          val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, flix)
+          assert(completions.items.isEmpty)
+        }
       }
     }
   }
