@@ -27,7 +27,7 @@ object SignatureHelpProvider {
     */
   def provideSignatureHelp(uri: String, pos: Position)(implicit root: Root, flix: Flix): Option[SignatureHelp] = {
     LspUtil.getStack(uri, pos).collectFirst {
-      // Find the nearest function application
+      // Find the nearest function application, that is, the lowest ApplyDef in the AST that contains the given position
       case TypedAst.Expr.ApplyDef(defnSymUse, exps, _, _, _, _) =>
         // Count the number of arguments applied
         // The number of arguments applied is the number of non-synthetic expressions
