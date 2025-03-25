@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.Token
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.util.Options
@@ -92,8 +93,7 @@ class TestCompletionProvider extends AnyFunSuite  {
       val keywordTokens = root.tokens(source).toList.filter(_.kind.isKeyword)
       keywordTokens.foreach{ token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
-        (0 to token.text.length).foreach{ offset =>
-          val pos = Position(token.sp1.line, token.sp1.col + offset)
+        getAllPositionsWithinToken(token).foreach { pos =>
           val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, flix)
           assert(completions.items.isEmpty)
         }
@@ -107,10 +107,9 @@ class TestCompletionProvider extends AnyFunSuite  {
       val source = mkSource(program)
       // Find all the literal tokens that are on a single line
       val keywordTokens = root.tokens(source).toList.filter(_.kind.isLiteral).filter(token => token.sp1.line == token.sp2.line)
-      keywordTokens.foreach{ token =>
+      keywordTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
-        (0 to token.text.length).foreach{ offset =>
-          val pos = Position(token.sp1.line, token.sp1.col + offset)
+        getAllPositionsWithinToken(token).foreach { pos =>
           val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, flix)
           assert(completions.items.isEmpty)
         }
@@ -143,4 +142,18 @@ class TestCompletionProvider extends AnyFunSuite  {
     val input = Input.Text(Uri, content, sctx)
     Source(input, content.toCharArray)
   }
+
+  /**
+    * Returns all positions within the given token.
+    *
+    * For example, give a token "def", we will return a list of positions:
+    * - |def
+    * - d|ef
+    * - de|f
+    * - def|
+    */
+  private def getAllPositionsWithinToken(token: Token): List[Position] =
+    (0 to token.text.length).map{ offset =>
+      Position(token.sp1.line, token.sp1.col + offset)
+    }.toList
 }
