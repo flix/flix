@@ -3,69 +3,248 @@ mod TestBPlusTree {
     import java.util.Objects
     use Array.sameElements
     use BPlusTree.Node
-
-    /////////////////////////////////////////////////////////////////////////////
-    // Test invariant about the BTree                                          //
-    /////////////////////////////////////////////////////////////////////////////
-    def testTreeInvariant(tree: BPlusTree[k, v, r]): Bool \ r with Order[k] =
-        let root = BPlusTree.getRootTesting(tree);
-        let order = BPlusTree.order(tree);
-        let nodeWorks = testNodeInvariant(root, order, true);
-        let rootIsUnlocked = not BPlusTree.Lock.isLocked(BPlusTree.getLock(tree));
-        let rootHasNoParent = Option.isEmpty(Node.parent(root));
-        nodeWorks and rootHasNoParent and rootIsUnlocked
-
-    def testNodeInvariant(node: Node[k, v, r], order: Int32, isRightMost: Bool): Bool \ r with Order[k] =
-        match Node.isLeaf(node) {
-        case false =>
-            let c = Node.children(node);
-            let size = Node.size(node);
-            let keys = toLength(Array.toVector(Node.keys(node)), size - 1);
-            let children = toLength(Array.toVector(c), size);
-            let keysInOrder = isInOrder(keys);
-            let childrenWorks = Vector.forAll(
-                x -> testNodeInvariant(x, order, false), toLength(children, size - 1)
-            ) and testNodeInvariant(unwrap(Vector.last(children)), order, isRightMost);
-            let parentPointerCorrect = Vector.foldLeft(
-                workingSoFar -> cur -> workingSoFar and ptrEqual(node, unwrap(Node.parent(cur))),
-                true, children);
-            let nextPointerCorrect = not Node.isLeaf(unwrap(Vector.head(children))) or applyPredicate(children, prev -> cur -> ptrEqual(unwrap(Node.next(prev)), cur));
-            let lastHasNoNext = not isRightMost or Option.isEmpty(Node.next(unwrap(Vector.last(children))));
-            let noLeaves = Array.size(Node.values(node)) == 0;
-            let nodeIsUnlocked = not BPlusTree.Lock.isLocked(Node.getLock(node));
-            parentPointerCorrect and nextPointerCorrect and
-                lastHasNoNext and noLeaves and keysInOrder and
-                childrenWorks and nodeIsUnlocked
-        case true =>
-            let size = Node.size(node);
-            let keys = toLength(Array.toVector(Node.keys(node)), size);
-            let keysInOrder = isInOrder(toLength(keys, size));
-            let sizeInRange = size <= order and 0 <= size;
-            let noChildren = Array.size(Node.children(node)) == 0;
-            let leafIsUnlocked = not BPlusTree.Lock.isLocked(Node.getLock(node));
-            sizeInRange and keysInOrder and leafIsUnlocked and noChildren
-    }
-
-    def toLength(v: Vector[v], length: Int32): Vector[v] =
-        Vector.slice(start = 0, end = length, v)
-
-    def isInOrder(v: Vector[k]): Bool with Order[k] =
-        applyPredicate(v, x -> y -> x <= y)
-
-    def applyPredicate(v: Vector[k], f: k -> k -> Bool \ r): Bool \ r =
-        let zipped = Vector.map(x -> (x, true), v);
-        let reduced =  Vector.reduceLeft(old -> cur ->
-            let (oldNum, oldBool) = old;
-            let (curNum, _) = cur;
-            (curNum, oldBool and f(oldNum, curNum))
-        , zipped);
-        match reduced {
-            case None => true
-            case Some((_, bool)) => bool
-        }
-
     def listToMap(l: List[(k, v)]): Map[k, v] with Order[k] =
         List.foldLeft(acc -> p -> let (x, y) = p; Map.insert(x, y, acc), Map#{}, l)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Test concurrency                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    ///
+    /// Calls `f` `callNum` times and returns the and of the result.
+    ///
+    def repeatN(f: Unit -> Bool \ ef, callNum: Int64): Bool \ ef = 
+        def repeatNInternal(callNumInternal: Int64, res: Bool): Bool \ ef = {
+            if (callNumInternal <= 0i64) res else {
+                // If the call to f is inlined Flix crashes for some reason.
+                let f_ = f();
+                repeatNInternal(callNumInternal - 1i64, res and f_)
+            }
+        };
+        repeatNInternal(callNum, true)
+
+    def totalInsertNum(): Int64 = 300_000i64
+
+    ///
+    /// `gen` and `inserted` are the functions that generate the inserted values.
+    /// If `inserted` is Some we check that they have been inserted.
+    /// For both `gen` and `inserted` every element of the vector will be called `numInserts` times and, respectively, be inserted or test membership.
+    ///
+    def concurrencyWithGenerators(gen: Vector[Unit -> (a, b) \ ef1], numInserts: Int64, inserted: Option[Vector[Unit -> (a, b) \ ef2]]): Bool \ ef2 + IO + NonDet - Random with Order[a] = region rc {
+        let tree: BPlusTree[a, b, rc]  = BPlusTree.empty(rc, 10); // Small order to get more splits.
+        let seeds = Random.runWithIO(() -> Vector.map(_ -> Random.randomInt64(), gen));
+        let _: Unit = region rc2 {
+            Vector.forEach(inputt -> {
+                let (f, seed) = inputt;
+                // Have to remove the effect ef1 and rc as spawn does not accept them
+                spawn unchecked_cast(() -> {
+                    Random.runWithSeed(seed, () -> repeatN(() -> {
+                        let (x, y) = f();
+                        BPlusTree.insert(x, y, tree);
+                        true
+                    }, numInserts)); ()
+                } as Unit -> Unit \ IO)() @ rc2}
+            , Vector.zip(gen, seeds))
+        };
+        BPlusTree.assertTreeInvariant(tree)
+         and match inserted {
+            case None => true
+            case Some(shouldBeIn) =>
+            Vector.forAll(inputt -> {
+                let (f, seed) = inputt;
+                Random.runWithSeed(seed, () -> repeatN(() -> {
+                    let (x, _) = f();
+                    BPlusTree.memberOf(x, tree)
+                }, numInserts))}
+            , Vector.zip(shouldBeIn, seeds))
+        }
+    }
+
+    ///
+    /// `gen` and `inserted` are the functions that generate the inserted values.
+    /// If `inserted` is Some we check that they have been inserted.
+    /// For both `gen` and `inserted` every element of the vector will be called `numInserts` times and, respectively, be inserted or test membership
+    ///
+    def concurrencyWithGeneratorsAndOccasionalTests(gen: Vector[Unit -> (a, b) \ ef1], numInserts: Int64, inserted: Vector[Unit -> (a, b) \ ef2], readEvery: Int64): Bool \ IO + NonDet - Random with Order[a] = region rc {
+        let tree: BPlusTree[a, b, rc]  = BPlusTree.empty(rc, 10); // Small order to get more splits.
+        let seeds = Random.runWithIO(() -> Vector.map(_ -> Random.randomInt64(), gen));
+        let resultVec = Vector.map(_ -> Ref.fresh(rc, false), Vector.range(0, Vector.length(gen)));
+        let insertWithSeed = Vector.map(match (seed, insert) -> Random.handleWithSeed(seed, insert), Vector.zip(seeds, inserted));
+        let _: Unit = region rc2 {
+            Vector.forEach(inputt -> {
+                let (((f, seed), insertedFunc), resultRef) = inputt;
+                // Have to remove the effect ef1 and rc as spawn does not accept them
+                spawn unchecked_cast(() -> {
+                    let countRef = Ref.fresh(rc, 0i64);
+                    Random.runWithSeed(seed, () -> Ref.put(repeatN(() -> {
+                        let (x, y) = f();
+                        BPlusTree.insert(x, y, tree);
+                        let cur = Ref.get(countRef);
+                        if (cur >= readEvery) {
+                            let (x_, _) = insertedFunc();
+                            Ref.put(0i64, countRef);
+                            BPlusTree.memberOf(x_, tree)
+                        } else {
+                            Ref.put(cur + 1i64, countRef);
+                            true
+                        }
+                    }, numInserts), resultRef))
+                } as Unit -> Unit \ IO)() @ rc2
+                }
+            , Vector.zip(Vector.zip(Vector.zip(gen, seeds), insertWithSeed), resultVec))
+        };
+        Vector.forAll(x -> Ref.get(x), resultVec)
+        // res
+    }
+
+    ///
+    /// Run concurrencyWithGenerators with random values as inserts.
+    ///
+    def concurrencyRandomInserts(numThreads: Int32, totalInserts: Int64): Bool \ IO + NonDet =
+        let generators = Vector.map(_ -> () -> (Random.randomInt64(), Random.randomInt32()), Vector.range(0, numThreads));
+        let insertions = Vector.map(_ -> () -> (Random.randomInt64(), Random.randomInt32()), Vector.range(0, numThreads));
+        concurrencyWithGenerators(generators, totalInserts / Int32.toInt64(numThreads), Some(insertions))
+
+    ///
+    /// Run concurrencyWithGenerators with random values between 0 (inclusive) and `rangeSize` (exlusive) as inserts.
+    ///
+    def concurrencyRandomInsertsClamped(numThreads: Int32, totalInserts: Int64, rangeSize: Int64): Bool \ IO + NonDet =
+        let generators = Vector.map(_ -> () -> (Int64.modulo(Random.randomInt64(), rangeSize), Random.randomInt32()), Vector.range(0, numThreads));
+        let insertions = Vector.map(_ -> () -> (Int64.modulo(Random.randomInt64(), rangeSize), Random.randomInt32()), Vector.range(0, numThreads));
+        concurrencyWithGenerators(generators, totalInserts / Int32.toInt64(numThreads), Some(insertions))
+
+    ///
+    /// Run concurrencyWithGenerators with [1, 2, ..., `numInserts`] as inserts for all threads.
+    ///
+    def concurrencyLockStep(numThreads: Int32, totalInserts: Int64): Bool \ IO + NonDet = region rc {
+        let range = Vector.range(0, numThreads);
+        let generators = Vector.map(reff -> () -> {let next = Ref.get(reff); Ref.put(next + 1i64, reff); (next, next)}, Vector.map(_ -> Ref.fresh(rc, 0i64), range));
+        let insertions = Vector.map(reff -> () -> {let next = Ref.get(reff); Ref.put(next + 1i64, reff); (next, next)}, Vector.map(_ -> Ref.fresh(rc, 0i64), range));
+        concurrencyWithGenerators(generators, totalInserts / Int32.toInt64(numThreads), Some(insertions))
+    }
+
+        ///
+    /// Run concurrencyWithGeneratorsAndOccasionalTests with random values as inserts.
+    ///
+    def concurrencyRandomInsertsIntermittentMemberOf(numThreads: Int32, totalInserts: Int64, readEvery: Int64): Bool \ IO + NonDet =
+        let generators = Vector.map(_ -> () -> (Random.randomInt64(), Random.randomInt32()), Vector.range(0, numThreads));
+        let insertions = Vector.map(_ -> () -> (Random.randomInt64(), Random.randomInt32()), Vector.range(0, numThreads));
+        concurrencyWithGeneratorsAndOccasionalTests(generators, totalInserts / Int32.toInt64(numThreads), insertions, readEvery)
+
+    ///
+    /// Run concurrencyWithGeneratorsAndOccasionalTests with random values between 0 (inclusive) and `rangeSize` (exlusive) as inserts.
+    ///
+    def concurrencyRandomInsertsClampedIntermittentMemberOf(numThreads: Int32, totalInserts: Int64, rangeSize: Int64, readEvery: Int64): Bool \ IO + NonDet =
+        let generators = Vector.map(_ -> () -> (Int64.modulo(Random.randomInt64(), rangeSize), Random.randomInt32()), Vector.range(0, numThreads));
+        let insertions = Vector.map(_ -> () -> (Int64.modulo(Random.randomInt64(), rangeSize), Random.randomInt32()), Vector.range(0, numThreads));
+        concurrencyWithGeneratorsAndOccasionalTests(generators, totalInserts / Int32.toInt64(numThreads), insertions, readEvery)
+
+    ///
+    /// Run concurrencyWithGeneratorsAndOccasionalTests with [1, 2, ..., `numInserts`] as inserts for all threads.
+    ///
+    def concurrencyLockStepIntermittentMemberOf(numThreads: Int32, totalInserts: Int64, readEvery: Int64): Bool \ IO + NonDet = region rc {
+        let range = Vector.range(0, numThreads);
+        let generators = Vector.map(reff -> () -> {let next = Ref.get(reff); Ref.put(next + 1i64, reff); (next, next)}, Vector.map(_ -> Ref.fresh(rc, 0i64), range));
+        let insertions = Vector.map(reff -> () -> {let next = Ref.get(reff); Ref.put(next + 1i64, reff); (next, next)}, Vector.map(_ -> Ref.fresh(rc, 0i64), range));
+        concurrencyWithGeneratorsAndOccasionalTests(generators, totalInserts / Int32.toInt64(numThreads), insertions, readEvery)
+    }
+
+
+
+    // Large concurrent insertion test-cases
+    @test
+    def concurrency01(): Bool \ IO + NonDet = concurrencyRandomInserts(10, totalInsertNum())
+
+    @test
+    def concurrency02(): Bool \ IO + NonDet = concurrencyRandomInserts(20, totalInsertNum())
+
+    @test
+    def concurrency03(): Bool \ IO + NonDet = concurrencyRandomInserts(30, totalInsertNum())
+
+    @test
+    def concurrency04(): Bool \ IO + NonDet = concurrencyRandomInsertsClamped(10, totalInsertNum(), 10_000i64)
+
+    @test
+    def concurrency05(): Bool \ IO + NonDet = concurrencyRandomInsertsClamped(30, totalInsertNum(), 10_000i64)
+
+    @test
+    def concurrency06(): Bool \ IO + NonDet = concurrencyRandomInsertsClamped(20, totalInsertNum(), 10_000i64)
+
+    @test
+    def concurrency07(): Bool \ IO + NonDet = concurrencyRandomInsertsClamped(40, totalInsertNum(), 100_000i64)
+
+    @test
+    def concurrency08(): Bool \ IO + NonDet = concurrencyLockStep(10, totalInsertNum())
+
+    @test
+    def concurrency09(): Bool \ IO + NonDet = concurrencyLockStep(30, totalInsertNum())
+
+    @test
+    def concurrency10(): Bool \ IO + NonDet = concurrencyRandomInsertsIntermittentMemberOf(10, totalInsertNum(), 10i64)
+
+    @test
+    def concurrency11(): Bool \ IO + NonDet = concurrencyRandomInsertsIntermittentMemberOf(20, totalInsertNum(), 10i64)
+
+    @test
+    def concurrency12(): Bool \ IO + NonDet = concurrencyRandomInsertsIntermittentMemberOf(30, totalInsertNum(), 10i64)
+
+    @test
+    def concurrency13(): Bool \ IO + NonDet = concurrencyRandomInsertsClampedIntermittentMemberOf(10, totalInsertNum(), 10_000i64, 10i64)
+
+    @test
+    def concurrency14(): Bool \ IO + NonDet = concurrencyRandomInsertsClampedIntermittentMemberOf(30, totalInsertNum(), 10_000i64, 10i64)
+
+    @test
+    def concurrency15(): Bool \ IO + NonDet = concurrencyRandomInsertsClampedIntermittentMemberOf(20, totalInsertNum(), 10_000i64, 10i64)
+
+    @test
+    def concurrency16(): Bool \ IO + NonDet = concurrencyRandomInsertsClampedIntermittentMemberOf(40, totalInsertNum(), 100_000i64, 10i64)
+
+    @test
+    def concurrency17(): Bool \ IO + NonDet = concurrencyLockStepIntermittentMemberOf(10, totalInsertNum(), 10i64)
+
+    @test
+    def concurrency18(): Bool \ IO + NonDet = concurrencyLockStepIntermittentMemberOf(30, totalInsertNum(), 10i64)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // containsPair                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def containsPair01(): Bool = region rc {
+        let tree = BPlusTree.empty(rc, 3);
+        not BPlusTree.containsPair(0, 0, tree) and
+            not BPlusTree.containsPair(0, 1, tree) and
+            not BPlusTree.containsPair(1, 0, tree)
+    }
+    @test
+    def containsPair02(): Bool = region rc {
+        let tree = BPlusTree.empty(rc, 3);
+        BPlusTree.insert(1, 2, tree);
+        BPlusTree.containsPair(1, 2, tree) and
+            not BPlusTree.containsPair(2, 1, tree) and
+            not BPlusTree.containsPair(1, 3, tree)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // containsPairThreadUnsafe                                                //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def containsPairUnsafe01(): Bool = region rc {
+        let tree = BPlusTree.empty(rc, 3);
+        not BPlusTree.containsPairThreadUnsafe(0, 0, tree) and
+            not BPlusTree.containsPairThreadUnsafe(0, 1, tree) and
+            not BPlusTree.containsPairThreadUnsafe(1, 0, tree)
+    }
+    @test
+    def containsPairUnsafe02(): Bool = region rc {
+        let tree = BPlusTree.empty(rc, 3);
+        BPlusTree.insert(1, 2, tree);
+        BPlusTree.containsPairThreadUnsafe(1, 2, tree) and
+            not BPlusTree.containsPairThreadUnsafe(2, 1, tree) and
+            not BPlusTree.containsPairThreadUnsafe(1, 3, tree)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
@@ -100,17 +279,49 @@ mod TestBPlusTree {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // isEmptyThreadUnsafe                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def isEmptyThreadUnsafe01(): Bool = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc, 3);
+        BPlusTree.isEmptyThreadUnsafe(tree)
+    }
+
+    @test
+    def isEmptyThreadUnsafe02(): Bool = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc, 3);
+        BPlusTree.insert(1, 2, tree);
+        not BPlusTree.isEmptyThreadUnsafe(tree)
+    }
+
+    @test
+    def isEmptyThreadUnsafe03(): Bool = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc, 3);
+        let empty0 = BPlusTree.isEmptyThreadUnsafe(tree);
+        BPlusTree.insert(1, 2, tree);
+        let empty1 = BPlusTree.isEmptyThreadUnsafe(tree);
+        BPlusTree.insert(2, 3, tree);
+        let empty2 = BPlusTree.isEmptyThreadUnsafe(tree);
+        BPlusTree.insert(3, 4, tree);
+        let empty3 = BPlusTree.isEmptyThreadUnsafe(tree);
+        BPlusTree.insert(4, 5, tree);
+        let empty4 = BPlusTree.isEmptyThreadUnsafe(tree);
+        empty0 and not empty1 and not empty2 and not empty3 and not empty4
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // insert                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    def getRandomListOfPairs(n: Int32): List[(Int32, Int32)] \ Random =
-        List.map(_ -> (Random.randomInt32(), Random.randomInt32()), List.range(0, n))
+    // def getRandomListOfPairs(n: Int32): List[(Int32, Int32)] \ Random =
+    //     List.map(_ -> (Random.randomInt32(), Random.randomInt32()), List.range(0, n))
 
     @test
     def insert01(): Bool = region rc {
         let tree = BPlusTree.empty(rc, 3);
         BPlusTree.insert(4, 2, tree);
-        BPlusTree.containsPair(4, 2 ,tree) and testTreeInvariant(tree)
+        BPlusTree.containsPair(4, 2 ,tree) and BPlusTree.assertTreeInvariant(tree)
     }
 
     @test
@@ -122,7 +333,7 @@ mod TestBPlusTree {
         BPlusTree.containsPair(1, 10, tree) and
             BPlusTree.containsPair(2, 11, tree) and
             BPlusTree.containsPair(3, 12, tree) and
-            testTreeInvariant(tree)
+            BPlusTree.assertTreeInvariant(tree)
     }
 
     @test
@@ -140,7 +351,7 @@ mod TestBPlusTree {
             BPlusTree.containsPair(4, 13, tree) and
             BPlusTree.containsPair(5, 14, tree) and
             BPlusTree.containsPair(6, 15, tree) and
-            testTreeInvariant(tree)
+            BPlusTree.assertTreeInvariant(tree)
     }
 
     @test
@@ -156,7 +367,7 @@ mod TestBPlusTree {
         }, pairs);
         Map.forAll(x -> y -> {
             BPlusTree.containsPair(x, y, tree)
-        }, listToMap(pairs)) and testTreeInvariant(tree)
+        }, listToMap(pairs)) and BPlusTree.assertTreeInvariant(tree)
     }
 
     @test
@@ -173,60 +384,8 @@ mod TestBPlusTree {
             }, pairs);
             Map.forAll((x, y) -> {
                 BPlusTree.containsPair(x, y, tree)
-            }, listToMap(pairs)) and testTreeInvariant(tree)
+            }, listToMap(pairs)) and BPlusTree.assertTreeInvariant(tree)
         }, List.range(3, 10))
-    }
-
-
-    @test
-    def insert06(): Bool = region rc {
-        List.forAll(threads -> {
-            let tree: BPlusTree[Int32, Int32, rc]  = BPlusTree.empty(rc, 10);
-            let pairsList = Random.handleWithSeed(0i64, () -> Vector.map(_ -> getRandomListOfPairs(10_000 / threads), Vector.range(0, threads)))();
-            let _: Unit = region rc2 {
-                unchecked_cast(
-                    Vector.forEach(list -> spawn unchecked_cast(() ->
-                        List.forEach(p -> {
-                            let (x, y) = p;
-                            BPlusTree.insert(x, y, tree)
-                        }, list) as Unit -> Unit \ IO)() @ rc2
-                    , pairsList)
-                as _ \ rc)
-            };
-            Vector.forAll(list ->
-                List.forAll(p -> {
-                    let (x, _) = p;
-                    BPlusTree.memberOf(x, tree)
-            }, list), pairsList) and testTreeInvariant(tree)
-        }, List.range(1, 11))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // memberOfThreadUnsafe                                                          //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def memberOfUnsafe01(): Bool = region rc {
-        let tree = BPlusTree.empty(rc, 3);
-        BPlusTree.insert(2, 3, tree);
-        BPlusTree.memberOfThreadUnsafe(2, tree)
-    }
-
-    @test
-    def memberOfUnsafe02(): Bool = region rc {
-        let tree = BPlusTree.empty(rc, 3);
-        not BPlusTree.memberOfThreadUnsafe(0, tree) and
-            not BPlusTree.memberOfThreadUnsafe(1, tree) and
-            not BPlusTree.memberOfThreadUnsafe(-1, tree)
-    }
-
-    @test
-    def memberOfUnsafe03(): Bool = region rc {
-        let tree = BPlusTree.empty(rc, 3);
-        BPlusTree.insert(1, 2, tree);
-        BPlusTree.memberOfThreadUnsafe(1, tree) and
-            not BPlusTree.memberOfThreadUnsafe(2, tree) and
-            not BPlusTree.memberOfThreadUnsafe(0, tree)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -259,27 +418,37 @@ mod TestBPlusTree {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // containsPair                                                            //
+    // memberOfThreadUnsafe                                                          //
     /////////////////////////////////////////////////////////////////////////////
+
     @test
-    def containsPair01(): Bool = region rc {
+    def memberOfUnsafe01(): Bool = region rc {
         let tree = BPlusTree.empty(rc, 3);
-        not BPlusTree.containsPair(0, 0, tree) and
-            not BPlusTree.containsPair(0, 1, tree) and
-            not BPlusTree.containsPair(1, 0, tree)
+        BPlusTree.insert(2, 3, tree);
+        BPlusTree.memberOfThreadUnsafe(2, tree)
     }
+
     @test
-    def containsPair04(): Bool = region rc {
+    def memberOfUnsafe02(): Bool = region rc {
+        let tree = BPlusTree.empty(rc, 3);
+        not BPlusTree.memberOfThreadUnsafe(0, tree) and
+            not BPlusTree.memberOfThreadUnsafe(1, tree) and
+            not BPlusTree.memberOfThreadUnsafe(-1, tree)
+    }
+
+    @test
+    def memberOfUnsafe03(): Bool = region rc {
         let tree = BPlusTree.empty(rc, 3);
         BPlusTree.insert(1, 2, tree);
-        BPlusTree.containsPair(1, 2, tree) and
-            not BPlusTree.containsPair(2, 1, tree) and
-            not BPlusTree.containsPair(1, 3, tree)
+        BPlusTree.memberOfThreadUnsafe(1, tree) and
+            not BPlusTree.memberOfThreadUnsafe(2, tree) and
+            not BPlusTree.memberOfThreadUnsafe(0, tree)
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // rangeQueryWith                                                          //
     /////////////////////////////////////////////////////////////////////////////
+
     def rangeQueryDefaultTree(rc: Region[r]): BPlusTree[Int32, Int32, r] \ r =
         let tree: BPlusTree[Int32, Int32, r] = BPlusTree.empty(rc, 3);
         BPlusTree.insert(0, 10, tree);
@@ -379,15 +548,5 @@ mod TestBPlusTree {
         BPlusTree.rangeQueryWith(f, 0, 3, tree);
         let res = Vector#{(0, 12), (1, 12), (2, 13), (3, 14)};
         MutList.toVector(list) `Vector.equals` res
-    }
-
-    def ptrEqual(o1: v, o2: v): Bool \ r =
-        let obj1 = unchecked_cast(o1 as Object \ r);
-        let obj2 = unchecked_cast(o2 as Object \ r);
-        unchecked_cast(Objects.equals(obj1, obj2) as _ \ r)
-
-    def unwrap(x: Option[a]): a = match x {
-        case Some(v) => v
-        case None => bug!("Attempted unwrapping None")
     }
 }
