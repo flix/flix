@@ -91,9 +91,9 @@ object ResolvedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends Expr
 
-    case class Hole(sym: Symbol.HoleSym, env: LocalScope, loc: SourceLocation) extends Expr
+    case class Hole(sym: Symbol.HoleSym, scp: LocalScope, loc: SourceLocation) extends Expr
 
-    case class HoleWithExp(exp: Expr, env: LocalScope, loc: SourceLocation) extends Expr
+    case class HoleWithExp(exp: Expr, scp: LocalScope, loc: SourceLocation) extends Expr
 
     case class OpenAs(symUse: RestrictableEnumSymUse, exp: Expr, loc: SourceLocation) extends Expr
 

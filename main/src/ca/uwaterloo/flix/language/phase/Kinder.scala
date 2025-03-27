@@ -619,7 +619,7 @@ object Kinder {
       val tvar = Type.freshVar(Kind.Star, loc)
       val evar1 = Type.freshVar(Kind.Eff, loc)
       val evar2 = Type.freshVar(Kind.Eff, loc)
-      val rules = rules0.map(visitHandlerRule(_, kenv0, taenv, tvar, root))
+      val rules = rules0.map(visitHandlerRule(_, kenv0, taenv, root))
       KindedAst.Expr.Handler(symUse, rules, tvar, evar1, evar2, loc)
 
     case ResolvedAst.Expr.RunWith(exp10, exp20, loc) =>
@@ -814,7 +814,7 @@ object Kinder {
   /**
     * Performs kinding on the given handler rule under the given kind environment.
     */
-  private def visitHandlerRule(rule0: ResolvedAst.HandlerRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], hTvar: Type.Var, root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.HandlerRule = rule0 match {
+  private def visitHandlerRule(rule0: ResolvedAst.HandlerRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.HandlerRule = rule0 match {
     case ResolvedAst.HandlerRule(symUse, fparams0, exp0, loc) =>
       // create a new type variable for the op return type (same as resume argument type)
       val tvar = Type.freshVar(Kind.Star, exp0.loc)
@@ -1291,7 +1291,7 @@ object Kinder {
   /**
     * Infers a kind environment from the given formal param.
     */
-  private def inferFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindEnv = fparam0 match {
+  private def inferFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext): KindEnv = fparam0 match {
     case ResolvedAst.FormalParam(_, _, tpe0, _) => tpe0 match {
       case None => KindEnv.empty
       case Some(tpe) => inferType(tpe, Kind.Star, kenv, taenv, root)

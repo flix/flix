@@ -26,7 +26,7 @@ case class ZhegalkinTerm(cst: ZhegalkinCst, vars: SortedSet[ZhegalkinVar]) {
   def freeVars: SortedSet[ZhegalkinVar] = vars.filter(x => x.flexible)
 
   /**
-    * Maps the given function `f` over the variables in `this` Zhegalkin term.
+    * Maps the given function `f` over the free variables in `this` Zhegalkin term.
     *
     * {{{
     *   map(f, c ∩ x1 ∩ x2 ∩ ... ∩ xn) = c ∩ map(f, x1) ∩ map(f, x2) ∩ ... ∩ map(f, xn)
@@ -35,7 +35,9 @@ case class ZhegalkinTerm(cst: ZhegalkinCst, vars: SortedSet[ZhegalkinVar]) {
     */
   def map(f: Int => ZhegalkinExpr): ZhegalkinExpr = {
     vars.foldLeft(ZhegalkinExpr.mkZhegalkinExpr(cst, Nil)) {
-      case (acc, x) => ZhegalkinExpr.mkInter(f(x.id), acc)
+      case (acc, x) =>
+        val newX = if (x.flexible) f(x.id) else ZhegalkinExpr.mkVar(x)
+        ZhegalkinExpr.mkInter(newX, acc)
     }
   }
 

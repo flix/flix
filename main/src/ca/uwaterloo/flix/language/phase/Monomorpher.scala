@@ -85,9 +85,6 @@ import scala.collection.mutable
   */
 object Monomorpher {
 
-  // TODO levels trying top scope to get it to compile. Revisit.
-  private implicit val S: Scope = Scope.Top
-
   /**
     * Companion object for [[StrictSubstitution]].
     */
@@ -155,23 +152,6 @@ object Monomorpher {
       case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
       case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
     }
-
-    /**
-      * Adds the given mapping to the substitution.
-      *
-      * The type must be a normalized type.
-      */
-    def +(kv: (Symbol.KindedTypeVarSym, Type)): StrictSubstitution = kv match {
-      case (tvar, tpe) =>
-        val t = simplify(tpe.map(default), eqEnv, isGround = true)
-        StrictSubstitution(s ++ Substitution.singleton(tvar, t), eqEnv)
-    }
-
-    /**
-      * Removes the binding for the given type variable `tvar` (if it exists).
-      */
-    def unbind(sym: Symbol.KindedTypeVarSym): StrictSubstitution =
-      StrictSubstitution(s.unbind(sym), eqEnv)
 
     /**
       * Returns the non-strict version of this substitution.
@@ -369,8 +349,8 @@ object Monomorpher {
     val effects = ParOps.parMapValues(root.effects) {
       case LoweredAst.Effect(doc, ann, mod, sym, ops0, loc) =>
         val ops = ops0.map {
-          case LoweredAst.Op(sym, spec, loc) =>
-            MonoAst.Op(sym, visitEffectOpSpec(spec, empty), loc)
+          case LoweredAst.Op(opSym, spec, opLoc) =>
+            MonoAst.Op(opSym, visitEffectOpSpec(spec, empty), opLoc)
         }
         MonoAst.Effect(doc, ann, mod, sym, ops, loc)
     }
@@ -438,8 +418,8 @@ object Monomorpher {
   private def visitEffectOpSpec(spec: LoweredAst.Spec, subst: StrictSubstitution): MonoAst.Spec = spec match {
     case LoweredAst.Spec(doc, ann, mod, _, fparams0, declaredScheme, retTpe, eff, _) =>
       val fparams = fparams0.map {
-        case LoweredAst.FormalParam(sym, mod, tpe, src, loc) =>
-          MonoAst.FormalParam(sym, mod, subst(tpe), src, loc)
+        case LoweredAst.FormalParam(sym, fparamMod, tpe, src, loc) =>
+          MonoAst.FormalParam(sym, fparamMod, subst(tpe), src, loc)
       }
       MonoAst.Spec(doc, ann, mod, fparams, declaredScheme.base, subst(retTpe), subst(eff))
   }
@@ -853,7 +833,7 @@ object Monomorpher {
     case v@Type.Var(_, _) => v
     case c@Type.Cst(_, _) => c
     case app@Type.Apply(_, _, _) => normalizeApply(simplify(_, eqEnv, isGround), app, isGround)
-    case Type.Alias(_, _, tpe, _) => simplify(tpe, eqEnv, isGround)
+    case Type.Alias(_, _, t, _) => simplify(t, eqEnv, isGround)
     case Type.AssocType(symUse, arg0, kind, loc) =>
       val arg = simplify(arg0, eqEnv, isGround)
       val t = TypeReduction2.reduce(Type.AssocType(symUse, arg, kind, loc), Scope.Top, RigidityEnv.empty)(Progress(), eqEnv, flix)
