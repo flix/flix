@@ -24,7 +24,7 @@ object ExprSnippetCompleter {
     // NB: Please keep the list alphabetically sorted.
     Completion.SnippetCompletion("main",
       "def main(): Unit \\ IO = \n    println(\"Hello World!\")",
-      "snippet for Hello World Program"),
+      "snippet for Hello World Program", range),
   )
 
 }

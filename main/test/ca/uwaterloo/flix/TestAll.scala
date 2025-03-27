@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.tools.ToolsSuite
 import ca.uwaterloo.flix.util.UtilSuite
 import flix.CompilerSuite
 import flix.experimental.ExperimentalSuite
+import flix.resiliency.ResiliencySuite
 import org.scalatest.Suites
 
 class TestAll extends Suites(
@@ -33,6 +34,7 @@ class TestAll extends Suites(
   new ExperimentalSuite,
   new LanguageSuite,
   new LibrarySuite,
+  new ResiliencySuite,
   new TestMain,
   new ToolsSuite,
   new UtilSuite,

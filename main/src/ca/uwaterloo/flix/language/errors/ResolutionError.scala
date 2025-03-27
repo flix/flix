@@ -16,9 +16,9 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, TraitUsageKind}
 import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, UnkindedType}
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 /**
@@ -637,10 +637,10 @@ object ResolutionError {
     * @param qn  the unresolved effect.
     * @param ap  then anchor position.
     * @param ns  the current namespace.
-    * @param env the local scope.
+    * @param scp the local scope.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedEffect(qn: Name.QName, ap: AnchorPosition, env: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedEffect(qn: Name.QName, ap: AnchorPosition, scp: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined effect '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
@@ -761,10 +761,10 @@ object ResolutionError {
     *
     * @param qn    the unresolved name.
     * @param ap    the anchor position.
-    * @param env   the variables in the scope.
+    * @param scp   the variables in the scope.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedName(qn: Name.QName, ap: AnchorPosition, env: LocalScope, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedName(qn: Name.QName, ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
@@ -788,10 +788,10 @@ object ResolutionError {
     *
     * @param qn    the unresolved name.
     * @param ns    the current namespace.
-    * @param env   the variables in the scope.
+    * @param scp   the variables in the scope.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedNameUnrecoverable(qn: Name.QName, ns: Name.NName, env: LocalScope, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedNameUnrecoverable(qn: Name.QName, ns: Name.NName, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
@@ -815,11 +815,11 @@ object ResolutionError {
     *
     * @param name the jvm class/struct name
     * @param ap   the anchor position.
-    * @param env  the local scope.
+    * @param scp  the local scope.
     * @param msg  the error message.
     * @param loc  the location of the class/struct name.
     */
-  case class UndefinedNewJvmClassOrStruct(name: Name.Ident, ap: AnchorPosition, env: LocalScope, msg: String, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedNewJvmClassOrStruct(name: Name.Ident, ap: AnchorPosition, scp: LocalScope, msg: String, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined New: '$name'."
 
     def message(formatter: Formatter): String = messageWithLink {
@@ -836,10 +836,10 @@ object ResolutionError {
   /**
     * Undefined Op Error.
     *
-    * @param qname the qualified name of the operation.
+    * @param qn    the qualified name of the operation.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedOp(qn: Name.QName, ap: AnchorPosition, env: LocalScope, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedOp(qn: Name.QName, ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined operation '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
@@ -916,7 +916,7 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedTag(qn: Name.QName, ap: AnchorPosition, env: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedTag(qn: Name.QName, ap: AnchorPosition, scp: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined tag: '$qn'."
 
     def message(formatter: Formatter): String = messageWithLink {
@@ -941,11 +941,11 @@ object ResolutionError {
     * @param qn           the unresolved trait.
     * @param traitUseKind the kind of trait use.
     * @param ap           the anchor position.
-    * @param env          the variables in the scope.
+    * @param scp          the variables in the scope.
     * @param ns           the current namespace.
     * @param loc          the location where the error occurred.
     */
-  case class UndefinedTrait(qn: Name.QName, traitUseKind: TraitUsageKind, ap: AnchorPosition, env: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedTrait(qn: Name.QName, traitUseKind: TraitUsageKind, ap: AnchorPosition, scp: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined trait: '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
@@ -972,7 +972,7 @@ object ResolutionError {
     * @param ap       the enclosing module.
     * @param loc      the location where the error occurred.
     */
-  case class UndefinedType(qn: Name.QName, kindOpt: Option[Kind], ap: AnchorPosition, env: LocalScope, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedType(qn: Name.QName, kindOpt: Option[Kind], ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined type: '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {

@@ -901,7 +901,7 @@ object Namer {
   /**
     * Performs naming on the given struct field expression `exp0`.
     */
-  private def visitStructField(exp0: (Name.Label, DesugaredAst.Expr))(implicit scope: Scope, sctx: SharedContext, flix: Flix): (Name.Label, NamedAst.Expr) = exp0 match {
+  private def visitStructField(field: (Name.Label, DesugaredAst.Expr))(implicit scope: Scope, sctx: SharedContext, flix: Flix): (Name.Label, NamedAst.Expr) = field match {
     case (n, exp0) =>
       val e = visitExp(exp0)
       (n, e)
@@ -1213,7 +1213,7 @@ object Namer {
   }
 
   /**
-    * Returns the free variables in the list of [[Record.RecordLabelPattern]] `pats`.
+    * Returns the free variables in the list of [[DesugaredAst.Pattern.Record.RecordLabelPattern]] `pats`.
     */
   private def recordPatternFreeVars(pats: List[DesugaredAst.Pattern.Record.RecordLabelPattern]): List[Name.Ident] = {
     def optFreeVars(rfp: DesugaredAst.Pattern.Record.RecordLabelPattern): List[Name.Ident] = rfp.pat.map(freeVars).getOrElse(Nil)
