@@ -84,10 +84,6 @@ object SourcePosition {
 /** Represents a physical position inside a source. */
 final class SourcePosition private(val source: Source, val lineOneIndexed: Int, val colOneIndexed: Short) {
 
-  def lineZeroIndexed: Int = lineOneIndexed - 1
-
-  def colZeroIndexed: Short = (colOneIndexed - 1).toShort
-
   /** Returns `true` if `this` and `o` represent the same source position. */
   override def equals(o: Any): Boolean = o match {
     case that: SourcePosition =>
