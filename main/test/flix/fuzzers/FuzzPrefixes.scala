@@ -32,19 +32,19 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
   test("simple-card-game") {
     val filepath = Paths.get("examples/larger-examples/simple-card-game.flix")
     val input = Files.readString(filepath)
-    compilePrefixes(filepath.getFileName.toString, input)
+    compilePrefixes(input)
   }
 
   test("the-ast-typing-problem-with-polymorphic-records") {
     val filepath = Paths.get("examples/records/the-ast-typing-problem-with-polymorphic-records.flix")
     val input = Files.readString(filepath)
-    compilePrefixes(filepath.getFileName.toString, input)
+    compilePrefixes(input)
   }
 
   test("ford-fulkerson") {
     val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
     val input = Files.readString(filepath)
-    compilePrefixes(filepath.getFileName.toString, input)
+    compilePrefixes(input)
   }
 
   /**
@@ -52,7 +52,7 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
     * For example, if N is 100 and the input has length 300 then we create prefixes of length 3, 6, 9, ...
     * The program may not be valid: We just care that it does not crash the compiler.
     */
-  private def compilePrefixes(name: String, input: String): Unit = {
+  private def compilePrefixes(input: String): Unit = {
     val length = input.length
     val step = length / N
 
@@ -61,10 +61,9 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
     for (i <- 1 until N) {
       val e = Math.min(i * step, length)
       val prefix = input.substring(0, e)
-      val sourceName = s"$name-prefix-$e"
-      flix.addSourceCode(sourceName, prefix)(SecurityContext.AllPermissions)
+      // We use the same name for all inputs to simulate editing a file
+      flix.addSourceCode("<input>", prefix)(SecurityContext.AllPermissions)
       flix.compile() // We simply care that this does not crash.
-      flix.remSourceCode(sourceName)
     }
   }
 

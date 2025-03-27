@@ -33,26 +33,26 @@ class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
   test("simple-card-game") {
     val filepath = Paths.get("examples/larger-examples/simple-card-game.flix")
     val lines = Files.lines(filepath)
-    compileWithDuplicateLine(filepath.getFileName.toString, lines)
+    compileWithDuplicateLine(lines)
   }
 
   test("the-ast-typing-problem-with-polymorphic-records") {
     val filepath = Paths.get("examples/records/the-ast-typing-problem-with-polymorphic-records.flix")
     val lines = Files.lines(filepath)
-    compileWithDuplicateLine(filepath.getFileName.toString, lines)
+    compileWithDuplicateLine(lines)
   }
 
   test("ford-fulkerson") {
     val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
     val lines = Files.lines(filepath)
-    compileWithDuplicateLine(filepath.getFileName.toString, lines)
+    compileWithDuplicateLine(lines)
   }
 
   /**
     * Compile N variants of the given program with a single line duplicated.
     * The program may not be valid: We just care that it does not crash the compiler.
     */
-  private def compileWithDuplicateLine(name: String, stream: java.util.stream.Stream[String]): Unit = {
+  private def compileWithDuplicateLine(stream: java.util.stream.Stream[String]): Unit = {
     val lines = stream.iterator().asScala.toList
     val numLines = lines.length
     val NFixed = N.min(numLines)
@@ -64,10 +64,9 @@ class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
       val iStepped = Math.min(i * step, numLines)
       val (before, after) = lines.splitAt(iStepped)
       val src = (before ::: after.head :: after).mkString("\n")
-      val sourceName = s"$name-duplicate-line-$iStepped"
-      flix.addSourceCode(sourceName, src)(SecurityContext.AllPermissions)
+      // We use the same name for all inputs to simulate editing a file
+      flix.addSourceCode("<input>", src)(SecurityContext.AllPermissions)
       flix.compile() // We simply care that this does not crash.
-      flix.remSourceCode(sourceName)
     }
   }
 

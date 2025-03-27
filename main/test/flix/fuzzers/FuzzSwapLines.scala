@@ -36,19 +36,19 @@ class FuzzSwapLines extends AnyFunSuite with TestUtils {
   test("simple-card-game") {
     val filepath = Paths.get("examples/larger-examples/simple-card-game.flix")
     val lines = Files.lines(filepath)
-    compileWithSwappedLines(filepath.getFileName.toString, lines)
+    compileWithSwappedLines(lines)
   }
 
   test("the-ast-typing-problem-with-polymorphic-records") {
     val filepath = Paths.get("examples/records/the-ast-typing-problem-with-polymorphic-records.flix")
     val lines = Files.lines(filepath)
-    compileWithSwappedLines(filepath.getFileName.toString, lines)
+    compileWithSwappedLines(lines)
   }
 
   test("ford-fulkerson") {
     val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
     val lines = Files.lines(filepath)
-    compileWithSwappedLines(filepath.getFileName.toString, lines)
+    compileWithSwappedLines(lines)
   }
 
   /**
@@ -57,7 +57,7 @@ class FuzzSwapLines extends AnyFunSuite with TestUtils {
     * line 0 with line 10, 20, 30, 40, 50, 60, 70, 80, 90 and 100.
     * The program may not be valid: We just care that it does not crash the compiler.
     */
-  private def compileWithSwappedLines(name: String, stream: java.util.stream.Stream[String]): Unit = {
+  private def compileWithSwappedLines(stream: java.util.stream.Stream[String]): Unit = {
     val lines = stream.iterator().asScala.toList
     val numLines = lines.length
     val numSwapLinesFixed = numLines.min(numSwapLines)
@@ -70,10 +70,9 @@ class FuzzSwapLines extends AnyFunSuite with TestUtils {
       for (j <- i + 1 until numSwapLinesFixed) {
         val jStepped = Math.min(j * step, numLines)
         val src = lines.updated(iStepped, lines(jStepped)).updated(jStepped, lines(iStepped)).mkString("\n")
-        val sourceName = s"$name-swap-lines-$iStepped-and-$jStepped"
-        flix.addSourceCode(sourceName, src)(SecurityContext.AllPermissions)
+        // We use the same name for all inputs to simulate editing a file
+        flix.addSourceCode("<input>", src)(SecurityContext.AllPermissions)
         flix.compile() // We simply care that this does not crash.
-        flix.remSourceCode(sourceName)
       }
     }
   }
