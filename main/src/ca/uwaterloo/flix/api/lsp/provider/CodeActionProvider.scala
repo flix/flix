@@ -548,7 +548,7 @@ object CodeActionProvider {
   }
 
   private def sourcePosition2Position(sourcePosition: SourcePosition): Position = {
-    Position(sourcePosition.line, sourcePosition.col)
+    Position(sourcePosition.lineZeroIndexed, sourcePosition.colZeroIndexed)
   }
 
   private def sourceLocation2Range(sourceLocation: SourceLocation): Range = {

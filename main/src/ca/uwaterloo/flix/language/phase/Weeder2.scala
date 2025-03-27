@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.WeederError
@@ -992,7 +992,7 @@ object Weeder2 {
         ident =>
           // Strip '?' suffix and update source location
           val sp1 = ident.loc.sp1
-          val sp2 = ident.loc.sp2.copy(col = (ident.loc.sp2.col - 1).toShort)
+          val sp2 = SourcePosition.moveLeft(ident.loc.sp2)
           val id = Name.Ident(ident.name.stripSuffix("?"), SourceLocation(isReal = true, sp1, sp2))
           val expr = Expr.Ambiguous(Name.QName(Name.RootNS, id, id.loc), id.loc)
           Expr.HoleWithExp(expr, tree.loc)
@@ -3100,7 +3100,7 @@ object Weeder2 {
     // The resulting QName will be something like QName(["A", "B"], "")
     if (trailingDot) {
       val nname = Name.NName(idents, loc)
-      val positionAfterDot = last.loc.sp2.copy(col = (last.loc.sp2.col + 1).toShort)
+      val positionAfterDot = SourcePosition.moveRight(last.loc.sp2)
       val emptyIdentLoc = SourceLocation(isReal = true, positionAfterDot, positionAfterDot)
       val emptyIdent = Name.Ident("", emptyIdentLoc)
       val qnameLoc = SourceLocation(isReal = true, first.loc.sp1, positionAfterDot)
