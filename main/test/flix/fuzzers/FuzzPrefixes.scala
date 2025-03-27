@@ -29,28 +29,23 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
     */
   private val N: Int = 100
 
-//  test("simple-card-game") {
-//    val filepath = Paths.get("examples/larger-examples/simple-card-game.flix")
-//    val input = Files.readString(filepath)
-//    compilePrefixes(filepath.getFileName.toString, input)
-//  }
-//
-//  test("the-ast-typing-problem-with-polymorphic-records") {
-//    val filepath = Paths.get("examples/records/the-ast-typing-problem-with-polymorphic-records.flix")
-//    val input = Files.readString(filepath)
-//    compilePrefixes(filepath.getFileName.toString, input)
-//  }
-//
-//  test("ford-fulkerson") {
-//    val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
-//    val input = Files.readString(filepath)
-//    compilePrefixes(filepath.getFileName.toString, input)
-//  }
+  test("simple-card-game") {
+    val filepath = Paths.get("examples/larger-examples/simple-card-game.flix")
+    val input = Files.readString(filepath)
+    compilePrefixes(filepath.getFileName.toString, input)
+  }
 
-  testFile("simple-card-game", "examples/larger-examples/simple-card-game.flix")
-  testFile("the-ast-typing-problem-with-polymorphic-records", "examples/records/the-ast-typing-problem-with-polymorphic-records.flix")
-  testFile("ford-fulkerson", "examples/larger-examples/datalog/ford-fulkerson.flix")
+  test("the-ast-typing-problem-with-polymorphic-records") {
+    val filepath = Paths.get("examples/records/the-ast-typing-problem-with-polymorphic-records.flix")
+    val input = Files.readString(filepath)
+    compilePrefixes(filepath.getFileName.toString, input)
+  }
 
+  test("ford-fulkerson") {
+    val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
+    val input = Files.readString(filepath)
+    compilePrefixes(filepath.getFileName.toString, input)
+  }
 
   /**
     * We break the given string `input` down into N prefixes and compile each of them.
@@ -73,22 +68,4 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
     }
   }
 
-  def testFile(name: String, filepath: String) = {
-    val input = Files.readString(Paths.get(filepath))
-    val length = input.length
-    val step = length / N
-
-    val flix = new Flix()
-    flix.compile()
-    for (i <- 1 until N) {
-      val e = Math.min(i * step, length)
-      val prefix = input.substring(0, e)
-      val sourceName = s"$name-prefix-$e"
-      test(sourceName) {
-        flix.addSourceCode(sourceName, prefix)(SecurityContext.AllPermissions)
-        flix.compile() // We simply care that this does not crash.
-        flix.remSourceCode(sourceName)
-      }
-    }
-  }
 }
