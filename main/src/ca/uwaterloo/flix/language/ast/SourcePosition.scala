@@ -43,7 +43,7 @@ object SourcePosition {
   /**
     * Returns a new [[SourcePosition]] where the column of `pos` is increased by 1.
     *
-    * OBS: This new position might not be a real location in the source.
+    * OBS: This new position might not be a real position in the source.
     */
   def moveRight(pos: SourcePosition): SourcePosition = {
     new SourcePosition(pos.source, pos.lineOneIndexed, (pos.colOneIndexed + 1).toShort)
