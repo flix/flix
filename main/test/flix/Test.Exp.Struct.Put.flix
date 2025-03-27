@@ -159,9 +159,10 @@ mod Nested {
     def nestedPut01(): Bool =
         region rc {
             let nested = new Nested @ rc { v = new Nested @ rc { v = new Nested @ rc {v = new Nested @ rc {v = 15} }} };
-            nested->v->v->v->v == 15;
+            let b1 = nested->v->v->v->v == 15;
             nested->v->v->v->v = 37;
-            nested->v->v->v->v == 37
+            let b2 = nested->v->v->v->v == 37;
+            b1 and b2
         }
 }
 

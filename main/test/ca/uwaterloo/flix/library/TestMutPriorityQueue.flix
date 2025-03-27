@@ -37,8 +37,8 @@ mod TestMutPriorityQueue {
     def testToString03(): Bool = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
-        MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.toString(mq) == "MutPriorityQueue {6, 4, 5, 1, 3, 2}"
     }
 
@@ -73,7 +73,7 @@ mod TestMutPriorityQueue {
     def testSize03(): Bool = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
-        MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.size(mq) == 7
     }
 
@@ -98,17 +98,17 @@ mod TestMutPriorityQueue {
     def testIsEmpty03(): Bool = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(mq, 1 :: 2 :: 3 :: Nil);
-        MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.isEmpty(mq)
     }
 
     @Test def testIsEmpty04(): Bool = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(mq, 1 :: 2 :: Nil);
-        MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.enqueue(mq, 1);
         not MutPriorityQueue.isEmpty(mq)
     }
@@ -134,9 +134,9 @@ mod TestMutPriorityQueue {
     def testNonEmpty03(): Bool = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(mq, 1 :: 2 :: 3 :: Nil);
-        MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
         not MutPriorityQueue.nonEmpty(mq)
     }
 
@@ -144,8 +144,8 @@ mod TestMutPriorityQueue {
     def testNonEmpty04(): Bool = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(mq, 1 :: 2 :: Nil);
-        MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.enqueue(mq, 1);
         MutPriorityQueue.nonEmpty(mq)
     }
@@ -158,7 +158,7 @@ mod TestMutPriorityQueue {
     def testPeek01(): Bool = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueue(mq, 3);
-        MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.peek(mq) == None
     }
 
@@ -173,7 +173,7 @@ mod TestMutPriorityQueue {
     def testPeek03(): Bool = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(mq, 1 :: 9 :: 2 :: 8 :: 3 :: 7 :: Nil);
-        MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.peek(mq) == Some(8)
     }
 
@@ -188,7 +188,7 @@ mod TestMutPriorityQueue {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueue(mq, 5);
         MutPriorityQueue.enqueue(mq, 5);
-        MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.peek(mq) == Some(5)
     }
 
@@ -252,7 +252,7 @@ mod TestMutPriorityQueue {
     @Test
     def testDequeue01(): Bool = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
-        MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.size(mq) == 0
     }
 
@@ -266,8 +266,8 @@ mod TestMutPriorityQueue {
     def testDequeue03(): Bool = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: Nil);
-        MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.size(mq) == 3
     }
 
@@ -275,7 +275,7 @@ mod TestMutPriorityQueue {
     def testDequeue04(): Bool = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: Nil);
-        MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.dequeue(mq) == Some(4)
     }
 
@@ -283,9 +283,9 @@ mod TestMutPriorityQueue {
     def testDequeue05(): Bool = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(mq, 1 :: 2 :: 3 :: Nil);
-        MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.size(mq) == 0
     }
 
@@ -399,8 +399,8 @@ mod TestMutPriorityQueue {
     def testToList06(): Bool = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
-        MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.toList(mq) == 6 :: 4 :: 5 :: 1 :: 3 :: 2 :: Nil
     }
 
@@ -439,8 +439,8 @@ mod TestMutPriorityQueue {
     def testToNel05(): Bool = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
-        MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.toNel(mq) == Some(Nel.Nel(6, 4 :: 5 :: 1 :: 3 :: 2 :: Nil))
     }
 
@@ -486,8 +486,8 @@ mod TestMutPriorityQueue {
     def testToArray06(): Bool = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
         MutPriorityQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
-        MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
         Array.toString(MutPriorityQueue.toArray(rc, mq)) == "Array#{6, 4, 5, 1, 3, 2}"
     }
 
@@ -533,8 +533,8 @@ mod TestMutPriorityQueue {
     def testToVector06(): Bool = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
         MutPriorityQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
-        MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
+        discard MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.toVector(mq) == Vector#{6, 4, 5, 1, 3, 2}
     }
 

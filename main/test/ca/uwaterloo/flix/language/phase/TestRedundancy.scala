@@ -1879,10 +1879,9 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantDiscard](result)
   }
 
-  test("MustUse.01") {
+  test("NonUnitStm.01") {
     val input =
       """
-        |@MustUse
         |enum A {
         |    case A
         |}
@@ -1894,10 +1893,10 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.UnusedMustUseValue](result)
+    expectError[TypeError](result)
   }
 
-  test("MustUse.02") {
+  test("NonUnitStm.02") {
     val input =
       """
         |def f(): Int32 \ IO =
@@ -1907,7 +1906,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.UnusedMustUseValue](result)
+    expectError[TypeError](result)
   }
 
   test("RedundantCheckedTypeCast.01") {

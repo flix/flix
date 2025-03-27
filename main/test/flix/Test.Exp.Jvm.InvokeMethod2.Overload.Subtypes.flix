@@ -9,11 +9,11 @@ mod Test.Exp.Jvm.InvokeMethod.Overload.Subtypes {
    @test
    def testInvokeMethod_02(): Bool \ IO =
       let cs = CharBuffer.allocate(5);
-      cs.append('h');
-      cs.append('e');
-      cs.append('l');
-      cs.append('l');
-      cs.append('o');
+      discard cs.append('h');
+      discard cs.append('e');
+      discard cs.append('l');
+      discard cs.append('l');
+      discard cs.append('o');
       let obj = "hello world";
       obj.contains(cs)
 

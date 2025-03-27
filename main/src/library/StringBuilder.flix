@@ -43,7 +43,7 @@ mod StringBuilder {
     ///
     pub def appendString(s: String, sb: StringBuilder[r]): Unit \ r =
         let StringBuilder(msb) = sb;
-        unchecked_cast((msb.append(s): _ \ IO) as _ \ r);
+        unchecked_cast((discard msb.append(s): _ \ IO) as _ \ r);
         ()
 
     ///
@@ -51,7 +51,7 @@ mod StringBuilder {
     ///
     pub def appendCodePoint(cp: Int32, sb: StringBuilder[r]): Unit \ r =
         let StringBuilder(msb) = sb;
-        unchecked_cast((msb.appendCodePoint(cp): _ \ IO) as _ \ r);
+        unchecked_cast((discard msb.appendCodePoint(cp): _ \ IO) as _ \ r);
         ()
 
     ///
