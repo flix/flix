@@ -1126,7 +1126,7 @@ object Resolver {
       lookupStruct(name, scp0, ns0, root) match {
         case Result.Ok(st0) =>
           checkStructIsAccessible(st0, ns0, loc)
-          val fieldsVal = traverse(fields) {
+          val fieldsVal = traverse(fields0) {
             case (f, exp) =>
               val eVal = resolveExp(exp, scp0)
               // Lookup the field symbol or make up a fictitious one.
