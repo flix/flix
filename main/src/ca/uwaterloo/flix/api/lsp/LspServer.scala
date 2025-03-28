@@ -183,6 +183,7 @@ object LspServer {
           true
         )
       )
+      serverCapabilities.setSignatureHelpProvider(new SignatureHelpOptions(List("(", ",").asJava))
       serverCapabilities.setCodeActionProvider(true)
       serverCapabilities.setCodeLensProvider(new CodeLensOptions(true))
       serverCapabilities.setCompletionProvider(new CompletionOptions(true, TriggerChars.asJava))
@@ -389,7 +390,14 @@ object LspServer {
       }
     }
 
-    override def implementation(params: ImplementationParams): CompletableFuture[messages.Either[util.List[? <: Location], util.List[? <: LocationLink]]] = {
+    override def signatureHelp(params: SignatureHelpParams): CompletableFuture[SignatureHelp] = {
+      val uri = params.getTextDocument.getUri
+      val pos = Position.fromLsp4j(params.getPosition)
+      val signatureHelp = SignatureHelpProvider.provideSignatureHelp(uri, pos)(flixLanguageServer.root, flixLanguageServer.flix)
+      CompletableFuture.completedFuture(signatureHelp.map(_.toLsp4j).orNull)
+    }
+
+    override def implementation(params: ImplementationParams): CompletableFuture[messages.Either[util.List[? <: Location], util.List[_ <: LocationLink]]] = {
       val uri = params.getTextDocument.getUri
       val pos = Position.fromLsp4j(params.getPosition)
       val implementation = GotoProvider.processGoto(uri, pos)(flixLanguageServer.root)

@@ -182,6 +182,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       case JString("lsp/workspaceSymbols") => Request.parseWorkspaceSymbols(json)
       case JString("lsp/uses") => Request.parseUses(json)
       case JString("lsp/semanticTokens") => Request.parseSemanticTokens(json)
+      case JString("lsp/signature") => Request.parseSignature(json)
       case JString("lsp/inlayHints") => Request.parseInlayHint(json)
       case JString("lsp/showAst") => Request.parseShowAst(json)
       case JString("lsp/codeAction") => Request.parseCodeAction(json)
@@ -309,6 +310,12 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
 
     case Request.SemanticTokens(id, uri) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("data" -> SemanticTokensProvider.provideSemanticTokens(uri)(root)))
+
+    case Request.Signature(id, uri, pos) =>
+      SignatureHelpProvider.provideSignatureHelp(uri, pos)(root, flix) match {
+        case Some(signature) => ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> signature.toJSON)
+        case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this signature.")
+      }
 
     case Request.InlayHint(id, uri, range) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.getInlayHints(uri, range).map(_.toJSON))
