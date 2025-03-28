@@ -18,15 +18,15 @@ def createAndShowGUI(): Unit \ IO = {
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
     frame.setLayout(new GridLayout(3, 3));
-    frame.getContentPane().add(mkButton("1"));
-    frame.getContentPane().add(mkButton("2"));
-    frame.getContentPane().add(mkButton("3"));
-    frame.getContentPane().add(mkButton("4"));
-    frame.getContentPane().add(mkButton("5"));
-    frame.getContentPane().add(mkButton("6"));
-    frame.getContentPane().add(mkButton("7"));
-    frame.getContentPane().add(mkButton("8"));
-    frame.getContentPane().add(mkButton("9"));
+    discard frame.getContentPane().add(mkButton("1"));
+    discard frame.getContentPane().add(mkButton("2"));
+    discard frame.getContentPane().add(mkButton("3"));
+    discard frame.getContentPane().add(mkButton("4"));
+    discard frame.getContentPane().add(mkButton("5"));
+    discard frame.getContentPane().add(mkButton("6"));
+    discard frame.getContentPane().add(mkButton("7"));
+    discard frame.getContentPane().add(mkButton("8"));
+    discard frame.getContentPane().add(mkButton("9"));
 
     frame.pack();
     frame.setVisible(true)

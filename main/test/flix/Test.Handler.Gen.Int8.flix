@@ -5,7 +5,7 @@ mod Test.Handler.Gen.Int8 {
     }
 
     def generator(): Unit \ Gen =
-        Gen.gen(); generator()
+        discard Gen.gen(); generator()
 
     def sample(limit: Int8): List[Int8] =
         region rc {

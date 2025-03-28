@@ -4,7 +4,7 @@ import java.io.IOException
 def main(): Unit \ IO =
     try {
         let reader = new FileReader("foo.txt");
-        reader.read();
+        discard reader.read();
         reader.close()
     } catch {
         case ex: IOException => ex.printStackTrace()

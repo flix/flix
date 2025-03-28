@@ -99,15 +99,6 @@ object Annotation {
   }
 
   /**
-    * An annotation that marks a type as must-use.
-    *
-    * @param loc the source location of the annotation.
-    */
-  case class MustUse(loc: SourceLocation) extends Annotation {
-    override def toString: String = "@MustUse"
-  }
-
-  /**
     * An AST node that represents a `@Skip` annotation.
     *
     * A function marked with `Skip` is skipped by the test framework.

@@ -451,8 +451,6 @@ object Redundancy {
         (us1 ++ us2) + UnderAppliedFunction(exp1.tpe, exp1.loc)
       } else if (isUselessExpression(exp1)) {
         (us1 ++ us2) + UselessExpression(exp1.tpe, exp1.loc)
-      } else if (isMustUse(exp1)(root) && !isHole(exp1)) {
-        (us1 ++ us2) + UnusedMustUseValue(exp1.tpe, exp1.loc)
       } else {
         us1 ++ us2
       }
@@ -989,21 +987,6 @@ object Redundancy {
     */
   private def isUselessExpression(exp: Expr): Boolean =
     isPure(exp)
-
-  /**
-    * Returns `true` if the expression must be used.
-    */
-  private def isMustUse(exp: Expr)(implicit root: Root): Boolean =
-    isMustUseType(exp.tpe)
-
-  /**
-    * Returns `true` if the given type `tpe` is marked as `@MustUse` or is intrinsically `@MustUse`.
-    */
-  private def isMustUseType(tpe: Type)(implicit root: Root): Boolean = tpe.typeConstructor match {
-    case Some(TypeConstructor.Arrow(_)) => true
-    case Some(TypeConstructor.Enum(sym, _)) => root.enums(sym).ann.isMustUse
-    case _ => false
-  }
 
   /**
     * Returns true if the expression is a hole.

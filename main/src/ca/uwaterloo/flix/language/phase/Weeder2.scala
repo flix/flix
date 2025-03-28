@@ -664,7 +664,6 @@ object Weeder2 {
         case "@ParallelWhenPure" => ParallelWhenPure(loc)
         case "@Lazy" => Lazy(loc)
         case "@LazyWhenPure" => LazyWhenPure(loc)
-        case "@MustUse" => MustUse(loc)
         case "@Skip" => Skip(loc)
         case "@Test" | "@test" => Test(loc)
         case "@TailRec" => TailRecursive(loc)

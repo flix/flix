@@ -117,7 +117,7 @@ mod FileWrite {
             def write(data, f, k) = {
                 try {
                     let bytes = data#str.getBytes(StandardCharsets.UTF_8);
-                    Files.write(Paths.get(f), bytes, (...{}: Vector[OpenOption]));
+                    discard Files.write(Paths.get(f), bytes, (...{}: Vector[OpenOption]));
                     k(())
                 } catch {
                     case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
@@ -146,7 +146,7 @@ mod FileWrite {
                 try {
                     region rc {
                         let bytes = Vector.toArray(rc, data);
-                        Files.write(Paths.get(f), bytes, (...{}: Vector[OpenOption]));
+                        discard Files.write(Paths.get(f), bytes, (...{}: Vector[OpenOption]));
                         k(())
                     }
                 } catch {
@@ -160,7 +160,7 @@ mod FileWrite {
                 try {
                     let bytes = data#str.getBytes(StandardCharsets.UTF_8);
                     let opt: OpenOption = checked_cast(StandardOpenOption.APPEND);
-                    Files.write(Paths.get(f), bytes, ...{opt});
+                    discard Files.write(Paths.get(f), bytes, ...{opt});
                     k(())
                 } catch {
                     case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
@@ -191,7 +191,7 @@ mod FileWrite {
                     region rc {
                         let bytes = Vector.toArray(rc, data);
                         let opt: OpenOption = checked_cast(StandardOpenOption.APPEND);
-                        Files.write(Paths.get(f), bytes, ...{opt});
+                        discard Files.write(Paths.get(f), bytes, ...{opt});
                         k(())
                     }
                 } catch {
@@ -206,7 +206,7 @@ mod FileWrite {
                     region rc {
                         let opt: OpenOption = checked_cast(StandardOpenOption.TRUNCATE_EXISTING);
                         let arr: Array[Int8, rc] = Array#{} @ rc;
-                        Files.write(Paths.get(f), arr, ...{opt});
+                        discard Files.write(Paths.get(f), arr, ...{opt});
                         k(())
                     }
                 } catch {
@@ -218,7 +218,7 @@ mod FileWrite {
 
             def mkDir(d, k) = {
                 try {
-                    Files.createDirectory(Paths.get(d), (...{}: Vector[FileAttribute]));
+                    discard Files.createDirectory(Paths.get(d), (...{}: Vector[FileAttribute]));
                     k(())
                 } catch {
                     case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
@@ -230,7 +230,7 @@ mod FileWrite {
 
             def mkDirs(d, k) = {
                 try {
-                    Files.createDirectories(Paths.get(d), (...{}: Vector[FileAttribute]));
+                    discard Files.createDirectories(Paths.get(d), (...{}: Vector[FileAttribute]));
                     k(())
                 } catch {
                     case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))

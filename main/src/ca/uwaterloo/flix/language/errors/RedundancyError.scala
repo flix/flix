@@ -513,36 +513,6 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that the value of an expression must be used.
-    *
-    * @param tpe the type of the expression.
-    * @param loc the location of the expression.
-    */
-  case class UnusedMustUseValue(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
-    def summary: String = "Unused value but its type is marked as @MustUse"
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unused value but its type is marked as @MustUse.
-         |
-         |${code(loc, "unused value.")}
-         |
-         |The expression has type '${FormatType.formatType(tpe)}'
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Use the value.
-         |  (2)  Explicit mark the value as unused with `discard`.
-         |
-         |""".stripMargin
-    })
-  }
-
-  /**
     * An error raised to indicate that the given type parameter `ident` is not used.
     *
     * @param ident the unused type variable.
