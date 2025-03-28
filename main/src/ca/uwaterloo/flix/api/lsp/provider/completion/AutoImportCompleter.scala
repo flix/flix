@@ -15,52 +15,45 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.CompletionItemLabelDetails
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.AutoImportCompletion
+import ca.uwaterloo.flix.api.lsp.{CompletionItemLabelDetails, Range}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
-import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object AutoImportCompleter {
 
   /**
-   * Returns a list of import completions to auto complete the class name and import the java class.
-   *
-   * Example:
-   *  If we have an undefined name which is the prefix of an existing and unimported java class
-   *
-   *  {{{
-   *    let s = Mat // undefined name error
-   *  }}}
-   *
-   *  We propose to complete the name to `Math` and import the class `java.lang.Math`
-   *
-   *  {{{
-   *    import java.lang.Math
-   *    ...
-   *    let s = Math
-   *  }}}
-   */
-  def getCompletions(err: ResolutionError.UndefinedName)(implicit root: Root): Iterable[AutoImportCompletion] =
-    javaClassCompletionsByClass(err.qn.ident.name, err.ap, err.env)
-
-  def getCompletions(err: ResolutionError.UndefinedType)(implicit root: Root): Iterable[AutoImportCompletion] =
-    javaClassCompletionsByClass(err.qn.ident.name, err.ap, err.env)
-
-  /**
-   * Gets completions from a java class prefix.
-   *
-   * Note: we will not propose completions for classes with a lowercase name.
-   */
-  private def javaClassCompletionsByClass(prefix: String, ap: AnchorPosition, env: LocalScope)(implicit root: Root): Iterable[AutoImportCompletion] = {
+    * Returns a list of import completions to auto complete the class name and import the java class.
+    *
+    * Example:
+    *  If we have an undefined name which is the prefix of an existing and unimported java class
+    *
+    *  {{{
+    *    let s = Mat // undefined name error
+    *  }}}
+    *
+    *  We propose to complete the name to `Math` and import the class `java.lang.Math`
+    *
+    *  {{{
+    *    import java.lang.Math
+    *    ...
+    *    let s = Math
+    *  }}}
+    *
+    * @param prefix the prefix of the class name, usually from the ident of a qname.
+    * @param range  the range of the completion.
+    * @param ap     the anchor position of the completion.
+    * @param scp    the local scope.
+    */
+  def getCompletions(prefix: String, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: Root): Iterable[AutoImportCompletion] = {
     if (!CompletionUtils.shouldComplete(prefix)) return Nil
     val availableClasses = root.availableClasses.byClass.m.filter(_._1.exists(_.isUpper))
     availableClasses.keys.filter(CompletionUtils.fuzzyMatch(prefix, _)).flatMap { className =>
-      availableClasses(className).collect { case namespace if (!env.m.contains(className)) =>
+      availableClasses(className).collect { case namespace if !scp.m.contains(className) =>
         val qualifiedName = namespace.mkString(".") + "." + className
         val priority = mkPriority(qualifiedName)
         val labelDetails = CompletionItemLabelDetails(None, Some(s"import $qualifiedName"))
-          AutoImportCompletion(className, qualifiedName, ap, labelDetails, priority)
+          AutoImportCompletion(className, qualifiedName, range, ap, labelDetails, priority)
       }
     }
  }

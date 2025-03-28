@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Chenhao Gao
+ * Copyright 2025 Chenhao Gao
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.Range
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.KindCompletion
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.OpHandlerCompletion
+import ca.uwaterloo.flix.language.ast.{Name, Symbol, TypedAst}
 
-object KindCompleter {
-  def getCompletions(name: String, range: Range): List[Completion] = {
-    val kinds = List("Type", "Eff", "Bool")
-    kinds.collect{
-      case kind if kind.startsWith(name) => KindCompletion(kind, range)}
+object HandlerCompleter {
+
+  def getCompletions(qn: Name.QName, range: Range)(implicit root: TypedAst.Root): Iterable[OpHandlerCompletion] = {
+    val effSym = Symbol.mkEffectSym(qn.namespace.toString)
+    root.effects.get(effSym).toList.flatMap (eff =>
+      eff.ops.collect {
+        case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false) =>
+          OpHandlerCompletion(op, range)
+      }
+    )
   }
 }
