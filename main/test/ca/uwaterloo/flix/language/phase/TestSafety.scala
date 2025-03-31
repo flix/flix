@@ -925,7 +925,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |        spawn Ask.ask() @ rc
         |    }
         |
-        """.stripMargin
+      """.stripMargin
     val result = compile(input, Options.DefaultTest)
     expectError[IllegalSpawnEffect](result)
   }
