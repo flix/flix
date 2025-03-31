@@ -326,14 +326,16 @@ object Deriver {
           List(
             KindedAst.Expr.ApplyClo(
               mkVarExpr(lambdaSym, loc),
-              mkVarExpr(param1, loc),
+              List(mkVarExpr(param1, loc)),
+              List(Type.freshVar(Kind.Eff, loc)),
               Type.freshVar(Kind.Star, loc),
               Type.freshVar(Kind.Eff, loc),
               loc
             ),
             KindedAst.Expr.ApplyClo(
               mkVarExpr(lambdaSym, loc),
-              mkVarExpr(param2, loc),
+              List(mkVarExpr(param2, loc)),
+              List(Type.freshVar(Kind.Eff, loc)),
               Type.freshVar(Kind.Star, loc),
               Type.freshVar(Kind.Eff, loc),
               loc),

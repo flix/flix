@@ -85,7 +85,8 @@ object KindedAst {
 
     case class Cst(cst: Constant, loc: SourceLocation) extends Expr
 
-    case class ApplyClo(exp1: Expr, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    /** `exps` and `evars` have the same, non-zero length. */
+    case class ApplyClo(exp: Expr, exps: List[Expr], evars: List[Type.Var], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class ApplyDef(symUse: DefSymUse, exps: List[Expr], itvar: Type, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 

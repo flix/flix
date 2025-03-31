@@ -1528,10 +1528,7 @@ object Resolver {
       val expVal = resolveExp(exp0, scp0)
       val expsVal = traverse(exps0)(resolveExp(_, scp0))
       mapN(expVal, expsVal) {
-        case (e, es) =>
-          es.foldLeft(e) {
-            case (acc, a) => ResolvedAst.Expr.ApplyClo(acc, a, loc.asSynthetic)
-          }
+        case (e, es) => ResolvedAst.Expr.ApplyClo(e, es, loc.asSynthetic)
       }
   }
 
@@ -1542,10 +1539,7 @@ object Resolver {
     val expsVal = traverse(exps)(resolveExp(_, scp0))
     val exp: ResolvedAst.Expr = ResolvedAst.Expr.Error(err)
     mapN(expsVal) {
-      case es =>
-        es.foldLeft(exp) {
-          case (acc, a) => ResolvedAst.Expr.ApplyClo(acc, a, loc.asSynthetic)
-        }
+      case es => ResolvedAst.Expr.ApplyClo(exp, es, loc.asSynthetic)
     }
   }
 
@@ -1576,9 +1570,7 @@ object Resolver {
         else (mkPureLambda(fp, acc, loc.asSynthetic), false)
     }
 
-    val closureApplication = cloArgs.foldLeft(fullDefLambda) {
-      case (acc, cloArg) => ResolvedAst.Expr.ApplyClo(acc, cloArg, loc)
-    }
+    val closureApplication = ResolvedAst.Expr.ApplyClo(fullDefLambda, cloArgs, loc)
 
     closureApplication
   }

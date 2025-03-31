@@ -371,11 +371,23 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Lambda(p, e, t, loc)
 
-    case TypedAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
+    case TypedAst.Expr.ApplyClo(exp, exps, argEffs, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val es = exps.map(visitExp)
       val t = visitType(tpe)
-      LoweredAst.Expr.ApplyClo(e1, e2, t, eff, loc)
+      // Curried function of `exps` arguments.
+      val funType = exps.zip(argEffs).foldRight(tpe){
+        case ((e, argEff), res) => Type.mkArrowWithEffect(e.tpe, argEff, res, loc.asSynthetic)
+      }
+      val (applies, _) = es.foldLeft((e, funType)){
+        case ((f, Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), argEff, _), _argT, _), next, _)), arg) =>
+          (
+            LoweredAst.Expr.ApplyClo(f, arg, next, Type.mkUnion(argEff, arg.eff, loc.asSynthetic), loc.asSynthetic),
+            next
+          )
+        case ((_, tpe), _) => throw InternalCompilerException(s"Unexpected type: $tpe", loc)
+      }
+      applies
 
     case TypedAst.Expr.ApplyDef(DefSymUse(sym, _), exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)

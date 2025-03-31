@@ -120,7 +120,8 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    case class ApplyClo(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    /** `exps` must be non-empty and `argEffs` has the same size as `exps`. */
+    case class ApplyClo(exp: Expr, exps: List[Expr], argEffs: List[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class ApplyDef(symUse: DefSymUse, exps: List[Expr], itpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

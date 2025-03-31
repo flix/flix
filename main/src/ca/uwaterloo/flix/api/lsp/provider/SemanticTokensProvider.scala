@@ -421,8 +421,10 @@ object SemanticTokensProvider {
     case Expr.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp)
 
-    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+    case Expr.ApplyClo(exp, exps, _, _, _, _) =>
+      exps.foldLeft(visitExp(exp)) {
+        case (acc, exp1) => acc ++ visitExp(exp1)
+      }
 
     case Expr.ApplyDef(DefSymUse(sym, loc), exps, _, _, _, _) =>
       val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Function
