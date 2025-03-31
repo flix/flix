@@ -1,0 +1,9 @@
+[package]
+name        = "lancensus"
+description = "count the lines of adds and dels for every commit from you"
+version     = "0.1.0"
+flix        = "0.58.1"
+authors     = ["chenhaogao123@gmail.com"]
+
+[dependencies]
+"github:mlutze/flix-json" =  "0.12.18"
