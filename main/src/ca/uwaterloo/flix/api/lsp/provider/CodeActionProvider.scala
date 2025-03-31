@@ -19,10 +19,9 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils
 import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.Modifier
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.Similarity
 
@@ -396,10 +395,10 @@ object CodeActionProvider {
     *
     * Uses Levenshtein Distance to find close spellings.
     */
-  private def mkFixMisspelling(qn: Name.QName, loc: SourceLocation, env: LocalScope,  uri: String): List[CodeAction] = {
+  private def mkFixMisspelling(qn: Name.QName, loc: SourceLocation, scp: LocalScope, uri: String): List[CodeAction] = {
     val minLength = 3
     val maxDistance = 3
-    val possibleNames: List[String] = env.m.toList.map(_._1).filter(n => (n.length - qn.ident.name.length).abs < maxDistance)
+    val possibleNames: List[String] = scp.m.toList.map(_._1).filter(n => (n.length - qn.ident.name.length).abs < maxDistance)
       .filter(n => Similarity.levenshtein(n, qn.ident.name) < maxDistance)
     if (qn.ident.name.length > minLength)
       possibleNames.map(n => mkCorrectSpelling(n, loc, uri))

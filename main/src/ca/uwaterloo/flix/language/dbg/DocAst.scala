@@ -116,7 +116,7 @@ object DocAst {
 
     case class Scope(v: Expr, d: Expr) extends Atom
 
-    case class App(f: Expr, args: List[Expr]) extends Atom
+    case class AppWithTail(f: Expr, args: List[Expr], ct: Option[ExpPosition]) extends Atom
 
     case class SquareApp(f: Expr, args: List[Expr]) extends Atom
 
@@ -277,14 +277,23 @@ object DocAst {
     def Cst(cst: Constant): Expr =
       printer.ConstantPrinter.print(cst)
 
-    def ApplyClo(d: Expr, ds: List[Expr], ct: Option[ExpPosition]): Expr =
+    def App(f: Expr, args: List[Expr]): Expr =
+      AppWithTail(f, args, None)
+
+    def ApplyClo(d: Expr, ds: List[Expr]): Expr =
       App(d, ds)
 
+    def ApplyCloWithTail(d: Expr, ds: List[Expr], ct: ExpPosition): Expr =
+      AppWithTail(d, ds, Some(ct))
+
     def ApplySelfTail(sym: Symbol.DefnSym, ds: List[Expr]): Expr =
+      AppWithTail(AsIs(sym.toString), ds, Some(ExpPosition.Tail))
+
+    def ApplyDef(sym: Symbol.DefnSym, ds: List[Expr]): Expr =
       App(AsIs(sym.toString), ds)
 
-    def ApplyDef(sym: Symbol.DefnSym, ds: List[Expr], ct: Option[ExpPosition]): Expr =
-      App(AsIs(sym.toString), ds)
+    def ApplyDefWithTail(sym: Symbol.DefnSym, ds: List[Expr], ct: ExpPosition): Expr =
+      AppWithTail(AsIs(sym.toString), ds, Some(ct))
 
     def Do(sym: Symbol.OpSym, ds: List[Expr]): Expr =
       Keyword("do", App(AsIs(sym.toString), ds))

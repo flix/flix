@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg
 
-import ca.uwaterloo.flix.language.ast.shared.VarText
+import ca.uwaterloo.flix.language.ast.shared.{ExpPosition, VarText}
 import ca.uwaterloo.flix.language.dbg.Doc.*
 import ca.uwaterloo.flix.language.dbg.DocAst.*
 import ca.uwaterloo.flix.language.dbg.DocAst.Expr.*
@@ -168,7 +168,9 @@ object DocAstFormatter {
       case Lambda(fparams, body) =>
         val params = fparams.map(_.v).map(aux(_, paren = false))
         tuplish(params) +: text("->") |:: breakIndent(aux(body, paren = false))
-      case App(f, args) =>
+      case AppWithTail(f, args, Some(ExpPosition.Tail)) =>
+        aux(f) |:: tuple(args.map(aux(_, paren = false))) |:: text("!")
+      case AppWithTail(f, args, _) =>
         aux(f) |:: tuple(args.map(aux(_, paren = false)))
       case SquareApp(f, args) =>
         aux(f) |:: squareTuple(args.map(aux(_, paren = false)))
