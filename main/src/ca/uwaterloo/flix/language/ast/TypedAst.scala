@@ -121,7 +121,7 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    /** `exps` and `evars` have the same, non-zero length. */
+    /** `exps` and `argEffs` have the same, non-zero length. */
     case class ApplyClo(exp: Expr, exps: List[Expr], argEffs: List[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr {
       if (exps.sizeIs != argEffs.size) throw InternalCompilerException("Inconsistent apply closure arity", loc)
       else if (exps.isEmpty) throw InternalCompilerException("Unexpected empty closure apply", loc)
