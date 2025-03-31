@@ -330,10 +330,11 @@ mod BPlusTree {
         /// - On invocation, the thread has a lock on `node`.
         ///
         def actualInsertLeaf(
-                key: k,
-                val: v,
-                insertionPoint: Int32,
-                node: Node[k, v, r]): Unit \ r with Order[k] =
+            key: k,
+            val: v,
+            insertionPoint: Int32,
+            node: Node[k, v, r]
+        ): Unit \ r with Order[k] =
             let size = node->size;
             arrayInsert(val, insertionPoint, size, node->values);
             arrayInsert(key, insertionPoint, size, node->keys);
@@ -375,7 +376,12 @@ mod BPlusTree {
         /// Only used for internal testing.
         ///
         @Internal
-        pub def assertNodeInvariant(node: Node[k, v, r], order: Int32, isRightMost: Bool, shouldBeBiggerThan: Option[k]): Bool \ r with Order[k] =
+        pub def assertNodeInvariant(
+            node: Node[k, v, r],
+            order: Int32,
+            isRightMost: Bool,
+            shouldBeBiggerThan: Option[k]
+        ): Bool \ r with Order[k] =
             def unwrapNode(opt: Option[Node[k, v, r]]): Node[k, v, r] = match opt {
                 case Some(val) => val
                 case None => bug!("")
@@ -440,11 +446,12 @@ mod BPlusTree {
         ///     Otherwise it has a lock on the old root and `p` where `Some(p)` is returned
         ///
         pub def insertIntoLeaf(
-                key: k,
-                val: v,
-                order: Int32,
-                rc: Region[r],
-                node: Node[k, v, r]): Option[Node[k, v, r]] \ r with Order[k] = {
+            key: k,
+            val: v,
+            order: Int32,
+            rc: Region[r],
+            node: Node[k, v, r]
+        ): Option[Node[k, v, r]] \ r with Order[k] = {
             let size = node->size;
             let index = binarySearch(key, size, node->keys);
             if (index >= 0) {
@@ -526,12 +533,13 @@ mod BPlusTree {
         /// Create a new leaf node.
         ///
         pub def mkLeaf(
-                rc: Region[r],
-                keys: Array[k, r],
-                values: Array[v, r],
-                size: Int32,
-                parent: Option[Node[k, v, r]],
-                next: Option[Node[k, v, r]]): Node[k, v, r] \ r =
+            rc: Region[r],
+            keys: Array[k, r],
+            values: Array[v, r],
+            size: Int32,
+            parent: Option[Node[k, v, r]],
+            next: Option[Node[k, v, r]]
+        ): Node[k, v, r] \ r =
             new Node @ rc {
                 keys = keys,
                 children = Array.empty(rc, 0),
@@ -547,11 +555,12 @@ mod BPlusTree {
         /// Create a new internal node.
         ///
         def mkInternal(
-                rc: Region[r],
-                keys: Array[k, r],
-                children: Array[Node[k, v, r], r],
-                size: Int32,
-                parent: Option[Node[k, v, r]]): Node[k, v, r] \ r =
+            rc: Region[r],
+            keys: Array[k, r],
+            children: Array[Node[k, v, r], r],
+            size: Int32,
+            parent: Option[Node[k, v, r]]
+        ): Node[k, v, r] \ r =
             new Node @ rc {
                 keys = keys,
                 children = children,
@@ -583,12 +592,13 @@ mod BPlusTree {
         /// - On return, the thread only holds a lock if the return value is Some. In
         /// that case it holds a lock on the new root and the old root.
         def pushKeyToParent(
-                parent: Option[Node[k, v, r]],
-                leftChild: Node[k, v, r],
-                rightChild: Node[k, v, r],
-                newKey: k,
-                order: Int32,
-                rc: Region[r]): Option[Node[k, v, r]] \ r with Order[k] = match parent {
+            parent: Option[Node[k, v, r]],
+            leftChild: Node[k, v, r],
+            rightChild: Node[k, v, r],
+            newKey: k,
+            order: Int32,
+            rc: Region[r]
+        ): Option[Node[k, v, r]] \ r with Order[k] = match parent {
             case Some(node) =>
                 let children = node->children;
                 let insertionPoint = toInsertionPoint(binarySearch(newKey, node->size - 1, node->keys));
@@ -628,10 +638,11 @@ mod BPlusTree {
         /// Not thread-safe.
         ///
         pub def rangeQueryWith(
-                f: k -> v -> Unit \ r0,
-                min: k,
-                max: k,
-                node: Node[k, v, r1]): Unit \ r0 + r1 with Order[k] =
+            f: k -> v -> Unit \ r0,
+            min: k,
+            max: k,
+            node: Node[k, v, r1]
+        ): Unit \ r0 + r1 with Order[k] =
             let minLeaf = traverseDownThreadUnsafe(min, node);
             let index = binarySearch(min, minLeaf->size, minLeaf->keys);
             if(index < 0) {
@@ -655,12 +666,13 @@ mod BPlusTree {
         /// - On return, the thread only holds a lock if the return value is Some. In
         /// that case it holds a lock on the new root and the old root.
         def splitLeaf(
-                leftLeaf: Node[k, v, r],
-                key: k,
-                val: v,
-                insertionPoint: Int32,
-                order: Int32,
-                rc: Region[r]): Option[Node[k, v, r]] \ r with Order[k] =
+            leftLeaf: Node[k, v, r],
+            key: k,
+            val: v,
+            insertionPoint: Int32,
+            order: Int32,
+            rc: Region[r]
+        ): Option[Node[k, v, r]] \ r with Order[k] =
             let prev_mid = order / 2;
             let (mid, insertInLeft) = if (insertionPoint <= prev_mid) (prev_mid, true) else (prev_mid + 1, false);
             let (rightKeys, rightValues) = splitToRightLeaf(rc, mid, order, leftLeaf);
@@ -690,15 +702,16 @@ mod BPlusTree {
         /// - On return, the thread only holds a lock if the return value is Some. In
         /// that case it holds a lock on the new root and the old root.
         def splitInternal(
-                leftNode: Node[k, v, r],
-                insertedChild: Node[k, v, r],
-                insertionPoint: Int32,
-                newKey: k,
-                order: Int32,
-                rc: Region[r]): Option[Node[k, v, r]] \ r with Order[k] =
+            leftNode: Node[k, v, r],
+            insertedChild: Node[k, v, r],
+            insertionPoint: Int32,
+            newKey: k,
+            order: Int32,
+            rc: Region[r]
+        ): Option[Node[k, v, r]] \ r with Order[k] =
             Lock.unlock(insertedChild->lock);
             let prev_mid = order / 2;
-            // Note: The current implementation requires that we do not insert `insertedChild` as 
+            // Note: The current implementation requires that we do not insert `insertedChild` as
             // the last element in the left child. If this is done the inserted key will be incorrect
             let (mid, insertInLeft, rightSize) = if (insertionPoint >= prev_mid) (prev_mid + 1, false, order - prev_mid) else (prev_mid, true, order - prev_mid);
             leftNode->size = mid;
@@ -734,50 +747,52 @@ mod BPlusTree {
         /// from `mid` (inclusive) to `order` (exclusive) to the returned
         /// arrays, respectively. Inserts `insertedChild` at `insertionPoint`
         /// in `leftNode`.
-        /// 
-        /// Note: This function assumes that `insertionPoint < mid - 1`. 
+        ///
+        /// Note: This function assumes that `insertionPoint < mid - 1`.
         /// In other words `insertedChild` is not the rightMost child.
         ///
         /// Returns `(key, rightKeys, rightChildren)` where `key` is the largest value in the left subtree.
         ///
         def splitInternalToLeftChild(
-                                    rc: Region[r],
-                                    insertedChild: Node[k, v, r],
-                                    insertionPoint: Int32,
-                                    newKey: k,
-                                    mid: Int32,
-                                    order: Int32,
-                                    rightSize: Int32,
-                                    leftNode: Node[k, v, r]): (k, Array[k, r], Array[Node[k, v, r], r]) \ r = {
-                let keyToPass = Array.get(mid - 1, leftNode->keys);
-                let leftChildren = leftNode->children;
-                let leftKeys = leftNode->keys;
-                let rightKeys = Array.empty(rc, order - 1);
-                let rightChildren = Array.empty(rc, order);
-                Array.copyInto(srcPos = mid, dstPos = 0, len = rightSize - 1, src = leftKeys, rightKeys);
-                Array.copyInto(srcPos = mid, dstPos = 0, len = rightSize, src = leftChildren, rightChildren);
-                arrayInsert(insertedChild, insertionPoint + 1, mid, leftChildren);
-                arrayInsert(newKey, insertionPoint, mid, leftKeys);
-                leftNode->size = mid + 1;
-                (keyToPass, rightKeys, rightChildren)
+            rc: Region[r],
+            insertedChild: Node[k, v, r],
+            insertionPoint: Int32,
+            newKey: k,
+            mid: Int32,
+            order: Int32,
+            rightSize: Int32,
+            leftNode: Node[k, v, r]
+        ): (k, Array[k, r], Array[Node[k, v, r], r]) \ r = {
+            let keyToPass = Array.get(mid - 1, leftNode->keys);
+            let leftChildren = leftNode->children;
+            let leftKeys = leftNode->keys;
+            let rightKeys = Array.empty(rc, order - 1);
+            let rightChildren = Array.empty(rc, order);
+            Array.copyInto(srcPos = mid, dstPos = 0, len = rightSize - 1, src = leftKeys, rightKeys);
+            Array.copyInto(srcPos = mid, dstPos = 0, len = rightSize, src = leftChildren, rightChildren);
+            arrayInsert(insertedChild, insertionPoint + 1, mid, leftChildren);
+            arrayInsert(newKey, insertionPoint, mid, leftKeys);
+            leftNode->size = mid + 1;
+            (keyToPass, rightKeys, rightChildren)
         }
 
         ///
         /// Moves elements of `leftNode->keys` and `leftNode->children` from
-        /// `mid` (inclusive) to `order` (exclusive) to the returned arrays, respectively. 
+        /// `mid` (inclusive) to `order` (exclusive) to the returned arrays, respectively.
         /// Inserts `insertedChild` at `insertionPoint` in the right node.
         ///
         /// Returns `(key, rightKeys, rightChildren)` where `key` is the largest value in the left subtree.
         ///
         def splitInternalToRightChild(
-                                    rc: Region[r],
-                                    insertedChild: Node[k, v, r],
-                                    insertionPoint: Int32,
-                                    newKey: k,
-                                    mid: Int32,
-                                    order: Int32,
-                                    rightSize: Int32,
-                                    leftNode: Node[k, v, r]): (k, Array[k, r], Array[Node[k, v, r], r]) \ r = {
+            rc: Region[r],
+            insertedChild: Node[k, v, r],
+            insertionPoint: Int32,
+            newKey: k,
+            mid: Int32,
+            order: Int32,
+            rightSize: Int32,
+            leftNode: Node[k, v, r]
+        ): (k, Array[k, r], Array[Node[k, v, r], r]) \ r = {
             // Insert the new node in the new right node and copy the relevant elements of the leftNode (index>=mid).
             let rightKeys = Array.empty(rc, order - 1);
             let rightChildren = Array.empty(rc, order);
@@ -885,10 +900,11 @@ mod BPlusTree {
         /// Not thread-safe.
         ///
         def traverseRight(
-                f: k -> v -> Unit \ r0,
-                index: Int32,
-                max: k,
-                node: Node[k, v, r1]): Unit \ r0 + r1 with Order[k] =
+            f: k -> v -> Unit \ r0,
+            index: Int32,
+            max: k,
+            node: Node[k, v, r1]
+        ): Unit \ r0 + r1 with Order[k] =
             if(index < node->size) {
                 let k = Array.get(index, node->keys);
                 if(k <= max) {
