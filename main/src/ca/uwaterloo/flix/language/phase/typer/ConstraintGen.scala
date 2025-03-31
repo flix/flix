@@ -82,14 +82,12 @@ object ConstraintGen {
         // e: (t1 -> (t2 -> (.. -> t \ efFreshN) \ efFresh2) \ efFresh1) \ ef
         // ----------------------------------------------
         // e(e1, e2, ..) : t \ ef ∪ ef1 ∪ efFresh1 ∪ ef2 ∪ efFresh2 ∪ ...
-        val lambdaBodyType = freshVar(Kind.Star, loc)
         val (tpe1, eff1) = visitExp(exp)
         val (tpes, effs) = exps.map(visitExp).unzip
-        val expectedType = tpes.zip(evars).foldRight(lambdaBodyType: Type){
+        val expectedType = tpes.zip(evars).foldRight(tvar: Type){
           case ((arg, argEf), t) => Type.mkArrowWithEffect(arg, argEf, t, loc)
         }
         c.expectType(expectedType, tpe1, loc)
-        c.unifyType(tvar, lambdaBodyType, loc)
         c.unifyType(evar,  Type.mkUnion(eff1 :: effs ::: evars, loc), loc)
         val resTpe = tvar
         val resEff = evar
