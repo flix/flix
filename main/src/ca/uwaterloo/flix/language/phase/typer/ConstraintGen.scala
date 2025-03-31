@@ -82,6 +82,7 @@ object ConstraintGen {
         // e: (t1 -> (t2 -> (.. -> t \ efFreshN) \ efFresh2) \ efFresh1) \ ef
         // ----------------------------------------------
         // e(e1, e2, ..) : t \ ef ∪ ef1 ∪ efFresh1 ∪ ef2 ∪ efFresh2 ∪ ...
+        //
         val (tpe1, eff1) = visitExp(exp)
         val (tpes, effs) = exps.map(visitExp).unzip
         val expectedType = tpes.zip(evars).foldRight(tvar: Type){
