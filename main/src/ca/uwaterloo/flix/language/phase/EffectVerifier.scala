@@ -90,7 +90,12 @@ object EffectVerifier {
     case Expr.ApplyClo(exp, exps, argEffs, tpe, eff, loc) =>
       visitExp(exp)
       exps.foreach(visitExp)
-      // TODO ?
+      val funType = exps.zip(argEffs).foldRight(tpe){
+        case ((arg, argEff), acc) => Type.mkArrowWithEffect(arg.tpe, argEff, acc, loc)
+      }
+      expectType(funType, exp.tpe, loc)
+      expectType(Type.mkUnion(exp.eff :: exps.map(_.eff) ::: argEffs, loc), eff, loc)
+
     case Expr.ApplyDef(_, exps, itpe, _, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(Type.eraseTopAliases(itpe).arrowEffectType :: exps.map(_.eff), loc)
