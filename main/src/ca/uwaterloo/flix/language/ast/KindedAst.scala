@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
+import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListMap
 
 import java.lang.reflect.Field
@@ -86,7 +87,10 @@ object KindedAst {
     case class Cst(cst: Constant, loc: SourceLocation) extends Expr
 
     /** `exps` and `evars` have the same, non-zero length. */
-    case class ApplyClo(exp: Expr, exps: List[Expr], evars: List[Type.Var], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ApplyClo(exp: Expr, exps: List[Expr], evars: List[Type.Var], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr {
+      if (exps.sizeIs != evars.size) throw InternalCompilerException("Inconsistent apply closure arity", loc)
+      else if (exps.isEmpty) throw InternalCompilerException("Unexpected empty closure apply", loc)
+    }
 
     case class ApplyDef(symUse: DefSymUse, exps: List[Expr], itvar: Type, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 

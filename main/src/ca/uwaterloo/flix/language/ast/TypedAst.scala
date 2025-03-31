@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, TraitEnv}
+import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListMap
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -121,7 +122,10 @@ object TypedAst {
     }
 
     /** `exps` and `evars` have the same, non-zero length. */
-    case class ApplyClo(exp: Expr, exps: List[Expr], argEffs: List[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ApplyClo(exp: Expr, exps: List[Expr], argEffs: List[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr {
+      if (exps.sizeIs != argEffs.size) throw InternalCompilerException("Inconsistent apply closure arity", loc)
+      else if (exps.isEmpty) throw InternalCompilerException("Unexpected empty closure apply", loc)
+    }
 
     case class ApplyDef(symUse: DefSymUse, exps: List[Expr], itpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

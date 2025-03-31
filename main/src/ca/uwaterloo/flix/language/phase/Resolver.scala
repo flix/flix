@@ -1570,9 +1570,8 @@ object Resolver {
         else (mkPureLambda(fp, acc, loc.asSynthetic), false)
     }
 
-    val closureApplication = ResolvedAst.Expr.ApplyClo(fullDefLambda, cloArgs, loc)
-
-    closureApplication
+    if (cloArgs.isEmpty) fullDefLambda
+    else ResolvedAst.Expr.ApplyClo(fullDefLambda, cloArgs, loc)
   }
 
   /**
