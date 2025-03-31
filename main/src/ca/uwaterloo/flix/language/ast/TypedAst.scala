@@ -120,7 +120,7 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    /** `exps` must be non-empty and `argEffs` has the same size as `exps`. */
+    /** `exps` and `evars` have the same, non-zero length. */
     case class ApplyClo(exp: Expr, exps: List[Expr], argEffs: List[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class ApplyDef(symUse: DefSymUse, exps: List[Expr], itpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr

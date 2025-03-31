@@ -101,7 +101,7 @@ object ResolvedAst {
 
     case class Cst(cst: Constant, loc: SourceLocation) extends Expr
 
-    /** `exps` must be non-empty. */
+    /** `exps` is non-empty. */
     case class ApplyClo(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class ApplyDef(symUse: DefSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
