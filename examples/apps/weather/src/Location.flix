@@ -1,9 +1,8 @@
 mod Location {
     use Json.JsonError.JsonError
-    use Json.FromJson.fromJsonAt
+    use Json.FromJson.{fromJson, fromJsonAt}
     use Json.Path.{Path, !!}
     use Json.{getAtKey, JsonElement, JsonError}
-    use WeatherError.WeatherError
     
     pub enum Loc(String, String, Float64, Float64)
 
@@ -45,7 +44,7 @@ mod Location {
             def getLocation(resume) = 
                 let url = "http://ip-api.com/json";
                 let loc = Util.getAndParse(url, Map.empty()) |> Result.flatMap ( resJson ->
-                    fromJsonAt(Path.Root, resJson) |> Result.mapErr( err -> 
+                    fromJson(resJson) |> Result.mapErr( err -> 
                         WeatherError.JsonError(err)
                     )
                 );

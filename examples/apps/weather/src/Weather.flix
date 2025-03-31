@@ -1,10 +1,15 @@
+use Location.Loc
+use Weather.WeatherInfo
+
+pub eff Weather {
+    def getWeather(loc: Loc): Result[WeatherError, WeatherInfo]
+}
+
 mod Weather {
+    use Location.Loc
     use Json.{FromJson, getAtKey, JsonElement, JsonError, Parse}
     use Json.FromJson.{fromNullableJson, fromJson,fromJsonAt} 
     use Json.Path.{!!, Path}
-    use Location.Loc
-    use WeatherInfo.WeatherInfo
-    use WeatherError.WeatherError
     use WeatherInfoPrimitive.WeatherInfoPrimitive
     
     pub enum WeatherInfoPrimitive(Int32, Float64)
@@ -52,7 +57,7 @@ mod Weather {
             case Option.Some(descriptions) => 
                 let nString = ToString.toString(n);
                 let res = forM (
-                    descriptionsMap <- fromJsonAt(Path.Root, descriptions);
+                    descriptionsMap <- fromJson(descriptions);
                     descriptionMap <- getAtKey(Path.Root, nString, descriptionsMap);
                     dayDescriptionMap <- getAtKey(Path.Root !! nString, "day", descriptionMap);
                     content <- getAtKey(Path.Root !! nString !! "day" , "description", dayDescriptionMap)
@@ -62,9 +67,6 @@ mod Weather {
                 )
         }
 
-    pub eff Weather {
-        def getWeather(loc: Loc): Result[WeatherError, WeatherInfo]
-    }
     
     ///
     /// Handles Weather effect by getting the weather for the given location from open-meteo and parse it.
@@ -79,9 +81,9 @@ mod Weather {
             let weather = Util.getAndParse(url, Map.empty()) |> Result.flatMap( resJson ->
                 match fromJson(resJson) {
                     case Result.Ok(weatherInfoPrimitive)  => 
-                        let WeatherInfoPrimitive(wmo_code, temp) = weatherInfoPrimitive;
-                        parseWMOCode(wmo_code) |> Result.flatMap( weatherCondition ->
-                            Ok(WeatherInfo(weatherCondition, temp))
+                        let WeatherInfoPrimitive(wmoCode, temp) = weatherInfoPrimitive;
+                        parseWMOCode(wmoCode) |> Result.flatMap( weatherCondition ->
+                            Ok(WeatherInfo.WeatherInfo(weatherCondition, temp))
                         )
                     case Result.Err(err) => Err(WeatherError.JsonError(err))
                 }

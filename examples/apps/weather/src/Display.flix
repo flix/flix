@@ -13,8 +13,10 @@ mod Display {
         run {
             f()
         } with handler Display {
-            def display(loc, weather, resume) = 
-                println("Weather for ${loc}:\n\t ${weather}") |> resume
+            def display(loc, weather, resume) = {
+                println("Weather for ${loc}:\n\t ${weather}");
+                resume()
+            }
         }
 
 }

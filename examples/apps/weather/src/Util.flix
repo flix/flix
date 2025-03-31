@@ -1,5 +1,4 @@
 mod Util {
-    use WeatherError.WeatherError
     use Json.JsonElement
     use Json.Parse
 
