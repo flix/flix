@@ -45,7 +45,7 @@ object TypedAstOps {
     case Expr.OpenAs(_, exp, _, _) => sigSymsOf(exp)
     case Expr.Use(_, _, exp, _) => sigSymsOf(exp)
     case Expr.Lambda(_, exp, _, _) => sigSymsOf(exp)
-    case Expr.ApplyClo(exp, exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ sigSymsOf(exp)
+    case Expr.ApplyClo(exp, exps, _, _, _, _) => sigSymsOf(exp) ++ exps.flatMap(sigSymsOf)
     case Expr.ApplyDef(_, exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet + sym
