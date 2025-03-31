@@ -482,7 +482,7 @@ object BenchmarkInliner {
 
   private def map10KLength: String = {
     """
-         def main(): Unit \ IO = {
+      |def main(): Unit \ IO = {
       |    let l1 = range(0, 10_000);
       |    let l2 = map(x -> x + 1, l1);
       |    let l3 = length(l2);
