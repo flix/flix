@@ -31,6 +31,7 @@ class TestCompletionProvider extends AnyFunSuite  {
     */
   private val Programs = List(
     s"""
+       |// A simple program that reads a name from the console and prints a greeting.
        |def main(): Unit \\ IO =
        |    run {
        |        Console.println("Please enter your name: ");
@@ -40,6 +41,7 @@ class TestCompletionProvider extends AnyFunSuite  {
        |
        |""".stripMargin,
     s"""
+       |// A simple program that reads a name from the console and prints a greeting.
        |def main(): Unit \\ IO =
        |    run {
        |        let timestamp = Clock.currentTime(TimeUnit.Milliseconds);
@@ -48,6 +50,9 @@ class TestCompletionProvider extends AnyFunSuite  {
        |
        |""".stripMargin,
     s"""
+       |///
+       |/// A simple program that reads a name from the console and prints a greeting.
+       |///
        |def main(): Unit \\ {Net, IO} =
        |    run {
        |        let url = "http://example.com/";
@@ -72,6 +77,7 @@ class TestCompletionProvider extends AnyFunSuite  {
        |
        |""".stripMargin,
     s"""
+       |// Map the function f over the list l in parallel.
        |def parMap(f: a -> b, l: List[a]): List[b] = match l {
        |    case Nil     => Nil
        |    case x :: xs =>
@@ -79,6 +85,7 @@ class TestCompletionProvider extends AnyFunSuite  {
        |            yield r :: rs
        |}
        |
+       |// The main function.
        |def main(): Unit \\ IO =
        |    let l = List.range(1, 100);
        |    println(parMap(x -> x + 1, l))
@@ -110,6 +117,24 @@ class TestCompletionProvider extends AnyFunSuite  {
       keywordTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
+          val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, flix)
+          assert(completions.items.isEmpty)
+        }
+      }
+    }
+  }
+
+  test("No completions inside comment"){
+    Programs.foreach{ program =>
+      val (root, flix, errors) = compile(program, Options.Default)
+      val source = mkSource(program)
+      // Find all the literal tokens that are on a single line
+      println(program)
+      val keywordTokens = root.tokens(source).toList.filter(_.kind.isComment).filter(token => token.sp1.line == token.sp2.line)
+      keywordTokens.foreach { token =>
+        // We will test all possible offsets in the keyword, including the start and end of the keyword
+        getAllPositionsWithinToken(token).foreach { pos =>
+          println(pos)
           val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, flix)
           assert(completions.items.isEmpty)
         }
