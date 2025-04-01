@@ -38,4 +38,5 @@ case class Nel[T](x: T, xs: List[T]) extends Iterable[T] {
 
   /** Returns `this` as a [[List]]. */
   override def toList: List[T] = x :: xs
+
 }
