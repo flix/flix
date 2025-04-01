@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
-import ca.uwaterloo.flix.util.CofiniteIntSet
+import ca.uwaterloo.flix.util.collection.CofiniteIntSet
 
 /** Companion object for [[ZhegalkinCst]] */
 object ZhegalkinCst {
