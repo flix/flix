@@ -32,11 +32,11 @@ class TestNel extends AnyFunSuite {
   }
 
   test("toString.01") {
-    assert(mkNel(1, 2, 3, 4).toString == "mkNel(1, 2, 3, 4)")
+    assert(mkNel(1, 2, 3, 4).toString == "Nel(1, 2, 3, 4)")
   }
 
   test("toString.02") {
-    assert(mkNel(1, Nil).toString == "mkNel(1)")
+    assert(mkNel(1, Nil).toString == "Nel(1)")
   }
 
   test("iterator.01") {
