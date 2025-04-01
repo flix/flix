@@ -101,8 +101,8 @@ object Validation {
   def traverseNel[T, S, E](xs: Nel[T])(f: T => Validation[S, E]): Validation[Nel[S], E] = {
     traverse(xs)(f) match {
       case Success(l) => l match {
-        case Nil => throw InternalCompilerException("Impossible case, Nel traversed into an empty list", SourceLocation.Unknown)
         case y :: ys => Validation.Success(Nel(y, ys))
+        case Nil => throw InternalCompilerException("Impossible case, Nel traversed into an empty list", SourceLocation.Unknown)
       }
       case Failure(errors) => Failure(errors)
     }
