@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.api.lsp.Position
 import ca.uwaterloo.flix.language.ast.shared.Source
 
 /**
@@ -48,6 +49,14 @@ case class Token(kind: TokenKind, src: Source, start: Int, end: Int, sp1: Source
     * NB: Tokens are zero-indexed
     */
   def mkSourceLocation(isReal: Boolean = true): SourceLocation = SourceLocation(isReal, sp1, sp2)
+
+  def offset(steps: Int): Position = {
+    val text = src.data.slice(start, end).mkString("")
+    val (line, col) = (0 until steps).foldLeft((sp1.line, sp1.col.toInt)) { case ((line, col), char) =>
+      if (text(char) == '\n') (line + 1, 1) else (line, col + 1)
+    }
+    Position(line, col)
+  }
 
   /**
     * Returns a one-indexed string representation of this token. Must only be used for debugging.

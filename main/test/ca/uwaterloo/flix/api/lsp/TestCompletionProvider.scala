@@ -31,7 +31,9 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private val Programs = List(
         s"""
-           |// A simple program that reads a name from the console and prints a greeting.
+           |/**
+           |  *A simple program that reads a name from the console and prints a greeting.
+           |  */
            |def main(): Unit \\ IO =
            |    run {
            |        Console.println("Please enter your name: ");
@@ -86,6 +88,7 @@ class TestCompletionProvider extends AnyFunSuite {
        |}
        |
        |// The main function.
+       |//
        |def main(): Unit \\ IO =
        |    let l = List.range(1, 100);
        |    println(parMap(x -> x + 1, l))
@@ -113,7 +116,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val (root, flix, errors) = compile(program, Options.Default)
       val source = mkSource(program)
       // Find all the literal tokens that are on a single line
-      val keywordTokens = root.tokens(source).toList.filter(_.kind.isLiteral).filter(token => token.sp1.lineOneIndexed == token.sp2.lineOneIndexed)
+      val keywordTokens = root.tokens(source).toList.filter(_.kind.isLiteral)
       keywordTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
@@ -129,7 +132,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val (root, flix, errors) = compile(program, Options.Default)
       val source = mkSource(program)
       // Find all the literal tokens that are on a single line
-      val keywordTokens = root.tokens(source).toList.filter(_.kind.isComment).filter(token => token.sp1.line == token.sp2.line)
+      val keywordTokens = root.tokens(source).toList.filter(_.kind.isComment)
       keywordTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
@@ -232,24 +235,17 @@ class TestCompletionProvider extends AnyFunSuite {
         .foldLeft(program) { case (currentProg, (token, incomplete)) =>
           currentProg.take(token.start) + incomplete + currentProg.substring(token.end)
         }
-      val (newRoot, _, _) = compile(newProgram, Options.Default)
+      val (newRoot, newFlix, newErrors) = compile(newProgram, Options.Default)
       val newSource = mkSource(newProgram)
       val newKeywordTokens = newRoot.tokens(newSource).toList.filter(_.kind.isComment).filter(token => token.sp1.line == token.sp2.line)
       newKeywordTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
-          val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, flix)
+          val completions = CompletionProvider.autoComplete(Uri, pos, newErrors)(newRoot, newFlix)
           assert(completions.items.isEmpty)
         }
       }
     }
-  }
-
-  /**
-    * Randomly deletes characters from the given text that are not in the set of protected characters `protectedChars`.
-    */
-  private def randomlyDelete(text: String, protectedChars: Set[Char]): String = {
-    text.filter(c => protectedChars.contains(c) || scala.util.Random.nextBoolean())
   }
 
   /**
@@ -270,6 +266,21 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   /**
+    * Returns all positions within the given token.
+    *
+    * For example, give a token "def", we will return a list of positions:
+    * - |def
+    * - d|ef
+    * - de|f
+    * - def|
+    */
+  private def getAllPositionsWithinToken(token: Token): List[Position] = {
+    (0 to token.text.length).map { offset =>
+      token.offset(offset)
+    }.toList
+  }
+
+  /**
     * Creates a source object from the given string `content`.
     */
   private def mkSource(content: String): Source = {
@@ -279,16 +290,9 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   /**
-    * Returns all positions within the given token.
-    *
-    * For example, give a token "def", we will return a list of positions:
-    * - |def
-    * - d|ef
-    * - de|f
-    * - def|
+    * Randomly deletes characters from the given text that are not in the set of protected characters `protectedChars`.
     */
-  private def getAllPositionsWithinToken(token: Token): List[Position] =
-    (0 to token.text.length).map{ offset =>
-      Position(token.sp1.lineOneIndexed, token.sp1.colOneIndexed + offset)
-    }.toList
+  private def randomlyDelete(text: String, protectedChars: Set[Char]): String = {
+    text.filter(c => protectedChars.contains(c) || scala.util.Random.nextBoolean())
+  }
 }
