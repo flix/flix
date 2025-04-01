@@ -22,7 +22,8 @@ import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, SourceLocation, Symb
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, SubstitutionTree, TypeConstraint}
-import ca.uwaterloo.flix.util.{CofiniteSet, InternalCompilerException, ParOps, Result}
+import ca.uwaterloo.flix.util.collection.CofiniteSet
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean

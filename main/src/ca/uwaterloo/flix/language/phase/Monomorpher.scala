@@ -23,8 +23,8 @@ import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, Rigidity
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
-import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps}
-import ca.uwaterloo.flix.util.{CofiniteSet, InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListMap, ListOps, MapOps}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.SortedSet
