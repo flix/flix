@@ -382,7 +382,7 @@ object Lowering {
       val (applies, _) = es.foldLeft((e, funType)){
         case ((f, Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), argEff, _), _argT, _), next, _)), arg) =>
           (
-            LoweredAst.Expr.ApplyClo(f, arg, next, Type.mkUnion(argEff, arg.eff, loc.asSynthetic), loc.asSynthetic),
+            LoweredAst.Expr.ApplyClo(f, arg, next, Type.mkUnion(f.eff, argEff, arg.eff, loc.asSynthetic), loc.asSynthetic),
             next
           )
         case ((_, tpe), _) => throw InternalCompilerException(s"Unexpected type: $tpe", loc)
