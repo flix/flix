@@ -35,11 +35,7 @@ case class Nel[T](x: T, xs: List[T]) extends Iterable[T] {
 
   /** Returns an iterator of the elements of `this`. */
   override def iterator: Iterator[T] = Iterator(x) ++ xs.iterator
-}
 
-object Nel {
-
-  /** Returns a [[Nel]] of the elements, `x` being the first. */
-  def apply[T](x: T, xs: T*): Nel[T] = Nel(x, xs.toList)
-
+  /** Returns `this` as a [[List]]. */
+  override def toList: List[T] = x :: xs
 }
