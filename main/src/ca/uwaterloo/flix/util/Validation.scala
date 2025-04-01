@@ -95,6 +95,9 @@ object Validation {
     */
   def traverse[T, S, E](xs: Iterable[T])(f: T => Validation[S, E]): Validation[List[S], E] = fastTraverse(xs)(f)
 
+  /**
+    * Traverses `xs` applying the function `f` to each element.
+    */
   def traverseNel[T, S, E](xs: Nel[T])(f: T => Validation[S, E]): Validation[Nel[S], E] = {
     traverse(xs)(f) match {
       case Success(l) => l match {
