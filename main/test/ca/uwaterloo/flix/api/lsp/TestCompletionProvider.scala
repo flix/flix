@@ -229,7 +229,7 @@ class TestCompletionProvider extends AnyFunSuite {
       // Sort the replacements by column in descending order, otherwise former replacements will affect the latter ones
 
       val newProgram = keywordTokens
-        .map(token => (token, randomlyDelete(token.text, Set('\t', '\n', '\r'))))
+        .map(token => (token, randomlyDelete(token.text, Set('/', '*', '\t', '\n', '\r'))))
         // Sort the replacements by column in descending order, otherwise former replacements will affect the latter ones
         .sortBy(-_._1.start)
         .foldLeft(program) { case (currentProg, (token, incomplete)) =>
