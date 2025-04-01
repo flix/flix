@@ -384,7 +384,7 @@ object UnkindedType {
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
-  def mkTuple(ts: Nel[UnkindedType], loc: SourceLocation): UnkindedType = {
+  def mkTuple(ts: List[UnkindedType], loc: SourceLocation): UnkindedType = {
     val init = UnkindedType.Cst(TypeConstructor.Tuple(ts.length), loc)
     ts.foldLeft(init: UnkindedType) {
       case (acc, x) => Apply(acc, x, loc)
@@ -427,7 +427,7 @@ object UnkindedType {
     val ts = ts0 match {
       case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
       case x :: Nil => x
-      case x :: xs => mkTuple(Nel(x, xs), loc)
+      case xs => mkTuple(xs, loc)
     }
 
     Apply(UnkindedType.Cst(TypeConstructor.Relation, loc), ts, loc)
@@ -440,7 +440,7 @@ object UnkindedType {
     val ts = ts0 match {
       case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
       case x :: Nil => x
-      case x :: xs => mkTuple(Nel(x, xs), loc)
+      case xs => mkTuple(xs, loc)
     }
 
     Apply(UnkindedType.Cst(TypeConstructor.Lattice, loc), ts, loc)
@@ -477,7 +477,7 @@ object UnkindedType {
     val ts = ts0 match {
       case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
       case x :: Nil => x
-      case x :: xs => UnkindedType.mkTuple(Nel(x, xs), loc)
+      case xs => UnkindedType.mkTuple(xs, loc)
     }
 
     UnkindedType.Apply(tycon, ts, loc)

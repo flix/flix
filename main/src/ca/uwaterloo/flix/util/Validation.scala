@@ -16,8 +16,7 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.util.collection.{Chain, Nel}
+import ca.uwaterloo.flix.util.collection.Chain
 
 import scala.collection.mutable
 
@@ -94,16 +93,6 @@ object Validation {
     * Traverses `xs` applying the function `f` to each element.
     */
   def traverse[T, S, E](xs: Iterable[T])(f: T => Validation[S, E]): Validation[List[S], E] = fastTraverse(xs)(f)
-
-  def traverseNel[T, S, E](xs: Nel[T])(f: T => Validation[S, E]): Validation[Nel[S], E] = {
-    traverse(xs)(f) match {
-      case Success(l) => l match {
-        case Nil => throw InternalCompilerException("Impossible case, Nel traversed into an empty list", SourceLocation.Unknown)
-        case y :: ys => Validation.Success(Nel(y, ys))
-      }
-      case Failure(errors) => Failure(errors)
-    }
-  }
 
   /**
     * Traverses `o` applying the function `f` to the value, if it exists.
