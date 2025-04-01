@@ -25,57 +25,57 @@ import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
-class TestCompletionProvider extends AnyFunSuite  {
+class TestCompletionProvider extends AnyFunSuite {
   /**
     * A list of programs to test invariants on.
     */
   private val Programs = List(
-    s"""
-       |// A simple program that reads a name from the console and prints a greeting.
-       |def main(): Unit \\ IO =
-       |    run {
-       |        Console.println("Please enter your name: ");
-       |        let name = Console.readln();
-       |        Console.println("Hello $${name}")
-       |    } with Console.runWithIO
-       |
-       |""".stripMargin,
-    s"""
-       |// A simple program that reads a name from the console and prints a greeting.
-       |def main(): Unit \\ IO =
-       |    run {
-       |        let timestamp = Clock.currentTime(TimeUnit.Milliseconds);
-       |        println("$${timestamp} ms since the epoc")
-       |    } with Clock.runWithIO
-       |
-       |""".stripMargin,
-    s"""
-       |///
-       |/// A simple program that reads a name from the console and prints a greeting.
-       |///
-       |def main(): Unit \\ {Net, IO} =
-       |    run {
-       |        let url = "http://example.com/";
-       |        Logger.info("Downloading URL: '$${url}'");
-       |        match HttpWithResult.get(url, Map.empty()) {
-       |            case Result.Ok(response) =>
-       |                let file = "data.txt";
-       |                Logger.info("Saving response to file: '$${file}'");
-       |                let body = Http.Response.body(response);
-       |                match FileWriteWithResult.write(str = body, file) {
-       |                    case Result.Ok(_) =>
-       |                        Logger.info("Response saved to file: '$${file}'")
-       |                    case Result.Err(err) =>
-       |                        Logger.fatal("Unable to write file: '$${err}'")
-       |                }
-       |            case Result.Err(err) =>
-       |                Logger.fatal("Unable to download URL: '$${err}'")
-       |        }
-       |    } with FileWriteWithResult.runWithIO
-       |      with HttpWithResult.runWithIO
-       |      with Logger.runWithIO
-       |
-       |""".stripMargin,
+        s"""
+           |// A simple program that reads a name from the console and prints a greeting.
+           |def main(): Unit \\ IO =
+           |    run {
+           |        Console.println("Please enter your name: ");
+           |        let name = Console.readln();
+           |        Console.println("Hello $${name}")
+           |    } with Console.runWithIO
+           |
+           |""".stripMargin,
+        s"""
+           |// A simple program that reads a name from the console and prints a greeting.
+           |    def main(): Unit \\ IO =
+           |    run {
+           |        let timestamp = Clock.currentTime(TimeUnit.Milliseconds);
+           |        println("$${timestamp} ms since the epoc")
+           |    } with Clock.runWithIO
+           |
+           |""".stripMargin,
+        s"""
+           |///
+           |/// A simple program that reads a name from the console and prints a greeting.
+           |///
+           |def main(): Unit \\ {Net, IO} =
+           |    run {
+           |        let url = "http://example.com/";
+           |        Logger.info("Downloading URL: '$${url}'");
+           |        match HttpWithResult.get(url, Map.empty()) {
+           |            case Result.Ok(response) =>
+           |                let file = "data.txt";
+           |                Logger.info("Saving response to file: '$${file}'");
+           |                let body = Http.Response.body(response);
+           |                match FileWriteWithResult.write(str = body, file) {
+           |                    case Result.Ok(_) =>
+           |                        Logger.info("Response saved to file: '$${file}'")
+           |                    case Result.Err(err) =>
+           |                        Logger.fatal("Unable to write file: '$${err}'")
+           |                }
+           |            case Result.Err(err) =>
+           |                Logger.fatal("Unable to download URL: '$${err}'")
+           |        }
+           |    } with FileWriteWithResult.runWithIO
+           |      with HttpWithResult.runWithIO
+           |      with Logger.runWithIO
+           |
+           |""".stripMargin,
     s"""
        |// Map the function f over the list l in parallel.
        |def parMap(f: a -> b, l: List[a]): List[b] = match l {
@@ -93,12 +93,12 @@ class TestCompletionProvider extends AnyFunSuite  {
        |""".stripMargin
   )
 
-  test("No completions after complete keyword"){
-    Programs.foreach{ program =>
+  test("No completions after complete keyword") {
+    Programs.foreach { program =>
       val (root, flix, errors) = compile(program, Options.Default)
       val source = mkSource(program)
       val keywordTokens = root.tokens(source).toList.filter(_.kind.isKeyword)
-      keywordTokens.foreach{ token =>
+      keywordTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
           val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, flix)
@@ -108,8 +108,8 @@ class TestCompletionProvider extends AnyFunSuite  {
     }
   }
 
-  test("No completions after complete literal"){
-    Programs.foreach{ program =>
+  test("No completions after complete literal") {
+    Programs.foreach { program =>
       val (root, flix, errors) = compile(program, Options.Default)
       val source = mkSource(program)
       // Find all the literal tokens that are on a single line
@@ -124,17 +124,15 @@ class TestCompletionProvider extends AnyFunSuite  {
     }
   }
 
-  test("No completions inside comment"){
-    Programs.foreach{ program =>
+  test("No completions inside comment") {
+    Programs.foreach { program =>
       val (root, flix, errors) = compile(program, Options.Default)
       val source = mkSource(program)
       // Find all the literal tokens that are on a single line
-      println(program)
       val keywordTokens = root.tokens(source).toList.filter(_.kind.isComment).filter(token => token.sp1.line == token.sp2.line)
       keywordTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
-          println(pos)
           val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, flix)
           assert(completions.items.isEmpty)
         }
@@ -217,6 +215,41 @@ class TestCompletionProvider extends AnyFunSuite  {
         assert(completions.items.isEmpty)
       }
     }
+  }
+
+  test("No completions inside incomplete comment") {
+    Programs.foreach { program =>
+      val (root, flix, errors) = compile(program, Options.Default)
+      val source = mkSource(program)
+      // Find all the literal tokens that are on a single line
+      val keywordTokens = root.tokens(source).toList.filter(_.kind.isComment).filter(token => token.sp1.line == token.sp2.line)
+      // Sort the replacements by column in descending order, otherwise former replacements will affect the latter ones
+
+      val newProgram = keywordTokens
+        .map(token => (token, randomlyDelete(token.text, Set('\t', '\n', '\r'))))
+        // Sort the replacements by column in descending order, otherwise former replacements will affect the latter ones
+        .sortBy(-_._1.start)
+        .foldLeft(program) { case (currentProg, (token, incomplete)) =>
+          currentProg.take(token.start) + incomplete + currentProg.substring(token.end)
+        }
+      val (newRoot, _, _) = compile(newProgram, Options.Default)
+      val newSource = mkSource(newProgram)
+      val newKeywordTokens = newRoot.tokens(newSource).toList.filter(_.kind.isComment).filter(token => token.sp1.line == token.sp2.line)
+      newKeywordTokens.foreach { token =>
+        // We will test all possible offsets in the keyword, including the start and end of the keyword
+        getAllPositionsWithinToken(token).foreach { pos =>
+          val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, flix)
+          assert(completions.items.isEmpty)
+        }
+      }
+    }
+  }
+
+  /**
+    * Randomly deletes characters from the given text that are not in the set of protected characters `protectedChars`.
+    */
+  private def randomlyDelete(text: String, protectedChars: Set[Char]): String = {
+    text.filter(c => protectedChars.contains(c) || scala.util.Random.nextBoolean())
   }
 
   /**
