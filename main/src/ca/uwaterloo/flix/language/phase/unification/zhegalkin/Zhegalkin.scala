@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
-import ca.uwaterloo.flix.util.CofiniteIntSet
+import ca.uwaterloo.flix.util.collection.CofiniteIntSet
 
 import scala.collection.immutable.SortedSet
 
