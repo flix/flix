@@ -36,7 +36,7 @@ class TestNel extends AnyFunSuite {
   }
 
   test("toString.02") {
-    assert(mkNel(1, Nil).toString == "Nel(1)")
+    assert(mkNel(1).toString == "Nel(1)")
   }
 
   test("iterator.01") {
