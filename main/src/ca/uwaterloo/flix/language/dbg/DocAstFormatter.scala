@@ -75,13 +75,13 @@ object DocAstFormatter {
       case Unit =>
         text("()")
       case Tuple(elms) =>
-        tuple(elms.map(aux(_, paren = false)))
+        tuple(elms.map(aux(_, paren = false)).toList)
       case Tag(sym, Nil) =>
         text(sym.toString)
       case Tag(sym, List(Unit)) =>
         text(sym.toString)
       case Tag(sym, List(Tuple(args))) =>
-        text(sym.toString) |:: tuple(args.map(aux(_, paren = false)))
+        text(sym.toString) |:: tuple(args.map(aux(_, paren = false)).toList)
       case Tag(sym, args) =>
         text(sym.toString) |:: tuple(args.map(aux(_, paren = false)))
       case AsIs(s) =>

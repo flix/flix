@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Name, Symbol}
+import ca.uwaterloo.flix.util.collection.Nel
 
 import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.SortedSet

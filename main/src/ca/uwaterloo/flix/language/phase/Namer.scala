@@ -1212,7 +1212,7 @@ object Namer {
     case DesugaredAst.Pattern.Wild(_) => Nil
     case DesugaredAst.Pattern.Cst(_, _) => Nil
     case DesugaredAst.Pattern.Tag(_, ps, _) => ps.flatMap(freeVars)
-    case DesugaredAst.Pattern.Tuple(elms, _) => elms.flatMap(freeVars)
+    case DesugaredAst.Pattern.Tuple(elms, _) => elms.toList.flatMap(freeVars)
     case DesugaredAst.Pattern.Record(pats, pat, _) => recordPatternFreeVars(pats) ++ freeVars(pat)
     case DesugaredAst.Pattern.Error(_) => Nil
   }

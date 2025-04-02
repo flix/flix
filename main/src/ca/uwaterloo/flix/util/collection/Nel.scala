@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.util.collection
 
 /**
-  * A non-empty list - always has at least one element.
+  * A non-empty list (Nel) - always has at least one element.
   *
   * @param x the first element
   * @param xs the remaining elements
@@ -30,6 +30,13 @@ case class Nel[T](x: T, xs: List[T]) extends Iterable[T] {
   /** Builds a new [[Nel]] by applying `f` to all elements of `this`. */
   override def map[S](f: T => S): Nel[S] = Nel(f(x), xs.map(f))
 
+  /** Returns two lists from a list of tuples. */
+  override def unzip[A1, A2](implicit asPair: T => (A1, A2)): (Nel[A1], Nel[A2]) = {
+    val (a, b) = asPair(x)
+    val (as, bs) = xs.unzip
+    (Nel(a, as), Nel(b, bs))
+  }
+
   /** Returns a string representation of `this`. */
   override def toString: String = s"Nel(${this.toList.mkString(", ")})"
 
@@ -38,5 +45,12 @@ case class Nel[T](x: T, xs: List[T]) extends Iterable[T] {
 
   /** Returns `this` as a [[List]]. */
   override def toList: List[T] = x :: xs
+
+}
+
+object Nel {
+
+  /** Returns a [[Nel]] of the given elements. */
+  def apply[T](x: T, xs: T*): Nel[T] = Nel(x, xs.toList)
 
 }

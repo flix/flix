@@ -3454,7 +3454,7 @@ object Resolver {
   /**
     * Creates an LocalScope from the given patterns.
     */
-  private def mkPatternsScp(pats: List[ResolvedAst.Pattern]): LocalScope = {
+  private def mkPatternsScp(pats: Iterable[ResolvedAst.Pattern]): LocalScope = {
     pats.foldLeft(LocalScope.empty) {
       case (acc, pat) => acc ++ mkPatternScp(pat)
     }

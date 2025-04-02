@@ -265,7 +265,7 @@ object WeededAst {
 
     case class Tag(qname: Name.QName, pats: List[Pattern], loc: SourceLocation) extends Pattern
 
-    case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
+    case class Tuple(pats: Nel[Pattern], loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
 

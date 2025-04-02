@@ -89,7 +89,7 @@ object MonoAstPrinter {
     case Pattern.Var(sym, _, _) => printVar(sym)
     case Pattern.Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Pattern.Tag(sym, pats, _, _) => DocAst.Expr.Tag(sym.sym, pats.map(printPattern))
-    case Pattern.Tuple(elms, _, _) => DocAst.Expr.Tuple(elms.map(printPattern))
+    case Pattern.Tuple(elms, _, _) => DocAst.Expr.Tuple(elms.map(printPattern).toList)
     case Pattern.Record(pats, pat, _, _) => printRecordPattern(pats, pat)
   }
 

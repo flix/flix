@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.dbg.DocAst.Expr
 import ca.uwaterloo.flix.language.dbg.DocAst.Expr.*
+import ca.uwaterloo.flix.util.collection.Nel
 
 object OpPrinter {
 
