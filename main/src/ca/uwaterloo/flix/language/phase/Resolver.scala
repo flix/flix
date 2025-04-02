@@ -2411,7 +2411,7 @@ object Resolver {
         }
 
       case NamedAst.Type.Tuple(elms0, loc) =>
-        val elmsVal = traverse(elms0)(tpe => visit(tpe))
+        val elmsVal = traverseNel(elms0)(tpe => visit(tpe))
         mapN(elmsVal) {
           elms => UnkindedType.mkTuple(elms, loc)
         }

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
-import ca.uwaterloo.flix.util.collection.MultiMap
+import ca.uwaterloo.flix.util.collection.{MultiMap, Nel}
 
 object WeededAst {
 
@@ -334,7 +334,7 @@ object WeededAst {
 
     case class Unit(loc: SourceLocation) extends Type
 
-    case class Tuple(tpes: List[Type], loc: SourceLocation) extends Type
+    case class Tuple(tpes: Nel[Type], loc: SourceLocation) extends Type
 
     case class RecordRowEmpty(loc: SourceLocation) extends Type
 
