@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError.*
 import ca.uwaterloo.flix.util.Validation.*
-import ca.uwaterloo.flix.util.collection.{ArrayOps, Chain}
+import ca.uwaterloo.flix.util.collection.{ArrayOps, Chain, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 import java.lang.{Byte as JByte, Integer as JInt, Long as JLong, Short as JShort}
@@ -2770,7 +2770,10 @@ object Weeder2 {
       expect(tree, TreeKind.Type.Tuple)
       mapN(traverse(pickAll(TreeKind.Type.Type, tree))(visitType)) {
         case tpe :: Nil => tpe // flatten singleton tuple types
-        case types => Type.Tuple(types, tree.loc)
+        case tpe :: types => Type.Tuple(Nel(tpe, types), tree.loc)
+        case Nil =>
+          // Parser never produces empty tuple types.
+          throw InternalCompilerException("Unexpected empty tuple type", tree.loc)
       }
     }
 

@@ -1233,7 +1233,7 @@ object Namer {
     case DesugaredAst.Type.Var(ident, _) => ident :: Nil
     case DesugaredAst.Type.Ambiguous(_, _) => Nil
     case DesugaredAst.Type.Unit(_) => Nil
-    case DesugaredAst.Type.Tuple(elms, _) => elms.flatMap(freeTypeVars)
+    case DesugaredAst.Type.Tuple(elms, _) => elms.toList.flatMap(freeTypeVars)
     case DesugaredAst.Type.RecordRowEmpty(_) => Nil
     case DesugaredAst.Type.RecordRowExtend(_, t, r, _) => freeTypeVars(t) ::: freeTypeVars(r)
     case DesugaredAst.Type.Record(row, _) => freeTypeVars(row)
