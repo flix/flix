@@ -12,8 +12,8 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.scala-lang:scala-library:2.13.15!!'
-    implementation 'org.scala-lang:scala-reflect:2.13.15!!'
+    implementation 'org.scala-lang:scala-library:2.13.16!!'
+    implementation 'org.scala-lang:scala-reflect:2.13.16!!'
 
     implementation('org.java-websocket:Java-WebSocket:1.5.7')
     implementation('org.jline:jline:3.26.2')
