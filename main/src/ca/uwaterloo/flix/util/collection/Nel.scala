@@ -47,10 +47,3 @@ case class Nel[T](x: T, xs: List[T]) extends Iterable[T] {
   override def toList: List[T] = x :: xs
 
 }
-
-object Nel {
-
-  /** Returns a [[Nel]] of the given elements. */
-  def apply[T](x: T, xs: T*): Nel[T] = Nel(x, xs.toList)
-
-}
