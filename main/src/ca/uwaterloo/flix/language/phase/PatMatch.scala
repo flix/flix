@@ -132,9 +132,9 @@ object PatMatch {
 
       case Expr.Lambda(_, body, _, _) => visitExp(body)
 
-      case Expr.ApplyClo(exp1, exp2, _, _, _) =>
-        visitExp(exp1)
-        visitExp(exp2)
+      case Expr.ApplyClo(exp, exps, _, _, _, _) =>
+        visitExp(exp)
+        exps.foreach(visitExp)
 
       case Expr.ApplyDef(_, exps, _, _, _, _) => exps.foreach(visitExp)
 

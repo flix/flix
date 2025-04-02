@@ -138,9 +138,9 @@ object Dependencies {
       visitExp(exp)
       visitType(tpe)
 
-    case Expr.ApplyClo(exp1, exp2, tpe, eff, _) =>
-      visitExp(exp1)
-      visitExp(exp2)
+    case Expr.ApplyClo(exp, exps, _, tpe, eff, _) =>
+      visitExp(exp)
+      exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 

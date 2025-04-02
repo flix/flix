@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
+import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListMap
 
 import java.lang.reflect.Field
@@ -101,7 +102,10 @@ object ResolvedAst {
 
     case class Cst(cst: Constant, loc: SourceLocation) extends Expr
 
-    case class ApplyClo(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    /** `exps` is non-empty. */
+    case class ApplyClo(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr {
+      if (exps.isEmpty) throw InternalCompilerException("Unexpected empty closure args", loc)
+    }
 
     case class ApplyDef(symUse: DefSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 

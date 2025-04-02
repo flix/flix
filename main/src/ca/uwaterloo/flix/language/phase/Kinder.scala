@@ -357,12 +357,13 @@ object Kinder {
     case ResolvedAst.Expr.Cst(cst, loc) =>
       KindedAst.Expr.Cst(cst, loc)
 
-    case ResolvedAst.Expr.ApplyClo(exp10, exp20, loc) =>
-      val exp1 = visitExp(exp10, kenv0, taenv, root)
-      val exp2 = visitExp(exp20, kenv0, taenv, root)
+    case ResolvedAst.Expr.ApplyClo(exp0, exps0, loc) =>
+      val exp1 = visitExp(exp0, kenv0, taenv, root)
+      val exps1 = exps0.map(visitExp(_, kenv0, taenv, root))
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evars = exps1.map(_ => Type.freshVar(Kind.Eff, loc.asSynthetic))
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.ApplyClo(exp1, exp2, tvar, evar, loc)
+      KindedAst.Expr.ApplyClo(exp1, exps1, evars, tvar, evar, loc)
 
     case ResolvedAst.Expr.ApplyDef(DefSymUse(sym, loc1), exps0, loc2) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, root))

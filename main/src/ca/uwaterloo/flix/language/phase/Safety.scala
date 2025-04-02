@@ -96,9 +96,9 @@ object Safety {
       // `exp` will be in its own function, so `inTryCatch` is reset.
       visitExp(exp)(inTryCatch = false, renv, sctx, flix)
 
-    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
-      visitExp(exp1)
-      visitExp(exp2)
+    case Expr.ApplyClo(exp, exps, _, _, _, _) =>
+      visitExp(exp)
+      exps.foreach(visitExp)
 
     case Expr.ApplyDef(_, exps, _, _, _, _) =>
       exps.foreach(visitExp)

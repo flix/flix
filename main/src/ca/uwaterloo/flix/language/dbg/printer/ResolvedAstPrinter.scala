@@ -49,7 +49,7 @@ object ResolvedAstPrinter {
     case Expr.OpenAs(_, _, _) => DocAst.Expr.Unknown
     case Expr.Use(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Cst(cst, _) => ConstantPrinter.print(cst)
-    case Expr.ApplyClo(exp1, exp2, _) => DocAst.Expr.App(print(exp1), List(print(exp2)))
+    case Expr.ApplyClo(exp, exps, _) => DocAst.Expr.App(print(exp), exps.map(print))
     case Expr.ApplyDef(DefSymUse(sym, _), exps, _) => DocAst.Expr.ApplyDef(sym, exps.map(print))
     case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _) => DocAst.Expr.App(printVarSym(sym), exps.map(print))
     case Expr.ApplySig(SigSymUse(sym, _), exps, _) => DocAst.Expr.App(DocAst.Expr.AsIs(sym.name), exps.map(print))
