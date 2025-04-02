@@ -1787,7 +1787,7 @@ object Lowering {
     * Returns a TypedAst.Pattern representing a tuple of patterns.
     */
   def mkTuplePattern(patterns: Nel[LoweredAst.Pattern], loc: SourceLocation): LoweredAst.Pattern = {
-    LoweredAst.Pattern.Tuple(patterns, Type.mkTuple(patterns.map(_.tpe).toList, loc), loc)
+    LoweredAst.Pattern.Tuple(patterns, Type.mkTuple(patterns.map(_.tpe), loc), loc)
   }
 
   /**

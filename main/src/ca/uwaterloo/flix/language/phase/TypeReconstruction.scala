@@ -687,7 +687,7 @@ object TypeReconstruction {
 
     case KindedAst.Pattern.Tuple(elms, loc) =>
       val es = elms.map(visitPattern)
-      val tpe = Type.mkTuple(es.map(_.tpe).toList, loc)
+      val tpe = Type.mkTuple(es.map(_.tpe), loc)
       TypedAst.Pattern.Tuple(es, tpe, loc)
 
     case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>

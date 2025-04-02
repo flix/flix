@@ -876,8 +876,8 @@ object Simplifier {
         * variables.
         */
       case (MonoAst.Pattern.Tuple(elms, tpe, loc) :: ps, v :: vs) =>
-        val freshVars = elms.map(_ => Symbol.freshVarSym("innerElm" + Flix.Delimiter, BoundBy.Let, loc)).toList
-        val zero = patternMatchList(elms.toList ::: ps, freshVars ::: vs, guard, succ, fail)
+        val freshVars = elms.map(_ => Symbol.freshVarSym("innerElm" + Flix.Delimiter, BoundBy.Let, loc))
+        val zero = patternMatchList(elms.toList ::: ps, freshVars.toList ::: vs, guard, succ, fail)
         elms.zip(freshVars).zipWithIndex.foldRight(zero) {
           case (((pat, name), idx), exp) =>
             val varExp = SimplifiedAst.Expr.Var(v, visitType(tpe), loc)

@@ -1000,7 +1000,7 @@ object ConstraintGen {
 
       case KindedAst.Pattern.Tuple(elms, loc) =>
         val tpes = elms.map(visitPattern)
-        Type.mkTuple(tpes.toList, loc)
+        Type.mkTuple(tpes, loc)
 
       case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
         val freshRowVar = freshVar(Kind.RecordRow, loc)
