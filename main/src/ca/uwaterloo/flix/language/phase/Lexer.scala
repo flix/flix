@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
+import scala.Function.const
 import scala.collection.mutable
 import scala.util.Random
 
@@ -603,13 +604,21 @@ object Lexer {
     s.sc.advanceWhile(_.isWhitespace)
 
   /**
-    * Moves the current position past all pairs of `\` and any other character.
-    *
-    * This is useful to avoid `\'` and `\"` ending the lexing of literals.
-    */
-  private def consumeSingleEscapes()(implicit s: State): Unit =
-    while (s.sc.advanceIfMatch('\\')) {
+   * Moves the current position past all pairs of `\` and any other character, returning
+   * true if any '\' are seen.
+   *
+   * This is useful to avoid `\'` and `\"` ending the lexing of literals, and to
+   * determine whether a '$' before a '{' is escaped or a string interpolation indicator.
+   */
+  private def consumeSingleEscapes()(implicit s: State): Boolean =
+    if (s.sc.advanceIfMatch('\\')) {
       advance()
+      while (s.sc.advanceIfMatch('\\')) {
+        advance()
+      }
+      true
+    } else {
+      false
     }
 
   /**
@@ -695,14 +704,13 @@ object Lexer {
   private def acceptString()(implicit s: State): TokenKind = {
     var kind: TokenKind = TokenKind.LiteralString
     while (!eof()) {
-      consumeSingleEscapes()
+      val hasEscapes = consumeSingleEscapes()
       // Note: `sc.peek` returns `EOF` if out of bounds, different from `peek`.
       var p = s.sc.peek
       // Check for the beginning of a string interpolation.
-      val prevPrev = previousPrevious()
       val prev = previous()
-      val isInterpolation = !prevPrev.contains('\\') && prev.contains('$') && p == '{'
-      val isDebug = !prevPrev.contains('\\') && prev.contains('%') && p == '{'
+      val isInterpolation = !hasEscapes && prev.contains('$') & p == '{'
+      val isDebug = !hasEscapes && prev.contains('%') && p == '{'
       if (isInterpolation || isDebug) {
         acceptStringInterpolation(isDebug) match {
           case e@TokenKind.Err(_) => return e
