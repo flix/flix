@@ -38,6 +38,12 @@ instance Iterable[MutPriorityQueue[a, r]] {
 mod MutPriorityQueue {
 
     ///
+    /// Constant which stores the minimum capacity of a MutPriorityQueue.
+    ///
+    @Internal
+    pub def minCapacity(): Int32 = 8
+
+    ///
     /// Returns a String representation of the mutable priority queue `mq`.
     ///
     pub def toString(mq: MutPriorityQueue[a, r]): String \ r with ToString[a] = region rc {
@@ -45,10 +51,10 @@ mod MutPriorityQueue {
     }
 
     ///
-    /// Returns an empty MutPriorityQueue.
+    /// Returns an empty MutPriorityQueue with a default capacity.
     ///
     pub def empty(rc: Region[r]): MutPriorityQueue[a, r] \ r =
-        new MutPriorityQueue @ rc {r = rc, values = Array.empty(rc, 8), size = 0}
+        new MutPriorityQueue @ rc {r = rc, values = Array.empty(rc, minCapacity()), size = 0}
 
     ///
     /// Returns the number of elements in `mq`.
