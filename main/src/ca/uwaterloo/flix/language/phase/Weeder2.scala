@@ -2283,18 +2283,18 @@ object Weeder2 {
         (qname, maybePat) =>
           maybePat match {
             case None => Pattern.Tag(qname, Nil, tree.loc)
-            case Some(elms) => Pattern.Tag(qname, elms, tree.loc)
+            case Some(elms) => Pattern.Tag(qname, elms.toList, tree.loc)
           }
       }
     }
 
-    /** Extracts a non-empty tuple pattern as a list, expanding `()` to be `List(Unit)`. */
-    private def visitTagTermsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[List[Pattern], CompilationMessage] = {
+    /** Extracts a tuple pattern as a list, expanding `()` to be `List(Unit)`. */
+    private def visitTagTermsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Nel[Pattern], CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Tuple)
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
       mapN(traverse(patterns)(visitPattern(_, seen))) {
-        case Nil => List(Pattern.Cst(Constant.Unit, tree.loc))
-        case xs => xs
+        case Nil => Nel(Pattern.Cst(Constant.Unit, tree.loc), Nil)
+        case x :: xs => Nel(x, xs)
       }
     }
 
