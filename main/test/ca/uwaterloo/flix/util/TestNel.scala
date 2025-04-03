@@ -31,6 +31,14 @@ class TestNel extends AnyFunSuite {
     assert(mkNel(1, 2, 3, 4).map(x => -x) == mkNel(-1, -2, -3, -4))
   }
 
+  test("unzip.01") {
+    assert(mkNel((1, 2), (3, 4), (5, 6)).unzip == (mkNel(1, 3, 5), mkNel(2, 4, 6)))
+  }
+
+  test("unzip.02") {
+    assert(mkNel(("1", "2")).unzip == (mkNel("1"), mkNel("2")))
+  }
+
   test("toString.01") {
     assert(mkNel(1, 2, 3, 4).toString == "Nel(1, 2, 3, 4)")
   }
