@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, ModuleKind, QualifiedSym, Scope, Source, VarText}
+import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
@@ -499,7 +499,7 @@ object Symbol {
   /**
     * Enum Symbol.
     */
-  final class EnumSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
+  final class EnumSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Locatable with Symbol with QualifiedSym {
 
     /**
       * Returns the name of `this` symbol.
@@ -533,7 +533,7 @@ object Symbol {
   /**
    * Struct Symbol.
    */
-  final class StructSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
+  final class StructSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Locatable with Symbol with QualifiedSym {
     /**
       * Returns the name of `this` symbol.
       */
@@ -688,7 +688,7 @@ object Symbol {
   /**
     * Trait Symbol.
     */
-  final class TraitSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
+  final class TraitSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Locatable with Symbol with QualifiedSym {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -716,7 +716,7 @@ object Symbol {
   /**
     * Signature Symbol.
     */
-  final class SigSym(val trt: Symbol.TraitSym, val name: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
+  final class SigSym(val trt: Symbol.TraitSym, val name: String, val loc: SourceLocation) extends Sourceable with Locatable with Symbol with QualifiedSym {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -795,7 +795,7 @@ object Symbol {
   /**
     * TypeAlias Symbol.
     */
-  final class TypeAliasSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
+  final class TypeAliasSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Locatable with Symbol with QualifiedSym {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -862,7 +862,7 @@ object Symbol {
   /**
     * Effect symbol.
     */
-  final class EffectSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Ordered[EffectSym] with Symbol with QualifiedSym {
+  final class EffectSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Locatable with Ordered[EffectSym] with Symbol with QualifiedSym {
 
     /**
       * Returns the source of `this`.

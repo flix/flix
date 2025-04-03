@@ -117,6 +117,19 @@ class TestCompletionProvider extends AnyFunSuite  {
     }
   }
 
+  test("No completions on name definition"){
+    Programs.foreach{ program =>
+      val (root, flix, errors) = compile(program, Options.Default)
+      val allNameDefs = root.defs.keys ++ root.enums.keys ++ root.sigs.keys ++ root.traits.keys ++ root.effects.keys ++
+        root.structs.keys ++ root.typeAliases.keys
+      val validNameDef = allNameDefs.filter(_.src.name.startsWith(Uri)).map(_.loc)
+      validNameDef.foreach{ loc =>
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
+        assert(completions.items.isEmpty)
+      }
+    }
+  }
+
   /**
     * The uri of the test source.
     */
