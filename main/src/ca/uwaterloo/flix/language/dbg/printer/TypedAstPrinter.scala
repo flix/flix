@@ -141,7 +141,7 @@ object TypedAstPrinter {
     case Pattern.Var(TypedAst.Binder(sym, _), _, _) => printVar(sym)
     case Pattern.Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Pattern.Tag(sym, pats, _, _) => DocAst.Expr.Tag(sym.sym, pats.map(printPattern))
-    case Pattern.Tuple(elms, _, _) => DocAst.Expr.Tuple(elms.map(printPattern))
+    case Pattern.Tuple(elms, _, _) => DocAst.Expr.Tuple(elms.map(printPattern).toList)
     case Pattern.Record(pats, pat, _, _) => printRecordPattern(pats, pat)
     case Pattern.Error(_, _) => DocAst.Expr.Error
   }

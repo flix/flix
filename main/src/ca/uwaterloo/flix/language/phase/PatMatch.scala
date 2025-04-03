@@ -504,7 +504,7 @@ object PatMatch {
         }
       case TypedAst.Pattern.Tuple(pats, _, _) =>
         if (ctor.isInstanceOf[TyCon.Tuple]) {
-          Some(pats ::: pat.tail)
+          Some(pats.toList ::: pat.tail)
         } else {
           None
         }
@@ -719,7 +719,7 @@ object PatMatch {
     case Pattern.Var(_, _, _) => TyCon.Wild
     case Pattern.Cst(cst, _, _) => TyCon.Cst(cst)
     case Pattern.Tag(CaseSymUse(sym, _), pats, _, _) => TyCon.Enum(sym, pats.map(patToCtor))
-    case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
+    case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor).toList)
     case Pattern.Record(pats, pat, _, _) =>
       val patsVal = pats.map {
         case TypedAst.Pattern.Record.RecordLabelPattern(label, pat1, _, _) =>

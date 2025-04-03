@@ -2304,7 +2304,7 @@ object Weeder2 {
       mapN(traverse(patterns)(visitPattern(_, seen))) {
         case Nil => Pattern.Cst(Constant.Unit, tree.loc)
         case x :: Nil => x
-        case xs => Pattern.Tuple(xs, tree.loc)
+        case x :: xs => Pattern.Tuple(Nel(x, xs), tree.loc)
       }
     }
 

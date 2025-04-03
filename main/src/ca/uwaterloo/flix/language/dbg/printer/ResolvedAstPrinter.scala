@@ -136,7 +136,7 @@ object ResolvedAstPrinter {
     case Pattern.Var(sym, _) => printVarSym(sym)
     case Pattern.Cst(cst, _) => ConstantPrinter.print(cst)
     case Pattern.Tag(symUse, pats, _) => DocAst.Expr.Tag(symUse.sym, pats.map(printPattern))
-    case Pattern.Tuple(pats, _) => DocAst.Expr.Tuple(pats.map(printPattern))
+    case Pattern.Tuple(pats, _) => DocAst.Expr.Tuple(pats.map(printPattern).toList)
     case Pattern.Record(_, _, _) => DocAst.Expr.Unknown
     case Pattern.Error(_) => DocAst.Expr.Error
   }
