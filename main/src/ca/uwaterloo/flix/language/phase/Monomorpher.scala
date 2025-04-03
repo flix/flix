@@ -599,24 +599,16 @@ object Monomorpher {
 
   }
 
-  //
-  //
-  // PROGRESS TO HERE
-  //
-  //
-
-  /**
-    * Specializes the given pattern `p0` w.r.t. the current substitution.
-    *
-    * Returns the new pattern and a mapping from variable symbols to fresh variable symbols.
-    */
+  /** Specializes `p0` w.r.t. `subst` and returns the renaming of binders. */
   private def specializePat(p0: LoweredAst.Pattern, subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.Pattern, Map[Symbol.VarSym, Symbol.VarSym]) = p0 match {
-    case LoweredAst.Pattern.Wild(tpe, loc) => (MonoAst.Pattern.Wild(subst(tpe), loc), Map.empty)
+    case LoweredAst.Pattern.Wild(tpe, loc) =>
+      (MonoAst.Pattern.Wild(subst(tpe), loc), Map.empty)
     case LoweredAst.Pattern.Var(sym, tpe, loc) =>
       // Generate a fresh variable symbol for the pattern-bound variable.
       val freshSym = Symbol.freshVarSym(sym)
       (MonoAst.Pattern.Var(freshSym, subst(tpe), loc), Map(sym -> freshSym))
-    case LoweredAst.Pattern.Cst(cst, tpe, loc) => (MonoAst.Pattern.Cst(cst, subst(tpe), loc), Map.empty)
+    case LoweredAst.Pattern.Cst(cst, tpe, loc) =>
+      (MonoAst.Pattern.Cst(cst, subst(tpe), loc), Map.empty)
     case LoweredAst.Pattern.Tag(sym, pats, tpe, loc) =>
       val (ps, envs) = pats.map(specializePat(_, subst)).unzip
       (MonoAst.Pattern.Tag(sym, ps, subst(tpe), loc), combineEnvs(envs))
@@ -634,11 +626,7 @@ object Monomorpher {
       (MonoAst.Pattern.Record(ps, p, subst(tpe), loc), combineEnvs(finalEnv))
   }
 
-  /**
-    * Specializes the given method `method` w.r.t. the current substitution.
-    *
-    * Returns the new method.
-    */
+  /** Specializes `method` w.r.t. `subst`. */
   private def specializeJvmMethod(method: LoweredAst.JvmMethod, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
     case LoweredAst.JvmMethod(ident, fparams0, exp0, tpe, eff, loc) =>
       val (fparams, env1) = specializeFormalParams(fparams0, subst)
@@ -647,15 +635,13 @@ object Monomorpher {
   }
 
   /**
-    * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
-    *
-    * The given type must be a normalized type.
+    * Returns the [[Symbol.DefnSym]] corresponding to the specialization of `sym` w.r.t. the
+    * normalized function type `tpe`.
     */
   private def specializeDefSym(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
-    // Lookup the definition and its declared type.
     val defn = root.defs(sym)
 
-    // Check if the function is non-polymorphic.
+    // Do nothing if the function is non-polymorphic.
     if (defn.spec.tparams.isEmpty) {
       defn.sym
     } else {
@@ -663,10 +649,15 @@ object Monomorpher {
     }
   }
 
+  //
+  //
+  // PROGRESS TO HERE
+  //
+  //
+
   /**
-    * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
-    *
-    * The given type must be a normalized type.
+    * Returns the [[Symbol.DefnSym]] corresponding to the specialization of `sym` w.r.t. the
+    * normalized function type `tpe`.
     */
   private def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
     val sig = root.sigs(sym)
