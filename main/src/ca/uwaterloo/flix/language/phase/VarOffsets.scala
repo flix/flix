@@ -105,9 +105,9 @@ object VarOffsets {
     case Expr.TryCatch(exp, rules, _, _, _) =>
       val i1 = visitExp(exp, i0)
       rules.foldLeft(i1) {
-        case (i2, CatchRule(sym, _, exp)) =>
+        case (i2, CatchRule(sym, _, body)) =>
           val i3 = setStackOffset(sym, MonoType.Object, i2)
-          visitExp(exp, i3)
+          visitExp(body, i3)
       }
 
     case Expr.RunWith(exp, _, _, _, _, _, _) =>
