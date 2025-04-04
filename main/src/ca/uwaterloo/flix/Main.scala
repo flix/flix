@@ -97,6 +97,7 @@ object Main {
       assumeYes = cmdOpts.assumeYes,
       xnoverify = cmdOpts.xnoverify,
       xnooptimizer = cmdOpts.xnooptimizer,
+      xUseSurfaceSimplifier = cmdOpts.xUseSurfaceSimplifier,
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
       xsummary = cmdOpts.xsummary,
@@ -353,6 +354,7 @@ object Main {
                      xnodeprecated: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
                      xnooptimizer: Boolean = false,
+                     xUseSurfaceSimplifier: Boolean = false,
                      xprintphases: Boolean = false,
                      xsummary: Boolean = false,
                      xfuzzer: Boolean = false,
@@ -541,6 +543,10 @@ object Main {
       // Xbenchmark-incremental
       opt[Unit]("Xbenchmark-incremental").action((_, c) => c.copy(xbenchmarkIncremental = true)).
         text("[experimental] benchmarks the performance of each compiler phase in incremental mode.")
+
+      // Xuse-surface-simplifier
+      opt[Unit]("Xuse-surface-simplifier").action((_, c) => c.copy(xUseSurfaceSimplifier = true)).
+        text("[experimental] use the user-facing type simplifier on all constraints (for testing).")
 
       // Xbenchmark-phases
       opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
