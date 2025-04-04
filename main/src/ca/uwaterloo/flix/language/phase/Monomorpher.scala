@@ -84,7 +84,7 @@ import scala.collection.mutable
 object Monomorpher {
 
   /** Region types are instantiated to this type no matter their argument. */
-  private val RegionInstantiation = Type.IO
+  private val RegionInstantiation = TypeConstructor.Effect(Symbol.IO)
 
   /**
     * A strict substitution is similar to a regular substitution except that free type variables are
@@ -111,8 +111,8 @@ object Monomorpher {
           case Some(t) => t // All types in `s.m` are already normalized.
         }
 
-        case Type.Cst(TypeConstructor.Region(_), _) =>
-          RegionInstantiation
+        case Type.Cst(TypeConstructor.Region(_), loc) =>
+          Type.Cst(RegionInstantiation, loc)
 
         case cst@Type.Cst(_, _) =>
           cst
@@ -649,87 +649,76 @@ object Monomorpher {
     }
   }
 
-  //
-  //
-  // PROGRESS TO HERE
-  //
-  //
-
   /**
     * Returns the [[Symbol.DefnSym]] corresponding to the specialization of `sym` w.r.t. the
     * normalized function type `tpe`.
     */
   private def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
+    val defn = resolveSigSym(sym, tpe)
+    specializeDef(defn, tpe)
+  }
+
+  /** Returns a [[LoweredAst.Def]] corresponding to the Sig call. */
+  private def resolveSigSym(sym: Symbol.SigSym, tpe: Type)(implicit instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): LoweredAst.Def = {
     val sig = root.sigs(sym)
     val trt = root.traits(sym.trt)
 
-    // find out what we're specializing the sig to by unifying with the type
+    // Find out what instance we're using by unifying with the type.
     val subst = ConstraintSolver2.fullyUnify(sig.spec.declaredScheme.base, tpe, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix).get
     val specialization = subst.m(trt.tparam.sym)
     val tycon = specialization.typeConstructor.get
 
-    // lookup the instance corresponding to this type
     val instance = instances((sym.trt, tycon))
 
-    val defns = instance.defs.filter {
-      d => d.sym.text == sig.sym.name
-    }
+    val defns = instance.defs.filter(_.sym.text == sig.sym.name)
 
     (sig.exp, defns) match {
-      // Case 1: An instance implementation exists. Use it.
-      case (_, defn :: Nil) => specializeDef(defn, tpe)
-      // Case 2: No instance implementation, but a default implementation exists. Use it.
-      case (Some(impl), Nil) => specializeDef(sigToDef(sig.sym, sig.spec, impl, sig.loc), tpe)
-      // Case 3: Multiple matching defs. Should have been caught previously.
+      // An instance implementation exists - use it.
+      case (_, defn :: Nil) => defn
+      // No instance implementation, but a default implementation exists - use it.
+      case (Some(impl), Nil) => sigToDef(sig.sym, sig.spec, impl, sig.loc)
+      // Multiple matching defs - should have been caught previously.
       case (_, _ :: _ :: _) => throw InternalCompilerException(s"Expected at most one matching definition for '$sym', but found ${defns.size} signatures.", sym.loc)
-      // Case 4: No matching defs and no default. Should have been caught previously.
+      // No matching defs and no default - should have been caught previously.
       case (None, Nil) => throw InternalCompilerException(s"No default or matching definition found for '$sym'.", sym.loc)
     }
   }
 
-  /**
-    * Converts a signature with an implementation into the equivalent definition.
-    */
+  /** Converts a signature with an implementation into the equivalent definition. */
   private def sigToDef(sigSym: Symbol.SigSym, spec: LoweredAst.Spec, exp: LoweredAst.Expr, loc: SourceLocation): LoweredAst.Def = {
     LoweredAst.Def(sigSymToDefnSym(sigSym), spec, exp, loc)
   }
 
-  /**
-    * Converts a SigSym into the equivalent DefnSym.
-    */
+  /** Converts a [[Symbol.SigSym]] into the equivalent [[Symbol.DefnSym]]. */
   private def sigSymToDefnSym(sigSym: Symbol.SigSym): Symbol.DefnSym = {
     val ns = sigSym.trt.namespace :+ sigSym.trt.name
     new Symbol.DefnSym(None, ns, sigSym.name, sigSym.loc)
   }
 
   /**
-    * Returns the def symbol corresponding to the specialized def `defn` w.r.t. to the type `tpe`.
-    *
-    * The given type must be a normalized type.
+    * Returns the [[Symbol.DefnSym]] corresponding to the specialization of `sym` w.r.t. the
+    * normalized function type `tpe`.
     */
   private def specializeDef(defn: LoweredAst.Def, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
-    // Unify the declared and actual type to obtain the substitution map.
+    // Unify the declared and actual type to obtain the substitution.
     val subst = infallibleUnify(defn.spec.declaredScheme.base, tpe, defn.sym)
 
-    // Check whether the function definition has already been specialized.
+    // Check whether the function has already been specialized with `tpe`.
     ctx synchronized {
       ctx.getSpecializedName(defn.sym, tpe) match {
         case None =>
-          // Case 1: The function has not been specialized.
-          // Generate a fresh specialized definition symbol.
+          // The function has not been specialized.
+          // Generate a fresh specialized symbol.
           val freshSym = Symbol.freshDefnSym(defn.sym)
 
-          // Register the fresh symbol (and actual type) in the symbol2symbol map.
           ctx.addSpecializedName(defn.sym, tpe, freshSym)
 
-          // Enqueue the fresh symbol with the definition and substitution.
+          // Enqueue the specialization with the definition and substitution.
           ctx.enqueueSpecialization(freshSym, defn, subst)
 
-          // Now simply refer to the freshly generated symbol.
           freshSym
         case Some(specializedSym) =>
-          // Case 2: The function has already been specialized.
-          // Simply refer to the already existing specialized symbol.
+          // The function has already been specialized.
           specializedSym
       }
     }
@@ -741,41 +730,25 @@ object Monomorpher {
     *
     * This is equivalent to `envs.reduce(_ ++ _)` without crashing on empty lists.
     */
-  private def combineEnvs(envs: Iterable[Map[Symbol.VarSym, Symbol.VarSym]]): Map[Symbol.VarSym, Symbol.VarSym] = {
-    envs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
-      case (acc, m) => acc ++ m
-    }
-  }
+  private def combineEnvs(envs: Iterable[Map[Symbol.VarSym, Symbol.VarSym]]): Map[Symbol.VarSym, Symbol.VarSym] =
+    envs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
 
-  /**
-    * Specializes the given formal parameters `fparams0` w.r.t. the given substitution `subst0`.
-    *
-    * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
-    */
+  /** Specializes `fparams0` w.r.t. `subst0` and returns the renaming of binders. */
   private def specializeFormalParams(fparams0: List[LoweredAst.FormalParam], subst0: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (List[MonoAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
-    // Return early if there are no formal parameters.
-    if (fparams0.isEmpty)
-      return (Nil, Map.empty)
+    if (fparams0.isEmpty) return (Nil, Map.empty)
 
-    // Specialize each formal parameter and recombine the results.
-    val (params, envs) = fparams0.map(p => specializeFormalParam(p, subst0)).unzip
+    val (params, envs) = fparams0.map(specializeFormalParam(_, subst0)).unzip
     (params, combineEnvs(envs))
   }
 
-  /**
-    * Specializes the given formal parameter `fparam0` w.r.t. the given substitution `subst0`.
-    *
-    * Returns the new formal parameter and an environment mapping the variable symbol to a fresh variable symbol.
-    */
+  /** Specializes `fparam0` w.r.t. `subst0` and returns the renaming of binders. */
   private def specializeFormalParam(fparam0: LoweredAst.FormalParam, subst0: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
     val LoweredAst.FormalParam(sym, mod, tpe, src, loc) = fparam0
     val freshSym = Symbol.freshVarSym(sym)
     (MonoAst.FormalParam(freshSym, mod, subst0(tpe), src, loc), Map(sym -> freshSym))
   }
 
-  /**
-    * Unifies `tpe1` and `tpe2` which must be unifiable.
-    */
+  /** Unifies `tpe1` and `tpe2` which must be unifiable. */
   private def infallibleUnify(tpe1: Type, tpe2: Type, sym: Symbol.DefnSym)(implicit root: LoweredAst.Root, flix: Flix): StrictSubstitution = {
     ConstraintSolver2.fullyUnify(tpe1, tpe2, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix) match {
       case Some(subst) =>
@@ -785,12 +758,12 @@ object Monomorpher {
     }
   }
 
+  /** Reduces the given associated into its definition, will crash if not able to. */
   private def reduceAssocType(assoc: Type.AssocType)(implicit root: LoweredAst.Root, flix: Flix): Type = {
     // Since assoc is ground, `scope` will be unused.
     val scope = Scope.Top
     // Since assoc is ground, `renv` will be unused.
     val renv = RigidityEnv.empty
-    // Progress will .
     val progress = Progress()
 
     val res = TypeReduction2.reduce(assoc, scope, renv)(progress, root.eqEnv, flix)
@@ -802,6 +775,8 @@ object Monomorpher {
   /**
     * Removes [[Type.Alias]] and [[Type.AssocType]], or crashes if some [[Type.AssocType]] is not
     * reducible.
+    *
+    * @param isGround set this to true if `tpe` is ground to enable full type normalization.
     */
   private def simplify(tpe: Type, isGround: Boolean)(implicit root: LoweredAst.Root, flix: Flix): Type = tpe match {
     case v@Type.Var(_, _) => v
@@ -819,9 +794,11 @@ object Monomorpher {
   }
 
   /**
-    * Applies `f` on both sides of the application, then normalizing the remaining type.
+    * Applies `f` on both sides of the application, then normalizes the remaining type.
     *
-    * OBS: `f` must not output [[Type.AssocType]] or [[Type.Alias]].
+    * OBS: `normalize` must not output [[Type.AssocType]] or [[Type.Alias]].
+    *
+    * @param isGround set this to true if `tpe` is ground to enable full type normalization.
     */
   @inline
   private def normalizeApply(normalize: Type => Type, app: Type.Apply, isGround: Boolean): Type = {
@@ -854,9 +831,9 @@ object Monomorpher {
     }
   }
 
-  /** Returns a canonical effect type equivalent to `eff` */
+  /** Returns the canonical effect type equivalent to `eff` */
   private def canonicalEffect(eff: Type): Type = {
-    evalToType(eval(eff), eff.loc)
+    coSetToType(eval(eff), eff.loc)
   }
 
   /** Evaluates a ground, simplified effect type */
@@ -866,8 +843,7 @@ object Monomorpher {
     case Type.Cst(TypeConstructor.Effect(sym), _) =>
       CofiniteSet.mkSet(sym)
     case Type.Cst(TypeConstructor.Region(_), _) =>
-      // We map regions to IO
-      CofiniteSet.mkSet(Symbol.IO)
+      CofiniteSet.mkSet(RegionInstantiation.sym)
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _) =>
       CofiniteSet.complement(eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) =>
@@ -882,7 +858,7 @@ object Monomorpher {
   }
 
   /** Returns the [[Type]] representation of `set` with `loc`. */
-  private def evalToType(set: CofiniteSet[Symbol.EffectSym], loc: SourceLocation): Type = set match {
+  private def coSetToType(set: CofiniteSet[Symbol.EffectSym], loc: SourceLocation): Type = set match {
     case CofiniteSet.Set(s) => Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc)
     case CofiniteSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc), loc)
   }
