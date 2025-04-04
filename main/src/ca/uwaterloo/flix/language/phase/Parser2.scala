@@ -161,8 +161,8 @@ object Parser2 {
     })
 
     // Make a synthetic token to begin with, to make the SourceLocations generated below be correct.
-    val b = SourcePosition(s.src, 0, 0)
-    val e = SourcePosition(s.src, 0, 0)
+    val b = SourcePosition(s.src, 1, 1)
+    val e = SourcePosition(s.src, 1, 1)
     var lastAdvance = Token(TokenKind.Eof, s.src, 0, 0, b, e)
     for (event <- s.events) {
       event match {
