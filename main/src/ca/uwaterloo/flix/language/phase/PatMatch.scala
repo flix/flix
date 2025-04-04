@@ -703,8 +703,8 @@ object PatMatch {
     // Two enums are the same constructor if they have the same case symbol
     case (TyCon.Enum(s1, _), TyCon.Enum(s2, _)) => s1 == s2
     // Everything else is the same constructor if they are the same type
-    case (a: TyCon.Tuple, b: TyCon.Tuple) => true
-    case (a: TyCon.Record, b: TyCon.Record) => true
+    case (_: TyCon.Tuple, _: TyCon.Tuple) => true
+    case (_: TyCon.Record, _: TyCon.Record) => true
     case (a, b) => a == b;
   }
 
