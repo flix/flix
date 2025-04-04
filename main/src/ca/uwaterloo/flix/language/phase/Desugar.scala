@@ -1508,9 +1508,9 @@ object Desugar {
 
     // Automatically fix all lattices atoms.
     val body = guard ::: from.map {
-      case DesugaredAst.Predicate.Body.Atom(pred, Denotation.Latticenal, polarity, _, terms, loc) =>
-        DesugaredAst.Predicate.Body.Atom(pred, Denotation.Latticenal, polarity, Fixity.Fixed, terms, loc)
-      case pred => pred
+      case DesugaredAst.Predicate.Body.Atom(name, Denotation.Latticenal, polarity, _, terms, loc) =>
+        DesugaredAst.Predicate.Body.Atom(name, Denotation.Latticenal, polarity, Fixity.Fixed, terms, loc)
+      case nonAtom => nonAtom
     }
 
     // Construct the pseudo-query.

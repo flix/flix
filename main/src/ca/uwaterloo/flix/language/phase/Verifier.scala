@@ -227,7 +227,7 @@ object Verifier {
           }
           tpe
 
-        case AtomicOp.Untag(sym, idx) =>
+        case AtomicOp.Untag(sym, _) =>
           val List(t1) = ts
           // Untag(Nil): Unit
           // Checking this requires instantiating the enum case
@@ -491,7 +491,7 @@ object Verifier {
       val bodyType = visitExpr(exp2)(root, env + (sym -> letBoundType), lenv)
       checkEq(bodyType, tpe, loc)
 
-    case Expr.Stmt(exp1, exp2, tpe, _, loc) =>
+    case Expr.Stmt(_, exp2, tpe, _, loc) =>
       val secondType = visitExpr(exp2)
       checkEq(secondType, tpe, loc)
 
