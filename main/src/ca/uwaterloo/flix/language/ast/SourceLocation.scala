@@ -54,7 +54,7 @@ case class SourceLocation(isReal: Boolean, sp1: SourcePosition, sp2: SourcePosit
   def beginLine: Int = sp1.lineOneIndexed
 
   /**
-    * Returns the ond-indexed column where the entity begins.
+    * Returns the one-indexed column where the entity begins.
     */
   def beginCol: Int = sp1.colOneIndexed
 

@@ -52,5 +52,5 @@ case class Token(kind: TokenKind, src: Source, start: Int, end: Int, sp1: Source
   /**
     * Returns a one-indexed string representation of this token. Must only be used for debugging.
     */
-  override def toString: String = s"Token($kind, $text, ${sp1.colOneIndexed}, ${sp1.colOneIndexed}, ${sp2.colOneIndexed}, ${sp2.colOneIndexed})"
+  override def toString: String = s"Token($kind, $text, ${sp1.lineOneIndexed}, ${sp1.colOneIndexed}, ${sp2.lineOneIndexed}, ${sp2.colOneIndexed})"
 }

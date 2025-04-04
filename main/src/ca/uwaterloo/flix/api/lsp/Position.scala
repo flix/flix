@@ -49,7 +49,7 @@ object Position {
   /**
     * Returns a position from the given source position `pos`.
     */
-  def from(pos: SourcePosition): Position = Position(pos.lineOneIndexed, pos.lineOneIndexed)
+  def from(pos: SourcePosition): Position = Position(pos.lineOneIndexed, pos.colOneIndexed)
 
   /**
     * Tries to parse the given `json` value as a [[Position]].
