@@ -7,13 +7,13 @@ class SourcePositionSuite extends AnyFunSuite {
   test("tryCompare with different SourcePositions sources gives None") {
     val l1 = SourcePosition(
       Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray),
-      0,
-      0
+      1,
+      1
     )
     val l2 = SourcePosition(
       Source(Input.Text("Dummy2", "dummy", SecurityContext.AllPermissions), Array.emptyCharArray),
-      0,
-      0
+      1,
+      1
     )
 
     assert(SourcePosition.PartialOrder.tryCompare(l1, l2) === None)
@@ -21,8 +21,8 @@ class SourcePositionSuite extends AnyFunSuite {
 
   test("tryCompare with same SourcePosition sources gives Some") {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
-    val l1 = SourcePosition(source, 0, 0)
-    val l2 = SourcePosition(source, 0, 0)
+    val l1 = SourcePosition(source, 1, 1)
+    val l2 = SourcePosition(source, 1, 1)
 
     assert(SourcePosition.PartialOrder.tryCompare(l1, l2).isDefined)
   }
@@ -86,13 +86,13 @@ class SourcePositionSuite extends AnyFunSuite {
   test("lteq with different sources gives none") {
     val p1 = SourcePosition(
       Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray),
-      0,
-      0
+      1,
+      1
     )
     val p2 = SourcePosition(
       Source(Input.Text("Dummy2", "dummy", SecurityContext.AllPermissions), Array.emptyCharArray),
-      0,
-      0
+      1,
+      1
     )
 
     assert(!SourcePosition.PartialOrder.lteq(p1, p2))
