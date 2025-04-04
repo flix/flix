@@ -92,16 +92,19 @@ object Monomorpher {
   /** Companion object for [[StrictSubstitution]]. */
   private object StrictSubstitution {
 
+    /** The empty substitution. */
+    val empty: StrictSubstitution = StrictSubstitution(Substitution.empty)
+
     /**
       * A smart constructor for [[StrictSubstitution]].
       *
       * The smart constructor ensures that all types in the substitution are grounded.
       */
-    def mk(s: Substitution, eqEnv: EqualityEnv)(implicit flix: Flix): StrictSubstitution = {
+    def mk(s: Substitution)(implicit root: LoweredAst.Root, flix: Flix): StrictSubstitution = {
       val m = s.m.map {
-        case (sym, tpe) => sym -> simplify(tpe.map(default), eqEnv, isGround = true)
+        case (sym, tpe) => sym -> simplify(tpe.map(default), isGround = true)
       }
-      StrictSubstitution(Substitution(m), eqEnv)
+      StrictSubstitution(Substitution(m))
     }
   }
 
@@ -117,14 +120,14 @@ object Monomorpher {
     *   - No type aliases
     *   - Equivalent types are uniquely represented (e.g. fields in records types are alphabetized)
     */
-  private case class StrictSubstitution(s: Substitution, eqEnv: EqualityEnv)(implicit flix: Flix) {
+  private case class StrictSubstitution(s: Substitution) {
 
     /**
       * Applies `this` substitution to the given type `tpe`, returning a normalized type.
       *
       * Performance Note: We are on a hot path. We take extra care to avoid redundant type objects.
       */
-    def apply(tpe0: Type): Type = tpe0 match {
+    def apply(tpe0: Type)(implicit root: LoweredAst.Root, flix: Flix): Type = tpe0 match {
       case v@Type.Var(sym, _) => s.m.get(sym) match {
         case None =>
           // Variable unbound. Use the default type.
@@ -151,9 +154,9 @@ object Monomorpher {
       case Type.AssocType(symUse, arg0, kind, loc) =>
         val arg = apply(arg0)
         val assoc = Type.AssocType(symUse, arg, kind, loc)
-        val reducedType = TypeReduction2.reduce(assoc, Scope.Top, RigidityEnv.empty)(Progress(), eqEnv, flix)
+        val reducedType = TypeReduction2.reduce(assoc, Scope.Top, RigidityEnv.empty)(Progress(), root.eqEnv, flix)
         // `reducedType` is ground, but might need normalization.
-        simplify(reducedType, eqEnv, isGround = true)
+        simplify(reducedType, isGround = true)
 
       case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
       case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
@@ -311,7 +314,6 @@ object Monomorpher {
     implicit val r: LoweredAst.Root = root
     implicit val is: Map[(Symbol.TraitSym, TypeConstructor), Instance] = mkFastInstanceLookup(root.instances)
     implicit val ctx: Context = new Context()
-    val empty = StrictSubstitution.mk(Substitution.empty, root.eqEnv)
 
     // Collect all non-parametric function definitions.
     val nonParametricDefns = root.defs.filter {
@@ -326,7 +328,7 @@ object Monomorpher {
         // We use an empty substitution because the defs are non-parametric.
         // It's important that non-parametric functions keep their symbol to not
         // invalidate the set of entryPoints functions.
-        mkFreshDefn(sym, defn, empty)
+        mkFreshDefn(sym, defn, StrictSubstitution.empty)
     }
 
     // Perform function specialization until the queue is empty.
@@ -343,7 +345,7 @@ object Monomorpher {
       case LoweredAst.Effect(doc, ann, mod, sym, ops0, loc) =>
         val ops = ops0.map {
           case LoweredAst.Op(opSym, spec, opLoc) =>
-            MonoAst.Op(opSym, visitEffectOpSpec(spec, empty), opLoc)
+            MonoAst.Op(opSym, visitEffectOpSpec(spec), opLoc)
         }
         MonoAst.Effect(doc, ann, mod, sym, ops, loc)
     }
@@ -385,7 +387,7 @@ object Monomorpher {
   def visitStructField(field: LoweredAst.StructField)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.StructField = {
     field match {
       case LoweredAst.StructField(fieldSym, tpe, loc) =>
-        MonoAst.StructField(fieldSym, simplify(tpe, root.eqEnv, isGround = false), loc)
+        MonoAst.StructField(fieldSym, simplify(tpe, isGround = false), loc)
     }
   }
 
@@ -393,7 +395,7 @@ object Monomorpher {
   def visitEnumCase(caze: LoweredAst.Case)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.Case = {
     caze match {
       case LoweredAst.Case(sym, tpes, _, loc) =>
-        MonoAst.Case(sym, tpes.map(simplify(_, root.eqEnv, isGround = false)), loc)
+        MonoAst.Case(sym, tpes.map(simplify(_, isGround = false)), loc)
     }
   }
 
@@ -402,17 +404,16 @@ object Monomorpher {
     case LoweredAst.TypeParam(name, sym, loc) => MonoAst.TypeParam(name, sym, loc)
   }
 
-  /**
-    * Converts the given effect op spec. Effect operations are monomorphic -
-    * they have no variables - so the substitution can be empty.
-    */
-  private def visitEffectOpSpec(spec: LoweredAst.Spec, subst: StrictSubstitution): MonoAst.Spec = spec match {
+  /** Converts the given effect op spec. */
+  private def visitEffectOpSpec(spec: LoweredAst.Spec)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.Spec = spec match {
     case LoweredAst.Spec(doc, ann, mod, _, fparams0, declaredScheme, retTpe, eff, _) =>
+      // Effect operations are monomorphic - they have no variables.
+      // The substitution can be left empty.
       val fparams = fparams0.map {
         case LoweredAst.FormalParam(sym, fparamMod, tpe, src, loc) =>
-          MonoAst.FormalParam(sym, fparamMod, subst(tpe), src, loc)
+          MonoAst.FormalParam(sym, fparamMod, StrictSubstitution.empty(tpe), src, loc)
       }
-      MonoAst.Spec(doc, ann, mod, fparams, declaredScheme.base, subst(retTpe), subst(eff))
+      MonoAst.Spec(doc, ann, mod, fparams, declaredScheme.base, StrictSubstitution.empty(retTpe), StrictSubstitution.empty(eff))
   }
 
   /**
@@ -567,9 +568,9 @@ object Monomorpher {
               val env1 = env0 + (sym -> freshSym)
               val subst1 = caseSubst @@ subst.nonStrict
               // Visit the body under the extended environment.
-              val body = visitExp(body0, env1, StrictSubstitution.mk(subst1, root.eqEnv))
+              val body = visitExp(body0, env1, StrictSubstitution.mk(subst1))
               val eff = Type.mkUnion(e.eff, body.eff, loc.asSynthetic)
-              Some(MonoAst.Expr.Let(freshSym, e, body, StrictSubstitution.mk(subst1, root.eqEnv).apply(tpe), subst1(eff), loc))
+              Some(MonoAst.Expr.Let(freshSym, e, body, StrictSubstitution.mk(subst1).apply(tpe), subst1(eff), loc))
           }
       }.get // We are safe to call get because the last case will always match.
 
@@ -633,7 +634,7 @@ object Monomorpher {
     *
     * Returns the new pattern and a mapping from variable symbols to fresh variable symbols.
     */
-  private def visitPat(p0: LoweredAst.Pattern, subst: StrictSubstitution)(implicit flix: Flix): (MonoAst.Pattern, Map[Symbol.VarSym, Symbol.VarSym]) = p0 match {
+  private def visitPat(p0: LoweredAst.Pattern, subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.Pattern, Map[Symbol.VarSym, Symbol.VarSym]) = p0 match {
     case LoweredAst.Pattern.Wild(tpe, loc) => (MonoAst.Pattern.Wild(subst(tpe), loc), Map.empty)
     case LoweredAst.Pattern.Var(sym, tpe, loc) =>
       // Generate a fresh variable symbol for the pattern-bound variable.
@@ -777,7 +778,7 @@ object Monomorpher {
     *
     * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
     */
-  private def specializeFormalParams(fparams0: List[LoweredAst.FormalParam], subst0: StrictSubstitution)(implicit flix: Flix): (List[MonoAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
+  private def specializeFormalParams(fparams0: List[LoweredAst.FormalParam], subst0: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (List[MonoAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
     // Return early if there are no formal parameters.
     if (fparams0.isEmpty)
       return (Nil, Map.empty)
@@ -793,7 +794,7 @@ object Monomorpher {
     * Returns the new formal parameter and an environment mapping the variable symbol to a fresh
     * variable symbol.
     */
-  private def specializeFormalParam(fparam0: LoweredAst.FormalParam, subst0: StrictSubstitution)(implicit flix: Flix): (MonoAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
+  private def specializeFormalParam(fparam0: LoweredAst.FormalParam, subst0: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
     val LoweredAst.FormalParam(sym, mod, tpe, src, loc) = fparam0
     val freshSym = Symbol.freshVarSym(sym)
     (MonoAst.FormalParam(freshSym, mod, subst0(tpe), src, loc), Map(sym -> freshSym))
@@ -803,7 +804,7 @@ object Monomorpher {
   private def infallibleUnify(tpe1: Type, tpe2: Type, sym: Symbol.DefnSym)(implicit root: LoweredAst.Root, flix: Flix): StrictSubstitution = {
     ConstraintSolver2.fullyUnify(tpe1, tpe2, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix) match {
       case Some(subst) =>
-        StrictSubstitution.mk(subst, root.eqEnv)
+        StrictSubstitution.mk(subst)
       case None =>
         throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.\nIn '$sym'", tpe1.loc)
     }
@@ -813,15 +814,15 @@ object Monomorpher {
     * Removes [[Type.Alias]] and [[Type.AssocType]], or crashes if some [[Type.AssocType]] is not
     * reducible.
     */
-  private def simplify(tpe: Type, eqEnv: EqualityEnv, isGround: Boolean)(implicit flix: Flix): Type = tpe match {
+  private def simplify(tpe: Type, isGround: Boolean)(implicit root: LoweredAst.Root, flix: Flix): Type = tpe match {
     case v@Type.Var(_, _) => v
     case c@Type.Cst(_, _) => c
-    case app@Type.Apply(_, _, _) => normalizeApply(simplify(_, eqEnv, isGround), app, isGround)
-    case Type.Alias(_, _, t, _) => simplify(t, eqEnv, isGround)
+    case app@Type.Apply(_, _, _) => normalizeApply(simplify(_, isGround), app, isGround)
+    case Type.Alias(_, _, t, _) => simplify(t, isGround)
     case Type.AssocType(symUse, arg0, kind, loc) =>
-      val arg = simplify(arg0, eqEnv, isGround)
-      val t = TypeReduction2.reduce(Type.AssocType(symUse, arg, kind, loc), Scope.Top, RigidityEnv.empty)(Progress(), eqEnv, flix)
-      simplify(t, eqEnv, isGround)
+      val arg = simplify(arg0, isGround)
+      val t = TypeReduction2.reduce(Type.AssocType(symUse, arg, kind, loc), Scope.Top, RigidityEnv.empty)(Progress(), root.eqEnv, flix)
+      simplify(t, isGround)
     case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
     case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
     case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
