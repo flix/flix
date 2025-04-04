@@ -17,6 +17,30 @@
 mod TestMutPriorityQueue {
 
     /////////////////////////////////////////////////////////////////////////////
+    // emptyWithCapacity                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def emptyWithCapacity01(): Bool = region rc {
+        let l: MutPriorityQueue[Int32, rc] = MutPriorityQueue.emptyWithCapacity(rc, 10);
+        MutPriorityQueue.toString(l) == "MutPriorityQueue {}"
+    }
+
+    @test
+    def emptyWithCapacity02(): Bool = region rc {
+        let l: MutPriorityQueue[Int32, rc] = MutPriorityQueue.emptyWithCapacity(rc, -1);
+        MutPriorityQueue.toString(l) == "MutPriorityQueue {}"
+    }
+
+    @test
+    def emptyWithCapacity03(): Bool = region rc {
+        let l: MutPriorityQueue[Int32, rc] = MutPriorityQueue.emptyWithCapacity(rc, 0);
+        MutPriorityQueue.enqueue(l, 4);
+        MutPriorityQueue.enqueue(l, 5);
+        MutPriorityQueue.toString(l) == "MutPriorityQueue {5, 4}"
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
 

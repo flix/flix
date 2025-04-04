@@ -165,9 +165,9 @@ object TreeShaker1 {
   /**
     * A common super-type for reachable symbols (defs, traits, sigs)
     */
-  sealed trait ReachableSym
+  private sealed trait ReachableSym
 
-  object ReachableSym {
+  private object ReachableSym {
 
     case class DefnSym(sym: Symbol.DefnSym) extends ReachableSym
 

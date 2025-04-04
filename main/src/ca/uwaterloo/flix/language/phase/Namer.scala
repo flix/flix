@@ -177,7 +177,7 @@ object Namer {
       case LookupResult.NotDefined => addDeclToTable(table, ns, name, decl)
       case LookupResult.AlreadyDefined(loc) =>
         mkDuplicateNamePair(name, getSymLocation(decl), loc)
-        SymbolTable.empty
+         table
     }
   }
 
@@ -1212,7 +1212,7 @@ object Namer {
     case DesugaredAst.Pattern.Wild(_) => Nil
     case DesugaredAst.Pattern.Cst(_, _) => Nil
     case DesugaredAst.Pattern.Tag(_, ps, _) => ps.flatMap(freeVars)
-    case DesugaredAst.Pattern.Tuple(elms, _) => elms.flatMap(freeVars)
+    case DesugaredAst.Pattern.Tuple(elms, _) => elms.toList.flatMap(freeVars)
     case DesugaredAst.Pattern.Record(pats, pat, _) => recordPatternFreeVars(pats) ++ freeVars(pat)
     case DesugaredAst.Pattern.Error(_) => Nil
   }
@@ -1233,7 +1233,7 @@ object Namer {
     case DesugaredAst.Type.Var(ident, _) => ident :: Nil
     case DesugaredAst.Type.Ambiguous(_, _) => Nil
     case DesugaredAst.Type.Unit(_) => Nil
-    case DesugaredAst.Type.Tuple(elms, _) => elms.flatMap(freeTypeVars)
+    case DesugaredAst.Type.Tuple(elms, _) => elms.toList.flatMap(freeTypeVars)
     case DesugaredAst.Type.RecordRowEmpty(_) => Nil
     case DesugaredAst.Type.RecordRowExtend(_, t, r, _) => freeTypeVars(t) ::: freeTypeVars(r)
     case DesugaredAst.Type.Record(row, _) => freeTypeVars(row)

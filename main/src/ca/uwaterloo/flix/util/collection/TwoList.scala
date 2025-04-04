@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.util
+package ca.uwaterloo.flix.util.collection
 
 /**
   * Represents an immutable list of at least size two.
