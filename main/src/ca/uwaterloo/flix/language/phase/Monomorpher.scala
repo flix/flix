@@ -85,6 +85,7 @@ import scala.collection.mutable
   */
 object Monomorpher {
 
+  /** The effect that all [[TypeConstructor.Region]] are instantiated to. */
   private val RegionInstantiation: TypeConstructor.Effect =
     TypeConstructor.Effect(Symbol.IO)
 
