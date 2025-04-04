@@ -258,7 +258,7 @@ object Safety {
         sctx.errors.add(IllegalNestedTryCatch(loc))
       }
       visitExp(exp)(inTryCatch = true, renv, sctx, flix)
-      rules.foreach { case CatchRule(bnd, clazz, e, loc) =>
+      rules.foreach { case CatchRule(bnd, clazz, e, _) =>
         checkCatchClass(clazz, bnd.sym.loc)
         visitExp(e)
       }
@@ -275,7 +275,7 @@ object Safety {
       }
       rules.foreach(rule => visitExp(rule.exp))
 
-    case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+    case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
@@ -643,7 +643,7 @@ object Safety {
   }
 
   /** Checks that `pat` contains no wildcards. */
-  private def visitPat(pat: Pattern, loc: SourceLocation)(implicit sctx: SharedContext): Unit = pat match {
+  private def visitPat(pat0: Pattern, loc: SourceLocation)(implicit sctx: SharedContext): Unit = pat0 match {
     case Pattern.Wild(_, _) => sctx.errors.add(IllegalNegativelyBoundWildCard(loc))
     case Pattern.Var(_, _, _) => ()
     case Pattern.Cst(_, _, _) => ()
@@ -676,7 +676,7 @@ object Safety {
 
   /** Returns `true` if `tpe` is [[java.lang.Throwable]] or a subclass of it. */
   @tailrec
-  private def isThrowableType(tpe: Type): Boolean = tpe match {
+  private def isThrowableType(tpe0: Type): Boolean = tpe0 match {
     case Type.Cst(TypeConstructor.Native(clazz), _) => isThrowable(clazz)
     case Type.Alias(_, _, tpe, _) => isThrowableType(tpe)
     case _ => false
