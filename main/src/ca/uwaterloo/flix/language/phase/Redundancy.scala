@@ -473,7 +473,7 @@ object Redundancy {
 
       // Visit each match rule.
       val usedRules = rules map {
-        case MatchRule(pat, guard, body, loc) =>
+        case MatchRule(pat, guard, body, _) =>
           // Compute the free variables in the pattern.
           val fvs = freeVars(pat)
 
@@ -697,7 +697,7 @@ object Redundancy {
           acc ++ usedBody ++ dead.map(UnusedVarSym.apply)
       }
 
-    case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+    case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc)
 
     case Expr.Do(opUse, exps, _, _, _) =>
@@ -1142,13 +1142,6 @@ object Redundancy {
       * Represents the empty environment.
       */
     val empty: Env = Env(Map.empty)
-
-    /**
-      * Returns an environment with the given variable symbols `varSyms` in it.
-      */
-    def of(varSyms: Iterable[Symbol.VarSym]): Env = varSyms.foldLeft(Env.empty) {
-      case (acc, sym) => acc + sym
-    }
   }
 
   /**
