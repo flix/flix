@@ -163,7 +163,7 @@ object Monomorpher {
   }
 
   /**
-    * Holds the mutable data used throughout monomorphization.
+    * The mutable data used throughout monomorphization.
     *
     * This class is thread-safe.
     */
@@ -172,44 +172,43 @@ object Monomorpher {
     /**
       * A queue of pending (fresh symbol, function definition, and substitution)-triples.
       *
-      * For example, if the queue contains the entry:
+      * If the queue contains the entry:
       *
-      *   - (f$1, f, [a -> Int32])
+      *   - `(f$1, f, [a -> Int32])`
       *
-      * it means that the function definition f should be specialized w.r.t. the map [a -> Int32] under the fresh name f$1.
+      * it means that the function definition `f` should be specialized w.r.t. the map
+      * `[a -> Int32]` under the fresh name `f$1`.
       *
-      * Note: We use a concurrent linked queue (which is non-blocking) so threads can enqueue items without contention.
+      * Note: [[ConcurrentLinkedQueue]] is non-blocking so threads can enqueue items without
+      * contention.
       */
-    private val defQueue: ConcurrentLinkedQueue[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)] = new ConcurrentLinkedQueue
+    private val defQueue: ConcurrentLinkedQueue[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)] =
+      new ConcurrentLinkedQueue
+
+    /** Returns `true` if the queue is non-empty. */
+    def nonEmptySpecializationQueue: Boolean =
+      synchronized {
+        !defQueue.isEmpty
+      }
 
     /**
-      * Returns `true` if the queue is non-empty.
+      * Enqueues `defn` to be specialized according to `subst` with the new name `sym`.
       *
-      * Note: This is not synchronized.
+      * This should be used in combination with [[getSpecializedName]] and [[addSpecializedName]] to
+      * avoid enqueuing duplicate specializations.
       */
-    def nonEmpty: Boolean = synchronized {
-      !defQueue.isEmpty
-    }
+    def enqueueSpecialization(sym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution): Unit =
+      synchronized {
+        defQueue.add((sym, defn, subst))
+      }
 
-    /**
-      * Enqueues the given symbol, def, and substitution triple.
-      *
-      * Note: This is not synchronized.
-      */
-    def enqueue(sym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution): Unit = synchronized {
-      defQueue.add((sym, defn, subst))
-    }
-
-    /**
-      * Dequeues an element from the queue.
-      *
-      * Note: This is not synchronized.
-      */
-    def dequeueAll: Array[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)] = synchronized {
-      val r = defQueue.toArray(Array.empty[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)])
-      defQueue.clear()
-      r
-    }
+    /** Dequeues all elements from the queue and clears it. */
+    def dequeueAllSpecializations: Array[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)] =
+      synchronized {
+        val r = defQueue.toArray(Array.empty[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)])
+        defQueue.clear()
+        r
+      }
 
     /**
       * A map from a symbol and a normalized type to the fresh symbol for the specialized version
@@ -217,46 +216,42 @@ object Monomorpher {
       *
       * For example, if the function:
       *
-      *   - def fst[a, b](x: a, y: b): a = ...
+      *   - `def fst[a, b](x: a, y: b): a = ...`
       *
       * has been specialized w.r.t. to `Int32` and `String` then this map will contain an entry:
       *
-      *   - (fst, (Int32, String) -> Int32) -> fst$1
+      *   - `(fst, (Int32, String) -> Int32) -> fst$1`
       */
-    private val def2def: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] = mutable.Map.empty
+    private val specializedNames: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] =
+        mutable.Map.empty
 
-    /**
-      * Optionally returns the specialized def symbol for the given symbol `sym` and type `tpe`.
-      */
-    def getDef2Def(sym: Symbol.DefnSym, tpe: Type): Option[Symbol.DefnSym] = synchronized {
-      def2def.get((sym, tpe))
-    }
+    /** Returns the specialized def symbol for `sym` w.r.t. `tpe` if it exists. */
+    def getSpecializedName(sym: Symbol.DefnSym, tpe: Type): Option[Symbol.DefnSym] =
+      synchronized {
+        specializedNames.get((sym, tpe))
+      }
 
-    /**
-      * Adds a new def2def binding for the given symbol `sym1` and type `tpe`.
-      */
-    def putDef2Def(sym1: Symbol.DefnSym, tpe: Type, sym2: Symbol.DefnSym): Unit = synchronized {
-      def2def.put((sym1, tpe), sym2)
-    }
+    /** Adds a specialized name, `specializedSym`, for `sym` w.r.t `tpe`. */
+    def addSpecializedName(sym1: Symbol.DefnSym, tpe: Type, sym2: Symbol.DefnSym): Unit =
+      synchronized {
+        specializedNames.put((sym1, tpe), sym2)
+      }
 
-    /**
-      * A map used to collect specialized definitions, etc.
-      */
-    private val specializedDefns: mutable.Map[Symbol.DefnSym, MonoAst.Def] = mutable.Map.empty
+    /** A map of specialized definitions. */
+    private val specializedDefns: mutable.Map[Symbol.DefnSym, MonoAst.Def] =
+        mutable.Map.empty
 
-    /**
-      * Adds a new specialized definition for the given def symbol `sym`.
-      */
-    def putSpecializedDef(sym: Symbol.DefnSym, defn: MonoAst.Def): Unit = synchronized {
-      specializedDefns.put(sym, defn)
-    }
+    /** Add a new specialized definition. */
+    def addSpecializedDef(sym: Symbol.DefnSym, defn: MonoAst.Def): Unit =
+      synchronized {
+        specializedDefns.put(sym, defn)
+      }
 
-    /**
-      * Returns the specialized definitions as an immutable map.
-      */
-    def toMap: Map[Symbol.DefnSym, MonoAst.Def] = synchronized {
-      specializedDefns.toMap
-    }
+    /** Returns the specialized definitions as an immutable map. */
+    def getSpecializedDefs: Map[Symbol.DefnSym, MonoAst.Def] =
+      synchronized {
+        specializedDefns.toMap
+      }
   }
 
   /**
@@ -338,9 +333,9 @@ object Monomorpher {
      *
      * We perform specialization in parallel along the frontier, i.e. each frontier is done in parallel.
      */
-    while (ctx.nonEmpty) {
+    while (ctx.nonEmptySpecializationQueue) {
       // Extract a function from the queue and specializes it w.r.t. its substitution.
-      val queue = ctx.dequeueAll
+      val queue = ctx.dequeueAllSpecializations
       ParOps.parMap(queue) {
         case (freshSym, defn, subst) => mkFreshDefn(freshSym, defn, subst)
       }
@@ -371,7 +366,7 @@ object Monomorpher {
 
     // Reassemble the AST.
     MonoAst.Root(
-      ctx.toMap,
+      ctx.getSpecializedDefs,
       enums,
       structs,
       effects,
@@ -449,7 +444,7 @@ object Monomorpher {
     val specializedDefn = MonoAst.Def(freshSym, spec, specializedExp, defn.loc)
 
     // Save the specialized function.
-    ctx.putSpecializedDef(freshSym, specializedDefn)
+    ctx.addSpecializedDef(freshSym, specializedDefn)
   }
 
   /**
@@ -753,17 +748,17 @@ object Monomorpher {
 
     // Check whether the function definition has already been specialized.
     ctx synchronized {
-      ctx.getDef2Def(defn.sym, tpe) match {
+      ctx.getSpecializedName(defn.sym, tpe) match {
         case None =>
           // Case 1: The function has not been specialized.
           // Generate a fresh specialized definition symbol.
           val freshSym = Symbol.freshDefnSym(defn.sym)
 
           // Register the fresh symbol (and actual type) in the symbol2symbol map.
-          ctx.putDef2Def(defn.sym, tpe, freshSym)
+          ctx.addSpecializedName(defn.sym, tpe, freshSym)
 
           // Enqueue the fresh symbol with the definition and substitution.
-          ctx.enqueue(freshSym, defn, subst)
+          ctx.enqueueSpecialization(freshSym, defn, subst)
 
           // Now simply refer to the freshly generated symbol.
           freshSym
