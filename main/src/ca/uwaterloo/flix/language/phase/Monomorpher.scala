@@ -684,47 +684,43 @@ object Monomorpher {
   }
 
   /**
-    * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
-    *
-    * The given type must be a normalized type.
+    * Returns a [[Symbol.DefnSym]] corresponding to the specialization of `sym`
+    * w.r.t. the normalized function type `tpe`.
     */
   private def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
+    val defn = resolveSigSym(sym, tpe)
+    specializeDef(defn, tpe)
+  }
+
+  /**
+    * Returns a [[LoweredAst.Def]] corresponding to the resolved trait `sym`
+    * w.r.t. to the normalized function type `tpe`.
+    */
+  private def resolveSigSym(sym: Symbol.SigSym, tpe: Type)(implicit instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): LoweredAst.Def = {
     val sig = root.sigs(sym)
     val trt = root.traits(sym.trt)
 
-    // Find out what we're specializing the sig to by unifying with the type.
+    // Find out what instance to use by unifying with the sig type.
     val subst = ConstraintSolver2.fullyUnify(sig.spec.declaredScheme.base, tpe, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix).get
-    val specialization = subst.m(trt.tparam.sym)
-    val tycon = specialization.typeConstructor.get
+    val traitType = subst.m(trt.tparam.sym)
+    val tyCon = traitType.typeConstructor.get
 
-    // Lookup the instance corresponding to this type.
-    val instance = instances((sym.trt, tycon))
-
-    val defns = instance.defs.filter {
-      d => d.sym.text == sig.sym.name
-    }
+    val instance = instances((sym.trt, tyCon))
+    val defns = instance.defs.filter(_.sym.text == sig.sym.name)
 
     (sig.exp, defns) match {
       // An instance implementation exists. Use it.
-      case (_, defn :: Nil) => specializeDef(defn, tpe)
+      case (_, defn :: Nil) => defn
       // No instance implementation, but a default implementation exists. Use it.
-      case (Some(impl), Nil) => specializeDef(sigToDef(sig.sym, sig.spec, impl, sig.loc), tpe)
+      case (Some(impl), Nil) =>
+        val ns = sig.sym.trt.namespace :+ sig.sym.trt.name
+        val defnSym = new Symbol.DefnSym(None, ns, sig.sym.name, sig.sym.loc)
+        LoweredAst.Def(defnSym, sig.spec, impl, sig.loc)
       // Multiple matching defs. Should have been caught previously.
       case (_, _ :: _ :: _) => throw InternalCompilerException(s"Expected at most one matching definition for '$sym', but found ${defns.size} signatures.", sym.loc)
       // No matching defs and no default. Should have been caught previously.
       case (None, Nil) => throw InternalCompilerException(s"No default or matching definition found for '$sym'.", sym.loc)
     }
-  }
-
-  /** Converts a signature with an implementation into the equivalent definition. */
-  private def sigToDef(sigSym: Symbol.SigSym, spec: LoweredAst.Spec, exp: LoweredAst.Expr, loc: SourceLocation): LoweredAst.Def = {
-    LoweredAst.Def(sigSymToDefnSym(sigSym), spec, exp, loc)
-  }
-
-  /** Converts a SigSym into the equivalent DefnSym. */
-  private def sigSymToDefnSym(sigSym: Symbol.SigSym): Symbol.DefnSym = {
-    val ns = sigSym.trt.namespace :+ sigSym.trt.name
-    new Symbol.DefnSym(None, ns, sigSym.name, sigSym.loc)
   }
 
   /**
