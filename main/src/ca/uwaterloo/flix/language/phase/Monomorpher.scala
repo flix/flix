@@ -85,6 +85,9 @@ import scala.collection.mutable
   */
 object Monomorpher {
 
+  private val RegionInstantiation: TypeConstructor.Effect =
+    TypeConstructor.Effect(Symbol.IO)
+
   /** Companion object for [[StrictSubstitution]]. */
   private object StrictSubstitution {
 
@@ -130,9 +133,8 @@ object Monomorpher {
           t
       }
 
-      // We map regions to IO.
-      case Type.Cst(TypeConstructor.Region(_), _) =>
-        Type.IO
+      case Type.Cst(TypeConstructor.Region(_), loc) =>
+        Type.Cst(RegionInstantiation, loc)
 
       case cst@Type.Cst(_, _) =>
         // Maintain and exploit reference equality for performance.
@@ -871,8 +873,7 @@ object Monomorpher {
     case Type.Cst(TypeConstructor.Effect(sym), _) =>
       CofiniteSet.mkSet(sym)
     case Type.Cst(TypeConstructor.Region(_), _) =>
-      // We map regions to IO.
-      CofiniteSet.mkSet(Symbol.IO)
+      CofiniteSet.mkSet(RegionInstantiation.sym)
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _) =>
       CofiniteSet.complement(eval(y))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) =>
