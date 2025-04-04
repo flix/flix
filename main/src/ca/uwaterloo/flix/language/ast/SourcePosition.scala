@@ -14,15 +14,17 @@ object SourcePosition {
     new SourcePosition(source, lineOneIndexed = 1, colOneIndexed = 1)
 
   /**
-    * Returns a [[SourcePosition]] in `source` with the zero-indexed `line` and `col`. Both must
-    * be 0 or greater.
+    * Returns a [[SourcePosition]] in `source` with the zero-indexed `line` and `col`.
+    *
+    * Both must be 0 or greater.
     */
   def mkFromZeroIndexed(source: Source, line: Int, col: Int): SourcePosition =
     new SourcePosition(source, lineOneIndexed = line + 1, colOneIndexed = (col + 1).toShort)
 
   /**
-    * Returns a [[SourcePosition]] in `source` with the zero-indexed `line` and `col`. Both must
-    * be 1 or greater.
+    * Returns a [[SourcePosition]] in `source` with the zero-indexed `line` and `col`.
+    *
+    * Both must be 1 or greater.
     */
   def mkFromOneIndexed(source: Source, line: Int, col: Int): SourcePosition =
     new SourcePosition(source, lineOneIndexed = line, colOneIndexed = col.toShort)
