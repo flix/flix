@@ -106,7 +106,7 @@ class TestCompletionProvider extends AnyFunSuite  {
       val (root, flix, errors) = compile(program, Options.Default)
       val source = mkSource(program)
       // Find all the literal tokens that are on a single line
-      val keywordTokens = root.tokens(source).toList.filter(_.kind.isLiteral).filter(token => token.sp1.line == token.sp2.line)
+      val keywordTokens = root.tokens(source).toList.filter(_.kind.isLiteral).filter(token => token.sp1.lineOneIndexed == token.sp2.lineOneIndexed)
       keywordTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
@@ -154,6 +154,6 @@ class TestCompletionProvider extends AnyFunSuite  {
     */
   private def getAllPositionsWithinToken(token: Token): List[Position] =
     (0 to token.text.length).map{ offset =>
-      Position(token.sp1.line, token.sp1.col + offset)
+      Position(token.sp1.lineOneIndexed, token.sp1.colOneIndexed + offset)
     }.toList
 }
