@@ -20,6 +20,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{MonoAst, OccurrenceAst1, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.util.collection.ListMap
 
 /**
   * Iterative runs of the optimizer pipeline: OccurrenceAnalyzer -> Inliner.
@@ -52,17 +53,17 @@ object Optimizer1 {
     def toMonoAst(root: OccurrenceAst1.Root): MonoAst.Root = ???
   }
 
-  case class Stats(inlinedDefs: Map[Symbol.DefnSym, Set[Symbol.DefnSym]],
-                   inlinedVars: Map[Symbol.DefnSym, Set[Symbol.VarSym]],
+  case class Stats(inlinedDefs: ListMap[Symbol.DefnSym, Symbol.DefnSym],
+                   inlinedVars: ListMap[Symbol.DefnSym, Symbol.VarSym],
                    betaReductions: Map[Symbol.DefnSym, Int],
-                   eliminatedVars: Map[Symbol.DefnSym, Set[Symbol.VarSym]],
+                   eliminatedVars: ListMap[Symbol.DefnSym, Symbol.VarSym],
                    simplifiedIfThenElse: Map[Symbol.DefnSym, Int],
                    eliminatedStms: Map[Symbol.DefnSym, Int]) {
     def ++(that: Stats): Stats = {
-      val inlinedDefs1 = Stats.merge(inlinedDefs, that.inlinedDefs)(_ ++ _)
-      val inlinedVars1 = Stats.merge(inlinedVars, that.inlinedVars)(_ ++ _)
+      val inlinedDefs1 = inlinedDefs ++ that.inlinedDefs
+      val inlinedVars1 = inlinedVars ++ that.inlinedVars
       val betaReductions1 = Stats.merge(betaReductions, that.betaReductions)(_ + _)
-      val eliminatedVars1 = Stats.merge(eliminatedVars, that.eliminatedVars)(_ ++ _)
+      val eliminatedVars1 = eliminatedVars ++ that.eliminatedVars
       val simplifiedIfThenElse1 = Stats.merge(simplifiedIfThenElse, that.simplifiedIfThenElse)(_ + _)
       val eliminatedStms1 = Stats.merge(eliminatedStms, that.eliminatedStms)(_ + _)
       Stats(inlinedDefs1, inlinedVars1, betaReductions1, eliminatedVars1, simplifiedIfThenElse1, eliminatedStms1)
