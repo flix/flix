@@ -18,9 +18,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.MonoAst
+import ca.uwaterloo.flix.language.ast.{MonoAst, OccurrenceAst1, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.language.ast.Symbol
 
 /**
   * Iterative runs of the optimizer pipeline: OccurrenceAnalyzer -> Inliner.
@@ -31,23 +30,26 @@ object Optimizer1 {
     * Returns an optimized version of the given AST `root`.
     */
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer1") {
-    // TODO: Remove inliner1 and analyzer1. Just have converters to and from MonoAst
-    if (flix.options.xnooptimizer1 || flix.options.inliner1Rounds < 1) {
+    if (flix.options.xnooptimizer1) {
       root
     } else {
-      var result = OccurrenceAnalyzer1.run(root)
+      var result = Converter.toOccurrenceAst(root)
       var stats: Stats = null
-      for (_ <- 2 to flix.options.inliner1Rounds) {
-        val (afterInliner, stats1) = Inliner2.run(result)
-        val afterOccurrenceAnalyzer = OccurrenceAnalyzer2.run(afterInliner)
+      for (_ <- 1 to flix.options.inliner1Rounds) {
+        val afterOccurrenceAnalyzer = OccurrenceAnalyzer1.run(result)
+        val (afterInliner, stats1) = Inliner1.run(afterOccurrenceAnalyzer)
         stats = if (stats == null) stats1 else stats ++ stats1
-        result = afterOccurrenceAnalyzer
+        result = afterInliner
       }
-      val (afterInliner, stats1) = Inliner1.run(result)
-      stats = stats ++ stats1
       // println(stats)
-      afterInliner
+      Converter.toMonoAst(result)
     }
+  }
+
+  private object Converter {
+    def toOccurrenceAst(root: MonoAst.Root): OccurrenceAst1.Root = ???
+
+    def toMonoAst(root: OccurrenceAst1.Root): MonoAst.Root = ???
   }
 
   case class Stats(inlinedDefs: Map[Symbol.DefnSym, Set[Symbol.DefnSym]],
