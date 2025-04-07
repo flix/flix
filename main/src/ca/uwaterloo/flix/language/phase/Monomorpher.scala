@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
-import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
+import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListMap, ListOps, MapOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -154,7 +154,7 @@ object Monomorpher {
       case Type.AssocType(symUse, arg0, kind, loc) =>
         val arg = apply(arg0)
         val assoc = Type.AssocType(symUse, arg, kind, loc)
-        val reducedType = TypeReduction2.reduce(assoc, Scope.Top, RigidityEnv.empty)(Progress(), root.eqEnv, flix)
+        val reducedType = reduceAssocType(assoc)
         // `reducedType` is ground, but might need normalization.
         simplify(reducedType, isGround = true)
 
@@ -233,7 +233,7 @@ object Monomorpher {
       *   - `(fst, (Int32, String) -> Int32) -> fst$1`
       */
     private val specializedNames: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] =
-        mutable.Map.empty
+      mutable.Map.empty
 
     /** Returns the specialized def symbol for `sym` w.r.t. `tpe` if it exists. */
     def getSpecializedName(sym: Symbol.DefnSym, tpe: Type): Option[Symbol.DefnSym] =
@@ -249,7 +249,7 @@ object Monomorpher {
 
     /** A map of specialized definitions. */
     private val specializedDefns: mutable.Map[Symbol.DefnSym, MonoAst.Def] =
-        mutable.Map.empty
+      mutable.Map.empty
 
     /** Add a new specialized definition. */
     def addSpecializedDef(sym: Symbol.DefnSym, defn: MonoAst.Def): Unit =
@@ -810,6 +810,20 @@ object Monomorpher {
     }
   }
 
+  /** Reduces the given associated into its definition, will crash if not able to. */
+  private def reduceAssocType(assoc: Type.AssocType)(implicit root: LoweredAst.Root, flix: Flix): Type = {
+    // Since assoc is ground, `scope` will be unused.
+    val scope = Scope.Top
+    // Since assoc is ground, `renv` will be unused.
+    val renv = RigidityEnv.empty
+    val progress = Progress()
+
+    val res = TypeReduction2.reduce(assoc, scope, renv)(progress, root.eqEnv, flix)
+
+    if (progress.query()) res
+    else throw InternalCompilerException(s"Could not reduce associated type $assoc", assoc.loc)
+  }
+
   /**
     * Removes [[Type.Alias]] and [[Type.AssocType]], or crashes if some [[Type.AssocType]] is not
     * reducible.
@@ -821,7 +835,8 @@ object Monomorpher {
     case Type.Alias(_, _, t, _) => simplify(t, isGround)
     case Type.AssocType(symUse, arg0, kind, loc) =>
       val arg = simplify(arg0, isGround)
-      val t = TypeReduction2.reduce(Type.AssocType(symUse, arg, kind, loc), Scope.Top, RigidityEnv.empty)(Progress(), root.eqEnv, flix)
+      val assoc = Type.AssocType(symUse, arg, kind, loc)
+      val t = reduceAssocType(assoc)
       simplify(t, isGround)
     case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
     case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
