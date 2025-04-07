@@ -28,6 +28,7 @@ import org.json4s.JsonDSL.*
 import java.nio.file.Path
 import scala.collection.immutable.Queue
 import scala.collection.mutable.ListBuffer
+import scala.io.StdIn
 
 object BenchmarkInliner {
 
@@ -68,6 +69,14 @@ object BenchmarkInliner {
   )
 
   def run(opts: Options, micro: Boolean = true): Unit = {
+    val input = StdIn.readLine("Please connect profiling tools if necessary (e.g., async-profiler). Ready to proceed? [Y/n]")
+    input.toLowerCase match {
+      case "n" | "no" | "abort" =>
+        println("Aborting...")
+        return
+      case _ =>
+    }
+
     FileOps.writeString(Path.of("./build/").resolve("perf/").resolve("plots.py"), Python)
 
     val t0 = System.nanoTime()
