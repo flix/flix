@@ -30,7 +30,7 @@ object OccurrenceAst1 {
                   entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(sym: Symbol.DefnSym, fparams: List[(FormalParam, Occur)], spec: MonoAst.Spec, exp: Expr, context: DefContext, loc: SourceLocation)
+  case class Def(sym: Symbol.DefnSym, fparams: List[(MonoAst.FormalParam, Occur)], spec: MonoAst.Spec, exp: Expr, context: DefContext, loc: SourceLocation)
 
   sealed trait Expr extends Product {
     def tpe: Type
@@ -50,7 +50,7 @@ object OccurrenceAst1 {
       def eff: Type = Type.Pure
     }
 
-    case class Lambda(fparam: (FormalParam, Occur), exp: Expr, tpe: Type, loc: SourceLocation) extends Expr {
+    case class Lambda(fparam: (MonoAst.FormalParam, Occur), exp: Expr, tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = Type.Pure
     }
 
@@ -64,7 +64,7 @@ object OccurrenceAst1 {
 
     case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, occur: Occur, loc: SourceLocation) extends Expr
 
-    case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, occur: Occur, loc: SourceLocation) extends Expr
+    case class LocalDef(sym: Symbol.VarSym, fparams: List[MonoAst.FormalParam], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, occur: Occur, loc: SourceLocation) extends Expr
 
     case class Scope(sym: Symbol.VarSym, regSym: Symbol.RegionSym, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -127,27 +127,19 @@ object OccurrenceAst1 {
     }
   }
 
-  case class Case(sym: Symbol.CaseSym, tpes: List[Type], loc: SourceLocation)
-
   case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: Type, src: TypeSource, loc: SourceLocation)
-
-  case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
-
-  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[MonoAst.FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
 
-  case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
+  case class HandlerRule(op: OpSymUse, fparams: List[MonoAst.FormalParam], exp: Expr)
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
 
   case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
-
-  case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 
   case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
 
@@ -207,5 +199,3 @@ object OccurrenceAst1 {
   case class DefContext(isDirectCall: Boolean, occur: Occur, size: Int, localDefs: Int, isSelfRecursive: Boolean)
 
 }
-
-

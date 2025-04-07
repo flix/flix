@@ -99,15 +99,6 @@ object Optimizer1 {
       }
     }
 
-    def toMapSet[A, B](iterable: Iterable[(A, B)]): Map[A, Set[B]] = {
-      iterable.foldLeft(Map.empty[A, Set[B]]) {
-        case (m, (k, v)) => m.get(k) match {
-          case Some(set) => m + (k -> (set + v))
-          case None => m + (k -> Set(v))
-        }
-      }
-    }
-
     def toCount[A](iterable: Iterable[(A, Int)]): Map[A, Int] = {
       iterable.foldLeft(Map.empty[A, Int]) {
         case (m, (k, i)) => m.get(k) match {

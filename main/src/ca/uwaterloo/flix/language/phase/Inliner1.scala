@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur.*
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.{DefContext, Expr, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
-import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst1, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.collection.CofiniteSet
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst1, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListMap}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -52,9 +52,9 @@ object Inliner1 {
 
   private type OutExpr = OccurrenceAst1.Expr
 
-  private type InCase = OccurrenceAst1.Case
+  // private type InCase = MonoAst.Case
 
-  private type OutCase = OccurrenceAst1.Case
+  //  private type OutCase = MonoAst.Case
 
   sealed private trait SubstRange
 
@@ -66,21 +66,21 @@ object Inliner1 {
 
   }
 
-  private sealed trait Const
+  //  private sealed trait Const
 
-  private object Const {
+  //   private object Const {
 
-    case class Lit(lit: Constant) extends Const
+  //     case class Lit(lit: Constant) extends Const
 
-    case class Tag(tag: Symbol.CaseSym) extends Const
+  //     case class Tag(tag: Symbol.CaseSym) extends Const
 
-  }
+  // }
 
   private sealed trait Definition
 
   private object Definition {
 
-    case object CaseOrLambda extends Definition
+    //     case object CaseOrLambda extends Definition
 
     case class LetBound(expr: OutExpr, occur: Occur) extends Definition
 
@@ -101,11 +101,11 @@ object Inliner1 {
 
     case object Stop extends Context
 
-    case class Application(inExpr: InExpr, subst: Subst, context: Context) extends Context
+    // case class Application(inExpr: InExpr, subst: Subst, context: Context) extends Context
 
-    case class Argument(continuation: OutExpr => OutExpr) extends Context
+    // case class Argument(continuation: OutExpr => OutExpr) extends Context
 
-    case class Match(sym: InVar, cases: List[InCase], subst: Subst, context: Context) extends Context
+    // case class Match(sym: InVar, cases: List[InCase], subst: Subst, context: Context) extends Context
 
   }
 
@@ -121,13 +121,6 @@ object Inliner1 {
       } else {
         OccurrenceAst1.Def(sym, fparams, spec, exp, ctx, loc)
       }
-  }
-
-  /**
-    * Translates the given formal parameter `fparam` from [[OccurrenceAst1.FormalParam]] into a [[OccurrenceAst1.FormalParam]].
-    */
-  private def visitFormalParam(fparam0: OccurrenceAst1.FormalParam): OccurrenceAst1.FormalParam = fparam0 match {
-    case OccurrenceAst1.FormalParam(sym, mod, tpe, src, loc) => OccurrenceAst1.FormalParam(sym, mod, tpe, src, loc)
   }
 
   /**
@@ -403,11 +396,11 @@ object Inliner1 {
 
       case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
         val methods = methods0.map {
-          case OccurrenceAst1.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
+          case OccurrenceAst1.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
             val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
             val varSubst1 = varSubsts.fold(varSubst0)(_ ++ _)
             val e = visitExp(exp, varSubst1, subst0, inScopeSet0, context0)
-            OccurrenceAst1.JvmMethod(ident, fps, e, retTpe, eff, loc)
+            OccurrenceAst1.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
         }
         Expr.NewObject(name, clazz, tpe, eff, methods, loc)
 
@@ -417,7 +410,7 @@ object Inliner1 {
       * Recursively bind each argument in `args` to a let-expression with a fresh symbol
       * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
       */
-    def inlineLocalAbstraction(exp0: Expr, symbols: List[(OccurrenceAst1.FormalParam, Occur)], args: List[OutExpr])(implicit root: OccurrenceAst1.Root, flix: Flix): Expr = {
+    def inlineLocalAbstraction(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr])(implicit root: OccurrenceAst1.Root, flix: Flix): Expr = {
       bind(exp0, symbols, args, varSubst0, subst0, inScopeSet0, context0)
     }
 
@@ -473,7 +466,7 @@ object Inliner1 {
     * Recursively bind each argument in `args` to a let-expression with a fresh symbol
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
-  private def inlineDef(exp0: Expr, symbols: List[(OccurrenceAst1.FormalParam, Occur)], args: List[OutExpr])(implicit sym0: Symbol.DefnSym, root: OccurrenceAst1.Root, sctx: SharedContext, flix: Flix): Expr = {
+  private def inlineDef(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr])(implicit sym0: Symbol.DefnSym, root: OccurrenceAst1.Root, sctx: SharedContext, flix: Flix): Expr = {
     bind(exp0, symbols, args, Map.empty, Map.empty, Map.empty, Context.Stop)
   }
 
@@ -481,8 +474,8 @@ object Inliner1 {
     * Recursively bind each argument in `args` to a let-expression with a fresh symbol
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
-  private def bind(exp0: Expr, symbols: List[(OccurrenceAst1.FormalParam, Occur)], args: List[OutExpr], varSubst0: VarSubst, subst0: Subst, inScopeSet0: InScopeSet, context0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst1.Root, sctx: SharedContext, flix: Flix): Expr = {
-    def bnd(syms: List[(OccurrenceAst1.FormalParam, Occur)], as: List[OutExpr], env: VarSubst): Expr = (syms, as) match {
+  private def bind(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr], varSubst0: VarSubst, subst0: Subst, inScopeSet0: InScopeSet, context0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst1.Root, sctx: SharedContext, flix: Flix): Expr = {
+    def bnd(syms: List[(MonoAst.FormalParam, Occur)], as: List[OutExpr], env: VarSubst): Expr = (syms, as) match {
       case ((_, occur) :: nextSymbols, e1 :: nextExpressions) if isDeadAndPure(occur, e1.eff) =>
         // If the parameter is unused and the argument is pure, then throw it away.
         bnd(nextSymbols, nextExpressions, env)
@@ -493,7 +486,7 @@ object Inliner1 {
         val eff = canonicalEffect(Type.mkUnion(e1.eff, nextLet.eff, e1.loc))
         Expr.Stm(e1, nextLet, nextLet.tpe, eff, exp0.loc)
 
-      case ((OccurrenceAst1.FormalParam(sym, _, _, _, _), occur) :: nextSymbols, e1 :: nextExpressions) =>
+      case ((MonoAst.FormalParam(sym, _, _, _, _), occur) :: nextSymbols, e1 :: nextExpressions) =>
         val freshVar = Symbol.freshVarSym(sym)
         val env1 = env + (sym -> freshVar)
         val nextLet = bnd(nextSymbols, nextExpressions, env1)
@@ -506,22 +499,22 @@ object Inliner1 {
     bnd(symbols, args, Map.empty)
   }
 
-  private def freshFormalParam(fp0: OccurrenceAst1.FormalParam)(implicit flix: Flix): (OccurrenceAst1.FormalParam, VarSubst) = fp0 match {
-    case OccurrenceAst1.FormalParam(sym, mod, tpe, src, loc) =>
+  private def freshFormalParam(fp0: MonoAst.FormalParam)(implicit flix: Flix): (MonoAst.FormalParam, VarSubst) = fp0 match {
+    case MonoAst.FormalParam(sym, mod, tpe, src, loc) =>
       val freshVarSym = Symbol.freshVarSym(sym)
       val subst = Map(sym -> freshVarSym)
-      (OccurrenceAst1.FormalParam(freshVarSym, mod, tpe, src, loc), subst)
+      (MonoAst.FormalParam(freshVarSym, mod, tpe, src, loc), subst)
   }
 
 
-  private def refreshFormalParam(fp0: OccurrenceAst1.FormalParam)(implicit flix: Flix): (OccurrenceAst1.FormalParam, VarSubst) = fp0 match {
-    case OccurrenceAst1.FormalParam(sym, mod, tpe, src, loc) =>
+  private def refreshFormalParam(fp0: MonoAst.FormalParam)(implicit flix: Flix): (MonoAst.FormalParam, VarSubst) = fp0 match {
+    case MonoAst.FormalParam(sym, mod, tpe, src, loc) =>
       val freshVarSym = Symbol.freshVarSym(sym)
       val subst = Map(sym -> freshVarSym)
-      (OccurrenceAst1.FormalParam(freshVarSym, mod, tpe, src, loc), subst)
+      (MonoAst.FormalParam(freshVarSym, mod, tpe, src, loc), subst)
   }
 
-  private def refreshFormalParams(fparams0: List[OccurrenceAst1.FormalParam])(implicit flix: Flix): (List[OccurrenceAst1.FormalParam], VarSubst) = {
+  private def refreshFormalParams(fparams0: List[MonoAst.FormalParam])(implicit flix: Flix): (List[MonoAst.FormalParam], VarSubst) = {
     val (fps, substs) = fparams0.map(refreshFormalParam).unzip
     val subst = substs.reduceLeft(_ ++ _)
     (fps, subst)
@@ -599,11 +592,11 @@ object Inliner1 {
     case Expr.Match(exp, rules, tpe, eff, loc) =>
       val e = refreshBinders(exp)
       val rs = rules.map {
-        case OccurrenceAst1.MatchRule(pat, guard, exp) =>
+        case OccurrenceAst1.MatchRule(pat, guard, exp1) =>
           val (p, subst1) = refreshPattern(pat)
           val subst2 = subst0 ++ subst1
           val g = guard.map(refreshBinders(_)(subst2, flix))
-          val e = refreshBinders(exp)(subst2, flix)
+          val e = refreshBinders(exp1)(subst2, flix)
           OccurrenceAst1.MatchRule(p, g, e)
       }
       Expr.Match(e, rs, tpe, eff, loc)
@@ -657,11 +650,11 @@ object Inliner1 {
 
     case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val ms = methods.map {
-        case OccurrenceAst1.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
+        case OccurrenceAst1.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
           val (fps, subst1) = refreshFormalParams(fparams)
           val subst2 = subst0 ++ subst1
           val e = refreshBinders(exp)(subst2, flix)
-          OccurrenceAst1.JvmMethod(ident, fps, e, retTpe, eff, loc)
+          OccurrenceAst1.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
       }
       Expr.NewObject(name, clazz, tpe, eff, ms, loc)
   }
@@ -831,10 +824,10 @@ object Inliner1 {
     def mk(): SharedContext = SharedContext(new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue())
 
     def toStats(sctx: SharedContext): Optimizer1.Stats = {
-      val inlinedDefs = Optimizer1.Stats.toMapSet(sctx.inlinedDefs.asScala)
-      val inlinedVars = Optimizer1.Stats.toMapSet(sctx.inlinedVars.asScala)
+      val inlinedDefs = ListMap.from(sctx.inlinedDefs.asScala)
+      val inlinedVars = ListMap.from(sctx.inlinedVars.asScala)
       val betaReductions = Optimizer1.Stats.toCount(sctx.betaReductions.asScala)
-      val eliminatedVars = Optimizer1.Stats.toMapSet(sctx.eliminatedVars.asScala)
+      val eliminatedVars = ListMap.from(sctx.eliminatedVars.asScala)
       val simplifiedIfThenElse = Optimizer1.Stats.toCount(sctx.simplifiedIfThenElse.asScala)
       val eliminatedStms = Optimizer1.Stats.toCount(sctx.eliminatedStms.asScala)
       Optimizer1.Stats(inlinedDefs, inlinedVars, betaReductions, eliminatedVars, simplifiedIfThenElse, eliminatedStms)
