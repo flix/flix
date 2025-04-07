@@ -45,7 +45,7 @@ object Deriver {
   private val HashSym = new Symbol.TraitSym(Nil, "Hash", SourceLocation.Unknown)
   private val CoerceSym = new Symbol.TraitSym(Nil, "Coerce", SourceLocation.Unknown)
 
-  val DerivableSyms: List[Symbol.TraitSym] = List(EqSym, OrderSym, ToStringSym, HashSym, CoerceSym)
+  private val DerivableSyms: List[Symbol.TraitSym] = List(EqSym, OrderSym, ToStringSym, HashSym, CoerceSym)
 
   def run(root: KindedAst.Root)(implicit flix: Flix): (KindedAst.Root, List[DerivationError]) = flix.phaseNew("Deriver") {
     implicit val sctx: SharedContext = SharedContext.mk()
@@ -903,18 +903,6 @@ object Deriver {
       case Nil => KindedAst.Expr.Cst(Constant.Str(""), loc)
       case head :: tail => tail.foldLeft(head)(concat(_, _, loc))
     }
-  }
-
-  /**
-    * Extracts the types from the given aggregate type.
-    * A Unit unpacks to an empty list.
-    * A Tuple unpacks to its member types.
-    * Anything else unpacks to the singleton list of itself.
-    */
-  private def unpack(tpe: Type): List[Type] = tpe.typeConstructor match {
-    case Some(TypeConstructor.Unit) => Nil
-    case Some(TypeConstructor.Tuple(_)) => tpe.typeArguments
-    case _ => List(tpe)
   }
 
   /**
