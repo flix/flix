@@ -1,43 +1,78 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.shared.{Input, Source}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object SourcePosition {
-  /**
-    * Represents an unknown source position.
-    */
-  val Unknown: SourcePosition = SourcePosition(Source(Input.Unknown, Array.emptyCharArray), 0, 0)
 
   /**
-    * [[PartialOrdering]] describing if and how two [[SourcePosition]] are ordered.
+    * Returns the first [[SourcePosition]] of `source`.
+    *
+    * OBS: This might not be a real position if `source` is empty.
     */
+  def firstPosition(source: Source): SourcePosition =
+    new SourcePosition(source, lineOneIndexed = 1, colOneIndexed = 1)
+
+  /**
+    * Returns a [[SourcePosition]] in `source` with the zero-indexed `line` and `col`.
+    *
+    * `line` and `col` must be 0 or greater.
+    */
+  def mkFromZeroIndexed(source: Source, line: Int, col: Int): SourcePosition =
+    new SourcePosition(source, lineOneIndexed = line + 1, colOneIndexed = (col + 1).toShort)
+
+  /**
+    * Returns a [[SourcePosition]] in `source` with the zero-indexed `line` and `col`.
+    *
+    * `line` and `col` must be 1 or greater.
+    */
+  def mkFromOneIndexed(source: Source, line: Int, col: Int): SourcePosition =
+    new SourcePosition(source, lineOneIndexed = line, colOneIndexed = col.toShort)
+
+  /** An unknown source position. */
+  val Unknown: SourcePosition = firstPosition(Source(Input.Unknown, Array.emptyCharArray))
+
+  /**
+    * Returns a new [[SourcePosition]] where the column of `pos` is reduced by 1.
+    *
+    * OBS: Crashes if the column cannot be reduced.
+    */
+  def moveLeft(pos: SourcePosition): SourcePosition = {
+    if (pos.colOneIndexed <= 1) throw InternalCompilerException(s"Trying to reduce the column of ${SourceLocation.zeroPoint(isReal = false, pos).toString}", SourceLocation.Unknown)
+    else new SourcePosition(pos.source, pos.lineOneIndexed, (pos.colOneIndexed - 1).toShort)
+  }
+
+  /**
+    * Returns a new [[SourcePosition]] where the column of `pos` is increased by 1.
+    *
+    * OBS: This new position might not be a real position in the source.
+    */
+  def moveRight(pos: SourcePosition): SourcePosition = {
+    new SourcePosition(pos.source, pos.lineOneIndexed, (pos.colOneIndexed + 1).toShort)
+  }
+
+  /** [[PartialOrdering]] for [[SourcePosition]]s. */
   implicit object PartialOrder extends PartialOrdering[SourcePosition] {
+
     /**
-      * Returns a comparison between `x` and `y` if the two are comparable. Returns [[None]] otherwise.
+      * Returns a comparison (`Some(cmp)`) between `x` and `y` if they point to the same file.
+      * Returns `None` otherwise.
       *
-      * If `x` is less than `y`, the returned number is negative,
-      * if `x` is greater than `y`, it's positive and
-      * if they are the same, it's 0.
-      *
-      * @param x  The [[SourcePosition]] to be compared to `y`
-      * @param y  The [[SourcePosition]] to be comapred to `x`
-      * @return   A comparison between `x` and `y` if they're comparable, [[None]] otherwise.
+      *   - If `x` is strictly before `y` then `cmp < 0`
+      *   - If `x` is strictly after `y` then `cmp > 0`
+      *   - If they are the same then `cmp == 0`.
       */
     override def tryCompare(x: SourcePosition, y: SourcePosition): Option[Int] = {
-      if (x.source != y.source) { return None }
-      if (x.line != y.line) { return Some(x.line - y.line) }
-      if (x.col != y.col) { return Some(x.col - y.col) }
-      Some(0)
+      if (x.source != y.source) None
+      else if (x.lineOneIndexed != y.lineOneIndexed) Some(x.lineOneIndexed - y.lineOneIndexed)
+      else if (x.colOneIndexed != y.colOneIndexed) Some(x.colOneIndexed - y.colOneIndexed)
+      else Some(0)
     }
 
     /**
-      * Returns `true` if `x` is less than or equal to `y`, `false` otherwise.
+      * Returns `true` if `x` is a position before or equal to `y` and both point to the same source.
       *
-      * If `x` and `y` aren't comparable, the return value is `false`.
-      *
-      * @param x  The [[SourcePosition]] to be compared to `y`.
-      * @param y  The [[SourcePosition]] to be compared to `x`.
-      * @return   `true` if `x` is less than or equal to `y`, `false` otherwise.
+      * Returns `false` if `x` and `y` aren't from the same source or `x` is after `y`.
       */
     override def lteq(x: SourcePosition, y: SourcePosition): Boolean = {
       tryCompare(x, y) match {
@@ -48,30 +83,19 @@ object SourcePosition {
   }
 }
 
-/**
-  * A class that represent a physical source position inside a source input.
-  *
-  * A [[SourcePosition]] must always be one-indexed.
-  *
-  * @param line the line number. Must be one-indexed.
-  * @param col  the column number. Must be one-indexed.
-  */
-case class SourcePosition(source: Source, line: Int, col: Short) {
+/** Represents a physical position inside a source. */
+final class SourcePosition private(val source: Source, val lineOneIndexed: Int, val colOneIndexed: Short) {
 
-  /**
-    * Returns `true` if `this` and `o` represent the same source position.
-    */
+  /** Returns `true` if `this` and `o` represent the same source position. */
   override def equals(o: Any): Boolean = o match {
     case that: SourcePosition =>
       this.source == that.source &&
-        this.line == that.line &&
-        this.col == that.col
+        this.lineOneIndexed == that.lineOneIndexed &&
+        this.colOneIndexed == that.colOneIndexed
     case _ => false
   }
 
-  /**
-    * Returns the hashCode of `this` source position.
-    */
-  override def hashCode(): Int = source.hashCode() + line + col
+  /** Returns the hashCode of `this` source position. */
+  override def hashCode(): Int = source.hashCode() + lineOneIndexed + colOneIndexed
 
 }

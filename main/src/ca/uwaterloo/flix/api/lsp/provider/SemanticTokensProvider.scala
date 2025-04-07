@@ -1040,10 +1040,10 @@ object SemanticTokensProvider {
         splitTokens += token
       // Split the multiline token
       case SemanticToken(tpe, modifiers, loc) =>
-        for (line <- loc.sp1.line to loc.sp2.line) {
-          val begin = if (line == loc.sp1.line) loc.sp1.col else 1.toShort
-          val end = if (line == loc.sp2.line) loc.sp2.col else (loc.source.getLine(line).length + 1).toShort // Column is 1-indexed
-          val newLoc = SourceLocation(isReal = true, SourcePosition(loc.source, line, begin), SourcePosition(loc.source, line, end))
+        for (line <- loc.sp1.lineOneIndexed to loc.sp2.lineOneIndexed) {
+          val begin = if (line == loc.sp1.lineOneIndexed) loc.sp1.colOneIndexed else 1.toShort
+          val end = if (line == loc.sp2.lineOneIndexed) loc.sp2.colOneIndexed else (loc.source.getLine(line).length + 1).toShort // Column is 1-indexed
+          val newLoc = SourceLocation(isReal = true, SourcePosition.mkFromOneIndexed(loc.source, line, begin), SourcePosition.mkFromOneIndexed(loc.source, line, end))
           splitTokens += SemanticToken(tpe, modifiers, newLoc)
         }
     }

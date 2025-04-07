@@ -234,12 +234,9 @@ object Lexer {
     * `column`.
     */
   private def sourceLocationFromZeroIndex(src: Source, line: Int, column: Int): SourceLocation = {
-    // SourcePosition is one-indexed - so correct line and column.
-    val lineFixed = line + 1
-    val columnFixed = column + 1
-    val sp1 = SourcePosition(src, lineFixed, columnFixed.toShort)
-    // It is safe not consider line breaks because `columnFixed + 1` is an exclusive index.
-    val sp2 = SourcePosition(src, lineFixed, (columnFixed + 1).toShort)
+    val sp1 = SourcePosition.mkFromZeroIndexed(src, line, column)
+    // It is safe not consider line breaks because `column + 1` is an exclusive index.
+    val sp2 = SourcePosition.mkFromZeroIndexed(src, line, column + 1)
     SourceLocation(isReal = true, sp1, sp2)
   }
 
@@ -248,12 +245,12 @@ object Lexer {
     * Afterwards `s.start` is reset to the next position after the previous token.
     */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
-    val b = SourcePosition(s.src, s.start.line + 1, (s.start.column + 1).toShort)
+    val b = SourcePosition.mkFromZeroIndexed(s.src, s.start.line, s.start.column)
     // If we are currently at the start of a line, create a non-existent position and the
     // end of the previous line as the exclusive end position.
     // This should not happen for zero-width tokens at the start of lines.
     val (endLine, endColumn) = if (s.start.offset != s.sc.getOffset) s.sc.getExclusiveEndPosition else s.sc.getPosition
-    val e = SourcePosition(s.src, endLine + 1, (endColumn + 1).toShort)
+    val e = SourcePosition.mkFromZeroIndexed(s.src, endLine, endColumn)
     s.tokens.append(Token(kind, s.src, s.start.offset, s.sc.getOffset, b, e))
     s.resetStart()
   }

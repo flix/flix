@@ -305,7 +305,7 @@ object Summary {
     Source(Input.Text("generated", "", SecurityContext.AllPermissions), Array.emptyCharArray)
 
   private val unknownPosition =
-    SourcePosition(unknownSource, 1, 1)
+    SourcePosition.firstPosition(unknownSource)
 
   private val unknownLocation =
     SourceLocation(isReal = false, unknownPosition, unknownPosition)
@@ -329,7 +329,7 @@ object Summary {
       val src = debugSrc.getOrElse(unknownSource)
       throw InternalCompilerException(
         s"${(defs, pureDefs, groundNonPureDefs, polyDefs)} does not sum for $src",
-        SourceLocation(isReal = true, SourcePosition(src, 1, 1), SourcePosition(src, 1, 1))
+        SourceLocation(isReal = true, SourcePosition.firstPosition(src), SourcePosition.firstPosition(src))
       )
     }
 
@@ -342,7 +342,7 @@ object Summary {
       if (lines != other.lines) {
         val src = debugSrc.getOrElse(unknownSource)
         throw InternalCompilerException(s"lines '$lines' and '${other.lines}' in $debugSrc",
-          SourceLocation(isReal = true, SourcePosition(src, 1, 1), SourcePosition(src, 1, 1))
+          SourceLocation(isReal = true, SourcePosition.firstPosition(src), SourcePosition.firstPosition(src))
         )
       }
       FileData(
