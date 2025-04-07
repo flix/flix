@@ -33,7 +33,7 @@ object BenchmarkInliner {
 
   private val BenchmarkingTime: Int = 5
 
-  private val MaxInliningRounds: Int = 5
+  private val MaxInliningRounds: Int = 3
 
   private val NumberOfCompilations: Int = 10
 
@@ -46,19 +46,19 @@ object BenchmarkInliner {
     */
   private val Verbose: Boolean = true
 
-  private val WarmupTime: Int = 0
+  private val WarmupTime: Int = 5
 
   private val MicroBenchmarks: Map[String, String] = Map(
     "map10KLength" -> map10KLength,
     "map10KLengthOptimized" -> map10KLengthOptimized,
     "filterMap10K" -> filterMap10K,
     "filterMap10KOptimized" -> filterMap10KOptimized,
-    "List.filter" -> listFilter,
-    "List.foldLeft" -> listFoldLeft,
-    "List.foldRight" -> listFoldRight,
+    // "List.filter" -> listFilter,
+    // "List.foldLeft" -> listFoldLeft,
+    // "List.foldRight" -> listFoldRight,
     "List.map" -> listMap,
-    "List.length" -> listLength,
-    "List.reverse" -> listReverse,
+    // "List.length" -> listLength,
+    // "List.reverse" -> listReverse,
     "List.filterMap" -> listFilterMap,
   )
 
@@ -106,11 +106,11 @@ object BenchmarkInliner {
     def run(programs: Map[String, String], opts: Options): JsonAST.JObject = {
       implicit val warmup: Boolean = false
 
-      debug(s"Warming up for $WarmupTime minutes...")
-      benchmarkWithGlobalMaxTime(programs, opts, minutesToNanos(WarmupTime))(warmup = true)
+      val timeCalc = (time: Int) => time * 2 * programs.size * (MaxInliningRounds + 1)
+      val totalTime = timeCalc(BenchmarkingTime) + timeCalc(WarmupTime)
 
       debug(s"Running up to $MaxInliningRounds inlining rounds, timing $NumberOfRuns runs of each program (total of ${programs.size} programs)")
-      debug(s"Max individual time is $BenchmarkingTime minutes. It should take ${BenchmarkingTime * 2 * programs.size * MaxInliningRounds} minutes")
+      debug(s"Max individual time is $BenchmarkingTime minutes. It should take $totalTime minutes")
       val programExperiments = benchmarkWithIndividualMaxTime(programs, opts, minutesToNanos(BenchmarkingTime))
 
       val runningTimeStats = programExperiments.m.map {
@@ -216,12 +216,16 @@ object BenchmarkInliner {
         debug(s"Benchmarking $name with inliner '${InlinerType.from(config)}' with ${config.inliner1Rounds} rounds")
 
         debug("Benchmarking compiler")
+        debug(s"Warming up for $WarmupTime minutes...")(warmup = true)
+        val _ = benchmarkCompilationWithMaxTime(config, name, prog, minutesToNanos(WarmupTime))
         val t0Compiler = System.nanoTime()
         val compilationTimings = benchmarkCompilationWithMaxTime(config, name, prog, maxNanos)
         val tDeltaCompiler = System.nanoTime() - t0Compiler
         debug(s"Took ${nanosToSeconds(tDeltaCompiler)} seconds")
 
         debug("Benchmarking running time")
+        debug(s"Warming up for $WarmupTime minutes...")(warmup = true)
+        val _ = benchmarkRunningTimeWithMaxTime(config, name, prog, minutesToNanos(WarmupTime))
         val t0RunningTime = System.nanoTime()
         val (runningTimes, result) = benchmarkRunningTimeWithMaxTime(config, name, prog, maxNanos)
         val tDeltaRunningTime = System.nanoTime() - t0RunningTime
@@ -230,62 +234,6 @@ object BenchmarkInliner {
         runs += collectRun(config, name, compilationTimings, runningTimes, result)
       }
       ListMap.from(runs.map(r => (r.name, r)))
-    }
-
-    private def benchmarkWithGlobalMaxTime(programs: Map[String, String], opts: Options, maxNanos: Long)(implicit warmup: Boolean): ListMap[String, Run] = {
-      implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-      val runConfigs = mkConfigurations(opts)
-      val configQueue = scala.collection.mutable.Queue.from(runConfigs)
-      val progs = scala.collection.mutable.Queue.from(programs)
-
-      var config = configQueue.dequeue()
-      var usedTime = 0L
-      val runs = scala.collection.mutable.ListBuffer.empty[Run]
-
-      while (usedTime < maxNanos && configQueue.nonEmpty) {
-        val (name, prog) = progs.dequeue()
-        debug(s"Benchmarking $name with inliner '${InlinerType.from(config)}' with ${config.inliner1Rounds} rounds")
-        if (progs.isEmpty) {
-          progs.enqueueAll(programs)
-          config = configQueue.dequeue()
-        }
-
-        debug("Benchmarking compiler")
-        val t0Compiler = System.nanoTime()
-        val compilationTimings = benchmarkCompilation(config, name, prog, maxNanos - usedTime)
-        val tDeltaCompiler = System.nanoTime() - t0Compiler
-        usedTime += tDeltaCompiler
-        debug(s"Took ${nanosToSeconds(tDeltaCompiler)} seconds")
-
-        debug("Benchmarking running time")
-        val t0RunningTime = System.nanoTime()
-        val (runningTimes, result) = benchmarkRunningTime(config, name, prog, maxNanos - usedTime)
-        val tDeltaRunningTime = System.nanoTime() - t0RunningTime
-        usedTime += tDeltaRunningTime
-        debug(s"Took ${nanosToSeconds(tDeltaRunningTime)} seconds")
-
-        runs += collectRun(config, name, compilationTimings, runningTimes, result)
-      }
-      ListMap.from(runs.map(r => (r.name, r)))
-    }
-
-    private def benchmarkCompilation(o: Options, name: String, prog: String, maxNanos: Long)(implicit sctx: SecurityContext): Seq[(Long, List[(String, Long)])] = {
-      val compilationTimings = scala.collection.mutable.ListBuffer.empty[(Long, List[(String, Long)])]
-      var usedTime = 0L
-      var i = 0
-      while (usedTime < maxNanos && i < NumberOfCompilations) {
-        val t0 = System.nanoTime()
-        val flix = new Flix().setOptions(o)
-        ZhegalkinCache.clearCaches()
-        flix.addSourceCode(s"$name.flix", prog)
-        val result = flix.compile().unsafeGet
-        val phaseTimes = flix.phaseTimers.map { case PhaseTime(phase, time) => phase -> time }.toList
-        val timing = (result.totalTime, phaseTimes)
-        compilationTimings += timing
-        i += 1
-        usedTime += (System.nanoTime() - t0)
-      }
-      compilationTimings.toSeq
     }
 
     private def benchmarkCompilationWithMaxTime(o: Options, name: String, prog: String, maxNanos: Long)(implicit sctx: SecurityContext): Seq[(Long, List[(String, Long)])] = {
@@ -303,35 +251,6 @@ object BenchmarkInliner {
         usedTime += (System.nanoTime() - t0)
       }
       compilationTimings.toSeq
-    }
-
-    private def benchmarkRunningTime(o: Options, name: String, prog: String, maxNanos: Long)(implicit sctx: SecurityContext): (Seq[Long], CompilationResult) = {
-      val runningTimes = scala.collection.mutable.ListBuffer.empty[Long]
-      val flix = new Flix().setOptions(o)
-      ZhegalkinCache.clearCaches()
-      flix.addSourceCode(s"$name.flix", prog)
-      val result = flix.compile().unsafeGet
-      result.getMain match {
-        case Some(mainFunc) =>
-          var usedTime = 0L
-          var samples = 0
-          while (usedTime < maxNanos && samples < NumberOfSamples) {
-            var sampleTime = 0L
-            var runs = 0
-            while (usedTime < maxNanos && runs < NumberOfRuns) {
-              val t0 = System.nanoTime()
-              mainFunc(Array.empty)
-              val tDelta = System.nanoTime() - t0
-              sampleTime += tDelta
-              usedTime += tDelta
-              runs += 1
-            }
-            runningTimes += sampleTime
-            samples += 1
-          }
-        case None => throw new RuntimeException(s"undefined main method for program '$name'")
-      }
-      (runningTimes.toSeq, result)
     }
 
     private def benchmarkRunningTimeWithMaxTime(o: Options, name: String, prog: String, maxNanos: Long)(implicit sctx: SecurityContext): (Seq[Long], CompilationResult) = {
@@ -390,10 +309,6 @@ object BenchmarkInliner {
 
   private def nanosToSeconds(nanos: Long): Long = {
     nanos / 1_000_000_000
-  }
-
-  private def nanosToMinutes(nanos: Long): Long = {
-    nanosToSeconds(nanos) / 60
   }
 
   private def listFilter: String = {
