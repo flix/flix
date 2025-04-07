@@ -294,7 +294,11 @@ object Inliner1 {
           val freshVarSym = Symbol.freshVarSym(sym)
           val varSubst1 = varSubst0 + (sym -> freshVarSym)
           val e2 = visitExp(exp2, varSubst1, subst0, inScopeSet0, context0)
-          val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
+          val (fps, varSubsts) = fparams.map {
+            case (fp, fpOccur) =>
+              val (freshFp, varSubstTmp) = freshFormalParam(fp)
+              ((freshFp, fpOccur), varSubstTmp)
+          }.unzip
           val varSubst2 = varSubsts.foldLeft(varSubst1)(_ ++ _)
           val e1 = visitExp(exp1, varSubst2, subst0, inScopeSet0, context0)
           Expr.LocalDef(freshVarSym, fps, e1, e2, tpe, eff, occur, loc)
@@ -563,7 +567,12 @@ object Inliner1 {
       val freshVarSym = Symbol.freshVarSym(sym)
       val subst1 = subst0 + (sym -> freshVarSym)
       val e2 = refreshBinders(exp2)(subst1, flix)
-      val (fps, subst2) = refreshFormalParams(fparams)
+      val (fps, varSubstsTmp) = fparams.map {
+        case (fp, fpOccur) =>
+          val (freshFp, varSubstTmp) = refreshFormalParam(fp)
+          ((freshFp, fpOccur), varSubstTmp)
+      }.unzip
+      val subst2 = varSubstsTmp.reduceLeft(_ ++ _)
       val subst3 = subst1 ++ subst2
       val e1 = refreshBinders(exp1)(subst3, flix)
       Expr.LocalDef(freshVarSym, fps, e1, e2, tpe, eff, occur, loc)
