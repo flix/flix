@@ -136,10 +136,10 @@ object ClosureConv {
 
     case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0 map {
-        case JvmMethod(ident, fparams, exp, retTpe, purity, loc) =>
+        case JvmMethod(ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
           val cloType = MonoType.Arrow(fparams.map(_.tpe), retTpe)
-          val clo = mkLambdaClosure(fparams, exp, cloType, loc)
-          JvmMethod(ident, fparams, clo, retTpe, purity, loc)
+          val clo = mkLambdaClosure(fparams, exp, cloType, methodLoc)
+          JvmMethod(ident, fparams, clo, retTpe, methodPurity, methodLoc)
       }
       Expr.NewObject(name, clazz, tpe, purity, methods, loc)
 
@@ -232,13 +232,13 @@ object ClosureConv {
     case Expr.Scope(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
 
     case Expr.TryCatch(exp, rules, _, _, _) => rules.foldLeft(freeVars(exp)) {
-      case (acc, CatchRule(sym, _, exp)) =>
-        acc ++ filterBoundVar(freeVars(exp), sym)
+      case (acc, CatchRule(sym, _, body)) =>
+        acc ++ filterBoundVar(freeVars(body), sym)
     }
 
     case Expr.RunWith(exp, _, rules, _, _, _) => rules.foldLeft(freeVars(exp)) {
-      case (acc, HandlerRule(_, fparams, exp)) =>
-        acc ++ filterBoundParams(freeVars(exp), fparams)
+      case (acc, HandlerRule(_, fparams, body)) =>
+        acc ++ filterBoundParams(freeVars(body), fparams)
     }
 
     case Expr.Do(_, exps, _, _, _) => freeVarsExps(exps)
@@ -518,9 +518,9 @@ object ClosureConv {
         val e = visit(exp)
         Expr.Lambda(fparams, e, tpe, loc)
 
-      case Expr.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
+      case Expr.LambdaClosure(cparams, fparams, cloFreeVars, exp, tpe, loc) =>
         val e = visit(exp)
-        Expr.LambdaClosure(cparams, fparams, freeVars, e, tpe, loc)
+        Expr.LambdaClosure(cparams, fparams, cloFreeVars, e, tpe, loc)
 
       case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
         val es = exps.map(visit)
@@ -611,9 +611,9 @@ object ClosureConv {
 
       case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
         val ms = methods.map {
-          case JvmMethod(ident, fparams, exp, retTpe, purity, loc) =>
+          case JvmMethod(ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
             val e = visit(exp)
-            JvmMethod(ident, fparams, e, retTpe, purity, loc)
+            JvmMethod(ident, fparams, e, retTpe, methodPurity, methodLoc)
         }
         Expr.NewObject(name, clazz, tpe, purity, ms, loc)
     }
