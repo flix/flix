@@ -21,13 +21,11 @@ import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinCache
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{FileOps, LibLevel, LocalResource, Options, StatUtils}
+import ca.uwaterloo.flix.util.{FileOps, LibLevel, Options}
 import org.json4s.{JValue, JsonAST}
 import org.json4s.JsonDSL.*
 
 import java.nio.file.Path
-import scala.collection.immutable.Queue
-import scala.collection.mutable.ListBuffer
 import scala.io.StdIn
 
 object BenchmarkInliner {
@@ -69,7 +67,9 @@ object BenchmarkInliner {
   )
 
   def run(opts: Options, micro: Boolean = true): Unit = {
-    val input = StdIn.readLine("Please connect profiling tools if necessary (e.g., async-profiler). Ready to proceed? [Y/n]")
+    val pid = java.lang.ProcessHandle.current().pid()
+    println(s"Please connect profiling tools if necessary (e.g., async-profiler). PID: $pid")
+    val input = StdIn.readLine("Ready to proceed? [Y/n] ")
     input.toLowerCase match {
       case "n" | "no" | "abort" =>
         println("Aborting...")
