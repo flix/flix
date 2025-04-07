@@ -161,8 +161,8 @@ object Parser2 {
     })
 
     // Make a synthetic token to begin with, to make the SourceLocations generated below be correct.
-    val b = SourcePosition(s.src, 1, 1)
-    val e = SourcePosition(s.src, 1, 1)
+    val b = SourcePosition.firstPosition(s.src)
+    val e = SourcePosition.firstPosition(s.src)
     var lastAdvance = Token(TokenKind.Eof, s.src, 0, 0, b, e)
     for (event <- s.events) {
       event match {
@@ -203,7 +203,7 @@ object Parser2 {
     // Set source location of the root.
     stack.last.loc = SourceLocation(
       isReal = true,
-      SourcePosition(s.src, 1, 1),
+      SourcePosition.firstPosition(s.src),
       tokens.head.sp2
     )
 
