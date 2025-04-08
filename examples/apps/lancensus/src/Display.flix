@@ -1,5 +1,8 @@
 use Util.Stats
 
+///
+/// The effect to display different analysis results.
+///
 eff Display {
     def displayByUser(stat: Stats): Unit
     def displayByRepo(stat: Stats): Unit
@@ -9,6 +12,9 @@ eff Display {
 mod Display{
     use Util.Stat
 
+    ///
+    /// Handles the display effect through IO.
+    ///
     pub def runWithIO(f: Unit -> a \ ef): a \ ef - Display + IO = {
         run {
             f()
@@ -44,6 +50,9 @@ mod Display{
         }
     }
     
+    ///
+    /// Filters out the languages whose adds is zero.
+    ///
     def statFilter(stat: Stat): Stat = {
         Map.filter(lines -> {
             let (adds, _) = lines;
@@ -51,12 +60,18 @@ mod Display{
         }, stat)
     }
         
+    ///
+    /// Prints the stat for a single language.
+    ///
     def printEachLanguage(stat: List[(String, (BigInt, BigInt))]): Unit \ IO = 
         List.forEach(item -> {
             let (language, (adds, dels)) = item;
             println("${language}: ${adds} additions, ${dels} deletions.")
         }, stat)
         
+    ///
+    /// Renames the extention to langauges and merge entries of the same language.
+    /// 
     def renameAndMerge(stat: Stat): Stat = 
         Map.foldLeftWithKey((acc, ext, data) -> {
             let (adds, dels) = data;
@@ -72,6 +87,9 @@ mod Display{
             }
         }, Map.empty(), stat)
 
+    ///
+    /// Sorts the map by converting it to a list.
+    ///
     def sortMapByList(map: Map[k, v]): List[(k, v)] with Order[v] = {
         let list = Map.toList(map);
         List.sortBy(kv -> {
@@ -80,6 +98,9 @@ mod Display{
         }, list)
     }
 
+    ///
+    /// A map from extension to list.
+    ///
     def ext2Language(ext: String): Option[String] = 
         let mapping: Map[String, String] = Map#{
             "ASM" => "Assembly",
