@@ -575,8 +575,7 @@ object EntryPoints {
       val mainSym = DefSymUse(oldEntryPoint.sym, SourceLocation.Unknown)
       val mainArgType = Type.Unit
       val mainArg = TypedAst.Expr.Cst(Constant.Unit, mainArgType, SourceLocation.Unknown)
-      val mainReturnType = mainArrowType.arrowResultType
-      val mainEffect = mainArrowType.arrowEffectType
+      val (mainEffect, _, mainReturnType) = mainArrowType.decomposeArrow
       // `mainFunc()`
       val mainCall = TypedAst.Expr.ApplyDef(mainSym, List(mainArg), mainArrowType, mainReturnType, mainEffect, SourceLocation.Unknown)
 
