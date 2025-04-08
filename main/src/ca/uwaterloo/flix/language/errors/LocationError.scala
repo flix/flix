@@ -29,6 +29,7 @@ trait LocationError extends CompilationMessage {
 
 object LocationError {
 
+  private def format(loc: SourceLocation): String = s"${loc.source.name}:${loc.beginLine}:${loc.beginCol}-${loc.endLine}:${loc.endCol}"
   /**
     * An error raised when a location is not contained in location of its parent.
     *
@@ -40,7 +41,7 @@ object LocationError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> The child location is not contained in its parent location.
+      s""">> The location of the child ${format(loc)} is not contained in the location of its parent ${format(parentLoc)}.
          |
          |${code(loc, "Child location.")}
          |""".stripMargin
@@ -58,7 +59,7 @@ object LocationError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> The location of the node is not after the location of the preceding node.
+      s""">> The location of the node ${format(loc)} is not after the location of the preceding node ${format(prevLoc)}.
          |
          |${code(loc, "node location.")}
          |""".stripMargin
@@ -76,7 +77,7 @@ object LocationError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> The location of the last child has a different ending than its parent.
+      s""">> The location of the last child ${format(loc)} has a different ending than its parent ${format(parentLoc)}.
          |
          |${code(loc, "Child location.")}
          |""".stripMargin
