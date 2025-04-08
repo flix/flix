@@ -517,8 +517,8 @@ object Simplifier {
           case TypeConstructor.Arrow(_) =>
             // Remove the effect from the arrow.
             // Arrow type arguments are ordered (effect, args.., result type).
-            val args = tpe.arrowArgTypes
-            val res = tpe.arrowResultType
+            val _ :: targs = tpe.typeArguments
+            val (args, List(res)) = targs.splitAt(targs.length - 1)
             Type.mkArrowWithoutEffect(args.map(visitPolyType), visitPolyType(res), loc)
 
           case TypeConstructor.RecordRowExtend(label) =>
