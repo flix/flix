@@ -42,10 +42,11 @@ object LocationVerifier {
 
   private def visitExp(exp0: Expr)(implicit sctx: SharedContext): Unit = exp0 match {
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, loc) =>
+      verifyParentContainment(loc, List(exp1.loc, exp2.loc, exp3.loc))
+      verifyPrecedence(List(exp1.loc, exp2.loc, exp3.loc))
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
-      verifyParentContainment(loc, List(exp1.loc, exp2.loc, exp3.loc))
     case _ => ()
   }
 
@@ -61,6 +62,16 @@ object LocationVerifier {
         sctx.errors.add(LocationError.ChildOutOfBoundError(parentLoc, loc))
       }
     }
+
+  private def verifyPrecedence(locs: List[SourceLocation])(implicit sctx: SharedContext): Unit = {
+    locs.sliding(2).foreach {
+      case List(prevLoc, currLoc) =>
+        if (!prevLoc.isBefore(currLoc)) {
+          sctx.errors.add(LocationError.PrecedenceError(prevLoc, currLoc))
+        }
+      case _ => ()
+    }
+  }
 
   /**
     * Companion object for [[SharedContext]]

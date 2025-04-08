@@ -46,4 +46,22 @@ object LocationError {
          |""".stripMargin
     }
   }
+
+  /**
+    * An error raised when a location is not after the location of the preceding node.
+    *
+    * @param prevLoc the location of the preceding node.
+    * @param loc     the location of the child node.
+    */
+  case class PrecedenceError(prevLoc: SourceLocation, loc: SourceLocation) extends LocationError {
+    def summary: String = "The location of the node is not after the location of the preceding node."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> The location of the node is not after the location of the preceding node.
+         |
+         |${code(loc, "node location.")}
+         |""".stripMargin
+    }
+  }
 }
