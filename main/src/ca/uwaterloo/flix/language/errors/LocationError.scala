@@ -53,7 +53,7 @@ object LocationError {
     * @param prevLoc the location of the preceding node.
     * @param loc     the location of the child node.
     */
-  case class PrecedenceError(prevLoc: SourceLocation, loc: SourceLocation) extends LocationError {
+  case class AppearanceOrderError(prevLoc: SourceLocation, loc: SourceLocation) extends LocationError {
     def summary: String = "The location of the node is not after the location of the preceding node."
 
     def message(formatter: Formatter): String = {
@@ -71,7 +71,7 @@ object LocationError {
     * @param parentLoc the location of the parent node.
     * @param loc       the location of the child node.
     */
-  case class DifferenetEndingError(parentLoc: SourceLocation, loc: SourceLocation) extends LocationError {
+  case class DifferentEndingError(parentLoc: SourceLocation, loc: SourceLocation) extends LocationError {
     def summary: String = "The location of the last child has a different ending than its parent."
 
     def message(formatter: Formatter): String = {

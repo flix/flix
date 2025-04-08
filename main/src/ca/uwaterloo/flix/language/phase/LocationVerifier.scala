@@ -27,6 +27,11 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
   * The LocationVerifier verifies the locations of the Flix program.
+  *
+  * We currently enforce three invariants:
+  *   - The location of the child node must be contained in the location of its parent node.
+  *   - The locations of the nodes must be in appearance order.
+  *   - The parent node and its last child node must have the same ending.
   */
 object LocationVerifier {
   def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (TypedAst.Root, List[LocationError]) = flix.phaseNew("LocationVerifier") {
@@ -43,7 +48,7 @@ object LocationVerifier {
   private def visitExp(exp0: Expr)(implicit sctx: SharedContext): Unit = exp0 match {
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, loc) =>
       verifyParentContainment(loc, List(exp1.loc, exp2.loc, exp3.loc))
-      verifyPrecedence(List(exp1.loc, exp2.loc, exp3.loc))
+      verifyAppearanceOrder(List(exp1.loc, exp2.loc, exp3.loc))
       verifySameEnding(loc, exp1.loc)
       visitExp(exp1)
       visitExp(exp2)
@@ -65,15 +70,15 @@ object LocationVerifier {
     }
 
   /**
-    * Verifies that the locations are in precedence order.
+    * Verifies that the locations are in appearance order.
     *
-    * @param locs the list of locations to verify, in the order of precedence.
+    * @param locs the list of locations to verify, in the order of appearance.
     */
-  private def verifyPrecedence(locs: List[SourceLocation])(implicit sctx: SharedContext): Unit = {
+  private def verifyAppearanceOrder(locs: List[SourceLocation])(implicit sctx: SharedContext): Unit = {
     locs.sliding(2).foreach {
       case List(prevLoc, currLoc) =>
         if (!prevLoc.isBefore(currLoc)) {
-          sctx.errors.add(LocationError.PrecedenceError(prevLoc, currLoc))
+          sctx.errors.add(LocationError.AppearanceOrderError(prevLoc, currLoc))
         }
       case _ => ()
     }
@@ -87,7 +92,7 @@ object LocationVerifier {
     */
   private def verifySameEnding(parentLoc: SourceLocation, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     if (parentLoc.sp2 != loc.sp2) {
-      sctx.errors.add(LocationError.DifferenetEndingError(parentLoc, loc))
+      sctx.errors.add(LocationError.DifferentEndingError(parentLoc, loc))
     }
   }
 
