@@ -320,6 +320,68 @@ object BenchmarkInliner {
     nanos / 1_000_000_000
   }
 
+  private def flixBenchmarkProgram: String = {
+    s"""
+       |import java.lang.System
+       |pub def main(): Unit \\ IO = {
+       |    println("TODO Write to JSON file");
+       |
+       |    //
+       |    // Constants
+       |    //
+       |    let warmupTime = ${WarmupTime}i64;
+       |    let benchTime  = ${BenchmarkingTime}i64;
+       |    let runs       = $NumberOfRuns;
+       |
+       |    //
+       |    // Benchmarking functions
+       |    //
+       |    def loop(usedNanos, maxNanos, usedRuns) = {
+       |        if (usedNanos < maxNanos and usedRuns < runs) {
+       |            let t0 = System.nanoTime();
+       |            runBenchmark();
+       |            let tDelta = System.nanoTime() - t0;
+       |            loop(usedNanos + tDelta, maxNanos, usedRuns + 1)
+       |        } else {
+       |            usedNanos
+       |        }
+       |
+       |    };
+       |    def bench(usedNanos, maxNanos, samples) = {
+       |        if (usedNanos < maxNanos) {
+       |            let sample = loop(usedNanos, maxNanos, 0) - usedNanos;
+       |            bench(usedNanos + sample, maxNanos, sample :: samples)
+       |        } else {
+       |            List.reverse(samples)
+       |        }
+       |    };
+       |
+       |    let totalTime = warmupTime + benchTime;
+       |    println("Expected total time: $${totalTime}");
+       |
+       |    println("Running warmup for $${warmupTime} minutes");
+       |    discard bench(0i64, minutesToNanos(warmupTime), List.empty());
+       |
+       |    println("Benchmarking for $${benchTime} minutes, running $${runs} times for each sample");
+       |    let _samples = bench(0i64, minutesToNanos(benchTime), List.empty());
+       |
+       |    println("Done")
+       |}
+       |
+       |pub def minutesToNanos(minutes: Int64): Int64 = {
+       |    secondsToNanos(minutes * 60i64)
+       |}
+       |
+       |pub def secondsToNanos(seconds: Int64): Int64 = {
+       |    seconds * 1_000_000_000i64
+       |}
+       |
+       |pub def nanosToSeconds(nanos: Int64): Int64 = {
+       |    nanos / 1_000_000_000i64
+       |}
+       |""".stripMargin
+  }
+
   private def listFilter: String = {
     """
       |def main(): Unit \ IO = {
