@@ -23,7 +23,7 @@ object SourceLocation {
     import scala.math.Ordered.orderingToOrdered
 
     def compare(x: SourceLocation, y: SourceLocation): Int =
-      (x.source.name, x.beginLine, x.beginCol, x.endLine, x.endCol).compare(y.source.name, y.beginLine, y.beginCol, y.endLine, y.endCol)
+      (x.source.name, x.beginLine, x.beginCol, x.endLine, x.endCol).compare((y.source.name, y.beginLine, y.beginCol, y.endLine, y.endCol))
   }
 
 }
@@ -68,6 +68,15 @@ case class SourceLocation(isReal: Boolean, sp1: SourcePosition, sp2: SourcePosit
     val thatBeginsLater = SourcePosition.PartialOrder.lteq(this.sp1, that.sp1)
     val thatEndsBefore = SourcePosition.PartialOrder.lteq(that.sp2, this.sp2)
     thatBeginsLater && thatEndsBefore
+  }
+
+  /**
+    * Returns `true` if `this` [[SourceLocation]] is before `that`, otherwise `false`.
+    *
+    * 'Before' means that `this` ends before or at the same position as `that` begins.
+    */
+  def isBefore(that: SourceLocation): Boolean = {
+    SourcePosition.PartialOrder.lteq(this.sp2, that.sp1)
   }
 
   /**
