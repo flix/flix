@@ -44,6 +44,7 @@ object LocationVerifier {
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, loc) =>
       verifyParentContainment(loc, List(exp1.loc, exp2.loc, exp3.loc))
       verifyPrecedence(List(exp1.loc, exp2.loc, exp3.loc))
+      verifySameEnding(loc, exp1.loc)
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
@@ -63,6 +64,11 @@ object LocationVerifier {
       }
     }
 
+  /**
+    * Verifies that the locations are in precedence order.
+    *
+    * @param locs the list of locations to verify, in the order of precedence.
+    */
   private def verifyPrecedence(locs: List[SourceLocation])(implicit sctx: SharedContext): Unit = {
     locs.sliding(2).foreach {
       case List(prevLoc, currLoc) =>
@@ -70,6 +76,18 @@ object LocationVerifier {
           sctx.errors.add(LocationError.PrecedenceError(prevLoc, currLoc))
         }
       case _ => ()
+    }
+  }
+
+  /**
+    * Verifies that the parent location and the child location have the same ending.
+    *
+    * @param parentLoc the location of the parent node.
+    * @param loc       the location of the child node.
+    */
+  private def verifySameEnding(parentLoc: SourceLocation, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+    if (parentLoc.sp2 != loc.sp2) {
+      sctx.errors.add(LocationError.DifferenetEndingError(parentLoc, loc))
     }
   }
 
