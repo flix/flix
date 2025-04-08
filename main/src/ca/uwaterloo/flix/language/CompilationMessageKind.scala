@@ -25,6 +25,7 @@ sealed trait CompilationMessageKind {
     case InstanceError => "Instance Error"
     case KindError => "Kind Error"
     case LexerError => "Lexer Error"
+    case LocationError => "Location Error"
     case NameError => "Name Error"
     case ParseError(sctx) => s"Parse Error ($sctx)"
     case PatternMatchError => "Pattern Match Error"
@@ -49,6 +50,8 @@ object CompilationMessageKind {
   case object KindError extends CompilationMessageKind
 
   case object LexerError extends CompilationMessageKind
+
+  case object LocationError extends CompilationMessageKind
 
   case object NameError extends CompilationMessageKind
 

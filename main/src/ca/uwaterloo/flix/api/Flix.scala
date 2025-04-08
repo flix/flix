@@ -80,7 +80,7 @@ class Flix {
   /**
     * The set of known Java classes and interfaces.
     */
-  private var availableClasses: AvailableClasses = AvailableClasses(getJavaPlatformClassesAndInterfaces())
+  private var availableClasses: AvailableClasses = AvailableClasses(getJavaPlatformClassesAndInterfaces)
 
   /**
     * A cache of ASTs for incremental compilation.
@@ -825,7 +825,7 @@ class Flix {
   /**
     * Returns all Java classes and interfaces in the current Java Platform.
     */
-  private def getJavaPlatformClassesAndInterfaces(): MultiMap[List[String], String] = {
+  private def getJavaPlatformClassesAndInterfaces: MultiMap[List[String], String] = {
     getPackageContent(ClassList.TheList)
   }
 
