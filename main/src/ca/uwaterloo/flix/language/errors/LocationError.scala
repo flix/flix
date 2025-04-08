@@ -64,4 +64,22 @@ object LocationError {
          |""".stripMargin
     }
   }
+
+  /**
+    * An error raised when the location of the last child has a different ending than its parent.
+    *
+    * @param parentLoc the location of the parent node.
+    * @param loc       the location of the child node.
+    */
+  case class DifferenetEndingError(parentLoc: SourceLocation, loc: SourceLocation) extends LocationError {
+    def summary: String = "The location of the last child has a different ending than its parent."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> The location of the last child has a different ending than its parent.
+         |
+         |${code(loc, "Child location.")}
+         |""".stripMargin
+    }
+  }
 }
