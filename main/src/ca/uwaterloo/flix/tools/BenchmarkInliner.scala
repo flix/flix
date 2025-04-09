@@ -327,9 +327,9 @@ object BenchmarkInliner {
     val lines = result.getTotalLines
     val inlinerType = InlinerType.from(o)
     val inliningRounds = o.inliner1Rounds
-    val compilationTime = median(compilationTimings.map(_._1)).toLong
+    val compilationTime = median(compilationTimings.map(fst)).toLong
     // TODO: Use ListMap
-    val phaseTimings = compilationTimings.flatMap(_._2).foldLeft(Map.empty[String, Seq[Long]]) {
+    val phaseTimings = compilationTimings.flatMap(snd).foldLeft(Map.empty[String, Seq[Long]]) {
       case (acc, (phase, time)) => acc.get(phase) match {
         case Some(timings) => acc + (phase -> timings.appended(time))
         case None => acc + (phase -> Seq(time))
