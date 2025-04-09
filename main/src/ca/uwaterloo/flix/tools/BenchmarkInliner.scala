@@ -22,11 +22,16 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{FileOps, LibLevel, Options}
-import org.json4s.{JValue, JsonAST}
+import org.json4s.JsonAST
 import org.json4s.JsonDSL.*
 
-import java.nio.file.Path
+import java.nio.file.attribute.BasicFileAttributes
+import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
+import java.util.zip.{ZipEntry, ZipOutputStream}
+import java.util.{Calendar, GregorianCalendar}
+import scala.collection.mutable
 import scala.io.StdIn
+import scala.util.{Failure, Success, Using}
 
 object BenchmarkInliner {
 
@@ -39,6 +44,22 @@ object BenchmarkInliner {
   private val NumberOfRuns: Int = 1000
 
   private val NumberOfSamples: Int = 1000
+
+  private def baseDir: Path = Path.of("./build/").normalize()
+
+  private def classDir: Path = baseDir.resolve("class/").normalize()
+
+  private def classDirFor(path: String): Path = classDir.resolve(path).normalize()
+
+  private def jarDir: Path = baseDir.resolve("jar/").normalize()
+
+  private def jarDirFor(path: String): Path = jarDir.resolve(path).normalize()
+
+  private def benchOutputPath: Path = baseDir.resolve("perf/").normalize()
+
+  private def scriptOutputPath: Path = baseDir.resolve("scripts/").normalize()
+
+  private def pythonPath: Path = scriptOutputPath.resolve("plots.py").normalize()
 
   /**
     * Set this to `true` for additional details during benchmarking.
@@ -77,33 +98,27 @@ object BenchmarkInliner {
       case _ =>
     }
 
-    writeJars(opts, micro)
+    // TODO: Maybe pass this as a program config to the run instance
+    // TODO: Then create public pre-made configs in this object
+    val programs = if (micro) MicroBenchmarks else MacroBenchmarks
+    val outFileName = if (micro) "micro.json" else "macro.json"
 
-    FileOps.writeString(Path.of("./build/").resolve("perf/").resolve("plots.py"), Python)
+    writeJars(programs, opts)
 
-    val t0 = System.nanoTime()
+    FileOps.writeString(pythonPath, Python)
 
     println("Benchmarking inliner. This may take a while...")
-    val programs = if (micro) MicroBenchmarks else MacroBenchmarks
+    val t0 = System.nanoTime()
     val benchmarks = runBenchmarking(programs, opts)
-    val outFileName = if (micro) "micro.json" else "macro.json"
-    writeFile(outFileName, benchmarks)
 
-    println(s"Done. Results written to 'build/perf/$outFileName'")
+    val filePath = benchOutputPath.resolve(outFileName).normalize()
+    FileOps.writeJSON(filePath, benchmarks)
+
+    println(s"Done. Results written to '$filePath'")
 
     val tDelta = System.nanoTime() - t0
     val seconds = nanosToSeconds(tDelta)
     println(s"Took $seconds seconds total")
-
-  }
-
-  /**
-    * Writes the given `json` to the given `file`.
-    */
-  private def writeFile(file: String, json: JValue): Unit = {
-    val directory = Path.of("./build/").resolve("perf/")
-    val filePath = directory.resolve(s"$file")
-    FileOps.writeJSON(filePath, json)
   }
 
   private def debug(s: String)(implicit warmup: Boolean): Unit = {
@@ -112,19 +127,135 @@ object BenchmarkInliner {
     }
   }
 
-  private def writeJars(opts: Options, micro: Boolean): Unit = {
-    ???
+  private def writeJars(programs: Map[String, String], opts: Options): Unit = {
+    mkConfigurations(opts.copy(loadClassFiles = false))
+      .flatMap(o => programs.map { case (name, prog) => (o, name, prog) })
+      .foreach(buildAndWrite)
+  }
+
+  private def buildAndWrite(config: (Options, String, String)): Unit = {
+    val (opts, name, prog) = config
+
+    // Build
+    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    val fileName = fileNameForBenchmark(name, opts)
+    val buildDir = classDirFor(s"$fileName/")
+    Files.createDirectories(buildDir)
+    val flix = new Flix().setOptions(opts.copy(output = Some(buildDir)))
+    flix.addSourceCode(name, prog)
+    flix.addSourceCode("mainProg", mainProg)
+    flix.compile().unsafeGet
+
+    // Jar
+    val jarName = s"$fileName.jar"
+    val jarFile = jarDirFor(jarName)
+    Files.createDirectories(jarFile)
+    val classFilesDir = buildDir.resolve("class/").normalize()
+    val classFiles =
+      FromBootstrap.getAllFiles(classFilesDir)
+        .map { path =>
+          (path, FromBootstrap.convertPathToRelativeFileName(classFilesDir, path))
+        }.sortBy(snd)
+
+
+    Using(new ZipOutputStream(Files.newOutputStream(jarFile))) { zip =>
+      val (manifestName, manifestContent) = FromBootstrap.manifest
+      FromBootstrap.addToZip(zip, manifestName, manifestContent.getBytes)
+
+      for ((buildFile, fileNameWithSlashes) <- classFiles) {
+        FromBootstrap.addToZip(zip, fileNameWithSlashes, buildFile)
+      }
+    } match {
+      case Success(_) =>
+      case Failure(_) => throw new Exception(s"Unable to create jar $jarFile")
+    }
+  }
+
+  private def fst[A, B](x: (A, B)): A = x._1
+
+  private def snd[A, B](x: (A, B)): B = x._2
+
+  private def fileNameForBenchmark(name: String, opts: Options): String = {
+    val inlinerType = InlinerType.from(opts).toString.toLowerCase
+    val rounds = InlinerType.rounds(opts)
+    s"${name}_${inlinerType}_$rounds"
+  }
+
+  private object FromBootstrap {
+
+    private val ENOUGH_OLD_CONSTANT_TIME: Long = new GregorianCalendar(2014, Calendar.JUNE, 27, 0, 0, 0).getTimeInMillis
+
+    /**
+      * @param root the root directory to compute a relative path from the given path
+      * @param path the path to be converted to a relative path based on the given root directory
+      * @return relative file name separated by slashes, like `path/to/file.ext`
+      */
+    def convertPathToRelativeFileName(root: Path, path: Path): String =
+      root.relativize(path).toString.replace('\\', '/')
+
+
+    private class FileVisitor extends SimpleFileVisitor[Path] {
+      val result: mutable.ListBuffer[Path] = mutable.ListBuffer.empty
+
+      override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+        result += file
+        FileVisitResult.CONTINUE
+      }
+    }
+
+    /**
+      * Returns all files in the given path `p`.
+      */
+    def getAllFiles(p: Path): List[Path] = {
+      if (Files.isReadable(p) && Files.isDirectory(p)) {
+        val visitor = new FileVisitor
+        Files.walkFileTree(p, visitor)
+        visitor.result.toList
+      } else {
+        Nil
+      }
+    }
+
+    /**
+      * Adds an entry to the given zip file.
+      */
+    def addToZip(zip: ZipOutputStream, name: String, p: Path): Unit = {
+      if (Files.exists(p)) {
+        addToZip(zip, name, Files.readAllBytes(p))
+      }
+    }
+
+    /**
+      * Adds an entry to the given zip file.
+      */
+    def addToZip(zip: ZipOutputStream, name: String, d: Array[Byte]): Unit = {
+      val entry = new ZipEntry(name)
+      entry.setTime(ENOUGH_OLD_CONSTANT_TIME)
+      zip.putNextEntry(entry)
+      zip.write(d)
+      zip.closeEntry()
+    }
+
+    def manifest: (String, String) = {
+      ("META-INF/MANIFEST.MF",
+        """Manifest-Version: 1.0
+          |Main-Class: Main
+          |""".stripMargin)
+    }
   }
 
   private def runBenchmarking(programs: Map[String, String], opts: Options): JsonAST.JObject = {
     implicit val warmup: Boolean = false
 
+    // TODO Update this to match reality :)
     val timeCalc = (time: Int) => time * 2 * programs.size * (MaxInliningRounds + 1)
     val totalTime = timeCalc(BenchmarkingTime) + timeCalc(WarmupTime)
 
     debug(s"Running up to $MaxInliningRounds inlining rounds, timing $NumberOfRuns runs of each program (total of ${programs.size} programs)")
     debug(s"Max individual time is $BenchmarkingTime minutes. It should take $totalTime minutes")
-    val programExperiments = benchmarkWithIndividualMaxTime(programs, opts, minutesToNanos(BenchmarkingTime))
+
+    val runConfigs = mkConfigurations(opts).flatMap(o => programs.map { case (name, prog) => (o, name, prog) })
+    val programExperiments = benchmarkWithIndividualMaxTime(runConfigs, minutesToNanos(BenchmarkingTime))
 
     val runningTimeStats = programExperiments.m.map {
       case (name, runs) => name -> stats(runs.map(_.runningTime))
@@ -134,7 +265,7 @@ object BenchmarkInliner {
       case (name, runs) => name -> stats(runs.map(_.compilationTime))
     }
 
-    // Timestamp (in seconds) when the experiment was run.
+    // Timestamp (in seconds) when the experiment was run
     val timestamp = nanosToSeconds(System.nanoTime())
 
     ("timestamp" -> timestamp) ~
@@ -182,6 +313,12 @@ object BenchmarkInliner {
       else
         New
     }
+
+    def rounds(options: Options): Int = from(options) match {
+      case NoInliner => 0
+      case Old => options.inlinerRounds
+      case New => options.inliner1Rounds
+    }
   }
 
   /**
@@ -221,9 +358,8 @@ object BenchmarkInliner {
     o0 :: (1 to MaxInliningRounds).map(r => o1.copy(inlinerRounds = r, inliner1Rounds = r)).toList ::: (1 to MaxInliningRounds).map(r => o2.copy(inlinerRounds = r, inliner1Rounds = r)).toList
   }
 
-  private def benchmarkWithIndividualMaxTime(programs: Map[String, String], opts: Options, maxNanos: Long)(implicit warmup: Boolean): ListMap[String, Run] = {
+  private def benchmarkWithIndividualMaxTime(runConfigs: List[(Options, String, String)], maxNanos: Long)(implicit warmup: Boolean): ListMap[String, Run] = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-    val runConfigs = mkConfigurations(opts).flatMap(o => programs.map { case (name, prog) => (o, name, prog) })
     val runs = scala.collection.mutable.ListBuffer.empty[Run]
     for ((config, name, prog) <- runConfigs) {
       debug(s"Benchmarking $name with inliner '${InlinerType.from(config)}' with ${config.inliner1Rounds} rounds")
@@ -323,7 +459,7 @@ object BenchmarkInliner {
     nanos / 1_000_000_000
   }
 
-  private def flixBenchmarkProgram: String = {
+  private def mainProg: String = {
     s"""
        |import java.lang.System
        |pub def main(): Unit \\ IO = {
