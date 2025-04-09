@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.Range
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.TypeAliasCompletion
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.TypeAlias
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
-import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, TypedAst}
 
 object TypeAliasCompleter {
   /**
@@ -31,12 +31,12 @@ object TypeAliasCompleter {
   def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
       root.typeAliases.values.collect{
-        case typeAlias if CompletionUtils.isAvailable(typeAlias) && CompletionUtils.matchesName(typeAlias.sym, qn, qualified = true) =>
+        case typeAlias if isStarKind(typeAlias) && CompletionUtils.isAvailable(typeAlias) && CompletionUtils.matchesName(typeAlias.sym, qn, qualified = true) =>
           TypeAliasCompletion(typeAlias, range, ap, qualified = true, inScope = true)
       }
     else
       root.typeAliases.values.collect({
-        case typeAlias if CompletionUtils.isAvailable(typeAlias) && CompletionUtils.matchesName(typeAlias.sym, qn, qualified = false) =>
+        case typeAlias if isStarKind(typeAlias) && CompletionUtils.isAvailable(typeAlias) && CompletionUtils.matchesName(typeAlias.sym, qn, qualified = false) =>
           TypeAliasCompletion(typeAlias, range, ap, qualified = false, inScope = inScope(typeAlias, scp))
       })
   }
@@ -54,4 +54,9 @@ object TypeAliasCompleter {
     val isRoot = typeAlias.sym.namespace.isEmpty
     isRoot || isResolved
   }
+
+  private def isStarKind(typeAlias: TypedAst.TypeAlias): Boolean = typeAlias.tpe.kind match {
+      case Kind.Star => true
+      case _ => false
+    }
 }
