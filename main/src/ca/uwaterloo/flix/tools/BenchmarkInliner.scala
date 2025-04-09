@@ -71,8 +71,6 @@ object BenchmarkInliner {
     "parsers" -> parsers
   )
 
-  private def currentDir: Path = Path.of(".").normalize()
-
   private def baseDir: Path = Path.of("./build/").normalize()
 
   private def classDir: Path = baseDir.resolve("class/").normalize()
@@ -89,7 +87,7 @@ object BenchmarkInliner {
 
   private def benchmarkScriptPath: Path = scriptOutputPath.resolve("benchmark.sh").normalize()
 
-  private def runScriptPath: Path = currentDir.resolve("all.sh").normalize()
+  private def runScriptPath: Path = scriptOutputPath.resolve("all.sh").normalize()
 
   private def pythonPath: Path = scriptOutputPath.resolve("plots.py").normalize()
 
