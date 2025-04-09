@@ -85,6 +85,8 @@ object BenchmarkInliner {
 
   private def scriptOutputPath: Path = baseDir.resolve("scripts/").normalize()
 
+  private def benchmarkScriptPath: Path = scriptOutputPath.resolve("benchmark.sh").normalize()
+
   private def pythonPath: Path = scriptOutputPath.resolve("plots.py").normalize()
 
   def run(opts: Options, micro: Boolean = true): Unit = {
@@ -134,8 +136,7 @@ object BenchmarkInliner {
       case (o, name, _) => mkScriptSnippet(BenchmarkFile(name, o))
     }
     val script = mkScript(snippets)
-    val scriptPath = scriptOutputPath.resolve("run.sh").normalize()
-    FileOps.writeString(scriptPath, script)
+    FileOps.writeString(benchmarkScriptPath, script)
   }
 
   private def buildAndWrite(config: (Options, String, String)): Unit = {
