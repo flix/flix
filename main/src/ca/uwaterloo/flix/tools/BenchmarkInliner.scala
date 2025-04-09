@@ -207,17 +207,23 @@ object BenchmarkInliner {
 
   private def snd[A, B](x: (A, B)): B = x._2
 
-  private def runBenchmarking(programs: Map[String, String], opts: Options): JsonAST.JObject = {
+  private def estimateTimeMinutes(programsCount: Int, warmupTime: Int, benchmarkTime: Int): Int = {
     val timeCalc = (time: Int) => {
-      val allProgsTime = time * programs.size
+      val allProgsTime = time * programsCount
       val withInlining = allProgsTime * MaxInliningRounds
       val withoutInlining = allProgsTime
       withInlining + withoutInlining
     }
-    val totalTime = timeCalc(CompilationBenchmarkTime) + timeCalc(CompilationWarmupTime)
+    timeCalc(warmupTime) + timeCalc(benchmarkTime)
+  }
 
-    debug(s"Running up to $MaxInliningRounds inlining rounds (total of ${programs.size} programs)")
-    debug(s"Max individual time is $CompilationBenchmarkTime minutes. It should take $totalTime minutes")
+  private def runBenchmarking(programs: Map[String, String], opts: Options): JsonAST.JObject = {
+    val totalTime = estimateTimeMinutes(programs.size, CompilationWarmupTime, CompilationBenchmarkTime)
+    debug(s"#Programs: ${programs.size}")
+    debug(s"Rounds: $MaxInliningRounds")
+    debug(s"Warmup: $CompilationWarmupTime minutes")
+    debug(s"Bench: $CompilationBenchmarkTime minutes")
+    debug(s"Total: $totalTime minutes")
 
     val runConfigs = mkConfigurations(opts).flatMap(o => programs.map { case (name, prog) => (o, name, prog) })
     val programExperiments = benchmarkWithIndividualMaxTime(runConfigs, minutesToNanos(CompilationBenchmarkTime))
