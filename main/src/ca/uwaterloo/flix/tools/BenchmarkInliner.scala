@@ -90,15 +90,6 @@ object BenchmarkInliner {
   private def pythonPath: Path = scriptOutputPath.resolve("plots.py").normalize()
 
   def run(opts: Options, micro: Boolean = true): Unit = {
-    val pid = java.lang.ProcessHandle.current().pid()
-    println(s"Please connect profiling tools if necessary (e.g., async-profiler). PID: $pid")
-    val input = StdIn.readLine("Ready to proceed? [Y/n] ")
-    input.toLowerCase match {
-      case "n" | "no" | "abort" =>
-        println("Aborting...")
-        return
-      case _ =>
-    }
 
     // TODO: Maybe pass this as a program config to the run instance
     // TODO: Then create public pre-made configs in this object
@@ -108,6 +99,17 @@ object BenchmarkInliner {
     println("Building jars...")
     writeJars(programs, opts)
     FileOps.writeString(pythonPath, Python)
+    println(s"Output written to '$scriptOutputPath'")
+
+    val pid = java.lang.ProcessHandle.current().pid()
+    println(s"Please connect profiling tools if necessary (e.g., async-profiler). PID: $pid")
+    val input = StdIn.readLine("Ready to proceed? [Y/n] ")
+    input.toLowerCase match {
+      case "n" | "no" | "abort" =>
+        println("Aborting...")
+        return
+      case _ =>
+    }
 
     println("Benchmarking inliner compilation...")
     val t0 = System.nanoTime()
