@@ -247,8 +247,12 @@ object BenchmarkInliner {
   private def runBenchmarking(programs: Map[String, String], opts: Options): JsonAST.JObject = {
     implicit val warmup: Boolean = false
 
-    // TODO Update this to match reality :)
-    val timeCalc = (time: Int) => time * 2 * programs.size * (MaxInliningRounds + 1)
+    val timeCalc = (time: Int) => {
+      val allProgsTime = time * programs.size
+      val withInlining = allProgsTime * MaxInliningRounds
+      val withoutInlining = allProgsTime
+      withInlining + withoutInlining
+    }
     val totalTime = timeCalc(BenchmarkingTime) + timeCalc(WarmupTime)
 
     debug(s"Running up to $MaxInliningRounds inlining rounds, timing $NumberOfRuns runs of each program (total of ${programs.size} programs)")
