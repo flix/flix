@@ -103,6 +103,7 @@ object BenchmarkInliner {
     val programs = if (micro) MicroBenchmarks else MacroBenchmarks
     val outFileName = if (micro) "micro.json" else "macro.json"
 
+    println("Building jars...")
     writeJars(programs, opts)
     FileOps.writeString(pythonPath, Python)
 
@@ -126,9 +127,9 @@ object BenchmarkInliner {
   }
 
   private def writeJars(programs: Map[String, String], opts: Options): Unit = {
-    mkConfigurations(opts.copy(loadClassFiles = false))
+    val configs = mkConfigurations(opts.copy(loadClassFiles = false))
       .flatMap(o => programs.map { case (name, prog) => (o, name, prog) })
-      .foreach(buildAndWrite)
+    configs.foreach(buildAndWrite)
   }
 
   private def buildAndWrite(config: (Options, String, String)): Unit = {
@@ -136,27 +137,23 @@ object BenchmarkInliner {
 
     // Build
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-    val fileName = fileNameForBenchmark(name, opts)
-    val buildDir = classDirFor(s"$fileName/")
-    Files.createDirectories(buildDir)
-    val flix = new Flix().setOptions(opts.copy(output = Some(buildDir)))
+    val file = BenchmarkFile(name, opts)
+    Files.createDirectories(file.BuildDir)
+    val flix = new Flix().setOptions(opts.copy(output = Some(file.BuildDir)))
     flix.addSourceCode(name, prog)
     flix.addSourceCode("mainProg", mainProg)
     flix.compile().unsafeGet
 
     // Jar
-    val jarName = s"$fileName.jar"
-    val jarFile = jarDirFor(jarName)
     Files.createDirectories(jarDir)
-    val classFilesDir = buildDir.resolve("class/").normalize()
     val classFiles =
-      FromBootstrap.getAllFiles(classFilesDir)
+      FromBootstrap.getAllFiles(file.ClassFilesDir)
         .map { path =>
-          (path, FromBootstrap.convertPathToRelativeFileName(classFilesDir, path))
+          (path, FromBootstrap.convertPathToRelativeFileName(file.ClassFilesDir, path))
         }.sortBy(snd)
 
 
-    Using(new ZipOutputStream(Files.newOutputStream(jarFile))) { zip =>
+    Using(new ZipOutputStream(Files.newOutputStream(file.JarFile))) { zip =>
       val (manifestName, manifestContent) = FromBootstrap.manifest
       FromBootstrap.addToZip(zip, manifestName, manifestContent.getBytes)
 
@@ -169,15 +166,21 @@ object BenchmarkInliner {
     }
   }
 
+  private case class BenchmarkFile(private val name: String, private val opts: Options) {
+    private val FileName: String = {
+      val inlinerType = InlinerType.from(opts).toString.toLowerCase
+      val rounds = InlinerType.rounds(opts)
+      s"${name}_${inlinerType}_$rounds"
+    }
+    private val JarName: String = s"$FileName.jar"
+    val BuildDir: Path = classDirFor(s"$FileName/")
+    val ClassFilesDir: Path = BuildDir.resolve("class/").normalize()
+    val JarFile: Path = jarDirFor(JarName)
+  }
+
   private def fst[A, B](x: (A, B)): A = x._1
 
   private def snd[A, B](x: (A, B)): B = x._2
-
-  private def fileNameForBenchmark(name: String, opts: Options): String = {
-    val inlinerType = InlinerType.from(opts).toString.toLowerCase
-    val rounds = InlinerType.rounds(opts)
-    s"${name}_${inlinerType}_$rounds"
-  }
 
   private def runBenchmarking(programs: Map[String, String], opts: Options): JsonAST.JObject = {
     val timeCalc = (time: Int) => {
