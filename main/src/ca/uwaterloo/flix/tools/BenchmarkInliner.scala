@@ -147,7 +147,7 @@ object BenchmarkInliner {
     // Jar
     val jarName = s"$fileName.jar"
     val jarFile = jarDirFor(jarName)
-    Files.createDirectories(jarFile)
+    Files.createDirectories(jarDir)
     val classFilesDir = buildDir.resolve("class/").normalize()
     val classFiles =
       FromBootstrap.getAllFiles(classFilesDir)
