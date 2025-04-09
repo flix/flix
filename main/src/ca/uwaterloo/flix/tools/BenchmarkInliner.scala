@@ -54,16 +54,16 @@ object BenchmarkInliner {
 
   private val MicroBenchmarks: Map[String, String] = Map(
     "map10KLength" -> map10KLength,
-    ///////// "map10KLengthOptimized" -> map10KLengthOptimized,
-    ///////// "filterMap10K" -> filterMap10K,
-    ///////// "filterMap10KOptimized" -> filterMap10KOptimized,
+    "map10KLengthOptimized" -> map10KLengthOptimized,
+    "filterMap10K" -> filterMap10K,
+    "filterMap10KOptimized" -> filterMap10KOptimized,
     // "List.filter" -> listFilter,
     // "List.foldLeft" -> listFoldLeft,
     // "List.foldRight" -> listFoldRight,
-    ///////// "List.map" -> listMap,
+    "List.map" -> listMap,
     // "List.length" -> listLength,
     // "List.reverse" -> listReverse,
-    ///////// "List.filterMap" -> listFilterMap,
+    "List.filterMap" -> listFilterMap,
   )
 
   private val MacroBenchmarks: Map[String, String] = Map(
