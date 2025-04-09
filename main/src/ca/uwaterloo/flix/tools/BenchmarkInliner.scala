@@ -190,7 +190,7 @@ object BenchmarkInliner {
   }
 
   private def mkScriptSnippet(file: BenchmarkFile): String = {
-    s"""rm ${file.OutputFile}
+    s"""rm -f ${file.OutputFile}
        |java -jar ${file.JarFilePath} >> ${file.OutputFile}
        |""".stripMargin
   }
