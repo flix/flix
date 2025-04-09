@@ -55,6 +55,9 @@ object TypeAliasCompleter {
     isRoot || isResolved
   }
 
+  /**
+    * Checks if the type alias is a star kind.
+    */
   private def isStarKind(typeAlias: TypedAst.TypeAlias): Boolean = typeAlias.tpe.kind match {
       case Kind.Star => true
       case _ => false
