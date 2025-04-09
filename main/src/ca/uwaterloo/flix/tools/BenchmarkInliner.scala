@@ -130,6 +130,12 @@ object BenchmarkInliner {
     val configs = mkConfigurations(opts.copy(loadClassFiles = false))
       .flatMap(o => programs.map { case (name, prog) => (o, name, prog) })
     configs.foreach(buildAndWrite)
+    val snippets = configs.map {
+      case (o, name, _) => mkScriptSnippet(BenchmarkFile(name, o))
+    }
+    val script = mkScript(snippets)
+    val scriptPath = scriptOutputPath.resolve("run.sh").normalize()
+    FileOps.writeString(scriptPath, script)
   }
 
   private def buildAndWrite(config: (Options, String, String)): Unit = {
@@ -153,7 +159,7 @@ object BenchmarkInliner {
         }.sortBy(snd)
 
 
-    Using(new ZipOutputStream(Files.newOutputStream(file.JarFile))) { zip =>
+    Using(new ZipOutputStream(Files.newOutputStream(file.JarFilePath))) { zip =>
       val (manifestName, manifestContent) = FromBootstrap.manifest
       FromBootstrap.addToZip(zip, manifestName, manifestContent.getBytes)
 
@@ -175,7 +181,22 @@ object BenchmarkInliner {
     private val JarName: String = s"$FileName.jar"
     val BuildDir: Path = classDirFor(s"$FileName/")
     val ClassFilesDir: Path = BuildDir.resolve("class/").normalize()
-    val JarFile: Path = jarDirFor(JarName)
+    val JarFilePath: Path = jarDirFor(JarName)
+    val OutputFile: Path = benchOutputPath.resolve(s"$FileName.json").normalize()
+  }
+
+  private def mkScriptSnippet(file: BenchmarkFile): String = {
+    s"""rm ${file.OutputFile}
+       |java -jar ${file.JarFilePath} >> ${file.OutputFile}
+       |""".stripMargin
+  }
+
+  private def mkScript(snippets: List[String]): String = {
+    s"""#!/bin/bash
+       |
+       |${snippets.mkString("\n")}
+       |
+       |""".stripMargin
   }
 
   private def fst[A, B](x: (A, B)): A = x._1
