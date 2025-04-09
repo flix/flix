@@ -165,7 +165,7 @@ object BenchmarkInliner {
       }
     } match {
       case Success(_) =>
-      case Failure(_) => throw new Exception(s"Unable to create jar $jarFile")
+      case Failure(e) => throw e
     }
   }
 
