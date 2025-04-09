@@ -35,15 +35,41 @@ import scala.util.{Failure, Success, Using}
 
 object BenchmarkInliner {
 
-  private val BenchmarkingTime: Int = 5
+  private val RunningTimeWarmupTime: Int = 5
+
+  private val RunningTimeBenchmarkTime: Int = 5
+
+  private val CompilationWarmupTime: Int = 0
+
+  private val CompilationBenchmarkTime: Int = 2
 
   private val MaxInliningRounds: Int = 3
 
-  private val NumberOfCompilations: Int = 10
-
   private val NumberOfRuns: Int = 1000
 
-  private val NumberOfSamples: Int = 1000
+  /**
+    * Set this to `true` for additional details during benchmarking.
+    */
+  private val Verbose: Boolean = true
+
+  private val MicroBenchmarks: Map[String, String] = Map(
+    "map10KLength" -> map10KLength,
+    ///////// "map10KLengthOptimized" -> map10KLengthOptimized,
+    ///////// "filterMap10K" -> filterMap10K,
+    ///////// "filterMap10KOptimized" -> filterMap10KOptimized,
+    // "List.filter" -> listFilter,
+    // "List.foldLeft" -> listFoldLeft,
+    // "List.foldRight" -> listFoldRight,
+    ///////// "List.map" -> listMap,
+    // "List.length" -> listLength,
+    // "List.reverse" -> listReverse,
+    ///////// "List.filterMap" -> listFilterMap,
+  )
+
+  private val MacroBenchmarks: Map[String, String] = Map(
+    "FordFulkerson" -> fordFulkerson,
+    "parsers" -> parsers
+  )
 
   private def baseDir: Path = Path.of("./build/").normalize()
 
@@ -60,32 +86,6 @@ object BenchmarkInliner {
   private def scriptOutputPath: Path = baseDir.resolve("scripts/").normalize()
 
   private def pythonPath: Path = scriptOutputPath.resolve("plots.py").normalize()
-
-  /**
-    * Set this to `true` for additional details during benchmarking.
-    */
-  private val Verbose: Boolean = true
-
-  private val WarmupTime: Int = 5
-
-  private val MicroBenchmarks: Map[String, String] = Map(
-    "map10KLength" -> map10KLength,
-    "map10KLengthOptimized" -> map10KLengthOptimized,
-    "filterMap10K" -> filterMap10K,
-    "filterMap10KOptimized" -> filterMap10KOptimized,
-    // "List.filter" -> listFilter,
-    // "List.foldLeft" -> listFoldLeft,
-    // "List.foldRight" -> listFoldRight,
-    "List.map" -> listMap,
-    // "List.length" -> listLength,
-    // "List.reverse" -> listReverse,
-    "List.filterMap" -> listFilterMap,
-  )
-
-  private val MacroBenchmarks: Map[String, String] = Map(
-    "FordFulkerson" -> fordFulkerson,
-    "parsers" -> parsers
-  )
 
   def run(opts: Options, micro: Boolean = true): Unit = {
     val pid = java.lang.ProcessHandle.current().pid()
@@ -119,8 +119,8 @@ object BenchmarkInliner {
     println(s"Took $seconds seconds total")
   }
 
-  private def debug(s: String)(implicit warmup: Boolean): Unit = {
-    if (Verbose && !warmup) {
+  private def debug(s: String): Unit = {
+    if (Verbose) {
       println(s)
     }
   }
@@ -180,21 +180,19 @@ object BenchmarkInliner {
   }
 
   private def runBenchmarking(programs: Map[String, String], opts: Options): JsonAST.JObject = {
-    implicit val warmup: Boolean = false
-
     val timeCalc = (time: Int) => {
       val allProgsTime = time * programs.size
       val withInlining = allProgsTime * MaxInliningRounds
       val withoutInlining = allProgsTime
       withInlining + withoutInlining
     }
-    val totalTime = timeCalc(BenchmarkingTime) + timeCalc(WarmupTime)
+    val totalTime = timeCalc(CompilationBenchmarkTime) + timeCalc(CompilationWarmupTime)
 
     debug(s"Running up to $MaxInliningRounds inlining rounds, timing $NumberOfRuns runs of each program (total of ${programs.size} programs)")
-    debug(s"Max individual time is $BenchmarkingTime minutes. It should take $totalTime minutes")
+    debug(s"Max individual time is $CompilationBenchmarkTime minutes. It should take $totalTime minutes")
 
     val runConfigs = mkConfigurations(opts).flatMap(o => programs.map { case (name, prog) => (o, name, prog) })
-    val programExperiments = benchmarkWithIndividualMaxTime(runConfigs, minutesToNanos(BenchmarkingTime))
+    val programExperiments = benchmarkWithIndividualMaxTime(runConfigs, minutesToNanos(CompilationBenchmarkTime))
 
     val compilationTimeStats = programExperiments.m.map {
       case (name, runs) => name -> stats(runs.map(_.compilationTime))
@@ -285,15 +283,14 @@ object BenchmarkInliner {
     o0 :: (1 to MaxInliningRounds).map(r => o1.copy(inlinerRounds = r, inliner1Rounds = r)).toList ::: (1 to MaxInliningRounds).map(r => o2.copy(inlinerRounds = r, inliner1Rounds = r)).toList
   }
 
-  private def benchmarkWithIndividualMaxTime(runConfigs: List[(Options, String, String)], maxNanos: Long)(implicit warmup: Boolean): ListMap[String, Run] = {
+  private def benchmarkWithIndividualMaxTime(runConfigs: List[(Options, String, String)], maxNanos: Long): ListMap[String, Run] = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
     val runs = scala.collection.mutable.ListBuffer.empty[Run]
     for ((config, name, prog) <- runConfigs) {
-      debug(s"Benchmarking $name with inliner '${InlinerType.from(config)}' with ${config.inliner1Rounds} rounds")
-
+      debug(s"Benchmarking $name with inliner '${InlinerType.from(config)}' with ${InlinerType.rounds(config)} rounds")
       debug("Benchmarking compiler")
-      debug(s"Warming up for $WarmupTime minutes...")(warmup = true)
-      val _ = benchmarkCompilationWithMaxTime(config, name, prog, minutesToNanos(WarmupTime))
+      debug(s"Warming up for $CompilationWarmupTime minutes...")
+      val _ = benchmarkCompilationWithMaxTime(config, name, prog, minutesToNanos(CompilationWarmupTime))
       val t0Compiler = System.nanoTime()
       val (compilationTimings, result) = benchmarkCompilationWithMaxTime(config, name, prog, maxNanos)
       val tDeltaCompiler = System.nanoTime() - t0Compiler
@@ -425,8 +422,8 @@ object BenchmarkInliner {
        |    //
        |    // Constants
        |    //
-       |    let warmupTime = ${WarmupTime}i64;
-       |    let benchTime  = ${BenchmarkingTime}i64;
+       |    let warmupTime = ${RunningTimeWarmupTime}i64;
+       |    let benchTime  = ${RunningTimeBenchmarkTime}i64;
        |    let runs       = $NumberOfRuns;
        |
        |    //
