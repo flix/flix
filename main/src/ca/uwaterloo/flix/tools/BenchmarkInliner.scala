@@ -71,6 +71,8 @@ object BenchmarkInliner {
     "parsers" -> parsers
   )
 
+  private def currentDir: Path = Path.of(".").normalize()
+
   private def baseDir: Path = Path.of("./build/").normalize()
 
   private def classDir: Path = baseDir.resolve("class/").normalize()
@@ -87,20 +89,49 @@ object BenchmarkInliner {
 
   private def benchmarkScriptPath: Path = scriptOutputPath.resolve("benchmark.sh").normalize()
 
+  private def runScriptPath: Path = currentDir.resolve("all.sh").normalize()
+
   private def pythonPath: Path = scriptOutputPath.resolve("plots.py").normalize()
 
-  def run(opts: Options, micro: Boolean = true): Unit = {
+  def generateSetup(opts: Options, micro: Boolean = true): Unit = {
+    println("Generating setup...")
 
     // TODO: Maybe pass this as a program config to the run instance
     // TODO: Then create public pre-made configs in this object
     val programs = if (micro) MicroBenchmarks else MacroBenchmarks
-    val outFileName = if (micro) "micro.json" else "macro.json"
 
     println("Building jars...")
     writeJars(programs, opts)
+    FileOps.writeString(runScriptPath, mkRunScript(programs.size))
     FileOps.writeString(pythonPath, Python)
     Files.createDirectories(benchOutputPath)
-    println(s"Output written to '$scriptOutputPath'")
+    println("")
+  }
+
+  private def mkRunScript(programCount: Int): String = {
+    val compilerEstimate = estimateTimeMinutes(programCount, CompilationWarmupTime, CompilationBenchmarkTime)
+    val flixEstimate = estimateTimeMinutes(programCount, RunningTimeWarmupTime, RunningTimeBenchmarkTime)
+    val totalEstimate = compilerEstimate + flixEstimate
+    s"""#!/bin/bash
+       |
+       |echo "Compiler benchmark time estimate: $compilerEstimate minutes"
+       |echo "Flix benchmark time estimate: $flixEstimate minutes"
+       |echo "Total time estimate: $totalEstimate minutes"
+       |
+       |echo "Benchmarking Compiler..."
+       |java -jar flix.jar Xinliner
+       |
+       |echo "Benchmarking programs..."
+       |bash $benchmarkScriptPath
+       |
+       |echo "Done"
+       |
+       |""".stripMargin
+  }
+
+  def runCompilerBenchmark(opts: Options, micro: Boolean = true): Unit = {
+    val programs = if (micro) MicroBenchmarks else MacroBenchmarks
+    val outFileName = if (micro) "micro.json" else "macro.json"
 
     val pid = java.lang.ProcessHandle.current().pid()
     println(s"Please connect profiling tools if necessary (e.g., async-profiler). PID: $pid")
