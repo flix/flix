@@ -527,7 +527,7 @@ object BenchmarkInliner {
 
   private def listFilter: String = {
     """
-      |def main(): Unit \ IO = {
+      |pub def runBenchmark(): Unit \ IO = {
       |    List.range(0, 10_000) |> List.filter(x -> Int32.modulo(x, 2) == 0) |> blackhole
       |}
       |
@@ -539,7 +539,7 @@ object BenchmarkInliner {
 
   private def listFoldLeft: String = {
     """
-      |def main(): Unit \ IO = {
+      |pub def runBenchmark(): Unit \ IO = {
       |    List.range(0, 10_000) |> List.foldLeft(Add.add, 0) |> blackhole
       |}
       |
@@ -551,7 +551,7 @@ object BenchmarkInliner {
 
   private def listFoldRight: String = {
     """
-      |def main(): Unit \ IO = {
+      |pub def runBenchmark(): Unit \ IO = {
       |    List.range(0, 10_000) |> List.foldRight(Add.add, 0) |> blackhole
       |}
       |
@@ -563,7 +563,7 @@ object BenchmarkInliner {
 
   private def listMap: String = {
     """
-      |def main(): Unit \ IO = {
+      |pub def runBenchmark(): Unit \ IO = {
       |    List.range(0, 10_000) |> List.map(x -> x + 1) |> blackhole
       |}
       |
@@ -575,7 +575,7 @@ object BenchmarkInliner {
 
   private def listLength: String = {
     """
-      |def main(): Unit \ IO = {
+      |pub def runBenchmark(): Unit \ IO = {
       |    List.range(0, 10_000) |> List.length |> blackhole
       |}
       |
@@ -587,7 +587,7 @@ object BenchmarkInliner {
 
   private def listReverse: String = {
     """
-      |def main(): Unit \ IO = {
+      |pub def runBenchmark(): Unit \ IO = {
       |    List.range(0, 10_000) |> List.reverse |> blackhole
       |}
       |
@@ -599,7 +599,7 @@ object BenchmarkInliner {
 
   private def listFilterMap: String = {
     """
-      |def main(): Unit \ IO = {
+      |pub def runBenchmark(): Unit \ IO = {
       |    List.range(0, 10_000) |> List.filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None) |> blackhole
       |}
       |
@@ -611,7 +611,7 @@ object BenchmarkInliner {
 
   private def map10KLength: String = {
     """
-      |def main(): Unit \ IO = {
+      |pub def runBenchmark(): Unit \ IO = {
       |    let l1 = range(0, 10_000);
       |    let l2 = map(x -> x + 1, l1);
       |    let l3 = length(l2);
@@ -655,7 +655,7 @@ object BenchmarkInliner {
 
   private def map10KLengthOptimized: String = {
     """
-      |def main(): Unit \ IO = {
+      |pub def runBenchmark(): Unit \ IO = {
       |    let top = 10_000 - 1;
       |    let l1 = rng(top, Nil);
       |    let l2 = mp(l1, Nil);
@@ -689,7 +689,7 @@ object BenchmarkInliner {
 
   private def filterMap10K: String = {
     """
-      |def main(): Unit \ IO = {
+      |pub def runBenchmark(): Unit \ IO = {
       |    let l1 = range(0, 10_000);
       |    let l2 = filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None, l1);
       |    blackhole(l2)
@@ -728,7 +728,7 @@ object BenchmarkInliner {
 
   private def filterMap10KOptimized: String = {
     """
-      |def main(): Unit \ IO = {
+      |pub def runBenchmark(): Unit \ IO = {
       |    let top = 10_000 - 1;
       |    let l1 = rng(top, Nil);
       |    let l2 = fmp(l1, Nil);
@@ -765,7 +765,7 @@ object BenchmarkInliner {
       |/// Here it is implemented using a combination of functional programming
       |/// and datalog.
       |///
-      |pub def main(): Unit \ IO =
+      |pub def runBenchmark(): Unit \ IO =
       |    FordFulkerson.exampleGraph01() |> FordFulkerson.maxFlow(0, 5) |> blackhole
       |
       |mod FordFulkerson {
@@ -991,7 +991,7 @@ object BenchmarkInliner {
 
   private def parsers: String = {
     """
-      |pub def main(): Unit \ IO = {
+      |pub def runBenchmark(): Unit \ IO = {
       |    ArithParser.parse("1+((2/3+4*(5*(6/7)))+41)")
       |    |> Option.map(eval)
       |    |> blackhole
