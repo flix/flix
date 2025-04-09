@@ -324,6 +324,9 @@ object Main {
         case Command.InlinerExperiments =>
           BenchmarkInliner.runCompilerBenchmark(options, micro = true)
 
+        case Command.InlinerExperimentsSetup =>
+          BenchmarkInliner.generateSetup(options, micro = true)
+
         case Command.Zhegalkin =>
           ZhegalkinPerf.run(options.XPerfN)
 
@@ -417,6 +420,8 @@ object Main {
 
     case object InlinerExperiments extends Command
 
+    case object InlinerExperimentsSetup extends Command
+
     case object Zhegalkin extends Command
 
   }
@@ -496,6 +501,9 @@ object Main {
 
       cmd("Xinliner").action((_, c) => c.copy(command = Command.InlinerExperiments))
         .text("Runs experiments for the new inliner")
+
+      cmd("Xinlinersetup").action((_, c) => c.copy(command = Command.InlinerExperimentsSetup))
+        .text("Sets up inliner experiments")
 
       cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
 
