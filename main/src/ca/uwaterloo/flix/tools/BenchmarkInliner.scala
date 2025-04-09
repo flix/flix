@@ -104,13 +104,11 @@ object BenchmarkInliner {
     val outFileName = if (micro) "micro.json" else "macro.json"
 
     writeJars(programs, opts)
-
     FileOps.writeString(pythonPath, Python)
 
-    println("Benchmarking inliner. This may take a while...")
+    println("Benchmarking inliner compilation...")
     val t0 = System.nanoTime()
     val benchmarks = runBenchmarking(programs, opts)
-
     val filePath = benchOutputPath.resolve(outFileName).normalize()
     FileOps.writeJSON(filePath, benchmarks)
 
@@ -181,6 +179,180 @@ object BenchmarkInliner {
     s"${name}_${inlinerType}_$rounds"
   }
 
+  private def runBenchmarking(programs: Map[String, String], opts: Options): JsonAST.JObject = {
+    implicit val warmup: Boolean = false
+
+    val timeCalc = (time: Int) => {
+      val allProgsTime = time * programs.size
+      val withInlining = allProgsTime * MaxInliningRounds
+      val withoutInlining = allProgsTime
+      withInlining + withoutInlining
+    }
+    val totalTime = timeCalc(BenchmarkingTime) + timeCalc(WarmupTime)
+
+    debug(s"Running up to $MaxInliningRounds inlining rounds, timing $NumberOfRuns runs of each program (total of ${programs.size} programs)")
+    debug(s"Max individual time is $BenchmarkingTime minutes. It should take $totalTime minutes")
+
+    val runConfigs = mkConfigurations(opts).flatMap(o => programs.map { case (name, prog) => (o, name, prog) })
+    val programExperiments = benchmarkWithIndividualMaxTime(runConfigs, minutesToNanos(BenchmarkingTime))
+
+    val compilationTimeStats = programExperiments.m.map {
+      case (name, runs) => name -> stats(runs.map(_.compilationTime))
+    }
+
+    // Timestamp (in seconds) when the experiment was run
+    val timestamp = nanosToSeconds(System.nanoTime())
+
+    ("timestamp" -> timestamp) ~
+      ("programs" -> {
+        programExperiments.m.map {
+          case (name, runs) =>
+            ("programName" -> name) ~ {
+              ("summary" -> {
+                "compilationTime" -> {
+                  val stats = compilationTimeStats.apply(name)
+                  ("best" -> stats.min) ~
+                    ("worst" -> stats.max) ~
+                    ("average" -> stats.average) ~
+                    ("median" -> stats.median)
+                }
+              }) ~
+                ("results" -> runs.map(_.toJson))
+            }
+        }
+      })
+  }
+
+  private sealed trait InlinerType
+
+  private object InlinerType {
+
+    private case object NoInliner extends InlinerType
+
+    private case object Old extends InlinerType
+
+    private case object New extends InlinerType
+
+    def from(options: Options): InlinerType = {
+      if (options.xnooptimizer && options.xnooptimizer1)
+        NoInliner
+      else if (options.xnooptimizer1)
+        Old
+      else
+        New
+    }
+
+    def rounds(options: Options): Int = from(options) match {
+      case NoInliner => 0
+      case Old => options.inlinerRounds
+      case New => options.inliner1Rounds
+    }
+  }
+
+  /**
+    * Represents a run of a single program.
+    *
+    * @param name            The name of the program
+    * @param lines           The number of lines of source code in the program
+    * @param inlinerType     Which inliner was used (if any)
+    * @param inliningRounds  The number of rounds of inlining
+    * @param runningTime     The median running time of the program
+    * @param compilationTime The median time taken to compile the program
+    * @param phases          The median running time of each compilation phase
+    * @param codeSize        The number of bytes of the compiled program
+    */
+  private case class Run(name: String, lines: Int, inlinerType: InlinerType, inliningRounds: Int, compilationTime: Long, phases: List[(String, Long)], codeSize: Int) {
+    def toJson: JsonAST.JObject = {
+      ("lines" -> lines) ~
+        ("inlinerType" -> inlinerType.toString) ~
+        ("inliningRounds" -> inliningRounds) ~
+        ("compilationTime" -> compilationTime) ~
+        ("phases" -> phases) ~
+        ("codeSize" -> codeSize)
+    }
+  }
+
+  private case class Stats[T](min: T, max: T, average: Double, median: Double)
+
+  private def stats[T](xs: Seq[T])(implicit numeric: Numeric[T]): Stats[T] = {
+    Stats(xs.min, xs.max, average(xs), median(xs))
+  }
+
+  private def mkConfigurations(opts: Options): List[Options] = {
+    val o0 = opts.copy(xnooptimizer = true, xnooptimizer1 = true, lib = LibLevel.All, progress = false, incremental = false, inlinerRounds = 0, inliner1Rounds = 0)
+    val o1 = opts.copy(xnooptimizer = false, xnooptimizer1 = true, lib = LibLevel.All, progress = false, incremental = false)
+    val o2 = opts.copy(xnooptimizer = true, xnooptimizer1 = false, lib = LibLevel.All, progress = false, incremental = false)
+    o0 :: (1 to MaxInliningRounds).map(r => o1.copy(inlinerRounds = r, inliner1Rounds = r)).toList ::: (1 to MaxInliningRounds).map(r => o2.copy(inlinerRounds = r, inliner1Rounds = r)).toList
+  }
+
+  private def benchmarkWithIndividualMaxTime(runConfigs: List[(Options, String, String)], maxNanos: Long)(implicit warmup: Boolean): ListMap[String, Run] = {
+    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    val runs = scala.collection.mutable.ListBuffer.empty[Run]
+    for ((config, name, prog) <- runConfigs) {
+      debug(s"Benchmarking $name with inliner '${InlinerType.from(config)}' with ${config.inliner1Rounds} rounds")
+
+      debug("Benchmarking compiler")
+      debug(s"Warming up for $WarmupTime minutes...")(warmup = true)
+      val _ = benchmarkCompilationWithMaxTime(config, name, prog, minutesToNanos(WarmupTime))
+      val t0Compiler = System.nanoTime()
+      val (compilationTimings, result) = benchmarkCompilationWithMaxTime(config, name, prog, maxNanos)
+      val tDeltaCompiler = System.nanoTime() - t0Compiler
+      debug(s"Took ${nanosToSeconds(tDeltaCompiler)} seconds")
+
+      runs += collectRun(config, name, compilationTimings, result.get)
+    }
+    ListMap.from(runs.map(r => (r.name, r)))
+  }
+
+  private def benchmarkCompilationWithMaxTime(o: Options, name: String, prog: String, maxNanos: Long)(implicit sctx: SecurityContext): (Seq[(Long, List[(String, Long)])], Option[CompilationResult]) = {
+    val compilationTimings = scala.collection.mutable.ListBuffer.empty[(Long, List[(String, Long)])]
+    var usedTime = 0L
+    var result: Option[CompilationResult] = None
+    while (usedTime < maxNanos) {
+      val t0 = System.nanoTime()
+      val flix = new Flix().setOptions(o)
+      ZhegalkinCache.clearCaches()
+      flix.addSourceCode(s"$name.flix", prog)
+      val compilationResult = flix.compile().unsafeGet
+      val phaseTimes = flix.phaseTimers.map { case PhaseTime(phase, time) => phase -> time }.toList
+      val timing = (compilationResult.totalTime, phaseTimes)
+      compilationTimings += timing
+      usedTime += (System.nanoTime() - t0)
+      result = Some(compilationResult)
+    }
+    (compilationTimings.toSeq, result)
+  }
+
+  private def collectRun(o: Options, name: String, compilationTimings: Seq[(Long, List[(String, Long)])], result: CompilationResult): Run = {
+    val lines = result.getTotalLines
+    val inlinerType = InlinerType.from(o)
+    val inliningRounds = o.inliner1Rounds
+    val compilationTime = median(compilationTimings.map(_._1)).toLong
+    // TODO: Use ListMap
+    val phaseTimings = compilationTimings.flatMap(_._2).foldLeft(Map.empty[String, Seq[Long]]) {
+      case (acc, (phase, time)) => acc.get(phase) match {
+        case Some(timings) => acc + (phase -> timings.appended(time))
+        case None => acc + (phase -> Seq(time))
+      }
+    }.map { case (phase, timings) => phase -> median(timings).toLong }.toList
+    val codeSize = result.codeSize
+
+    Run(name, lines, inlinerType, inliningRounds, compilationTime, phaseTimings, codeSize)
+  }
+
+
+  private def minutesToNanos(minutes: Long): Long = {
+    secondsToNanos(minutes * 60)
+  }
+
+  private def secondsToNanos(seconds: Long): Long = {
+    seconds * 1_000_000_000
+  }
+
+  private def nanosToSeconds(nanos: Long): Long = {
+    nanos / 1_000_000_000
+  }
+
   private object FromBootstrap {
 
     private val ENOUGH_OLD_CONSTANT_TIME: Long = new GregorianCalendar(2014, Calendar.JUNE, 27, 0, 0, 0).getTimeInMillis
@@ -242,225 +414,6 @@ object BenchmarkInliner {
           |Main-Class: Main
           |""".stripMargin)
     }
-  }
-
-  private def runBenchmarking(programs: Map[String, String], opts: Options): JsonAST.JObject = {
-    implicit val warmup: Boolean = false
-
-    val timeCalc = (time: Int) => {
-      val allProgsTime = time * programs.size
-      val withInlining = allProgsTime * MaxInliningRounds
-      val withoutInlining = allProgsTime
-      withInlining + withoutInlining
-    }
-    val totalTime = timeCalc(BenchmarkingTime) + timeCalc(WarmupTime)
-
-    debug(s"Running up to $MaxInliningRounds inlining rounds, timing $NumberOfRuns runs of each program (total of ${programs.size} programs)")
-    debug(s"Max individual time is $BenchmarkingTime minutes. It should take $totalTime minutes")
-
-    val runConfigs = mkConfigurations(opts).flatMap(o => programs.map { case (name, prog) => (o, name, prog) })
-    val programExperiments = benchmarkWithIndividualMaxTime(runConfigs, minutesToNanos(BenchmarkingTime))
-
-    val runningTimeStats = programExperiments.m.map {
-      case (name, runs) => name -> stats(runs.map(_.runningTime))
-    }
-
-    val compilationTimeStats = programExperiments.m.map {
-      case (name, runs) => name -> stats(runs.map(_.compilationTime))
-    }
-
-    // Timestamp (in seconds) when the experiment was run
-    val timestamp = nanosToSeconds(System.nanoTime())
-
-    ("timestamp" -> timestamp) ~
-      ("programs" -> {
-        programExperiments.m.map {
-          case (name, runs) =>
-            ("programName" -> name) ~ {
-              ("summary" -> {
-                ("runningTime" -> {
-                  val stats = runningTimeStats.apply(name)
-                  ("best" -> stats.min) ~
-                    ("worst" -> stats.max) ~
-                    ("average" -> stats.average) ~
-                    ("median" -> stats.median)
-                }) ~
-                  ("compilationTime" -> {
-                    val stats = compilationTimeStats.apply(name)
-                    ("best" -> stats.min) ~
-                      ("worst" -> stats.max) ~
-                      ("average" -> stats.average) ~
-                      ("median" -> stats.median)
-                  })
-              }) ~
-                ("results" -> runs.map(_.toJson))
-            }
-        }
-      })
-  }
-
-  private sealed trait InlinerType
-
-  private object InlinerType {
-
-    private case object NoInliner extends InlinerType
-
-    private case object Old extends InlinerType
-
-    private case object New extends InlinerType
-
-    def from(options: Options): InlinerType = {
-      if (options.xnooptimizer && options.xnooptimizer1)
-        NoInliner
-      else if (options.xnooptimizer1)
-        Old
-      else
-        New
-    }
-
-    def rounds(options: Options): Int = from(options) match {
-      case NoInliner => 0
-      case Old => options.inlinerRounds
-      case New => options.inliner1Rounds
-    }
-  }
-
-  /**
-    * Represents a run of a single program.
-    *
-    * @param name            The name of the program
-    * @param lines           The number of lines of source code in the program
-    * @param inlinerType     Which inliner was used (if any)
-    * @param inliningRounds  The number of rounds of inlining
-    * @param runningTime     The median running time of the program
-    * @param compilationTime The median time taken to compile the program
-    * @param phases          The median running time of each compilation phase
-    * @param codeSize        The number of bytes of the compiled program
-    */
-  private case class Run(name: String, lines: Int, inlinerType: InlinerType, inliningRounds: Int, runningTime: Long, compilationTime: Long, phases: List[(String, Long)], codeSize: Int) {
-    def toJson: JsonAST.JObject = {
-      ("lines" -> lines) ~
-        ("inlinerType" -> inlinerType.toString) ~
-        ("inliningRounds" -> inliningRounds) ~
-        ("runningTime" -> runningTime) ~
-        ("compilationTime" -> compilationTime) ~
-        ("phases" -> phases) ~
-        ("codeSize" -> codeSize)
-    }
-  }
-
-  private case class Stats[T](min: T, max: T, average: Double, median: Double)
-
-  private def stats[T](xs: Seq[T])(implicit numeric: Numeric[T]): Stats[T] = {
-    Stats(xs.min, xs.max, average(xs), median(xs))
-  }
-
-  private def mkConfigurations(opts: Options): List[Options] = {
-    val o0 = opts.copy(xnooptimizer = true, xnooptimizer1 = true, lib = LibLevel.All, progress = false, incremental = false, inlinerRounds = 0, inliner1Rounds = 0)
-    val o1 = opts.copy(xnooptimizer = false, xnooptimizer1 = true, lib = LibLevel.All, progress = false, incremental = false)
-    val o2 = opts.copy(xnooptimizer = true, xnooptimizer1 = false, lib = LibLevel.All, progress = false, incremental = false)
-    o0 :: (1 to MaxInliningRounds).map(r => o1.copy(inlinerRounds = r, inliner1Rounds = r)).toList ::: (1 to MaxInliningRounds).map(r => o2.copy(inlinerRounds = r, inliner1Rounds = r)).toList
-  }
-
-  private def benchmarkWithIndividualMaxTime(runConfigs: List[(Options, String, String)], maxNanos: Long)(implicit warmup: Boolean): ListMap[String, Run] = {
-    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-    val runs = scala.collection.mutable.ListBuffer.empty[Run]
-    for ((config, name, prog) <- runConfigs) {
-      debug(s"Benchmarking $name with inliner '${InlinerType.from(config)}' with ${config.inliner1Rounds} rounds")
-
-      debug("Benchmarking compiler")
-      debug(s"Warming up for $WarmupTime minutes...")(warmup = true)
-      val _ = benchmarkCompilationWithMaxTime(config, name, prog, minutesToNanos(WarmupTime))
-      val t0Compiler = System.nanoTime()
-      val compilationTimings = benchmarkCompilationWithMaxTime(config, name, prog, maxNanos)
-      val tDeltaCompiler = System.nanoTime() - t0Compiler
-      debug(s"Took ${nanosToSeconds(tDeltaCompiler)} seconds")
-
-      debug("Benchmarking running time")
-      debug(s"Warming up for $WarmupTime minutes...")(warmup = true)
-      val _ = benchmarkRunningTimeWithMaxTime(config, name, prog, minutesToNanos(WarmupTime))
-      val t0RunningTime = System.nanoTime()
-      val (runningTimes, result) = benchmarkRunningTimeWithMaxTime(config, name, prog, maxNanos)
-      val tDeltaRunningTime = System.nanoTime() - t0RunningTime
-      debug(s"Took ${nanosToSeconds(tDeltaRunningTime)} seconds")
-
-      runs += collectRun(config, name, compilationTimings, runningTimes, result)
-    }
-    ListMap.from(runs.map(r => (r.name, r)))
-  }
-
-  private def benchmarkCompilationWithMaxTime(o: Options, name: String, prog: String, maxNanos: Long)(implicit sctx: SecurityContext): Seq[(Long, List[(String, Long)])] = {
-    val compilationTimings = scala.collection.mutable.ListBuffer.empty[(Long, List[(String, Long)])]
-    var usedTime = 0L
-    while (usedTime < maxNanos) {
-      val t0 = System.nanoTime()
-      val flix = new Flix().setOptions(o)
-      ZhegalkinCache.clearCaches()
-      flix.addSourceCode(s"$name.flix", prog)
-      val result = flix.compile().unsafeGet
-      val phaseTimes = flix.phaseTimers.map { case PhaseTime(phase, time) => phase -> time }.toList
-      val timing = (result.totalTime, phaseTimes)
-      compilationTimings += timing
-      usedTime += (System.nanoTime() - t0)
-    }
-    compilationTimings.toSeq
-  }
-
-  private def benchmarkRunningTimeWithMaxTime(o: Options, name: String, prog: String, maxNanos: Long)(implicit sctx: SecurityContext): (Seq[Long], CompilationResult) = {
-    val runningTimes = scala.collection.mutable.ListBuffer.empty[Long]
-    val flix = new Flix().setOptions(o)
-    ZhegalkinCache.clearCaches()
-    flix.addSourceCode(s"$name.flix", prog)
-    val result = flix.compile().unsafeGet
-    result.getMain match {
-      case Some(mainFunc) =>
-        var usedTime = 0L
-        while (usedTime < maxNanos) {
-          var sampleTime = 0L
-          var runs = 0
-          while (usedTime < maxNanos && runs < NumberOfRuns) {
-            val t0 = System.nanoTime()
-            mainFunc(Array.empty)
-            val tDelta = System.nanoTime() - t0
-            sampleTime += tDelta
-            usedTime += tDelta
-            runs += 1
-          }
-          runningTimes += sampleTime
-        }
-      case None => throw new RuntimeException(s"undefined main method for program '$name'")
-    }
-    (runningTimes.toSeq, result)
-  }
-
-  private def collectRun(o: Options, name: String, compilationTimings: Seq[(Long, List[(String, Long)])], runningTimes: Seq[Long], result: CompilationResult): Run = {
-    val lines = result.getTotalLines
-    val inlinerType = InlinerType.from(o)
-    val inliningRounds = o.inliner1Rounds
-    val runningTime = median(runningTimes).toLong
-    val compilationTime = median(compilationTimings.map(_._1)).toLong
-    val phaseTimings = compilationTimings.flatMap(_._2).foldLeft(Map.empty[String, Seq[Long]]) {
-      case (acc, (phase, time)) => acc.get(phase) match {
-        case Some(timings) => acc + (phase -> timings.appended(time))
-        case None => acc + (phase -> Seq(time))
-      }
-    }.map { case (phase, timings) => phase -> median(timings).toLong }.toList
-    val codeSize = result.codeSize
-
-    Run(name, lines, inlinerType, inliningRounds, runningTime, compilationTime, phaseTimings, codeSize)
-  }
-
-
-  private def minutesToNanos(minutes: Long): Long = {
-    secondsToNanos(minutes * 60)
-  }
-
-  private def secondsToNanos(seconds: Long): Long = {
-    seconds * 1_000_000_000
-  }
-
-  private def nanosToSeconds(nanos: Long): Long = {
-    nanos / 1_000_000_000
   }
 
   private def mainProg: String = {
