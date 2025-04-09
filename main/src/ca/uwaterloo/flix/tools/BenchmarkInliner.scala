@@ -188,7 +188,7 @@ object BenchmarkInliner {
     }
     val totalTime = timeCalc(CompilationBenchmarkTime) + timeCalc(CompilationWarmupTime)
 
-    debug(s"Running up to $MaxInliningRounds inlining rounds, timing $NumberOfRuns runs of each program (total of ${programs.size} programs)")
+    debug(s"Running up to $MaxInliningRounds inlining rounds (total of ${programs.size} programs)")
     debug(s"Max individual time is $CompilationBenchmarkTime minutes. It should take $totalTime minutes")
 
     val runConfigs = mkConfigurations(opts).flatMap(o => programs.map { case (name, prog) => (o, name, prog) })
