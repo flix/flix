@@ -99,6 +99,7 @@ object BenchmarkInliner {
     println("Building jars...")
     writeJars(programs, opts)
     FileOps.writeString(pythonPath, Python)
+    Files.createDirectories(benchOutputPath)
     println(s"Output written to '$scriptOutputPath'")
 
     val pid = java.lang.ProcessHandle.current().pid()
