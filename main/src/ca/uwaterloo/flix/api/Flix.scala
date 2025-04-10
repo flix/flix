@@ -534,7 +534,10 @@ class Flix {
     val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
     errors ++= lexerErrors
 
-    val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
+    val (afterTokenVerifier, tokenVerifierErrors) = TokenVerifier.run(afterLexer)
+    errors ++= tokenVerifierErrors
+
+    val (afterParser, parserErrors) = Parser2.run(afterTokenVerifier, cachedParserCst, changeSet)
     errors ++= parserErrors
 
     val (weederValidation, weederErrors) = Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)

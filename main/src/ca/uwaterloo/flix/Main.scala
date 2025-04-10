@@ -103,6 +103,7 @@ object Main {
       xfuzzer = cmdOpts.xfuzzer,
       xprinttyper = cmdOpts.xprinttyper,
       xverifyeffects = cmdOpts.xverifyeffects,
+      xverifylexer = cmdOpts.xverifylexer,
       xsubeffecting = cmdOpts.xsubeffecting,
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfPar = cmdOpts.XPerfPar,
@@ -358,6 +359,7 @@ object Main {
                      xfuzzer: Boolean = false,
                      xprinttyper: Option[String] = None,
                      xverifyeffects: Boolean = false,
+                     xverifylexer: Boolean = false,
                      xsubeffecting: Set[Subeffecting] = Set.empty,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
@@ -585,6 +587,10 @@ object Main {
       // Xverify-effects
       opt[String]("Xverify-effects").action((_, c) => c.copy(xverifyeffects = true)).
         text("[experimental] verifies consistency of effects after typechecking")
+
+      // Xverify-lexer
+      opt[String]("Xverify-lexer").action((_, c) => c.copy(xverifylexer = true)).
+        text("[experimental] verifies the lexer output")
 
       // Xsubeffecting
       opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).
