@@ -35,9 +35,9 @@ import scala.util.{Failure, Success, Using}
 
 object BenchmarkInliner {
 
-  private val RunningTimeWarmupTime: Int = 5
+  private val RunningTimeWarmupTime: Int = 0
 
-  private val RunningTimeBenchmarkTime: Int = 5
+  private val RunningTimeBenchmarkTime: Int = 1
 
   private val CompilationWarmupTime: Int = 0
 
