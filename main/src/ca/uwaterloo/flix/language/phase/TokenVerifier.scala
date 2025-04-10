@@ -103,7 +103,7 @@ object TokenVerifier {
 
   /** Checks I-Bounds. */
   private def checkBounds(src: Source, tokens: Array[Token]): Iterator[TokenVerifierError] = {
-    // Tokens end offsets are exclusive.
+    // Tokens end offsets are exclusive and offsets are zero-indexed.
     def outOfBounds(i: Int): Boolean = i < 0 || src.data.length < i
 
     tokens
