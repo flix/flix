@@ -514,23 +514,21 @@ object BenchmarkInliner {
        |
        |    let pid = ProcessHandle.current().pid();
        |    Console.eprintln("Please connect profiling tools if necessary (e.g., async-profiler). PID: $${pid}");
-       |    Console.eprint("Ready to proceed? [Y/n] ");
-       |    let input = Console.readln() |> String.toLowerCase |> String.trim;
-       |    match input {
-       |        case "n"     => Console.eprintln("Aborting...")
-       |        case "no"    => Console.eprintln("Aborting...")
-       |        case "abort" => Console.eprintln("Aborting...")
-       |        case _       =>
-       |            let totalTime = warmupTime + benchTime;
-       |            Console.eprintln("Expected total time: $${totalTime}");
-       |            Console.eprintln("Benchmarking for $${benchTime} minutes, running $${runs} times for each sample");
-       |            Console.eprintln("Warming up for $${warmupTime} minutes");
-       |            discard bench(0i64, minutesToNanos(warmupTime), List.empty());
-       |            let samples = bench(0i64, minutesToNanos(benchTime), List.empty());
-       |            let json = toJSON(samples);
-       |            Console.println(ToString.toString(json));
-       |            Console.eprintln("Done")
-       |    }
+       |
+       |    let totalTime = warmupTime + benchTime;
+       |    Console.eprintln("Expected total time: $${totalTime}");
+       |
+       |    Console.eprintln("Benchmarking for $${benchTime} minutes, running $${runs} times for each sample");
+       |
+       |    Console.eprintln("Warming up for $${warmupTime} minutes");
+       |
+       |    discard bench(0i64, minutesToNanos(warmupTime), List.empty());
+       |    let samples = bench(0i64, minutesToNanos(benchTime), List.empty());
+       |    let json = toJSON(samples);
+       |
+       |    Console.println(ToString.toString(json));
+       |    Console.eprintln("Done")
+       |
        |} with Console.runWithIO
        |
        |pub def minutesToNanos(minutes: Int64): Int64 = {
