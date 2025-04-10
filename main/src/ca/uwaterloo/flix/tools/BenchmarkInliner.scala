@@ -92,6 +92,7 @@ object BenchmarkInliner {
   private def pythonPath: Path = scriptOutputPath.resolve("plots.py").normalize()
 
   def generateSetup(opts: Options, micro: Boolean = true): Unit = {
+    println(mainProg)
     println("Generating setup...")
 
     // TODO: Maybe pass this as a program config to the run instance
