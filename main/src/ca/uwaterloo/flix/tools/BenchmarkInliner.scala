@@ -220,6 +220,7 @@ object BenchmarkInliner {
 
   private def mkScriptSnippet(file: BenchmarkFile): String = {
     s"""rm -f ${file.OutputFile}
+       |echo "Benchmarking ${file.JarFilePath}"
        |java -jar ${file.JarFilePath} >> ${file.OutputFile}
        |""".stripMargin
   }
