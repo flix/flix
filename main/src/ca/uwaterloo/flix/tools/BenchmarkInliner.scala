@@ -478,9 +478,9 @@ object BenchmarkInliner {
   private def mainProg: String = {
     s"""
        |import java.lang.System
-       |pub def main(): Unit \\ IO = {
-       |    println("TODO Write to JSON file");
+       |import java.lang.ProcessHandle
        |
+       |pub def main(): Unit \\ Exec + IO = run {
        |    //
        |    // Constants
        |    //
@@ -491,37 +491,46 @@ object BenchmarkInliner {
        |    //
        |    // Benchmarking functions
        |    //
-       |    def loop(usedNanos, maxNanos, usedRuns) = {
+       |    def doSampling(usedNanos, maxNanos, usedRuns) = {
        |        if (usedNanos < maxNanos and usedRuns < runs) {
        |            let t0 = System.nanoTime();
        |            runBenchmark();
        |            let tDelta = System.nanoTime() - t0;
-       |            loop(usedNanos + tDelta, maxNanos, usedRuns + 1)
+       |            doSampling(usedNanos + tDelta, maxNanos, usedRuns + 1)
        |        } else {
        |            usedNanos
        |        }
-       |
        |    };
+       |
        |    def bench(usedNanos, maxNanos, samples) = {
        |        if (usedNanos < maxNanos) {
-       |            let sample = loop(usedNanos, maxNanos, 0) - usedNanos;
+       |            let sample = doSampling(usedNanos, maxNanos, 0) - usedNanos;
        |            bench(usedNanos + sample, maxNanos, sample :: samples)
        |        } else {
        |            List.reverse(samples)
        |        }
        |    };
        |
-       |    let totalTime = warmupTime + benchTime;
-       |    println("Expected total time: $${totalTime}");
-       |
-       |    println("Running warmup for $${warmupTime} minutes");
-       |    discard bench(0i64, minutesToNanos(warmupTime), List.empty());
-       |
-       |    println("Benchmarking for $${benchTime} minutes, running $${runs} times for each sample");
-       |    let _samples = bench(0i64, minutesToNanos(benchTime), List.empty());
-       |
-       |    println("Done")
-       |}
+       |    let pid = ProcessHandle.current().pid();
+       |    Console.eprintln("Please connect profiling tools if necessary (e.g., async-profiler). PID: $${pid}");
+       |    Console.eprint("Ready to proceed? [Y/n] ");
+       |    let input = Console.readln() |> String.toLowerCase |> String.trim;
+       |    match input {
+       |        case "n"     => Console.eprintln("Aborting...")
+       |        case "no"    => Console.eprintln("Aborting...")
+       |        case "abort" => Console.eprintln("Aborting...")
+       |        case _       =>
+       |            let totalTime = warmupTime + benchTime;
+       |            Console.eprintln("Expected total time: $${totalTime}");
+       |            Console.eprintln("Benchmarking for $${benchTime} minutes, running $${runs} times for each sample");
+       |            Console.eprintln("Warming up for $${warmupTime} minutes");
+       |            discard bench(0i64, minutesToNanos(warmupTime), List.empty());
+       |            let samples = bench(0i64, minutesToNanos(benchTime), List.empty());
+       |            let json = toJSON(samples);
+       |            Console.println(ToString.toString(json));
+       |            Console.eprintln("Done")
+       |    }
+       |} with Console.runWithIO
        |
        |pub def minutesToNanos(minutes: Int64): Int64 = {
        |    secondsToNanos(minutes * 60i64)
@@ -533,6 +542,70 @@ object BenchmarkInliner {
        |
        |pub def nanosToSeconds(nanos: Int64): Int64 = {
        |    nanos / 1_000_000_000i64
+       |}
+       |
+       |def toJSON(samples: List[Int64]): JSON = {
+       |    JSON.Obj(
+       |        List#{
+       |            ("samples",
+       |                JVal.Arr(List.toVector(samples) |> Vector.map(n -> JVal.Lit(Lit.Num(n))))
+       |            )
+       |        }
+       |    )
+       |}
+       |
+       |enum JSON {
+       |    case Obj(List[(String, JVal)])
+       |}
+       |
+       |enum JVal {
+       |    case Obj(JSON)
+       |    case Arr(Vector[JVal])
+       |    case Lit(Lit)
+       |}
+       |
+       |enum Lit {
+       |    case Str(String)
+       |    case Num(Int64)
+       |    case Null
+       |}
+       |
+       |instance ToString[JSON] {
+       |    pub def toString(x: JSON): String = match x {
+       |        case JSON.Obj(kvs) =>
+       |            let str = kvs
+       |                |> List.map(match (k, v) -> "$${JSON.quote(k)}:$${ToString.toString(v)}")
+       |                |> List.join(",");
+       |            "{$${str}}"
+       |    }
+       |}
+       |
+       |
+       |instance ToString[JVal] {
+       |    pub def toString(x: JVal): String = match x {
+       |        case JVal.Obj(obj) => ToString.toString(obj)
+       |        case JVal.Arr(arr) => "[$${Vector.join(",", arr)}]"
+       |        case JVal.Lit(lit) => ToString.toString(lit)
+       |    }
+       |}
+       |
+       |
+       |instance ToString[Lit] {
+       |    pub def toString(x: Lit): String = match x {
+       |        case Lit.Str(s) => JSON.quote(s)
+       |        case Lit.Num(n) => Int64.toString(n)
+       |        case Lit.Null   => "null"
+       |    }
+       |}
+       |
+       |
+       |mod JSON {
+       |    pub def quote(s: String): String = {
+       |        let escaped = s
+       |            |> String.replace(src = "\\\\", dst = "\\\\\\\\")
+       |            |> String.replace(src = "\\\"", dst = "\\\\\\"");
+       |        String.concat(escaped, "\\\"") |> String.concat("\\\"")
+       |    }
        |}
        |""".stripMargin
   }
