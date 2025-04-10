@@ -5,7 +5,7 @@ mod Test.Handler.Gen.Float64 {
     }
 
     def generator(): Unit \ Gen =
-        Gen.gen(); generator()
+        discard Gen.gen(); generator()
 
     def sample(limit: Float64): List[Float64] =
         region rc {

@@ -65,7 +65,7 @@ pub def findOneSolution(size: Int32, queens: Int32): Placement \ Searchable =
 ///
 pub def countSolutions(size: Int32): Int32 =
     run {
-        findOneSolution(size, size);
+        discard findOneSolution(size, size);
         1
     } with handler Searchable {
         //

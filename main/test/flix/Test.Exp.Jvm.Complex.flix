@@ -11,7 +11,7 @@ mod Test.Exp.Jvm.Complex {
 
     pub def start(): Unit \ {Net, IO} =
         let server = HttpServer.create(new InetSocketAddress(3000), 0);
-        server.createContext("/", httpHandler());
+        discard server.createContext("/", httpHandler());
         ()
 
     def httpHandler(): HttpHandler \ IO = new HttpHandler {

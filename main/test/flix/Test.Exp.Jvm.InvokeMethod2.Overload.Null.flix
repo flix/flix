@@ -22,6 +22,6 @@ mod Test.Exp.Jvm.InvokeMethod.Overload.Null {
    @test
    def testInvokeMethod_04(): Bool \ IO =
       let sb = new StringBuilder("hello ");
-      sb.append((checked_cast(null) : String));
+      discard sb.append((checked_cast(null) : String));
       sb.toString() == "hello null"
 }

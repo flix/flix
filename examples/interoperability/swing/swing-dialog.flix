@@ -17,7 +17,7 @@ def createAndShowGUI(): Unit \ IO = {
     let openDialog = _ -> showDialog(title = "Are you sure?", content = "The button was clicked. Pick an option", frame);
     let button = mkButton("Click me to open a dialog", openDialog);
 
-    frame.getContentPane().add(button);
+    discard frame.getContentPane().add(button);
     frame.pack();
     frame.setVisible(true)
 }
@@ -33,6 +33,6 @@ def mkButton(content: String, onClick: ActionEvent -> Unit \ ef): JButton \ IO =
 }
 
 def showDialog(title: { title = String }, content: { content = String }, frame: JFrame): Unit \ IO = {
-    JOptionPane.showConfirmDialog(frame, content#content, title#title, JOptionPane.YES_NO_CANCEL_OPTION);
+    discard JOptionPane.showConfirmDialog(frame, content#content, title#title, JOptionPane.YES_NO_CANCEL_OPTION);
     ()
 }

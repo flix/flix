@@ -6,7 +6,7 @@ def main(): Unit \ IO = {
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
     let label = new JLabel("Hello World!");
-    frame.getContentPane().add(label);
+    discard frame.getContentPane().add(label);
 
     frame.pack();
     frame.setVisible(true)
