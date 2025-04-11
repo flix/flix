@@ -116,8 +116,8 @@ class TestCompletionProvider extends AnyFunSuite {
       val (root, flix, errors) = compile(program, Options.Default)
       val source = mkSource(program)
       // Find all the literal tokens that are on a single line
-      val keywordTokens = root.tokens(source).toList.filter(_.kind.isLiteral)
-      keywordTokens.foreach { token =>
+      val literalTokens = root.tokens(source).toList.filter(_.kind.isLiteral)
+      literalTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
           val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, flix)
@@ -132,8 +132,8 @@ class TestCompletionProvider extends AnyFunSuite {
       val (root, flix, errors) = compile(program, Options.Default)
       val source = mkSource(program)
       // Find all the literal tokens that are on a single line
-      val keywordTokens = root.tokens(source).toList.filter(_.kind.isComment)
-      keywordTokens.foreach { token =>
+      val commentTokens = root.tokens(source).toList.filter(_.kind.isComment)
+      commentTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
           val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, flix)
@@ -275,9 +275,16 @@ class TestCompletionProvider extends AnyFunSuite {
     * - def|
     */
   private def getAllPositionsWithinToken(token: Token): List[Position] = {
-    (0 to token.text.length).map { offset =>
-      token.offset(offset)
-    }.toList
+    val initialLine = token.sp1.line
+    val initialCol = token.sp1.col.toInt
+
+    token.text
+      .scanLeft((initialLine, initialCol)) { case ((line, col), char) =>
+        if (char == '\n') (line + 1, 1)
+        else (line, col + 1)
+      }
+      .map { case (line, col) => Position(line, col) }
+      .toList
   }
 
   /**
