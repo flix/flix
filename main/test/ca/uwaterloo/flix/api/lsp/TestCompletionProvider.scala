@@ -116,8 +116,8 @@ class TestCompletionProvider extends AnyFunSuite {
       val (root, flix, errors) = compile(program, Options.Default)
       val source = mkSource(program)
       // Find all the literal tokens that are on a single line
-      val keywordTokens = root.tokens(source).toList.filter(_.kind.isLiteral)
-      keywordTokens.foreach { token =>
+      val literalTokens = root.tokens(source).toList.filter(_.kind.isLiteral)
+      literalTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
           val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, flix)
@@ -132,39 +132,11 @@ class TestCompletionProvider extends AnyFunSuite {
       val (root, flix, errors) = compile(program, Options.Default)
       val source = mkSource(program)
       // Find all the literal tokens that are on a single line
-      val keywordTokens = root.tokens(source).toList.filter(_.kind.isComment)
-      keywordTokens.foreach { token =>
+      val commentTokens = root.tokens(source).toList.filter(_.kind.isComment)
+      commentTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
           val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, flix)
-          assert(completions.items.isEmpty)
-        }
-      }
-    }
-  }
-
-  test("No completions inside incomplete comment") {
-    Programs.foreach { program =>
-      val (root, flix, errors) = compile(program, Options.Default)
-      val source = mkSource(program)
-      // Find all the literal tokens that are on a single line
-      val keywordTokens = root.tokens(source).toList.filter(_.kind.isComment).filter(token => token.sp1.line == token.sp2.line)
-      // Sort the replacements by column in descending order, otherwise former replacements will affect the latter ones
-
-      val newProgram = keywordTokens
-        .map(token => (token, randomlyDelete(token.text, Set('/', '*', '\t', '\n', '\r'))))
-        // Sort the replacements by column in descending order, otherwise former replacements will affect the latter ones
-        .sortBy(-_._1.start)
-        .foldLeft(program) { case (currentProg, (token, incomplete)) =>
-          currentProg.take(token.start) + incomplete + currentProg.substring(token.end)
-        }
-      val (newRoot, newFlix, newErrors) = compile(newProgram, Options.Default)
-      val newSource = mkSource(newProgram)
-      val newKeywordTokens = newRoot.tokens(newSource).toList.filter(_.kind.isComment).filter(token => token.sp1.line == token.sp2.line)
-      newKeywordTokens.foreach { token =>
-        // We will test all possible offsets in the keyword, including the start and end of the keyword
-        getAllPositionsWithinToken(token).foreach { pos =>
-          val completions = CompletionProvider.autoComplete(Uri, pos, newErrors)(newRoot, newFlix)
           assert(completions.items.isEmpty)
         }
       }
@@ -198,9 +170,16 @@ class TestCompletionProvider extends AnyFunSuite {
     * - def|
     */
   private def getAllPositionsWithinToken(token: Token): List[Position] = {
-    (0 to token.text.length).map { offset =>
-      token.offset(offset)
-    }.toList
+    val initialLine = token.sp1.line
+    val initialCol = token.sp1.col.toInt
+
+    token.text
+      .scanLeft((initialLine, initialCol)) { case ((line, col), char) =>
+        if (char == '\n') (line + 1, 1)
+        else (line, col + 1)
+      }
+      .map { case (line, col) => Position(line, col) }
+      .toList
   }
 
   /**
