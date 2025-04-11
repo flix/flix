@@ -16,31 +16,31 @@
 
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-sealed trait UndefinedNameContextState
+sealed trait ExprContextState
 
 /**
   * Represents the state when parsing the undefined name context.
   *
   */
-object UndefinedNameContextState {
+object ExprContextState {
   /**
     * Represents the start state.
     *
     * In this state we should expect an undefined name.
     */
-  case object Start extends UndefinedNameContextState
+  case object Start extends ExprContextState
 
   /**
     * Represents the state when we have found an undefined name.
     *
     * In this state we need to find of the number of arguments and pipelines applied to this undefined name.
     */
-  case object CanBeApplied extends UndefinedNameContextState
+  case object CanBeApplied extends ExprContextState
 
   /**
     * Represents the state when we are done.
     */
-  case object Done extends UndefinedNameContextState
+  case object Done extends ExprContextState
 }
 
-case class UndefinedNameContext(applied: Option[Int], pipelined: Option[Int])
+case class ExprContext(applied: Int, pipelined: Int)
