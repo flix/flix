@@ -117,13 +117,77 @@ class TestCompletionProvider extends AnyFunSuite  {
     }
   }
 
-  test("No completions on name definition"){
+  test("No completions when defining the name for defs"){
     Programs.foreach{ program =>
       val (root, flix, errors) = compile(program, Options.Default)
-      val allNameDefs = root.defs.keys ++ root.enums.keys ++ root.sigs.keys ++ root.traits.keys ++ root.effects.keys ++
-        root.structs.keys ++ root.typeAliases.keys
-      val validNameDef = allNameDefs.filter(_.src.name.startsWith(Uri)).map(_.loc)
-      validNameDef.foreach{ loc =>
+      val allNameDefLocs = root.defs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
+      allNameDefLocs.foreach{ loc =>
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
+        assert(completions.items.isEmpty)
+      }
+    }
+  }
+
+  test("No completions when defining the name for enums"){
+    Programs.foreach{ program =>
+      val (root, flix, errors) = compile(program, Options.Default)
+      val allNameDefLocs = root.enums.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
+      allNameDefLocs.foreach{ loc =>
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
+        assert(completions.items.isEmpty)
+      }
+    }
+  }
+
+  test("No completions when defining the name for sigs"){
+    Programs.foreach{ program =>
+      val (root, flix, errors) = compile(program, Options.Default)
+      val allNameDefLocs = root.sigs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
+      allNameDefLocs.foreach{ loc =>
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
+        assert(completions.items.isEmpty)
+      }
+    }
+  }
+
+  test("No completions when defining the name for traits"){
+    Programs.foreach{ program =>
+      val (root, flix, errors) = compile(program, Options.Default)
+      val allNameDefLocs = root.traits.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
+      allNameDefLocs.foreach{ loc =>
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
+        assert(completions.items.isEmpty)
+      }
+    }
+  }
+
+  test("No completions when defining the name for effects"){
+    Programs.foreach{ program =>
+      val (root, flix, errors) = compile(program, Options.Default)
+      val allNameDefLocs = root.effects.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
+      allNameDefLocs.foreach{ loc =>
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
+        assert(completions.items.isEmpty)
+      }
+    }
+  }
+
+  test("No completions when defining the name for structs"){
+    Programs.foreach{ program =>
+      val (root, flix, errors) = compile(program, Options.Default)
+      val allNameDefLocs = root.structs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
+      allNameDefLocs.foreach{ loc =>
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
+        assert(completions.items.isEmpty)
+      }
+    }
+  }
+
+  test("No completions when defining the name for type aliases"){
+    Programs.foreach{ program =>
+      val (root, flix, errors) = compile(program, Options.Default)
+      val allNameDefLocs = root.typeAliases.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
+      allNameDefLocs.foreach{ loc =>
         val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
         assert(completions.items.isEmpty)
       }
