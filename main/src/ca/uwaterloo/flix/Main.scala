@@ -103,7 +103,7 @@ object Main {
       xfuzzer = cmdOpts.xfuzzer,
       xprinttyper = cmdOpts.xprinttyper,
       xverifyeffects = cmdOpts.xverifyeffects,
-      xverifylocations = cmdOpts.xverifylocations,
+      xverify = cmdOpts.xverify,
       xsubeffecting = cmdOpts.xsubeffecting,
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfPar = cmdOpts.XPerfPar,
@@ -359,7 +359,7 @@ object Main {
                      xfuzzer: Boolean = false,
                      xprinttyper: Option[String] = None,
                      xverifyeffects: Boolean = false,
-                     xverifylocations: Boolean = false,
+                     xverify: Boolean = false,
                      xsubeffecting: Set[Subeffecting] = Set.empty,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
@@ -588,8 +588,8 @@ object Main {
       opt[String]("Xverify-effects").action((_, c) => c.copy(xverifyeffects = true)).
         text("[experimental] verifies consistency of effects after typechecking")
 
-      opt[String]("Xverify-locations").action((_, c) => c.copy(xverifylocations = true)).
-        text("[experimental] verifies consistency of locations after typechecking")
+      opt[String]("Xverify").action((_, c) => c.copy(xverify = true)).
+        text("[experimental] verifies consistency after typechecking")
 
       // Xsubeffecting
       opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).
