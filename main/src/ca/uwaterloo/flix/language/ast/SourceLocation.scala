@@ -134,6 +134,11 @@ case class SourceLocation(isReal: Boolean, sp1: SourcePosition, sp2: SourcePosit
   def format: String = s"${source.name}:$beginLine:$beginCol"
 
   /**
+    * Returns a string representation of `this` source location with the line and column numbers for the start and end.
+    */
+  def toFullString: String = s"${source.name}:$beginLine:$beginCol-$endLine:$endCol"
+
+  /**
     * Returns the source text of the source location.
     */
   def text: Option[String] = {

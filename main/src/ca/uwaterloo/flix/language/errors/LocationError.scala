@@ -21,9 +21,6 @@ import ca.uwaterloo.flix.util.Formatter.NoFormatter.code
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 object LocationError {
-
-  private def format(loc: SourceLocation): String = s"${loc.source.name}:${loc.beginLine}:${loc.beginCol}-${loc.endLine}:${loc.endCol}"
-
   /**
     * An error raised when a location is not contained in location of its parent.
     *
@@ -32,7 +29,7 @@ object LocationError {
     */
   def mkChildOutOfBoundError(parentLoc: SourceLocation, loc: SourceLocation): InternalCompilerException = {
     val message =
-      s""">> The location of the child ${format(loc)} is not contained in the location of its parent ${format(parentLoc)}.
+      s""">> The location of the child ${loc.toFullString} is not contained in the location of its parent ${parentLoc.toFullString}.
          |
          |${code(loc, "Child location.")}
          |""".stripMargin
@@ -47,7 +44,7 @@ object LocationError {
   */
 def mkAppearanceOrderError(prevLoc: SourceLocation, loc: SourceLocation): InternalCompilerException = {
   val message: String =
-    s""">> The location of the node ${format(loc)} is not after the location of the preceding node ${format(prevLoc)}.
+    s""">> The location of the node ${loc.toFullString} is not after the location of the preceding node ${prevLoc.toFullString}.
        |
        |${code(loc, "node location.")}
        |""".stripMargin
@@ -62,7 +59,7 @@ def mkAppearanceOrderError(prevLoc: SourceLocation, loc: SourceLocation): Intern
     */
   def mkDifferentEndingError(parentLoc: SourceLocation, loc: SourceLocation): InternalCompilerException = {
     val message: String =
-      s""">> The location of the last child ${format(loc)} has a different ending than its parent ${format(parentLoc)}.
+      s""">> The location of the last child ${loc.toFullString} has a different ending than its parent ${parentLoc.toFullString}.
          |
          |${code(loc, "Child location.")}
          |""".stripMargin
