@@ -156,26 +156,10 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getClosureAbstractClassType(tpe: MonoType): JvmType.Reference = tpe match {
+  def getClosureAbstractClassType(tpe: MonoType): BackendObjType = tpe match {
     case MonoType.Arrow(targs, tresult) =>
-      getClosureAbstractClassType(targs.map(getErasedJvmType), asErasedJvmType(tresult))
+     BackendObjType.AbstractArrow(targs.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(tresult))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
-  }
-
-
-  /**
-    * Returns the closure abstract class type `CloX$Y$Z` for the given signature.
-    *
-    * For example:
-    *
-    * Int -> Int          =>  Clo1$Int$Int
-    * (Int, Int) -> Int   =>  Clo2$Int$Int$Int
-    */
-  def getClosureAbstractClassType(argTypes: List[JvmType], resType: JvmType): JvmType.Reference = {
-    val arity = argTypes.length
-    val args = (argTypes ::: resType :: Nil).map(_.toErased).map(stringify)
-    val name = JvmName.mkClassName(s"Clo$arity", args)
-    JvmType.Reference(JvmName(RootPackage, name))
   }
 
   /**

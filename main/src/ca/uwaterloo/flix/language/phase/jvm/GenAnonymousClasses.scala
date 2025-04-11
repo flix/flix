@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.ast.MonoType.erase
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{MethodDescriptor, RootPackage}
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm
@@ -121,11 +122,11 @@ object GenAnonymousClasses {
       val args = fparams.map(_.tpe)
       val boxedResult = MonoType.Object
       val arrowType = MonoType.Arrow(args, boxedResult)
-      val closureAbstractClass = JvmOps.getClosureAbstractClassType(arrowType)
+      val closureAbstractClass = BackendObjType.AbstractArrow(args.map(BackendType.toErasedBackendType), BackendObjType.JavaObject.toTpe)
       val functionInterface = JvmOps.getFunctionInterfaceType(arrowType)
 
       // Create the field that will store the closure implementing the body of the method
-      AsmOps.compileField(classVisitor, cloName, closureAbstractClass, isStatic = false, isPrivate = false, isVolatile = false)
+      classVisitor.visitField(ACC_PUBLIC, cloName, closureAbstractClass.toDescriptor, null, null)
 
       // Drop the first formal parameter (which always represents `this`)
       val paramTypes = fparams.tail.map(_.tpe)
@@ -135,8 +136,8 @@ object GenAnonymousClasses {
       methodVisitor.visitVarInsn(ALOAD, 0)
       methodVisitor.visitFieldInsn(GETFIELD, currentClass.name.toInternalName, cloName, closureAbstractClass.toDescriptor)
 
-      methodVisitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName,
-        AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
+      methodVisitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.jvmName.toInternalName, closureAbstractClass.GetUniqueThreadClosureMethod.name,
+        MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, false)
 
       // Push arguments onto the stack
       var offset = 0

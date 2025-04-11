@@ -18,11 +18,11 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
-import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression.compileInt
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import org.objectweb.asm.Opcodes.*
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor, Opcodes}
 
@@ -130,7 +130,7 @@ object GenFunAndClosureClasses {
     // Header
     val functionInterface = kind match {
       case Function => JvmOps.getFunctionInterfaceType(defn.arrowType)
-      case Closure => JvmOps.getClosureAbstractClassType(defn.arrowType)
+      case Closure => JvmType.Reference(JvmOps.getClosureAbstractClassType(defn.arrowType).jvmName)
     }
     val frameInterface = BackendObjType.Frame
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null,
@@ -308,8 +308,11 @@ object GenFunAndClosureClasses {
   }
 
   private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def): Unit = {
-    val closureAbstractClass = JvmOps.getClosureAbstractClassType(defn.arrowType)
-    val m = visitor.visitMethod(ACC_PUBLIC, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), null, null)
+    val closureAbstractClass = defn.arrowType match {
+      case MonoType.Arrow(args, result) => BackendObjType.AbstractArrow(args.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(result))
+      case _ => throw InternalCompilerException(s"Unexpected type ${defn.arrowType}", SourceLocation.Unknown)
+    }
+    val m = visitor.visitMethod(ACC_PUBLIC, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, null, null)
     m.visitCode()
 
     mkCopy(classType, defn)(new BytecodeInstructions.F(m))

@@ -1083,17 +1083,20 @@ object GenExpression {
     }
 
     case Expr.ApplyClo(exp1, exp2, ct, _, purity, loc) =>
+      // Type of the function abstract class
+      val functionInterface = JvmOps.getFunctionInterfaceType(exp1.tpe)
+      val closureAbstractClass = exp1.tpe match {
+        case MonoType.Arrow(args, result) => BackendObjType.AbstractArrow(args.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(result))
+        case _ => throw InternalCompilerException(s"Unexpected type: '${exp1.tpe}'.", loc)
+      }
       ct match {
         case ExpPosition.Tail =>
-          // Type of the function abstract class
-          val functionInterface = JvmOps.getFunctionInterfaceType(exp1.tpe)
-          val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp1.tpe)
           // Evaluating the closure
           compileExpr(exp1)
           // Casting to JvmType of closure abstract class
-          mv.visitTypeInsn(CHECKCAST, closureAbstractClass.name.toInternalName)
+          mv.visitTypeInsn(CHECKCAST, closureAbstractClass.jvmName.toInternalName)
           // retrieving the unique thread object
-          mv.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
+          mv.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.jvmName.toInternalName, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, false)
           // Putting arg on the Fn class
           // Duplicate the FunctionInterface
           mv.visitInsn(DUP)
@@ -1105,15 +1108,11 @@ object GenExpression {
           mv.visitInsn(ARETURN)
 
         case ExpPosition.NonTail =>
-          // Type of the function abstract class
-          val functionInterface = JvmOps.getFunctionInterfaceType(exp1.tpe)
-          val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp1.tpe)
-
           compileExpr(exp1)
           // Casting to JvmType of closure abstract class
-          mv.visitTypeInsn(CHECKCAST, closureAbstractClass.name.toInternalName)
+          mv.visitTypeInsn(CHECKCAST, closureAbstractClass.jvmName.toInternalName)
           // retrieving the unique thread object
-          mv.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
+          mv.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.jvmName.toInternalName, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, false)
           // Putting arg on the Fn class
           // Duplicate the FunctionInterface
           mv.visitInsn(DUP)
