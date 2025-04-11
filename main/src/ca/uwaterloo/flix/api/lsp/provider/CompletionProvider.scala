@@ -46,7 +46,7 @@ object CompletionProvider {
 
   def autoComplete(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): CompletionList = {
       val stack = getStack(uri, pos)
-      val undefinedNameContext: UndefinedNameContext = getUndefinedNameContext(stack)
+      val undefinedNameContext: ExprContext = getUndefinedNameContext(stack)
       val items = getCompletions(uri, pos, currentErrors)(root, flix).map(_.toCompletionItem(undefinedNameContext))
       CompletionList(isIncomplete = true, items)
   }
@@ -156,19 +156,31 @@ object CompletionProvider {
     *   CanBeApplied -- ApplyClo --> CanBeApplied
     *   CanBeApplied -- ApplyDef --> Done
     *   AnyState -- Anything --> Done
+    *
+    * For each ApplyClo, we increment the applied count.
+    * For each ApplyDef, we check the name of the symbol, if it is a pipeline operator, we increment the pipelined count.
     */
-  private def getUndefinedNameContext(stack: List[AnyRef]): UndefinedNameContext = {
-    stack.foldLeft((UndefinedNameContextState.Start: UndefinedNameContextState, UndefinedNameContext(None, pipelined = None))) {
-      case ((UndefinedNameContextState.Start, ctx), TypedAst.Expr.Error(_: ResolutionError.UndefinedName, _, _)) => (UndefinedNameContextState.CanBeApplied, ctx)
-      case ((UndefinedNameContextState.CanBeApplied, ctx), _: TypedAst.Expr.ApplyClo) => (UndefinedNameContextState.CanBeApplied, ctx.copy(applied = Some(ctx.applied.getOrElse(0) + 1)))
-      case ((UndefinedNameContextState.CanBeApplied, ctx), TypedAst.Expr.ApplyDef(DefSymUse(sym, _), _, _, _, _, _)) =>
-        sym.text match {
-          case "|>" | "!>" => (UndefinedNameContextState.Done, ctx.copy(pipelined = Some(1)))
-          case "||>" => (UndefinedNameContextState.Done, ctx.copy(pipelined = Some(2)))
-          case _ => (UndefinedNameContextState.Done, ctx)
-        }
-      case ((_, ctx), _) => (UndefinedNameContextState.Done, ctx) // Jump to the final state in other cases
-    }._2
+  private def getUndefinedNameContext(stack: List[AnyRef]): ExprContext = {
+    var state: ExprContextState = ExprContextState.Start
+    var applied = 0
+    var pipelined = 0
+    for (item <- stack if state != ExprContextState.Done) {
+      (state, item) match {
+        case (ExprContextState.Start, TypedAst.Expr.Error(_: ResolutionError.UndefinedName, _, _)) =>
+          state = ExprContextState.CanBeApplied
+        case (ExprContextState.CanBeApplied, _: TypedAst.Expr.ApplyClo) =>
+          state = ExprContextState.CanBeApplied
+          applied += 1
+        case (ExprContextState.CanBeApplied, TypedAst.Expr.ApplyDef(DefSymUse(sym, _), _, _, _, _, _)) =>
+          sym.text match {
+            case "|>" | "!>" => state = ExprContextState.Done; pipelined = 1
+            case "||>" => state = ExprContextState.Done; pipelined = 2
+            case _ => state = ExprContextState.Done
+          }
+        case (_, _) => state = ExprContextState.Done
+      }
+    }
+    ExprContext(applied, pipelined)
   }
 
   /**
