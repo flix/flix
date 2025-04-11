@@ -18,11 +18,11 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
-import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression.compileInt
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes.*
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor, Opcodes}
 
@@ -129,12 +129,12 @@ object GenFunAndClosureClasses {
 
     // Header
     val functionInterface = kind match {
-      case Function => JvmOps.getFunctionInterfaceType(defn.arrowType)
-      case Closure => JvmType.Reference(JvmOps.getClosureAbstractClassType(defn.arrowType).jvmName)
+      case Function => JvmOps.getFunctionInterfaceType(defn.arrowType).name
+      case Closure => JvmOps.getClosureAbstractClassType(defn.arrowType).jvmName
     }
     val frameInterface = BackendObjType.Frame
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null,
-      functionInterface.name.toInternalName, Array(frameInterface.jvmName.toInternalName))
+      functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
 
     // Fields
     val closureArgTypes = defn.cparams.map(_.tpe)
@@ -159,11 +159,11 @@ object GenFunAndClosureClasses {
     visitor.toByteArray
   }
 
-  private def compileConstructor(superClass: JvmType.Reference, visitor: ClassWriter): Unit = {
+  private def compileConstructor(superClass: JvmName, visitor: ClassWriter): Unit = {
     val constructor = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
 
     constructor.visitVarInsn(ALOAD, 0)
-    constructor.visitMethodInsn(INVOKESPECIAL, superClass.name.toInternalName, JvmName.ConstructorMethod,
+    constructor.visitMethodInsn(INVOKESPECIAL, superClass.toInternalName, JvmName.ConstructorMethod,
       MethodDescriptor.NothingToVoid.toDescriptor, false)
     constructor.visitInsn(RETURN)
 
@@ -308,10 +308,7 @@ object GenFunAndClosureClasses {
   }
 
   private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def): Unit = {
-    val closureAbstractClass = defn.arrowType match {
-      case MonoType.Arrow(args, result) => BackendObjType.AbstractArrow(args.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(result))
-      case _ => throw InternalCompilerException(s"Unexpected type ${defn.arrowType}", SourceLocation.Unknown)
-    }
+    val closureAbstractClass = JvmOps.getClosureAbstractClassType(defn.arrowType)
     val m = visitor.visitMethod(ACC_PUBLIC, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, null, null)
     m.visitCode()
 

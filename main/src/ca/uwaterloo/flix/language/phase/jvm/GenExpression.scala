@@ -1085,10 +1085,7 @@ object GenExpression {
     case Expr.ApplyClo(exp1, exp2, ct, _, purity, loc) =>
       // Type of the function abstract class
       val functionInterface = JvmOps.getFunctionInterfaceType(exp1.tpe)
-      val closureAbstractClass = exp1.tpe match {
-        case MonoType.Arrow(args, result) => BackendObjType.AbstractArrow(args.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(result))
-        case _ => throw InternalCompilerException(s"Unexpected type: '${exp1.tpe}'.", loc)
-      }
+      val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp1.tpe)
       ct match {
         case ExpPosition.Tail =>
           // Evaluating the closure
