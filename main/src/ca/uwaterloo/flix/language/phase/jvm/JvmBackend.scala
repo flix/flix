@@ -81,7 +81,9 @@ object JvmBackend {
       // Generate function classes.
       val functionInterfaces = erasedFunctionTypes.map(genClass).toMap
       val functionAndClosureClasses = GenFunAndClosureClasses.gen(root.defs)
-      val closureAbstractClasses = GenClosureAbstractClasses.gen(types)
+      val closureAbstractClasses = erasedFunctionTypes.map{
+        case BackendObjType.Arrow(args, result) => BackendObjType.AbstractArrow(args, result)
+      }.map(genClass).toMap
 
       val taggedAbstractClass = Map(genClass(BackendObjType.Tagged))
       val tagClasses = erasedTagTypes.map(genClass).toMap

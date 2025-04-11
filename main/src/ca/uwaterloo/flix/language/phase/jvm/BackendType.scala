@@ -178,7 +178,7 @@ object BackendType {
       case MonoType.String => BackendObjType.String.toTpe
       case MonoType.Regex => BackendObjType.Regex.toTpe
       case MonoType.Region => BackendObjType.Region.toTpe
-      case MonoType.Null => BackendObjType.Native(JvmName.ofClass(classOf[Object])).toTpe
+      case MonoType.Null => BackendObjType.JavaObject.toTpe
       case MonoType.Array(tpe) => Array(toBackendType(tpe))
       case MonoType.Lazy(tpe) => BackendObjType.Lazy(toBackendType(tpe)).toTpe
       case MonoType.Tuple(elms) => BackendObjType.Tuple(elms.map(toBackendType)).toTpe
