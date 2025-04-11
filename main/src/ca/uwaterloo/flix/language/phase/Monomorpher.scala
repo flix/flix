@@ -328,8 +328,8 @@ object Monomorpher {
         // We use an empty substitution because the defs are non-parametric.
         // It's important that non-parametric functions keep their symbol to not
         // invalidate the set of entryPoints functions.
-        val freshDefn = mkFreshDefn(sym, defn, StrictSubstitution.empty)
-        ctx.addSpecializedDef(sym, freshDefn)
+        val specializedDefn = mkSpecializedDefn(sym, defn, StrictSubstitution.empty)
+        ctx.addSpecializedDef(sym, specializedDefn)
     }
 
     // Perform function specialization until the queue is empty.
@@ -339,8 +339,8 @@ object Monomorpher {
       val queue = ctx.dequeueAllSpecializations
       ParOps.parMap(queue) {
         case (freshSym, defn, subst) =>
-          val freshDefn = mkFreshDefn(freshSym, defn, subst)
-          ctx.addSpecializedDef(freshSym, freshDefn)
+          val specializedDefn = mkSpecializedDefn(freshSym, defn, subst)
+          ctx.addSpecializedDef(freshSym, specializedDefn)
       }
     }
 
@@ -420,7 +420,7 @@ object Monomorpher {
   }
 
   /** Returns a specialization of `defn` with the name `freshSym` according to `subst`. */
-  private def mkFreshDefn(freshSym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): MonoAst.Def = {
+  private def mkSpecializedDefn(freshSym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): MonoAst.Def = {
     val (specializedFparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
 
     val specializedExp = visitExp(defn.exp, env0, subst)
