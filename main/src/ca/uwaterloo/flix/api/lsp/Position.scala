@@ -88,4 +88,12 @@ case class Position(line: Int, character: Int) extends Ordered[Position] {
     val lineComparison = this.line.compare(that.line)
     if (lineComparison != 0) lineComparison else this.character.compare(that.character)
   }
+
+  /**
+    * Returns `true` if `this` position is contained by the given source location `loc`
+    * This check is inclusive for both ends.
+    */
+  def containedBy(loc: SourceLocation): Boolean =
+    loc.beginLine <= line && line <= loc.endLine &&
+      loc.beginCol <= character && character <= loc.endCol
 }
