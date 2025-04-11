@@ -566,11 +566,11 @@ object Monomorpher {
               // Generate a fresh symbol for the let-bound variable.
               val freshSym = Symbol.freshVarSym(sym)
               val env1 = env0 + (sym -> freshSym)
-              val subst1 = caseSubst @@ subst.nonStrict
+              val subst1 = StrictSubstitution.mk(caseSubst @@ subst.nonStrict)
               // Visit the body under the extended environment.
-              val body = visitExp(body0, env1, StrictSubstitution.mk(subst1))
+              val body = visitExp(body0, env1, subst1)
               val eff = Type.mkUnion(e.eff, body.eff, loc.asSynthetic)
-              Some(MonoAst.Expr.Let(freshSym, e, body, StrictSubstitution.mk(subst1).apply(tpe), subst1(eff), loc))
+              Some(MonoAst.Expr.Let(freshSym, e, body, subst1(tpe), subst1(eff), loc))
           }
       }.get // We are safe to call get because the last case will always match.
 
