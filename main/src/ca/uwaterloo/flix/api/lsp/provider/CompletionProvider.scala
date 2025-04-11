@@ -17,11 +17,15 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.*
+import ca.uwaterloo.flix.api.lsp.acceptors.InsideAcceptor
+import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.provider.completion.*
 import ca.uwaterloo.flix.api.lsp.provider.completion.semantic.{GetStaticFieldCompleter, InvokeStaticMethodCompleter}
 import ca.uwaterloo.flix.api.lsp.provider.completion.syntactic.{ExprSnippetCompleter, KeywordCompleter}
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
 import ca.uwaterloo.flix.language.ast.shared.{SyntacticContext, TraitUsageKind}
 import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError, WeederError}
 
@@ -41,7 +45,9 @@ import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError
 object CompletionProvider {
 
   def autoComplete(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): CompletionList = {
-      val items = getCompletions(uri, pos, currentErrors)(root, flix).map(_.toCompletionItem)
+      val stack = getStack(uri, pos)
+      val undefinedNameContext: ExprContext = getUndefinedNameContext(stack)
+      val items = getCompletions(uri, pos, currentErrors)(root, flix).map(_.toCompletionItem(undefinedNameContext))
       CompletionList(isIncomplete = true, items)
   }
 
@@ -140,6 +146,58 @@ object CompletionProvider {
 
       case SyntacticContext.Unknown => Nil
     }
+  }
+
+  /**
+    * Returns the undefined name context from the stack.
+    *
+    * Transfer:
+    *   Start -- UndefinedName --> CanBeApplied
+    *   CanBeApplied -- ApplyClo --> CanBeApplied
+    *   CanBeApplied -- ApplyDef --> Done
+    *   AnyState -- Anything --> Done
+    *
+    * For each ApplyClo, we increment the applied count.
+    * For each ApplyDef, we check the name of the symbol, if it is a pipeline operator, we increment the pipelined count.
+    */
+  private def getUndefinedNameContext(stack: List[AnyRef]): ExprContext = {
+    var state: ExprContextState = ExprContextState.Start
+    var applied = 0
+    var pipelined = 0
+    for (item <- stack if state != ExprContextState.Done) {
+      (state, item) match {
+        case (ExprContextState.Start, TypedAst.Expr.Error(_: ResolutionError.UndefinedName, _, _)) =>
+          state = ExprContextState.CanBeApplied
+        case (ExprContextState.CanBeApplied, _: TypedAst.Expr.ApplyClo) =>
+          state = ExprContextState.CanBeApplied
+          applied += 1
+        case (ExprContextState.CanBeApplied, TypedAst.Expr.ApplyDef(DefSymUse(sym, _), _, _, _, _, _)) =>
+          sym.text match {
+            case "|>" | "!>" => state = ExprContextState.Done; pipelined = 1
+            case "||>" => state = ExprContextState.Done; pipelined = 2
+            case _ => state = ExprContextState.Done
+          }
+        case (_, _) => state = ExprContextState.Done
+      }
+    }
+    ExprContext(applied, pipelined)
+  }
+
+  /**
+    * Returns the stack of AST nodes at the given position.
+    *
+    * Every AST node that includes the given position is pushed onto the stack.
+    * Represented as a list of AnyRef. The head of the list is the innermost AST node.
+    */
+  private def getStack(uri: String, pos: Position)(implicit root: Root): List[AnyRef] = {
+    val stack = StackConsumer()
+
+    if (pos.character >= 2) {
+      val leftPos = Position(pos.line, pos.character - 1)
+      Visitor.visitRoot(root, stack, InsideAcceptor(uri, leftPos))
+    }
+
+    stack.getStack
   }
 
   /**
