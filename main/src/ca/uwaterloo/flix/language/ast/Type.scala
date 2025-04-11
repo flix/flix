@@ -218,13 +218,22 @@ sealed trait Type {
   }
 
   /**
+    * Returns the effect, argument types, and result type of `this` arrow type.
+    *
+    * NB: Assumes that `this` type is an arrow.
+    */
+  def decomposeArrow: (Type, List[Type], Type) = (typeConstructor, typeArguments) match {
+    case (Some(TypeConstructor.Arrow(_)), eff :: (args :+ res)) => (eff, args, res)
+    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.", loc)
+  }
+
+  /**
     * Returns the argument types of `this` arrow type.
     *
     * NB: Assumes that `this` type is an arrow.
     */
-  def arrowArgTypes: List[Type] = typeConstructor match {
-    case Some(TypeConstructor.Arrow(_)) => typeArguments.drop(1).dropRight(1)
-    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.", loc)
+  def arrowArgTypes: List[Type] = decomposeArrow match {
+    case (_, args, _) => args
   }
 
   /**
@@ -232,9 +241,8 @@ sealed trait Type {
     *
     * NB: Assumes that `this` type is an arrow.
     */
-  def arrowResultType: Type = typeConstructor match {
-    case Some(TypeConstructor.Arrow(_)) => typeArguments.last
-    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.", loc)
+  def arrowResultType: Type = decomposeArrow match {
+    case (_, _, res) => res
   }
 
   /**
@@ -242,9 +250,8 @@ sealed trait Type {
     *
     * NB: Assumes that `this` type is an arrow.
     */
-  def arrowEffectType: Type = typeConstructor match {
-    case Some(TypeConstructor.Arrow(_)) => typeArguments.head
-    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.", loc)
+  def arrowEffectType: Type = decomposeArrow match {
+    case (eff, _, _) => eff
   }
 
   /**

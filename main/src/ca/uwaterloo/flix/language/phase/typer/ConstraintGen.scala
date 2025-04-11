@@ -90,9 +90,7 @@ object ConstraintGen {
         val defn = root.defs(sym)
         val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
         val constrs1 = tconstrs1.map(_.copy(loc = loc2))
-        val declaredEff = declaredType.arrowEffectType
-        val declaredArgumentTypes = declaredType.arrowArgTypes
-        val declaredResultType = declaredType.arrowResultType
+        val (declaredEff, declaredArgumentTypes, declaredResultType) = declaredType.decomposeArrow
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(itvar, declaredType, loc2)
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
@@ -119,9 +117,7 @@ object ConstraintGen {
         val sig = root.traits(sym.trt).sigs(sym)
         val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
         val constrs1 = tconstrs1.map(_.copy(loc = loc1))
-        val declaredEff = declaredType.arrowEffectType
-        val declaredArgumentTypes = declaredType.arrowArgTypes
-        val declaredResultType = declaredType.arrowResultType
+        val (declaredEff, declaredArgumentTypes, declaredResultType) = declaredType.decomposeArrow
         val (tpes, effs) = exps.map(visitExp).unzip
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
         c.addClassConstraints(constrs1, loc2)
