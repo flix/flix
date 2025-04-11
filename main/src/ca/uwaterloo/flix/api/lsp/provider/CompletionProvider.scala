@@ -47,16 +47,16 @@ object CompletionProvider {
   def autoComplete(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): CompletionList = {
       val stack = getStack(uri, pos)
       val undefinedNameContext: UndefinedNameContext = getUndefinedNameContext(stack)
-      val items = getCompletions(uri, pos, currentErrors, stack)(root, flix).map(_.toCompletionItem(undefinedNameContext))
+      val items = getCompletions(uri, pos, currentErrors)(root, flix).map(_.toCompletionItem(undefinedNameContext))
       CompletionList(isIncomplete = true, items)
   }
 
   /**
     * Returns all completions in the given `uri` at the given position `pos`.
     */
-  private def getCompletions(uri: String, pos: Position, currentErrors: List[CompilationMessage], stack: List[AnyRef])(implicit root: Root, flix: Flix): List[Completion] = {
+  private def getCompletions(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[Completion] = {
     if (currentErrors.isEmpty)
-      HoleCompleter.getHoleCompletion(stack).toList
+      HoleCompleter.getHoleCompletion(uri, pos, root).toList
     else
       errorsAt(uri, pos, currentErrors).flatMap {
         case err: WeederError.UndefinedAnnotation => KeywordCompleter.getModKeywords(Range.from(err.loc))
