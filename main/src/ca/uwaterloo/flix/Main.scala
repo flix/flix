@@ -23,8 +23,8 @@ import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
-import ca.uwaterloo.flix.util.Validation.flatMapN
 import ca.uwaterloo.flix.util.*
+import ca.uwaterloo.flix.util.Validation.flatMapN
 
 import java.io.{File, PrintStream}
 import java.net.BindException
@@ -103,6 +103,7 @@ object Main {
       xfuzzer = cmdOpts.xfuzzer,
       xprinttyper = cmdOpts.xprinttyper,
       xverifyeffects = cmdOpts.xverifyeffects,
+      xverifylocations = cmdOpts.xverifylocations,
       xsubeffecting = cmdOpts.xsubeffecting,
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfPar = cmdOpts.XPerfPar,
@@ -358,6 +359,7 @@ object Main {
                      xfuzzer: Boolean = false,
                      xprinttyper: Option[String] = None,
                      xverifyeffects: Boolean = false,
+                     xverifylocations: Boolean = false,
                      xsubeffecting: Set[Subeffecting] = Set.empty,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
@@ -585,6 +587,9 @@ object Main {
       // Xverify-effects
       opt[String]("Xverify-effects").action((_, c) => c.copy(xverifyeffects = true)).
         text("[experimental] verifies consistency of effects after typechecking")
+
+      opt[String]("Xverify-locations").action((_, c) => c.copy(xverifylocations = true)).
+        text("[experimental] verifies consistency of locations after typechecking")
 
       // Xsubeffecting
       opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).

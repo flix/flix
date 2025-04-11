@@ -38,9 +38,13 @@ import scala.jdk.CollectionConverters.IterableHasAsScala
   */
 object LocationVerifier {
   def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (TypedAst.Root, List[Any]) = flix.phaseNew("LocationVerifier") {
-    implicit val sctx: SharedContext = SharedContext.mk()
-    val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
-    (root.copy(defs = defs), sctx.errors.asScala.toList)
+      if (flix.options.xverifylocations) {
+        implicit val sctx: SharedContext = SharedContext.mk()
+        val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
+        (root.copy(defs = defs), sctx.errors.asScala.toList)
+      } else {
+        (root, Nil)
+      }
   }
 
   private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext): TypedAst.Def = {
