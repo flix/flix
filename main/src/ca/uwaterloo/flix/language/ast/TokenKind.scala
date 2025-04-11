@@ -211,6 +211,8 @@ sealed trait TokenKind {
     */
   def isComment: Boolean = this == TokenKind.CommentDoc || this.isCommentNonDoc
 
+  def isDocComment = this == TokenKind.CommentDoc
+
   /**
     * Checks if this token is a keyword.
     */

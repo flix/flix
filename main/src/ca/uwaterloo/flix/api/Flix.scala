@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.TokenKind.{CommentBlock, CommentLine}
 import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
@@ -534,8 +535,13 @@ class Flix {
     val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
     errors ++= lexerErrors
 
-    val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
+    def stripComments(tokens: Array[Token]): Array[Token] = tokens.filterNot(t => t.kind == CommentLine || t.kind == CommentBlock)
+    val afterLexerStrippedOfComments = afterLexer.view.mapValues(stripComments).toMap
+
+    val (afterParserStrippedOfComments, parserErrors) = Parser2.run(afterLexerStrippedOfComments, cachedParserCst, changeSet)
     errors ++= parserErrors
+
+    val afterParser = afterParserStrippedOfComments.copy(tokens = afterLexer)
 
     val (weederValidation, weederErrors) = Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
     errors ++= weederErrors

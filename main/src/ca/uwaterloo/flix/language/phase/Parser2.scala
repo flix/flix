@@ -230,24 +230,24 @@ object Parser2 {
   /**
     * Opens a group with kind [[TreeKind.UnclosedMark]].
     * Each call to [[open]] must have a pairing call to [[close]]. This is asserted in [[buildTree]].
-    * [[open]] consumes comments into the opened group.
+    * [[open]] consumes doc-comments into the opened group if consumeDocComments is true.
     */
   private def open(consumeDocComments: Boolean = true)(implicit s: State): Mark.Opened = {
     val mark = Mark.Opened(s.events.length)
     s.events.append(Event.Open(TreeKind.UnclosedMark))
-    // Consume any comments just before opening a new mark.
-    comments(consumeDocComments = consumeDocComments)
+    // Consume any docComments just before opening a new mark.
+    if(consumeDocComments) {
+      docComments()
+    }
     mark
   }
 
   /**
-    * Closes a group and marks it with `kind`. [[close]] consumes comments into the group before
+    * Closes a group and marks it with `kind`.
     * closing.
     */
   private def close(mark: Mark.Opened, kind: TreeKind)(implicit s: State): Mark.Closed = {
     s.events(mark.index) = Event.Open(kind)
-    // Consume any comments just before closing a mark.
-    comments()
     s.events.append(Event.Close)
     Mark.Closed(mark.index)
   }
@@ -380,7 +380,7 @@ object Parser2 {
   /**
     * Advance past current token if it is of kind `kind`. Otherwise wrap it in an error.
     *
-    * [[expect]] does not consume comments. That means that consecutive calls to [[expect]] work in
+    * [[expect]] does not consume doc comments. That means that consecutive calls to [[expect]] work in
     * an atomic manner.
     *
     * expect(TokenKind.KeywordIf)
@@ -395,8 +395,6 @@ object Parser2 {
 
     val mark = open()
     val error = nth(0) match {
-      case TokenKind.CommentLine => MisplacedComments(context, currentSourceLocation())
-      case TokenKind.CommentBlock => MisplacedComments(context, currentSourceLocation())
       case TokenKind.CommentDoc => MisplacedDocComments(context, currentSourceLocation())
       case at => UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(kind)), actual = Some(at), context, hint = hint, loc = currentSourceLocation())
     }
@@ -410,8 +408,6 @@ object Parser2 {
     }
     val mark = open()
     val error = nth(0) match {
-      case TokenKind.CommentLine => MisplacedComments(context, currentSourceLocation())
-      case TokenKind.CommentBlock => MisplacedComments(context, currentSourceLocation())
       case TokenKind.CommentDoc => MisplacedDocComments(context, currentSourceLocation())
       case at => UnexpectedToken(expected = NamedTokenSet.FromKinds(kinds), actual = Some(at), context, hint = hint, loc = currentSourceLocation())
     }
@@ -429,8 +425,6 @@ object Parser2 {
     }
     val mark = open()
     val error = nth(0) match {
-      case TokenKind.CommentLine => MisplacedComments(context, currentSourceLocation())
-      case TokenKind.CommentBlock => MisplacedComments(context, currentSourceLocation())
       case TokenKind.CommentDoc => MisplacedDocComments(context, currentSourceLocation())
       case at => UnexpectedToken(expected = NamedTokenSet.FromKinds(kinds), actual = Some(at), context, hint = hint, loc = currentSourceLocation())
     }
@@ -529,7 +523,6 @@ object Parser2 {
     var continue = true
     var numItems = 0
     while (continue && !atEnd() && !eof()) {
-      comments()
       val kind = nth(0)
       if (checkForItem(kind)) {
         getItem()
@@ -561,9 +554,6 @@ object Parser2 {
           advanceWithError(error)
         }
       }
-      // Consume any comments trailing an item.
-      // This is needed because the comment might be just before delimiterR obscuring the atEnd check.
-      comments()
     }
     optionallyWith match {
       case Some((indicator, rule)) => if (eat(indicator)) {
@@ -731,33 +721,31 @@ object Parser2 {
   }
 
   /**
-    * Consumes comments.
-    *
-    * @param consumeDocComments If true, allow doc-comments to be parsed as a regular comment.
+    * Consumes doc comments.
     */
-  private def comments(consumeDocComments: Boolean = false)(implicit s: State): Unit = {
+  private def docComments()(implicit s: State): Unit = {
     // This function does not use nth on purpose, to avoid consuming fuel.
     // Both open and close call this function, so using nth would consume all the parsers fuel on
-    // comments.
-    def atComment(): Boolean = {
+    // docComments.
+    def atDocComment(): Boolean = {
       val current = if (s.position >= s.tokens.length - 1) {
         TokenKind.Eof
       } else {
         s.tokens(s.position).kind
       }
-      if (consumeDocComments) current.isComment else current.isCommentNonDoc
+      current.isDocComment
     }
 
-    if (atComment()) {
+    if (atDocComment()) {
       val mark = Mark.Opened(s.events.length)
       s.events.append(Event.Open(TreeKind.UnclosedMark))
       // This loop will also consume doc-comments that are preceded or surrounded by either line or
-      // block comments.
-      while (atComment() && !eof()) {
+      // block docComments.
+      while (atDocComment() && !eof()) {
         advance()
       }
       // Check for a trailing doc-comment that is not followed by a declaration.
-      val isDanglingDoc = consumeDocComments && nth(-1) == TokenKind.CommentDoc && !nth(0).isDocumentable
+      val isDanglingDoc = nth(-1) == TokenKind.CommentDoc && !nth(0).isDocumentable
       if (isDanglingDoc) {
         val errMark = open()
         closeWithError(errMark, MisplacedDocComments(SyntacticContext.Decl.Module, previousSourceLocation()))
@@ -872,7 +860,7 @@ object Parser2 {
         case TokenKind.KeywordStruct => structDecl(mark)
         case TokenKind.KeywordType => typeAliasDecl(mark)
         case TokenKind.KeywordEff => effectDecl(mark)
-        case TokenKind.Eof => close(mark, TreeKind.CommentList) // Last tokens in the file were comments.
+        case TokenKind.Eof => close(mark, TreeKind.CommentList) // Last tokens in the file were docComments.
         case at =>
           val loc = currentSourceLocation()
           val error = UnexpectedToken(expected = NamedTokenSet.Declaration, actual = Some(at), SyntacticContext.Decl.Module, loc = loc)
@@ -1127,8 +1115,7 @@ object Parser2 {
     private def FIRST_ENUM_CASE: Set[TokenKind] = Set(TokenKind.CommentDoc, TokenKind.KeywordCase, TokenKind.Comma)
 
     private def enumCases()(implicit s: State): Unit = {
-      // Clear non-doc comments that appear before any cases.
-      comments()
+      // Clear non-doc docComments that appear before any cases.
       while (!eof() && atAny(FIRST_ENUM_CASE)) {
         val mark = open(consumeDocComments = false)
         docComment()
@@ -2645,7 +2632,6 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordSelect, SyntacticContext.Expr.OtherExpr)
       expect(TokenKind.CurlyL, SyntacticContext.Expr.OtherExpr)
-      comments()
       // We can't use zeroOrMore here because there's special semantics.
       // The wildcard rule `case _ => ...` must be the last one.
       var continue = true
