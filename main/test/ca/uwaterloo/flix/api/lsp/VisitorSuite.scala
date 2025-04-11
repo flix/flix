@@ -26,8 +26,8 @@ class VisitorSuite extends AnyFunSuite {
   test("inside when strictly within lines") {
     val loc = SourceLocation(
       isReal = true,
-      SourcePosition(source, 3, 10),
-      SourcePosition(source, 6, 2)
+      SourcePosition.mkFromOneIndexed(source, 3, 10),
+      SourcePosition.mkFromOneIndexed(source, 6, 2)
     )
     val pos = Position(5, 5)
 
@@ -37,8 +37,8 @@ class VisitorSuite extends AnyFunSuite {
   test("inside when on start line and after start character") {
     val loc = SourceLocation(
       isReal = true,
-      SourcePosition(source, 3, 4),
-      SourcePosition(source, 5, 2)
+      SourcePosition.mkFromOneIndexed(source, 3, 4),
+      SourcePosition.mkFromOneIndexed(source, 5, 2)
     )
     val  pos = Position(3, 5)
 
@@ -48,8 +48,8 @@ class VisitorSuite extends AnyFunSuite {
   test("inside when on start line and at start character") {
     val loc = SourceLocation(
       isReal = true,
-      SourcePosition(source, 3, 4),
-      SourcePosition(source, 5, 2)
+      SourcePosition.mkFromOneIndexed(source, 3, 4),
+      SourcePosition.mkFromOneIndexed(source, 5, 2)
     )
     val  pos = Position(3, 4)
 
@@ -59,8 +59,8 @@ class VisitorSuite extends AnyFunSuite {
   test("inside when on end line and before end character") {
     val loc = SourceLocation(
       isReal = true,
-      SourcePosition(source, 3, 4),
-      SourcePosition(source, 5, 3)
+      SourcePosition.mkFromOneIndexed(source, 3, 4),
+      SourcePosition.mkFromOneIndexed(source, 5, 3)
     )
     val  pos = Position(5, 1)
 
@@ -70,8 +70,8 @@ class VisitorSuite extends AnyFunSuite {
   test("inside when on end line and right before end character") {
     val loc = SourceLocation(
       isReal = true,
-      SourcePosition(source, 3, 4),
-      SourcePosition(source, 5, 3)
+      SourcePosition.mkFromOneIndexed(source, 3, 4),
+      SourcePosition.mkFromOneIndexed(source, 5, 3)
     )
     val  pos = Position(5, 2)
 
@@ -81,8 +81,8 @@ class VisitorSuite extends AnyFunSuite {
   test("inside when on start and end line and within characters") {
     val loc = SourceLocation(
       isReal = true,
-      SourcePosition(source, 5, 2),
-      SourcePosition(source, 5, 10)
+      SourcePosition.mkFromOneIndexed(source, 5, 2),
+      SourcePosition.mkFromOneIndexed(source, 5, 10)
     )
     val  pos = Position(5, 4)
 
@@ -92,8 +92,8 @@ class VisitorSuite extends AnyFunSuite {
   test("inside when on start and end line and at start character") {
     val loc = SourceLocation(
       isReal = true,
-      SourcePosition(source, 5, 2),
-      SourcePosition(source, 5, 10)
+      SourcePosition.mkFromOneIndexed(source, 5, 2),
+      SourcePosition.mkFromOneIndexed(source, 5, 10)
     )
     val  pos = Position(5, 2)
 
@@ -103,8 +103,8 @@ class VisitorSuite extends AnyFunSuite {
   test("inside when on start and end line and right before end character") {
     val loc = SourceLocation(
       isReal = true,
-      SourcePosition(source, 5, 2),
-      SourcePosition(source, 5, 10)
+      SourcePosition.mkFromOneIndexed(source, 5, 2),
+      SourcePosition.mkFromOneIndexed(source, 5, 10)
     )
     val  pos = Position(5, 9)
 
@@ -114,8 +114,8 @@ class VisitorSuite extends AnyFunSuite {
   test("not inside when before start line") {
     val loc = SourceLocation(
       isReal = true,
-      SourcePosition(source, 4, 4),
-      SourcePosition(source, 6, 10),
+      SourcePosition.mkFromOneIndexed(source, 4, 4),
+      SourcePosition.mkFromOneIndexed(source, 6, 10),
     )
     val pos = Position(3, 7)
 
@@ -125,8 +125,8 @@ class VisitorSuite extends AnyFunSuite {
   test("not inside when after end line") {
     val loc = SourceLocation(
       isReal = true,
-      SourcePosition(source, 3, 2),
-      SourcePosition(source, 6, 5),
+      SourcePosition.mkFromOneIndexed(source, 3, 2),
+      SourcePosition.mkFromOneIndexed(source, 6, 5),
     )
     val pos = Position(7, 4)
 
@@ -136,8 +136,8 @@ class VisitorSuite extends AnyFunSuite {
   test("not inside when on start line but before start character (column)") {
     val loc = SourceLocation(
       isReal = true,
-      SourcePosition(source, 2, 7),
-      SourcePosition(source, 6, 4),
+      SourcePosition.mkFromOneIndexed(source, 2, 7),
+      SourcePosition.mkFromOneIndexed(source, 6, 4),
     )
     val pos = Position(2, 6)
 
@@ -147,8 +147,8 @@ class VisitorSuite extends AnyFunSuite {
   test("not inside when on end line but after end character (column)") {
     val loc = SourceLocation(
       isReal = true,
-      SourcePosition(source, 2, 7),
-      SourcePosition(source, 6, 4),
+      SourcePosition.mkFromOneIndexed(source, 2, 7),
+      SourcePosition.mkFromOneIndexed(source, 6, 4),
     )
     val pos = Position(6, 11)
 
@@ -159,8 +159,8 @@ class VisitorSuite extends AnyFunSuite {
   test("not inside when on end line and on end character") {
     val loc = SourceLocation(
       isReal = true,
-      SourcePosition(source, 3, 5),
-      SourcePosition(source, 5, 3),
+      SourcePosition.mkFromOneIndexed(source, 3, 5),
+      SourcePosition.mkFromOneIndexed(source, 5, 3),
     )
     val pos = Position(5, 3)
 
@@ -170,8 +170,8 @@ class VisitorSuite extends AnyFunSuite {
   test("not inside when on start and end line but before start character") {
     val loc = SourceLocation(
       isReal = true,
-      SourcePosition(source, 6, 4),
-      SourcePosition(source, 6, 8)
+      SourcePosition.mkFromOneIndexed(source, 6, 4),
+      SourcePosition.mkFromOneIndexed(source, 6, 8)
     )
     val pos = Position(6, 3)
 
@@ -181,8 +181,8 @@ class VisitorSuite extends AnyFunSuite {
   test("not inside when on start and end line but after end character") {
     val loc = SourceLocation(
       isReal = true,
-      SourcePosition(source, 6, 4),
-      SourcePosition(source, 6, 8)
+      SourcePosition.mkFromOneIndexed(source, 6, 4),
+      SourcePosition.mkFromOneIndexed(source, 6, 8)
     )
     val pos = Position(6, 9)
 
@@ -192,8 +192,8 @@ class VisitorSuite extends AnyFunSuite {
   test("not inside when on start and end line but on end character") {
     val loc = SourceLocation(
       isReal = true,
-      SourcePosition(source, 6, 4),
-      SourcePosition(source, 6, 8)
+      SourcePosition.mkFromOneIndexed(source, 6, 4),
+      SourcePosition.mkFromOneIndexed(source, 6, 8)
     )
     val pos = Position(6, 8)
 
@@ -203,8 +203,8 @@ class VisitorSuite extends AnyFunSuite {
   test("not inside if uri doesn't match source") {
     val loc = SourceLocation(
       isReal = true,
-      SourcePosition(source, 3, 6),
-      SourcePosition(source, 6, 10)
+      SourcePosition.mkFromOneIndexed(source, 3, 6),
+      SourcePosition.mkFromOneIndexed(source, 6, 10)
     )
     val pos = Position(4, 4)
 

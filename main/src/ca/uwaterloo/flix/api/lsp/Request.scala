@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s
-import org.json4s.jvalue2monadic
 import org.json4s.JsonAST.{JString, JValue}
+import org.json4s.jvalue2monadic
 
 import java.util.Base64
 
@@ -135,6 +135,11 @@ object Request {
    * A request to get semantic tokens for a file.
    */
   case class SemanticTokens(requestId: String, uri: String) extends Request
+
+  /**
+    * A request to get the signature information.
+    */
+  case class Signature(requestId: String, uri: String, pos: Position) extends Request
 
   /**
     * A request to get workspace symbols information.
@@ -395,6 +400,17 @@ object Request {
       id <- parseId(json)
       uri <- parseUri(json)
     } yield Request.SemanticTokens(id, uri)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Signature]] request.
+    */
+  def parseSignature(json: JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+      pos <- Position.parse(json \\ "position")
+    } yield Request.Signature(id, uri, pos)
   }
 
   /**

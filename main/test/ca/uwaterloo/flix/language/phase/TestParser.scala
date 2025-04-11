@@ -845,6 +845,12 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[LexerError](result)
   }
 
+  test("ParseError.Interpolation.03") {
+    val input = """pub def foo(): String = "\\${""""
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError](result)
+  }
+
   test("ParseError.EnumCase.01") {
     val input =
       """
