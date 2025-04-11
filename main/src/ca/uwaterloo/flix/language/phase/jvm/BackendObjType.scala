@@ -1281,36 +1281,36 @@ object BackendObjType {
       "join", mkDescriptor(CharSequence.toTpe, BackendType.Array(CharSequence.toTpe))(String.toTpe), None)
 
     def BoolValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Bool)(this.jvmName.toTpe), None)
+      "valueOf", mkDescriptor(BackendType.Bool)(this.toTpe), None)
 
     def CharValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Char)(this.jvmName.toTpe), None)
+      "valueOf", mkDescriptor(BackendType.Char)(this.toTpe), None)
 
     // implicit use of Int8 as Int32
     def Int8ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Int32)(this.jvmName.toTpe), None)
+      "valueOf", mkDescriptor(BackendType.Int32)(this.toTpe), None)
 
     // implicit use of Int16 as Int32
     def Int16ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Int32)(this.jvmName.toTpe), None)
+      "valueOf", mkDescriptor(BackendType.Int32)(this.toTpe), None)
 
     def Int32ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Int32)(this.jvmName.toTpe), None)
+      "valueOf", mkDescriptor(BackendType.Int32)(this.toTpe), None)
 
     def Int64ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Int64)(this.jvmName.toTpe), None)
+      "valueOf", mkDescriptor(BackendType.Int64)(this.toTpe), None)
 
     def Float32ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Float32)(this.jvmName.toTpe), None)
+      "valueOf", mkDescriptor(BackendType.Float32)(this.toTpe), None)
 
     def Float64ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Float64)(this.jvmName.toTpe), None)
+      "valueOf", mkDescriptor(BackendType.Float64)(this.toTpe), None)
 
     def ObjectValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendObjType.JavaObject.toTpe)(this.jvmName.toTpe), None)
+      "valueOf", mkDescriptor(BackendObjType.JavaObject.toTpe)(this.toTpe), None)
 
     def Concat: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal,
-      "concat", mkDescriptor(this.jvmName.toTpe)(this.jvmName.toTpe), None)
+      "concat", mkDescriptor(this.toTpe)(this.toTpe), None)
   }
 
   case object CharSequence extends BackendObjType
@@ -1984,7 +1984,7 @@ object BackendObjType {
         xReturn(Result.toTpe)
     ))
 
-    def UniqueMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "getUniqueThreadClosure", mkDescriptor()(Native(this.superClass.jvmName).toTpe), Some(_ =>
+    def UniqueMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "getUniqueThreadClosure", mkDescriptor()(this.superClass.toTpe), Some(_ =>
       thisLoad() ~ ARETURN()
     ))
 
