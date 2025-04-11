@@ -17,10 +17,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern, RestrictableChoosePattern}
-import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.LocationError
 import ca.uwaterloo.flix.util.ParOps
@@ -37,7 +37,7 @@ import scala.jdk.CollectionConverters.IterableHasAsScala
   *   - The parent node and its last child node must have the same ending.
   */
 object LocationVerifier {
-  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (TypedAst.Root, List[LocationError]) = flix.phaseNew("LocationVerifier") {
+  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (TypedAst.Root, List[Any]) = flix.phaseNew("LocationVerifier") {
     implicit val sctx: SharedContext = SharedContext.mk()
     val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
     (root.copy(defs = defs), sctx.errors.asScala.toList)
@@ -600,7 +600,7 @@ object LocationVerifier {
   private def verifyParentContainment(parentLoc: SourceLocation, childrenLocation: List[SourceLocation])(implicit sctx: SharedContext): Unit =
     childrenLocation.foreach { loc =>
       if (!parentLoc.contains(loc)) {
-        sctx.errors.add(LocationError.ChildOutOfBoundError(parentLoc, loc))
+        throw LocationError.mkChildOutOfBoundError(parentLoc, loc)
       }
     }
 
@@ -613,7 +613,7 @@ object LocationVerifier {
     locs.sliding(2).foreach {
       case List(prevLoc, currLoc) =>
         if (!prevLoc.isBefore(currLoc)) {
-          sctx.errors.add(LocationError.AppearanceOrderError(prevLoc, currLoc))
+          throw LocationError.mkAppearanceOrderError(prevLoc, currLoc)
         }
       case _ => ()
     }
@@ -627,7 +627,7 @@ object LocationVerifier {
     */
   private def verifySameEnding(parentLoc: SourceLocation, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     if (parentLoc.sp2 != loc.sp2) {
-      sctx.errors.add(LocationError.DifferentEndingError(parentLoc, loc))
+      LocationError.mkDifferentEndingError(parentLoc, loc)
     }
   }
 
@@ -647,6 +647,6 @@ object LocationVerifier {
     *
     * @param errors the [[LocationError]]s in the AST, if any.
     */
-  private case class SharedContext(errors: ConcurrentLinkedQueue[LocationError])
+  private case class SharedContext(errors: ConcurrentLinkedQueue[Any])
 }
 

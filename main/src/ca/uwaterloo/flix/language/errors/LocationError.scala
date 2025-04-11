@@ -17,54 +17,42 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.util.Formatter
-
-/**
-  * A common super-type for location errors.
-  */
-trait LocationError extends CompilationMessage {
-  val kind: CompilationMessageKind = CompilationMessageKind.LocationError
-}
+import ca.uwaterloo.flix.util.Formatter.NoFormatter.code
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object LocationError {
 
   private def format(loc: SourceLocation): String = s"${loc.source.name}:${loc.beginLine}:${loc.beginCol}-${loc.endLine}:${loc.endCol}"
+
   /**
     * An error raised when a location is not contained in location of its parent.
     *
     * @param parentLoc the location of the parent node.
     * @param loc       the location of the chile node.
     */
-  case class ChildOutOfBoundError(parentLoc: SourceLocation, loc: SourceLocation) extends LocationError {
-    def summary: String = "The location of the child is not contained in the location of its parent."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
+  def mkChildOutOfBoundError(parentLoc: SourceLocation, loc: SourceLocation): InternalCompilerException = {
+    val message =
       s""">> The location of the child ${format(loc)} is not contained in the location of its parent ${format(parentLoc)}.
          |
          |${code(loc, "Child location.")}
          |""".stripMargin
-    }
+    InternalCompilerException(message, loc)
   }
 
-  /**
-    * An error raised when a location is not after the location of the preceding node.
-    *
-    * @param prevLoc the location of the preceding node.
-    * @param loc     the location of the child node.
-    */
-  case class AppearanceOrderError(prevLoc: SourceLocation, loc: SourceLocation) extends LocationError {
-    def summary: String = "The location of the node is not after the location of the preceding node."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> The location of the node ${format(loc)} is not after the location of the preceding node ${format(prevLoc)}.
-         |
-         |${code(loc, "node location.")}
-         |""".stripMargin
-    }
-  }
+/**
+  * An error raised when a location is not after the location of the preceding node.
+  *
+  * @param prevLoc the location of the preceding node.
+  * @param loc     the location of the child node.
+  */
+def mkAppearanceOrderError(prevLoc: SourceLocation, loc: SourceLocation): InternalCompilerException = {
+  val message: String =
+    s""">> The location of the node ${format(loc)} is not after the location of the preceding node ${format(prevLoc)}.
+       |
+       |${code(loc, "node location.")}
+       |""".stripMargin
+  InternalCompilerException(message, loc)
+}
 
   /**
     * An error raised when the location of the last child has a different ending than its parent.
@@ -72,15 +60,12 @@ object LocationError {
     * @param parentLoc the location of the parent node.
     * @param loc       the location of the child node.
     */
-  case class DifferentEndingError(parentLoc: SourceLocation, loc: SourceLocation) extends LocationError {
-    def summary: String = "The location of the last child has a different ending than its parent."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
+  def mkDifferentEndingError(parentLoc: SourceLocation, loc: SourceLocation): InternalCompilerException = {
+    val message: String =
       s""">> The location of the last child ${format(loc)} has a different ending than its parent ${format(parentLoc)}.
          |
          |${code(loc, "Child location.")}
          |""".stripMargin
-    }
+    InternalCompilerException(message, loc)
   }
 }
