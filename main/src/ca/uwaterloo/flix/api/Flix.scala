@@ -534,6 +534,8 @@ class Flix {
     val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
     errors ++= lexerErrors
 
+    TokenVerifier.run(afterLexer)
+
     val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
     errors ++= parserErrors
 

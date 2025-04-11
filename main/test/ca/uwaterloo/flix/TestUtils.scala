@@ -99,6 +99,17 @@ trait TestUtils {
   }
 
   /**
+    * Asserts that the result of a compiler check is successful.
+    */
+  def expectSuccessOnCheck(result: (Option[TypedAst.Root], List[CompilationMessage])): Unit = result match {
+    case (Some(_), Nil) => ()
+    case (None, Nil) =>
+      fail(s"Expected success, but found no AST and no errors")
+    case (_, errors) =>
+      fail(s"Expected success, but found errors:\n\n${errorString(errors)}.")
+  }
+
+  /**
     * Private generic version of expectError.
     * Asserts that the validation is a failure with a value of the parametric type `T`.
     */
