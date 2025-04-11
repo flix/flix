@@ -177,10 +177,11 @@ object BenchmarkInliner {
     // Build
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
     val file = BenchmarkFile(name, opts)
+    val baseline = BenchmarkFile.BaselineFile(file)
     Files.createDirectories(file.BuildDir)
     val flix = new Flix().setOptions(opts.copy(output = Some(file.BuildDir)))
     flix.addSourceCode(name, prog)
-    flix.addSourceCode("mainProg", mainProg)
+    flix.addSourceCode("mainProg", mainProg(baseline.toString))
     flix.compile().unsafeGet
 
     // Jar
@@ -216,6 +217,13 @@ object BenchmarkInliner {
     val ClassFilesDir: Path = BuildDir.resolve("class/").normalize()
     val JarFilePath: Path = jarDirFor(JarName)
     val OutputFile: Path = benchOutputPath.resolve(s"$FileName.json").normalize()
+  }
+
+  private object BenchmarkFile {
+    def BaselineFile(file: BenchmarkFile): Path = {
+      val baseOpts = file.opts.copy(inlinerRounds = 0, inliner1Rounds = 0, xnooptimizer = true, xnooptimizer1 = true)
+      BenchmarkFile(file.name, baseOpts).OutputFile
+    }
   }
 
   private def mkScriptSnippet(file: BenchmarkFile): String = {
@@ -481,7 +489,7 @@ object BenchmarkInliner {
     }
   }
 
-  private def mainProg: String = {
+  private def mainProg(baselineFilePath: String): String = {
     s"""
        |import java.lang.System
        |import java.lang.ProcessHandle
@@ -551,6 +559,9 @@ object BenchmarkInliner {
        |def toJSON(samples: List[Int64]): JSON = {
        |    JSON.Obj(
        |        List#{
+       |            ("baseline",
+       |                JVal.Lit(Lit.Str("$baselineFilePath"))
+       |            ),
        |            ("samples",
        |                JVal.Arr(List.toVector(samples) |> Vector.map(n -> JVal.Lit(Lit.Num(n))))
        |            )
