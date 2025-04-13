@@ -1,4 +1,4 @@
-﻿# Contributors
+# Contributors
 
 By adding your name to this document, you agree to release all your contributions to Flix under the [Apache 2.0 License](LICENSE.md).
 
@@ -65,7 +65,7 @@ By adding your name to this document, you agree to release all your contribution
 - [Xavier deSouza](https://github.com/xdesou01)
 - [Herluf Baggesen](https://github.com/herluf-ba)
 - [Yukang Xie](https://github.com/bathtub-01)
-- [Lionel Mendes](https://github.com/LionelMeli) 
+- [Lionel Mendes](https://github.com/LionelMeli)
 - [Stephen Bastians](https://github.com/stetimi)
 - [Chanattan Sok](https://github.com/ZentsuGo)
 - [Felix Berg](https://github.com/felix-berg)
@@ -77,3 +77,4 @@ By adding your name to this document, you agree to release all your contribution
 - [gwydd](https://github.com/gwydd12)
 - [Adam Yasser Tallouzi](https://github.com/JumpTwiice)
 - [Casper Dalgaard Nielsen](https://github.com/CasperDN)
+- [Gagan Chandan](https://github.com/gaganchandan)
