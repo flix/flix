@@ -90,7 +90,7 @@ object Inliner1 {
 
   private type Subst = Map[InVar, SubstRange]
 
-  private type InScopeSet = Map[OutVar, Definition]
+  private type InScopeVars = Map[OutVar, Definition]
 
   private sealed trait InliningContext
 
@@ -108,7 +108,7 @@ object Inliner1 {
 
   }
 
-  private case class Context(varSubst: VarSubst, subst: Subst, inScopeSet: InScopeSet, inliningContext: InliningContext)
+  private case class Context(varSubst: VarSubst, subst: Subst, inScopeVars: InScopeVars, inliningContext: InliningContext)
 
   private object Context {
     def emptyStart: Context = Context(Map.empty, Map.empty, Map.empty, InliningContext.Start)
@@ -183,7 +183,7 @@ object Inliner1 {
         val e2 = visit(exp2)
 
         def maybeInline(sym1: OutVar): Expr.ApplyClo = {
-          ctx0.inScopeSet.get(sym1) match {
+          ctx0.inScopeVars.get(sym1) match {
             case Some(Definition.LetBound(lambda, Occur.OnceInLocalDef)) =>
               sctx.inlinedVars.add((sym0, sym1))
               val e1 = refreshBinders(lambda)(Map.empty, flix)
@@ -288,8 +288,8 @@ object Inliner1 {
               // Case 5:
               // If none of the previous cases pass, `sym` is not inlined. Return a let expression with the visited expressions
               // Code size and runtime are not impacted
-              val inScopeSet1 = ctx0.inScopeSet + (freshVarSym -> Definition.LetBound(e1, occur))
-              val ctx = ctx0.copy(varSubst = varSubst1, inScopeSet = inScopeSet1)
+              val inScopeSet1 = ctx0.inScopeVars + (freshVarSym -> Definition.LetBound(e1, occur))
+              val ctx = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeSet1)
               val e2 = visitExp(exp2, ctx)
               Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
             }
