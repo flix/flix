@@ -295,11 +295,4 @@ class TestCompletionProvider extends AnyFunSuite {
     val input = Input.Text(Uri, content, sctx)
     Source(input, content.toCharArray)
   }
-
-  /**
-    * Randomly deletes characters from the given text that are not in the set of protected characters `protectedChars`.
-    */
-  private def randomlyDelete(text: String, protectedChars: Set[Char]): String = {
-    text.filter(c => protectedChars.contains(c) || scala.util.Random.nextBoolean())
-  }
 }
