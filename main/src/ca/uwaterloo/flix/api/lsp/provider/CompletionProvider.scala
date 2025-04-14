@@ -56,7 +56,7 @@ object CompletionProvider {
     */
   private def getCompletions(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[Completion] = {
     if (currentErrors.isEmpty)
-      HoleCompleter.getHoleCompletion(uri, pos, root).toList
+      HoleCompleter.getHoleCompletion(uri, pos).toList
     else
       errorsAt(uri, pos, currentErrors).flatMap {
         case err: WeederError.UndefinedAnnotation => KeywordCompleter.getModKeywords(Range.from(err.loc))
