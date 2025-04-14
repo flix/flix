@@ -148,10 +148,12 @@ object OccurrenceAst1 {
 
   object Linearity {
 
-    case object Linear extends Linearity
+    case object Dead extends Linearity // Affine???
 
-    case object NonLinear extends Linearity
-    
+    case object Once extends Linearity // Linear
+
+    case object Many extends Linearity // NonLinear
+
   }
 
   sealed trait Occur

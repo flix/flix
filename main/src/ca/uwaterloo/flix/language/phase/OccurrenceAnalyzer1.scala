@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur.*
-import ca.uwaterloo.flix.language.ast.OccurrenceAst1.{DefContext, Expr, Occur, Pattern}
+import ca.uwaterloo.flix.language.ast.OccurrenceAst1.{DefContext, Expr, Linearity, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst1, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst1, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 
 /**
@@ -330,9 +330,20 @@ object OccurrenceAnalyzer1 {
 
   private def visitTryWithRules(rules0: List[OccurrenceAst1.HandlerRule])(implicit sym0: Symbol.DefnSym): (List[OccurrenceAst1.HandlerRule], OccurInfo) = {
     val (rs, o) = rules0.map {
-      case OccurrenceAst1.HandlerRule(op, fps, exp, linearity) =>
+      case OccurrenceAst1.HandlerRule(op, fps, exp, _) =>
         val (e, o) = visitExp(exp)
-        (OccurrenceAst1.HandlerRule(op, fps, e, linearity), o)
+        val continuation = fps.last
+        val occurrence = o.get(continuation.sym)
+        occurrence match {
+          case Dead => (OccurrenceAst1.HandlerRule(op, fps, e, Linearity.Dead), o)
+          case Once => (OccurrenceAst1.HandlerRule(op, fps, e, Linearity.Once), o)
+          case OnceInLocalDef
+               | OnceInLambda
+               | Many
+               | Dangerous
+               | DontInline
+               | ManyBranch => (OccurrenceAst1.HandlerRule(op, fps, e, Linearity.Many), o)
+        }
     }.unzip
     val o1 = o.foldLeft(OccurInfo.Empty)(combineInfo)
     (rs, o1)

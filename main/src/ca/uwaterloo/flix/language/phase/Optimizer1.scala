@@ -171,7 +171,7 @@ object Optimizer1 {
         val rs = rules.map {
           case MonoAst.HandlerRule(op, fparams, exp1) =>
             val e1 = visitExp(exp1)
-            OccurrenceAst1.HandlerRule(op, fparams, e1, Linearity.NonLinear)
+            OccurrenceAst1.HandlerRule(op, fparams, e1, Linearity.Many)
         }
         OccurrenceAst1.Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
