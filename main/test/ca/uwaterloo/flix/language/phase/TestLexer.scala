@@ -298,6 +298,16 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError](result)
   }
 
+  test("LexerError.HexLiteralContinuesAfterSuffix.01") {
+    // Check that lexing doesn't naively stop after i32 and lex `f` as a name.
+    val input =
+      s"""
+         |def f(): Int32 = 0xFFi32f
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError](result)
+  }
+
   test("TrailingUnderscoreInNumber.Int.03") {
     val input =
       s"""
