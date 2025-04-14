@@ -1526,7 +1526,8 @@ object Weeder2 {
             case Expr.Stm(exp1, exp2, _) => Validation.Success((exp1, exp2))
             // Fall back on Expr.Error. Parser has reported an error here.
             case e =>
-              val loc = e.loc.copy(sp1 = e.loc.sp2).asSynthetic // The location of the error is the end of the expression, zero-width.
+              // The location of the error is the end of the expression, zero-width.
+              val loc = e.loc.copy(sp1 = e.loc.sp2).asSynthetic
               val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordLet)), SyntacticContext.Expr.OtherExpr, hint = Some("let-bindings must be followed by an expression"), loc)
               Validation.Success((e, Expr.Error(error)))
           }
