@@ -194,6 +194,10 @@ object SyntaxTree {
 
       case object CheckedTypeCast extends Expr
 
+      case object Condition extends Expr
+
+      case object Else extends Expr
+
       case object Index extends Expr
 
       case object IndexMut extends Expr
@@ -337,6 +341,8 @@ object SyntaxTree {
       case object Static extends Expr
 
       case object StringInterpolation extends Expr
+
+      case object Then extends Expr
 
       case object Try extends Expr
 

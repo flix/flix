@@ -1261,17 +1261,26 @@ object Weeder2 {
       }
     }
 
+    /**
+      * The condition and then sub-trees are required, but the else sub-tree is optional.
+      * If condition/then branch is missing in the source code, it will be represented as an Expr.Error inside that sub-tree.
+      */
     private def visitIfThenElseExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.IfThenElse)
-      pickAll(TreeKind.Expr.Expr, tree) match {
-        case exprCondition :: exprThen :: exprElse :: Nil =>
-          mapN(visitExpr(exprCondition), visitExpr(exprThen), visitExpr(exprElse)) {
-            (condition, tthen, eelse) => Expr.IfThenElse(condition, tthen, eelse, tree.loc)
-          }
-        case _ =>
-          val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.KeywordElse)), actual = None, SyntacticContext.Expr.OtherExpr, hint = Some("the else-branch is required in Flix."), tree.loc)
-          sctx.errors.add(error)
-          Validation.Success(Expr.Error(error))
+      val condTreeVal = pick(TreeKind.Expr.Condition, tree)
+      val thenTreeVal = pick(TreeKind.Expr.Then, tree)
+      flatMapN(condTreeVal, thenTreeVal) {
+        case (condTree, thenTree) => tryPick(TreeKind.Expr.Else, tree) match {
+          case Some(elseTree) =>
+            flatMapN(pickExpr(condTree), pickExpr(thenTree), pickExpr(elseTree)) {
+              (condExpr, thenExpr, elseExpr) => Validation.Success(Expr.IfThenElse(condExpr, thenExpr, elseExpr, tree.loc))
+            }
+          case None =>
+            flatMapN(pickExpr(condTree), pickExpr(thenTree)) {
+              // This Expr.Error is just a placeholder.
+              (condExpr, thenExpr) => Validation.Success(Expr.IfThenElse(condExpr, thenExpr, Expr.Error(MisplacedComments(SyntacticContext.Unknown, tree.loc)), tree.loc))
+            }
+        }
       }
     }
 
@@ -1830,7 +1839,8 @@ object Weeder2 {
           visitMethodArguments(argumentList)
       }
       mapN(Types.pickType(tree), expsValidation) {
-        (tpe, exps) => tpe match {
+        (tpe, exps) =>
+          tpe match {
             case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
               Expr.InvokeConstructor(qname.ident, exps, tree.loc)
             case _ =>
@@ -3126,7 +3136,7 @@ object Weeder2 {
   }
 
   private def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
-    mapN(pick(TreeKind.QName, tree)){
+    mapN(pick(TreeKind.QName, tree)) {
       qname => Name.JavaName(pickAll(TreeKind.Ident, qname).flatMap(text), qname.loc)
     }
   }
