@@ -1861,13 +1861,19 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordIf, SyntacticContext.Expr.OtherExpr)
       expect(TokenKind.ParenL, SyntacticContext.Expr.OtherExpr)
+      val condMark = open()
       expression()
+      close(condMark, TreeKind.Expr.Condition)
       expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
+      val thenMark = open()
       expression()
+      close(thenMark, TreeKind.Expr.Then)
       if (eat(TokenKind.KeywordElse)) {
         // Only call expression, if we found an 'else'. Otherwise when it is missing, defs might
         // get read as let-rec-defs.
+        val elseMark = open()
         expression()
+        close(elseMark, TreeKind.Expr.Else)
       }
       close(mark, TreeKind.Expr.IfThenElse)
     }
