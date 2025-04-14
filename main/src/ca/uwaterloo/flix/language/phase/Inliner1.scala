@@ -92,6 +92,12 @@ object Inliner1 {
 
   private type InScopeVars = Map[OutVar, Definition]
 
+  case class Handler(rule: OccurrenceAst1.HandlerRule)
+
+  private type OutEff = MonoAst.Op.type
+
+  private type InScopeEffs = Map[OutEff, Handler]
+
   private sealed trait InliningContext
 
   private object InliningContext {
