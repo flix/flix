@@ -494,8 +494,8 @@ object SemanticTokensProvider {
           acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
       }
 
-    case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
-      val c = visitExp(exp)
+    case Expr.RestrictableChoose(_, exp1, rules, _, _, _) =>
+      val c = visitExp(exp1)
       rules.foldLeft(c) {
         case (acc, RestrictableChooseRule(pat, exp)) =>
           acc ++ visitRestrictableChoosePat(pat) ++ visitExp(exp)
@@ -585,8 +585,8 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Type, Nil, sym.qname.loc)
       Iterator(t) ++ visitExp(exp)
 
-    case Expr.TryCatch(exp, rules, _, _, _) =>
-      rules.foldLeft(visitExp(exp)) {
+    case Expr.TryCatch(exp1, rules, _, _, _) =>
+      rules.foldLeft(visitExp(exp1)) {
         case (acc, CatchRule(bnd, _, exp, _)) =>
           val t = SemanticToken(SemanticTokenType.Variable, Nil, bnd.sym.loc)
           acc ++ Iterator(t) ++ visitExp(exp)
@@ -600,7 +600,7 @@ object SemanticTokensProvider {
       val st1 = Iterator(t)
       val st2 = rules.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, HandlerRule(op, fparams, exp ,loc)) =>
-          val st = SemanticToken(SemanticTokenType.Type, Nil, op.loc)
+          val st = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
           val t1 = Iterator(st)
           val t2 = visitFormalParams(fparams)
           acc ++ t1 ++ t2 ++ visitExp(exp)
@@ -762,34 +762,38 @@ object SemanticTokensProvider {
   /**
     * Returns all semantic tokens in the given type `tpe0`.
     */
-  private def visitType(tpe0: Type): Iterator[SemanticToken] = tpe0 match {
-    case Type.Var(_, loc) =>
-      val t = SemanticToken(SemanticTokenType.TypeParameter, Nil, loc)
-      Iterator(t)
-
-    case Type.Cst(cst, loc) =>
-      if (isVisibleTypeConstructor(cst)) {
-        val t = SemanticToken(SemanticTokenType.Type, Nil, loc)
+  private def visitType(tpe0: Type): Iterator[SemanticToken] = {
+    if (tpe0.loc.isSynthetic)
+      Iterator.empty
+    else tpe0 match {
+      case Type.Var(_, loc) =>
+        val t = SemanticToken(SemanticTokenType.TypeParameter, Nil, loc)
         Iterator(t)
-      } else {
-        Iterator.empty
-      }
 
-    case Type.Apply(tpe1, tpe2, _) =>
-      visitType(tpe1) ++ visitType(tpe2)
+      case Type.Cst(cst, loc) =>
+        if (isVisibleTypeConstructor(cst)) {
+          val t = SemanticToken(SemanticTokenType.Type, Nil, loc)
+          Iterator(t)
+        } else {
+          Iterator.empty
+        }
 
-    case Type.Alias(cst, args, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
-      Iterator(t) ++ args.flatMap(visitType).iterator
+      case Type.Apply(tpe1, tpe2, _) =>
+        visitType(tpe1) ++ visitType(tpe2)
 
-    case Type.AssocType(cst, arg, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
-      Iterator(t) ++ visitType(arg)
+      case Type.Alias(cst, args, _, _) =>
+        val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
+        Iterator(t) ++ args.flatMap(visitType).iterator
 
-    // Jvm types should not be exposed to the user.
-    case _: Type.JvmToType => Iterator.empty
-    case _: Type.JvmToEff => Iterator.empty
-    case _: Type.UnresolvedJvmType => Iterator.empty
+      case Type.AssocType(cst, arg, _, _) =>
+        val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
+        Iterator(t) ++ visitType(arg)
+
+      // Jvm types should not be exposed to the user.
+      case _: Type.JvmToType => Iterator.empty
+      case _: Type.JvmToEff => Iterator.empty
+      case _: Type.UnresolvedJvmType => Iterator.empty
+    }
   }
 
   /**
@@ -914,9 +918,12 @@ object SemanticTokensProvider {
     */
   private def visitFormalParam(fparam0: FormalParam): Iterator[SemanticToken] = fparam0 match {
     case FormalParam(bnd, _, tpe, _, _) =>
-      val o = getSemanticTokenType(bnd.sym, tpe)
-      val t = SemanticToken(o, Nil, bnd.sym.loc)
-      Iterator(t) ++ visitType(tpe)
+      val bndToken = if (!bnd.sym.loc.isSynthetic) {
+        val o = getSemanticTokenType(bnd.sym, tpe)
+        val t = SemanticToken(o, Nil, bnd.sym.loc)
+        Iterator(t)
+      } else Iterator.empty
+      bndToken ++ visitType(tpe)
   }
 
   /**
