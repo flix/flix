@@ -330,9 +330,9 @@ object OccurrenceAnalyzer1 {
 
   private def visitTryWithRules(rules0: List[OccurrenceAst1.HandlerRule])(implicit sym0: Symbol.DefnSym): (List[OccurrenceAst1.HandlerRule], OccurInfo) = {
     val (rs, o) = rules0.map {
-      case OccurrenceAst1.HandlerRule(op, fps, exp) =>
+      case OccurrenceAst1.HandlerRule(op, fps, exp, linearity) =>
         val (e, o) = visitExp(exp)
-        (OccurrenceAst1.HandlerRule(op, fps, e), o)
+        (OccurrenceAst1.HandlerRule(op, fps, e, linearity), o)
     }.unzip
     val o1 = o.foldLeft(OccurInfo.Empty)(combineInfo)
     (rs, o1)

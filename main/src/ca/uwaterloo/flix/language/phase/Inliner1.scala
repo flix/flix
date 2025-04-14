@@ -386,11 +386,11 @@ object Inliner1 {
       case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
         val e = visit(exp)
         val rs = rules.map {
-          case OccurrenceAst1.HandlerRule(op, fparams, exp1) =>
+          case OccurrenceAst1.HandlerRule(op, fparams, exp1, linearity) =>
             val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
             val varSubst1 = varSubsts.fold(varSubst0)(_ ++ _)
             val e1 = visitExp(exp1, varSubst1, subst0, inScopeSet0, context0)
-            OccurrenceAst1.HandlerRule(op, fps, e1)
+            OccurrenceAst1.HandlerRule(op, fps, e1, linearity)
         }
         Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
@@ -645,11 +645,11 @@ object Inliner1 {
     case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
       val e = refreshBinders(exp)
       val rs = rules.map {
-        case OccurrenceAst1.HandlerRule(op, fparams, exp1) =>
+        case OccurrenceAst1.HandlerRule(op, fparams, exp1, linearity) =>
           val (fps, subst1) = refreshFormalParams(fparams)
           val subst2 = subst0 ++ subst1
           val e1 = refreshBinders(exp1)(subst2, flix)
-          OccurrenceAst1.HandlerRule(op, fps, e1)
+          OccurrenceAst1.HandlerRule(op, fps, e1, linearity)
       }
       Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
