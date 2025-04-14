@@ -72,7 +72,7 @@ object OccurrenceAnalyzer1 {
       this.vars.getOrElse(varSym, Dead)
     }
 
-    def countLocalDef: OccurInfo = {
+    def incrementLocalDefCount: OccurInfo = {
       this.copy(localDefs = localDefs + 1)
     }
   }
@@ -209,7 +209,7 @@ object OccurrenceAnalyzer1 {
       val o3 = combineInfo(o1, o2)
       val occur = o3.get(sym)
       val o4 = o3 - sym
-      val o5 = o4.countLocalDef
+      val o5 = o4.incrementLocalDefCount
       (OccurrenceAst1.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), increment(o5))
 
     case Expr.Scope(sym, rsym, exp, tpe, eff, loc) =>
