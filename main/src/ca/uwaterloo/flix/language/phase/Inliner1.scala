@@ -531,16 +531,8 @@ object Inliner1 {
       (MonoAst.FormalParam(freshVarSym, mod, tpe, src, loc), subst)
   }
 
-
-  private def refreshFormalParam(fp0: MonoAst.FormalParam)(implicit flix: Flix): (MonoAst.FormalParam, VarSubst) = fp0 match {
-    case MonoAst.FormalParam(sym, mod, tpe, src, loc) =>
-      val freshVarSym = Symbol.freshVarSym(sym)
-      val subst = Map(sym -> freshVarSym)
-      (MonoAst.FormalParam(freshVarSym, mod, tpe, src, loc), subst)
-  }
-
   private def refreshFormalParams(fparams0: List[MonoAst.FormalParam])(implicit flix: Flix): (List[MonoAst.FormalParam], VarSubst) = {
-    val (fps, substs) = fparams0.map(refreshFormalParam).unzip
+    val (fps, substs) = fparams0.map(freshFormalParam).unzip
     val subst = substs.reduceLeft(_ ++ _)
     (fps, subst)
   }
@@ -554,7 +546,7 @@ object Inliner1 {
       Expr.Var(freshVarSym, tpe, loc)
 
     case Expr.Lambda((fparam, occur), exp, tpe, loc) =>
-      val (fp, subst1) = refreshFormalParam(fparam)
+      val (fp, subst1) = freshFormalParam(fparam)
       val subst2 = subst0 ++ subst1
       val e = refreshBinders(exp)(subst2, flix)
       Expr.Lambda((fp, occur), e, tpe, loc)
@@ -590,7 +582,7 @@ object Inliner1 {
       val e2 = refreshBinders(exp2)(subst1, flix)
       val (fps, varSubstsTmp) = fparams.map {
         case (fp, fpOccur) =>
-          val (freshFp, varSubstTmp) = refreshFormalParam(fp)
+          val (freshFp, varSubstTmp) = freshFormalParam(fp)
           ((freshFp, fpOccur), varSubstTmp)
       }.unzip
       val subst2 = varSubstsTmp.reduceLeft(_ ++ _)
