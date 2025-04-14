@@ -528,7 +528,7 @@ object Inliner1 {
       (MonoAst.FormalParam(freshVarSym, mod, tpe, src, loc), subst)
   }
 
-  private def refreshFormalParams(fparams0: List[MonoAst.FormalParam])(implicit flix: Flix): (List[MonoAst.FormalParam], VarSubst) = {
+  private def freshFormalParams(fparams0: List[MonoAst.FormalParam])(implicit flix: Flix): (List[MonoAst.FormalParam], VarSubst) = {
     val (fps, substs) = fparams0.map(freshFormalParam).unzip
     val subst = substs.reduceLeft(_ ++ _)
     (fps, subst)
@@ -656,7 +656,7 @@ object Inliner1 {
       val e = refreshBinders(exp)
       val rs = rules.map {
         case OccurrenceAst1.HandlerRule(op, fparams, exp1, linearity) =>
-          val (fps, subst1) = refreshFormalParams(fparams)
+          val (fps, subst1) = freshFormalParams(fparams)
           val subst2 = subst0 ++ subst1
           val e1 = refreshBinders(exp1)(subst2, flix)
           OccurrenceAst1.HandlerRule(op, fps, e1, linearity)
@@ -670,7 +670,7 @@ object Inliner1 {
     case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val ms = methods.map {
         case OccurrenceAst1.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
-          val (fps, subst1) = refreshFormalParams(fparams)
+          val (fps, subst1) = freshFormalParams(fparams)
           val subst2 = subst0 ++ subst1
           val e = refreshBinders(exp)(subst2, flix)
           OccurrenceAst1.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
@@ -678,41 +678,38 @@ object Inliner1 {
       Expr.NewObject(name, clazz, tpe, eff, ms, loc)
   }
 
-  private def refreshPattern(pattern0: Pattern)(implicit flix: Flix): (Pattern, VarSubst) = {
-    def refreshRecordLabelPattern(pattern0: Pattern.Record.RecordLabelPattern)(implicit flix: Flix): (Pattern.Record.RecordLabelPattern, VarSubst) = pattern0 match {
-      case Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
-        val (p, subst) = refreshPattern(pat)
-        (Pattern.Record.RecordLabelPattern(label, p, tpe, loc), subst)
-    }
+  private def refreshPattern(pattern0: Pattern)(implicit flix: Flix): (Pattern, VarSubst) = pattern0 match {
+    case Pattern.Wild(tpe, loc) =>
+      (Pattern.Wild(tpe, loc), Map.empty)
 
-    pattern0 match {
-      case Pattern.Wild(tpe, loc) =>
-        (Pattern.Wild(tpe, loc), Map.empty)
+    case Pattern.Var(sym, tpe, occur, loc) =>
+      val freshVarSym = Symbol.freshVarSym(sym)
+      (Pattern.Var(freshVarSym, tpe, occur, loc), Map(sym -> freshVarSym))
 
-      case Pattern.Var(sym, tpe, occur, loc) =>
-        val freshVarSym = Symbol.freshVarSym(sym)
-        (Pattern.Var(freshVarSym, tpe, occur, loc), Map(sym -> freshVarSym))
+    case Pattern.Cst(cst, tpe, loc) =>
+      (Pattern.Cst(cst, tpe, loc), Map.empty)
 
-      case Pattern.Cst(cst, tpe, loc) =>
-        (Pattern.Cst(cst, tpe, loc), Map.empty)
+    case Pattern.Tag(sym, pats, tpe, loc) =>
+      val (ps, substs) = pats.map(refreshPattern).unzip
+      val subst = substs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
+      (Pattern.Tag(sym, ps, tpe, loc), subst)
 
-      case Pattern.Tag(sym, pats, tpe, loc) =>
-        val (ps, substs) = pats.map(refreshPattern).unzip
-        val subst = substs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
-        (Pattern.Tag(sym, ps, tpe, loc), subst)
+    case Pattern.Tuple(pats, tpe, loc) =>
+      val (ps, substs) = pats.map(refreshPattern).unzip
+      val subst = substs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
+      (Pattern.Tuple(ps, tpe, loc), subst)
 
-      case Pattern.Tuple(pats, tpe, loc) =>
-        val (ps, substs) = pats.map(refreshPattern).unzip
-        val subst = substs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
-        (Pattern.Tuple(ps, tpe, loc), subst)
+    case Pattern.Record(pats, pat, tpe, loc) =>
+      val (ps, substs) = pats.map(refreshRecordLabelPattern).unzip
+      val (p, subst) = refreshPattern(pat)
+      val subst1 = substs.foldLeft(subst)(_ ++ _)
+      (Pattern.Record(ps, p, tpe, loc), subst1)
+  }
 
-      case Pattern.Record(pats, pat, tpe, loc) =>
-        val (ps, substs) = pats.map(refreshRecordLabelPattern).unzip
-        val (p, subst) = refreshPattern(pat)
-        val subst1 = substs.foldLeft(subst)(_ ++ _)
-        (Pattern.Record(ps, p, tpe, loc), subst1)
-
-    }
+  private def refreshRecordLabelPattern(pattern0: Pattern.Record.RecordLabelPattern)(implicit flix: Flix): (Pattern.Record.RecordLabelPattern, VarSubst) = pattern0 match {
+    case Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
+      val (p, subst) = refreshPattern(pat)
+      (Pattern.Record.RecordLabelPattern(label, p, tpe, loc), subst)
   }
 
   /**
