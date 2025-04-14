@@ -273,6 +273,8 @@ class TestCompletionProvider extends AnyFunSuite {
     * - d|ef
     * - de|f
     * - def|
+    *
+    * If the token spans multiple lines, we will return all the positions in all the lines, both sides inclusive.
     */
   private def getAllPositionsWithinToken(token: Token): List[Position] = {
     val initialLine = token.sp1.line
