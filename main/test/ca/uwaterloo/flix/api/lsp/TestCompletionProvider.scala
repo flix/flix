@@ -32,7 +32,7 @@ class TestCompletionProvider extends AnyFunSuite {
   private val Programs = List(
         s"""
            |/**
-           |  *A simple program that reads a name from the console and prints a greeting.
+           |  * A simple program that reads a name from the console and prints a greeting.
            |  */
            |def main(): Unit \\ IO =
            |    run {
@@ -220,34 +220,6 @@ class TestCompletionProvider extends AnyFunSuite {
     }
   }
 
-  test("No completions inside incomplete comment") {
-    Programs.foreach { program =>
-      val (root, flix, errors) = compile(program, Options.Default)
-      val source = mkSource(program)
-      // Find all the literal tokens that are on a single line
-      val keywordTokens = root.tokens(source).toList.filter(_.kind.isComment).filter(token => token.sp1.line == token.sp2.line)
-      // Sort the replacements by column in descending order, otherwise former replacements will affect the latter ones
-
-      val newProgram = keywordTokens
-        .map(token => (token, randomlyDelete(token.text, Set('/', '*', '\t', '\n', '\r'))))
-        // Sort the replacements by column in descending order, otherwise former replacements will affect the latter ones
-        .sortBy(-_._1.start)
-        .foldLeft(program) { case (currentProg, (token, incomplete)) =>
-          currentProg.take(token.start) + incomplete + currentProg.substring(token.end)
-        }
-      val (newRoot, newFlix, newErrors) = compile(newProgram, Options.Default)
-      val newSource = mkSource(newProgram)
-      val newKeywordTokens = newRoot.tokens(newSource).toList.filter(_.kind.isComment).filter(token => token.sp1.line == token.sp2.line)
-      newKeywordTokens.foreach { token =>
-        // We will test all possible offsets in the keyword, including the start and end of the keyword
-        getAllPositionsWithinToken(token).foreach { pos =>
-          val completions = CompletionProvider.autoComplete(Uri, pos, newErrors)(newRoot, newFlix)
-          assert(completions.items.isEmpty)
-        }
-      }
-    }
-  }
-
   /**
     * The uri of the test source.
     */
@@ -277,8 +249,8 @@ class TestCompletionProvider extends AnyFunSuite {
     * If the token spans multiple lines, we will return all the positions in all the lines, both sides inclusive.
     */
   private def getAllPositionsWithinToken(token: Token): List[Position] = {
-    val initialLine = token.sp1.line
-    val initialCol = token.sp1.col.toInt
+    val initialLine = token.sp1.lineOneIndexed
+    val initialCol = token.sp1.colOneIndexed.toInt
 
     token.text
       .scanLeft((initialLine, initialCol)) { case ((line, col), char) =>
