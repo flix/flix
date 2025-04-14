@@ -443,48 +443,42 @@ object Inliner1 {
     bind(exp0, symbols, args, ctx0)
   }
 
-  private def visitPattern(pattern00: Pattern)(implicit flix: Flix): (Pattern, VarSubst) = {
+  private def visitPattern(pattern0: Pattern)(implicit flix: Flix): (Pattern, VarSubst) = pattern0 match {
+    case Pattern.Wild(tpe, loc) =>
+      (Pattern.Wild(tpe, loc), Map.empty)
 
-    def visit(pattern0: Pattern): (Pattern, VarSubst) = pattern0 match {
-      case Pattern.Wild(tpe, loc) =>
+    case Pattern.Var(sym, tpe, occur, loc) =>
+      if (isDead(occur)) {
         (Pattern.Wild(tpe, loc), Map.empty)
+      } else {
+        val freshVarSym = Symbol.freshVarSym(sym)
+        (Pattern.Var(freshVarSym, tpe, occur, loc), Map(sym -> freshVarSym))
+      }
 
-      case Pattern.Var(sym, tpe, occur, loc) =>
-        if (isDead(occur)) {
-          (Pattern.Wild(tpe, loc), Map.empty)
-        } else {
-          val freshVarSym = Symbol.freshVarSym(sym)
-          (Pattern.Var(freshVarSym, tpe, occur, loc), Map(sym -> freshVarSym))
-        }
+    case Pattern.Cst(cst, tpe, loc) =>
+      (Pattern.Cst(cst, tpe, loc), Map.empty)
 
-      case Pattern.Cst(cst, tpe, loc) =>
-        (Pattern.Cst(cst, tpe, loc), Map.empty)
+    case Pattern.Tag(sym, pats, tpe, loc) =>
+      val (ps, varSubsts) = pats.map(visitPattern).unzip
+      val varSubst = varSubsts.foldLeft(Map.empty[InVar, OutVar])(_ ++ _)
+      (Pattern.Tag(sym, ps, tpe, loc), varSubst)
 
-      case Pattern.Tag(sym, pats, tpe, loc) =>
-        val (ps, varSubsts) = pats.map(visit).unzip
-        val varSubst = varSubsts.foldLeft(Map.empty[InVar, OutVar])(_ ++ _)
-        (Pattern.Tag(sym, ps, tpe, loc), varSubst)
+    case Pattern.Tuple(pats, tpe, loc) =>
+      val (ps, varSubsts) = pats.map(visitPattern).unzip
+      val varSubst = varSubsts.foldLeft(Map.empty[InVar, OutVar])(_ ++ _)
+      (Pattern.Tuple(ps, tpe, loc), varSubst)
 
-      case Pattern.Tuple(pats, tpe, loc) =>
-        val (ps, varSubsts) = pats.map(visit).unzip
-        val varSubst = varSubsts.foldLeft(Map.empty[InVar, OutVar])(_ ++ _)
-        (Pattern.Tuple(ps, tpe, loc), varSubst)
+    case Pattern.Record(pats, pat, tpe, loc) =>
+      val (ps, varSubsts) = pats.map(visitRecordLabelPattern).unzip
+      val (p, varSubst1) = visitPattern(pat)
+      val varSubst2 = varSubsts.foldLeft(varSubst1)(_ ++ _)
+      (Pattern.Record(ps, p, tpe, loc), varSubst2)
+  }
 
-      case Pattern.Record(pats, pat, tpe, loc) =>
-        val (ps, varSubsts) = pats.map(visitRecordLabelPattern).unzip
-        val (p, varSubst1) = visit(pat)
-        val varSubst2 = varSubsts.foldLeft(varSubst1)(_ ++ _)
-        (Pattern.Record(ps, p, tpe, loc), varSubst2)
-
-    }
-
-    def visitRecordLabelPattern(pattern0: Pattern.Record.RecordLabelPattern): (Pattern.Record.RecordLabelPattern, VarSubst) = pattern0 match {
-      case Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
-        val (p, subst) = visit(pat)
-        (Pattern.Record.RecordLabelPattern(label, p, tpe, loc), subst)
-    }
-
-    visit(pattern00)
+  private def visitRecordLabelPattern(pattern0: Pattern.Record.RecordLabelPattern)(implicit flix: Flix): (Pattern.Record.RecordLabelPattern, VarSubst) = pattern0 match {
+    case Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
+      val (p, subst) = visitPattern(pat)
+      (Pattern.Record.RecordLabelPattern(label, p, tpe, loc), subst)
   }
 
   /**
