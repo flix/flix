@@ -80,8 +80,8 @@ import scala.collection.mutable
   *
   *   - Record fields are in alphabetical order
   *   - Schema fields are in alphabetical order
-  *   - Effect formulas are flat unions of effects in alphabetical order.
-  *   - Case set formulas are a single CaseSet literal.
+  *   - Effect formulas are flat unions of effects in alphabetical order or a complement thereof.
+  *   - Case set formulas are a single CaseSet literal or a complement thererof.
   *
   */
 object Monomorpher {
@@ -888,6 +888,9 @@ object Monomorpher {
 
   /**
     * Returns the default type of `tpe0`, depending on its kind.
+    *
+    * A default type is the choice we make for unconstrained type variables. Any choice will result
+    * in a well-typed program since the typer did not constrain them.
     *
     * All defaults are normalized types.
     */
