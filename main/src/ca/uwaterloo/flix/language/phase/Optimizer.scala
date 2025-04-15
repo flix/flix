@@ -33,11 +33,11 @@ object Optimizer {
   /**
     * Returns an optimized version of the given AST `root`.
     */
-  def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer1") {
+  def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer") {
     if (flix.options.xnooptimizer) {
       root
     } else {
-      var result = ToOccurrenceAst1.run(root)
+      var result = ToOccurrenceAst.run(root)
       var stats: Stats = null
       for (_ <- 1 to flix.options.inlinerRounds) {
         val afterOccurrenceAnalyzer = OccurrenceAnalyzer1.run(result)
@@ -50,7 +50,7 @@ object Optimizer {
     }
   }
 
-  private object ToOccurrenceAst1 {
+  private object ToOccurrenceAst {
     def run(root: MonoAst.Root)(implicit flix: Flix): OccurrenceAst.Root = {
       val defs = ParOps.parMapValues(root.defs)(visitDef)
       OccurrenceAst.Root(defs, root.enums, root.structs, root.effects, root.mainEntryPoint, root.entryPoints, root.sources)

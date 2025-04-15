@@ -539,8 +539,8 @@ object Main {
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
 
-      opt[Int]("inliner1Rounds").action((n, c) => c.copy(inlinerRounds = Some(n))).
-        text("number of rounds of (new) inlining")
+      opt[Int]("inlinerRounds").action((n, c) => c.copy(inlinerRounds = Some(n))).
+        text("number inlining rounds")
 
       opt[Unit]("yes").action((_, c) => c.copy(assumeYes = true)).
         text("automatically answer yes to all prompts.")
@@ -583,8 +583,8 @@ object Main {
       opt[Unit]("Xno-deprecated").action((_, c) => c.copy(xnodeprecated = true)).
         text("[experimental] disables deprecated features.")
 
-      // Xno-optimizer1
-      opt[Unit]("Xno-optimizer1").action((_, c) => c.copy(xnooptimizer = true)).
+      // Xno-optimizer
+      opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
         text("[experimental] disables new compiler optimizations.")
 
       // Xprint-phase
