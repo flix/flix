@@ -23,7 +23,7 @@ mod Display{
                 println("\n==================== Analysis Result Per Repo ====================\n");
                 Map.forEach((repo, thisStat) -> {
                     println("\nRepository: ${repo}");
-                    thisStat |> statFilter |> renameAndMerge |> sortMapByList |> printEachLanguage              
+                    thisStat |> statFilter |> renameAndMerge |> sortMapByValue |> printEachLanguage              
                 }, stat) |> cont
             }
             
@@ -37,12 +37,12 @@ mod Display{
                             case Option.Some(newData) => let (newAdds, newDels) = newData; Map.insert(ext, (adds + newAdds, dels + newDels), acc1)
                         }
                     }, acc, stat)
-                }, Map.empty(), stats) |> statFilter |> renameAndMerge |> sortMapByList |> printEachLanguage |> resume
+                }, Map.empty(), stats) |> statFilter |> renameAndMerge |> sortMapByValue |> printEachLanguage |> resume
             }
             
             def displayByByte(stat, resume) = {
                 println("\n==================== Analysis Result By Bytes ====================\n");
-                stat |> sortMapByList |>  List.forEach(data -> {
+                stat |> sortMapByValue |>  List.forEach(data -> {
                     let (lang, size) = data;
                     println("${lang}: ${size} Bytes")
                 }) |> resume
@@ -61,7 +61,7 @@ mod Display{
     }
         
     ///
-    /// Prints the stat for a single language.
+    /// Prints the stat for each language.
     ///
     def printEachLanguage(stat: List[(String, (BigInt, BigInt))]): Unit \ IO = 
         List.forEach(item -> {
@@ -90,7 +90,7 @@ mod Display{
     ///
     /// Sorts the map by converting it to a list.
     ///
-    def sortMapByList(map: Map[k, v]): List[(k, v)] with Order[v] = {
+    def sortMapByValue(map: Map[k, v]): List[(k, v)] with Order[v] = {
         let list = Map.toList(map);
         List.sortBy(kv -> {
             let (_, v) = kv;

@@ -1,5 +1,5 @@
 [package]
-name        = "lancensus"
+name        = "langcensus"
 description = "count the lines of adds and dels for every commit from you"
 version     = "0.1.0"
 flix        = "0.58.1"

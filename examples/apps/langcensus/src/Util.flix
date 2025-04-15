@@ -1,4 +1,5 @@
 mod Util {
+    import java.util.regex.Pattern
     use Json.FromJson
     use Json.JsonElement
     use Json.Parse
@@ -60,7 +61,7 @@ mod Util {
     ///   <https://api.github.com/repositories/1300192/issues?page=515>; rel="last",
     ///   <https://api.github.com/repositories/1300192/issues?page=1>; rel="first"
     ///
-    pub def getAllPages(url: String, headers: Map[String, List[String]]): List[JsonElement] \ HttpWithResult  + AnalysisFailure = {
+    pub def getAllPages(url: String, headers: Map[String, List[String]]): List[JsonElement] \ HttpWithResult  + AnalysisFailure + IO = {
         match HttpWithResult.get(url, headers) {
             case Result.Ok(response)  => 
                 if (Http.Response.status(response) != 200)
@@ -70,12 +71,11 @@ mod Util {
                     let nextPagesOpt = forM (
                         linkValueList <- Http.Response.headers(response) |> Map.get("link");
                         linkString <- List.head(linkValueList);
-                        // http <- Regex.(regex"<([^>]*)>; rel=\"next\"", linkString)
-                        links = String.split({regex = ","}, linkString);
-                        next_link <- List.find(lk -> String.contains({substr = "rel=\"next\""}, lk), links);
-                        httpWithoutPrefix <- String.stripPrefix({substr = "<"}, next_link);
-                        http <- String.stripSuffix({substr = ">; rel=\"next\""}, httpWithoutPrefix)
-                    ) yield getAllPages(http, headers);
+                        pattern = Pattern.compile("<([^>]*)>; rel=\"next\"");
+                        matcher = pattern.matcher(linkString);
+                        if (matcher.find());
+                        nextLink = matcher.group(1)
+                    ) yield getAllPages(nextLink, headers);
                     let nextPages = Option.getWithDefault(Nil, nextPagesOpt);
                     thisPage ::: nextPages
             case Result.Err(err) => AnalysisFailure.raiseRequestFailure(err)

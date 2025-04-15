@@ -7,7 +7,7 @@ use Json.JsonElement
 ///
 pub eff Github {
     ///
-    /// Gets a list of the full name of reporitories that the user has contributed to, regardless of privacy.
+    /// Gets a list of the full name of repositories that the user has contributed to, regardless of privacy.
     ///
     def getRepos(): List[String]
 
@@ -19,12 +19,13 @@ pub eff Github {
     def getCommits(repos: List[String]): Map[String, List[String]]
 
     ///
-    /// Gets all the language data from the given repository names.
+    /// Gets all the language data from the given repository name.
     /// 
-    /// Returns a map from the repository name to the json of lanuage data.
-    /// The language data should be a map from laguange name to the byte of code for this languge in this repository.
+    /// Returns the json of lanuage data.
     ///
-    def getLanguages(repos: List[String]): Map[String, JsonElement]
+    /// The language data should be a map from language name to the byte of code for this language in this repository.
+    ///
+    def getLanguages(repo: String): JsonElement
     
     ///
     /// Gets the detailed statistic of a specific commit in the repository.
@@ -50,7 +51,7 @@ mod Github {
     ///
     /// The handler that gets data from github through REST API.
     ///
-    pub def runWithConfigHttp(f: Unit -> a \ ef): a \ ef - Github + Config + HttpWithResult + AnalysisFailure = {
+    pub def runWithConfigHttp(f: Unit -> a \ ef): a \ ef - Github + Config + HttpWithResult + AnalysisFailure + IO = {
         run {
             f()
         } with handler Github {
@@ -67,12 +68,9 @@ mod Github {
                 }, Map.empty(), repos) |> resume
             }
             
-            def getLanguages(repos, resume) = {
-                List.foldLeft((acc, repo) -> {
+            def getLanguages(repo, resume) = {
                     let url = "https://api.github.com/repos/${repo}/languages";
-                    let res = Util.getAndParse(url, buildHeader());
-                    Map.insert(repo, res, acc)
-                }, Map.empty(), repos) |> resume
+                    Util.getAndParse(url, buildHeader()) |> resume
             }
 
            def getCommit(repo, sha, resume) = {
