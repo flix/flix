@@ -26,19 +26,14 @@ import ca.uwaterloo.flix.util.ParOps
   * The Tree Shaking phase removes all unused function definitions.
   *
   * A function is considered reachable if it:
-  *   - (a) is an entry point (main / tests / exports).
-  *   - (c) appears in a function which itself is reachable.
-  *   - (d) is an instance of a trait whose signature(s) appear in a reachable function.
-  *     [[Monomorpher]] will erase unused instances so this phase must check all instances
-  *     for the [[Monomorpher]] to work.
+  *   - Is an entry point (main / test / export).
+  *   - Appears in a function which itself is reachable.
+  *   - Is an instance of a trait whose signature(s) appear in a reachable function.
   */
 object TreeShaker1 {
 
-  /**
-    * Performs tree shaking on the given AST `root`.
-    */
+  /** Performs tree shaking on `root`. */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("TreeShaker1") {
-    // Entry points are always reachable.
     val initReach: Set[ReachableSym] = root.entryPoints.map(ReachableSym.DefnSym.apply)
 
     // Compute the symbols that are transitively reachable.
@@ -49,21 +44,14 @@ object TreeShaker1 {
       case (sym, _) => allReachable.contains(ReachableSym.DefnSym(sym))
     }
 
-    // Reassemble the AST.
     root.copy(defs = reachableDefs)
   }
 
-  /**
-    * Returns the symbols reachable from the given symbol `sym`.
-    *
-    * This includes three types of symbols:
-    *   - (a) The function or signature symbols in the implementation / body expression of a reachable function symbol
-    *   - (b) The trait symbol of a reachable sig symbol.
-    *   - (c) Every expression in a trait instance of a reachable trait symbol is reachable.
-    */
+  /** Returns the symbols reachable from `sym`. */
   private def visitSym(sym: ReachableSym, root: Root): Set[ReachableSym] = sym match {
     case ReachableSym.DefnSym(defnSym) =>
-      visitExp(root.defs(defnSym).exp)
+      val defn = root.defs(defnSym)
+      visitExp(defn.exp)
 
     case ReachableSym.SigSym(sigSym) =>
       val sig = root.sigs(sigSym)
@@ -76,9 +64,7 @@ object TreeShaker1 {
       }
   }
 
-  /**
-    * Returns the function and signature symbols reachable from the given expression `e0`.
-    */
+  /** Returns the symbols reachable from `e0`. */
   private def visitExp(e0: Expr): Set[ReachableSym] = e0 match {
     case Expr.Cst(_, _, _) =>
       Set.empty
@@ -156,15 +142,12 @@ object TreeShaker1 {
       visitExp(exp) ++ visitExps(rules.map(_.exp))
   }
 
-  /**
-    * Returns the function symbols reachable from `exps`.
-    */
-  private def visitExps(exps: List[Expr]): Set[ReachableSym] = exps.map(visitExp).fold(Set())(_ ++ _)
+  /** Returns the symbols reachable from `exps`. */
+  private def visitExps(exps: List[Expr]): Set[ReachableSym] =
+    exps.map(visitExp).fold(Set())(_ ++ _)
 
 
-  /**
-    * A common super-type for reachable symbols (defs, traits, sigs)
-    */
+  /** Reachable symbols (defs, traits, sigs). */
   private sealed trait ReachableSym
 
   private object ReachableSym {

@@ -96,7 +96,6 @@ object Main {
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
       xnoverify = cmdOpts.xnoverify,
-      xnooptimizer = cmdOpts.xnooptimizer,
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
       xsummary = cmdOpts.xsummary,
@@ -353,7 +352,6 @@ object Main {
                      xbenchmarkThroughput: Boolean = false,
                      xnodeprecated: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
-                     xnooptimizer: Boolean = false,
                      xprintphases: Boolean = false,
                      xsummary: Boolean = false,
                      xfuzzer: Boolean = false,
@@ -563,10 +561,6 @@ object Main {
       // Xno-deprecated
       opt[Unit]("Xno-deprecated").action((_, c) => c.copy(xnodeprecated = true)).
         text("[experimental] disables deprecated features.")
-
-      // Xno-optimizer
-      opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
-        text("[experimental] disables compiler optimizations.")
 
       // Xprint-phase
       opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).
