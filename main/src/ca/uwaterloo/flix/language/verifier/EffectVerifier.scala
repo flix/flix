@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.language.verifier
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
