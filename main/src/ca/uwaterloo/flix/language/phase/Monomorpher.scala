@@ -440,7 +440,8 @@ object Monomorpher {
     * Specializes `exp0`, renaming variables according to `env0` and specializes
     * w.r.t. `subst`.
     *
-    * Replaces every polymorphic function reference with a reference to a specialized version.
+    * Replaces every polymorphic function reference with a reference to a specialized version. If a
+    * specialized version of a function does not yet exist, a fresh symbol is created for it,
     *
     * Replaces every local variable symbol with a fresh local variable symbol.
     */
