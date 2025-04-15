@@ -25,8 +25,8 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
-import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.*
+import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.collection.{Chain, MultiMap}
 import ca.uwaterloo.flix.util.tc.Debug
 
@@ -79,7 +79,7 @@ class Flix {
   /**
     * The set of known Java classes and interfaces.
     */
-  private var availableClasses: AvailableClasses = AvailableClasses(getJavaPlatformClassesAndInterfaces())
+  private var availableClasses: AvailableClasses = AvailableClasses(getJavaPlatformClassesAndInterfaces)
 
   /**
     * A cache of ASTs for incremental compilation.
@@ -595,6 +595,9 @@ class Flix {
 
             val (afterDependencies, _) = Dependencies.run(afterRedundancy, cachedTyperAst, changeSet)
 
+            val (_, locationErrors) = LocationVerifier.run(afterDependencies, cachedTyperAst, changeSet)
+            errors ++= locationErrors
+
             if (options.incremental) {
               this.cachedLexerTokens = afterLexer
               this.cachedParserCst = afterParser
@@ -795,7 +798,7 @@ class Flix {
   /**
     * Returns the inputs for the given list of (path, text) pairs.
     */
-  private def getLibraryInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
+  private def getLibraryInputs(xs0: List[(String, String)]): List[Input] = xs0.foldLeft(List.empty[Input]) {
     case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, SecurityContext.AllPermissions) :: xs
   }
 
@@ -823,7 +826,7 @@ class Flix {
   /**
     * Returns all Java classes and interfaces in the current Java Platform.
     */
-  private def getJavaPlatformClassesAndInterfaces(): MultiMap[List[String], String] = {
+  private def getJavaPlatformClassesAndInterfaces: MultiMap[List[String], String] = {
     getPackageContent(ClassList.TheList)
   }
 

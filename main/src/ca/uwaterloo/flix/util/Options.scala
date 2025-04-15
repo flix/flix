@@ -46,6 +46,7 @@ object Options {
     xfuzzer = false,
     xprinttyper = None,
     xverifyeffects = false,
+    xverify = false,
     xsubeffecting = Set.empty,
     XPerfN = None,
     XPerfFrontend = false,
@@ -56,7 +57,7 @@ object Options {
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true, xnodeprecated = true)
+  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true, xnodeprecated = true, xverify = true)
 
   /**
     * Default test options with the standard library.
@@ -113,6 +114,7 @@ case class Options(lib: LibLevel,
                    xfuzzer: Boolean,
                    xprinttyper: Option[String],
                    xverifyeffects: Boolean,
+                   xverify: Boolean,
                    xsubeffecting: Set[Subeffecting],
                    XPerfFrontend: Boolean,
                    XPerfPar: Boolean,
