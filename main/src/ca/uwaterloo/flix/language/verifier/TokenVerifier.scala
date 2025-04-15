@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.language.verifier
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Source
