@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.ParOps
   * The occurrence analyzer collects information on variable and function usage and calculates the weight of the expressions
   * Marks a variable or function as Dead if it is not used, Once if it is used exactly once and Many otherwise
   */
-object OccurrenceAnalyzer1 {
+object OccurrenceAnalyzer {
 
   object OccurInfo {
 

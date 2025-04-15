@@ -40,7 +40,7 @@ object Optimizer {
       var result = ToOccurrenceAst.run(root)
       var stats: Stats = null
       for (_ <- 1 to flix.options.inlinerRounds) {
-        val afterOccurrenceAnalyzer = OccurrenceAnalyzer1.run(result)
+        val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(result)
         val (afterInliner, stats1) = Inliner.run(afterOccurrenceAnalyzer)
         stats = if (stats == null) stats1 else stats ++ stats1
         result = afterInliner
