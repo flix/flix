@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Magnus Madsen
+ * Copyright 2025 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,10 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language
+package ca.uwaterloo.flix.language.verification
 
-import ca.uwaterloo.flix.language.errors.TestCompilationMessage
-import ca.uwaterloo.flix.language.ast.AstSuite
-import ca.uwaterloo.flix.language.fmt.TestFormatType
-import ca.uwaterloo.flix.language.phase.PhaseSuite
-import ca.uwaterloo.flix.language.verification.VerificationSuite
 import org.scalatest.Suites
 
-class LanguageSuite extends Suites(
-  new PhaseSuite,
-  new TestFlixErrors,
-  new TestFormatType,
-  new TestCompilationMessage,
-  new AstSuite,
-  new VerificationSuite,
+class VerificationSuite extends Suites(
+  new VerifyTokens,
 )
