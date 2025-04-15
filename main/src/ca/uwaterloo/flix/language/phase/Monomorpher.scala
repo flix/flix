@@ -64,17 +64,17 @@ import scala.collection.mutable
   *
   * At a high-level, monomorphization works as follows:
   *
-  *   1. We maintain a queue of functions and the concrete, normalized types they must be
+  *   - 1. We maintain a queue of functions and the concrete, normalized types they must be
   *      specialized to.
-  *   1. We populate the queue by specialization of non-parametric function definitions.
-  *   1. We iteratively extract a function from the queue and specialize it:
-  *      a. We replace every type variable appearing anywhere in the definition by its concrete
+  *   - 2. We populate the queue by specialization of non-parametric function definitions.
+  *   - 3. We iteratively extract a function from the queue and specialize it:
+  *      - a. We replace every type variable appearing anywhere in the definition by its concrete
   *         type.
-  *      a. We create new fresh local variable symbols (since the function is effectively being
+  *      - b. We create new fresh local variable symbols (since the function is effectively being
   *         copied).
-  *      a. We enqueue (or re-use) other functions referenced by the current function which require
+  *      - c. We enqueue (or re-use) other functions referenced by the current function which require
   *         specialization.
-  *   1. We reconstruct the AST from the specialized functions and remove all parametric functions.
+  *   - 4. We reconstruct the AST from the specialized functions and remove all parametric functions.
   *
   * Type normalization details:
   *
