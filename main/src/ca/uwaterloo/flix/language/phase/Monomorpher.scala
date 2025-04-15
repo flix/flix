@@ -485,7 +485,6 @@ object Monomorpher {
       MonoAst.Expr.ApplyLocalDef(newSym, es, t, ef, loc)
 
     case LoweredAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
-      // Generate a fresh symbol.
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
       val e1 = specializeExp(exp1, env0, subst)
@@ -493,7 +492,6 @@ object Monomorpher {
       MonoAst.Expr.Let(freshSym, e1, e2, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
-      // Generate a fresh symbol.
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
       val (fps, env2) = specializeFormalParams(fparams, subst)
@@ -504,7 +502,6 @@ object Monomorpher {
       MonoAst.Expr.LocalDef(freshSym, fps, e1, e2, t, ef, loc)
 
     case LoweredAst.Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
-      // Generate a fresh symbol.
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
       MonoAst.Expr.Scope(freshSym, regionVar, specializeExp(exp, env1, subst), subst(tpe), subst(eff), loc)
@@ -552,7 +549,6 @@ object Monomorpher {
             case Some(caseSubst) =>
               // Visit the base expression under the initial environment.
               val e = specializeExp(exp, env0, subst)
-              // Generate a fresh symbol.
               val freshSym = Symbol.freshVarSym(sym)
               val env1 = env0 + (sym -> freshSym)
               val subst1 = StrictSubstitution.mk(caseSubst @@ subst.nonStrict)
@@ -589,7 +585,6 @@ object Monomorpher {
       val e = specializeExp(exp, env0, subst)
       val rs = rules map {
         case LoweredAst.CatchRule(sym, clazz, body) =>
-          // Generate a fresh symbol.
           val freshSym = Symbol.freshVarSym(sym)
           val env1 = env0 + (sym -> freshSym)
           val b = specializeExp(body, env1, subst)
@@ -623,7 +618,6 @@ object Monomorpher {
     case LoweredAst.Pattern.Wild(tpe, loc) =>
       (MonoAst.Pattern.Wild(subst(tpe), loc), Map.empty)
     case LoweredAst.Pattern.Var(sym, tpe, loc) =>
-      // Generate a fresh symbol.
       val freshSym = Symbol.freshVarSym(sym)
       (MonoAst.Pattern.Var(freshSym, subst(tpe), loc), Map(sym -> freshSym))
     case LoweredAst.Pattern.Cst(cst, tpe, loc) => (MonoAst.Pattern.Cst(cst, subst(tpe), loc), Map.empty)
