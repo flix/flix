@@ -36,7 +36,7 @@ object Inliner1 {
   /**
     * Performs inlining on the given AST `root`.
     */
-  def run(root: OccurrenceAst1.Root)(implicit flix: Flix): (OccurrenceAst1.Root, Optimizer1.Stats) = {
+  def run(root: OccurrenceAst1.Root)(implicit flix: Flix): (OccurrenceAst1.Root, Optimizer.Stats) = {
     implicit val sctx: SharedContext = SharedContext.mk()
     val defs = ParOps.parMapValues(root.defs)(visitDef(_)(root, sctx, flix))
     val newRoot = OccurrenceAst1.Root(defs, root.enums, root.structs, root.effects, root.mainEntryPoint, root.entryPoints, root.sources)
@@ -839,14 +839,14 @@ object Inliner1 {
       */
     def mk(): SharedContext = SharedContext(new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue())
 
-    def toStats(sctx: SharedContext): Optimizer1.Stats = {
+    def toStats(sctx: SharedContext): Optimizer.Stats = {
       val inlinedDefs = ListMap.from(sctx.inlinedDefs.asScala)
       val inlinedVars = ListMap.from(sctx.inlinedVars.asScala)
-      val betaReductions = Optimizer1.Stats.toCount(sctx.betaReductions.asScala)
+      val betaReductions = Optimizer.Stats.toCount(sctx.betaReductions.asScala)
       val eliminatedVars = ListMap.from(sctx.eliminatedVars.asScala)
-      val simplifiedIfThenElse = Optimizer1.Stats.toCount(sctx.simplifiedIfThenElse.asScala)
-      val eliminatedStms = Optimizer1.Stats.toCount(sctx.eliminatedStms.asScala)
-      Optimizer1.Stats(inlinedDefs, inlinedVars, betaReductions, eliminatedVars, simplifiedIfThenElse, eliminatedStms)
+      val simplifiedIfThenElse = Optimizer.Stats.toCount(sctx.simplifiedIfThenElse.asScala)
+      val eliminatedStms = Optimizer.Stats.toCount(sctx.eliminatedStms.asScala)
+      Optimizer.Stats(inlinedDefs, inlinedVars, betaReductions, eliminatedVars, simplifiedIfThenElse, eliminatedStms)
     }
 
   }

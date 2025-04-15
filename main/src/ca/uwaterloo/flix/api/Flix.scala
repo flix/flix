@@ -649,7 +649,7 @@ class Flix {
     val loweringAst = Lowering.run(typedAst)
     val treeShaker1Ast = TreeShaker1.run(loweringAst)
     val monomorpherAst = Monomorpher.run(treeShaker1Ast)
-    val optimizer1Ast = Optimizer1.run(monomorpherAst)
+    val optimizer1Ast = Optimizer.run(monomorpherAst)
     val simplifierAst = Simplifier.run(optimizer1Ast)
     val closureConvAst = ClosureConv.run(simplifierAst)
     val lambdaLiftAst = LambdaLift.run(closureConvAst)

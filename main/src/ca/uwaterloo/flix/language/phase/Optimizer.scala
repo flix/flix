@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.collection.ListMap
 /**
   * Iterative runs of the optimizer pipeline: OccurrenceAnalyzer -> Inliner.
   */
-object Optimizer1 {
+object Optimizer {
 
   /**
     * Returns an optimized version of the given AST `root`.
