@@ -328,7 +328,8 @@ object Monomorpher {
         // We use an empty substitution because the defs are non-parametric.
         // It's important that non-parametric functions keep their symbol to not
         // invalidate the set of entryPoints functions.
-        mkFreshDefn(sym, defn, StrictSubstitution.empty)
+        val specializedDefn = mkSpecializedDefn(sym, defn, StrictSubstitution.empty)
+        ctx.addSpecializedDef(sym, specializedDefn)
     }
 
     // Perform function specialization until the queue is empty.
@@ -337,7 +338,9 @@ object Monomorpher {
       // Extract a function from the queue and specializes it w.r.t. its substitution.
       val queue = ctx.dequeueAllSpecializations
       ParOps.parMap(queue) {
-        case (freshSym, defn, subst) => mkFreshDefn(freshSym, defn, subst)
+        case (freshSym, defn, subst) =>
+          val specializedDefn = mkSpecializedDefn(freshSym, defn, subst)
+          ctx.addSpecializedDef(freshSym, specializedDefn)
       }
     }
 
@@ -414,33 +417,23 @@ object Monomorpher {
         MonoAst.Op(sym, spec, loc)
     }
 
-  /**
-    * Adds a specialized def for the given symbol `freshSym` and def `defn` with the given
-    * substitution `subst`.
-    */
-  private def mkFreshDefn(freshSym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): Unit = {
-    // Specialize the formal parameters and introduce fresh local variable symbols.
-    val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
+  /** Returns a specialization of `defn` with the name `freshSym` according to `subst`. */
+  private def mkSpecializedDefn(freshSym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): MonoAst.Def = {
+    val (specializedFparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
 
-    // Specialize the body expression.
     val specializedExp = specializeExp(defn.exp, env0, subst)
 
-    // Reassemble the definition.
-    // NB: Removes the type parameters as the function is now monomorphic.
     val spec0 = defn.spec
     val spec = MonoAst.Spec(
       spec0.doc,
       spec0.ann,
       spec0.mod,
-      fparams,
+      specializedFparams,
       subst(defn.spec.declaredScheme.base),
       subst(spec0.retTpe),
       subst(spec0.eff)
     )
-    val specializedDefn = MonoAst.Def(freshSym, spec, specializedExp, defn.loc)
-
-    // Save the specialized function.
-    ctx.addSpecializedDef(freshSym, specializedDefn)
+    MonoAst.Def(freshSym, spec, specializedExp, defn.loc)
   }
 
   /**
@@ -562,11 +555,11 @@ object Monomorpher {
               // Generate a fresh symbol.
               val freshSym = Symbol.freshVarSym(sym)
               val env1 = env0 + (sym -> freshSym)
-              val subst1 = caseSubst @@ subst.nonStrict
+              val subst1 = StrictSubstitution.mk(caseSubst @@ subst.nonStrict)
               // Visit the body under the extended environment.
-              val body = specializeExp(body0, env1, StrictSubstitution.mk(subst1))
+              val body = specializeExp(body0, env1, subst1)
               val eff = Type.mkUnion(e.eff, body.eff, loc.asSynthetic)
-              Some(MonoAst.Expr.Let(freshSym, e, body, StrictSubstitution.mk(subst1).apply(tpe), subst1(eff), loc))
+              Some(MonoAst.Expr.Let(freshSym, e, body, subst1(tpe), subst1(eff), loc))
           }
       }.get // This is safe since the last case can always match.
 
