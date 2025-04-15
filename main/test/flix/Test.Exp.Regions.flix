@@ -1383,4 +1383,18 @@ mod Test.Exp.Regions {
             }
         }
 
+    @test
+    def testRegionsAndTryCatch(): Bool \ IO = {
+        region rc {
+            let res = Ref.fresh(rc, false);
+            try {
+                throw new NullPointerException("test");
+                Ref.put(false, res)
+            } catch {
+                case _: NullPointerException => Ref.put(true, res)
+            };
+            Ref.get(res)
+        }
+    }
+
 }
