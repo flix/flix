@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, EffectSymUse, O
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.util.collection.Nel
 
-object OccurrenceAst1 {
+object OccurrenceAst {
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, MonoAst.Enum],

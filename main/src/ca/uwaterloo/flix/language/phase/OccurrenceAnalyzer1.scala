@@ -18,10 +18,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur.*
-import ca.uwaterloo.flix.language.ast.OccurrenceAst1.{DefContext, Expr, Linearity, Occur, Pattern}
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.*
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Expr, Linearity, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
-import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst1, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 
 /**
@@ -95,23 +95,23 @@ object OccurrenceAnalyzer1 {
   /**
     * Performs occurrence analysis on the given AST `root`.
     */
-  def run(root: OccurrenceAst1.Root)(implicit flix: Flix): OccurrenceAst1.Root = {
+  def run(root: OccurrenceAst.Root)(implicit flix: Flix): OccurrenceAst.Root = {
     val defs = visitDefs(root.defs) // visitDefs calls parMap internally and has additional handling
-    OccurrenceAst1.Root(defs, root.enums, root.structs, root.effects, root.mainEntryPoint, root.entryPoints, root.sources)
+    OccurrenceAst.Root(defs, root.enums, root.structs, root.effects, root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
   /**
     * Performs occurrence analysis on every entry in `defs0` in parallel.
     * Decorates each Def with occurrence information, i.e., how it appears in the program or if it is unused.
     */
-  private def visitDefs(defs0: Map[DefnSym, OccurrenceAst1.Def])(implicit flix: Flix): Map[DefnSym, OccurrenceAst1.Def] = {
+  private def visitDefs(defs0: Map[DefnSym, OccurrenceAst.Def])(implicit flix: Flix): Map[DefnSym, OccurrenceAst.Def] = {
     val (ds, os) = ParOps.parMap(defs0.values)(visitDef).unzip
 
     // Combine all `defOccurrences` into one map.
     val defOccur = combineAll(os)
 
     // Updates the occurrence of every `def` in `ds` based on the occurrence found in `defOccur`.
-    ds.foldLeft(Map.empty[DefnSym, OccurrenceAst1.Def]) {
+    ds.foldLeft(Map.empty[DefnSym, OccurrenceAst.Def]) {
       case (macc, defn) =>
         val occur = if (DangerousFunctions.contains(toReadableFunction(defn.sym))) Dangerous else defOccur.getOrElse(defn.sym, Dead)
         val newContext = defn.context.copy(occur = occur)
@@ -123,13 +123,13 @@ object OccurrenceAnalyzer1 {
   /**
     * Performs occurrence analysis on `defn`.
     */
-  private def visitDef(defn0: OccurrenceAst1.Def): (OccurrenceAst1.Def, OccurInfo) = {
+  private def visitDef(defn0: OccurrenceAst.Def): (OccurrenceAst.Def, OccurInfo) = {
 
     /**
       * Returns true if `expr0` is a function call.
       */
-    def isDirectCall(expr0: OccurrenceAst1.Expr): Boolean = expr0 match {
-      case OccurrenceAst1.Expr.ApplyDef(_, _, _, _, _, _) => true
+    def isDirectCall(expr0: OccurrenceAst.Expr): Boolean = expr0 match {
+      case OccurrenceAst.Expr.ApplyDef(_, _, _, _, _, _) => true
       case _ => false
     }
 
@@ -153,46 +153,46 @@ object OccurrenceAnalyzer1 {
     val (exp, occurInfo) = visitExp(defn0.exp)(defn0.sym)
     val defContext = DefContext(isDirectCall(exp), occurInfo.get(defn0.sym), occurInfo.size, occurInfo.localDefs, isSelfRecursive(occurInfo))
     val fparams = defn0.fparams.map { case (p, _) => p -> occurInfo.get(p.sym) }
-    (OccurrenceAst1.Def(defn0.sym, fparams, defn0.spec, exp, defContext, defn0.loc), occurInfo)
+    (OccurrenceAst.Def(defn0.sym, fparams, defn0.spec, exp, defContext, defn0.loc), occurInfo)
   }
 
   /**
     * Performs occurrence analysis on `exp00`
     */
-  private def visitExp(exp0: OccurrenceAst1.Expr)(implicit sym0: Symbol.DefnSym): (OccurrenceAst1.Expr, OccurInfo) = exp0 match {
+  private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym): (OccurrenceAst.Expr, OccurInfo) = exp0 match {
     case Expr.Cst(cst, tpe, loc) =>
-      (OccurrenceAst1.Expr.Cst(cst, tpe, loc), OccurInfo.One)
+      (OccurrenceAst.Expr.Cst(cst, tpe, loc), OccurInfo.One)
 
     case Expr.Var(sym, tpe, loc) =>
-      (OccurrenceAst1.Expr.Var(sym, tpe, loc), OccurInfo.One + (sym -> Once))
+      (OccurrenceAst.Expr.Var(sym, tpe, loc), OccurInfo.One + (sym -> Once))
 
     case Expr.Lambda((fp, _), exp, tpe, loc) =>
       val (e, o) = visitExp(exp)
       val o1 = captureVarsInLambda(o)
       val occur = o1.get(fp.sym)
       val o2 = o1 - fp.sym
-      (OccurrenceAst1.Expr.Lambda((fp, occur), e, tpe, loc), increment(o2))
+      (OccurrenceAst.Expr.Lambda((fp, occur), e, tpe, loc), increment(o2))
 
     case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val (es, o) = visitExps(exps)
       val o1 = visitAtomicOp(op, o)
-      (OccurrenceAst1.Expr.ApplyAtomic(op, es, tpe, eff, loc), increment(o1))
+      (OccurrenceAst.Expr.ApplyAtomic(op, es, tpe, eff, loc), increment(o1))
 
     case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
       val (e1, o1) = visitExp(exp1)
       val (e2, o2) = visitExp(exp2)
       val o3 = combineInfo(o1, o2)
-      (OccurrenceAst1.Expr.ApplyClo(e1, e2, tpe, eff, loc), increment(o3))
+      (OccurrenceAst.Expr.ApplyClo(e1, e2, tpe, eff, loc), increment(o3))
 
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val (es, o1) = visitExps(exps)
       val o2 = o1 :+ sym -> Once
-      (OccurrenceAst1.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc), increment(o2))
+      (OccurrenceAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc), increment(o2))
 
     case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       val (es, o1) = visitExps(exps)
       val o2 = o1 + (sym -> Once)
-      (OccurrenceAst1.Expr.ApplyLocalDef(sym, es, tpe, eff, loc), increment(o2))
+      (OccurrenceAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc), increment(o2))
 
     case Expr.Let(sym, exp1, exp2, tpe, eff, _, loc) =>
       val (e1, o1) = visitExp(exp1)
@@ -200,7 +200,7 @@ object OccurrenceAnalyzer1 {
       val o3 = combineInfo(o1, o2)
       val occur = o3.get(sym)
       val o4 = o3 - sym
-      (OccurrenceAst1.Expr.Let(sym, e1, e2, tpe, eff, occur, loc), increment(o4))
+      (OccurrenceAst.Expr.Let(sym, e1, e2, tpe, eff, occur, loc), increment(o4))
 
     case Expr.LocalDef(sym, fps, exp1, exp2, tpe, eff, _, loc) =>
       val (e1, o10) = visitExp(exp1)
@@ -210,78 +210,78 @@ object OccurrenceAnalyzer1 {
       val occur = o3.get(sym)
       val o4 = o3 - sym
       val o5 = o4.incrementLocalDefCount
-      (OccurrenceAst1.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), increment(o5))
+      (OccurrenceAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), increment(o5))
 
     case Expr.Scope(sym, rsym, exp, tpe, eff, loc) =>
       val (e, o1) = visitExp(exp)
-      (OccurrenceAst1.Expr.Scope(sym, rsym, e, tpe, eff, loc), increment(o1))
+      (OccurrenceAst.Expr.Scope(sym, rsym, e, tpe, eff, loc), increment(o1))
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val (e1, o1) = visitExp(exp1)
       val (e2, o2) = visitExp(exp2)
       val (e3, o3) = visitExp(exp3)
       val o4 = combineInfo(o1, combineInfoBranch(o2, o3))
-      (OccurrenceAst1.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc), increment(o4))
+      (OccurrenceAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc), increment(o4))
 
     case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
       val (e1, o1) = visitExp(exp1)
       val (e2, o2) = visitExp(exp2)
       val o3 = combineInfo(o1, o2)
-      (OccurrenceAst1.Expr.Stm(e1, e2, tpe, eff, loc), increment(o3))
+      (OccurrenceAst.Expr.Stm(e1, e2, tpe, eff, loc), increment(o3))
 
     case Expr.Discard(exp, eff, loc) =>
       val (e, o) = visitExp(exp)
-      (OccurrenceAst1.Expr.Discard(e, eff, loc), increment(o))
+      (OccurrenceAst.Expr.Discard(e, eff, loc), increment(o))
 
     case Expr.Match(exp, rules, tpe, eff, loc) =>
       val (e, o1) = visitExp(exp)
       val (rs, o2) = visitMatchRules(rules)
       val o3 = combineInfo(o1, o2)
-      (OccurrenceAst1.Expr.Match(e, rs, tpe, eff, loc), increment(o3))
+      (OccurrenceAst.Expr.Match(e, rs, tpe, eff, loc), increment(o3))
 
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       val (es, o) = visitExps(exps)
-      (OccurrenceAst1.Expr.VectorLit(es, tpe, eff, loc), increment(o))
+      (OccurrenceAst.Expr.VectorLit(es, tpe, eff, loc), increment(o))
 
     case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
       val (e1, o1) = visitExp(exp1)
       val (e2, o2) = visitExp(exp2)
       val o3 = combineInfo(o1, o2)
-      (OccurrenceAst1.Expr.VectorLoad(e1, e2, tpe, eff, loc), increment(o3))
+      (OccurrenceAst.Expr.VectorLoad(e1, e2, tpe, eff, loc), increment(o3))
 
     case Expr.VectorLength(exp, loc) =>
       val (e, o) = visitExp(exp)
-      (OccurrenceAst1.Expr.VectorLength(e, loc), increment(o))
+      (OccurrenceAst.Expr.VectorLength(e, loc), increment(o))
 
     case Expr.Ascribe(exp, tpe, eff, loc) =>
       val (e, o) = visitExp(exp)
-      (OccurrenceAst1.Expr.Ascribe(e, tpe, eff, loc), increment(o))
+      (OccurrenceAst.Expr.Ascribe(e, tpe, eff, loc), increment(o))
 
     case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val (e, o) = visitExp(exp)
       val o1 = if (declaredEff.isDefined) o :+ sym0 -> Dangerous else o
-      (OccurrenceAst1.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc), increment(o1))
+      (OccurrenceAst.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc), increment(o1))
 
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val (e, o1) = visitExp(exp)
       val (rs, o2) = visitTryCatchRules(rules)
       // Nesting try-catch breaks the backend so don't inline
       val o3 = combineInfoBranch(o1, o2) :+ sym0 -> DontInline
-      (OccurrenceAst1.Expr.TryCatch(e, rs, tpe, eff, loc), increment(o3))
+      (OccurrenceAst.Expr.TryCatch(e, rs, tpe, eff, loc), increment(o3))
 
     case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
       val (e, o1) = visitExp(exp)
       val (rs, o2) = visitTryWithRules(rules)
       val o3 = combineInfo(o1, o2) :+ sym0 -> DontInline
-      (OccurrenceAst1.Expr.RunWith(e, effUse, rs, tpe, eff, loc), increment(o3))
+      (OccurrenceAst.Expr.RunWith(e, effUse, rs, tpe, eff, loc), increment(o3))
 
     case Expr.Do(op, exps, tpe, eff, loc) =>
       val (es, o) = visitExps(exps)
-      (OccurrenceAst1.Expr.Do(op, es, tpe, eff, loc), increment(o))
+      (OccurrenceAst.Expr.Do(op, es, tpe, eff, loc), increment(o))
 
     case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val (ms, o) = visitJvmMethods(methods)
-      (OccurrenceAst1.Expr.NewObject(name, clazz, tpe, eff, ms, loc), increment(o))
+      (OccurrenceAst.Expr.NewObject(name, clazz, tpe, eff, ms, loc), increment(o))
 
   }
 
@@ -289,7 +289,7 @@ object OccurrenceAnalyzer1 {
     * Performs occurrence analysis on a list of expressions `exps` and merges occurrences.
     * Captures `sym0`.
     */
-  private def visitExps(exps: List[Expr])(implicit sym0: Symbol.DefnSym): (List[OccurrenceAst1.Expr], OccurInfo) = {
+  private def visitExps(exps: List[Expr])(implicit sym0: Symbol.DefnSym): (List[OccurrenceAst.Expr], OccurInfo) = {
     val (es, o1) = exps.map(visitExp).unzip
     val o2 = o1.foldLeft(OccurInfo.Empty)(combineInfo)
     (es, o2)
@@ -304,56 +304,56 @@ object OccurrenceAnalyzer1 {
     case _ => occurInfo0
   }
 
-  private def visitMatchRules(rules0: List[OccurrenceAst1.MatchRule])(implicit sym0: Symbol.DefnSym): (List[OccurrenceAst1.MatchRule], OccurInfo) = {
+  private def visitMatchRules(rules0: List[OccurrenceAst.MatchRule])(implicit sym0: Symbol.DefnSym): (List[OccurrenceAst.MatchRule], OccurInfo) = {
     val (rs, o) = rules0.map {
-      case OccurrenceAst1.MatchRule(pat, guard, exp) =>
+      case OccurrenceAst.MatchRule(pat, guard, exp) =>
         val (g, o1) = guard.map(visitExp).unzip
         val (e, o2) = visitExp(exp)
         val o3 = combineInfoOpt(o1, o2)
         val (p, syms) = visitPattern(pat)(o3)
         val o4 = o3 -- syms
-        (OccurrenceAst1.MatchRule(p, g, e), o4)
+        (OccurrenceAst.MatchRule(p, g, e), o4)
     }.unzip
     val o1 = o.foldLeft(OccurInfo.Empty)(combineInfoBranch)
     (rs, o1)
   }
 
-  private def visitTryCatchRules(rules0: List[OccurrenceAst1.CatchRule])(implicit sym0: Symbol.DefnSym): (List[OccurrenceAst1.CatchRule], OccurInfo) = {
+  private def visitTryCatchRules(rules0: List[OccurrenceAst.CatchRule])(implicit sym0: Symbol.DefnSym): (List[OccurrenceAst.CatchRule], OccurInfo) = {
     val (rs, o) = rules0.map {
-      case OccurrenceAst1.CatchRule(sym, clazz, exp) =>
+      case OccurrenceAst.CatchRule(sym, clazz, exp) =>
         val (e, o) = visitExp(exp)
-        (OccurrenceAst1.CatchRule(sym, clazz, e), o)
+        (OccurrenceAst.CatchRule(sym, clazz, e), o)
     }.unzip
     val o1 = o.foldLeft(OccurInfo.Empty)(combineInfo)
     (rs, o1)
   }
 
-  private def visitTryWithRules(rules0: List[OccurrenceAst1.HandlerRule])(implicit sym0: Symbol.DefnSym): (List[OccurrenceAst1.HandlerRule], OccurInfo) = {
+  private def visitTryWithRules(rules0: List[OccurrenceAst.HandlerRule])(implicit sym0: Symbol.DefnSym): (List[OccurrenceAst.HandlerRule], OccurInfo) = {
     val (rs, o) = rules0.map {
-      case OccurrenceAst1.HandlerRule(op, fps, exp, _) =>
+      case OccurrenceAst.HandlerRule(op, fps, exp, _) =>
         val (e, o) = visitExp(exp)
         val continuation = fps.last
         val occurrence = o.get(continuation.sym)
         occurrence match {
-          case Dead => (OccurrenceAst1.HandlerRule(op, fps, e, Linearity.Dead), o)
-          case Once => (OccurrenceAst1.HandlerRule(op, fps, e, Linearity.Once), o)
+          case Dead => (OccurrenceAst.HandlerRule(op, fps, e, Linearity.Dead), o)
+          case Once => (OccurrenceAst.HandlerRule(op, fps, e, Linearity.Once), o)
           case OnceInLocalDef
                | OnceInLambda
                | Many
                | Dangerous
                | DontInline
-               | ManyBranch => (OccurrenceAst1.HandlerRule(op, fps, e, Linearity.Many), o)
+               | ManyBranch => (OccurrenceAst.HandlerRule(op, fps, e, Linearity.Many), o)
         }
     }.unzip
     val o1 = o.foldLeft(OccurInfo.Empty)(combineInfo)
     (rs, o1)
   }
 
-  private def visitJvmMethods(methods0: List[OccurrenceAst1.JvmMethod])(implicit sym0: Symbol.DefnSym): (List[OccurrenceAst1.JvmMethod], OccurInfo) = {
+  private def visitJvmMethods(methods0: List[OccurrenceAst.JvmMethod])(implicit sym0: Symbol.DefnSym): (List[OccurrenceAst.JvmMethod], OccurInfo) = {
     val (ms, o) = methods0.map {
-      case OccurrenceAst1.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
+      case OccurrenceAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
         val (c, o) = visitExp(exp)
-        (OccurrenceAst1.JvmMethod(ident, fparams, c, retTpe, eff, loc), increment(o))
+        (OccurrenceAst.JvmMethod(ident, fparams, c, retTpe, eff, loc), increment(o))
     }.unzip
     val o1 = o.foldLeft(OccurInfo.Empty)(combineInfoBranch)
     (ms, o1)
@@ -461,8 +461,8 @@ object OccurrenceAnalyzer1 {
   /**
     * Combines two occurrences `o1` and `o2` of type Occur into a single occurrence based on ManyBranches logic.
     * ManyBranches can be
-    * - [[OccurrenceAst1.Expr.IfThenElse]]
-    * - [[OccurrenceAst1.Expr.Match]]
+    * - [[OccurrenceAst.Expr.IfThenElse]]
+    * - [[OccurrenceAst.Expr.Match]]
     */
   private def combineBranch(o1: Occur, o2: Occur): Occur = (o1, o2) match {
     case (Dangerous, _) => Dangerous

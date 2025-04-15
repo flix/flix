@@ -18,10 +18,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.OccurrenceAst1.Occur.*
-import ca.uwaterloo.flix.language.ast.OccurrenceAst1.{DefContext, Expr, Occur, Pattern}
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.*
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Expr, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst1, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListMap}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -36,10 +36,10 @@ object Inliner {
   /**
     * Performs inlining on the given AST `root`.
     */
-  def run(root: OccurrenceAst1.Root)(implicit flix: Flix): (OccurrenceAst1.Root, Optimizer.Stats) = {
+  def run(root: OccurrenceAst.Root)(implicit flix: Flix): (OccurrenceAst.Root, Optimizer.Stats) = {
     implicit val sctx: SharedContext = SharedContext.mk()
     val defs = ParOps.parMapValues(root.defs)(visitDef(_)(root, sctx, flix))
-    val newRoot = OccurrenceAst1.Root(defs, root.enums, root.structs, root.effects, root.mainEntryPoint, root.entryPoints, root.sources)
+    val newRoot = OccurrenceAst.Root(defs, root.enums, root.structs, root.effects, root.mainEntryPoint, root.entryPoints, root.sources)
     val stats = SharedContext.toStats(sctx)
     (newRoot, stats)
   }
@@ -48,9 +48,9 @@ object Inliner {
 
   private type OutVar = Symbol.VarSym
 
-  private type InExpr = OccurrenceAst1.Expr
+  private type InExpr = OccurrenceAst.Expr
 
-  private type OutExpr = OccurrenceAst1.Expr
+  private type OutExpr = OccurrenceAst.Expr
 
   // private type InCase = MonoAst.Case
 
@@ -92,7 +92,7 @@ object Inliner {
 
   private type InScopeVars = Map[OutVar, Definition]
 
-  case class Handler(rule: OccurrenceAst1.HandlerRule)
+  case class Handler(rule: OccurrenceAst.HandlerRule)
 
   private type OutEff = MonoAst.Op.type
 
@@ -124,15 +124,15 @@ object Inliner {
 
   /**
     * Performs expression inlining on the given definition `def0`.
-    * Converts definition from [[OccurrenceAst1]] to [[OccurrenceAst1]].
+    * Converts definition from [[OccurrenceAst]] to [[OccurrenceAst]].
     */
-  private def visitDef(def0: OccurrenceAst1.Def)(implicit root: OccurrenceAst1.Root, sctx: SharedContext, flix: Flix): OccurrenceAst1.Def = def0 match {
-    case OccurrenceAst1.Def(sym, fparams, spec, exp, ctx, loc) =>
+  private def visitDef(def0: OccurrenceAst.Def)(implicit root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): OccurrenceAst.Def = def0 match {
+    case OccurrenceAst.Def(sym, fparams, spec, exp, ctx, loc) =>
       if (ctx.occur != Dangerous) {
         val e = visitExp(exp, Context.emptyStart)(sym, root, sctx, flix)
-        OccurrenceAst1.Def(sym, fparams, spec, e, ctx, loc)
+        OccurrenceAst.Def(sym, fparams, spec, e, ctx, loc)
       } else {
-        OccurrenceAst1.Def(sym, fparams, spec, exp, ctx, loc)
+        OccurrenceAst.Def(sym, fparams, spec, exp, ctx, loc)
       }
   }
 
@@ -140,7 +140,7 @@ object Inliner {
     * Performs inlining operations on the expression `exp0` from [[Expr]].
     * Returns a [[Expr]]
     */
-  private def visitExp(exp0: Expr, ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst1.Root, sctx: SharedContext, flix: Flix): Expr = exp0 match {
+  private def visitExp(exp0: Expr, ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = exp0 match {
     case Expr.Cst(cst, tpe, loc) =>
       Expr.Cst(cst, tpe, loc)
 
@@ -364,13 +364,13 @@ object Inliner {
     case Expr.Match(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)
       val rs = rules.map {
-        case OccurrenceAst1.MatchRule(pat, guard, exp1) =>
+        case OccurrenceAst.MatchRule(pat, guard, exp1) =>
           val (p, varSubst1) = visitPattern(pat)
           val varSubst2 = ctx0.varSubst ++ varSubst1
           val ctx = ctx0.copy(varSubst = varSubst2)
           val g = guard.map(visitExp(_, ctx))
           val e1 = visitExp(exp1, ctx)
-          OccurrenceAst1.MatchRule(p, g, e1)
+          OccurrenceAst.MatchRule(p, g, e1)
       }
       Expr.Match(e, rs, tpe, eff, loc)
 
@@ -398,24 +398,24 @@ object Inliner {
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)
       val rs = rules.map {
-        case OccurrenceAst1.CatchRule(sym, clazz, exp1) =>
+        case OccurrenceAst.CatchRule(sym, clazz, exp1) =>
           val freshVarSym = Symbol.freshVarSym(sym)
           val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
           val ctx = ctx0.copy(varSubst = varSubst1)
           val e1 = visitExp(exp1, ctx)
-          OccurrenceAst1.CatchRule(freshVarSym, clazz, e1)
+          OccurrenceAst.CatchRule(freshVarSym, clazz, e1)
       }
       Expr.TryCatch(e, rs, tpe, eff, loc)
 
     case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)
       val rs = rules.map {
-        case OccurrenceAst1.HandlerRule(op, fparams, exp1, linearity) =>
+        case OccurrenceAst.HandlerRule(op, fparams, exp1, linearity) =>
           val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
           val varSubst1 = varSubsts.fold(ctx0.varSubst)(_ ++ _)
           val ctx = ctx0.copy(varSubst = varSubst1)
           val e1 = visitExp(exp1, ctx)
-          OccurrenceAst1.HandlerRule(op, fps, e1, linearity)
+          OccurrenceAst.HandlerRule(op, fps, e1, linearity)
       }
       Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
@@ -425,12 +425,12 @@ object Inliner {
 
     case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map {
-        case OccurrenceAst1.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
+        case OccurrenceAst.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
           val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
           val varSubst1 = varSubsts.fold(ctx0.varSubst)(_ ++ _)
           val ctx = ctx0.copy(varSubst = varSubst1)
           val e = visitExp(exp, ctx)
-          OccurrenceAst1.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
+          OccurrenceAst.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
       }
       Expr.NewObject(name, clazz, tpe, eff, methods, loc)
   }
@@ -439,7 +439,7 @@ object Inliner {
     * Recursively bind each argument in `args` to a let-expression with a fresh symbol
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
-  private def inlineLocalAbstraction(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr], ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst1.Root, sctx: SharedContext, flix: Flix): Expr = {
+  private def inlineLocalAbstraction(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr], ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     bind(exp0, symbols, args, ctx0)
   }
 
@@ -485,7 +485,7 @@ object Inliner {
     * Recursively bind each argument in `args` to a let-expression with a fresh symbol
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
-  private def inlineDef(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr])(implicit sym0: Symbol.DefnSym, root: OccurrenceAst1.Root, sctx: SharedContext, flix: Flix): Expr = {
+  private def inlineDef(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr])(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     bind(exp0, symbols, args, Context.emptyStop)
   }
 
@@ -493,7 +493,7 @@ object Inliner {
     * Recursively bind each argument in `args` to a let-expression with a fresh symbol
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
-  private def bind(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr], ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst1.Root, sctx: SharedContext, flix: Flix): Expr = {
+  private def bind(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr], ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     def bnd(syms: List[(MonoAst.FormalParam, Occur)], as: List[OutExpr], env: VarSubst): Expr = (syms, as) match {
       case ((_, occur) :: nextSymbols, e1 :: nextExpressions) if isDeadAndPure(occur, e1.eff) =>
         // If the parameter is unused and the argument is pure, then throw it away.
@@ -611,12 +611,12 @@ object Inliner {
     case Expr.Match(exp, rules, tpe, eff, loc) =>
       val e = refreshBinders(exp)
       val rs = rules.map {
-        case OccurrenceAst1.MatchRule(pat, guard, exp1) =>
+        case OccurrenceAst.MatchRule(pat, guard, exp1) =>
           val (p, subst1) = refreshPattern(pat)
           val subst2 = subst0 ++ subst1
           val g = guard.map(refreshBinders(_)(subst2, flix))
           val e = refreshBinders(exp1)(subst2, flix)
-          OccurrenceAst1.MatchRule(p, g, e)
+          OccurrenceAst.MatchRule(p, g, e)
       }
       Expr.Match(e, rs, tpe, eff, loc)
 
@@ -644,22 +644,22 @@ object Inliner {
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = refreshBinders(exp)
       val rs = rules.map {
-        case OccurrenceAst1.CatchRule(sym, clazz, exp1) =>
+        case OccurrenceAst.CatchRule(sym, clazz, exp1) =>
           val freshVarSym = Symbol.freshVarSym(sym)
           val subst1 = subst0 + (sym -> freshVarSym)
           val e1 = refreshBinders(exp1)(subst1, flix)
-          OccurrenceAst1.CatchRule(freshVarSym, clazz, e1)
+          OccurrenceAst.CatchRule(freshVarSym, clazz, e1)
       }
       Expr.TryCatch(e, rs, tpe, eff, loc)
 
     case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
       val e = refreshBinders(exp)
       val rs = rules.map {
-        case OccurrenceAst1.HandlerRule(op, fparams, exp1, linearity) =>
+        case OccurrenceAst.HandlerRule(op, fparams, exp1, linearity) =>
           val (fps, subst1) = freshFormalParams(fparams)
           val subst2 = subst0 ++ subst1
           val e1 = refreshBinders(exp1)(subst2, flix)
-          OccurrenceAst1.HandlerRule(op, fps, e1, linearity)
+          OccurrenceAst.HandlerRule(op, fps, e1, linearity)
       }
       Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
@@ -669,11 +669,11 @@ object Inliner {
 
     case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val ms = methods.map {
-        case OccurrenceAst1.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
+        case OccurrenceAst.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
           val (fps, subst1) = freshFormalParams(fparams)
           val subst2 = subst0 ++ subst1
           val e = refreshBinders(exp)(subst2, flix)
-          OccurrenceAst1.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
+          OccurrenceAst.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
       }
       Expr.NewObject(name, clazz, tpe, eff, ms, loc)
   }
@@ -741,7 +741,7 @@ object Inliner {
   /**
     * Checks if `occur` is Dead.
     */
-  private def isDead(occur: OccurrenceAst1.Occur): Boolean = occur match {
+  private def isDead(occur: OccurrenceAst.Occur): Boolean = occur match {
     case Dead => true
     case _ => false
   }
@@ -749,7 +749,7 @@ object Inliner {
   /**
     * Checks if `occur` is Once and `eff` is Pure
     */
-  private def isUsedOnceAndPure(occur: OccurrenceAst1.Occur, eff0: Type): Boolean = occur match {
+  private def isUsedOnceAndPure(occur: OccurrenceAst.Occur, eff0: Type): Boolean = occur match {
     case Once => isPure(eff0)
     case _ => false
   }
@@ -764,7 +764,7 @@ object Inliner {
   /**
     * Checks if `occur` is dead and `exp` is pure.
     */
-  private def isDeadAndPure(occur: OccurrenceAst1.Occur, eff0: Type): Boolean = occur match {
+  private def isDeadAndPure(occur: OccurrenceAst.Occur, eff0: Type): Boolean = occur match {
     case Dead => isPure(eff0)
     case _ => false
   }
