@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.util.ParOps
   */
 object OccurrenceAnalyzer {
 
-  object OccurInfo {
+  private object OccurInfo {
 
     /**
       * Occurrence information for an empty sequence of expressions
