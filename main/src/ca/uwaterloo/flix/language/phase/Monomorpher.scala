@@ -613,7 +613,10 @@ object Monomorpher {
 
   }
 
-  /** Specializes `p0` w.r.t. `subst` and returns a renaming of pattern variables. */
+  /**
+    * Specializes `p0` w.r.t. `subst` and returns a mapping from variable symbols to fresh variable
+    * symbols.
+    */
   private def specializePat(p0: LoweredAst.Pattern, subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.Pattern, Map[Symbol.VarSym, Symbol.VarSym]) = p0 match {
     case LoweredAst.Pattern.Wild(tpe, loc) =>
       (MonoAst.Pattern.Wild(subst(tpe), loc), Map.empty)
@@ -745,14 +748,20 @@ object Monomorpher {
   private def combineEnvs(envs: Iterable[Map[Symbol.VarSym, Symbol.VarSym]]): Map[Symbol.VarSym, Symbol.VarSym] =
     envs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
 
-  /** Specializes `fparams0` w.r.t. `subst0` and returns a renaming of variables. */
+  /**
+    * Specializes `fparams0` w.r.t. `subst0` and returns a mapping from variable symbols to fresh
+    * variable symbols.
+    */
   private def specializeFormalParams(fparams0: List[LoweredAst.FormalParam], subst0: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (List[MonoAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
     // Specialize each formal parameter and recombine the results.
     val (params, envs) = fparams0.map(p => specializeFormalParam(p, subst0)).unzip
     (params, combineEnvs(envs))
   }
 
-  /** Specializes `fparam0` w.r.t. `subst0` and returns a renaming of it. */
+  /**
+    * Specializes `fparam0` w.r.t. `subst0` and returns an environment mapping the variable symbol
+    * to a fresh variable symbol.
+    */
   private def specializeFormalParam(fparam0: LoweredAst.FormalParam, subst0: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
     val LoweredAst.FormalParam(sym, mod, tpe, src, loc) = fparam0
     val freshSym = Symbol.freshVarSym(sym)
