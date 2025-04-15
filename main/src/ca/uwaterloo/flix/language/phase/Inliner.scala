@@ -31,7 +31,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 /**
   * The inliner optionally performs beta-reduction at call-sites.
   */
-object Inliner1 {
+object Inliner {
 
   /**
     * Performs inlining on the given AST `root`.

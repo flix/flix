@@ -41,7 +41,7 @@ object Optimizer {
       var stats: Stats = null
       for (_ <- 1 to flix.options.inlinerRounds) {
         val afterOccurrenceAnalyzer = OccurrenceAnalyzer1.run(result)
-        val (afterInliner, stats1) = Inliner1.run(afterOccurrenceAnalyzer)
+        val (afterInliner, stats1) = Inliner.run(afterOccurrenceAnalyzer)
         stats = if (stats == null) stats1 else stats ++ stats1
         result = afterInliner
       }
