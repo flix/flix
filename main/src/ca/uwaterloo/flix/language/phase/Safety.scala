@@ -65,13 +65,13 @@ object Safety {
     * Checks tje safety and well-formedness of `exp0`.
     *
     * The checks are:
-    *   - Nested [[Expr.TryCatch]] expressions are disallowed unless the inner [[Expr.TryCatch]]
-    *     will be extracted (e.g. Lambda).
+    *   - Nested [[Expr.TryCatch]]/[[Expr.Scope]] expressions are disallowed unless the inner
+    *     [[Expr.TryCatch]]/[[Expr.Scope]] will be extracted (e.g. Lambda).
     *   - [[Expr.TypeMatch]] must end with a default case.
     *
-    *
-    * @param inTryCatch indicates whether `exp` is enclosed in a try-catch. This can be reset if the
-    *                   expression will later be extracted to its own function (e.g [[Expr.Lambda]]).
+    * @param inTryCatch indicates whether `exp` is enclosed in a try-catch or scope. This can be
+    *                   reset if the expression will later be extracted to its own function (e.g
+    *                   [[Expr.Lambda]]).
     */
   private def visitExp(exp0: Expr)(implicit inTryCatch: Boolean, renv: RigidityEnv, sctx: SharedContext, flix: Flix): Unit = exp0 match {
     case Expr.Cst(_, _, _) =>
@@ -128,8 +128,12 @@ object Safety {
     case Expr.Region(_, _) =>
       ()
 
-    case Expr.Scope(_, _, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.Scope(_, _, exp, _, _, loc) =>
+      // Check for [[IllegalNestedTryCatchOrScope]]
+      if (inTryCatch) {
+        sctx.errors.add(IllegalNestedTryCatchOrScope(loc))
+      }
+      visitExp(exp)(inTryCatch = true, renv, sctx, flix)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1)
@@ -253,9 +257,9 @@ object Safety {
       visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, loc) =>
-      // Check for [[IllegalNestedTryCatch]]
+      // Check for [[IllegalNestedTryCatchOrScope]]
       if (inTryCatch) {
-        sctx.errors.add(IllegalNestedTryCatch(loc))
+        sctx.errors.add(IllegalNestedTryCatchOrScope(loc))
       }
       visitExp(exp)(inTryCatch = true, renv, sctx, flix)
       rules.foreach { case CatchRule(bnd, clazz, e, _) =>

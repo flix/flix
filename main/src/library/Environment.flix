@@ -119,13 +119,14 @@ mod Environment {
                 k(unsafe Array.toList(Global.getArgs()))
 
             def getEnv(k) = region rc {
-                try {
+                def inner () = try {
                     let _ = rc;
                     let iter = unchecked_cast ((System.getenv().entrySet().iterator()) as _ \ rc);
                     k(getEnvHelper(iter, Map.empty()))
                 } catch {
                     case _: Exception => k(Map.empty())
-                }
+                };
+                inner()
             }
 
             def getVar(name, k) =

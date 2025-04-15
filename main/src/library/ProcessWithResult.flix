@@ -66,13 +66,14 @@ mod ProcessWithResult {
             f(x)
         } with handler ProcessWithResult {
             def execWithCwdAndEnv(cmd, args, cwd, env, k) = region rc {
-                let res = try {
+                def res() = try {
                     let arr = List.toArray(rc, cmd :: args);
                     let pb = new ProcessBuilder(arr);
-                    foreach(e <- Map.toList(env)) {
+                    def inner() = foreach(e <- Map.toList(env)) {
                         pb.environment().put(fst(e), snd(e));
                         ()
                     };
+                    inner();
                     match cwd {
                         case Some(cwd) => pb.directory(new JFile(cwd)); ()
                         case None => ()
@@ -91,7 +92,7 @@ mod ProcessWithResult {
                     case ex: SecurityException         => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
                     case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 };
-                k(res)
+                k(res())
             }
         }
 

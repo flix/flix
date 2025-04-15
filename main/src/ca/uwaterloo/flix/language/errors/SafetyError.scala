@@ -212,24 +212,25 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate that a try-catch expression contains another try-catch expression.
+    * An error raised to indicate that a try-catch or scope expression contains another try-catch
+    * or scope expression.
     *
-    * @param loc the location of the inner try-catch.
+    * @param loc the location of the inner try-catch or scope.
     */
-  case class IllegalNestedTryCatch(loc: SourceLocation) extends SafetyError {
-    def summary: String = s"Try-catch expressions cannot be nested."
+  case class IllegalNestedTryCatchOrScope(loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Try-catch and region scope expressions cannot be nested."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
       s""">> $summary
          |
-         |${code(loc, "The inner try-catch expression.")}
+         |${code(loc, "The inner try-catch or scope expression.")}
          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
       import formatter.*
-      s"""${underline("Tip:")} Put the inner try-catch expression in a function.""".stripMargin
+      s"""${underline("Tip:")} Put the inner expression in a function.""".stripMargin
     })
   }
 

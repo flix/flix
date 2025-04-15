@@ -230,11 +230,12 @@ mod CodePoint {
     /// Returns 'None' if `cp` is not a valid code point.
     ///
     pub def toChars(cp: Int32): Option[Vector[Char]] = try {
-        region rc {
+        def inner() = region rc {
             let arr : Array[Char, rc] = Array.empty(rc, 2);
             let size = unchecked_cast(Character.toChars(cp, arr, 0) as _ \ rc);
             Array.toVector(arr) |> Vector.takeLeft(size) |> Some
-        }
+        };
+        inner()
     } catch {
         case _: Throwable => None
     }
@@ -244,14 +245,15 @@ mod CodePoint {
     /// Unicode's Basic Multilingual Plane.
     ///
     pub def toBmpChar(cp: Int32): Option[Char] = try {
-        region rc {
+        def inner () = region rc {
             let arr : Array[Char, rc] = Array.empty(rc, 2);
             let i = Character.toChars(cp, arr, 0);
             if (i == 1)
                 Array.nth(0, arr)
             else
                 None
-        }
+        };
+        inner()
     } catch {
         case _: Exception => None
     }
@@ -261,14 +263,15 @@ mod CodePoint {
     /// code point `cp` if `cp` is a supplementary character.
     ///
     pub def toSupplementaryChars(cp: Int32): Option[(Char, Char)] = try {
-        region rc {
+        def inner() = region rc {
             let arr : Array[Char, rc] = Array.empty(rc, 2);
             let i = Character.toChars(cp, arr, 0);
             if (i == 2)
                 Some((Array.get(0, arr), Array.get(1, arr)))
             else
                 None
-        }
+        };
+        inner()
     } catch {
         case _: Exception => None
     }

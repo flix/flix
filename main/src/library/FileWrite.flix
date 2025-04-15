@@ -144,11 +144,12 @@ mod FileWrite {
 
             def writeBytes(data, f, k) = {
                 try {
-                    region rc {
+                    def inner() = region rc {
                         let bytes = Vector.toArray(rc, data);
                         Files.write(Paths.get(f), bytes, (...{}: Vector[OpenOption]));
                         k(())
-                    }
+                    };
+                    inner()
                 } catch {
                     case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
@@ -188,12 +189,13 @@ mod FileWrite {
 
             def appendBytes(data, f, k) = {
                 try {
-                    region rc {
+                    def inner () = region rc {
                         let bytes = Vector.toArray(rc, data);
                         let opt: OpenOption = checked_cast(StandardOpenOption.APPEND);
                         Files.write(Paths.get(f), bytes, ...{opt});
                         k(())
-                    }
+                    };
+                    inner()
                 } catch {
                     case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
@@ -203,12 +205,13 @@ mod FileWrite {
 
             def truncate(f, k) = {
                 try {
-                    region rc {
+                    def inner() = region rc {
                         let opt: OpenOption = checked_cast(StandardOpenOption.TRUNCATE_EXISTING);
                         let arr: Array[Int8, rc] = Array#{} @ rc;
                         Files.write(Paths.get(f), arr, ...{opt});
                         k(())
-                    }
+                    };
+                    inner()
                 } catch {
                     case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))

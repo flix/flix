@@ -69,13 +69,14 @@ mod Process {
             Ok(f(x))
         } with handler Process {
             def execWithCwdAndEnv(cmd, args, cwd, env, k) = region rc {
-                try {
+                def inner1() = try {
                     let arr = List.toArray(rc, cmd :: args);
                     let pb = new ProcessBuilder(arr);
-                    foreach(e <- Map.toList(env)) {
+                    def inner2() = foreach(e <- Map.toList(env)) {
                         pb.environment().put(fst(e), snd(e));
                         ()
                     };
+                    inner2();
                     match cwd {
                         case Some(cwd) => pb.directory(new JFile(cwd)); ()
                         case None => ()
@@ -92,7 +93,8 @@ mod Process {
                     case ex: NullPointerException      => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
                     case ex: SecurityException         => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
                     case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
+                };
+                inner1()
             }
         }
 
