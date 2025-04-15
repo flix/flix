@@ -208,9 +208,8 @@ object BenchmarkInliner {
 
   private case class BenchmarkFile(private val name: String, private val opts: Options) {
     private val FileName: String = {
-      val inlinerType = InlinerType.from(opts).toString.toLowerCase
-      val rounds = InlinerType.rounds(opts)
-      s"${name}_${inlinerType}_$rounds"
+      val rounds = InlinerRounds.rounds(opts)
+      s"${name}_$rounds"
     }
     private val JarName: String = s"$FileName.jar"
     val BuildDir: Path = classDirFor(s"$FileName/")
@@ -293,24 +292,12 @@ object BenchmarkInliner {
       })
   }
 
-  private sealed trait InlinerType
-
-  private object InlinerType {
-
-    private case object NoInliner extends InlinerType
-
-    private case object New extends InlinerType
-
-    def from(options: Options): InlinerType = {
+  private object InlinerRounds {
+    def rounds(options: Options): Int = {
       if (options.xnooptimizer)
-        NoInliner
+        0
       else
-        New
-    }
-
-    def rounds(options: Options): Int = from(options) match {
-      case NoInliner => 0
-      case New => options.inlinerRounds
+        options.inlinerRounds
     }
   }
 
@@ -319,16 +306,14 @@ object BenchmarkInliner {
     *
     * @param name            The name of the program
     * @param lines           The number of lines of source code in the program
-    * @param inlinerType     Which inliner was used (if any)
     * @param inliningRounds  The number of rounds of inlining
     * @param compilationTime The median time taken to compile the program
     * @param phases          The median running time of each compilation phase
     * @param codeSize        The number of bytes of the compiled program
     */
-  private case class Run(name: String, lines: Int, inlinerType: InlinerType, inliningRounds: Int, compilationTime: Long, phases: List[(String, Long)], codeSize: Int) {
+  private case class Run(name: String, lines: Int, inliningRounds: Int, compilationTime: Long, phases: List[(String, Long)], codeSize: Int) {
     def toJson: JsonAST.JObject = {
       ("lines" -> lines) ~
-        ("inlinerType" -> inlinerType.toString) ~
         ("inliningRounds" -> inliningRounds) ~
         ("compilationTime" -> compilationTime) ~
         ("phases" -> phases) ~
@@ -352,7 +337,7 @@ object BenchmarkInliner {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
     val runs = scala.collection.mutable.ListBuffer.empty[Run]
     for ((config, name, prog) <- runConfigs) {
-      debug(s"Benchmarking $name with inliner '${InlinerType.from(config)}' with ${InlinerType.rounds(config)} rounds")
+      debug(s"Benchmarking $name with ${InlinerRounds.rounds(config)} rounds")
       debug(s"Warming up for ${nanosToMinutes(maxWarmupNanos)} minutes...")
 
       val t0Compiler = System.nanoTime()
@@ -388,7 +373,6 @@ object BenchmarkInliner {
 
   private def collectRun(o: Options, name: String, compilationTimings: Seq[(Long, List[(String, Long)])], result: CompilationResult): Run = {
     val lines = result.getTotalLines
-    val inlinerType = InlinerType.from(o)
     val inliningRounds = o.inlinerRounds
     val compilationTime = median(compilationTimings.map(fst)).toLong
     // TODO: Use ListMap
@@ -400,7 +384,7 @@ object BenchmarkInliner {
     }.map { case (phase, timings) => phase -> median(timings).toLong }.toList
     val codeSize = result.codeSize
 
-    Run(name, lines, inlinerType, inliningRounds, compilationTime, phaseTimings, codeSize)
+    Run(name, lines, inliningRounds, compilationTime, phaseTimings, codeSize)
   }
 
 
