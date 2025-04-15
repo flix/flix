@@ -221,7 +221,7 @@ object BenchmarkInliner {
 
   private object BenchmarkFile {
     def BaselineFile(file: BenchmarkFile): Path = {
-      val baseOpts = file.opts.copy( inliner1Rounds = 0, xnooptimizer1 = true)
+      val baseOpts = file.opts.copy(inlinerRounds = 0, xnooptimizer = true)
       BenchmarkFile(file.name, baseOpts).OutputFile
     }
   }
@@ -302,7 +302,7 @@ object BenchmarkInliner {
     private case object New extends InlinerType
 
     def from(options: Options): InlinerType = {
-      if (options.xnooptimizer1)
+      if (options.xnooptimizer)
         NoInliner
       else
         New
@@ -310,7 +310,7 @@ object BenchmarkInliner {
 
     def rounds(options: Options): Int = from(options) match {
       case NoInliner => 0
-      case New => options.inliner1Rounds
+      case New => options.inlinerRounds
     }
   }
 
@@ -343,9 +343,9 @@ object BenchmarkInliner {
   }
 
   private def mkConfigurations(opts: Options): List[Options] = {
-    val o0 = opts.copy(xnooptimizer1 = true, inliner1Rounds = 0, lib = LibLevel.All, progress = false, incremental = false)
-    val o1 = o0.copy(xnooptimizer1 = false)
-    o0 :: (1 to MaxInliningRounds).map(r => o1.copy(inliner1Rounds = r)).toList
+    val o0 = opts.copy(xnooptimizer = true, inlinerRounds = 0, lib = LibLevel.All, progress = false, incremental = false)
+    val o1 = o0.copy(xnooptimizer = false)
+    o0 :: (1 to MaxInliningRounds).map(r => o1.copy(inlinerRounds = r)).toList
   }
 
   private def benchmarkWithIndividualMaxTime(runConfigs: List[(Options, String, String)], maxWarmupNanos: Long, maxNanos: Long): ListMap[String, Run] = {
@@ -389,7 +389,7 @@ object BenchmarkInliner {
   private def collectRun(o: Options, name: String, compilationTimings: Seq[(Long, List[(String, Long)])], result: CompilationResult): Run = {
     val lines = result.getTotalLines
     val inlinerType = InlinerType.from(o)
-    val inliningRounds = o.inliner1Rounds
+    val inliningRounds = o.inlinerRounds
     val compilationTime = median(compilationTimings.map(fst)).toLong
     // TODO: Use ListMap
     val phaseTimings = compilationTimings.flatMap(snd).foldLeft(Map.empty[String, Seq[Long]]) {
