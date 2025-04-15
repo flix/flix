@@ -1276,9 +1276,6 @@ object GenExpression {
       // Introduce a label after the finally block.
       val afterFinally = new Label()
 
-      // Emit try finally block.
-      mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, finallyBlock, null)
-
       // Create an instance of Region
       mv.visitTypeInsn(NEW, BackendObjType.Region.jvmName.toInternalName)
       mv.visitInsn(DUP)
@@ -1291,6 +1288,10 @@ object GenExpression {
       // Compile the scope body
       mv.visitLabel(beforeTryBlock)
       compileExpr(exp)
+
+      // Emit try finally block. It's important to do this after compiling sub-expressions to ensure
+      // correct catch case ordering.
+      mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, finallyBlock, null)
 
       // When we exit the scope, call the region's `exit` method
       val iLoad = AsmOps.getLoadInstruction(JvmType.Reference(BackendObjType.Region.jvmName))
@@ -1334,11 +1335,6 @@ object GenExpression {
         rule => rule -> new Label()
       }
 
-      // Emit a try catch block for each catch rule.
-      for ((CatchRule(_, clazz, _), handlerLabel) <- rulesAndLabels) {
-        mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, handlerLabel, asm.Type.getInternalName(clazz))
-      }
-
       // Emit code for the try block.
       mv.visitLabel(beforeTryBlock)
       compileExpr(exp)
@@ -1357,6 +1353,12 @@ object GenExpression {
         // Emit code for the handler body expression.
         compileExpr(body)
         mv.visitJumpInsn(GOTO, afterTryAndCatch)
+      }
+
+      // Emit a try catch block for each catch rule. It's important to do this after compiling
+      // sub-expressions to ensure correct catch case ordering.
+      for ((CatchRule(_, clazz, _), handlerLabel) <- rulesAndLabels) {
+        mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, handlerLabel, asm.Type.getInternalName(clazz))
       }
 
       // Add the label after both the try and catch rules.
