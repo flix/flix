@@ -96,8 +96,6 @@ object Main {
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
       xnoverify = cmdOpts.xnoverify,
-      xnooptimizer = cmdOpts.xnooptimizer,
-      inlinerRounds = cmdOpts.inlinerRounds.getOrElse(Options.Default.inlinerRounds),
       xnooptimizer1 = cmdOpts.xnooptimizer1,
       inliner1Rounds = cmdOpts.inliner1Rounds.getOrElse(Options.Default.inliner1Rounds),
       xprintphases = cmdOpts.xprintphases,
@@ -361,8 +359,6 @@ object Main {
                      xbenchmarkThroughput: Boolean = false,
                      xnodeprecated: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
-                     xnooptimizer: Boolean = false,
-                     inlinerRounds: Option[Int] = None,
                      xnooptimizer1: Boolean = false,
                      inliner1Rounds: Option[Int] = None,
                      xprintphases: Boolean = false,
@@ -543,9 +539,6 @@ object Main {
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
 
-      opt[Int]("inlinerRounds").action((n, c) => c.copy(inlinerRounds = Some(n))).
-        text("number of rounds of (old) inlining")
-
       opt[Int]("inliner1Rounds").action((n, c) => c.copy(inliner1Rounds = Some(n))).
         text("number of rounds of (new) inlining")
 
@@ -589,10 +582,6 @@ object Main {
       // Xno-deprecated
       opt[Unit]("Xno-deprecated").action((_, c) => c.copy(xnodeprecated = true)).
         text("[experimental] disables deprecated features.")
-
-      // Xno-optimizer
-      opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
-        text("[experimental] disables compiler optimizations.")
 
       // Xno-optimizer1
       opt[Unit]("Xno-optimizer1").action((_, c) => c.copy(xnooptimizer1 = true)).

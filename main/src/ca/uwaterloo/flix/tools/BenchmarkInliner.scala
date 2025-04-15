@@ -221,7 +221,7 @@ object BenchmarkInliner {
 
   private object BenchmarkFile {
     def BaselineFile(file: BenchmarkFile): Path = {
-      val baseOpts = file.opts.copy(inlinerRounds = 0, inliner1Rounds = 0, xnooptimizer = true, xnooptimizer1 = true)
+      val baseOpts = file.opts.copy( inliner1Rounds = 0, xnooptimizer1 = true)
       BenchmarkFile(file.name, baseOpts).OutputFile
     }
   }
@@ -299,22 +299,17 @@ object BenchmarkInliner {
 
     private case object NoInliner extends InlinerType
 
-    private case object Old extends InlinerType
-
     private case object New extends InlinerType
 
     def from(options: Options): InlinerType = {
-      if (options.xnooptimizer && options.xnooptimizer1)
+      if (options.xnooptimizer1)
         NoInliner
-      else if (options.xnooptimizer1)
-        Old
       else
         New
     }
 
     def rounds(options: Options): Int = from(options) match {
       case NoInliner => 0
-      case Old => options.inlinerRounds
       case New => options.inliner1Rounds
     }
   }
@@ -348,10 +343,9 @@ object BenchmarkInliner {
   }
 
   private def mkConfigurations(opts: Options): List[Options] = {
-    val o0 = opts.copy(xnooptimizer = true, xnooptimizer1 = true, lib = LibLevel.All, progress = false, incremental = false, inlinerRounds = 0, inliner1Rounds = 0)
-    val o1 = opts.copy(xnooptimizer = false, xnooptimizer1 = true, lib = LibLevel.All, progress = false, incremental = false)
-    val o2 = opts.copy(xnooptimizer = true, xnooptimizer1 = false, lib = LibLevel.All, progress = false, incremental = false)
-    o0 :: (1 to MaxInliningRounds).map(r => o1.copy(inlinerRounds = r, inliner1Rounds = r)).toList ::: (1 to MaxInliningRounds).map(r => o2.copy(inlinerRounds = r, inliner1Rounds = r)).toList
+    val o0 = opts.copy(xnooptimizer1 = true, inliner1Rounds = 0, lib = LibLevel.All, progress = false, incremental = false)
+    val o1 = o0.copy(xnooptimizer1 = false)
+    o0 :: (1 to MaxInliningRounds).map(r => o1.copy(inliner1Rounds = r)).toList
   }
 
   private def benchmarkWithIndividualMaxTime(runConfigs: List[(Options, String, String)], maxWarmupNanos: Long, maxNanos: Long): ListMap[String, Run] = {
