@@ -435,14 +435,6 @@ object Inliner {
       Expr.NewObject(name, clazz, tpe, eff, methods, loc)
   }
 
-  /**
-    * Recursively bind each argument in `args` to a let-expression with a fresh symbol
-    * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
-    */
-  private def inlineLocalAbstraction(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr], ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
-    bind(exp0, symbols, args, ctx0)
-  }
-
   private def visitPattern(pattern0: Pattern)(implicit flix: Flix): (Pattern, VarSubst) = pattern0 match {
     case Pattern.Wild(tpe, loc) =>
       (Pattern.Wild(tpe, loc), Map.empty)
@@ -487,6 +479,14 @@ object Inliner {
     */
   private def inlineDef(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr])(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     bind(exp0, symbols, args, Context.emptyStop)
+  }
+
+  /**
+    * Recursively bind each argument in `args` to a let-expression with a fresh symbol
+    * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
+    */
+  private def inlineLocalAbstraction(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr], ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+    bind(exp0, symbols, args, ctx0)
   }
 
   /**
