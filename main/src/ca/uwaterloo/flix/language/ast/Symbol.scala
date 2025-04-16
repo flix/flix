@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, ModuleKind, QualifiedSym, Scope, Source, VarText}
+import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects

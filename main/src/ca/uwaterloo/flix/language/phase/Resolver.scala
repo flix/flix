@@ -2408,7 +2408,7 @@ object Resolver {
         }
 
       case NamedAst.Type.Tuple(elms0, loc) =>
-        val elmsVal = traverse(elms0)(tpe => visit(tpe))
+        val elmsVal = traverseNel(elms0)(tpe => visit(tpe))
         mapN(elmsVal) {
           elms => UnkindedType.mkTuple(elms, loc)
         }
@@ -3451,7 +3451,7 @@ object Resolver {
   /**
     * Creates an LocalScope from the given patterns.
     */
-  private def mkPatternsScp(pats: List[ResolvedAst.Pattern]): LocalScope = {
+  private def mkPatternsScp(pats: Iterable[ResolvedAst.Pattern]): LocalScope = {
     pats.foldLeft(LocalScope.empty) {
       case (acc, pat) => acc ++ mkPatternScp(pat)
     }

@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
+import ca.uwaterloo.flix.util.collection.Nel
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -1488,7 +1489,7 @@ object Lowering {
     rs.zip(channels).zipWithIndex map {
       case ((LoweredAst.SelectChannelRule(sym, chan, exp), (chSym, _)), i) =>
         val locksSym = mkLetSym("locks", loc)
-        val pat = mkTuplePattern(List(LoweredAst.Pattern.Cst(Constant.Int32(i), Type.Int32, loc), LoweredAst.Pattern.Var(locksSym, locksType, loc)), loc)
+        val pat = mkTuplePattern(Nel(LoweredAst.Pattern.Cst(Constant.Int32(i), Type.Int32, loc), List(LoweredAst.Pattern.Var(locksSym, locksType, loc))), loc)
         val (getTpe, _) = extractChannelTpe(chan.tpe)
         val itpe = Type.mkIoUncurriedArrow(List(chan.tpe, locksType), getTpe, loc)
         val args = List(LoweredAst.Expr.Var(chSym, chan.tpe, loc), LoweredAst.Expr.Var(locksSym, locksType, loc))
@@ -1506,7 +1507,7 @@ object Lowering {
     default match {
       case Some(defaultExp) =>
         val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
-        val pat = mkTuplePattern(List(LoweredAst.Pattern.Cst(Constant.Int32(-1), Type.Int32, loc), LoweredAst.Pattern.Wild(locksType, loc)), loc)
+        val pat = mkTuplePattern(Nel(LoweredAst.Pattern.Cst(Constant.Int32(-1), Type.Int32, loc), List(LoweredAst.Pattern.Wild(locksType, loc))), loc)
         val defaultMatch = LoweredAst.MatchRule(pat, None, defaultExp)
         List(defaultMatch)
       case _ =>
@@ -1783,7 +1784,7 @@ object Lowering {
   /**
     * Returns a TypedAst.Pattern representing a tuple of patterns.
     */
-  def mkTuplePattern(patterns: List[LoweredAst.Pattern], loc: SourceLocation): LoweredAst.Pattern = {
+  def mkTuplePattern(patterns: Nel[LoweredAst.Pattern], loc: SourceLocation): LoweredAst.Pattern = {
     LoweredAst.Pattern.Tuple(patterns, Type.mkTuple(patterns.map(_.tpe), loc), loc)
   }
 

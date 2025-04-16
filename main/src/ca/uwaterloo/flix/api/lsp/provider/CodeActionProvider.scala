@@ -20,10 +20,9 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils
 import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
+import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
-import ca.uwaterloo.flix.util.Similarity
 
 /**
   * The CodeActionProvider offers quickfix suggestions.
@@ -43,13 +42,13 @@ object CodeActionProvider {
       mkUseEffect(qn.ident, uri, ap)
 
     case ResolutionError.UndefinedStruct(qn, ap, loc) if overlaps(range, loc) =>
-      mkUseStruct(qn.ident, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
+      mkUseStruct(qn.ident, uri, ap)
 
     case ResolutionError.UndefinedJvmImport(name, ap, _, loc) if overlaps(range, loc) =>
       mkImportJava(Name.mkQName(name), uri, ap)
 
-    case ResolutionError.UndefinedName(qn, ap, env, loc) if overlaps(range, loc) =>
-      mkFixMisspelling(qn, loc, env, uri) ++ mkUseDef(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap) ++ mkNewDef(qn.ident.name, uri, ap)
+    case ResolutionError.UndefinedName(qn, ap, _, loc) if overlaps(range, loc) =>
+      mkUseDef(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap)
 
     case ResolutionError.UndefinedTrait(qn, _, ap, _, _, loc) if overlaps(range, loc) =>
       mkUseTrait(qn.ident, uri, ap)
@@ -58,7 +57,7 @@ object CodeActionProvider {
       mkUseTag(name.ident.name, uri, ap) ++ mkQualifyTag(name.ident.name, uri, loc)
 
     case ResolutionError.UndefinedType(qn, _, ap, _, loc) if overlaps(range, loc) =>
-      mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap) ++ mkNewEnum(qn.ident.name, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
+      mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap)
 
     case TypeError.MissingInstanceEq(tpe, _, loc) if overlaps(range, loc) =>
       mkDeriveMissingEq(tpe, uri)
@@ -273,62 +272,6 @@ object CodeActionProvider {
     }.toList.sortBy(_.title)
 
   /**
-    * Returns a code action that proposes to create a new enum.
-    *
-    * For example, if we have:
-    *
-    * {{{
-    *   def foo(): Abc = ???
-    * }}}
-    *
-    * where the `Abc` type is not defined this code action proposes to add:
-    * {{{
-    *   enum Abc { }
-    * }}}
-    */
-  private def mkNewEnum(name: String, uri: String, ap: AnchorPosition): List[CodeAction] = CodeAction(
-    title = s"Create enum '$name'",
-    kind = CodeActionKind.QuickFix,
-    edit = Some(WorkspaceEdit(
-      Map(uri -> List(mkTextEdit(ap,
-        s"""
-          |enum $name {
-          |
-          |}
-          |""".stripMargin
-      )))
-    )),
-    command = None
-  ) :: Nil
-
-  /**
-    * Returns a code action that proposes to create a new function.
-    *
-    * For example, if we have:
-    *
-    * {{{
-    *   let x = f()
-    * }}}
-    *
-    * where the name `f` is not defined this code action proposes to add:
-    * {{{
-    *   def f(): =
-    * }}}
-    */
-  private def mkNewDef(name: String, uri: String, ap: AnchorPosition): List[CodeAction] = CodeAction(
-    title = s"Create def '$name'",
-    kind = CodeActionKind.QuickFix,
-    edit = Some(WorkspaceEdit(
-      Map(uri -> List(mkTextEdit(ap,
-        s"""
-          |def $name(): =
-          |""".stripMargin
-      )))
-    )),
-    command = None
-  ) :: Nil
-
-  /**
     * Returns a code action that proposes to import the corresponding Java class.
     * First, we try to import the class with the name matching the head of the `qn.namespace.idents`.
     * If there is no namespace, we try to import the class with the name matching `qn.ident`.
@@ -360,68 +303,6 @@ object CodeActionProvider {
       )
     }
   }
-
-  /**
-    * Returns a code action that proposes to create a new struct.
-    *
-    * For example, if we have:
-    *
-    * {{{
-    *   def foo(): Abc = ???
-    * }}}
-    *
-    * where the `Abc` type is not defined this code action proposes to add:
-    * {{{
-    *   struct Abc[r] { }
-    * }}}
-    */
-  private def mkNewStruct(name: String, uri: String, ap:AnchorPosition): List[CodeAction] = CodeAction(
-    title = s"Create struct '$name'",
-    kind = CodeActionKind.QuickFix,
-    edit = Some(WorkspaceEdit(
-      Map(uri -> List(mkTextEdit(ap,
-        s"""
-           |struct $name[r] {
-           |
-           |}
-           |""".stripMargin
-      )))
-    )),
-    command = None
-  ) :: Nil
-
-  /**
-    * Returns a list of quickfix code action to suggest possibly correct spellings.
-    *
-    * Uses Levenshtein Distance to find close spellings.
-    */
-  private def mkFixMisspelling(qn: Name.QName, loc: SourceLocation, scp: LocalScope, uri: String): List[CodeAction] = {
-    val minLength = 3
-    val maxDistance = 3
-    val possibleNames: List[String] = scp.m.toList.map(_._1).filter(n => (n.length - qn.ident.name.length).abs < maxDistance)
-      .filter(n => Similarity.levenshtein(n, qn.ident.name) < maxDistance)
-    if (qn.ident.name.length > minLength)
-      possibleNames.map(n => mkCorrectSpelling(n, loc, uri))
-    else
-      Nil
-  }
-
-  /**
-    * Internal helper function for `mkFixMisspelling`.
-    * Returns a quickfix code action for a possibly correct name.
-    */
-  private def mkCorrectSpelling(correctName: String, loc: SourceLocation, uri: String): CodeAction =
-    CodeAction(
-      title = s"Did you mean: '$correctName'?",
-      kind = CodeActionKind.QuickFix,
-      edit = Some(WorkspaceEdit(
-        Map(uri -> List(TextEdit(
-          Range(Position.fromBegin(loc), Position.fromEnd(loc)),
-          correctName
-        )))
-      )),
-      command = None
-    )
 
   /**
     * Returns a quickfix code action to derive the `Eq` trait for the given type `tpe` if it is an enum.
@@ -548,7 +429,7 @@ object CodeActionProvider {
   }
 
   private def sourcePosition2Position(sourcePosition: SourcePosition): Position = {
-    Position(sourcePosition.line, sourcePosition.col)
+    Position(sourcePosition.lineOneIndexed, sourcePosition.colOneIndexed)
   }
 
   private def sourceLocation2Range(sourceLocation: SourceLocation): Range = {

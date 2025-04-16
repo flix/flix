@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, CompletionItemLabelDetails, InsertTextFormat, Position, Range, TextEdit}
+import ca.uwaterloo.flix.api.lsp.{Command, CompletionItem, CompletionItemKind, CompletionItemLabelDetails, InsertTextFormat, Position, Range, TextEdit}
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
@@ -178,7 +178,8 @@ sealed trait Completion {
         documentation       = Some(decl.spec.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Function,
-        additionalTextEdits = additionalTextEdit
+        additionalTextEdits = additionalTextEdit,
+        command = Some(Command("editor.action.triggerParameterHints", "editor.action.triggerParameterHints", Nil))
       )
 
     case Completion.EnumCompletion(enm, range, ap, qualified, inScope, withTypeParameters) =>
