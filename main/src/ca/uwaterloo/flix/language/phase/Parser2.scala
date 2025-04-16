@@ -1366,11 +1366,22 @@ object Parser2 {
       * expression.
       *
       * @param rhsIsOptional If false, the right-hand-side expression is not treated as optional.
+      * @param continueUntil statement parsing will keep looping until an expression is followed by
+      *                      this. E.g. if '}' then `42; 43 44}` will be parsed as a statement of
+      *                      three expressions with an error for the missing `;` after `43`.
       */
-    def statement(rhsIsOptional: Boolean = true)(implicit s: State): Mark.Closed = {
+    def statement(rhsIsOptional: Boolean = true, continueUntil: Option[TokenKind] = None)(implicit s: State): Mark.Closed = {
       var lhs = expression()
-      if (eat(TokenKind.Semi)) {
-        statement()
+      val t = nth(0)
+      if (t == TokenKind.Semi) {
+        advance()
+        statement(continueUntil = continueUntil)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      } else if (continueUntil.isDefined && !continueUntil.contains(t) && !t.isFirstDecl) {
+        // Treat as a missing `;` and continue looping.
+        s.errors.append(ParseError.MissingSemi(SyntacticContext.Expr.OtherExpr, previousSourceLocation()))
+        statement(continueUntil = continueUntil)
         lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       } else if (!rhsIsOptional) {
@@ -1919,7 +1930,7 @@ object Parser2 {
       if (eat(TokenKind.CurlyR)) { // Handle an empty block.
         return close(mark, TreeKind.Expr.LiteralRecord)
       }
-      statement()
+      statement(continueUntil = Some(TokenKind.CurlyR))
       expect(TokenKind.CurlyR, SyntacticContext.Expr.OtherExpr)
       close(mark, TreeKind.Expr.Block)
     }

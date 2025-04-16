@@ -212,6 +212,27 @@ object ParseError {
   }
 
   /**
+    * An error raised to indicate that a statement expression is missing a semi colon.
+    *
+    * @param sctx  The syntactic context.
+    * @param loc   The source location.
+    */
+  case class MissingSemi(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind.ParseError = CompilationMessageKind.ParseError(sctx)
+
+    def summary: String = s"Runaway expression, possibly missing ';'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Runway expression, possibly missing ';'.
+         |
+         |${code(loc, s"Here")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that no items were found in a context where one or more is needed.
     *
     * @param expected Names of the items that are expected at least one of. See [[TokenKind.display]].
