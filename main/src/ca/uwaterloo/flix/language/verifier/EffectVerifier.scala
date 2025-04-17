@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 import ca.uwaterloo.flix.language.phase.unification.EqualityEnv
 import ca.uwaterloo.flix.util.*
+import ca.uwaterloo.flix.util.VerificationOptions.Verifiers
 
 /**
   * Performs a re-checking of the effects in the program.
@@ -39,7 +40,7 @@ object EffectVerifier {
     * Verifies the effects in the given root.
     */
   def run(root: Root)(implicit flix: Flix): Unit = {
-    if (flix.options.xverifyeffects) {
+    if (flix.options.xverify.isEnabled(Verifiers.EffectVerifier)) {
       ParOps.parMapValues(root.defs)(visitDef(_)(root.eqEnv, flix))
       ParOps.parMapValues(root.sigs)(visitSig(_)(root.eqEnv, flix))
       ParOps.parMap(root.instances.values)(visitInstance(_)(root.eqEnv, flix))

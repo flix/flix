@@ -27,5 +27,6 @@ class LanguageSuite extends Suites(
   new TestFlixErrors,
   new TestFormatType,
   new TestCompilationMessage,
+  new TestVerifiers,
   new AstSuite
 )
