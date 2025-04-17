@@ -281,7 +281,7 @@ object EffectVerifier {
       val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Throw(exp, eff, _, loc) =>
+    case Expr.Throw(exp, _, eff, loc) =>
       visitExp(exp)
       expectType(eff, Type.mkUnion(exp.eff, Type.IO, loc), loc)
     case Expr.Handler(sym, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
