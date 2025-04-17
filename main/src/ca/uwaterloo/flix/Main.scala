@@ -95,13 +95,12 @@ object Main {
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
-      xnoverify = cmdOpts.xnoverify,
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
       xsummary = cmdOpts.xsummary,
       xfuzzer = cmdOpts.xfuzzer,
       xprinttyper = cmdOpts.xprinttyper,
-      xverifyeffects = cmdOpts.xverifyeffects,
+      xverify = if (cmdOpts.xverify) VerificationOptions.EnableAll else VerificationOptions.EnableNone,
       xsubeffecting = cmdOpts.xsubeffecting,
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfPar = cmdOpts.XPerfPar,
@@ -343,7 +342,6 @@ object Main {
                      listen: Option[Int] = None,
                      threads: Option[Int] = None,
                      assumeYes: Boolean = false,
-                     xnoverify: Boolean = false,
                      xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkIncremental: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
@@ -355,7 +353,7 @@ object Main {
                      xsummary: Boolean = false,
                      xfuzzer: Boolean = false,
                      xprinttyper: Option[String] = None,
-                     xverifyeffects: Boolean = false,
+                     xverify: Boolean = false,
                      xsubeffecting: Set[Subeffecting] = Set.empty,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
@@ -528,10 +526,6 @@ object Main {
       note("")
       note("The following options are experimental:")
 
-      // Xnoverify
-      opt[Unit]("Xnoverify").action((_, c) => c.copy(xnoverify = true)).
-        text("disables verification of the last AST.")
-
       // Xbenchmark-code-size
       opt[Unit]("Xbenchmark-code-size").action((_, c) => c.copy(xbenchmarkCodeSize = true)).
         text("[experimental] benchmarks the size of the generated JVM files.")
@@ -577,8 +571,8 @@ object Main {
         text("[experimental] writes constraints to dot files.")
 
       // Xverify-effects
-      opt[String]("Xverify-effects").action((_, c) => c.copy(xverifyeffects = true)).
-        text("[experimental] verifies consistency of effects after typechecking")
+      opt[Unit]("Xverify").action((_, c) => c.copy(xverify = true)).
+        text("[experimental] enables verifiers")
 
       // Xsubeffecting
       opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).

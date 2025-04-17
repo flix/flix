@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.util.VerificationOptions.Verifiers
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
@@ -31,10 +32,10 @@ import scala.annotation.tailrec
 object ClassVerifier {
 
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("ClassVerifier") {
-    if (flix.options.xnoverify) {
+    if (flix.options.xverify.isEnabled(Verifiers.ClassVerifier)) {
+      ParOps.parMap(root.defs.values)(visitDef(_)(root))
       root
     } else {
-      ParOps.parMap(root.defs.values)(visitDef(_)(root))
       root
     }
   }

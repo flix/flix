@@ -39,13 +39,12 @@ object Options {
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
     assumeYes = false,
-    xnoverify = false,
     xprintphases = false,
     xnodeprecated = false,
     xsummary = false,
     xfuzzer = false,
     xprinttyper = None,
-    xverifyeffects = false,
+    xverify = VerificationOptions.EnableNone,
     xsubeffecting = Set.empty,
     XPerfN = None,
     XPerfFrontend = false,
@@ -56,7 +55,13 @@ object Options {
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true, xnodeprecated = true)
+  val DefaultTest: Options = Default.copy(
+    lib = LibLevel.All,
+    progress = false,
+    test = true,
+    xnodeprecated = true,
+    xverify = VerificationOptions.EnableSome(Set(VerificationOptions.Verifiers.ClassVerifier))
+  )
 
   /**
     * Default test options with the standard library.
@@ -106,13 +111,12 @@ case class Options(lib: LibLevel,
                    threads: Int,
                    loadClassFiles: Boolean,
                    assumeYes: Boolean,
-                   xnoverify: Boolean,
                    xprintphases: Boolean,
                    xnodeprecated: Boolean,
                    xsummary: Boolean,
                    xfuzzer: Boolean,
                    xprinttyper: Option[String],
-                   xverifyeffects: Boolean,
+                   xverify: VerificationOptions,
                    xsubeffecting: Set[Subeffecting],
                    XPerfFrontend: Boolean,
                    XPerfPar: Boolean,
@@ -173,5 +177,57 @@ object Subeffecting {
     * Enable sub-effecting for lambda expressions.
     */
   case object Lambdas extends Subeffecting
+
+}
+
+sealed trait VerificationOptions {
+
+  /**
+    * Returns `true` if `verifier` is enabled by `this`.
+    */
+  def isEnabled(verifier: VerificationOptions.Verifier): Boolean = this match {
+    case VerificationOptions.EnableAll => true
+    case VerificationOptions.EnableSome(verifiers) => verifiers.contains(verifier)
+  }
+
+}
+
+object VerificationOptions {
+
+  /**
+    * Enable all verifiers.
+    */
+  case object EnableAll extends VerificationOptions
+
+  /**
+    * Enable the listed verifiers.
+    */
+  case class EnableSome(verifiers: Set[Verifier]) extends VerificationOptions
+
+  /**
+    * Disable all verifiers.
+    */
+  def EnableNone: VerificationOptions = EnableSome(Set.empty)
+
+  sealed trait Verifier
+
+  object Verifiers {
+
+    /**
+      * Option corresponding to [[EffectVerifier]].
+      */
+    case object EffectVerifier extends Verifier
+
+    /**
+      * Option corresponding to [[ClassVerifier]].
+      */
+    case object ClassVerifier extends Verifier
+
+    /**
+      * Returns all [[Verifier]]s.
+      */
+    def all: Set[Verifier] = Set(EffectVerifier, ClassVerifier)
+
+  }
 
 }
