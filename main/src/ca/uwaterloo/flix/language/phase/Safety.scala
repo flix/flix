@@ -63,7 +63,7 @@ object Safety {
     *   - [[Expr.TypeMatch]] must end with a default case.
     *   - [[Expr.Handler]] are not defined for primitive effects.
     *   - JVM operations and casts are allowed by the relevant [[SecurityContext]].
-    *   - No trivially wrong [[Expr.UncheckedCast]].
+    *   - [[Expr.UncheckedCast]] are not impossible.
     *   - [[Expr.Throw]] only throws exceptions.
     *   - [[Expr.NewObject]] are valid (see [[checkObjectImplementation]]).
     *   - [[Expr.Spawn]] only performs primitive effects.
