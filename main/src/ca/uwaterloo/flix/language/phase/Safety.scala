@@ -51,8 +51,8 @@ object Safety {
 
   /** Checks the safety and well-formedness of `sig`. */
   private def visitSig(sig: Sig)(implicit flix: Flix, sctx: SharedContext): Unit = {
-    val renv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
-    sig.exp.foreach(visitExp(_)(renv, sctx, flix))
+    implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
+    sig.exp.foreach(visitExp(_))
   }
 
   /**
