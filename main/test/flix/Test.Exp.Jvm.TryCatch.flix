@@ -134,7 +134,7 @@ mod Test.Exp.Jvm.TestTryCatch {
                 exception();
                 false
             } catch {
-                case _: Exception => false
+                case _: IllegalArgumentException => false
             }
         } catch {
             case _: ArithmeticException => true
