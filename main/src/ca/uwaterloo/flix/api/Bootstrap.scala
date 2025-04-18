@@ -156,6 +156,11 @@ object Bootstrap {
   private def getClassDirectory(p: Path): Path = getBuildDirectory(p).resolve("./class/")
 
   /**
+    * Returns the path to the artifact directory relative to the given path `p`.
+    */
+  private def getResourcesDirectory(p: Path): Path = p.resolve("./resources/").normalize()
+
+  /**
     * Returns the path to the LICENSE file relative to the given path `p`.
     */
   private def getLicenseFile(p: Path): Path = p.resolve("./LICENSE.md").normalize()
@@ -307,6 +312,12 @@ object Bootstrap {
     }
   }
 
+  private def getAllFilesSorted(p: Path): List[(Path, String)] = {
+    Bootstrap.getAllFiles(p).map { path =>
+      (path, Bootstrap.convertPathToRelativeFileName(p, path))
+    }.sortBy(snd)
+  }
+
   /**
     * Returns all .flix files directly in the directory given by `p`.
     */
@@ -349,6 +360,10 @@ object Bootstrap {
       out.println(s"""No `${formatter.blue("flix.toml")}`. Will load source files from `${formatter.blue("*.flix")}`, `${formatter.blue("src/**")}`, and `${formatter.blue("test/**")}`.""")
       Validation.mapN(bootstrap.folderMode())(_ => bootstrap)
     }
+  }
+
+  private def snd[A, B](t: (A, B)): B = t match {
+    case (_, b) => b
   }
 }
 
@@ -536,16 +551,22 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           |Main-Class: Main
           |""".stripMargin
 
-      // Add manifest file.
+      // Add manifest file.r
       Bootstrap.addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
 
       // Add all class files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
-      for ((buildFile, fileNameWithSlashes) <- Bootstrap.getAllFiles(Bootstrap.getClassDirectory(projectPath))
-        .map { path => (path, Bootstrap.convertPathToRelativeFileName(Bootstrap.getClassDirectory(projectPath), path)) }
-        .sortBy(_._2)) {
+      val classDir = Bootstrap.getClassDirectory(projectPath)
+      for ((buildFile, fileNameWithSlashes) <- Bootstrap.getAllFilesSorted(classDir)) {
         Bootstrap.addToZip(zip, fileNameWithSlashes, buildFile)
       }
+
+      // Add all resources, again sorting by relative file name
+      val resourcesDir = Bootstrap.getResourcesDirectory(projectPath)
+      for ((resource, fileNameWithSlashes) <- Bootstrap.getAllFilesSorted(resourcesDir)) {
+        Bootstrap.addToZip(zip, fileNameWithSlashes, resource)
+      }
+
     } match {
       case Success(()) => Validation.Success(())
       case Failure(e) => Validation.Failure(BootstrapError.GeneralError(List(e.getMessage)))
