@@ -22,7 +22,7 @@ mod Test.Exp.Jvm.TestTryCatch {
     import java.lang.Exception
 
     def exception(): Unit \ IO =
-        unchecked_cast ((Math.floorDiv(1, 0): _ \ IO) as _ \ IO);
+        discard Math.floorDiv(1, 0);
         ()
 
     @test
