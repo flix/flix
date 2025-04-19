@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
+import ca.uwaterloo.flix.language.verifier.{EffectVerifier, ClassVerifier}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
@@ -656,7 +657,7 @@ class Flix {
     val treeShaker2Ast = TreeShaker2.run(lambdaLiftAst)
     val effectBinderAst = EffectBinder.run(treeShaker2Ast)
     val tailPosAst = TailPos.run(effectBinderAst)
-    Verifier.run(tailPosAst)
+    ClassVerifier.run(tailPosAst)
     val eraserAst = Eraser.run(tailPosAst)
     val reducerAst = Reducer.run(eraserAst)
     val varOffsetsAst = VarOffsets.run(reducerAst)

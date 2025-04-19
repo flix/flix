@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.language.verifier
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
@@ -232,11 +232,10 @@ object EffectVerifier {
       // TODO region stuff
       ()
     case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
-      val expected = Type.mkUnion(fields.map { case (k, v) => v.eff } :+ region.eff, loc)
-      val actual = eff
-      expectType(expected, actual, loc)
       fields.map { case (k, v) => v }.foreach(visitExp)
       visitExp(region)
+      // TODO region stuff
+      ()
     case Expr.StructGet(e, _, t, _, _) =>
       // JOE TODO region stuff
       visitExp(e)
@@ -281,7 +280,7 @@ object EffectVerifier {
       val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Throw(exp, eff, _, loc) =>
+    case Expr.Throw(exp, _, eff, loc) =>
       visitExp(exp)
       expectType(eff, Type.mkUnion(exp.eff, Type.IO, loc), loc)
     case Expr.Handler(sym, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>

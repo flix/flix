@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Position, Range, T
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
 
 /**
@@ -38,7 +38,7 @@ object CodeActionProvider {
   }
 
   private def getActionsFromErrors(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = errors.flatMap {
-    case ResolutionError.UndefinedEffect(qn, ap,  _, _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedEffect(qn, ap, _, _, loc) if overlaps(range, loc) =>
       mkUseEffect(qn.ident, uri, ap)
 
     case ResolutionError.UndefinedStruct(qn, ap, loc) if overlaps(range, loc) =>
@@ -58,18 +58,6 @@ object CodeActionProvider {
 
     case ResolutionError.UndefinedType(qn, _, ap, _, loc) if overlaps(range, loc) =>
       mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap)
-
-    case TypeError.MissingInstanceEq(tpe, _, loc) if overlaps(range, loc) =>
-      mkDeriveMissingEq(tpe, uri)
-
-    case TypeError.MissingInstanceOrder(tpe, _, loc) if overlaps(range, loc) =>
-      mkDeriveMissingOrder(tpe, uri)
-
-    case TypeError.MissingInstanceToString(tpe, _, loc) if overlaps(range, loc) =>
-      mkDeriveMissingToString(tpe, uri)
-
-    case InstanceError.MissingSuperTraitInstance(tpe, _, sup, loc) if overlaps(range, loc) =>
-      mkDeriveMissingSuperTrait(tpe, sup, uri)
 
     case _ => Nil
   }
@@ -144,8 +132,8 @@ object CodeActionProvider {
     * }}}
     */
   private def mkUseTag(tagName: String, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
-    val candidateEnums = root.enums.filter{ case (_, enm) => enm.cases.keys.exists(_.name == tagName) && CompletionUtils.isAvailable(enm)}
-    candidateEnums.keys.map{ enumName =>
+    val candidateEnums = root.enums.filter { case (_, enm) => enm.cases.keys.exists(_.name == tagName) && CompletionUtils.isAvailable(enm) }
+    candidateEnums.keys.map { enumName =>
       CodeAction(
         title = s"use '$enumName.$tagName'",
         kind = CodeActionKind.QuickFix,
@@ -172,8 +160,8 @@ object CodeActionProvider {
     * }}}
     */
   private def mkQualifyTag(tagName: String, uri: String, loc: SourceLocation)(implicit root: Root): List[CodeAction] = {
-    val candidateEnums = root.enums.filter{ case (_, enm) => enm.cases.keys.exists(_.name == tagName) && CompletionUtils.isAvailable(enm)}
-    candidateEnums.keys.map{ enumName =>
+    val candidateEnums = root.enums.filter { case (_, enm) => enm.cases.keys.exists(_.name == tagName) && CompletionUtils.isAvailable(enm) }
+    candidateEnums.keys.map { enumName =>
       CodeAction(
         title = s"Prefix with '$enumName.'",
         kind = CodeActionKind.QuickFix,
@@ -223,9 +211,9 @@ object CodeActionProvider {
     *   - add a newline at the end.
     *
     * Example:
-    *   Given text = "\ndef foo(): =\n", ap = AnchorPosition(line=1, col=0, spaces=4)
-    *   The result will be:
-    *   TextEdit(Range(Position(1, 0), Position(1, 0)), "    \n    def foo(): =\n    \n")
+    * Given text = "\ndef foo(): =\n", ap = AnchorPosition(line=1, col=0, spaces=4)
+    * The result will be:
+    * TextEdit(Range(Position(1, 0), Position(1, 0)), "    \n    def foo(): =\n    \n")
     */
   private def mkTextEdit(ap: AnchorPosition, text: String): TextEdit = {
     val insertPosition = Position(ap.line, ap.col)
@@ -302,48 +290,6 @@ object CodeActionProvider {
         command = None
       )
     }
-  }
-
-  /**
-    * Returns a quickfix code action to derive the `Eq` trait for the given type `tpe` if it is an enum.
-    */
-  private def mkDeriveMissingEq(tpe: Type, uri: String)(implicit root: Root): Option[CodeAction] =
-    mkDeriveMissing(tpe, "Eq", uri)
-
-  /**
-    * Returns a quickfix code action to derive the `Order` trait for the given type `tpe` if it is an enum.
-    */
-  private def mkDeriveMissingOrder(tpe: Type, uri: String)(implicit root: Root): Option[CodeAction] =
-    mkDeriveMissing(tpe, "Order", uri)
-
-  /**
-    * Returns a quickfix code action to derive the `ToString` trait for the given type `tpe` if it is an enum.
-    */
-  private def mkDeriveMissingToString(tpe: Type, uri: String)(implicit root: Root): Option[CodeAction] =
-    mkDeriveMissing(tpe, "ToString", uri)
-
-  /**
-    * Returns a quickfix code action to derive the missing supertrait for the given subtrait.
-    */
-  private def mkDeriveMissingSuperTrait(tpe: Type, superTrait: Symbol.TraitSym, uri: String)(implicit root: Root): Option[CodeAction] =
-    mkDeriveMissing(tpe, superTrait.name, uri)
-
-  /**
-    * Internal helper function for all `mkDeriveMissingX`.
-    * Returns a quickfix code action to derive the given trait `trt`
-    * for the given type `tpe` if it is an enum in the root.
-    */
-  private def mkDeriveMissing(tpe: Type, trt: String, uri: String)(implicit root: Root): Option[CodeAction] = tpe.typeConstructor match {
-    case Some(TypeConstructor.Enum(sym, _)) =>
-      root.enums.get(sym).map { e =>
-        CodeAction(
-          title = s"Derive '$trt'",
-          kind = CodeActionKind.QuickFix,
-          edit = Some(addDerivation(e, trt, uri)),
-          command = None
-        )
-      }
-    case _ => None
   }
 
   /**

@@ -34,7 +34,6 @@ object Options {
     json = false,
     output = None,
     progress = false,
-    test = false,
     target = JvmTarget.Version21,
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
@@ -58,7 +57,7 @@ object Options {
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true, xnodeprecated = true)
+  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, xnodeprecated = true)
 
   /**
     * Default test options with the standard library.
@@ -88,7 +87,6 @@ object Options {
   * @param json                enable json output.
   * @param output              the optional output directory where to place JVM bytecode.
   * @param progress            print progress during compilation.
-  * @param test                enables test mode.
   * @param target              the target JVM.
   * @param threads             selects the number of threads to use.
   * @param loadClassFiles      loads the generated class files into the JVM.
@@ -104,7 +102,6 @@ case class Options(lib: LibLevel,
                    progress: Boolean,
                    output: Option[Path],
                    target: JvmTarget,
-                   test: Boolean,
                    threads: Int,
                    loadClassFiles: Boolean,
                    assumeYes: Boolean,
