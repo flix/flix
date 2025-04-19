@@ -617,10 +617,15 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
       // Add class files of the project.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
-      for ((buildFile, fileNameWithSlashes) <- Bootstrap.getAllFiles(Bootstrap.getClassDirectory(projectPath))
-        .map { path => (path, Bootstrap.convertPathToRelativeFileName(Bootstrap.getClassDirectory(projectPath), path)) }
-        .sortBy(_._2)) {
+      val classDir = Bootstrap.getClassDirectory(projectPath)
+      for ((buildFile, fileNameWithSlashes) <- Bootstrap.getAllFilesSorted(classDir)) {
         Bootstrap.addToZip(zipOut, fileNameWithSlashes, buildFile)
+      }
+
+      // Add all resources, again sorting by relative file name
+      val resourcesDir = Bootstrap.getResourcesDirectory(projectPath)
+      for ((resource, fileNameWithSlashes) <- Bootstrap.getAllFilesSorted(resourcesDir)) {
+        Bootstrap.addToZip(zipOut, fileNameWithSlashes, resource)
       }
 
       // Add jar dependencies.
