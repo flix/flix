@@ -188,7 +188,7 @@ object OccurrenceAst {
 
     /**
       * Represents a binder that is excluded from inlining at its occurrence sites.
-      * Unlike [[DontInline]], the body is never considered for rewriting (due to casts being dangerous).
+      * Unlike [[DontInline]], the body of a function is never considered for rewriting (due to casts being dangerous).
       */
     case object Dangerous extends Occur
   }
