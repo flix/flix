@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-mod Test.Exp.Jvm.TestTryCatch {
+mod Test.Exp.Jvm.TryCatch {
 
     import java.lang.Math
     import java.lang.ArithmeticException
