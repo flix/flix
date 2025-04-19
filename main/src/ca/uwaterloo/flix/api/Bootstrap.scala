@@ -301,6 +301,7 @@ object Bootstrap {
 
   /**
     * Returns all files in the given path `p`.
+    * If this is used for a build, you probably want to use [[getAllFilesSorted]]
     */
   private def getAllFiles(p: Path): List[Path] = {
     if (Files.isReadable(p) && Files.isDirectory(p)) {
@@ -312,6 +313,10 @@ object Bootstrap {
     }
   }
 
+  /**
+    * Returns all files in the given path `p` sorted on the relative filename
+    * to make build reproducible.
+    */
   private def getAllFilesSorted(p: Path): List[(Path, String)] = {
     Bootstrap.getAllFiles(p).map { path =>
       (path, Bootstrap.convertPathToRelativeFileName(p, path))
