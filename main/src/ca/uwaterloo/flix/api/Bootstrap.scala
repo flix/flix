@@ -60,7 +60,6 @@ object Bootstrap {
     //
     // Compute all the directories and files we intend to create.
     //
-    val resourcesDirectory = getResourcesDirectory(p)
     val sourceDirectory = getSourceDirectory(p)
     val testDirectory = getTestDirectory(p)
 
@@ -74,7 +73,6 @@ object Bootstrap {
     //
     // Create the project directories and files.
     //
-    newDirectoryIfAbsent(resourcesDirectory)
     newDirectoryIfAbsent(sourceDirectory)
     newDirectoryIfAbsent(testDirectory)
 
