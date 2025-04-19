@@ -315,7 +315,7 @@ object Bootstrap {
   private def getAllFilesSorted(p: Path): List[(Path, String)] = {
     Bootstrap.getAllFiles(p).map { path =>
       (path, Bootstrap.convertPathToRelativeFileName(p, path))
-    }.sortBy(snd)
+    }.sortBy(_._2)
   }
 
   /**
@@ -360,10 +360,6 @@ object Bootstrap {
       out.println(s"""No `${formatter.blue("flix.toml")}`. Will load source files from `${formatter.blue("*.flix")}`, `${formatter.blue("src/**")}`, and `${formatter.blue("test/**")}`.""")
       Validation.mapN(bootstrap.folderMode())(_ => bootstrap)
     }
-  }
-
-  private def snd[A, B](t: (A, B)): B = t match {
-    case (_, b) => b
   }
 }
 
