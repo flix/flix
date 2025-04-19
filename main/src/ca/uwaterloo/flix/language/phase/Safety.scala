@@ -32,8 +32,8 @@ object Safety {
 
   /** Checks the safety and well-formedness of `defn`. */
   private def visitDef(defn: Def)(implicit sctx: SharedContext, flix: Flix): Def = {
-    val renv = RigidityEnv.ofRigidVars(defn.spec.tparams.map(_.sym))
-    visitExp(defn.exp)(inTryCatch = false, renv, sctx, flix)
+    implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(defn.spec.tparams.map(_.sym))
+    visitExp(defn.exp)
     defn
   }
 
@@ -51,15 +51,13 @@ object Safety {
 
   /** Checks the safety and well-formedness of `sig`. */
   private def visitSig(sig: Sig)(implicit flix: Flix, sctx: SharedContext): Unit = {
-    val renv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
-    sig.exp.foreach(visitExp(_)(inTryCatch = false, renv, sctx, flix))
+    implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
+    sig.exp.foreach(visitExp(_))
   }
 
   /**
     * Checks the safety and well-formedness of `exp0`.
     *
-    *   - Nested [[Expr.TryCatch]] expressions are disallowed unless the inner [[Expr.TryCatch]]
-    *     will be extracted (e.g. Lambda).
     *   - [[Expr.TypeMatch]] must end with a default case.
     *   - [[Expr.Handler]] are not defined for primitive effects.
     *   - JVM operations and casts are allowed by the relevant [[SecurityContext]].
@@ -68,11 +66,8 @@ object Safety {
     *   - [[Expr.NewObject]] are valid (see [[checkObjectImplementation]]).
     *   - [[Expr.Spawn]] only performs primitive effects.
     *   - [[Expr.FixpointConstraintSet]] are valid (see [[checkConstraint]]).
-    *
-    * @param inTryCatch indicates whether `exp` is enclosed in a try-catch. This can be reset if the
-    *                   expression will later be extracted to its own function (e.g [[Expr.Lambda]]).
     */
-  private def visitExp(exp0: Expr)(implicit inTryCatch: Boolean, renv: RigidityEnv, sctx: SharedContext, flix: Flix): Unit = exp0 match {
+  private def visitExp(exp0: Expr)(implicit renv: RigidityEnv, sctx: SharedContext, flix: Flix): Unit = exp0 match {
     case Expr.Cst(_, _, _) =>
       ()
 
@@ -92,8 +87,7 @@ object Safety {
       visitExp(exp)
 
     case Expr.Lambda(_, exp, _, _) =>
-      // `exp` will be in its own function, so `inTryCatch` is reset.
-      visitExp(exp)(inTryCatch = false, renv, sctx, flix)
+      visitExp(exp)
 
     case Expr.ApplyClo(exp1, exp2, _, _, _) =>
       visitExp(exp1)
@@ -120,8 +114,7 @@ object Safety {
       visitExp(exp2)
 
     case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
-      // `exp1` will be its own function, so `inTryCatch` is reset.
-      visitExp(exp1)(inTryCatch = false, renv, sctx, flix)
+      visitExp(exp1)
       visitExp(exp2)
 
     case Expr.Region(_, _) =>
@@ -251,12 +244,8 @@ object Safety {
     case Expr.Without(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.TryCatch(exp, rules, _, _, loc) =>
-      // Check for [[IllegalNestedTryCatch]]
-      if (inTryCatch) {
-        sctx.errors.add(IllegalNestedTryCatch(loc))
-      }
-      visitExp(exp)(inTryCatch = true, renv, sctx, flix)
+    case Expr.TryCatch(exp, rules, _, _, _) =>
+      visitExp(exp)
       rules.foreach { case CatchRule(bnd, clazz, e, _) =>
         checkCatchClass(clazz, bnd.sym.loc)
         visitExp(e)
@@ -490,7 +479,7 @@ object Safety {
   }
 
   /** Checks the safety and well-formedness of `c`. */
-  private def checkConstraint(c: Constraint)(implicit inTryCatch: Boolean, renv: RigidityEnv, sctx: SharedContext, flix: Flix): Unit = {
+  private def checkConstraint(c: Constraint)(implicit renv: RigidityEnv, sctx: SharedContext, flix: Flix): Unit = {
     // Compute the set of positively defined variable symbols in the constraint.
     val posVars = positivelyDefinedVariables(c)
 
@@ -543,7 +532,7 @@ object Safety {
     * @param quantVars the quantified variables, not bound by lexical scope.
     * @param latVars   the variables in lattice position.
     */
-  private def checkBodyPredicate(p: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym])(implicit inTryCatch: Boolean, renv: RigidityEnv, flix: Flix, sctx: SharedContext): Unit = p match {
+  private def checkBodyPredicate(p: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym])(implicit renv: RigidityEnv, flix: Flix, sctx: SharedContext): Unit = p match {
     case Predicate.Body.Atom(_, den, polarity, _, terms, _, loc) =>
       // Check for non-positively bound negative variables.
       polarity match {
