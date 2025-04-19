@@ -181,13 +181,14 @@ object OccurrenceAst {
     case object Many extends Occur
 
     /**
-      * Represents a binder that we explicitly do not want to inline.
+      * Represents a binder that is excluded from inlining at its occurrence sites.
+      * If the binder is a function, sub-expressions of the body may be considered for rewriting.
       */
     case object DontInline extends Occur
 
     /**
-      * Represents a binder that should not be inlined and excluded from any rewriting internally.
-      * This is because casts are dangerous.
+      * Represents a binder that is excluded from inlining at its occurrence sites.
+      * Unlike [[DontInline]], the body is never considered for rewriting (due to casts being dangerous).
       */
     case object Dangerous extends Occur
   }
