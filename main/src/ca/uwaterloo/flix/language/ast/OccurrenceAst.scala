@@ -145,6 +145,7 @@ object OccurrenceAst {
 
   /**
     * Represents occurrence information of binders, i.e., how a binder occurs in the program.
+    * A binder may be a variable, function, or effect handler.
     */
   sealed trait Occur
 
