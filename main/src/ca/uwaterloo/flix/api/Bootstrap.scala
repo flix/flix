@@ -562,7 +562,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
 
       // Add all resources, again sorting by relative file name
-      // TODO: copy into resource dir in zip
       val resourcesDir = Bootstrap.getResourcesDirectory(projectPath)
       for ((resource, fileNameWithSlashes) <- Bootstrap.getAllFilesSorted(resourcesDir)) {
         Bootstrap.addToZip(zip, fileNameWithSlashes, resource)
