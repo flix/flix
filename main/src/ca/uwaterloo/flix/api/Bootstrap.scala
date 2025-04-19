@@ -552,7 +552,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           |Main-Class: Main
           |""".stripMargin
 
-      // Add manifest file.r
+      // Add manifest file.
       Bootstrap.addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
 
       // Add all class files.
