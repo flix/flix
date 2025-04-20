@@ -30,7 +30,7 @@ object OccurrenceAst {
                   entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(sym: Symbol.DefnSym, fparams: List[(MonoAst.FormalParam, Occur)], spec: MonoAst.Spec, exp: Expr, context: DefContext, loc: SourceLocation)
+  case class Def(sym: Symbol.DefnSym, fparams: List[FormalParam], spec: MonoAst.Spec, exp: Expr, context: DefContext, loc: SourceLocation)
 
   sealed trait Expr {
     def tpe: Type
@@ -50,7 +50,7 @@ object OccurrenceAst {
       def eff: Type = Type.Pure
     }
 
-    case class Lambda(fparam: (MonoAst.FormalParam, Occur), exp: Expr, tpe: Type, loc: SourceLocation) extends Expr {
+    case class Lambda(fparam: FormalParam, exp: Expr, tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = Type.Pure
     }
 
@@ -64,7 +64,7 @@ object OccurrenceAst {
 
     case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, occur: Occur, loc: SourceLocation) extends Expr
 
-    case class LocalDef(sym: Symbol.VarSym, fparams: List[(MonoAst.FormalParam, Occur)], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, occur: Occur, loc: SourceLocation) extends Expr
+    case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, occur: Occur, loc: SourceLocation) extends Expr
 
     case class Scope(sym: Symbol.VarSym, regSym: Symbol.RegionSym, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -128,6 +128,8 @@ object OccurrenceAst {
   }
 
   case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
+
+  case class FormalParam(formalParam: MonoAst.FormalParam, occur: Occur)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[MonoAst.FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
