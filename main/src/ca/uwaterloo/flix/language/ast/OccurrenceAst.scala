@@ -129,7 +129,7 @@ object OccurrenceAst {
 
   case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
-  case class FormalParam(formalParam: MonoAst.FormalParam, occur: Occur)
+  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: Type, src: TypeSource, occur: Occur, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[MonoAst.FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
