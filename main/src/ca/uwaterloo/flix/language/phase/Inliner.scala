@@ -158,12 +158,10 @@ object Inliner {
             e1 match {
               // If `e1` is a `LiftedExp` then `e1` has already been visited
               case SubstRange.DoneExp(e) =>
-                //assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym' into '$sym0'")
                 e
               // If `e1` is a `OccurrenceExp` then `e1` has not been visited. Visit `e1`
               case SubstRange.SuspendedExp(exp) =>
                 val e = visitExp(exp, ctx0)
-                //assert(e.tpe == tpe, s"expected '$tpe', got '${e.tpe}' at $loc, inlining '$sym' into '$sym0'")
                 e
             }
         }
