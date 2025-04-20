@@ -32,7 +32,7 @@ object OccurrenceAst {
 
   case class Def(sym: Symbol.DefnSym, fparams: List[(MonoAst.FormalParam, Occur)], spec: MonoAst.Spec, exp: Expr, context: DefContext, loc: SourceLocation)
 
-  sealed trait Expr extends Product {
+  sealed trait Expr {
     def tpe: Type
 
     def eff: Type
