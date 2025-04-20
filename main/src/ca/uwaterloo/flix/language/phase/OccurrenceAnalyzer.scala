@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.*
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Expr, Linearity, Occur, Pattern}
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Expr, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.ParOps
@@ -334,16 +334,7 @@ object OccurrenceAnalyzer {
         val (e, o) = visitExp(exp)
         val continuation = fps.last
         val occurrence = o.get(continuation.sym)
-        occurrence match {
-          case Dead => (OccurrenceAst.HandlerRule(op, fps, e, Linearity.Dead), o)
-          case Once => (OccurrenceAst.HandlerRule(op, fps, e, Linearity.Once), o)
-          case OnceInLocalDef
-               | OnceInLambda
-               | Many
-               | Dangerous
-               | DontInline
-               | ManyBranch => (OccurrenceAst.HandlerRule(op, fps, e, Linearity.Many), o)
-        }
+        (OccurrenceAst.HandlerRule(op, fps, e, occurrence), o)
     }.unzip
     val o1 = o.foldLeft(OccurInfo.Empty)(combineInfo)
     (rs, o1)

@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Linearity
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur
 import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.ParOps
@@ -171,7 +171,7 @@ object Optimizer {
         val rs = rules.map {
           case MonoAst.HandlerRule(op, fparams, exp1) =>
             val e1 = visitExp(exp1)
-            OccurrenceAst.HandlerRule(op, fparams, e1, Linearity.Many)
+            OccurrenceAst.HandlerRule(op, fparams, e1, Occur.Many)
         }
         OccurrenceAst.Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 

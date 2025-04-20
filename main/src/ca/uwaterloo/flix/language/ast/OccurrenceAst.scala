@@ -133,7 +133,7 @@ object OccurrenceAst {
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
 
-  case class HandlerRule(op: OpSymUse, fparams: List[MonoAst.FormalParam], exp: Expr, linear: Linearity)
+  case class HandlerRule(op: OpSymUse, fparams: List[MonoAst.FormalParam], exp: Expr, occur: Occur)
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
 
@@ -142,19 +142,6 @@ object OccurrenceAst {
   case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
 
   case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
-
-
-  sealed trait Linearity
-
-  object Linearity {
-
-    case object Dead extends Linearity // Affine???
-
-    case object Once extends Linearity // Linear
-
-    case object Many extends Linearity // NonLinear
-
-  }
 
   sealed trait Occur
 
