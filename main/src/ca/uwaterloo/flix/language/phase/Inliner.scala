@@ -300,7 +300,6 @@ object Inliner {
       }
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
-      // TODO: Treat like let-binding above, except it is never trivial so some checks can be omitted
       if (isDead(occur)) { // Probably never happens
         sctx.eliminatedVars.add((sym0, sym))
         visitExp(exp2, ctx0)
