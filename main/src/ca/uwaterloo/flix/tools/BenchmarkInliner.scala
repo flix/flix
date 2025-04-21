@@ -54,6 +54,7 @@ object BenchmarkInliner {
 
   private val MicroBenchmarks: Map[String, String] = Map(
     "map10KLength" -> map10KLength,
+    "map10KLengthEff" -> map10KLengthEff,
     "filterMap10K" -> filterMap10K,
   )
 
@@ -682,6 +683,58 @@ object BenchmarkInliner {
     """
       |pub def runBenchmark(): Unit \ IO = {
       |    List.range(0, 10_000) |> List.filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None) |> blackhole
+      |}
+      |
+      |def blackhole(t: a): Unit \ IO =
+      |    Ref.fresh(Static, t); ()
+      |
+      |""".stripMargin
+  }
+
+  private def map10KLengthEff: String = {
+    """
+      |pub def runBenchmark(): Unit \ IO = {
+      |    run {
+      |        let l1 = range(0, 10_000);
+      |        let l2 = map(l1);
+      |        let l3 = length(l2);
+      |        blackhole(l3)
+      |    } with handler Transform {
+      |        def f(x, k) = k(x + 1)
+      |    }
+      |}
+      |
+      |pub eff Transform {
+      |    def f(x: Int32): Int32
+      |}
+      |
+      |pub def map(l: List[Int32]) : List[Int32] \ Transform = {
+      |    def mp(xs, acc) = match xs {
+      |        case Nil     => acc
+      |        case z :: zs => mp(zs, Transform.f(z) :: acc)
+      |    };
+      |    rev(mp(l, Nil))
+      |}
+      |
+      |pub def rev(l: List[a]): List[a] = {
+      |    def rv(xs, acc) = match xs {
+      |        case Nil     => acc
+      |        case z :: zs => rv(zs, z :: acc)
+      |    };
+      |    rv(l, Nil)
+      |}
+      |
+      |pub def range(bot: Int32, top: Int32): List[Int32] = {
+      |    def rng(i, acc) = if (i < bot) acc else rng(i - 1, i :: acc);
+      |    rng(top - 1, Nil)
+      |}
+      |
+      |pub def length(l: List[a]): Int32 = {
+      |    def len(xs, acc) = match xs {
+      |        case Nil     => acc
+      |        case _ :: zs => len(zs, acc + 1)
+      |    };
+      |    len(l, 0)
       |}
       |
       |def blackhole(t: a): Unit \ IO =
