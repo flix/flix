@@ -104,9 +104,11 @@ object Inliner {
 
   private object InliningContext {
 
-    case object Start extends InliningContext
+    case object Start extends InliningContext // TODO: Refactor into Context
 
-    case object Stop extends InliningContext
+    case object Stop extends InliningContext // TODO: Refactor into Context
+
+    case class InlineContinuation(sym: Symbol.VarSym) extends InliningContext
 
     // case class Application(inExpr: InExpr, subst: Subst, context: Context) extends Context
 
@@ -186,21 +188,24 @@ object Inliner {
       // TODO: Refactor this to use Context, so inlining and beta reduction cases are moved to Var and Lambda exprs respectively.
       val e2 = visitExp(exp2, ctx0)
 
-      def maybeInline(sym1: OutVar): Expr.ApplyClo = {
+      def maybeInline(sym1: OutVar): Expr = {
         ctx0.inScopeVars.get(sym1) match {
           case Some(Definition.LetBound(lambda, Occur.OnceInLocalDef)) =>
             sctx.inlinedVars.add((sym0, sym1))
-            val e1 = refreshBinders(lambda)(Map.empty, flix)
+            val e1 = refreshBinders(lambda, Map.empty)
             Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
           case Some(Definition.LetBound(lambda, Occur.Once)) =>
             sctx.inlinedVars.add((sym0, sym1))
-            val e1 = refreshBinders(lambda)(Map.empty, flix)
+            val e1 = refreshBinders(lambda, Map.empty)
             Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
           case _ =>
             val e1 = visitExp(exp1, ctx0)
-            Expr.ApplyClo(e1, e2, tpe, eff, loc)
+            ctx0.inliningContext match {
+              case InliningContext.InlineContinuation(sym) if sym == sym1 => e2
+              case _ => Expr.ApplyClo(e1, e2, tpe, eff, loc)
+            }
         }
       }
 
@@ -432,9 +437,10 @@ object Inliner {
       ctx0.inScopeEffs.get(op.sym.eff).flatMap(m => m.get(op.sym)) match {
         case Some(rule) => rule.rule.occur match {
           // case Dead => ??? // TODO: Rewrite such that the body of handler becomes the leaf expr in this subtree
-          case Once =>
-            // TODO: Collect information on the arguments to continuation k and insert as final expr.
-            inlineEffectHandler(rule.rule.exp, rule.rule.fparams.init, es, ctx0)
+          case Once => // Linear handler
+            val continuationSym = rule.rule.fparams.last._1.sym
+            val ctx = ctx0.copy(inliningContext = InliningContext.InlineContinuation(continuationSym))
+            inlineEffectHandler(rule.rule.exp, rule.rule.fparams, es, ctx)
           case _ => Expr.Do(op, es, tpe, eff, loc)
         }
         case None =>
@@ -540,7 +546,7 @@ object Inliner {
 
       case _ =>
         val varSubst1 = ctx0.varSubst ++ env
-        val ctx = ctx0.copy(varSubst1)
+        val ctx = ctx0.copy(varSubst = varSubst1)
         visitExp(exp0, ctx)
     }
 
@@ -560,7 +566,7 @@ object Inliner {
     (fps, subst)
   }
 
-  private def refreshBinders(expr0: OutExpr)(implicit subst0: VarSubst, flix: Flix): OutExpr = expr0 match {
+  private def refreshBinders(expr0: OutExpr, subst0: VarSubst)(implicit flix: Flix): OutExpr = expr0 match {
     case Expr.Cst(cst, tpe, loc) =>
       Expr.Cst(cst, tpe, loc)
 
@@ -571,38 +577,38 @@ object Inliner {
     case Expr.Lambda((fparam, occur), exp, tpe, loc) =>
       val (fp, subst1) = freshFormalParam(fparam)
       val subst2 = subst0 ++ subst1
-      val e = refreshBinders(exp)(subst2, flix)
+      val e = refreshBinders(exp, subst2)
       Expr.Lambda((fp, occur), e, tpe, loc)
 
     case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
-      val es = exps.map(refreshBinders)
+      val es = exps.map(refreshBinders(_, subst0))
       Expr.ApplyAtomic(op, es, tpe, eff, loc)
 
     case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
-      val e1 = refreshBinders(exp1)
-      val e2 = refreshBinders(exp2)
+      val e1 = refreshBinders(exp1, subst0)
+      val e2 = refreshBinders(exp2, subst0)
       Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
-      val es = exps.map(refreshBinders)
+      val es = exps.map(refreshBinders(_, subst0))
       Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
 
     case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       val freshVarSym = subst0.getOrElse(sym, sym)
-      val es = exps.map(refreshBinders)
+      val es = exps.map(refreshBinders(_, subst0))
       Expr.ApplyLocalDef(freshVarSym, es, tpe, eff, loc)
 
     case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) =>
+      val e1 = refreshBinders(exp1, subst0)
       val freshVarSym = Symbol.freshVarSym(sym)
       val subst1 = subst0 + (sym -> freshVarSym)
-      val e1 = refreshBinders(exp1)
-      val e2 = refreshBinders(exp2)(subst1, flix)
+      val e2 = refreshBinders(exp2, subst1)
       Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
       val freshVarSym = Symbol.freshVarSym(sym)
       val subst1 = subst0 + (sym -> freshVarSym)
-      val e2 = refreshBinders(exp2)(subst1, flix)
+      val e2 = refreshBinders(exp2, subst1)
       val (fps, varSubstsTmp) = fparams.map {
         case (fp, fpOccur) =>
           val (freshFp, varSubstTmp) = freshFormalParam(fp)
@@ -610,76 +616,76 @@ object Inliner {
       }.unzip
       val subst2 = varSubstsTmp.reduceLeft(_ ++ _)
       val subst3 = subst1 ++ subst2
-      val e1 = refreshBinders(exp1)(subst3, flix)
+      val e1 = refreshBinders(exp1, subst3)
       Expr.LocalDef(freshVarSym, fps, e1, e2, tpe, eff, occur, loc)
 
     case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val freshVarSym = Symbol.freshVarSym(sym)
       val subst1 = subst0 + (sym -> freshVarSym)
-      val e = refreshBinders(exp)(subst1, flix)
+      val e = refreshBinders(exp, subst1)
       Expr.Scope(freshVarSym, regionVar, e, tpe, eff, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-      val e1 = refreshBinders(exp1)
-      val e2 = refreshBinders(exp2)
-      val e3 = refreshBinders(exp3)
+      val e1 = refreshBinders(exp1, subst0)
+      val e2 = refreshBinders(exp2, subst0)
+      val e3 = refreshBinders(exp3, subst0)
       Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
     case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-      val e1 = refreshBinders(exp1)
-      val e2 = refreshBinders(exp2)
+      val e1 = refreshBinders(exp1, subst0)
+      val e2 = refreshBinders(exp2, subst0)
       Expr.Stm(e1, e2, tpe, eff, loc)
 
     case Expr.Discard(exp, eff, loc) =>
-      val e = refreshBinders(exp)
+      val e = refreshBinders(exp, subst0)
       Expr.Discard(e, eff, loc)
 
     case Expr.Match(exp, rules, tpe, eff, loc) =>
-      val e = refreshBinders(exp)
+      val e = refreshBinders(exp, subst0)
       val rs = rules.map {
         case OccurrenceAst.MatchRule(pat, guard, exp1) =>
           val (p, subst1) = refreshPattern(pat)
           val subst2 = subst0 ++ subst1
-          val g = guard.map(refreshBinders(_)(subst2, flix))
-          val e = refreshBinders(exp1)(subst2, flix)
+          val g = guard.map(refreshBinders(_, subst2))
+          val e = refreshBinders(exp1, subst2)
           OccurrenceAst.MatchRule(p, g, e)
       }
       Expr.Match(e, rs, tpe, eff, loc)
 
     case Expr.VectorLit(exps, tpe, eff, loc) =>
-      val es = exps.map(refreshBinders)
+      val es = exps.map(refreshBinders(_, subst0))
       Expr.VectorLit(es, tpe, eff, loc)
 
     case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
-      val e1 = refreshBinders(exp1)
-      val e2 = refreshBinders(exp2)
+      val e1 = refreshBinders(exp1, subst0)
+      val e2 = refreshBinders(exp2, subst0)
       Expr.VectorLoad(e1, e2, tpe, eff, loc)
 
     case Expr.VectorLength(exp, loc) =>
-      val e = refreshBinders(exp)
+      val e = refreshBinders(exp, subst0)
       Expr.VectorLength(e, loc)
 
     case Expr.Ascribe(exp, tpe, eff, loc) =>
-      val e = refreshBinders(exp)
+      val e = refreshBinders(exp, subst0)
       Expr.Ascribe(e, tpe, eff, loc)
 
     case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
-      val e = refreshBinders(exp)
+      val e = refreshBinders(exp, subst0)
       Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc)
 
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
-      val e = refreshBinders(exp)
+      val e = refreshBinders(exp, subst0)
       val rs = rules.map {
         case OccurrenceAst.CatchRule(sym, clazz, exp1) =>
           val freshVarSym = Symbol.freshVarSym(sym)
           val subst1 = subst0 + (sym -> freshVarSym)
-          val e1 = refreshBinders(exp1)(subst1, flix)
+          val e1 = refreshBinders(exp1, subst1)
           OccurrenceAst.CatchRule(freshVarSym, clazz, e1)
       }
       Expr.TryCatch(e, rs, tpe, eff, loc)
 
     case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
-      val e = refreshBinders(exp)
+      val e = refreshBinders(exp, subst0)
       val rs = rules.map {
         case OccurrenceAst.HandlerRule(op, fparams, exp1, linearity) =>
           val (fps, varSubstsTmp) = fparams.map {
@@ -689,13 +695,13 @@ object Inliner {
           }.unzip
           val subst1 = varSubstsTmp.reduceLeft(_ ++ _)
           val subst2 = subst0 ++ subst1
-          val e1 = refreshBinders(exp1)(subst2, flix)
+          val e1 = refreshBinders(exp1, subst2)
           OccurrenceAst.HandlerRule(op, fps, e1, linearity)
       }
       Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
     case Expr.Do(op, exps, tpe, eff, loc) =>
-      val es = exps.map(refreshBinders)
+      val es = exps.map(refreshBinders(_, subst0))
       Expr.Do(op, es, tpe, eff, loc)
 
     case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
@@ -703,7 +709,7 @@ object Inliner {
         case OccurrenceAst.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
           val (fps, subst1) = freshFormalParams(fparams)
           val subst2 = subst0 ++ subst1
-          val e = refreshBinders(exp)(subst2, flix)
+          val e = refreshBinders(exp, subst2)
           OccurrenceAst.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
       }
       Expr.NewObject(name, clazz, tpe, eff, ms, loc)
