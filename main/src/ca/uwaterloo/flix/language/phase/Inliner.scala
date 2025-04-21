@@ -415,11 +415,11 @@ object Inliner {
           val e1 = visitExp(exp1, ctx)
           OccurrenceAst.HandlerRule(op, fps, e1, occur)
       }
-      val inScopeEffs = rs.foldLeft(Map.empty[OutEffHandler, Handler]) {
+      val inScopeEffs1 = rs.foldLeft(Map.empty[OutEffHandler, Handler]) {
         case (acc, rule) => acc + (rule.op.sym -> Handler(rule))
       }
-      val ctx1 = ctx0.copy(inScopeEffs = ctx0.inScopeEffs + (effUse.sym -> inScopeEffs))
-      val e = visitExp(exp, ctx1)
+      val ctx = ctx0.copy(inScopeEffs = ctx0.inScopeEffs + (effUse.sym -> inScopeEffs1))
+      val e = visitExp(exp, ctx)
       Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
     case Expr.Do(op, exps, tpe, eff, loc) =>
