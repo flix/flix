@@ -407,6 +407,7 @@ object Inliner {
       Expr.TryCatch(e, rs, tpe, eff, loc)
 
     case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
+      // TODO: Consider removing rules if they are dead and it is allowed
       val rs = rules.map {
         case OccurrenceAst.HandlerRule(op, fparams, exp1, occur) =>
           val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
