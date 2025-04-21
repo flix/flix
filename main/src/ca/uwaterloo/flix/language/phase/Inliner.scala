@@ -104,9 +104,7 @@ object Inliner {
 
   private object InliningContext {
 
-    case object Start extends InliningContext // TODO: Refactor into Context
-
-    case object Stop extends InliningContext // TODO: Refactor into Context
+    case object None extends InliningContext
 
     case class InlineContinuation(sym: Symbol.VarSym) extends InliningContext
 
@@ -118,12 +116,10 @@ object Inliner {
 
   }
 
-  private case class Context(varSubst: VarSubst, subst: Subst, inScopeVars: InScopeVars, inScopeEffs: InScopeEffs, inliningContext: InliningContext)
+  private case class Context(varSubst: VarSubst, subst: Subst, inScopeVars: InScopeVars, inScopeEffs: InScopeEffs, inliningContext: InliningContext, currentlyInlining: Boolean)
 
   private object Context {
-    def emptyStart: Context = Context(Map.empty, Map.empty, Map.empty, Map.empty, InliningContext.Start)
-
-    def emptyStop: Context = emptyStart.copy(inliningContext = InliningContext.Stop)
+    def empty: Context = Context(Map.empty, Map.empty, Map.empty, Map.empty, InliningContext.None, currentlyInlining = false)
   }
 
   /**
@@ -133,7 +129,7 @@ object Inliner {
   private def visitDef(def0: OccurrenceAst.Def)(implicit root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): OccurrenceAst.Def = def0 match {
     case OccurrenceAst.Def(sym, fparams, spec, exp, ctx, loc) =>
       if (ctx.occur != Dangerous) {
-        val e = visitExp(exp, Context.emptyStart)(sym, root, sctx, flix)
+        val e = visitExp(exp, Context.empty)(sym, root, sctx, flix)
         OccurrenceAst.Def(sym, fparams, spec, e, ctx, loc)
       } else {
         OccurrenceAst.Def(sym, fparams, spec, exp, ctx, loc)
@@ -236,7 +232,7 @@ object Inliner {
       val def1 = root.defs.apply(sym)
       // If `def1` is a single non-self call or is trivial
       // then inline the body of `def1`
-      if (canInlineDef(def1.context, ctx0.inliningContext)) {
+      if (canInlineDef(def1.context, ctx0)) {
         sctx.inlinedDefs.add((sym0, sym))
         inlineDef(def1.exp, def1.fparams, es)
       } else {
@@ -503,7 +499,7 @@ object Inliner {
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
   private def inlineDef(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr])(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
-    bind(exp0, symbols, args, Context.emptyStop)
+    bind(exp0, symbols, args, Context.empty.copy(currentlyInlining = true))
   }
 
   /**
@@ -511,7 +507,7 @@ object Inliner {
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
   private def inlineLocalAbstraction(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr], ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
-    bind(exp0, symbols, args, ctx0)
+    bind(exp0, symbols, args, ctx0.copy(currentlyInlining = true))
   }
 
   /**
@@ -519,7 +515,7 @@ object Inliner {
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
   private def inlineEffectHandler(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr], ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
-    bind(exp0, symbols, args, ctx0)
+    bind(exp0, symbols, args, ctx0.copy(currentlyInlining = true))
   }
 
   /**
@@ -763,12 +759,12 @@ object Inliner {
   /**
     * Returns `true` if `def0` should be inlined.
     */
-  private def canInlineDef(ctx: DefContext, inlCtx: InliningContext): Boolean = {
-    val mayInline = ctx.occur != DontInline && ctx.occur != Dangerous && !ctx.isSelfRecursive && inlCtx == InliningContext.Start
-    val isSomewhereOnce = ctx.occur == Once || ctx.occur == OnceInLambda || ctx.occur == OnceInLocalDef
-    val belowSoft = ctx.size - ctx.localDefs * 8 < SoftInlineThreshold
-    val belowHard = ctx.size - ctx.localDefs * 8 < HardInlineThreshold
-    val shouldInline = belowSoft || (ctx.isDirectCall && belowHard) || (isSomewhereOnce && belowHard)
+  private def canInlineDef(defCtx: DefContext, ctx: Context): Boolean = {
+    val mayInline = defCtx.occur != DontInline && defCtx.occur != Dangerous && !defCtx.isSelfRecursive && !ctx.currentlyInlining
+    val isSomewhereOnce = defCtx.occur == Once || defCtx.occur == OnceInLambda || defCtx.occur == OnceInLocalDef
+    val belowSoft = defCtx.size - defCtx.localDefs * 8 < SoftInlineThreshold
+    val belowHard = defCtx.size - defCtx.localDefs * 8 < HardInlineThreshold
+    val shouldInline = belowSoft || (defCtx.isDirectCall && belowHard) || (isSomewhereOnce && belowHard)
     mayInline && shouldInline
   }
 
