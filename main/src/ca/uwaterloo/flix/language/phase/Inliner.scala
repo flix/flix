@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.*
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Expr, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListMap}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -107,6 +108,8 @@ object Inliner {
     case object Start extends InliningContext
 
     case object Stop extends InliningContext
+
+    case class RecordContinuation(record: (OutVar, OutExpr) => Unit) extends InliningContext
 
     // case class Application(inExpr: InExpr, subst: Subst, context: Context) extends Context
 
@@ -200,6 +203,10 @@ object Inliner {
 
           case _ =>
             val e1 = visitExp(exp1, ctx0)
+            ctx0.inliningContext match {
+              case InliningContext.RecordContinuation(update) => update(sym1, e2)
+              case _ =>
+            }
             Expr.ApplyClo(e1, e2, tpe, eff, loc)
         }
       }
@@ -409,16 +416,23 @@ object Inliner {
     case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
       // TODO: Consider removing rules if they are dead and it is allowed
       val rs = rules.map {
-        case OccurrenceAst.HandlerRule(op, fparams, exp1, occur) =>
+        case OccurrenceAst.HandlerRule(op, fparams, exp1, occur, _) =>
           val (fps, varSubsts) = fparams.map {
             case (fp, fpOccur) =>
               val (freshFp, varSubstTmp) = freshFormalParam(fp)
               ((freshFp, fpOccur), varSubstTmp)
           }.unzip
           val varSubst1 = varSubsts.fold(ctx0.varSubst)(_ ++ _)
-          val ctx = ctx0.copy(varSubst = varSubst1)
+          val continuationSym = fps.last._1.sym
+          var continuationArg: Option[OutExpr] = None
+          val update = (sym: OutVar, e: OutExpr) => {
+            if (sym == continuationSym) {
+              continuationArg = Some(e)
+            }
+          }
+          val ctx = ctx0.copy(varSubst = varSubst1, inliningContext = InliningContext.RecordContinuation(update))
           val e1 = visitExp(exp1, ctx)
-          OccurrenceAst.HandlerRule(op, fps, e1, occur)
+          OccurrenceAst.HandlerRule(op, fps, e1, occur, continuationArg)
       }
       val inScopeEffs1 = rs.foldLeft(Map.empty[OutEffHandler, Handler]) {
         case (acc, rule) => acc + (rule.op.sym -> Handler(rule))
@@ -681,7 +695,7 @@ object Inliner {
     case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
       val e = refreshBinders(exp)
       val rs = rules.map {
-        case OccurrenceAst.HandlerRule(op, fparams, exp1, linearity) =>
+        case OccurrenceAst.HandlerRule(op, fparams, exp1, linearity, continuationArg) =>
           val (fps, varSubstsTmp) = fparams.map {
             case (fp, fpOccur) =>
               val (freshFp, varSubstTmp) = freshFormalParam(fp)
@@ -690,7 +704,7 @@ object Inliner {
           val subst1 = varSubstsTmp.reduceLeft(_ ++ _)
           val subst2 = subst0 ++ subst1
           val e1 = refreshBinders(exp1)(subst2, flix)
-          OccurrenceAst.HandlerRule(op, fps, e1, linearity)
+          OccurrenceAst.HandlerRule(op, fps, e1, linearity, continuationArg)
       }
       Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 

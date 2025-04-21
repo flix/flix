@@ -172,7 +172,7 @@ object Optimizer {
           case MonoAst.HandlerRule(op, fparams, exp1) =>
             val e1 = visitExp(exp1)
             val fps = fparams.map(fp => (fp, Occur.Dead))
-            OccurrenceAst.HandlerRule(op, fps, e1, Occur.Many)
+            OccurrenceAst.HandlerRule(op, fps, e1, Occur.Many, None)
         }
         OccurrenceAst.Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
@@ -332,7 +332,7 @@ object Optimizer {
       case OccurrenceAst.Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
         val e = visitExp(exp)
         val rs = rules.map {
-          case OccurrenceAst.HandlerRule(op, fparams, exp1, _) =>
+          case OccurrenceAst.HandlerRule(op, fparams, exp1, _, _) =>
             val e1 = visitExp(exp1)
             val fps = fparams.map(_._1)
             MonoAst.HandlerRule(op, fps, e1)
