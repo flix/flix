@@ -432,7 +432,9 @@ object Inliner {
       ctx0.inScopeEffs.get(op.sym.eff).flatMap(m => m.get(op.sym)) match {
         case Some(rule) => rule.rule.occur match {
           // case Dead => ??? // TODO: Rewrite such that the body of handler becomes the leaf expr in this subtree
-          // case Once => inlineEffectHandler(rule.rule.exp, rule.rule.fparams, es, ctx0)
+          case Once =>
+            // TODO: Collect information on the arguments to continuation k and insert as final expr.
+            inlineEffectHandler(rule.rule.exp, rule.rule.fparams.init, es, ctx0)
           case _ => Expr.Do(op, es, tpe, eff, loc)
         }
         case None =>
