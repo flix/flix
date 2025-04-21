@@ -197,7 +197,7 @@ object OccurrenceAst {
   }
 
   /**
-    * A [[DefContext]] contains various pieces information on a function that are relevant for making an inlining decision.
+    * A [[DefContext]] contains various pieces of information on a function that are relevant for making an inlining decision.
     *
     * @param occur           the occurrence information of the function (as described by [[Occur]]).
     * @param size            the number of subexpressions in the function.
