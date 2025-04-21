@@ -202,9 +202,13 @@ object OccurrenceAnalyzer {
       val o4 = o3 - sym
       (OccurrenceAst.Expr.Let(sym, e1, e2, tpe, eff, occur, loc), increment(o4))
 
-    case Expr.LocalDef(sym, fps, exp1, exp2, tpe, eff, _, loc) =>
+    case Expr.LocalDef(sym, formalParams, exp1, exp2, tpe, eff, _, loc) =>
       val (e1, o10) = visitExp(exp1)
-      val o1 = captureVarsInLocalDef(o10)
+      val o11 = captureVarsInLocalDef(o10)
+      val fps = formalParams.map {
+        case (fp, _) => fp -> o11.get(fp.sym)
+      }
+      val o1 = o11 -- fps.map(_._1.sym)
       val (e2, o2) = visitExp(exp2)
       val o3 = combineInfo(o1, o2)
       val occur = o3.get(sym)
@@ -330,11 +334,14 @@ object OccurrenceAnalyzer {
 
   private def visitTryWithRules(rules0: List[OccurrenceAst.HandlerRule])(implicit sym0: Symbol.DefnSym): (List[OccurrenceAst.HandlerRule], OccurInfo) = {
     val (rs, o) = rules0.map {
-      case OccurrenceAst.HandlerRule(op, fps, exp, _) =>
-        val (e, o) = visitExp(exp)
-        val continuation = fps.last
-        val occurrence = o.get(continuation.sym)
-        (OccurrenceAst.HandlerRule(op, fps, e, occurrence), o)
+      case OccurrenceAst.HandlerRule(op, formalParams, exp, _) =>
+        val (e, o1) = visitExp(exp)
+        val fps = formalParams.map {
+          case (fp, _) => fp -> o1.get(fp.sym)
+        }
+        val o2 = o1 -- fps.map(_._1.sym)
+        val (_, linearity) = fps.last
+        (OccurrenceAst.HandlerRule(op, fps, e, linearity), o2)
     }.unzip
     val o1 = o.foldLeft(OccurInfo.Empty)(combineInfo)
     (rs, o1)

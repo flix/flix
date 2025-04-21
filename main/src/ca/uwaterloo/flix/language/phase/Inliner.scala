@@ -410,7 +410,11 @@ object Inliner {
       // TODO: Consider removing rules if they are dead and it is allowed
       val rs = rules.map {
         case OccurrenceAst.HandlerRule(op, fparams, exp1, occur) =>
-          val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
+          val (fps, varSubsts) = fparams.map {
+            case (fp, fpOccur) =>
+              val (freshFp, varSubstTmp) = freshFormalParam(fp)
+              ((freshFp, fpOccur), varSubstTmp)
+          }.unzip
           val varSubst1 = varSubsts.fold(ctx0.varSubst)(_ ++ _)
           val ctx = ctx0.copy(varSubst = varSubst1)
           val e1 = visitExp(exp1, ctx)
@@ -425,7 +429,15 @@ object Inliner {
 
     case Expr.Do(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, ctx0))
-      Expr.Do(op, es, tpe, eff, loc)
+      ctx0.inScopeEffs.get(op.sym.eff).flatMap(m => m.get(op.sym)) match {
+        case Some(rule) => rule.rule.occur match {
+          // case Dead => ??? // TODO: Rewrite such that the body of handler becomes the leaf expr in this subtree
+          // case Once => inlineEffectHandler(rule.rule.exp, rule.rule.fparams, es, ctx0)
+          case _ => Expr.Do(op, es, tpe, eff, loc)
+        }
+        case None =>
+          Expr.Do(op, es, tpe, eff, loc)
+      }
 
     case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map {
@@ -490,6 +502,14 @@ object Inliner {
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
   private def inlineLocalAbstraction(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr], ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+    bind(exp0, symbols, args, ctx0)
+  }
+
+  /**
+    * Recursively bind each argument in `args` to a let-expression with a fresh symbol
+    * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
+    */
+  private def inlineEffectHandler(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr], ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     bind(exp0, symbols, args, ctx0)
   }
 
@@ -660,7 +680,12 @@ object Inliner {
       val e = refreshBinders(exp)
       val rs = rules.map {
         case OccurrenceAst.HandlerRule(op, fparams, exp1, linearity) =>
-          val (fps, subst1) = freshFormalParams(fparams)
+          val (fps, varSubstsTmp) = fparams.map {
+            case (fp, fpOccur) =>
+              val (freshFp, varSubstTmp) = freshFormalParam(fp)
+              ((freshFp, fpOccur), varSubstTmp)
+          }.unzip
+          val subst1 = varSubstsTmp.reduceLeft(_ ++ _)
           val subst2 = subst0 ++ subst1
           val e1 = refreshBinders(exp1)(subst2, flix)
           OccurrenceAst.HandlerRule(op, fps, e1, linearity)
