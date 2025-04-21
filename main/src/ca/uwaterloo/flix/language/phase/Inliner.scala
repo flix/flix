@@ -407,12 +407,12 @@ object Inliner {
     case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)
       val rs = rules.map {
-        case OccurrenceAst.HandlerRule(op, fparams, exp1, linearity) =>
+        case OccurrenceAst.HandlerRule(op, fparams, exp1, occur) =>
           val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
           val varSubst1 = varSubsts.fold(ctx0.varSubst)(_ ++ _)
           val ctx = ctx0.copy(varSubst = varSubst1)
           val e1 = visitExp(exp1, ctx)
-          OccurrenceAst.HandlerRule(op, fps, e1, linearity)
+          OccurrenceAst.HandlerRule(op, fps, e1, occur)
       }
       Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
