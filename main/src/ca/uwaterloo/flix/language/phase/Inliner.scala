@@ -757,7 +757,7 @@ object Inliner {
     * Returns `true` if `def0` should be inlined.
     */
   private def canInlineDef(ctx: DefContext, inlCtx: InliningContext): Boolean = {
-    val mayInline = ctx.occur != DontInline && ctx.occur != Dangerous && !ctx.isSelfRecursive && inlCtx != InliningContext.Stop
+    val mayInline = ctx.occur != DontInline && ctx.occur != Dangerous && !ctx.isSelfRecursive && inlCtx == InliningContext.Start
     val isSomewhereOnce = ctx.occur == Once || ctx.occur == OnceInLambda || ctx.occur == OnceInLocalDef
     val belowSoft = ctx.size - ctx.localDefs * 8 < SoftInlineThreshold
     val belowHard = ctx.size - ctx.localDefs * 8 < HardInlineThreshold
