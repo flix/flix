@@ -131,11 +131,11 @@ object OccurrenceAst {
 
   case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: Type, src: TypeSource, occur: Occur, loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[MonoAst.FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
 
-  case class HandlerRule(op: OpSymUse, fparams: List[MonoAst.FormalParam], exp: Expr)
+  case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
 
