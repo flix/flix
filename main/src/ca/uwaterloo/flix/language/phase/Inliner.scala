@@ -94,9 +94,11 @@ object Inliner {
 
   case class Handler(rule: OccurrenceAst.HandlerRule)
 
-  private type OutEff = MonoAst.Op.type
+  private type OutEff = Symbol.EffectSym
 
-  private type InScopeEffs = ListMap[OutEff, Handler]
+  private type OutEffHandler = Symbol.OpSym
+
+  private type InScopeEffs = Map[OutEff, Map[OutEffHandler, Handler]]
 
   private sealed trait InliningContext
 
@@ -117,7 +119,7 @@ object Inliner {
   private case class Context(varSubst: VarSubst, subst: Subst, inScopeVars: InScopeVars, inScopeEffs: InScopeEffs, inliningContext: InliningContext)
 
   private object Context {
-    def emptyStart: Context = Context(Map.empty, Map.empty, Map.empty, ListMap.empty, InliningContext.Start)
+    def emptyStart: Context = Context(Map.empty, Map.empty, Map.empty, Map.empty, InliningContext.Start)
 
     def emptyStop: Context = emptyStart.copy(inliningContext = InliningContext.Stop)
   }
