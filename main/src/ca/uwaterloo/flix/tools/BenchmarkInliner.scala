@@ -35,15 +35,15 @@ import scala.util.{Failure, Success, Using}
 
 object BenchmarkInliner {
 
-  private val RunningTimeWarmupTime: Int = 0
+  private val RunningTimeWarmupTime: Int = 5
 
-  private val RunningTimeBenchmarkTime: Int = 1
+  private val RunningTimeBenchmarkTime: Int = 5
 
   private val CompilationWarmupTime: Int = 0
 
   private val CompilationBenchmarkTime: Int = 2
 
-  private val MaxInliningRounds: Int = 3
+  private val MaxInliningRounds: Int = 5
 
   private val NumberOfRuns: Int = 1000
 
@@ -54,15 +54,18 @@ object BenchmarkInliner {
 
   private val MicroBenchmarks: Map[String, String] = Map(
     "map10KLength" -> map10KLength,
-    "map10KLengthOptimized" -> map10KLengthOptimized,
     "filterMap10K" -> filterMap10K,
+  )
+
+  private val MediumBenchmarks: Map[String, String] = Map(
+    "List.filter" -> listFilter,
+    "List.foldLeft" -> listFoldLeft,
+    "List.foldRight" -> listFoldRight,
+    "List.length" -> listLength,
+    "List.reverse" -> listReverse,
+    "map10KLengthOptimized" -> map10KLengthOptimized,
     "filterMap10KOptimized" -> filterMap10KOptimized,
-    // "List.filter" -> listFilter,
-    // "List.foldLeft" -> listFoldLeft,
-    // "List.foldRight" -> listFoldRight,
     "List.map" -> listMap,
-    // "List.length" -> listLength,
-    // "List.reverse" -> listReverse,
     "List.filterMap" -> listFilterMap,
   )
 
