@@ -135,7 +135,7 @@ object OccurrenceAst {
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
 
-  case class HandlerRule(op: OpSymUse, fparams: List[OccurrenceAst.FormalParam], exp: Expr, occur: Occur)
+  case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr, occur: Occur)
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
 
