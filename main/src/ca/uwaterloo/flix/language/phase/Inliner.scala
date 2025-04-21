@@ -438,8 +438,9 @@ object Inliner {
         case Some(rule) => rule.rule.occur match {
           // case Dead => ??? // TODO: Rewrite such that the body of handler becomes the leaf expr in this subtree
           case Once => // Linear handler
-            val continuationSym = rule.rule.fparams.last._1.sym
-            val ctx = ctx0.copy(inliningContext = InliningContext.InlineContinuation(continuationSym))
+            val continuation = rule.rule.fparams.last._1.sym
+            val freshSym = Symbol.freshVarSym(continuation)
+            val ctx = ctx0.copy(varSubst = ctx0.varSubst + (continuation -> freshSym), inliningContext = InliningContext.InlineContinuation(freshSym))
             inlineEffectHandler(rule.rule.exp, rule.rule.fparams, es, ctx)
           case _ => Expr.Do(op, es, tpe, eff, loc)
         }
