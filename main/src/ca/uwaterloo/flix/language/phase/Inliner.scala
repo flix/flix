@@ -407,7 +407,6 @@ object Inliner {
       Expr.TryCatch(e, rs, tpe, eff, loc)
 
     case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
-      val e = visitExp(exp, ctx0)
       val rs = rules.map {
         case OccurrenceAst.HandlerRule(op, fparams, exp1, occur) =>
           val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
@@ -416,6 +415,11 @@ object Inliner {
           val e1 = visitExp(exp1, ctx)
           OccurrenceAst.HandlerRule(op, fps, e1, occur)
       }
+      val inScopeEffs = rs.foldLeft(Map.empty[OutEffHandler, Handler]) {
+        case (acc, rule) => acc + (rule.op.sym -> Handler(rule))
+      }
+      val ctx1 = ctx0.copy(inScopeEffs = ctx0.inScopeEffs + (effUse.sym -> inScopeEffs))
+      val e = visitExp(exp, ctx1)
       Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
     case Expr.Do(op, exps, tpe, eff, loc) =>
