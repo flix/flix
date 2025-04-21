@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Jakob Schneider Villumsen
+ * Copyright 2025 Jakob Schneider Villumsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,9 @@ object OccurrenceAst {
                   entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(sym: Symbol.DefnSym, fparams: List[(MonoAst.FormalParam, Occur)], spec: MonoAst.Spec, exp: Expr, context: DefContext, loc: SourceLocation)
+  case class Def(sym: Symbol.DefnSym, fparams: List[FormalParam], spec: MonoAst.Spec, exp: Expr, context: DefContext, loc: SourceLocation)
 
-  sealed trait Expr extends Product {
+  sealed trait Expr {
     def tpe: Type
 
     def eff: Type
@@ -50,7 +50,7 @@ object OccurrenceAst {
       def eff: Type = Type.Pure
     }
 
-    case class Lambda(fparam: (MonoAst.FormalParam, Occur), exp: Expr, tpe: Type, loc: SourceLocation) extends Expr {
+    case class Lambda(fparam: FormalParam, exp: Expr, tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = Type.Pure
     }
 
@@ -64,7 +64,7 @@ object OccurrenceAst {
 
     case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, occur: Occur, loc: SourceLocation) extends Expr
 
-    case class LocalDef(sym: Symbol.VarSym, fparams: List[(MonoAst.FormalParam, Occur)], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, occur: Occur, loc: SourceLocation) extends Expr
+    case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, occur: Occur, loc: SourceLocation) extends Expr
 
     case class Scope(sym: Symbol.VarSym, regSym: Symbol.RegionSym, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -129,11 +129,13 @@ object OccurrenceAst {
 
   case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[MonoAst.FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: Type, src: TypeSource, occur: Occur, loc: SourceLocation)
+
+  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
 
-  case class HandlerRule(op: OpSymUse, fparams: List[(MonoAst.FormalParam, Occur)], exp: Expr, occur: Occur)
+  case class HandlerRule(op: OpSymUse, fparams: List[OccurrenceAst.FormalParam], exp: Expr, occur: Occur)
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
 
@@ -143,58 +145,66 @@ object OccurrenceAst {
 
   case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
 
+  /**
+    * Represents occurrence information of binders, i.e., how a binder occurs in the program.
+    * A binder may be a variable, function, or effect handler.
+    */
   sealed trait Occur
 
   object Occur {
 
     /**
-      * Represents a variable that is not used in an expression.
+      * Represents a binder that is not used in an expression.
       */
     case object Dead extends Occur
 
     /**
-      * Represents a variable that occurs exactly once in an expression.
+      * Represents a binder that occurs exactly once in an expression.
       */
     case object Once extends Occur
 
     /**
-      * Represents a variable that occurs exactly once in the body of a lambda abstraction.
+      * Represents a binder that occurs exactly once and that occurrence is in the body of a lambda abstraction.
       */
     case object OnceInLambda extends Occur
 
     /**
-      * Represents a variable that occurs exactly once in the body of a local def.
+      * Represents a binder that occurs exactly once and that occurrence is in the body of a local def.
       */
     case object OnceInLocalDef extends Occur
 
     /**
-      * Represents a variable that occurs in expressions more than once.
-      */
-    case object Many extends Occur
-
-    /**
-      * Represents a variable that occurs in more than one branch, e.g., match cases, but never inside a lambda abstraction or local def.
+      * Represents a binder that occurs in more than one branch, e.g., match cases, but never inside a lambda abstraction or local def.
       */
     case object ManyBranch extends Occur
 
     /**
-      * Represents a variable that we explicitly do not want to inline.
+      * Represents a binder that occurs more than once (including lambdas, local defs, branches).
+      */
+    case object Many extends Occur
+
+    /**
+      * Represents a binder that is excluded from inlining at its occurrence sites.
+      * If the binder is a function, sub-expressions of the body may be considered for rewriting.
       */
     case object DontInline extends Occur
 
     /**
-      * Represents a function that should not be inlined and excluded from any rewriting internally.
-      * This is because casts are dangerous.
+      * Represents a binder that is excluded from inlining at its occurrence sites.
+      * Unlike [[DontInline]], the body of a function is never considered for rewriting (due to casts being dangerous).
       */
-    case object Dangerous extends Occur
+    case object DontInlineAndDontRewrite extends Occur
   }
 
   /**
-    * `OccurDef` contains information that indicates whether a def should be inlined.
-    * A def is `isDirectCall` if the expression consist of a single (non-self) call.
-    * `occur` represents the number of times a def is references in the entire program.
-    * `size` denotes the cumulative weight of each expression in the body of the def.
+    * A [[DefContext]] contains various pieces of information on a function that are relevant for making an inlining decision.
+    *
+    * @param occur           the occurrence information of the function (as described by [[Occur]]).
+    * @param size            the number of subexpressions in the function.
+    * @param localDefs       the number of local defs defined in a function.
+    * @param isDirectCall    true if the outermost expression of the body is a function call.
+    * @param isSelfRecursive true if the function symbol occurs in the body of the function being defined.
     */
-  case class DefContext(isDirectCall: Boolean, occur: Occur, size: Int, localDefs: Int, isSelfRecursive: Boolean)
+  case class DefContext(occur: Occur, size: Int, localDefs: Int, isDirectCall: Boolean, isSelfRecursive: Boolean)
 
 }

@@ -128,7 +128,7 @@ object Inliner {
     */
   private def visitDef(def0: OccurrenceAst.Def)(implicit root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): OccurrenceAst.Def = def0 match {
     case OccurrenceAst.Def(sym, fparams, spec, exp, ctx, loc) =>
-      if (ctx.occur != Dangerous) {
+      if (ctx.occur != DontInlineAndDontRewrite) {
         val e = visitExp(exp, Context.empty)(sym, root, sctx, flix)
         OccurrenceAst.Def(sym, fparams, spec, e, ctx, loc)
       } else {
@@ -169,12 +169,12 @@ object Inliner {
           Expr.Var(sym, tpe, loc)
       }
 
-    case Expr.Lambda((fparam, occur), exp, tpe, loc) => // TODO: Make parameter wild if dead
-      val (fps, varSubst1) = freshFormalParam(fparam)
+    case Expr.Lambda(fparam, exp, tpe, loc) => // TODO: Make parameter wild if dead
+      val (fp, varSubst1) = freshFormalParam(fparam)
       val varSubst2 = ctx0.varSubst ++ varSubst1
       val ctx = ctx0.copy(varSubst = varSubst2)
       val e = visitExp(exp, ctx)
-      Expr.Lambda((fps, occur), e, tpe, loc)
+      Expr.Lambda(fp, e, tpe, loc)
 
     case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, ctx0))
@@ -282,7 +282,7 @@ object Inliner {
           // Case 4:
           // If `e1` is trivial and pure, then it is safe to inline.
           // Code size and runtime are not impacted, because only trivial expressions are inlined
-          val wantToPostInline = isTrivialAndPure(e1, exp1.eff) && occur != DontInline && occur != Dangerous
+          val wantToPostInline = isTrivialAndPure(e1, exp1.eff) && occur != DontInline && occur != DontInlineAndDontRewrite
           if (wantToPostInline) {
             // If `e1` is to be inlined:
             // Add map `sym` to `e1` and return `e2` without constructing the let expression.
@@ -311,11 +311,7 @@ object Inliner {
         val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
         val ctx1 = ctx0.copy(varSubst = varSubst1)
         val e2 = visitExp(exp2, ctx1)
-        val (fps, varSubsts) = fparams.map {
-          case (fp, fpOccur) =>
-            val (freshFp, varSubstTmp) = freshFormalParam(fp)
-            ((freshFp, fpOccur), varSubstTmp)
-        }.unzip
+        val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
         val varSubst2 = varSubsts.foldLeft(varSubst1)(_ ++ _)
         val ctx2 = ctx0.copy(varSubst = varSubst2)
         val e1 = visitExp(exp1, ctx2)
@@ -411,11 +407,7 @@ object Inliner {
       // TODO: Consider removing rules if they are dead and it is allowed
       val rs = rules.map {
         case OccurrenceAst.HandlerRule(op, fparams, exp1, occur) =>
-          val (fps, varSubsts) = fparams.map {
-            case (fp, fpOccur) =>
-              val (freshFp, varSubstTmp) = freshFormalParam(fp)
-              ((freshFp, fpOccur), varSubstTmp)
-          }.unzip
+          val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
           val varSubst1 = varSubsts.fold(ctx0.varSubst)(_ ++ _)
           val ctx = ctx0.copy(varSubst = varSubst1)
           val e1 = visitExp(exp1, ctx)
@@ -434,7 +426,7 @@ object Inliner {
         case Some(rule) => rule.rule.occur match {
           // case Dead => ??? // TODO: Rewrite such that the body of handler becomes the leaf expr in this subtree
           case Once => // Linear handler
-            val continuation = rule.rule.fparams.last._1.sym
+            val continuation = rule.rule.fparams.last.sym
             val freshSym = Symbol.freshVarSym(continuation)
             val ctx = ctx0.copy(varSubst = ctx0.varSubst + (continuation -> freshSym), inliningContext = InliningContext.InlineContinuation(freshSym))
             inlineEffectHandler(rule.rule.exp, rule.rule.fparams, es, ctx)
@@ -498,7 +490,7 @@ object Inliner {
     * Recursively bind each argument in `args` to a let-expression with a fresh symbol
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
-  private def inlineDef(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr])(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+  private def inlineDef(exp0: Expr, symbols: List[OccurrenceAst.FormalParam], args: List[OutExpr])(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     bind(exp0, symbols, args, Context.empty.copy(currentlyInlining = true))
   }
 
@@ -506,7 +498,7 @@ object Inliner {
     * Recursively bind each argument in `args` to a let-expression with a fresh symbol
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
-  private def inlineLocalAbstraction(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr], ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+  private def inlineLocalAbstraction(exp0: Expr, symbols: List[OccurrenceAst.FormalParam], args: List[OutExpr], ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     bind(exp0, symbols, args, ctx0.copy(currentlyInlining = true))
   }
 
@@ -514,7 +506,7 @@ object Inliner {
     * Recursively bind each argument in `args` to a let-expression with a fresh symbol
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
-  private def inlineEffectHandler(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr], ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+  private def inlineEffectHandler(exp0: Expr, symbols: List[OccurrenceAst.FormalParam], args: List[OutExpr], ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     bind(exp0, symbols, args, ctx0.copy(currentlyInlining = true))
   }
 
@@ -522,19 +514,19 @@ object Inliner {
     * Recursively bind each argument in `args` to a let-expression with a fresh symbol
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
-  private def bind(exp0: Expr, symbols: List[(MonoAst.FormalParam, Occur)], args: List[OutExpr], ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
-    def bnd(syms: List[(MonoAst.FormalParam, Occur)], as: List[OutExpr], env: VarSubst): Expr = (syms, as) match {
-      case ((_, occur) :: nextSymbols, e1 :: nextExpressions) if isDeadAndPure(occur, e1.eff) =>
+  private def bind(exp0: Expr, formalParams: List[OccurrenceAst.FormalParam], args: List[OutExpr], ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+    def bnd(fparams: List[OccurrenceAst.FormalParam], as: List[OutExpr], env: VarSubst): Expr = (fparams, as) match {
+      case (OccurrenceAst.FormalParam(_, _, _, _, occur, _) :: nextSymbols, e1 :: nextExpressions) if isDeadAndPure(occur, e1.eff) =>
         // If the parameter is unused and the argument is pure, then throw it away.
         bnd(nextSymbols, nextExpressions, env)
 
-      case ((_, occur) :: nextSymbols, e1 :: nextExpressions) if isDead(occur) =>
+      case (OccurrenceAst.FormalParam(_, _, _, _, occur, _) :: nextSymbols, e1 :: nextExpressions) if isDead(occur) =>
         // If the parameter is unused and the argument is NOT pure, then put it in a statement.
         val nextLet = bnd(nextSymbols, nextExpressions, env)
         val eff = canonicalEffect(Type.mkUnion(e1.eff, nextLet.eff, e1.loc))
         Expr.Stm(e1, nextLet, nextLet.tpe, eff, exp0.loc)
 
-      case ((MonoAst.FormalParam(sym, _, _, _, _), occur) :: nextSymbols, e1 :: nextExpressions) =>
+      case (OccurrenceAst.FormalParam(sym, _, _, _, occur, _) :: nextSymbols, e1 :: nextExpressions) =>
         val freshVar = Symbol.freshVarSym(sym)
         val env1 = env + (sym -> freshVar)
         val nextLet = bnd(nextSymbols, nextExpressions, env1)
@@ -547,17 +539,17 @@ object Inliner {
         visitExp(exp0, ctx)
     }
 
-    bnd(symbols, args, Map.empty)
+    bnd(formalParams, args, Map.empty)
   }
 
-  private def freshFormalParam(fp0: MonoAst.FormalParam)(implicit flix: Flix): (MonoAst.FormalParam, VarSubst) = fp0 match {
-    case MonoAst.FormalParam(sym, mod, tpe, src, loc) =>
+  private def freshFormalParam(fp0: OccurrenceAst.FormalParam)(implicit flix: Flix): (OccurrenceAst.FormalParam, VarSubst) = fp0 match {
+    case OccurrenceAst.FormalParam(sym, mod, tpe, src, occur, loc) =>
       val freshVarSym = Symbol.freshVarSym(sym)
       val subst = Map(sym -> freshVarSym)
-      (MonoAst.FormalParam(freshVarSym, mod, tpe, src, loc), subst)
+      (OccurrenceAst.FormalParam(freshVarSym, mod, tpe, src, occur, loc), subst)
   }
 
-  private def freshFormalParams(fparams0: List[MonoAst.FormalParam])(implicit flix: Flix): (List[MonoAst.FormalParam], VarSubst) = {
+  private def freshFormalParams(fparams0: List[OccurrenceAst.FormalParam])(implicit flix: Flix): (List[OccurrenceAst.FormalParam], VarSubst) = {
     val (fps, substs) = fparams0.map(freshFormalParam).unzip
     val subst = substs.reduceLeft(_ ++ _)
     (fps, subst)
@@ -571,11 +563,11 @@ object Inliner {
       val freshVarSym = subst0.getOrElse(sym, sym)
       Expr.Var(freshVarSym, tpe, loc)
 
-    case Expr.Lambda((fparam, occur), exp, tpe, loc) =>
+    case Expr.Lambda(fparam, exp, tpe, loc) =>
       val (fp, subst1) = freshFormalParam(fparam)
       val subst2 = subst0 ++ subst1
       val e = refreshBinders(exp, subst2)
-      Expr.Lambda((fp, occur), e, tpe, loc)
+      Expr.Lambda(fp, e, tpe, loc)
 
     case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(refreshBinders(_, subst0))
@@ -606,11 +598,7 @@ object Inliner {
       val freshVarSym = Symbol.freshVarSym(sym)
       val subst1 = subst0 + (sym -> freshVarSym)
       val e2 = refreshBinders(exp2, subst1)
-      val (fps, varSubstsTmp) = fparams.map {
-        case (fp, fpOccur) =>
-          val (freshFp, varSubstTmp) = freshFormalParam(fp)
-          ((freshFp, fpOccur), varSubstTmp)
-      }.unzip
+      val (fps, varSubstsTmp) = fparams.map(freshFormalParam).unzip
       val subst2 = varSubstsTmp.reduceLeft(_ ++ _)
       val subst3 = subst1 ++ subst2
       val e1 = refreshBinders(exp1, subst3)
@@ -685,12 +673,7 @@ object Inliner {
       val e = refreshBinders(exp, subst0)
       val rs = rules.map {
         case OccurrenceAst.HandlerRule(op, fparams, exp1, linearity) =>
-          val (fps, varSubstsTmp) = fparams.map {
-            case (fp, fpOccur) =>
-              val (freshFp, varSubstTmp) = freshFormalParam(fp)
-              ((freshFp, fpOccur), varSubstTmp)
-          }.unzip
-          val subst1 = varSubstsTmp.reduceLeft(_ ++ _)
+          val (fps, subst1) = freshFormalParams(fparams)
           val subst2 = subst0 ++ subst1
           val e1 = refreshBinders(exp1, subst2)
           OccurrenceAst.HandlerRule(op, fps, e1, linearity)
@@ -760,7 +743,7 @@ object Inliner {
     * Returns `true` if `def0` should be inlined.
     */
   private def canInlineDef(defCtx: DefContext, ctx: Context): Boolean = {
-    val mayInline = defCtx.occur != DontInline && defCtx.occur != Dangerous && !defCtx.isSelfRecursive && !ctx.currentlyInlining
+    val mayInline = defCtx.occur != DontInline && defCtx.occur != DontInlineAndDontRewrite && !defCtx.isSelfRecursive && !ctx.currentlyInlining
     val isSomewhereOnce = defCtx.occur == Once || defCtx.occur == OnceInLambda || defCtx.occur == OnceInLocalDef
     val belowSoft = defCtx.size - defCtx.localDefs * 8 < SoftInlineThreshold
     val belowHard = defCtx.size - defCtx.localDefs * 8 < HardInlineThreshold

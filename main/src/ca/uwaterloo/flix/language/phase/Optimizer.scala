@@ -59,9 +59,13 @@ object Optimizer {
     private def visitDef(def0: MonoAst.Def): OccurrenceAst.Def = def0 match {
       case MonoAst.Def(sym, spec, exp, loc) =>
         val e = visitExp(exp)
-        val fps = spec.fparams.map(fp => (fp, OccurrenceAst.Occur.Dead))
-        val ctx = OccurrenceAst.DefContext(isDirectCall = false, OccurrenceAst.Occur.Dead, 0, 0, isSelfRecursive = false)
+        val fps = spec.fparams.map(visitFormalParam)
+        val ctx = OccurrenceAst.DefContext(OccurrenceAst.Occur.Dead, 0, 0, isDirectCall = false, isSelfRecursive = false)
         OccurrenceAst.Def(sym, fps, spec, e, ctx, loc)
+    }
+
+    private def visitFormalParam(fp0: MonoAst.FormalParam): OccurrenceAst.FormalParam = fp0 match {
+      case MonoAst.FormalParam(sym, mod, tpe, src, loc) => OccurrenceAst.FormalParam(sym, mod, tpe, src, OccurrenceAst.Occur.Dead, loc)
     }
 
     private def visitExp(expr0: MonoAst.Expr): OccurrenceAst.Expr = expr0 match {
@@ -72,7 +76,7 @@ object Optimizer {
         OccurrenceAst.Expr.Var(sym, tpe, loc)
 
       case MonoAst.Expr.Lambda(fparam, exp, tpe, loc) =>
-        val fp = (fparam, OccurrenceAst.Occur.Dead)
+        val fp = visitFormalParam(fparam)
         val e = visitExp(exp)
         OccurrenceAst.Expr.Lambda(fp, e, tpe, loc)
 
@@ -100,7 +104,7 @@ object Optimizer {
         OccurrenceAst.Expr.Let(sym, e1, e2, tpe, eff, occur, loc)
 
       case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
-        val fps = fparams.map(fp => (fp, OccurrenceAst.Occur.Dead))
+        val fps = fparams.map(visitFormalParam)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         val occur = OccurrenceAst.Occur.Dead
@@ -171,7 +175,7 @@ object Optimizer {
         val rs = rules.map {
           case MonoAst.HandlerRule(op, fparams, exp1) =>
             val e1 = visitExp(exp1)
-            val fps = fparams.map(fp => (fp, Occur.Dead))
+            val fps = fparams.map(visitFormalParam)
             OccurrenceAst.HandlerRule(op, fps, e1, Occur.Many)
         }
         OccurrenceAst.Expr.RunWith(e, effUse, rs, tpe, eff, loc)
@@ -183,8 +187,9 @@ object Optimizer {
       case MonoAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
         val ms = methods.map {
           case MonoAst.JvmMethod(ident, fparams, exp1, retTpe, eff1, loc1) =>
+            val fps = fparams.map(visitFormalParam)
             val e1 = visitExp(exp1)
-            OccurrenceAst.JvmMethod(ident, fparams, e1, retTpe, eff1, loc1)
+            OccurrenceAst.JvmMethod(ident, fps, e1, retTpe, eff1, loc1)
         }
         OccurrenceAst.Expr.NewObject(name, clazz, tpe, eff, ms, loc)
     }
@@ -230,6 +235,10 @@ object Optimizer {
         MonoAst.Def(sym, spec, e, loc)
     }
 
+    private def visitFormalParam(fp0: OccurrenceAst.FormalParam): MonoAst.FormalParam = fp0 match {
+      case OccurrenceAst.FormalParam(sym, mod, tpe, src, _, loc) => MonoAst.FormalParam(sym, mod, tpe, src, loc)
+    }
+
     private def visitExp(expr0: OccurrenceAst.Expr): MonoAst.Expr = expr0 match {
       case OccurrenceAst.Expr.Cst(cst, tpe, loc) =>
         MonoAst.Expr.Cst(cst, tpe, loc)
@@ -237,9 +246,10 @@ object Optimizer {
       case OccurrenceAst.Expr.Var(sym, tpe, loc) =>
         MonoAst.Expr.Var(sym, tpe, loc)
 
-      case OccurrenceAst.Expr.Lambda((fparam, _), exp, tpe, loc) =>
+      case OccurrenceAst.Expr.Lambda(fparam, exp, tpe, loc) =>
+        val fp = visitFormalParam(fparam)
         val e = visitExp(exp)
-        MonoAst.Expr.Lambda(fparam, e, tpe, loc)
+        MonoAst.Expr.Lambda(fp, e, tpe, loc)
 
       case OccurrenceAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
         val es = exps.map(visitExp)
@@ -264,7 +274,7 @@ object Optimizer {
         MonoAst.Expr.Let(sym, e1, e2, tpe, eff, loc)
 
       case OccurrenceAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _, loc) =>
-        val fps = fparams.map { case (fp, _) => fp }
+        val fps = fparams.map(visitFormalParam)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         MonoAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, loc)
@@ -334,7 +344,7 @@ object Optimizer {
         val rs = rules.map {
           case OccurrenceAst.HandlerRule(op, fparams, exp1, _) =>
             val e1 = visitExp(exp1)
-            val fps = fparams.map(_._1)
+            val fps = fparams.map(visitFormalParam)
             MonoAst.HandlerRule(op, fps, e1)
         }
         MonoAst.Expr.RunWith(e, effUse, rs, tpe, eff, loc)
@@ -346,8 +356,9 @@ object Optimizer {
       case OccurrenceAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
         val ms = methods.map {
           case OccurrenceAst.JvmMethod(ident, fparams, exp1, retTpe, eff1, loc1) =>
+            val fps = fparams.map(visitFormalParam)
             val e1 = visitExp(exp1)
-            MonoAst.JvmMethod(ident, fparams, e1, retTpe, eff1, loc1)
+            MonoAst.JvmMethod(ident, fps, e1, retTpe, eff1, loc1)
         }
         MonoAst.Expr.NewObject(name, clazz, tpe, eff, ms, loc)
     }

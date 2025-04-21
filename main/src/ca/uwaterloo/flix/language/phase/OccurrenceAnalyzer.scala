@@ -113,7 +113,7 @@ object OccurrenceAnalyzer {
     // Updates the occurrence of every `def` in `ds` based on the occurrence found in `defOccur`.
     ds.foldLeft(Map.empty[DefnSym, OccurrenceAst.Def]) {
       case (macc, defn) =>
-        val occur = if (DangerousFunctions.contains(toReadableFunction(defn.sym))) Dangerous else defOccur.getOrElse(defn.sym, Dead)
+        val occur = if (DangerousFunctions.contains(toReadableFunction(defn.sym))) DontInlineAndDontRewrite else defOccur.getOrElse(defn.sym, Dead)
         val newContext = defn.context.copy(occur = occur)
         val defWithContext = defn.copy(context = newContext)
         macc + (defn.sym -> defWithContext)
@@ -146,13 +146,13 @@ object OccurrenceAnalyzer {
         case Occur.Many => true
         case Occur.ManyBranch => true
         case Occur.DontInline => false
-        case Occur.Dangerous => true
+        case Occur.DontInlineAndDontRewrite => true
       }
     }
 
     val (exp, occurInfo) = visitExp(defn0.exp)(defn0.sym)
-    val defContext = DefContext(isDirectCall(exp), occurInfo.get(defn0.sym), occurInfo.size, occurInfo.localDefs, isSelfRecursive(occurInfo))
-    val fparams = defn0.fparams.map { case (p, _) => p -> occurInfo.get(p.sym) }
+    val defContext = DefContext(occurInfo.get(defn0.sym), occurInfo.size, occurInfo.localDefs, isDirectCall(exp), isSelfRecursive(occurInfo))
+    val fparams = defn0.fparams.map(fp => fp.copy(occur = occurInfo.get(fp.sym)))
     (OccurrenceAst.Def(defn0.sym, fparams, defn0.spec, exp, defContext, defn0.loc), occurInfo)
   }
 
@@ -166,12 +166,12 @@ object OccurrenceAnalyzer {
     case Expr.Var(sym, tpe, loc) =>
       (OccurrenceAst.Expr.Var(sym, tpe, loc), OccurInfo.One + (sym -> Once))
 
-    case Expr.Lambda((fp, _), exp, tpe, loc) =>
+    case Expr.Lambda(fp, exp, tpe, loc) =>
       val (e, o) = visitExp(exp)
       val o1 = captureVarsInLambda(o)
       val occur = o1.get(fp.sym)
       val o2 = o1 - fp.sym
-      (OccurrenceAst.Expr.Lambda((fp, occur), e, tpe, loc), increment(o2))
+      (OccurrenceAst.Expr.Lambda(fp.copy(occur = occur), e, tpe, loc), increment(o2))
 
     case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val (es, o) = visitExps(exps)
@@ -205,10 +205,8 @@ object OccurrenceAnalyzer {
     case Expr.LocalDef(sym, formalParams, exp1, exp2, tpe, eff, _, loc) =>
       val (e1, o10) = visitExp(exp1)
       val o11 = captureVarsInLocalDef(o10)
-      val fps = formalParams.map {
-        case (fp, _) => fp -> o11.get(fp.sym)
-      }
-      val o1 = o11 -- fps.map(_._1.sym)
+      val fps = formalParams.map(fp => fp.copy(occur = o11.get(fp.sym)))
+      val o1 = o11 -- fps.map(_.sym)
       val (e2, o2) = visitExp(exp2)
       val o3 = combineInfo(o1, o2)
       val occur = o3.get(sym)
@@ -263,7 +261,7 @@ object OccurrenceAnalyzer {
 
     case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val (e, o) = visitExp(exp)
-      val o1 = if (declaredEff.isDefined) o :+ sym0 -> Dangerous else o
+      val o1 = if (declaredEff.isDefined) o :+ sym0 -> DontInlineAndDontRewrite else o
       (OccurrenceAst.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc), increment(o1))
 
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
@@ -303,7 +301,7 @@ object OccurrenceAnalyzer {
     case AtomicOp.Is(sym) if sym.name == "Choice" =>
       occurInfo0 :+ sym0 -> DontInline
 
-    case AtomicOp.Cast => occurInfo0 :+ sym0 -> Dangerous
+    case AtomicOp.Cast => occurInfo0 :+ sym0 -> DontInlineAndDontRewrite
 
     case _ => occurInfo0
   }
@@ -336,11 +334,9 @@ object OccurrenceAnalyzer {
     val (rs, o) = rules0.map {
       case OccurrenceAst.HandlerRule(op, formalParams, exp, _) =>
         val (e, o1) = visitExp(exp)
-        val fps = formalParams.map {
-          case (fp, _) => fp -> o1.get(fp.sym)
-        }
-        val o2 = o1 -- fps.map(_._1.sym)
-        val (_, linearity) = fps.last
+        val fps = formalParams.map(fp => fp.copy(occur = o1.get(fp.sym)))
+        val o2 = o1 -- fps.map(_.sym)
+        val linearity = fps.last.occur
         (OccurrenceAst.HandlerRule(op, fps, e, linearity), o2)
     }.unzip
     val o1 = o.foldLeft(OccurInfo.Empty)(combineInfo)
@@ -447,8 +443,8 @@ object OccurrenceAnalyzer {
     * Combines two occurrences `o1` and `o2` of type Occur into a single occurrence.
     */
   private def combine(o1: Occur, o2: Occur): Occur = (o1, o2) match {
-    case (Dangerous, _) => Dangerous
-    case (_, Dangerous) => Dangerous
+    case (DontInlineAndDontRewrite, _) => DontInlineAndDontRewrite
+    case (_, DontInlineAndDontRewrite) => DontInlineAndDontRewrite
     case (DontInline, _) => DontInline
     case (_, DontInline) => DontInline
     case (Dead, _) => o2
@@ -463,8 +459,8 @@ object OccurrenceAnalyzer {
     * - [[OccurrenceAst.Expr.Match]]
     */
   private def combineBranch(o1: Occur, o2: Occur): Occur = (o1, o2) match {
-    case (Dangerous, _) => Dangerous
-    case (_, Dangerous) => Dangerous
+    case (DontInlineAndDontRewrite, _) => DontInlineAndDontRewrite
+    case (_, DontInlineAndDontRewrite) => DontInlineAndDontRewrite
     case (DontInline, _) => DontInline
     case (_, DontInline) => DontInline
     case (Dead, _) => o2
