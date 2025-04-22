@@ -25,79 +25,95 @@ import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
+import java.nio.file.{Files, Paths}
+
 class TestCompletionProvider extends AnyFunSuite {
+
   /**
-    * A list of programs to test invariants on.
+    * A list of program paths to test invariants on.
+    *
+    * Note: files from large-examples and package-manager are not included in this list
     */
-  private val Programs = List(
-        s"""
-           |/**
-           |  * A simple program that reads a name from the console and prints a greeting.
-           |  */
-           |def main(): Unit \\ IO =
-           |    run {
-           |        Console.println("Please enter your name: ");
-           |        let name = Console.readln();
-           |        Console.println("Hello $${name}")
-           |    } with Console.runWithIO
-           |
-           |""".stripMargin,
-        s"""
-           |// A simple program that reads a name from the console and prints a greeting.
-           |    def main(): Unit \\ IO =
-           |    run {
-           |        let timestamp = Clock.currentTime(TimeUnit.Milliseconds);
-           |        println("$${timestamp} ms since the epoc")
-           |    } with Clock.runWithIO
-           |
-           |""".stripMargin,
-        s"""
-           |///
-           |/// A simple program that reads a name from the console and prints a greeting.
-           |///
-           |def main(): Unit \\ {Net, IO} =
-           |    run {
-           |        let url = "http://example.com/";
-           |        Logger.info("Downloading URL: '$${url}'");
-           |        match HttpWithResult.get(url, Map.empty()) {
-           |            case Result.Ok(response) =>
-           |                let file = "data.txt";
-           |                Logger.info("Saving response to file: '$${file}'");
-           |                let body = Http.Response.body(response);
-           |                match FileWriteWithResult.write(str = body, file) {
-           |                    case Result.Ok(_) =>
-           |                        Logger.info("Response saved to file: '$${file}'")
-           |                    case Result.Err(err) =>
-           |                        Logger.fatal("Unable to write file: '$${err}'")
-           |                }
-           |            case Result.Err(err) =>
-           |                Logger.fatal("Unable to download URL: '$${err}'")
-           |        }
-           |    } with FileWriteWithResult.runWithIO
-           |      with HttpWithResult.runWithIO
-           |      with Logger.runWithIO
-           |
-           |""".stripMargin,
-    s"""
-       |// Map the function f over the list l in parallel.
-       |def parMap(f: a -> b, l: List[a]): List[b] = match l {
-       |    case Nil     => Nil
-       |    case x :: xs =>
-       |        par (r <- f(x); rs <- parMap(f, xs))
-       |            yield r :: rs
-       |}
-       |
-       |// The main function.
-       |//
-       |def main(): Unit \\ IO =
-       |    let l = List.range(1, 100);
-       |    println(parMap(x -> x + 1, l))
-       |
-       |""".stripMargin
+  private val ProgramPathList = List(
+    "examples/concurrency-and-parallelism/spawning-threads.flix",
+    "examples/concurrency-and-parallelism/using-par-yield.flix",
+    "examples/concurrency-and-parallelism/using-par-yield-recursively.flix",
+    "examples/concurrency-and-parallelism/using-select-with-default.flix",
+    "examples/concurrency-and-parallelism/using-select.flix",
+    "examples/concurrency-and-parallelism/using-channels-for-message-passing.flix",
+    "examples/concurrency-and-parallelism/using-select-with-timeout.flix",
+    "examples/effects-and-handlers/advanced/collatz.flix",
+    "examples/effects-and-handlers/advanced/nqueens.flix",
+    "examples/effects-and-handlers/advanced/backtracking.flix",
+    "examples/effects-and-handlers/using-Random.flix",
+    "examples/effects-and-handlers/using-HttpWithResult.flix",
+    "examples/effects-and-handlers/using-ProcessWithResult.flix",
+    "examples/effects-and-handlers/using-FileWriteWithResult.flix",
+    "examples/effects-and-handlers/using-Console.flix",
+    "examples/effects-and-handlers/using-Logger.flix",
+    "examples/effects-and-handlers/running-multiple-effects.flix",
+    "examples/effects-and-handlers/using-Clock.flix",
+    "examples/fixpoints/railroad-network.flix",
+    "examples/fixpoints/pipelines-of-fixpoint-computations.flix",
+    "examples/fixpoints/compiler-puzzle.flix",
+    "examples/fixpoints/polymorphic-first-class-constraints.flix",
+    "examples/fixpoints/first-class-constraints-and-fixpoints.flix",
+    "examples/functional-style/lists-and-list-processing.flix",
+    "examples/functional-style/pure-and-impure-functions.flix",
+    "examples/functional-style/mutual-recursion-with-full-tail-call-elimination.flix",
+    "examples/functional-style/higher-order-functions.flix",
+    "examples/functional-style/effect-polymorphic-functions.flix",
+    "examples/functional-style/enums-and-parametric-polymorphism.flix",
+    "examples/functional-style/function-composition-pipelines-and-currying.flix",
+    "examples/functional-style/algebraic-data-types-and-pattern-matching.flix",
+    "examples/imperative-style/copying-characters-into-array-with-foreach.flix",
+    "examples/imperative-style/imperative-style-foreach-loops.flix",
+    "examples/imperative-style/internal-mutability-with-regions.flix",
+    "examples/imperative-style/iterating-over-lists-with-foreach.flix",
+    "examples/interoperability/calling-methods/calling-java-varargs-methods.flix",
+    "examples/interoperability/calling-methods/calling-java-static-methods.flix",
+    "examples/interoperability/anonymous-classes/implementing-java-closeable.flix",
+    "examples/interoperability/anonymous-classes/implementing-java-runnable.flix",
+    "examples/interoperability/swing/swing-dial.flix",
+    "examples/interoperability/swing/simple-swing-app.flix",
+    "examples/interoperability/swing/swing-dialog.flix",
+    "examples/interoperability/exceptions/catching-java-exceptions.flix",
+    "examples/interoperability/files/reading-a-file-with-java.flix",
+    "examples/interoperability/files/writing-a-file-with-java.flix",
+    "examples/interoperability/files/checking-if-file-exists-with-java.flix",
+    "examples/misc/type-level-programming/track-list-emptiness-with-type-level-booleans.flix",
+    "examples/misc/type-level-programming/type-level-programming-string-sanitization.flix",
+    "examples/misc/type-level-programming/type-level-programming-4bit-adder.flix",
+    "examples/misc/type-level-programming/type-level-programming-demorgan.flix",
+    "examples/misc/type-level-programming/type-level-programming-even-odd-list.flix",
+    "examples/misc/type-level-programming/type-level-programming-eager-lazy-list.flix",
+    "examples/misc/type-aliases.flix",
+    "examples/misc/named-arguments.flix",
+    "examples/modules/use-from-a-module-locally.flix",
+    "examples/modules/declaring-a-module.flix",
+    "examples/modules/use-from-a-module.flix",
+    "examples/modules/companion-module-effect.flix",
+    "examples/modules/companion-module-struct.flix",
+    "examples/modules/companion-module-trait.flix",
+    "examples/modules/companion-module-enum.flix",
+    "examples/records/the-ast-typing-problem-with-polymorphic-records.flix",
+    "examples/records/polymorphic-record-update.flix",
+    "examples/records/polymorphic-record-extension-and-restriction.flix",
+    "examples/records/record-construction-and-use.flix",
+    "examples/structs/structs-and-parametric-polymorphism.flix",
+    "examples/structs/struct-person.flix",
+    "examples/structs/struct-tree-monadic.flix",
+    "examples/structs/struct-tree.flix",
+    "examples/traits/trait-with-higher-kinded-type.flix",
+    "examples/traits/trait-with-associated-effect.flix",
+    "examples/traits/deriving-traits-automatically.flix",
+    "examples/traits/trait-with-associated-type.flix",
+    "examples/traits/declaring-a-trait-with-instances.flix",
   )
 
   test("No completions after complete keyword") {
-    Programs.foreach { program =>
+    ProgramPathList.foreach( programPath => {
+      val program = Files.readString(Paths.get(programPath))
       val (root, flix, errors) = compile(program, Options.Default)
       val source = mkSource(program)
       val keywordTokens = root.tokens(source).toList.filter(_.kind.isKeyword)
@@ -108,11 +124,12 @@ class TestCompletionProvider extends AnyFunSuite {
           assert(completions.items.isEmpty)
         }
       }
-    }
+    })
   }
 
   test("No completions after complete literal") {
-    Programs.foreach { program =>
+    ProgramPathList.foreach( programPath => {
+      val program = Files.readString(Paths.get(programPath))
       val (root, flix, errors) = compile(program, Options.Default)
       val source = mkSource(program)
       // Find all the literal tokens that are on a single line
@@ -124,11 +141,12 @@ class TestCompletionProvider extends AnyFunSuite {
           assert(completions.items.isEmpty)
         }
       }
-    }
+    })
   }
 
   test("No completions inside comment") {
-    Programs.foreach { program =>
+    ProgramPathList.foreach( programPath => {
+      val program = Files.readString(Paths.get(programPath))
       val (root, flix, errors) = compile(program, Options.Default)
       val source = mkSource(program)
       // Find all the literal tokens that are on a single line
@@ -140,84 +158,91 @@ class TestCompletionProvider extends AnyFunSuite {
           assert(completions.items.isEmpty)
         }
       }
-    }
+    })
   }
 
   test("No completions when defining the name for defs"){
-    Programs.foreach{ program =>
+    ProgramPathList.foreach( programPath => {
+      val program = Files.readString(Paths.get(programPath))
       val (root, flix, errors) = compile(program, Options.Default)
       val allNameDefLocs = root.defs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
         val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
         assert(completions.items.isEmpty)
       }
-    }
+    })
   }
 
   test("No completions when defining the name for enums"){
-    Programs.foreach{ program =>
+    ProgramPathList.foreach( programPath => {
+      val program = Files.readString(Paths.get(programPath))
       val (root, flix, errors) = compile(program, Options.Default)
       val allNameDefLocs = root.enums.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
         val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
         assert(completions.items.isEmpty)
       }
-    }
+    })
   }
 
   test("No completions when defining the name for sigs"){
-    Programs.foreach{ program =>
+    ProgramPathList.foreach( programPath => {
+      val program = Files.readString(Paths.get(programPath))
       val (root, flix, errors) = compile(program, Options.Default)
       val allNameDefLocs = root.sigs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
         val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
         assert(completions.items.isEmpty)
       }
-    }
+    })
   }
 
   test("No completions when defining the name for traits"){
-    Programs.foreach{ program =>
+    ProgramPathList.foreach( programPath => {
+      val program = Files.readString(Paths.get(programPath))
       val (root, flix, errors) = compile(program, Options.Default)
       val allNameDefLocs = root.traits.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
         val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
         assert(completions.items.isEmpty)
       }
-    }
+    })
   }
 
   test("No completions when defining the name for effects"){
-    Programs.foreach{ program =>
+    ProgramPathList.foreach( programPath => {
+      val program = Files.readString(Paths.get(programPath))
       val (root, flix, errors) = compile(program, Options.Default)
       val allNameDefLocs = root.effects.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
         val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
         assert(completions.items.isEmpty)
       }
-    }
+    })
   }
 
   test("No completions when defining the name for structs"){
-    Programs.foreach{ program =>
+    ProgramPathList.foreach( programPath => {
+      val program = Files.readString(Paths.get(programPath))
       val (root, flix, errors) = compile(program, Options.Default)
       val allNameDefLocs = root.structs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
         val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
         assert(completions.items.isEmpty)
       }
-    }
+    })
   }
 
   test("No completions when defining the name for type aliases"){
-    Programs.foreach{ program =>
+    ProgramPathList.foreach( programPath => {
+      val program = Files.readString(Paths.get(programPath))
       val (root, flix, errors) = compile(program, Options.Default)
       val allNameDefLocs = root.typeAliases.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
         val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
         assert(completions.items.isEmpty)
       }
-    }
+    })
   }
 
   /**
