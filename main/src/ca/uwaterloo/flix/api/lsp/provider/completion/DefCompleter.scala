@@ -15,9 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.lsp.Range
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
-import ca.uwaterloo.flix.api.lsp.{LspUtil, Position, Range}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
@@ -31,8 +30,8 @@ object DefCompleter {
     * Whether the returned completions are qualified is based on whether the UndefinedName is qualified.
     * When providing completions for unqualified defs that is not in scope, we will also automatically use the def.
     */
-  def getCompletions(uri: String, pos: Position, qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: Root, flix: Flix): Iterable[Completion] = {
-    val ectx = getExprContext(uri, pos)
+  def getCompletions(stack: List[AnyRef], qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: Root): Iterable[Completion] = {
+    val ectx = getExprContext(stack)
 
     if (qn.namespace.nonEmpty) {
       root.defs.values.collect {
@@ -64,8 +63,7 @@ object DefCompleter {
   /**
     * Returns the expression context at the given `uri` and position `pos`.
     */
-  private def getExprContext(uri: String, pos: Position)(implicit root: Root, flix: Flix): ExprContext = {
-    val stack = LspUtil.getStack(uri, pos)
+  private def getExprContext(stack: List[AnyRef]): ExprContext = {
     // The stack contains the path of expressions from the leaf to the root.
     stack match {
       case Expr.Error(UndefinedName(_, _, _, _), _, _) :: Expr.ApplyClo(_, _, _, _, _) :: _ =>

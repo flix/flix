@@ -47,8 +47,9 @@ object CompletionProvider {
     * Returns all completions in the given `uri` at the given position `pos`.
     */
   private def getCompletions(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[Completion] = {
+    val stack = LspUtil.getStack(uri, pos)
     if (currentErrors.isEmpty)
-      HoleCompleter.getHoleCompletion(uri, pos).toList
+      HoleCompleter.getHoleCompletion(stack).toList
     else
       errorsAt(uri, pos, currentErrors).flatMap {
         case err: WeederError.UndefinedAnnotation => KeywordCompleter.getModKeywords(Range.from(err.loc))
@@ -73,7 +74,7 @@ object CompletionProvider {
           AutoImportCompleter.getCompletions(ident, range, ap, scp) ++
             LocalScopeCompleter.getCompletionsExpr(range, scp) ++
             KeywordCompleter.getExprKeywords(range) ++
-            DefCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
+            DefCompleter.getCompletions(stack, qn, range, ap, scp) ++
             EnumCompleter.getCompletions(qn, range, ap, scp, withTypeParameters = false) ++
             EffectCompleter.getCompletions(qn, range, ap, scp, inHandler = false) ++
             OpCompleter.getCompletions(qn, range, ap, scp) ++

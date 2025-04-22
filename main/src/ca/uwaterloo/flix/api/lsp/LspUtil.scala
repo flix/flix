@@ -35,7 +35,7 @@ object LspUtil {
     *
     * So the stack actually contains a path from the leaf node that contains the given position to the root node, with the leaf node at the top of the stack.
     */
-  def getStack(uri: String, pos: Position)(implicit root: Root, flix: Flix): List[AnyRef] = {
+  def getStack(uri: String, pos: Position)(implicit root: Root): List[AnyRef] = {
     val stack = StackConsumer()
 
     if (pos.character >= 2) {
