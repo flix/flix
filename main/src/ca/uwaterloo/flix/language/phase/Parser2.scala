@@ -1856,6 +1856,10 @@ object Parser2 {
       close(mark, TreeKind.Expr.Unary)
     }
 
+    /**
+      * The condition and then sub-trees will always exist, but the else sub-tree is optional.
+      * If condition/then branch is missing in the source code, it will be represented as an Expr.Error inside that sub-tree.
+      */
     private def ifThenElseExpr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordIf))
       val mark = open()

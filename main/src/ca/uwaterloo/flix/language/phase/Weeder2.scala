@@ -1261,10 +1261,6 @@ object Weeder2 {
       }
     }
 
-    /**
-      * The condition and then sub-trees are required, but the else sub-tree is optional.
-      * If condition/then branch is missing in the source code, it will be represented as an Expr.Error inside that sub-tree.
-      */
     private def visitIfThenElseExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.IfThenElse)
       val condTreeVal = pick(TreeKind.Expr.Condition, tree)
