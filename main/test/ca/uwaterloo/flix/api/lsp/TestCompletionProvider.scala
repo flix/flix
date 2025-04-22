@@ -111,16 +111,42 @@ class TestCompletionProvider extends AnyFunSuite {
     "examples/traits/declaring-a-trait-with-instances.flix",
   )
 
+  /**
+    * The contents of the programs in the list.
+    *
+    * We read the files from the disk and cache them in this list.
+    */
+  private val Programs: List[String] = ProgramPathList.map { programPath =>
+    Files.readString(Paths.get(programPath))
+  }
+
+  /**
+    * The Flix object used across all the tests.
+    *
+    * We first compile the stdlib so that every further compilation will be incremental.
+    */
+  private val Flix: Flix = {
+    val flix = new Flix().setOptions(Options.Default)
+    flix.check()
+    flix
+  }
+
+  /**
+    * The uri of the test source.
+    *
+    * Every test will use the same uri so that adding a new source with this uri will replace the old one.
+    */
+  private val Uri = "<test>"
+
   test("No completions after complete keyword") {
-    ProgramPathList.foreach( programPath => {
-      val program = Files.readString(Paths.get(programPath))
-      val (root, flix, errors) = compile(program, Options.Default)
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
       val source = mkSource(program)
       val keywordTokens = root.tokens(source).toList.filter(_.kind.isKeyword)
       keywordTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
-          val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, flix)
+          val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, Flix)
           assert(completions.items.isEmpty)
         }
       }
@@ -128,16 +154,15 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   test("No completions after complete literal") {
-    ProgramPathList.foreach( programPath => {
-      val program = Files.readString(Paths.get(programPath))
-      val (root, flix, errors) = compile(program, Options.Default)
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
       val source = mkSource(program)
       // Find all the literal tokens that are on a single line
       val literalTokens = root.tokens(source).toList.filter(_.kind.isLiteral)
       literalTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
-          val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, flix)
+          val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, Flix)
           assert(completions.items.isEmpty)
         }
       }
@@ -145,16 +170,15 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   test("No completions inside comment") {
-    ProgramPathList.foreach( programPath => {
-      val program = Files.readString(Paths.get(programPath))
-      val (root, flix, errors) = compile(program, Options.Default)
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
       val source = mkSource(program)
       // Find all the literal tokens that are on a single line
       val commentTokens = root.tokens(source).toList.filter(_.kind.isComment)
       commentTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
-          val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, flix)
+          val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, Flix)
           assert(completions.items.isEmpty)
         }
       }
@@ -162,102 +186,90 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   test("No completions when defining the name for defs"){
-    ProgramPathList.foreach( programPath => {
-      val program = Files.readString(Paths.get(programPath))
-      val (root, flix, errors) = compile(program, Options.Default)
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
       val allNameDefLocs = root.defs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
-        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
         assert(completions.items.isEmpty)
       }
     })
   }
 
   test("No completions when defining the name for enums"){
-    ProgramPathList.foreach( programPath => {
-      val program = Files.readString(Paths.get(programPath))
-      val (root, flix, errors) = compile(program, Options.Default)
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
       val allNameDefLocs = root.enums.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
-        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
         assert(completions.items.isEmpty)
       }
     })
   }
 
   test("No completions when defining the name for sigs"){
-    ProgramPathList.foreach( programPath => {
-      val program = Files.readString(Paths.get(programPath))
-      val (root, flix, errors) = compile(program, Options.Default)
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
       val allNameDefLocs = root.sigs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
-        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
         assert(completions.items.isEmpty)
       }
     })
   }
 
   test("No completions when defining the name for traits"){
-    ProgramPathList.foreach( programPath => {
-      val program = Files.readString(Paths.get(programPath))
-      val (root, flix, errors) = compile(program, Options.Default)
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
       val allNameDefLocs = root.traits.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
-        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
         assert(completions.items.isEmpty)
       }
     })
   }
 
   test("No completions when defining the name for effects"){
-    ProgramPathList.foreach( programPath => {
-      val program = Files.readString(Paths.get(programPath))
-      val (root, flix, errors) = compile(program, Options.Default)
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
       val allNameDefLocs = root.effects.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
-        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
         assert(completions.items.isEmpty)
       }
     })
   }
 
   test("No completions when defining the name for structs"){
-    ProgramPathList.foreach( programPath => {
-      val program = Files.readString(Paths.get(programPath))
-      val (root, flix, errors) = compile(program, Options.Default)
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
       val allNameDefLocs = root.structs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
-        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
         assert(completions.items.isEmpty)
       }
     })
   }
 
   test("No completions when defining the name for type aliases"){
-    ProgramPathList.foreach( programPath => {
-      val program = Files.readString(Paths.get(programPath))
-      val (root, flix, errors) = compile(program, Options.Default)
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
       val allNameDefLocs = root.typeAliases.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
-        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, flix)
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
         assert(completions.items.isEmpty)
       }
     })
   }
 
   /**
-    * The uri of the test source.
-    */
-  private val Uri = "<test>"
-
-  /**
     * Compiles the given input string `s` with the given compilation options `o`.
     */
-  private def compile(s: String, o: Options): (Root, Flix, List[CompilationMessage]) = {
+  private def compile(program: String): (Root, List[CompilationMessage]) = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-    val flix = new Flix().setOptions(o).addSourceCode(Uri, s)
-    flix.check() match {
-      case (Some(root), errors) => (root, flix, errors)
+    Flix.addSourceCode(Uri, program)
+    Flix.check() match {
+      case (Some(root), errors) => (root, errors)
       case (None, _) => fail("Compilation failed: a root is expected.")
     }
   }
