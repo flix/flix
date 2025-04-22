@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Position, Range, T
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol}
+import ca.uwaterloo.flix.language.errors.ResolutionError
 
 /**
   * The CodeActionProvider offers quickfix suggestions.
@@ -34,7 +34,7 @@ import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeEr
 object CodeActionProvider {
 
   def getCodeActions(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = {
-    getActionsFromErrors(uri, range, errors) ++ getActionsFromRange(uri, range)
+    getActionsFromErrors(uri, range, errors)
   }
 
   private def getActionsFromErrors(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = errors.flatMap {
@@ -60,17 +60,6 @@ object CodeActionProvider {
       mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap)
 
     case _ => Nil
-  }
-
-  /**
-    * Returns code actions based on the current index and the given range.
-    */
-  private def getActionsFromRange(uri: String, range: Range)(implicit root: Root): List[CodeAction] = {
-    root.enums.foldLeft(List.empty[CodeAction]) {
-      case (acc, (sym, enm)) if overlaps(range, sym.loc) =>
-        List(mkDeriveEq(enm, uri), mkDeriveOrder(enm, uri), mkDeriveToString(enm, uri)).flatten ::: acc
-      case (acc, _) => acc
-    }
   }
 
   /**
@@ -290,80 +279,6 @@ object CodeActionProvider {
         command = None
       )
     }
-  }
-
-  /**
-    * Returns a code action to derive the `Eq` trait.
-    */
-  private def mkDeriveEq(e: TypedAst.Enum, uri: String): Option[CodeAction] = mkDerive(e, "Eq", uri)
-
-  /**
-    * Returns a code action to derive the `Order` trait.
-    */
-  private def mkDeriveOrder(e: TypedAst.Enum, uri: String): Option[CodeAction] = mkDerive(e, "Order", uri)
-
-  /**
-    * Returns a code action to derive the `ToString` trait.
-    */
-  private def mkDeriveToString(e: TypedAst.Enum, uri: String): Option[CodeAction] = mkDerive(e, "ToString", uri)
-
-  /**
-    * Returns a code action to derive the given trait `trt` for the given enum `e` if it isn't already.
-    * `None` otherwise.
-    */
-  private def mkDerive(e: TypedAst.Enum, trt: String, uri: String): Option[CodeAction] = {
-    val alreadyDerived = e.derives.traits.exists(d => d.sym.name == trt)
-    if (alreadyDerived)
-      None
-    else Some(
-      CodeAction(
-        title = s"Derive '$trt'",
-        kind = CodeActionKind.Refactor,
-        edit = Some(addDerivation(e, trt, uri)),
-        command = None
-      )
-    )
-  }
-
-  /**
-    * Returns a workspace edit that properly derives the given trait, `trt`, for the enum, `e`.
-    *
-    * For example, if we have:
-    * {{{
-    *   enum Abc {}
-    * }}}
-    * we could derive the trait 'Eq' like so:
-    * {{{
-    *   enum Abc with Eq { }
-    * }}}
-    *
-    * Or if there are already other derivations present:
-    * {{{
-    *   enum Abc with ToString {}
-    * }}}
-    * it will be appended at the end:
-    * {{{
-    *   enum Abc with ToString, Eq { }
-    * }}}
-    */
-  private def addDerivation(e: TypedAst.Enum, trt: String, uri: String): WorkspaceEdit = {
-    val text =
-      if (e.derives.traits.isEmpty)
-        s" with $trt"
-      else
-        s", $trt"
-
-    // Compute the end source location.
-    // If there is already a derives clause we use its source location.
-    // Otherwise, we use the source location of the enum symbol.
-    val end = if (e.derives.loc != SourceLocation.Unknown) e.derives.loc else e.sym.loc
-
-    WorkspaceEdit(
-      Map(uri -> List(TextEdit(
-        Range(Position.fromEnd(end), Position.fromEnd(end)),
-        text
-      )))
-    )
   }
 
   /**
