@@ -181,7 +181,6 @@ object OccurrenceAnalyzer {
     o1.map(combineInfo(_, o2)).getOrElse(o2)
   }
 
-
   /**
     * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
     */
