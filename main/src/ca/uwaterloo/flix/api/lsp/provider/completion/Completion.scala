@@ -164,6 +164,7 @@ sealed trait Completion {
       val snippet = ectx match {
         case ExprContext.InsideApply => CompletionUtils.getApplySnippet(label, Nil)
         case ExprContext.InsidePipeline => CompletionUtils.getApplySnippet(label, decl.spec.fparams.dropRight(1))
+        case ExprContext.InsideRunWith => CompletionUtils.getApplySnippet(label, decl.spec.fparams.dropRight(1))
         case ExprContext.Unknown => CompletionUtils.getApplySnippet(label, decl.spec.fparams)
       }
       val description = if(!qualified) {

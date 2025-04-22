@@ -36,6 +36,13 @@ object ExprContext {
   case object InsidePipeline extends ExprContext
 
   /**
+    * Represents an expression in a run with context.
+    *
+    * For example, in `run { e1 } with e2` we have that `e2` is `InsideRunWith` while `e1` is not.
+    */
+  case object InsideRunWith extends ExprContext
+
+  /**
     * Represents an expression in an unknown context.
     */
   case object Unknown extends ExprContext
