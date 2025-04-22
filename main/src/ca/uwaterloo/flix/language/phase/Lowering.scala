@@ -194,7 +194,7 @@ object Lowering {
       val tpe = visitType(tpe0)
       val tconstrs = tconstrs0.map(visitTraitConstraint)
       val assocs = assocs0.map {
-        case TypedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) => LoweredAst.AssocTypeDef(doc, mod, sym, args, tpe, loc)
+        case TypedAst.AssocTypeDef(defDoc, defMod, defSym, args, defTpe, defLoc) => LoweredAst.AssocTypeDef(defDoc, defMod, defSym, args, defTpe, defLoc)
       }
       val defs = defs0.map(visitDef)
       LoweredAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs, defs, ns, loc)
@@ -207,10 +207,10 @@ object Lowering {
     case TypedAst.Enum(doc, ann, mod, sym, tparams0, derives, cases0, loc) =>
       val tparams = tparams0.map(visitTypeParam)
       val cases = cases0.map {
-        case (_, TypedAst.Case(caseSym, tpes0, caseSc0, loc)) =>
+        case (_, TypedAst.Case(caseSym, tpes0, caseSc0, caseLoc)) =>
           val tpes = tpes0.map(visitType)
           val caseSc = visitScheme(caseSc0)
-          (caseSym, LoweredAst.Case(caseSym, tpes, caseSc, loc))
+          (caseSym, LoweredAst.Case(caseSym, tpes, caseSc, caseLoc))
       }
       LoweredAst.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
   }
@@ -238,11 +238,11 @@ object Lowering {
       val index = visitTypeParam(index0)
       val tparams = tparams0.map(visitTypeParam)
       val cases = cases0.map {
-        case (_, TypedAst.RestrictableCase(caseSym0, tpes0, caseSc0, loc)) =>
+        case (_, TypedAst.RestrictableCase(caseSym0, tpes0, caseSc0, caseLoc)) =>
           val tpes = tpes0.map(visitType)
           val caseSc = visitScheme(caseSc0)
           val caseSym = visitRestrictableCaseSym(caseSym0)
-          (caseSym, LoweredAst.Case(caseSym, tpes, caseSc, loc))
+          (caseSym, LoweredAst.Case(caseSym, tpes, caseSc, caseLoc))
       }
       val sym = visitRestrictableEnumSym(sym0)
       LoweredAst.Enum(doc, ann, mod, sym, index :: tparams, derives, cases, loc)
@@ -314,7 +314,7 @@ object Lowering {
       val tparam = visitTypeParam(tparam0)
       val superTraits = superTraits0.map(visitTraitConstraint)
       val assocs = assocs0.map {
-        case TypedAst.AssocTypeSig(doc, mod, sym, tparam, kind, tpe, loc) => LoweredAst.AssocTypeSig(doc, mod, sym, tparam, kind, loc)
+        case TypedAst.AssocTypeSig(sigDoc, sigMod, sigSym, sigTparam, kind, tpe, sigLoc) => LoweredAst.AssocTypeSig(sigDoc, sigMod, sigSym, sigTparam, kind, sigLoc)
       }
       val signatures = signatures0.map(sig => sigs(sig.sym))
       val laws = laws0.map(visitDef)
@@ -533,13 +533,13 @@ object Lowering {
       val names = names0.map(_.sym)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, names), region :: es, tpe, eff, loc)
 
-    case TypedAst.Expr.StructGet(exp0, field, tpe, eff, loc) =>
-      val exp = visitExp(exp0)
+    case TypedAst.Expr.StructGet(exp, field, tpe, eff, loc) =>
+      val e = visitExp(exp)
       val idx = field.sym.idx
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructGet(field.sym), List(exp), tpe, eff, loc)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructGet(field.sym), List(e), tpe, eff, loc)
 
-    case TypedAst.Expr.StructPut(exp0, field, exp1, tpe, eff, loc) =>
-      val struct = visitExp(exp0)
+    case TypedAst.Expr.StructPut(exp, field, exp1, tpe, eff, loc) =>
+      val struct = visitExp(exp)
       val rhs = visitExp(exp1)
       val idx = field.sym.idx
       LoweredAst.Expr.ApplyAtomic(AtomicOp.StructPut(field.sym), List(struct, rhs), tpe, eff, loc)
@@ -743,7 +743,7 @@ object Lowering {
 
     case TypedAst.Expr.ParYield(frags, exp, tpe, eff, loc) =>
       val fs = frags.map {
-        case TypedAst.ParYieldFragment(pat, e, loc) => LoweredAst.ParYieldFragment(visitPat(pat), visitExp(e), loc)
+        case TypedAst.ParYieldFragment(pat, fragExp, fragLoc) => LoweredAst.ParYieldFragment(visitPat(pat), visitExp(fragExp), fragLoc)
       }
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -961,9 +961,9 @@ object Lowering {
       pat match {
         case TypedAst.RestrictableChoosePattern.Tag(sym, pat0, tpe, loc) =>
           val termPatterns = pat0.map {
-            case TypedAst.RestrictableChoosePattern.Var(TypedAst.Binder(sym, _), tpe, loc) => LoweredAst.Pattern.Var(sym, tpe, loc)
-            case TypedAst.RestrictableChoosePattern.Wild(tpe, loc) => LoweredAst.Pattern.Wild(tpe, loc)
-            case TypedAst.RestrictableChoosePattern.Error(_, loc) => throw InternalCompilerException("unexpected restrictable choose variable", loc)
+            case TypedAst.RestrictableChoosePattern.Var(TypedAst.Binder(varSym, _), varTpe, varLoc) => LoweredAst.Pattern.Var(varSym, varTpe, varLoc)
+            case TypedAst.RestrictableChoosePattern.Wild(wildTpe, wildLoc) => LoweredAst.Pattern.Wild(wildTpe, wildLoc)
+            case TypedAst.RestrictableChoosePattern.Error(_, errLoc) => throw InternalCompilerException("unexpected restrictable choose variable", errLoc)
           }
           val tagSym = visitRestrictableCaseSymUse(sym)
           val p = LoweredAst.Pattern.Tag(tagSym, termPatterns, tpe, loc)
