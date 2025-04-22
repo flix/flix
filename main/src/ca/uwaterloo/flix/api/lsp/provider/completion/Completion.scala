@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.lsp.provider.completion.ExprContext.UnderPipeline
 import ca.uwaterloo.flix.api.lsp.{Command, CompletionItem, CompletionItemKind, CompletionItemLabelDetails, InsertTextFormat, Position, Range, TextEdit}
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Symbol, Type, TypedAst}
@@ -163,6 +164,7 @@ sealed trait Completion {
       val label = if (qualified) qualifiedName else decl.sym.name
       val snippet = ectx match {
         case ExprContext.UnderApply => CompletionUtils.getApplySnippet(label, Nil)
+        case UnderPipeline => CompletionUtils.getApplySnippet(label, decl.spec.fparams.dropRight(1))
         case ExprContext.Unknown => CompletionUtils.getApplySnippet(label, decl.spec.fparams)
       }
       val description = if(!qualified) {

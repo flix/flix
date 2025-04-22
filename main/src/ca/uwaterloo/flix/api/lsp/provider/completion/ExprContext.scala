@@ -27,6 +27,15 @@ object ExprContext {
   case object UnderApply extends ExprContext
 
   /**
+    * Represents an expression in a match context.
+    *
+    * For example, in `1 |> println` we have that `println` is `UnderPipeline`.
+    *
+    * Currently, the only pipeline considered is `|>`, so the number of arguments from the pipeline is always 1.
+    */
+  case object UnderPipeline extends ExprContext
+
+  /**
     * Represents an expression in an unknown context.
     */
   case object Unknown extends ExprContext
