@@ -131,6 +131,7 @@ object KeywordCompleter {
       Completion.KeywordCompletion("query"       , range, Priority.Default),
       // R
       Completion.KeywordCompletion("region"      , range, Priority.Default),
+      Completion.KeywordCompletion("run"         , range, Priority.Default),
       // S
       Completion.KeywordCompletion("select"      , range, Priority.Higher),
       Completion.KeywordCompletion("solve"       , range, Priority.High),
