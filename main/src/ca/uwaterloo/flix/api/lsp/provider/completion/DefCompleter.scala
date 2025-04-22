@@ -75,7 +75,7 @@ object DefCompleter {
         // The leaf is an error followed by an ApplyDef expression with the symbol "|>".
         ExprContext.InsidePipeline
       case Expr.Error(UndefinedName(_, _, _, _), _, _) :: Expr.RunWith(_, _, _, _, _) :: _ =>
-        // The leaf is an error followed by an ApplyDef expression.
+        // The leaf is an error followed by a RunWith expression.
         ExprContext.InsideRunWith
       case _ => ExprContext.Unknown
     }
