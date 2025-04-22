@@ -1,5 +1,243 @@
+/*
+ * Copyright 2022 Anna Krogh, Patrick Lundvig, Christian Bonde, 2025 Jakob Schneider Villumsen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.*
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Expr, Occur, Pattern}
+import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, Symbol}
+import ca.uwaterloo.flix.util.ParOps
+
+/**
+  * The occurrence analyzer collects information on variable and function usage and calculates the weight of the expressions
+  * Marks a variable or function as Dead if it is not used, Once if it is used exactly once and Many otherwise
+  */
 object OccurrenceAnalyzer {
 
+  private object OccurInfo {
+
+    /**
+      * Occurrence information for an empty sequence of expressions
+      */
+    val Empty: OccurInfo = OccurInfo(Map.empty, Map.empty, 0, 0)
+
+    /**
+      * The initial occurrence information for an expression of size 1, i.e. an expression without subexpressions.
+      */
+    val One: OccurInfo = OccurInfo(Map.empty, Map.empty, 0, 1)
+  }
+
+  /**
+    * The occurrence of `defs` and `vars` inside the body of a `def`
+    * `size` represents the number of expressions in the body of a `def`
+    */
+  case class OccurInfo(defs: Map[DefnSym, Occur], vars: Map[VarSym, Occur], localDefs: Int, size: Int) {
+    def :+(kv: (DefnSym, Occur)): OccurInfo = {
+      this.copy(defs = this.defs + kv)
+    }
+
+    def +(kv: (VarSym, Occur)): OccurInfo = {
+      this.copy(vars = this.vars + kv)
+    }
+
+    def -(varSym: VarSym): OccurInfo = {
+      this.copy(vars = this.vars - varSym)
+    }
+
+    def --(varSyms: Iterable[VarSym]): OccurInfo = {
+      this.copy(vars = this.vars -- varSyms)
+    }
+
+    def get(defnSym: DefnSym): Occur = {
+      this.defs.getOrElse(defnSym, Dead)
+    }
+
+    def get(varSym: VarSym): Occur = {
+      this.vars.getOrElse(varSym, Dead)
+    }
+
+    def incrementLocalDefCount: OccurInfo = {
+      this.copy(localDefs = localDefs + 1)
+    }
+  }
+
+  private def increment(occurInfo: OccurInfo): OccurInfo = {
+    occurInfo.copy(size = occurInfo.size + 1)
+  }
+
+  /**
+    * A set of functions that contain masked casts.
+    *
+    * Must be manually maintained since Lowering erases the masked cast.
+    */
+  private val DangerousFunctions: Set[String] = Set("bug!", "Fixpoint.Debugging.notifyPreSolve", "Fixpoint.Debugging.notifyPostSolve", "Fixpoint.Debugging.notifyPreInterpret", "Assert.eq")
+
+  private def toReadableFunction(sym: Symbol.DefnSym): String = {
+    sym.toString.takeWhile(c => c.toString != Flix.Delimiter)
+  }
+
+  /**
+    * Performs occurrence analysis on the given AST `root`.
+    */
+  def run(root: OccurrenceAst.Root)(implicit flix: Flix): OccurrenceAst.Root = {
+    val defs = visitDefs(root.defs) // visitDefs calls parMap internally and has additional handling
+    OccurrenceAst.Root(defs, root.enums, root.structs, root.effects, root.mainEntryPoint, root.entryPoints, root.sources)
+  }
+
+  /**
+    * Performs occurrence analysis on every entry in `defs0` in parallel.
+    * Decorates each Def with occurrence information, i.e., how it appears in the program or if it is unused.
+    */
+  private def visitDefs(defs0: Map[DefnSym, OccurrenceAst.Def])(implicit flix: Flix): Map[DefnSym, OccurrenceAst.Def] = {
+    val (ds, os) = ParOps.parMap(defs0.values)(visitDef).unzip
+
+    // Combine all `defOccurrences` into one map.
+    val defOccur = combineAll(os)
+
+    // Updates the occurrence of every `def` in `ds` based on the occurrence found in `defOccur`.
+    ds.foldLeft(Map.empty[DefnSym, OccurrenceAst.Def]) {
+      case (macc, defn) =>
+        val occur = if (DangerousFunctions.contains(toReadableFunction(defn.sym))) DontInlineAndDontRewrite else defOccur.getOrElse(defn.sym, Dead)
+        val newContext = defn.context.copy(occur = occur)
+        val defWithContext = defn.copy(context = newContext)
+        macc + (defn.sym -> defWithContext)
+    }
+  }
+
+  /**
+    * Performs occurrence analysis on `defn`.
+    */
+  private def visitDef(defn0: OccurrenceAst.Def): (OccurrenceAst.Def, OccurInfo) = {
+
+    /**
+      * Returns true if `expr0` is a function call.
+      */
+    def isDirectCall(expr0: OccurrenceAst.Expr): Boolean = expr0 match {
+      case OccurrenceAst.Expr.ApplyDef(_, _, _, _, _, _) => true
+      case _ => false
+    }
+
+    /**
+      * Returns true if `def0` occurs in `occurInfo`.
+      */
+    def isSelfRecursive(occurInfo: OccurInfo): Boolean = occurInfo.defs.get(defn0.sym) match {
+      case None => false
+      case Some(o) => o match {
+        case Occur.Dead => false
+        case Occur.Once => true
+        case Occur.OnceInLambda => true
+        case Occur.OnceInLocalDef => true
+        case Occur.Many => true
+        case Occur.ManyBranch => true
+        case Occur.DontInline => false
+        case Occur.DontInlineAndDontRewrite => true
+      }
+    }
+
+    val (exp, occurInfo) = visitExp(defn0.exp)(defn0.sym)
+    val defContext = DefContext(occurInfo.get(defn0.sym), occurInfo.size, occurInfo.localDefs, isDirectCall(exp), isSelfRecursive(occurInfo))
+    val fparams = defn0.fparams.map(fp => fp.copy(occur = occurInfo.get(fp.sym)))
+    (OccurrenceAst.Def(defn0.sym, fparams, defn0.spec, exp, defContext, defn0.loc), occurInfo)
+  }
+
+  /**
+    * Performs occurrence analysis on `exp00`
+    */
+  private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym): (OccurrenceAst.Expr, OccurInfo) = (exp0, DontInlineAndDontRewrite)
+
+  /**
+    * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
+    */
+  private def combineInfoBranch(o1: OccurInfo, o2: OccurInfo): OccurInfo = {
+    combineAll(o1, o2, combineBranch)
+  }
+
+  /**
+    * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
+    */
+  private def combineInfo(o1: OccurInfo, o2: OccurInfo): OccurInfo = {
+    combineAll(o1, o2, combine)
+  }
+
+  /**
+    * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
+    */
+  private def combineInfoOpt(o1: Option[OccurInfo], o2: OccurInfo): OccurInfo = {
+    o1.map(combineInfo(_, o2)).getOrElse(o2)
+  }
+
+
+  /**
+    * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
+    */
+  private def combineAll(o1: OccurInfo, o2: OccurInfo, combine: (Occur, Occur) => Occur): OccurInfo = {
+    val varMap = combineMaps(o1.vars, o2.vars, combine)
+    val defMap = combineMaps(o1.defs, o2.defs, combine)
+    val localDefs = o1.localDefs + o2.localDefs
+    val size = o1.size + o2.size
+    OccurInfo(defMap, varMap, localDefs, size)
+  }
+
+  /**
+    * Combines maps `m1` and `m2` of the type (A -> Occur) into a single map of the same type.
+    */
+  private def combineMaps[A](m1: Map[A, Occur], m2: Map[A, Occur], combine: (Occur, Occur) => Occur): Map[A, Occur] = {
+    val (smallest, largest) = if (m1.size < m2.size) (m1, m2) else (m2, m1)
+    smallest.foldLeft[Map[A, Occur]](largest) {
+      case (acc, (k, v)) =>
+        val occur = combine(v, acc.getOrElse(k, Dead))
+        acc + (k -> occur)
+    }
+  }
+
+  /**
+    * Combines all [[OccurInfo]] in `os` and maps each [[DefnSym]] to its corresponding [[OccurInfo]].
+    */
+  private def combineAll(os: Iterable[OccurInfo]): Map[DefnSym, Occur] = {
+    os.foldLeft(Map.empty[DefnSym, Occur])((acc, o) => combineMaps(acc, o.defs, combine))
+  }
+
+  /**
+    * Combines two occurrences `o1` and `o2` of type Occur into a single occurrence.
+    */
+  private def combine(o1: Occur, o2: Occur): Occur = (o1, o2) match {
+    case (DontInlineAndDontRewrite, _) => DontInlineAndDontRewrite
+    case (_, DontInlineAndDontRewrite) => DontInlineAndDontRewrite
+    case (DontInline, _) => DontInline
+    case (_, DontInline) => DontInline
+    case (Dead, _) => o2
+    case (_, Dead) => o1
+    case _ => Many
+  }
+
+  /**
+    * Combines two occurrences `o1` and `o2` of type Occur into a single occurrence based on ManyBranches logic.
+    * ManyBranches can be
+    * - [[OccurrenceAst.Expr.IfThenElse]]
+    * - [[OccurrenceAst.Expr.Match]]
+    */
+  private def combineBranch(o1: Occur, o2: Occur): Occur = (o1, o2) match {
+    case (DontInlineAndDontRewrite, _) => DontInlineAndDontRewrite
+    case (_, DontInlineAndDontRewrite) => DontInlineAndDontRewrite
+    case (DontInline, _) => DontInline
+    case (_, DontInline) => DontInline
+    case (Dead, _) => o2
+    case (_, Dead) => o1
+    case _ => ManyBranch
+  }
 }
