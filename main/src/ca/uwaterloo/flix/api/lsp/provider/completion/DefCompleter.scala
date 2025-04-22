@@ -15,9 +15,11 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.Range
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.lsp.{LspUtil, Position, Range}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 
@@ -27,17 +29,20 @@ object DefCompleter {
     * Whether the returned completions are qualified is based on whether the UndefinaedName is qualified.
     * When providing completions for unqualified defs that is not in scope, we will also automatically use the def.
     */
-  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] ={
-    if (qn.namespace.nonEmpty)
-      root.defs.values.collect{
+  def getCompletions(uri: String, pos: Position, qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: Root, flix: Flix): Iterable[Completion] = {
+    val ectx = getExprContext(uri, pos)
+
+    if (qn.namespace.nonEmpty) {
+      root.defs.values.collect {
         case decl if CompletionUtils.isAvailable(decl.spec) && CompletionUtils.matchesName(decl.sym, qn, qualified = true) =>
-          DefCompletion(decl, range, ap, qualified = true, inScope = true)
+          DefCompletion(decl, range, ap, qualified = true, inScope = true, ectx)
       }
-    else
-      root.defs.values.collect{
+    } else {
+      root.defs.values.collect {
         case decl if CompletionUtils.isAvailable(decl.spec) && CompletionUtils.matchesName(decl.sym, qn, qualified = false) =>
-          DefCompletion(decl, range, ap, qualified = false, inScope = inScope(decl, scp))
+          DefCompletion(decl, range, ap, qualified = false, inScope = inScope(decl, scp), ectx)
       }
+    }
   }
 
   /**
@@ -52,5 +57,19 @@ object DefCompleter {
     })
     val isRoot = decl.sym.namespace.isEmpty
     isRoot || isResolved
+  }
+
+  /**
+    * Returns the expression context at the given `uri` and position `pos`.
+    */
+  private def getExprContext(uri: String, pos: Position)(implicit root: Root, flix: Flix): ExprContext = {
+    val stack = LspUtil.getStack(uri, pos)
+    // The stack contains the path of expressions from the leaf to the root.
+    stack match {
+      case Expr.Error(_, _, _) :: Expr.ApplyClo(_, _, _, _, _) :: _ =>
+        // The leaf is an error followed by an apply expression.
+        ExprContext.UnderApply
+      case _ => ExprContext.Unknown
+    }
   }
 }
