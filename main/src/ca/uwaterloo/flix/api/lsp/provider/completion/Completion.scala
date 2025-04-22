@@ -162,7 +162,8 @@ sealed trait Completion {
       val qualifiedName = decl.sym.toString
       val label = if (qualified) qualifiedName else decl.sym.name
       val snippet = ectx match {
-        case ExprContext.UnderApply => CompletionUtils.getApplySnippet(label, Nil)
+        case ExprContext.InsideApply => CompletionUtils.getApplySnippet(label, Nil)
+        case ExprContext.InsidePipeline => CompletionUtils.getApplySnippet(label, decl.spec.fparams.dropRight(1))
         case ExprContext.Unknown => CompletionUtils.getApplySnippet(label, decl.spec.fparams)
       }
       val description = if(!qualified) {
