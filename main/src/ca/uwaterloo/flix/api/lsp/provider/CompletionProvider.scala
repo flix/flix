@@ -75,7 +75,7 @@ object CompletionProvider {
           AutoImportCompleter.getCompletions(ident, range, ap, scp) ++
             LocalScopeCompleter.getCompletionsExpr(range, scp) ++
             KeywordCompleter.getExprKeywords(range) ++
-            DefCompleter.getCompletions(qn, range, ap, scp) ++
+            DefCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
             EnumCompleter.getCompletions(qn, range, ap, scp, withTypeParameters = false) ++
             EffectCompleter.getCompletions(qn, range, ap, scp, inHandler = false) ++
             OpCompleter.getCompletions(qn, range, ap, scp) ++
