@@ -53,11 +53,11 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on `defn`.
     */
-  private def visitDef(defn0: OccurrenceAst.Def): (OccurrenceAst.Def, ExpContext) = {
-    val (exp, expCtx) = visitExp(defn0.exp)(defn0.sym)
-    val defContext = DefContext(expCtx.get(defn0.sym), expCtx.size, expCtx.localDefs, isDirectCall(exp), isSelfRecursive(expCtx, defn0))
-    val fparams = defn0.fparams.map(fp => fp.copy(occur = expCtx.get(fp.sym)))
-    (OccurrenceAst.Def(defn0.sym, fparams, defn0.spec, exp, defContext, defn0.loc), expCtx)
+  private def visitDef(defn: OccurrenceAst.Def): (OccurrenceAst.Def, ExpContext) = {
+    val (exp, ctx) = visitExp(defn.exp)(defn.sym)
+    val defContext = DefContext(ctx.get(defn.sym), ctx.size, ctx.localDefs, isDirectCall(exp), isSelfRecursive(defn, ctx))
+    val fparams = defn.fparams.map(fp => fp.copy(occur = ctx.get(fp.sym)))
+    (OccurrenceAst.Def(defn.sym, fparams, defn.spec, exp, defContext, defn.loc), ctx)
   }
 
   /**
@@ -66,34 +66,34 @@ object OccurrenceAnalyzer {
   private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym): (OccurrenceAst.Expr, ExpContext) = (exp0, ExpContext.empty)
 
   /**
-    * Combines `expCtx1` and `expCtx2` into a single [[ExpContext]].
+    * Combines `ctx1` and `ctx2` into a single [[ExpContext]].
     */
-  private def combineBranch(expCtx1: ExpContext, expCtx2: ExpContext): ExpContext = {
-    combine(expCtx1, expCtx2, combineBranch)
+  private def combineBranch(ctx1: ExpContext, ctx2: ExpContext): ExpContext = {
+    combine(ctx1, ctx2, combineBranch)
   }
 
   /**
-    * Combines `expCtx1` and `expCtx2` into a single [[ExpContext]].
+    * Combines `ctx1` and `ctx2` into a single [[ExpContext]].
     */
-  private def combineSeq(expCtx1: ExpContext, expCtx2: ExpContext): ExpContext = {
-    combine(expCtx1, expCtx2, combineSeq)
+  private def combineSeq(ctx1: ExpContext, ctx2: ExpContext): ExpContext = {
+    combine(ctx1, ctx2, combineSeq)
   }
 
   /**
-    * Combines `expCtx1` and `expCtx2` into a single [[ExpContext]].
+    * Combines `ctx1` and `ctx2` into a single [[ExpContext]].
     */
-  private def combineSeqOpt(expCtx1: Option[ExpContext], expCtx2: ExpContext): ExpContext = {
-    expCtx1.map(combineSeq(_, expCtx2)).getOrElse(expCtx2)
+  private def combineSeqOpt(ctx1: Option[ExpContext], ctx2: ExpContext): ExpContext = {
+    ctx1.map(combineSeq(_, ctx2)).getOrElse(ctx2)
   }
 
   /**
-    * Combines `expCtx1` and `expCtx2` into a single [[ExpContext]].
+    * Combines `ctx1` and `ctx2` into a single [[ExpContext]].
     */
-  private def combine(expCtx1: ExpContext, expCtx2: ExpContext, combine: (Occur, Occur) => Occur): ExpContext = {
-    val varMap = combineMaps(expCtx1.vars, expCtx2.vars, combine)
-    val defMap = combineMaps(expCtx1.defs, expCtx2.defs, combine)
-    val localDefs = expCtx1.localDefs + expCtx2.localDefs
-    val size = expCtx1.size + expCtx2.size
+  private def combine(ctx1: ExpContext, ctx2: ExpContext, combine: (Occur, Occur) => Occur): ExpContext = {
+    val varMap = combineMaps(ctx1.vars, ctx2.vars, combine)
+    val defMap = combineMaps(ctx1.defs, ctx2.defs, combine)
+    val localDefs = ctx1.localDefs + ctx2.localDefs
+    val size = ctx1.size + ctx2.size
     ExpContext(defMap, varMap, localDefs, size)
   }
 
@@ -110,10 +110,10 @@ object OccurrenceAnalyzer {
   }
 
   /**
-    * Combines all [[ExpContext]] in `expCtxs` and maps each [[DefnSym]] to its corresponding [[ExpContext]].
+    * Combines all [[ExpContext]] in `ctxs` and maps each [[DefnSym]] to its corresponding [[ExpContext]].
     */
-  private def combineSeq(expCtxs: Iterable[ExpContext]): Map[DefnSym, Occur] = {
-    expCtxs.foldLeft(Map.empty[DefnSym, Occur])((acc, o) => combineMaps(acc, o.defs, combineSeq))
+  private def combineSeq(ctxs: Iterable[ExpContext]): Map[DefnSym, Occur] = {
+    ctxs.foldLeft(Map.empty[DefnSym, Occur])((acc, o) => combineMaps(acc, o.defs, combineSeq))
   }
 
   /**
@@ -214,9 +214,9 @@ object OccurrenceAnalyzer {
   }
 
   /**
-    * Returns true if `def0` occurs in `expCtx`.
+    * Returns true if `defn` occurs in `ctx`.
     */
-  private def isSelfRecursive(expCtx: ExpContext, defn0: OccurrenceAst.Def): Boolean = expCtx.defs.get(defn0.sym) match {
+  private def isSelfRecursive(defn: OccurrenceAst.Def, ctx: ExpContext): Boolean = ctx.defs.get(defn.sym) match {
     case None => false
     case Some(o) => o match {
       case Occur.Dead => false
