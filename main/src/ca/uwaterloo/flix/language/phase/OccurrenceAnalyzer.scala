@@ -117,7 +117,7 @@ object OccurrenceAnalyzer {
   }
 
   /**
-    * Combines two occurrences `o1` and `o2` into a single occurrence for a branchless expression.
+    * Combines two occurrences `o1` and `o2` from the same branch into a single occurrence.
     */
   private def combineSeq(o1: Occur, o2: Occur): Occur = (o1, o2) match {
     case (Dead, _) => o2
@@ -126,13 +126,13 @@ object OccurrenceAnalyzer {
   }
 
   /**
-    * Combines two occurrences `o1` and `o2` into a single occurrence for a branching expression such as
-    * [[OccurrenceAst.Expr.IfThenElse]] and [[OccurrenceAst.Expr.Match]].
+    * Combines two occurrences `o1` and `o2` from distinct branches into a single occurrence.
     */
   private def combineBranch(o1: Occur, o2: Occur): Occur = (o1, o2) match {
     case (Dead, _) => o2
     case (_, Dead) => o1
-    case _ => ManyBranch
+    case (Once, Once) => ManyBranch
+    case _ => Many
   }
 
   private object ExpContext {
