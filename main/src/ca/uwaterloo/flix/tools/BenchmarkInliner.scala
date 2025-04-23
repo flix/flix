@@ -129,6 +129,9 @@ object BenchmarkInliner {
        |echo "Benchmarking programs..."
        |bash $benchmarkScriptPath
        |
+       |echo "Zipping output"
+       |zip -r build.zip $baseDir
+       |
        |echo "Done"
        |
        |""".stripMargin
