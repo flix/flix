@@ -60,6 +60,7 @@ object OccurrenceAnalyzer {
       */
     def isDirectCall(expr0: OccurrenceAst.Expr): Boolean = expr0 match {
       case OccurrenceAst.Expr.ApplyDef(_, _, _, _, _, _) => true
+      case OccurrenceAst.Expr.ApplyClo(_, _, _, _, _) => true
       case _ => false
     }
 
