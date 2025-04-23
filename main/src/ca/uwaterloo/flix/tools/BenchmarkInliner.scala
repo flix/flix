@@ -479,9 +479,7 @@ object BenchmarkInliner {
   private def mainProg(baselineFilePath: String): String = {
     s"""
        |import java.lang.System
-       |import java.lang.ProcessHandle
-       |
-       |pub def main(): Unit \\ Exec + IO = run {
+       |pub def main(): Unit \\ IO = run {
        |    //
        |    // Constants
        |    //
@@ -511,9 +509,6 @@ object BenchmarkInliner {
        |            List.reverse(samples)
        |        }
        |    };
-       |
-       |    let pid = ProcessHandle.current().pid();
-       |    Console.eprintln("Please connect profiling tools if necessary (e.g., async-profiler). PID: $${pid}");
        |
        |    let totalTime = warmupTime + benchTime;
        |    Console.eprintln("Expected total time: $${totalTime}");
