@@ -1,5 +1,6 @@
 /*
- * Copyright 2022 Anna Krogh, Patrick Lundvig, Christian Bonde, 2025 Jakob Schneider Villumsen
+ * Copyright 2022 Anna Krogh, Patrick Lundvig, Christian Bonde
+ * Copyright 2025 Jakob Schneider Villumsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +25,8 @@ import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 
 /**
-  * The occurrence analyzer collects information on variable and function usage and calculates the weight of the expressions
-  * Marks a variable or function as Dead if it is not used, Once if it is used exactly once and Many otherwise
+  * The occurrence analyzer collects occurrence information on binders according to the definition of [[Occur]].
+  * Additionally, it also counts the number of subexpressions in a function to compute its size.
   */
 object OccurrenceAnalyzer {
 
