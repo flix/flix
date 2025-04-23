@@ -127,8 +127,6 @@ object OccurrenceAst {
     }
   }
 
-  case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
-
   case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: Type, src: TypeSource, occur: Occur, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
@@ -138,12 +136,6 @@ object OccurrenceAst {
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr, occur: Occur)
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
-
-  case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr)
-
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
-
-  case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
 
   /**
     * Represents occurrence information of binders, i.e., how a binder occurs in the program.
