@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix
 
+import ca.uwaterloo.flix.Main.Command
 import ca.uwaterloo.flix.Main.Command.PlainLsp
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
@@ -321,8 +322,8 @@ object Main {
         case Command.BenchmarkInlinerCompiler =>
           BenchmarkInliner.runCompilerBenchmark(options, micro = true)
 
-        case Command.SetupInlinerBenchmark =>
-          BenchmarkInliner.generateSetup(options, micro = true)
+        case Command.SetupInlinerBenchmark(asprofPath) =>
+          BenchmarkInliner.generateSetup(options, micro = true, asprofPath)
 
         case Command.Zhegalkin =>
           ZhegalkinPerf.run(options.XPerfN)
@@ -415,7 +416,7 @@ object Main {
 
     case object BenchmarkInlinerCompiler extends Command
 
-    case object SetupInlinerBenchmark extends Command
+    case class SetupInlinerBenchmark(asprofPath: Option[String]) extends Command
 
     case object Zhegalkin extends Command
 
@@ -497,8 +498,16 @@ object Main {
       cmd("benchmark-inliner-compiler").action((_, c) => c.copy(command = Command.BenchmarkInlinerCompiler))
         .text("Benchmark compilation for inliner")
 
-      cmd("setup-inliner-benchmark").action((_, c) => c.copy(command = Command.SetupInlinerBenchmark))
+      cmd("setup-inliner-benchmark").action((_, c) => c.copy(command = Command.SetupInlinerBenchmark(None)))
         .text("Sets up inliner experiments")
+        .children(
+          opt[String]("asprof")
+            .action {
+              case (value, c) if value.isBlank => c.copy(command = Command.SetupInlinerBenchmark(None))
+              case (value, c) => c.copy(command = Command.SetupInlinerBenchmark(Some(value)))
+            }
+            .text("path to async-profiler shared library (leave blank if you do not want to attach)")
+        )
 
       cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
 

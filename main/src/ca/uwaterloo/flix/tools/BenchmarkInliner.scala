@@ -97,7 +97,7 @@ object BenchmarkInliner {
 
   private def pythonPath: Path = scriptOutputPath.resolve("plots.py").normalize()
 
-  def generateSetup(opts: Options, micro: Boolean = true): Unit = {
+  def generateSetup(opts: Options, micro: Boolean = true, asprofPath: Option[String]): Unit = {
     println("Generating setup...")
 
     // TODO: Maybe pass this as a program config to the run instance
@@ -157,7 +157,7 @@ object BenchmarkInliner {
     }
   }
 
-  private def writeJars(programs: Map[String, String], opts: Options): Unit = {
+  private def writeJars(programs: Map[String, String], opts: Options, asprofPath: Option[String]): Unit = {
     val configs = mkConfigurations(opts.copy(loadClassFiles = false))
       .flatMap(o => programs.map { case (name, prog) => (o, name, prog) })
     configs.foreach(buildAndWriteJar)
@@ -213,6 +213,7 @@ object BenchmarkInliner {
     val ClassFilesDir: Path = BuildDir.resolve("class/").normalize()
     val JarFilePath: Path = jarDirFor(JarName)
     val OutputFile: Path = benchOutputPath.resolve(s"$FileName.json").normalize()
+    val ProfilingOutFile: Path = benchOutputPath.resolve(s"$FileName-profile.txt").normalize()
   }
 
   private object BenchmarkFile {
@@ -222,10 +223,10 @@ object BenchmarkInliner {
     }
   }
 
-  private def mkScriptSnippet(file: BenchmarkFile): String = {
+  private def mkScriptSnippet(file: BenchmarkFile, asprofPath: Option[String]): String = {
     s"""rm -f ${file.OutputFile}
        |echo "Benchmarking ${file.JarFilePath}"
-       |java -jar ${file.JarFilePath} >> ${file.OutputFile}
+       |java ${asprofPath.map(p => s"-agentpath:$p=start,fmt=collapsed,event=alloc,file=${file.ProfilingOutFile}").getOrElse("")} -jar ${file.JarFilePath} >> ${file.OutputFile}
        |""".stripMargin
   }
 
