@@ -140,6 +140,20 @@ object OccurrenceAst {
   /**
     * Represents occurrence information of binders, i.e., how a binder occurs in the program.
     * A binder may be a variable, function, or effect handler.
+    *
+    * The definitions form a lattice that allow for parallel evaluation:
+    *
+    * {{{
+    *       DontInline
+    *           |
+    *          Many
+    *           |
+    *       ManyBranch
+    *           |
+    * Once OnceInLambda OnceInLocalDef
+    *   \       |       /
+    *          Dead
+    * }}}
     */
   sealed trait Occur
 
@@ -152,8 +166,6 @@ object OccurrenceAst {
       * If the binder is a function, it is safe to remove it. However, [[ca.uwaterloo.flix.language.phase.TreeShaker2]] handles that.
       *
       * Removing the binder results in smaller code size and does not affect work duplication.
-      *
-      * // TODO: Lattice drawing
       */
     case object Dead extends Occur
 
@@ -199,20 +211,18 @@ object OccurrenceAst {
 
     /**
       * Represents a binder that occurs more than once (including lambdas, local defs, branches).
+      *
+      * If the let-binding is pure, then it is safe to move its definition to an occurrence,
+      * but it may increase code size and duplicate work.
       */
     case object Many extends Occur
 
     /**
       * Represents a binder that is excluded from inlining at its occurrence sites.
-      * If the binder is a function, sub-expressions of the body may be considered for rewriting.
+      * If the binder is a function, subexpressions of the body may be considered for rewriting.
       */
     case object DontInline extends Occur
 
-    /**
-      * Represents a binder that is excluded from inlining at its occurrence sites.
-      * Unlike [[DontInline]], the body of a function is never considered for rewriting (due to casts being dangerous).
-      */
-    case object DontInlineAndDontRewrite extends Occur
   }
 
   /**
