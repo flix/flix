@@ -24,17 +24,21 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Root
 object SignatureHelpProvider {
   /**
     * Provides signature help for the given position.
+    * We find the nearest application, which is the lowest ApplyDef/ApplySig in the AST that contains the position of the cursor.
     */
   def provideSignatureHelp(uri: String, pos: Position)(implicit root: Root, flix: Flix): Option[SignatureHelp] = {
     LspUtil.getStack(uri, pos).collectFirst {
-      // Find the nearest function application, that is, the lowest ApplyDef in the AST that contains the given position
       case TypedAst.Expr.ApplyDef(defnSymUse, exps, _, _, _, _) =>
-        // Count the number of arguments applied
-        // The number of arguments applied is the number of non-synthetic expressions
-        val argsNumApplied = exps.indexWhere(exp => pos.containedBy(exp.loc))
-        val defn = root.defs(defnSymUse.sym)
-        val signatureInfo = SignatureInformation.from(defn, argsNumApplied)
-        SignatureHelp(List(signatureInfo), 0, 0)
+        buildSignatureHelp(defnSymUse.sym.toString, root.defs(defnSymUse.sym).spec, exps, pos)
+      case TypedAst.Expr.ApplySig(sigSymUse, exps, _, _, _, _) =>
+        buildSignatureHelp(sigSymUse.sym.toString, root.sigs(sigSymUse.sym).spec, exps, pos)
     }
+  }
+
+  private def buildSignatureHelp(symbol: String, spec: TypedAst.Spec, exps: List[TypedAst.Expr], pos: Position)(implicit flix: Flix): SignatureHelp = {
+    // Count the index of the active parameter, which is the first expression that contains the position of the cursor.
+    val idxActiveParameter = exps.indexWhere(exp => pos.containedBy(exp.loc))
+    val signatureInfo = SignatureInformation.from(symbol, spec, idxActiveParameter)
+    SignatureHelp(List(signatureInfo), 0, 0)
   }
 }

@@ -24,13 +24,12 @@ import org.json4s.JsonDSL.*
 import scala.jdk.CollectionConverters.SeqHasAsJava
 
 object SignatureInformation {
-  def from(defn: TypedAst.Def, activeParameter: Int)(implicit flix: Flix): SignatureInformation = {
-    val label = defn.sym.toString + LspUtil.getLabelForSpec(defn.spec)
-    val documentation = defn.spec.doc.text
-    val parameters = defn.spec.fparams.map(ParameterInformation.from)
-    SignatureInformation(label, Some(documentation), parameters, activeParameter)
+  def from(symbol: String, spec: TypedAst.Spec, idxActiveParameter: Int)(implicit flix: Flix): SignatureInformation = {
+    val label = symbol + LspUtil.getLabelForSpec(spec)
+    val documentation = spec.doc.text
+    val parameters = spec.fparams.map(ParameterInformation.from)
+    SignatureInformation(label, Some(documentation), parameters, idxActiveParameter)
   }
-
 }
 
 case class SignatureInformation(label: String, documentation: Option[String], parameters: List[ParameterInformation], activeParameter: Int) {
