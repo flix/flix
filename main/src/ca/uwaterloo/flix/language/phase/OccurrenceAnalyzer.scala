@@ -55,7 +55,7 @@ object OccurrenceAnalyzer {
     */
   private def visitDef(defn0: OccurrenceAst.Def): (OccurrenceAst.Def, ExpContext) = {
     val (exp, occurInfo) = visitExp(defn0.exp)(defn0.sym)
-    val defContext = DefContext(occurInfo.get(defn0.sym), occurInfo.size, occurInfo.localDefs, isDirectCall(exp), isSelfRecursive(occurInfo))
+    val defContext = DefContext(occurInfo.get(defn0.sym), occurInfo.size, occurInfo.localDefs, isDirectCall(exp), isSelfRecursive(occurInfo, defn0))
     val fparams = defn0.fparams.map(fp => fp.copy(occur = occurInfo.get(fp.sym)))
     (OccurrenceAst.Def(defn0.sym, fparams, defn0.spec, exp, defContext, defn0.loc), occurInfo)
   }
@@ -72,7 +72,7 @@ object OccurrenceAnalyzer {
   /**
     * Returns true if `def0` occurs in `occurInfo`.
     */
-  private def isSelfRecursive(occurInfo: ExpContext): Boolean = occurInfo.defs.get(defn0.sym) match {
+  private def isSelfRecursive(occurInfo: ExpContext, defn0: OccurrenceAst.Def): Boolean = occurInfo.defs.get(defn0.sym) match {
     case None => false
     case Some(o) => o match {
       case Occur.Dead => false
