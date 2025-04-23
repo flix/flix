@@ -44,11 +44,28 @@ object OccurrenceAnalyzer {
     * Stores various pieces of information extracted from an expression.
     *
     * @param defs      A map from function symbols to occurrence information.
+    *                  If the map does not contain a certain symbol, then symbol is [[Dead]].
     * @param vars      A map from variable symbols to occurrence information (this also includes uses of [[OccurrenceAst.Expr.LocalDef]]).
+    *                  If the map does not contain a certain symbol, then symbol is [[Dead]].
     * @param localDefs the number of declared [[OccurrenceAst.Expr.LocalDef]]s in the expression.
     * @param size      The total number of subexpressions (including the expression itself).
     */
   case class ExpContext(defs: Map[DefnSym, Occur], vars: Map[VarSym, Occur], localDefs: Int, size: Int) {
+
+    /**
+      * Returns the occurrence information collected on `sym`. If [[defs]] does not contain `sym`, then it is [[Dead]].
+      */
+    def get(sym: DefnSym): Occur = {
+      this.defs.getOrElse(sym, Dead)
+    }
+
+    /**
+      * Returns the occurrence information collected on `sym`. If [[vars]] does not contain `sym`, then it is [[Dead]].
+      */
+    def get(sym: VarSym): Occur = {
+      this.vars.getOrElse(sym, Dead)
+    }
+
     def :+(kv: (DefnSym, Occur)): ExpContext = {
       this.copy(defs = this.defs + kv)
     }
@@ -63,14 +80,6 @@ object OccurrenceAnalyzer {
 
     def --(varSyms: Iterable[VarSym]): ExpContext = {
       this.copy(vars = this.vars -- varSyms)
-    }
-
-    def get(defnSym: DefnSym): Occur = {
-      this.defs.getOrElse(defnSym, Dead)
-    }
-
-    def get(varSym: VarSym): Occur = {
-      this.vars.getOrElse(varSym, Dead)
     }
 
     def incrementLocalDefCount: ExpContext = {
