@@ -207,23 +207,23 @@ object OccurrenceAnalyzer {
       this.vars.getOrElse(sym, Dead)
     }
 
-    /** Returns a new [[ExpContext]] with the key-value pair `kv` added to [[defs]]. */
-    def +(kv: (DefnSym, Occur)): ExpContext = {
-      this.copy(defs = this.defs + kv)
+    /** Returns a new [[ExpContext]] with the mapping `sym -> occur` added to [[defs]]. */
+    def addDef(sym: DefnSym, occur: Occur): ExpContext = {
+      this.copy(defs = this.defs + (sym -> occur))
     }
 
-    /** Returns a new [[ExpContext]] with the key-value pair `kv` added to [[vars]]. */
-    def +(kv: (VarSym, Occur)): ExpContext = {
-      this.copy(vars = this.vars + kv)
+    /** Returns a new [[ExpContext]] with the mapping `sym -> occur` added to [[vars]]. */
+    def addVar(sym: VarSym, occur: Occur): ExpContext = {
+      this.copy(vars = this.vars + (sym -> occur))
     }
 
     /** Returns a new [[ExpContext]] with `sym` and the corresponding value removed from [[vars]]. */
-    def -(sym: VarSym): ExpContext = {
+    def removeVar(sym: VarSym): ExpContext = {
       this.copy(vars = this.vars - sym)
     }
 
     /** Returns a new [[ExpContext]] with `syms` and the corresponding values removed from [[vars]]. */
-    def --(syms: Iterable[VarSym]): ExpContext = {
+    def removeVars(syms: Iterable[VarSym]): ExpContext = {
       this.copy(vars = this.vars -- syms)
     }
 
