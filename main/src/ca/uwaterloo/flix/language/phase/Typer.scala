@@ -62,9 +62,10 @@ object Typer {
   /**
     * Collects the symbols in the given root into a map.
     *
-    * We'll make sure that the kind of any companion module in its parent's map is always Companion.
-    * This is achieved by first adding the companion module to the map.
-    * Later on, this value will never be replaced by a Standalone version, since they are equal.
+    * We'll make sure that the kind of any companion module in its parent module's mapping is always Companion.
+    * This is achieved by:
+    *   - Adding the companion module to the map first.
+    *   - Prevent overwrites. This value will never be replaced by its Standalone version, since they are considered equal ModuleSyms and adding to set is not replacing in this case.
     */
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
     case KindedAst.Root(traits, _, defs, enums, structs, _, effects, typeAliases, _, _, _, _, _) =>
@@ -72,8 +73,8 @@ object Typer {
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
       // First, we add mapping for companion modules to make sure they are considered Companion Modules from their parent module
-      // For example, A.B.C.Clr will add
-      //   ModuleSym(A.B.C, Standalone -> ModuleSym(A.B.C.Clr, Companion)
+      // For example, A.B.Clr will add
+      //   ModuleSym(A.B, Standalone) -> ModuleSym(A.B.Clr, Companion)
       val constructsWithCompanionModule = traits.keys ++ enums.keys ++ structs.keys ++ effects.keys
       val companionModules = constructsWithCompanionModule.foldLeft(Map.empty[ModuleSym, Set[Symbol]]) {
         case (acc, sym) =>
@@ -88,10 +89,9 @@ object Typer {
       val syms0 = traits.keys ++ defs.keys ++ enums.keys ++ structs.keys ++ effects.keys ++ typeAliases.keys ++ sigs ++ ops
 
       // Collect namespaces from prefixes of all constructs
-      // For example, A.B.C.Clr will add
+      // For example, A.B.Clr will result in
       //   - ModuleSym(A, Standalone)
       //   - ModuleSym(A.B, Standalone)
-      //   - ModuleSym(A.B.C, Companion)
       // TODO this should be done in resolver once the duplicate namespace issue is managed
       val namespaces = syms0.collect {
         case sym: Symbol.DefnSym => sym.namespace
@@ -110,19 +110,17 @@ object Typer {
       }.toSet
 
       // Collect all the namespaces and the symbols
-      // For example, A.B.C.Clr will result in
+      // For example, A.B.Clr will result in
       //   - ModuleSym(A, Standalone)
       //   - ModuleSym(A.B, Standalone)
-      //   - ModuleSym(A.B.C, Standalone)
-      //   - EnumSym(A.B.C.Clr)
+      //   - EnumSym(A.B.Clr)
       val syms = syms0 ++ namespaces
 
       // Finally, add all syms to the map
-      // For example, A.B.C.Clr will add
+      // For example, A.B.Clr will add
       //   - ModuleSym("", Standalone)   -> Set(ModuleSym(A, Standalone))
       //   - ModuleSym(A, Standalone)    -> Set(ModuleSym(A.B, Standalone))
-      //   - ModuleSym(A.B, Standalone)  -> Set(ModuleSym(A.B.C, Companion))
-      //   - ModuleSym(A.B.C, Companion) -> Set(EnumSym(A.B.C.Clr), ModuleSym(A.B.C.Clr, Companion))
+      //   - ModuleSym(A.B, Companion) -> Set(EnumSym(A.B.Clr), ModuleSym(A.B.Clr, Companion))
       val modules = syms.foldLeft(companionModules) {
         case (acc, sym) =>
           sym match {
