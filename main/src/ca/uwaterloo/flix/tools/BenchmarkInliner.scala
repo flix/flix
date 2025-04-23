@@ -105,7 +105,7 @@ object BenchmarkInliner {
     val programs = if (micro) MicroBenchmarks else MacroBenchmarks
 
     println("Building jars...")
-    writeJars(programs, opts)
+    writeJars(programs, opts, asprofPath)
     FileOps.writeString(runScriptPath, mkRunScript(programs.size))
     FileOps.writeString(benchmarkCompilerScriptPath, mkCompilerScript)
     FileOps.writeString(pythonPath, Python)
@@ -165,7 +165,7 @@ object BenchmarkInliner {
       .flatMap(o => programs.map { case (name, prog) => (o, name, prog) })
     configs.foreach(buildAndWriteJar)
     val snippets = configs.map {
-      case (o, name, _) => mkScriptSnippet(BenchmarkFile(name, o))
+      case (o, name, _) => mkScriptSnippet(BenchmarkFile(name, o), asprofPath)
     }
     val script = mkScript(snippets)
     FileOps.writeString(benchmarkScriptPath, script)
