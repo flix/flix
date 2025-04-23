@@ -34,28 +34,22 @@ object OccurrenceAnalyzer {
     * Performs occurrence analysis on the given AST `root`.
     */
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): OccurrenceAst.Root = {
-    val defs = visitDefs(root.defs) // visitDefs calls parMap internally and has additional handling
-    OccurrenceAst.Root(defs, root.enums, root.structs, root.effects, root.mainEntryPoint, root.entryPoints, root.sources)
-  }
+    val defs = {
+      val (ds, os) = ParOps.parMap(root.defs.values)(visitDef).unzip
 
-  /**
-    * Performs occurrence analysis on every entry in `defs0` in parallel.
-    * Decorates each Def with occurrence information, i.e., how it appears in the program or if it is unused.
-    */
-  private def visitDefs(defs0: Map[DefnSym, OccurrenceAst.Def])(implicit flix: Flix): Map[DefnSym, OccurrenceAst.Def] = {
-    val (ds, os) = ParOps.parMap(defs0.values)(visitDef).unzip
+      // Combine all `defOccurrences` into one map.
+      val defOccur = combineAll(os)
 
-    // Combine all `defOccurrences` into one map.
-    val defOccur = combineAll(os)
-
-    // Updates the occurrence of every `def` in `ds` based on the occurrence found in `defOccur`.
-    ds.foldLeft(Map.empty[DefnSym, OccurrenceAst.Def]) {
-      case (macc, defn) =>
-        val occur = if (DangerousFunctions.contains(stripDelimiter(defn.sym))) DontInlineAndDontRewrite else defOccur.getOrElse(defn.sym, Dead)
-        val newContext = defn.context.copy(occur = occur)
-        val defWithContext = defn.copy(context = newContext)
-        macc + (defn.sym -> defWithContext)
+      // Updates the occurrence of every `def` in `ds` based on the occurrence found in `defOccur`.
+      ds.foldLeft(Map.empty[DefnSym, OccurrenceAst.Def]) {
+        case (macc, defn) =>
+          val occur = if (DangerousFunctions.contains(stripDelimiter(defn.sym))) DontInlineAndDontRewrite else defOccur.getOrElse(defn.sym, Dead)
+          val newContext = defn.context.copy(occur = occur)
+          val defWithContext = defn.copy(context = newContext)
+          macc + (defn.sym -> defWithContext)
+      }
     }
+    OccurrenceAst.Root(defs, root.enums, root.structs, root.effects, root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
   /**
