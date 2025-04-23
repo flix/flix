@@ -157,11 +157,18 @@ object OccurrenceAst {
       * Represents a binder that is not used in an expression.
       *
       * If the let-binding is pure, then it is safe to remove it, otherwise it can be rewritten to a statement.
+      * If the binder is a function, it is safe to remove it. However, [[ca.uwaterloo.flix.language.phase.TreeShaker2]] will handle that.
+      *
+      * Removing the binder results in smaller code size and does not affect work duplication.
       */
     case object Dead extends Occur
 
     /**
       * Represents a binder that occurs exactly once in an expression.
+      *
+      * If the let-binding is pure, then it is safe to move its definition to the occurrence.
+      *
+      * This has little to no impact on code size and does not affect work duplication.
       */
     case object Once extends Occur
 
