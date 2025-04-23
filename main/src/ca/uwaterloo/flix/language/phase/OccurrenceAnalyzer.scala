@@ -30,37 +30,38 @@ import ca.uwaterloo.flix.util.ParOps
   */
 object OccurrenceAnalyzer {
 
-  private object OccurInfo {
+  private object ExpContext {
 
-    /**
-      * Occurrence information for an empty sequence of expressions
-      */
-    val Empty: OccurInfo = OccurInfo(Map.empty, Map.empty, 0, 0)
+    /** Occurrence information for an empty sequence of expressions. */
+    def empty: ExpContext = ExpContext(Map.empty, Map.empty, 0, 0)
 
-    /**
-      * The initial occurrence information for an expression of size 1, i.e. an expression without subexpressions.
-      */
-    val One: OccurInfo = OccurInfo(Map.empty, Map.empty, 0, 1)
+    /** Occurrence information for a single expression. */
+    def one: ExpContext = ExpContext(Map.empty, Map.empty, 0, 1)
+
   }
 
   /**
-    * The occurrence of `defs` and `vars` inside the body of a `def`
-    * `size` represents the number of expressions in the body of a `def`
+    * Stores various pieces of information extracted from an expression.
+    *
+    * @param defs      A map from function symbols to occurrence information.
+    * @param vars      A map from variable symbols to occurrence information (this also includes uses of [[OccurrenceAst.Expr.LocalDef]]).
+    * @param localDefs the number of declared [[OccurrenceAst.Expr.LocalDef]]s in the expression.
+    * @param size      The total number of subexpressions (including the expression itself).
     */
-  case class OccurInfo(defs: Map[DefnSym, Occur], vars: Map[VarSym, Occur], localDefs: Int, size: Int) {
-    def :+(kv: (DefnSym, Occur)): OccurInfo = {
+  case class ExpContext(defs: Map[DefnSym, Occur], vars: Map[VarSym, Occur], localDefs: Int, size: Int) {
+    def :+(kv: (DefnSym, Occur)): ExpContext = {
       this.copy(defs = this.defs + kv)
     }
 
-    def +(kv: (VarSym, Occur)): OccurInfo = {
+    def +(kv: (VarSym, Occur)): ExpContext = {
       this.copy(vars = this.vars + kv)
     }
 
-    def -(varSym: VarSym): OccurInfo = {
+    def -(varSym: VarSym): ExpContext = {
       this.copy(vars = this.vars - varSym)
     }
 
-    def --(varSyms: Iterable[VarSym]): OccurInfo = {
+    def --(varSyms: Iterable[VarSym]): ExpContext = {
       this.copy(vars = this.vars -- varSyms)
     }
 
@@ -72,12 +73,12 @@ object OccurrenceAnalyzer {
       this.vars.getOrElse(varSym, Dead)
     }
 
-    def incrementLocalDefCount: OccurInfo = {
+    def incrementLocalDefCount: ExpContext = {
       this.copy(localDefs = localDefs + 1)
     }
   }
 
-  private def increment(occurInfo: OccurInfo): OccurInfo = {
+  private def increment(occurInfo: ExpContext): ExpContext = {
     occurInfo.copy(size = occurInfo.size + 1)
   }
 
@@ -123,7 +124,7 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on `defn`.
     */
-  private def visitDef(defn0: OccurrenceAst.Def): (OccurrenceAst.Def, OccurInfo) = {
+  private def visitDef(defn0: OccurrenceAst.Def): (OccurrenceAst.Def, ExpContext) = {
 
     /**
       * Returns true if `expr0` is a function call.
@@ -136,7 +137,7 @@ object OccurrenceAnalyzer {
     /**
       * Returns true if `def0` occurs in `occurInfo`.
       */
-    def isSelfRecursive(occurInfo: OccurInfo): Boolean = occurInfo.defs.get(defn0.sym) match {
+    def isSelfRecursive(occurInfo: ExpContext): Boolean = occurInfo.defs.get(defn0.sym) match {
       case None => false
       case Some(o) => o match {
         case Occur.Dead => false
@@ -159,38 +160,38 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on `exp00`
     */
-  private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym): (OccurrenceAst.Expr, OccurInfo) = (exp0, OccurInfo.Empty)
+  private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym): (OccurrenceAst.Expr, ExpContext) = (exp0, ExpContext.empty)
 
   /**
     * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
     */
-  private def combineInfoBranch(o1: OccurInfo, o2: OccurInfo): OccurInfo = {
+  private def combineInfoBranch(o1: ExpContext, o2: ExpContext): ExpContext = {
     combineAll(o1, o2, combineBranch)
   }
 
   /**
     * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
     */
-  private def combineInfo(o1: OccurInfo, o2: OccurInfo): OccurInfo = {
+  private def combineInfo(o1: ExpContext, o2: ExpContext): ExpContext = {
     combineAll(o1, o2, combine)
   }
 
   /**
     * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
     */
-  private def combineInfoOpt(o1: Option[OccurInfo], o2: OccurInfo): OccurInfo = {
+  private def combineInfoOpt(o1: Option[ExpContext], o2: ExpContext): ExpContext = {
     o1.map(combineInfo(_, o2)).getOrElse(o2)
   }
 
   /**
     * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
     */
-  private def combineAll(o1: OccurInfo, o2: OccurInfo, combine: (Occur, Occur) => Occur): OccurInfo = {
+  private def combineAll(o1: ExpContext, o2: ExpContext, combine: (Occur, Occur) => Occur): ExpContext = {
     val varMap = combineMaps(o1.vars, o2.vars, combine)
     val defMap = combineMaps(o1.defs, o2.defs, combine)
     val localDefs = o1.localDefs + o2.localDefs
     val size = o1.size + o2.size
-    OccurInfo(defMap, varMap, localDefs, size)
+    ExpContext(defMap, varMap, localDefs, size)
   }
 
   /**
@@ -206,9 +207,9 @@ object OccurrenceAnalyzer {
   }
 
   /**
-    * Combines all [[OccurInfo]] in `os` and maps each [[DefnSym]] to its corresponding [[OccurInfo]].
+    * Combines all [[ExpContext]] in `os` and maps each [[DefnSym]] to its corresponding [[ExpContext]].
     */
-  private def combineAll(os: Iterable[OccurInfo]): Map[DefnSym, Occur] = {
+  private def combineAll(os: Iterable[ExpContext]): Map[DefnSym, Occur] = {
     os.foldLeft(Map.empty[DefnSym, Occur])((acc, o) => combineMaps(acc, o.defs, combine))
   }
 
