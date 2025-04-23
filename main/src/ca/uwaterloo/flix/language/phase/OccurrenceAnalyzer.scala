@@ -237,21 +237,4 @@ object OccurrenceAnalyzer {
       this.copy(size = size + 1)
     }
   }
-
-  /**
-    * A set of functions that contain masked casts.
-    *
-    * Must be manually maintained since [[Lowering]] erases masked casts.
-    */
-  private val DangerousFunctions: Set[String] = Set("bug!", "Fixpoint.Debugging.notifyPreSolve", "Fixpoint.Debugging.notifyPostSolve", "Fixpoint.Debugging.notifyPreInterpret", "Assert.eq")
-
-  /** Returns a string with where [[Flix.Delimiter]] is stripped, so membership can be checked in [[DangerousFunctions]]. */
-  private def stripDelimiter(sym: Symbol.DefnSym): String = {
-    sym.toString.takeWhile(c => c.toString != Flix.Delimiter)
-  }
-
-  /** Returns `true` if `sym` is a dangerous function, i.e., it is a member of [[DangerousFunctions]]. */
-  private def isDangerousFunction(sym: Symbol.DefnSym): Boolean = {
-    DangerousFunctions.contains(stripDelimiter(sym))
-  }
 }
