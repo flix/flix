@@ -155,6 +155,8 @@ object OccurrenceAst {
 
     /**
       * Represents a binder that is not used in an expression.
+      *
+      * If the let-binding is pure, then it is safe to remove it, otherwise it can be rewritten to a statement.
       */
     case object Dead extends Occur
 
