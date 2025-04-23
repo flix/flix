@@ -47,7 +47,7 @@ object Dependencies {
     val typeAliases = changeSet.updateStaleValues(root.typeAliases, oldRoot.typeAliases)(ParOps.parMapValues(_)(visitTypeAlias))
 
     var deps = MultiMap.empty[Input, Input]
-    sctx.deps.forEach((k, _) => deps = deps + k)
+    sctx.deps.forEach { case (k, _) => deps = deps + k }
     val dg = DependencyGraph(deps)
     (root.copy(
       dependencyGraph = dg,

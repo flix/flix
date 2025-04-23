@@ -131,7 +131,7 @@ object LambdaLift {
       val closureArgs = if (freeVars.isEmpty)
         List(LiftedAst.Expr.Cst(Constant.Unit, MonoType.Unit, loc))
       else freeVars.map {
-        case SimplifiedAst.FreeVar(sym, tpe) => LiftedAst.Expr.Var(sym, tpe, sym.loc)
+        case SimplifiedAst.FreeVar(sym, fvTpe) => LiftedAst.Expr.Var(sym, fvTpe, sym.loc)
       }
 
       // Construct the closure expression.
