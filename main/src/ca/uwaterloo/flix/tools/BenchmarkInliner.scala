@@ -107,7 +107,7 @@ object BenchmarkInliner {
     FileOps.writeString(runScriptPath, mkRunScript(programs.size))
     FileOps.writeString(pythonPath, Python)
     Files.createDirectories(benchOutputPath)
-    println("")
+    println(s"Please run $runScriptPath")
   }
 
   private def mkRunScript(programCount: Int): String = {
@@ -157,7 +157,7 @@ object BenchmarkInliner {
   private def writeJars(programs: Map[String, String], opts: Options): Unit = {
     val configs = mkConfigurations(opts.copy(loadClassFiles = false))
       .flatMap(o => programs.map { case (name, prog) => (o, name, prog) })
-    configs.foreach(buildAndWrite)
+    configs.foreach(buildAndWriteJar)
     val snippets = configs.map {
       case (o, name, _) => mkScriptSnippet(BenchmarkFile(name, o))
     }
@@ -165,7 +165,7 @@ object BenchmarkInliner {
     FileOps.writeString(benchmarkScriptPath, script)
   }
 
-  private def buildAndWrite(config: (Options, String, String)): Unit = {
+  private def buildAndWriteJar(config: (Options, String, String)): Unit = {
     val (opts, name, prog) = config
 
     // Build
