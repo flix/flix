@@ -32,10 +32,10 @@ object OccurrenceAnalyzer {
 
   private object ExpContext {
 
-    /** Occurrence information for an empty sequence of expressions. */
+    /** Context for an empty sequence of expressions. */
     def empty: ExpContext = ExpContext(Map.empty, Map.empty, 0, 0)
 
-    /** Occurrence information for a single expression. */
+    /** Context for a single expression. */
     def one: ExpContext = ExpContext(Map.empty, Map.empty, 0, 1)
 
   }
