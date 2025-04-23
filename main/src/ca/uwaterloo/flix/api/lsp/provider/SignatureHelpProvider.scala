@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{LspUtil, Position, SignatureHelp, SignatureInformation}
-import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 
 object SignatureHelpProvider {
   /**
@@ -35,6 +35,15 @@ object SignatureHelpProvider {
     }
   }
 
+  /**
+    * Builds the signature help for the given symbol and its specification.
+    *
+    * @param symbol the symbol of the function/signature.
+    * @param spec   the specification of the function/signature.
+    * @param exps   the expressions passed as arguments to the function/signature.
+    * @param pos    the position of the cursor.
+    * @return a SignatureHelp object containing the signature information.
+    */
   private def buildSignatureHelp(symbol: Symbol, spec: TypedAst.Spec, exps: List[TypedAst.Expr], pos: Position)(implicit flix: Flix): SignatureHelp = {
     // Count the index of the active parameter, which is the first expression that contains the position of the cursor.
     val idxActiveParameter = exps.indexWhere(exp => pos.containedBy(exp.loc))
