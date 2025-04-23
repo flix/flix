@@ -124,6 +124,13 @@ object OccurrenceAnalyzer {
   }
 
   /**
+    * Returns `true` if `sym` is a dangerous function, i.e., it is a member of [[DangerousFunctions]].
+    */
+  private def isDangerousFunction(sym: Symbol.DefnSym): Boolean = {
+    DangerousFunctions.contains(stripDelimiter(sym))
+  }
+
+  /**
     * Performs occurrence analysis on the given AST `root`.
     */
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): OccurrenceAst.Root = {
