@@ -66,35 +66,53 @@ object OccurrenceAnalyzer {
       this.vars.getOrElse(sym, Dead)
     }
 
+    /**
+      * Returns a new [[ExpContext]] with the key-value pair `kv` added to [[defs]].
+      */
     def :+(kv: (DefnSym, Occur)): ExpContext = {
       this.copy(defs = this.defs + kv)
     }
 
+    /**
+      * Returns a new [[ExpContext]] with the key-value pair `kv` added to [[vars]].
+      */
     def +(kv: (VarSym, Occur)): ExpContext = {
       this.copy(vars = this.vars + kv)
     }
 
-    def -(varSym: VarSym): ExpContext = {
-      this.copy(vars = this.vars - varSym)
+    /**
+      * Returns a new [[ExpContext]] with `sym` and the corresponding value removed from [[vars]].
+      */
+    def -(sym: VarSym): ExpContext = {
+      this.copy(vars = this.vars - sym)
     }
 
-    def --(varSyms: Iterable[VarSym]): ExpContext = {
-      this.copy(vars = this.vars -- varSyms)
+    /**
+      * Returns a new [[ExpContext]] with `syms` and the corresponding values removed from [[vars]].
+      */
+    def --(syms: Iterable[VarSym]): ExpContext = {
+      this.copy(vars = this.vars -- syms)
     }
 
-    def incrementLocalDefCount: ExpContext = {
+    /**
+      * Returns a new [[ExpContext]] with [[localDefs]] incremented by one.
+      */
+    def incrementLocalDefs: ExpContext = {
       this.copy(localDefs = localDefs + 1)
     }
-  }
 
-  private def increment(occurInfo: ExpContext): ExpContext = {
-    occurInfo.copy(size = occurInfo.size + 1)
+    /**
+      * Returns a new [[ExpContext]] with [[size]] incremented by one.
+      */
+    def incrementSize: ExpContext = {
+      this.copy(size = size + 1)
+    }
   }
 
   /**
     * A set of functions that contain masked casts.
     *
-    * Must be manually maintained since Lowering erases the masked cast.
+    * Must be manually maintained since [[Lowering]] erases masked casts.
     */
   private val DangerousFunctions: Set[String] = Set("bug!", "Fixpoint.Debugging.notifyPreSolve", "Fixpoint.Debugging.notifyPostSolve", "Fixpoint.Debugging.notifyPreInterpret", "Assert.eq")
 
