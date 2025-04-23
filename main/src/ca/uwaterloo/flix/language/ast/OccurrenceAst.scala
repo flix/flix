@@ -144,15 +144,13 @@ object OccurrenceAst {
     * The definitions form a lattice that allow for parallel evaluation:
     *
     * {{{
-    *       DontInline
-    *           |
-    *          Many
-    *           |
-    *       ManyBranch
-    *           |
-    * Once OnceInLambda OnceInLocalDef
-    *   \       |       /
-    *          Dead
+    *               Many
+    *       /        |        \
+    *      |     ManyBranch    |
+    *      |         |         |
+    * OnceInLambda  Once  OnceInLocalDef
+    *            \   |   /
+    *              Dead
     * }}}
     */
   sealed trait Occur
