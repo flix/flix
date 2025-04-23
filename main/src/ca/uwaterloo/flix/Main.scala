@@ -318,10 +318,10 @@ object Main {
         case Command.CompilerMemory =>
           CompilerMemory.run(options)
 
-        case Command.InlinerExperiments =>
+        case Command.BenchmarkInlinerCompiler =>
           BenchmarkInliner.runCompilerBenchmark(options, micro = true)
 
-        case Command.InlinerExperimentsSetup =>
+        case Command.SetupInlinerBenchmark =>
           BenchmarkInliner.generateSetup(options, micro = true)
 
         case Command.Zhegalkin =>
@@ -413,9 +413,9 @@ object Main {
 
     case object CompilerMemory extends Command
 
-    case object InlinerExperiments extends Command
+    case object BenchmarkInlinerCompiler extends Command
 
-    case object InlinerExperimentsSetup extends Command
+    case object SetupInlinerBenchmark extends Command
 
     case object Zhegalkin extends Command
 
@@ -494,10 +494,10 @@ object Main {
           .text("number of compilations")
       ).hidden()
 
-      cmd("Xinliner").action((_, c) => c.copy(command = Command.InlinerExperiments))
-        .text("Runs experiments for the new inliner")
+      cmd("benchmark-inliner-compiler").action((_, c) => c.copy(command = Command.BenchmarkInlinerCompiler))
+        .text("Benchmark compilation for inliner")
 
-      cmd("Xinlinersetup").action((_, c) => c.copy(command = Command.InlinerExperimentsSetup))
+      cmd("setup-inliner-benchmark").action((_, c) => c.copy(command = Command.SetupInlinerBenchmark))
         .text("Sets up inliner experiments")
 
       cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()

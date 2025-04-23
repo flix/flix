@@ -91,6 +91,8 @@ object BenchmarkInliner {
 
   private def benchmarkScriptPath: Path = scriptOutputPath.resolve("benchmark.sh").normalize()
 
+  private def benchmarkCompilerScriptPath: Path = scriptOutputPath.resolve("benchmark-compiler.sh").normalize()
+
   private def runScriptPath: Path = scriptOutputPath.resolve("all.sh").normalize()
 
   private def pythonPath: Path = scriptOutputPath.resolve("plots.py").normalize()
@@ -105,6 +107,7 @@ object BenchmarkInliner {
     println("Building jars...")
     writeJars(programs, opts)
     FileOps.writeString(runScriptPath, mkRunScript(programs.size))
+    FileOps.writeString(benchmarkCompilerScriptPath, mkCompilerScript)
     FileOps.writeString(pythonPath, Python)
     Files.createDirectories(benchOutputPath)
     println(s"Please run $runScriptPath")
@@ -121,7 +124,7 @@ object BenchmarkInliner {
        |echo "Total time estimate: $totalEstimate minutes"
        |
        |echo "Benchmarking Compiler..."
-       |java -jar flix.jar Xinliner
+       |bash $benchmarkCompilerScriptPath
        |
        |echo "Benchmarking programs..."
        |bash $benchmarkScriptPath
@@ -230,6 +233,14 @@ object BenchmarkInliner {
     s"""#!/bin/bash
        |
        |${snippets.mkString("\n")}
+       |
+       |""".stripMargin
+  }
+
+  private def mkCompilerScript: String = {
+    s"""#!/bin/bash
+       |
+       |java -jar flix.jar benchmark-inliner-compiler
        |
        |""".stripMargin
   }
