@@ -24,11 +24,11 @@ import org.json4s.JsonDSL.*
 import scala.jdk.CollectionConverters.SeqHasAsJava
 
 object SignatureInformation {
-  def from(symbol: Symbol, spec: TypedAst.Spec, idxActiveParameter: Int)(implicit flix: Flix): SignatureInformation = {
-    val label = symbol.toString + LspUtil.getLabelForSpec(spec)
+  def from(sym: Symbol, spec: TypedAst.Spec, activeParameter: Int)(implicit flix: Flix): SignatureInformation = {
+    val label = sym.toString + LspUtil.getLabelForSpec(spec)
     val documentation = spec.doc.text
     val parameters = spec.fparams.map(ParameterInformation.from)
-    SignatureInformation(label, Some(documentation), parameters, idxActiveParameter)
+    SignatureInformation(label, Some(documentation), parameters, activeParameter)
   }
 }
 
