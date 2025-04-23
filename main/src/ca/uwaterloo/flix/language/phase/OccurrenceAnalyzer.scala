@@ -116,7 +116,10 @@ object OccurrenceAnalyzer {
     */
   private val DangerousFunctions: Set[String] = Set("bug!", "Fixpoint.Debugging.notifyPreSolve", "Fixpoint.Debugging.notifyPostSolve", "Fixpoint.Debugging.notifyPreInterpret", "Assert.eq")
 
-  private def toReadableFunction(sym: Symbol.DefnSym): String = {
+  /**
+    * Returns a string with where [[Flix.Delimiter]] is stripped, so membership can be checked in [[DangerousFunctions]].
+    */
+  private def stripDelimiter(sym: Symbol.DefnSym): String = {
     sym.toString.takeWhile(c => c.toString != Flix.Delimiter)
   }
 
@@ -141,7 +144,7 @@ object OccurrenceAnalyzer {
     // Updates the occurrence of every `def` in `ds` based on the occurrence found in `defOccur`.
     ds.foldLeft(Map.empty[DefnSym, OccurrenceAst.Def]) {
       case (macc, defn) =>
-        val occur = if (DangerousFunctions.contains(toReadableFunction(defn.sym))) DontInlineAndDontRewrite else defOccur.getOrElse(defn.sym, Dead)
+        val occur = if (DangerousFunctions.contains(stripDelimiter(defn.sym))) DontInlineAndDontRewrite else defOccur.getOrElse(defn.sym, Dead)
         val newContext = defn.context.copy(occur = occur)
         val defWithContext = defn.copy(context = newContext)
         macc + (defn.sym -> defWithContext)
