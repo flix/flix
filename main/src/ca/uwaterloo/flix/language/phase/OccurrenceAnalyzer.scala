@@ -61,32 +61,6 @@ object OccurrenceAnalyzer {
   }
 
   /**
-    * Returns true if `expr0` is a function call.
-    */
-  private def isDirectCall(expr0: OccurrenceAst.Expr): Boolean = expr0 match {
-    case OccurrenceAst.Expr.ApplyDef(_, _, _, _, _, _) => true
-    case OccurrenceAst.Expr.ApplyClo(_, _, _, _, _) => true
-    case _ => false
-  }
-
-  /**
-    * Returns true if `def0` occurs in `expCtx`.
-    */
-  private def isSelfRecursive(expCtx: ExpContext, defn0: OccurrenceAst.Def): Boolean = expCtx.defs.get(defn0.sym) match {
-    case None => false
-    case Some(o) => o match {
-      case Occur.Dead => false
-      case Occur.Once => true
-      case Occur.OnceInLambda => true
-      case Occur.OnceInLocalDef => true
-      case Occur.Many => true
-      case Occur.ManyBranch => true
-      case Occur.DontInline => true
-      case Occur.DontInlineAndDontRewrite => true
-    }
-  }
-
-  /**
     * Performs occurrence analysis on `exp0`
     */
   private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym): (OccurrenceAst.Expr, ExpContext) = (exp0, ExpContext.empty)
@@ -235,6 +209,32 @@ object OccurrenceAnalyzer {
     /** Returns a new [[ExpContext]] with [[size]] incremented by one. */
     def incrementSize: ExpContext = {
       this.copy(size = size + 1)
+    }
+  }
+
+  /**
+    * Returns true if `expr0` is a function call.
+    */
+  private def isDirectCall(expr0: OccurrenceAst.Expr): Boolean = expr0 match {
+    case OccurrenceAst.Expr.ApplyDef(_, _, _, _, _, _) => true
+    case OccurrenceAst.Expr.ApplyClo(_, _, _, _, _) => true
+    case _ => false
+  }
+
+  /**
+    * Returns true if `def0` occurs in `expCtx`.
+    */
+  private def isSelfRecursive(expCtx: ExpContext, defn0: OccurrenceAst.Def): Boolean = expCtx.defs.get(defn0.sym) match {
+    case None => false
+    case Some(o) => o match {
+      case Occur.Dead => false
+      case Occur.Once => true
+      case Occur.OnceInLambda => true
+      case Occur.OnceInLocalDef => true
+      case Occur.Many => true
+      case Occur.ManyBranch => true
+      case Occur.DontInline => true
+      case Occur.DontInlineAndDontRewrite => true
     }
   }
 }
