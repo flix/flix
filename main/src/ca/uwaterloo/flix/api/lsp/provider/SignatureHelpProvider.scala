@@ -32,6 +32,10 @@ object SignatureHelpProvider {
         mkSignatureHelp(defnSymUse.sym, root.defs(defnSymUse.sym).spec, exps, pos)
       case TypedAst.Expr.ApplySig(sigSymUse, exps, _, _, _, _) =>
         mkSignatureHelp(sigSymUse.sym, root.sigs(sigSymUse.sym).spec, exps, pos)
+      case TypedAst.Expr.Do(opSymUse, exps, _, _, _) =>
+        val ops = root.effects(opSymUse.sym.eff).ops
+        val op = ops.find(thatOp => thatOp.sym == opSymUse.sym).get
+        mkSignatureHelp(opSymUse.sym, op.spec, exps, pos)
     }
   }
 

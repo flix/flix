@@ -366,7 +366,8 @@ sealed trait Completion {
         documentation       = Some(op.spec.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Function,
-        additionalTextEdits = additionalTextEdit
+        additionalTextEdits = additionalTextEdit,
+        command             = Some(Command("editor.action.triggerParameterHints", "editor.action.triggerParameterHints", Nil))
       )
 
     case Completion.OpHandlerCompletion(op, range) =>
