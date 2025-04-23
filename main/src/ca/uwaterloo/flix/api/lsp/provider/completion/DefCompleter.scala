@@ -30,7 +30,7 @@ object DefCompleter {
     * Whether the returned completions are qualified is based on whether the UndefinedName is qualified.
     * When providing completions for unqualified defs that is not in scope, we will also automatically use the def.
     */
-  def getCompletions(stack: List[AnyRef], qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: Root): Iterable[Completion] = {
+  def getCompletions(qn: Name.QName, stack: List[AnyRef], range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: Root): Iterable[Completion] = {
     val ectx = getExprContext(stack)
 
     if (qn.namespace.nonEmpty) {
