@@ -17,15 +17,15 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import org.json4s.JValue
 import org.json4s.JsonDSL.*
 
 import scala.jdk.CollectionConverters.SeqHasAsJava
 
 object SignatureInformation {
-  def from(symbol: String, spec: TypedAst.Spec, idxActiveParameter: Int)(implicit flix: Flix): SignatureInformation = {
-    val label = symbol + LspUtil.getLabelForSpec(spec)
+  def from(symbol: Symbol, spec: TypedAst.Spec, idxActiveParameter: Int)(implicit flix: Flix): SignatureInformation = {
+    val label = symbol.toString + LspUtil.getLabelForSpec(spec)
     val documentation = spec.doc.text
     val parameters = spec.fparams.map(ParameterInformation.from)
     SignatureInformation(label, Some(documentation), parameters, idxActiveParameter)

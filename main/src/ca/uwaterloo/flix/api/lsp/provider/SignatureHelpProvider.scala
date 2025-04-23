@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{LspUtil, Position, SignatureHelp, SignatureInformation}
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 
 object SignatureHelpProvider {
@@ -29,13 +29,13 @@ object SignatureHelpProvider {
   def provideSignatureHelp(uri: String, pos: Position)(implicit root: Root, flix: Flix): Option[SignatureHelp] = {
     LspUtil.getStack(uri, pos).collectFirst {
       case TypedAst.Expr.ApplyDef(defnSymUse, exps, _, _, _, _) =>
-        buildSignatureHelp(defnSymUse.sym.toString, root.defs(defnSymUse.sym).spec, exps, pos)
+        buildSignatureHelp(defnSymUse.sym, root.defs(defnSymUse.sym).spec, exps, pos)
       case TypedAst.Expr.ApplySig(sigSymUse, exps, _, _, _, _) =>
-        buildSignatureHelp(sigSymUse.sym.toString, root.sigs(sigSymUse.sym).spec, exps, pos)
+        buildSignatureHelp(sigSymUse.sym, root.sigs(sigSymUse.sym).spec, exps, pos)
     }
   }
 
-  private def buildSignatureHelp(symbol: String, spec: TypedAst.Spec, exps: List[TypedAst.Expr], pos: Position)(implicit flix: Flix): SignatureHelp = {
+  private def buildSignatureHelp(symbol: Symbol, spec: TypedAst.Spec, exps: List[TypedAst.Expr], pos: Position)(implicit flix: Flix): SignatureHelp = {
     // Count the index of the active parameter, which is the first expression that contains the position of the cursor.
     val idxActiveParameter = exps.indexWhere(exp => pos.containedBy(exp.loc))
     val signatureInfo = SignatureInformation.from(symbol, spec, idxActiveParameter)
