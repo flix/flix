@@ -127,8 +127,6 @@ object OccurrenceAst {
     }
   }
 
-  case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
-
   case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: Type, src: TypeSource, occur: Occur, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
@@ -139,15 +137,21 @@ object OccurrenceAst {
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
 
-  case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr)
-
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
-
-  case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
-
   /**
     * Represents occurrence information of binders, i.e., how a binder occurs in the program.
     * A binder may be a variable, function, or effect handler.
+    *
+    * The definitions form a lattice that allow for parallel evaluation:
+    *
+    * {{{
+    *               Many
+    *       /        |        \
+    *      |     ManyBranch    |
+    *      |         |         |
+    * OnceInLambda  Once  OnceInLocalDef
+    *            \   |   /
+    *              Dead
+    * }}}
     */
   sealed trait Occur
 
@@ -155,45 +159,64 @@ object OccurrenceAst {
 
     /**
       * Represents a binder that is not used in an expression.
+      *
+      * If the let-binding is pure, then it is safe to remove it, otherwise it can be rewritten to a statement.
+      * If the binder is a function, it is safe to remove it. However, [[ca.uwaterloo.flix.language.phase.TreeShaker2]] handles that.
+      *
+      * Removing the binder results in smaller code size and does not increase work.
       */
     case object Dead extends Occur
 
     /**
       * Represents a binder that occurs exactly once in an expression.
+      *
+      * If the let-binding is pure, then it is safe to move its definition to the occurrence.
+      *
+      * Doing so strictly decreases code size and does not increase work.
       */
     case object Once extends Occur
 
     /**
       * Represents a binder that occurs exactly once and that occurrence is in the body of a lambda abstraction.
+      *
+      * If the let-binding is pure, then it is safe to move its definition to the occurrence.
+      *
+      * Doing so strictly decreases code size but may increase work.
       */
     case object OnceInLambda extends Occur
 
     /**
       * Represents a binder that occurs exactly once and that occurrence is in the body of a local def.
+      *
+      * If the let-binding is pure, then it is safe to move its definition to the occurrence.
+      *
+      * Doing so strictly decreases code size but may increase work.
+      *
+      * However, it may be beneficial to move the definition of the binder to simplify the expression further.
+      * Local defs are often called multiple times so if work duplication is bounded, it may result in
+      * smaller code size and less memory usage.
       */
     case object OnceInLocalDef extends Occur
 
     /**
-      * Represents a binder that occurs in more than one branch, e.g., match cases, but never inside a lambda abstraction or local def.
+      * Represents a binder that occurs at most once in distinct branches, but never inside a lambda abstraction or local def.
+      *
+      * If the let-binding is pure, then it is safe to move its definition to an occurrence.
+      *
+      * Moving the definition to any or all occurrences increases code size but does not increase work
+      * since branches are exclusive.
       */
     case object ManyBranch extends Occur
 
     /**
       * Represents a binder that occurs more than once (including lambdas, local defs, branches).
+      *
+      * If the let-binding is pure, then it is safe to move its definition to an occurrence.
+      *
+      * Doing so may increase both code size and work.
       */
     case object Many extends Occur
 
-    /**
-      * Represents a binder that is excluded from inlining at its occurrence sites.
-      * If the binder is a function, sub-expressions of the body may be considered for rewriting.
-      */
-    case object DontInline extends Occur
-
-    /**
-      * Represents a binder that is excluded from inlining at its occurrence sites.
-      * Unlike [[DontInline]], the body of a function is never considered for rewriting (due to casts being dangerous).
-      */
-    case object DontInlineAndDontRewrite extends Occur
   }
 
   /**
