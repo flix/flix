@@ -135,16 +135,6 @@ object BenchmarkInliner {
     val programs = if (micro) MicroBenchmarks else MacroBenchmarks
     val outFileName = if (micro) "micro.json" else "macro.json"
 
-    val pid = java.lang.ProcessHandle.current().pid()
-    println(s"Please connect profiling tools if necessary (e.g., async-profiler). PID: $pid")
-    val input = StdIn.readLine("Ready to proceed? [Y/n] ")
-    input.toLowerCase match {
-      case "n" | "no" | "abort" =>
-        println("Aborting...")
-        return
-      case _ =>
-    }
-
     println("Benchmarking inliner compilation...")
     val t0 = System.nanoTime()
     val benchmarks = runBenchmarking(programs, opts)
