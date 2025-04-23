@@ -54,37 +54,36 @@ object OccurrenceAnalyzer {
     * Performs occurrence analysis on `defn`.
     */
   private def visitDef(defn0: OccurrenceAst.Def): (OccurrenceAst.Def, ExpContext) = {
-
-    /**
-      * Returns true if `expr0` is a function call.
-      */
-    def isDirectCall(expr0: OccurrenceAst.Expr): Boolean = expr0 match {
-      case OccurrenceAst.Expr.ApplyDef(_, _, _, _, _, _) => true
-      case OccurrenceAst.Expr.ApplyClo(_, _, _, _, _) => true
-      case _ => false
-    }
-
-    /**
-      * Returns true if `def0` occurs in `occurInfo`.
-      */
-    def isSelfRecursive(occurInfo: ExpContext): Boolean = occurInfo.defs.get(defn0.sym) match {
-      case None => false
-      case Some(o) => o match {
-        case Occur.Dead => false
-        case Occur.Once => true
-        case Occur.OnceInLambda => true
-        case Occur.OnceInLocalDef => true
-        case Occur.Many => true
-        case Occur.ManyBranch => true
-        case Occur.DontInline => false
-        case Occur.DontInlineAndDontRewrite => true
-      }
-    }
-
     val (exp, occurInfo) = visitExp(defn0.exp)(defn0.sym)
     val defContext = DefContext(occurInfo.get(defn0.sym), occurInfo.size, occurInfo.localDefs, isDirectCall(exp), isSelfRecursive(occurInfo))
     val fparams = defn0.fparams.map(fp => fp.copy(occur = occurInfo.get(fp.sym)))
     (OccurrenceAst.Def(defn0.sym, fparams, defn0.spec, exp, defContext, defn0.loc), occurInfo)
+  }
+
+  /**
+    * Returns true if `expr0` is a function call.
+    */
+  private def isDirectCall(expr0: OccurrenceAst.Expr): Boolean = expr0 match {
+    case OccurrenceAst.Expr.ApplyDef(_, _, _, _, _, _) => true
+    case OccurrenceAst.Expr.ApplyClo(_, _, _, _, _) => true
+    case _ => false
+  }
+
+  /**
+    * Returns true if `def0` occurs in `occurInfo`.
+    */
+  private def isSelfRecursive(occurInfo: ExpContext): Boolean = occurInfo.defs.get(defn0.sym) match {
+    case None => false
+    case Some(o) => o match {
+      case Occur.Dead => false
+      case Occur.Once => true
+      case Occur.OnceInLambda => true
+      case Occur.OnceInLocalDef => true
+      case Occur.Many => true
+      case Occur.ManyBranch => true
+      case Occur.DontInline => false
+      case Occur.DontInlineAndDontRewrite => true
+    }
   }
 
   /**
