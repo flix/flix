@@ -163,7 +163,7 @@ object OccurrenceAst {
       * If the let-binding is pure, then it is safe to remove it, otherwise it can be rewritten to a statement.
       * If the binder is a function, it is safe to remove it. However, [[ca.uwaterloo.flix.language.phase.TreeShaker2]] handles that.
       *
-      * Removing the binder results in smaller code size and does not affect work duplication.
+      * Removing the binder results in smaller code size and does not increase work.
       */
     case object Dead extends Occur
 
@@ -172,7 +172,7 @@ object OccurrenceAst {
       *
       * If the let-binding is pure, then it is safe to move its definition to the occurrence.
       *
-      * This has little to no impact on code size and does not affect work duplication.
+      * Doing so strictly decreases code size and does not increase work.
       */
     case object Once extends Occur
 
@@ -181,7 +181,7 @@ object OccurrenceAst {
       *
       * If the let-binding is pure, then it is safe to move its definition to the occurrence.
       *
-      * This has little to no impact on code size but may duplicate work.
+      * Doing so strictly decreases code size but may increase work.
       */
     case object OnceInLambda extends Occur
 
@@ -190,8 +190,9 @@ object OccurrenceAst {
       *
       * If the let-binding is pure, then it is safe to move its definition to the occurrence.
       *
-      * This has little to no impact on code size but may duplicate work. However, it may be beneficial
-      * to inline the definition of the binder to simplify the expression further.
+      * Doing so strictly decreases code size but may increase work.
+      *
+      * However, it may be beneficial to move the definition of the binder to simplify the expression further.
       * Local defs are often called multiple times so if work duplication is bounded, it may result in
       * smaller code size and less memory usage.
       */
@@ -202,7 +203,7 @@ object OccurrenceAst {
       *
       * If the let-binding is pure, then it is safe to move its definition to an occurrence.
       *
-      * Moving the definition to all occurrences increases code size but does not affect work duplication
+      * Moving the definition to any or all occurrences increases code size but does not increase work
       * since branches are exclusive.
       */
     case object ManyBranch extends Occur
@@ -210,8 +211,9 @@ object OccurrenceAst {
     /**
       * Represents a binder that occurs more than once (including lambdas, local defs, branches).
       *
-      * If the let-binding is pure, then it is safe to move its definition to an occurrence,
-      * but it may increase code size and duplicate work.
+      * If the let-binding is pure, then it is safe to move its definition to an occurrence.
+      *
+      * Doing so may increase both code size and work.
       */
     case object Many extends Occur
 
