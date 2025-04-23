@@ -54,10 +54,10 @@ object OccurrenceAnalyzer {
     * Performs occurrence analysis on `defn`.
     */
   private def visitDef(defn0: OccurrenceAst.Def): (OccurrenceAst.Def, ExpContext) = {
-    val (exp, occurInfo) = visitExp(defn0.exp)(defn0.sym)
-    val defContext = DefContext(occurInfo.get(defn0.sym), occurInfo.size, occurInfo.localDefs, isDirectCall(exp), isSelfRecursive(occurInfo, defn0))
-    val fparams = defn0.fparams.map(fp => fp.copy(occur = occurInfo.get(fp.sym)))
-    (OccurrenceAst.Def(defn0.sym, fparams, defn0.spec, exp, defContext, defn0.loc), occurInfo)
+    val (exp, expCtx) = visitExp(defn0.exp)(defn0.sym)
+    val defContext = DefContext(expCtx.get(defn0.sym), expCtx.size, expCtx.localDefs, isDirectCall(exp), isSelfRecursive(expCtx, defn0))
+    val fparams = defn0.fparams.map(fp => fp.copy(occur = expCtx.get(fp.sym)))
+    (OccurrenceAst.Def(defn0.sym, fparams, defn0.spec, exp, defContext, defn0.loc), expCtx)
   }
 
   /**
@@ -70,9 +70,9 @@ object OccurrenceAnalyzer {
   }
 
   /**
-    * Returns true if `def0` occurs in `ctx`.
+    * Returns true if `def0` occurs in `expCtx`.
     */
-  private def isSelfRecursive(ctx: ExpContext, defn0: OccurrenceAst.Def): Boolean = ctx.defs.get(defn0.sym) match {
+  private def isSelfRecursive(expCtx: ExpContext, defn0: OccurrenceAst.Def): Boolean = expCtx.defs.get(defn0.sym) match {
     case None => false
     case Some(o) => o match {
       case Occur.Dead => false
@@ -87,44 +87,44 @@ object OccurrenceAnalyzer {
   }
 
   /**
-    * Performs occurrence analysis on `exp00`
+    * Performs occurrence analysis on `exp0`
     */
   private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym): (OccurrenceAst.Expr, ExpContext) = (exp0, ExpContext.empty)
 
   /**
-    * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
+    * Combines `expCtx1` and `expCtx2` into a single [[ExpContext]].
     */
-  private def combineInfoBranch(o1: ExpContext, o2: ExpContext): ExpContext = {
-    combineAll(o1, o2, combineBranch)
+  private def combineInfoBranch(expCtx1: ExpContext, expCtx2: ExpContext): ExpContext = {
+    combineAll(expCtx1, expCtx2, combineBranch)
   }
 
   /**
-    * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
+    * Combines `expCtx1` and `expCtx2` into a single [[ExpContext]].
     */
-  private def combineInfo(o1: ExpContext, o2: ExpContext): ExpContext = {
-    combineAll(o1, o2, combine)
+  private def combineInfo(expCtx1: ExpContext, expCtx2: ExpContext): ExpContext = {
+    combineAll(expCtx1, expCtx2, combine)
   }
 
   /**
-    * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
+    * Combines `expCtx1` and `expCtx2` into a single [[ExpContext]].
     */
-  private def combineInfoOpt(o1: Option[ExpContext], o2: ExpContext): ExpContext = {
-    o1.map(combineInfo(_, o2)).getOrElse(o2)
+  private def combineInfoOpt(expCtx1: Option[ExpContext], expCtx2: ExpContext): ExpContext = {
+    expCtx1.map(combineInfo(_, expCtx2)).getOrElse(expCtx2)
   }
 
   /**
-    * Combines objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object.
+    * Combines `expCtx1` and `expCtx2` into a single [[ExpContext]].
     */
-  private def combineAll(o1: ExpContext, o2: ExpContext, combine: (Occur, Occur) => Occur): ExpContext = {
-    val varMap = combineMaps(o1.vars, o2.vars, combine)
-    val defMap = combineMaps(o1.defs, o2.defs, combine)
-    val localDefs = o1.localDefs + o2.localDefs
-    val size = o1.size + o2.size
+  private def combineAll(expCtx1: ExpContext, expCtx2: ExpContext, combine: (Occur, Occur) => Occur): ExpContext = {
+    val varMap = combineMaps(expCtx1.vars, expCtx2.vars, combine)
+    val defMap = combineMaps(expCtx1.defs, expCtx2.defs, combine)
+    val localDefs = expCtx1.localDefs + expCtx2.localDefs
+    val size = expCtx1.size + expCtx2.size
     ExpContext(defMap, varMap, localDefs, size)
   }
 
   /**
-    * Combines maps `m1` and `m2` of the type (A -> Occur) into a single map of the same type.
+    * Combines maps `m1` and `m2` into a single map.
     */
   private def combineMaps[A](m1: Map[A, Occur], m2: Map[A, Occur], combine: (Occur, Occur) => Occur): Map[A, Occur] = {
     val (smallest, largest) = if (m1.size < m2.size) (m1, m2) else (m2, m1)
@@ -136,14 +136,14 @@ object OccurrenceAnalyzer {
   }
 
   /**
-    * Combines all [[ExpContext]] in `os` and maps each [[DefnSym]] to its corresponding [[ExpContext]].
+    * Combines all [[ExpContext]] in `expCtxs` and maps each [[DefnSym]] to its corresponding [[ExpContext]].
     */
-  private def combineAll(os: Iterable[ExpContext]): Map[DefnSym, Occur] = {
-    os.foldLeft(Map.empty[DefnSym, Occur])((acc, o) => combineMaps(acc, o.defs, combine))
+  private def combineAll(expCtxs: Iterable[ExpContext]): Map[DefnSym, Occur] = {
+    expCtxs.foldLeft(Map.empty[DefnSym, Occur])((acc, o) => combineMaps(acc, o.defs, combine))
   }
 
   /**
-    * Combines two occurrences `o1` and `o2` of type Occur into a single occurrence.
+    * Combines two occurrences `o1` and `o2` into a single occurrence for a branchless expression.
     */
   private def combine(o1: Occur, o2: Occur): Occur = (o1, o2) match {
     case (DontInlineAndDontRewrite, _) => DontInlineAndDontRewrite
@@ -156,10 +156,8 @@ object OccurrenceAnalyzer {
   }
 
   /**
-    * Combines two occurrences `o1` and `o2` of type Occur into a single occurrence based on ManyBranches logic.
-    * ManyBranches can be
-    * - [[OccurrenceAst.Expr.IfThenElse]]
-    * - [[OccurrenceAst.Expr.Match]]
+    * Combines two occurrences `o1` and `o2` into a single occurrence for a branching expression such as
+    * [[OccurrenceAst.Expr.IfThenElse]] and [[OccurrenceAst.Expr.Match]].
     */
   private def combineBranch(o1: Occur, o2: Occur): Occur = (o1, o2) match {
     case (DontInlineAndDontRewrite, _) => DontInlineAndDontRewrite
@@ -194,57 +192,47 @@ object OccurrenceAnalyzer {
   case class ExpContext(defs: Map[DefnSym, Occur], vars: Map[VarSym, Occur], localDefs: Int, size: Int) {
 
     /**
-      * Returns the occurrence information collected on `sym`. If [[defs]] does not contain `sym`, then it is [[Dead]].
+      * Returns the occurrence information collected on `sym`.
+      * If [[defs]] does not contain `sym`, then it is [[Dead]].
       */
     def get(sym: DefnSym): Occur = {
       this.defs.getOrElse(sym, Dead)
     }
 
     /**
-      * Returns the occurrence information collected on `sym`. If [[vars]] does not contain `sym`, then it is [[Dead]].
+      * Returns the occurrence information collected on `sym`.
+      * If [[vars]] does not contain `sym`, then it is [[Dead]].
       */
     def get(sym: VarSym): Occur = {
       this.vars.getOrElse(sym, Dead)
     }
 
-    /**
-      * Returns a new [[ExpContext]] with the key-value pair `kv` added to [[defs]].
-      */
+    /** Returns a new [[ExpContext]] with the key-value pair `kv` added to [[defs]]. */
     def :+(kv: (DefnSym, Occur)): ExpContext = {
       this.copy(defs = this.defs + kv)
     }
 
-    /**
-      * Returns a new [[ExpContext]] with the key-value pair `kv` added to [[vars]].
-      */
+    /** Returns a new [[ExpContext]] with the key-value pair `kv` added to [[vars]]. */
     def +(kv: (VarSym, Occur)): ExpContext = {
       this.copy(vars = this.vars + kv)
     }
 
-    /**
-      * Returns a new [[ExpContext]] with `sym` and the corresponding value removed from [[vars]].
-      */
+    /** Returns a new [[ExpContext]] with `sym` and the corresponding value removed from [[vars]]. */
     def -(sym: VarSym): ExpContext = {
       this.copy(vars = this.vars - sym)
     }
 
-    /**
-      * Returns a new [[ExpContext]] with `syms` and the corresponding values removed from [[vars]].
-      */
+    /** Returns a new [[ExpContext]] with `syms` and the corresponding values removed from [[vars]]. */
     def --(syms: Iterable[VarSym]): ExpContext = {
       this.copy(vars = this.vars -- syms)
     }
 
-    /**
-      * Returns a new [[ExpContext]] with [[localDefs]] incremented by one.
-      */
+    /** Returns a new [[ExpContext]] with [[localDefs]] incremented by one. */
     def incrementLocalDefs: ExpContext = {
       this.copy(localDefs = localDefs + 1)
     }
 
-    /**
-      * Returns a new [[ExpContext]] with [[size]] incremented by one.
-      */
+    /** Returns a new [[ExpContext]] with [[size]] incremented by one. */
     def incrementSize: ExpContext = {
       this.copy(size = size + 1)
     }
@@ -257,16 +245,12 @@ object OccurrenceAnalyzer {
     */
   private val DangerousFunctions: Set[String] = Set("bug!", "Fixpoint.Debugging.notifyPreSolve", "Fixpoint.Debugging.notifyPostSolve", "Fixpoint.Debugging.notifyPreInterpret", "Assert.eq")
 
-  /**
-    * Returns a string with where [[Flix.Delimiter]] is stripped, so membership can be checked in [[DangerousFunctions]].
-    */
+  /** Returns a string with where [[Flix.Delimiter]] is stripped, so membership can be checked in [[DangerousFunctions]]. */
   private def stripDelimiter(sym: Symbol.DefnSym): String = {
     sym.toString.takeWhile(c => c.toString != Flix.Delimiter)
   }
 
-  /**
-    * Returns `true` if `sym` is a dangerous function, i.e., it is a member of [[DangerousFunctions]].
-    */
+  /** Returns `true` if `sym` is a dangerous function, i.e., it is a member of [[DangerousFunctions]]. */
   private def isDangerousFunction(sym: Symbol.DefnSym): Boolean = {
     DangerousFunctions.contains(stripDelimiter(sym))
   }
