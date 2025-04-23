@@ -217,12 +217,6 @@ object OccurrenceAst {
       */
     case object Many extends Occur
 
-    /**
-      * Represents a binder that is excluded from inlining at its occurrence sites.
-      * If the binder is a function, subexpressions of the body may be considered for rewriting.
-      */
-    case object DontInline extends Occur
-
   }
 
   /**
