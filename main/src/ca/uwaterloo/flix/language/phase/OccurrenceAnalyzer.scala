@@ -42,7 +42,7 @@ object OccurrenceAnalyzer {
     // Updates the occurrence of every `def` in `ds` based on the occurrence found in `defOccur`.
     val defs = ds.foldLeft(Map.empty[DefnSym, OccurrenceAst.Def]) {
       case (macc, defn) =>
-        val occur = if (DangerousFunctions.contains(stripDelimiter(defn.sym))) DontInlineAndDontRewrite else defOccur.getOrElse(defn.sym, Dead)
+        val occur = defOccur.getOrElse(defn.sym, Dead)
         val newContext = defn.context.copy(occur = occur)
         val defWithContext = defn.copy(context = newContext)
         macc + (defn.sym -> defWithContext)
@@ -208,7 +208,7 @@ object OccurrenceAnalyzer {
     }
 
     /** Returns a new [[ExpContext]] with the key-value pair `kv` added to [[defs]]. */
-    def :+(kv: (DefnSym, Occur)): ExpContext = {
+    def +(kv: (DefnSym, Occur)): ExpContext = {
       this.copy(defs = this.defs + kv)
     }
 
