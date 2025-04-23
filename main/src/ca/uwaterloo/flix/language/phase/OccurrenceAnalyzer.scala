@@ -30,106 +30,6 @@ import ca.uwaterloo.flix.util.ParOps
   */
 object OccurrenceAnalyzer {
 
-  private object ExpContext {
-
-    /** Context for an empty sequence of expressions. */
-    def empty: ExpContext = ExpContext(Map.empty, Map.empty, 0, 0)
-
-    /** Context for a single expression. */
-    def one: ExpContext = ExpContext(Map.empty, Map.empty, 0, 1)
-
-  }
-
-  /**
-    * Stores various pieces of information extracted from an expression.
-    *
-    * @param defs      A map from function symbols to occurrence information.
-    *                  If the map does not contain a certain symbol, then symbol is [[Dead]].
-    * @param vars      A map from variable symbols to occurrence information (this also includes uses of [[OccurrenceAst.Expr.LocalDef]]).
-    *                  If the map does not contain a certain symbol, then symbol is [[Dead]].
-    * @param localDefs the number of declared [[OccurrenceAst.Expr.LocalDef]]s in the expression.
-    * @param size      The total number of subexpressions (including the expression itself).
-    */
-  case class ExpContext(defs: Map[DefnSym, Occur], vars: Map[VarSym, Occur], localDefs: Int, size: Int) {
-
-    /**
-      * Returns the occurrence information collected on `sym`. If [[defs]] does not contain `sym`, then it is [[Dead]].
-      */
-    def get(sym: DefnSym): Occur = {
-      this.defs.getOrElse(sym, Dead)
-    }
-
-    /**
-      * Returns the occurrence information collected on `sym`. If [[vars]] does not contain `sym`, then it is [[Dead]].
-      */
-    def get(sym: VarSym): Occur = {
-      this.vars.getOrElse(sym, Dead)
-    }
-
-    /**
-      * Returns a new [[ExpContext]] with the key-value pair `kv` added to [[defs]].
-      */
-    def :+(kv: (DefnSym, Occur)): ExpContext = {
-      this.copy(defs = this.defs + kv)
-    }
-
-    /**
-      * Returns a new [[ExpContext]] with the key-value pair `kv` added to [[vars]].
-      */
-    def +(kv: (VarSym, Occur)): ExpContext = {
-      this.copy(vars = this.vars + kv)
-    }
-
-    /**
-      * Returns a new [[ExpContext]] with `sym` and the corresponding value removed from [[vars]].
-      */
-    def -(sym: VarSym): ExpContext = {
-      this.copy(vars = this.vars - sym)
-    }
-
-    /**
-      * Returns a new [[ExpContext]] with `syms` and the corresponding values removed from [[vars]].
-      */
-    def --(syms: Iterable[VarSym]): ExpContext = {
-      this.copy(vars = this.vars -- syms)
-    }
-
-    /**
-      * Returns a new [[ExpContext]] with [[localDefs]] incremented by one.
-      */
-    def incrementLocalDefs: ExpContext = {
-      this.copy(localDefs = localDefs + 1)
-    }
-
-    /**
-      * Returns a new [[ExpContext]] with [[size]] incremented by one.
-      */
-    def incrementSize: ExpContext = {
-      this.copy(size = size + 1)
-    }
-  }
-
-  /**
-    * A set of functions that contain masked casts.
-    *
-    * Must be manually maintained since [[Lowering]] erases masked casts.
-    */
-  private val DangerousFunctions: Set[String] = Set("bug!", "Fixpoint.Debugging.notifyPreSolve", "Fixpoint.Debugging.notifyPostSolve", "Fixpoint.Debugging.notifyPreInterpret", "Assert.eq")
-
-  /**
-    * Returns a string with where [[Flix.Delimiter]] is stripped, so membership can be checked in [[DangerousFunctions]].
-    */
-  private def stripDelimiter(sym: Symbol.DefnSym): String = {
-    sym.toString.takeWhile(c => c.toString != Flix.Delimiter)
-  }
-
-  /**
-    * Returns `true` if `sym` is a dangerous function, i.e., it is a member of [[DangerousFunctions]].
-    */
-  private def isDangerousFunction(sym: Symbol.DefnSym): Boolean = {
-    DangerousFunctions.contains(stripDelimiter(sym))
-  }
-
   /**
     * Performs occurrence analysis on the given AST `root`.
     */
@@ -277,5 +177,105 @@ object OccurrenceAnalyzer {
     case (Dead, _) => o2
     case (_, Dead) => o1
     case _ => ManyBranch
+  }
+
+  private object ExpContext {
+
+    /** Context for an empty sequence of expressions. */
+    def empty: ExpContext = ExpContext(Map.empty, Map.empty, 0, 0)
+
+    /** Context for a single expression. */
+    def one: ExpContext = ExpContext(Map.empty, Map.empty, 0, 1)
+
+  }
+
+  /**
+    * Stores various pieces of information extracted from an expression.
+    *
+    * @param defs      A map from function symbols to occurrence information.
+    *                  If the map does not contain a certain symbol, then symbol is [[Dead]].
+    * @param vars      A map from variable symbols to occurrence information (this also includes uses of [[OccurrenceAst.Expr.LocalDef]]).
+    *                  If the map does not contain a certain symbol, then symbol is [[Dead]].
+    * @param localDefs the number of declared [[OccurrenceAst.Expr.LocalDef]]s in the expression.
+    * @param size      The total number of subexpressions (including the expression itself).
+    */
+  case class ExpContext(defs: Map[DefnSym, Occur], vars: Map[VarSym, Occur], localDefs: Int, size: Int) {
+
+    /**
+      * Returns the occurrence information collected on `sym`. If [[defs]] does not contain `sym`, then it is [[Dead]].
+      */
+    def get(sym: DefnSym): Occur = {
+      this.defs.getOrElse(sym, Dead)
+    }
+
+    /**
+      * Returns the occurrence information collected on `sym`. If [[vars]] does not contain `sym`, then it is [[Dead]].
+      */
+    def get(sym: VarSym): Occur = {
+      this.vars.getOrElse(sym, Dead)
+    }
+
+    /**
+      * Returns a new [[ExpContext]] with the key-value pair `kv` added to [[defs]].
+      */
+    def :+(kv: (DefnSym, Occur)): ExpContext = {
+      this.copy(defs = this.defs + kv)
+    }
+
+    /**
+      * Returns a new [[ExpContext]] with the key-value pair `kv` added to [[vars]].
+      */
+    def +(kv: (VarSym, Occur)): ExpContext = {
+      this.copy(vars = this.vars + kv)
+    }
+
+    /**
+      * Returns a new [[ExpContext]] with `sym` and the corresponding value removed from [[vars]].
+      */
+    def -(sym: VarSym): ExpContext = {
+      this.copy(vars = this.vars - sym)
+    }
+
+    /**
+      * Returns a new [[ExpContext]] with `syms` and the corresponding values removed from [[vars]].
+      */
+    def --(syms: Iterable[VarSym]): ExpContext = {
+      this.copy(vars = this.vars -- syms)
+    }
+
+    /**
+      * Returns a new [[ExpContext]] with [[localDefs]] incremented by one.
+      */
+    def incrementLocalDefs: ExpContext = {
+      this.copy(localDefs = localDefs + 1)
+    }
+
+    /**
+      * Returns a new [[ExpContext]] with [[size]] incremented by one.
+      */
+    def incrementSize: ExpContext = {
+      this.copy(size = size + 1)
+    }
+  }
+
+  /**
+    * A set of functions that contain masked casts.
+    *
+    * Must be manually maintained since [[Lowering]] erases masked casts.
+    */
+  private val DangerousFunctions: Set[String] = Set("bug!", "Fixpoint.Debugging.notifyPreSolve", "Fixpoint.Debugging.notifyPostSolve", "Fixpoint.Debugging.notifyPreInterpret", "Assert.eq")
+
+  /**
+    * Returns a string with where [[Flix.Delimiter]] is stripped, so membership can be checked in [[DangerousFunctions]].
+    */
+  private def stripDelimiter(sym: Symbol.DefnSym): String = {
+    sym.toString.takeWhile(c => c.toString != Flix.Delimiter)
+  }
+
+  /**
+    * Returns `true` if `sym` is a dangerous function, i.e., it is a member of [[DangerousFunctions]].
+    */
+  private def isDangerousFunction(sym: Symbol.DefnSym): Boolean = {
+    DangerousFunctions.contains(stripDelimiter(sym))
   }
 }
