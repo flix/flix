@@ -72,7 +72,7 @@ object OccurrenceAnalyzer {
   /**
     * Returns true if `def0` occurs in `occurInfo`.
     */
-  private def isSelfRecursive(occurInfo: ExpContext, defn0: OccurrenceAst.Def): Boolean = occurInfo.defs.get(defn0.sym) match {
+  private def isSelfRecursive(ctx: ExpContext, defn0: OccurrenceAst.Def): Boolean = ctx.defs.get(defn0.sym) match {
     case None => false
     case Some(o) => o match {
       case Occur.Dead => false
