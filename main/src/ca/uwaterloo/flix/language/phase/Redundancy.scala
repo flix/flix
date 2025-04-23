@@ -691,10 +691,18 @@ object Redundancy {
       sctx.effSyms.put(sym.sym, ())
       rules.foldLeft(Used.empty) {
         case (acc, HandlerRule(_, fparams, body, _)) =>
-          val usedBody = visitExp(body, env0, rc)
           val syms = fparams.map(_.bnd.sym)
-          val dead = syms.filter(deadVarSym(_, usedBody))
-          acc ++ usedBody ++ dead.map(UnusedVarSym.apply)
+          val shadowedFparamVars = syms.map(s => shadowing(s.text, s.loc, env0))
+          val env1 = env0 ++ syms
+          val usedBody = visitExp(body, env1, rc)
+          syms.zip(shadowedFparamVars).foldLeft(acc ++ usedBody) {
+            case (acc, (s, shadow)) =>
+              if (deadVarSym(s, usedBody)) {
+                acc ++ shadow + UnusedVarSym(s)
+              } else {
+                acc ++ shadow
+              }
+          }
       }
 
     case Expr.RunWith(exp1, exp2, _, _, _) =>
