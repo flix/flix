@@ -81,7 +81,7 @@ object OccurrenceAnalyzer {
       case Occur.OnceInLocalDef => true
       case Occur.Many => true
       case Occur.ManyBranch => true
-      case Occur.DontInline => false
+      case Occur.DontInline => true
       case Occur.DontInlineAndDontRewrite => true
     }
   }
