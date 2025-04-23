@@ -140,18 +140,6 @@ object OccurrenceAst {
   /**
     * Represents occurrence information of binders, i.e., how a binder occurs in the program.
     * A binder may be a variable, function, or effect handler.
-    *
-    * The definitions form a lattice that allow for parallel evaluation:
-    *
-    * {{{
-    *               Many
-    *       /        |        \
-    *      |     ManyBranch    |
-    *      |         |         |
-    * OnceInLambda  Once  OnceInLocalDef
-    *            \   |   /
-    *              Dead
-    * }}}
     */
   sealed trait Occur
 
