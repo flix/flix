@@ -184,7 +184,7 @@ sealed trait Completion {
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Function,
         additionalTextEdits = additionalTextEdit,
-        command = Some(Command("editor.action.triggerParameterHints", "editor.action.triggerParameterHints", Nil))
+        command             = Some(Command("editor.action.triggerParameterHints", "editor.action.triggerParameterHints", Nil))
       )
 
     case Completion.EnumCompletion(enm, range, ap, qualified, inScope, withTypeParameters) =>
@@ -407,7 +407,8 @@ sealed trait Completion {
         documentation       = Some(sig.spec.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Function,
-        additionalTextEdits = additionalTextEdit
+        additionalTextEdits = additionalTextEdit,
+        command             = Some(Command("editor.action.triggerParameterHints", "editor.action.triggerParameterHints", Nil))
       )
 
     case Completion.EnumTagCompletion(tag, namespace, range, ap, qualified, inScope) =>
