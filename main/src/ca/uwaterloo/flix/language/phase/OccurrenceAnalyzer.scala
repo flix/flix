@@ -37,7 +37,7 @@ object OccurrenceAnalyzer {
     val (ds, os) = ParOps.parMap(root.defs.values)(visitDef).unzip
 
     // Combine all `defOccurrences` into one map.
-    val defOccur = combineAll(os)
+    val defOccur = combineSeq(os)
 
     // Updates the occurrence of every `def` in `ds` based on the occurrence found in `defOccur`.
     val defs = ds.foldLeft(Map.empty[DefnSym, OccurrenceAst.Def]) {
@@ -68,28 +68,28 @@ object OccurrenceAnalyzer {
   /**
     * Combines `expCtx1` and `expCtx2` into a single [[ExpContext]].
     */
-  private def combineInfoBranch(expCtx1: ExpContext, expCtx2: ExpContext): ExpContext = {
-    combineAll(expCtx1, expCtx2, combineBranch)
+  private def combineBranch(expCtx1: ExpContext, expCtx2: ExpContext): ExpContext = {
+    combine(expCtx1, expCtx2, combineBranch)
   }
 
   /**
     * Combines `expCtx1` and `expCtx2` into a single [[ExpContext]].
     */
-  private def combineInfo(expCtx1: ExpContext, expCtx2: ExpContext): ExpContext = {
-    combineAll(expCtx1, expCtx2, combine)
+  private def combineSeq(expCtx1: ExpContext, expCtx2: ExpContext): ExpContext = {
+    combine(expCtx1, expCtx2, combineSeq)
   }
 
   /**
     * Combines `expCtx1` and `expCtx2` into a single [[ExpContext]].
     */
-  private def combineInfoOpt(expCtx1: Option[ExpContext], expCtx2: ExpContext): ExpContext = {
-    expCtx1.map(combineInfo(_, expCtx2)).getOrElse(expCtx2)
+  private def combineSeqOpt(expCtx1: Option[ExpContext], expCtx2: ExpContext): ExpContext = {
+    expCtx1.map(combineSeq(_, expCtx2)).getOrElse(expCtx2)
   }
 
   /**
     * Combines `expCtx1` and `expCtx2` into a single [[ExpContext]].
     */
-  private def combineAll(expCtx1: ExpContext, expCtx2: ExpContext, combine: (Occur, Occur) => Occur): ExpContext = {
+  private def combine(expCtx1: ExpContext, expCtx2: ExpContext, combine: (Occur, Occur) => Occur): ExpContext = {
     val varMap = combineMaps(expCtx1.vars, expCtx2.vars, combine)
     val defMap = combineMaps(expCtx1.defs, expCtx2.defs, combine)
     val localDefs = expCtx1.localDefs + expCtx2.localDefs
@@ -112,14 +112,14 @@ object OccurrenceAnalyzer {
   /**
     * Combines all [[ExpContext]] in `expCtxs` and maps each [[DefnSym]] to its corresponding [[ExpContext]].
     */
-  private def combineAll(expCtxs: Iterable[ExpContext]): Map[DefnSym, Occur] = {
-    expCtxs.foldLeft(Map.empty[DefnSym, Occur])((acc, o) => combineMaps(acc, o.defs, combine))
+  private def combineSeq(expCtxs: Iterable[ExpContext]): Map[DefnSym, Occur] = {
+    expCtxs.foldLeft(Map.empty[DefnSym, Occur])((acc, o) => combineMaps(acc, o.defs, combineSeq))
   }
 
   /**
     * Combines two occurrences `o1` and `o2` into a single occurrence for a branchless expression.
     */
-  private def combine(o1: Occur, o2: Occur): Occur = (o1, o2) match {
+  private def combineSeq(o1: Occur, o2: Occur): Occur = (o1, o2) match {
     case (DontInlineAndDontRewrite, _) => DontInlineAndDontRewrite
     case (_, DontInlineAndDontRewrite) => DontInlineAndDontRewrite
     case (DontInline, _) => DontInline
