@@ -160,6 +160,8 @@ object OccurrenceAst {
       * If the binder is a function, it is safe to remove it. However, [[ca.uwaterloo.flix.language.phase.TreeShaker2]] will handle that.
       *
       * Removing the binder results in smaller code size and does not affect work duplication.
+      *
+      * // TODO: Lattice drawing
       */
     case object Dead extends Occur
 
