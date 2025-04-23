@@ -120,10 +120,6 @@ object OccurrenceAnalyzer {
     * Combines two occurrences `o1` and `o2` into a single occurrence for a branchless expression.
     */
   private def combineSeq(o1: Occur, o2: Occur): Occur = (o1, o2) match {
-    case (DontInlineAndDontRewrite, _) => DontInlineAndDontRewrite
-    case (_, DontInlineAndDontRewrite) => DontInlineAndDontRewrite
-    case (DontInline, _) => DontInline
-    case (_, DontInline) => DontInline
     case (Dead, _) => o2
     case (_, Dead) => o1
     case _ => Many
@@ -134,10 +130,6 @@ object OccurrenceAnalyzer {
     * [[OccurrenceAst.Expr.IfThenElse]] and [[OccurrenceAst.Expr.Match]].
     */
   private def combineBranch(o1: Occur, o2: Occur): Occur = (o1, o2) match {
-    case (DontInlineAndDontRewrite, _) => DontInlineAndDontRewrite
-    case (_, DontInlineAndDontRewrite) => DontInlineAndDontRewrite
-    case (DontInline, _) => DontInline
-    case (_, DontInline) => DontInline
     case (Dead, _) => o2
     case (_, Dead) => o1
     case _ => ManyBranch
@@ -233,8 +225,6 @@ object OccurrenceAnalyzer {
       case Occur.OnceInLocalDef => true
       case Occur.Many => true
       case Occur.ManyBranch => true
-      case Occur.DontInline => true
-      case Occur.DontInlineAndDontRewrite => true
     }
   }
 }
