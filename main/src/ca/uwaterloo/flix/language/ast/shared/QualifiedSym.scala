@@ -13,10 +13,3 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package ca.uwaterloo.flix.language.ast.shared
-
-trait QualifiedSym{
-  def namespace: List[String]
-  def name: String
-}

@@ -26,6 +26,12 @@ import scala.collection.immutable.SortedSet
 
 sealed trait Symbol
 
+sealed trait QualifiedSym extends Symbol{
+  def namespace: List[String]
+  def name: String
+}
+
+
 object Symbol {
 
   /**

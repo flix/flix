@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolverInterface, InfResult, SubstitutionTree, TypeContext}
+import ca.uwaterloo.flix.language.phase.typer.*
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, TraitEnv}
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -61,15 +61,37 @@ object Typer {
 
   /**
     * Collects the symbols in the given root into a map.
+    *
+    * We'll make sure that the kind of any companion module in its parent's map is always Companion.
+    * This is achieved by first adding the companion module to the map.
+    * Later on, this value will never be replaced by a Standalone version, since they are equal.
     */
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
     case KindedAst.Root(traits, _, defs, enums, structs, _, effects, typeAliases, _, _, _, _, _) =>
       val sigs = traits.values.flatMap { trt => trt.sigs.values.map(_.sym) }
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
+      // First, we add mapping for companion modules to make sure they are considered Companion Modules from their parent module
+      // For example, A.B.C.Clr will add
+      //   ModuleSym(A.B.C, Standalone -> ModuleSym(A.B.C.Clr, Companion)
+      val constructsWithCompanionModule = traits.keys ++ enums.keys ++ structs.keys ++ effects.keys
+      val companionModules = constructsWithCompanionModule.foldLeft(Map.empty[ModuleSym, Set[Symbol]]) {
+        case (acc, sym) =>
+          val companionModule = new Symbol.ModuleSym(sym.namespace :+ sym.name, ModuleKind.Companion)
+          val parentModule = new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
+          val set = acc.getOrElse(parentModule, Set.empty)
+          // Add the companion module to the set of symbols for its parent module
+          acc.updated(parentModule, set + companionModule)
+      }
+
+      // The symbol of all the constructs
       val syms0 = traits.keys ++ defs.keys ++ enums.keys ++ structs.keys ++ effects.keys ++ typeAliases.keys ++ sigs ++ ops
 
-      // collect namespaces from prefixes of other symbols
+      // Collect namespaces from prefixes of all constructs
+      // For example, A.B.C.Clr will add
+      //   - ModuleSym(A, Standalone)
+      //   - ModuleSym(A.B, Standalone)
+      //   - ModuleSym(A.B.C, Companion)
       // TODO this should be done in resolver once the duplicate namespace issue is managed
       val namespaces = syms0.collect {
         case sym: Symbol.DefnSym => sym.namespace
@@ -83,23 +105,24 @@ object Typer {
       }.flatMap {
         fullNs =>
           fullNs.inits.collect {
-            case ns@(_ :: _) => new Symbol.ModuleSym(ns, ModuleKind.Standalone)
+            case ns@_ :: _ => new Symbol.ModuleSym(ns, ModuleKind.Standalone)
           }
       }.toSet
+
+      // Collect all the namespaces and the symbols
+      // For example, A.B.C.Clr will result in
+      //   - ModuleSym(A, Standalone)
+      //   - ModuleSym(A.B, Standalone)
+      //   - ModuleSym(A.B.C, Standalone)
+      //   - EnumSym(A.B.C.Clr)
       val syms = syms0 ++ namespaces
 
-      val constructsWithCompanionModule = traits.keys ++ enums.keys ++ structs.keys ++ effects.keys
-
-      val companionModules = constructsWithCompanionModule.foldLeft(Map.empty[ModuleSym, Set[Symbol]]) {
-        case (acc, sym) =>
-          val companionModule = new Symbol.ModuleSym(sym.namespace :+ sym.name, ModuleKind.Companion)
-          val parentModule = new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-          val set = acc.getOrElse(parentModule, Set.empty)
-          // Add the companion module to the set of symbols for its parent module
-          // Also, add the companion module with a default empty set of symbols
-          acc.updated(parentModule, set + companionModule).updated(companionModule, Set.empty)
-      }
-
+      // Finally, add all syms to the map
+      // For example, A.B.C.Clr will add
+      //   - ModuleSym("", Standalone)   -> Set(ModuleSym(A, Standalone))
+      //   - ModuleSym(A, Standalone)    -> Set(ModuleSym(A.B, Standalone))
+      //   - ModuleSym(A.B, Standalone)  -> Set(ModuleSym(A.B.C, Companion))
+      //   - ModuleSym(A.B.C, Companion) -> Set(EnumSym(A.B.C.Clr), ModuleSym(A.B.C.Clr, Companion))
       val modules = syms.foldLeft(companionModules) {
         case (acc, sym) =>
           sym match {
@@ -197,7 +220,7 @@ object Typer {
     */
   private def visitDefs(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, TypedAst.Def] = {
     changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_) {
-      case defn =>
+      defn =>
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
         val enableSubeffects = shouldSubeffect(defn.exp, defn.spec.eff, Subeffecting.ModDefs)
         visitDef(defn, tconstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, enableSubeffects)
@@ -286,9 +309,7 @@ object Typer {
     val instances0 = root.instances.values
 
     val instances = ParOps.parMap(instances0)(visitInstance(_, root, traitEnv, eqEnv))
-    val mapping = instances.map {
-      case instance => instance.trt.sym -> instance
-    }
+    val mapping = instances.map(instance => instance.trt.sym -> instance)
     ListMap.from(mapping)
   }
 
@@ -491,9 +512,7 @@ object Typer {
     */
   private def withSupers(tconstr: TraitConstraint, tenv: TraitEnv): List[TraitConstraint] = {
     val superSyms = tenv.getSuperTraits(tconstr.symUse.sym)
-    val directSupers = superSyms.map {
-      case sym => TraitConstraint(TraitSymUse(sym, SourceLocation.Unknown), tconstr.arg, tconstr.loc)
-    }
+    val directSupers = superSyms.map(sym => TraitConstraint(TraitSymUse(sym, SourceLocation.Unknown), tconstr.arg, tconstr.loc))
     val allSupers = directSupers.flatMap(withSupers(_, tenv))
     tconstr :: allSupers
   }
