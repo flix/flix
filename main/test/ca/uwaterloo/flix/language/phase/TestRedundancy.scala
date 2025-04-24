@@ -1658,7 +1658,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |eff Something
-           |pub def f(): Int32 = unsafely {IO, Something} run println("hey")
+           |pub def f(): Unit = unsafely {IO, Something} run println("hey")
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
