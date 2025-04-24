@@ -19,13 +19,14 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.*
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Occur}
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Expr, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
+import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 
 /**
   * The occurrence analyzer collects occurrence information on binders according to the definition of [[Occur]].
@@ -37,13 +38,14 @@ object OccurrenceAnalyzer {
     * Performs occurrence analysis on the given AST `root`.
     */
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): OccurrenceAst.Root = {
-    val (ds, os) = ParOps.parMap(root.defs.values)(visitDef).unzip
+    implicit val sctx: SharedContext = SharedContext.mk()
+    val defs0 = ParOps.parMap(root.defs.values)(visitDef)
 
-    // Combine all `defOccurrences` into one map.
-    val defOccur = combineSeq(os)
+    // Combine all def occurrence information.
+    val defOccur = combineSeq(sctx.defs.asScala)
 
-    // Updates the occurrence of every `def` in `ds` based on the occurrence found in `defOccur`.
-    val defs = ds.foldLeft(Map.empty[DefnSym, OccurrenceAst.Def]) {
+    // Updates the occurrence of every `def` in `defs0` based on the occurrence found in `defOccur`.
+    val defs = defs0.foldLeft(Map.empty[DefnSym, OccurrenceAst.Def]) {
       case (macc, defn) =>
         val occur = defOccur.getOrElse(defn.sym, Dead)
         val newContext = defn.context.copy(occur = occur)
@@ -56,17 +58,19 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on `defn`.
     */
-  private def visitDef(defn: OccurrenceAst.Def): (OccurrenceAst.Def, ExpContext) = {
-    val (exp, ctx) = visitExp(defn.exp)(defn.sym)
-    val defContext = DefContext(ctx.get(defn.sym), ctx.size, ctx.localDefs, isDirectCall(exp), isSelfRecursive(defn, ctx))
+  private def visitDef(defn: OccurrenceAst.Def)(implicit sctx: SharedContext): OccurrenceAst.Def = {
+    implicit val lctx: LocalContext = LocalContext.mk()
+    val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx, sctx)
+    val occur = Dead // This will be overwritten when combining all defs in `run`.
+    val defContext = DefContext(occur, lctx.size.get(), lctx.localDefs.get(), isDirectCall(exp), isSelfRecursive(ctx.selfOccur))
     val fparams = defn.fparams.map(fp => fp.copy(occur = ctx.get(fp.sym)))
-    (OccurrenceAst.Def(defn.sym, fparams, defn.spec, exp, defContext, defn.loc), ctx)
+    OccurrenceAst.Def(defn.sym, fparams, defn.spec, exp, defContext, defn.loc)
   }
 
   /**
     * Performs occurrence analysis on `exp0`
     */
-  private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym): (OccurrenceAst.Expr, ExpContext) = (exp0, ExpContext.empty)
+  private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext, sctx: SharedContext): (OccurrenceAst.Expr, ExpContext) = (exp0, ExpContext.empty)
 
   /**
     * Combines `ctx1` and `ctx2` into a single [[ExpContext]].
@@ -93,11 +97,9 @@ object OccurrenceAnalyzer {
     * Combines `ctx1` and `ctx2` into a single [[ExpContext]].
     */
   private def combine(ctx1: ExpContext, ctx2: ExpContext, combine: (Occur, Occur) => Occur): ExpContext = {
+    val selfOccur = combine(ctx1.selfOccur, ctx2.selfOccur)
     val varMap = combineMaps(ctx1.vars, ctx2.vars, combine)
-    val defMap = combineMaps(ctx1.defs, ctx2.defs, combine)
-    val localDefs = ctx1.localDefs + ctx2.localDefs
-    val size = ctx1.size + ctx2.size
-    ExpContext(defMap, varMap, localDefs, size)
+    ExpContext(selfOccur, varMap)
   }
 
   /**
@@ -113,10 +115,15 @@ object OccurrenceAnalyzer {
   }
 
   /**
-    * Combines all [[ExpContext]] in `ctxs` and maps each [[DefnSym]] to its corresponding [[ExpContext]].
+    * Maps each [[DefnSym]] to its corresponding [[Occur]] combining with [[combineSeq]].
     */
-  private def combineSeq(ctxs: Iterable[ExpContext]): Map[DefnSym, Occur] = {
-    ctxs.foldLeft(Map.empty[DefnSym, Occur])((acc, o) => combineMaps(acc, o.defs, combineSeq))
+  private def combineSeq(kvs: Iterable[(DefnSym, Occur)]): Map[DefnSym, Occur] = {
+    kvs.foldLeft(Map.empty[DefnSym, Occur]) {
+      case (acc, (sym, occur1)) => acc.get(sym) match {
+        case Some(occur2) => acc + (sym -> combineSeq(occur1, occur2))
+        case None => acc + (sym -> occur1)
+      }
+    }
   }
 
   /**
@@ -141,32 +148,21 @@ object OccurrenceAnalyzer {
   private object ExpContext {
 
     /** Context for an empty sequence of expressions. */
-    def empty: ExpContext = ExpContext(Map.empty, Map.empty, 0, 0)
+    def empty: ExpContext = ExpContext(Dead, Map.empty)
 
-    /** Context for a single expression. */
-    def one: ExpContext = ExpContext(Map.empty, Map.empty, 0, 1)
+    /** Context for a self-recursive call. */
+    def recursiveOnce: ExpContext = ExpContext(Once, Map.empty)
 
   }
 
   /**
     * Stores various pieces of information extracted from an expression.
     *
-    * @param defs      A map from function symbols to occurrence information.
-    *                  If the map does not contain a certain symbol, then symbol is [[Dead]].
+    * @param selfOccur Occurrence information on how the function occurs in its own definition.
     * @param vars      A map from variable symbols to occurrence information (this also includes uses of [[OccurrenceAst.Expr.LocalDef]]).
     *                  If the map does not contain a certain symbol, then symbol is [[Dead]].
-    * @param localDefs the number of declared [[OccurrenceAst.Expr.LocalDef]]s in the expression.
-    * @param size      The total number of subexpressions (including the expression itself).
     */
-  case class ExpContext(defs: Map[DefnSym, Occur], vars: Map[VarSym, Occur], localDefs: Int, size: Int) {
-
-    /**
-      * Returns the occurrence information collected on `sym`.
-      * If [[defs]] does not contain `sym`, then it is [[Dead]].
-      */
-    def get(sym: DefnSym): Occur = {
-      this.defs.getOrElse(sym, Dead)
-    }
+  case class ExpContext(selfOccur: Occur, vars: Map[VarSym, Occur]) {
 
     /**
       * Returns the occurrence information collected on `sym`.
@@ -174,11 +170,6 @@ object OccurrenceAnalyzer {
       */
     def get(sym: VarSym): Occur = {
       this.vars.getOrElse(sym, Dead)
-    }
-
-    /** Returns a new [[ExpContext]] with the mapping `sym -> occur` added to [[defs]]. */
-    def addDef(sym: DefnSym, occur: Occur): ExpContext = {
-      this.copy(defs = this.defs + (sym -> occur))
     }
 
     /** Returns a new [[ExpContext]] with the mapping `sym -> occur` added to [[vars]]. */
@@ -195,16 +186,6 @@ object OccurrenceAnalyzer {
     def removeVars(syms: Iterable[VarSym]): ExpContext = {
       this.copy(vars = this.vars -- syms)
     }
-
-    /** Returns a new [[ExpContext]] with [[localDefs]] incremented by one. */
-    def incrementLocalDefs: ExpContext = {
-      this.copy(localDefs = localDefs + 1)
-    }
-
-    /** Returns a new [[ExpContext]] with [[size]] incremented by one. */
-    def incrementSize: ExpContext = {
-      this.copy(size = size + 1)
-    }
   }
 
   /**
@@ -219,16 +200,13 @@ object OccurrenceAnalyzer {
   /**
     * Returns true if `defn` occurs in `ctx`.
     */
-  private def isSelfRecursive(defn: OccurrenceAst.Def, ctx: ExpContext): Boolean = ctx.defs.get(defn.sym) match {
-    case None => false
-    case Some(o) => o match {
-      case Occur.Dead => false
-      case Occur.Once => true
-      case Occur.OnceInLambda => true
-      case Occur.OnceInLocalDef => true
-      case Occur.Many => true
-      case Occur.ManyBranch => true
-    }
+  private def isSelfRecursive(occur: Occur): Boolean = occur match {
+    case Occur.Dead => false
+    case Occur.Once => true
+    case Occur.OnceInLambda => true
+    case Occur.OnceInLocalDef => true
+    case Occur.Many => true
+    case Occur.ManyBranch => true
   }
 
   /**
@@ -240,6 +218,7 @@ object OccurrenceAnalyzer {
       * Returns a fresh [[LocalContext]].
       */
     def mk(): LocalContext = new LocalContext(new AtomicInteger(0), new AtomicInteger(0))
+
   }
 
   /**
@@ -262,6 +241,7 @@ object OccurrenceAnalyzer {
       * Returns a fresh [[SharedContext]].
       */
     def mk(): SharedContext = new SharedContext(new ConcurrentHashMap())
+
   }
 
   /**
