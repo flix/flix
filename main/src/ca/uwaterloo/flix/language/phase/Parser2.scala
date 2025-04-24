@@ -37,11 +37,11 @@ import scala.collection.mutable.ArrayBuffer
   *      Conceptually this is exactly the same as inserting parenthesis in a stream of tokens, only
   *      here each parenthesis is annotated with a kind.
   *      For instance:
-  *      {{{def main(): Int32 = 123}}}
+  * {{{def main(): Int32 = 123}}}
   *      Becomes:
-  *      {{{(Def 'def' (Name 'main' ) '(' ')' ':' (Type 'Int32' ) '=' (Literal '123' ) )}}}
+  * {{{(Def 'def' (Name 'main' ) '(' ')' ':' (Type 'Int32' ) '=' (Literal '123' ) )}}}
   *
-  *   2. The flat list of events is automatically turned into a SyntaxTree.Tree.
+  * 2. The flat list of events is automatically turned into a SyntaxTree.Tree.
   *
   * This parser is adopted from 'Resilient LL Parsing Tutorial' by Alex Kladov who works on
   * rust-analyzer. The tutorial is also a great resource for understanding this parser (and a great
@@ -174,16 +174,16 @@ object Parser2 {
           val child = stack.head
           val openToken = locationStack.head
           stack.head.loc = if (stack.head.children.length == 0)
-          // If the subtree has no children, give it a zero length position just after the last
-          // token.
+            // If the subtree has no children, give it a zero length position just after the last
+            // token.
             SourceLocation(
               isReal = true,
               lastAdvance.sp2,
               lastAdvance.sp2
             )
           else
-          // Otherwise the source location can span from the first to the last token in the sub
-          // tree.
+            // Otherwise the source location can span from the first to the last token in the sub
+            // tree.
             SourceLocation(
               isReal = true,
               openToken.sp1,
@@ -1382,8 +1382,8 @@ object Parser2 {
       lhs
     }
 
-    def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false)(implicit s: State): Mark.Closed = {
-      var lhs = exprDelimited()
+    def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false, exitTokens: Set[TokenKind] = Set.empty)(implicit s: State): Mark.Closed = {
+      var lhs = exprDelimited(exitTokens)
       // Handle chained calls and record lookups.
       var continue = true
       while (continue) {
@@ -1586,92 +1586,99 @@ object Parser2 {
       }
     }
 
-    private def exprDelimited()(implicit s: State): Mark.Closed = {
+    private def exprDelimited(exitTokens: Set[TokenKind])(implicit s: State): Mark.Closed = {
       // If a new expression is added here then add it to FIRST_EXPR too.
       val mark = open()
-      nth(0) match {
-        case TokenKind.KeywordOpenVariant => openVariantExpr()
-        case TokenKind.KeywordOpenVariantAs => openVariantAsExpr()
-        case TokenKind.HoleNamed
-             | TokenKind.HoleAnonymous => holeExpr()
-        case TokenKind.HoleVariable => holeVariableExpr()
-        case TokenKind.KeywordUse => useExpr()
-        case TokenKind.LiteralString
-             | TokenKind.LiteralChar
-             | TokenKind.LiteralFloat32
-             | TokenKind.LiteralFloat64
-             | TokenKind.LiteralBigDecimal
-             | TokenKind.LiteralInt8
-             | TokenKind.LiteralInt16
-             | TokenKind.LiteralInt32
-             | TokenKind.LiteralInt64
-             | TokenKind.LiteralBigInt
-             | TokenKind.KeywordTrue
-             | TokenKind.KeywordFalse
-             | TokenKind.KeywordNull
-             | TokenKind.LiteralRegex => literalExpr()
-        case TokenKind.ParenL => parenOrTupleOrLambdaExpr()
-        case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else nameUnqualified(NAME_VARIABLE, SyntacticContext.Expr.OtherExpr)
-        case TokenKind.NameLowerCase if nth(1) == TokenKind.ArrowThinR => unaryLambdaExpr()
-        case TokenKind.NameLowerCase => nameAllowQualified(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
-        case TokenKind.NameUpperCase
-             | TokenKind.NameMath
-             | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else nameAllowQualified(NAME_DEFINITION, context = SyntacticContext.Expr.OtherExpr)
-        case TokenKind.Minus
-             | TokenKind.KeywordNot
-             | TokenKind.Plus
-             | TokenKind.TripleTilde
-             | TokenKind.KeywordLazy
-             | TokenKind.KeywordForce
-             | TokenKind.KeywordDiscard => unaryExpr()
-        case TokenKind.KeywordIf => ifThenElseExpr()
-        case TokenKind.KeywordLet => letMatchExpr()
-        case TokenKind.Annotation | TokenKind.KeywordDef => localDefExpr()
-        case TokenKind.KeywordRegion => scopeExpr()
-        case TokenKind.KeywordMatch => matchOrMatchLambdaExpr()
-        case TokenKind.KeywordTypeMatch => typematchExpr()
-        case TokenKind.KeywordChoose
-             | TokenKind.KeywordChooseStar => restrictableChooseExpr()
-        case TokenKind.KeywordForA => forApplicativeExpr()
-        case TokenKind.KeywordForeach => foreachExpr()
-        case TokenKind.KeywordForM => forMonadicExpr()
-        case TokenKind.CurlyL => blockOrRecordExpr()
-        case TokenKind.ArrayHash => arrayLiteralExpr()
-        case TokenKind.VectorHash => vectorLiteralExpr()
-        case TokenKind.ListHash => listLiteralExpr()
-        case TokenKind.SetHash => setLiteralExpr()
-        case TokenKind.MapHash => mapLiteralExpr()
-        case TokenKind.DotDotDot => dotdotdotLiteral()
-        case TokenKind.KeywordCheckedCast => checkedTypeCastExpr()
-        case TokenKind.KeywordCheckedECast => checkedEffectCastExpr()
-        case TokenKind.KeywordUncheckedCast => uncheckedCastExpr()
-        case TokenKind.KeywordUnsafe => unsafeExpr()
-        case TokenKind.KeywordUnsafely => unsafelyRunExpr()
-        case TokenKind.KeywordRun => runExpr()
-        case TokenKind.KeywordHandler => handlerExpr()
-        case TokenKind.KeywordTry => tryExpr()
-        case TokenKind.KeywordThrow => throwExpr()
-        case TokenKind.KeywordNew => ambiguousNewExpr()
-        case TokenKind.KeywordStaticUppercase => staticExpr()
-        case TokenKind.KeywordSelect => selectExpr()
-        case TokenKind.KeywordSpawn => spawnExpr()
-        case TokenKind.KeywordPar => parYieldExpr()
-        case TokenKind.HashCurlyL => fixpointConstraintSetExpr()
-        case TokenKind.HashParenL => fixpointLambdaExpr()
-        case TokenKind.KeywordSolve => fixpointSolveExpr()
-        case TokenKind.KeywordInject => fixpointInjectExpr()
-        case TokenKind.KeywordQuery => fixpointQueryExpr()
-        case TokenKind.BuiltIn => intrinsicExpr()
-        case TokenKind.LiteralStringInterpolationL
-             | TokenKind.LiteralDebugStringL => interpolatedStringExpr()
-        case TokenKind.KeywordDebug
-             | TokenKind.KeywordDebugBang
-             | TokenKind.KeywordDebugBangBang => debugExpr()
-        case t =>
-          val mark = open()
-          val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation())
-          advance()
-          closeWithError(mark, error)
+      val token = nth(0)
+      if (exitTokens.contains(token)) {
+        val mark = open()
+        val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(token), SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation())
+        closeWithError(mark, error)
+      } else {
+        token match {
+          case TokenKind.KeywordOpenVariant => openVariantExpr()
+          case TokenKind.KeywordOpenVariantAs => openVariantAsExpr()
+          case TokenKind.HoleNamed
+               | TokenKind.HoleAnonymous => holeExpr()
+          case TokenKind.HoleVariable => holeVariableExpr()
+          case TokenKind.KeywordUse => useExpr()
+          case TokenKind.LiteralString
+               | TokenKind.LiteralChar
+               | TokenKind.LiteralFloat32
+               | TokenKind.LiteralFloat64
+               | TokenKind.LiteralBigDecimal
+               | TokenKind.LiteralInt8
+               | TokenKind.LiteralInt16
+               | TokenKind.LiteralInt32
+               | TokenKind.LiteralInt64
+               | TokenKind.LiteralBigInt
+               | TokenKind.KeywordTrue
+               | TokenKind.KeywordFalse
+               | TokenKind.KeywordNull
+               | TokenKind.LiteralRegex => literalExpr()
+          case TokenKind.ParenL => parenOrTupleOrLambdaExpr()
+          case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else nameUnqualified(NAME_VARIABLE, SyntacticContext.Expr.OtherExpr)
+          case TokenKind.NameLowerCase if nth(1) == TokenKind.ArrowThinR => unaryLambdaExpr()
+          case TokenKind.NameLowerCase => nameAllowQualified(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
+          case TokenKind.NameUpperCase
+               | TokenKind.NameMath
+               | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else nameAllowQualified(NAME_DEFINITION, context = SyntacticContext.Expr.OtherExpr)
+          case TokenKind.Minus
+               | TokenKind.KeywordNot
+               | TokenKind.Plus
+               | TokenKind.TripleTilde
+               | TokenKind.KeywordLazy
+               | TokenKind.KeywordForce
+               | TokenKind.KeywordDiscard => unaryExpr()
+          case TokenKind.KeywordIf => ifThenElseExpr()
+          case TokenKind.KeywordLet => letMatchExpr()
+          case TokenKind.Annotation | TokenKind.KeywordDef => localDefExpr()
+          case TokenKind.KeywordRegion => scopeExpr()
+          case TokenKind.KeywordMatch => matchOrMatchLambdaExpr()
+          case TokenKind.KeywordTypeMatch => typematchExpr()
+          case TokenKind.KeywordChoose
+               | TokenKind.KeywordChooseStar => restrictableChooseExpr()
+          case TokenKind.KeywordForA => forApplicativeExpr()
+          case TokenKind.KeywordForeach => foreachExpr()
+          case TokenKind.KeywordForM => forMonadicExpr()
+          case TokenKind.CurlyL => blockOrRecordExpr()
+          case TokenKind.ArrayHash => arrayLiteralExpr()
+          case TokenKind.VectorHash => vectorLiteralExpr()
+          case TokenKind.ListHash => listLiteralExpr()
+          case TokenKind.SetHash => setLiteralExpr()
+          case TokenKind.MapHash => mapLiteralExpr()
+          case TokenKind.DotDotDot => dotdotdotLiteral()
+          case TokenKind.KeywordCheckedCast => checkedTypeCastExpr()
+          case TokenKind.KeywordCheckedECast => checkedEffectCastExpr()
+          case TokenKind.KeywordUncheckedCast => uncheckedCastExpr()
+          case TokenKind.KeywordUnsafe => unsafeExpr()
+          case TokenKind.KeywordUnsafely => unsafelyRunExpr()
+          case TokenKind.KeywordRun => runExpr()
+          case TokenKind.KeywordHandler => handlerExpr()
+          case TokenKind.KeywordTry => tryExpr()
+          case TokenKind.KeywordThrow => throwExpr()
+          case TokenKind.KeywordNew => ambiguousNewExpr()
+          case TokenKind.KeywordStaticUppercase => staticExpr()
+          case TokenKind.KeywordSelect => selectExpr()
+          case TokenKind.KeywordSpawn => spawnExpr()
+          case TokenKind.KeywordPar => parYieldExpr()
+          case TokenKind.HashCurlyL => fixpointConstraintSetExpr()
+          case TokenKind.HashParenL => fixpointLambdaExpr()
+          case TokenKind.KeywordSolve => fixpointSolveExpr()
+          case TokenKind.KeywordInject => fixpointInjectExpr()
+          case TokenKind.KeywordQuery => fixpointQueryExpr()
+          case TokenKind.BuiltIn => intrinsicExpr()
+          case TokenKind.LiteralStringInterpolationL
+               | TokenKind.LiteralDebugStringL => interpolatedStringExpr()
+          case TokenKind.KeywordDebug
+               | TokenKind.KeywordDebugBang
+               | TokenKind.KeywordDebugBangBang => debugExpr()
+          case t =>
+            val mark = open()
+            val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation())
+            advance()
+            closeWithError(mark, error)
+        }
       }
       close(mark, TreeKind.Expr.Expr)
     }
@@ -1865,12 +1872,13 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordIf, SyntacticContext.Expr.OtherExpr)
       expect(TokenKind.ParenL, SyntacticContext.Expr.OtherExpr)
+      val exitTokens: Set[TokenKind] = Set(TokenKind.ParenR, TokenKind.KeywordElse)
       val condMark = open()
-      expression()
+      expression(exitTokens = exitTokens)
       close(condMark, TreeKind.Expr.Condition)
       expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
       val thenMark = open()
-      expression()
+      expression(exitTokens = exitTokens)
       close(thenMark, TreeKind.Expr.Then)
       if (eat(TokenKind.KeywordElse)) {
         // Only call expression, if we found an 'else'. Otherwise when it is missing, defs might
