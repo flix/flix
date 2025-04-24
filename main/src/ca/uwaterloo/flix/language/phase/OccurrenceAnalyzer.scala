@@ -54,7 +54,136 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on `exp0`
     */
-  private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.Expr, ExpContext) = (exp0, ExpContext.empty)
+  private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.Expr, ExpContext) = exp0 match {
+    case OccurrenceAst.Expr.Cst(cst, tpe, loc) =>
+      lctx.size.incrementAndGet()
+      (OccurrenceAst.Expr.Cst(cst, tpe, loc), ExpContext.empty)
+
+    case OccurrenceAst.Expr.Var(sym, tpe, loc) =>
+      (OccurrenceAst.Expr.Var(sym, tpe, loc), ExpContext.empty.addVar(sym, Once))
+
+    case OccurrenceAst.Expr.Lambda(fp, exp, tpe, loc) =>
+      val (e, o) = visitExp(exp)
+      val o1 = captureVarsInLambda(o)
+      val occur = o1.get(fp.sym)
+      val o2 = o1 - fp.sym
+      lctx.size.incrementAndGet()
+      (OccurrenceAst.Expr.Lambda(fp.copy(occur = occur), e, tpe, loc), )
+
+    case OccurrenceAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
+      val (es, o) = visitExps(exps)
+      val o1 = visitAtomicOp(op, o)
+      (OccurrenceAst.Expr.ApplyAtomic(op, es, tpe, eff, loc), increment(o1))
+
+    case OccurrenceAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+      val (e1, o1) = visitExp(exp1)
+      val (e2, o2) = visitExp(exp2)
+      val o3 = combineInfo(o1, o2)
+      (OccurrenceAst.Expr.ApplyClo(e1, e2, tpe, eff, loc), increment(o3))
+
+    case OccurrenceAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+      val (es, o1) = visitExps(exps)
+      val o2 = o1 :+ sym -> Once
+      (OccurrenceAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc), increment(o2))
+
+    case OccurrenceAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+      val (es, o1) = visitExps(exps)
+      val o2 = o1 + (sym -> Once)
+      (OccurrenceAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc), increment(o2))
+
+    case OccurrenceAst.Expr.Let(sym, exp1, exp2, tpe, eff, _, loc) =>
+      val (e1, o1) = visitExp(exp1)
+      val (e2, o2) = visitExp(exp2)
+      val o3 = combineInfo(o1, o2)
+      val occur = o3.get(sym)
+      val o4 = o3 - sym
+      (OccurrenceAst.Expr.Let(sym, e1, e2, tpe, eff, occur, loc), increment(o4))
+
+    case OccurrenceAst.Expr.LocalDef(sym, formalParams, exp1, exp2, tpe, eff, _, loc) =>
+      val (e1, o10) = visitExp(exp1)
+      val o11 = captureVarsInLocalDef(o10)
+      val fps = formalParams.map(fp => fp.copy(occur = o11.get(fp.sym)))
+      val o1 = o11 -- fps.map(_.sym)
+      val (e2, o2) = visitExp(exp2)
+      val o3 = combineInfo(o1, o2)
+      val occur = o3.get(sym)
+      val o4 = o3 - sym
+      val o5 = o4.incrementLocalDefCount
+      (OccurrenceAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), increment(o5))
+
+    case OccurrenceAst.Expr.Scope(sym, rsym, exp, tpe, eff, loc) =>
+      val (e, o1) = visitExp(exp)
+      (OccurrenceAst.Expr.Scope(sym, rsym, e, tpe, eff, loc), increment(o1))
+
+    case OccurrenceAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+      val (e1, o1) = visitExp(exp1)
+      val (e2, o2) = visitExp(exp2)
+      val (e3, o3) = visitExp(exp3)
+      val o4 = combineInfo(o1, combineInfoBranch(o2, o3))
+      (OccurrenceAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc), increment(o4))
+
+    case OccurrenceAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
+      val (e1, o1) = visitExp(exp1)
+      val (e2, o2) = visitExp(exp2)
+      val o3 = combineInfo(o1, o2)
+      (OccurrenceAst.Expr.Stm(e1, e2, tpe, eff, loc), increment(o3))
+
+    case OccurrenceAst.Expr.Discard(exp, eff, loc) =>
+      val (e, o) = visitExp(exp)
+      (OccurrenceAst.Expr.Discard(e, eff, loc), increment(o))
+
+    case OccurrenceAst.Expr.Match(exp, rules, tpe, eff, loc) =>
+      val (e, o1) = visitExp(exp)
+      val (rs, o2) = visitMatchRules(rules)
+      val o3 = combineInfo(o1, o2)
+      (OccurrenceAst.Expr.Match(e, rs, tpe, eff, loc), increment(o3))
+
+    case OccurrenceAst.Expr.VectorLit(exps, tpe, eff, loc) =>
+      val (es, o) = visitExps(exps)
+      (OccurrenceAst.Expr.VectorLit(es, tpe, eff, loc), increment(o))
+
+    case OccurrenceAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+      val (e1, o1) = visitExp(exp1)
+      val (e2, o2) = visitExp(exp2)
+      val o3 = combineInfo(o1, o2)
+      (OccurrenceAst.Expr.VectorLoad(e1, e2, tpe, eff, loc), increment(o3))
+
+    case OccurrenceAst.Expr.VectorLength(exp, loc) =>
+      val (e, o) = visitExp(exp)
+      (OccurrenceAst.Expr.VectorLength(e, loc), increment(o))
+
+    case OccurrenceAst.Expr.Ascribe(exp, tpe, eff, loc) =>
+      val (e, o) = visitExp(exp)
+      (OccurrenceAst.Expr.Ascribe(e, tpe, eff, loc), increment(o))
+
+    case OccurrenceAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      val (e, o) = visitExp(exp)
+      val o1 = if (declaredEff.isDefined) o :+ sym0 -> DontInlineAndDontRewrite else o
+      (OccurrenceAst.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc), increment(o1))
+
+    case OccurrenceAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+      val (e, o1) = visitExp(exp)
+      val (rs, o2) = visitTryCatchRules(rules)
+      // Nesting try-catch breaks the backend so don't inline
+      val o3 = combineInfoBranch(o1, o2) :+ sym0 -> DontInline
+      (OccurrenceAst.Expr.TryCatch(e, rs, tpe, eff, loc), increment(o3))
+
+    case OccurrenceAst.Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
+      val (e, o1) = visitExp(exp)
+      val (rs, o2) = visitTryWithRules(rules)
+      val o3 = combineInfo(o1, o2) :+ sym0 -> DontInline
+      (OccurrenceAst.Expr.RunWith(e, effUse, rs, tpe, eff, loc), increment(o3))
+
+    case OccurrenceAst.Expr.Do(op, exps, tpe, eff, loc) =>
+      val (es, o) = visitExps(exps)
+      (OccurrenceAst.Expr.Do(op, es, tpe, eff, loc), increment(o))
+
+    case OccurrenceAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
+      val (ms, o) = visitJvmMethods(methods)
+      (OccurrenceAst.Expr.NewObject(name, clazz, tpe, eff, ms, loc), increment(o))
+
+  }
+
 
   /**
     * Combines `ctx1` and `ctx2` into a single [[ExpContext]].
