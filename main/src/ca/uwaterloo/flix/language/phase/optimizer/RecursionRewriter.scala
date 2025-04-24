@@ -205,7 +205,7 @@ object RecursionRewriter {
           }.map {
             case (e, _) => rewriteExp(e)
           }
-          Expr.ApplyLocalDef(localDefSym, es, itpe, eff, loc)
+          Expr.ApplyLocalDef(localDefSym, es, tpe, eff, loc)
       }
 
     case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
