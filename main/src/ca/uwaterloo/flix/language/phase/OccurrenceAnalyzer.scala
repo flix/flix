@@ -24,6 +24,8 @@ import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 
+import java.util.concurrent.ConcurrentLinkedQueue
+
 /**
   * The occurrence analyzer collects occurrence information on binders according to the definition of [[Occur]].
   * Additionally, it also counts the number of subexpressions in a function to compute its size.
@@ -227,4 +229,23 @@ object OccurrenceAnalyzer {
       case Occur.ManyBranch => true
     }
   }
+
+  /**
+    * Companion object for [[SharedContext]].
+    */
+  private object SharedContext {
+    /**
+      * Returns a fresh shared context.
+      */
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+  }
+
+  /**
+    * A global shared context. Must be thread-safe.
+    *
+    * @param defs A map from function symbols to occurrence information.
+    *             If the map does not contain a certain symbol, then symbol is [[Dead]].
+    */
+  private case class SharedContext(defs: ConcurrentLinkedQueue[(DefnSym, Occur)])
+
 }
