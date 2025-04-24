@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.Expr
+import ca.uwaterloo.flix.language.ast.MonoAst.Expr.ApplyLocalDef
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope}
-import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -49,10 +50,14 @@ object RecursionRewriter {
     // 2.1 Create a substitution from the function symbol and alive parameters to fresh symbols (maybe this can be created during step 2)
     // 2.2 Copy the function body, visit and apply the substitution and rewrite nodes. Any ApplyDef expr becomes an ApplyLocalDef expr.
     val freshLocalDefSym = Symbol.freshVarSym(defn.sym.text, BoundBy.LocalDef, defn.sym.loc)(Scope.Top, flix)
-    val subst = Subst.from(defn.sym, freshLocalDefSym, ctx.alive.toMap)
-    val localDefLoop = rewriteExp(defn.exp)(subst, defn.spec.fparams)
+    val varSubst = ctx.alive.toMap
+    val subst = Subst.from(defn.sym, freshLocalDefSym, varSubst)
+    val localDef = rewriteExp(defn.exp)(subst, defn.spec.fparams)
+
     // 2.3 Replace the original function body with a LocalDef declaration that has the body from 3.2, followed by an ApplyLocalDef expr.
-    ???
+    val aliveParams = defn.spec.fparams.filter(fp => varSubst.contains(fp.sym))
+    val body = mkLocalDefExpr(subst, localDef, freshLocalDefSym, aliveParams, defn.spec.retTpe, defn.spec.eff)
+    defn.copy(exp = body)
   }
 
   private def checkTailPosition(exp0: MonoAst.Expr, tailPos: Boolean)(implicit sym0: Symbol.DefnSym, fparams: List[MonoAst.FormalParam], ctx: LocalContext, flix: Flix): Boolean = exp0 match {
@@ -305,6 +310,28 @@ object RecursionRewriter {
     case Expr.Var(sym, _, _) => sym != fparam.sym
     case _ => true
   }
+
+  /**
+    * Returns a [[Expr.LocalDef]] that is immediately applied after its declaration. Only the parameters that are alive are declared and applied.
+    * Dead parameters are captured from the containing function.
+    *
+    * @param subst       The variable substitution.
+    * @param body        The body of the local def to be created.
+    * @param localDefSym The symbol of the local def to be created.
+    * @param aliveParams The list of parameters that are alive in the body.
+    * @param tpe         The return type of the local def, i.e., the type obtained by applying the local def.
+    * @param eff         The effect the local def, i.e., the effect obtained by applying the local def.
+    */
+  private def mkLocalDefExpr(subst: Subst, body: Expr, localDefSym: Symbol.VarSym, aliveParams: List[MonoAst.FormalParam], tpe: Type, eff: Type): Expr = {
+    // Make ApplyLocalDef Expr
+    val args = aliveParams.map(fp => Expr.Var(fp.sym, fp.tpe, fp.loc.asSynthetic))
+    val applyLocalDef = Expr.ApplyLocalDef(localDefSym, args, tpe, eff, body.loc.asSynthetic)
+
+    // Make LocalDef expr
+    val params = aliveParams.map(fp => fp.copy(sym = subst(fp.sym), loc = fp.loc.asSynthetic))
+    Expr.LocalDef(localDefSym, params, body, applyLocalDef, tpe, eff, body.loc.asSynthetic)
+  }
+
 
   private object LocalContext {
 
