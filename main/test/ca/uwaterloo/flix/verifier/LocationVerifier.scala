@@ -21,12 +21,10 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern, RestrictableChoosePattern}
-import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.LocationError
 import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.jdk.CollectionConverters.IterableHasAsScala
 
 /**
   * The LocationVerifier verifies the locations of the Flix program.
@@ -37,13 +35,10 @@ import scala.jdk.CollectionConverters.IterableHasAsScala
   *   - The parent node and its last child node must have the same ending.
   */
 object LocationVerifier {
-  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): (TypedAst.Root, List[Any]) = flix.phaseNew("LocationVerifier") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Unit = {
       if (flix.options.xverifylocations) {
         implicit val sctx: SharedContext = SharedContext.mk()
-        val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
-        (root.copy(defs = defs), sctx.errors.asScala.toList)
-      } else {
-        (root, Nil)
+        ParOps.parMapValues(root.defs)(visitDef)
       }
   }
 
