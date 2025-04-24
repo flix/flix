@@ -1731,7 +1731,7 @@ object Weeder2 {
             SyntacticContext.Expr.OtherExpr,
             loc = tree.loc)
           sctx.errors.add(error)
-          Validation.Success(Expr.RunWith(expr, Nil, tree.loc))
+          Validation.Success(Expr.RunWith(expr, List(Expr.Error(error)), tree.loc))
         // Case: run expr [with expr]...
         case (expr, exprs) => Validation.Success(Expr.RunWith(expr, exprs, tree.loc))
       }
