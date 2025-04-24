@@ -22,11 +22,11 @@ import ca.uwaterloo.flix.language.ast.{MonoAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
 import ca.uwaterloo.flix.util.ParOps
 
-import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.mutable
 
 /**
   * Rewrites functions that recursively call themselves in tail-position to
-  * non-recursive functions with a recursive local def.
+  * non-recursive functions with a recursive _al def.
   */
 object RecursionRewriter {
 
@@ -35,73 +35,150 @@ object RecursionRewriter {
     root.copy(defs = newDefs)
   }
 
-  private def visitDef(defn: MonoAst.Def): MonoAst.Def = {
+  private def visitDef(defn: MonoAst.Def)(implicit flix: Flix): MonoAst.Def = {
     // 1. Check that every recursive call is in tail position
+    //    Return a set of alive parameters, i.e, function parameters that are changed in a recursive call (if it is an Expr.Var with the same symbol, then it is dead).
     implicit val ctx: LocalContext = LocalContext.mk()
-    val isRewritable = checkTailPosition(defn.exp, tailPos = true)(defn.sym, defn.spec.fparams ctx)
-    // 2. Return a set of alive parameters, i.e, function parameters that are changed in a recursive call (if it is an Expr.Var with the same symbol, then it is dead).
-    // 3. Rewrite eligible functions
-    // 3.1 Create a substitution from the function symbol and alive parameters to fresh symbols (maybe this can be created during step 2)
-    // 3.2 Copy the function body, visit and apply the substitution and rewrite nodes. Any ApplyDef expr becomes an ApplyLocalDef expr.
-    // 3.3 Replace the original function body with a LocalDef declaration that has the body from 3.2, followed by an ApplyLocalDef expr.
+    val isRewritable = checkTailPosition(defn.exp, tailPos = true)(defn.sym, defn.spec.fparams, ctx, flix)
+    if (!isRewritable) {
+      return defn
+    }
+
+    // 2. Rewrite eligible functions
+
+    // 2.1 Create a substitution from the function symbol and alive parameters to fresh symbols (maybe this can be created during step 2)
+    // 2.2 Copy the function body, visit and apply the substitution and rewrite nodes. Any ApplyDef expr becomes an ApplyLocalDef expr.
+    // 2.3 Replace the original function body with a LocalDef declaration that has the body from 3.2, followed by an ApplyLocalDef expr.
     ???
   }
 
-  private def checkTailPosition(exp0: MonoAst.Expr, tailPos: Boolean)(implicit sym0: Symbol.DefnSym, fparams: List[MonoAst.FormalParam], ctx: LocalContext): Boolean = exp0 match {
+  private def checkTailPosition(exp0: MonoAst.Expr, tailPos: Boolean)(implicit sym0: Symbol.DefnSym, fparams: List[MonoAst.FormalParam], ctx: LocalContext, flix: Flix): Boolean = exp0 match {
     case Expr.Cst(_, _, _) =>
       true
 
-    case Expr.Var(_, _, _) =>
-      true
-
-    case Expr.Lambda(fparam, exp, tpe, loc) =>
-      // The inner expr is always in tailpos, but we care about `sym0` so it should be in tailpos only if the lambda is too
-      val expIsTailPos = checkTailPosition(exp, tailPos = tailPos)
-      tailPos && expIsTailPos
-
-    case Expr.ApplyAtomic(op, exps, _, _, _) =>
-      val expsInTailPos = exps.forall(checkTailPosition(_, tailPos = false))
-      tailPos && expsInTailPos
-
-    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
-      checkTailPosition(exp1, tailPos) && checkTailPosition(exp2, tailPos = false)
-
-    case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
-      if (isRecursiveCallInNonTailPosition(tailPos, sym0, sym)) {
-        return false
+    case Expr.Var(sym, _, _) =>
+      if (fparams.map(_.sym).contains(sym)) {
+        ctx.alive.getOrElseUpdate(sym, Symbol.freshVarSym(sym))
       }
       true
 
+    case Expr.Lambda(_, exp, _, _) =>
+      checkTailPosition(exp, tailPos = false)
 
-    case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) => ???
-    case Expr.Let(sym, exp1, exp2, tpe, eff, loc) => ???
-    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) => ???
-    case Expr.Scope(sym, regSym, exp, tpe, eff, loc) => ???
-    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => ???
-    case Expr.Stm(exp1, exp2, tpe, eff, loc) => ???
-    case Expr.Discard(exp, eff, loc) => ???
-    case Expr.Match(exp, rules, tpe, eff, loc) => ???
-    case Expr.VectorLit(exps, tpe, eff, loc) => ???
-    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => ???
-    case Expr.VectorLength(exp, loc) => ???
-    case Expr.Ascribe(exp, tpe, eff, loc) => ???
-    case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) => ???
-    case Expr.TryCatch(exp, rules, tpe, eff, loc) => ???
-    case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) => ???
-    case Expr.Do(op, exps, tpe, eff, loc) => ???
-    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => ???
+    case Expr.ApplyAtomic(_, exps, _, _, _) =>
+      exps.forall(checkTailPosition(_, tailPos = false))
+
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      checkTailPosition(exp1, tailPos) &&
+        checkTailPosition(exp2, tailPos = false)
+
+    case Expr.ApplyDef(sym, exps, _, _, _, _) =>
+      if (sym != sym0) {
+        // Not recursive call
+        return exps.forall(checkTailPosition(_, tailPos = false))
+      }
+
+      // Recursive Call
+      if (!tailPos) {
+        // Not tailpos => abort!
+        return false
+      }
+
+      // Recursive call in tailpos
+      // Check alive parameters
+      exps.zip(fparams)
+        .filter {
+          case (exp, fparam) => aliveParam(exp, fparam)
+        }.forall {
+          case (exp, _) => checkTailPosition(exp, tailPos = false)
+        }
+
+    case Expr.ApplyLocalDef(_, exps, _, _, _) =>
+      exps.forall(checkTailPosition(_, tailPos = false))
+
+    case Expr.Let(_, exp1, exp2, _, _, _) =>
+      checkTailPosition(exp1, tailPos = false) &&
+        checkTailPosition(exp2, tailPos)
+
+
+    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
+      checkTailPosition(exp1, tailPos = false) &&
+        checkTailPosition(exp2, tailPos)
+
+    case Expr.Scope(_, _, exp, _, _, _) =>
+      checkTailPosition(exp, tailPos)
+
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+      checkTailPosition(exp1, tailPos = false) &&
+        checkTailPosition(exp2, tailPos) &&
+        checkTailPosition(exp3, tailPos)
+
+    case Expr.Stm(exp1, exp2, _, _, _) =>
+      checkTailPosition(exp1, tailPos = false) &&
+        checkTailPosition(exp2, tailPos)
+
+    case Expr.Discard(exp, _, _) =>
+      checkTailPosition(exp, tailPos)
+
+    case Expr.Match(exp1, rules, _, _, _) =>
+      checkTailPosition(exp1, tailPos = false) &&
+        rules.forall {
+          case MonoAst.MatchRule(_, guard, exp2) =>
+            guard.forall(checkTailPosition(_, tailPos = false)) &&
+              checkTailPosition(exp2, tailPos)
+        }
+
+    case Expr.VectorLit(exps, _, _, _) =>
+      exps.forall(checkTailPosition(_, tailPos = false))
+
+    case Expr.VectorLoad(exp1, exp2, _, _, _) =>
+      checkTailPosition(exp1, tailPos = false) &&
+        checkTailPosition(exp2, tailPos = false)
+
+    case Expr.VectorLength(exp, _) =>
+      checkTailPosition(exp, tailPos = false)
+
+    case Expr.Ascribe(exp, _, _, _) => // Is this erased???
+      checkTailPosition(exp, tailPos)
+
+    case Expr.Cast(exp, _, _, _, _, _) => // Is this erased???
+      checkTailPosition(exp, tailPos)
+
+    case Expr.TryCatch(exp1, rules, _, _, _) =>
+      checkTailPosition(exp1, tailPos = false) &&
+        rules.forall {
+          case MonoAst.CatchRule(_, _, exp2) =>
+            checkTailPosition(exp2, tailPos)
+        }
+    case Expr.RunWith(exp1, _, rules, _, _, _) =>
+      checkTailPosition(exp1, tailPos = false) &&
+        rules.forall {
+          case MonoAst.HandlerRule(_, _, exp2) =>
+            checkTailPosition(exp2, tailPos)
+        }
+
+    case Expr.Do(_, exps, _, _, _) =>
+      exps.forall(checkTailPosition(_, tailPos))
+
+    case Expr.NewObject(_, _, _, _, methods, _) =>
+      methods.forall {
+        case MonoAst.JvmMethod(_, _, exp, _, _, _) =>
+          checkTailPosition(exp, tailPos = false)
+      }
   }
 
-  private def isRecursiveCallInNonTailPosition(tailPos: Boolean, sym0: Symbol.DefnSym, sym: Symbol.DefnSym) = {
-    !tailPos && sym == sym0
+  /** Returns `false` if `expr` is a var with same symbol as `fparam`. Returns `true` otherwise. */
+  private def aliveParam(expr: MonoAst.Expr, fparam: MonoAst.FormalParam): Boolean = expr match {
+    case Expr.Var(sym, _, _) => sym != fparam.sym
+    case _ => true
   }
 
   private object LocalContext {
 
-    def mk(): LocalContext = new LocalContext(new ConcurrentLinkedQueue())
+    def mk(): LocalContext = new LocalContext(new mutable.HashMap())
 
   }
 
-  private case class LocalContext(alive: ConcurrentLinkedQueue[(Symbol.VarSym, Symbol.VarSym)])
+  private case class LocalContext(alive: mutable.HashMap[Symbol.VarSym, Symbol.VarSym])
 
 }
