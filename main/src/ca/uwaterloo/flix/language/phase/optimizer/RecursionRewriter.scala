@@ -47,12 +47,13 @@ object RecursionRewriter {
       return defn
     }
 
-    // 2. Rewrite eligible functions
+    // 2. Rewrite function
     // 2.1 Create a substitution from the function symbol and alive parameters to fresh symbols (maybe this can be created during step 1)
-    // 2.2 Copy the function body, visit and apply the substitution and rewrite nodes. Any ApplyDef expr becomes an ApplyLocalDef expr.
     val freshLocalDefSym = Symbol.freshVarSym(defn.sym.text, BoundBy.LocalDef, defn.sym.loc)(Scope.Top, flix)
     val varSubst = ctx.alive.toMap
     val subst = Subst.from(defn.sym, freshLocalDefSym, varSubst)
+
+    // 2.2 Copy the function body, visit and apply the substitution and rewrite nodes. Any recursive ApplyDef expr becomes an ApplyLocalDef expr.
     val localDef = rewriteExp(defn.exp)(subst, defn.spec.fparams)
 
     // 2.3 Replace the original function body with a LocalDef declaration that has the body from 2.2, followed by an ApplyLocalDef expr.
