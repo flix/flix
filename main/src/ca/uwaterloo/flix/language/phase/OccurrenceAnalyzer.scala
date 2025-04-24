@@ -234,6 +234,7 @@ object OccurrenceAnalyzer {
     * Companion object for [[SharedContext]].
     */
   private object SharedContext {
+
     /**
       * Returns a fresh shared context.
       */
