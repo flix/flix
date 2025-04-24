@@ -17,9 +17,12 @@
 package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.MonoAst
+import ca.uwaterloo.flix.language.ast.MonoAst.Expr
+import ca.uwaterloo.flix.language.ast.{MonoAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
 import ca.uwaterloo.flix.util.ParOps
+
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
   * Rewrites functions that recursively call themselves in tail-position to
@@ -34,6 +37,8 @@ object RecursionRewriter {
 
   private def visitDef(defn: MonoAst.Def): MonoAst.Def = {
     // 1. Check that every recursive call is in tail position
+    implicit val ctx: LocalContext = LocalContext.mk()
+    val isRewritable = checkTailRecursion(defn.exp, TailPos.Tail)(defn.sym, ctx)
     // 2. Return a set of alive parameters, i.e, function parameters that are changed in a recursive call (if it is an Expr.Var with the same symbol, then it is dead).
     // 3. Rewrite eligible functions
     // 3.1 Create a substitution from the function symbol and alive parameters to fresh symbols (maybe this can be created during step 2)
@@ -41,5 +46,49 @@ object RecursionRewriter {
     // 3.3 Replace the original function body with a LocalDef declaration that has the body from 3.2, followed by an ApplyLocalDef expr.
     ???
   }
+
+  private def checkTailRecursion(exp0: MonoAst.Expr, tailPos: TailPos)(implicit sym0: Symbol.DefnSym, ctx: LocalContext): Boolean = exp0 match {
+    case Expr.Cst(cst, tpe, loc) => ???
+    case Expr.Var(sym, tpe, loc) => ???
+    case Expr.Lambda(fparam, exp, tpe, loc) => ???
+    case Expr.ApplyAtomic(op, exps, tpe, eff, loc) => ???
+    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) => ???
+    case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) => ???
+    case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) => ???
+    case Expr.Let(sym, exp1, exp2, tpe, eff, loc) => ???
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) => ???
+    case Expr.Scope(sym, regSym, exp, tpe, eff, loc) => ???
+    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => ???
+    case Expr.Stm(exp1, exp2, tpe, eff, loc) => ???
+    case Expr.Discard(exp, eff, loc) => ???
+    case Expr.Match(exp, rules, tpe, eff, loc) => ???
+    case Expr.VectorLit(exps, tpe, eff, loc) => ???
+    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => ???
+    case Expr.VectorLength(exp, loc) => ???
+    case Expr.Ascribe(exp, tpe, eff, loc) => ???
+    case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) => ???
+    case Expr.TryCatch(exp, rules, tpe, eff, loc) => ???
+    case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) => ???
+    case Expr.Do(op, exps, tpe, eff, loc) => ???
+    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => ???
+  }
+
+  private sealed trait TailPos
+
+  private object TailPos {
+
+    case object Tail extends TailPos
+
+    case object NonTail extends TailPos
+
+  }
+
+  private object LocalContext {
+
+    def mk(): LocalContext = new LocalContext(new ConcurrentLinkedQueue())
+
+  }
+
+  private case class LocalContext(alive: ConcurrentLinkedQueue[(Symbol.VarSym, Symbol.VarSym)])
 
 }
