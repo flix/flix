@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
   * The occurrence analyzer collects occurrence information on binders according to the definition of [[Occur]].
@@ -231,12 +232,34 @@ object OccurrenceAnalyzer {
   }
 
   /**
+    * Companion object for [[LocalContext]].
+    */
+  private object LocalContext {
+
+    /**
+      * Returns a fresh [[LocalContext]].
+      */
+    def mk(): LocalContext = new LocalContext(new AtomicInteger(0), new AtomicInteger(0))
+  }
+
+  /**
+    * A local context, scoped for each function definition.
+    * No requirements on thread-safety since it is scoped.
+    *
+    * @param localDefs The number of declared [[OccurrenceAst.Expr.LocalDef]]s in the expression.
+    *                  Must be mutable.
+    * @param size      The total number of subexpressions (including the expression itself).
+    *                  Must be mutable.
+    */
+  private case class LocalContext(localDefs: AtomicInteger, size: AtomicInteger)
+
+  /**
     * Companion object for [[SharedContext]].
     */
   private object SharedContext {
 
     /**
-      * Returns a fresh shared context.
+      * Returns a fresh [[SharedContext]].
       */
     def mk(): SharedContext = new SharedContext(new ConcurrentHashMap())
   }
