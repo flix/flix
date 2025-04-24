@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.ConcurrentHashMap
 
 /**
   * The occurrence analyzer collects occurrence information on binders according to the definition of [[Occur]].
@@ -238,7 +238,7 @@ object OccurrenceAnalyzer {
     /**
       * Returns a fresh shared context.
       */
-    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+    def mk(): SharedContext = new SharedContext(new ConcurrentHashMap())
   }
 
   /**
@@ -247,6 +247,6 @@ object OccurrenceAnalyzer {
     * @param defs A map from function symbols to occurrence information.
     *             If the map does not contain a certain symbol, then symbol is [[Dead]].
     */
-  private case class SharedContext(defs: ConcurrentLinkedQueue[(DefnSym, Occur)])
+  private case class SharedContext(defs: ConcurrentHashMap[DefnSym, Occur])
 
 }
