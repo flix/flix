@@ -1723,7 +1723,7 @@ object Weeder2 {
         traverse(maybeWith)(visitRunWithBody),
       ) {
         // Bad case: run expr
-        case (_, Nil) =>
+        case (expr, Nil) =>
           // Fall back on Expr.Error
           val error = UnexpectedToken(
             expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordCatch, TokenKind.KeywordWith)),
@@ -1731,7 +1731,7 @@ object Weeder2 {
             SyntacticContext.Expr.OtherExpr,
             loc = tree.loc)
           sctx.errors.add(error)
-          Validation.Success(Expr.Error(error))
+          Validation.Success(Expr.RunWith(expr, Nil, tree.loc))
         // Case: run expr [with expr]...
         case (expr, exprs) => Validation.Success(Expr.RunWith(expr, exprs, tree.loc))
       }
