@@ -38,7 +38,7 @@ object RecursionRewriter {
   private def visitDef(defn: MonoAst.Def): MonoAst.Def = {
     // 1. Check that every recursive call is in tail position
     implicit val ctx: LocalContext = LocalContext.mk()
-    val isRewritable = checkTailRecursion(defn.exp, TailPos.Tail)(defn.sym, ctx)
+    val isRewritable = checkTailPosition(defn.exp, tailPos = true)(defn.sym, defn.spec.fparams ctx)
     // 2. Return a set of alive parameters, i.e, function parameters that are changed in a recursive call (if it is an Expr.Var with the same symbol, then it is dead).
     // 3. Rewrite eligible functions
     // 3.1 Create a substitution from the function symbol and alive parameters to fresh symbols (maybe this can be created during step 2)
@@ -47,11 +47,22 @@ object RecursionRewriter {
     ???
   }
 
-  private def checkTailRecursion(exp0: MonoAst.Expr, tailPos: TailPos)(implicit sym0: Symbol.DefnSym, ctx: LocalContext): Boolean = exp0 match {
-    case Expr.Cst(cst, tpe, loc) => ???
-    case Expr.Var(sym, tpe, loc) => ???
-    case Expr.Lambda(fparam, exp, tpe, loc) => ???
-    case Expr.ApplyAtomic(op, exps, tpe, eff, loc) => ???
+  private def checkTailPosition(exp0: MonoAst.Expr, tailPos: Boolean)(implicit sym0: Symbol.DefnSym, fparams: List[MonoAst.FormalParam], ctx: LocalContext): Boolean = exp0 match {
+    case Expr.Cst(_, _, _) =>
+      tailPos
+
+    case Expr.Var(_, _, _) =>
+      tailPos
+
+    case Expr.Lambda(fparam, exp, tpe, loc) =>
+      // The inner expr is always in tailpos, but we care about `sym0` so it should be in tailpos only if the lambda is too
+      val expIsTailPos = checkTailPosition(exp, tailPos = tailPos)
+      tailPos && expIsTailPos
+
+    case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
+      val expsInTailPos = exps.forall(checkTailPosition(_, tailPos = false))
+      tailPos
+
     case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) => ???
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) => ???
     case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) => ???
@@ -71,16 +82,6 @@ object RecursionRewriter {
     case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) => ???
     case Expr.Do(op, exps, tpe, eff, loc) => ???
     case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => ???
-  }
-
-  private sealed trait TailPos
-
-  private object TailPos {
-
-    case object Tail extends TailPos
-
-    case object NonTail extends TailPos
-
   }
 
   private object LocalContext {
