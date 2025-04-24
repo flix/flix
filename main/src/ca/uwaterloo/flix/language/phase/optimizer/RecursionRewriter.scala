@@ -49,22 +49,30 @@ object RecursionRewriter {
 
   private def checkTailPosition(exp0: MonoAst.Expr, tailPos: Boolean)(implicit sym0: Symbol.DefnSym, fparams: List[MonoAst.FormalParam], ctx: LocalContext): Boolean = exp0 match {
     case Expr.Cst(_, _, _) =>
-      tailPos
+      true
 
     case Expr.Var(_, _, _) =>
-      tailPos
+      true
 
     case Expr.Lambda(fparam, exp, tpe, loc) =>
       // The inner expr is always in tailpos, but we care about `sym0` so it should be in tailpos only if the lambda is too
       val expIsTailPos = checkTailPosition(exp, tailPos = tailPos)
       tailPos && expIsTailPos
 
-    case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
+    case Expr.ApplyAtomic(op, exps, _, _, _) =>
       val expsInTailPos = exps.forall(checkTailPosition(_, tailPos = false))
-      tailPos
+      tailPos && expsInTailPos
 
-    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) => ???
-    case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) => ???
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      checkTailPosition(exp1, tailPos) && checkTailPosition(exp2, tailPos = false)
+
+    case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+      if (isRecursiveCallInNonTailPosition(tailPos, sym0, sym)) {
+        return false
+      }
+      true
+
+
     case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) => ???
     case Expr.Let(sym, exp1, exp2, tpe, eff, loc) => ???
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) => ???
@@ -82,6 +90,10 @@ object RecursionRewriter {
     case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) => ???
     case Expr.Do(op, exps, tpe, eff, loc) => ???
     case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => ???
+  }
+
+  private def isRecursiveCallInNonTailPosition(tailPos: Boolean, sym0: Symbol.DefnSym, sym: Symbol.DefnSym) = {
+    !tailPos && sym == sym0
   }
 
   private object LocalContext {
