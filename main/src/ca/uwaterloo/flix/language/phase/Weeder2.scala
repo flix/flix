@@ -1753,7 +1753,7 @@ object Weeder2 {
         traverse(maybeCatch)(visitTryCatchBody),
       ) {
         // Bad case: try expr
-        case (_, Nil) =>
+        case (expr, Nil) =>
           // Fall back on Expr.Error
           val error = UnexpectedToken(
             expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordCatch, TokenKind.KeywordWith)),
@@ -1761,7 +1761,7 @@ object Weeder2 {
             SyntacticContext.Expr.OtherExpr,
             loc = tree.loc)
           sctx.errors.add(error)
-          Validation.Success(Expr.Error(error))
+          Validation.Success(Expr.TryCatch(expr, List(Expr.Error(error)), tree.loc))
         // Case: try expr catch { rules... }
         case (expr, catches) => Validation.Success(Expr.TryCatch(expr, catches.flatten, tree.loc))
       }
