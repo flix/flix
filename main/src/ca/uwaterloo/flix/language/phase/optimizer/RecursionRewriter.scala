@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.mutable
 
 /**
@@ -40,8 +41,9 @@ object RecursionRewriter {
     // 1. Check that every recursive call is in tail position
     //    Return a set of alive parameters, i.e, function parameters that are changed in a recursive call (if it is an Expr.Var with the same symbol, then it is dead).
     implicit val ctx: LocalContext = LocalContext.mk()
-    val isRewritable = checkTailPosition(defn.exp, tailPos = true)(defn.sym, defn.spec.fparams, ctx, flix)
-    if (!isRewritable) {
+    val containsZeroRecursiveNonTailCalls = checkTailPosition(defn.exp, tailPos = true)(defn.sym, defn.spec.fparams, ctx, flix)
+    val containsRecursiveCall = ctx.isRecursive.get()
+    if (!containsZeroRecursiveNonTailCalls && containsRecursiveCall) {
       return defn
     }
 
@@ -84,6 +86,8 @@ object RecursionRewriter {
         // Not recursive call
         return exps.forall(checkTailPosition(_, tailPos = false))
       }
+
+      ctx.isRecursive.set(true)
 
       // Recursive Call
       if (!tailPos) {
@@ -334,11 +338,11 @@ object RecursionRewriter {
 
   private object LocalContext {
 
-    def mk(): LocalContext = new LocalContext(new mutable.HashMap())
+    def mk(): LocalContext = new LocalContext(new AtomicBoolean(false), new mutable.HashMap())
 
   }
 
-  private case class LocalContext(alive: mutable.HashMap[Symbol.VarSym, Symbol.VarSym])
+  private case class LocalContext(isRecursive: AtomicBoolean, alive: mutable.HashMap[Symbol.VarSym, Symbol.VarSym])
 
   private object Subst {
     def from(old: Symbol.DefnSym, fresh: Symbol.VarSym, vars: Map[Symbol.VarSym, Symbol.VarSym]): Subst = Subst(old, fresh, vars)
