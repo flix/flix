@@ -1651,7 +1651,18 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantUnsafe](result)
+    expectError[RedundancyError.RedundantEffectInUnsafe](result)
+  }
+
+  test("RedundantUnsafe.02") {
+    val input =
+      raw"""
+           |eff Something
+           |pub def f(): Int32 = unsafely {IO, Something} run println("hey")
+           |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.RedundantEffectInUnsafe](result)
   }
 
   test("RedundantTraitConstraint.Trait.01") {

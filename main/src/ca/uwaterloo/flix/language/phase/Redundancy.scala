@@ -662,11 +662,20 @@ object Redundancy {
       }
 
     case Expr.Unsafe(exp, runEff, _, _, loc) =>
-      (runEff, exp.eff) match {
-        case (Type.Pure, _) => visitExp(exp, env0, rc) + UselessUnsafe(loc)
-        case (_, Type.Pure) => visitExp(exp, env0, rc) + RedundantUnsafe(loc)
-        case _ => visitExp(exp, env0, rc)
+      val simpleEff = collectSimpleEffs(runEff)
+      val unsafeErrors = (simpleEff, exp.eff) match {
+        case (None, _) => Used.empty
+        case (Some(effs), _) =>
+          if (effs.isEmpty) Used.empty + UselessUnsafe(loc)
+          else {
+            effs.foldLeft(Used.empty){
+              case (used, effSym) =>
+                if (mightContain(effSym, exp.eff)) used
+                else used + RedundantEffectInUnsafe(effSym, loc)
+            }
+          }
       }
+      visitExp(exp, env0, rc) ++ unsafeErrors
 
     case Expr.Without(exp, sym, _, _, _) =>
       sctx.effSyms.put(sym.sym, ())
@@ -820,6 +829,34 @@ object Redundancy {
       lctx.errorLocs += e0.loc
       Used.empty
 
+  }
+
+  /** If `eff` is a union of concrete effects, then that set is returned. */
+  private def collectSimpleEffs(eff: Type): Option[Set[Symbol.EffectSym]] = eff match {
+    case Type.Cst(TypeConstructor.Effect(sym), _) => Some(Set(sym))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) =>
+      for (
+        a <- collectSimpleEffs(tpe1);
+        b <- collectSimpleEffs(tpe2)
+      ) yield a.union(b)
+    case _ => None
+  }
+
+  /**
+    * Returns true if `effSym` might be included in `eff`.
+    *
+    * Returns false if `effSym` can NEVER be included in `eff`.
+    */
+  private def mightContain(effSym: Symbol.EffectSym, eff: Type): Boolean = eff match {
+    case Type.Cst(TypeConstructor.Effect(sym), _) => effSym == sym
+    case Type.Cst(TypeConstructor.Pure, _) => false
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) =>
+      mightContain(effSym, tpe1) || mightContain(effSym, tpe2)
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) =>
+      mightContain(effSym, tpe1) && mightContain(effSym, tpe2)
+    case _ =>
+      // It is always okay to return true.
+      true
   }
 
   /**
