@@ -1276,7 +1276,7 @@ object Weeder2 {
               val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.KeywordElse)), actual = None, SyntacticContext.Expr.OtherExpr, hint = Some("the else-branch is required in Flix."), tree.loc)
               sctx.errors.add(error)
               // This Expr.Error is just a placeholder.
-              (condExpr, thenExpr) => Expr.IfThenElse(condExpr, thenExpr, Expr.Error(MisplacedComments(SyntacticContext.Unknown, tree.loc)), tree.loc)
+              (condExpr, thenExpr) => Expr.IfThenElse(condExpr, thenExpr, Expr.Error(error), tree.loc)
             }
         }
       }
