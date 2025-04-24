@@ -748,7 +748,7 @@ object Inliner {
     val localDefDiscount = defCtx.localDefs * 8
     val belowSoft = defCtx.size - localDefDiscount < SoftInlineThreshold
     val belowHard = defCtx.size - localDefDiscount < HardInlineThreshold
-    val shouldInline = belowSoft || (defCtx.isDirectCall && belowHard) || (isSomewhereOnce && belowHard)
+    val shouldInline = isSomewhereOnce || belowSoft || (defCtx.isDirectCall && belowHard)
     mayInline && shouldInline
   }
 
