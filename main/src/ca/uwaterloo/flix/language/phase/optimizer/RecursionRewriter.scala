@@ -55,7 +55,7 @@ object RecursionRewriter {
     val subst = Subst.from(defn.sym, freshLocalDefSym, varSubst)
     val localDef = rewriteExp(defn.exp)(subst, defn.spec.fparams)
 
-    // 2.3 Replace the original function body with a LocalDef declaration that has the body from 3.2, followed by an ApplyLocalDef expr.
+    // 2.3 Replace the original function body with a LocalDef declaration that has the body from 2.2, followed by an ApplyLocalDef expr.
     val aliveParams = defn.spec.fparams.filter(fp => varSubst.contains(fp.sym))
     val body = mkLocalDefExpr(subst, localDef, freshLocalDefSym, aliveParams, defn.spec.retTpe, defn.spec.eff)
     defn.copy(exp = body)
