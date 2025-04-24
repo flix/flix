@@ -38,31 +38,17 @@ object OccurrenceAnalyzer {
     * Performs occurrence analysis on the given AST `root`.
     */
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): OccurrenceAst.Root = {
-    implicit val sctx: SharedContext = SharedContext.mk()
-    val defs0 = ParOps.parMap(root.defs.values)(visitDef)
-
-    // Combine all def occurrence information.
-    val defOccur = combineSeq(sctx.defs.asScala)
-
-    // Updates the occurrence of every `def` in `defs0` based on the occurrence found in `defOccur`.
-    val defs = defs0.foldLeft(Map.empty[DefnSym, OccurrenceAst.Def]) {
-      case (macc, defn) =>
-        val occur = defOccur.getOrElse(defn.sym, Dead)
-        val newContext = defn.context.copy(occur = occur)
-        val defWithContext = defn.copy(context = newContext)
-        macc + (defn.sym -> defWithContext)
-    }
+    val defs = ParOps.parMapValues(root.defs)(visitDef)
     OccurrenceAst.Root(defs, root.enums, root.structs, root.effects, root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
   /**
     * Performs occurrence analysis on `defn`.
     */
-  private def visitDef(defn: OccurrenceAst.Def)(implicit sctx: SharedContext): OccurrenceAst.Def = {
+  private def visitDef(defn: OccurrenceAst.Def): OccurrenceAst.Def = {
     implicit val lctx: LocalContext = LocalContext.mk()
-    val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx, sctx)
-    val occur = Dead // This will be overwritten when combining all defs in `run`.
-    val defContext = DefContext(occur, lctx.size.get(), lctx.localDefs.get(), isDirectCall(exp), isSelfRecursive(ctx.selfOccur))
+    val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx)
+    val defContext = DefContext(lctx.size.get(), lctx.localDefs.get(), isDirectCall(exp), isSelfRecursive(ctx.selfOccur))
     val fparams = defn.fparams.map(fp => fp.copy(occur = ctx.get(fp.sym)))
     OccurrenceAst.Def(defn.sym, fparams, defn.spec, exp, defContext, defn.loc)
   }
@@ -70,7 +56,7 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on `exp0`
     */
-  private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext, sctx: SharedContext): (OccurrenceAst.Expr, ExpContext) = (exp0, ExpContext.empty)
+  private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.Expr, ExpContext) = (exp0, ExpContext.empty)
 
   /**
     * Combines `ctx1` and `ctx2` into a single [[ExpContext]].
@@ -231,25 +217,5 @@ object OccurrenceAnalyzer {
     *                  Must be mutable.
     */
   private case class LocalContext(localDefs: AtomicInteger, size: AtomicInteger)
-
-  /**
-    * Companion object for [[SharedContext]].
-    */
-  private object SharedContext {
-
-    /**
-      * Returns a fresh [[SharedContext]].
-      */
-    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
-
-  }
-
-  /**
-    * A global shared context. Must be thread-safe.
-    *
-    * @param defs A map from function symbols to occurrence information.
-    *             If the map does not contain a certain symbol, then the symbol is [[Dead]].
-    */
-  private case class SharedContext(defs: ConcurrentLinkedQueue[(DefnSym, Occur)])
 
 }
