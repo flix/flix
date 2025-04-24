@@ -32,6 +32,14 @@ object RecursionRewriter {
     root.copy(defs = newDefs)
   }
 
-  private def visitDef(defn: MonoAst.Def): MonoAst.Def = ???
+  private def visitDef(defn: MonoAst.Def): MonoAst.Def = {
+    // 1. Check that every recursive call is in tail position
+    // 2. Return a set of alive parameters, i.e, function parameters that are changed in a recursive call (if it is an Expr.Var with the same symbol, then it is dead).
+    // 3. Rewrite eligible functions
+    // 3.1 Create a substitution from the function symbol and alive parameters to fresh symbols (maybe this can be created during step 2)
+    // 3.2 Copy the function body, visit and apply the substitution and rewrite nodes. Any ApplyDef expr becomes an ApplyLocalDef expr.
+    // 3.3 Replace the original function body with a LocalDef declaration that has the body from 3.2, followed by an ApplyLocalDef expr.
+    ???
+  }
 
 }
