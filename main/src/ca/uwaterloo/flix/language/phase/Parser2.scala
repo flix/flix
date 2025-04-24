@@ -1387,7 +1387,7 @@ object Parser2 {
       *
       * @param left        The operator that binds the left-hand-side of the expression.
       * @param leftIsUnary If true, the left-hand-side is an unary operator.
-      * @param exitTokens  A set of tokens that will prevent exprDelimited from consuming them.
+      * @param exitTokens  A set of tokens that will prevent exprDelimited from consuming them as unexpected tokens.
       */
     def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false, exitTokens: Set[TokenKind] = Set.empty)(implicit s: State): Mark.Closed = {
       var lhs = exprDelimited(exitTokens)
@@ -1596,7 +1596,7 @@ object Parser2 {
     /**
       * Parse a delimited expression.
       *
-      * @param exitTokens A set of tokens that will prevent exprDelimited from consuming them.
+      * @param exitTokens A set of tokens that will prevent exprDelimited from consuming them as unexpected tokens.
       */
     private def exprDelimited(exitTokens: Set[TokenKind])(implicit s: State): Mark.Closed = {
       // If a new expression is added here then add it to FIRST_EXPR too.

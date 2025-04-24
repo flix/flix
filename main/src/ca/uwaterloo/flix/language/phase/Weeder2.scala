@@ -1268,13 +1268,15 @@ object Weeder2 {
       flatMapN(condTreeVal, thenTreeVal) {
         case (condTree, thenTree) => tryPick(TreeKind.Expr.Else, tree) match {
           case Some(elseTree) =>
-            flatMapN(pickExpr(condTree), pickExpr(thenTree), pickExpr(elseTree)) {
-              (condExpr, thenExpr, elseExpr) => Validation.Success(Expr.IfThenElse(condExpr, thenExpr, elseExpr, tree.loc))
+            mapN(pickExpr(condTree), pickExpr(thenTree), pickExpr(elseTree)) {
+              (condExpr, thenExpr, elseExpr) => Expr.IfThenElse(condExpr, thenExpr, elseExpr, tree.loc)
             }
           case None =>
-            flatMapN(pickExpr(condTree), pickExpr(thenTree)) {
+            mapN(pickExpr(condTree), pickExpr(thenTree)) {
+              val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.KeywordElse)), actual = None, SyntacticContext.Expr.OtherExpr, hint = Some("the else-branch is required in Flix."), tree.loc)
+              sctx.errors.add(error)
               // This Expr.Error is just a placeholder.
-              (condExpr, thenExpr) => Validation.Success(Expr.IfThenElse(condExpr, thenExpr, Expr.Error(MisplacedComments(SyntacticContext.Unknown, tree.loc)), tree.loc))
+              (condExpr, thenExpr) => Expr.IfThenElse(condExpr, thenExpr, Expr.Error(MisplacedComments(SyntacticContext.Unknown, tree.loc)), tree.loc)
             }
         }
       }
