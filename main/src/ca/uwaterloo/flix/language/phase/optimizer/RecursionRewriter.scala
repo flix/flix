@@ -16,10 +16,22 @@
 
 package ca.uwaterloo.flix.language.phase.optimizer
 
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.MonoAst
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
+import ca.uwaterloo.flix.util.ParOps
+
 /**
   * Rewrites functions that recursively call themselves in tail-position to
   * non-recursive functions with a recursive local def.
   */
 object RecursionRewriter {
+
+  def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("RecursionRewriter") {
+    val newDefs = ParOps.parMapValues(root.defs)(visitDef)
+    root.copy(defs = newDefs)
+  }
+
+  private def visitDef(defn: MonoAst.Def): MonoAst.Def = ???
 
 }
