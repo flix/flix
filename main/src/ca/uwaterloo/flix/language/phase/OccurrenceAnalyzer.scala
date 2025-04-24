@@ -19,14 +19,14 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.*
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Expr, Occur}
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
-import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
   * The occurrence analyzer collects occurrence information on binders according to the definition of [[Occur]].
@@ -240,7 +240,7 @@ object OccurrenceAnalyzer {
     /**
       * Returns a fresh [[SharedContext]].
       */
-    def mk(): SharedContext = new SharedContext(new ConcurrentHashMap())
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
 
   }
 
@@ -250,6 +250,6 @@ object OccurrenceAnalyzer {
     * @param defs A map from function symbols to occurrence information.
     *             If the map does not contain a certain symbol, then the symbol is [[Dead]].
     */
-  private case class SharedContext(defs: ConcurrentHashMap[DefnSym, Occur])
+  private case class SharedContext(defs: ConcurrentLinkedQueue[(DefnSym, Occur)])
 
 }
