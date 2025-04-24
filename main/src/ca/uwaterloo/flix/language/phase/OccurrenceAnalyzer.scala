@@ -24,9 +24,7 @@ import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
-import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
   * The occurrence analyzer collects occurrence information on binders according to the definition of [[Occur]].
