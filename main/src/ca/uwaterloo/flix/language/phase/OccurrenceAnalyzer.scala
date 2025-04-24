@@ -160,7 +160,7 @@ object OccurrenceAnalyzer {
     *
     * @param selfOccur Occurrence information on how the function occurs in its own definition.
     * @param vars      A map from variable symbols to occurrence information (this also includes uses of [[OccurrenceAst.Expr.LocalDef]]).
-    *                  If the map does not contain a certain symbol, then symbol is [[Dead]].
+    *                  If the map does not contain a certain symbol, then the symbol is [[Dead]].
     */
   case class ExpContext(selfOccur: Occur, vars: Map[VarSym, Occur]) {
 
@@ -248,7 +248,7 @@ object OccurrenceAnalyzer {
     * A global shared context. Must be thread-safe.
     *
     * @param defs A map from function symbols to occurrence information.
-    *             If the map does not contain a certain symbol, then symbol is [[Dead]].
+    *             If the map does not contain a certain symbol, then the symbol is [[Dead]].
     */
   private case class SharedContext(defs: ConcurrentHashMap[DefnSym, Occur])
 
