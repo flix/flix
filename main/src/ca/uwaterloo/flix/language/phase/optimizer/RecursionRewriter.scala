@@ -52,7 +52,8 @@ object RecursionRewriter {
 
     // 2. Rewrite function
     // 2.1 Create a substitution from the function symbol and alive parameters to fresh symbols (maybe this can be created during step 1)
-    val freshLocalDefSym = Symbol.freshVarSym(defn.sym.text, BoundBy.LocalDef, defn.sym.loc)(Scope.Top, flix)
+    val freshLocalDefSym = Symbol.freshVarSym(defn.sym.text + "Loop", BoundBy.LocalDef, defn.sym.loc)(Scope.Top, flix)
+    println(s"fresh $freshLocalDefSym")
     val varSubst = ctx.alive.toMap
     val subst = Subst.from(defn.sym, freshLocalDefSym, varSubst)
 
