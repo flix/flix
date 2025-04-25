@@ -1554,33 +1554,41 @@ object Resolver {
     *
     * Example with `def f(a: Char, b: Char): Char -> Char`
     *   - `   f     ===> x -> y -> f(x, y)`
-    *   - `  f(a)   ===> x -> f(a, x)`
+    *   - `  f(a)   ===> let x = a; y -> f(x, y)`
     *   - ` f(a,b)  ===> f(a, b)`
     *   - `f(a,b,c) ===> f(a, b)(c)`
     */
   private def visitApplyFull(base: List[ResolvedAst.Expr] => ResolvedAst.Expr, arity: Int, exps: List[ResolvedAst.Expr], loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
     val (directArgs, cloArgs) = exps.splitAt(arity)
 
-    val fparamsPadding = mkFreshFparams(arity - directArgs.length, loc.asSynthetic)
-    val argsPadding = fparamsPadding.map(fp => ResolvedAst.Expr.Var(fp.sym, loc.asSynthetic))
+    val isFullCall = directArgs.lengthIs == arity
+    if (isFullCall) {
+      val defApplication = base(directArgs)
+      val closureApplication = cloArgs.foldLeft(defApplication) {
+        case (acc, cloArg) => ResolvedAst.Expr.ApplyClo(acc, cloArg, loc)
+      }
+      closureApplication
+    } else {
+      assert(cloArgs.isEmpty)
+      val binders = directArgs.zipWithIndex.map{case (arg, i) => (freshVarSym("arg" + i, BoundBy.Let, loc.asSynthetic), arg)}
+      val binderVars = binders.map{case (varSym, _) => ResolvedAst.Expr.Var(varSym, loc.asSynthetic)}
 
-    val fullArgs = directArgs ++ argsPadding
-    val fullDefApplication = base(fullArgs)
+      val fparamsPadding = mkFreshFparams(arity - directArgs.length, loc.asSynthetic)
+      val argsPadding = fparamsPadding.map(fp => ResolvedAst.Expr.Var(fp.sym, loc.asSynthetic))
 
-    // The ordering of lambdas and closure application doesn't matter,
-    // `fparamsPadding.isEmpty` iff `cloArgs.nonEmpty`.
-    // For typing performance we make pure lambdas for all except the last.
-    val (fullDefLambda, _) = fparamsPadding.foldRight((fullDefApplication: ResolvedAst.Expr, true)) {
-      case (fp, (acc, first)) =>
-        if (first) (ResolvedAst.Expr.Lambda(fp, acc, allowSubeffecting = false, loc.asSynthetic), false)
-        else (mkPureLambda(fp, acc, loc.asSynthetic), false)
+      val fullDefApplication = base(binderVars ++ argsPadding)
+
+      // For typing performance we make pure lambdas for all except the last.
+      val (fullDefLambda, _) = fparamsPadding.foldRight((fullDefApplication, true)) {
+        case (fp, (acc, first)) =>
+          if (first) (ResolvedAst.Expr.Lambda(fp, acc, allowSubeffecting = false, loc.asSynthetic), false)
+          else (mkPureLambda(fp, acc, loc.asSynthetic), false)
+      }
+      
+      binders.foldRight(fullDefLambda){
+        case ((varSym, exp), acc) => ResolvedAst.Expr.Let(varSym, exp, acc, loc.asSynthetic)
+      }
     }
-
-    val closureApplication = cloArgs.foldLeft(fullDefLambda) {
-      case (acc, cloArg) => ResolvedAst.Expr.ApplyClo(acc, cloArg, loc)
-    }
-
-    closureApplication
   }
 
   /**
