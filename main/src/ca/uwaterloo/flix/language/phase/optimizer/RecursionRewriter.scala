@@ -100,7 +100,7 @@ object RecursionRewriter {
       // Check alive parameters
       exps.zip(fparams)
         .filter {
-          case (exp, fparam) => aliveParam(exp, fparam)
+          case (exp, fparam) => isAliveParam(exp, fparam)
         }.forall {
           case (exp, _) => checkTailPosition(exp, tailPos = false)
         }
@@ -310,7 +310,7 @@ object RecursionRewriter {
   }
 
   /** Returns `false` if `expr` is a var with same symbol as `fparam`. Returns `true` otherwise. */
-  private def aliveParam(expr: MonoAst.Expr, fparam: MonoAst.FormalParam): Boolean = expr match {
+  private def isAliveParam(expr: MonoAst.Expr, fparam: MonoAst.FormalParam): Boolean = expr match {
     case Expr.Var(sym, _, _) => sym != fparam.sym
     case _ => true
   }
