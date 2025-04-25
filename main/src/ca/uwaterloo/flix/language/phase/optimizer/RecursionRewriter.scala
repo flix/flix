@@ -55,16 +55,19 @@ object RecursionRewriter {
 
     val constantParams = constants(ctx.calls, defn.spec.fparams)
     println(s"constants $constantParams")
-    val varSubst = constantParams.map(fp => fp.sym -> Symbol.freshVarSym(fp.sym)).toMap
+    val aliveParams = defn.spec.fparams.filterNot(fp => constantParams.contains(fp))
+    val varSubst = aliveParams.map(fp => fp.sym -> Symbol.freshVarSym(fp.sym)).toMap
     val freshLocalDefSym = Symbol.freshVarSym(defn.sym.text + "Loop", BoundBy.LocalDef, defn.sym.loc)(Scope.Top, flix)
     println(s"fresh $freshLocalDefSym")
     val subst = Subst.from(defn.sym, freshLocalDefSym, varSubst)
+    println(s"subst $subst")
 
     // 2.2 Copy the function body, visit and apply the substitution and rewrite nodes. Any recursive ApplyDef expr becomes an ApplyLocalDef expr.
-    val localDef = rewriteExp(defn.exp)(subst, defn.spec.fparams)
+    val nonConstantFps = defn.spec.fparams.zipWithIndex.filterNot { case (fp, _) => constantParams.contains(fp) }
+    val localDef = rewriteExp(defn.exp)(subst, nonConstantFps)
 
     // 2.3 Replace the original function body with a LocalDef declaration that has the body from 2.2, followed by an ApplyLocalDef expr.
-    val body = mkLocalDefExpr(subst, localDef, freshLocalDefSym, constantParams, defn.spec.retTpe, defn.spec.eff)
+    val body = mkLocalDefExpr(subst, localDef, freshLocalDefSym, aliveParams, defn.spec.retTpe, defn.spec.eff)
     defn.copy(exp = body)
   }
 
@@ -196,7 +199,7 @@ object RecursionRewriter {
       }
   }
 
-  private def rewriteExp(expr0: MonoAst.Expr)(implicit subst: Subst, fparams0: List[MonoAst.FormalParam]): MonoAst.Expr = expr0 match {
+  private def rewriteExp(expr0: MonoAst.Expr)(implicit subst: Subst, aliveParams: List[(MonoAst.FormalParam, Int)]): MonoAst.Expr = expr0 match {
     case Expr.Cst(_, _, _) =>
       expr0
 
@@ -223,7 +226,7 @@ object RecursionRewriter {
 
         case Some(localDefSym) =>
           val es = exps.zipWithIndex.filter {
-            case (_, i) => subst.isAlive(i, fparams0)
+            case (_, i) => aliveParams.map(_._2).contains(i)
           }.map {
             case (e, _) => rewriteExp(e)
           }
@@ -350,11 +353,14 @@ object RecursionRewriter {
   private def mkLocalDefExpr(subst: Subst, body: Expr, localDefSym: Symbol.VarSym, aliveParams: List[MonoAst.FormalParam], tpe: Type, eff: Type): Expr = {
     // Make ApplyLocalDef Expr
     val args = aliveParams.map(fp => Expr.Var(fp.sym, fp.tpe, fp.loc.asSynthetic))
+    println(s"args $args")
     val applyLocalDef = Expr.ApplyLocalDef(localDefSym, args, tpe, eff, body.loc.asSynthetic)
 
     // Make LocalDef expr
     val params = aliveParams.map(fp => fp.copy(sym = subst(fp.sym), loc = fp.loc.asSynthetic))
-    Expr.LocalDef(localDefSym, params, body, applyLocalDef, tpe, eff, body.loc.asSynthetic)
+    val result = Expr.LocalDef(localDefSym, params, body, applyLocalDef, tpe, eff, body.loc.asSynthetic)
+    println(s"result $result")
+    result
   }
 
 
