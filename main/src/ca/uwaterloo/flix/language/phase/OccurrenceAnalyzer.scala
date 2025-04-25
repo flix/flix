@@ -406,7 +406,7 @@ object OccurrenceAnalyzer {
 
     /**
       * Applies `f` to each value in `vars` where `f` is defined.
-      * Returns a new ExpContext with the updated map.
+      * Returns a new [[ExprContext]] with the updated map.
       */
     def map(f: PartialFunction[Occur, Occur]): ExprContext = {
       val newVars = vars.map {
