@@ -46,7 +46,7 @@ object OccurrenceAnalyzer {
   private def visitDef(defn: OccurrenceAst.Def): OccurrenceAst.Def = {
     implicit val lctx: LocalContext = LocalContext.mk()
     val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx)
-    val defContext = DefContext(lctx.size.get(), lctx.localDefs.get(), isDirectCall(exp), isSelfRecursive(ctx.selfOccur))
+    val defContext = DefContext(lctx.localDefs.get(), isDirectCall(exp), isSelfRecursive(ctx.selfOccur))
     val fparams = defn.fparams.map(fp => fp.copy(occur = ctx.get(fp.sym)))
     OccurrenceAst.Def(defn.sym, fparams, defn.spec, exp, defContext, defn.loc)
   }
@@ -55,7 +55,6 @@ object OccurrenceAnalyzer {
     * Performs occurrence analysis on `exp0`
     */
   private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.Expr, ExprContext) = {
-    lctx.size.incrementAndGet()
     exp0 match {
       case OccurrenceAst.Expr.Cst(_, _, _) =>
         (exp0, ExprContext.empty)
@@ -406,7 +405,7 @@ object OccurrenceAnalyzer {
     /**
       * Returns a fresh [[LocalContext]].
       */
-    def mk(): LocalContext = new LocalContext(new AtomicInteger(0), new AtomicInteger(0))
+    def mk(): LocalContext = new LocalContext(new AtomicInteger(0))
 
   }
 
@@ -416,9 +415,7 @@ object OccurrenceAnalyzer {
     *
     * @param localDefs The number of declared [[OccurrenceAst.Expr.LocalDef]]s in the expression.
     *                  Must be mutable.
-    * @param size      The total number of subexpressions (including the expression itself).
-    *                  Must be mutable.
     */
-  private case class LocalContext(localDefs: AtomicInteger, size: AtomicInteger)
+  private case class LocalContext(localDefs: AtomicInteger)
 
 }
