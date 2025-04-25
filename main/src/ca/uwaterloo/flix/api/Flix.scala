@@ -22,11 +22,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
-<<<<<<< HEAD
-import ca.uwaterloo.flix.language.phase.optimizer.RecursionRewriter
-=======
-import ca.uwaterloo.flix.language.phase.optimizer.Optimizer
->>>>>>> main
+import ca.uwaterloo.flix.language.phase.optimizer.{Optimizer, RecursionRewriter}
 import ca.uwaterloo.flix.language.verifier.{ClassVerifier, EffectVerifier}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
