@@ -1553,9 +1553,9 @@ object Resolver {
     * Resolve the application of a top-level function or signature `base` with some `arity`.
     *
     * Example with `def f(a: Char, b: Char): Char -> Char`
-    *   - under applied: `f ===> x -> y -> f(x, y)`
-    *   - under applied: `f(a) ===> let x = a; y -> f(x, y)`
-    *   - fully applied: `f(a,b) ===> f(a, b)`
+    *   - under applied: `   f     ===> x -> y -> f(x, y)`
+    *   - under applied: `  f(a)   ===> let x = a; y -> f(x, y)`
+    *   - fully applied: ` f(a,b)  ===> f(a, b)`
     *   - over applied:  `f(a,b,c) ===> f(a, b)(c)`
     */
   private def visitApplyFull(base: List[ResolvedAst.Expr] => ResolvedAst.Expr, arity: Int, exps: List[ResolvedAst.Expr], loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
