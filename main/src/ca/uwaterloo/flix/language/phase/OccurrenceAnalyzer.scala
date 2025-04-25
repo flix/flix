@@ -268,6 +268,32 @@ object OccurrenceAnalyzer {
 
   }
 
+  // TODO: Maybe refactor to member function?
+  private def captureVarsInLambda(occurInfo: ExpContext): ExpContext = {
+    update(occurInfo) {
+      case Once => OnceInLambda
+    }
+  }
+
+  // TODO: Maybe refactor to member function?
+  private def captureVarsInLocalDef(expContext: ExpContext): ExpContext = {
+    update(expContext) {
+      case Once => OnceInLocalDef
+    }
+  }
+
+  // TODO: Maybe refactor to member function?
+  private def update(ctx: ExpContext)(f: PartialFunction[Occur, Occur]): ExpContext = {
+    val vars = ctx.vars.map {
+      case (k, v) =>
+        if (f.isDefinedAt(v))
+          (k, f(v))
+        else
+          (k, v)
+    }
+    ctx.copy(vars = vars)
+  }
+
   /**
     * Stores various pieces of information extracted from an expression.
     *
