@@ -41,9 +41,10 @@ object RecursionRewriter {
     // 1. Check that every recursive call is in tail position
     //    Return a set of alive parameters, i.e, function parameters that are changed in a recursive call (if it is an Expr.Var with the same symbol, then it is dead).
     implicit val ctx: LocalContext = LocalContext.mk()
-    val containsZeroRecursiveNonTailCalls = checkTailPosition(defn.exp, tailPos = true)(defn.sym, defn.spec.fparams, ctx, flix)
+    val allRecursiveCallsInTailPos = checkTailPosition(defn.exp, tailPos = true)(defn.sym, defn.spec.fparams, ctx, flix)
     val containsRecursiveCall = ctx.isRecursive.get()
-    if (!containsZeroRecursiveNonTailCalls && containsRecursiveCall) {
+    val isTailRecursive = containsRecursiveCall && allRecursiveCallsInTailPos
+    if (!isTailRecursive) {
       return defn
     }
     // TODO: Debug
