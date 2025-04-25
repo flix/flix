@@ -54,13 +54,13 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on `exp0`
     */
-  private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.Expr, ExpContext) = exp0 match {
+  private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.Expr, ExprContext) = exp0 match {
     case OccurrenceAst.Expr.Cst(cst, tpe, loc) =>
       lctx.size.incrementAndGet()
-      (OccurrenceAst.Expr.Cst(cst, tpe, loc), ExpContext.empty)
+      (OccurrenceAst.Expr.Cst(cst, tpe, loc), ExprContext.empty)
 
     case OccurrenceAst.Expr.Var(sym, tpe, loc) =>
-      (OccurrenceAst.Expr.Var(sym, tpe, loc), ExpContext.empty.addVar(sym, Once))
+      (OccurrenceAst.Expr.Var(sym, tpe, loc), ExprContext.empty.addVar(sym, Once))
 
     case OccurrenceAst.Expr.Lambda(fp, exp, tpe, loc) =>
       val (e, ctx1) = visitExp(exp)
@@ -74,7 +74,7 @@ object OccurrenceAnalyzer {
 
     case OccurrenceAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val (es, ctxs) = exps.map(visitExp).unzip
-      val ctx = ctxs.foldLeft(ExpContext.empty)(combineSeq)
+      val ctx = ctxs.foldLeft(ExprContext.empty)(combineSeq)
       lctx.size.incrementAndGet()
       (OccurrenceAst.Expr.ApplyAtomic(op, es, tpe, eff, loc), ctx)
 
@@ -87,14 +87,14 @@ object OccurrenceAnalyzer {
 
     case OccurrenceAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val (es, ctxs) = exps.map(visitExp).unzip
-      val ctx1 = if (sym == sym0) ExpContext.recursiveOnce else ExpContext.empty
+      val ctx1 = if (sym == sym0) ExprContext.recursiveOnce else ExprContext.empty
       val ctx2 = ctxs.foldLeft(ctx1)(combineSeq)
       lctx.size.incrementAndGet()
       (OccurrenceAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc), ctx2)
 
     case OccurrenceAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       val (es, ctxs) = exps.map(visitExp).unzip
-      val ctx = ctxs.foldLeft(ExpContext.empty)(combineSeq)
+      val ctx = ctxs.foldLeft(ExprContext.empty)(combineSeq)
       lctx.size.incrementAndGet()
       (OccurrenceAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc), ctx)
 
@@ -156,7 +156,7 @@ object OccurrenceAnalyzer {
 
     case OccurrenceAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val (es, ctxs) = exps.map(visitExp).unzip
-      val ctx = ctxs.foldLeft(ExpContext.empty)(combineSeq)
+      val ctx = ctxs.foldLeft(ExprContext.empty)(combineSeq)
       lctx.size.incrementAndGet()
       (OccurrenceAst.Expr.VectorLit(es, tpe, eff, loc), ctx)
 
@@ -198,7 +198,7 @@ object OccurrenceAnalyzer {
 
     case OccurrenceAst.Expr.Do(op, exps, tpe, eff, loc) =>
       val (es, ctxs) = exps.map(visitExp).unzip
-      val ctx = ctxs.foldLeft(ExpContext.empty)(combineSeq)
+      val ctx = ctxs.foldLeft(ExprContext.empty)(combineSeq)
       lctx.size.incrementAndGet()
       (OccurrenceAst.Expr.Do(op, es, tpe, eff, loc), ctx)
 
@@ -208,7 +208,7 @@ object OccurrenceAnalyzer {
       (OccurrenceAst.Expr.NewObject(name, clazz, tpe, eff, ms, loc), ctx)
   }
 
-  private def visitMatchRules(rules0: List[OccurrenceAst.MatchRule])(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (List[OccurrenceAst.MatchRule], ExpContext) = {
+  private def visitMatchRules(rules0: List[OccurrenceAst.MatchRule])(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (List[OccurrenceAst.MatchRule], ExprContext) = {
     val (rs, ctx1) = rules0.map {
       case OccurrenceAst.MatchRule(pat, guard, exp) =>
         val (g, ctx1) = guard.map(visitExp).unzip
@@ -218,22 +218,22 @@ object OccurrenceAnalyzer {
         val ctx4 = ctx3.removeVars(syms)
         (OccurrenceAst.MatchRule(p, g, e), ctx4)
     }.unzip
-    val ctx2 = ctx1.foldLeft(ExpContext.empty)(combineBranch)
+    val ctx2 = ctx1.foldLeft(ExprContext.empty)(combineBranch)
     (rs, ctx2)
   }
 
-  private def visitTryCatchRules(rules0: List[OccurrenceAst.CatchRule])(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (List[OccurrenceAst.CatchRule], ExpContext) = {
+  private def visitTryCatchRules(rules0: List[OccurrenceAst.CatchRule])(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (List[OccurrenceAst.CatchRule], ExprContext) = {
     val (rs, ctx1) = rules0.map {
       case OccurrenceAst.CatchRule(sym, clazz, exp) =>
         val (e, ctx1) = visitExp(exp)
         val ctx2 = ctx1.removeVar(sym)
         (OccurrenceAst.CatchRule(sym, clazz, e), ctx2)
     }.unzip
-    val ctx2 = ctx1.foldLeft(ExpContext.empty)(combineBranch)
+    val ctx2 = ctx1.foldLeft(ExprContext.empty)(combineBranch)
     (rs, ctx2)
   }
 
-  private def visitTryWithRules(rules0: List[OccurrenceAst.HandlerRule])(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (List[OccurrenceAst.HandlerRule], ExpContext) = {
+  private def visitTryWithRules(rules0: List[OccurrenceAst.HandlerRule])(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (List[OccurrenceAst.HandlerRule], ExprContext) = {
     val (rs, ctx1) = rules0.map {
       case OccurrenceAst.HandlerRule(op, fparams, exp) =>
         val (e, ctx1) = visitExp(exp)
@@ -241,21 +241,21 @@ object OccurrenceAnalyzer {
         val ctx2 = ctx1.removeVars(fps.map(_.sym))
         (OccurrenceAst.HandlerRule(op, fps, e), ctx2)
     }.unzip
-    val ctx2 = ctx1.foldLeft(ExpContext.empty)(combineBranch)
+    val ctx2 = ctx1.foldLeft(ExprContext.empty)(combineBranch)
     (rs, ctx2)
   }
 
-  private def visitJvmMethods(methods0: List[OccurrenceAst.JvmMethod])(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (List[OccurrenceAst.JvmMethod], ExpContext) = {
+  private def visitJvmMethods(methods0: List[OccurrenceAst.JvmMethod])(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (List[OccurrenceAst.JvmMethod], ExprContext) = {
     val (ms, ctx1) = methods0.map {
       case OccurrenceAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
         val (c, ctx) = visitExp(exp)
         (OccurrenceAst.JvmMethod(ident, fparams, c, retTpe, eff, loc), ctx)
     }.unzip
-    val ctx2 = ctx1.foldLeft(ExpContext.empty)(combineBranch)
+    val ctx2 = ctx1.foldLeft(ExprContext.empty)(combineBranch)
     (ms, ctx2)
   }
 
-  private def visitPattern(pattern0: OccurrenceAst.Pattern)(implicit ctx: ExpContext): (OccurrenceAst.Pattern, Set[VarSym]) = pattern0 match {
+  private def visitPattern(pattern0: OccurrenceAst.Pattern)(implicit ctx: ExprContext): (OccurrenceAst.Pattern, Set[VarSym]) = pattern0 match {
     case OccurrenceAst.Pattern.Wild(tpe, loc) =>
       (OccurrenceAst.Pattern.Wild(tpe, loc), Set.empty)
 
@@ -283,40 +283,40 @@ object OccurrenceAnalyzer {
 
   }
 
-  private def visitRecordLabelPattern(pattern0: OccurrenceAst.Pattern.Record.RecordLabelPattern)(implicit ctx: ExpContext): (OccurrenceAst.Pattern.Record.RecordLabelPattern, Set[VarSym]) = pattern0 match {
+  private def visitRecordLabelPattern(pattern0: OccurrenceAst.Pattern.Record.RecordLabelPattern)(implicit ctx: ExprContext): (OccurrenceAst.Pattern.Record.RecordLabelPattern, Set[VarSym]) = pattern0 match {
     case OccurrenceAst.Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
       val (p, syms) = visitPattern(pat)
       (OccurrenceAst.Pattern.Record.RecordLabelPattern(label, p, tpe, loc), syms)
   }
 
   /**
-    * Combines `ctx1` and `ctx2` into a single [[ExpContext]].
+    * Combines `ctx1` and `ctx2` into a single [[ExprContext]].
     */
-  private def combineBranch(ctx1: ExpContext, ctx2: ExpContext): ExpContext = {
+  private def combineBranch(ctx1: ExprContext, ctx2: ExprContext): ExprContext = {
     combine(ctx1, ctx2, combineBranch)
   }
 
   /**
-    * Combines `ctx1` and `ctx2` into a single [[ExpContext]].
+    * Combines `ctx1` and `ctx2` into a single [[ExprContext]].
     */
-  private def combineSeq(ctx1: ExpContext, ctx2: ExpContext): ExpContext = {
+  private def combineSeq(ctx1: ExprContext, ctx2: ExprContext): ExprContext = {
     combine(ctx1, ctx2, combineSeq)
   }
 
   /**
-    * Combines `ctx1` and `ctx2` into a single [[ExpContext]].
+    * Combines `ctx1` and `ctx2` into a single [[ExprContext]].
     */
-  private def combineSeqOpt(ctx1: Option[ExpContext], ctx2: ExpContext): ExpContext = {
+  private def combineSeqOpt(ctx1: Option[ExprContext], ctx2: ExprContext): ExprContext = {
     ctx1.map(combineSeq(_, ctx2)).getOrElse(ctx2)
   }
 
   /**
-    * Combines `ctx1` and `ctx2` into a single [[ExpContext]].
+    * Combines `ctx1` and `ctx2` into a single [[ExprContext]].
     */
-  private def combine(ctx1: ExpContext, ctx2: ExpContext, combine: (Occur, Occur) => Occur): ExpContext = {
+  private def combine(ctx1: ExprContext, ctx2: ExprContext, combine: (Occur, Occur) => Occur): ExprContext = {
     val selfOccur = combine(ctx1.selfOccur, ctx2.selfOccur)
     val varMap = combineMaps(ctx1.vars, ctx2.vars, combine)
-    ExpContext(selfOccur, varMap)
+    ExprContext(selfOccur, varMap)
   }
 
   /**
@@ -362,13 +362,13 @@ object OccurrenceAnalyzer {
     case _ => Many
   }
 
-  private object ExpContext {
+  private object ExprContext {
 
     /** Context for an empty sequence of expressions. */
-    def empty: ExpContext = ExpContext(Dead, Map.empty)
+    def empty: ExprContext = ExprContext(Dead, Map.empty)
 
     /** Context for a self-recursive call. */
-    def recursiveOnce: ExpContext = ExpContext(Once, Map.empty)
+    def recursiveOnce: ExprContext = ExprContext(Once, Map.empty)
 
   }
 
@@ -379,7 +379,7 @@ object OccurrenceAnalyzer {
     * @param vars      A map from variable symbols to occurrence information (this also includes uses of [[OccurrenceAst.Expr.LocalDef]]).
     *                  If the map does not contain a certain symbol, then the symbol is [[Dead]].
     */
-  case class ExpContext(selfOccur: Occur, vars: Map[VarSym, Occur]) {
+  case class ExprContext(selfOccur: Occur, vars: Map[VarSym, Occur]) {
 
     /**
       * Returns the occurrence information collected on `sym`.
@@ -389,18 +389,18 @@ object OccurrenceAnalyzer {
       this.vars.getOrElse(sym, Dead)
     }
 
-    /** Returns a new [[ExpContext]] with the mapping `sym -> occur` added to [[vars]]. */
-    def addVar(sym: VarSym, occur: Occur): ExpContext = {
+    /** Returns a new [[ExprContext]] with the mapping `sym -> occur` added to [[vars]]. */
+    def addVar(sym: VarSym, occur: Occur): ExprContext = {
       this.copy(vars = this.vars + (sym -> occur))
     }
 
-    /** Returns a new [[ExpContext]] with `sym` and the corresponding value removed from [[vars]]. */
-    def removeVar(sym: VarSym): ExpContext = {
+    /** Returns a new [[ExprContext]] with `sym` and the corresponding value removed from [[vars]]. */
+    def removeVar(sym: VarSym): ExprContext = {
       this.copy(vars = this.vars - sym)
     }
 
-    /** Returns a new [[ExpContext]] with `syms` and the corresponding values removed from [[vars]]. */
-    def removeVars(syms: Iterable[VarSym]): ExpContext = {
+    /** Returns a new [[ExprContext]] with `syms` and the corresponding values removed from [[vars]]. */
+    def removeVars(syms: Iterable[VarSym]): ExprContext = {
       this.copy(vars = this.vars -- syms)
     }
 
@@ -408,7 +408,7 @@ object OccurrenceAnalyzer {
       * Applies `f` to each value in `vars` where `f` is defined.
       * Returns a new ExpContext with the updated map.
       */
-    def map(f: PartialFunction[Occur, Occur]): ExpContext = {
+    def map(f: PartialFunction[Occur, Occur]): ExprContext = {
       val newVars = vars.map {
         case (k, v) =>
           if (f.isDefinedAt(v))
