@@ -68,7 +68,6 @@ object RecursionRewriter {
 
     case Expr.Var(sym, _, _) =>
       // Mark a formal parameter alive if it does not occur as an argument to a call
-      //
       if (fparams.map(_.sym).contains(sym)) {
         ctx.alive.getOrElseUpdate(sym, Symbol.freshVarSym(sym))
       }
