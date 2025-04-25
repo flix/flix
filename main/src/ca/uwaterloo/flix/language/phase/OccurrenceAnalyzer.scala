@@ -83,7 +83,11 @@ object OccurrenceAnalyzer {
       val (e2, ctx2) = visitExp(exp2)
       val ctx3 = combineSeq(ctx1, ctx2)
       lctx.size.incrementAndGet()
-      (OccurrenceAst.Expr.ApplyClo(e1, e2, tpe, eff, loc), ctx3)
+      if (e1.eq(exp1) && e2.eq(exp2)) { // Reuse memory if there is no change
+        (exp0, ctx3)
+      } else {
+        (OccurrenceAst.Expr.ApplyClo(e1, e2, tpe, eff, loc), ctx3)
+      }
 
     case OccurrenceAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val (es, ctxs) = exps.map(visitExp).unzip
