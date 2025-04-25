@@ -64,7 +64,9 @@ object OccurrenceAnalyzer {
 
     case OccurrenceAst.Expr.Lambda(fp, exp, tpe, loc) =>
       val (e, ctx1) = visitExp(exp)
-      val ctx2 = captureVarsInLambda(ctx1)
+      val ctx2 = ctx1.map {
+        case Once => OnceInLambda
+      }
       val occur = ctx2.get(fp.sym)
       val ctx3 = ctx2.removeVar(fp.sym)
       lctx.size.incrementAndGet()
@@ -107,7 +109,9 @@ object OccurrenceAnalyzer {
 
     case OccurrenceAst.Expr.LocalDef(sym, formalParams, exp1, exp2, tpe, eff, _, loc) =>
       val (e1, ctx1) = visitExp(exp1)
-      val ctx2 = captureVarsInLocalDef(ctx1)
+      val ctx2 = ctx1.map {
+        case Once => OnceInLocalDef
+      }
       val fps = formalParams.map(fp => fp.copy(occur = ctx2.get(fp.sym)))
       val ctx3 = ctx2.removeVars(fps.map(_.sym))
       val (e2, ctx4) = visitExp(exp2)
@@ -368,32 +372,6 @@ object OccurrenceAnalyzer {
 
   }
 
-  // TODO: Maybe refactor to member function?
-  private def captureVarsInLambda(ctx: ExpContext): ExpContext = {
-    update(ctx) {
-      case Once => OnceInLambda
-    }
-  }
-
-  // TODO: Maybe refactor to member function?
-  private def captureVarsInLocalDef(expContext: ExpContext): ExpContext = {
-    update(expContext) {
-      case Once => OnceInLocalDef
-    }
-  }
-
-  // TODO: Maybe refactor to member function?
-  private def update(ctx: ExpContext)(f: PartialFunction[Occur, Occur]): ExpContext = {
-    val vars = ctx.vars.map {
-      case (k, v) =>
-        if (f.isDefinedAt(v))
-          (k, f(v))
-        else
-          (k, v)
-    }
-    ctx.copy(vars = vars)
-  }
-
   /**
     * Stores various pieces of information extracted from an expression.
     *
@@ -424,6 +402,21 @@ object OccurrenceAnalyzer {
     /** Returns a new [[ExpContext]] with `syms` and the corresponding values removed from [[vars]]. */
     def removeVars(syms: Iterable[VarSym]): ExpContext = {
       this.copy(vars = this.vars -- syms)
+    }
+
+    /**
+      * Applies `f` to each value in `vars` where `f` is defined.
+      * Returns a new ExpContext with the updated map.
+      */
+    def map(f: PartialFunction[Occur, Occur]): ExpContext = {
+      val newVars = vars.map {
+        case (k, v) =>
+          if (f.isDefinedAt(v))
+            (k, f(v))
+          else
+            (k, v)
+      }
+      this.copy(vars = newVars)
     }
   }
 
