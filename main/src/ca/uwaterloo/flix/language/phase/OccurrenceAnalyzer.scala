@@ -20,7 +20,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.*
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Occur}
-import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
+import ca.uwaterloo.flix.language.ast.Symbol.VarSym
 import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 
@@ -71,19 +71,27 @@ object OccurrenceAnalyzer {
         val occur = ctx2.get(fparam.sym)
         val fp = fparam.copy(occur = occur)
         val ctx3 = ctx2.removeVar(fparam.sym)
-        (OccurrenceAst.Expr.Lambda(fp, e, tpe, loc), ctx3)
+        if (e eq exp) {
+          (exp0, ctx3) // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.Lambda(fp, e, tpe, loc), ctx3)
+        }
 
       case OccurrenceAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx = ctxs.foldLeft(ExprContext.empty)(combineSeq)
-        (OccurrenceAst.Expr.ApplyAtomic(op, es, tpe, eff, loc), ctx)
+        if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
+          (exp0, ctx) // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.ApplyAtomic(op, es, tpe, eff, loc), ctx)
+        }
 
       case OccurrenceAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)
         val ctx3 = combineSeq(ctx1, ctx2)
-        if (e1.eq(exp1) && e2.eq(exp2)) { // Reuse memory if there is no change
-          (exp0, ctx3)
+        if ((e1 eq exp1) && (e2 eq exp2)) {
+          (exp0, ctx3) // Reuse exp0.
         } else {
           (OccurrenceAst.Expr.ApplyClo(e1, e2, tpe, eff, loc), ctx3)
         }
@@ -92,7 +100,11 @@ object OccurrenceAnalyzer {
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx1 = if (sym == sym0) ExprContext.recursiveOnce else ExprContext.empty
         val ctx2 = ctxs.foldLeft(ctx1)(combineSeq)
-        (OccurrenceAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc), ctx2)
+        if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
+          (exp0, ctx2) // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc), ctx2)
+        }
 
       case OccurrenceAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
@@ -105,7 +117,11 @@ object OccurrenceAnalyzer {
         val ctx3 = combineSeq(ctx1, ctx2)
         val occur = ctx3.get(sym)
         val ctx4 = ctx3.removeVar(sym)
-        (OccurrenceAst.Expr.Let(sym, e1, e2, tpe, eff, occur, loc), ctx4)
+        if ((e1 eq exp1) && (e2 eq exp2)) {
+          (exp0, ctx4) // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.Let(sym, e1, e2, tpe, eff, occur, loc), ctx4)
+        }
 
       case OccurrenceAst.Expr.LocalDef(sym, formalParams, exp1, exp2, tpe, eff, _, loc) =>
         val (e1, ctx1) = visitExp(exp1)
@@ -137,7 +153,11 @@ object OccurrenceAnalyzer {
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)
         val ctx3 = combineSeq(ctx1, ctx2)
-        (OccurrenceAst.Expr.Stm(e1, e2, tpe, eff, loc), ctx3)
+        if ((e1 eq exp1) && (e2 eq exp2)) {
+          (exp0, ctx3)  // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.Stm(e1, e2, tpe, eff, loc), ctx3)
+        }
 
       case OccurrenceAst.Expr.Discard(exp, eff, loc) =>
         val (e, ctx) = visitExp(exp)
@@ -230,15 +250,16 @@ object OccurrenceAnalyzer {
       (OccurrenceAst.JvmMethod(ident, fparams, c, retTpe, eff, loc), ctx)
   }
 
-  private def visitPattern(pattern0: OccurrenceAst.Pattern)(implicit ctx: ExprContext): (OccurrenceAst.Pattern, Set[VarSym]) = pattern0 match {
+  private def visitPattern(pat0: OccurrenceAst.Pattern)(implicit ctx: ExprContext): (OccurrenceAst.Pattern, Set[VarSym]) = pat0 match {
     case OccurrenceAst.Pattern.Wild(_, _) =>
-      (pattern0, Set.empty)
+      (pat0, Set.empty)
 
     case OccurrenceAst.Pattern.Var(sym, tpe, _, loc) =>
-      (OccurrenceAst.Pattern.Var(sym, tpe, ctx.get(sym), loc), Set(sym))
+      val occur = ctx.get(sym)
+      (OccurrenceAst.Pattern.Var(sym, tpe, occur, loc), Set(sym))
 
     case OccurrenceAst.Pattern.Cst(_, _, _) =>
-      (pattern0, Set.empty)
+      (pat0, Set.empty)
 
     case OccurrenceAst.Pattern.Tag(sym, pats, tpe, loc) =>
       val (ps, listOfSyms) = pats.map(visitPattern).unzip
