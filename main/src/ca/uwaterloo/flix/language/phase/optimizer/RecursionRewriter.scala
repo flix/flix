@@ -83,7 +83,7 @@ object RecursionRewriter {
       checkTailPosition(exp1, tailPos) &&
         checkTailPosition(exp2, tailPos = false)
 
-    case Expr.ApplyDef(sym, exps, _, _, _, _) =>
+    case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       // Check for recursion
       if (sym == sym0) {
         if (!tailPos) {
@@ -91,6 +91,7 @@ object RecursionRewriter {
         }
         // Mark as recursive
         ctx.isRecursive.set(true)
+        ctx.calls.addOne(Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc))
       }
 
       // Check alive parameters
@@ -334,11 +335,11 @@ object RecursionRewriter {
 
   private object LocalContext {
 
-    def mk(): LocalContext = new LocalContext(new AtomicBoolean(false), new mutable.HashMap())
+    def mk(): LocalContext = new LocalContext(new AtomicBoolean(false), new mutable.HashMap(), new mutable.ListBuffer())
 
   }
 
-  private case class LocalContext(isRecursive: AtomicBoolean, alive: mutable.HashMap[Symbol.VarSym, Symbol.VarSym])
+  private case class LocalContext(isRecursive: AtomicBoolean, alive: mutable.HashMap[Symbol.VarSym, Symbol.VarSym], calls: mutable.ListBuffer[Expr.ApplyDef])
 
   private object Subst {
     def from(old: Symbol.DefnSym, fresh: Symbol.VarSym, vars: Map[Symbol.VarSym, Symbol.VarSym]): Subst = Subst(old, fresh, vars)
