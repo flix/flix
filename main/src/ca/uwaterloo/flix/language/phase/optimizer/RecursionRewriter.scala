@@ -28,7 +28,7 @@ import scala.collection.mutable
 
 /**
   * Rewrites functions that recursively call themselves in tail-position to
-  * non-recursive functions with a recursive _al def.
+  * non-recursive functions with a recursive local def.
   */
 object RecursionRewriter {
 
