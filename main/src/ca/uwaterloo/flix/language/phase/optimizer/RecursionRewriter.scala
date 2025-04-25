@@ -67,6 +67,8 @@ object RecursionRewriter {
       true
 
     case Expr.Var(sym, _, _) =>
+      // Mark a formal parameter alive if it does not occur as an argument to a call
+      //
       if (fparams.map(_.sym).contains(sym)) {
         ctx.alive.getOrElseUpdate(sym, Symbol.freshVarSym(sym))
       }
@@ -83,27 +85,18 @@ object RecursionRewriter {
         checkTailPosition(exp2, tailPos = false)
 
     case Expr.ApplyDef(sym, exps, _, _, _, _) =>
-      if (sym != sym0) {
-        // Not recursive call
-        return exps.forall(checkTailPosition(_, tailPos = false))
-      }
-
-      ctx.isRecursive.set(true)
-
-      // Recursive Call
-      if (!tailPos) {
-        // Not tailpos => abort!
-        return false
-      }
-
-      // Recursive call in tailpos
-      // Check alive parameters
-      exps.zip(fparams)
-        .filter {
-          case (exp, fparam) => isAliveParam(exp, fparam)
-        }.forall {
-          case (exp, _) => checkTailPosition(exp, tailPos = false)
+      // Check for recursion
+      if (sym == sym0) {
+        if (!tailPos) {
+          return false
         }
+        // Mark as recursive
+        ctx.isRecursive.set(true)
+      }
+
+      // Check alive parameters
+      exps.filter(isAliveParam(_, fparams))
+        .forall(checkTailPosition(_, tailPos = false))
 
     case Expr.ApplyLocalDef(_, exps, _, _, _) =>
       exps.forall(checkTailPosition(_, tailPos = false))
@@ -111,7 +104,6 @@ object RecursionRewriter {
     case Expr.Let(_, exp1, exp2, _, _, _) =>
       checkTailPosition(exp1, tailPos = false) &&
         checkTailPosition(exp2, tailPos)
-
 
     case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
       checkTailPosition(exp1, tailPos = false) &&
@@ -309,9 +301,13 @@ object RecursionRewriter {
 
   }
 
-  /** Returns `false` if `expr` is a var with same symbol as `fparam`. Returns `true` otherwise. */
-  private def isAliveParam(expr: MonoAst.Expr, fparam: MonoAst.FormalParam): Boolean = expr match {
-    case Expr.Var(sym, _, _) => sym != fparam.sym
+  /**
+    * Returns `false` if `expr` is a var with same symbol as a formal parameter in `fparams`.
+    * Returns `true` otherwise.
+    * Should only be called from an [[Expr.ApplyDef]] node.
+    */
+  private def isAliveParam(expr: MonoAst.Expr, fparams: List[MonoAst.FormalParam]): Boolean = expr match {
+    case Expr.Var(sym, _, _) => fparams.forall(fp => sym != fp.sym)
     case _ => true
   }
 
