@@ -63,15 +63,15 @@ object OccurrenceAnalyzer {
       (OccurrenceAst.Expr.Var(sym, tpe, loc), ExpContext.empty.addVar(sym, Once))
 
     case OccurrenceAst.Expr.Lambda(fp, exp, tpe, loc) =>
-      val (e, o) = visitExp(exp)
-      val o1 = captureVarsInLambda(o)
-      val occur = o1.get(fp.sym)
-      val o2 = o1 - fp.sym
+      val (e, ctx1) = visitExp(exp)
+      val ctx2 = captureVarsInLambda(ctx1)
+      val occur = ctx2.get(fp.sym)
+      val ctx3 = ctx2.removeVar(fp.sym)
       lctx.size.incrementAndGet()
-      (OccurrenceAst.Expr.Lambda(fp.copy(occur = occur), e, tpe, loc), )
+      (OccurrenceAst.Expr.Lambda(fp.copy(occur = occur), e, tpe, loc), ctx3)
 
     case OccurrenceAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
-      val (es, o) = visitExps(exps)
+      val (es, o) = exps.map(visitExp).unzip
       val o1 = visitAtomicOp(op, o)
       (OccurrenceAst.Expr.ApplyAtomic(op, es, tpe, eff, loc), increment(o1))
 
