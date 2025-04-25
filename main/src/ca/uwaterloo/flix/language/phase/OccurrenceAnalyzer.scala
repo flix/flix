@@ -149,7 +149,8 @@ object OccurrenceAnalyzer {
 
     case OccurrenceAst.Expr.Match(exp, rules, tpe, eff, loc) =>
       val (e, ctx1) = visitExp(exp)
-      val (rs, ctx2) = visitMatchRules(rules)
+      val (rs, ctxs) = rules.map(visitMatchRule).unzip
+      val ctx2 = ctxs.foldLeft(ExprContext.empty)(combineBranch)
       val ctx3 = combineSeq(ctx1, ctx2)
       lctx.size.incrementAndGet()
       (OccurrenceAst.Expr.Match(e, rs, tpe, eff, loc), ctx3)
@@ -184,14 +185,16 @@ object OccurrenceAnalyzer {
 
     case OccurrenceAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val (e, ctx1) = visitExp(exp)
-      val (rs, ctx2) = visitTryCatchRules(rules)
+      val (rs, ctxs) = rules.map(visitCatchRule).unzip
+      val ctx2 = ctxs.foldLeft(ExprContext.empty)(combineBranch)
       val ctx3 = combineSeq(ctx1, ctx2)
       lctx.size.incrementAndGet()
       (OccurrenceAst.Expr.TryCatch(e, rs, tpe, eff, loc), ctx3)
 
     case OccurrenceAst.Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
       val (e, ctx1) = visitExp(exp)
-      val (rs, ctx2) = visitTryWithRules(rules)
+      val (rs, ctxs) = rules.map(visitHandlerRule).unzip
+      val ctx2 = ctxs.foldLeft(ExprContext.empty)(combineBranch)
       val ctx3 = combineSeq(ctx1, ctx2)
       lctx.size.incrementAndGet()
       (OccurrenceAst.Expr.RunWith(e, effUse, rs, tpe, eff, loc), ctx3)
@@ -203,82 +206,67 @@ object OccurrenceAnalyzer {
       (OccurrenceAst.Expr.Do(op, es, tpe, eff, loc), ctx)
 
     case OccurrenceAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
-      val (ms, ctx) = visitJvmMethods(methods)
+      val (ms, ctxs) = methods.map(visitJvmMethod).unzip
+      val ctx = ctxs.foldLeft(ExprContext.empty)(combineBranch)
       lctx.size.incrementAndGet()
       (OccurrenceAst.Expr.NewObject(name, clazz, tpe, eff, ms, loc), ctx)
   }
 
-  private def visitMatchRules(rules0: List[OccurrenceAst.MatchRule])(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (List[OccurrenceAst.MatchRule], ExprContext) = {
-    val (rs, ctx1) = rules0.map {
-      case OccurrenceAst.MatchRule(pat, guard, exp) =>
-        val (g, ctx1) = guard.map(visitExp).unzip
-        val (e, ctx2) = visitExp(exp)
-        val ctx3 = combineSeqOpt(ctx1, ctx2)
-        val (p, syms) = visitPattern(pat)(ctx3)
-        val ctx4 = ctx3.removeVars(syms)
-        (OccurrenceAst.MatchRule(p, g, e), ctx4)
-    }.unzip
-    val ctx2 = ctx1.foldLeft(ExprContext.empty)(combineBranch)
-    (rs, ctx2)
+  private def visitMatchRule(rule: OccurrenceAst.MatchRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.MatchRule, ExprContext) = rule match {
+    case OccurrenceAst.MatchRule(pat, guard, exp) =>
+      val (g, ctx1) = guard.map(visitExp).unzip
+      val (e, ctx2) = visitExp(exp)
+      val ctx3 = combineSeqOpt(ctx1, ctx2)
+      val (p, syms) = visitPattern(pat)(ctx3)
+      val ctx4 = ctx3.removeVars(syms)
+      (OccurrenceAst.MatchRule(p, g, e), ctx4)
   }
 
-  private def visitTryCatchRules(rules0: List[OccurrenceAst.CatchRule])(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (List[OccurrenceAst.CatchRule], ExprContext) = {
-    val (rs, ctx1) = rules0.map {
-      case OccurrenceAst.CatchRule(sym, clazz, exp) =>
-        val (e, ctx1) = visitExp(exp)
-        val ctx2 = ctx1.removeVar(sym)
-        (OccurrenceAst.CatchRule(sym, clazz, e), ctx2)
-    }.unzip
-    val ctx2 = ctx1.foldLeft(ExprContext.empty)(combineBranch)
-    (rs, ctx2)
+  private def visitCatchRule(rule: OccurrenceAst.CatchRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.CatchRule, ExprContext) = rule match {
+    case OccurrenceAst.CatchRule(sym, clazz, exp) =>
+      val (e, ctx1) = visitExp(exp)
+      val ctx2 = ctx1.removeVar(sym)
+      (OccurrenceAst.CatchRule(sym, clazz, e), ctx2)
   }
 
-  private def visitTryWithRules(rules0: List[OccurrenceAst.HandlerRule])(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (List[OccurrenceAst.HandlerRule], ExprContext) = {
-    val (rs, ctx1) = rules0.map {
-      case OccurrenceAst.HandlerRule(op, fparams, exp) =>
-        val (e, ctx1) = visitExp(exp)
-        val fps = fparams.map(fp => fp.copy(occur = ctx1.get(fp.sym)))
-        val ctx2 = ctx1.removeVars(fps.map(_.sym))
-        (OccurrenceAst.HandlerRule(op, fps, e), ctx2)
-    }.unzip
-    val ctx2 = ctx1.foldLeft(ExprContext.empty)(combineBranch)
-    (rs, ctx2)
+  private def visitHandlerRule(rule: OccurrenceAst.HandlerRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.HandlerRule, ExprContext) = rule match {
+    case OccurrenceAst.HandlerRule(op, fparams, exp) =>
+      val (e, ctx1) = visitExp(exp)
+      val fps = fparams.map(fp => fp.copy(occur = ctx1.get(fp.sym)))
+      val ctx2 = ctx1.removeVars(fps.map(_.sym))
+      (OccurrenceAst.HandlerRule(op, fps, e), ctx2)
   }
 
-  private def visitJvmMethods(methods0: List[OccurrenceAst.JvmMethod])(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (List[OccurrenceAst.JvmMethod], ExprContext) = {
-    val (ms, ctx1) = methods0.map {
-      case OccurrenceAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
-        val (c, ctx) = visitExp(exp)
-        (OccurrenceAst.JvmMethod(ident, fparams, c, retTpe, eff, loc), ctx)
-    }.unzip
-    val ctx2 = ctx1.foldLeft(ExprContext.empty)(combineBranch)
-    (ms, ctx2)
+  private def visitJvmMethod(method: OccurrenceAst.JvmMethod)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.JvmMethod, ExprContext) = method match {
+    case OccurrenceAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
+      val (c, ctx) = visitExp(exp)
+      (OccurrenceAst.JvmMethod(ident, fparams, c, retTpe, eff, loc), ctx)
   }
 
   private def visitPattern(pattern0: OccurrenceAst.Pattern)(implicit ctx: ExprContext): (OccurrenceAst.Pattern, Set[VarSym]) = pattern0 match {
-    case OccurrenceAst.Pattern.Wild(tpe, loc) =>
-      (OccurrenceAst.Pattern.Wild(tpe, loc), Set.empty)
+    case OccurrenceAst.Pattern.Wild(_, _) =>
+      (pattern0, Set.empty)
 
     case OccurrenceAst.Pattern.Var(sym, tpe, _, loc) =>
       (OccurrenceAst.Pattern.Var(sym, tpe, ctx.get(sym), loc), Set(sym))
 
-    case OccurrenceAst.Pattern.Cst(cst, tpe, loc) =>
-      (OccurrenceAst.Pattern.Cst(cst, tpe, loc), Set.empty)
+    case OccurrenceAst.Pattern.Cst(_, _, _) =>
+      (pattern0, Set.empty)
 
     case OccurrenceAst.Pattern.Tag(sym, pats, tpe, loc) =>
       val (ps, listOfSyms) = pats.map(visitPattern).unzip
-      val syms = Set.from(listOfSyms.flatten)
+      val syms = listOfSyms.flatten.toSet
       (OccurrenceAst.Pattern.Tag(sym, ps, tpe, loc), syms)
 
     case OccurrenceAst.Pattern.Tuple(pats, tpe, loc) =>
       val (ps, listOfSyms) = pats.map(visitPattern).unzip
-      val syms = Set.from(listOfSyms.flatten)
+      val syms = listOfSyms.flatten.toSet
       (OccurrenceAst.Pattern.Tuple(ps, tpe, loc), syms)
 
     case OccurrenceAst.Pattern.Record(pats, pat, tpe, loc) =>
       val (ps, listOfSyms) = pats.map(visitRecordLabelPattern).unzip
       val (p, syms0) = visitPattern(pat)
-      val syms = Set.from(listOfSyms.flatten) ++ syms0
+      val syms = listOfSyms.flatten.toSet ++ syms0
       (OccurrenceAst.Pattern.Record(ps, p, tpe, loc), syms)
 
   }
