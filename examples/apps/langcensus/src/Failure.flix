@@ -3,7 +3,6 @@ use Json.JsonError
 ///
 /// The failure we may encounter during the analysis.
 /// A failure should only be raised in cases where we can not provide a sensible analysis result.
-/// TODO: try to handle some resumable failure.
 ///
 eff AnalysisFailure {
     ///
@@ -18,7 +17,6 @@ eff AnalysisFailure {
 
     ///
     /// This failure means we have trouble parsing a string to a json element.
-    /// TODO: We can provide a better report.
     ///
     def raiseParseError(): Void
     
@@ -29,6 +27,7 @@ eff AnalysisFailure {
 }
 
 mod AnalysisFailure{
+    use Json.JsonError.JsonError
     use Exit.exit
     
     ///
@@ -50,8 +49,9 @@ mod AnalysisFailure{
                 println("Parse Error");
                 exit(3)
             }
-            // TODO: we can try to print the json error.
-            def raiseJsonError(_err, _k) = {
+            def raiseJsonError(err, _k) = {
+                let JsonError(p, set) = err;
+                println("Expected one of ${set} at JSON location ${p}");
                 exit(4)
             }
         }

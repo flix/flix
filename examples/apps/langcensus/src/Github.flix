@@ -69,8 +69,8 @@ mod Github {
             }
             
             def getLanguages(repo, resume) = {
-                    let url = "https://api.github.com/repos/${repo}/languages";
-                    Util.getAndParse(url, buildHeader()) |> resume
+                let url = "https://api.github.com/repos/${repo}/languages";
+                Util.getAndParse(url, buildHeader()) |> resume
             }
 
            def getCommit(repo, sha, resume) = {

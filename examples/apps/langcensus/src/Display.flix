@@ -31,21 +31,19 @@ mod Display{
                 println("\n==================== Analysis Result For User ====================\n");
                 Map.foldLeft((acc, stat) -> {
                     Map.foldLeftWithKey((acc1, ext, data) -> {
-                        let (adds, dels) = data;
-                        match Map.get(ext, acc) {
-                            case Option.None        => Map.insert(ext, (adds, dels), acc1)
-                            case Option.Some(newData) => let (newAdds, newDels) = newData; Map.insert(ext, (adds + newAdds, dels + newDels), acc1)
-                        }
+                        Map.insertWith(match (oldAdds, oldDels) -> match (newAdds, newDels) -> 
+                            (oldAdds + newAdds, oldDels + newDels)
+                        , ext, data, acc1)
                     }, acc, stat)
                 }, Map.empty(), stats) |> statFilter |> renameAndMerge |> sortMapByValue |> printEachLanguage |> resume
             }
             
             def displayByByte(stat, resume) = {
                 println("\n==================== Analysis Result By Bytes ====================\n");
-                stat |> sortMapByValue |>  List.forEach(data -> {
-                    let (lang, size) = data;
-                    println("${lang}: ${size} Bytes")
-                }) |> resume
+                stat 
+                |> sortMapByValue 
+                |> List.forEach(match (lang, size) -> println("${lang}: ${size} Bytes")) 
+                |> resume
             }
         }
     }
@@ -53,50 +51,32 @@ mod Display{
     ///
     /// Filters out the languages whose adds is zero.
     ///
-    def statFilter(stat: Stat): Stat = {
-        Map.filter(lines -> {
-            let (adds, _) = lines;
-            adds > 0ii
-        }, stat)
-    }
+    def statFilter(stat: Stat): Stat = Map.filter(match (adds, _) -> adds > 0ii, stat)
         
     ///
     /// Prints the stat for each language.
     ///
     def printEachLanguage(stat: List[(String, (BigInt, BigInt))]): Unit \ IO = 
-        List.forEach(item -> {
-            let (language, (adds, dels)) = item;
-            println("${language}: ${adds} additions, ${dels} deletions.")
-        }, stat)
+        List.forEach(match (language, (adds, dels)) -> println("${language}: ${adds} additions, ${dels} deletions."), stat)
         
     ///
     /// Renames the extention to langauges and merge entries of the same language.
     /// 
     def renameAndMerge(stat: Stat): Stat = 
         Map.foldLeftWithKey((acc, ext, data) -> {
-            let (adds, dels) = data;
             match ext2Language(ext) {
                 case Option.None        => acc
                 case Option.Some(language) => 
-                    match Map.get(language, acc) {
-                        case Option.None        => Map.insert(language, (adds, dels), acc)
-                        case Option.Some(newData) => 
-                            let (newAdds, newDels) = newData;
-                            Map.insert(language, (adds + newAdds, dels + newDels), acc)
-                    }
+                    Map.insertWith(match (oldAdds, oldDels) -> match (newAdds, newDels) -> 
+                        (oldAdds + newAdds, oldDels + newDels)
+                    , language, data, acc)
             }
         }, Map.empty(), stat)
 
     ///
     /// Sorts the map by converting it to a list.
     ///
-    def sortMapByValue(map: Map[k, v]): List[(k, v)] with Order[v] = {
-        let list = Map.toList(map);
-        List.sortBy(kv -> {
-            let (_, v) = kv;
-            v
-        }, list)
-    }
+    def sortMapByValue(map: Map[k, v]): List[(k, v)] with Order[v] = Map.toList(map) |> List.sortBy(match (_, v) -> v)
 
     ///
     /// A map from extension to list.

@@ -5,7 +5,7 @@ eff Config {
     ///
     /// Gets the github user name.
     ///
-    def getName(): String 
+    def getName(): String
 
     ///
     /// Gets the github user token.
