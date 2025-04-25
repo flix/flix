@@ -22,7 +22,11 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
+<<<<<<< HEAD
 import ca.uwaterloo.flix.language.phase.optimizer.RecursionRewriter
+=======
+import ca.uwaterloo.flix.language.phase.optimizer.Optimizer
+>>>>>>> main
 import ca.uwaterloo.flix.language.verifier.{ClassVerifier, EffectVerifier}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -652,7 +656,8 @@ class Flix {
     val treeShaker1Ast = TreeShaker1.run(loweringAst)
     val monomorpherAst = Monomorpher.run(treeShaker1Ast)
     val recursionRewrittenAst = RecursionRewriter.run(monomorpherAst)
-    val simplifierAst = Simplifier.run(recursionRewrittenAst)
+    val optimizerAst = Optimizer.run(recursionRewrittenAst)
+    val simplifierAst = Simplifier.run(optimizerAst)
     val closureConvAst = ClosureConv.run(simplifierAst)
     val lambdaLiftAst = LambdaLift.run(closureConvAst)
     val treeShaker2Ast = TreeShaker2.run(lambdaLiftAst)
