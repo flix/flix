@@ -29,7 +29,7 @@ object Optimizer {
       case MonoAst.Def(sym, spec, exp, loc) =>
         val e = visitExp(exp)
         val fps = spec.fparams.map(visitFormalParam)
-        val ctx = OccurrenceAst.DefContext(0, 0, isDirectCall = false, isSelfRecursive = false)
+        val ctx = OccurrenceAst.DefContext(0, isDirectCall = false, isSelfRecursive = false)
         OccurrenceAst.Def(sym, fps, spec, e, ctx, loc)
     }
 
