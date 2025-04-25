@@ -1553,27 +1553,19 @@ object Resolver {
     * Resolve the application of a top-level function or signature `base` with some `arity`.
     *
     * Example with `def f(a: Char, b: Char): Char -> Char`
-    *   - `   f     ===> x -> y -> f(x, y)`
-    *   - `  f(a)   ===> let x = a; y -> f(x, y)`
-    *   - ` f(a,b)  ===> f(a, b)`
-    *   - `f(a,b,c) ===> f(a, b)(c)`
+    *   - under applied: `f ===> x -> y -> f(x, y)`
+    *   - under applied: `f(a) ===> let x = a; y -> f(x, y)`
+    *   - fully applied: `f(a,b) ===> f(a, b)`
+    *   - over applied:  `f(a,b,c) ===> f(a, b)(c)`
     */
   private def visitApplyFull(base: List[ResolvedAst.Expr] => ResolvedAst.Expr, arity: Int, exps: List[ResolvedAst.Expr], loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    val (directArgs, cloArgs) = exps.splitAt(arity)
+    val argsGiven = exps.length
+    if (argsGiven < arity) {
+      // Case: under applied.
+      val binders = exps.zipWithIndex.map { case (arg, i) => (freshVarSym("arg" + i, BoundBy.Let, loc.asSynthetic), arg) }
+      val binderVars = binders.map { case (varSym, _) => ResolvedAst.Expr.Var(varSym, loc.asSynthetic) }
 
-    val isFullCall = directArgs.lengthIs == arity
-    if (isFullCall) {
-      val defApplication = base(directArgs)
-      val closureApplication = cloArgs.foldLeft(defApplication) {
-        case (acc, cloArg) => ResolvedAst.Expr.ApplyClo(acc, cloArg, loc)
-      }
-      closureApplication
-    } else {
-      assert(cloArgs.isEmpty)
-      val binders = directArgs.zipWithIndex.map{case (arg, i) => (freshVarSym("arg" + i, BoundBy.Let, loc.asSynthetic), arg)}
-      val binderVars = binders.map{case (varSym, _) => ResolvedAst.Expr.Var(varSym, loc.asSynthetic)}
-
-      val fparamsPadding = mkFreshFparams(arity - directArgs.length, loc.asSynthetic)
+      val fparamsPadding = mkFreshFparams(arity - exps.length, loc.asSynthetic)
       val argsPadding = fparamsPadding.map(fp => ResolvedAst.Expr.Var(fp.sym, loc.asSynthetic))
 
       val fullDefApplication = base(binderVars ++ argsPadding)
@@ -1584,10 +1576,21 @@ object Resolver {
           if (first) (ResolvedAst.Expr.Lambda(fp, acc, allowSubeffecting = false, loc.asSynthetic), false)
           else (mkPureLambda(fp, acc, loc.asSynthetic), false)
       }
-      
-      binders.foldRight(fullDefLambda){
+
+      binders.foldRight(fullDefLambda) {
         case ((varSym, exp), acc) => ResolvedAst.Expr.Let(varSym, exp, acc, loc.asSynthetic)
       }
+    } else if (argsGiven == arity) {
+      // Case: fully applied.
+      base(exps)
+    } else {
+      // Case: over applied.
+      val (directArgs, cloArgs) = exps.splitAt(arity)
+      val defApplication = base(directArgs)
+      val closureApplication = cloArgs.foldLeft(defApplication) {
+        case (acc, cloArg) => ResolvedAst.Expr.ApplyClo(acc, cloArg, loc)
+      }
+      closureApplication
     }
   }
 
