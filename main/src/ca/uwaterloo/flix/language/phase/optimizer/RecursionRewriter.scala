@@ -52,18 +52,39 @@ object RecursionRewriter {
 
     // 2. Rewrite function
     // 2.1 Create a substitution from the function symbol and alive parameters to fresh symbols (maybe this can be created during step 1)
+
+    val constantParams = constants(ctx.calls, defn.spec.fparams)
+    println(s"constants $constantParams")
+    val varSubst = constantParams.map(fp => fp.sym -> Symbol.freshVarSym(fp.sym)).toMap
     val freshLocalDefSym = Symbol.freshVarSym(defn.sym.text + "Loop", BoundBy.LocalDef, defn.sym.loc)(Scope.Top, flix)
     println(s"fresh $freshLocalDefSym")
-    val varSubst = ctx.alive.toMap
     val subst = Subst.from(defn.sym, freshLocalDefSym, varSubst)
 
     // 2.2 Copy the function body, visit and apply the substitution and rewrite nodes. Any recursive ApplyDef expr becomes an ApplyLocalDef expr.
     val localDef = rewriteExp(defn.exp)(subst, defn.spec.fparams)
 
     // 2.3 Replace the original function body with a LocalDef declaration that has the body from 2.2, followed by an ApplyLocalDef expr.
-    val aliveParams = defn.spec.fparams.filter(fp => varSubst.contains(fp.sym))
-    val body = mkLocalDefExpr(subst, localDef, freshLocalDefSym, aliveParams, defn.spec.retTpe, defn.spec.eff)
+    val body = mkLocalDefExpr(subst, localDef, freshLocalDefSym, constantParams, defn.spec.retTpe, defn.spec.eff)
     defn.copy(exp = body)
+  }
+
+  private def constants(calls: Iterable[Expr.ApplyDef], fparams: Iterable[MonoAst.FormalParam]): List[MonoAst.FormalParam] = {
+    val matrix = calls.map(ap => fparams.zip(ap.exps)).transpose
+    matrix.flatMap {
+      case invocations =>
+        val allConstant = invocations.forall {
+          case (fp, Expr.Var(sym, _, _)) => fp.sym == sym
+          case _ => false
+        }
+        if (allConstant) {
+          invocations.headOption match {
+            case Some((fp, _)) => List(fp)
+            case None => throw InternalCompilerException("unexpected empty head", SourceLocation.Unknown)
+          }
+        } else {
+          List.empty
+        }
+    }.toList
   }
 
   private def checkTailPosition(exp0: MonoAst.Expr, tailPos: Boolean)(implicit sym0: Symbol.DefnSym, fparams: List[MonoAst.FormalParam], ctx: LocalContext, flix: Flix): Boolean = exp0 match {
@@ -195,10 +216,10 @@ object RecursionRewriter {
       val e2 = rewriteExp(exp2)
       Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
-    case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+    case Expr.ApplyDef(sym, exps, _, tpe, eff, loc) =>
       subst(sym) match {
         case None => // It is not a recursive call
-          Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc)
+          expr0
 
         case Some(localDefSym) =>
           val es = exps.zipWithIndex.filter {
@@ -339,7 +360,7 @@ object RecursionRewriter {
 
   private object LocalContext {
 
-    def mk(): LocalContext = new LocalContext(new AtomicBoolean(false), new mutable.HashMap(), new mutable.ListBuffer())
+    def mk(): LocalContext = new LocalContext(new AtomicBoolean(false), mutable.HashMap.empty, mutable.ListBuffer.empty)
 
   }
 
