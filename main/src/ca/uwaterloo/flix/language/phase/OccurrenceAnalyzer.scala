@@ -153,7 +153,11 @@ object OccurrenceAnalyzer {
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)
         val ctx3 = combineSeq(ctx1, ctx2)
-        (OccurrenceAst.Expr.Stm(e1, e2, tpe, eff, loc), ctx3)
+        if ((e1 eq exp1) && (e2 eq exp2)) {
+          (exp0, ctx3)  // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.Stm(e1, e2, tpe, eff, loc), ctx3)
+        }
 
       case OccurrenceAst.Expr.Discard(exp, eff, loc) =>
         val (e, ctx) = visitExp(exp)
@@ -246,15 +250,16 @@ object OccurrenceAnalyzer {
       (OccurrenceAst.JvmMethod(ident, fparams, c, retTpe, eff, loc), ctx)
   }
 
-  private def visitPattern(pattern0: OccurrenceAst.Pattern)(implicit ctx: ExprContext): (OccurrenceAst.Pattern, Set[VarSym]) = pattern0 match {
+  private def visitPattern(pat0: OccurrenceAst.Pattern)(implicit ctx: ExprContext): (OccurrenceAst.Pattern, Set[VarSym]) = pat0 match {
     case OccurrenceAst.Pattern.Wild(_, _) =>
-      (pattern0, Set.empty)
+      (pat0, Set.empty)
 
     case OccurrenceAst.Pattern.Var(sym, tpe, _, loc) =>
-      (OccurrenceAst.Pattern.Var(sym, tpe, ctx.get(sym), loc), Set(sym))
+      val occur = ctx.get(sym)
+      (OccurrenceAst.Pattern.Var(sym, tpe, occur, loc), Set(sym))
 
     case OccurrenceAst.Pattern.Cst(_, _, _) =>
-      (pattern0, Set.empty)
+      (pat0, Set.empty)
 
     case OccurrenceAst.Pattern.Tag(sym, pats, tpe, loc) =>
       val (ps, listOfSyms) = pats.map(visitPattern).unzip
