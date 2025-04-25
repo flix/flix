@@ -85,9 +85,10 @@ object OccurrenceAnalyzer {
 
     case OccurrenceAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val (es, ctxs) = exps.map(visitExp).unzip
-      val ctx = ctxs.foldLeft(ExpContext.empty)(combineSeq)
+      val ctx1 = if (sym == sym0) ExpContext.recursiveOnce else ExpContext.empty
+      val ctx2 = ctxs.foldLeft(ctx1)(combineSeq)
       lctx.size.incrementAndGet()
-      (OccurrenceAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc), ctx)
+      (OccurrenceAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc), ctx2)
 
     case OccurrenceAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       val (es, ctxs) = exps.map(visitExp).unzip
