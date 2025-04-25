@@ -57,11 +57,11 @@ object OccurrenceAnalyzer {
   private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.Expr, ExprContext) = {
     lctx.size.incrementAndGet()
     exp0 match {
-      case OccurrenceAst.Expr.Cst(cst, tpe, loc) =>
-        (OccurrenceAst.Expr.Cst(cst, tpe, loc), ExprContext.empty)
+      case OccurrenceAst.Expr.Cst(_, _, _) =>
+        (exp0, ExprContext.empty)
 
-      case OccurrenceAst.Expr.Var(sym, tpe, loc) =>
-        (OccurrenceAst.Expr.Var(sym, tpe, loc), ExprContext.empty.addVar(sym, Once))
+      case OccurrenceAst.Expr.Var(sym, _, _) =>
+        (exp0, ExprContext.empty.addVar(sym, Once))
 
       case OccurrenceAst.Expr.Lambda(fparam, exp, tpe, loc) =>
         val (e, ctx1) = visitExp(exp)
