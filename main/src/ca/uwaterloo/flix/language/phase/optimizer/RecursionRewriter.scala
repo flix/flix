@@ -46,6 +46,8 @@ object RecursionRewriter {
     if (!containsZeroRecursiveNonTailCalls && containsRecursiveCall) {
       return defn
     }
+    // TODO: Debug
+    println(defn.sym)
 
     // 2. Rewrite function
     // 2.1 Create a substitution from the function symbol and alive parameters to fresh symbols (maybe this can be created during step 1)
