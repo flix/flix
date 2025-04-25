@@ -153,10 +153,6 @@ object MonoAst {
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
 
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
-
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
-
-  case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
 
 }
