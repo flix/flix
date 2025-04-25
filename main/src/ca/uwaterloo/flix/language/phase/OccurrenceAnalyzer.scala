@@ -67,6 +67,7 @@ object OccurrenceAnalyzer {
         val (e, ctx1) = visitExp(exp)
         val ctx2 = ctx1.map {
           case Once => OnceInLambda
+          case o => o
         }
         val occur = ctx2.get(fparam.sym)
         val fp = fparam.copy(occur = occur)
@@ -111,6 +112,7 @@ object OccurrenceAnalyzer {
         val (e1, ctx1) = visitExp(exp1)
         val ctx2 = ctx1.map {
           case Once => OnceInLocalDef
+          case o => o
         }
         val fps = formalParams.map(fp => fp.copy(occur = ctx2.get(fp.sym)))
         val ctx3 = ctx2.removeVars(fps.map(_.sym))
@@ -306,18 +308,6 @@ object OccurrenceAnalyzer {
   }
 
   /**
-    * Maps each [[DefnSym]] to its corresponding [[Occur]] combining with [[combineSeq]].
-    */
-  private def combineSeq(kvs: Iterable[(DefnSym, Occur)]): Map[DefnSym, Occur] = {
-    kvs.foldLeft(Map.empty[DefnSym, Occur]) {
-      case (acc, (sym, occur1)) => acc.get(sym) match {
-        case Some(occur2) => acc + (sym -> combineSeq(occur1, occur2))
-        case None => acc + (sym -> occur1)
-      }
-    }
-  }
-
-  /**
     * Combines two occurrences `o1` and `o2` from the same branch into a single occurrence.
     */
   private def combineSeq(o1: Occur, o2: Occur): Occur = (o1, o2) match {
@@ -378,17 +368,10 @@ object OccurrenceAnalyzer {
       this.copy(vars = this.vars -- syms)
     }
 
-    /**
-      * Applies `f` to each value in `vars` where `f` is defined.
-      * Returns a new [[ExprContext]] with the updated map.
-      */
-    def map(f: PartialFunction[Occur, Occur]): ExprContext = {
+    /** Applies `f` to each value in `vars`, i.e., maps `(k, v) > (k, f(v))`. */
+    def map(f: Occur => Occur): ExprContext = {
       val newVars = vars.map {
-        case (k, v) =>
-          if (f.isDefinedAt(v))
-            (k, f(v))
-          else
-            (k, v)
+        case (k, v) => (k, f(v))
       }
       this.copy(vars = newVars)
     }
