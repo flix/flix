@@ -57,10 +57,10 @@ object OccurrenceAnalyzer {
   private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.Expr, ExprContext) = {
     exp0 match {
       case OccurrenceAst.Expr.Cst(_, _, _) =>
-        (exp0, ExprContext.empty)
+        (exp0, ExprContext.Empty)
 
       case OccurrenceAst.Expr.Var(sym, _, _) =>
-        (exp0, ExprContext.empty.addVar(sym, Once))
+        (exp0, ExprContext.Empty.addVar(sym, Once))
 
       case OccurrenceAst.Expr.Lambda(fparam, exp, tpe, loc) =>
         val (e, ctx1) = visitExp(exp)
@@ -79,7 +79,7 @@ object OccurrenceAnalyzer {
 
       case OccurrenceAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
-        val ctx = ctxs.foldLeft(ExprContext.empty)(combineSeq)
+        val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
         if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
@@ -98,7 +98,7 @@ object OccurrenceAnalyzer {
 
       case OccurrenceAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
-        val ctx1 = if (sym == sym0) ExprContext.recursiveOnce else ExprContext.empty
+        val ctx1 = if (sym == sym0) ExprContext.RecursiveOnce else ExprContext.Empty
         val ctx2 = ctxs.foldLeft(ctx1)(combineSeq)
         if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx2) // Reuse exp0.
@@ -108,7 +108,7 @@ object OccurrenceAnalyzer {
 
       case OccurrenceAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
-        val ctx = ctxs.foldLeft(ExprContext.empty)(combineSeq)
+        val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
         (OccurrenceAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc), ctx)
 
       case OccurrenceAst.Expr.Let(sym, exp1, exp2, tpe, eff, _, loc) =>
@@ -166,13 +166,13 @@ object OccurrenceAnalyzer {
       case OccurrenceAst.Expr.Match(exp, rules, tpe, eff, loc) =>
         val (e, ctx1) = visitExp(exp)
         val (rs, ctxs) = rules.map(visitMatchRule).unzip
-        val ctx2 = ctxs.foldLeft(ExprContext.empty)(combineBranch)
+        val ctx2 = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
         val ctx3 = combineSeq(ctx1, ctx2)
         (OccurrenceAst.Expr.Match(e, rs, tpe, eff, loc), ctx3)
 
       case OccurrenceAst.Expr.VectorLit(exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
-        val ctx = ctxs.foldLeft(ExprContext.empty)(combineSeq)
+        val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
         (OccurrenceAst.Expr.VectorLit(es, tpe, eff, loc), ctx)
 
       case OccurrenceAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
@@ -196,25 +196,25 @@ object OccurrenceAnalyzer {
       case OccurrenceAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
         val (e, ctx1) = visitExp(exp)
         val (rs, ctxs) = rules.map(visitCatchRule).unzip
-        val ctx2 = ctxs.foldLeft(ExprContext.empty)(combineBranch)
+        val ctx2 = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
         val ctx3 = combineSeq(ctx1, ctx2)
         (OccurrenceAst.Expr.TryCatch(e, rs, tpe, eff, loc), ctx3)
 
       case OccurrenceAst.Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
         val (e, ctx1) = visitExp(exp)
         val (rs, ctxs) = rules.map(visitHandlerRule).unzip
-        val ctx2 = ctxs.foldLeft(ExprContext.empty)(combineBranch)
+        val ctx2 = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
         val ctx3 = combineSeq(ctx1, ctx2)
         (OccurrenceAst.Expr.RunWith(e, effUse, rs, tpe, eff, loc), ctx3)
 
       case OccurrenceAst.Expr.Do(op, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
-        val ctx = ctxs.foldLeft(ExprContext.empty)(combineSeq)
+        val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
         (OccurrenceAst.Expr.Do(op, es, tpe, eff, loc), ctx)
 
       case OccurrenceAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
         val (ms, ctxs) = methods.map(visitJvmMethod).unzip
-        val ctx = ctxs.foldLeft(ExprContext.empty)(combineBranch)
+        val ctx = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
         (OccurrenceAst.Expr.NewObject(name, clazz, tpe, eff, ms, loc), ctx)
     }
   }
@@ -279,7 +279,7 @@ object OccurrenceAnalyzer {
 
   }
 
-  private def visitRecordLabelPattern(pattern0: OccurrenceAst.Pattern.Record.RecordLabelPattern)(implicit ctx: ExprContext): (OccurrenceAst.Pattern.Record.RecordLabelPattern, Set[VarSym]) = pattern0 match {
+  private def visitRecordLabelPattern(pat0: OccurrenceAst.Pattern.Record.RecordLabelPattern)(implicit ctx: ExprContext): (OccurrenceAst.Pattern.Record.RecordLabelPattern, Set[VarSym]) = pat0 match {
     case OccurrenceAst.Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
       val (p, syms) = visitPattern(pat)
       (OccurrenceAst.Pattern.Record.RecordLabelPattern(label, p, tpe, loc), syms)
@@ -310,6 +310,13 @@ object OccurrenceAnalyzer {
     * Combines `ctx1` and `ctx2` into a single [[ExprContext]].
     */
   private def combine(ctx1: ExprContext, ctx2: ExprContext, combine: (Occur, Occur) => Occur): ExprContext = {
+    if (ctx1 eq ExprContext.Empty) {
+      return ctx2
+    }
+    if (ctx2 eq ExprContext.Empty) {
+      return ctx1
+    }
+
     val selfOccur = combine(ctx1.selfOccur, ctx2.selfOccur)
     val varMap = combineMaps(ctx1.vars, ctx2.vars, combine)
     ExprContext(selfOccur, varMap)
@@ -319,6 +326,13 @@ object OccurrenceAnalyzer {
     * Combines maps `m1` and `m2` into a single map.
     */
   private def combineMaps[A](m1: Map[A, Occur], m2: Map[A, Occur], combine: (Occur, Occur) => Occur): Map[A, Occur] = {
+    if (m1.isEmpty) {
+      return m2
+    }
+    if (m2.isEmpty) {
+      return m1
+    }
+
     val (smallest, largest) = if (m1.size < m2.size) (m1, m2) else (m2, m1)
     smallest.foldLeft[Map[A, Occur]](largest) {
       case (acc, (k, v)) =>
@@ -349,10 +363,10 @@ object OccurrenceAnalyzer {
   private object ExprContext {
 
     /** Context for an empty sequence of expressions. */
-    def empty: ExprContext = ExprContext(Dead, Map.empty)
+    val Empty: ExprContext = ExprContext(Dead, Map.empty)
 
     /** Context for a self-recursive call. */
-    def recursiveOnce: ExprContext = ExprContext(Once, Map.empty)
+    val RecursiveOnce: ExprContext = ExprContext(Once, Map.empty)
 
   }
 
