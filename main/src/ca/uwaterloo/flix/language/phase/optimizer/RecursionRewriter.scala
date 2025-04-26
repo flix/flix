@@ -47,20 +47,14 @@ object RecursionRewriter {
     if (!isTailRecursive) {
       return defn
     }
-    // TODO: Debug
-    println(defn.sym)
 
     // 2. Rewrite function
     // 2.1 Create a substitution from the function symbol and alive parameters to fresh symbols (maybe this can be created during step 1)
-
     val constantParams = constants(ctx.calls, defn.spec.fparams)
-    println(s"constants $constantParams")
     val aliveParams = defn.spec.fparams.filterNot(fp => constantParams.contains(fp))
     val varSubst = aliveParams.map(fp => fp.sym -> Symbol.freshVarSym(fp.sym)).toMap
     val freshLocalDefSym = Symbol.freshVarSym(defn.sym.text + "Loop", BoundBy.LocalDef, defn.sym.loc)(Scope.Top, flix)
-    println(s"fresh $freshLocalDefSym")
     val subst = Subst.from(defn.sym, freshLocalDefSym, varSubst)
-    println(s"subst $subst")
 
     // 2.2 Copy the function body, visit and apply the substitution and rewrite nodes. Any recursive ApplyDef expr becomes an ApplyLocalDef expr.
     val nonConstantFps = defn.spec.fparams.zipWithIndex.filterNot { case (fp, _) => constantParams.contains(fp) }
@@ -356,11 +350,9 @@ object RecursionRewriter {
     val args = aliveParams.map(fp => Expr.Var(fp.sym, fp.tpe, fp.loc.asSynthetic))
     val applyLocalDef = Expr.ApplyLocalDef(localDefSym, args, tpe, eff, body.loc.asSynthetic)
 
-    // Make LocalDef expr
+    // Make LocalDef definition expr
     val params = aliveParams.map(fp => fp.copy(sym = subst(fp.sym), loc = fp.loc.asSynthetic))
-    val result = Expr.LocalDef(localDefSym, params, body, applyLocalDef, tpe, eff, body.loc.asSynthetic)
-    println(s"args $args\nresult $result")
-    result
+    Expr.LocalDef(localDefSym, params, body, applyLocalDef, tpe, eff, body.loc.asSynthetic)
   }
 
 
