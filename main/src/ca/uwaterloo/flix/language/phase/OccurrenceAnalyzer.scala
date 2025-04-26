@@ -292,28 +292,30 @@ object OccurrenceAnalyzer {
   }
 
   /**
-    * Combines `ctx1` and `ctx2` into a single [[ExprContext]].
-    */
-  private def combineBranch(ctx1: ExprContext, ctx2: ExprContext): ExprContext = {
-    combine(ctx1, ctx2, combineBranch)
-  }
-
-  /**
-    * Combines `ctx1` and `ctx2` into a single [[ExprContext]].
+    * Combines `ctx1` and `ctx2` into a single [[ExprContext]] using [[combineSeq]] to merge [[Occur]].
     */
   private def combineSeq(ctx1: ExprContext, ctx2: ExprContext): ExprContext = {
     combine(ctx1, ctx2, combineSeq)
   }
 
   /**
-    * Combines `ctx1` and `ctx2` into a single [[ExprContext]].
+    * Combines `ctx1` and `ctx2` into a single [[ExprContext]] using [[combineSeq]] to merge [[Occur]].
+    *
+    * If `ctx1` is [[None]] then `ctx2` is returned.
     */
   private def combineSeqOpt(ctx1: Option[ExprContext], ctx2: ExprContext): ExprContext = {
     ctx1.map(combineSeq(_, ctx2)).getOrElse(ctx2)
   }
 
   /**
-    * Combines `ctx1` and `ctx2` into a single [[ExprContext]].
+    * Combines `ctx1` and `ctx2` into a single [[ExprContext]] using [[combineBranch]] to merge [[Occur]].
+    */
+  private def combineBranch(ctx1: ExprContext, ctx2: ExprContext): ExprContext = {
+    combine(ctx1, ctx2, combineBranch)
+  }
+
+  /**
+    * Combines `ctx1` and `ctx2` into a single [[ExprContext]] using `combine` to merge [[Occur]].
     */
   private def combine(ctx1: ExprContext, ctx2: ExprContext, combine: (Occur, Occur) => Occur): ExprContext = {
     if (ctx1 eq ExprContext.Empty) {
@@ -329,7 +331,7 @@ object OccurrenceAnalyzer {
   }
 
   /**
-    * Combines maps `m1` and `m2` into a single map.
+    * Combines maps `m1` and `m2` into a single map using `combine` to merge [[Occur]].
     */
   private def combineMaps[A](m1: Map[A, Occur], m2: Map[A, Occur], combine: (Occur, Occur) => Occur): Map[A, Occur] = {
     if (m1.isEmpty) {
@@ -349,6 +351,8 @@ object OccurrenceAnalyzer {
 
   /**
     * Combines two occurrences `o1` and `o2` from the same branch into a single occurrence.
+    *
+    * If none of the occurrences are [[Dead]] then they are merged as [[Many]].
     */
   private def combineSeq(o1: Occur, o2: Occur): Occur = (o1, o2) match {
     case (Dead, _) => o2
@@ -358,6 +362,9 @@ object OccurrenceAnalyzer {
 
   /**
     * Combines two occurrences `o1` and `o2` from distinct branches into a single occurrence.
+    *
+    * If none of the occurrences are [[Dead]] then they are merged as [[Many]],
+    * except if both occurrences are [[Once]] then they are merged as [[ManyBranch]].
     */
   private def combineBranch(o1: Occur, o2: Occur): Occur = (o1, o2) match {
     case (Dead, _) => o2
