@@ -47,7 +47,7 @@ object OccurrenceAnalyzer {
     implicit val lctx: LocalContext = LocalContext.mk()
     val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx)
     val defContext = DefContext(lctx.localDefs.get(), isDirectCall(exp), isSelfRecursive(ctx.selfOccur))
-    val fparams = defn.fparams.map(fp => fp.copy(occur = ctx.get(fp.sym)))
+    val fparams = defn.fparams.map(visitFormalParam(_, ctx))
     OccurrenceAst.Def(defn.sym, fparams, defn.spec, exp, defContext, defn.loc)
   }
 
@@ -68,9 +68,8 @@ object OccurrenceAnalyzer {
           case Once => OnceInLambda
           case o => o
         }
-        val occur = ctx2.get(fparam.sym)
-        val fp = fparam.copy(occur = occur)
-        val ctx3 = ctx2.removeVar(fparam.sym)
+        val fp = visitFormalParam(fparam, ctx2)
+        val ctx3 = ctx2.removeVar(fp.sym)
         if (e eq exp) {
           (exp0, ctx3) // Reuse exp0.
         } else {
@@ -129,7 +128,7 @@ object OccurrenceAnalyzer {
           case Once => OnceInLocalDef
           case o => o
         }
-        val fps = formalParams.map(fp => fp.copy(occur = ctx2.get(fp.sym)))
+        val fps = formalParams.map(visitFormalParam(_, ctx2))
         val ctx3 = ctx2.removeVars(fps.map(_.sym))
         val (e2, ctx4) = visitExp(exp2)
         val ctx5 = combineSeq(ctx3, ctx4)
@@ -239,15 +238,17 @@ object OccurrenceAnalyzer {
   private def visitHandlerRule(rule: OccurrenceAst.HandlerRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.HandlerRule, ExprContext) = rule match {
     case OccurrenceAst.HandlerRule(op, fparams, exp) =>
       val (e, ctx1) = visitExp(exp)
-      val fps = fparams.map(fp => fp.copy(occur = ctx1.get(fp.sym)))
+      val fps = fparams.map(visitFormalParam(_, ctx1))
       val ctx2 = ctx1.removeVars(fps.map(_.sym))
       (OccurrenceAst.HandlerRule(op, fps, e), ctx2)
   }
 
   private def visitJvmMethod(method: OccurrenceAst.JvmMethod)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.JvmMethod, ExprContext) = method match {
     case OccurrenceAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
-      val (c, ctx) = visitExp(exp)
-      (OccurrenceAst.JvmMethod(ident, fparams, c, retTpe, eff, loc), ctx)
+      val (c, ctx1) = visitExp(exp)
+      val fps = fparams.map(visitFormalParam(_, ctx1))
+      val ctx2 = ctx1.removeVars(fps.map(_.sym))
+      (OccurrenceAst.JvmMethod(ident, fparams, c, retTpe, eff, loc), ctx2)
   }
 
   private def visitPattern(pat0: OccurrenceAst.Pattern, ctx: ExprContext): (OccurrenceAst.Pattern, Set[VarSym]) = pat0 match {
