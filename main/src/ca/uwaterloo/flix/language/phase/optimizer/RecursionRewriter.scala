@@ -219,13 +219,14 @@ object RecursionRewriter {
       val e2 = rewriteExp(exp2)
       Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
-    case Expr.ApplyDef(sym, exps, _, tpe, eff, loc) =>
+    case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       subst(sym) match {
         case None => // It is not a recursive call
-          expr0
+          val es = exps.map(rewriteExp)
+          Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
 
         case Some(localDefSym) =>
-          val es = exps.zipWithIndex.filter {
+          val es = exps.zipWithIndex.filter { // Only apply with alive params
             case (_, i) => aliveParams.map(_._2).contains(i)
           }.map {
             case (e, _) => rewriteExp(e)
