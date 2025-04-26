@@ -285,6 +285,11 @@ object OccurrenceAnalyzer {
       (OccurrenceAst.Pattern.Record.RecordLabelPattern(label, p, tpe, loc), syms)
   }
 
+  private def visitFormalParam(fparam0: OccurrenceAst.FormalParam, ctx: ExprContext): OccurrenceAst.FormalParam = {
+    val occur = ctx.get(fparam0.sym)
+    fparam0.copy(occur = occur)
+  }
+
   /**
     * Combines `ctx1` and `ctx2` into a single [[ExprContext]].
     */
