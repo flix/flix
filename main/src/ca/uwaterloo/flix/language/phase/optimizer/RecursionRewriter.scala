@@ -353,13 +353,12 @@ object RecursionRewriter {
   private def mkLocalDefExpr(subst: Subst, body: Expr, localDefSym: Symbol.VarSym, aliveParams: List[MonoAst.FormalParam], tpe: Type, eff: Type): Expr = {
     // Make ApplyLocalDef Expr
     val args = aliveParams.map(fp => Expr.Var(fp.sym, fp.tpe, fp.loc.asSynthetic))
-    println(s"args $args")
     val applyLocalDef = Expr.ApplyLocalDef(localDefSym, args, tpe, eff, body.loc.asSynthetic)
 
     // Make LocalDef expr
     val params = aliveParams.map(fp => fp.copy(sym = subst(fp.sym), loc = fp.loc.asSynthetic))
     val result = Expr.LocalDef(localDefSym, params, body, applyLocalDef, tpe, eff, body.loc.asSynthetic)
-    println(s"result $result")
+    println(s"args $args\nresult $result")
     result
   }
 
