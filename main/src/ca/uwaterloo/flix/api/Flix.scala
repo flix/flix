@@ -800,7 +800,7 @@ class Flix {
     * Returns the inputs for the given list of (path, text) pairs.
     */
   private def getLibraryInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
-    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, SecurityContext.AllPermissions) :: xs
+    case (ys, (virtualPath, text)) => Input.Text(virtualPath, text, SecurityContext.AllPermissions) :: ys
   }
 
   /**

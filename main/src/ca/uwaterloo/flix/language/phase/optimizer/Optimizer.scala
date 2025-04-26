@@ -13,7 +13,7 @@ object Optimizer {
     */
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer") {
     var result = ToOccurrenceAst.run(root)
-    for (_ <- 1 to 2) {
+    for (_ <- 1 to 10) {
       result = OccurrenceAnalyzer.run(result)
     }
     ToMonoAst.run(result)
@@ -29,7 +29,7 @@ object Optimizer {
       case MonoAst.Def(sym, spec, exp, loc) =>
         val e = visitExp(exp)
         val fps = spec.fparams.map(visitFormalParam)
-        val ctx = OccurrenceAst.DefContext(0, 0, isDirectCall = false, isSelfRecursive = false)
+        val ctx = OccurrenceAst.DefContext(0, isDirectCall = false, isSelfRecursive = false)
         OccurrenceAst.Def(sym, fps, spec, e, ctx, loc)
     }
 
