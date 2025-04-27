@@ -70,49 +70,7 @@ object RecursionRewriter {
       defn
   }
 
-  private def isRewritable(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): Boolean = {
-    val allRecursiveCallsInTailPos = visitExp(defn.exp, tailPos = true)(defn.sym, defn.spec.fparams, ctx, flix)
-    val containsRecursiveCall = ctx.selfTailCalls.nonEmpty
-    containsRecursiveCall && allRecursiveCallsInTailPos
-  }
-
-  private def rewriteDefn(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): MonoAst.Def = {
-    // 2. Rewrite function
-    // 2.1 Create a substitution from the function symbol and alive parameters to fresh symbols (maybe this can be created during step 1)
-    val constantParams = constants(ctx.selfTailCalls, defn.spec.fparams)
-    val aliveParams = defn.spec.fparams.filterNot(fp => constantParams.contains(fp))
-    val varSubst = aliveParams.map(fp => fp.sym -> Symbol.freshVarSym(fp.sym)).toMap
-    val freshLocalDefSym = Symbol.freshVarSym(defn.sym.text + "Loop", BoundBy.LocalDef, defn.sym.loc)(Scope.Top, flix)
-    val subst = Subst.from(defn.sym, freshLocalDefSym, varSubst)
-
-    // 2.2 Copy the function body, visit and apply the substitution and rewrite nodes. Any recursive ApplyDef expr becomes an ApplyLocalDef expr.
-    val nonConstantFps = defn.spec.fparams.zipWithIndex.filterNot { case (fp, _) => constantParams.contains(fp) }
-    val localDef = rewriteExp(defn.exp)(subst, nonConstantFps)
-
-    // 2.3 Replace the original function body with a LocalDef declaration that has the body from 2.2, followed by an ApplyLocalDef expr.
-    val body = mkLocalDefExpr(subst, localDef, freshLocalDefSym, aliveParams, defn.spec.retTpe, defn.spec.eff)
-    defn.copy(exp = body)
-  }
-
-  private def constants(calls: Iterable[Expr.ApplyDef], fparams: Iterable[MonoAst.FormalParam]): List[MonoAst.FormalParam] = {
-    val matrix = calls.map(ap => fparams.zip(ap.exps)).transpose
-    matrix.flatMap {
-      case invocations =>
-        val allConstant = invocations.forall {
-          case (fp, Expr.Var(sym, _, _)) => fp.sym == sym
-          case _ => false
-        }
-        if (allConstant) {
-          invocations.headOption match {
-            case Some((fp, _)) => List(fp)
-            case None => throw InternalCompilerException("unexpected empty head", SourceLocation.Unknown)
-          }
-        } else {
-          List.empty
-        }
-    }.toList
-  }
-
+  // TODO: Use TailPosition type
   private def visitExp(exp0: MonoAst.Expr, tailPos: Boolean)(implicit sym0: Symbol.DefnSym, fparams: List[MonoAst.FormalParam], ctx: LocalContext, flix: Flix): Boolean = exp0 match {
     case Expr.Cst(_, _, _) =>
       true
@@ -140,8 +98,7 @@ object RecursionRewriter {
       }
 
       // Check alive parameters
-      exps.filter(isAliveParam(_, fparams))
-        .forall(visitExp(_, tailPos = false))
+      exps.forall(visitExp(_, tailPos = false))
 
     case Expr.ApplyLocalDef(_, exps, _, _, _) =>
       exps.forall(visitExp(_, tailPos = false))
@@ -216,7 +173,7 @@ object RecursionRewriter {
       }
   }
 
-  private def rewriteExp(expr0: MonoAst.Expr)(implicit subst: Subst, aliveParams: List[(MonoAst.FormalParam, Int)]): MonoAst.Expr = expr0 match {
+  private def rewriteExp(expr0: MonoAst.Expr)(implicit subst: Subst, fparams0: List[(MonoAst.FormalParam, ParameterKind)]): MonoAst.Expr = expr0 match {
     case Expr.Cst(_, _, _) =>
       expr0
 
@@ -243,10 +200,9 @@ object RecursionRewriter {
           Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
 
         case Some(localDefSym) =>
-          val es = exps.zipWithIndex.filter { // Only apply with alive params
-            case (_, i) => aliveParams.map(_._2).contains(i)
-          }.map {
-            case (e, _) => rewriteExp(e)
+          val es = exps.zip(fparams0).map {
+            case (e, (_, ParameterKind.NonConstant)) => rewriteExp(e)
+            case (e, (_, ParameterKind.Constant)) => e
           }
           Expr.ApplyLocalDef(localDefSym, es, tpe, eff, loc)
       }
@@ -347,37 +303,71 @@ object RecursionRewriter {
 
   }
 
-  /**
-    * Returns `false` if `expr` is a var with same symbol as a formal parameter in `fparams`.
-    * Returns `true` otherwise.
-    * Should only be called from an [[Expr.ApplyDef]] node.
-    */
-  private def isAliveParam(expr: MonoAst.Expr, fparams: List[MonoAst.FormalParam]): Boolean = expr match {
-    case Expr.Var(sym, _, _) => fparams.forall(fp => sym != fp.sym)
-    case _ => true
+  private def isRewritable(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): Boolean = {
+    val allRecursiveCallsInTailPos = visitExp(defn.exp, tailPos = true)(defn.sym, defn.spec.fparams, ctx, flix)
+    val containsRecursiveCall = ctx.selfTailCalls.nonEmpty
+    containsRecursiveCall && allRecursiveCallsInTailPos
+  }
+
+  private def rewriteDefn(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): MonoAst.Def = {
+    implicit val params: List[(MonoAst.FormalParam, ParameterKind)] = paramKinds(ctx.selfTailCalls, defn.spec.fparams)
+    implicit val subst: Subst = mkSubst(defn, params)
+    val rewrittenExp = rewriteExp(defn.exp)
+    val body = mkLocalDefExpr(rewrittenExp)
+    defn.copy(exp = body)
+  }
+
+  private def mkSubst(defn: MonoAst.Def, params: List[(MonoAst.FormalParam, ParameterKind)])(implicit flix: Flix): Subst = {
+    val nonConstantParams = params.filter { case (_, pk) => pk == ParameterKind.NonConstant }
+    val varSubst = nonConstantParams.map { case (fp, _) => fp.sym -> Symbol.freshVarSym(fp.sym) }.toMap
+    val freshLocalDefSym = mkFreshLocalDefSym(defn)
+    Subst.from(defn.sym, freshLocalDefSym, varSubst)
+  }
+
+  private def paramKinds(calls: Iterable[Expr.ApplyDef], fparams: Iterable[MonoAst.FormalParam]): List[(MonoAst.FormalParam, ParameterKind)] = {
+    val matrix = calls.map(call => fparams.zip(call.exps)).transpose
+    matrix.map {
+      case invocations =>
+        val allConstant = invocations.forall {
+          case (fp, Expr.Var(sym, _, _)) => fp.sym == sym
+          case _ => false
+        }
+        invocations.headOption match {
+          case Some((fp, _)) if allConstant => (fp, ParameterKind.Constant)
+          case Some((fp, _)) => (fp, ParameterKind.NonConstant)
+          case None => throw InternalCompilerException("unexpected empty head", SourceLocation.Unknown)
+        }
+    }.toList
+  }
+
+  private def mkFreshLocalDefSym(defn: MonoAst.Def)(implicit flix: Flix): Symbol.VarSym = {
+    Symbol.freshVarSym(defn.sym.text + "Loop", BoundBy.LocalDef, defn.sym.loc)(Scope.Top, flix)
   }
 
   /**
     * Returns a [[Expr.LocalDef]] that is immediately applied after its declaration. Only the parameters that are alive are declared and applied.
     * Dead parameters are captured from the containing function.
     *
-    * @param subst       The variable substitution.
-    * @param body        The body of the local def to be created.
-    * @param localDefSym The symbol of the local def to be created.
-    * @param aliveParams The list of parameters that are alive in the body.
-    * @param tpe         The return type of the local def, i.e., the type obtained by applying the local def.
-    * @param eff         The effect the local def, i.e., the effect obtained by applying the local def.
+    * @param body   The body of the local def to be created.
+    * @param subst  The variable substitution.
+    * @param params The list of formal parameters and their [[ParameterKind]].
     */
-  private def mkLocalDefExpr(subst: Subst, body: Expr, localDefSym: Symbol.VarSym, aliveParams: List[MonoAst.FormalParam], tpe: Type, eff: Type): Expr = {
+  private def mkLocalDefExpr(body: Expr)(implicit subst: Subst, params: List[(MonoAst.FormalParam, ParameterKind)]): Expr = {
     // Make ApplyLocalDef Expr
-    val args = aliveParams.map(fp => Expr.Var(fp.sym, fp.tpe, fp.loc.asSynthetic))
-    val applyLocalDef = Expr.ApplyLocalDef(localDefSym, args, tpe, eff, body.loc.asSynthetic)
+    val nonConstantParams = params.filter {
+      case (_, pkind) => pkind == ParameterKind.NonConstant
+    }
+    val args = nonConstantParams.map {
+      case (fp, _) => Expr.Var(fp.sym, fp.tpe, fp.loc.asSynthetic)
+    }
+    val applyLocalDef = Expr.ApplyLocalDef(subst.fresh, args, body.tpe, body.eff, body.loc.asSynthetic)
 
     // Make LocalDef definition expr
-    val params = aliveParams.map(fp => fp.copy(sym = subst(fp.sym), loc = fp.loc.asSynthetic))
-    Expr.LocalDef(localDefSym, params, body, applyLocalDef, tpe, eff, body.loc.asSynthetic)
+    val localDefParams = nonConstantParams.map {
+      case (fp, _) => fp.copy(sym = subst(fp.sym), loc = fp.loc.asSynthetic)
+    }
+    Expr.LocalDef(subst.fresh, localDefParams, body, applyLocalDef, applyLocalDef.tpe, applyLocalDef.eff, applyLocalDef.loc.asSynthetic)
   }
-
 
   private object LocalContext {
 
@@ -391,7 +381,7 @@ object RecursionRewriter {
     def from(old: Symbol.DefnSym, fresh: Symbol.VarSym, vars: Map[Symbol.VarSym, Symbol.VarSym]): Subst = Subst(old, fresh, vars)
   }
 
-  private case class Subst(private val old: Symbol.DefnSym, private val fresh: Symbol.VarSym, private val vars: Map[Symbol.VarSym, Symbol.VarSym]) {
+  private case class Subst(old: Symbol.DefnSym, fresh: Symbol.VarSym, vars: Map[Symbol.VarSym, Symbol.VarSym]) {
     def apply(sym: Symbol.DefnSym): Option[Symbol.VarSym] = {
       if (sym == old)
         Some(fresh)
