@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.MonoAst.Expr
+import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, empty}
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope}
 import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
@@ -59,15 +59,20 @@ object RecursionRewriter {
   }
 
   private def visitDef(defn: MonoAst.Def)(implicit flix: Flix): MonoAst.Def = {
-    // 1. Check that every recursive call is in tail position and collect constant-ness information on fparams.
     implicit val ctx: LocalContext = LocalContext.mk()
+    if (isRewritable(defn))
+      rewriteDefn(defn)
+    else
+      defn
+  }
+
+  private def isRewritable(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): Boolean = {
     val allRecursiveCallsInTailPos = visitExp(defn.exp, tailPos = true)(defn.sym, defn.spec.fparams, ctx, flix)
     val containsRecursiveCall = ctx.selfTailCalls.nonEmpty
-    val isTailRecursive = containsRecursiveCall && allRecursiveCallsInTailPos
-    if (!isTailRecursive) {
-      return defn
-    }
+    containsRecursiveCall && allRecursiveCallsInTailPos
+  }
 
+  private def rewriteDefn(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): MonoAst.Def = {
     // 2. Rewrite function
     // 2.1 Create a substitution from the function symbol and alive parameters to fresh symbols (maybe this can be created during step 1)
     val constantParams = constants(ctx.selfTailCalls, defn.spec.fparams)
