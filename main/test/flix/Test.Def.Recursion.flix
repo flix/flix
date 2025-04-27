@@ -77,6 +77,12 @@ mod Test.Def.Recursion {
         case Conz(_, xs)   => higherOrder(f, xs)
     }
 
+    def higherOrderSwaps(f: a -> b, g: a -> b, l: Lizt[a]): Opt[b] = match l {
+        case Null          => Empty
+        case Conz(x, Null) => El(f(x))
+        case Conz(_, xs)   => higherOrderSwaps(g, f, xs)
+    }
+
     def nonTailCallMap(f: a -> b, l: Lizt[a]): Lizt[b] = match l {
         case Null        => Null
         case Conz(x, xs) => Conz(f(x), nonTailCallMap(f, xs))
@@ -225,6 +231,26 @@ mod Test.Def.Recursion {
     @test
     def higherOrder04(): Bool = {
         El(2) == higherOrder(x -> x + 1, list3(1))
+    }
+
+    @test
+    def higherOrderSwaps01(): Bool = {
+        Empty == higherOrderSwaps(x -> x + 1, x -> x + 2, emptyList())
+    }
+
+    @test
+    def higherOrderSwaps02(): Bool = {
+        El(2) == higherOrderSwaps(x -> x + 1, x -> x + 2, list1(1))
+    }
+
+    @test
+    def higherOrderSwaps03(): Bool = {
+        El(3) == higherOrderSwaps(x -> x + 1, x -> x + 2, list2(1))
+    }
+
+    @test
+    def higherOrderSwaps04(): Bool = {
+        El(2) == higherOrderSwaps(x -> x + 1, x -> x + 2, list3(1))
     }
 
     @test
