@@ -83,6 +83,30 @@ mod Test.Def.Recursion {
         case Conz(_, xs)   => higherOrderSwaps(g, f, xs)
     }
 
+    def mutualHigherOrder1(f: a -> b, l: Lizt[a]): Opt[b] = match l {
+        case Null          => Empty
+        case Conz(x, Null) => El(f(x))
+        case Conz(_, xs)   => mutualHigherOrder2(f, xs)
+    }
+
+    def mutualHigherOrder2(f: a -> b, l: Lizt[a]): Opt[b] =match l {
+        case Null          => Empty
+        case Conz(x, Null) => El(f(x))
+        case Conz(_, xs)   => mutualHigherOrder1(f, xs)
+    }
+
+    def mutualHigherOrderSwaps1(f: a -> b, g: a -> b, l: Lizt[a]): Opt[b] = match l {
+        case Null          => Empty
+        case Conz(x, Null) => El(f(x))
+        case Conz(_, xs)   => mutualHigherOrderSwaps2(g, f, xs)
+    }
+
+    def mutualHigherOrderSwaps2(f: a -> b, g: a -> b, l: Lizt[a]): Opt[b] = match l {
+        case Null          => Empty
+        case Conz(x, Null) => El(f(x))
+        case Conz(_, xs)   => mutualHigherOrderSwaps1(g, f, xs)
+    }
+
     def nonTailCallMap(f: a -> b, l: Lizt[a]): Lizt[b] = match l {
         case Null        => Null
         case Conz(x, xs) => Conz(f(x), nonTailCallMap(f, xs))
@@ -251,6 +275,46 @@ mod Test.Def.Recursion {
     @test
     def higherOrderSwaps04(): Bool = {
         El(2) == higherOrderSwaps(x -> x + 1, x -> x + 2, list3(1))
+    }
+
+    @test
+    def mutualHigherOrder01(): Bool = {
+        Empty == mutualHigherOrder1(x -> x + 1, emptyList())
+    }
+
+    @test
+    def mutualHigherOrder02(): Bool = {
+        El(2) == mutualHigherOrder1(x -> x + 1, list1(1))
+    }
+
+    @test
+    def mutualHigherOrder03(): Bool = {
+        El(2) == mutualHigherOrder1(x -> x + 1, list2(1))
+    }
+
+    @test
+    def mutualHigherOrder04(): Bool = {
+        El(2) == mutualHigherOrder1(x -> x + 1, list3(1))
+    }
+
+    @test
+    def mutualHigherOrderSwaps01(): Bool = {
+        Empty == mutualHigherOrderSwaps1(x -> x + 1, x -> x + 2, emptyList())
+    }
+
+    @test
+    def mutualHigherOrderSwaps02(): Bool = {
+        El(2) == mutualHigherOrderSwaps1(x -> x + 1, x -> x + 2, list1(1))
+    }
+
+    @test
+    def mutualHigherOrderSwaps03(): Bool = {
+        El(3) == mutualHigherOrderSwaps1(x -> x + 1, x -> x + 2, list2(1))
+    }
+
+    @test
+    def mutualHigherOrderSwaps04(): Bool = {
+        El(2) == mutualHigherOrderSwaps1(x -> x + 1, x -> x + 2, list3(1))
     }
 
     @test
