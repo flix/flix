@@ -40,6 +40,52 @@ mod Test.Def.Recursion {
         else
             swapsConstantParams(y, x, i + 1)
 
+    def mutual1(x: Int32, y: Int32): Int32 =
+        if (x / y == 0)
+            x
+        else
+            mutual2(x - 1, y)
+
+    def mutual2(x: Int32, y: Int32): Int32 =
+        mutual1(x, y)
+
+    def mutualSwaps1(x: Int32, y: Int32): Int32 =
+        if (x / y == 0)
+            1
+        else
+            mutualSwaps2(y, x)
+
+    def mutualSwaps2(x: Int32, y: Int32): Int32 =
+        mutualSwaps1(x + 1, y - 1)
+
+
+    def mutualSimple1(l: Lizt[a]): Opt[a] = match l {
+        case Null          => Empty
+        case Conz(x, Null) => El(x)
+        case Conz(_, xs)   => mutualSimple2(xs)
+    }
+
+    def mutualSimple2(l: Lizt[a]): Opt[a] = match l {
+        case Null          => Empty
+        case Conz(x, Null) => El(x)
+        case Conz(_, xs)   => mutualSimple1(xs)
+    }
+
+    def higherOrder(f: a -> b, l: Lizt[a]): Opt[b] = match l {
+        case Null          => Empty
+        case Conz(x, Null) => El(f(x))
+        case Conz(_, xs)   => higherOrder(f, xs)
+    }
+
+    def nonTailCallMap(f: a -> b, l: Lizt[a]): Lizt[b] = match l {
+        case Null        => Null
+        case Conz(x, xs) => Conz(f(x), nonTailCallMap(f, xs))
+    }
+
+    def tailCallMapReverse(f: a -> b, l: Lizt[a], acc: Lizt[b]): Lizt[b] = match l {
+        case Null        => acc
+        case Conz(x, xs) => tailCallMapReverse(f, xs, Conz(f(x), acc))
+    }
 
     @test
     def simple01(): Bool = {
@@ -109,5 +155,115 @@ mod Test.Def.Recursion {
     @test
     def swapsConstantParams05(): Int32 = {
         swapsConstantParams(1, 2, -10)
+    }
+
+    @test
+    def mutual01(): Int32 = {
+        mutual1(0, 1)
+    }
+
+    @test
+    def mutual02(): Int32 = {
+        mutual1(1000, 1)
+    }
+
+    @test
+    def mutual03(): Int32 = {
+        mutual1(1000, 2)
+    }
+
+    @test
+    def mutualSwaps01(): Int32 = {
+        mutual1(0, 1)
+    }
+
+    @test
+    def mutualSwaps02(): Int32 = {
+        mutual1(1000, 1)
+    }
+
+    @test
+    def mutualSwaps03(): Int32 = {
+        mutual1(1000, 2)
+    }
+
+    @test
+    def mutualSimple01(): Bool = {
+        Empty == mutualSimple1(emptyList())
+    }
+
+    @test
+    def mutualSimple02(): Bool = {
+        El(1) == mutualSimple1(list1(1))
+    }
+
+    @test
+    def mutualSimple03(): Bool = {
+        El(1) == mutualSimple1(list2(1))
+    }
+
+    @test
+    def mutualSimple04(): Bool = {
+        El(1) == mutualSimple1(list3(1))
+    }
+
+    @test
+    def higherOrder01(): Bool = {
+        Empty == higherOrder(x -> x + 1, emptyList())
+    }
+
+    @test
+    def higherOrder02(): Bool = {
+        El(2) == higherOrder(x -> x + 1, list1(1))
+    }
+
+    @test
+    def higherOrder03(): Bool = {
+        El(2) == higherOrder(x -> x + 1, list2(1))
+    }
+
+    @test
+    def higherOrder04(): Bool = {
+        El(2) == higherOrder(x -> x + 1, list3(1))
+    }
+
+    @test
+    def nonTailCallMap01(): Lizt[Int32] = {
+        nonTailCallMap(x -> x * x, emptyList())
+    }
+
+    @test
+    def nonTailCallMap02(): Lizt[Int32] = {
+        nonTailCallMap(x -> x * x, list1(1))
+    }
+
+    @test
+    def nonTailCallMap03(): Lizt[Int32] = {
+        nonTailCallMap(x -> x * x, list1(2))
+    }
+
+    @test
+    def nonTailCallMap04(): Lizt[Int32] = {
+        nonTailCallMap(x -> x * x, list3(3))
+    }
+
+    @test
+    def tailCallMapReverse01(): Lizt[Int32] = {
+        tailCallMapReverse(x -> x * x, emptyList(), Null)
+    }
+
+    @test
+    def tailCallMapReverse02(): Lizt[Int32] = {
+        tailCallMapReverse(x -> x * x, list1(1), Null)
+    }
+
+    @test
+    def tailCallMapReverse03(): Lizt[Int32] = {
+        tailCallMapReverse(x -> x * x, list1(2), Null)
+    }
+
+    @test
+    def tailCallMapReverse04(): Lizt[Int32] = {
+        tailCallMapReverse(x -> x * x, list3(3), Null)
     }
 }
