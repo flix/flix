@@ -403,4 +403,14 @@ object RecursionRewriter {
     }
   }
 
+  private sealed trait TailPosition
+
+  private object TailPosition {
+
+    case object Tail extends TailPosition
+
+    case object NonTail extends TailPosition
+
+  }
+
 }
