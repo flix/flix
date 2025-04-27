@@ -117,6 +117,12 @@ mod Test.Def.Recursion {
         case Conz(x, xs) => tailCallMapReverse(f, xs, Conz(f(x), acc))
     }
 
+    def allConstantParams(x: a): Bool with Eq[a] =
+        if (x == x)
+            true
+        else
+            allConstantParams(x)
+
     @test
     def simple01(): Bool = {
         Empty == simple(emptyList())
@@ -355,5 +361,20 @@ mod Test.Def.Recursion {
     @test
     def tailCallMapReverse04(): Lizt[Int32] = {
         tailCallMapReverse(x -> x * x, list3(3), Null)
+    }
+
+    @test
+    def allConstantParams01(): Bool = {
+        allConstantParams(0)
+    }
+
+    @test
+    def allConstantParams02(): Bool = {
+        allConstantParams(true)
+    }
+
+    @test
+    def allConstantParams03(): Bool = {
+        allConstantParams("abc")
     }
 }
