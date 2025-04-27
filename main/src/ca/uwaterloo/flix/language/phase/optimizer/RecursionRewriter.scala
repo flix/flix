@@ -413,4 +413,23 @@ object RecursionRewriter {
 
   }
 
+  private sealed trait Recursion
+
+  private object Recursion {
+
+    case object AllSelf extends Recursion
+
+    case object Mixed extends Recursion
+
+  }
+
+  private sealed trait ParameterKind
+
+  private object ParameterKind {
+
+    case object Constant extends ParameterKind
+
+    case object NonConstant extends ParameterKind
+
+  }
 }
