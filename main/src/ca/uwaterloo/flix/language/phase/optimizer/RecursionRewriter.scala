@@ -61,8 +61,8 @@ object RecursionRewriter {
   private def visitDef(defn: MonoAst.Def)(implicit flix: Flix): MonoAst.Def = {
     // 1. Check that every recursive call is in tail position and collect constant-ness information on fparams.
     implicit val ctx: LocalContext = LocalContext.mk()
-    val allRecursiveCallsInTailPos = checkTailPosition(defn.exp, tailPos = true)(defn.sym, defn.spec.fparams, ctx, flix)
-    val containsRecursiveCall = ctx.calls.nonEmpty
+    val allRecursiveCallsInTailPos = visitExp(defn.exp, tailPos = true)(defn.sym, defn.spec.fparams, ctx, flix)
+    val containsRecursiveCall = ctx.selfTailCalls.nonEmpty
     val isTailRecursive = containsRecursiveCall && allRecursiveCallsInTailPos
     if (!isTailRecursive) {
       return defn
@@ -70,7 +70,7 @@ object RecursionRewriter {
 
     // 2. Rewrite function
     // 2.1 Create a substitution from the function symbol and alive parameters to fresh symbols (maybe this can be created during step 1)
-    val constantParams = constants(ctx.calls, defn.spec.fparams)
+    val constantParams = constants(ctx.selfTailCalls, defn.spec.fparams)
     val aliveParams = defn.spec.fparams.filterNot(fp => constantParams.contains(fp))
     val varSubst = aliveParams.map(fp => fp.sym -> Symbol.freshVarSym(fp.sym)).toMap
     val freshLocalDefSym = Symbol.freshVarSym(defn.sym.text + "Loop", BoundBy.LocalDef, defn.sym.loc)(Scope.Top, flix)
@@ -104,26 +104,22 @@ object RecursionRewriter {
     }.toList
   }
 
-  private def checkTailPosition(exp0: MonoAst.Expr, tailPos: Boolean)(implicit sym0: Symbol.DefnSym, fparams: List[MonoAst.FormalParam], ctx: LocalContext, flix: Flix): Boolean = exp0 match {
+  private def visitExp(exp0: MonoAst.Expr, tailPos: Boolean)(implicit sym0: Symbol.DefnSym, fparams: List[MonoAst.FormalParam], ctx: LocalContext, flix: Flix): Boolean = exp0 match {
     case Expr.Cst(_, _, _) =>
       true
 
-    case Expr.Var(sym, _, _) =>
-      // Mark a formal parameter alive if it does not occur as an argument to a call
-      if (fparams.map(_.sym).contains(sym)) {
-        ctx.alive.getOrElseUpdate(sym, Symbol.freshVarSym(sym))
-      }
+    case Expr.Var(_, _, _) =>
       true
 
     case Expr.Lambda(_, exp, _, _) =>
-      checkTailPosition(exp, tailPos = false)
+      visitExp(exp, tailPos = false)
 
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
-      exps.forall(checkTailPosition(_, tailPos = false))
+      exps.forall(visitExp(_, tailPos = false))
 
     case Expr.ApplyClo(exp1, exp2, _, _, _) =>
-      checkTailPosition(exp1, tailPos) &&
-        checkTailPosition(exp2, tailPos = false)
+      visitExp(exp1, tailPos) &&
+        visitExp(exp2, tailPos = false)
 
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       // Check for recursion
@@ -131,83 +127,83 @@ object RecursionRewriter {
         if (!tailPos) {
           return false
         }
-        ctx.calls.addOne(Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc))
+        ctx.selfTailCalls.addOne(Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc))
       }
 
       // Check alive parameters
       exps.filter(isAliveParam(_, fparams))
-        .forall(checkTailPosition(_, tailPos = false))
+        .forall(visitExp(_, tailPos = false))
 
     case Expr.ApplyLocalDef(_, exps, _, _, _) =>
-      exps.forall(checkTailPosition(_, tailPos = false))
+      exps.forall(visitExp(_, tailPos = false))
 
     case Expr.Let(_, exp1, exp2, _, _, _) =>
-      checkTailPosition(exp1, tailPos = false) &&
-        checkTailPosition(exp2, tailPos)
+      visitExp(exp1, tailPos = false) &&
+        visitExp(exp2, tailPos)
 
     case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
-      checkTailPosition(exp1, tailPos = false) &&
-        checkTailPosition(exp2, tailPos)
+      visitExp(exp1, tailPos = false) &&
+        visitExp(exp2, tailPos)
 
     case Expr.Scope(_, _, exp, _, _, _) =>
-      checkTailPosition(exp, tailPos)
+      visitExp(exp, tailPos)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      checkTailPosition(exp1, tailPos = false) &&
-        checkTailPosition(exp2, tailPos) &&
-        checkTailPosition(exp3, tailPos)
+      visitExp(exp1, tailPos = false) &&
+        visitExp(exp2, tailPos) &&
+        visitExp(exp3, tailPos)
 
     case Expr.Stm(exp1, exp2, _, _, _) =>
-      checkTailPosition(exp1, tailPos = false) &&
-        checkTailPosition(exp2, tailPos)
+      visitExp(exp1, tailPos = false) &&
+        visitExp(exp2, tailPos)
 
     case Expr.Discard(exp, _, _) =>
-      checkTailPosition(exp, tailPos)
+      visitExp(exp, tailPos)
 
     case Expr.Match(exp1, rules, _, _, _) =>
-      checkTailPosition(exp1, tailPos = false) &&
+      visitExp(exp1, tailPos = false) &&
         rules.forall {
           case MonoAst.MatchRule(_, guard, exp2) =>
-            guard.forall(checkTailPosition(_, tailPos = false)) &&
-              checkTailPosition(exp2, tailPos)
+            guard.forall(visitExp(_, tailPos = false)) &&
+              visitExp(exp2, tailPos)
         }
 
     case Expr.VectorLit(exps, _, _, _) =>
-      exps.forall(checkTailPosition(_, tailPos = false))
+      exps.forall(visitExp(_, tailPos = false))
 
     case Expr.VectorLoad(exp1, exp2, _, _, _) =>
-      checkTailPosition(exp1, tailPos = false) &&
-        checkTailPosition(exp2, tailPos = false)
+      visitExp(exp1, tailPos = false) &&
+        visitExp(exp2, tailPos = false)
 
     case Expr.VectorLength(exp, _) =>
-      checkTailPosition(exp, tailPos = false)
+      visitExp(exp, tailPos = false)
 
     case Expr.Ascribe(exp, _, _, _) => // Is this erased???
-      checkTailPosition(exp, tailPos)
+      visitExp(exp, tailPos)
 
     case Expr.Cast(exp, _, _, _, _, _) => // Is this erased???
-      checkTailPosition(exp, tailPos)
+      visitExp(exp, tailPos)
 
     case Expr.TryCatch(exp1, rules, _, _, _) =>
-      checkTailPosition(exp1, tailPos = false) &&
+      visitExp(exp1, tailPos = false) &&
         rules.forall {
           case MonoAst.CatchRule(_, _, exp2) =>
-            checkTailPosition(exp2, tailPos)
+            visitExp(exp2, tailPos)
         }
     case Expr.RunWith(exp1, _, rules, _, _, _) =>
-      checkTailPosition(exp1, tailPos = false) &&
+      visitExp(exp1, tailPos = false) &&
         rules.forall {
           case MonoAst.HandlerRule(_, _, exp2) =>
-            checkTailPosition(exp2, tailPos)
+            visitExp(exp2, tailPos)
         }
 
     case Expr.Do(_, exps, _, _, _) =>
-      exps.forall(checkTailPosition(_, tailPos))
+      exps.forall(visitExp(_, tailPos))
 
     case Expr.NewObject(_, _, _, _, methods, _) =>
       methods.forall {
         case MonoAst.JvmMethod(_, _, exp, _, _, _) =>
-          checkTailPosition(exp, tailPos = false)
+          visitExp(exp, tailPos = false)
       }
   }
 
@@ -376,11 +372,11 @@ object RecursionRewriter {
 
   private object LocalContext {
 
-    def mk(): LocalContext = new LocalContext(mutable.HashMap.empty, mutable.ListBuffer.empty)
+    def mk(): LocalContext = new LocalContext(Recursion.Other, mutable.ArrayBuffer.empty)
 
   }
 
-  private case class LocalContext(alive: mutable.HashMap[Symbol.VarSym, Symbol.VarSym], calls: mutable.ListBuffer[Expr.ApplyDef])
+  private case class LocalContext(var recursion: Recursion, selfTailCalls: mutable.ArrayBuffer[Expr.ApplyDef])
 
   private object Subst {
     def from(old: Symbol.DefnSym, fresh: Symbol.VarSym, vars: Map[Symbol.VarSym, Symbol.VarSym]): Subst = Subst(old, fresh, vars)
@@ -416,7 +412,7 @@ object RecursionRewriter {
 
     case object AllSelf extends Recursion
 
-    case object Mixed extends Recursion
+    case object Other extends Recursion
 
   }
 
