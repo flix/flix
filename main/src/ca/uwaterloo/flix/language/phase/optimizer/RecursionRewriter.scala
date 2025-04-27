@@ -27,7 +27,11 @@ import scala.collection.mutable
 
 /**
   * Rewrites functions that recursively call themselves in tail-position to
-  * non-recursive functions with a recursive local def.
+  * non-recursive functions with a recursive local def that capture constant
+  * parameters.
+  *
+  * A constant parameter is a parameter that is never updated or changed in
+  * a recursive call.
   *
   * Example:
   *
