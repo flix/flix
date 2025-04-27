@@ -60,8 +60,7 @@ object RecursionRewriter {
   }
 
   private def visitDef(defn: MonoAst.Def)(implicit flix: Flix): MonoAst.Def = {
-    // 1. Check that every recursive call is in tail position
-    //    Return a set of alive parameters, i.e, function parameters that are changed in a recursive call (if it is an Expr.Var with the same symbol, then it is dead).
+    // 1. Check that every recursive call is in tail position and collect constant-ness information on fparams.
     implicit val ctx: LocalContext = LocalContext.mk()
     val allRecursiveCallsInTailPos = checkTailPosition(defn.exp, tailPos = true)(defn.sym, defn.spec.fparams, ctx, flix)
     val containsRecursiveCall = ctx.isRecursive.get()
@@ -391,7 +390,6 @@ object RecursionRewriter {
   }
 
   private case class Subst(private val old: Symbol.DefnSym, private val fresh: Symbol.VarSym, private val vars: Map[Symbol.VarSym, Symbol.VarSym]) {
-
     def apply(sym: Symbol.DefnSym): Option[Symbol.VarSym] = {
       if (sym == old)
         Some(fresh)
@@ -403,20 +401,6 @@ object RecursionRewriter {
       case Some(freshSym) => freshSym
       case None => sym
     }
-
-    /**
-      * Returns `true` if the fparam at index `i` is alive.
-      *
-      * @param i       The index of the fparam of which to check aliveness.
-      * @param fparams The list of [[MonoAst.FormalParam]] to traverse.
-      */
-    def isAlive(i: Int, fparams: List[MonoAst.FormalParam]): Boolean = {
-      fparams.drop(i) match {
-        case fp :: _ => vars.contains(fp.sym)
-        case Nil => throw InternalCompilerException("unexpected empty fparam", SourceLocation.Unknown)
-      }
-    }
-
   }
 
 }
