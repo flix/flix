@@ -27,12 +27,19 @@ mod Test.Def.Recursion {
         case Conz(_, xs)   => simple(xs)
     }
 
-    def simpleSwaps(x: Int32, y: Int32): Int32 =
+    def swapsWithExpr(x: Int32, y: Int32): Int32 =
         let res = x * y;
         if (res < 1_000_000)
-            simpleSwaps(1 + 2 + y, x + 1)
+            swapsWithExpr(1 + 2 + y, x + 1)
         else
             res
+
+    def swapsConstantParams(x: Int32, y: Int32, i: Int32): Int32 =
+        if (i > 50)
+            x
+        else
+            swapsConstantParams(y, x, i + 1)
+
 
     @test
     def simple01(): Bool = {
@@ -55,27 +62,52 @@ mod Test.Def.Recursion {
     }
 
     @test
-    def simpleSwaps01(): Int32 = {
-        simpleSwaps(0, 0)
+    def swapsWithExpr01(): Int32 = {
+        swapsWithExpr(0, 0)
     }
 
     @test
-    def simpleSwaps02(): Int32 = {
-        simpleSwaps(1, 0)
+    def swapsWithExpr02(): Int32 = {
+        swapsWithExpr(1, 0)
     }
 
     @test
-    def simpleSwaps03(): Int32 = {
-        simpleSwaps(0, 1)
+    def swapsWithExpr03(): Int32 = {
+        swapsWithExpr(0, 1)
     }
 
     @test
-    def simpleSwaps04(): Int32 = {
-        simpleSwaps(1, 2)
+    def swapsWithExpr04(): Int32 = {
+        swapsWithExpr(1, 2)
     }
 
     @test
-    def simpleSwaps05(): Int32 = {
-        simpleSwaps(2, 1)
+    def swapsWithExpr05(): Int32 = {
+        swapsWithExpr(2, 1)
+    }
+
+    @test
+    def swapsConstantParams01(): Int32 = {
+        swapsConstantParams(0, 0, 0)
+    }
+
+    @test
+    def swapsConstantParams02(): Int32 = {
+        swapsConstantParams(1, 2, 0)
+    }
+
+    @test
+    def swapsConstantParams03(): Int32 = {
+        swapsConstantParams(1, 2, 51)
+    }
+
+    @test
+    def swapsConstantParams04(): Int32 = {
+        swapsConstantParams(1, 2, 30)
+    }
+
+    @test
+    def swapsConstantParams05(): Int32 = {
+        swapsConstantParams(1, 2, -10)
     }
 }
