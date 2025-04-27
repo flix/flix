@@ -82,7 +82,8 @@ object RecursionRewriter {
 
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
       exps.map(visitExp(_, tailPos = TailPosition.NonTail))
-        .reduce(TailPosition.combine)
+        .reduceOption(TailPosition.combine)
+        .getOrElse(tailPos)
 
     case Expr.ApplyClo(exp1, exp2, _, _, _) =>
       val t1 = visitExp(exp1, tailPos)
@@ -99,11 +100,13 @@ object RecursionRewriter {
       }
       // Check alive parameters
       exps.map(visitExp(_, tailPos = TailPosition.NonTail))
-        .reduce(TailPosition.combine)
+        .reduceOption(TailPosition.combine)
+        .getOrElse(tailPos)
 
     case Expr.ApplyLocalDef(_, exps, _, _, _) =>
       exps.map(visitExp(_, tailPos = TailPosition.NonTail))
-        .reduce(TailPosition.combine)
+        .reduceOption(TailPosition.combine)
+        .getOrElse(tailPos)
 
     case Expr.Let(_, exp1, exp2, _, _, _) =>
       val t1 = visitExp(exp1, tailPos = TailPosition.NonTail)
@@ -135,17 +138,18 @@ object RecursionRewriter {
     case Expr.Match(exp1, rules, _, _, _) =>
       val t1 = visitExp(exp1, tailPos = TailPosition.NonTail)
       val t2 = rules.map {
-        case MonoAst.MatchRule(_, guard, exp2) =>
-          val gt1 = guard.map(visitExp(_, tailPos = TailPosition.NonTail))
-            .reduce(TailPosition.combine)
-          val et2 = visitExp(exp2, tailPos)
-          TailPosition.combine(gt1, et2)
-      }.reduce(TailPosition.combine)
+          case MonoAst.MatchRule(_, guard, exp2) =>
+            val gt1 = guard.map(visitExp(_, tailPos = TailPosition.NonTail))
+            val et2 = visitExp(exp2, tailPos)
+            TailPosition.combineOpt(gt1, et2)
+        }.reduceOption(TailPosition.combine)
+        .getOrElse(tailPos)
       TailPosition.combine(t1, t2)
 
     case Expr.VectorLit(exps, _, _, _) =>
       exps.map(visitExp(_, tailPos = TailPosition.NonTail))
-        .reduce(TailPosition.combine)
+        .reduceOption(TailPosition.combine)
+        .getOrElse(tailPos)
 
     case Expr.VectorLoad(exp1, exp2, _, _, _) =>
       val t1 = visitExp(exp1, tailPos = TailPosition.NonTail)
@@ -164,28 +168,32 @@ object RecursionRewriter {
     case Expr.TryCatch(exp1, rules, _, _, _) =>
       val t1 = visitExp(exp1, tailPos = TailPosition.NonTail)
       val t2 = rules.map {
-        case MonoAst.CatchRule(_, _, exp2) =>
-          visitExp(exp2, tailPos)
-      }.reduce(TailPosition.combine)
+          case MonoAst.CatchRule(_, _, exp2) =>
+            visitExp(exp2, tailPos)
+        }.reduceOption(TailPosition.combine)
+        .getOrElse(tailPos)
       TailPosition.combine(t1, t2)
 
     case Expr.RunWith(exp1, _, rules, _, _, _) =>
       val t1 = visitExp(exp1, tailPos = TailPosition.NonTail)
       val t2 = rules.map {
-        case MonoAst.HandlerRule(_, _, exp2) =>
-          visitExp(exp2, tailPos)
-      }.reduce(TailPosition.combine)
+          case MonoAst.HandlerRule(_, _, exp2) =>
+            visitExp(exp2, tailPos)
+        }.reduceOption(TailPosition.combine)
+        .getOrElse(tailPos)
       TailPosition.combine(t1, t2)
 
     case Expr.Do(_, exps, _, _, _) =>
       exps.map(visitExp(_, tailPos))
-        .reduce(TailPosition.combine)
+        .reduceOption(TailPosition.combine)
+        .getOrElse(tailPos)
 
     case Expr.NewObject(_, _, _, _, methods, _) =>
       methods.map {
-        case MonoAst.JvmMethod(_, _, exp, _, _, _) =>
-          visitExp(exp, tailPos = TailPosition.NonTail)
-      }.reduce(TailPosition.combine)
+          case MonoAst.JvmMethod(_, _, exp, _, _, _) =>
+            visitExp(exp, tailPos = TailPosition.NonTail)
+        }.reduceOption(TailPosition.combine)
+        .getOrElse(tailPos)
   }
 
   private def rewriteExp(expr0: MonoAst.Expr)(implicit subst: Subst, fparams0: List[(MonoAst.FormalParam, ParameterKind)]): MonoAst.Expr = expr0 match {
@@ -425,6 +433,11 @@ object RecursionRewriter {
       case (TailPosition.NonTail, TailPosition.Tail) => TailPosition.NonTail
       case (TailPosition.Tail, TailPosition.NonTail) => TailPosition.NonTail
       case (TailPosition.NonTail, TailPosition.NonTail) => TailPosition.NonTail
+    }
+
+    def combineOpt(tp1: Option[TailPosition], tp2: TailPosition): TailPosition = tp1 match {
+      case Some(tp11) => combine(tp11, tp2)
+      case None => tp2
     }
 
   }
