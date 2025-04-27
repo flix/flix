@@ -200,9 +200,10 @@ object RecursionRewriter {
           Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
 
         case Some(localDefSym) =>
-          val es = exps.zip(fparams0).map {
-            case (e, (_, ParameterKind.NonConstant)) => rewriteExp(e)
-            case (e, (_, ParameterKind.Constant)) => e
+          val es = exps.zip(fparams0).filter { // Exclude constant parameters
+            case (_, (_, pkind)) => pkind == ParameterKind.NonConstant
+          }.map {
+            case (e, (_, _)) => rewriteExp(e)
           }
           Expr.ApplyLocalDef(localDefSym, es, tpe, eff, loc)
       }
