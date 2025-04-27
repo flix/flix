@@ -319,7 +319,7 @@ object RecursionRewriter {
   }
 
   private def mkSubst(defn: MonoAst.Def, params: List[(MonoAst.FormalParam, ParameterKind)])(implicit flix: Flix): Subst = {
-    val nonConstantParams = params.filter { case (_, pk) => pk == ParameterKind.NonConstant }
+    val nonConstantParams = params.filter { case (_, pkind) => pkind == ParameterKind.NonConstant }
     val varSubst = nonConstantParams.map { case (fp, _) => fp.sym -> Symbol.freshVarSym(fp.sym) }.toMap
     val freshLocalDefSym = mkFreshLocalDefSym(defn)
     Subst.from(defn.sym, freshLocalDefSym, varSubst)
