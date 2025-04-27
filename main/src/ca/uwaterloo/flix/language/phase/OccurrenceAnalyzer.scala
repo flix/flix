@@ -47,7 +47,7 @@ object OccurrenceAnalyzer {
     implicit val lctx: LocalContext = LocalContext.mk()
     val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx)
     val defContext = DefContext(lctx.localDefs.get(), isDirectCall(exp), isSelfRecursive(ctx.selfOccur))
-    val fparams = defn.fparams.map(fp => fp.copy(occur = ctx.get(fp.sym)))
+    val fparams = defn.fparams.map(visitFormalParam(_, ctx))
     OccurrenceAst.Def(defn.sym, fparams, defn.spec, exp, defContext, defn.loc)
   }
 
@@ -68,9 +68,8 @@ object OccurrenceAnalyzer {
           case Once => OnceInLambda
           case o => o
         }
-        val occur = ctx2.get(fparam.sym)
-        val fp = fparam.copy(occur = occur)
-        val ctx3 = ctx2.removeVar(fparam.sym)
+        val fp = visitFormalParam(fparam, ctx2)
+        val ctx3 = ctx2.removeVar(fp.sym)
         if (e eq exp) {
           (exp0, ctx3) // Reuse exp0.
         } else {
@@ -129,7 +128,7 @@ object OccurrenceAnalyzer {
           case Once => OnceInLocalDef
           case o => o
         }
-        val fps = formalParams.map(fp => fp.copy(occur = ctx2.get(fp.sym)))
+        val fps = formalParams.map(visitFormalParam(_, ctx2))
         val ctx3 = ctx2.removeVars(fps.map(_.sym))
         val (e2, ctx4) = visitExp(exp2)
         val ctx5 = combineSeq(ctx3, ctx4)
@@ -154,7 +153,7 @@ object OccurrenceAnalyzer {
         val (e2, ctx2) = visitExp(exp2)
         val ctx3 = combineSeq(ctx1, ctx2)
         if ((e1 eq exp1) && (e2 eq exp2)) {
-          (exp0, ctx3)  // Reuse exp0.
+          (exp0, ctx3) // Reuse exp0.
         } else {
           (OccurrenceAst.Expr.Stm(e1, e2, tpe, eff, loc), ctx3)
         }
@@ -224,7 +223,7 @@ object OccurrenceAnalyzer {
       val (g, ctx1) = guard.map(visitExp).unzip
       val (e, ctx2) = visitExp(exp)
       val ctx3 = combineSeqOpt(ctx1, ctx2)
-      val (p, syms) = visitPattern(pat)(ctx3)
+      val (p, syms) = visitPattern(pat, ctx3)
       val ctx4 = ctx3.removeVars(syms)
       (OccurrenceAst.MatchRule(p, g, e), ctx4)
   }
@@ -239,18 +238,20 @@ object OccurrenceAnalyzer {
   private def visitHandlerRule(rule: OccurrenceAst.HandlerRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.HandlerRule, ExprContext) = rule match {
     case OccurrenceAst.HandlerRule(op, fparams, exp) =>
       val (e, ctx1) = visitExp(exp)
-      val fps = fparams.map(fp => fp.copy(occur = ctx1.get(fp.sym)))
+      val fps = fparams.map(visitFormalParam(_, ctx1))
       val ctx2 = ctx1.removeVars(fps.map(_.sym))
       (OccurrenceAst.HandlerRule(op, fps, e), ctx2)
   }
 
   private def visitJvmMethod(method: OccurrenceAst.JvmMethod)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.JvmMethod, ExprContext) = method match {
     case OccurrenceAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
-      val (c, ctx) = visitExp(exp)
-      (OccurrenceAst.JvmMethod(ident, fparams, c, retTpe, eff, loc), ctx)
+      val (c, ctx1) = visitExp(exp)
+      val fps = fparams.map(visitFormalParam(_, ctx1))
+      val ctx2 = ctx1.removeVars(fps.map(_.sym))
+      (OccurrenceAst.JvmMethod(ident, fparams, c, retTpe, eff, loc), ctx2)
   }
 
-  private def visitPattern(pat0: OccurrenceAst.Pattern)(implicit ctx: ExprContext): (OccurrenceAst.Pattern, Set[VarSym]) = pat0 match {
+  private def visitPattern(pat0: OccurrenceAst.Pattern, ctx: ExprContext): (OccurrenceAst.Pattern, Set[VarSym]) = pat0 match {
     case OccurrenceAst.Pattern.Wild(_, _) =>
       (pat0, Set.empty)
 
@@ -262,52 +263,59 @@ object OccurrenceAnalyzer {
       (pat0, Set.empty)
 
     case OccurrenceAst.Pattern.Tag(sym, pats, tpe, loc) =>
-      val (ps, listOfSyms) = pats.map(visitPattern).unzip
+      val (ps, listOfSyms) = pats.map(visitPattern(_, ctx)).unzip
       val syms = listOfSyms.flatten.toSet
       (OccurrenceAst.Pattern.Tag(sym, ps, tpe, loc), syms)
 
     case OccurrenceAst.Pattern.Tuple(pats, tpe, loc) =>
-      val (ps, listOfSyms) = pats.map(visitPattern).unzip
+      val (ps, listOfSyms) = pats.map(visitPattern(_, ctx)).unzip
       val syms = listOfSyms.flatten.toSet
       (OccurrenceAst.Pattern.Tuple(ps, tpe, loc), syms)
 
     case OccurrenceAst.Pattern.Record(pats, pat, tpe, loc) =>
-      val (ps, listOfSyms) = pats.map(visitRecordLabelPattern).unzip
-      val (p, syms0) = visitPattern(pat)
+      val (ps, listOfSyms) = pats.map(visitRecordLabelPattern(_, ctx)).unzip
+      val (p, syms0) = visitPattern(pat, ctx)
       val syms = listOfSyms.flatten.toSet ++ syms0
       (OccurrenceAst.Pattern.Record(ps, p, tpe, loc), syms)
 
   }
 
-  private def visitRecordLabelPattern(pat0: OccurrenceAst.Pattern.Record.RecordLabelPattern)(implicit ctx: ExprContext): (OccurrenceAst.Pattern.Record.RecordLabelPattern, Set[VarSym]) = pat0 match {
+  private def visitRecordLabelPattern(pat0: OccurrenceAst.Pattern.Record.RecordLabelPattern, ctx: ExprContext): (OccurrenceAst.Pattern.Record.RecordLabelPattern, Set[VarSym]) = pat0 match {
     case OccurrenceAst.Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
-      val (p, syms) = visitPattern(pat)
+      val (p, syms) = visitPattern(pat, ctx)
       (OccurrenceAst.Pattern.Record.RecordLabelPattern(label, p, tpe, loc), syms)
   }
 
-  /**
-    * Combines `ctx1` and `ctx2` into a single [[ExprContext]].
-    */
-  private def combineBranch(ctx1: ExprContext, ctx2: ExprContext): ExprContext = {
-    combine(ctx1, ctx2, combineBranch)
+  private def visitFormalParam(fparam0: OccurrenceAst.FormalParam, ctx: ExprContext): OccurrenceAst.FormalParam = {
+    val occur = ctx.get(fparam0.sym)
+    fparam0.copy(occur = occur)
   }
 
   /**
-    * Combines `ctx1` and `ctx2` into a single [[ExprContext]].
+    * Combines `ctx1` and `ctx2` into a single [[ExprContext]] using [[combineSeq]] to merge [[Occur]].
     */
   private def combineSeq(ctx1: ExprContext, ctx2: ExprContext): ExprContext = {
     combine(ctx1, ctx2, combineSeq)
   }
 
   /**
-    * Combines `ctx1` and `ctx2` into a single [[ExprContext]].
+    * Combines `ctx1` and `ctx2` into a single [[ExprContext]] using [[combineSeq]] to merge [[Occur]].
+    *
+    * If `ctx1` is [[None]] then `ctx2` is returned.
     */
   private def combineSeqOpt(ctx1: Option[ExprContext], ctx2: ExprContext): ExprContext = {
     ctx1.map(combineSeq(_, ctx2)).getOrElse(ctx2)
   }
 
   /**
-    * Combines `ctx1` and `ctx2` into a single [[ExprContext]].
+    * Combines `ctx1` and `ctx2` into a single [[ExprContext]] using [[combineBranch]] to merge [[Occur]].
+    */
+  private def combineBranch(ctx1: ExprContext, ctx2: ExprContext): ExprContext = {
+    combine(ctx1, ctx2, combineBranch)
+  }
+
+  /**
+    * Combines `ctx1` and `ctx2` into a single [[ExprContext]] using `combine` to merge [[Occur]].
     */
   private def combine(ctx1: ExprContext, ctx2: ExprContext, combine: (Occur, Occur) => Occur): ExprContext = {
     if (ctx1 eq ExprContext.Empty) {
@@ -323,7 +331,7 @@ object OccurrenceAnalyzer {
   }
 
   /**
-    * Combines maps `m1` and `m2` into a single map.
+    * Combines maps `m1` and `m2` into a single map using `combine` to merge [[Occur]].
     */
   private def combineMaps[A](m1: Map[A, Occur], m2: Map[A, Occur], combine: (Occur, Occur) => Occur): Map[A, Occur] = {
     if (m1.isEmpty) {
@@ -343,6 +351,8 @@ object OccurrenceAnalyzer {
 
   /**
     * Combines two occurrences `o1` and `o2` from the same branch into a single occurrence.
+    *
+    * If none of the occurrences are [[Dead]] then they are merged as [[Many]].
     */
   private def combineSeq(o1: Occur, o2: Occur): Occur = (o1, o2) match {
     case (Dead, _) => o2
@@ -352,6 +362,9 @@ object OccurrenceAnalyzer {
 
   /**
     * Combines two occurrences `o1` and `o2` from distinct branches into a single occurrence.
+    *
+    * If none of the occurrences are [[Dead]] then they are merged as [[Many]],
+    * except if both occurrences are [[Once]] then they are merged as [[ManyBranch]].
     */
   private def combineBranch(o1: Occur, o2: Occur): Occur = (o1, o2) match {
     case (Dead, _) => o2
