@@ -30,7 +30,7 @@ mod Test.Def.Recursion {
     def simpleSwaps(x: Int32, y: Int32): Int32 =
         let res = x * y;
         if (res < 1_000_000)
-            simpleSwaps(y + x, x + 1)
+            simpleSwaps(1 + 2 + y, x + 1)
         else
             res
 
