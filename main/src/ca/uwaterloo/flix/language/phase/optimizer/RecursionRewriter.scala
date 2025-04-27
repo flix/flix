@@ -372,11 +372,11 @@ object RecursionRewriter {
 
   private object LocalContext {
 
-    def mk(): LocalContext = new LocalContext(Recursion.Other, mutable.ArrayBuffer.empty)
+    def mk(): LocalContext = new LocalContext(mutable.ArrayBuffer.empty)
 
   }
 
-  private case class LocalContext(var recursion: Recursion, selfTailCalls: mutable.ArrayBuffer[Expr.ApplyDef])
+  private case class LocalContext(selfTailCalls: mutable.ArrayBuffer[Expr.ApplyDef])
 
   private object Subst {
     def from(old: Symbol.DefnSym, fresh: Symbol.VarSym, vars: Map[Symbol.VarSym, Symbol.VarSym]): Subst = Subst(old, fresh, vars)
@@ -403,16 +403,6 @@ object RecursionRewriter {
     case object Tail extends TailPosition
 
     case object NonTail extends TailPosition
-
-  }
-
-  private sealed trait Recursion
-
-  private object Recursion {
-
-    case object AllSelf extends Recursion
-
-    case object Other extends Recursion
 
   }
 
