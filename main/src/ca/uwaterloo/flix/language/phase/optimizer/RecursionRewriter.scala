@@ -29,6 +29,28 @@ import scala.collection.mutable
 /**
   * Rewrites functions that recursively call themselves in tail-position to
   * non-recursive functions with a recursive local def.
+  *
+  * Example:
+  *
+  * {{{
+  *   def lastMap(f: a -> b, l: List[a]): Option[b] = match l {
+  *       case Nil      => None
+  *       case x :: Nil => Some(f(x))
+  *       case _ :: xs  => lastMap(f, xs)
+  *   }
+  * }}}
+  *
+  * Will be transformed to
+  *
+  * {{{
+  *   def lastMap(f: a -> b, l: List[a]): Option[b] =
+  *       def lastMapLoop(l1) = match l1 {
+  *           case Nil      => None
+  *           case x :: Nil => Some(f(x))
+  *           case _ :: xs  => lastMapLoop(xs)
+  *       };
+  *       lastMapLoop(l)
+  * }}}
   */
 object RecursionRewriter {
 
