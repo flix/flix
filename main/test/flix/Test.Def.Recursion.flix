@@ -1,19 +1,3 @@
-/*
- * Copyright 2025 Jakob Schneider Villumsen
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod Test.Def.Recursion {
 
     use Lizt.{Null, Conz};
@@ -43,24 +27,55 @@ mod Test.Def.Recursion {
         case Conz(_, xs)   => simple(xs)
     }
 
+    def simpleSwaps(x: Int32, y: Int32): Int32 =
+        let res = x * y;
+        if (res < 1_000_000)
+            simpleSwaps(y + x, x + 1)
+        else
+            res
+
     @test
     def simple01(): Bool = {
-        Assert.eq(Empty, simple(emptyList()))
+        Empty == simple(emptyList())
     }
 
     @test
     def simple02(): Bool = {
-        Assert.eq(El(1), simple(list1(1)))
+        El(1) == simple(list1(1))
     }
 
     @test
     def simple03(): Bool = {
-        Assert.eq(El(1), simple(list2(1)))
+        El(1) == simple(list2(1))
     }
 
     @test
     def simple04(): Bool = {
-        Assert.eq(El(1), simple(list3(1)))
+        El(1) == simple(list3(1))
     }
 
+    @test
+    def simpleSwaps01(): Int32 = {
+        simpleSwaps(0, 0)
+    }
+
+    @test
+    def simpleSwaps02(): Int32 = {
+        simpleSwaps(1, 0)
+    }
+
+    @test
+    def simpleSwaps03(): Int32 = {
+        simpleSwaps(0, 1)
+    }
+
+    @test
+    def simpleSwaps04(): Int32 = {
+        simpleSwaps(1, 2)
+    }
+
+    @test
+    def simpleSwaps05(): Int32 = {
+        simpleSwaps(2, 1)
+    }
 }
