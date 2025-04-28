@@ -53,7 +53,7 @@ import scala.collection.mutable
   */
 object LambdaDrop {
 
-  def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Lambda Dropping") {
+  def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("LambdaDrop") {
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
     root.copy(defs = newDefs)
   }
