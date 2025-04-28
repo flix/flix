@@ -27,7 +27,43 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
-  * The inliner optionally performs beta-reduction at call-sites.
+  * Rewrites the body of each def using, applying the following transformations:
+  *   - Copy Propagation:
+  * {{{
+  *     let x = 1;
+  *     f(x)
+  * }}}
+  *     becomes
+  * {{{
+  *     let x = 1;
+  *    f(1)
+  * }}}
+  *   - Dead Code Elimination
+  * {{{
+  *     let x = 1;
+  *     f(1)
+  * }}}
+  *     becomes
+  * {{{
+  *     f(1)
+  * }}}
+  *   - Inline Expansion
+  * {{{
+  *     f(1)
+  * }}}
+  *     becomes (where the definition of `f` is `x + 2`)
+  * {{{
+  *     (x -> x + 2)(1)
+  * }}}
+  *   - Beta Reduction
+  * {{{
+  *     (x -> x + 2)(1)
+  * }}}
+  *     becomes
+  * {{{
+  *     let x = 1;
+  *     x + 2
+  * }}}
   */
 object Inliner {
 
