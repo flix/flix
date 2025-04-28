@@ -79,9 +79,11 @@ object LambdaDrop {
   private def isHigherOrder(fparams: List[MonoAst.FormalParam]): Boolean = {
     fparams.exists {
       fp =>
-        fp.tpe match {
-          case Type.Apply(Type.Cst(TypeConstructor.Arrow(_), _), _, _) => true
-          case _ => false
+        fp.tpe.typeConstructor match {
+          case Some(TypeConstructor.Arrow(_)) => true
+          case Some(TypeConstructor.ArrowWithoutEffect(_)) => true
+          case Some(_) => true
+          case None => false
         }
     }
   }
