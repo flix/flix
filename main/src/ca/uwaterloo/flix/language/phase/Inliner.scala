@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.*
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Expr, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListMap}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -163,21 +164,19 @@ object Inliner {
       ctx0.varSubst.get(sym) match {
         case Some(freshVarSym) => ctx0.subst.get(freshVarSym) match {
           // Case 1:
-          // The variable `sym` is not in the substitution map and will not be inlined.
-          case None => Expr.Var(freshVarSym, tpe, loc)
-          // Case 2:
           // The variable `sym` is in the substitution map. Replace `sym` with `e1`.
           case Some(e1) =>
             sctx.inlinedVars.add((sym0, sym))
             e1 match {
-              // If `e1` is a `LiftedExp` then `e1` has already been visited
-              case SubstRange.DoneExp(e) =>
-                e
-              // If `e1` is a `OccurrenceExp` then `e1` has not been visited. Visit `e1`
-              case SubstRange.SuspendedExp(exp) =>
-                val e = visitExp(exp, ctx0)
-                e
+              case SubstRange.DoneExp(e) => e // Reduced expression
+
+              case SubstRange.SuspendedExp(exp) => // Reduce suspended expr
+                visitExp(exp, ctx0)
             }
+
+          // Case 1:
+          // The variable `sym` is not in the substitution map, but we consider inlining it at this occurrence.
+          case None => callSiteInline(ctx0, tpe, loc, freshVarSym)
         }
         case None => // Function parameter occurrence
           Expr.Var(sym, tpe, loc)
@@ -460,6 +459,23 @@ object Inliner {
           OccurrenceAst.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
       }
       Expr.NewObject(name, clazz, tpe, eff, methods, loc)
+  }
+
+  private def callSiteInline(ctx0: Context, tpe: Type, loc: SourceLocation, freshVarSym: phase.Inliner.OutVar)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+    ctx0.inScopeVars.get(freshVarSym) match {
+      case Some(Definition.LetBound(rhs, occur)) if shouldInlineVar(rhs, occur, ctx0) =>
+        visitExp(rhs, ctx0.copy(inScopeVars = Map.empty))
+
+      case Some(_) =>
+        Expr.Var(freshVarSym, tpe, loc)
+
+      case None =>
+        throw InternalCompilerException("unexpected evaluated var not in scope", loc)
+    }
+  }
+
+  private def shouldInlineVar(rhs: OutExpr, occur: Occur, ctx0: Context): Boolean = {
+    false
   }
 
   private def visitPattern(pattern0: Pattern)(implicit flix: Flix): (Pattern, VarSubst) = pattern0 match {
