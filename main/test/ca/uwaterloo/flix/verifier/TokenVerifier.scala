@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.verifier
+package ca.uwaterloo.flix.verifier
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Source
@@ -41,17 +41,15 @@ import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, ParOps}
 object TokenVerifier {
 
   /** Checks that tokens adhere to the invariants. */
-  def run(m: Map[Source, Array[Token]])(implicit flix: Flix): Unit = {
-    if (flix.options.xverifylexer) {
-      ParOps.parMap(m) {
-        case (src, tokens) =>
-          checkEndOfFile(src, tokens)
-          checkSrc(src, tokens)
-          checkRanges(tokens)
-          checkBounds(src, tokens)
-          checkOffsetOrder(tokens)
-          checkPositionOrder(tokens)
-      }
+  def verify(m: Map[Source, Array[Token]])(implicit flix: Flix): Unit = {
+    ParOps.parMap(m) {
+      case (src, tokens) =>
+        checkEndOfFile(src, tokens)
+        checkSrc(src, tokens)
+        checkRanges(tokens)
+        checkBounds(src, tokens)
+        checkOffsetOrder(tokens)
+        checkPositionOrder(tokens)
     }
   }
 

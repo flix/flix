@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
-import ca.uwaterloo.flix.language.verifier.TokenVerifier
 import ca.uwaterloo.flix.language.phase.optimizer.Optimizer
 import ca.uwaterloo.flix.language.verifier.EffectVerifier
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
@@ -536,8 +535,7 @@ class Flix {
 
     val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
     errors ++= lexerErrors
-
-    TokenVerifier.run(afterLexer)
+    flix.emitEvent(FlixEvent.AfterLexer(afterLexer))
 
     val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
     errors ++= parserErrors
