@@ -151,6 +151,25 @@ object Inliner {
 
   }
 
+  /** Represents the compile-time evaluation context. */
+  private sealed trait ExprContext
+
+  private object ExprContext {
+
+    /** The empty evaluation context. */
+    case object Empty extends ExprContext
+
+    /** Function application context. */
+    case class AppCtx(expr: Expr, subst: Map[Symbol.VarSym, BoundKind], ctx: ExprContext) extends ExprContext
+
+    /** Match-case expression context. */
+    case class MatchCtx(sym: Symbol.VarSym, rules: List[OccurrenceAst.MatchRule], subst: Map[Symbol.VarSym, BoundKind], ctx: ExprContext) extends ExprContext
+
+    /** Application argument context. */
+    case class ArgCtx(cont: Expr => Expr) extends ExprContext
+
+  }
+
   /** Denotes the level at which the binder is declared. */
   sealed trait Level
 
