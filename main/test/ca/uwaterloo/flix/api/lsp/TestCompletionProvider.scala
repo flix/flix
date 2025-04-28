@@ -287,7 +287,7 @@ class TestCompletionProvider extends AnyFunSuite {
           val triggerPosition = Position(varOccur.loc.sp2.lineOneIndexed, varOccur.loc.sp2.colOneIndexed - charToTrim)
           val (root, errors) = compile(alteredProgram)
           val completions = CompletionProvider.autoComplete(Uri, triggerPosition, errors)(root, Flix)
-          assertNoDuplicatedCompletions(completions, varOccur, program)
+          assertNoDuplicatedCompletions(completions, varOccur, program, charToTrim)
         case _ => ()
       }
     })
@@ -300,11 +300,11 @@ class TestCompletionProvider extends AnyFunSuite {
     * @param varOccur    The variable occurrence where we are checking for completions.
     * @param program     The original program string.
     */
-  private def assertNoDuplicatedCompletions(completions: CompletionList, varOccur: Symbol.VarSym, program: String): Unit = {
+  private def assertNoDuplicatedCompletions(completions: CompletionList, varOccur: Symbol.VarSym, program: String, charToTrim: Int): Unit = {
     completions.items.groupBy(identity).foreach {
       case (completion, duplicates) if duplicates.size > 1 =>
         println(s"Duplicated completions when selecting var \"${varOccur.text}\" at ${varOccur.loc} for program:\n $program")
-        println(code(varOccur.loc, s"Duplicated completion with label \"${completion.label}\" after deleting one char here"))
+        println(code(varOccur.loc, s"""Duplicated completion with label "${completion.label}" after deleting $charToTrim char here"""))
         fail("Duplicated completions")
       case _ => ()
     }
