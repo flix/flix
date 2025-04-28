@@ -70,91 +70,69 @@ object RecursionRewriter {
       defn
   }
 
-  private def visitExp(exp0: MonoAst.Expr, tailPos: TailPosition)(implicit sym0: Symbol.DefnSym, fparams: List[MonoAst.FormalParam], ctx: LocalContext, flix: Flix): TailPosition = exp0 match {
+  private def visitExp(exp0: MonoAst.Expr, tailPos: TailPosition)(implicit sym0: Symbol.DefnSym, ctx: LocalContext, flix: Flix): Unit = exp0 match {
     case Expr.Cst(_, _, _) =>
-      TailPosition.Tail
 
     case Expr.Var(_, _, _) =>
-      TailPosition.Tail
 
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp, tailPos = TailPosition.NonTail)
 
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
-      exps.map(visitExp(_, tailPos = TailPosition.NonTail))
-        .reduceOption(TailPosition.combine)
-        .getOrElse(tailPos)
+      exps.foreach(visitExp(_, tailPos = TailPosition.NonTail))
 
     case Expr.ApplyClo(exp1, exp2, _, _, _) =>
-      val t1 = visitExp(exp1, tailPos)
-      val t2 = visitExp(exp2, tailPos = TailPosition.NonTail)
-      TailPosition.combine(t1, t2)
+      visitExp(exp1, tailPos)
+      visitExp(exp2, tailPos = TailPosition.NonTail)
 
-    case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+    case Expr.ApplyDef(sym, exps, _, _, _, _) =>
       // Check for recursion
       if (sym == sym0) {
-        if (tailPos == TailPosition.NonTail) {
-          return tailPos
-        }
-        ctx.selfTailCalls.addOne(Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc))
+        val applyExp = exp0.asInstanceOf[Expr.ApplyDef]
+        ctx.selfTailCalls.addOne((applyExp, tailPos))
       }
-      // Check alive parameters
-      exps.map(visitExp(_, tailPos = TailPosition.NonTail))
-        .reduceOption(TailPosition.combine)
-        .getOrElse(tailPos)
+      exps.foreach(visitExp(_, tailPos = TailPosition.NonTail))
 
     case Expr.ApplyLocalDef(_, exps, _, _, _) =>
-      exps.map(visitExp(_, tailPos = TailPosition.NonTail))
-        .reduceOption(TailPosition.combine)
-        .getOrElse(tailPos)
+      exps.foreach(visitExp(_, tailPos = TailPosition.NonTail))
 
     case Expr.Let(_, exp1, exp2, _, _, _) =>
-      val t1 = visitExp(exp1, tailPos = TailPosition.NonTail)
-      val t2 = visitExp(exp2, tailPos)
-      TailPosition.combine(t1, t2)
+      visitExp(exp1, tailPos = TailPosition.NonTail)
+      visitExp(exp2, tailPos)
 
     case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
-      val t1 = visitExp(exp1, tailPos = TailPosition.NonTail)
-      val t2 = visitExp(exp2, tailPos)
-      TailPosition.combine(t1, t2)
+      visitExp(exp1, tailPos = TailPosition.NonTail)
+      visitExp(exp2, tailPos)
 
     case Expr.Scope(_, _, exp, _, _, _) =>
       visitExp(exp, tailPos)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      val t1 = visitExp(exp1, tailPos = TailPosition.NonTail)
-      val t2 = visitExp(exp2, tailPos)
-      val t3 = visitExp(exp3, tailPos)
-      TailPosition.combine(TailPosition.combine(t1, t2), t3)
+      visitExp(exp1, tailPos = TailPosition.NonTail)
+      visitExp(exp2, tailPos)
+      visitExp(exp3, tailPos)
 
     case Expr.Stm(exp1, exp2, _, _, _) =>
-      val t1 = visitExp(exp1, tailPos = TailPosition.NonTail)
-      val t2 = visitExp(exp2, tailPos)
-      TailPosition.combine(t1, t2)
+      visitExp(exp1, tailPos = TailPosition.NonTail)
+      visitExp(exp2, tailPos)
 
     case Expr.Discard(exp, _, _) =>
       visitExp(exp, tailPos)
 
     case Expr.Match(exp1, rules, _, _, _) =>
-      val t1 = visitExp(exp1, tailPos = TailPosition.NonTail)
-      val t2 = rules.map {
-          case MonoAst.MatchRule(_, guard, exp2) =>
-            val gt1 = guard.map(visitExp(_, tailPos = TailPosition.NonTail))
-            val et2 = visitExp(exp2, tailPos)
-            TailPosition.combineOpt(gt1, et2)
-        }.reduceOption(TailPosition.combine)
-        .getOrElse(tailPos)
-      TailPosition.combine(t1, t2)
+      visitExp(exp1, tailPos = TailPosition.NonTail)
+      rules.foreach {
+        case MonoAst.MatchRule(_, guard, exp2) =>
+          guard.foreach(visitExp(_, tailPos = TailPosition.NonTail))
+          visitExp(exp2, tailPos)
+      }
 
     case Expr.VectorLit(exps, _, _, _) =>
-      exps.map(visitExp(_, tailPos = TailPosition.NonTail))
-        .reduceOption(TailPosition.combine)
-        .getOrElse(tailPos)
+      exps.foreach(visitExp(_, tailPos = TailPosition.NonTail))
 
     case Expr.VectorLoad(exp1, exp2, _, _, _) =>
-      val t1 = visitExp(exp1, tailPos = TailPosition.NonTail)
-      val t2 = visitExp(exp2, tailPos = TailPosition.NonTail)
-      TailPosition.combine(t1, t2)
+      visitExp(exp1, tailPos = TailPosition.NonTail)
+      visitExp(exp2, tailPos = TailPosition.NonTail)
 
     case Expr.VectorLength(exp, _) =>
       visitExp(exp, tailPos = TailPosition.NonTail)
@@ -166,34 +144,18 @@ object RecursionRewriter {
       visitExp(exp, tailPos)
 
     case Expr.TryCatch(exp1, rules, _, _, _) =>
-      val t1 = visitExp(exp1, tailPos = TailPosition.NonTail)
-      val t2 = rules.map {
-          case MonoAst.CatchRule(_, _, exp2) =>
-            visitExp(exp2, tailPos)
-        }.reduceOption(TailPosition.combine)
-        .getOrElse(tailPos)
-      TailPosition.combine(t1, t2)
+      visitExp(exp1, tailPos = TailPosition.NonTail)
+      rules.foreach(rule => visitExp(rule.exp, tailPos))
 
     case Expr.RunWith(exp1, _, rules, _, _, _) =>
-      val t1 = visitExp(exp1, tailPos = TailPosition.NonTail)
-      val t2 = rules.map {
-          case MonoAst.HandlerRule(_, _, exp2) =>
-            visitExp(exp2, tailPos)
-        }.reduceOption(TailPosition.combine)
-        .getOrElse(tailPos)
-      TailPosition.combine(t1, t2)
+      visitExp(exp1, tailPos = TailPosition.NonTail)
+      rules.foreach(rule => visitExp(rule.exp, tailPos))
 
     case Expr.Do(_, exps, _, _, _) =>
-      exps.map(visitExp(_, tailPos))
-        .reduceOption(TailPosition.combine)
-        .getOrElse(tailPos)
+      exps.foreach(visitExp(_, tailPos))
 
     case Expr.NewObject(_, _, _, _, methods, _) =>
-      methods.map {
-          case MonoAst.JvmMethod(_, _, exp, _, _, _) =>
-            visitExp(exp, tailPos = TailPosition.NonTail)
-        }.reduceOption(TailPosition.combine)
-        .getOrElse(tailPos)
+      methods.foreach(m => visitExp(m.exp, tailPos = TailPosition.NonTail))
   }
 
   private def rewriteExp(expr0: MonoAst.Expr)(implicit subst: Subst, fparams0: List[(MonoAst.FormalParam, ParameterKind)]): MonoAst.Expr = expr0 match {
@@ -328,14 +290,14 @@ object RecursionRewriter {
   }
 
   private def isRewritable(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): Boolean = {
-    val tailPos = visitExp(defn.exp, tailPos = TailPosition.Tail)(defn.sym, defn.spec.fparams, ctx, flix)
-    val allRecursiveCallsInTailPos = tailPos == TailPosition.Tail
+    visitExp(defn.exp, tailPos = TailPosition.Tail)(defn.sym, ctx, flix)
     val containsRecursiveCall = ctx.selfTailCalls.nonEmpty
+    val allRecursiveCallsInTailPos = ctx.selfTailCalls.forall { case (_, tps) => tps == TailPosition.Tail }
     containsRecursiveCall && allRecursiveCallsInTailPos
   }
 
   private def rewriteDefn(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): MonoAst.Def = {
-    implicit val params: List[(MonoAst.FormalParam, ParameterKind)] = paramKinds(ctx.selfTailCalls, defn.spec.fparams)
+    implicit val params: List[(MonoAst.FormalParam, ParameterKind)] = paramKinds(ctx.selfTailCalls.map(_._1), defn.spec.fparams)
     implicit val subst: Subst = mkSubst(defn, params)
     val rewrittenExp = rewriteExp(defn.exp)
     val body = mkLocalDefExpr(rewrittenExp)
@@ -400,7 +362,7 @@ object RecursionRewriter {
 
   }
 
-  private case class LocalContext(selfTailCalls: mutable.ArrayBuffer[Expr.ApplyDef])
+  private case class LocalContext(selfTailCalls: mutable.ArrayBuffer[(Expr.ApplyDef, TailPosition)])
 
   private object Subst {
     def from(old: Symbol.DefnSym, fresh: Symbol.VarSym, vars: Map[Symbol.VarSym, Symbol.VarSym]): Subst = Subst(old, fresh, vars)
