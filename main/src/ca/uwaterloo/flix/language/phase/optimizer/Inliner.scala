@@ -69,21 +69,20 @@ object Inliner {
 
   /** Performs inlining on the given AST `root`. */
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): OccurrenceAst.Root = {
-    implicit val sctx: SharedContext = SharedContext.mk()
-    val defs = ParOps.parMapValues(root.defs)(visitDef(_)(root, sctx, flix))
+    val defs = ParOps.parMapValues(root.defs)(visitDef(_)(root, flix))
     val newRoot = OccurrenceAst.Root(defs, root.enums, root.structs, root.effects, root.mainEntryPoint, root.entryPoints, root.sources)
     newRoot
   }
 
   /** Performs inlining on the body of `def0`. */
-  private def visitDef(def0: OccurrenceAst.Def)(implicit root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): OccurrenceAst.Def = def0 match {
+  private def visitDef(def0: OccurrenceAst.Def)(implicit root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.Def = def0 match {
     case OccurrenceAst.Def(sym, fparams, spec, exp, ctx, loc) =>
-      val e = visitExp(exp, Context.Empty)(sym, root, sctx, flix)
+      val e = visitExp(exp, Context.Empty)(sym, root, flix)
       OccurrenceAst.Def(sym, fparams, spec, e, ctx, loc)
   }
 
   /** Performs inlining operations on the expression `exp0` from [[Expr]]. */
-  private def visitExp(exp0: Expr, ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = exp0
+  private def visitExp(exp0: Expr, ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, flix: Flix): Expr = exp0
 
   /** Returns `true` if `def0` should be inlined. */
   private def shouldInline(defCtx: DefContext, ctx: Context): Boolean = {
@@ -93,16 +92,8 @@ object Inliner {
   }
 
   /** Returns `true` if `eff0` is pure. */
-  private def isPure(eff0: Type): Boolean = eff0 match {
-    case Type.Cst(TypeConstructor.Pure, _) => true
-    case Type.Cst(_, _) => false
-    case Type.Apply(_, _, _) => false
-    case Type.Var(sym, loc) => throw InternalCompilerException(s"unexpected type variable $sym", loc)
-    case Type.Alias(_, _, _, loc) => throw InternalCompilerException("unexpected type 'alias'", loc)
-    case Type.AssocType(_, _, _, loc) => throw InternalCompilerException("unexpected type 'assoc type'", loc)
-    case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected type 'jvm to type'", loc)
-    case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected type 'jvm to eff'", loc)
-    case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected type 'unresolved jvm type'", loc)
+  private def isPure(eff0: Type): Boolean = {
+    eff0 == Type.Pure
   }
 
   /** Checks if `occur` is [[Dead]]. */
@@ -130,36 +121,6 @@ object Inliner {
   private def isDeadAndPure(occur: OccurrenceAst.Occur, eff0: Type): Boolean = occur match {
     case Dead => isPure(eff0)
     case _ => false
-  }
-
-  /** Returns a canonical effect type equivalent to `eff` */
-  private def canonicalEffect(eff: Type): Type = {
-    evalToType(eval(eff), eff.loc)
-  }
-
-  /** Evaluates a ground, simplified effect type */
-  private def eval(eff: Type): CofiniteSet[Symbol.EffectSym] = eff match {
-    case Type.Univ => CofiniteSet.universe
-    case Type.Pure => CofiniteSet.empty
-    case Type.Cst(TypeConstructor.Effect(sym), _) =>
-      CofiniteSet.mkSet(sym)
-    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _) =>
-      CofiniteSet.complement(eval(y))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y, _) =>
-      CofiniteSet.union(eval(x), eval(y))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y, _) =>
-      CofiniteSet.intersection(eval(x), eval(y))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x, _), y, _) =>
-      CofiniteSet.difference(eval(x), eval(y))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x, _), y, _) =>
-      CofiniteSet.xor(eval(x), eval(y))
-    case other => throw InternalCompilerException(s"Unexpected effect $other", other.loc)
-  }
-
-  /** Returns the [[Type]] representation of `set` with `loc`. */
-  private def evalToType(set: CofiniteSet[Symbol.EffectSym], loc: SourceLocation): Type = set match {
-    case CofiniteSet.Set(s) => Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc)
-    case CofiniteSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc), loc)
   }
 
   /**
