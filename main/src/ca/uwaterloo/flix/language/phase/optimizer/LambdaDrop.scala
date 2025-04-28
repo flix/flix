@@ -346,22 +346,24 @@ object LambdaDrop {
   }
 
   /**
-    * Returns a [[Expr.LocalDef]] that is immediately applied after its declaration. Only the parameters that are alive are declared and applied.
-    * Dead parameters are captured from the containing function.
+    * Returns a [[Expr.LocalDef]] that is immediately applied after its declaration.
+    * Only non-constant parameters are declared as parameters for the local def.
     *
-    * @param body   The body of the local def to be created.
+    * See [[LambdaDrop]] for an example.
+    *
+    * @param exp0 The body of the local def to be created.
     * @param sym    The symbol of the local def to be created.
     * @param subst  The variable substitution.
     * @param params The list of formal parameters and their [[ParamKind]].
     */
-  private def mkLocalDefExpr(body: Expr, sym: Symbol.VarSym)(implicit subst: Substitution, params: List[(MonoAst.FormalParam, ParamKind)]): Expr = {
+  private def mkLocalDefExpr(exp0: Expr, sym: Symbol.VarSym)(implicit subst: Substitution, params: List[(MonoAst.FormalParam, ParamKind)]): Expr = {
     val nonConstantParams = params.filter {
       case (_, pkind) => pkind == ParamKind.NonConst
     }
     val args = nonConstantParams.map {
       case (fp, _) => Expr.Var(fp.sym, fp.tpe, fp.loc.asSynthetic)
     }
-    val applyLocalDefExpr = Expr.ApplyLocalDef(sym, args, body.tpe, body.eff, body.loc.asSynthetic)
+    val applyLocalDefExpr = Expr.ApplyLocalDef(sym, args, exp0.tpe, exp0.eff, exp0.loc.asSynthetic)
 
     val localDefParams = nonConstantParams.map {
       case (fp, _) => fp.copy(sym = subst(fp.sym), loc = fp.loc.asSynthetic)
@@ -369,7 +371,7 @@ object LambdaDrop {
     val tpe = applyLocalDefExpr.tpe
     val eff = applyLocalDefExpr.eff
     val loc = applyLocalDefExpr.loc.asSynthetic
-    Expr.LocalDef(sym, localDefParams, body, applyLocalDefExpr, tpe, eff, loc)
+    Expr.LocalDef(sym, localDefParams, exp0, applyLocalDefExpr, tpe, eff, loc)
   }
 
   private object LocalContext {
