@@ -126,8 +126,13 @@ object Inliner {
   /**
     * Returns `true` if `exp0` is considered a trivial expression.
     *
-    * An expression is trivial if:
-    * It is either a literal (float, string, int, bool, unit), or it is a variable.
+    * An expression is trivial if it is a:
+    *   - primitive literal (float, string, int, bool, unit)
+    *   - variable
+    *   - unary expression with a trivial operand
+    *   - binary expression with trivial operands
+    *   - tag with trivial arguments
+    *   - tuple with trivial arguments
     *
     * A pure and trivial expression can always be inlined even without duplicating work.
     */
