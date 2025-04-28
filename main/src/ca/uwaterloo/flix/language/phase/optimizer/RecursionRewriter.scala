@@ -390,18 +390,6 @@ object RecursionRewriter {
 
     case object NonTail extends TailPosition
 
-    def combine(tp1: TailPosition, tp2: TailPosition): TailPosition = (tp1, tp2) match {
-      case (TailPosition.Tail, TailPosition.Tail) => TailPosition.Tail
-      case (TailPosition.NonTail, TailPosition.Tail) => TailPosition.NonTail
-      case (TailPosition.Tail, TailPosition.NonTail) => TailPosition.NonTail
-      case (TailPosition.NonTail, TailPosition.NonTail) => TailPosition.NonTail
-    }
-
-    def combineOpt(tp1: Option[TailPosition], tp2: TailPosition): TailPosition = tp1 match {
-      case Some(tp11) => combine(tp11, tp2)
-      case None => tp2
-    }
-
   }
 
   private sealed trait ParameterKind
