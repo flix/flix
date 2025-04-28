@@ -176,7 +176,7 @@ object Inliner {
 
           // Case 1:
           // The variable `sym` is not in the substitution map, but we consider inlining it at this occurrence.
-          case None => callSiteInline(ctx0, Level.Nested, tpe, loc, freshVarSym)
+          case None => callSiteInline(freshVarSym, Level.Nested, ctx0, Expr.Var(freshVarSym, tpe, loc))
         }
         case None => // Function parameter occurrence
           Expr.Var(sym, tpe, loc)
@@ -461,16 +461,16 @@ object Inliner {
       Expr.NewObject(name, clazz, tpe, eff, methods, loc)
   }
 
-  private def callSiteInline(ctx0: LocalContext, lvl: Level, tpe: Type, loc: SourceLocation, freshVarSym: phase.Inliner.OutVar)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+  private def callSiteInline(freshVarSym: OutVar, lvl: Level, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     ctx0.inScopeVars.get(freshVarSym) match {
       case Some(Definition.LetBound(rhs, occur)) if shouldInlineVar(rhs, occur, lvl, ctx0) =>
         visitExp(rhs, ctx0.copy(inScopeVars = Map.empty))
 
       case Some(_) =>
-        Expr.Var(freshVarSym, tpe, loc)
+        default
 
       case None =>
-        throw InternalCompilerException("unexpected evaluated var not in scope", loc)
+        throw InternalCompilerException("unexpected evaluated var not in scope", freshVarSym.loc)
     }
   }
 
@@ -496,7 +496,7 @@ object Inliner {
   private def someBenefit(exp0: OutExpr, ctx0: LocalContext): Boolean = exp0 match {
     case Expr.Lambda(fparam, exp, tpe, loc) => ???
     case Expr.ApplyAtomic(AtomicOp.Tag(sym), exps, tpe, eff, loc) => ctx0.inliningContext match {
-      case ExprContext.MatchCtx(sym, rules, subst, ctx) =>???
+      case ExprContext.MatchCtx(sym, rules, subst, ctx) => ???
       case _ => false
     }
     case Expr.ApplyAtomic(AtomicOp.Tuple, exps, tpe, eff, loc) => ctx0.inliningContext match {
@@ -504,6 +504,7 @@ object Inliner {
       case _ => false
     }
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) => ???
+    case _ => false
   }
 
   private def visitPattern(pattern0: Pattern)(implicit flix: Flix): (Pattern, VarSubst) = pattern0 match {
