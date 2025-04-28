@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.{Dead, Once}
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.{Dead, Once, OnceInLambda, OnceInLocalDef, ManyBranch, Many}
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Expr, Occur}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, Symbol, Type}
 import ca.uwaterloo.flix.util.ParOps
@@ -87,18 +87,22 @@ object Inliner {
 
   /** Checks if `occur` is [[Dead]]. */
   private def isDead(occur: OccurrenceAst.Occur): Boolean = occur match {
-    case Occur.Dead => true
-    case Occur.Once => false
-    case Occur.OnceInLambda => false
-    case Occur.OnceInLocalDef => false
-    case Occur.ManyBranch => false
-    case Occur.Many => false
+    case Dead => true
+    case Once => false
+    case OnceInLambda => false
+    case OnceInLocalDef => false
+    case ManyBranch => false
+    case Many => false
   }
 
   /** Checks if `occur` is [[Once]] and `eff` is pure. */
   private def isUsedOnceAndPure(occur: OccurrenceAst.Occur, eff0: Type): Boolean = occur match {
+    case Dead => false
     case Once => isPure(eff0)
-    case _ => false
+    case OnceInLambda => false
+    case OnceInLocalDef => false
+    case ManyBranch => false
+    case Many => false
   }
 
   /** Checks if `exp0` is trivial and `eff` is pure */
@@ -109,7 +113,11 @@ object Inliner {
   /** Checks if `occur` is dead and `exp` is pure. */
   private def isDeadAndPure(occur: OccurrenceAst.Occur, eff0: Type): Boolean = occur match {
     case Dead => isPure(eff0)
-    case _ => false
+    case Once => false
+    case OnceInLambda => false
+    case OnceInLocalDef => false
+    case ManyBranch => false
+    case Many => false
   }
 
   /**
