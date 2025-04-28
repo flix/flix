@@ -18,6 +18,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.*
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Expr, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
@@ -481,12 +482,57 @@ object Inliner {
   }
 
   private def shouldInlineMulti(rhs: OutExpr, lvl: Level, ctx0: LocalContext): Boolean = {
-    noSizeIncrease(rhs, ctx0) || (someBenefit(rhs, lvl, ctx0) && smallEnough(rhs, lvl, ctx0))
+    noSizeIncrease(rhs, ctx0) || (someBenefit(rhs, lvl, ctx0) && smallEnough(rhs, ctx0))
   }
 
   private def noSizeIncrease(rhs: OutExpr, ctx0: LocalContext): Boolean = false
 
-  private def smallEnough(rhs: OutExpr, lvl: Level, ctx0: LocalContext): Boolean = ???
+  private def smallEnough(rhs: OutExpr, ctx0: LocalContext): Boolean = rhs match {
+    case Expr.Lambda(_, exp, _, _) =>
+      val bodySize = size(exp)
+      val args = collectLambdaArgs(exp, ctx0.exprCtx, ctx0)
+      val callSize = args.map(_._1).map(size).sum
+      val argDiscount = args.map {
+        case (_, Definition.LetBound(_, _), ctx) if isMatchOrAppCtx(ctx) => 1
+        case (_, Definition.NotAmong(_), ctx) if isMatchOrAppCtx(ctx) => 1
+        case _ => 0
+      }.sum
+      val resultDiscount = resultExp(exp) match {
+        case Expr.Lambda(_, _, _, _) => 1
+        case Expr.ApplyAtomic(AtomicOp.Tag(_), _, _, _, _) => 1
+        case Expr.ApplyAtomic(AtomicOp.Tuple, _, _, _, _) => 1
+      }
+      val keenness = 1.5
+      val threshold = 8
+      bodySize - callSize - (argDiscount * keenness + resultDiscount * keenness) <= threshold
+
+    case Expr.ApplyAtomic(AtomicOp.Tag(_), _, _, _, _) => true
+    case Expr.ApplyAtomic(AtomicOp.Tuple, _, _, _, _) => true
+    case _ => false
+  }
+
+  /**
+    * Returns a tuple of the arg expression, its definition (unknown if not applicable) and a boolean denoting whether
+    * it is being scrutinized by a match or applied to an argument.
+    */
+  private def collectLambdaArgs(exp0: Expr, ectx0: ExprContext, ctx0: LocalContext): List[(Expr, Definition, ExprContext)] = (exp0, ectx0) match {
+    case (Expr.Lambda(_, body, _, _), ExprContext.AppCtx(Expr.Var(sym, tpe, loc), _, ctx)) =>
+      (Expr.Var(sym, tpe, loc), getEvaluationState(sym, ctx0), ctx) :: collectLambdaArgs(body, ctx, ctx0)
+    case (Expr.Lambda(_, body, _, _), ExprContext.AppCtx(exp, _, ctx)) =>
+      (exp, Definition.Unknown, ctx) :: collectLambdaArgs(body, ctx, ctx0)
+    case _ => Nil
+  }
+
+  private def getEvaluationState(sym: OutVar, ctx0: LocalContext): Definition = ctx0.varSubst.get(sym) match {
+    case Some(freshSym) => ctx0.inScopeVars.getOrElse(freshSym, throw InternalCompilerException("unexpected not in-scope variable", freshSym.loc))
+    case None => throw InternalCompilerException("unexpected not in-scope variable", sym.loc)
+  }
+
+  private def isMatchOrAppCtx(ctx: ExprContext): Boolean = ctx match {
+    case ExprContext.AppCtx(_, _, _) => true
+    case ExprContext.MatchCtx(_, _, _) => true
+    case _ => false
+  }
 
   private def someBenefit(exp0: OutExpr, lvl: Level, ctx0: LocalContext): Boolean = exp0 match {
     case Expr.Lambda(_, _, _, _) =>
@@ -827,6 +873,40 @@ object Inliner {
     case Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
       val (p, subst) = refreshPattern(pat)
       (Pattern.Record.RecordLabelPattern(label, p, tpe, loc), subst)
+  }
+
+  private def size(exp0: Expr): Int = exp0 match {
+    case Expr.Cst(_, _, _) => 1
+    case Expr.Var(_, _, _) => 1
+    case Expr.Lambda(_, exp, _, _) => size(exp) + 1
+    case Expr.ApplyAtomic(_, exps, _, _, _) => exps.map(size).sum + 1
+    case Expr.ApplyClo(exp1, exp2, _, _, _) => size(exp1) + size(exp2) + 1
+    case Expr.ApplyDef(_, exps, _, _, _, _) => exps.map(size).sum + 1
+    case Expr.ApplyLocalDef(_, exps, _, _, _) => exps.map(size).sum + 1
+    case Expr.Let(_, exp1, exp2, _, _, _, _) => size(exp1) + size(exp2) + 1
+    case Expr.LocalDef(_, _, exp1, exp2, _, _, _, _) => size(exp1) + size(exp2) + 1
+    case Expr.Scope(_, _, exp, _, _, _) => size(exp) + 1
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => size(exp1) + size(exp2) + size(exp3) + 1
+    case Expr.Stm(exp1, exp2, _, _, _) => size(exp1) + size(exp2) + 1
+    case Expr.Discard(exp, _, _) => size(exp) + 1
+    case Expr.Match(exp, rules, _, _, _) => size(exp) + rules.map(_.exp).map(size).sum + 1
+    case Expr.VectorLit(exps, _, _, _) => exps.map(size).sum
+    case Expr.VectorLoad(exp1, exp2, _, _, _) => size(exp1) + size(exp2) + 1
+    case Expr.VectorLength(exp, _) => size(exp) + 1
+    case Expr.Ascribe(exp, _, _, _) => size(exp) + 1
+    case Expr.Cast(exp, _, _, _, _, _) => size(exp) + 1
+    case Expr.TryCatch(exp, rules, _, _, _) => size(exp) + rules.map(_.exp).map(size).sum + 1
+    case Expr.RunWith(exp, _, rules, _, _, _) => size(exp) + rules.map(_.exp).map(size).sum + 1
+    case Expr.Do(_, exps, _, _, _) => exps.map(size).sum + 1
+    case Expr.NewObject(_, _, _, _, methods, _) => methods.map(_.exp).map(size).sum + 1
+  }
+
+  @tailrec
+  private def resultExp(exp0: Expr): Expr = exp0 match {
+    case Expr.Let(_, _, exp2, _, _, _, _) => resultExp(exp2)
+    case Expr.LocalDef(_, _, _, exp2, _, _, _, _) => resultExp(exp2)
+    case Expr.Stm(_, exp2, _, _, _) => resultExp(exp2)
+    case _ => exp0
   }
 
   /**
