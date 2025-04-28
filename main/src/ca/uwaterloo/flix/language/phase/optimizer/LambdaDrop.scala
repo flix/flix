@@ -66,6 +66,21 @@ object LambdaDrop {
       defn
   }
 
+  private def isRewritable(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): Boolean = {
+    visitExp(defn.exp, tailPos = TailPosition.Tail)(defn.sym, ctx, flix)
+    val containsRecursiveCall = ctx.selfTailCalls.nonEmpty
+    val allRecursiveCallsInTailPos = ctx.selfTailCalls.forall { case (_, tps) => tps == TailPosition.Tail }
+    containsRecursiveCall && allRecursiveCallsInTailPos
+  }
+
+  private def rewriteDefn(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): MonoAst.Def = {
+    implicit val params: List[(MonoAst.FormalParam, ParamKind)] = paramKinds(ctx.selfTailCalls.map(_._1), defn.spec.fparams)
+    implicit val subst: Substitution = mkSubst(defn, params)
+    val rewrittenExp = rewriteExp(defn.exp)
+    val body = mkLocalDefExpr(rewrittenExp)
+    defn.copy(exp = body)
+  }
+
   private def visitExp(exp0: MonoAst.Expr, tailPos: TailPosition)(implicit sym0: Symbol.DefnSym, ctx: LocalContext, flix: Flix): Unit = exp0 match {
     case Expr.Cst(_, _, _) =>
 
@@ -283,21 +298,6 @@ object LambdaDrop {
       }
       Expr.NewObject(name, clazz, tpe, eff1, ms, loc1)
 
-  }
-
-  private def isRewritable(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): Boolean = {
-    visitExp(defn.exp, tailPos = TailPosition.Tail)(defn.sym, ctx, flix)
-    val containsRecursiveCall = ctx.selfTailCalls.nonEmpty
-    val allRecursiveCallsInTailPos = ctx.selfTailCalls.forall { case (_, tps) => tps == TailPosition.Tail }
-    containsRecursiveCall && allRecursiveCallsInTailPos
-  }
-
-  private def rewriteDefn(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): MonoAst.Def = {
-    implicit val params: List[(MonoAst.FormalParam, ParamKind)] = paramKinds(ctx.selfTailCalls.map(_._1), defn.spec.fparams)
-    implicit val subst: Substitution = mkSubst(defn, params)
-    val rewrittenExp = rewriteExp(defn.exp)
-    val body = mkLocalDefExpr(rewrittenExp)
-    defn.copy(exp = body)
   }
 
   private def mkSubst(defn: MonoAst.Def, params: List[(MonoAst.FormalParam, ParamKind)])(implicit flix: Flix): Substitution = {
