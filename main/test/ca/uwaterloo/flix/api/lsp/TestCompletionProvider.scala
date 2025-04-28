@@ -319,14 +319,14 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   /**
-    * Returns the set of variable symbols that occur in the given root.
+    * Returns the set of non-synthetic variable symbols that occur in the given root.
     */
   private def getVarSymOccurs()(implicit root: Root): Set[Symbol.VarSym] = {
     var occurs: Set[Symbol.VarSym] = Set.empty
 
     object VarConsumer extends Consumer {
       override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
-          case TypedAst.Expr.Var(sym, _, _) => occurs += sym
+          case TypedAst.Expr.Var(sym, _, loc) if !loc.isSynthetic => occurs += sym
           case _ =>
         }
     }
