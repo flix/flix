@@ -177,7 +177,6 @@ object Inliner {
 
   }
 
-
   private type InVar = Symbol.VarSym
 
   private type OutVar = Symbol.VarSym
