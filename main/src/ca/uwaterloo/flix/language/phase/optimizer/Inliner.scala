@@ -73,12 +73,12 @@ object Inliner {
   /** Performs inlining on the body of `def0`. */
   private def visitDef(def0: OccurrenceAst.Def)(implicit root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.Def = def0 match {
     case OccurrenceAst.Def(sym, fparams, spec, exp, ctx, loc) =>
-      val e = visitExp(exp, Context.Empty)(sym, root, flix)
+      val e = visitExp(exp, LocalContext.Empty)(sym, root, flix)
       OccurrenceAst.Def(sym, fparams, spec, e, ctx, loc)
   }
 
   /** Performs inlining on the expression `exp0`. */
-  private def visitExp(exp0: Expr, ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, flix: Flix): Expr = exp0
+  private def visitExp(exp0: Expr, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, flix: Flix): Expr = exp0
 
   /** Returns `true` if `eff0` is pure. */
   private def isPure(eff0: Type): Boolean = {
@@ -172,12 +172,12 @@ object Inliner {
     * @param inScopeVars       a set of variables considered to be in scope.
     * @param currentlyInlining a flag denoting whether the current traversal is part of an inline-expansion process.
     */
-  private case class Context(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], currentlyInlining: Boolean)
+  private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], currentlyInlining: Boolean)
 
-  private object Context {
+  private object LocalContext {
 
     /** Returns the empty context with `currentlyInlining` set to `false`. */
-    val Empty: Context = Context(Map.empty, Map.empty, Map.empty, currentlyInlining = false)
+    val Empty: LocalContext = LocalContext(Map.empty, Map.empty, Map.empty, currentlyInlining = false)
 
   }
 }
