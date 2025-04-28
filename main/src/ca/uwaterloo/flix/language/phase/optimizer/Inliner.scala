@@ -209,10 +209,18 @@ object Inliner {
 
   private type InScopeVars = Map[OutVar, Definition]
 
-
+  /**
+    * A wrapper class for all the different inlining environments.
+    *
+    * @param varSubst          a substitution on variables to variables.
+    * @param subst             a substitution on variables to expressions.
+    * @param inScopeVars       a set of variables considered to be in scope.
+    * @param currentlyInlining a flag denoting whether the current traversal is part of an inline-expansion process.
+    */
   private case class Context(varSubst: VarSubst, subst: Subst, inScopeVars: InScopeVars, currentlyInlining: Boolean)
 
   private object Context {
+    /** Returns the empty context with `currentlyInlining` set to `false`. */
     val Empty: Context = Context(Map.empty, Map.empty, Map.empty, currentlyInlining = false)
   }
 
