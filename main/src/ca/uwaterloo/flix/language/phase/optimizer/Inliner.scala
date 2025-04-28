@@ -213,37 +213,28 @@ object Inliner {
 
   }
 
-  private type InVar = Symbol.VarSym
-
-  private type OutVar = Symbol.VarSym
-
-  private type InExpr = OccurrenceAst.Expr
-
-  private type OutExpr = OccurrenceAst.Expr
-
+  /** Represents the range of a substitution from variables to expressions. */
   sealed private trait SubstRange
 
   private object SubstRange {
 
-    case class SuspendedExpr(exp: InExpr) extends SubstRange
+    /** An expression that will be inlined but is not yet visited. */
+    case class SuspendedExpr(exp: OccurrenceAst.Expr) extends SubstRange
 
-    case class DoneExpr(exp: OutExpr) extends SubstRange
+    /** An expression that will be inlined but has already been visited. */
+    case class DoneExpr(exp: OccurrenceAst.Expr) extends SubstRange
 
   }
 
+  /** Contains information on a variable's definition. */
   private sealed trait Definition
 
   private object Definition {
 
-    case class LetBound(expr: OutExpr, occur: Occur) extends Definition
+    /** The right-hand side of a let-bound variable along with its occurrence information. */
+    case class LetBound(expr: OccurrenceAst.Expr, occur: Occur) extends Definition
 
   }
-
-  private type VarSubst = Map[InVar, OutVar]
-
-  private type Subst = Map[InVar, SubstRange]
-
-  private type InScopeVars = Map[OutVar, Definition]
 
   /**
     * A wrapper class for all the different inlining environments.
@@ -253,11 +244,12 @@ object Inliner {
     * @param inScopeVars       a set of variables considered to be in scope.
     * @param currentlyInlining a flag denoting whether the current traversal is part of an inline-expansion process.
     */
-  private case class Context(varSubst: VarSubst, subst: Subst, inScopeVars: InScopeVars, currentlyInlining: Boolean)
+  private case class Context(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, Definition], currentlyInlining: Boolean)
 
   private object Context {
+
     /** Returns the empty context with `currentlyInlining` set to `false`. */
     val Empty: Context = Context(Map.empty, Map.empty, Map.empty, currentlyInlining = false)
-  }
 
+  }
 }
