@@ -74,8 +74,12 @@ object Inliner {
     * Checks if `occur` is Dead.
     */
   private def isDead(occur: OccurrenceAst.Occur): Boolean = occur match {
-    case Dead => true
-    case _ => false
+    case Occur.Dead => true
+    case Occur.Once => false
+    case Occur.OnceInLambda => false
+    case Occur.OnceInLocalDef => false
+    case Occur.ManyBranch => false
+    case Occur.Many => false
   }
 
   /**
