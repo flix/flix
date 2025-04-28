@@ -1,5 +1,4 @@
 mod Test.Def.Recursion {
-
     use Lizt.{Null, Conz};
     use Opt.{Empty, El};
 
@@ -20,6 +19,8 @@ mod Test.Def.Recursion {
     def list2(x: a): Lizt[a] = Conz(x, Conz(x, Null))
 
     def list3(x: a): Lizt[a] = Conz(x, Conz(x, Conz(x, Null)))
+
+    def list123(): Lizt[Int32] = Conz(1, Conz(2, Conz(3, Null)))
 
     def simple(l: Lizt[a]): Opt[a] = match l {
         case Null          => Empty
@@ -57,7 +58,6 @@ mod Test.Def.Recursion {
 
     def mutualSwaps2(x: Int32, y: Int32): Int32 =
         mutualSwaps1(x + 1, y - 1)
-
 
     def mutualSimple1(l: Lizt[a]): Opt[a] = match l {
         case Null          => Empty
@@ -122,6 +122,16 @@ mod Test.Def.Recursion {
             true
         else
             allConstantParams(x)
+
+    pub def higherOrderCapturesItself(f: (a, Unit -> b) -> b, z: b, l: Lizt[a]): b = match l {
+        case Null        => z
+        case Conz(x, xs) => f(x, _ -> higherOrderCapturesItself(f, z, xs))
+    }
+
+    pub def higherOrderPartiallyApplies(f: (a, Lizt[a], Lizt[a] -> b) -> b, z: b, l: Lizt[a]): b = match l {
+        case Null        => z
+        case Conz(x, xs) => f(x, xs, higherOrderPartiallyApplies(f, z))
+    }
 
     @test
     def simple01(): Bool = {
@@ -376,5 +386,24 @@ mod Test.Def.Recursion {
     @test
     def allConstantParams03(): Bool = {
         allConstantParams("abc")
+    }
+
+    @test
+    def higherOrderCapturesItself01(): Int32 = {
+        higherOrderCapturesItself(x -> cont -> cont() + x, 0, list123())
+    }
+
+    @test
+    def higherOrderCapturesItself02(): Int32 = {
+        higherOrderCapturesItself(x -> _ -> x + 3, 0, list123())
+    }
+
+    @test
+    def higherOrderPartiallyApplies01(): Int32 = {
+        higherOrderPartiallyApplies(x -> xs -> cont -> cont(xs) + x, 0, list123())
+    }
+    @test
+    def higherOrderPartiallyApplies02(): Int32 = {
+        higherOrderPartiallyApplies(x -> xs -> cont -> if (x == 2) cont(list1(4)) + x else cont(xs) + x, 0, list123())
     }
 }
