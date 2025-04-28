@@ -115,26 +115,26 @@ object Inliner {
 
   private type InScopeEffs = Map[OutEff, Map[OutEffHandler, Handler]]
 
-  private sealed trait InliningContext
+  private sealed trait ExprContext
 
-  private object InliningContext {
+  private object ExprContext {
 
-    case object None extends InliningContext
+    case object Stop extends ExprContext
 
-    case class InlineContinuation(sym: Symbol.VarSym) extends InliningContext
+    case class AppCtx(expr: Expr, subst: Subst, ctx: ExprContext) extends ExprContext
 
-    // case class Application(inExpr: InExpr, subst: Subst, context: Context) extends Context
+    case class MatchCtx(sym: Symbol.VarSym, rules: List[OccurrenceAst.MatchRule], subst: Subst, ctx: ExprContext) extends ExprContext
 
-    // case class Argument(continuation: OutExpr => OutExpr) extends Context
+    case class ArgCtx(cont: Expr => Expr) extends ExprContext
 
-    // case class Match(sym: InVar, cases: List[InCase], subst: Subst, context: Context) extends Context
+    case class HandlerCtx(sym: Symbol.VarSym) extends ExprContext
 
   }
 
-  private case class ScopedData(varSubst: VarSubst, subst: Subst, inScopeVars: InScopeVars, inScopeEffs: InScopeEffs, inliningContext: InliningContext, currentlyInlining: Boolean)
+  private case class ScopedData(varSubst: VarSubst, subst: Subst, inScopeVars: InScopeVars, inScopeEffs: InScopeEffs, inliningContext: ExprContext, currentlyInlining: Boolean)
 
   private object ScopedData {
-    def empty: ScopedData = ScopedData(Map.empty, Map.empty, Map.empty, Map.empty, InliningContext.None, currentlyInlining = false)
+    def empty: ScopedData = ScopedData(Map.empty, Map.empty, Map.empty, Map.empty, ExprContext.Stop, currentlyInlining = false)
   }
 
   /**
@@ -212,7 +212,7 @@ object Inliner {
           case _ =>
             val e1 = visitExp(exp1, ctx0)
             ctx0.inliningContext match {
-              case InliningContext.InlineContinuation(sym) if sym == sym1 => e2
+              case ExprContext.HandlerCtx(sym) if sym == sym1 => e2
               case _ => Expr.ApplyClo(e1, e2, tpe, eff, loc)
             }
         }
@@ -441,7 +441,7 @@ object Inliner {
           case Once => // Linear handler
             val continuation = rule.rule.fparams.last.sym
             val freshSym = Symbol.freshVarSym(continuation)
-            val ctx = ctx0.copy(varSubst = ctx0.varSubst + (continuation -> freshSym), inliningContext = InliningContext.InlineContinuation(freshSym))
+            val ctx = ctx0.copy(varSubst = ctx0.varSubst + (continuation -> freshSym), inliningContext = ExprContext.HandlerCtx(freshSym))
             inlineEffectHandler(rule.rule.exp, rule.rule.fparams, es, ctx)
           case _ => Expr.Do(op, es, tpe, eff, loc)
         }
