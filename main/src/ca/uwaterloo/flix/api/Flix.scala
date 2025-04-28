@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.phase.optimizer.{Optimizer, RecursionRewriter}
-import ca.uwaterloo.flix.language.verifier.{ClassVerifier, EffectVerifier}
+import ca.uwaterloo.flix.language.verifier.EffectVerifier
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
@@ -658,8 +658,10 @@ class Flix {
     val lambdaLiftAst = LambdaLift.run(closureConvAst)
     val treeShaker2Ast = TreeShaker2.run(lambdaLiftAst)
     val effectBinderAst = EffectBinder.run(treeShaker2Ast)
+
     val tailPosAst = TailPos.run(effectBinderAst)
-    ClassVerifier.run(tailPosAst)
+    flix.emitEvent(FlixEvent.AfterTailPos(tailPosAst))
+
     val eraserAst = Eraser.run(tailPosAst)
     val reducerAst = Reducer.run(eraserAst)
     val varOffsetsAst = VarOffsets.run(reducerAst)
@@ -799,8 +801,8 @@ class Flix {
   /**
     * Returns the inputs for the given list of (path, text) pairs.
     */
-  private def getLibraryInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
-    case (ys, (virtualPath, text)) => Input.Text(virtualPath, text, SecurityContext.AllPermissions) :: ys
+  private def getLibraryInputs(l: List[(String, String)]): List[Input] = l.foldLeft(List.empty[Input]) {
+    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, SecurityContext.AllPermissions) :: xs
   }
 
   /**
