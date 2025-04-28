@@ -15,6 +15,12 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.lsp.{LspUtil, Position}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
+import ca.uwaterloo.flix.language.errors.ResolutionError.UndefinedName
+
 sealed trait ExprContext
 
 object ExprContext {
@@ -46,5 +52,25 @@ object ExprContext {
     * Represents an expression in an unknown context.
     */
   case object Unknown extends ExprContext
+
+  /**
+    * Returns the expression context at the given `uri` and position `pos`.
+    */
+  def getExprContext(uri: String, pos: Position)(implicit root: Root, flix: Flix): ExprContext = {
+    val stack = LspUtil.getStack(uri, pos)
+    // The stack contains the path of expressions from the leaf to the root.
+    stack match {
+      case Expr.Error(UndefinedName(_, _, _, _), _, _) :: Expr.ApplyClo(_, _, _, _, _) :: _ =>
+        // The leaf is an error followed by an ApplyClo expression.
+        ExprContext.InsideApply
+      case Expr.Error(UndefinedName(_, _, _, _), _, _) :: Expr.ApplyDef(DefSymUse(sym, _), _, _, _, _, _) :: _ if sym.text == "|>" =>
+        // The leaf is an error followed by an ApplyDef expression with the symbol "|>".
+        ExprContext.InsidePipeline
+      case Expr.Error(UndefinedName(_, _, _, _), _, _) :: Expr.RunWith(_, _, _, _, _) :: _ =>
+        // The leaf is an error followed by a RunWith expression.
+        ExprContext.InsideRunWith
+      case _ => ExprContext.Unknown
+    }
+  }
 
 }
