@@ -51,21 +51,17 @@ object Inliner {
       OccurrenceAst.Def(sym, fparams, spec, e, ctx, loc)
   }
 
-  /**
-    * Performs inlining operations on the expression `exp0` from [[Expr]].
-    * Returns a [[Expr]]
-    */
+  /** Performs inlining operations on the expression `exp0` from [[Expr]]. */
   private def visitExp(exp0: Expr, ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = exp0
 
-  /**
-    * Returns `true` if `def0` should be inlined.
-    */
+  /** Returns `true` if `def0` should be inlined. */
   private def shouldInline(defCtx: DefContext, ctx: Context): Boolean = {
     val mayInline = !defCtx.isSelfRecursive && !ctx.currentlyInlining
     val shouldInline = defCtx.isDirectCall
     mayInline && shouldInline
   }
 
+  /** Returns `true` if `eff0` is pure. */
   private def isPure(eff0: Type): Boolean = eff0 match {
     case Type.Cst(TypeConstructor.Pure, _) => true
     case Type.Cst(_, _) => false
@@ -78,9 +74,7 @@ object Inliner {
     case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected type 'unresolved jvm type'", loc)
   }
 
-  /**
-    * Checks if `occur` is Dead.
-    */
+  /** Checks if `occur` is [[Dead]]. */
   private def isDead(occur: OccurrenceAst.Occur): Boolean = occur match {
     case Occur.Dead => true
     case Occur.Once => false
@@ -90,24 +84,18 @@ object Inliner {
     case Occur.Many => false
   }
 
-  /**
-    * Checks if `occur` is Once and `eff` is Pure
-    */
+  /** Checks if `occur` is [[Once]] and `eff` is pure. */
   private def isUsedOnceAndPure(occur: OccurrenceAst.Occur, eff0: Type): Boolean = occur match {
     case Once => isPure(eff0)
     case _ => false
   }
 
-  /**
-    * Checks if `exp0` is trivial and `eff` is pure
-    */
+  /** Checks if `exp0` is trivial and `eff` is pure */
   private def isTrivialAndPure(exp0: Expr, eff0: Type): Boolean = {
     isPure(eff0) && isTrivialExp(exp0)
   }
 
-  /**
-    * Checks if `occur` is dead and `exp` is pure.
-    */
+  /** Checks if `occur` is dead and `exp` is pure. */
   private def isDeadAndPure(occur: OccurrenceAst.Occur, eff0: Type): Boolean = occur match {
     case Dead => isPure(eff0)
     case _ => false
@@ -182,9 +170,8 @@ object Inliner {
                                   )
 
   private object SharedContext {
-    /**
-      * Returns a fresh shared context.
-      */
+
+    /** Returns a fresh shared context. */
     def mk(): SharedContext = SharedContext(
       new ConcurrentLinkedQueue(),
       new ConcurrentLinkedQueue(),
@@ -192,6 +179,7 @@ object Inliner {
       new ConcurrentLinkedQueue(),
       new ConcurrentLinkedQueue(),
       new ConcurrentLinkedQueue())
+
   }
 
 
