@@ -26,33 +26,29 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import scala.collection.mutable
 
 /**
-  * Rewrites functions that recursively call themselves in tail-position to
-  * non-recursive functions with a recursive local def that capture constant
-  * parameters.
+  * Rewrites recursive higher-order functions to non-recursive functions with
+  * a recursive local def where constant parameters become closure captured.
   *
-  * A constant parameter is a parameter that is never updated or changed in
-  * a recursive call.
+  * A constant parameter is one that has the same value in every recursive call.
   *
   * Example:
   *
   * {{{
-  *   def lastMap(f: a -> b, l: List[a]): Option[b] = match l {
-  *       case Nil      => None
-  *       case x :: Nil => Some(f(x))
-  *       case _ :: xs  => lastMap(f, xs)
+  *   def map(f: a -> b, l: List[a]): List[b] = match l {
+  *       case Nil     => Nil
+  *       case x :: xs => f(x) :: map(f, xs)
   *   }
   * }}}
   *
   * Is rewritten to:
   *
   * {{{
-  *   def lastMap(f: a -> b, l: List[a]): Option[b] =
-  *       def lastMapLoop(l1) = match l1 {
-  *           case Nil      => None
-  *           case x :: Nil => Some(f(x))
-  *           case _ :: xs  => lastMapLoop(xs)
+  *   def map(f: a -> b, l: List[a]): List[b] =
+  *       def map$Loop(l1) = match l1 {
+  *           case Nil      => Nil
+  *           case x :: xs  => f(x) :: map$Loop(xs)
   *       };
-  *       lastMapLoop(l)
+  *       map$Loop(l)
   * }}}
   */
 object RecursionRewriter {
