@@ -339,6 +339,7 @@ object LambdaDrop {
     }.toList
   }
 
+  /** Returns a fresh [[Symbol.VarSym]] for a local def. */
   private def mkFreshLocalDefSym(defn: MonoAst.Def)(implicit flix: Flix): Symbol.VarSym = {
     val text = defn.sym.text + Flix.Delimiter + "Loop"
     Symbol.freshVarSym(text, BoundBy.LocalDef, defn.sym.loc)(Scope.Top, flix)
