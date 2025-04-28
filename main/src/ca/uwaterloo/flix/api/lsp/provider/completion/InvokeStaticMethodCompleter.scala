@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen, Lukas Rønn
+ * Copyright 2024 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,14 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.Range
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MethodCompletion
+import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.util.JvmUtils
 
-/**
-  * Represents a completion context.
-  *
-  * @param range        Start and end position of the word underneath (or alongside) the cursor
-  */
-case class CompletionContext(range: Range)
+object InvokeStaticMethodCompleter {
+
+  def getCompletions(clazz: Class[?], field: Name.Ident): List[Completion] = {
+    JvmUtils.getStaticMethods(clazz).sortBy(_.getName).map(MethodCompletion(field, _))
+  }
+
+}

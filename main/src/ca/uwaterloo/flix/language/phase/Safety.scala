@@ -16,15 +16,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
-/**
-  * Checks the safety and well-formedness of:
-  *   - Datalog constraints.
-  *   - New object expressions.
-  *   - CheckedCast expressions.
-  *   - UncheckedCast expressions.
-  *   - TypeMatch expressions.
-  *   - Throw expressions.
-  */
+/** Checks safety and well-formedness not captured by the type system. */
 object Safety {
 
   /** Checks the safety and well-formedness of `root`. */
@@ -40,16 +32,18 @@ object Safety {
 
   /** Checks the safety and well-formedness of `defn`. */
   private def visitDef(defn: Def)(implicit sctx: SharedContext, flix: Flix): Def = {
-    val renv = RigidityEnv.ofRigidVars(defn.spec.tparams.map(_.sym))
-    visitExp(defn.exp)(inTryCatch = false, renv, sctx, flix)
+    implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(defn.spec.tparams.map(_.sym))
+    visitExp(defn.exp)
     defn
   }
 
+  /** Checks the safety and well-formedness of `trt`. */
   private def visitTrait(trt: Trait)(implicit sctx: SharedContext, flix: Flix): Trait = {
     trt.sigs.foreach(visitSig)
     trt
   }
 
+  /** Checks the safety and well-formedness of `inst`. */
   private def visitInstance(inst: TypedAst.Instance)(implicit flix: Flix, sctx: SharedContext): TypedAst.Instance = {
     inst.defs.foreach(visitDef)
     inst
@@ -57,23 +51,23 @@ object Safety {
 
   /** Checks the safety and well-formedness of `sig`. */
   private def visitSig(sig: Sig)(implicit flix: Flix, sctx: SharedContext): Unit = {
-    val renv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
-    sig.exp.foreach(visitExp(_)(inTryCatch = false, renv, sctx, flix))
+    implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
+    sig.exp.foreach(visitExp(_))
   }
 
   /**
-    * Checks tje safety and well-formedness of `exp0`.
+    * Checks the safety and well-formedness of `exp0`.
     *
-    * The checks are:
-    *   - Nested [[Expr.TryCatch]] expressions are disallowed unless the inner [[Expr.TryCatch]]
-    *     will be extracted (e.g. Lambda).
     *   - [[Expr.TypeMatch]] must end with a default case.
-    *
-    *
-    * @param inTryCatch indicates whether `exp` is enclosed in a try-catch. This can be reset if the
-    *                   expression will later be extracted to its own function (e.g [[Expr.Lambda]]).
+    *   - [[Expr.Handler]] are not defined for primitive effects.
+    *   - JVM operations and casts are allowed by the relevant [[SecurityContext]].
+    *   - [[Expr.UncheckedCast]] are not impossible.
+    *   - [[Expr.Throw]] only throws exceptions.
+    *   - [[Expr.NewObject]] are valid (see [[checkObjectImplementation]]).
+    *   - [[Expr.Spawn]] only performs primitive effects.
+    *   - [[Expr.FixpointConstraintSet]] are valid (see [[checkConstraint]]).
     */
-  private def visitExp(exp0: Expr)(implicit inTryCatch: Boolean, renv: RigidityEnv, sctx: SharedContext, flix: Flix): Unit = exp0 match {
+  private def visitExp(exp0: Expr)(implicit renv: RigidityEnv, sctx: SharedContext, flix: Flix): Unit = exp0 match {
     case Expr.Cst(_, _, _) =>
       ()
 
@@ -93,8 +87,7 @@ object Safety {
       visitExp(exp)
 
     case Expr.Lambda(_, exp, _, _) =>
-      // `exp` will be in its own function, so `inTryCatch` is reset.
-      visitExp(exp)(inTryCatch = false, renv, sctx, flix)
+      visitExp(exp)
 
     case Expr.ApplyClo(exp1, exp2, _, _, _) =>
       visitExp(exp1)
@@ -121,8 +114,7 @@ object Safety {
       visitExp(exp2)
 
     case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
-      // `exp1` will be its own function, so `inTryCatch` is reset.
-      visitExp(exp1)(inTryCatch = false, renv, sctx, flix)
+      visitExp(exp1)
       visitExp(exp2)
 
     case Expr.Region(_, _) =>
@@ -151,9 +143,9 @@ object Safety {
       }
 
     case Expr.TypeMatch(exp, rules, _, _, _) =>
-      // check whether the last case in the type match looks like `..: _`
+      // Check whether the last case in the type match looks like `..: _`.
       rules.lastOption match {
-        // Use top scope since the rigidity check only cares if it's a syntactically known variable
+        // Use top scope since the rigidity check only cares if it's a syntactically known variable.
         case Some(TypeMatchRule(_, Type.Var(sym, _), _, _)) if renv.isFlexible(sym)(Scope.Top) =>
           ()
         case Some(_) | None =>
@@ -166,11 +158,11 @@ object Safety {
       visitExp(exp)
       rules.foreach(rule => visitExp(rule.exp))
 
-      case Expr.Tag(_, exps, _, _, _) =>
-        exps.foreach(visitExp)
+    case Expr.Tag(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
 
-      case Expr.RestrictableTag(_, exps, _, _, _) =>
-        exps.foreach(visitExp)
+    case Expr.RestrictableTag(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
 
     case Expr.Tuple(elms, _, _, _) =>
       elms.foreach(visitExp)
@@ -252,12 +244,8 @@ object Safety {
     case Expr.Without(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.TryCatch(exp, rules, _, _, loc) =>
-      // Check for [[IllegalNestedTryCatch]]
-      if (inTryCatch) {
-        sctx.errors.add(IllegalNestedTryCatch(loc))
-      }
-      visitExp(exp)(inTryCatch = true, renv, sctx, flix)
+    case Expr.TryCatch(exp, rules, _, _, _) =>
+      visitExp(exp)
       rules.foreach { case CatchRule(bnd, clazz, e, _) =>
         checkCatchClass(clazz, bnd.sym.loc)
         visitExp(e)
@@ -486,12 +474,12 @@ object Safety {
         case (t1, Some(t2)) if primitives.contains(t2) && !primitives.contains(t1) =>
           sctx.errors.add(ImpossibleUncheckedCast(from, to.get, loc))
 
-        case _  => ()
+        case _ => ()
       }
   }
 
   /** Checks the safety and well-formedness of `c`. */
-  private def checkConstraint(c: Constraint)(implicit inTryCatch: Boolean, renv: RigidityEnv, sctx: SharedContext, flix: Flix): Unit = {
+  private def checkConstraint(c: Constraint)(implicit renv: RigidityEnv, sctx: SharedContext, flix: Flix): Unit = {
     // Compute the set of positively defined variable symbols in the constraint.
     val posVars = positivelyDefinedVariables(c)
 
@@ -519,10 +507,10 @@ object Safety {
     c.body.foreach(checkBodyPredicate(_, posVars, quantVars, latVars))
 
     // Check that the free relational variables in the head atom are not lattice variables.
-   checkHeadPredicate(c.head, unsafeLatVars)
+    checkHeadPredicate(c.head, unsafeLatVars)
 
     // Check that patterns in atom body are legal.
-   c.body.foreach(s => checkBodyPattern(s))
+    c.body.foreach(s => checkBodyPattern(s))
   }
 
   /** Checks that `p` only contains [[Pattern.Var]], [[Pattern.Wild]], and [[Pattern.Cst]]. */
@@ -540,11 +528,11 @@ object Safety {
   /**
     * Checks that `p` is well-formed.
     *
-    * @param posVars the positively bound variables.
+    * @param posVars   the positively bound variables.
     * @param quantVars the quantified variables, not bound by lexical scope.
-    * @param latVars the variables in lattice position.
+    * @param latVars   the variables in lattice position.
     */
-  private def checkBodyPredicate(p: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym])(implicit inTryCatch: Boolean, renv: RigidityEnv, flix: Flix, sctx: SharedContext): Unit = p match {
+  private def checkBodyPredicate(p: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym])(implicit renv: RigidityEnv, flix: Flix, sctx: SharedContext): Unit = p match {
     case Predicate.Body.Atom(_, den, polarity, _, terms, _, loc) =>
       // Check for non-positively bound negative variables.
       polarity match {
@@ -570,7 +558,6 @@ object Safety {
       // Check for non-positively in variables (free variables in exp).
       val inVars = freeVars(exp).keySet.intersect(quantVars)
       (inVars -- posVars).toList.foreach(mkIllegalNonPositivelyBoundVariableError(_, loc))
-
       visitExp(exp)
 
     case Predicate.Body.Guard(exp, _) =>
@@ -661,7 +648,7 @@ object Safety {
     * @param clazz the Java class specified in the catch clause
     * @param loc   the location of the catch parameter.
     */
-  private def checkCatchClass(clazz: Class[?], loc: SourceLocation )(implicit sctx: SharedContext): Unit =
+  private def checkCatchClass(clazz: Class[?], loc: SourceLocation)(implicit sctx: SharedContext): Unit =
     if (!isThrowable(clazz)) {
       sctx.errors.add(IllegalCatchType(loc))
     }
@@ -671,7 +658,7 @@ object Safety {
     classOf[Throwable].isAssignableFrom(clazz)
 
   /** Checks that the type of the argument to `throw` is [[java.lang.Throwable]] or a subclass. */
-  private def checkThrow(exp: Expr )(implicit sctx: SharedContext): Unit =
+  private def checkThrow(exp: Expr)(implicit sctx: SharedContext): Unit =
     if (!isThrowableType(exp.tpe)) sctx.errors.add(IllegalThrowType(exp.loc))
 
   /** Returns `true` if `tpe` is [[java.lang.Throwable]] or a subclass of it. */
@@ -694,7 +681,7 @@ object Safety {
     *   - `methods` must not include non-existing methods.
     *   - `methods` must not let control effects escape.
     */
-  private def checkObjectImplementation(newObject: Expr.NewObject)(implicit flix: Flix , sctx: SharedContext): Unit = newObject match {
+  private def checkObjectImplementation(newObject: Expr.NewObject)(implicit flix: Flix, sctx: SharedContext): Unit = newObject match {
     case Expr.NewObject(_, clazz, tpe0, _, methods, loc) =>
       val tpe = Type.eraseAliases(tpe0)
       // `clazz` must be an interface or have a non-private constructor without arguments.
@@ -796,22 +783,18 @@ object Safety {
     !eff.effects.forall(Symbol.isPrimitiveEff)
   }
 
-  /**
-   * Companion object for [[SharedContext]]
-   */
+  /** Companion object for [[SharedContext]] */
   private object SharedContext {
 
-    /**
-     * Returns a fresh shared context.
-     */
+    /** Returns a fresh shared context. */
     def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
   }
 
   /**
-   * A global shared context. Must be thread-safe.
-   *
-   * @param errors the [[SafetyError]]s in the AST, if any.
-   */
+    * A global shared context. Must be thread-safe.
+    *
+    * @param errors the [[SafetyError]]s in the AST, if any.
+    */
   private case class SharedContext(errors: ConcurrentLinkedQueue[SafetyError])
 
 }
