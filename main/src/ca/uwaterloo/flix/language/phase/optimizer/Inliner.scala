@@ -167,20 +167,33 @@ object Inliner {
     *
     * We use a concurrent (non-blocking) linked queue to ensure thread-safety.
     *
-    * inlinedDefs is a map where each def `def1` points to a set of defs that have been inlined into `def1`.
-    * inlinedVars is a map where each def `def1` points to a set of vars that have been inlined at their use sites in `def1`.
-    * betaReductions is a map where each def `def1` points to the number of beta reductions that have been performed in `def1`.
-    * eliminatedVars is a map where each def `def1` points to the vars that have been removed from `def1`.
-    * simplifiedIfThenElse is a map where each def `def1` points to the number of simplifications of `if (constant) e1 else e2` in `def1`.
-    * eliminatedStms is a map where each def `def1` points to the number of removed Stms that were pure `def1`.
+    * @param inlinedDefs          is a map where each def `def1` points to a set of defs that have been inlined into `def1`.
+    * @param inlinedVars          is a map where each def `def1` points to a set of vars that have been inlined at their use sites in `def1`.
+    * @param betaReductions       is a map where each def `def1` points to the number of beta reductions that have been performed in `def1`.
+    * @param eliminatedVars       is a map where each def `def1` points to the vars that have been removed from `def1`.
+    * @param simplifiedIfThenElse is a map where each def `def1` points to the number of simplifications of `if (constant) e1 else e2` in `def1`.
+    * @param eliminatedStms       is a map where each def `def1` points to the number of removed Stms that were pure `def1`.
     */
-  private case class SharedContext(inlinedDefs: ConcurrentLinkedQueue[(Symbol.DefnSym, Symbol.DefnSym)], inlinedVars: ConcurrentLinkedQueue[(Symbol.DefnSym, Symbol.VarSym)], betaReductions: ConcurrentLinkedQueue[(Symbol.DefnSym, Int)], eliminatedVars: ConcurrentLinkedQueue[(Symbol.DefnSym, Symbol.VarSym)], simplifiedIfThenElse: ConcurrentLinkedQueue[(Symbol.DefnSym, Int)], eliminatedStms: ConcurrentLinkedQueue[(Symbol.DefnSym, Int)])
+  private case class SharedContext(
+                                    inlinedDefs: ConcurrentLinkedQueue[(Symbol.DefnSym, Symbol.DefnSym)],
+                                    inlinedVars: ConcurrentLinkedQueue[(Symbol.DefnSym, Symbol.VarSym)],
+                                    betaReductions: ConcurrentLinkedQueue[(Symbol.DefnSym, Int)],
+                                    eliminatedVars: ConcurrentLinkedQueue[(Symbol.DefnSym, Symbol.VarSym)],
+                                    simplifiedIfThenElse: ConcurrentLinkedQueue[(Symbol.DefnSym, Int)],
+                                    eliminatedStms: ConcurrentLinkedQueue[(Symbol.DefnSym, Int)]
+                                  )
 
   private object SharedContext {
     /**
       * Returns a fresh shared context.
       */
-    def mk(): SharedContext = SharedContext(new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue())
+    def mk(): SharedContext = SharedContext(
+      new ConcurrentLinkedQueue(),
+      new ConcurrentLinkedQueue(),
+      new ConcurrentLinkedQueue(),
+      new ConcurrentLinkedQueue(),
+      new ConcurrentLinkedQueue(),
+      new ConcurrentLinkedQueue())
   }
 
 
