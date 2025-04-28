@@ -158,7 +158,7 @@ object RecursionRewriter {
       methods.foreach(m => visitExp(m.exp, tailPos = TailPosition.NonTail))
   }
 
-  private def rewriteExp(expr0: MonoAst.Expr)(implicit subst: Subst, fparams0: List[(MonoAst.FormalParam, ParameterKind)]): MonoAst.Expr = expr0 match {
+  private def rewriteExp(expr0: MonoAst.Expr)(implicit subst: Substitution, fparams0: List[(MonoAst.FormalParam, ParameterKind)]): MonoAst.Expr = expr0 match {
     case Expr.Cst(_, _, _) =>
       expr0
 
@@ -298,17 +298,17 @@ object RecursionRewriter {
 
   private def rewriteDefn(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): MonoAst.Def = {
     implicit val params: List[(MonoAst.FormalParam, ParameterKind)] = paramKinds(ctx.selfTailCalls.map(_._1), defn.spec.fparams)
-    implicit val subst: Subst = mkSubst(defn, params)
+    implicit val subst: Substitution = mkSubst(defn, params)
     val rewrittenExp = rewriteExp(defn.exp)
     val body = mkLocalDefExpr(rewrittenExp)
     defn.copy(exp = body)
   }
 
-  private def mkSubst(defn: MonoAst.Def, params: List[(MonoAst.FormalParam, ParameterKind)])(implicit flix: Flix): Subst = {
+  private def mkSubst(defn: MonoAst.Def, params: List[(MonoAst.FormalParam, ParameterKind)])(implicit flix: Flix): Substitution = {
     val nonConstantParams = params.filter { case (_, pkind) => pkind == ParameterKind.NonConstant }
     val varSubst = nonConstantParams.map { case (fp, _) => fp.sym -> Symbol.freshVarSym(fp.sym) }.toMap
     val freshLocalDefSym = mkFreshLocalDefSym(defn)
-    Subst.from(defn.sym, freshLocalDefSym, varSubst)
+    Substitution.from(defn.sym, freshLocalDefSym, varSubst)
   }
 
   private def paramKinds(calls: Iterable[Expr.ApplyDef], fparams: Iterable[MonoAst.FormalParam]): List[(MonoAst.FormalParam, ParameterKind)] = {
@@ -339,7 +339,7 @@ object RecursionRewriter {
     * @param subst  The variable substitution.
     * @param params The list of formal parameters and their [[ParameterKind]].
     */
-  private def mkLocalDefExpr(body: Expr)(implicit subst: Subst, params: List[(MonoAst.FormalParam, ParameterKind)]): Expr = {
+  private def mkLocalDefExpr(body: Expr)(implicit subst: Substitution, params: List[(MonoAst.FormalParam, ParameterKind)]): Expr = {
     // Make ApplyLocalDef Expr
     val nonConstantParams = params.filter {
       case (_, pkind) => pkind == ParameterKind.NonConstant
@@ -364,11 +364,11 @@ object RecursionRewriter {
 
   private case class LocalContext(selfTailCalls: mutable.ArrayBuffer[(Expr.ApplyDef, TailPosition)])
 
-  private object Subst {
-    def from(old: Symbol.DefnSym, fresh: Symbol.VarSym, vars: Map[Symbol.VarSym, Symbol.VarSym]): Subst = Subst(old, fresh, vars)
+  private object Substitution {
+    def from(old: Symbol.DefnSym, fresh: Symbol.VarSym, vars: Map[Symbol.VarSym, Symbol.VarSym]): Substitution = Substitution(old, fresh, vars)
   }
 
-  private case class Subst(old: Symbol.DefnSym, fresh: Symbol.VarSym, vars: Map[Symbol.VarSym, Symbol.VarSym]) {
+  private case class Substitution(old: Symbol.DefnSym, fresh: Symbol.VarSym, vars: Map[Symbol.VarSym, Symbol.VarSym]) {
     def apply(sym: Symbol.DefnSym): Option[Symbol.VarSym] = {
       if (sym == old)
         Some(fresh)
