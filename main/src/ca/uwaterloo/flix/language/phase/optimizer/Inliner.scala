@@ -66,8 +66,16 @@ object Inliner {
     mayInline && shouldInline
   }
 
-  private def isPure(eff0: Type): Boolean = {
-    eff0 == Type.Pure
+  private def isPure(eff0: Type): Boolean = eff0 match {
+    case Type.Cst(TypeConstructor.Pure, _) => true
+    case Type.Cst(_, _) => false
+    case Type.Apply(_, _, _) => false
+    case Type.Var(sym, loc) => throw InternalCompilerException(s"unexpected type variable $sym", loc)
+    case Type.Alias(_, _, _, loc) => throw InternalCompilerException("unexpected type 'alias'", loc)
+    case Type.AssocType(_, _, _, loc) => throw InternalCompilerException("unexpected type 'assoc type'", loc)
+    case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected type 'jvm to type'", loc)
+    case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected type 'jvm to eff'", loc)
+    case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected type 'unresolved jvm type'", loc)
   }
 
   /**
