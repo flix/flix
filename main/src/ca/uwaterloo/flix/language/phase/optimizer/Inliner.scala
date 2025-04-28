@@ -162,7 +162,6 @@ object Inliner {
     case CofiniteSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc), loc)
   }
 
-
   /**
     * Returns `true` if `exp0` is considered a trivial expression.
     *
@@ -174,43 +173,11 @@ object Inliner {
   private def isTrivialExp(exp0: Expr): Boolean = exp0 match {
     case Expr.Cst(_, _, _) => true
     case Expr.Var(_, _, _) => true
-    case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivialExp) // TODO: Ensure fully applied
+    case Expr.ApplyAtomic(AtomicOp.Unary(_), exps, _, _, _) => exps.forall(isTrivialExp)
+    case Expr.ApplyAtomic(AtomicOp.Binary(_), exps, _, _, _) => exps.forall(isTrivialExp)
+    case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivialExp)
     case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivialExp)
     case _ => false
-  }
-
-  /**
-    * A context shared across threads.
-    *
-    * We use a concurrent (non-blocking) linked queue to ensure thread-safety.
-    *
-    * @param inlinedDefs          is a map where each def `def1` points to a set of defs that have been inlined into `def1`.
-    * @param inlinedVars          is a map where each def `def1` points to a set of vars that have been inlined at their use sites in `def1`.
-    * @param betaReductions       is a map where each def `def1` points to the number of beta reductions that have been performed in `def1`.
-    * @param eliminatedVars       is a map where each def `def1` points to the vars that have been removed from `def1`.
-    * @param simplifiedIfThenElse is a map where each def `def1` points to the number of simplifications of `if (constant) e1 else e2` in `def1`.
-    * @param eliminatedStms       is a map where each def `def1` points to the number of removed Stms that were pure `def1`.
-    */
-  private case class SharedContext(
-                                    inlinedDefs: ConcurrentLinkedQueue[(Symbol.DefnSym, Symbol.DefnSym)],
-                                    inlinedVars: ConcurrentLinkedQueue[(Symbol.DefnSym, Symbol.VarSym)],
-                                    betaReductions: ConcurrentLinkedQueue[(Symbol.DefnSym, Int)],
-                                    eliminatedVars: ConcurrentLinkedQueue[(Symbol.DefnSym, Symbol.VarSym)],
-                                    simplifiedIfThenElse: ConcurrentLinkedQueue[(Symbol.DefnSym, Int)],
-                                    eliminatedStms: ConcurrentLinkedQueue[(Symbol.DefnSym, Int)]
-                                  )
-
-  private object SharedContext {
-
-    /** Returns a fresh shared context. */
-    def mk(): SharedContext = SharedContext(
-      new ConcurrentLinkedQueue(),
-      new ConcurrentLinkedQueue(),
-      new ConcurrentLinkedQueue(),
-      new ConcurrentLinkedQueue(),
-      new ConcurrentLinkedQueue(),
-      new ConcurrentLinkedQueue())
-
   }
 
   /** Represents the range of a substitution from variables to expressions. */
