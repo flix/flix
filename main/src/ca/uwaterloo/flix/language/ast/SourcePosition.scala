@@ -86,6 +86,17 @@ object SourcePosition {
 /** Represents a physical position inside a source. */
 final class SourcePosition private(val source: Source, val lineOneIndexed: Int, val colOneIndexed: Short) {
 
+  /**
+    * The absolute character offset into `source`, zero-indexed.
+    */
+  def offset: Int = {
+    var offset = 0
+    for (i <- 1 until lineOneIndexed) {
+      offset += source.getLine(i).length + 1 // +1 for the newline
+    }
+    offset + colOneIndexed - 1
+  }
+
   /** Returns `true` if `this` and `o` represent the same source position. */
   override def equals(o: Any): Boolean = o match {
     case that: SourcePosition =>

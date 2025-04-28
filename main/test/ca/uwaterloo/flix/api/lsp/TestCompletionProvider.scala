@@ -17,11 +17,12 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Token}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Token, TypedAst}
 import ca.uwaterloo.flix.util.Formatter.NoFormatter.code
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
@@ -274,6 +275,66 @@ class TestCompletionProvider extends AnyFunSuite {
     }
   }
 
+
+  test("No duplicated completions") {
+    val charToTrim = 1
+    Programs.foreach( program => {
+      val (root1, _) = compile(program)
+      val varOccurs = getVarSymOccurs()(root1)
+      varOccurs.foreach{
+        case varOccur if varOccur.text.length > charToTrim =>
+          val alteredProgram = trimAfter(program, varOccur.loc, charToTrim)
+          val triggerPosition = Position(varOccur.loc.sp2.lineOneIndexed, varOccur.loc.sp2.colOneIndexed - charToTrim)
+          val (root, errors) = compile(alteredProgram)
+          val completions = CompletionProvider.autoComplete(Uri, triggerPosition, errors)(root, Flix)
+          assertNoDuplicatedCompletions(completions, varOccur, program)
+        case _ => ()
+      }
+    })
+  }
+
+  /**
+    * Asserts that there are no duplicated completions in the given completion list.
+    *
+    * @param completions The completion list to check.
+    * @param varOccur    The variable occurrence where we are checking for completions.
+    * @param program     The original program string.
+    */
+  private def assertNoDuplicatedCompletions(completions: CompletionList, varOccur: Symbol.VarSym, program: String): Unit = {
+    completions.items.groupBy(identity).foreach {
+      case (completion, duplicates) if duplicates.size > 1 =>
+        println(s"Duplicated completions when selecting var \"${varOccur.text}\" at ${varOccur.loc} for program:\n $program")
+        println(code(varOccur.loc, s"Duplicated completion with label \"${completion.label}\" after deleting one char here"))
+        fail("Duplicated completions")
+      case _ => ()
+    }
+  }
+
+  /**
+    * Trims the given program string after the given location `loc` by `n` characters.
+    */
+  private def trimAfter(program: String, loc: SourceLocation, n: Int): String = {
+    val target = program.substring(loc.sp1.offset, loc.sp2.offset)
+    program.substring(0, loc.sp1.offset) + target.dropRight(n) + program.substring(loc.sp2.offset)
+  }
+
+  /**
+    * Returns the set of variable symbols that occur in the given root.
+    */
+  private def getVarSymOccurs()(implicit root: Root): Set[Symbol.VarSym] = {
+    var occurs: Set[Symbol.VarSym] = Set.empty
+
+    object VarConsumer extends Consumer {
+      override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
+          case TypedAst.Expr.Var(sym, _, _) => occurs += sym
+          case _ =>
+        }
+    }
+
+    Visitor.visitRoot(root, VarConsumer, FileAcceptor(Uri))
+
+    occurs
+  }
 
   /**
     * Compiles the given input string `s` with the given compilation options `o`.
