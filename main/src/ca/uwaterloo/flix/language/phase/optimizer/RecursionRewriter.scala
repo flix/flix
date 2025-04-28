@@ -340,20 +340,21 @@ object RecursionRewriter {
     * @param params The list of formal parameters and their [[ParamKind]].
     */
   private def mkLocalDefExpr(body: Expr)(implicit subst: Substitution, params: List[(MonoAst.FormalParam, ParamKind)]): Expr = {
-    // Make ApplyLocalDef Expr
     val nonConstantParams = params.filter {
       case (_, pkind) => pkind == ParamKind.NonConst
     }
     val args = nonConstantParams.map {
       case (fp, _) => Expr.Var(fp.sym, fp.tpe, fp.loc.asSynthetic)
     }
-    val applyLocalDef = Expr.ApplyLocalDef(subst.fresh, args, body.tpe, body.eff, body.loc.asSynthetic)
+    val applyLocalDefExpr = Expr.ApplyLocalDef(subst.fresh, args, body.tpe, body.eff, body.loc.asSynthetic)
 
-    // Make LocalDef definition expr
     val localDefParams = nonConstantParams.map {
       case (fp, _) => fp.copy(sym = subst(fp.sym), loc = fp.loc.asSynthetic)
     }
-    Expr.LocalDef(subst.fresh, localDefParams, body, applyLocalDef, applyLocalDef.tpe, applyLocalDef.eff, applyLocalDef.loc.asSynthetic)
+    val tpe = applyLocalDefExpr.tpe
+    val eff = applyLocalDefExpr.eff
+    val loc = applyLocalDefExpr.loc.asSynthetic
+    Expr.LocalDef(subst.fresh, localDefParams, body, applyLocalDefExpr, tpe, eff, loc)
   }
 
   private object LocalContext {
