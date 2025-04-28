@@ -191,12 +191,12 @@ object Inliner {
     * @param inScopeVars       a set of variables considered to be in scope.
     * @param currentlyInlining a flag denoting whether the current traversal is part of an inline-expansion process.
     */
-  private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], currentlyInlining: Boolean)
+  private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], exprCtx: ExprContext)
 
   private object LocalContext {
 
     /** Returns the empty context with `currentlyInlining` set to `false`. */
-    val Empty: LocalContext = LocalContext(Map.empty, Map.empty, Map.empty, currentlyInlining = false)
+    val Empty: LocalContext = LocalContext(Map.empty, Map.empty, Map.empty, ExprContext.Empty)
 
   }
 }
