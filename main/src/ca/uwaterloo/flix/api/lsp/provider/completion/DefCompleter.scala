@@ -17,13 +17,11 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
-import ca.uwaterloo.flix.api.lsp.{LspUtil, Position, Range}
+import ca.uwaterloo.flix.api.lsp.{Position, Range}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
-import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
 import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
-import ca.uwaterloo.flix.language.errors.ResolutionError.UndefinedName
 
 object DefCompleter {
   /**
@@ -32,7 +30,7 @@ object DefCompleter {
     * When providing completions for unqualified defs that is not in scope, we will also automatically use the def.
     */
   def getCompletions(uri: String, pos: Position, qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: Root, flix: Flix): Iterable[Completion] = {
-    val ectx = getExprContext(uri, pos)
+    val ectx = ExprContext.getExprContext(uri, pos)
 
     if (qn.namespace.nonEmpty) {
       root.defs.values.collect {
@@ -59,25 +57,5 @@ object DefCompleter {
     })
     val isRoot = decl.sym.namespace.isEmpty
     isRoot || isResolved
-  }
-
-  /**
-    * Returns the expression context at the given `uri` and position `pos`.
-    */
-  private def getExprContext(uri: String, pos: Position)(implicit root: Root, flix: Flix): ExprContext = {
-    val stack = LspUtil.getStack(uri, pos)
-    // The stack contains the path of expressions from the leaf to the root.
-    stack match {
-      case Expr.Error(UndefinedName(_, _, _, _), _, _) :: Expr.ApplyClo(_, _, _, _, _) :: _ =>
-        // The leaf is an error followed by an ApplyClo expression.
-        ExprContext.InsideApply
-      case Expr.Error(UndefinedName(_, _, _, _), _, _) :: Expr.ApplyDef(DefSymUse(sym, _), _, _, _, _, _) :: _ if sym.text == "|>" =>
-        // The leaf is an error followed by an ApplyDef expression with the symbol "|>".
-        ExprContext.InsidePipeline
-      case Expr.Error(UndefinedName(_, _, _, _), _, _) :: Expr.RunWith(_, _, _, _, _) :: _ =>
-        // The leaf is an error followed by a RunWith expression.
-        ExprContext.InsideRunWith
-      case _ => ExprContext.Unknown
-    }
   }
 }

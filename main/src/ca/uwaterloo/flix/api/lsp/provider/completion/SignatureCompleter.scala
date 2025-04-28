@@ -16,8 +16,9 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.Range
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.SigCompletion
+import ca.uwaterloo.flix.api.lsp.{Position, Range}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Namespace, Sig, Trait}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
 import ca.uwaterloo.flix.language.ast.{Name, Symbol, TypedAst}
@@ -26,14 +27,16 @@ object SignatureCompleter {
   /**
     * Returns a List of Completion for Sig for UndefinedName.
     */
-  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] = {
+  def getCompletions(uri: String, pos: Position, qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root, flix: Flix): Iterable[Completion] = {
+    val ectx = ExprContext.getExprContext(uri, pos)
+
     if (qn.namespace.nonEmpty) {
-      fullyQualifiedCompletion(qn, range, ap) ++ partiallyQualifiedCompletions(qn, range, ap, scp)
+      fullyQualifiedCompletion(qn, range, ap, ectx) ++ partiallyQualifiedCompletions(qn, range, ap, scp, ectx)
     } else
       root.traits.values.flatMap(trt =>
         trt.sigs.collect {
           case sig if CompletionUtils.isAvailable(trt) && CompletionUtils.matchesName(sig.sym, qn, qualified = false) =>
-            SigCompletion(sig, "", range, ap, qualified = false, inScope = inScope(sig, scp))
+            SigCompletion(sig, "", range, ap, qualified = false, inScope = inScope(sig, scp), ectx)
         }
       )
   }
@@ -43,11 +46,11 @@ object SignatureCompleter {
     *
     * We assume the user is trying to type a fully qualified name and will only match against fully qualified names.
     */
-  private def fullyQualifiedCompletion(qn: Name.QName, range: Range, ap: AnchorPosition)(implicit root: TypedAst.Root): Iterable[Completion] = {
+  private def fullyQualifiedCompletion(qn: Name.QName, range: Range, ap: AnchorPosition, ectx: ExprContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
     root.traits.values.flatMap(trt =>
       trt.sigs.collect {
         case sig if CompletionUtils.isAvailable(trt) && CompletionUtils.matchesName(sig.sym, qn, qualified = true) =>
-          SigCompletion(sig, "", range, ap, qualified = true, inScope = true)
+          SigCompletion(sig, "", range, ap, qualified = true, inScope = true, ectx)
       }
     )
   }
@@ -60,7 +63,7 @@ object SignatureCompleter {
     *
     * We assume the user is trying to type a partially qualified name and will only match against partially qualified names.
     */
-  private def partiallyQualifiedCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] = {
+  private def partiallyQualifiedCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope, ectx : ExprContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
     val fullyQualifiedNamespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
       case Some(Resolution.Declaration(Trait(_, _, _, name, _, _, _, _, _, _))) => name.toString
       case Some(Resolution.Declaration(Namespace(name, _, _, _))) => name.toString
@@ -72,7 +75,7 @@ object SignatureCompleter {
       trt <- root.traits.get(Symbol.mkTraitSym(fullyQualifiedTrait)).toList
       sig <- trt.sigs
       if CompletionUtils.isAvailable(trt) && CompletionUtils.matchesName(sig.sym, qn, qualified = false)
-    } yield SigCompletion(sig, qn.namespace.toString, range, ap, qualified = true, inScope = true)
+    } yield SigCompletion(sig, qn.namespace.toString, range, ap, qualified = true, inScope = true, ectx)
   }
 
   private def inScope(sig: TypedAst.Sig, scope: LocalScope): Boolean = {
