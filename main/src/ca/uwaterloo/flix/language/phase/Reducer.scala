@@ -63,7 +63,7 @@ object Reducer {
 
       // Compute the types in the captured formal parameters.
       val cParamTypes = cparams.foldLeft(Set.empty[MonoType]) {
-        case (sacc, FormalParam(_, _, tpe, _)) => sacc + tpe
+        case (sacc, FormalParam(_, _, paramTpe, _)) => sacc + paramTpe
       }
 
       // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
@@ -148,9 +148,9 @@ object Reducer {
         if (ct == ExpPosition.NonTail) lctx.pcPoints += 1
         val e = visitExpr(exp)
         val rs = rules.map {
-          case HandlerRule(op, fparams, exp) =>
-            val e = visitExpr(exp)
-            HandlerRule(op, fparams, e)
+          case HandlerRule(op, fparams, body) =>
+            val b = visitExpr(body)
+            HandlerRule(op, fparams, b)
         }
         Expr.RunWith(e, effUse, rs, ct, tpe, purity, loc)
 
@@ -161,9 +161,9 @@ object Reducer {
 
       case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
         val specs = methods.map {
-          case JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
+          case JvmMethod(ident, fparams, clo, retTpe, methPurity, methLoc) =>
             val c = visitExpr(clo)
-            JvmMethod(ident, fparams, c, retTpe, purity, loc)
+            JvmMethod(ident, fparams, c, retTpe, methPurity, methLoc)
         }
         ctx.anonClasses.add(AnonClass(name, clazz, tpe, specs, loc))
 

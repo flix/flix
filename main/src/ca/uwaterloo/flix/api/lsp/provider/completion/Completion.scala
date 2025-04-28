@@ -158,10 +158,15 @@ sealed trait Completion {
         kind     = CompletionItemKind.Function
       )
 
-    case Completion.DefCompletion(decl, range, ap, qualified, inScope) =>
+    case Completion.DefCompletion(decl, range, ap, qualified, inScope, ectx) =>
       val qualifiedName = decl.sym.toString
       val label = if (qualified) qualifiedName else decl.sym.name
-      val snippet = CompletionUtils.getApplySnippet(label, decl.spec.fparams)
+      val snippet = ectx match {
+        case ExprContext.InsideApply => CompletionUtils.getApplySnippet(label, Nil)
+        case ExprContext.InsidePipeline => CompletionUtils.getApplySnippet(label, decl.spec.fparams.dropRight(1))
+        case ExprContext.InsideRunWith => CompletionUtils.getApplySnippet(label, decl.spec.fparams.dropRight(1))
+        case ExprContext.Unknown => CompletionUtils.getApplySnippet(label, decl.spec.fparams)
+      }
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
@@ -179,7 +184,7 @@ sealed trait Completion {
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Function,
         additionalTextEdits = additionalTextEdit,
-        command = Some(Command("editor.action.triggerParameterHints", "editor.action.triggerParameterHints", Nil))
+        command             = Some(Command("editor.action.triggerParameterHints", "editor.action.triggerParameterHints", Nil))
       )
 
     case Completion.EnumCompletion(enm, range, ap, qualified, inScope, withTypeParameters) =>
@@ -361,7 +366,8 @@ sealed trait Completion {
         documentation       = Some(op.spec.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Function,
-        additionalTextEdits = additionalTextEdit
+        additionalTextEdits = additionalTextEdit,
+        command             = Some(Command("editor.action.triggerParameterHints", "editor.action.triggerParameterHints", Nil))
       )
 
     case Completion.OpHandlerCompletion(op, range) =>
@@ -402,7 +408,8 @@ sealed trait Completion {
         documentation       = Some(sig.spec.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Function,
-        additionalTextEdits = additionalTextEdit
+        additionalTextEdits = additionalTextEdit,
+        command             = Some(Command("editor.action.triggerParameterHints", "editor.action.triggerParameterHints", Nil))
       )
 
     case Completion.EnumTagCompletion(tag, namespace, range, ap, qualified, inScope) =>
@@ -671,8 +678,9 @@ object Completion {
     * @param ap        the anchor position for the use statement.
     * @param qualified indicate whether to use a qualified label.
     * @param inScope   indicate whether to the def is inScope.
+    * @param ectx      the expression context.
     */
-  case class DefCompletion(decl: TypedAst.Def, range: Range, ap: AnchorPosition, qualified:Boolean, inScope: Boolean) extends Completion
+  case class DefCompletion(decl: TypedAst.Def, range: Range, ap: AnchorPosition, qualified:Boolean, inScope: Boolean, ectx: ExprContext) extends Completion
 
   /**
     * Represents an Enum completion

@@ -91,7 +91,6 @@ object Main {
       installDeps = cmdOpts.installDeps,
       output = None,
       target = Options.Default.target,
-      test = Options.Default.test,
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
