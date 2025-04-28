@@ -60,7 +60,7 @@ object Inliner {
   /**
     * Returns `true` if `def0` should be inlined.
     */
-  private def canInlineDef(defCtx: DefContext, ctx: Context): Boolean = {
+  private def shouldInline(defCtx: DefContext, ctx: Context): Boolean = {
     val mayInline = !defCtx.isSelfRecursive && !ctx.currentlyInlining
     val shouldInline = defCtx.isDirectCall
     mayInline && shouldInline
