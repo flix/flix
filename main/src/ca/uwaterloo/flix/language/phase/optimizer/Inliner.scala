@@ -80,7 +80,7 @@ object Inliner {
       OccurrenceAst.Def(sym, fparams, spec, e, ctx, loc)
   }
 
-  /** Performs inlining operations on the expression `exp0` from [[Expr]]. */
+  /** Performs inlining on the expression `exp0`. */
   private def visitExp(exp0: Expr, ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, flix: Flix): Expr = exp0
 
   /** Returns `true` if `eff0` is pure. */
