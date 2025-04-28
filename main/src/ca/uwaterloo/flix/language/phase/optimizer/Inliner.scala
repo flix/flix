@@ -156,10 +156,10 @@ object Inliner {
 
   private object Level {
 
-    /** A [[Def]] declaration. The def can be in modules or top-level. */
+    /** A [[OccurrenceAst.Def]] declaration. The def can be in modules or top-level. */
     case object Def extends Level
 
-    /** Nested inside a [[Def]]. This can be a lambda or local def. */
+    /** Nested inside a [[OccurrenceAst.Def]]. This can be a lambda or local def. */
     case object Nested extends Level
 
   }
