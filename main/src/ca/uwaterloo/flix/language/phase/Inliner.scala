@@ -131,10 +131,10 @@ object Inliner {
 
   }
 
-  private case class ScopedData(varSubst: VarSubst, subst: Subst, inScopeVars: InScopeVars, inScopeEffs: InScopeEffs, inliningContext: ExprContext, currentlyInlining: Boolean)
+  private case class LocalContext(varSubst: VarSubst, subst: Subst, inScopeVars: InScopeVars, inScopeEffs: InScopeEffs, inliningContext: ExprContext, currentlyInlining: Boolean)
 
-  private object ScopedData {
-    def empty: ScopedData = ScopedData(Map.empty, Map.empty, Map.empty, Map.empty, ExprContext.Stop, currentlyInlining = false)
+  private object LocalContext {
+    def empty: LocalContext = LocalContext(Map.empty, Map.empty, Map.empty, Map.empty, ExprContext.Stop, currentlyInlining = false)
   }
 
   /**
@@ -144,7 +144,7 @@ object Inliner {
   private def visitDef(def0: OccurrenceAst.Def)(implicit root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): OccurrenceAst.Def = def0 match {
     case OccurrenceAst.Def(sym, fparams, spec, exp, ctx, loc) =>
       if (ctx.occur != DontInlineAndDontRewrite) {
-        val e = visitExp(exp, ScopedData.empty)(sym, root, sctx, flix)
+        val e = visitExp(exp, LocalContext.empty)(sym, root, sctx, flix)
         OccurrenceAst.Def(sym, fparams, spec, e, ctx, loc)
       } else {
         OccurrenceAst.Def(sym, fparams, spec, exp, ctx, loc)
@@ -155,7 +155,7 @@ object Inliner {
     * Performs inlining operations on the expression `exp0` from [[Expr]].
     * Returns a [[Expr]]
     */
-  private def visitExp(exp0: Expr, ctx0: ScopedData)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = exp0 match {
+  private def visitExp(exp0: Expr, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = exp0 match {
     case Expr.Cst(cst, tpe, loc) =>
       Expr.Cst(cst, tpe, loc)
 
@@ -461,7 +461,7 @@ object Inliner {
       Expr.NewObject(name, clazz, tpe, eff, methods, loc)
   }
 
-  private def callSiteInline(ctx0: ScopedData, lvl: Level, tpe: Type, loc: SourceLocation, freshVarSym: phase.Inliner.OutVar)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+  private def callSiteInline(ctx0: LocalContext, lvl: Level, tpe: Type, loc: SourceLocation, freshVarSym: phase.Inliner.OutVar)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     ctx0.inScopeVars.get(freshVarSym) match {
       case Some(Definition.LetBound(rhs, occur)) if shouldInlineVar(rhs, occur, lvl, ctx0) =>
         visitExp(rhs, ctx0.copy(inScopeVars = Map.empty))
@@ -474,7 +474,7 @@ object Inliner {
     }
   }
 
-  private def shouldInlineVar(rhs: OutExpr, occur: Occur, lvl: Level, ctx0: ScopedData): Boolean = occur match {
+  private def shouldInlineVar(rhs: OutExpr, occur: Occur, lvl: Level, ctx0: LocalContext): Boolean = occur match {
     case Occur.Dead => throw InternalCompilerException("unexpected call site inline of dead variable", rhs.loc)
     case Occur.Once => throw InternalCompilerException("unexpected call site inline of pre-inlined variable", rhs.loc)
     case Occur.OnceInLambda => isTrivialExp(rhs) && someBenefit(rhs, ctx0)
@@ -485,15 +485,15 @@ object Inliner {
     case Occur.DontInlineAndDontRewrite => false
   }
 
-  private def shouldInlineMulti(rhs: OutExpr, lvl: Level, ctx0: ScopedData): Boolean = {
+  private def shouldInlineMulti(rhs: OutExpr, lvl: Level, ctx0: LocalContext): Boolean = {
     noSizeIncrease(rhs, ctx0) || (someBenefit(rhs, ctx0) && smallEnough(rhs, lvl, ctx0))
   }
 
-  private def noSizeIncrease(rhs: OutExpr, ctx0: ScopedData): Boolean = ???
+  private def noSizeIncrease(rhs: OutExpr, ctx0: LocalContext): Boolean = ???
 
-  private def smallEnough(rhs: OutExpr, lvl: Level, ctx0: ScopedData): Boolean = ???
+  private def smallEnough(rhs: OutExpr, lvl: Level, ctx0: LocalContext): Boolean = ???
 
-  private def someBenefit(exp0: OutExpr, ctx0: ScopedData): Boolean = exp0 match {
+  private def someBenefit(exp0: OutExpr, ctx0: LocalContext): Boolean = exp0 match {
     case Expr.Lambda(fparam, exp, tpe, loc) => ???
     case Expr.ApplyAtomic(AtomicOp.Tag(sym), exps, tpe, eff, loc) => ctx0.inliningContext match {
       case ExprContext.MatchCtx(sym, rules, subst, ctx) =>???
@@ -549,14 +549,14 @@ object Inliner {
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
   private def inlineDef(exp0: Expr, symbols: List[OccurrenceAst.FormalParam], args: List[OutExpr])(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
-    bind(exp0, symbols, args, ScopedData.empty.copy(currentlyInlining = true))
+    bind(exp0, symbols, args, LocalContext.empty.copy(currentlyInlining = true))
   }
 
   /**
     * Recursively bind each argument in `args` to a let-expression with a fresh symbol
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
-  private def inlineLocalAbstraction(exp0: Expr, symbols: List[OccurrenceAst.FormalParam], args: List[OutExpr], ctx0: ScopedData)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+  private def inlineLocalAbstraction(exp0: Expr, symbols: List[OccurrenceAst.FormalParam], args: List[OutExpr], ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     bind(exp0, symbols, args, ctx0.copy(currentlyInlining = true))
   }
 
@@ -564,7 +564,7 @@ object Inliner {
     * Recursively bind each argument in `args` to a let-expression with a fresh symbol
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
-  private def inlineEffectHandler(exp0: Expr, symbols: List[OccurrenceAst.FormalParam], args: List[OutExpr], ctx0: ScopedData)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+  private def inlineEffectHandler(exp0: Expr, symbols: List[OccurrenceAst.FormalParam], args: List[OutExpr], ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     bind(exp0, symbols, args, ctx0.copy(currentlyInlining = true))
   }
 
@@ -572,7 +572,7 @@ object Inliner {
     * Recursively bind each argument in `args` to a let-expression with a fresh symbol
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
-  private def bind(exp0: Expr, formalParams: List[OccurrenceAst.FormalParam], args: List[OutExpr], ctx0: ScopedData)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+  private def bind(exp0: Expr, formalParams: List[OccurrenceAst.FormalParam], args: List[OutExpr], ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     def bnd(fparams: List[OccurrenceAst.FormalParam], as: List[OutExpr], env: VarSubst): Expr = (fparams, as) match {
       case (OccurrenceAst.FormalParam(_, _, _, _, occur, _) :: nextSymbols, e1 :: nextExpressions) if isDeadAndPure(occur, e1.eff) =>
         // If the parameter is unused and the argument is pure, then throw it away.
@@ -800,7 +800,7 @@ object Inliner {
   /**
     * Returns `true` if `def0` should be inlined.
     */
-  private def canInlineDef(defCtx: DefContext, ctx: ScopedData): Boolean = {
+  private def canInlineDef(defCtx: DefContext, ctx: LocalContext): Boolean = {
     val mayInline = defCtx.occur != DontInline && defCtx.occur != DontInlineAndDontRewrite && !defCtx.isSelfRecursive && !ctx.currentlyInlining
     val isSomewhereOnce = defCtx.occur == Once || defCtx.occur == OnceInLambda || defCtx.occur == OnceInLocalDef
     val localDefDiscount = defCtx.localDefs * 8
