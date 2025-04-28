@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
-  * Rewrites the body of each def using, applying the following transformations:
+  * Rewrites the body of each def using, using the following transformations:
   *   - Copy Propagation:
   * {{{
   *     let x = 1;
@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
   *     becomes
   * {{{
   *     let x = 1;
-  *    f(1)
+  *     f(1)
   * }}}
   *   - Dead Code Elimination
   * {{{
