@@ -339,13 +339,13 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.OpCompletion(op, namespace, range, ap, qualified, inScope) =>
+    case Completion.OpCompletion(op, namespace, range, ap, qualified, inScope, ectx) =>
       val qualifiedName =  if (namespace.nonEmpty)
         s"$namespace.${op.sym.name}"
       else
         op.sym.toString
       val name = if (qualified) qualifiedName else op.sym.name
-      val snippet = CompletionUtils.getApplySnippet(name, op.spec.fparams)
+      val snippet = LspUtil.mkSpecSnippet(name, op.spec, ectx)
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
@@ -765,8 +765,9 @@ object Completion {
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the op is inScope.
+    * @param ectx       the expression context.
     */
-  case class OpCompletion(op: TypedAst.Op, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class OpCompletion(op: TypedAst.Op, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion
 
   /**
     * Represents an Op Handler completion
