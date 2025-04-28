@@ -84,13 +84,6 @@ object Inliner {
   /** Performs inlining operations on the expression `exp0` from [[Expr]]. */
   private def visitExp(exp0: Expr, ctx0: Context)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, flix: Flix): Expr = exp0
 
-  /** Returns `true` if `def0` should be inlined. */
-  private def shouldInline(defCtx: DefContext, ctx: Context): Boolean = {
-    val mayInline = !defCtx.isSelfRecursive && !ctx.currentlyInlining
-    val shouldInline = defCtx.isDirectCall
-    mayInline && shouldInline
-  }
-
   /** Returns `true` if `eff0` is pure. */
   private def isPure(eff0: Type): Boolean = {
     eff0 == Type.Pure
