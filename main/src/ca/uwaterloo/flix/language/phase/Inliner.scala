@@ -176,7 +176,7 @@ object Inliner {
 
           // Case 1:
           // The variable `sym` is not in the substitution map, but we consider inlining it at this occurrence.
-          case None => callSiteInline(ctx0, tpe, loc, freshVarSym)
+          case None => callSiteInline(ctx0, Level.Nested, tpe, loc, freshVarSym)
         }
         case None => // Function parameter occurrence
           Expr.Var(sym, tpe, loc)
@@ -461,9 +461,9 @@ object Inliner {
       Expr.NewObject(name, clazz, tpe, eff, methods, loc)
   }
 
-  private def callSiteInline(ctx0: ScopedData, tpe: Type, loc: SourceLocation, freshVarSym: phase.Inliner.OutVar)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+  private def callSiteInline(ctx0: ScopedData, lvl: Level, tpe: Type, loc: SourceLocation, freshVarSym: phase.Inliner.OutVar)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     ctx0.inScopeVars.get(freshVarSym) match {
-      case Some(Definition.LetBound(rhs, occur)) if shouldInlineVar(rhs, occur, ctx0) =>
+      case Some(Definition.LetBound(rhs, occur)) if shouldInlineVar(rhs, occur, lvl, ctx0) =>
         visitExp(rhs, ctx0.copy(inScopeVars = Map.empty))
 
       case Some(_) =>
@@ -474,26 +474,37 @@ object Inliner {
     }
   }
 
-  private def shouldInlineVar(rhs: OutExpr, occur: Occur, ctx0: ScopedData): Boolean = occur match {
+  private def shouldInlineVar(rhs: OutExpr, occur: Occur, lvl: Level, ctx0: ScopedData): Boolean = occur match {
     case Occur.Dead => throw InternalCompilerException("unexpected call site inline of dead variable", rhs.loc)
     case Occur.Once => throw InternalCompilerException("unexpected call site inline of pre-inlined variable", rhs.loc)
     case Occur.OnceInLambda => isTrivialExp(rhs) && someBenefit(rhs, ctx0)
     case Occur.OnceInLocalDef => isTrivialExp(rhs) && someBenefit(rhs, ctx0)
-    case Occur.ManyBranch => shouldInlineMulti(rhs, ctx0)
-    case Occur.Many => isTrivialExp(rhs) && shouldInlineMulti(rhs, ctx0)
+    case Occur.ManyBranch => shouldInlineMulti(rhs, lvl, ctx0)
+    case Occur.Many => isTrivialExp(rhs) && shouldInlineMulti(rhs, lvl, ctx0)
     case Occur.DontInline => false
     case Occur.DontInlineAndDontRewrite => false
   }
 
-  private def shouldInlineMulti(rhs: OutExpr, ctx0: ScopedData): Boolean = {
-    noSizeIncrease(rhs, ctx0) || (someBenefit(rhs, ctx0) && smallEnough(rhs, ctx0))
+  private def shouldInlineMulti(rhs: OutExpr, lvl: Level, ctx0: ScopedData): Boolean = {
+    noSizeIncrease(rhs, ctx0) || (someBenefit(rhs, ctx0) && smallEnough(rhs, lvl, ctx0))
   }
 
   private def noSizeIncrease(rhs: OutExpr, ctx0: ScopedData): Boolean = ???
 
-  private def smallEnough(rhs: OutExpr, ctx0: ScopedData): Boolean = ???
+  private def smallEnough(rhs: OutExpr, lvl: Level, ctx0: ScopedData): Boolean = ???
 
-  private def someBenefit(expr: OutExpr, ctx0: ScopedData): Boolean = false
+  private def someBenefit(exp0: OutExpr, ctx0: ScopedData): Boolean = exp0 match {
+    case Expr.Lambda(fparam, exp, tpe, loc) => ???
+    case Expr.ApplyAtomic(AtomicOp.Tag(sym), exps, tpe, eff, loc) => ctx0.inliningContext match {
+      case ExprContext.MatchCtx(sym, rules, subst, ctx) =>???
+      case _ => false
+    }
+    case Expr.ApplyAtomic(AtomicOp.Tuple, exps, tpe, eff, loc) => ctx0.inliningContext match {
+      case ExprContext.MatchCtx(sym, rules, subst, ctx) => ???
+      case _ => false
+    }
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) => ???
+  }
 
   private def visitPattern(pattern0: Pattern)(implicit flix: Flix): (Pattern, VarSubst) = pattern0 match {
     case Pattern.Wild(tpe, loc) =>
@@ -914,5 +925,13 @@ object Inliner {
       Optimizer.Stats(inlinedDefs, inlinedVars, betaReductions, eliminatedVars, simplifiedIfThenElse, eliminatedStms)
     }
 
+  }
+
+  sealed trait Level
+
+  private object Level {
+    case object Top extends Level
+
+    case object Nested extends Level
   }
 }
