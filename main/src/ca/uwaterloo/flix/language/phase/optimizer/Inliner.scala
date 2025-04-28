@@ -31,9 +31,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
   */
 object Inliner {
 
-  /**
-    * Performs inlining on the given AST `root`.
-    */
+  /** Performs inlining on the given AST `root`. */
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): OccurrenceAst.Root = {
     implicit val sctx: SharedContext = SharedContext.mk()
     val defs = ParOps.parMapValues(root.defs)(visitDef(_)(root, sctx, flix))
@@ -41,10 +39,7 @@ object Inliner {
     newRoot
   }
 
-  /**
-    * Performs expression inlining on the given definition `def0`.
-    * Converts definition from [[OccurrenceAst]] to [[OccurrenceAst]].
-    */
+  /** Performs inlining on the body of `def0`. */
   private def visitDef(def0: OccurrenceAst.Def)(implicit root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): OccurrenceAst.Def = def0 match {
     case OccurrenceAst.Def(sym, fparams, spec, exp, ctx, loc) =>
       val e = visitExp(exp, Context.Empty)(sym, root, sctx, flix)
