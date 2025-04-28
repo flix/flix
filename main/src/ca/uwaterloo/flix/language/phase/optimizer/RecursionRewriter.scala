@@ -158,7 +158,7 @@ object RecursionRewriter {
       methods.foreach(m => visitExp(m.exp, tailPos = TailPosition.NonTail))
   }
 
-  private def rewriteExp(expr0: MonoAst.Expr)(implicit subst: Substitution, fparams0: List[(MonoAst.FormalParam, ParameterKind)]): MonoAst.Expr = expr0 match {
+  private def rewriteExp(expr0: MonoAst.Expr)(implicit subst: Substitution, fparams0: List[(MonoAst.FormalParam, ParamKind)]): MonoAst.Expr = expr0 match {
     case Expr.Cst(_, _, _) =>
       expr0
 
@@ -186,7 +186,7 @@ object RecursionRewriter {
 
         case Some(localDefSym) =>
           val es = exps.zip(fparams0).filter { // Exclude constant parameters
-            case (_, (_, pkind)) => pkind == ParameterKind.NonConstant
+            case (_, (_, pkind)) => pkind == ParamKind.NonConst
           }.map {
             case (e, (_, _)) => rewriteExp(e)
           }
@@ -297,21 +297,21 @@ object RecursionRewriter {
   }
 
   private def rewriteDefn(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): MonoAst.Def = {
-    implicit val params: List[(MonoAst.FormalParam, ParameterKind)] = paramKinds(ctx.selfTailCalls.map(_._1), defn.spec.fparams)
+    implicit val params: List[(MonoAst.FormalParam, ParamKind)] = paramKinds(ctx.selfTailCalls.map(_._1), defn.spec.fparams)
     implicit val subst: Substitution = mkSubst(defn, params)
     val rewrittenExp = rewriteExp(defn.exp)
     val body = mkLocalDefExpr(rewrittenExp)
     defn.copy(exp = body)
   }
 
-  private def mkSubst(defn: MonoAst.Def, params: List[(MonoAst.FormalParam, ParameterKind)])(implicit flix: Flix): Substitution = {
-    val nonConstantParams = params.filter { case (_, pkind) => pkind == ParameterKind.NonConstant }
+  private def mkSubst(defn: MonoAst.Def, params: List[(MonoAst.FormalParam, ParamKind)])(implicit flix: Flix): Substitution = {
+    val nonConstantParams = params.filter { case (_, pkind) => pkind == ParamKind.NonConst }
     val varSubst = nonConstantParams.map { case (fp, _) => fp.sym -> Symbol.freshVarSym(fp.sym) }.toMap
     val freshLocalDefSym = mkFreshLocalDefSym(defn)
     Substitution.from(defn.sym, freshLocalDefSym, varSubst)
   }
 
-  private def paramKinds(calls: Iterable[Expr.ApplyDef], fparams: Iterable[MonoAst.FormalParam]): List[(MonoAst.FormalParam, ParameterKind)] = {
+  private def paramKinds(calls: Iterable[Expr.ApplyDef], fparams: Iterable[MonoAst.FormalParam]): List[(MonoAst.FormalParam, ParamKind)] = {
     val matrix = calls.map(call => fparams.zip(call.exps)).transpose
     matrix.map {
       case invocations =>
@@ -320,8 +320,8 @@ object RecursionRewriter {
           case _ => false
         }
         invocations.headOption match {
-          case Some((fp, _)) if allConstant => (fp, ParameterKind.Constant)
-          case Some((fp, _)) => (fp, ParameterKind.NonConstant)
+          case Some((fp, _)) if allConstant => (fp, ParamKind.Const)
+          case Some((fp, _)) => (fp, ParamKind.NonConst)
           case None => throw InternalCompilerException("unexpected empty head", SourceLocation.Unknown)
         }
     }.toList
@@ -337,12 +337,12 @@ object RecursionRewriter {
     *
     * @param body   The body of the local def to be created.
     * @param subst  The variable substitution.
-    * @param params The list of formal parameters and their [[ParameterKind]].
+    * @param params The list of formal parameters and their [[ParamKind]].
     */
-  private def mkLocalDefExpr(body: Expr)(implicit subst: Substitution, params: List[(MonoAst.FormalParam, ParameterKind)]): Expr = {
+  private def mkLocalDefExpr(body: Expr)(implicit subst: Substitution, params: List[(MonoAst.FormalParam, ParamKind)]): Expr = {
     // Make ApplyLocalDef Expr
     val nonConstantParams = params.filter {
-      case (_, pkind) => pkind == ParameterKind.NonConstant
+      case (_, pkind) => pkind == ParamKind.NonConst
     }
     val args = nonConstantParams.map {
       case (fp, _) => Expr.Var(fp.sym, fp.tpe, fp.loc.asSynthetic)
@@ -392,13 +392,13 @@ object RecursionRewriter {
 
   }
 
-  private sealed trait ParameterKind
+  private sealed trait ParamKind
 
-  private object ParameterKind {
+  private object ParamKind {
 
-    case object Constant extends ParameterKind
+    case object Const extends ParamKind
 
-    case object NonConstant extends ParameterKind
+    case object NonConst extends ParamKind
 
   }
 }
