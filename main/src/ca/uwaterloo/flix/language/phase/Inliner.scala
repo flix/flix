@@ -96,6 +96,8 @@ object Inliner {
 
     case class Tag(tag: Symbol.CaseSym) extends Const
 
+    case object Wild extends Const
+
   }
 
   private type VarSubst = Map[InVar, OutVar]
