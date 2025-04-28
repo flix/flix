@@ -1500,10 +1500,13 @@ object Kinder {
   private def getStructKind(struct0: ResolvedAst.Declaration.Struct): Kind = struct0 match {
     case ResolvedAst.Declaration.Struct(_, _, _, _, tparams0, _, _) =>
       // tparams default to zero except for the region param
-      val kenv1 = getKindEnvFromTypeParams(tparams0.init)
-      val kenv2 = getKindEnvFromRegion(tparams0.last)
-      // The last add is simply to verify that the last tparam was marked as Eff
-      val kenv = KindEnv.disjointAppend(kenv1, kenv2)
+      val kenv = tparams0 match {
+        case tparams@(_ :: _) =>
+          val kenv1 = getKindEnvFromTypeParams(tparams.init)
+          val kenv2 = getKindEnvFromRegion(tparams.last)
+          KindEnv.disjointAppend(kenv1, kenv2)
+        case Nil => KindEnv.empty
+      }
       tparams0.foldRight(Kind.Star: Kind) {
         case (tparam, acc) => kenv.map(tparam.sym) ->: acc
       }
