@@ -43,7 +43,7 @@ import scala.collection.mutable
   *   }
   * }}}
   *
-  * Will be transformed to
+  * Is rewritten to:
   *
   * {{{
   *   def lastMap(f: a -> b, l: List[a]): Option[b] =
