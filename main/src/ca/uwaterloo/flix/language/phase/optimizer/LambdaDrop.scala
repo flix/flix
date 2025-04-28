@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.optimizer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, empty}
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope}
-import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -66,107 +66,120 @@ object LambdaDrop {
       defn
   }
 
-  private def isRewritable(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): Boolean = {
-    visitExp(defn.exp, tailPos = TailPosition.Tail)(defn.sym, ctx, flix)
-    val containsRecursiveCall = ctx.selfTailCalls.nonEmpty
-    val allRecursiveCallsInTailPos = ctx.selfTailCalls.forall { case (_, tps) => tps == TailPosition.Tail }
-    containsRecursiveCall && allRecursiveCallsInTailPos
+  private def isRewritable(defn: MonoAst.Def)(implicit ctx: LocalContext): Boolean = {
+    if (isHigherOrder(defn.spec.fparams)) { // Only visit exp if it is higher-order
+      visitExp(defn.exp)(defn.sym, ctx)
+      val containsRecursiveCall = ctx.selfTailCalls.nonEmpty
+      containsRecursiveCall
+    } else {
+      false
+    }
+  }
+
+  private def isHigherOrder(fparams: List[MonoAst.FormalParam]): Boolean = {
+    fparams.exists {
+      fp =>
+        fp.tpe match {
+          case Type.Apply(Type.Cst(TypeConstructor.Arrow(_), _), _, _) => true
+          case _ => false
+        }
+    }
   }
 
   private def rewriteDefn(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): MonoAst.Def = {
-    implicit val params: List[(MonoAst.FormalParam, ParamKind)] = paramKinds(ctx.selfTailCalls.map(_._1), defn.spec.fparams)
+    implicit val params: List[(MonoAst.FormalParam, ParamKind)] = paramKinds(ctx.selfTailCalls, defn.spec.fparams)
     implicit val subst: Substitution = mkSubst(defn, params)
     val rewrittenExp = rewriteExp(defn.exp)
     val body = mkLocalDefExpr(rewrittenExp)
     defn.copy(exp = body)
   }
 
-  private def visitExp(exp0: MonoAst.Expr, tailPos: TailPosition)(implicit sym0: Symbol.DefnSym, ctx: LocalContext, flix: Flix): Unit = exp0 match {
+  private def visitExp(exp0: MonoAst.Expr)(implicit sym0: Symbol.DefnSym, ctx: LocalContext): Unit = exp0 match {
     case Expr.Cst(_, _, _) =>
 
     case Expr.Var(_, _, _) =>
 
     case Expr.Lambda(_, exp, _, _) =>
-      visitExp(exp, tailPos = TailPosition.NonTail)
+      visitExp(exp)
 
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
-      exps.foreach(visitExp(_, tailPos = TailPosition.NonTail))
+      exps.foreach(visitExp)
 
     case Expr.ApplyClo(exp1, exp2, _, _, _) =>
-      visitExp(exp1, tailPos)
-      visitExp(exp2, tailPos = TailPosition.NonTail)
+      visitExp(exp1)
+      visitExp(exp2)
 
     case Expr.ApplyDef(sym, exps, _, _, _, _) =>
       // Check for recursion
       if (sym == sym0) {
         val applyExp = exp0.asInstanceOf[Expr.ApplyDef]
-        ctx.selfTailCalls.addOne((applyExp, tailPos))
+        ctx.selfTailCalls.addOne(applyExp)
       }
-      exps.foreach(visitExp(_, tailPos = TailPosition.NonTail))
+      exps.foreach(visitExp)
 
     case Expr.ApplyLocalDef(_, exps, _, _, _) =>
-      exps.foreach(visitExp(_, tailPos = TailPosition.NonTail))
+      exps.foreach(visitExp)
 
     case Expr.Let(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1, tailPos = TailPosition.NonTail)
-      visitExp(exp2, tailPos)
+      visitExp(exp1)
+      visitExp(exp2)
 
     case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
-      visitExp(exp1, tailPos = TailPosition.NonTail)
-      visitExp(exp2, tailPos)
+      visitExp(exp1)
+      visitExp(exp2)
 
     case Expr.Scope(_, _, exp, _, _, _) =>
-      visitExp(exp, tailPos)
+      visitExp(exp)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      visitExp(exp1, tailPos = TailPosition.NonTail)
-      visitExp(exp2, tailPos)
-      visitExp(exp3, tailPos)
+      visitExp(exp1)
+      visitExp(exp2)
+      visitExp(exp3)
 
     case Expr.Stm(exp1, exp2, _, _, _) =>
-      visitExp(exp1, tailPos = TailPosition.NonTail)
-      visitExp(exp2, tailPos)
+      visitExp(exp1)
+      visitExp(exp2)
 
     case Expr.Discard(exp, _, _) =>
-      visitExp(exp, tailPos)
+      visitExp(exp)
 
     case Expr.Match(exp1, rules, _, _, _) =>
-      visitExp(exp1, tailPos = TailPosition.NonTail)
+      visitExp(exp1)
       rules.foreach {
         case MonoAst.MatchRule(_, guard, exp2) =>
-          guard.foreach(visitExp(_, tailPos = TailPosition.NonTail))
-          visitExp(exp2, tailPos)
+          guard.foreach(visitExp)
+          visitExp(exp2)
       }
 
     case Expr.VectorLit(exps, _, _, _) =>
-      exps.foreach(visitExp(_, tailPos = TailPosition.NonTail))
+      exps.foreach(visitExp)
 
     case Expr.VectorLoad(exp1, exp2, _, _, _) =>
-      visitExp(exp1, tailPos = TailPosition.NonTail)
-      visitExp(exp2, tailPos = TailPosition.NonTail)
+      visitExp(exp1)
+      visitExp(exp2)
 
     case Expr.VectorLength(exp, _) =>
-      visitExp(exp, tailPos = TailPosition.NonTail)
+      visitExp(exp)
 
-    case Expr.Ascribe(exp, _, _, _) => // TODO: Is this erased???
-      visitExp(exp, tailPos)
+    case Expr.Ascribe(exp, _, _, _) =>
+      visitExp(exp)
 
-    case Expr.Cast(exp, _, _, _, _, _) => // TODO: Is this erased???
-      visitExp(exp, tailPos)
+    case Expr.Cast(exp, _, _, _, _, _) =>
+      visitExp(exp)
 
     case Expr.TryCatch(exp1, rules, _, _, _) =>
-      visitExp(exp1, tailPos = TailPosition.NonTail)
-      rules.foreach(rule => visitExp(rule.exp, tailPos))
+      visitExp(exp1)
+      rules.foreach(rule => visitExp(rule.exp))
 
     case Expr.RunWith(exp1, _, rules, _, _, _) =>
-      visitExp(exp1, tailPos = TailPosition.NonTail)
-      rules.foreach(rule => visitExp(rule.exp, tailPos))
+      visitExp(exp1)
+      rules.foreach(rule => visitExp(rule.exp))
 
     case Expr.Do(_, exps, _, _, _) =>
-      exps.foreach(visitExp(_, tailPos))
+      exps.foreach(visitExp)
 
     case Expr.NewObject(_, _, _, _, methods, _) =>
-      methods.foreach(m => visitExp(m.exp, tailPos = TailPosition.NonTail))
+      methods.foreach(m => visitExp(m.exp))
   }
 
   private def rewriteExp(expr0: MonoAst.Expr)(implicit subst: Substitution, fparams0: List[(MonoAst.FormalParam, ParamKind)]): MonoAst.Expr = expr0 match {
@@ -359,7 +372,7 @@ object LambdaDrop {
 
   }
 
-  private case class LocalContext(selfTailCalls: mutable.ArrayBuffer[(Expr.ApplyDef, TailPosition)])
+  private case class LocalContext(selfTailCalls: mutable.ArrayBuffer[Expr.ApplyDef])
 
   private object Substitution {
     def from(old: Symbol.DefnSym, fresh: Symbol.VarSym, vars: Map[Symbol.VarSym, Symbol.VarSym]): Substitution = Substitution(old, fresh, vars)
@@ -377,16 +390,6 @@ object LambdaDrop {
       case Some(freshSym) => freshSym
       case None => sym
     }
-  }
-
-  private sealed trait TailPosition
-
-  private object TailPosition {
-
-    case object Tail extends TailPosition
-
-    case object NonTail extends TailPosition
-
   }
 
   private sealed trait ParamKind
