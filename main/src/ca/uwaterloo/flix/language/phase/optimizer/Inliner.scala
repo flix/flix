@@ -70,8 +70,7 @@ object Inliner {
   /** Performs inlining on the given AST `root`. */
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): OccurrenceAst.Root = {
     val defs = ParOps.parMapValues(root.defs)(visitDef(_)(root, flix))
-    val newRoot = OccurrenceAst.Root(defs, root.enums, root.structs, root.effects, root.mainEntryPoint, root.entryPoints, root.sources)
-    newRoot
+    root.copy(defs = defs)
   }
 
   /** Performs inlining on the body of `def0`. */
