@@ -69,7 +69,7 @@ object LambdaDrop {
   private def isRewritable(defn: MonoAst.Def)(implicit ctx: LocalContext): Boolean = {
     if (isHigherOrder(defn.spec.fparams)) { // Only visit exp if it is higher-order
       visitExp(defn.exp)(defn.sym, ctx)
-      val containsRecursiveCall = ctx.selfTailCalls.nonEmpty
+      val containsRecursiveCall = ctx.recursiveCalls.nonEmpty
       containsRecursiveCall
     } else {
       false
@@ -89,7 +89,7 @@ object LambdaDrop {
   }
 
   private def rewriteDefn(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): MonoAst.Def = {
-    implicit val params: List[(MonoAst.FormalParam, ParamKind)] = paramKinds(ctx.selfTailCalls, defn.spec.fparams)
+    implicit val params: List[(MonoAst.FormalParam, ParamKind)] = paramKinds(ctx.recursiveCalls, defn.spec.fparams)
     implicit val (newDefnSym, subst): (Symbol.VarSym, Substitution) = mkSubst(defn, params)
     val rewrittenExp = rewriteExp(defn.exp)(defn.sym, newDefnSym, subst, params)
     val body = mkLocalDefExpr(rewrittenExp, newDefnSym)
@@ -115,7 +115,7 @@ object LambdaDrop {
       // Check for recursion
       if (sym == sym0) {
         val applyExp = exp0.asInstanceOf[Expr.ApplyDef]
-        ctx.selfTailCalls.addOne(applyExp)
+        ctx.recursiveCalls.addOne(applyExp)
       }
       exps.foreach(visitExp)
 
@@ -373,11 +373,17 @@ object LambdaDrop {
 
   private object LocalContext {
 
+    /** Returns a fresh [[LocalContext]] */
     def mk(): LocalContext = new LocalContext(mutable.ArrayBuffer.empty)
 
   }
 
-  private case class LocalContext(selfTailCalls: mutable.ArrayBuffer[Expr.ApplyDef])
+  /**
+    * A local mutable context for [[visitExp]]. No requirements for thread-safety.
+    *
+    * @param recursiveCalls A mutable buffer to collect recursive calls.
+    */
+  private case class LocalContext(recursiveCalls: mutable.ArrayBuffer[Expr.ApplyDef])
 
   private case class Substitution(vars: Map[Symbol.VarSym, Symbol.VarSym]) {
     def apply(sym: Symbol.VarSym): Symbol.VarSym = vars.get(sym) match {
