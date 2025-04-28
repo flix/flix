@@ -491,6 +491,7 @@ object Inliner {
       val args = collectLambdaArgs(exp, ctx0.exprCtx, ctx0)
       val callSize = args.map(_._1).map(size).sum
       bodySize <= callSize
+    case _ => false
   }
 
   private def smallEnough(rhs: OutExpr, ctx0: LocalContext): Boolean = rhs match {
@@ -507,6 +508,7 @@ object Inliner {
         case Expr.Lambda(_, _, _, _) => 1
         case Expr.ApplyAtomic(AtomicOp.Tag(_), _, _, _, _) => 1
         case Expr.ApplyAtomic(AtomicOp.Tuple, _, _, _, _) => 1
+        case _ => 0
       }
       val keenness = 1.5
       val threshold = 8
