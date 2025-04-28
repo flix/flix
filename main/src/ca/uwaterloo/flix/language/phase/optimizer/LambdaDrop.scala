@@ -51,9 +51,9 @@ import scala.collection.mutable
   *       map$Loop(l)
   * }}}
   */
-object RecursionRewriter {
+object LambdaDrop {
 
-  def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("RecursionRewriter") {
+  def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Lambda Dropping") {
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
     root.copy(defs = newDefs)
   }
