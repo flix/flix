@@ -90,9 +90,9 @@ object LambdaDrop {
 
   private def rewriteDefn(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): MonoAst.Def = {
     implicit val params: List[(MonoAst.FormalParam, ParamKind)] = paramKinds(ctx.selfTailCalls, defn.spec.fparams)
-    implicit val subst: Substitution = mkSubst(defn, params)
-    val rewrittenExp = rewriteExp(defn.exp)
-    val body = mkLocalDefExpr(rewrittenExp)
+    implicit val (newDefnSym, subst): (Symbol.VarSym, Substitution) = mkSubst(defn, params)
+    val rewrittenExp = rewriteExp(defn.exp)(defn.sym, newDefnSym, subst, params)
+    val body = mkLocalDefExpr(rewrittenExp, newDefnSym)
     defn.copy(exp = body)
   }
 
@@ -184,7 +184,7 @@ object LambdaDrop {
       methods.foreach(m => visitExp(m.exp))
   }
 
-  private def rewriteExp(expr0: MonoAst.Expr)(implicit subst: Substitution, fparams0: List[(MonoAst.FormalParam, ParamKind)]): MonoAst.Expr = expr0 match {
+  private def rewriteExp(expr0: MonoAst.Expr)(implicit oldDefnSym: Symbol.DefnSym, newDefnSym: Symbol.VarSym, subst: Substitution, fparams0: List[(MonoAst.FormalParam, ParamKind)]): MonoAst.Expr = expr0 match {
     case Expr.Cst(_, _, _) =>
       expr0
 
@@ -205,18 +205,16 @@ object LambdaDrop {
       Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
-      subst(sym) match {
-        case None => // It is not a recursive call
-          val es = exps.map(rewriteExp)
-          Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
-
-        case Some(localDefSym) =>
-          val es = exps.zip(fparams0).filter { // Exclude constant parameters
-            case (_, (_, pkind)) => pkind == ParamKind.NonConst
-          }.map {
-            case (e, (_, _)) => rewriteExp(e)
-          }
-          Expr.ApplyLocalDef(localDefSym, es, tpe, eff, loc)
+      if (sym == oldDefnSym) {
+        val es = exps.zip(fparams0).filter { // Exclude constant parameters
+          case (_, (_, pkind)) => pkind == ParamKind.NonConst
+        }.map {
+          case (e, (_, _)) => rewriteExp(e)
+        }
+        Expr.ApplyLocalDef(newDefnSym, es, tpe, eff, loc)
+      } else {
+        val es = exps.map(rewriteExp)
+        Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
       }
 
     case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
@@ -315,11 +313,14 @@ object LambdaDrop {
 
   }
 
-  private def mkSubst(defn: MonoAst.Def, params: List[(MonoAst.FormalParam, ParamKind)])(implicit flix: Flix): Substitution = {
+  /**
+    * Returns a tuple with the new local def symbol and a substitution for every variable in `defn`.
+    */
+  private def mkSubst(defn: MonoAst.Def, params: List[(MonoAst.FormalParam, ParamKind)])(implicit flix: Flix): (Symbol.VarSym, Substitution) = {
     val nonConstantParams = params.filter { case (_, pkind) => pkind == ParamKind.NonConst }
-    val varSubst = nonConstantParams.map { case (fp, _) => fp.sym -> Symbol.freshVarSym(fp.sym) }.toMap
+    val substMap = nonConstantParams.map { case (fp, _) => fp.sym -> Symbol.freshVarSym(fp.sym) }.toMap
     val freshLocalDefSym = mkFreshLocalDefSym(defn)
-    Substitution.from(defn.sym, freshLocalDefSym, varSubst)
+    (freshLocalDefSym, Substitution(substMap))
   }
 
   private def paramKinds(calls: Iterable[Expr.ApplyDef], fparams: Iterable[MonoAst.FormalParam]): List[(MonoAst.FormalParam, ParamKind)] = {
@@ -339,7 +340,8 @@ object LambdaDrop {
   }
 
   private def mkFreshLocalDefSym(defn: MonoAst.Def)(implicit flix: Flix): Symbol.VarSym = {
-    Symbol.freshVarSym(defn.sym.text + "Loop", BoundBy.LocalDef, defn.sym.loc)(Scope.Top, flix)
+    val text = defn.sym.text + Flix.Delimiter + "Loop"
+    Symbol.freshVarSym(text, BoundBy.LocalDef, defn.sym.loc)(Scope.Top, flix)
   }
 
   /**
@@ -347,17 +349,18 @@ object LambdaDrop {
     * Dead parameters are captured from the containing function.
     *
     * @param body   The body of the local def to be created.
+    * @param sym    The symbol of the local def to be created.
     * @param subst  The variable substitution.
     * @param params The list of formal parameters and their [[ParamKind]].
     */
-  private def mkLocalDefExpr(body: Expr)(implicit subst: Substitution, params: List[(MonoAst.FormalParam, ParamKind)]): Expr = {
+  private def mkLocalDefExpr(body: Expr, sym: Symbol.VarSym)(implicit subst: Substitution, params: List[(MonoAst.FormalParam, ParamKind)]): Expr = {
     val nonConstantParams = params.filter {
       case (_, pkind) => pkind == ParamKind.NonConst
     }
     val args = nonConstantParams.map {
       case (fp, _) => Expr.Var(fp.sym, fp.tpe, fp.loc.asSynthetic)
     }
-    val applyLocalDefExpr = Expr.ApplyLocalDef(subst.fresh, args, body.tpe, body.eff, body.loc.asSynthetic)
+    val applyLocalDefExpr = Expr.ApplyLocalDef(sym, args, body.tpe, body.eff, body.loc.asSynthetic)
 
     val localDefParams = nonConstantParams.map {
       case (fp, _) => fp.copy(sym = subst(fp.sym), loc = fp.loc.asSynthetic)
@@ -365,7 +368,7 @@ object LambdaDrop {
     val tpe = applyLocalDefExpr.tpe
     val eff = applyLocalDefExpr.eff
     val loc = applyLocalDefExpr.loc.asSynthetic
-    Expr.LocalDef(subst.fresh, localDefParams, body, applyLocalDefExpr, tpe, eff, loc)
+    Expr.LocalDef(sym, localDefParams, body, applyLocalDefExpr, tpe, eff, loc)
   }
 
   private object LocalContext {
@@ -376,18 +379,7 @@ object LambdaDrop {
 
   private case class LocalContext(selfTailCalls: mutable.ArrayBuffer[Expr.ApplyDef])
 
-  private object Substitution {
-    def from(old: Symbol.DefnSym, fresh: Symbol.VarSym, vars: Map[Symbol.VarSym, Symbol.VarSym]): Substitution = Substitution(old, fresh, vars)
-  }
-
-  private case class Substitution(old: Symbol.DefnSym, fresh: Symbol.VarSym, vars: Map[Symbol.VarSym, Symbol.VarSym]) {
-    def apply(sym: Symbol.DefnSym): Option[Symbol.VarSym] = {
-      if (sym == old)
-        Some(fresh)
-      else
-        None
-    }
-
+  private case class Substitution(vars: Map[Symbol.VarSym, Symbol.VarSym]) {
     def apply(sym: Symbol.VarSym): Symbol.VarSym = vars.get(sym) match {
       case Some(freshSym) => freshSym
       case None => sym
