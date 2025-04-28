@@ -157,12 +157,12 @@ object Inliner {
   }
 
   /** Contains information on a variable's definition. */
-  private sealed trait Definition
+  private sealed trait BoundKind
 
-  private object Definition {
+  private object BoundKind {
 
     /** The right-hand side of a let-bound variable along with its occurrence information. */
-    case class LetBound(expr: OccurrenceAst.Expr, occur: Occur) extends Definition
+    case class LetBound(expr: OccurrenceAst.Expr, occur: Occur) extends BoundKind
 
   }
 
@@ -174,7 +174,7 @@ object Inliner {
     * @param inScopeVars       a set of variables considered to be in scope.
     * @param currentlyInlining a flag denoting whether the current traversal is part of an inline-expansion process.
     */
-  private case class Context(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, Definition], currentlyInlining: Boolean)
+  private case class Context(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], currentlyInlining: Boolean)
 
   private object Context {
 
