@@ -95,25 +95,10 @@ object Inliner {
     case Many => false
   }
 
-  /** Checks if `occur` is [[Once]] and `eff` is pure. */
-  private def isUsedOnceAndPure(occur: OccurrenceAst.Occur, eff0: Type): Boolean = occur match {
+  /** Checks if `occur` is [[Once]]. */
+  private def isOnce(occur: OccurrenceAst.Occur): Boolean = occur match {
     case Dead => false
-    case Once => isPure(eff0)
-    case OnceInLambda => false
-    case OnceInLocalDef => false
-    case ManyBranch => false
-    case Many => false
-  }
-
-  /** Checks if `exp0` is trivial and `eff` is pure */
-  private def isTrivialAndPure(exp0: Expr, eff0: Type): Boolean = {
-    isPure(eff0) && isTrivialExp(exp0)
-  }
-
-  /** Checks if `occur` is dead and `exp` is pure. */
-  private def isDeadAndPure(occur: OccurrenceAst.Occur, eff0: Type): Boolean = occur match {
-    case Dead => isPure(eff0)
-    case Once => false
+    case Once => true
     case OnceInLambda => false
     case OnceInLocalDef => false
     case ManyBranch => false
