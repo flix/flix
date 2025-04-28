@@ -84,6 +84,18 @@ object Inliner {
 
     case class LetBound(expr: OutExpr, occur: Occur) extends Definition
 
+    case class NotAmong(consts: List[Const])
+
+  }
+
+  private sealed trait Const
+
+  private object Const {
+
+    case class Cst(cst: OccurrenceAst.Expr.Cst) extends Const
+
+    case class Tag(tag: Symbol.CaseSym) extends Const
+
   }
 
   private type VarSubst = Map[InVar, OutVar]
