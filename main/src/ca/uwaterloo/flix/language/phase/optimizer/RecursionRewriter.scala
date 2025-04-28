@@ -72,10 +72,10 @@ object RecursionRewriter {
 
   private def visitExp(exp0: MonoAst.Expr, tailPos: TailPosition)(implicit sym0: Symbol.DefnSym, fparams: List[MonoAst.FormalParam], ctx: LocalContext, flix: Flix): TailPosition = exp0 match {
     case Expr.Cst(_, _, _) =>
-      tailPos
+      TailPosition.Tail
 
     case Expr.Var(_, _, _) =>
-      tailPos
+      TailPosition.Tail
 
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp, tailPos = TailPosition.NonTail)
