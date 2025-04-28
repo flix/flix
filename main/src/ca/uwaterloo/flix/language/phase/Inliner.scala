@@ -27,6 +27,7 @@ import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListMap}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
@@ -67,25 +68,15 @@ object Inliner {
 
   }
 
-  //  private sealed trait Const
-
-  //   private object Const {
-
-  //     case class Lit(lit: Constant) extends Const
-
-  //     case class Tag(tag: Symbol.CaseSym) extends Const
-
-  // }
-
   private sealed trait Definition
 
   private object Definition {
 
-    //     case object CaseOrLambda extends Definition
+    case object Unknown extends Definition
 
     case class LetBound(expr: OutExpr, occur: Occur) extends Definition
 
-    case class NotAmong(consts: List[Const])
+    case class NotAmong(consts: List[Const]) extends Definition
 
   }
 
@@ -123,7 +114,7 @@ object Inliner {
 
     case class AppCtx(expr: Expr, subst: Subst, ctx: ExprContext) extends ExprContext
 
-    case class MatchCtx(sym: Symbol.VarSym, rules: List[OccurrenceAst.MatchRule], subst: Subst, ctx: ExprContext) extends ExprContext
+    case class MatchCtx(rules: List[OccurrenceAst.MatchRule], subst: Subst, ctx: ExprContext) extends ExprContext
 
     case class ArgCtx(cont: Expr => Expr) extends ExprContext
 
@@ -131,7 +122,7 @@ object Inliner {
 
   }
 
-  private case class LocalContext(varSubst: VarSubst, subst: Subst, inScopeVars: InScopeVars, inScopeEffs: InScopeEffs, inliningContext: ExprContext, currentlyInlining: Boolean)
+  private case class LocalContext(varSubst: VarSubst, subst: Subst, inScopeVars: InScopeVars, inScopeEffs: InScopeEffs, exprCtx: ExprContext, currentlyInlining: Boolean)
 
   private object LocalContext {
     def empty: LocalContext = LocalContext(Map.empty, Map.empty, Map.empty, Map.empty, ExprContext.Stop, currentlyInlining = false)
@@ -182,7 +173,9 @@ object Inliner {
           Expr.Var(sym, tpe, loc)
       }
 
-    case Expr.Lambda(fparam, exp, tpe, loc) => // TODO: Make parameter wild if dead
+    case Expr.Lambda(fparam, exp, tpe, loc) =>
+      // TODO: Make parameter wild if dead
+      // TODO: IMPORTANT Add variable in fparam to in-scope set bound as Unknown
       val (fp, varSubst1) = freshFormalParam(fparam)
       val varSubst2 = ctx0.varSubst ++ varSubst1
       val ctx = ctx0.copy(varSubst = varSubst2)
@@ -194,7 +187,7 @@ object Inliner {
       Expr.ApplyAtomic(op, es, tpe, eff, loc)
 
     case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
-      // TODO: Refactor this to use Context, so inlining and beta reduction cases are moved to Var and Lambda exprs respectively.
+      // TODO: IMPORTANT Refactor this to use Context, so inlining and beta reduction cases are moved to Var and Lambda exprs respectively.
       val e2 = visitExp(exp2, ctx0)
 
       def maybeInline(sym1: OutVar): Expr = {
@@ -211,7 +204,7 @@ object Inliner {
 
           case _ =>
             val e1 = visitExp(exp1, ctx0)
-            ctx0.inliningContext match {
+            ctx0.exprCtx match {
               case ExprContext.HandlerCtx(sym) if sym == sym1 => e2
               case _ => Expr.ApplyClo(e1, e2, tpe, eff, loc)
             }
@@ -316,6 +309,7 @@ object Inliner {
       }
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
+      // TODO: IMPORTANT Add variable in fparams to in-scope set bound as Unknown
       if (isDead(occur)) { // Probably never happens
         sctx.eliminatedVars.add((sym0, sym))
         visitExp(exp2, ctx0)
@@ -371,6 +365,7 @@ object Inliner {
       Expr.Discard(e, eff, loc)
 
     case Expr.Match(exp, rules, tpe, eff, loc) =>
+      // TODO: IMPORTANT Add variables in rules to in-scope set bound as Unknown
       val e = visitExp(exp, ctx0)
       val rs = rules.map {
         case OccurrenceAst.MatchRule(pat, guard, exp1) =>
@@ -441,7 +436,7 @@ object Inliner {
           case Once => // Linear handler
             val continuation = rule.rule.fparams.last.sym
             val freshSym = Symbol.freshVarSym(continuation)
-            val ctx = ctx0.copy(varSubst = ctx0.varSubst + (continuation -> freshSym), inliningContext = ExprContext.HandlerCtx(freshSym))
+            val ctx = ctx0.copy(varSubst = ctx0.varSubst + (continuation -> freshSym), exprCtx = ExprContext.HandlerCtx(freshSym))
             inlineEffectHandler(rule.rule.exp, rule.rule.fparams, es, ctx)
           case _ => Expr.Do(op, es, tpe, eff, loc)
         }
@@ -477,8 +472,8 @@ object Inliner {
   private def shouldInlineVar(rhs: OutExpr, occur: Occur, lvl: Level, ctx0: LocalContext): Boolean = occur match {
     case Occur.Dead => throw InternalCompilerException("unexpected call site inline of dead variable", rhs.loc)
     case Occur.Once => throw InternalCompilerException("unexpected call site inline of pre-inlined variable", rhs.loc)
-    case Occur.OnceInLambda => isTrivialExp(rhs) && someBenefit(rhs, ctx0)
-    case Occur.OnceInLocalDef => isTrivialExp(rhs) && someBenefit(rhs, ctx0)
+    case Occur.OnceInLambda => isTrivialExp(rhs) && someBenefit(rhs, lvl, ctx0)
+    case Occur.OnceInLocalDef => isTrivialExp(rhs) && someBenefit(rhs, lvl, ctx0)
     case Occur.ManyBranch => shouldInlineMulti(rhs, lvl, ctx0)
     case Occur.Many => isTrivialExp(rhs) && shouldInlineMulti(rhs, lvl, ctx0)
     case Occur.DontInline => false
@@ -486,25 +481,71 @@ object Inliner {
   }
 
   private def shouldInlineMulti(rhs: OutExpr, lvl: Level, ctx0: LocalContext): Boolean = {
-    noSizeIncrease(rhs, ctx0) || (someBenefit(rhs, ctx0) && smallEnough(rhs, lvl, ctx0))
+    noSizeIncrease(rhs, ctx0) || (someBenefit(rhs, lvl, ctx0) && smallEnough(rhs, lvl, ctx0))
   }
 
-  private def noSizeIncrease(rhs: OutExpr, ctx0: LocalContext): Boolean = ???
+  private def noSizeIncrease(rhs: OutExpr, ctx0: LocalContext): Boolean = false
 
   private def smallEnough(rhs: OutExpr, lvl: Level, ctx0: LocalContext): Boolean = ???
 
-  private def someBenefit(exp0: OutExpr, ctx0: LocalContext): Boolean = exp0 match {
-    case Expr.Lambda(fparam, exp, tpe, loc) => ???
-    case Expr.ApplyAtomic(AtomicOp.Tag(sym), exps, tpe, eff, loc) => ctx0.inliningContext match {
-      case ExprContext.MatchCtx(sym, rules, subst, ctx) => ???
+  private def someBenefit(exp0: OutExpr, lvl: Level, ctx0: LocalContext): Boolean = exp0 match {
+    case Expr.Lambda(_, _, _, _) =>
+      argsAreReducible(exp0, ctx0.exprCtx, ctx0) ||
+        fullyAppliedAndScrutinized(exp0, ctx0.exprCtx) ||
+        nestedAndFullyApplied(exp0, ctx0.exprCtx, lvl)
+
+    case Expr.ApplyAtomic(AtomicOp.Tag(_), _, _, _, _) => ctx0.exprCtx match {
+      case ExprContext.MatchCtx(_, _, _) => true
       case _ => false
     }
-    case Expr.ApplyAtomic(AtomicOp.Tuple, exps, tpe, eff, loc) => ctx0.inliningContext match {
-      case ExprContext.MatchCtx(sym, rules, subst, ctx) => ???
+    case Expr.ApplyAtomic(AtomicOp.Tuple, _, _, _, _) => ctx0.exprCtx match {
+      case ExprContext.MatchCtx(_, _, _) => true
       case _ => false
     }
-    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) => ???
+
+    // TODO: Add ApplyLocalDef (same heuristics as Lambda)
+    // TODO: Add ApplyDef (same heuristics as Lambda)
     case _ => false
+  }
+
+  @tailrec
+  private def argsAreReducible(exp0: OutExpr, exprCtx: ExprContext, ctx0: LocalContext): Boolean = (exp0, exprCtx) match {
+    case (Expr.Lambda(_, body, _, _), ExprContext.AppCtx(expr, _, ctx)) =>
+      !isTrivialExp(expr) || notUnknownVar(expr, ctx0) || argsAreReducible(body, ctx, ctx0)
+    case _ => false
+  }
+
+  private def notUnknownVar(expr: OccurrenceAst.Expr, ctx0: LocalContext): Boolean = expr match {
+    case Expr.Var(sym, _, _) => ctx0.varSubst.get(sym) match {
+      case Some(freshSym) => ctx0.inScopeVars.get(freshSym) match {
+        case Some(Definition.Unknown) => false
+        case Some(Definition.LetBound(_, _)) => true
+        case Some(Definition.NotAmong(_)) => true
+        case None => false
+      }
+      case None => false
+    }
+    case _ => false
+  }
+
+  private def fullyAppliedAndScrutinized(exp0: OutExpr, exprCtx: ExprContext): Boolean = {
+    val (fullyApplied, ctx) = checkFullyApplied(exp0, exprCtx)
+    ctx match {
+      case ExprContext.MatchCtx(_, _, _) => fullyApplied
+      case _ => false
+    }
+  }
+
+  private def nestedAndFullyApplied(exp0: OutExpr, exprCtx: ExprContext, lvl: Level): Boolean = {
+    val isNested = lvl == Level.Nested
+    isNested && checkFullyApplied(exp0, exprCtx)._1
+  }
+
+  @tailrec
+  private def checkFullyApplied(exp0: OutExpr, exprCtx: ExprContext): (Boolean, ExprContext) = (exp0, exprCtx) match {
+    case (Expr.Lambda(_, exp, _, _), ExprContext.AppCtx(_, _, ctx)) => checkFullyApplied(exp, ctx)
+    case (Expr.Lambda(_, _, _, _), _) => (false, exprCtx)
+    case _ => (true, exprCtx)
   }
 
   private def visitPattern(pattern0: Pattern)(implicit flix: Flix): (Pattern, VarSubst) = pattern0 match {
