@@ -59,6 +59,10 @@ object LambdaDrop {
     root.copy(defs = newDefs)
   }
 
+  /**
+    * Performs lambda dropping on `defn` if the [[isDroppable]] predicate holds.
+    * Returns `defn` as is otherwise.
+    */
   private def visitDef(defn: MonoAst.Def)(implicit flix: Flix): MonoAst.Def = {
     implicit val lctx: LocalContext = LocalContext.mk()
     if (isDroppable(defn))
