@@ -222,7 +222,6 @@ object LambdaDrop {
     * @param subst      the substitution defined on non-constant parameters.
     *                   It is up to the caller to ensure which variables the substitution is defined over.
     * @param fparams0   the formal parameters and their [[ParamKind]]s of the function to rewrite.
-    * @return
     */
   private def rewriteExp(expr0: MonoAst.Expr)(implicit oldDefnSym: Symbol.DefnSym, newDefnSym: Symbol.VarSym, subst: Substitution, fparams0: List[(MonoAst.FormalParam, ParamKind)]): MonoAst.Expr = expr0 match {
     case Expr.Cst(_, _, _) =>
