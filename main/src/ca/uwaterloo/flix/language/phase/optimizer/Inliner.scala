@@ -257,7 +257,9 @@ object Inliner {
       Expr.Discard(e, eff, loc)
 
     case Expr.Match(exp, rules, tpe, eff, loc) =>
-      val e = visitExp(exp, ctx0)
+      val exprCtx = ExprContext.MatchCtx(rules, ctx0.inScopeVars, ctx0.exprCtx)
+      val ctx = ctx0.copy(exprCtx = exprCtx)
+      val e = visitExp(exp, ctx)
       val rs = rules.map {
         case OccurrenceAst.MatchRule(pat, guard, exp1) =>
           val (p, varSubst1) = visitPattern(pat)
@@ -471,7 +473,7 @@ object Inliner {
     case class AppCtx(expr: Expr, subst: Map[Symbol.VarSym, BoundKind], ctx: ExprContext) extends ExprContext
 
     /** Match-case expression context. */
-    case class MatchCtx(sym: Symbol.VarSym, rules: List[OccurrenceAst.MatchRule], subst: Map[Symbol.VarSym, BoundKind], ctx: ExprContext) extends ExprContext
+    case class MatchCtx(rules: List[OccurrenceAst.MatchRule], subst: Map[Symbol.VarSym, BoundKind], ctx: ExprContext) extends ExprContext
 
   }
 
