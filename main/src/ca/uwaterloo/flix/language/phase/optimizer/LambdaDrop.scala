@@ -66,6 +66,14 @@ object LambdaDrop {
       defn
   }
 
+  /**
+    * A function is rewritable if
+    * (a) it contains at least one recursive call and
+    * (b) is a higher-order function, i.e., it has at least one formal parameter
+    * with a function type.
+    *
+    * The latter condition can be checked by the [[isHigherOrder]] predicate.
+    */
   private def isRewritable(defn: MonoAst.Def)(implicit ctx: LocalContext): Boolean = {
     if (isHigherOrder(defn.spec.fparams)) { // Only visit exp if it is higher-order
       visitExp(defn.exp)(defn.sym, ctx)
@@ -76,6 +84,7 @@ object LambdaDrop {
     }
   }
 
+  /** Returns `true` if at least one formal parameter of `defn0` is an arrow type. */
   private def isHigherOrder(fparams: List[MonoAst.FormalParam]): Boolean = {
     fparams.exists {
       fp =>
