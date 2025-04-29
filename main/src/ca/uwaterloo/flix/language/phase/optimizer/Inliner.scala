@@ -65,7 +65,7 @@ import ca.uwaterloo.flix.util.ParOps
 object Inliner {
 
   /** Performs inlining on the given AST `root`. */
-  def run(root: OccurrenceAst.Root)(implicit flix: Flix): OccurrenceAst.Root = {
+  def run(root: OccurrenceAst.Root)(implicit flix: Flix): (OccurrenceAst.Root, Map[Symbol.DefnSym, OccurrenceAst.Def]) = {
     val defs = ParOps.parMapValues(root.defs)(visitDef(_)(root, flix))
     root.copy(defs = defs)
   }

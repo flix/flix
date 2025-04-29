@@ -35,8 +35,8 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on the given AST `root`.
     */
-  def run(root: OccurrenceAst.Root)(implicit flix: Flix): OccurrenceAst.Root = {
-    val defs = ParOps.parMapValues(root.defs)(visitDef)
+  def run(root: OccurrenceAst.Root, delta: Map[Symbol.DefnSym, OccurrenceAst.Def])(implicit flix: Flix): OccurrenceAst.Root = {
+    val defs = ParOps.parMapValues(delta)(visitDef)
     OccurrenceAst.Root(defs, root.enums, root.structs, root.effects, root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
