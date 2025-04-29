@@ -113,9 +113,12 @@ object Inliner {
               }
 
             // Case 2:
-            // The variable `sym` is not in the substitution map, but we may consider it for inlining.
+            // The variable `sym` is not in the substitution map, but is considered for inlining.
             case None =>
-              Expr.Var(freshVarSym, tpe, loc)
+              ctx0.inScopeVars.get(freshVarSym) match {
+                case Some(_) => Expr.Var(freshVarSym, tpe, loc)
+                case None => Expr.Var(freshVarSym, tpe, loc)
+              }
           }
       }
 
