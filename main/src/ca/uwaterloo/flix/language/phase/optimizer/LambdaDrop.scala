@@ -91,7 +91,7 @@ object LambdaDrop {
         fp.tpe.typeConstructor match {
           case Some(TypeConstructor.Arrow(_)) => true
           case Some(TypeConstructor.ArrowWithoutEffect(_)) => true
-          case Some(_) => true
+          case Some(_) => false
           case None => false
         }
     }
