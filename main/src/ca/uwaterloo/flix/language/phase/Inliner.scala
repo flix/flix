@@ -176,10 +176,10 @@ object Inliner {
 
     case Expr.Lambda(fparam, exp, tpe, loc) =>
       // TODO: Make parameter wild if dead
-      // TODO: IMPORTANT Add variable in fparam to in-scope set bound as Unknown
       val (fp, varSubst1) = freshFormalParam(fparam)
       val varSubst2 = ctx0.varSubst ++ varSubst1
-      val ctx = ctx0.copy(varSubst = varSubst2)
+      val inScopeVars1 = ctx0.inScopeVars + (fp.sym -> Definition.Unknown)
+      val ctx = ctx0.copy(varSubst = varSubst2, inScopeVars = inScopeVars1)
       val e = visitExp(exp, ctx)
       Expr.Lambda(fp, e, tpe, loc)
 
@@ -670,31 +670,31 @@ object Inliner {
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     */
   private def bind(exp0: Expr, formalParams: List[OccurrenceAst.FormalParam], args: List[OutExpr], ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
-    def bnd(fparams: List[OccurrenceAst.FormalParam], as: List[OutExpr], env: VarSubst): Expr = (fparams, as) match {
+    def bnd(fparams: List[OccurrenceAst.FormalParam], as: List[OutExpr], varSubst: VarSubst, inScopeVars: InScopeVars): Expr = (fparams, as) match {
       case (OccurrenceAst.FormalParam(_, _, _, _, occur, _) :: nextSymbols, e1 :: nextExpressions) if isDeadAndPure(occur, e1.eff) =>
         // If the parameter is unused and the argument is pure, then throw it away.
-        bnd(nextSymbols, nextExpressions, env)
+        bnd(nextSymbols, nextExpressions, varSubst, inScopeVars)
 
       case (OccurrenceAst.FormalParam(_, _, _, _, occur, _) :: nextSymbols, e1 :: nextExpressions) if isDead(occur) =>
         // If the parameter is unused and the argument is NOT pure, then put it in a statement.
-        val nextLet = bnd(nextSymbols, nextExpressions, env)
+        val nextLet = bnd(nextSymbols, nextExpressions, varSubst, inScopeVars)
         val eff = canonicalEffect(Type.mkUnion(e1.eff, nextLet.eff, e1.loc))
         Expr.Stm(e1, nextLet, nextLet.tpe, eff, exp0.loc)
 
       case (OccurrenceAst.FormalParam(sym, _, _, _, occur, _) :: nextSymbols, e1 :: nextExpressions) =>
         val freshVar = Symbol.freshVarSym(sym)
-        val env1 = env + (sym -> freshVar)
-        val nextLet = bnd(nextSymbols, nextExpressions, env1)
+        val varSubst1 = varSubst + (sym -> freshVar)
+        val inScopeVars1 = inScopeVars + (freshVar -> Definition.LetBound(e1, occur))
+        val nextLet = bnd(nextSymbols, nextExpressions, varSubst1, inScopeVars1)
         val eff = canonicalEffect(Type.mkUnion(e1.eff, nextLet.eff, e1.loc))
         Expr.Let(freshVar, e1, nextLet, nextLet.tpe, eff, occur, exp0.loc)
 
       case _ =>
-        val varSubst1 = ctx0.varSubst ++ env
-        val ctx = ctx0.copy(varSubst = varSubst1)
+        val ctx = ctx0.copy(varSubst = varSubst, inScopeVars = inScopeVars)
         visitExp(exp0, ctx)
     }
 
-    bnd(formalParams, args, Map.empty)
+    bnd(formalParams, args, ctx0.varSubst, ctx0.inScopeVars)
   }
 
   private def freshFormalParam(fp0: OccurrenceAst.FormalParam)(implicit flix: Flix): (OccurrenceAst.FormalParam, VarSubst) = fp0 match {
