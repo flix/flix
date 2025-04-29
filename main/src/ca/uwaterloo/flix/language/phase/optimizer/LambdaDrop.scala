@@ -75,16 +75,15 @@ object LambdaDrop {
     * The latter condition can be checked by the [[isHigherOrder]] predicate.
     */
   private def isRewritable(defn: MonoAst.Def)(implicit ctx: LocalContext): Boolean = {
-    if (isHigherOrder(defn)) { // Only visit exp if it is higher-order
+    if (isHigherOrder(defn)) {
       visitExp(defn.exp)(defn.sym, ctx)
-      val containsRecursiveCall = ctx.recursiveCalls.nonEmpty
-      containsRecursiveCall
+      ctx.recursiveCalls.nonEmpty
     } else {
       false
     }
   }
 
-  /** Returns `true` if at least one formal parameter of `defn0` is an arrow type. */
+  /** Returns `true` if at least one formal parameter of `defn0` has an arrow type. */
   private def isHigherOrder(defn0: MonoAst.Def): Boolean = {
     defn0.spec.fparams.exists {
       fp =>
