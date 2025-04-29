@@ -473,9 +473,6 @@ object Inliner {
     /** Match-case expression context. */
     case class MatchCtx(sym: Symbol.VarSym, rules: List[OccurrenceAst.MatchRule], subst: Map[Symbol.VarSym, BoundKind], ctx: ExprContext) extends ExprContext
 
-    /** Application argument context. */
-    case class ArgCtx(cont: Expr => Expr) extends ExprContext
-
   }
 
   /** Denotes the level at which the binder is declared. */
