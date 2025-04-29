@@ -372,7 +372,6 @@ object Inliner {
       Expr.Discard(e, eff, loc)
 
     case Expr.Match(exp, rules, tpe, eff, loc) =>
-      // TODO: IMPORTANT Add variables in rules to in-scope set bound as Unknown
       val e = visitExp(exp, ctx0)
       val rs = rules.map {
         case OccurrenceAst.MatchRule(pat, guard, exp1) =>
@@ -413,7 +412,8 @@ object Inliner {
         case OccurrenceAst.CatchRule(sym, clazz, exp1) =>
           val freshVarSym = Symbol.freshVarSym(sym)
           val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
-          val ctx = ctx0.copy(varSubst = varSubst1)
+          val inScopeVars1 = ctx0.inScopeVars + (freshVarSym -> Definition.Unknown)
+          val ctx = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeVars1)
           val e1 = visitExp(exp1, ctx)
           OccurrenceAst.CatchRule(freshVarSym, clazz, e1)
       }
@@ -425,7 +425,8 @@ object Inliner {
         case OccurrenceAst.HandlerRule(op, fparams, exp1, occur) =>
           val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
           val varSubst1 = varSubsts.fold(ctx0.varSubst)(_ ++ _)
-          val ctx = ctx0.copy(varSubst = varSubst1)
+          val inScopeVars1 = ctx0.inScopeVars ++ fps.map(fp => fp.sym -> Definition.Unknown)
+          val ctx = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeVars1)
           val e1 = visitExp(exp1, ctx)
           OccurrenceAst.HandlerRule(op, fps, e1, occur)
       }
@@ -441,11 +442,11 @@ object Inliner {
       ctx0.inScopeEffs.get(op.sym.eff).flatMap(m => m.get(op.sym)) match {
         case Some(rule) => rule.rule.occur match {
           // case Dead => ??? // TODO: Rewrite such that the body of handler becomes the leaf expr in this subtree
-          case Once => // Linear handler
-            val continuation = rule.rule.fparams.last.sym
-            val freshSym = Symbol.freshVarSym(continuation)
-            val ctx = ctx0.copy(varSubst = ctx0.varSubst + (continuation -> freshSym), exprCtx = ExprContext.HandlerCtx(freshSym))
-            inlineEffectHandler(rule.rule.exp, rule.rule.fparams, es, ctx)
+          // case Once => // Linear handler
+          // val continuation = rule.rule.fparams.last.sym
+          // val freshSym = Symbol.freshVarSym(continuation)
+          // val ctx = ctx0.copy(varSubst = ctx0.varSubst + (continuation -> freshSym), exprCtx = ExprContext.HandlerCtx(freshSym))
+          // inlineEffectHandler(rule.rule.exp, rule.rule.fparams, es, ctx)
           case _ => Expr.Do(op, es, tpe, eff, loc)
         }
         case None =>
