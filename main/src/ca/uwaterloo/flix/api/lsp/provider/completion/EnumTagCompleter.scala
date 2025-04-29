@@ -16,8 +16,9 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.Range
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTagCompletion
+import ca.uwaterloo.flix.api.lsp.{Position, Range}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Case, Enum, Namespace}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
 import ca.uwaterloo.flix.language.ast.{Name, Symbol, TypedAst}
@@ -36,6 +37,19 @@ object EnumTagCompleter {
             EnumTagCompletion(tag, "", range, ap, qualified = false, inScope = inScope(tag, scp))
         }
       )
+  }
+
+  /**
+    * Returns a List of Completion for Tag that has been successfully resolved.
+    */
+  def getFurtherCompletions(uri: String, pos: Position)(implicit root: TypedAst.Root, flix: Flix): Iterable[Completion] = {
+    EnumTagContext.getEnumTagContext(uri, pos) match {
+      case EnumTagContext.AfterCompleteEnumTag(symUse) =>
+        root.enums(symUse.sym.enumSym).cases.map{ case (_, tag) =>
+          EnumTagCompletion(tag, "", Range.from(symUse.loc), AnchorPosition(1,1,0), qualified = true, inScope = true)
+        }
+      case EnumTagContext.Unknown => Iterable.empty
+    }
   }
 
   /**
