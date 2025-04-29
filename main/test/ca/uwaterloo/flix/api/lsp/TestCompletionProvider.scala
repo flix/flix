@@ -282,7 +282,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val (root1, _) = compile(program)
       val varOccurs = getVarSymOccurs()(root1)
       varOccurs.foreach{
-        case varOccur if varOccur.text.length > charToTrim =>
+        case varOccur if isValidVar(varOccur, charToTrim) =>
           val alteredProgram = trimAfter(program, varOccur.loc, charToTrim)
           val triggerPosition = Position(varOccur.loc.sp2.lineOneIndexed, varOccur.loc.sp2.colOneIndexed - charToTrim)
           val (root, errors) = compile(alteredProgram)
@@ -318,15 +318,45 @@ class TestCompletionProvider extends AnyFunSuite {
     program.substring(0, loc.sp1.offset) + target.dropRight(n) + program.substring(loc.sp2.offset)
   }
 
+  private val keywords = Set(
+    "def",
+    "let",
+    "var",
+    "if",
+    "else",
+    "match",
+    "case",
+    "for",
+    "while",
+    "do",
+    "try",
+    "catch",
+    "finally",
+    "return",
+    "throw",
+    "unsafe"
+  )
+
   /**
-    * Returns the set of non-synthetic variable symbols that occur in the given root.
+    * A Var is valid for the test if:
+    * - It's not a keyword after trimming
+    * - It's not empty after trimming
+    * - It's not synthetic
+    */
+  private def isValidVar(varOccur: Symbol.VarSym, charToTrim: Int) = {
+    val text = varOccur.text
+    text.length > charToTrim && !keywords.contains(text.dropRight(charToTrim)) && !varOccur.loc.isSynthetic
+  }
+
+  /**
+    * Returns the set of variable symbols that occur in the given root.
     */
   private def getVarSymOccurs()(implicit root: Root): Set[Symbol.VarSym] = {
     var occurs: Set[Symbol.VarSym] = Set.empty
 
     object VarConsumer extends Consumer {
       override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
-          case TypedAst.Expr.Var(sym, _, loc) if !loc.isSynthetic => occurs += sym
+          case TypedAst.Expr.Var(sym, _, _) => occurs += sym
           case _ =>
         }
     }
