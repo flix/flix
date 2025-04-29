@@ -361,6 +361,15 @@ object LambdaDrop {
     (freshLocalDefSym, Substitution(substMap))
   }
 
+  /**
+    * Returns the [[ParamKind]] of each formal parameter in `fparams`.
+    *
+    * If all expressions in `calls` that are in the position of formal parameter `x`
+    * are the symbol `x` then it is marked [[ParamKind.Const]].
+    *
+    * Otherwise, it is marked [[ParamKind.NonConst]]
+    *
+    */
   private def paramKinds(calls: List[Expr.ApplyDef], fparams: List[MonoAst.FormalParam]): List[(MonoAst.FormalParam, ParamKind)] = {
     val matrix = calls.map(call => fparams.zip(call.exps)).transpose
     matrix.map {
