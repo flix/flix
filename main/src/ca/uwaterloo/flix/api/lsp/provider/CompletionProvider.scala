@@ -47,6 +47,8 @@ object CompletionProvider {
     * Returns all completions in the given `uri` at the given position `pos`.
     */
   private def getCompletions(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[Completion] = {
+    val stack = LspUtil.getStack(uri, pos)
+    stack.foreach(item => println(s"$item\n"))
     if (currentErrors.isEmpty)
       HoleCompleter.getHoleCompletion(uri, pos).toList
     else
@@ -61,7 +63,7 @@ object CompletionProvider {
           val qn = err.qn
           val range = Range.from(err.loc)
           EnumCompleter.getCompletions(qn, range, ap, scp, withTypeParameters = false) ++
-            EnumTagCompleter.getCompletions(qn, range, ap, scp) ++
+            EnumTagCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
             ModuleCompleter.getCompletions(qn, range, ap, scp)
 
         case err: ResolutionError.UndefinedName =>
@@ -78,7 +80,7 @@ object CompletionProvider {
             EffectCompleter.getCompletions(qn, range, ap, scp, inHandler = false) ++
             OpCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
             SignatureCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
-            EnumTagCompleter.getCompletions(qn, range, ap, scp) ++
+            EnumTagCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
             TraitCompleter.getCompletions(qn, TraitUsageKind.Expr, range, ap, scp) ++
             ModuleCompleter.getCompletions(qn, range, ap, scp)
 
