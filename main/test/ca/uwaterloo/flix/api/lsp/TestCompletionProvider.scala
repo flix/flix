@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Token, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Token, TypedAst}
 import ca.uwaterloo.flix.util.Formatter.NoFormatter.code
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
@@ -311,11 +311,22 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   /**
+    * The absolute character offset into the source, zero-indexed.
+    */
+  private def calcOffset(loc: SourcePosition): Int = {
+      var offset = 0
+      for (i <- 1 until loc.lineOneIndexed) {
+        offset += loc.source.getLine(i).length + 1 // +1 for the newline
+      }
+      offset + loc.colOneIndexed - 1
+  }
+
+  /**
     * Trims the given program string after the given location `loc` by `n` characters.
     */
   private def trimAfter(program: String, loc: SourceLocation, n: Int): String = {
-    val target = program.substring(loc.sp1.offset, loc.sp2.offset)
-    program.substring(0, loc.sp1.offset) + target.dropRight(n) + program.substring(loc.sp2.offset)
+    val target = program.substring(calcOffset(loc.sp1), calcOffset(loc.sp2))
+    program.substring(0, calcOffset(loc.sp1)) + target.dropRight(n) + program.substring(calcOffset(loc.sp2))
   }
 
   private val keywords = Set(
