@@ -105,6 +105,13 @@ object LambdaDrop {
     defn.copy(exp = body)
   }
 
+  /**
+    * Collects all recursive calls in `exp0` and stores them in the local context `ctx`.
+    *
+    * @param exp0 the expression to visit.
+    * @param sym0 the symbol of function being visited.
+    * @param ctx  the local context. This will be mutated.
+    */
   private def visitExp(exp0: MonoAst.Expr)(implicit sym0: Symbol.DefnSym, ctx: LocalContext): Unit = exp0 match {
     case Expr.Cst(_, _, _) =>
 
