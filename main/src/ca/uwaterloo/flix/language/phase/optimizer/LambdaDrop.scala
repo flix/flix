@@ -102,7 +102,7 @@ object LambdaDrop {
     * are closure captured.
     */
   private def lambdaDrop(defn: MonoAst.Def)(implicit lctx: LocalContext, flix: Flix): MonoAst.Def = {
-    implicit val params: List[(MonoAst.FormalParam, ParamKind)] = paramKinds(lctx.recursiveCalls, defn.spec.fparams)
+    implicit val params: List[(MonoAst.FormalParam, ParamKind)] = paramKinds(lctx.recursiveCalls.toList, defn.spec.fparams)
     implicit val (newDefnSym, subst): (Symbol.VarSym, Substitution) = mkSubst(defn, params)
     val rewrittenExp = rewriteExp(defn.exp)(defn.sym, newDefnSym, subst, params)
     val body = mkLocalDefExpr(rewrittenExp, newDefnSym)
@@ -361,7 +361,7 @@ object LambdaDrop {
     (freshLocalDefSym, Substitution(substMap))
   }
 
-  private def paramKinds(calls: Iterable[Expr.ApplyDef], fparams: Iterable[MonoAst.FormalParam]): List[(MonoAst.FormalParam, ParamKind)] = {
+  private def paramKinds(calls: List[Expr.ApplyDef], fparams: List[MonoAst.FormalParam]): List[(MonoAst.FormalParam, ParamKind)] = {
     val matrix = calls.map(call => fparams.zip(call.exps)).transpose
     matrix.map {
       case invocations =>
