@@ -204,6 +204,23 @@ object LambdaDrop {
       methods.foreach(m => visitExp(m.exp))
   }
 
+  /**
+    * Rewrites every [[Expr.ApplyDef]] expression of `oldDefnSym` to
+    * an [[Expr.ApplyLocalDef]] expression, replacing `oldDefnSym` with
+    * `newDefnSym`.
+    *
+    * Also applies the substitution `subst` on all variables, so non-constant
+    * variables are renamed to matching formal parameters of the local def
+    * with name `newDefnSym`.
+    *
+    * @param expr0      the expression to rewrite
+    * @param oldDefnSym the symbol of the function to rewrite
+    * @param newDefnSym the symbol of the local def to insert
+    * @param subst      the substitution defined on non-constant parameters.
+    *                   It is up to the caller to ensure which variables the substitution is defined over.
+    * @param fparams0   the formal parameters and their [[ParamKind]]s of the function to rewrite.
+    * @return
+    */
   private def rewriteExp(expr0: MonoAst.Expr)(implicit oldDefnSym: Symbol.DefnSym, newDefnSym: Symbol.VarSym, subst: Substitution, fparams0: List[(MonoAst.FormalParam, ParamKind)]): MonoAst.Expr = expr0 match {
     case Expr.Cst(_, _, _) =>
       expr0
@@ -408,6 +425,15 @@ object LambdaDrop {
     */
   private case class LocalContext(recursiveCalls: mutable.ArrayBuffer[Expr.ApplyDef])
 
+  /**
+    * A substitution defined on `vars`.
+    * Applying the substitution to a variable not in `vars` returns the symbol itself.
+    *
+    * More formally, for all `x` not in `vars` it holds that `subst(x) = x`.
+    * Likewise, for all `x` in `vars` where `vars(x) = y`  it holds that `subst(x) = y`.
+    *
+    * @param vars the partial map from stale to fresh variables.
+    */
   private case class Substitution(vars: Map[Symbol.VarSym, Symbol.VarSym]) {
     def apply(sym: Symbol.VarSym): Symbol.VarSym = vars.get(sym) match {
       case Some(freshSym) => freshSym
