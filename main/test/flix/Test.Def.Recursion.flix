@@ -1,31 +1,31 @@
 mod Test.Def.Recursion {
-    use List.{Null, Conz};
-    use Opt.{Empty, El};
+    use List.{Nil, Cons};
+    use Option.{None, Some};
 
     enum List[a] {
-        case Null
-        case Conz(a, List[a])
+        case Nil
+        case Cons(a, List[a])
     }
 
-    enum Opt[a] with Eq, Order, ToString {
-        case Empty
-        case El(a)
+    enum Option[a] with Eq, Order, ToString {
+        case None
+        case Some(a)
     }
 
-    def emptyList(): List[Int32] = Null
+    def emptyList(): List[Int32] = Nil
 
-    def list1(x: a): List[a] = Conz(x, Null)
+    def list1(x: a): List[a] = Cons(x, Nil)
 
-    def list2(x: a): List[a] = Conz(x, Conz(x, Null))
+    def list2(x: a): List[a] = Cons(x, Cons(x, Nil))
 
-    def list3(x: a): List[a] = Conz(x, Conz(x, Conz(x, Null)))
+    def list3(x: a): List[a] = Cons(x, Cons(x, Cons(x, Nil)))
 
-    def list123(): List[Int32] = Conz(1, Conz(2, Conz(3, Null)))
+    def list123(): List[Int32] = Cons(1, Cons(2, Cons(3, Nil)))
 
-    def simple(l: List[a]): Opt[a] = match l {
-        case Null          => Empty
-        case Conz(x, Null) => El(x)
-        case Conz(_, xs)   => simple(xs)
+    def simple(l: List[a]): Option[a] = match l {
+        case Nil          => None
+        case Cons(x, Nil) => Some(x)
+        case Cons(_, xs)  => simple(xs)
     }
 
     def swapsWithExpr(x: Int32, y: Int32): Int32 =
@@ -59,62 +59,62 @@ mod Test.Def.Recursion {
     def mutualSwaps2(x: Int32, y: Int32): Int32 =
         mutualSwaps1(x + 1, y - 1)
 
-    def mutualSimple1(l: List[a]): Opt[a] = match l {
-        case Null          => Empty
-        case Conz(x, Null) => El(x)
-        case Conz(_, xs)   => mutualSimple2(xs)
+    def mutualSimple1(l: List[a]): Option[a] = match l {
+        case Nil          => None
+        case Cons(x, Nil) => Some(x)
+        case Cons(_, xs)   => mutualSimple2(xs)
     }
 
-    def mutualSimple2(l: List[a]): Opt[a] = match l {
-        case Null          => Empty
-        case Conz(x, Null) => El(x)
-        case Conz(_, xs)   => mutualSimple1(xs)
+    def mutualSimple2(l: List[a]): Option[a] = match l {
+        case Nil          => None
+        case Cons(x, Nil) => Some(x)
+        case Cons(_, xs)  => mutualSimple1(xs)
     }
 
-    def higherOrder(f: a -> b, l: List[a]): Opt[b] = match l {
-        case Null          => Empty
-        case Conz(x, Null) => El(f(x))
-        case Conz(_, xs)   => higherOrder(f, xs)
+    def higherOrder(f: a -> b, l: List[a]): Option[b] = match l {
+        case Nil          => None
+        case Cons(x, Nil) => Some(f(x))
+        case Cons(_, xs)  => higherOrder(f, xs)
     }
 
-    def higherOrderSwaps(f: a -> b, g: a -> b, l: List[a]): Opt[b] = match l {
-        case Null          => Empty
-        case Conz(x, Null) => El(f(x))
-        case Conz(_, xs)   => higherOrderSwaps(g, f, xs)
+    def higherOrderSwaps(f: a -> b, g: a -> b, l: List[a]): Option[b] = match l {
+        case Nil          => None
+        case Cons(x, Nil) => Some(f(x))
+        case Cons(_, xs)  => higherOrderSwaps(g, f, xs)
     }
 
-    def mutualHigherOrder1(f: a -> b, l: List[a]): Opt[b] = match l {
-        case Null          => Empty
-        case Conz(x, Null) => El(f(x))
-        case Conz(_, xs)   => mutualHigherOrder2(f, xs)
+    def mutualHigherOrder1(f: a -> b, l: List[a]): Option[b] = match l {
+        case Nil          => None
+        case Cons(x, Nil) => Some(f(x))
+        case Cons(_, xs)  => mutualHigherOrder2(f, xs)
     }
 
-    def mutualHigherOrder2(f: a -> b, l: List[a]): Opt[b] =match l {
-        case Null          => Empty
-        case Conz(x, Null) => El(f(x))
-        case Conz(_, xs)   => mutualHigherOrder1(f, xs)
+    def mutualHigherOrder2(f: a -> b, l: List[a]): Option[b] =match l {
+        case Nil          => None
+        case Cons(x, Nil) => Some(f(x))
+        case Cons(_, xs)  => mutualHigherOrder1(f, xs)
     }
 
-    def mutualHigherOrderSwaps1(f: a -> b, g: a -> b, l: List[a]): Opt[b] = match l {
-        case Null          => Empty
-        case Conz(x, Null) => El(f(x))
-        case Conz(_, xs)   => mutualHigherOrderSwaps2(g, f, xs)
+    def mutualHigherOrderSwaps1(f: a -> b, g: a -> b, l: List[a]): Option[b] = match l {
+        case Nil          => None
+        case Cons(x, Nil) => Some(f(x))
+        case Cons(_, xs)  => mutualHigherOrderSwaps2(g, f, xs)
     }
 
-    def mutualHigherOrderSwaps2(f: a -> b, g: a -> b, l: List[a]): Opt[b] = match l {
-        case Null          => Empty
-        case Conz(x, Null) => El(f(x))
-        case Conz(_, xs)   => mutualHigherOrderSwaps1(g, f, xs)
+    def mutualHigherOrderSwaps2(f: a -> b, g: a -> b, l: List[a]): Option[b] = match l {
+        case Nil          => None
+        case Cons(x, Nil) => Some(f(x))
+        case Cons(_, xs)  => mutualHigherOrderSwaps1(g, f, xs)
     }
 
     def nonTailCallMap(f: a -> b, l: List[a]): List[b] = match l {
-        case Null        => Null
-        case Conz(x, xs) => Conz(f(x), nonTailCallMap(f, xs))
+        case Nil         => Nil
+        case Cons(x, xs) => Cons(f(x), nonTailCallMap(f, xs))
     }
 
     def tailCallMapReverse(f: a -> b, l: List[a], acc: List[b]): List[b] = match l {
-        case Null        => acc
-        case Conz(x, xs) => tailCallMapReverse(f, xs, Conz(f(x), acc))
+        case Nil         => acc
+        case Cons(x, xs) => tailCallMapReverse(f, xs, Cons(f(x), acc))
     }
 
     def allConstantParams(x: a): Bool with Eq[a] =
@@ -124,33 +124,33 @@ mod Test.Def.Recursion {
             allConstantParams(x)
 
     pub def higherOrderCapturesItself(f: (a, Unit -> b) -> b, z: b, l: List[a]): b = match l {
-        case Null        => z
-        case Conz(x, xs) => f(x, _ -> higherOrderCapturesItself(f, z, xs))
+        case Nil         => z
+        case Cons(x, xs) => f(x, _ -> higherOrderCapturesItself(f, z, xs))
     }
 
     pub def higherOrderPartiallyApplies(f: (a, List[a], List[a] -> b) -> b, z: b, l: List[a]): b = match l {
-        case Null        => z
-        case Conz(x, xs) => f(x, xs, higherOrderPartiallyApplies(f, z))
+        case Nil         => z
+        case Cons(x, xs) => f(x, xs, higherOrderPartiallyApplies(f, z))
     }
 
     @test
     def simple01(): Bool = {
-        Empty == simple(emptyList())
+        None == simple(emptyList())
     }
 
     @test
     def simple02(): Bool = {
-        El(1) == simple(list1(1))
+        Some(1) == simple(list1(1))
     }
 
     @test
     def simple03(): Bool = {
-        El(1) == simple(list2(1))
+        Some(1) == simple(list2(1))
     }
 
     @test
     def simple04(): Bool = {
-        El(1) == simple(list3(1))
+        Some(1) == simple(list3(1))
     }
 
     @test
@@ -235,102 +235,102 @@ mod Test.Def.Recursion {
 
     @test
     def mutualSimple01(): Bool = {
-        Empty == mutualSimple1(emptyList())
+        None == mutualSimple1(emptyList())
     }
 
     @test
     def mutualSimple02(): Bool = {
-        El(1) == mutualSimple1(list1(1))
+        Some(1) == mutualSimple1(list1(1))
     }
 
     @test
     def mutualSimple03(): Bool = {
-        El(1) == mutualSimple1(list2(1))
+        Some(1) == mutualSimple1(list2(1))
     }
 
     @test
     def mutualSimple04(): Bool = {
-        El(1) == mutualSimple1(list3(1))
+        Some(1) == mutualSimple1(list3(1))
     }
 
     @test
     def higherOrder01(): Bool = {
-        Empty == higherOrder(x -> x + 1, emptyList())
+        None == higherOrder(x -> x + 1, emptyList())
     }
 
     @test
     def higherOrder02(): Bool = {
-        El(2) == higherOrder(x -> x + 1, list1(1))
+        Some(2) == higherOrder(x -> x + 1, list1(1))
     }
 
     @test
     def higherOrder03(): Bool = {
-        El(2) == higherOrder(x -> x + 1, list2(1))
+        Some(2) == higherOrder(x -> x + 1, list2(1))
     }
 
     @test
     def higherOrder04(): Bool = {
-        El(2) == higherOrder(x -> x + 1, list3(1))
+        Some(2) == higherOrder(x -> x + 1, list3(1))
     }
 
     @test
     def higherOrderSwaps01(): Bool = {
-        Empty == higherOrderSwaps(x -> x + 1, x -> x + 2, emptyList())
+        None == higherOrderSwaps(x -> x + 1, x -> x + 2, emptyList())
     }
 
     @test
     def higherOrderSwaps02(): Bool = {
-        El(2) == higherOrderSwaps(x -> x + 1, x -> x + 2, list1(1))
+        Some(2) == higherOrderSwaps(x -> x + 1, x -> x + 2, list1(1))
     }
 
     @test
     def higherOrderSwaps03(): Bool = {
-        El(3) == higherOrderSwaps(x -> x + 1, x -> x + 2, list2(1))
+        Some(3) == higherOrderSwaps(x -> x + 1, x -> x + 2, list2(1))
     }
 
     @test
     def higherOrderSwaps04(): Bool = {
-        El(2) == higherOrderSwaps(x -> x + 1, x -> x + 2, list3(1))
+        Some(2) == higherOrderSwaps(x -> x + 1, x -> x + 2, list3(1))
     }
 
     @test
     def mutualHigherOrder01(): Bool = {
-        Empty == mutualHigherOrder1(x -> x + 1, emptyList())
+        None == mutualHigherOrder1(x -> x + 1, emptyList())
     }
 
     @test
     def mutualHigherOrder02(): Bool = {
-        El(2) == mutualHigherOrder1(x -> x + 1, list1(1))
+        Some(2) == mutualHigherOrder1(x -> x + 1, list1(1))
     }
 
     @test
     def mutualHigherOrder03(): Bool = {
-        El(2) == mutualHigherOrder1(x -> x + 1, list2(1))
+        Some(2) == mutualHigherOrder1(x -> x + 1, list2(1))
     }
 
     @test
     def mutualHigherOrder04(): Bool = {
-        El(2) == mutualHigherOrder1(x -> x + 1, list3(1))
+        Some(2) == mutualHigherOrder1(x -> x + 1, list3(1))
     }
 
     @test
     def mutualHigherOrderSwaps01(): Bool = {
-        Empty == mutualHigherOrderSwaps1(x -> x + 1, x -> x + 2, emptyList())
+        None == mutualHigherOrderSwaps1(x -> x + 1, x -> x + 2, emptyList())
     }
 
     @test
     def mutualHigherOrderSwaps02(): Bool = {
-        El(2) == mutualHigherOrderSwaps1(x -> x + 1, x -> x + 2, list1(1))
+        Some(2) == mutualHigherOrderSwaps1(x -> x + 1, x -> x + 2, list1(1))
     }
 
     @test
     def mutualHigherOrderSwaps03(): Bool = {
-        El(3) == mutualHigherOrderSwaps1(x -> x + 1, x -> x + 2, list2(1))
+        Some(3) == mutualHigherOrderSwaps1(x -> x + 1, x -> x + 2, list2(1))
     }
 
     @test
     def mutualHigherOrderSwaps04(): Bool = {
-        El(2) == mutualHigherOrderSwaps1(x -> x + 1, x -> x + 2, list3(1))
+        Some(2) == mutualHigherOrderSwaps1(x -> x + 1, x -> x + 2, list3(1))
     }
 
     @test
@@ -355,22 +355,22 @@ mod Test.Def.Recursion {
 
     @test
     def tailCallMapReverse01(): List[Int32] = {
-        tailCallMapReverse(x -> x * x, emptyList(), Null)
+        tailCallMapReverse(x -> x * x, emptyList(), Nil)
     }
 
     @test
     def tailCallMapReverse02(): List[Int32] = {
-        tailCallMapReverse(x -> x * x, list1(1), Null)
+        tailCallMapReverse(x -> x * x, list1(1), Nil)
     }
 
     @test
     def tailCallMapReverse03(): List[Int32] = {
-        tailCallMapReverse(x -> x * x, list1(2), Null)
+        tailCallMapReverse(x -> x * x, list1(2), Nil)
     }
 
     @test
     def tailCallMapReverse04(): List[Int32] = {
-        tailCallMapReverse(x -> x * x, list3(3), Null)
+        tailCallMapReverse(x -> x * x, list3(3), Nil)
     }
 
     @test
