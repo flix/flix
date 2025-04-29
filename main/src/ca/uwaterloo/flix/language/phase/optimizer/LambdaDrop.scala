@@ -61,21 +61,21 @@ object LambdaDrop {
 
   private def visitDef(defn: MonoAst.Def)(implicit flix: Flix): MonoAst.Def = {
     implicit val ctx: LocalContext = LocalContext.mk()
-    if (isRewritable(defn))
-      rewriteDefn(defn)
+    if (isDroppable(defn))
+      lambdaDrop(defn)
     else
       defn
   }
 
   /**
-    * A function is rewritable if
+    * A function is droppable if
     * (a) it contains at least one recursive call and
     * (b) is a higher-order function, i.e., it has at least one formal parameter
     * with a function type.
     *
     * The latter condition can be checked by the [[isHigherOrder]] predicate.
     */
-  private def isRewritable(defn: MonoAst.Def)(implicit ctx: LocalContext): Boolean = {
+  private def isDroppable(defn: MonoAst.Def)(implicit ctx: LocalContext): Boolean = {
     if (isHigherOrder(defn)) {
       visitExp(defn.exp)(defn.sym, ctx)
       ctx.recursiveCalls.nonEmpty
@@ -97,7 +97,7 @@ object LambdaDrop {
     }
   }
 
-  private def rewriteDefn(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): MonoAst.Def = {
+  private def lambdaDrop(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): MonoAst.Def = {
     implicit val params: List[(MonoAst.FormalParam, ParamKind)] = paramKinds(ctx.recursiveCalls, defn.spec.fparams)
     implicit val (newDefnSym, subst): (Symbol.VarSym, Substitution) = mkSubst(defn, params)
     val rewrittenExp = rewriteExp(defn.exp)(defn.sym, newDefnSym, subst, params)
