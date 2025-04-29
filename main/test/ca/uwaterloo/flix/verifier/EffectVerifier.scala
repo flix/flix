@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.verifier
+package ca.uwaterloo.flix.verifier
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
@@ -38,12 +38,10 @@ object EffectVerifier {
   /**
     * Verifies the effects in the given root.
     */
-  def run(root: Root)(implicit flix: Flix): Unit = {
-    if (flix.options.xverifyeffects) {
-      ParOps.parMapValues(root.defs)(visitDef(_)(root.eqEnv, flix))
-      ParOps.parMapValues(root.sigs)(visitSig(_)(root.eqEnv, flix))
-      ParOps.parMap(root.instances.values)(visitInstance(_)(root.eqEnv, flix))
-    }
+  def verify(root: Root)(implicit flix: Flix): Unit = {
+    ParOps.parMapValues(root.defs)(visitDef(_)(root.eqEnv, flix))
+    ParOps.parMapValues(root.sigs)(visitSig(_)(root.eqEnv, flix))
+    ParOps.parMap(root.instances.values)(visitInstance(_)(root.eqEnv, flix))
   }
 
   /**
