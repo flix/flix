@@ -242,13 +242,15 @@ object LambdaDrop {
 
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       if (sym == oldDefnSym) {
-        val es = exps.zip(fparams0).filter { // Rewrite call to new function symbol and drop constant parameters
+        // Rewrite call to new function symbol and drop constant parameters
+        val es = exps.zip(fparams0).filter {
           case (_, (_, pkind)) => pkind == ParamKind.NonConst
         }.map {
           case (e, (_, _)) => rewriteExp(e)
         }
         Expr.ApplyLocalDef(newDefnSym, es, tpe, eff, loc)
       } else {
+        // Preserve call as is
         val es = exps.map(rewriteExp)
         Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
       }
