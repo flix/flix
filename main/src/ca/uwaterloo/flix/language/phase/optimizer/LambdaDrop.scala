@@ -60,7 +60,7 @@ object LambdaDrop {
   }
 
   private def visitDef(defn: MonoAst.Def)(implicit flix: Flix): MonoAst.Def = {
-    implicit val ctx: LocalContext = LocalContext.mk()
+    implicit val lctx: LocalContext = LocalContext.mk()
     if (isDroppable(defn))
       lambdaDrop(defn)
     else
@@ -75,10 +75,10 @@ object LambdaDrop {
     *
     * The latter condition can be checked by the [[isHigherOrder]] predicate.
     */
-  private def isDroppable(defn: MonoAst.Def)(implicit ctx: LocalContext): Boolean = {
+  private def isDroppable(defn: MonoAst.Def)(implicit lctx: LocalContext): Boolean = {
     if (isHigherOrder(defn)) {
-      visitExp(defn.exp)(defn.sym, ctx)
-      ctx.recursiveCalls.nonEmpty
+      visitExp(defn.exp)(defn.sym, lctx)
+      lctx.recursiveCalls.nonEmpty
     } else {
       false
     }
@@ -97,8 +97,8 @@ object LambdaDrop {
     }
   }
 
-  private def lambdaDrop(defn: MonoAst.Def)(implicit ctx: LocalContext, flix: Flix): MonoAst.Def = {
-    implicit val params: List[(MonoAst.FormalParam, ParamKind)] = paramKinds(ctx.recursiveCalls, defn.spec.fparams)
+  private def lambdaDrop(defn: MonoAst.Def)(implicit lctx: LocalContext, flix: Flix): MonoAst.Def = {
+    implicit val params: List[(MonoAst.FormalParam, ParamKind)] = paramKinds(lctx.recursiveCalls, defn.spec.fparams)
     implicit val (newDefnSym, subst): (Symbol.VarSym, Substitution) = mkSubst(defn, params)
     val rewrittenExp = rewriteExp(defn.exp)(defn.sym, newDefnSym, subst, params)
     val body = mkLocalDefExpr(rewrittenExp, newDefnSym)
@@ -106,13 +106,13 @@ object LambdaDrop {
   }
 
   /**
-    * Collects all recursive calls in `exp0` and stores them in the local context `ctx`.
+    * Collects all recursive calls in `exp0` and stores them in the local context `lctx`.
     *
     * @param exp0 the expression to visit.
     * @param sym0 the symbol of function being visited.
-    * @param ctx  the local context. This will be mutated.
+    * @param lctx the local context. This will be mutated.
     */
-  private def visitExp(exp0: MonoAst.Expr)(implicit sym0: Symbol.DefnSym, ctx: LocalContext): Unit = exp0 match {
+  private def visitExp(exp0: MonoAst.Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): Unit = exp0 match {
     case Expr.Cst(_, _, _) =>
 
     case Expr.Var(_, _, _) =>
@@ -131,7 +131,7 @@ object LambdaDrop {
       // Check for recursion
       if (sym == sym0) {
         val applyExp = exp0.asInstanceOf[Expr.ApplyDef]
-        ctx.recursiveCalls.addOne(applyExp)
+        lctx.recursiveCalls.addOne(applyExp)
       }
       exps.foreach(visitExp)
 
