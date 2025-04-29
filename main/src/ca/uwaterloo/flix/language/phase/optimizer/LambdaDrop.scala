@@ -374,7 +374,7 @@ object LambdaDrop {
           case Some((fp, _)) => (fp, ParamKind.NonConst)
           case None => throw InternalCompilerException("unexpected empty head", SourceLocation.Unknown)
         }
-    }.toList
+    }
   }
 
   /** Returns a fresh [[Symbol.VarSym]] for a local def. */
