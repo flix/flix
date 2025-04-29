@@ -131,11 +131,10 @@ object LambdaDrop {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.ApplyDef(sym, exps, _, _, _, _) =>
+    case expr@Expr.ApplyDef(sym, exps, _, _, _, _) =>
       // Check for self-recursive call
       if (sym == sym0) {
-        val applyExp = exp0.asInstanceOf[Expr.ApplyDef]
-        lctx.recursiveCalls.addOne(applyExp)
+        lctx.recursiveCalls.addOne(expr)
       }
       exps.foreach(visitExp)
 
