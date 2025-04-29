@@ -1,10 +1,10 @@
 mod Test.Def.Recursion {
-    use Lizt.{Null, Conz};
+    use List.{Null, Conz};
     use Opt.{Empty, El};
 
-    enum Lizt[a] {
+    enum List[a] {
         case Null
-        case Conz(a, Lizt[a])
+        case Conz(a, List[a])
     }
 
     enum Opt[a] with Eq, Order, ToString {
@@ -12,17 +12,17 @@ mod Test.Def.Recursion {
         case El(a)
     }
 
-    def emptyList(): Lizt[Int32] = Null
+    def emptyList(): List[Int32] = Null
 
-    def list1(x: a): Lizt[a] = Conz(x, Null)
+    def list1(x: a): List[a] = Conz(x, Null)
 
-    def list2(x: a): Lizt[a] = Conz(x, Conz(x, Null))
+    def list2(x: a): List[a] = Conz(x, Conz(x, Null))
 
-    def list3(x: a): Lizt[a] = Conz(x, Conz(x, Conz(x, Null)))
+    def list3(x: a): List[a] = Conz(x, Conz(x, Conz(x, Null)))
 
-    def list123(): Lizt[Int32] = Conz(1, Conz(2, Conz(3, Null)))
+    def list123(): List[Int32] = Conz(1, Conz(2, Conz(3, Null)))
 
-    def simple(l: Lizt[a]): Opt[a] = match l {
+    def simple(l: List[a]): Opt[a] = match l {
         case Null          => Empty
         case Conz(x, Null) => El(x)
         case Conz(_, xs)   => simple(xs)
@@ -59,60 +59,60 @@ mod Test.Def.Recursion {
     def mutualSwaps2(x: Int32, y: Int32): Int32 =
         mutualSwaps1(x + 1, y - 1)
 
-    def mutualSimple1(l: Lizt[a]): Opt[a] = match l {
+    def mutualSimple1(l: List[a]): Opt[a] = match l {
         case Null          => Empty
         case Conz(x, Null) => El(x)
         case Conz(_, xs)   => mutualSimple2(xs)
     }
 
-    def mutualSimple2(l: Lizt[a]): Opt[a] = match l {
+    def mutualSimple2(l: List[a]): Opt[a] = match l {
         case Null          => Empty
         case Conz(x, Null) => El(x)
         case Conz(_, xs)   => mutualSimple1(xs)
     }
 
-    def higherOrder(f: a -> b, l: Lizt[a]): Opt[b] = match l {
+    def higherOrder(f: a -> b, l: List[a]): Opt[b] = match l {
         case Null          => Empty
         case Conz(x, Null) => El(f(x))
         case Conz(_, xs)   => higherOrder(f, xs)
     }
 
-    def higherOrderSwaps(f: a -> b, g: a -> b, l: Lizt[a]): Opt[b] = match l {
+    def higherOrderSwaps(f: a -> b, g: a -> b, l: List[a]): Opt[b] = match l {
         case Null          => Empty
         case Conz(x, Null) => El(f(x))
         case Conz(_, xs)   => higherOrderSwaps(g, f, xs)
     }
 
-    def mutualHigherOrder1(f: a -> b, l: Lizt[a]): Opt[b] = match l {
+    def mutualHigherOrder1(f: a -> b, l: List[a]): Opt[b] = match l {
         case Null          => Empty
         case Conz(x, Null) => El(f(x))
         case Conz(_, xs)   => mutualHigherOrder2(f, xs)
     }
 
-    def mutualHigherOrder2(f: a -> b, l: Lizt[a]): Opt[b] =match l {
+    def mutualHigherOrder2(f: a -> b, l: List[a]): Opt[b] =match l {
         case Null          => Empty
         case Conz(x, Null) => El(f(x))
         case Conz(_, xs)   => mutualHigherOrder1(f, xs)
     }
 
-    def mutualHigherOrderSwaps1(f: a -> b, g: a -> b, l: Lizt[a]): Opt[b] = match l {
+    def mutualHigherOrderSwaps1(f: a -> b, g: a -> b, l: List[a]): Opt[b] = match l {
         case Null          => Empty
         case Conz(x, Null) => El(f(x))
         case Conz(_, xs)   => mutualHigherOrderSwaps2(g, f, xs)
     }
 
-    def mutualHigherOrderSwaps2(f: a -> b, g: a -> b, l: Lizt[a]): Opt[b] = match l {
+    def mutualHigherOrderSwaps2(f: a -> b, g: a -> b, l: List[a]): Opt[b] = match l {
         case Null          => Empty
         case Conz(x, Null) => El(f(x))
         case Conz(_, xs)   => mutualHigherOrderSwaps1(g, f, xs)
     }
 
-    def nonTailCallMap(f: a -> b, l: Lizt[a]): Lizt[b] = match l {
+    def nonTailCallMap(f: a -> b, l: List[a]): List[b] = match l {
         case Null        => Null
         case Conz(x, xs) => Conz(f(x), nonTailCallMap(f, xs))
     }
 
-    def tailCallMapReverse(f: a -> b, l: Lizt[a], acc: Lizt[b]): Lizt[b] = match l {
+    def tailCallMapReverse(f: a -> b, l: List[a], acc: List[b]): List[b] = match l {
         case Null        => acc
         case Conz(x, xs) => tailCallMapReverse(f, xs, Conz(f(x), acc))
     }
@@ -123,12 +123,12 @@ mod Test.Def.Recursion {
         else
             allConstantParams(x)
 
-    pub def higherOrderCapturesItself(f: (a, Unit -> b) -> b, z: b, l: Lizt[a]): b = match l {
+    pub def higherOrderCapturesItself(f: (a, Unit -> b) -> b, z: b, l: List[a]): b = match l {
         case Null        => z
         case Conz(x, xs) => f(x, _ -> higherOrderCapturesItself(f, z, xs))
     }
 
-    pub def higherOrderPartiallyApplies(f: (a, Lizt[a], Lizt[a] -> b) -> b, z: b, l: Lizt[a]): b = match l {
+    pub def higherOrderPartiallyApplies(f: (a, List[a], List[a] -> b) -> b, z: b, l: List[a]): b = match l {
         case Null        => z
         case Conz(x, xs) => f(x, xs, higherOrderPartiallyApplies(f, z))
     }
@@ -334,42 +334,42 @@ mod Test.Def.Recursion {
     }
 
     @test
-    def nonTailCallMap01(): Lizt[Int32] = {
+    def nonTailCallMap01(): List[Int32] = {
         nonTailCallMap(x -> x * x, emptyList())
     }
 
     @test
-    def nonTailCallMap02(): Lizt[Int32] = {
+    def nonTailCallMap02(): List[Int32] = {
         nonTailCallMap(x -> x * x, list1(1))
     }
 
     @test
-    def nonTailCallMap03(): Lizt[Int32] = {
+    def nonTailCallMap03(): List[Int32] = {
         nonTailCallMap(x -> x * x, list1(2))
     }
 
     @test
-    def nonTailCallMap04(): Lizt[Int32] = {
+    def nonTailCallMap04(): List[Int32] = {
         nonTailCallMap(x -> x * x, list3(3))
     }
 
     @test
-    def tailCallMapReverse01(): Lizt[Int32] = {
+    def tailCallMapReverse01(): List[Int32] = {
         tailCallMapReverse(x -> x * x, emptyList(), Null)
     }
 
     @test
-    def tailCallMapReverse02(): Lizt[Int32] = {
+    def tailCallMapReverse02(): List[Int32] = {
         tailCallMapReverse(x -> x * x, list1(1), Null)
     }
 
     @test
-    def tailCallMapReverse03(): Lizt[Int32] = {
+    def tailCallMapReverse03(): List[Int32] = {
         tailCallMapReverse(x -> x * x, list1(2), Null)
     }
 
     @test
-    def tailCallMapReverse04(): Lizt[Int32] = {
+    def tailCallMapReverse04(): List[Int32] = {
         tailCallMapReverse(x -> x * x, list3(3), Null)
     }
 
