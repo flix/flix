@@ -135,7 +135,9 @@ object Inliner {
       Expr.ApplyAtomic(op, es, tpe, eff, loc)
 
     case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, ctx0)
+      val exprCtx = ExprContext.AppCtx(exp2, ctx0.subst, ctx0.exprCtx)
+      val ctx = ctx0.copy(exprCtx = exprCtx)
+      val e1 = visitExp(exp1, ctx)
       val e2 = visitExp(exp2, ctx0)
       Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
@@ -257,7 +259,7 @@ object Inliner {
       Expr.Discard(e, eff, loc)
 
     case Expr.Match(exp, rules, tpe, eff, loc) =>
-      val exprCtx = ExprContext.MatchCtx(rules, ctx0.inScopeVars, ctx0.exprCtx)
+      val exprCtx = ExprContext.MatchCtx(rules, ctx0.subst, ctx0.exprCtx)
       val ctx = ctx0.copy(exprCtx = exprCtx)
       val e = visitExp(exp, ctx)
       val rs = rules.map {
@@ -470,10 +472,10 @@ object Inliner {
     case object Empty extends ExprContext
 
     /** Function application context. */
-    case class AppCtx(expr: Expr, subst: Map[Symbol.VarSym, BoundKind], ctx: ExprContext) extends ExprContext
+    case class AppCtx(expr: Expr, subst: Map[Symbol.VarSym, SubstRange], ctx: ExprContext) extends ExprContext
 
     /** Match-case expression context. */
-    case class MatchCtx(rules: List[OccurrenceAst.MatchRule], subst: Map[Symbol.VarSym, BoundKind], ctx: ExprContext) extends ExprContext
+    case class MatchCtx(rules: List[OccurrenceAst.MatchRule], subst: Map[Symbol.VarSym, SubstRange], ctx: ExprContext) extends ExprContext
 
   }
 
