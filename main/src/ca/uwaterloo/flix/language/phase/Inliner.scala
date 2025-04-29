@@ -458,7 +458,8 @@ object Inliner {
         case OccurrenceAst.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
           val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
           val varSubst1 = varSubsts.fold(ctx0.varSubst)(_ ++ _)
-          val ctx = ctx0.copy(varSubst = varSubst1)
+          val inScopeVars1 = ctx0.inScopeVars ++ fps.map(fp => fp.sym -> Definition.Unknown)
+          val ctx = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeVars1)
           val e = visitExp(exp, ctx)
           OccurrenceAst.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
       }
