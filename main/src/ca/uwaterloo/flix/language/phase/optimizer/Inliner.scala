@@ -149,7 +149,8 @@ object Inliner {
           val es = exps.map(visitExp(_, ctx0))
           Expr.ApplyLocalDef(freshVarSym, es, tpe, eff, loc)
 
-        case None => throw InternalCompilerException("unexpected stale local def symbol", loc)
+        case None =>
+          throw InternalCompilerException("unexpected stale local def symbol", loc)
       }
 
     case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) =>
@@ -203,6 +204,7 @@ object Inliner {
       }
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
+      println(occur)
       if (isDead(occur)) {
         visitExp(exp2, ctx0)
       } else {
