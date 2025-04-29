@@ -204,7 +204,6 @@ object Inliner {
       }
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
-      println(occur)
       if (isDead(occur)) {
         visitExp(exp2, ctx0)
       } else {
