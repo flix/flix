@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.verifier
+package ca.uwaterloo.flix.verifier
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern, RestrictableChoosePattern}
 import ca.uwaterloo.flix.language.errors.LocationError
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -35,11 +35,12 @@ import java.util.concurrent.ConcurrentLinkedQueue
   *   - The parent node and its last child node must have the same ending.
   */
 object LocationVerifier {
-  def run(root: TypedAst.Root)(implicit flix: Flix): Unit = {
-      if (flix.options.xverifylocations) {
-        implicit val sctx: SharedContext = SharedContext.mk()
-        ParOps.parMapValues(root.defs)(visitDef)
-      }
+  def verify(root: TypedAst.Root)(implicit flix: Flix): Unit = {
+    implicit val sctx: SharedContext = SharedContext.mk()
+    ParOps.parMapValues(root.defs)(visitDef)
+    sctx.errors.forEach{
+      case ice => throw ice
+    }
   }
 
   private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext): TypedAst.Def = {
@@ -233,7 +234,7 @@ object LocationVerifier {
       visitType(eff)
 
     case Expr.StructNew(_, fields, region, tpe, eff, _) =>
-      fields.foreach{ field =>
+      fields.foreach { field =>
         visitExp(field._2)
       }
       visitExp(region)
@@ -599,7 +600,9 @@ object LocationVerifier {
   private def verifyParentContainment(parentLoc: SourceLocation, childrenLocation: List[SourceLocation])(implicit sctx: SharedContext): Unit =
     childrenLocation.foreach { loc =>
       if (!parentLoc.contains(loc)) {
-        throw LocationError.mkChildOutOfBoundError(parentLoc, loc)
+        sctx.errors.add(
+          LocationError.mkChildOutOfBoundError(parentLoc, loc)
+        )
       }
     }
 
@@ -612,7 +615,9 @@ object LocationVerifier {
     locs.sliding(2).foreach {
       case List(prevLoc, currLoc) =>
         if (!prevLoc.isBefore(currLoc)) {
-          throw LocationError.mkAppearanceOrderError(prevLoc, currLoc)
+          sctx.errors.add(
+            LocationError.mkAppearanceOrderError(prevLoc, currLoc)
+          )
         }
       case _ => ()
     }
@@ -626,7 +631,9 @@ object LocationVerifier {
     */
   private def verifySameEnding(parentLoc: SourceLocation, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     if (parentLoc.sp2 != loc.sp2) {
-      LocationError.mkDifferentEndingError(parentLoc, loc)
+      sctx.errors.add(
+        LocationError.mkDifferentEndingError(parentLoc, loc)
+      )
     }
   }
 
@@ -646,6 +653,6 @@ object LocationVerifier {
     *
     * @param errors the [[LocationError]]s in the AST, if any.
     */
-  private case class SharedContext(errors: ConcurrentLinkedQueue[Any])
+  private case class SharedContext(errors: ConcurrentLinkedQueue[InternalCompilerException])
 }
 
