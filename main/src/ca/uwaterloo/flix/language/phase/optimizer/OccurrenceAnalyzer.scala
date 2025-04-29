@@ -70,7 +70,7 @@ object OccurrenceAnalyzer {
         }
         val fp = visitFormalParam(fparam, ctx2)
         val ctx3 = ctx2.removeVar(fp.sym)
-        if (e eq exp) {
+        if ((e eq exp) && (fp eq fparam)) {
           (exp0, ctx3) // Reuse exp0.
         } else {
           (OccurrenceAst.Expr.Lambda(fp, e, tpe, loc), ctx3)
