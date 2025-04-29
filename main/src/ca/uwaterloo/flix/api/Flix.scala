@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.phase.optimizer.Optimizer
-import ca.uwaterloo.flix.language.verifier.EffectVerifier
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
@@ -571,8 +570,6 @@ class Flix {
 
             val (afterTyper, typeErrors) = Typer.run(afterDeriver, cachedTyperAst, changeSet)
             errors ++= typeErrors
-
-            EffectVerifier.run(afterTyper)
 
             val (afterEntryPoint, entryPointErrors) = EntryPoints.run(afterTyper)
             errors ++= entryPointErrors
