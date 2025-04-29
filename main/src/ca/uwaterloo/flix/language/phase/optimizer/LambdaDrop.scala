@@ -44,11 +44,11 @@ import scala.collection.mutable
   *
   * {{{
   *   def map(f: a -> b, l: List[a]): List[b] =
-  *       def map$Loop(l1) = match l1 {
+  *       def map$loop(l1) = match l1 {
   *           case Nil      => Nil
-  *           case x :: xs  => f(x) :: map$Loop(xs)
+  *           case x :: xs  => f(x) :: map$loop(xs)
   *       };
-  *       map$Loop(l)
+  *       map$loop(l)
   * }}}
   */
 object LambdaDrop {
