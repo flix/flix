@@ -368,7 +368,6 @@ object LambdaDrop {
     * are the symbol `x` then it is marked [[ParamKind.Const]].
     *
     * Otherwise, it is marked [[ParamKind.NonConst]]
-    *
     */
   private def paramKinds(calls: List[Expr.ApplyDef], fparams: List[MonoAst.FormalParam]): List[(MonoAst.FormalParam, ParamKind)] = {
     val matrix = calls.map(call => fparams.zip(call.exps)).transpose
