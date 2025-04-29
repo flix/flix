@@ -19,31 +19,39 @@ mod Display{
         run {
             f()
         } with handler Display {
-            def displayByRepo(stat, cont) =  {
+            def displayByRepo(stat, resume) =  {
                 println("\n==================== Analysis Result Per Repo ====================\n");
                 Map.forEach((repo, thisStat) -> {
                     println("\nRepository: ${repo}");
                     thisStat |> statFilter |> renameAndMerge |> sortMapByValue |> printEachLanguage              
-                }, stat) |> cont
+                }, stat);
+                resume()
             }
             
             def displayByUser(stats, resume) = {
                 println("\n==================== Analysis Result For User ====================\n");
-                Map.foldLeft((acc, stat) -> {
-                    Map.foldLeftWithKey((acc1, ext, data) -> {
-                        Map.insertWith(match (oldAdds, oldDels) -> match (newAdds, newDels) -> 
-                            (oldAdds + newAdds, oldDels + newDels)
-                        , ext, data, acc1)
-                    }, acc, stat)
-                }, Map.empty(), stats) |> statFilter |> renameAndMerge |> sortMapByValue |> printEachLanguage |> resume
+                region rc {
+                    let map = MutMap.empty(rc);
+                    foreach (
+                        (_repo, stat) <- stats;
+                        (ext, data) <- stat
+                    ){
+                        MutMap.putWith(
+                            match (oldAdds, oldDels) -> match (newAdds, newDels) -> (oldAdds + newAdds, oldDels + newDels),
+                            ext, data, map
+                        )
+                    };
+                    map |> MutMap.toMap |> statFilter |> renameAndMerge |> sortMapByValue |> printEachLanguage;
+                    resume()
+                }
             }
             
             def displayByByte(stat, resume) = {
                 println("\n==================== Analysis Result By Bytes ====================\n");
                 stat 
                 |> sortMapByValue 
-                |> List.forEach(match (lang, size) -> println("${lang}: ${size} Bytes")) 
-                |> resume
+                |> List.forEach(match (lang, size) -> println("${lang}: ${size} Bytes")) ;
+                resume()
             }
         }
     }
@@ -67,9 +75,10 @@ mod Display{
             match ext2Language(ext) {
                 case Option.None        => acc
                 case Option.Some(language) => 
-                    Map.insertWith(match (oldAdds, oldDels) -> match (newAdds, newDels) -> 
-                        (oldAdds + newAdds, oldDels + newDels)
-                    , language, data, acc)
+                    Map.insertWith(
+                        match (oldAdds, oldDels) -> match (newAdds, newDels) -> (oldAdds + newAdds, oldDels + newDels),
+                        language, data, acc
+                    )
             }
         }, Map.empty(), stat)
 
