@@ -28,15 +28,21 @@ object EnumTagContext {
   /**
     * Represents an expression in a complete enum context.
     *
-    * For example, in `Clr.Red|` we have that cursor is `InsideCompleteEnumTag`.
+    * For example, in `Clr.Red|` where Red is a valid case, we say that cursor position is `AfterCompleteEnumTag`.
     */
   case class AfterCompleteEnumTag(sym: SymUse.CaseSymUse) extends EnumTagContext
 
+  /**
+    * Represents an expression in all other contexts.
+    */
   case object Unknown extends EnumTagContext
 
+  /**
+    * Returns the context of the enum tag at the given position.
+    * Only a CaseSymUse followed by a Tag expression is considered AfterCompleteEnumTag context.
+    */
   def getEnumTagContext(uri: String, pos: Position)(implicit root: TypedAst.Root, flix: Flix): EnumTagContext = {
-    val stack = LspUtil.getStack(uri, pos)
-    stack match {
+    LspUtil.getStack(uri, pos) match {
       case (symUse@SymUse.CaseSymUse(_, _)) :: Expr.Tag(_, _, _, _, _) :: _ =>
         // The leaf is a case symbol followed by a Tag expression.
         EnumTagContext.AfterCompleteEnumTag(symUse)
