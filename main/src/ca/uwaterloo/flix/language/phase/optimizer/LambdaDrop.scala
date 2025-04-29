@@ -84,9 +84,9 @@ object LambdaDrop {
     }
   }
 
-  /** Returns `true` if at least one formal parameter of `defn0` has an arrow type. */
-  private def isHigherOrder(defn0: MonoAst.Def): Boolean = {
-    defn0.spec.fparams.exists {
+  /** Returns `true` if at least one formal parameter of `defn` has an arrow type. */
+  private def isHigherOrder(defn: MonoAst.Def): Boolean = {
+    defn.spec.fparams.exists {
       fp =>
         fp.tpe.typeConstructor match {
           case Some(TypeConstructor.Arrow(_)) => true
@@ -97,6 +97,10 @@ object LambdaDrop {
     }
   }
 
+  /**
+    * Replaces the body of `defn` with a [[Expr.LocalDef]] where constant parameters
+    * are closure captured.
+    */
   private def lambdaDrop(defn: MonoAst.Def)(implicit lctx: LocalContext, flix: Flix): MonoAst.Def = {
     implicit val params: List[(MonoAst.FormalParam, ParamKind)] = paramKinds(lctx.recursiveCalls, defn.spec.fparams)
     implicit val (newDefnSym, subst): (Symbol.VarSym, Substitution) = mkSubst(defn, params)
