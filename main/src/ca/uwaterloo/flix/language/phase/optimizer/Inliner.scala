@@ -182,7 +182,8 @@ object Inliner {
           val ctx = ctx0.copy(varSubst = varSubst1, subst = subst1)
           visitExp(exp2, ctx)
         } else {
-          val e1 = visitExp(exp1, ctx0)
+          val ctx1 = ctx0.copy(exprCtx = ExprContext.Empty)
+          val e1 = visitExp(exp1, ctx1)
           // Case 4:
           // If `e1` is trivial and pure, then it is safe to inline.
           // Code size and runtime are not impacted, because only trivial expressions are inlined
@@ -191,15 +192,15 @@ object Inliner {
             // If `e1` is to be inlined:
             // Add map `sym` to `e1` and return `e2` without constructing the let expression.
             val subst1 = ctx0.subst + (freshVarSym -> SubstRange.DoneExpr(e1))
-            val ctx = ctx0.copy(varSubst = varSubst1, subst = subst1)
-            visitExp(exp2, ctx)
+            val ctx2 = ctx0.copy(varSubst = varSubst1, subst = subst1)
+            visitExp(exp2, ctx2)
           } else {
             // Case 5:
             // If none of the previous cases pass, `sym` is not inlined. Return a let expression with the visited expressions
             // Code size and runtime are not impacted
             val inScopeSet1 = ctx0.inScopeVars + (freshVarSym -> BoundKind.LetBound(e1, occur))
-            val ctx = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeSet1)
-            val e2 = visitExp(exp2, ctx)
+            val ctx2 = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeSet1)
+            val e2 = visitExp(exp2, ctx2)
             Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
           }
         }
