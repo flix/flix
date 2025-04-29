@@ -168,7 +168,11 @@ object Inliner {
 
           // Case 1:
           // The variable `sym` is not in the substitution map, but we consider inlining it at this occurrence.
-          case None => callSiteInline(freshVarSym, Level.Nested, ctx0, Expr.Var(freshVarSym, tpe, loc))
+          case None if !ctx0.currentlyInlining => // TODO: We need this flag because we have fully qualified defs
+            callSiteInline(freshVarSym, Level.Nested, ctx0, Expr.Var(freshVarSym, tpe, loc))
+
+          case None =>
+            Expr.Var(freshVarSym, tpe, loc)
         }
         case None => // Function parameter occurrence
           Expr.Var(sym, tpe, loc)
@@ -330,7 +334,8 @@ object Inliner {
     case Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
       val freshVarSym = Symbol.freshVarSym(sym)
       val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
-      val ctx = ctx0.copy(varSubst = varSubst1)
+      val inScopeVars1 = ctx0.inScopeVars + (freshVarSym -> Definition.Unknown)
+      val ctx = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeVars1)
       val e = visitExp(exp, ctx)
       Expr.Scope(freshVarSym, rvar, e, tpe, eff, loc)
 
@@ -373,7 +378,8 @@ object Inliner {
         case OccurrenceAst.MatchRule(pat, guard, exp1) =>
           val (p, varSubst1) = visitPattern(pat)
           val varSubst2 = ctx0.varSubst ++ varSubst1
-          val ctx = ctx0.copy(varSubst = varSubst2)
+          val inScopeVars1 = ctx0.inScopeVars ++ varSubst1.values.map(sym => sym -> Definition.Unknown)
+          val ctx = ctx0.copy(varSubst = varSubst2, inScopeVars = inScopeVars1)
           val g = guard.map(visitExp(_, ctx))
           val e1 = visitExp(exp1, ctx)
           OccurrenceAst.MatchRule(p, g, e1)
@@ -461,7 +467,7 @@ object Inliner {
   private def callSiteInline(freshVarSym: OutVar, lvl: Level, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     ctx0.inScopeVars.get(freshVarSym) match {
       case Some(Definition.LetBound(rhs, occur)) if shouldInlineVar(rhs, occur, lvl, ctx0) =>
-        visitExp(rhs, ctx0.copy(inScopeVars = Map.empty))
+        visitExp(rhs, ctx0.copy(subst = Map.empty))
 
       case Some(_) =>
         default
@@ -473,7 +479,8 @@ object Inliner {
 
   private def shouldInlineVar(rhs: OutExpr, occur: Occur, lvl: Level, ctx0: LocalContext): Boolean = occur match {
     case Occur.Dead => throw InternalCompilerException("unexpected call site inline of dead variable", rhs.loc)
-    case Occur.Once => throw InternalCompilerException("unexpected call site inline of pre-inlined variable", rhs.loc)
+    case Occur.Once if isPure(rhs.eff) => throw InternalCompilerException("unexpected call site inline of pre-inlined variable", rhs.loc)
+    case Occur.Once => false
     case Occur.OnceInLambda => isTrivialExp(rhs) && someBenefit(rhs, lvl, ctx0)
     case Occur.OnceInLocalDef => isTrivialExp(rhs) && someBenefit(rhs, lvl, ctx0)
     case Occur.ManyBranch => shouldInlineMulti(rhs, lvl, ctx0)
