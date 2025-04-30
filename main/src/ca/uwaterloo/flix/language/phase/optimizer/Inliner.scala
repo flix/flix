@@ -154,56 +154,45 @@ object Inliner {
           throw InternalCompilerException("unexpected stale local def symbol", loc)
       }
 
-    case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) =>
-      if (isDead(occur)) {
-        if (isPure(exp1.eff)) {
-          // Case 1:
-          // If `sym` is never used (it is `Dead`)  and `exp1` is pure, so it has no side effects, then it is safe to remove `sym`
-          // Both code size and runtime are reduced
-          visitExp(exp2, ctx0)
-        } else {
-          // Case 2:
-          // If `sym` is never used (it is `Dead`) so it is safe to make a Stm.
-          val e1 = visitExp(exp1, ctx0)
-          val e2 = visitExp(exp2, ctx0)
-          Expr.Stm(e1, e2, tpe, eff, loc)
-        }
-      } else {
+    case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) => (occur, eff) match {
+      case (Occur.Dead, Type.Pure) => // Eliminate dead binder
+        visitExp(exp2, ctx0)
+
+      case (Occur.Dead, _) => // Rewrite to Stm to preserve effect
+        val e1 = visitExp(exp1, ctx0)
+        val e2 = visitExp(exp2, ctx0)
+        Expr.Stm(e1, e2, tpe, eff, loc)
+
+      case (Occur.Once, Type.Pure) => // Unconditionally inline
         val freshVarSym = Symbol.freshVarSym(sym)
         val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
+        val subst1 = ctx0.subst + (freshVarSym -> SubstRange.SuspendedExpr(exp1))
+        val ctx = ctx0.copy(varSubst = varSubst1, subst = subst1)
+        visitExp(exp2, ctx)
 
-        // Case 3:
-        // If `exp1` occurs once, and it is pure, then it is safe to inline.
-        // There is a small decrease in code size and runtime.
-        val wantToPreInline = isOnce(occur) && isPure(exp1.eff)
-        if (wantToPreInline) {
-          val subst1 = ctx0.subst + (freshVarSym -> SubstRange.SuspendedExpr(exp1))
-          val ctx = ctx0.copy(varSubst = varSubst1, subst = subst1)
-          visitExp(exp2, ctx)
+      case _ => // Simplify and maybe do copy propagation
+        val ctx1 = ctx0.copy(exprCtx = ExprContext.Empty)
+        val e1 = visitExp(exp1, ctx1)
+
+        val freshVarSym = Symbol.freshVarSym(sym)
+        val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
+        // We want to preserve current ExprContext so do not reuse ctx1 since
+        val ctx2 = ctx0.copy(varSubst = varSubst1)
+
+        if (isTrivialExp(e1) && isPure(e1.eff)) {
+          // Do copy propagation and drop let-binding
+          val subst1 = ctx2.subst + (freshVarSym -> SubstRange.DoneExpr(e1))
+          val ctx3 = ctx2.copy(subst = subst1)
+          visitExp(exp2, ctx3)
         } else {
-          val ctx1 = ctx0.copy(exprCtx = ExprContext.Empty)
-          val e1 = visitExp(exp1, ctx1)
-          // Case 4:
-          // If `e1` is trivial and pure, then it is safe to inline.
-          // Code size and runtime are not impacted, because only trivial expressions are inlined
-          val wantToPostInline = isTrivialExp(e1) && isPure(e1.eff)
-          if (wantToPostInline) {
-            // If `e1` is to be inlined:
-            // Add map `sym` to `e1` and return `e2` without constructing the let expression.
-            val subst1 = ctx0.subst + (freshVarSym -> SubstRange.DoneExpr(e1))
-            val ctx2 = ctx0.copy(varSubst = varSubst1, subst = subst1)
-            visitExp(exp2, ctx2)
-          } else {
-            // Case 5:
-            // If none of the previous cases pass, `sym` is not inlined. Return a let expression with the visited expressions
-            // Code size and runtime are not impacted
-            val inScopeSet1 = ctx0.inScopeVars + (freshVarSym -> BoundKind.LetBound(e1, occur))
-            val ctx2 = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeSet1)
-            val e2 = visitExp(exp2, ctx2)
-            Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
-          }
+          // Keep let-binding, add binding freshVarSym -> e1 to the set of in-scope
+          // variables and consider inlining at each occurrence.
+          val inScopeSet1 = ctx2.inScopeVars + (freshVarSym -> BoundKind.LetBound(e1, occur))
+          val ctx3 = ctx2.copy(inScopeVars = inScopeSet1)
+          val e2 = visitExp(exp2, ctx3)
+          Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
         }
-      }
+    }
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
       if (isDead(occur)) {
