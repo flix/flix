@@ -136,9 +136,11 @@ object Inliner {
 
       case Some(freshVarSym) => ctx0.subst.get(freshVarSym) match { // Check for unconditional inlining / copy-propagation
         case Some(SubstRange.SuspendedExpr(exp)) => // Unconditional inline of variable that occurs once
+          sctx.changed.putIfAbsent(sym0, ())
           visitExp(exp, ctx0)
 
         case Some(SubstRange.DoneExpr(exp)) => // Copy-propagation of visited expr
+          sctx.changed.putIfAbsent(sym0, ())
           exp
 
         case None => // It was not unconditionally inlined, so just update the variable
@@ -177,14 +179,17 @@ object Inliner {
 
     case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) => (occur, exp1.eff) match {
       case (Occur.Dead, Type.Pure) => // Eliminate dead binder
+        sctx.changed.putIfAbsent(sym0, ())
         visitExp(exp2, ctx0)
 
       case (Occur.Dead, _) => // Rewrite to Stm to preserve effect
+        sctx.changed.putIfAbsent(sym0, ())
         val e1 = visitExp(exp1, ctx0)
         val e2 = visitExp(exp2, ctx0)
         Expr.Stm(e1, e2, tpe, eff, loc)
 
       case (Occur.Once, Type.Pure) => // Unconditionally inline
+        sctx.changed.putIfAbsent(sym0, ())
         val freshVarSym = Symbol.freshVarSym(sym)
         val ctx = ctx0.addVarSubst(sym, freshVarSym).addSubst(freshVarSym, SubstRange.SuspendedExpr(exp1))
         visitExp(exp2, ctx)
@@ -192,6 +197,7 @@ object Inliner {
       case (_, Type.Pure) => // Simplify and maybe do copy-propagation
         val e1 = visitExp(exp1, ctx0.withEmptyExprCtx)
         if (isTrivial(e1)) {
+          sctx.changed.putIfAbsent(sym0, ())
           // Do copy propagation and drop let-binding
           val freshVarSym = Symbol.freshVarSym(sym)
           val ctx = ctx0.addVarSubst(sym, freshVarSym).addSubst(freshVarSym, SubstRange.DoneExpr(e1))
@@ -214,6 +220,7 @@ object Inliner {
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) => occur match {
       case Occur.Dead => // A function declaration is always pure so we do not care about the effect of exp1
+        sctx.changed.putIfAbsent(sym0, ())
         visitExp(exp2, ctx0)
 
       case _ =>
@@ -236,8 +243,10 @@ object Inliner {
       val e1 = visitExp(exp1, ctx0)
       e1 match {
         case Expr.Cst(Constant.Bool(true), _, _) =>
+          sctx.changed.putIfAbsent(sym0, ())
           visitExp(exp2, ctx0)
         case Expr.Cst(Constant.Bool(false), _, _) =>
+          sctx.changed.putIfAbsent(sym0, ())
           visitExp(exp3, ctx0)
         case _ =>
           val e2 = visitExp(exp2, ctx0)
@@ -247,6 +256,7 @@ object Inliner {
 
     case Expr.Stm(exp1, exp2, tpe, eff, loc) => exp1.eff match {
       case Type.Pure => // Exp1 has no side effect and is unused
+        sctx.changed.putIfAbsent(sym0, ())
         visitExp(exp2, ctx0)
 
       case _ =>
