@@ -348,13 +348,18 @@ object Inliner {
     case Pattern.Wild(tpe, loc) =>
       (Pattern.Wild(tpe, loc), Map.empty)
 
-    case Pattern.Var(sym, tpe, occur, loc) =>
-      if (isDead(occur)) {
+    case Pattern.Var(sym, tpe, occur, loc) => occur match {
+      case Occur.Dead =>
         (Pattern.Wild(tpe, loc), Map.empty)
-      } else {
+
+      case Occur.Once
+           | Occur.OnceInLambda
+           | Occur.OnceInLocalDef
+           | Occur.ManyBranch
+           | Occur.Many =>
         val freshVarSym = Symbol.freshVarSym(sym)
         (Pattern.Var(freshVarSym, tpe, occur, loc), Map(sym -> freshVarSym))
-      }
+    }
 
     case Pattern.Cst(cst, tpe, loc) =>
       (Pattern.Cst(cst, tpe, loc), Map.empty)
