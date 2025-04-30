@@ -135,7 +135,7 @@ object OccurrenceAnalyzer {
           (OccurrenceAst.Expr.Let(sym, e1, e2, tpe, eff, occur, loc), ctx4)
         }
 
-      case OccurrenceAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _, loc) =>
+      case OccurrenceAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur0, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val ctx2 = ctx1.map {
           case Once => OnceInLocalDef
@@ -148,7 +148,7 @@ object OccurrenceAnalyzer {
         val occur = ctx5.get(sym)
         val ctx6 = ctx5.removeVar(sym)
         lctx.localDefs.incrementAndGet()
-        if ((e1 eq exp1) && (e2 eq exp2) && fparams.zip(fps).forall { case (fp1, fp2) => fp1 eq fp2 }) {
+        if ((e1 eq exp1) && (e2 eq exp2) && fparams.zip(fps).forall { case (fp1, fp2) => fp1 eq fp2 } && (occur eq occur0)) {
           (exp0, ctx6) // Reuse exp0.
         } else {
           (OccurrenceAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), ctx6)
@@ -185,7 +185,11 @@ object OccurrenceAnalyzer {
 
       case OccurrenceAst.Expr.Discard(exp, eff, loc) =>
         val (e, ctx) = visitExp(exp)
-        (OccurrenceAst.Expr.Discard(e, eff, loc), ctx)
+        if (e eq exp) {
+          (exp0, ctx) // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.Discard(e, eff, loc), ctx)
+        }
 
       case OccurrenceAst.Expr.Match(exp, rules, tpe, eff, loc) =>
         val (e, ctx1) = visitExp(exp)
