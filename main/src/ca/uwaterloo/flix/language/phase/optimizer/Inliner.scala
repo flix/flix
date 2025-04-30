@@ -97,7 +97,7 @@ object Inliner {
     *      This means that [[visitExp]] previously decided to unconditionally inline the let-binding
     *      or decided to do copy-propagation of that binding (see below).
     *   1. If `x'` is not in the expression substitution, it must be in the set of in-scope variable
-    *      definitions and considers it for inlining.
+    *      definitions and considers it for inlining if it is pure.
     *
     * When [[visitExp]] encounters a let-binding `let sym = e1; e2` it considers five cases
     * (note that it always refreshes `sym` to `sym'` as mentioned above):
