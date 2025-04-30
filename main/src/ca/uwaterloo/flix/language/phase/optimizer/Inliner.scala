@@ -187,19 +187,17 @@ object Inliner {
         visitExp(exp2, ctx)
 
       case (_, Type.Pure) => // Simplify and maybe do copy-propagation
-        val ctx1 = ctx0.copy(exprCtx = ExprContext.Empty)
-        val e1 = visitExp(exp1, ctx1)
-        // We want to preserve current ExprContext so do not reuse ctx1
-        val freshVarSym = Symbol.freshVarSym(sym)
-        val ctx2 = ctx0.addVarSubst(sym, freshVarSym)
+        val e1 = visitExp(exp1, ctx0.withEmptyExprCtx)
         if (isTrivial(e1)) {
           // Do copy propagation and drop let-binding
-          val ctx3 = ctx2.addSubst(freshVarSym, SubstRange.DoneExpr(e1))
-          visitExp(exp2, ctx3)
+          val freshVarSym = Symbol.freshVarSym(sym)
+          val ctx1 = ctx0.addVarSubst(sym, freshVarSym).addSubst(freshVarSym, SubstRange.DoneExpr(e1))
+          visitExp(exp2, ctx1)
         } else {
           // Keep let-binding, add binding freshVarSym -> e1 to the set of in-scope
           // variables and consider inlining at each occurrence.
-          val ctx3 = ctx2.addInScopeVar(freshVarSym, BoundKind.LetBound(e1, occur))
+          val freshVarSym = Symbol.freshVarSym(sym)
+          val ctx3 = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.LetBound(e1, occur))
           val e2 = visitExp(exp2, ctx3)
           Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
         }
@@ -500,6 +498,10 @@ object Inliner {
     * @param currentlyInlining a flag denoting whether the current traversal is part of an inline-expansion process.
     */
   private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], exprCtx: ExprContext, currentlyInlining: Boolean) {
+
+    def withEmptyExprCtx: LocalContext = {
+      this.copy(exprCtx = ExprContext.Empty)
+    }
 
     def addVarSubst(old: Symbol.VarSym, fresh: Symbol.VarSym): LocalContext = {
       this.copy(varSubst = this.varSubst + (old -> fresh))
