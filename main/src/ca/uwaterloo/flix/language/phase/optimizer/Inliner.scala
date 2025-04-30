@@ -87,6 +87,19 @@ object Inliner {
     * When a variable is visited, it replaces the old variable with the fresh one.
     * Top-level function parameters are not substituted unless inlined, in which case
     * the parameters are let-bound and added to the variable substitution.
+    *
+    * When `visitExp` encounters a let-binding `let sym = e1; e2` it considers five cases
+    * (note that it always refreshes `sym` to `sym'` as mentioned above):
+    *   1. If the binding is dead and pure, it drops the binding and returns `visitExp(e2)`.
+    *   1. If the binding is dead and impure, it rewrites the binding to a statement.
+    *   1. If the binding occurs once and is pure, it adds the unvisited `e1` to the substitution,
+    *      drops the binding and unconditionally inlines it at the occurrence of `sym`.
+    *   1. If the binding occurs more than once and is pure, it first visits `e1` and considers the following:
+    *      (a) If the visited `e1` is trivial, it removes the let-binding and unconditionally inlines
+    *      the visited `e1` at every occurrence of `sym`. This corresponds to copy-propagation.
+    *      (b) If the visited `e1` is not trivial, it keeps the let-binding, adds the visited `e1` to the set
+    *      of in-scope variable definitions and considers it for inlining at every occurrence.
+    *   1. If the binding occurs more than once and is impure, it keeps the let-binding and does not consider it for inlining.
     */
   private def visitExp(exp0: Expr, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, flix: Flix): Expr = exp0 match {
     case Expr.Cst(cst, tpe, loc) =>
@@ -199,9 +212,8 @@ object Inliner {
 
         val freshVarSym = Symbol.freshVarSym(sym)
         val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
-        val inScopeSet1 = ctx0.inScopeVars + (freshVarSym -> BoundKind.LetBound(e1, occur))
         // We want to preserve current ExprContext so do not reuse ctx1 since
-        val ctx2 = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeSet1)
+        val ctx2 = ctx0.copy(varSubst = varSubst1)
         val e2 = visitExp(exp2, ctx2)
         Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
     }
