@@ -190,7 +190,7 @@ object Inliner {
         val ctx = ctx0.copy(varSubst = varSubst1, subst = subst1)
         visitExp(exp2, ctx)
 
-      case (_, Type.Pure) => // Simplify and maybe do copy propagation
+      case (_, Type.Pure) => // Simplify and maybe do copy-propagation
         val ctx1 = ctx0.copy(exprCtx = ExprContext.Empty)
         val e1 = visitExp(exp1, ctx1)
         val freshVarSym = Symbol.freshVarSym(sym)
