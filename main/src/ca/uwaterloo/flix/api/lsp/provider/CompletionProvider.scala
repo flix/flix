@@ -61,7 +61,7 @@ object CompletionProvider {
           val qn = err.qn
           val range = Range.from(err.loc)
           EnumCompleter.getCompletions(qn, range, ap, scp, withTypeParameters = false) ++
-            EnumTagCompleter.getCompletions(qn, range, ap, scp) ++
+            EnumTagCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
             ModuleCompleter.getCompletions(qn, range, ap, scp)
 
         case err: ResolutionError.UndefinedName =>
@@ -78,7 +78,7 @@ object CompletionProvider {
             EffectCompleter.getCompletions(qn, range, ap, scp, inHandler = false) ++
             OpCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
             SignatureCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
-            EnumTagCompleter.getCompletions(qn, range, ap, scp) ++
+            EnumTagCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
             TraitCompleter.getCompletions(qn, TraitUsageKind.Expr, range, ap, scp) ++
             ModuleCompleter.getCompletions(qn, range, ap, scp)
 

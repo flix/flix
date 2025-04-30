@@ -407,13 +407,20 @@ sealed trait Completion {
         command             = Some(Command("editor.action.triggerParameterHints", "editor.action.triggerParameterHints", Nil))
       )
 
-    case Completion.EnumTagCompletion(tag, namespace, range, ap, qualified, inScope) =>
+    case Completion.EnumTagCompletion(tag, namespace, range, ap, qualified, inScope, ectx) =>
       val qualifiedName = if (namespace.nonEmpty)
         s"$namespace.${tag.sym.name}"
       else
         tag.sym.toString
       val name = if (qualified) qualifiedName else tag.sym.name
-      val snippet = name + CompletionUtils.formatTypesSnippet(tag.tpes)
+      val snippet = ectx match {
+        case ExprContext.InsideApply => name
+        case ExprContext.InsidePipeline => name + CompletionUtils.formatTypesSnippet(tag.tpes.dropRight(1))
+        case ExprContext.InsideRunWith =>
+          // Technically not possible, but we just revert to default behavior.
+          name + CompletionUtils.formatTypesSnippet(tag.tpes)
+        case ExprContext.Unknown => name + CompletionUtils.formatTypesSnippet(tag.tpes)
+      }
       val label = name + CompletionUtils.formatTypes(tag.tpes)
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
@@ -799,8 +806,9 @@ object Completion {
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the signature is inScope.
+    * @param ectx       the expression context.
     */
-  case class EnumTagCompletion(tag: TypedAst.Case, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class EnumTagCompletion(tag: TypedAst.Case, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion
 
   /**
     * Represents a Module completion

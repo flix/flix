@@ -198,11 +198,11 @@ object TypeReconstruction {
     case KindedAst.Expr.Match(matchExp, rules, loc) =>
       val e1 = visitExp(matchExp)
       val rs = rules map {
-        case KindedAst.MatchRule(pat, guard, exp, loc) =>
+        case KindedAst.MatchRule(pat, guard, exp, ruleLoc) =>
           val p = visitPattern(pat)
           val g = guard.map(visitExp(_))
           val b = visitExp(exp)
-          TypedAst.MatchRule(p, g, b, loc)
+          TypedAst.MatchRule(p, g, b, ruleLoc)
       }
       val tpe = rs.head.exp.tpe
       val eff = rs.foldLeft(e1.eff) {
@@ -213,11 +213,11 @@ object TypeReconstruction {
     case KindedAst.Expr.TypeMatch(matchExp, rules, loc) =>
       val e1 = visitExp(matchExp)
       val rs = rules map {
-        case KindedAst.TypeMatchRule(sym, tpe0, exp, loc) =>
+        case KindedAst.TypeMatchRule(sym, tpe0, exp, ruleLoc) =>
           val t = subst(tpe0)
           val b = visitExp(exp)
           val bnd = TypedAst.Binder(sym, t)
-          TypedAst.TypeMatchRule(bnd, t, b, loc)
+          TypedAst.TypeMatchRule(bnd, t, b, ruleLoc)
       }
       val tpe = rs.head.exp.tpe
       val eff = rs.foldLeft(e1.eff) {
@@ -230,14 +230,14 @@ object TypeReconstruction {
       val rs = rules.map {
         case KindedAst.RestrictableChooseRule(pat0, body0) =>
           val pat = pat0 match {
-            case KindedAst.RestrictableChoosePattern.Tag(symUse, pats, tvar, loc) =>
+            case KindedAst.RestrictableChoosePattern.Tag(symUse, pats, tagTvar, tagLoc) =>
               val ps = pats.map {
-                case KindedAst.RestrictableChoosePattern.Wild(tvar, loc) => TypedAst.RestrictableChoosePattern.Wild(subst(tvar), loc)
-                case KindedAst.RestrictableChoosePattern.Var(sym, tvar, loc) => TypedAst.RestrictableChoosePattern.Var(TypedAst.Binder(sym, subst(tvar)), subst(tvar), loc)
-                case KindedAst.RestrictableChoosePattern.Error(tvar, loc) => TypedAst.RestrictableChoosePattern.Error(subst(tvar), loc)
+                case KindedAst.RestrictableChoosePattern.Wild(wildTvar, wildLoc) => TypedAst.RestrictableChoosePattern.Wild(subst(wildTvar), wildLoc)
+                case KindedAst.RestrictableChoosePattern.Var(sym, varTvar, varLoc) => TypedAst.RestrictableChoosePattern.Var(TypedAst.Binder(sym, subst(varTvar)), subst(varTvar), varLoc)
+                case KindedAst.RestrictableChoosePattern.Error(errTvar, errLoc) => TypedAst.RestrictableChoosePattern.Error(subst(errTvar), errLoc)
               }
-              TypedAst.RestrictableChoosePattern.Tag(symUse, ps, subst(tvar), loc)
-            case KindedAst.RestrictableChoosePattern.Error(tvar1, loc) => TypedAst.RestrictableChoosePattern.Error(subst(tvar1), loc)
+              TypedAst.RestrictableChoosePattern.Tag(symUse, ps, subst(tagTvar), tagLoc)
+            case KindedAst.RestrictableChoosePattern.Error(errTvar, errLoc) => TypedAst.RestrictableChoosePattern.Error(subst(errTvar), errLoc)
           }
           val body = visitExp(body0)
           TypedAst.RestrictableChooseRule(pat, body)
@@ -317,8 +317,8 @@ object TypeReconstruction {
       val eff = subst(evar)
       TypedAst.Expr.StructNew(sym, fields, region, tpe, eff, loc)
 
-    case KindedAst.Expr.StructGet(exp0, symUse, tvar, evar, loc) =>
-      val e = visitExp(exp0)
+    case KindedAst.Expr.StructGet(e0, symUse, tvar, evar, loc) =>
+      val e = visitExp(e0)
       val tpe = subst(tvar)
       val eff = subst(evar)
       TypedAst.Expr.StructGet(e, symUse, tpe, eff, loc)
@@ -394,10 +394,10 @@ object TypeReconstruction {
     case KindedAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
-        case KindedAst.CatchRule(sym, clazz, body, loc) =>
+        case KindedAst.CatchRule(sym, clazz, body, ruleLoc) =>
           val b = visitExp(body)
           val bnd = TypedAst.Binder(sym, Type.mkNative(clazz, SourceLocation.Unknown))
-          TypedAst.CatchRule(bnd, clazz, b, loc)
+          TypedAst.CatchRule(bnd, clazz, b, ruleLoc)
       }
       val tpe = rs.head.exp.tpe
       val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)
@@ -411,10 +411,10 @@ object TypeReconstruction {
 
     case KindedAst.Expr.Handler(effectSymUse, rules, tvar, evar1, evar2, loc) =>
       val rs = rules map {
-        case KindedAst.HandlerRule(opSymUse, fparams, hexp, _, loc) =>
+        case KindedAst.HandlerRule(opSymUse, fparams, hexp, _, ruleLoc) =>
           val fps = fparams.map(visitFormalParam(_, subst))
           val he = visitExp(hexp)
-          TypedAst.HandlerRule(opSymUse, fps, he, loc)
+          TypedAst.HandlerRule(opSymUse, fps, he, ruleLoc)
       }
       val bodyTpe = subst(tvar)
       val bodyEff = subst(evar1)
@@ -454,9 +454,9 @@ object TypeReconstruction {
       val methodTpe = subst(jvar)
       val eff = subst(evar)
       methodTpe match {
-        case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
-          val es = getArgumentsWithVarArgs(method, es0, loc)
-          TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, loc)
+        case Type.Cst(TypeConstructor.JvmMethod(method), methLoc) =>
+          val es = getArgumentsWithVarArgs(method, es0, methLoc)
+          TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, methLoc)
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff)
       }
@@ -467,9 +467,9 @@ object TypeReconstruction {
       val returnTpe = subst(tvar)
       val eff = subst(evar)
       methodTpe match {
-        case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
-          val es = getArgumentsWithVarArgs(method, es0, loc)
-          TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, loc)
+        case Type.Cst(TypeConstructor.JvmMethod(method), methLoc) =>
+          val es = getArgumentsWithVarArgs(method, es0, methLoc)
+          TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, methLoc)
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedStaticMethod(loc), methodTpe, eff)
       }
@@ -480,8 +480,8 @@ object TypeReconstruction {
       val jvarType = subst(jvar)
       val eff = subst(evar)
       jvarType match {
-        case Type.Cst(TypeConstructor.JvmField(field), loc) =>
-          TypedAst.Expr.GetField(field, e, fieldType, eff, loc)
+        case Type.Cst(TypeConstructor.JvmField(field), fieldLoc) =>
+          TypedAst.Expr.GetField(field, e, fieldType, eff, fieldLoc)
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedField(loc), jvarType, eff)
       }
@@ -527,11 +527,11 @@ object TypeReconstruction {
 
     case KindedAst.Expr.SelectChannel(rules, default, tvar, evar, loc) =>
       val rs = rules map {
-        case KindedAst.SelectChannelRule(sym, chan, exp, loc) =>
+        case KindedAst.SelectChannelRule(sym, chan, exp, ruleLoc) =>
           val c = visitExp(chan)
           val b = visitExp(exp)
           val bnd = TypedAst.Binder(sym, c.tpe)
-          TypedAst.SelectChannelRule(bnd, c, b, loc)
+          TypedAst.SelectChannelRule(bnd, c, b, ruleLoc)
       }
       val d = default.map(visitExp(_))
       TypedAst.Expr.SelectChannel(rs, d, subst(tvar), subst(evar), loc)
