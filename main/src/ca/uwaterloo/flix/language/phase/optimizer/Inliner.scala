@@ -406,16 +406,6 @@ object Inliner {
       OccurrenceAst.MatchRule(p, g, e1)
   }
 
-  /** Checks if `occur` is [[Occur.Dead]]. */
-  private def isDead(occur: OccurrenceAst.Occur): Boolean = occur match {
-    case Occur.Dead => true
-    case Occur.Once => false
-    case Occur.OnceInLambda => false
-    case Occur.OnceInLocalDef => false
-    case Occur.ManyBranch => false
-    case Occur.Many => false
-  }
-
   /**
     * Returns `true` if `exp0` is considered a trivial expression.
     *
