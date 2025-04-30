@@ -256,7 +256,6 @@ object Inliner {
       val e = visitExp(exp, ctx0)
       Expr.Discard(e, eff, loc)
 
-
     case Expr.Match(exp, rules, tpe, eff, loc) =>
       val rs = rules.map(visitMatchRule(_, ctx0))
       val exprCtx = ExprContext.MatchCtx(rules, ctx0.subst, ctx0.exprCtx)
@@ -356,16 +355,14 @@ object Inliner {
   private def freshFormalParam(fp0: OccurrenceAst.FormalParam)(implicit flix: Flix): (OccurrenceAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = fp0 match {
     case OccurrenceAst.FormalParam(sym, mod, tpe, src, occur, loc) =>
       val freshVarSym = Symbol.freshVarSym(sym)
-      val subst = Map(sym -> freshVarSym)
-      (OccurrenceAst.FormalParam(freshVarSym, mod, tpe, src, occur, loc), subst)
+      val varSubst = Map(sym -> freshVarSym)
+      (OccurrenceAst.FormalParam(freshVarSym, mod, tpe, src, occur, loc), varSubst)
   }
 
   def visitMatchRule(rule: OccurrenceAst.MatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.MatchRule = rule match {
     case OccurrenceAst.MatchRule(pat, guard, exp1) =>
       val (p, varSubst1) = visitPattern(pat)
-      val varSubst2 = ctx0.varSubst ++ varSubst1
-      val inScopeVars1 = ctx0.inScopeVars ++ varSubst1.values.map(sym => sym -> BoundKind.ParameterOrPattern)
-      val ctx = ctx0.copy(varSubst = varSubst2, inScopeVars = inScopeVars1)
+      val ctx = ctx0.addVarSubsts(varSubst1).addInScopeVars(varSubst1.values.map(sym => sym -> BoundKind.ParameterOrPattern))
       val g = guard.map(visitExp(_, ctx))
       val e1 = visitExp(exp1, ctx)
       OccurrenceAst.MatchRule(p, g, e1)
@@ -374,9 +371,7 @@ object Inliner {
   def visitCatchRule(rule: OccurrenceAst.CatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.CatchRule = rule match {
     case OccurrenceAst.CatchRule(sym, clazz, exp1) =>
       val freshVarSym = Symbol.freshVarSym(sym)
-      val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
-      val inScopeVars1 = ctx0.inScopeVars + (freshVarSym -> BoundKind.ParameterOrPattern)
-      val ctx = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeVars1)
+      val ctx = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.ParameterOrPattern)
       val e1 = visitExp(exp1, ctx)
       OccurrenceAst.CatchRule(freshVarSym, clazz, e1)
   }
@@ -384,9 +379,7 @@ object Inliner {
   def visitHandlerRule(rule: OccurrenceAst.HandlerRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.HandlerRule = rule match {
     case OccurrenceAst.HandlerRule(op, fparams, exp1) =>
       val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
-      val varSubst1 = varSubsts.fold(ctx0.varSubst)(_ ++ _)
-      val inScopeVars1 = ctx0.inScopeVars ++ fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern)
-      val ctx = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeVars1)
+      val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
       val e1 = visitExp(exp1, ctx)
       OccurrenceAst.HandlerRule(op, fps, e1)
   }
@@ -394,9 +387,7 @@ object Inliner {
   def visitJvmMethod(method: OccurrenceAst.JvmMethod, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.JvmMethod = method match {
     case OccurrenceAst.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
       val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
-      val varSubst1 = varSubsts.fold(ctx0.varSubst)(_ ++ _)
-      val inScopeVars1 = ctx0.inScopeVars ++ fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern)
-      val ctx = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeVars1)
+      val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
       val e = visitExp(exp, ctx)
       OccurrenceAst.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
   }
