@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.acceptors.AllAcceptor
 import ca.uwaterloo.flix.api.lsp.{Consumer, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, TraitSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, SymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
 
@@ -32,9 +32,9 @@ object CodeHinter {
   def run(sources: Set[String])(implicit root: Root): List[CodeHint] = {
     val occurs = getOccurrences
 
-    val applyDefHints = occurs.applyDefOccurs.flatMap{case (sym, exps) => visitApplyDef(sym, exps)}
+    val applyDefHints = occurs.applyDefOccurs.flatMap { case (sym, exps) => visitApplyDef(sym, exps) }
     val defHints = occurs.defOccurs.flatMap(visitDefSymUse)
-    val enumHints = occurs.enumOccurs.flatMap{case (sym, loc) => visitEnumSymUse(sym, loc)}
+    val enumHints = occurs.enumOccurs.flatMap { case (sym, loc) => visitEnumSymUse(sym, loc) }
     val traitHints = occurs.traitOccurs.flatMap(visitTraitSymUse)
 
     val hints = applyDefHints ++ defHints ++ enumHints ++ traitHints
@@ -48,7 +48,7 @@ object CodeHinter {
     * @param sym  The [[Symbol.DefnSym]] for the function being applied.
     * @param exps The arguments the function is being applied to.
     * @param root The root AST node of the Flix project
-    * @return     A collection of code quality hints.
+    * @return A collection of code quality hints.
     */
   private def visitApplyDef(sym: Symbol.DefnSym, exps: List[Expr])(implicit root: Root): List[CodeHint] = {
     exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
@@ -61,7 +61,7 @@ object CodeHinter {
     *
     * @param symUse The [[SymUse.DefSymUse]] for the occurrence of the def in question.
     * @param root   The root AST node for the Flix project.
-    * @return       A collection of code quality hints
+    * @return A collection of code quality hints
     */
   private def visitDefSymUse(symUse: SymUse.DefSymUse)(implicit root: Root): List[CodeHint] = {
     val defn = root.defs(symUse.sym)
@@ -78,7 +78,7 @@ object CodeHinter {
     * @param root The root AST node for the Flix project.
     * @param sym  The [[Symbol.EnumSym]] for the enum in quesiton.
     * @param loc  The [[SourceLocation]] for the occurrence of `sym`.
-    * @return     A collection of code hints.
+    * @return A collection of code hints.
     */
   private def visitEnumSymUse(sym: Symbol.EnumSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
     val enm = root.enums(sym)
@@ -91,7 +91,7 @@ object CodeHinter {
     *
     * @param symUse The [[SymUse.TraitSymUse]] for the occurrence of the trait in question.
     * @param root   The root AST node of the project.
-    * @return       A collection of code quality hints.
+    * @return A collection of code quality hints.
     */
   private def visitTraitSymUse(symUse: SymUse.TraitSymUse)(implicit root: Root): List[CodeHint] = {
     val trt = root.traits(symUse.sym)
@@ -113,7 +113,7 @@ object CodeHinter {
     * Returns a [[Occurrences]] for the Flix project.
     *
     * @param root The root AST node of the Flix project
-    * @return     A [[Occurrences]] for the Flix project.
+    * @return A [[Occurrences]] for the Flix project.
     */
   private def getOccurrences(implicit root: Root): Occurrences = {
     var applyDefOccurs: List[(Symbol.DefnSym, List[Expr])] = Nil
@@ -123,12 +123,16 @@ object CodeHinter {
 
     object OccurConsumer extends Consumer {
       override def consumeCaseSymUse(sym: SymUse.CaseSymUse): Unit = enumOccurs = (sym.sym.enumSym, sym.loc) :: enumOccurs
+
       override def consumeDefSymUse(sym: DefSymUse): Unit = defOccurs = sym :: defOccurs
+
       override def consumeExpr(exp: Expr): Unit = exp match {
         case TypedAst.Expr.ApplyDef(symUse, exps, _, _, _, _) => applyDefOccurs = (symUse.sym, exps) :: applyDefOccurs
         case _ => ()
       }
+
       override def consumeTraitSymUse(symUse: TraitSymUse): Unit = traitOccurs = symUse :: traitOccurs
+
       override def consumeType(tpe: Type): Unit = tpe match {
         case Type.Cst(TypeConstructor.Enum(sym, _), loc) => enumOccurs = (sym, loc) :: enumOccurs
         case _ => ()
@@ -142,19 +146,35 @@ object CodeHinter {
 
 
   private def checkDeprecated(ann: Annotations, loc: SourceLocation): List[CodeHint] = {
-    if (ann.isDeprecated) { CodeHint.Deprecated(loc) :: Nil } else { Nil }
+    if (ann.isDeprecated) {
+      CodeHint.Deprecated(loc) :: Nil
+    } else {
+      Nil
+    }
   }
 
   private def checkExperimental(ann: Annotations, loc: SourceLocation): List[CodeHint] = {
-    if (ann.isExperimental) { CodeHint.Experimental(loc) :: Nil } else { Nil }
+    if (ann.isExperimental) {
+      CodeHint.Experimental(loc) :: Nil
+    } else {
+      Nil
+    }
   }
 
   private def checkLazy(ann: Annotations, loc: SourceLocation): List[CodeHint] = {
-    if (ann.isLazy) { CodeHint.Lazy(loc) :: Nil } else { Nil }
+    if (ann.isLazy) {
+      CodeHint.Lazy(loc) :: Nil
+    } else {
+      Nil
+    }
   }
 
   private def checkParallel(ann: Annotations, loc: SourceLocation): List[CodeHint] = {
-    if (ann.isParallel) { CodeHint.Parallel(loc) :: Nil } else { Nil }
+    if (ann.isParallel) {
+      CodeHint.Parallel(loc) :: Nil
+    } else {
+      Nil
+    }
   }
 
   /**
