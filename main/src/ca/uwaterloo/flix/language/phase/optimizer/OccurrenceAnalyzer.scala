@@ -387,7 +387,7 @@ object OccurrenceAnalyzer {
   private def visitFormalParam(fparam0: OccurrenceAst.FormalParam, ctx: ExprContext): OccurrenceAst.FormalParam = {
     val occur = ctx.get(fparam0.sym)
     if (occur eq fparam0.occur) {
-      fparam0
+      fparam0 // Reuse fparam0.
     } else {
       fparam0.copy(occur = occur)
     }
