@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Token, TypedAst}
+import ca.uwaterloo.flix.language.phase.Lexer
 import ca.uwaterloo.flix.util.Formatter.NoFormatter.code
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
@@ -330,34 +331,16 @@ class TestCompletionProvider extends AnyFunSuite {
     program.substring(0, calcOffset(loc.sp1)) + target.dropRight(n) + program.substring(calcOffset(loc.sp2))
   }
 
-  private val keywords = Set(
-    "def",
-    "let",
-    "var",
-    "if",
-    "else",
-    "match",
-    "case",
-    "for",
-    "while",
-    "do",
-    "try",
-    "catch",
-    "finally",
-    "return",
-    "throw",
-    "unsafe"
-  )
-
   /**
     * A Var is valid for the test if:
-    * - It's not a keyword after trimming
     * - It's not empty after trimming
     * - It's not synthetic
+    * - It's not a keyword after trimming
     */
   private def isValidVar(varOccur: Symbol.VarSym, charToTrim: Int) = {
     val text = varOccur.text
-    text.length > charToTrim && !keywords.contains(text.dropRight(charToTrim)) && !varOccur.loc.isSynthetic
+    val trimmedText = text.dropRight(charToTrim)
+    text.length > charToTrim && !varOccur.loc.isSynthetic && !Lexer.lex(mkSource(trimmedText))._1.exists(_.kind.isKeyword)
   }
 
   /**
