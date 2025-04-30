@@ -15,7 +15,7 @@ object Optimizer {
     var delta = result.defs.keys.toSet
     for (_ <- 1 to 10) {
       val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(result, delta)
-      val (inlinerRoot, inlinerChange) = Inliner.run(afterOccurrenceAnalyzer)
+      val (inlinerRoot, inlinerChange) = Inliner.run(afterOccurrenceAnalyzer, delta)
       result = inlinerRoot
       delta = inlinerChange
     }
