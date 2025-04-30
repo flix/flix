@@ -68,11 +68,9 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 object Inliner {
 
   /** Performs inlining on the given AST `root`. */
-  def run(root: OccurrenceAst.Root, delta: Set[Symbol.DefnSym])(implicit flix: Flix): (OccurrenceAst.Root, Set[Symbol.DefnSym]) = {
+  def run(root: OccurrenceAst.Root)(implicit flix: Flix): (OccurrenceAst.Root, Set[Symbol.DefnSym]) = {
     val sctx: SharedContext = SharedContext.mk()
-    val changed = root.defs.filter(kv => delta.contains(kv._1))
-    val visitedDefs = ParOps.parMapValues(changed)(visitDef(_)(root, sctx, flix))
-    val defs = root.defs ++ visitedDefs
+    val defs = ParOps.parMapValues(root.defs)(visitDef(_)(root, sctx, flix))
     val newDelta = sctx.changed.asScala.toSet
     (root.copy(defs = defs), newDelta)
   }
