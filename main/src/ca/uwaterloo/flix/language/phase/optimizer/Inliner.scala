@@ -81,7 +81,12 @@ object Inliner {
   private def visitDef(def0: OccurrenceAst.Def)(implicit root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): OccurrenceAst.Def = def0 match {
     case OccurrenceAst.Def(sym, fparams, spec, exp, ctx, loc) =>
       val e = visitExp(exp, LocalContext.Empty)(sym, root, sctx, flix)
-      OccurrenceAst.Def(sym, fparams, spec, e, ctx, loc)
+      if (e eq exp) {
+        def0
+      } else {
+        sctx.changed.add(def0.sym)
+        OccurrenceAst.Def(sym, fparams, spec, e, ctx, loc)
+      }
   }
 
   /** Performs inlining on the expression `exp0`. */
