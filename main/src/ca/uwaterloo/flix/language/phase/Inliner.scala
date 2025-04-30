@@ -313,7 +313,6 @@ object Inliner {
       }
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
-      // TODO: IMPORTANT Add variable in fparams to in-scope set bound as Unknown
       if (isDead(occur)) { // Probably never happens
         sctx.eliminatedVars.add((sym0, sym))
         visitExp(exp2, ctx0)
@@ -419,7 +418,6 @@ object Inliner {
       Expr.TryCatch(e, rs, tpe, eff, loc)
 
     case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
-      // TODO: Consider removing rules if they are dead and it is allowed
       val rs = rules.map {
         case OccurrenceAst.HandlerRule(op, fparams, exp1, occur) =>
           val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
