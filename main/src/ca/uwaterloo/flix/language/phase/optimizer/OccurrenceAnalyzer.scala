@@ -70,7 +70,7 @@ object OccurrenceAnalyzer {
         }
         val fp = visitFormalParam(fparam, ctx2)
         val ctx3 = ctx2.removeVar(fp.sym)
-        if (e eq exp) {
+        if ((e eq exp) && (fp eq fparam)) {
           (exp0, ctx3) // Reuse exp0.
         } else {
           (OccurrenceAst.Expr.Lambda(fp, e, tpe, loc), ctx3)
@@ -107,16 +107,17 @@ object OccurrenceAnalyzer {
 
       case OccurrenceAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
-        val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
-        (OccurrenceAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc), ctx)
+        val ctx1 = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
+        val ctx2 = ctx1.addVar(sym, Once)
+        (OccurrenceAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc), ctx2)
 
-      case OccurrenceAst.Expr.Let(sym, exp1, exp2, tpe, eff, _, loc) =>
+      case OccurrenceAst.Expr.Let(sym, exp1, exp2, tpe, eff, oldOccur, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)
         val ctx3 = combineSeq(ctx1, ctx2)
         val occur = ctx3.get(sym)
         val ctx4 = ctx3.removeVar(sym)
-        if ((e1 eq exp1) && (e2 eq exp2)) {
+        if ((e1 eq exp1) && (e2 eq exp2) && (occur eq oldOccur)) {
           (exp0, ctx4) // Reuse exp0.
         } else {
           (OccurrenceAst.Expr.Let(sym, e1, e2, tpe, eff, occur, loc), ctx4)
