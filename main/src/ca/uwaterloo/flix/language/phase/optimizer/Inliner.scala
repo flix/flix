@@ -316,9 +316,9 @@ object Inliner {
   }
 
   /**
-    * Returns a pattern with fresh variables and a substitution for the old variables.
+    * Returns a pattern with fresh variables and a substitution mapping the old variables the fresh variables.
     *
-    * If a variable is unused it is rewritten to a wild pattern.
+    * If a variable is unused it is rewritten to a wildcard pattern.
     */
   private def visitPattern(pat0: Pattern)(implicit flix: Flix): (Pattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
     case Pattern.Wild(tpe, loc) =>
@@ -363,7 +363,7 @@ object Inliner {
       (Pattern.Record.RecordLabelPattern(label, p, tpe, loc), subst)
   }
 
-  /** Returns a formal param with a fresh symbol and a substitution for the old variable. */
+  /** Returns a formal param with a fresh symbol and a substitution mapping the old variable the fresh variable. */
   private def freshFormalParam(fp0: OccurrenceAst.FormalParam)(implicit flix: Flix): (OccurrenceAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = fp0 match {
     case OccurrenceAst.FormalParam(sym, mod, tpe, src, occur, loc) =>
       val freshVarSym = Symbol.freshVarSym(sym)
