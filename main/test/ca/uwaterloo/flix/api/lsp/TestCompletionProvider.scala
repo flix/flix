@@ -139,6 +139,16 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private val Uri = "<test>"
 
+  test("No crashes when calling autoComplete anywhere") {
+    Programs.foreach(program => {
+      val (root, errors) = compile(program)
+      program.scanLeft(Position(1, 1))({
+        case (Position(line, _), '\n') => Position(line + 1, 1)
+        case (Position(line, col), _) => Position(line, col + 1)
+      }).foreach(pos => CompletionProvider.autoComplete(Uri, pos, errors)(root, Flix))
+    })
+  }
+
   test("No completions after complete keyword") {
     Programs.foreach( program => {
       val (root, errors) = compile(program)
