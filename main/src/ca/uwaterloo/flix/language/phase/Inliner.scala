@@ -179,7 +179,6 @@ object Inliner {
       }
 
     case Expr.Lambda(fparam, exp, tpe, loc) =>
-      // TODO: Make parameter wild if dead
       val (fp, varSubst1) = freshFormalParam(fparam)
       val varSubst2 = ctx0.varSubst ++ varSubst1
       val inScopeVars1 = ctx0.inScopeVars + (fp.sym -> Definition.Unknown)
