@@ -438,7 +438,6 @@ object Inliner {
       val es = exps.map(visitExp(_, ctx0))
       ctx0.inScopeEffs.get(op.sym.eff).flatMap(m => m.get(op.sym)) match {
         case Some(rule) => rule.rule.occur match {
-          // case Dead => ??? // TODO: Rewrite such that the body of handler becomes the leaf expr in this subtree
           // case Once => // Linear handler
           // val continuation = rule.rule.fparams.last.sym
           // val freshSym = Symbol.freshVarSym(continuation)
