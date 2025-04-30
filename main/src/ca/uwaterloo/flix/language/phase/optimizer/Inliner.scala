@@ -18,7 +18,6 @@
 package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.{Dead, Many, ManyBranch, Once, OnceInLambda, OnceInLocalDef}
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Expr, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, Symbol, Type}
@@ -395,24 +394,24 @@ object Inliner {
     eff0 == Type.Pure
   }
 
-  /** Checks if `occur` is [[Dead]]. */
+  /** Checks if `occur` is [[Occur.Dead]]. */
   private def isDead(occur: OccurrenceAst.Occur): Boolean = occur match {
-    case Dead => true
-    case Once => false
-    case OnceInLambda => false
-    case OnceInLocalDef => false
-    case ManyBranch => false
-    case Many => false
+    case Occur.Dead => true
+    case Occur.Once => false
+    case Occur.OnceInLambda => false
+    case Occur.OnceInLocalDef => false
+    case Occur.ManyBranch => false
+    case Occur.Many => false
   }
 
-  /** Checks if `occur` is [[Once]]. */
+  /** Checks if `occur` is [[Occur.Once]]. */
   private def isOnce(occur: OccurrenceAst.Occur): Boolean = occur match {
-    case Dead => false
-    case Once => true
-    case OnceInLambda => false
-    case OnceInLocalDef => false
-    case ManyBranch => false
-    case Many => false
+    case Occur.Dead => false
+    case Occur.Once => true
+    case Occur.OnceInLambda => false
+    case Occur.OnceInLocalDef => false
+    case Occur.ManyBranch => false
+    case Occur.Many => false
   }
 
   /**
