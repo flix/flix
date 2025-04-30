@@ -267,20 +267,12 @@ object Inliner {
       val e = visitExp(exp, ctx0)
       Expr.Discard(e, eff, loc)
 
+
     case Expr.Match(exp, rules, tpe, eff, loc) =>
+      val rs = rules.map(visitMatchRule(_, ctx0))
       val exprCtx = ExprContext.MatchCtx(rules, ctx0.subst, ctx0.exprCtx)
       val ctx = ctx0.copy(exprCtx = exprCtx)
       val e = visitExp(exp, ctx)
-      val rs = rules.map {
-        case OccurrenceAst.MatchRule(pat, guard, exp1) =>
-          val (p, varSubst1) = visitPattern(pat)
-          val varSubst2 = ctx0.varSubst ++ varSubst1
-          val inScopeVars1 = ctx0.inScopeVars ++ varSubst1.values.map(sym => sym -> BoundKind.ParameterOrPattern)
-          val ctx = ctx0.copy(varSubst = varSubst2, inScopeVars = inScopeVars1)
-          val g = guard.map(visitExp(_, ctx))
-          val e1 = visitExp(exp1, ctx)
-          OccurrenceAst.MatchRule(p, g, e1)
-      }
       Expr.Match(e, rs, tpe, eff, loc)
 
     case Expr.VectorLit(exps, tpe, eff, loc) =>
@@ -347,14 +339,6 @@ object Inliner {
       Expr.NewObject(name, clazz, tpe, eff, methods, loc)
   }
 
-  /** Returns a formal param with a fresh symbol and a substitution for the old variable. */
-  private def freshFormalParam(fp0: OccurrenceAst.FormalParam)(implicit flix: Flix): (OccurrenceAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = fp0 match {
-    case OccurrenceAst.FormalParam(sym, mod, tpe, src, occur, loc) =>
-      val freshVarSym = Symbol.freshVarSym(sym)
-      val subst = Map(sym -> freshVarSym)
-      (OccurrenceAst.FormalParam(freshVarSym, mod, tpe, src, occur, loc), subst)
-  }
-
   /**
     * Returns a pattern with fresh variables and a substitution for the old variables.
     *
@@ -397,6 +381,26 @@ object Inliner {
       val (p, subst) = visitPattern(pat)
       (Pattern.Record.RecordLabelPattern(label, p, tpe, loc), subst)
   }
+
+  /** Returns a formal param with a fresh symbol and a substitution for the old variable. */
+  private def freshFormalParam(fp0: OccurrenceAst.FormalParam)(implicit flix: Flix): (OccurrenceAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = fp0 match {
+    case OccurrenceAst.FormalParam(sym, mod, tpe, src, occur, loc) =>
+      val freshVarSym = Symbol.freshVarSym(sym)
+      val subst = Map(sym -> freshVarSym)
+      (OccurrenceAst.FormalParam(freshVarSym, mod, tpe, src, occur, loc), subst)
+  }
+
+  def visitMatchRule(rule: OccurrenceAst.MatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.MatchRule = rule match {
+    case OccurrenceAst.MatchRule(pat, guard, exp1) =>
+      val (p, varSubst1) = visitPattern(pat)
+      val varSubst2 = ctx0.varSubst ++ varSubst1
+      val inScopeVars1 = ctx0.inScopeVars ++ varSubst1.values.map(sym => sym -> BoundKind.ParameterOrPattern)
+      val ctx = ctx0.copy(varSubst = varSubst2, inScopeVars = inScopeVars1)
+      val g = guard.map(visitExp(_, ctx))
+      val e1 = visitExp(exp1, ctx)
+      OccurrenceAst.MatchRule(p, g, e1)
+  }
+
 
   /** Returns `true` if `eff0` is pure. */
   private def isPure(eff0: Type): Boolean = {
