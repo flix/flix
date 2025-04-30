@@ -37,10 +37,9 @@ object OccurrenceAnalyzer {
     * Performs occurrence analysis on the given AST `root`.
     */
   def run(root: OccurrenceAst.Root, delta: Set[Symbol.DefnSym])(implicit flix: Flix): OccurrenceAst.Root = {
-    val changed = root.defs.filter(kv => delta.contains(kv._1))
-    val visitedDefs = ParOps.parMapValues(changed)(visitDef)
-    val defs = root.defs ++ visitedDefs
-    root.copy(defs = defs)
+    val changedDefs = root.defs.filter(kv => delta.contains(kv._1))
+    val visitedDefs = ParOps.parMapValues(changedDefs)(visitDef)
+    root.copy(defs = root.defs ++ visitedDefs)
   }
 
   /**
