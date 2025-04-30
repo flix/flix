@@ -416,7 +416,9 @@ sealed trait Completion {
       val snippet = ectx match {
         case ExprContext.InsideApply => name
         case ExprContext.InsidePipeline => name + CompletionUtils.formatTypesSnippet(tag.tpes.dropRight(1))
-        case ExprContext.InsideRunWith => name + CompletionUtils.formatTypesSnippet(tag.tpes)
+        case ExprContext.InsideRunWith =>
+          // Technically not possible, but we just revert to default behavior.
+          name + CompletionUtils.formatTypesSnippet(tag.tpes)
         case ExprContext.Unknown => name + CompletionUtils.formatTypesSnippet(tag.tpes)
       }
       val label = name + CompletionUtils.formatTypes(tag.tpes)
