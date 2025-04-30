@@ -107,9 +107,8 @@ object OccurrenceAnalyzer {
 
       case OccurrenceAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
-        val ctx1 = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
-        val ctx2 = ctx1.addVar(sym, Once)
-        (OccurrenceAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc), ctx2)
+        val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq).addVar(sym, Once)
+        (OccurrenceAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc), ctx)
 
       case OccurrenceAst.Expr.Let(sym, exp1, exp2, tpe, eff, oldOccur, loc) =>
         val (e1, ctx1) = visitExp(exp1)
