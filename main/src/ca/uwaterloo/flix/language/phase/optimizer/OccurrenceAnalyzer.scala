@@ -110,13 +110,13 @@ object OccurrenceAnalyzer {
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq).addVar(sym, Once)
         (OccurrenceAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc), ctx)
 
-      case OccurrenceAst.Expr.Let(sym, exp1, exp2, tpe, eff, oldOccur, loc) =>
+      case OccurrenceAst.Expr.Let(sym, exp1, exp2, tpe, eff, occur0, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)
         val ctx3 = combineSeq(ctx1, ctx2)
         val occur = ctx3.get(sym)
         val ctx4 = ctx3.removeVar(sym)
-        if ((e1 eq exp1) && (e2 eq exp2) && (occur eq oldOccur)) {
+        if ((e1 eq exp1) && (e2 eq exp2) && (occur eq occur0)) {
           (exp0, ctx4) // Reuse exp0.
         } else {
           (OccurrenceAst.Expr.Let(sym, e1, e2, tpe, eff, occur, loc), ctx4)
