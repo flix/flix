@@ -78,7 +78,7 @@ object Inliner {
   /** Performs inlining on the body of `def0`. */
   private def visitDef(def0: OccurrenceAst.Def)(implicit sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.Def = def0 match {
     case OccurrenceAst.Def(sym, fparams, spec, exp, ctx, loc) =>
-      val e = visitExp(exp, LocalContext.Empty)(sym, sctx, root,, flix)
+      val e = visitExp(exp, LocalContext.Empty)(sym, sctx, root, flix)
       OccurrenceAst.Def(sym, fparams, spec, e, ctx, loc)
   }
 
