@@ -215,7 +215,11 @@ object OccurrenceAnalyzer {
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)
         val ctx3 = combineSeq(ctx1, ctx2)
-        (OccurrenceAst.Expr.VectorLoad(e1, e2, tpe, eff, loc), ctx3)
+        if ((e1 eq exp1) && (e2 eq exp2)) {
+          (exp0, ctx3) // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.VectorLoad(e1, e2, tpe, eff, loc), ctx3)
+        }
 
       case OccurrenceAst.Expr.VectorLength(exp, loc) =>
         val (e, ctx) = visitExp(exp)
