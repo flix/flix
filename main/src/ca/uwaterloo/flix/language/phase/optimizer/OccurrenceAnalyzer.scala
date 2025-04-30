@@ -52,6 +52,9 @@ object OccurrenceAnalyzer {
   private def visitDef(defn: OccurrenceAst.Def)(implicit sctx: SharedContext): OccurrenceAst.Def = {
     val lctx: LocalContext = LocalContext.mk()
     val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx, sctx)
+    if (!(exp eq defn.exp)) {
+      sctx.changed.add(defn.sym)
+    }
     val defContext = DefContext(lctx.localDefs.get(), isDirectCall(exp), isSelfRecursive(ctx.selfOccur))
     val fparams = defn.fparams.map(visitFormalParam(_, ctx))
     OccurrenceAst.Def(defn.sym, fparams, defn.spec, exp, defContext, defn.loc)
@@ -114,7 +117,11 @@ object OccurrenceAnalyzer {
       case OccurrenceAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
-        (OccurrenceAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc), ctx)
+        if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
+          (exp0, ctx) // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc), ctx)
+        }
 
       case OccurrenceAst.Expr.Let(sym, exp1, exp2, tpe, eff, _, loc) =>
         val (e1, ctx1) = visitExp(exp1)
@@ -128,31 +135,43 @@ object OccurrenceAnalyzer {
           (OccurrenceAst.Expr.Let(sym, e1, e2, tpe, eff, occur, loc), ctx4)
         }
 
-      case OccurrenceAst.Expr.LocalDef(sym, formalParams, exp1, exp2, tpe, eff, _, loc) =>
+      case OccurrenceAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val ctx2 = ctx1.map {
           case Once => OnceInLocalDef
           case o => o
         }
-        val fps = formalParams.map(visitFormalParam(_, ctx2))
+        val fps = fparams.map(visitFormalParam(_, ctx2))
         val ctx3 = ctx2.removeVars(fps.map(_.sym))
         val (e2, ctx4) = visitExp(exp2)
         val ctx5 = combineSeq(ctx3, ctx4)
         val occur = ctx5.get(sym)
         val ctx6 = ctx5.removeVar(sym)
         lctx.localDefs.incrementAndGet()
-        (OccurrenceAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), ctx6)
+        if ((e1 eq exp1) && (e2 eq exp2) && fparams.zip(fps).forall { case (fp1, fp2) => fp1 eq fp2 }) {
+          (exp0, ctx6) // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), ctx6)
+        }
 
       case OccurrenceAst.Expr.Scope(sym, rsym, exp, tpe, eff, loc) =>
         val (e, ctx) = visitExp(exp)
-        (OccurrenceAst.Expr.Scope(sym, rsym, e, tpe, eff, loc), ctx)
+        if (e eq exp) {
+          (exp0, ctx) // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.Scope(sym, rsym, e, tpe, eff, loc), ctx)
+        }
 
       case OccurrenceAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)
         val (e3, ctx3) = visitExp(exp3)
         val ctx4 = combineSeq(ctx1, combineBranch(ctx2, ctx3))
-        (OccurrenceAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc), ctx4)
+        if ((e1 eq exp1) && (e2 eq exp2) && (e3 eq exp3)) {
+          (exp0, ctx4) // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc), ctx4)
+        }
 
       case OccurrenceAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
         val (e1, ctx1) = visitExp(exp1)
