@@ -89,15 +89,4 @@ case class CompletionItem(
     ci.setCommitCharacters(commitCharacters.asJava)
     ci
   }
-
-  /**
-    * Two completion items are the same if all the immediately visible fields are the same.
-    */
-  override def equals(obj: Any): Boolean = obj match {
-    case that: CompletionItem =>
-      this.label == that.label &&
-      this.labelDetails == that.labelDetails &&
-      this.kind == that.kind
-    case _ => false
-  }
 }

@@ -301,10 +301,11 @@ class TestCompletionProvider extends AnyFunSuite {
     * @param program     The original program string.
     */
   private def assertNoDuplicatedCompletions(completions: CompletionList, varOccur: Symbol.VarSym, program: String, charToTrim: Int): Unit = {
-    completions.items.groupBy(identity).foreach {
+    // Two completion items are identical if all the immediately visible fields are identical.
+    completions.items.groupBy(item => (item.label, item.kind, item.labelDetails)).foreach {
       case (completion, duplicates) if duplicates.size > 1 =>
         println(s"Duplicated completions when selecting var \"${varOccur.text}\" at ${varOccur.loc} for program:\n $program")
-        println(code(varOccur.loc, s"""Duplicated completion with label "${completion.label}" after deleting $charToTrim char here"""))
+        println(code(varOccur.loc, s"""Duplicated completion with label "${completion._1}" after deleting $charToTrim char here"""))
         fail("Duplicated completions")
       case _ => ()
     }
