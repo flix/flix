@@ -143,9 +143,7 @@ object Inliner {
 
     case Expr.Lambda(fparam, exp, tpe, loc) =>
       val (fp, varSubst1) = freshFormalParam(fparam)
-      val varSubst2 = ctx0.varSubst ++ varSubst1
-      val inScopeVars1 = ctx0.inScopeVars + (fp.sym -> BoundKind.ParameterOrPattern)
-      val ctx = ctx0.copy(varSubst = varSubst2, inScopeVars = inScopeVars1)
+      val ctx = ctx0.addVarSubsts(varSubst1).addInScopeVar(fp.sym, BoundKind.ParameterOrPattern)
       val e = visitExp(exp, ctx)
       Expr.Lambda(fp, e, tpe, loc)
 
@@ -506,7 +504,21 @@ object Inliner {
     * @param exprCtx           a compile-time evaluation context.
     * @param currentlyInlining a flag denoting whether the current traversal is part of an inline-expansion process.
     */
-  private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], exprCtx: ExprContext, currentlyInlining: Boolean)
+  private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], exprCtx: ExprContext, currentlyInlining: Boolean) {
+
+    def addVarSubst(old: Symbol.VarSym, fresh: Symbol.VarSym): LocalContext = {
+      this.copy(varSubst = this.varSubst + (old -> fresh))
+    }
+
+    def addVarSubsts(varSubst: Map[Symbol.VarSym, Symbol.VarSym]): LocalContext = {
+      this.copy(varSubst = this.varSubst ++ varSubst)
+    }
+
+    def addInScopeVar(sym: Symbol.VarSym, boundKind: BoundKind): LocalContext = {
+      this.copy(inScopeVars = this.inScopeVars + (sym -> boundKind))
+    }
+
+  }
 
   private object LocalContext {
 
