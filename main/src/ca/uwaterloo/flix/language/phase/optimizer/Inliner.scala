@@ -146,12 +146,15 @@ object Inliner {
 
   private object BoundKind {
 
+    /** Variable is bound by either a parameter or a pattern. Its value is unknown. */
+    object ParameterOrPattern extends BoundKind
+
     /** The right-hand side of a let-bound variable along with its occurrence information. */
     case class LetBound(expr: OccurrenceAst.Expr, occur: Occur) extends BoundKind
 
   }
 
-  /** Represents the compile-time evaluation context. */
+  /** Represents the compile-time evaluation state and is used like a stack. */
   private sealed trait ExprContext
 
   private object ExprContext {
@@ -160,13 +163,10 @@ object Inliner {
     case object Empty extends ExprContext
 
     /** Function application context. */
-    case class AppCtx(expr: Expr, subst: Map[Symbol.VarSym, BoundKind], ctx: ExprContext) extends ExprContext
+    case class AppCtx(expr: Expr, subst: Map[Symbol.VarSym, SubstRange], ctx: ExprContext) extends ExprContext
 
     /** Match-case expression context. */
-    case class MatchCtx(sym: Symbol.VarSym, rules: List[OccurrenceAst.MatchRule], subst: Map[Symbol.VarSym, BoundKind], ctx: ExprContext) extends ExprContext
-
-    /** Application argument context. */
-    case class ArgCtx(cont: Expr => Expr) extends ExprContext
+    case class MatchCtx(rules: List[OccurrenceAst.MatchRule], subst: Map[Symbol.VarSym, SubstRange], ctx: ExprContext) extends ExprContext
 
   }
 
@@ -189,14 +189,15 @@ object Inliner {
     * @param varSubst          a substitution on variables to variables.
     * @param subst             a substitution on variables to expressions.
     * @param inScopeVars       a set of variables considered to be in scope.
+    * @param exprCtx           a compile-time evaluation context.
     * @param currentlyInlining a flag denoting whether the current traversal is part of an inline-expansion process.
     */
-  private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], exprCtx: ExprContext)
+  private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], exprCtx: ExprContext, currentlyInlining: Boolean)
 
   private object LocalContext {
 
     /** Returns the empty context with `currentlyInlining` set to `false`. */
-    val Empty: LocalContext = LocalContext(Map.empty, Map.empty, Map.empty, ExprContext.Empty)
+    val Empty: LocalContext = LocalContext(Map.empty, Map.empty, Map.empty, ExprContext.Empty, currentlyInlining = false)
 
   }
 }
