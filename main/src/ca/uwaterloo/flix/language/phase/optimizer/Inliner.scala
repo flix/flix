@@ -92,7 +92,8 @@ object Inliner {
     * to expressions ([[SubstRange]]) which it uses unconditionally replace some variable occurrences (see below).
     * It also maintains a set of in-scope variables `inScopeVars` mapping symbols to [[BoundKind]], i.e.,
     * information on how a variable is bound. This is used to consider inlining at a variable occurrence.
-    * If a variable has been visited and is not in `subst`, then it must be in `inScopeVars` if its definition is pure.
+    * If a let-bound variable has been visited and is not in `subst`, then it must be in `inScopeVars`
+    * if its definition is pure.
     * Importantly, only fresh variables are mapped in both `subst` and `inScopeVars`, so when a variable
     * is encountered, `varSubst` must always be applied first to obtain the corresponding fresh variable.
     *
