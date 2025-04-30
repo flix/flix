@@ -207,7 +207,7 @@ object Inliner {
         val e1 = visitExp(exp1, ctx1)
         val freshVarSym = Symbol.freshVarSym(sym)
         val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
-        // We want to preserve current ExprContext so do not reuse ctx1 since
+        // We want to preserve current ExprContext so do not reuse ctx1
         val ctx2 = ctx0.copy(varSubst = varSubst1)
         if (isTrivial(e1)) {
           // Do copy propagation and drop let-binding
@@ -228,7 +228,7 @@ object Inliner {
         val e1 = visitExp(exp1, ctx1)
         val freshVarSym = Symbol.freshVarSym(sym)
         val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
-        // We want to preserve current ExprContext so do not reuse ctx1 since
+        // We want to preserve current ExprContext so do not reuse ctx1
         val ctx2 = ctx0.copy(varSubst = varSubst1)
         val e2 = visitExp(exp2, ctx2)
         Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
