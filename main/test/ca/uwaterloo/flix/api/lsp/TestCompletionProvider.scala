@@ -17,11 +17,13 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Token}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Token, TypedAst}
+import ca.uwaterloo.flix.language.phase.Lexer
 import ca.uwaterloo.flix.util.Formatter.NoFormatter.code
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
@@ -274,6 +276,95 @@ class TestCompletionProvider extends AnyFunSuite {
     }
   }
 
+
+  test("No duplicated completions") {
+    val charToTrim = 1
+    Programs.foreach( program => {
+      val (root1, _) = compile(program)
+      val varOccurs = getVarSymOccurs()(root1)
+      varOccurs.foreach{
+        case varOccur if isValidVar(varOccur, charToTrim) =>
+          val alteredProgram = trimAfter(program, varOccur.loc, charToTrim)
+          val triggerPosition = Position(varOccur.loc.sp2.lineOneIndexed, varOccur.loc.sp2.colOneIndexed - charToTrim)
+          val (root, errors) = compile(alteredProgram)
+          val completions = CompletionProvider.autoComplete(Uri, triggerPosition, errors)(root, Flix)
+          assertNoDuplicatedCompletions(completions, varOccur, program, charToTrim)
+        case _ => ()
+      }
+    })
+  }
+
+  /**
+    * Asserts that there are no duplicated completions in the given completion list.
+    *
+    * @param completions The completion list to check.
+    * @param varOccur    The variable occurrence where we are checking for completions.
+    * @param program     The original program string.
+    */
+  private def assertNoDuplicatedCompletions(completions: CompletionList, varOccur: Symbol.VarSym, program: String, charToTrim: Int): Unit = {
+    // Two completion items are identical if all the immediately visible fields are identical.
+    completions.items.groupBy(item => (item.label, item.kind, item.labelDetails)).foreach {
+      case (completion, duplicates) if duplicates.size > 1 =>
+        println(s"Duplicated completions when selecting var \"${varOccur.text}\" at ${varOccur.loc} for program:\n $program")
+        println(code(varOccur.loc, s"""Duplicated completion with label "${completion._1}" after deleting $charToTrim char here"""))
+        fail("Duplicated completions")
+      case _ => ()
+    }
+  }
+
+  /**
+    * The absolute character offset into the source, zero-indexed.
+    */
+  private def calcOffset(loc: SourcePosition): Int = {
+      var offset = 0
+      for (i <- 1 until loc.lineOneIndexed) {
+        offset += loc.source.getLine(i).length + 1 // +1 for the newline
+      }
+      offset + loc.colOneIndexed - 1
+  }
+
+  /**
+    * Trims the given program string after the given location `loc` by `n` characters.
+    */
+  private def trimAfter(program: String, loc: SourceLocation, n: Int): String = {
+    val target = program.substring(calcOffset(loc.sp1), calcOffset(loc.sp2))
+    program.substring(0, calcOffset(loc.sp1)) + target.dropRight(n) + program.substring(calcOffset(loc.sp2))
+  }
+
+  /**
+    * A Var is valid for the test if:
+    * - It's not empty after trimming
+    * - It's not synthetic
+    * - It's not a keyword after trimming
+    */
+  private def isValidVar(varOccur: Symbol.VarSym, charToTrim: Int) = {
+    val text = varOccur.text
+    val trimmedText = text.dropRight(charToTrim)
+    text.length > charToTrim && !varOccur.loc.isSynthetic && !isKeyword(trimmedText)
+  }
+
+  /**
+    * Returns `true` if the given code is a keyword.
+    */
+  private def isKeyword(code: String): Boolean = Lexer.lex(mkSource(code))._1.exists(_.kind.isKeyword)
+
+  /**
+    * Returns the set of variable symbols that occur in the given root.
+    */
+  private def getVarSymOccurs()(implicit root: Root): Set[Symbol.VarSym] = {
+    var occurs: Set[Symbol.VarSym] = Set.empty
+
+    object VarConsumer extends Consumer {
+      override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
+          case TypedAst.Expr.Var(sym, _, _) => occurs += sym
+          case _ =>
+        }
+    }
+
+    Visitor.visitRoot(root, VarConsumer, FileAcceptor(Uri))
+
+    occurs
+  }
 
   /**
     * Compiles the given input string `s` with the given compilation options `o`.
