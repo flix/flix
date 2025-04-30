@@ -88,6 +88,14 @@ object Inliner {
     * Top-level function parameters are not substituted unless inlined, in which case
     * the parameters are let-bound and added to the variable substitution.
     *
+    * Within `ctx0` [[visitExp]] also maintains an 'expression substitution' `subst` mapping symbols
+    * to expressions ([[SubstRange]]) which it uses unconditionally replace some variable occurrences (see below).
+    * It also maintains a set of in-scope variables `inScopeVars` mapping symbols to [[BoundKind]], i.e.,
+    * information on how a variable is bound. This is used to consider inlining at a variable occurrence.
+    * If a variable has been visited and is not in `subst`, then it must be in `inScopeVars`.
+    * Importantly, only fresh variables are mapped in both `subst` and `inScopeVars`, so when a variable
+    * is encountered, `varSubst` must always be applied first to obtain the corresponding fresh variable.
+    *
     * When [[visitExp]] encounters a variable `x` it first applies the substitution `varSubst` to
     * obtain the fresh variable. If it is not in the substitution then the variable is a function parameter
     * occurrence bound by the defining function with symbol `sym0`.
