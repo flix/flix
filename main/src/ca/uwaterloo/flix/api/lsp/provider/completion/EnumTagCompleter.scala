@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTagCompletion
 import ca.uwaterloo.flix.api.lsp.{Position, Range}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Case, Enum, Namespace}
-import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution, SymUse}
 import ca.uwaterloo.flix.language.ast.{Name, Symbol, TypedAst}
 
 object EnumTagCompleter {
@@ -46,11 +46,11 @@ object EnumTagCompleter {
   def getFurtherCompletions(uri: String, pos: Position)(implicit root: TypedAst.Root, flix: Flix): Iterable[Completion] = {
     EnumTagContext.getEnumTagContext(uri, pos) match {
       case ctx@EnumTagContext.InsideValidEnumTag(symUse) =>
-        root.enums(symUse.sym.enumSym).cases.map{ case (_, tag) =>
+        root.enums(symUse.sym.enumSym).cases.collect{ case (_, tag) if matchesPrefix(symUse, tag, pos) =>
           EnumTagCompletion(tag, "", Range.from(symUse.loc), AnchorPosition(1,1,0), qualified = true, inScope = true, ctx)
         }
       case ctx@EnumTagContext.InsideAppliedEnumTag(symUse) =>
-        root.enums(symUse.sym.enumSym).cases.map{ case (_, tag) =>
+        root.enums(symUse.sym.enumSym).cases.collect{ case (_, tag) if matchesPrefix(symUse, tag, pos) =>
           EnumTagCompletion(tag, "", Range.from(symUse.loc), AnchorPosition(1,1,0), qualified = true, inScope = true, ctx)
         }
       case EnumTagContext.Unknown => Iterable.empty
@@ -106,4 +106,9 @@ object EnumTagCompleter {
     isRoot || isResolved
   }
 
+  private def matchesPrefix(symUse: SymUse.CaseSymUse, tag: TypedAst.Case, pos: Position): Boolean = {
+    val prefix = symUse.sym.name.dropRight(symUse.loc.sp2.colOneIndexed - pos.character)
+    val tagName = tag.sym.name
+    CompletionUtils.fuzzyMatch(prefix, tagName) && tagName != symUse.sym.name
+  }
 }
