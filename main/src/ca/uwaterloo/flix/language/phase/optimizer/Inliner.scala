@@ -216,7 +216,7 @@ object Inliner {
     }
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) => occur match {
-      case Occur.Dead => // A function declaration is always pure
+      case Occur.Dead => // A function declaration is always pure so we do not care about the effect of exp1
         visitExp(exp2, ctx0)
 
       case _ =>
