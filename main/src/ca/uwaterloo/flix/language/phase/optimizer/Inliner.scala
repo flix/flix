@@ -80,8 +80,8 @@ object Inliner {
   /**
     * Performs inlining on the expression `exp0`.
     *
-    * To avoid duplicating variable names, `visitExp` assigns new names to all
-    * variables.
+    * To avoid duplicating variable names, `visitExp` unconditionally
+    * assigns new names to all variables.
     * When a binder is visited, it replaces it with a fresh variable and adds
     * it to the variable substitution `varSubst` in th LocalContext `ctx0`.
     * When a variable is visited, it replaces the stale variable with the fresh one.
