@@ -401,26 +401,10 @@ object Inliner {
       OccurrenceAst.MatchRule(p, g, e1)
   }
 
-
-  /** Returns `true` if `eff0` is pure. */
-  private def isPure(eff0: Type): Boolean = {
-    eff0 == Type.Pure
-  }
-
   /** Checks if `occur` is [[Occur.Dead]]. */
   private def isDead(occur: OccurrenceAst.Occur): Boolean = occur match {
     case Occur.Dead => true
     case Occur.Once => false
-    case Occur.OnceInLambda => false
-    case Occur.OnceInLocalDef => false
-    case Occur.ManyBranch => false
-    case Occur.Many => false
-  }
-
-  /** Checks if `occur` is [[Occur.Once]]. */
-  private def isOnce(occur: OccurrenceAst.Occur): Boolean = occur match {
-    case Occur.Dead => false
-    case Occur.Once => true
     case Occur.OnceInLambda => false
     case Occur.OnceInLocalDef => false
     case Occur.ManyBranch => false
