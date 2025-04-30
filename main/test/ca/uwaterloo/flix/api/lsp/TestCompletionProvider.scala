@@ -340,8 +340,13 @@ class TestCompletionProvider extends AnyFunSuite {
   private def isValidVar(varOccur: Symbol.VarSym, charToTrim: Int) = {
     val text = varOccur.text
     val trimmedText = text.dropRight(charToTrim)
-    text.length > charToTrim && !varOccur.loc.isSynthetic && !Lexer.lex(mkSource(trimmedText))._1.exists(_.kind.isKeyword)
+    text.length > charToTrim && !varOccur.loc.isSynthetic && !isKeyword(trimmedText)
   }
+
+  /**
+    * Returns `true` if the given code is a keyword.
+    */
+  private def isKeyword(code: String): Boolean = Lexer.lex(mkSource(code))._1.exists(_.kind.isKeyword)
 
   /**
     * Returns the set of variable symbols that occur in the given root.
