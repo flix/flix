@@ -191,14 +191,14 @@ object Inliner {
         if (isTrivial(e1)) {
           // Do copy propagation and drop let-binding
           val freshVarSym = Symbol.freshVarSym(sym)
-          val ctx1 = ctx0.addVarSubst(sym, freshVarSym).addSubst(freshVarSym, SubstRange.DoneExpr(e1))
-          visitExp(exp2, ctx1)
+          val ctx = ctx0.addVarSubst(sym, freshVarSym).addSubst(freshVarSym, SubstRange.DoneExpr(e1))
+          visitExp(exp2, ctx)
         } else {
           // Keep let-binding, add binding freshVarSym -> e1 to the set of in-scope
           // variables and consider inlining at each occurrence.
           val freshVarSym = Symbol.freshVarSym(sym)
-          val ctx3 = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.LetBound(e1, occur))
-          val e2 = visitExp(exp2, ctx3)
+          val ctx = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.LetBound(e1, occur))
+          val e2 = visitExp(exp2, ctx)
           Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
         }
 
