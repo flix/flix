@@ -130,20 +130,27 @@ object Inliner {
     case Expr.Cst(cst, tpe, loc) =>
       Expr.Cst(cst, tpe, loc)
 
-    case Expr.Var(sym, tpe, loc) => ctx0.varSubst.get(sym) match { // Replace with fresh variable if it is not a parameter
+    case Expr.Var(sym, tpe, loc) =>
+      // Replace with fresh variable if it is not a parameter
+      ctx0.varSubst.get(sym) match {
       case None => // Function parameter occurrence
         Expr.Var(sym, tpe, loc)
 
-      case Some(freshVarSym) => ctx0.subst.get(freshVarSym) match { // Check for unconditional inlining / copy-propagation
-        case Some(SubstRange.SuspendedExpr(exp)) => // Unconditional inline of variable that occurs once
+      case Some(freshVarSym) =>
+        // Check for unconditional inlining / copy-propagation
+        ctx0.subst.get(freshVarSym) match {
+          case Some(SubstRange.SuspendedExpr(exp)) =>
+            // Unconditional inline of variable that occurs once
           sctx.changed.putIfAbsent(sym0, ())
           visitExp(exp, ctx0)
 
-        case Some(SubstRange.DoneExpr(exp)) => // Copy-propagation of visited expr
+          case Some(SubstRange.DoneExpr(exp)) =>
+            // Copy-propagation of visited expr
           sctx.changed.putIfAbsent(sym0, ())
           exp
 
-        case None => // It was not unconditionally inlined, so just update the variable
+          case None =>
+            // It was not unconditionally inlined, so just update the variable
           Expr.Var(freshVarSym, tpe, loc)
       }
     }
@@ -178,27 +185,31 @@ object Inliner {
       }
 
     case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) => (occur, exp1.eff) match {
-      case (Occur.Dead, Type.Pure) => // Eliminate dead binder
+      case (Occur.Dead, Type.Pure) =>
+        // Eliminate dead binder
         sctx.changed.putIfAbsent(sym0, ())
         visitExp(exp2, ctx0)
 
-      case (Occur.Dead, _) => // Rewrite to Stm to preserve effect
+      case (Occur.Dead, _) =>
+        // Rewrite to Stm to preserve effect
         sctx.changed.putIfAbsent(sym0, ())
         val e1 = visitExp(exp1, ctx0)
         val e2 = visitExp(exp2, ctx0)
         Expr.Stm(e1, e2, tpe, eff, loc)
 
-      case (Occur.Once, Type.Pure) => // Unconditionally inline
+      case (Occur.Once, Type.Pure) =>
+        // Unconditionally inline
         sctx.changed.putIfAbsent(sym0, ())
         val freshVarSym = Symbol.freshVarSym(sym)
         val ctx = ctx0.addVarSubst(sym, freshVarSym).addSubst(freshVarSym, SubstRange.SuspendedExpr(exp1))
         visitExp(exp2, ctx)
 
-      case (_, Type.Pure) => // Simplify and maybe do copy-propagation
+      case (_, Type.Pure) =>
+        // Simplify and maybe do copy-propagation
         val e1 = visitExp(exp1, ctx0.withEmptyExprCtx)
         if (isTrivial(e1)) {
-          sctx.changed.putIfAbsent(sym0, ())
           // Do copy propagation and drop let-binding
+          sctx.changed.putIfAbsent(sym0, ())
           val freshVarSym = Symbol.freshVarSym(sym)
           val ctx = ctx0.addVarSubst(sym, freshVarSym).addSubst(freshVarSym, SubstRange.DoneExpr(e1))
           visitExp(exp2, ctx)
@@ -211,7 +222,8 @@ object Inliner {
           Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
         }
 
-      case _ => // Let-binding with effectful right hand side so we cannot inline it.
+      case _ =>
+        // Let-binding with effectful right hand side so we cannot inline it.
         val e1 = visitExp(exp1, ctx0.withEmptyExprCtx)
         val freshVarSym = Symbol.freshVarSym(sym)
         val e2 = visitExp(exp2, ctx0.addVarSubst(sym, freshVarSym))
@@ -219,7 +231,8 @@ object Inliner {
     }
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) => occur match {
-      case Occur.Dead => // A function declaration is always pure so we do not care about the effect of exp1
+      case Occur.Dead =>
+        // A function declaration is always pure so we do not care about the effect of exp1
         sctx.changed.putIfAbsent(sym0, ())
         visitExp(exp2, ctx0)
 
@@ -255,7 +268,8 @@ object Inliner {
       }
 
     case Expr.Stm(exp1, exp2, tpe, eff, loc) => exp1.eff match {
-      case Type.Pure => // Exp1 has no side effect and is unused
+      case Type.Pure =>
+        // Exp1 has no side effect and is unused
         sctx.changed.putIfAbsent(sym0, ())
         visitExp(exp2, ctx0)
 
