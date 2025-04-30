@@ -125,34 +125,21 @@ object Inliner {
     case Expr.Cst(cst, tpe, loc) =>
       Expr.Cst(cst, tpe, loc)
 
-    case Expr.Var(sym, tpe, loc) =>
-      // Check for renamed local binder
-      ctx0.varSubst.get(sym) match {
-        case None => // Function parameter occurrence
-          Expr.Var(sym, tpe, loc)
+    case Expr.Var(sym, tpe, loc) => ctx0.varSubst.get(sym) match {
+      case None => // Function parameter occurrence
+        Expr.Var(sym, tpe, loc)
 
-        case Some(freshVarSym) =>
-          ctx0.subst.get(freshVarSym) match {
-            // Case 1:
-            // The variable `sym` is in the substitution map. Replace `sym` with `e1`.
-            case Some(e1) =>
-              e1 match {
-                case SubstRange.DoneExpr(e) => // Reduced expression
-                  e
+      case Some(freshVarSym) => ctx0.subst.get(freshVarSym) match {
+        case Some(SubstRange.DoneExpr(exp)) =>
+          exp
 
-                case SubstRange.SuspendedExpr(exp) => // Reduce suspended expr
-                  visitExp(exp, ctx0)
-              }
+        case Some(SubstRange.SuspendedExpr(exp)) =>
+          visitExp(exp, ctx0)
 
-            // Case 2:
-            // The variable `sym` is not in the substitution map, but is considered for inlining if it is pure.
-            case None =>
-              ctx0.inScopeVars.get(freshVarSym) match {
-                case Some(_) => Expr.Var(freshVarSym, tpe, loc)
-                case None => Expr.Var(freshVarSym, tpe, loc)
-              }
-          }
+        case None =>
+          Expr.Var(freshVarSym, tpe, loc)
       }
+    }
 
     case Expr.Lambda(fparam, exp, tpe, loc) =>
       val (fp, varSubst1) = freshFormalParam(fparam)
