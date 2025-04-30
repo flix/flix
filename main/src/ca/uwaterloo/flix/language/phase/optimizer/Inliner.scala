@@ -190,7 +190,7 @@ object Inliner {
         val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
         // We want to preserve current ExprContext so do not reuse ctx1 since
         val ctx2 = ctx0.copy(varSubst = varSubst1)
-        if (isTrivialExp(e1)) {
+        if (isTrivial(e1)) {
           // Do copy propagation and drop let-binding
           val subst1 = ctx2.subst + (freshVarSym -> SubstRange.DoneExpr(e1))
           val ctx3 = ctx2.copy(subst = subst1)
@@ -419,13 +419,13 @@ object Inliner {
     *
     * A pure and trivial expression can always be inlined even without duplicating work.
     */
-  private def isTrivialExp(exp0: Expr): Boolean = exp0 match {
+  private def isTrivial(exp0: Expr): Boolean = exp0 match {
     case Expr.Cst(_, _, _) => true
     case Expr.Var(_, _, _) => true
-    case Expr.ApplyAtomic(AtomicOp.Unary(_), exps, _, _, _) => exps.forall(isTrivialExp)
-    case Expr.ApplyAtomic(AtomicOp.Binary(_), exps, _, _, _) => exps.forall(isTrivialExp)
-    case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivialExp)
-    case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivialExp)
+    case Expr.ApplyAtomic(AtomicOp.Unary(_), exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.Binary(_), exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivial)
     case _ => false
   }
 
