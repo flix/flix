@@ -18,10 +18,13 @@
 package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.{Dead, Once, OnceInLambda, OnceInLocalDef, ManyBranch, Many}
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.{Dead, Many, ManyBranch, Once, OnceInLambda, OnceInLocalDef}
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Expr, Occur}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, Symbol, Type}
 import ca.uwaterloo.flix.util.ParOps
+
+import java.util.concurrent.ConcurrentLinkedQueue
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
   * Rewrites the body of each def using, using the following transformations:
@@ -65,20 +68,24 @@ import ca.uwaterloo.flix.util.ParOps
 object Inliner {
 
   /** Performs inlining on the given AST `root`. */
-  def run(root: OccurrenceAst.Root)(implicit flix: Flix): (OccurrenceAst.Root, Map[Symbol.DefnSym, OccurrenceAst.Def]) = {
-    val defs = ParOps.parMapValues(root.defs)(visitDef(_)(root, flix))
-    root.copy(defs = defs)
+  def run(root: OccurrenceAst.Root, delta: Set[Symbol.DefnSym])(implicit flix: Flix): (OccurrenceAst.Root, Set[Symbol.DefnSym]) = {
+    val sctx: SharedContext = SharedContext.mk()
+    val changed = root.defs.filter(kv => delta.contains(kv._1))
+    val visitedDefs = ParOps.parMapValues(changed)(visitDef(_)(root, sctx, flix))
+    val defs = root.defs ++ visitedDefs
+    val newDelta = sctx.changed.asScala.toSet
+    (root.copy(defs = defs), newDelta)
   }
 
   /** Performs inlining on the body of `def0`. */
-  private def visitDef(def0: OccurrenceAst.Def)(implicit root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.Def = def0 match {
+  private def visitDef(def0: OccurrenceAst.Def)(implicit root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): OccurrenceAst.Def = def0 match {
     case OccurrenceAst.Def(sym, fparams, spec, exp, ctx, loc) =>
-      val e = visitExp(exp, LocalContext.Empty)(sym, root, flix)
+      val e = visitExp(exp, LocalContext.Empty)(sym, root, sctx, flix)
       OccurrenceAst.Def(sym, fparams, spec, e, ctx, loc)
   }
 
   /** Performs inlining on the expression `exp0`. */
-  private def visitExp(exp0: Expr, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, flix: Flix): Expr = exp0
+  private def visitExp(exp0: Expr, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = exp0
 
   /** Returns `true` if `eff0` is pure. */
   private def isPure(eff0: Type): Boolean = {
@@ -199,4 +206,13 @@ object Inliner {
     val Empty: LocalContext = LocalContext(Map.empty, Map.empty, Map.empty, ExprContext.Empty)
 
   }
+
+  private object SharedContext {
+
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+
+  }
+
+  private case class SharedContext(changed: ConcurrentLinkedQueue[Symbol.DefnSym])
+
 }

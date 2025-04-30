@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.ConcurrentLinkedQueue
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
   * The occurrence analyzer collects occurrence information on binders according to the definition of [[Occur]].
@@ -35,17 +37,21 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on the given AST `root`.
     */
-  def run(root: OccurrenceAst.Root, delta: Map[Symbol.DefnSym, OccurrenceAst.Def])(implicit flix: Flix): OccurrenceAst.Root = {
-    val defs = ParOps.parMapValues(delta)(visitDef)
-    OccurrenceAst.Root(defs, root.enums, root.structs, root.effects, root.mainEntryPoint, root.entryPoints, root.sources)
+  def run(root: OccurrenceAst.Root, delta: Set[Symbol.DefnSym])(implicit flix: Flix): (OccurrenceAst.Root, Set[Symbol.DefnSym]) = {
+    implicit val sctx: SharedContext = SharedContext.mk()
+    val changed = root.defs.filter(kv => delta.contains(kv._1))
+    val visitedDefs = ParOps.parMapValues(changed)(visitDef)
+    val defs = root.defs ++ visitedDefs
+    val newDelta = sctx.changed.asScala.toSet
+    (root.copy(defs = defs), newDelta)
   }
 
   /**
     * Performs occurrence analysis on `defn`.
     */
-  private def visitDef(defn: OccurrenceAst.Def): OccurrenceAst.Def = {
-    implicit val lctx: LocalContext = LocalContext.mk()
-    val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx)
+  private def visitDef(defn: OccurrenceAst.Def)(implicit sctx: SharedContext): OccurrenceAst.Def = {
+    val lctx: LocalContext = LocalContext.mk()
+    val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx, sctx)
     val defContext = DefContext(lctx.localDefs.get(), isDirectCall(exp), isSelfRecursive(ctx.selfOccur))
     val fparams = defn.fparams.map(visitFormalParam(_, ctx))
     OccurrenceAst.Def(defn.sym, fparams, defn.spec, exp, defContext, defn.loc)
@@ -54,7 +60,7 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on `exp0`
     */
-  private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.Expr, ExprContext) = {
+  private def visitExp(exp0: OccurrenceAst.Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext, sctx: SharedContext): (OccurrenceAst.Expr, ExprContext) = {
     exp0 match {
       case OccurrenceAst.Expr.Cst(_, _, _) =>
         (exp0, ExprContext.Empty)
@@ -218,7 +224,7 @@ object OccurrenceAnalyzer {
     }
   }
 
-  private def visitMatchRule(rule: OccurrenceAst.MatchRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.MatchRule, ExprContext) = rule match {
+  private def visitMatchRule(rule: OccurrenceAst.MatchRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext, sctx: SharedContext): (OccurrenceAst.MatchRule, ExprContext) = rule match {
     case OccurrenceAst.MatchRule(pat, guard, exp) =>
       val (g, ctx1) = guard.map(visitExp).unzip
       val (e, ctx2) = visitExp(exp)
@@ -228,14 +234,14 @@ object OccurrenceAnalyzer {
       (OccurrenceAst.MatchRule(p, g, e), ctx4)
   }
 
-  private def visitCatchRule(rule: OccurrenceAst.CatchRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.CatchRule, ExprContext) = rule match {
+  private def visitCatchRule(rule: OccurrenceAst.CatchRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext, sctx: SharedContext): (OccurrenceAst.CatchRule, ExprContext) = rule match {
     case OccurrenceAst.CatchRule(sym, clazz, exp) =>
       val (e, ctx1) = visitExp(exp)
       val ctx2 = ctx1.removeVar(sym)
       (OccurrenceAst.CatchRule(sym, clazz, e), ctx2)
   }
 
-  private def visitHandlerRule(rule: OccurrenceAst.HandlerRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.HandlerRule, ExprContext) = rule match {
+  private def visitHandlerRule(rule: OccurrenceAst.HandlerRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext, sctx: SharedContext): (OccurrenceAst.HandlerRule, ExprContext) = rule match {
     case OccurrenceAst.HandlerRule(op, fparams, exp) =>
       val (e, ctx1) = visitExp(exp)
       val fps = fparams.map(visitFormalParam(_, ctx1))
@@ -243,7 +249,7 @@ object OccurrenceAnalyzer {
       (OccurrenceAst.HandlerRule(op, fps, e), ctx2)
   }
 
-  private def visitJvmMethod(method: OccurrenceAst.JvmMethod)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (OccurrenceAst.JvmMethod, ExprContext) = method match {
+  private def visitJvmMethod(method: OccurrenceAst.JvmMethod)(implicit sym0: Symbol.DefnSym, lctx: LocalContext, sctx: SharedContext): (OccurrenceAst.JvmMethod, ExprContext) = method match {
     case OccurrenceAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
       val (c, ctx1) = visitExp(exp)
       val fps = fparams.map(visitFormalParam(_, ctx1))
@@ -465,5 +471,13 @@ object OccurrenceAnalyzer {
     *                  Must be mutable.
     */
   private case class LocalContext(localDefs: AtomicInteger)
+
+  private object SharedContext {
+
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+
+  }
+
+  private case class SharedContext(changed: ConcurrentLinkedQueue[Symbol.DefnSym])
 
 }
