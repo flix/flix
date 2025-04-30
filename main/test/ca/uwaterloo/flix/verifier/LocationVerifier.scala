@@ -33,6 +33,9 @@ import java.util.concurrent.ConcurrentLinkedQueue
   *   - The location of the child node must be contained in the location of its parent node.
   *   - The locations of the nodes must be in appearance order.
   *   - The parent node and its last child node must have the same ending.
+  *
+  * We will print any error we encounter during the verification.
+  * At the end of the verification, we will throw an exception if any error is found.
   */
 object LocationVerifier {
   def verify(root: TypedAst.Root)(implicit flix: Flix): Unit = {
@@ -600,7 +603,7 @@ object LocationVerifier {
   private def verifyParentContainment(parentLoc: SourceLocation, childrenLocation: List[SourceLocation])(implicit sctx: SharedContext): Unit =
     childrenLocation.foreach { loc =>
       if (!parentLoc.contains(loc)) {
-        sctx.errors.add(
+        sctx.add(
           LocationError.mkChildOutOfBoundError(parentLoc, loc)
         )
       }
@@ -615,7 +618,7 @@ object LocationVerifier {
     locs.sliding(2).foreach {
       case List(prevLoc, currLoc) =>
         if (!prevLoc.isBefore(currLoc)) {
-          sctx.errors.add(
+          sctx.add(
             LocationError.mkAppearanceOrderError(prevLoc, currLoc)
           )
         }
@@ -631,7 +634,7 @@ object LocationVerifier {
     */
   private def verifySameEnding(parentLoc: SourceLocation, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     if (parentLoc.sp2 != loc.sp2) {
-      sctx.errors.add(
+      sctx.add(
         LocationError.mkDifferentEndingError(parentLoc, loc)
       )
     }
@@ -653,6 +656,11 @@ object LocationVerifier {
     *
     * @param errors the [[LocationError]]s in the AST, if any.
     */
-  private case class SharedContext(errors: ConcurrentLinkedQueue[InternalCompilerException])
+  private case class SharedContext(errors: ConcurrentLinkedQueue[InternalCompilerException]) {
+    def add(internalCompilerException: InternalCompilerException): Unit = {
+      println(internalCompilerException)
+      errors.add(internalCompilerException)
+    }
+  }
 }
 
