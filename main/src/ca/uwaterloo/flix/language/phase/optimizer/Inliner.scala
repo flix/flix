@@ -256,6 +256,7 @@ object Inliner {
     case Expr.Stm(exp1, exp2, tpe, eff, loc) => exp1.eff match {
       case Type.Pure => // Exp1 has no side effect and is unused
         visitExp(exp2, ctx0)
+
       case _ =>
         val e1 = visitExp(exp1, ctx0)
         val e2 = visitExp(exp2, ctx0)
