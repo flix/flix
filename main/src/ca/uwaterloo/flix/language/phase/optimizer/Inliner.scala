@@ -481,32 +481,39 @@ object Inliner {
     */
   private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], exprCtx: ExprContext, currentlyInlining: Boolean) {
 
+    /** Returns a [[LocalContext]] where [[exprCtx]] has be overwritten with [[ExprContext.Empty]]. */
     def withEmptyExprCtx: LocalContext = {
       this.copy(exprCtx = ExprContext.Empty)
     }
 
+    /** Returns a [[LocalContext]] with the mapping `old -> fresh` added to [[varSubst]]. */
     def addVarSubst(old: Symbol.VarSym, fresh: Symbol.VarSym): LocalContext = {
       this.copy(varSubst = this.varSubst + (old -> fresh))
     }
 
-    def addVarSubsts(varSubst: Map[Symbol.VarSym, Symbol.VarSym]): LocalContext = {
-      this.copy(varSubst = this.varSubst ++ varSubst)
+    /** Returns a [[LocalContext]] with the mappings of `mappings` added to [[varSubst]]. */
+    def addVarSubsts(mappings: Map[Symbol.VarSym, Symbol.VarSym]): LocalContext = {
+      this.copy(varSubst = this.varSubst ++ mappings)
     }
 
-    def addVarSubsts(varSubsts: List[Map[Symbol.VarSym, Symbol.VarSym]]): LocalContext = {
-      this.copy(varSubst = varSubsts.foldLeft(this.varSubst)(_ ++ _))
+    /** Returns a [[LocalContext]] with the mappings of `mappings` added to [[varSubst]]. */
+    def addVarSubsts(mappings: List[Map[Symbol.VarSym, Symbol.VarSym]]): LocalContext = {
+      this.copy(varSubst = mappings.foldLeft(this.varSubst)(_ ++ _))
     }
 
+    /** Returns a [[LocalContext]] with the mapping `sym -> substExpr` added to [[subst]]. */
     def addSubst(sym: Symbol.VarSym, substExpr: SubstRange): LocalContext = {
       this.copy(subst = this.subst + (sym -> substExpr))
     }
 
+    /** Returns a [[LocalContext]] with the mapping `sym -> boundKind` added to [[inScopeVars]]. */
     def addInScopeVar(sym: Symbol.VarSym, boundKind: BoundKind): LocalContext = {
       this.copy(inScopeVars = this.inScopeVars + (sym -> boundKind))
     }
 
-    def addInScopeVars(inScopeVars: Iterable[(Symbol.VarSym, BoundKind)]): LocalContext = {
-      this.copy(inScopeVars = this.inScopeVars ++ inScopeVars)
+    /** Returns a [[LocalContext]] with the mappings of `mappings` added to [[inScopeVars]]. */
+    def addInScopeVars(mappings: Iterable[(Symbol.VarSym, BoundKind)]): LocalContext = {
+      this.copy(inScopeVars = this.inScopeVars ++ mappings)
     }
 
   }
