@@ -222,15 +222,27 @@ object OccurrenceAnalyzer {
 
       case OccurrenceAst.Expr.VectorLength(exp, loc) =>
         val (e, ctx) = visitExp(exp)
-        (OccurrenceAst.Expr.VectorLength(e, loc), ctx)
+        if (e eq exp) {
+          (exp0, ctx) // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.VectorLength(e, loc), ctx)
+        }
 
       case OccurrenceAst.Expr.Ascribe(exp, tpe, eff, loc) =>
         val (e, ctx) = visitExp(exp)
-        (OccurrenceAst.Expr.Ascribe(e, tpe, eff, loc), ctx)
+        if (e eq exp) {
+          (exp0, ctx) // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.Ascribe(e, tpe, eff, loc), ctx)
+        }
 
       case OccurrenceAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
         val (e, ctx) = visitExp(exp)
-        (OccurrenceAst.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc), ctx)
+        if (e eq exp) {
+          (exp0, ctx) // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc), ctx)
+        }
 
       case OccurrenceAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
         val (e, ctx1) = visitExp(exp)
