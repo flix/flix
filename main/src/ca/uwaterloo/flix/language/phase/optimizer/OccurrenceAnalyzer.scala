@@ -337,37 +337,56 @@ object OccurrenceAnalyzer {
 
   private def visitPattern(pat0: OccurrenceAst.Pattern, ctx: ExprContext): (OccurrenceAst.Pattern, Set[VarSym]) = pat0 match {
     case OccurrenceAst.Pattern.Wild(_, _) =>
-      (pat0, Set.empty)
+      (pat0, Set.empty) // Always reuse pat0.
 
-    case OccurrenceAst.Pattern.Var(sym, tpe, _, loc) =>
+    case OccurrenceAst.Pattern.Var(sym, tpe, occur0, loc) =>
       val occur = ctx.get(sym)
-      (OccurrenceAst.Pattern.Var(sym, tpe, occur, loc), Set(sym))
+      if (occur eq occur0) {
+        (pat0, Set(sym)) // Reuse pat0.
+      } else {
+        (OccurrenceAst.Pattern.Var(sym, tpe, occur, loc), Set(sym))
+      }
 
     case OccurrenceAst.Pattern.Cst(_, _, _) =>
-      (pat0, Set.empty)
+      (pat0, Set.empty) // Always reuse pat0.
 
     case OccurrenceAst.Pattern.Tag(sym, pats, tpe, loc) =>
       val (ps, listOfSyms) = pats.map(visitPattern(_, ctx)).unzip
       val syms = listOfSyms.flatten.toSet
-      (OccurrenceAst.Pattern.Tag(sym, ps, tpe, loc), syms)
+      if (pats.zip(ps).forall { case (p1, p2) => p1 eq p2 }) {
+        (pat0, syms) // Reuse pat0.
+      } else {
+        (OccurrenceAst.Pattern.Tag(sym, ps, tpe, loc), syms)
+      }
 
     case OccurrenceAst.Pattern.Tuple(pats, tpe, loc) =>
       val (ps, listOfSyms) = pats.map(visitPattern(_, ctx)).unzip
       val syms = listOfSyms.flatten.toSet
-      (OccurrenceAst.Pattern.Tuple(ps, tpe, loc), syms)
+      if (pats.zip(ps).forall { case (p1, p2) => p1 eq p2 }) {
+        (pat0, syms) // Reuse pat0.
+      } else {
+        (OccurrenceAst.Pattern.Tuple(ps, tpe, loc), syms)
+      }
 
     case OccurrenceAst.Pattern.Record(pats, pat, tpe, loc) =>
       val (ps, listOfSyms) = pats.map(visitRecordLabelPattern(_, ctx)).unzip
       val (p, syms0) = visitPattern(pat, ctx)
       val syms = listOfSyms.flatten.toSet ++ syms0
-      (OccurrenceAst.Pattern.Record(ps, p, tpe, loc), syms)
-
+      if ((p eq pat) && pats.zip(ps).forall { case (p1, p2) => p1 eq p2 }) {
+        (pat0, syms) // Reuse pat0.
+      } else {
+        (OccurrenceAst.Pattern.Record(ps, p, tpe, loc), syms)
+      }
   }
 
   private def visitRecordLabelPattern(pat0: OccurrenceAst.Pattern.Record.RecordLabelPattern, ctx: ExprContext): (OccurrenceAst.Pattern.Record.RecordLabelPattern, Set[VarSym]) = pat0 match {
     case OccurrenceAst.Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
       val (p, syms) = visitPattern(pat, ctx)
-      (OccurrenceAst.Pattern.Record.RecordLabelPattern(label, p, tpe, loc), syms)
+      if (p eq pat) {
+        (pat0, syms) // Reuse pat0.
+      } else {
+        (OccurrenceAst.Pattern.Record.RecordLabelPattern(label, p, tpe, loc), syms)
+      }
   }
 
   private def visitFormalParam(fparam0: OccurrenceAst.FormalParam, ctx: ExprContext): OccurrenceAst.FormalParam = {
