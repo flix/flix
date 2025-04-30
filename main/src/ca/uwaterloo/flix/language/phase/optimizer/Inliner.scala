@@ -213,10 +213,16 @@ object Inliner {
 
   private object SharedContext {
 
+    /** Returns a fresh [[SharedContext]]. */
     def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
 
   }
 
+  /**
+    * A globally shared thread-safe context.
+    *
+    * @param changed the set of symbols of changed functions.
+    */
   private case class SharedContext(changed: ConcurrentLinkedQueue[Symbol.DefnSym])
 
 }
