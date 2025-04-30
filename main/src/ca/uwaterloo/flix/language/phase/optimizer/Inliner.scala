@@ -23,6 +23,9 @@ import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, Symbol, Type}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
+import java.util.concurrent.ConcurrentHashMap
+import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
+
 /**
   * Rewrites the body of each def using, using the following transformations:
   *   - Copy Propagation:
@@ -65,15 +68,17 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 object Inliner {
 
   /** Performs inlining on the given AST `root`. */
-  def run(root: OccurrenceAst.Root)(implicit flix: Flix): OccurrenceAst.Root = {
-    val defs = ParOps.parMapValues(root.defs)(visitDef(_)(root, flix))
-    root.copy(defs = defs)
+  def run(root: OccurrenceAst.Root)(implicit flix: Flix): (OccurrenceAst.Root, Set[Symbol.DefnSym]) = {
+    val sctx: SharedContext = SharedContext.mk()
+    val defs = ParOps.parMapValues(root.defs)(visitDef(_)(sctx, root, flix))
+    val newDelta = sctx.changed.asScala.keys.toSet
+    (root.copy(defs = defs), newDelta)
   }
 
   /** Performs inlining on the body of `def0`. */
-  private def visitDef(def0: OccurrenceAst.Def)(implicit root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.Def = def0 match {
+  private def visitDef(def0: OccurrenceAst.Def)(implicit sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.Def = def0 match {
     case OccurrenceAst.Def(sym, fparams, spec, exp, ctx, loc) =>
-      val e = visitExp(exp, LocalContext.Empty)(sym, root, flix)
+      val e = visitExp(exp, LocalContext.Empty)(sym, sctx, root, flix)
       OccurrenceAst.Def(sym, fparams, spec, e, ctx, loc)
   }
 
@@ -121,7 +126,7 @@ object Inliner {
     *      of in-scope variable definitions and considers it for inlining at every occurrence.
     *   1. If the binding occurs more than once and is impure, it keeps the let-binding and does not consider it for inlining.
     */
-  private def visitExp(exp0: Expr, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, flix: Flix): Expr = exp0 match {
+  private def visitExp(exp0: Expr, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = exp0 match {
     case Expr.Cst(cst, tpe, loc) =>
       Expr.Cst(cst, tpe, loc)
 
@@ -355,7 +360,7 @@ object Inliner {
       (OccurrenceAst.FormalParam(freshVarSym, mod, tpe, src, occur, loc), varSubst)
   }
 
-  def visitMatchRule(rule: OccurrenceAst.MatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.MatchRule = rule match {
+  def visitMatchRule(rule: OccurrenceAst.MatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.MatchRule = rule match {
     case OccurrenceAst.MatchRule(pat, guard, exp1) =>
       val (p, varSubst1) = visitPattern(pat)
       val ctx = ctx0.addVarSubsts(varSubst1).addInScopeVars(varSubst1.values.map(sym => sym -> BoundKind.ParameterOrPattern))
@@ -364,7 +369,7 @@ object Inliner {
       OccurrenceAst.MatchRule(p, g, e1)
   }
 
-  def visitCatchRule(rule: OccurrenceAst.CatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.CatchRule = rule match {
+  def visitCatchRule(rule: OccurrenceAst.CatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.CatchRule = rule match {
     case OccurrenceAst.CatchRule(sym, clazz, exp1) =>
       val freshVarSym = Symbol.freshVarSym(sym)
       val ctx = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.ParameterOrPattern)
@@ -372,7 +377,7 @@ object Inliner {
       OccurrenceAst.CatchRule(freshVarSym, clazz, e1)
   }
 
-  def visitHandlerRule(rule: OccurrenceAst.HandlerRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.HandlerRule = rule match {
+  def visitHandlerRule(rule: OccurrenceAst.HandlerRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.HandlerRule = rule match {
     case OccurrenceAst.HandlerRule(op, fparams, exp1) =>
       val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
       val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
@@ -380,7 +385,7 @@ object Inliner {
       OccurrenceAst.HandlerRule(op, fps, e1)
   }
 
-  def visitJvmMethod(method: OccurrenceAst.JvmMethod, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.JvmMethod = method match {
+  def visitJvmMethod(method: OccurrenceAst.JvmMethod, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.JvmMethod = method match {
     case OccurrenceAst.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
       val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
       val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
@@ -520,4 +525,19 @@ object Inliner {
     val Empty: LocalContext = LocalContext(Map.empty, Map.empty, Map.empty, ExprContext.Empty, currentlyInlining = false)
 
   }
+
+  private object SharedContext {
+
+    /** Returns a fresh [[SharedContext]]. */
+    def mk(): SharedContext = new SharedContext(new ConcurrentHashMap())
+
+  }
+
+  /**
+    * A globally shared thread-safe context.
+    *
+    * @param changed the set of symbols of changed functions.
+    */
+  private case class SharedContext(changed: ConcurrentHashMap[Symbol.DefnSym, Unit])
+
 }
