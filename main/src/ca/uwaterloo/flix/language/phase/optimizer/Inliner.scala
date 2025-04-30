@@ -80,7 +80,7 @@ object Inliner {
   /**
     * Performs inlining on the expression `exp0`.
     *
-    * To avoid duplicating variable names, `visitExp` unconditionally
+    * To avoid duplicating variable names, [[visitExp]] unconditionally
     * assigns new names to all variables.
     * When a binder is visited, it replaces it with a fresh variable and adds
     * it to the variable substitution `varSubst` in th LocalContext `ctx0`.
@@ -88,11 +88,22 @@ object Inliner {
     * Top-level function parameters are not substituted unless inlined, in which case
     * the parameters are let-bound and added to the variable substitution.
     *
-    * When `visitExp` encounters a let-binding `let sym = e1; e2` it considers five cases
+    * When [[visitExp]] encounters a variable `x` it first applies the substitution `varSubst` to
+    * obtain the fresh variable. If it is not in the substitution then the variable is a function parameter
+    * occurrence bound by the defining function with symbol `sym0`.
+    * If it obtains `x'` from the substitution, it does the following three things:
+    *   1. If `x'` is in the expression substitution `subst` it replaces the variable with
+    *      the expression, recursively calling [[visitExp]] if it is a [[SubstRange.SuspendedExpr]].
+    *      This means that [[visitExp]] previously decided to unconditionally inline the let-binding
+    *      or decided to do copy-propagation of that binding (see below).
+    *   1. If `x'` is not in the expression substitution, it must be in the set of in-scope variable
+    *      definitions and considers it for inlining.
+    *
+    * When [[visitExp]] encounters a let-binding `let sym = e1; e2` it considers five cases
     * (note that it always refreshes `sym` to `sym'` as mentioned above):
     *   1. If the binding is dead and pure, it drops the binding and returns `visitExp(e2)`.
     *   1. If the binding is dead and impure, it rewrites the binding to a statement.
-    *   1. If the binding occurs once and is pure, it adds the unvisited `e1` to the substitution,
+    *   1. If the binding occurs once and is pure, it adds the unvisited `e1` to the substitution `subst`,
     *      drops the binding and unconditionally inlines it at the occurrence of `sym`.
     *   1. If the binding occurs more than once and is pure, it first visits `e1` and considers the following:
     *      (a) If the visited `e1` is trivial, it removes the let-binding and unconditionally inlines
