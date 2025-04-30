@@ -203,13 +203,9 @@ object Inliner {
         }
 
       case _ => // Let-binding with effectful right hand side so we cannot inline it.
-        val ctx1 = ctx0.copy(exprCtx = ExprContext.Empty)
-        val e1 = visitExp(exp1, ctx1)
+        val e1 = visitExp(exp1, ctx0.withEmptyExprCtx)
         val freshVarSym = Symbol.freshVarSym(sym)
-        val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
-        // We want to preserve current ExprContext so do not reuse ctx1
-        val ctx2 = ctx0.copy(varSubst = varSubst1)
-        val e2 = visitExp(exp2, ctx2)
+        val e2 = visitExp(exp2, ctx0.addVarSubst(sym, freshVarSym))
         Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
     }
 
