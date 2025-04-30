@@ -183,28 +183,23 @@ object Inliner {
 
       case (Occur.Once, Type.Pure) => // Unconditionally inline
         val freshVarSym = Symbol.freshVarSym(sym)
-        val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
-        val subst1 = ctx0.subst + (freshVarSym -> SubstRange.SuspendedExpr(exp1))
-        val ctx = ctx0.copy(varSubst = varSubst1, subst = subst1)
+        val ctx = ctx0.addVarSubst(sym, freshVarSym).addSubst(freshVarSym, SubstRange.SuspendedExpr(exp1))
         visitExp(exp2, ctx)
 
       case (_, Type.Pure) => // Simplify and maybe do copy-propagation
         val ctx1 = ctx0.copy(exprCtx = ExprContext.Empty)
         val e1 = visitExp(exp1, ctx1)
-        val freshVarSym = Symbol.freshVarSym(sym)
-        val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
         // We want to preserve current ExprContext so do not reuse ctx1
-        val ctx2 = ctx0.copy(varSubst = varSubst1)
+        val freshVarSym = Symbol.freshVarSym(sym)
+        val ctx2 = ctx0.addVarSubst(sym, freshVarSym)
         if (isTrivial(e1)) {
           // Do copy propagation and drop let-binding
-          val subst1 = ctx2.subst + (freshVarSym -> SubstRange.DoneExpr(e1))
-          val ctx3 = ctx2.copy(subst = subst1)
+          val ctx3 = ctx2.addSubst(freshVarSym, SubstRange.DoneExpr(e1))
           visitExp(exp2, ctx3)
         } else {
           // Keep let-binding, add binding freshVarSym -> e1 to the set of in-scope
           // variables and consider inlining at each occurrence.
-          val inScopeSet1 = ctx2.inScopeVars + (freshVarSym -> BoundKind.LetBound(e1, occur))
-          val ctx3 = ctx2.copy(inScopeVars = inScopeSet1)
+          val ctx3 = ctx2.addInScopeVar(freshVarSym, BoundKind.LetBound(e1, occur))
           val e2 = visitExp(exp2, ctx3)
           Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
         }
@@ -512,6 +507,10 @@ object Inliner {
 
     def addVarSubsts(varSubst: Map[Symbol.VarSym, Symbol.VarSym]): LocalContext = {
       this.copy(varSubst = this.varSubst ++ varSubst)
+    }
+
+    def addSubst(sym: Symbol.VarSym, substExpr: SubstRange): LocalContext = {
+      this.copy(subst = this.subst + (sym -> substExpr))
     }
 
     def addInScopeVar(sym: Symbol.VarSym, boundKind: BoundKind): LocalContext = {
