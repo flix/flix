@@ -12,7 +12,7 @@ object Optimizer {
     */
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer") {
     var result = ToOccurrenceAst.run(root)
-    for (_ <- 1 to 5) {
+    for (_ <- 1 to 3) {
       val afterAnalyzer = OccurrenceAnalyzer.run(result)
       result = Inliner.run(afterAnalyzer)
     }
