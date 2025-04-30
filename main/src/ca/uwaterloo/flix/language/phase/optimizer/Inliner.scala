@@ -125,18 +125,18 @@ object Inliner {
     case Expr.Cst(cst, tpe, loc) =>
       Expr.Cst(cst, tpe, loc)
 
-    case Expr.Var(sym, tpe, loc) => ctx0.varSubst.get(sym) match {
+    case Expr.Var(sym, tpe, loc) => ctx0.varSubst.get(sym) match { // Replace with fresh variable if it is not a parameter
       case None => // Function parameter occurrence
         Expr.Var(sym, tpe, loc)
 
-      case Some(freshVarSym) => ctx0.subst.get(freshVarSym) match {
-        case Some(SubstRange.DoneExpr(exp)) =>
-          exp
-
-        case Some(SubstRange.SuspendedExpr(exp)) =>
+      case Some(freshVarSym) => ctx0.subst.get(freshVarSym) match { // Check for unconditional inlining / copy-propagation
+        case Some(SubstRange.SuspendedExpr(exp)) => // Unconditional inline of variable that occurs once
           visitExp(exp, ctx0)
 
-        case None =>
+        case Some(SubstRange.DoneExpr(exp)) => // Copy-propagation of visited expr
+          exp
+
+        case None => // It was not unconditionally inlined, so just update the variable
           Expr.Var(freshVarSym, tpe, loc)
       }
     }
