@@ -249,24 +249,40 @@ object OccurrenceAnalyzer {
         val (rs, ctxs) = rules.map(visitCatchRule).unzip
         val ctx2 = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
         val ctx3 = combineSeq(ctx1, ctx2)
-        (OccurrenceAst.Expr.TryCatch(e, rs, tpe, eff, loc), ctx3)
+        if ((e eq exp) && rules.zip(rs).forall { case (r1, r2) => r1 eq r2 }) {
+          (exp0, ctx3) // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.TryCatch(e, rs, tpe, eff, loc), ctx3)
+        }
 
       case OccurrenceAst.Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
         val (e, ctx1) = visitExp(exp)
         val (rs, ctxs) = rules.map(visitHandlerRule).unzip
         val ctx2 = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
         val ctx3 = combineSeq(ctx1, ctx2)
-        (OccurrenceAst.Expr.RunWith(e, effUse, rs, tpe, eff, loc), ctx3)
+        if ((e eq exp) && rules.zip(rs).forall { case (r1, r2) => r1 eq r2 }) {
+          (exp0, ctx3) // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.RunWith(e, effUse, rs, tpe, eff, loc), ctx3)
+        }
 
       case OccurrenceAst.Expr.Do(op, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
-        (OccurrenceAst.Expr.Do(op, es, tpe, eff, loc), ctx)
+        if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
+          (exp0, ctx) // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.Do(op, es, tpe, eff, loc), ctx)
+        }
 
       case OccurrenceAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
         val (ms, ctxs) = methods.map(visitJvmMethod).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
-        (OccurrenceAst.Expr.NewObject(name, clazz, tpe, eff, ms, loc), ctx)
+        if (methods.zip(ms).forall { case (m1, m2) => m1 eq m2 }) {
+          (exp0, ctx) // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.NewObject(name, clazz, tpe, eff, ms, loc), ctx)
+        }
     }
   }
 
