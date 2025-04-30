@@ -19,9 +19,10 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Token
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Token}
+import ca.uwaterloo.flix.util.Formatter.NoFormatter.code
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -147,7 +148,7 @@ class TestCompletionProvider extends AnyFunSuite {
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
           val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, Flix)
-          assert(completions.items.isEmpty)
+          assertEmpty(completions, token.mkSourceLocation(), pos)
         }
       }
     })
@@ -163,7 +164,7 @@ class TestCompletionProvider extends AnyFunSuite {
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
           val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, Flix)
-          assert(completions.items.isEmpty)
+          assertEmpty(completions, token.mkSourceLocation(), pos)
         }
       }
     })
@@ -179,7 +180,7 @@ class TestCompletionProvider extends AnyFunSuite {
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
           val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, Flix)
-          assert(completions.items.isEmpty)
+          assertEmpty(completions, token.mkSourceLocation(), pos)
         }
       }
     })
@@ -191,7 +192,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val allNameDefLocs = root.defs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
         val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        assert(completions.items.isEmpty)
+        assertEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
@@ -202,7 +203,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val allNameDefLocs = root.enums.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
         val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        assert(completions.items.isEmpty)
+        assertEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
@@ -213,7 +214,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val allNameDefLocs = root.sigs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
         val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        assert(completions.items.isEmpty)
+        assertEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
@@ -224,7 +225,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val allNameDefLocs = root.traits.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
         val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        assert(completions.items.isEmpty)
+        assertEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
@@ -235,7 +236,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val allNameDefLocs = root.effects.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
         val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        assert(completions.items.isEmpty)
+        assertEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
@@ -246,7 +247,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val allNameDefLocs = root.structs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
         val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        assert(completions.items.isEmpty)
+        assertEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
@@ -257,10 +258,22 @@ class TestCompletionProvider extends AnyFunSuite {
       val allNameDefLocs = root.typeAliases.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
         val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        assert(completions.items.isEmpty)
+        assertEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
+
+  /**
+    * Asserts that the given completion list is empty at the given position.
+    */
+  private def assertEmpty(completions: CompletionList, sourceLocation: SourceLocation, pos: Position): Unit = {
+    if (completions.items.nonEmpty) {
+      println(code(sourceLocation, s"Unexpected completions at $pos"))
+      println(s"Found completions: ${completions.items.map(_.label)}")
+      fail(s"Expected no completions at position $pos, but found ${completions.items.toList.length} completions.")
+    }
+  }
+
 
   /**
     * Compiles the given input string `s` with the given compilation options `o`.

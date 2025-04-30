@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
-import ca.uwaterloo.flix.language.phase.optimizer.Optimizer
+import ca.uwaterloo.flix.language.phase.optimizer.{Optimizer, LambdaDrop}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
@@ -648,7 +648,8 @@ class Flix {
     val loweringAst = Lowering.run(typedAst)
     val treeShaker1Ast = TreeShaker1.run(loweringAst)
     val monomorpherAst = Monomorpher.run(treeShaker1Ast)
-    val optimizerAst = Optimizer.run(monomorpherAst)
+    val lambdaDropAst = LambdaDrop.run(monomorpherAst)
+    val optimizerAst = Optimizer.run(lambdaDropAst)
     val simplifierAst = Simplifier.run(optimizerAst)
     val closureConvAst = ClosureConv.run(simplifierAst)
     val lambdaLiftAst = LambdaLift.run(closureConvAst)
