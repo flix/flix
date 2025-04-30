@@ -195,19 +195,19 @@ object TypedAstOps {
 
     case Expr.Match(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, MatchRule(pat, guard, exp, loc)) =>
-          acc ++ ((guard.map(freeVars).getOrElse(Map.empty) ++ freeVars(exp)) -- freeVars(pat).keys)
+        case (acc, MatchRule(pat, guard, body, _)) =>
+          acc ++ ((guard.map(freeVars).getOrElse(Map.empty) ++ freeVars(body)) -- freeVars(pat).keys)
       }
 
     case Expr.TypeMatch(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, TypeMatchRule(bnd, _, exp, loc)) => acc ++ (freeVars(exp) - bnd.sym)
+        case (acc, TypeMatchRule(bnd, _, body, _)) => acc ++ (freeVars(body) - bnd.sym)
       }
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       val e = freeVars(exp)
       val rs = rules.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, RestrictableChooseRule(pat, exp)) => acc ++ (freeVars(exp) -- freeVars(pat).toList)
+        case (acc, RestrictableChooseRule(pat, body)) => acc ++ (freeVars(body) -- freeVars(pat).toList)
       }
       e ++ rs
 
@@ -292,7 +292,7 @@ object TypedAstOps {
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, CatchRule(bnd, _, exp, _)) => acc ++ freeVars(exp) - bnd.sym
+        case (acc, CatchRule(bnd, _, body, _)) => acc ++ freeVars(body) - bnd.sym
       }
 
     case Expr.Throw(exp, _, _, _) => freeVars(exp)
@@ -315,7 +315,7 @@ object TypedAstOps {
 
     case Expr.InvokeMethod(_, exp, args, _, _, _) =>
       args.foldLeft(freeVars(exp)) {
-        case (acc, exp) => acc ++ freeVars(exp)
+        case (acc, obj) => acc ++ freeVars(obj)
       }
 
     case Expr.InvokeStaticMethod(_, args, _, _, _) =>
