@@ -254,14 +254,22 @@ object OccurrenceAnalyzer {
       val ctx3 = combineSeqOpt(ctx1, ctx2)
       val (p, syms) = visitPattern(pat, ctx3)
       val ctx4 = ctx3.removeVars(syms)
-      (OccurrenceAst.MatchRule(p, g, e), ctx4)
+      if ((p eq pat) && (g eq guard) && (e eq exp)) {
+        (rule, ctx4) // Reuse rule.
+      } else {
+        (OccurrenceAst.MatchRule(p, g, e), ctx4)
+      }
   }
 
   private def visitCatchRule(rule: OccurrenceAst.CatchRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext, sctx: SharedContext): (OccurrenceAst.CatchRule, ExprContext) = rule match {
     case OccurrenceAst.CatchRule(sym, clazz, exp) =>
       val (e, ctx1) = visitExp(exp)
       val ctx2 = ctx1.removeVar(sym)
-      (OccurrenceAst.CatchRule(sym, clazz, e), ctx2)
+      if (e eq exp) {
+        (rule, ctx2) // Reuse rule.
+      } else {
+        (OccurrenceAst.CatchRule(sym, clazz, e), ctx2)
+      }
   }
 
   private def visitHandlerRule(rule: OccurrenceAst.HandlerRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext, sctx: SharedContext): (OccurrenceAst.HandlerRule, ExprContext) = rule match {
@@ -269,15 +277,23 @@ object OccurrenceAnalyzer {
       val (e, ctx1) = visitExp(exp)
       val fps = fparams.map(visitFormalParam(_, ctx1))
       val ctx2 = ctx1.removeVars(fps.map(_.sym))
-      (OccurrenceAst.HandlerRule(op, fps, e), ctx2)
+      if ((e eq exp) && fparams.zip(fps).forall { case (fp1, fp2) => fp1 eq fp2 }) {
+        (rule, ctx2) // Reuse rule.
+      } else {
+        (OccurrenceAst.HandlerRule(op, fps, e), ctx2)
+      }
   }
 
   private def visitJvmMethod(method: OccurrenceAst.JvmMethod)(implicit sym0: Symbol.DefnSym, lctx: LocalContext, sctx: SharedContext): (OccurrenceAst.JvmMethod, ExprContext) = method match {
     case OccurrenceAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
-      val (c, ctx1) = visitExp(exp)
+      val (e, ctx1) = visitExp(exp)
       val fps = fparams.map(visitFormalParam(_, ctx1))
       val ctx2 = ctx1.removeVars(fps.map(_.sym))
-      (OccurrenceAst.JvmMethod(ident, fparams, c, retTpe, eff, loc), ctx2)
+      if ((e eq exp) && fparams.zip(fps).forall { case (fp1, fp2) => fp1 eq fp2 }) {
+        (method, ctx2) // Reuse method.
+      } else {
+        (OccurrenceAst.JvmMethod(ident, fparams, e, retTpe, eff, loc), ctx2)
+      }
   }
 
   private def visitPattern(pat0: OccurrenceAst.Pattern, ctx: ExprContext): (OccurrenceAst.Pattern, Set[VarSym]) = pat0 match {
