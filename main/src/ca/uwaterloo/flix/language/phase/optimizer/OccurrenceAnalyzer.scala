@@ -196,12 +196,20 @@ object OccurrenceAnalyzer {
         val (rs, ctxs) = rules.map(visitMatchRule).unzip
         val ctx2 = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
         val ctx3 = combineSeq(ctx1, ctx2)
-        (OccurrenceAst.Expr.Match(e, rs, tpe, eff, loc), ctx3)
+        if ((e eq exp) && rules.zip(rs).forall { case (r1, r2) => r1 eq r2 }) {
+          (exp0, ctx3) // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.Match(e, rs, tpe, eff, loc), ctx3)
+        }
 
       case OccurrenceAst.Expr.VectorLit(exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
-        (OccurrenceAst.Expr.VectorLit(es, tpe, eff, loc), ctx)
+        if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
+          (exp0, ctx) // Reuse exp0.
+        } else {
+          (OccurrenceAst.Expr.VectorLit(es, tpe, eff, loc), ctx)
+        }
 
       case OccurrenceAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
         val (e1, ctx1) = visitExp(exp1)
