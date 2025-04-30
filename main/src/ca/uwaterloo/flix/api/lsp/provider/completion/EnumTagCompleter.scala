@@ -34,7 +34,8 @@ object EnumTagCompleter {
       root.enums.values.flatMap(enm =>
         enm.cases.values.collect{
           case tag if CompletionUtils.isAvailable(enm) && CompletionUtils.matchesName(tag.sym, qn, qualified = false) =>
-            EnumTagCompletion(tag, "", range, ap, qualified = false, inScope = inScope(tag, scp))
+            EnumTagCompletion(tag, "", range, ap, qualified = false, inScope = inScope(tag, scp),
+              EnumTagContext.Unknown)
         }
       )
   }
@@ -44,9 +45,13 @@ object EnumTagCompleter {
     */
   def getFurtherCompletions(uri: String, pos: Position)(implicit root: TypedAst.Root, flix: Flix): Iterable[Completion] = {
     EnumTagContext.getEnumTagContext(uri, pos) match {
-      case EnumTagContext.AfterCompleteEnumTag(symUse) =>
+      case ctx@EnumTagContext.InsideValidEnumTag(symUse) =>
         root.enums(symUse.sym.enumSym).cases.map{ case (_, tag) =>
-          EnumTagCompletion(tag, "", Range.from(symUse.loc), AnchorPosition(1,1,0), qualified = true, inScope = true)
+          EnumTagCompletion(tag, "", Range.from(symUse.loc), AnchorPosition(1,1,0), qualified = true, inScope = true, ctx)
+        }
+      case ctx@EnumTagContext.InsideAppliedEnumTag(symUse) =>
+        root.enums(symUse.sym.enumSym).cases.map{ case (_, tag) =>
+          EnumTagCompletion(tag, "", Range.from(symUse.loc), AnchorPosition(1,1,0), qualified = true, inScope = true, ctx)
         }
       case EnumTagContext.Unknown => Iterable.empty
     }
@@ -61,7 +66,8 @@ object EnumTagCompleter {
     root.enums.values.flatMap(enm =>
       enm.cases.values.collect{
         case tag if CompletionUtils.isAvailable(enm) && CompletionUtils.matchesName(tag.sym, qn, qualified = true) =>
-          EnumTagCompletion(tag, "", range,  ap, qualified = true, inScope = true)
+          EnumTagCompletion(tag, "", range,  ap, qualified = true, inScope = true,
+            EnumTagContext.Unknown)
       }
     )
   }
@@ -86,7 +92,8 @@ object EnumTagCompleter {
       enm <- root.enums.get(Symbol.mkEnumSym(fullyQualifiedEnum)).toList
       tag <- enm.cases.values
       if CompletionUtils.isAvailable(enm) && CompletionUtils.matchesName(tag.sym, qn, qualified = false)
-    } yield EnumTagCompletion(tag, qn.namespace.toString, range, ap, qualified = true, inScope = true)
+    } yield EnumTagCompletion(tag, qn.namespace.toString, range, ap, qualified = true, inScope = true,
+      EnumTagContext.Unknown)
   }
 
   private def inScope(tag: TypedAst.Case, scope: LocalScope): Boolean = {

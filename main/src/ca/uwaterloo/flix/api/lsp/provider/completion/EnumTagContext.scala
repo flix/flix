@@ -26,11 +26,18 @@ sealed trait EnumTagContext
 
 object EnumTagContext {
   /**
-    * Represents an expression in a complete enum context.
+    * Represents a context in an applied enum tag.
+    *
+    * For example, in `Clr.Red|(1, 2)` where Red is a valid case, we say that cursor position is `InsideAppliedEnumTag`.
+    */
+  case class InsideAppliedEnumTag(symUse: SymUse.CaseSymUse) extends EnumTagContext
+
+  /**
+    * Represents a context in a valid but not applied enum tag.
     *
     * For example, in `Clr.Red|` where Red is a valid case, we say that cursor position is `AfterCompleteEnumTag`.
     */
-  case class AfterCompleteEnumTag(sym: SymUse.CaseSymUse) extends EnumTagContext
+  case class InsideValidEnumTag(symUse: SymUse.CaseSymUse) extends EnumTagContext
 
   /**
     * Represents an expression in all other contexts.
@@ -43,9 +50,12 @@ object EnumTagContext {
     */
   def getEnumTagContext(uri: String, pos: Position)(implicit root: TypedAst.Root, flix: Flix): EnumTagContext = {
     LspUtil.getStack(uri, pos) match {
-      case (symUse@SymUse.CaseSymUse(_, _)) :: Expr.Tag(_, _, _, _, _) :: _ =>
+      case (symUse@SymUse.CaseSymUse(_, _)) :: Expr.Tag(_, _ :: _, _, _, _) :: _ =>
+        // The leaf is a case symbol followed by a Tag expression with arguments.
+        EnumTagContext.InsideAppliedEnumTag(symUse)
+      case (symUse@SymUse.CaseSymUse(_, _)) :: Expr.Tag(_, Nil, _, _, _) :: _ =>
         // The leaf is a case symbol followed by a Tag expression.
-        EnumTagContext.AfterCompleteEnumTag(symUse)
+        EnumTagContext.InsideValidEnumTag(symUse)
       case _ => EnumTagContext.Unknown
     }
   }
