@@ -215,22 +215,17 @@ object Inliner {
 
       case _ =>
         val freshVarSym = Symbol.freshVarSym(sym)
-        val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
-        val ctx1 = ctx0.copy(varSubst = varSubst1)
+        val ctx1 = ctx0.addVarSubst(sym, freshVarSym)
         val e2 = visitExp(exp2, ctx1)
         val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
-        val varSubst2 = varSubsts.foldLeft(varSubst1)(_ ++ _)
-        val inScopeVars = ctx0.inScopeVars ++ fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern)
-        val ctx2 = ctx0.copy(varSubst = varSubst2, inScopeVars = inScopeVars)
+        val ctx2 = ctx1.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
         val e1 = visitExp(exp1, ctx2)
         Expr.LocalDef(freshVarSym, fps, e1, e2, tpe, eff, occur, loc)
     }
 
     case Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
       val freshVarSym = Symbol.freshVarSym(sym)
-      val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
-      val inScopeVars1 = ctx0.inScopeVars + (freshVarSym -> BoundKind.ParameterOrPattern)
-      val ctx = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeVars1)
+      val ctx = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.ParameterOrPattern)
       val e = visitExp(exp, ctx)
       Expr.Scope(freshVarSym, rvar, e, tpe, eff, loc)
 
@@ -507,12 +502,20 @@ object Inliner {
       this.copy(varSubst = this.varSubst ++ varSubst)
     }
 
+    def addVarSubsts(varSubsts: List[Map[Symbol.VarSym, Symbol.VarSym]]): LocalContext = {
+      this.copy(varSubst = varSubsts.foldLeft(this.varSubst)(_ ++ _))
+    }
+
     def addSubst(sym: Symbol.VarSym, substExpr: SubstRange): LocalContext = {
       this.copy(subst = this.subst + (sym -> substExpr))
     }
 
     def addInScopeVar(sym: Symbol.VarSym, boundKind: BoundKind): LocalContext = {
       this.copy(inScopeVars = this.inScopeVars + (sym -> boundKind))
+    }
+
+    def addInScopeVars(inScopeVars: Iterable[(Symbol.VarSym, BoundKind)]): LocalContext = {
+      this.copy(inScopeVars = this.inScopeVars ++ inScopeVars)
     }
 
   }
