@@ -112,7 +112,7 @@ object Inliner {
               }
 
             // Case 2:
-            // The variable `sym` is not in the substitution map, but is considered for inlining.
+            // The variable `sym` is not in the substitution map, but is considered for inlining if it is pure.
             case None =>
               ctx0.inScopeVars.get(freshVarSym) match {
                 case Some(_) => Expr.Var(freshVarSym, tpe, loc)
@@ -154,7 +154,7 @@ object Inliner {
           throw InternalCompilerException("unexpected stale local def symbol", loc)
       }
 
-    case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) => (occur, eff) match {
+    case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) => (occur, exp1.eff) match {
       case (Occur.Dead, Type.Pure) => // Eliminate dead binder
         visitExp(exp2, ctx0)
 
@@ -170,7 +170,7 @@ object Inliner {
         val ctx = ctx0.copy(varSubst = varSubst1, subst = subst1)
         visitExp(exp2, ctx)
 
-      case _ => // Simplify and maybe do copy propagation
+      case (_, Type.Pure) => // Simplify and maybe do copy propagation
         val ctx1 = ctx0.copy(exprCtx = ExprContext.Empty)
         val e1 = visitExp(exp1, ctx1)
 
@@ -179,7 +179,7 @@ object Inliner {
         // We want to preserve current ExprContext so do not reuse ctx1 since
         val ctx2 = ctx0.copy(varSubst = varSubst1)
 
-        if (isTrivialExp(e1) && isPure(e1.eff)) {
+        if (isTrivialExp(e1)) {
           // Do copy propagation and drop let-binding
           val subst1 = ctx2.subst + (freshVarSym -> SubstRange.DoneExpr(e1))
           val ctx3 = ctx2.copy(subst = subst1)
@@ -192,6 +192,18 @@ object Inliner {
           val e2 = visitExp(exp2, ctx3)
           Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
         }
+
+      case _ => // Let-binding with effectful right hand side so we cannot inline it.
+        val ctx1 = ctx0.copy(exprCtx = ExprContext.Empty)
+        val e1 = visitExp(exp1, ctx1)
+
+        val freshVarSym = Symbol.freshVarSym(sym)
+        val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
+        val inScopeSet1 = ctx0.inScopeVars + (freshVarSym -> BoundKind.LetBound(e1, occur))
+        // We want to preserve current ExprContext so do not reuse ctx1 since
+        val ctx2 = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeSet1)
+        val e2 = visitExp(exp2, ctx2)
+        Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
     }
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
