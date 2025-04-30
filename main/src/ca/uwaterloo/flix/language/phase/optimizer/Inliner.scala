@@ -18,10 +18,10 @@
 package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.{Dead, Many, ManyBranch, Once, OnceInLambda, OnceInLocalDef}
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Expr, Occur}
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Expr, Occur, Pattern}
+import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, Symbol, Type}
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
@@ -82,32 +82,339 @@ object Inliner {
       OccurrenceAst.Def(sym, fparams, spec, e, ctx, loc)
   }
 
-  /** Performs inlining on the expression `exp0`. */
-  private def visitExp(exp0: Expr, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = exp0
+  /**
+    * Performs inlining on the expression `exp0`.
+    *
+    * To avoid duplicating variable names, [[visitExp]] unconditionally
+    * assigns new names to all variables.
+    * When a binder is visited, it replaces it with a fresh variable and adds
+    * it to the variable substitution `varSubst` in th LocalContext `ctx0`.
+    * When a variable is visited, it replaces the old variable with the fresh one.
+    * Top-level function parameters are not substituted unless inlined, in which case
+    * the parameters are let-bound and added to the variable substitution.
+    *
+    * Within `ctx0` [[visitExp]] also maintains an 'expression substitution' `subst` mapping symbols
+    * to expressions ([[SubstRange]]) which it uses unconditionally replace some variable occurrences (see below).
+    * It also maintains a set of in-scope variables `inScopeVars` mapping symbols to [[BoundKind]], i.e.,
+    * information on how a variable is bound. This is used to consider inlining at a variable occurrence.
+    * If a let-bound variable has been visited and is not in `subst`, then it must be in `inScopeVars`
+    * if its definition is pure.
+    * Importantly, only fresh variables are mapped in both `subst` and `inScopeVars`, so when a variable
+    * is encountered, `varSubst` must always be applied first to obtain the corresponding fresh variable.
+    *
+    * When [[visitExp]] encounters a variable `x` it first applies the substitution `varSubst` to
+    * obtain the fresh variable. If it is not in the substitution then the variable is a function parameter
+    * occurrence bound by the defining function with symbol `sym0`.
+    * If it obtains `x'` from the substitution, it does the following three things:
+    *   1. If `x'` is in the expression substitution `subst` it replaces the variable with
+    *      the expression, recursively calling [[visitExp]] if it is a [[SubstRange.SuspendedExpr]].
+    *      This means that [[visitExp]] previously decided to unconditionally inline the let-binding
+    *      or decided to do copy-propagation of that binding (see below).
+    *   1. If `x'` is not in the expression substitution, it must be in the set of in-scope variable
+    *      definitions and considers it for inlining if it is pure.
+    *
+    * When [[visitExp]] encounters a let-binding `let sym = e1; e2` it considers five cases
+    * (note that it always refreshes `sym` to `sym'` as mentioned above):
+    *   1. If the binding is dead and pure, it drops the binding and returns `visitExp(e2)`.
+    *   1. If the binding is dead and impure, it rewrites the binding to a statement.
+    *   1. If the binding occurs once and is pure, it adds the unvisited `e1` to the substitution `subst`,
+    *      drops the binding and unconditionally inlines it at the occurrence of `sym`.
+    *   1. If the binding occurs more than once and is pure, it first visits `e1` and considers the following:
+    *      (a) If the visited `e1` is trivial, it removes the let-binding and unconditionally inlines
+    *      the visited `e1` at every occurrence of `sym`. This corresponds to copy-propagation.
+    *      (b) If the visited `e1` is not trivial, it keeps the let-binding, adds the visited `e1` to the set
+    *      of in-scope variable definitions and considers it for inlining at every occurrence.
+    *   1. If the binding occurs more than once and is impure, it keeps the let-binding and does not consider it for inlining.
+    */
+  private def visitExp(exp0: Expr, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = exp0 match {
+    case Expr.Cst(cst, tpe, loc) =>
+      Expr.Cst(cst, tpe, loc)
 
-  /** Returns `true` if `eff0` is pure. */
-  private def isPure(eff0: Type): Boolean = {
-    eff0 == Type.Pure
+    case Expr.Var(sym, tpe, loc) =>
+      // Replace with fresh variable if it is not a parameter
+      ctx0.varSubst.get(sym) match {
+      case None => // Function parameter occurrence
+        Expr.Var(sym, tpe, loc)
+
+      case Some(freshVarSym) =>
+        // Check for unconditional inlining / copy-propagation
+        ctx0.subst.get(freshVarSym) match {
+          case Some(SubstRange.SuspendedExpr(exp)) =>
+            // Unconditional inline of variable that occurs once
+          sctx.changed.putIfAbsent(sym0, ())
+          visitExp(exp, ctx0)
+
+          case Some(SubstRange.DoneExpr(exp)) =>
+            // Copy-propagation of visited expr
+          sctx.changed.putIfAbsent(sym0, ())
+          exp
+
+          case None =>
+            // It was not unconditionally inlined, so just update the variable
+          Expr.Var(freshVarSym, tpe, loc)
+      }
+    }
+
+    case Expr.Lambda(fparam, exp, tpe, loc) =>
+      val (fp, varSubst1) = freshFormalParam(fparam)
+      val ctx = ctx0.addVarSubsts(varSubst1).addInScopeVar(fp.sym, BoundKind.ParameterOrPattern)
+      val e = visitExp(exp, ctx)
+      Expr.Lambda(fp, e, tpe, loc)
+
+    case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, ctx0))
+      Expr.ApplyAtomic(op, es, tpe, eff, loc)
+
+    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1, ctx0)
+      val e2 = visitExp(exp2, ctx0)
+      Expr.ApplyClo(e1, e2, tpe, eff, loc)
+
+    case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, ctx0))
+      Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
+
+    case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+      ctx0.varSubst.get(sym) match {
+        case Some(freshVarSym) =>
+          val es = exps.map(visitExp(_, ctx0))
+          Expr.ApplyLocalDef(freshVarSym, es, tpe, eff, loc)
+
+        case None =>
+          throw InternalCompilerException("unexpected stale local def symbol", loc)
+      }
+
+    case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) => (occur, exp1.eff) match {
+      case (Occur.Dead, Type.Pure) =>
+        // Eliminate dead binder
+        sctx.changed.putIfAbsent(sym0, ())
+        visitExp(exp2, ctx0)
+
+      case (Occur.Dead, _) =>
+        // Rewrite to Stm to preserve effect
+        sctx.changed.putIfAbsent(sym0, ())
+        val e1 = visitExp(exp1, ctx0)
+        val e2 = visitExp(exp2, ctx0)
+        Expr.Stm(e1, e2, tpe, eff, loc)
+
+      case (Occur.Once, Type.Pure) =>
+        // Unconditionally inline
+        sctx.changed.putIfAbsent(sym0, ())
+        val freshVarSym = Symbol.freshVarSym(sym)
+        val ctx = ctx0.addVarSubst(sym, freshVarSym).addSubst(freshVarSym, SubstRange.SuspendedExpr(exp1))
+        visitExp(exp2, ctx)
+
+      case (_, Type.Pure) =>
+        // Simplify and maybe do copy-propagation
+        val e1 = visitExp(exp1, ctx0.withEmptyExprCtx)
+        if (isTrivial(e1)) {
+          // Do copy propagation and drop let-binding
+          sctx.changed.putIfAbsent(sym0, ())
+          val freshVarSym = Symbol.freshVarSym(sym)
+          val ctx = ctx0.addVarSubst(sym, freshVarSym).addSubst(freshVarSym, SubstRange.DoneExpr(e1))
+          visitExp(exp2, ctx)
+        } else {
+          // Keep let-binding, add binding freshVarSym -> e1 to the set of in-scope
+          // variables and consider inlining at each occurrence.
+          val freshVarSym = Symbol.freshVarSym(sym)
+          val ctx = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.LetBound(e1, occur))
+          val e2 = visitExp(exp2, ctx)
+          Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
+        }
+
+      case _ =>
+        // Let-binding with effectful right hand side so we cannot inline it.
+        val e1 = visitExp(exp1, ctx0.withEmptyExprCtx)
+        val freshVarSym = Symbol.freshVarSym(sym)
+        val e2 = visitExp(exp2, ctx0.addVarSubst(sym, freshVarSym))
+        Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
+    }
+
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) => occur match {
+      case Occur.Dead =>
+        // A function declaration is always pure so we do not care about the effect of exp1
+        sctx.changed.putIfAbsent(sym0, ())
+        visitExp(exp2, ctx0)
+
+      case _ =>
+        val freshVarSym = Symbol.freshVarSym(sym)
+        val ctx1 = ctx0.addVarSubst(sym, freshVarSym)
+        val e2 = visitExp(exp2, ctx1)
+        val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
+        val ctx2 = ctx1.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
+        val e1 = visitExp(exp1, ctx2)
+        Expr.LocalDef(freshVarSym, fps, e1, e2, tpe, eff, occur, loc)
+    }
+
+    case Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
+      val freshVarSym = Symbol.freshVarSym(sym)
+      val ctx = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.ParameterOrPattern)
+      val e = visitExp(exp, ctx)
+      Expr.Scope(freshVarSym, rvar, e, tpe, eff, loc)
+
+    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = visitExp(exp1, ctx0)
+      e1 match {
+        case Expr.Cst(Constant.Bool(true), _, _) =>
+          sctx.changed.putIfAbsent(sym0, ())
+          visitExp(exp2, ctx0)
+        case Expr.Cst(Constant.Bool(false), _, _) =>
+          sctx.changed.putIfAbsent(sym0, ())
+          visitExp(exp3, ctx0)
+        case _ =>
+          val e2 = visitExp(exp2, ctx0)
+          val e3 = visitExp(exp3, ctx0)
+          Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
+      }
+
+    case Expr.Stm(exp1, exp2, tpe, eff, loc) => exp1.eff match {
+      case Type.Pure =>
+        // Exp1 has no side effect and is unused
+        sctx.changed.putIfAbsent(sym0, ())
+        visitExp(exp2, ctx0)
+
+      case _ =>
+        val e1 = visitExp(exp1, ctx0)
+        val e2 = visitExp(exp2, ctx0)
+        Expr.Stm(e1, e2, tpe, eff, loc)
+    }
+
+    case Expr.Discard(exp, eff, loc) =>
+      val e = visitExp(exp, ctx0)
+      Expr.Discard(e, eff, loc)
+
+    case Expr.Match(exp, rules, tpe, eff, loc) =>
+      val rs = rules.map(visitMatchRule(_, ctx0))
+      val e = visitExp(exp, ctx0)
+      Expr.Match(e, rs, tpe, eff, loc)
+
+    case Expr.VectorLit(exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, ctx0))
+      Expr.VectorLit(es, tpe, eff, loc)
+
+    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1, ctx0)
+      val e2 = visitExp(exp2, ctx0)
+      Expr.VectorLoad(e1, e2, tpe, eff, loc)
+
+    case Expr.VectorLength(exp, loc) =>
+      val e = visitExp(exp, ctx0)
+      Expr.VectorLength(e, loc)
+
+    case Expr.Ascribe(exp, tpe, eff, loc) =>
+      val e = visitExp(exp, ctx0)
+      Expr.Ascribe(e, tpe, eff, loc)
+
+    case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      val e = visitExp(exp, ctx0)
+      Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc)
+
+    case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+      val e = visitExp(exp, ctx0)
+      val rs = rules.map(visitCatchRule(_, ctx0))
+      Expr.TryCatch(e, rs, tpe, eff, loc)
+
+    case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
+      val rs = rules.map(visitHandlerRule(_, ctx0))
+      val e = visitExp(exp, ctx0)
+      Expr.RunWith(e, effUse, rs, tpe, eff, loc)
+
+    case Expr.Do(op, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, ctx0))
+      Expr.Do(op, es, tpe, eff, loc)
+
+    case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
+      val methods = methods0.map(visitJvmMethod(_, ctx0))
+      Expr.NewObject(name, clazz, tpe, eff, methods, loc)
   }
 
-  /** Checks if `occur` is [[Dead]]. */
-  private def isDead(occur: OccurrenceAst.Occur): Boolean = occur match {
-    case Dead => true
-    case Once => false
-    case OnceInLambda => false
-    case OnceInLocalDef => false
-    case ManyBranch => false
-    case Many => false
+  /**
+    * Returns a pattern with fresh variables and a substitution mapping the old variables the fresh variables.
+    *
+    * If a variable is unused it is rewritten to a wildcard pattern.
+    */
+  private def visitPattern(pat0: Pattern)(implicit flix: Flix): (Pattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
+    case Pattern.Wild(tpe, loc) =>
+      (Pattern.Wild(tpe, loc), Map.empty)
+
+    case Pattern.Var(sym, tpe, occur, loc) => occur match {
+      case Occur.Dead =>
+        (Pattern.Wild(tpe, loc), Map.empty)
+
+      case Occur.Once
+           | Occur.OnceInLambda
+           | Occur.OnceInLocalDef
+           | Occur.ManyBranch
+           | Occur.Many =>
+        val freshVarSym = Symbol.freshVarSym(sym)
+        (Pattern.Var(freshVarSym, tpe, occur, loc), Map(sym -> freshVarSym))
+    }
+
+    case Pattern.Cst(cst, tpe, loc) =>
+      (Pattern.Cst(cst, tpe, loc), Map.empty)
+
+    case Pattern.Tag(sym, pats, tpe, loc) =>
+      val (ps, varSubsts) = pats.map(visitPattern).unzip
+      val varSubst = varSubsts.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
+      (Pattern.Tag(sym, ps, tpe, loc), varSubst)
+
+    case Pattern.Tuple(pats, tpe, loc) =>
+      val (ps, varSubsts) = pats.map(visitPattern).unzip
+      val varSubst = varSubsts.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
+      (Pattern.Tuple(ps, tpe, loc), varSubst)
+
+    case Pattern.Record(pats, pat, tpe, loc) =>
+      val (ps, varSubsts) = pats.map(visitRecordLabelPattern).unzip
+      val (p, varSubst1) = visitPattern(pat)
+      val varSubst2 = varSubsts.foldLeft(varSubst1)(_ ++ _)
+      (Pattern.Record(ps, p, tpe, loc), varSubst2)
   }
 
-  /** Checks if `occur` is [[Once]]. */
-  private def isOnce(occur: OccurrenceAst.Occur): Boolean = occur match {
-    case Dead => false
-    case Once => true
-    case OnceInLambda => false
-    case OnceInLocalDef => false
-    case ManyBranch => false
-    case Many => false
+  private def visitRecordLabelPattern(pat0: Pattern.Record.RecordLabelPattern)(implicit flix: Flix): (Pattern.Record.RecordLabelPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
+    case Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
+      val (p, subst) = visitPattern(pat)
+      (Pattern.Record.RecordLabelPattern(label, p, tpe, loc), subst)
+  }
+
+  /** Returns a formal param with a fresh symbol and a substitution mapping the old variable the fresh variable. */
+  private def freshFormalParam(fp0: OccurrenceAst.FormalParam)(implicit flix: Flix): (OccurrenceAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = fp0 match {
+    case OccurrenceAst.FormalParam(sym, mod, tpe, src, occur, loc) =>
+      val freshVarSym = Symbol.freshVarSym(sym)
+      val varSubst = Map(sym -> freshVarSym)
+      (OccurrenceAst.FormalParam(freshVarSym, mod, tpe, src, occur, loc), varSubst)
+  }
+
+  def visitMatchRule(rule: OccurrenceAst.MatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.MatchRule = rule match {
+    case OccurrenceAst.MatchRule(pat, guard, exp1) =>
+      val (p, varSubst1) = visitPattern(pat)
+      val ctx = ctx0.addVarSubsts(varSubst1).addInScopeVars(varSubst1.values.map(sym => sym -> BoundKind.ParameterOrPattern))
+      val g = guard.map(visitExp(_, ctx))
+      val e1 = visitExp(exp1, ctx)
+      OccurrenceAst.MatchRule(p, g, e1)
+  }
+
+  def visitCatchRule(rule: OccurrenceAst.CatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.CatchRule = rule match {
+    case OccurrenceAst.CatchRule(sym, clazz, exp1) =>
+      val freshVarSym = Symbol.freshVarSym(sym)
+      val ctx = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.ParameterOrPattern)
+      val e1 = visitExp(exp1, ctx)
+      OccurrenceAst.CatchRule(freshVarSym, clazz, e1)
+  }
+
+  def visitHandlerRule(rule: OccurrenceAst.HandlerRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.HandlerRule = rule match {
+    case OccurrenceAst.HandlerRule(op, fparams, exp1) =>
+      val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
+      val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
+      val e1 = visitExp(exp1, ctx)
+      OccurrenceAst.HandlerRule(op, fps, e1)
+  }
+
+  def visitJvmMethod(method: OccurrenceAst.JvmMethod, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.JvmMethod = method match {
+    case OccurrenceAst.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
+      val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
+      val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
+      val e = visitExp(exp, ctx)
+      OccurrenceAst.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
   }
 
   /**
@@ -123,13 +430,13 @@ object Inliner {
     *
     * A pure and trivial expression can always be inlined even without duplicating work.
     */
-  private def isTrivialExp(exp0: Expr): Boolean = exp0 match {
+  private def isTrivial(exp0: Expr): Boolean = exp0 match {
     case Expr.Cst(_, _, _) => true
     case Expr.Var(_, _, _) => true
-    case Expr.ApplyAtomic(AtomicOp.Unary(_), exps, _, _, _) => exps.forall(isTrivialExp)
-    case Expr.ApplyAtomic(AtomicOp.Binary(_), exps, _, _, _) => exps.forall(isTrivialExp)
-    case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivialExp)
-    case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivialExp)
+    case Expr.ApplyAtomic(AtomicOp.Unary(_), exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.Binary(_), exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivial)
     case _ => false
   }
 
@@ -197,7 +504,44 @@ object Inliner {
     * @param exprCtx           a compile-time evaluation context.
     * @param currentlyInlining a flag denoting whether the current traversal is part of an inline-expansion process.
     */
-  private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], exprCtx: ExprContext, currentlyInlining: Boolean)
+  private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], exprCtx: ExprContext, currentlyInlining: Boolean) {
+
+    /** Returns a [[LocalContext]] where [[exprCtx]] has be overwritten with [[ExprContext.Empty]]. */
+    def withEmptyExprCtx: LocalContext = {
+      this.copy(exprCtx = ExprContext.Empty)
+    }
+
+    /** Returns a [[LocalContext]] with the mapping `old -> fresh` added to [[varSubst]]. */
+    def addVarSubst(old: Symbol.VarSym, fresh: Symbol.VarSym): LocalContext = {
+      this.copy(varSubst = this.varSubst + (old -> fresh))
+    }
+
+    /** Returns a [[LocalContext]] with the mappings of `mappings` added to [[varSubst]]. */
+    def addVarSubsts(mappings: Map[Symbol.VarSym, Symbol.VarSym]): LocalContext = {
+      this.copy(varSubst = this.varSubst ++ mappings)
+    }
+
+    /** Returns a [[LocalContext]] with the mappings of `mappings` added to [[varSubst]]. */
+    def addVarSubsts(mappings: List[Map[Symbol.VarSym, Symbol.VarSym]]): LocalContext = {
+      this.copy(varSubst = mappings.foldLeft(this.varSubst)(_ ++ _))
+    }
+
+    /** Returns a [[LocalContext]] with the mapping `sym -> substExpr` added to [[subst]]. */
+    def addSubst(sym: Symbol.VarSym, substExpr: SubstRange): LocalContext = {
+      this.copy(subst = this.subst + (sym -> substExpr))
+    }
+
+    /** Returns a [[LocalContext]] with the mapping `sym -> boundKind` added to [[inScopeVars]]. */
+    def addInScopeVar(sym: Symbol.VarSym, boundKind: BoundKind): LocalContext = {
+      this.copy(inScopeVars = this.inScopeVars + (sym -> boundKind))
+    }
+
+    /** Returns a [[LocalContext]] with the mappings of `mappings` added to [[inScopeVars]]. */
+    def addInScopeVars(mappings: Iterable[(Symbol.VarSym, BoundKind)]): LocalContext = {
+      this.copy(inScopeVars = this.inScopeVars ++ mappings)
+    }
+
+  }
 
   private object LocalContext {
 
