@@ -302,15 +302,7 @@ object Inliner {
       Expr.TryCatch(e, rs, tpe, eff, loc)
 
     case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
-      val rs = rules.map {
-        case OccurrenceAst.HandlerRule(op, fparams, exp1) =>
-          val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
-          val varSubst1 = varSubsts.fold(ctx0.varSubst)(_ ++ _)
-          val inScopeVars1 = ctx0.inScopeVars ++ fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern)
-          val ctx = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeVars1)
-          val e1 = visitExp(exp1, ctx)
-          OccurrenceAst.HandlerRule(op, fps, e1)
-      }
+      val rs = rules.map(visitHandlerRule(_, ctx0))
       val e = visitExp(exp, ctx0)
       Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
@@ -406,6 +398,16 @@ object Inliner {
       val ctx = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeVars1)
       val e1 = visitExp(exp1, ctx)
       OccurrenceAst.CatchRule(freshVarSym, clazz, e1)
+  }
+
+  def visitHandlerRule(rule: OccurrenceAst.HandlerRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.HandlerRule = rule match {
+    case OccurrenceAst.HandlerRule(op, fparams, exp1) =>
+      val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
+      val varSubst1 = varSubsts.fold(ctx0.varSubst)(_ ++ _)
+      val inScopeVars1 = ctx0.inScopeVars ++ fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern)
+      val ctx = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeVars1)
+      val e1 = visitExp(exp1, ctx)
+      OccurrenceAst.HandlerRule(op, fps, e1)
   }
 
   /**
