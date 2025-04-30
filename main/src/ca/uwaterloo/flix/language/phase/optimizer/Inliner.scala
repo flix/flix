@@ -84,7 +84,7 @@ object Inliner {
     * assigns new names to all variables.
     * When a binder is visited, it replaces it with a fresh variable and adds
     * it to the variable substitution `varSubst` in th LocalContext `ctx0`.
-    * When a variable is visited, it replaces the stale variable with the fresh one.
+    * When a variable is visited, it replaces the old variable with the fresh one.
     * Top-level function parameters are not substituted unless inlined, in which case
     * the parameters are let-bound and added to the variable substitution.
     */
