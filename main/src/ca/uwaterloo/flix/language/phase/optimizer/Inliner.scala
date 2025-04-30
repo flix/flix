@@ -311,15 +311,7 @@ object Inliner {
       Expr.Do(op, es, tpe, eff, loc)
 
     case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
-      val methods = methods0.map {
-        case OccurrenceAst.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
-          val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
-          val varSubst1 = varSubsts.fold(ctx0.varSubst)(_ ++ _)
-          val inScopeVars1 = ctx0.inScopeVars ++ fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern)
-          val ctx = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeVars1)
-          val e = visitExp(exp, ctx)
-          OccurrenceAst.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
-      }
+      val methods = methods0.map(visitJvmMethod(_, ctx0))
       Expr.NewObject(name, clazz, tpe, eff, methods, loc)
   }
 
@@ -408,6 +400,16 @@ object Inliner {
       val ctx = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeVars1)
       val e1 = visitExp(exp1, ctx)
       OccurrenceAst.HandlerRule(op, fps, e1)
+  }
+
+  def visitJvmMethod(method: OccurrenceAst.JvmMethod, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.JvmMethod = method match {
+    case OccurrenceAst.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
+      val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
+      val varSubst1 = varSubsts.fold(ctx0.varSubst)(_ ++ _)
+      val inScopeVars1 = ctx0.inScopeVars ++ fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern)
+      val ctx = ctx0.copy(varSubst = varSubst1, inScopeVars = inScopeVars1)
+      val e = visitExp(exp, ctx)
+      OccurrenceAst.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
   }
 
   /**
