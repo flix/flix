@@ -186,12 +186,10 @@ object Inliner {
       case (_, Type.Pure) => // Simplify and maybe do copy propagation
         val ctx1 = ctx0.copy(exprCtx = ExprContext.Empty)
         val e1 = visitExp(exp1, ctx1)
-
         val freshVarSym = Symbol.freshVarSym(sym)
         val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
         // We want to preserve current ExprContext so do not reuse ctx1 since
         val ctx2 = ctx0.copy(varSubst = varSubst1)
-
         if (isTrivialExp(e1)) {
           // Do copy propagation and drop let-binding
           val subst1 = ctx2.subst + (freshVarSym -> SubstRange.DoneExpr(e1))
@@ -209,7 +207,6 @@ object Inliner {
       case _ => // Let-binding with effectful right hand side so we cannot inline it.
         val ctx1 = ctx0.copy(exprCtx = ExprContext.Empty)
         val e1 = visitExp(exp1, ctx1)
-
         val freshVarSym = Symbol.freshVarSym(sym)
         val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
         // We want to preserve current ExprContext so do not reuse ctx1 since
@@ -218,10 +215,11 @@ object Inliner {
         Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
     }
 
-    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
-      if (isDead(occur)) {
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) => occur match {
+      case Occur.Dead => // A function declaration is always pure
         visitExp(exp2, ctx0)
-      } else {
+
+      case _ =>
         val freshVarSym = Symbol.freshVarSym(sym)
         val varSubst1 = ctx0.varSubst + (sym -> freshVarSym)
         val ctx1 = ctx0.copy(varSubst = varSubst1)
@@ -232,7 +230,7 @@ object Inliner {
         val ctx2 = ctx0.copy(varSubst = varSubst2, inScopeVars = inScopeVars)
         val e1 = visitExp(exp1, ctx2)
         Expr.LocalDef(freshVarSym, fps, e1, e2, tpe, eff, occur, loc)
-      }
+    }
 
     case Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
       val freshVarSym = Symbol.freshVarSym(sym)
