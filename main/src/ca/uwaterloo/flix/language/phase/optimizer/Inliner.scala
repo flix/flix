@@ -23,8 +23,8 @@ import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Expr, Occur}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, Symbol, Type}
 import ca.uwaterloo.flix.util.ParOps
 
-import java.util.concurrent.ConcurrentLinkedQueue
-import scala.jdk.CollectionConverters.CollectionHasAsScala
+import java.util.concurrent.ConcurrentHashMap
+import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 
 /**
   * Rewrites the body of each def using, using the following transformations:
@@ -71,7 +71,7 @@ object Inliner {
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): (OccurrenceAst.Root, Set[Symbol.DefnSym]) = {
     val sctx: SharedContext = SharedContext.mk()
     val defs = ParOps.parMapValues(root.defs)(visitDef(_)(sctx, root, flix))
-    val newDelta = sctx.changed.asScala.toSet
+    val newDelta = sctx.changed.asScala.keys.toSet
     (root.copy(defs = defs), newDelta)
   }
 
@@ -209,7 +209,7 @@ object Inliner {
   private object SharedContext {
 
     /** Returns a fresh [[SharedContext]]. */
-    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+    def mk(): SharedContext = new SharedContext(new ConcurrentHashMap())
 
   }
 
@@ -218,6 +218,6 @@ object Inliner {
     *
     * @param changed the set of symbols of changed functions.
     */
-  private case class SharedContext(changed: ConcurrentLinkedQueue[Symbol.DefnSym])
+  private case class SharedContext(changed: ConcurrentHashMap[Symbol.DefnSym, Unit])
 
 }
