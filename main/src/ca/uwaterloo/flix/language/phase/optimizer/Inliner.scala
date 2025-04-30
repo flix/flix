@@ -70,15 +70,15 @@ object Inliner {
   /** Performs inlining on the given AST `root`. */
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): (OccurrenceAst.Root, Set[Symbol.DefnSym]) = {
     val sctx: SharedContext = SharedContext.mk()
-    val defs = ParOps.parMapValues(root.defs)(visitDef(_)(root, sctx, flix))
+    val defs = ParOps.parMapValues(root.defs)(visitDef(_)(sctx, root, flix))
     val newDelta = sctx.changed.asScala.toSet
     (root.copy(defs = defs), newDelta)
   }
 
   /** Performs inlining on the body of `def0`. */
-  private def visitDef(def0: OccurrenceAst.Def)(implicit root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): OccurrenceAst.Def = def0 match {
+  private def visitDef(def0: OccurrenceAst.Def)(implicit sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.Def = def0 match {
     case OccurrenceAst.Def(sym, fparams, spec, exp, ctx, loc) =>
-      val e = visitExp(exp, LocalContext.Empty)(sym, root, sctx, flix)
+      val e = visitExp(exp, LocalContext.Empty)(sym, sctx, root,, flix)
       if (e eq exp) {
         def0
       } else {
@@ -88,7 +88,7 @@ object Inliner {
   }
 
   /** Performs inlining on the expression `exp0`. */
-  private def visitExp(exp0: Expr, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = exp0
+  private def visitExp(exp0: Expr, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = exp0
 
   /** Returns `true` if `eff0` is pure. */
   private def isPure(eff0: Type): Boolean = {
