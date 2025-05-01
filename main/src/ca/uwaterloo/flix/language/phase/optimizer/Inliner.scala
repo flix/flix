@@ -179,7 +179,7 @@ object Inliner {
           Expr.ApplyLocalDef(freshVarSym, es, tpe, eff, loc)
 
         case None =>
-          throw InternalCompilerException("unexpected stale local def symbol", loc)
+          throw InternalCompilerException(s"unexpected stale local def symbol $sym", loc)
       }
 
     case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) => (occur, exp1.eff) match {
