@@ -408,8 +408,11 @@ object Inliner {
       OccurrenceAst.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
   }
 
-  private def callSiteInline(freshVarSym: Symbol.VarSym, lvl: Level, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
-    ctx0.inScopeVars.get(freshVarSym) match {
+  /**
+    * Returns the definition of `sym` if the [[shouldInlineVar]] predicate holds. Returns `default` otherwise.
+    */
+  private def callSiteInline(sym: Symbol.VarSym, lvl: Level, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+    ctx0.inScopeVars.get(sym) match {
       case Some(BoundKind.LetBound(rhs, occur)) if shouldInlineVar(rhs, occur, lvl, ctx0) =>
         visitExp(rhs, ctx0.copy(subst = Map.empty))
 
@@ -417,11 +420,13 @@ object Inliner {
         default
 
       case None =>
-        throw InternalCompilerException(s"unexpected evaluated var not in scope $freshVarSym", freshVarSym.loc)
+        throw InternalCompilerException(s"unexpected evaluated var not in scope $sym", sym.loc)
     }
   }
 
-  private def shouldInlineVar(expr: Expr, occur: Occur, lvl: Level, ctx0: LocalContext): Boolean = false
+  private def shouldInlineVar(expr: Expr, occur: Occur, lvl: Level, ctx0: LocalContext): Boolean = {
+    expr.eff == Type.Pure
+  }
 
   /**
     * Returns `true` if `exp0` is considered a trivial expression.
