@@ -138,12 +138,15 @@ object Inliner {
           // Check for unconditional inlining / copy-propagation
           ctx0.subst.get(freshVarSym) match {
             case Some(SubstRange.SuspendedExpr(exp, subst)) =>
-              // Unconditional inline of variable that occurs once
+              // Unconditional inline of variable that occurs once.
+              // Use the expression substitution from the definition site.
               sctx.changed.putIfAbsent(sym0, ())
               visitExp(exp, ctx0.copy(subst = subst))
 
             case Some(SubstRange.DoneExpr(exp)) =>
-              // Copy-propagation of visited expr
+              // Copy-propagation of visited expr.
+              // Use the empty expression substitution since this has already been visited
+              // and the context might indicate that if exp is a var, it should be inlined again.
               sctx.changed.putIfAbsent(sym0, ())
               visitExp(exp, ctx0.copy(subst = Map.empty))
 
