@@ -97,8 +97,7 @@ object Inliner {
     * to expressions ([[SubstRange]]) which it uses unconditionally replace some variable occurrences (see below).
     * It also maintains a set of in-scope variables `inScopeVars` mapping symbols to [[BoundKind]], i.e.,
     * information on how a variable is bound. This is used to consider inlining at a variable occurrence.
-    * If a let-bound variable has been visited and is not in `subst`, then it must be in `inScopeVars`
-    * if its definition is pure.
+    * If a let-bound variable has been visited and is not in `subst`, then it must always be in `inScopeVars`.
     * Importantly, only fresh variables are mapped in both `subst` and `inScopeVars`, so when a variable
     * is encountered, `varSubst` must always be applied first to obtain the corresponding fresh variable.
     *
@@ -111,20 +110,19 @@ object Inliner {
     *      This means that [[visitExp]] previously decided to unconditionally inline the let-binding
     *      or decided to do copy-propagation of that binding (see below).
     *   1. If `x'` is not in the expression substitution, it must be in the set of in-scope variable
-    *      definitions and considers it for inlining if it is pure.
+    *      definitions and considers it for inlining if its definition is pure.
     *
-    * When [[visitExp]] encounters a let-binding `let sym = e1; e2` it considers five cases
+    * When [[visitExp]] encounters a let-binding `let sym = e1; e2` it considers four cases
     * (note that it always refreshes `sym` to `sym'` as mentioned above):
     *   1. If the binding is dead and pure, it drops the binding and returns `visitExp(e2)`.
     *   1. If the binding is dead and impure, it rewrites the binding to a statement.
     *   1. If the binding occurs once and is pure, it adds the unvisited `e1` to the substitution `subst`,
     *      drops the binding and unconditionally inlines it at the occurrence of `sym`.
-    *   1. If the binding occurs more than once and is pure, it first visits `e1` and considers the following:
-    *      (a) If the visited `e1` is trivial, it removes the let-binding and unconditionally inlines
+    *   1. If the binding occurs more than once, it first visits `e1` and considers the following:
+    *      (a) If the visited `e1` is trivial and pure, it removes the let-binding and unconditionally inlines
     *      the visited `e1` at every occurrence of `sym`. This corresponds to copy-propagation.
-    *      (b) If the visited `e1` is not trivial, it keeps the let-binding, adds the visited `e1` to the set
+    *      (b) If the visited `e1` is nontrivial, it keeps the let-binding, adds the visited `e1` to the set
     *      of in-scope variable definitions and considers it for inlining at every occurrence.
-    *   1. If the binding occurs more than once and is impure, it keeps the let-binding and does not consider it for inlining.
     */
   private def visitExp(exp0: Expr, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = exp0 match {
     case Expr.Cst(cst, tpe, loc) =>
@@ -133,27 +131,27 @@ object Inliner {
     case Expr.Var(sym, tpe, loc) =>
       // Replace with fresh variable if it is not a parameter
       ctx0.varSubst.get(sym) match {
-      case None => // Function parameter occurrence
-        Expr.Var(sym, tpe, loc)
+        case None => // Function parameter occurrence
+          Expr.Var(sym, tpe, loc)
 
-      case Some(freshVarSym) =>
-        // Check for unconditional inlining / copy-propagation
-        ctx0.subst.get(freshVarSym) match {
-          case Some(SubstRange.SuspendedExpr(exp)) =>
-            // Unconditional inline of variable that occurs once
-          sctx.changed.putIfAbsent(sym0, ())
-          visitExp(exp, ctx0)
+        case Some(freshVarSym) =>
+          // Check for unconditional inlining / copy-propagation
+          ctx0.subst.get(freshVarSym) match {
+            case Some(SubstRange.SuspendedExpr(exp, subst)) =>
+              // Unconditional inline of variable that occurs once
+              sctx.changed.putIfAbsent(sym0, ())
+              visitExp(exp, ctx0.copy(subst = subst))
 
-          case Some(SubstRange.DoneExpr(exp)) =>
-            // Copy-propagation of visited expr
-          sctx.changed.putIfAbsent(sym0, ())
-          exp
+            case Some(SubstRange.DoneExpr(exp)) =>
+              // Copy-propagation of visited expr
+              sctx.changed.putIfAbsent(sym0, ())
+              visitExp(exp, ctx0.copy(subst = Map.empty))
 
-          case None =>
-            // It was not unconditionally inlined, so just update the variable
-          Expr.Var(freshVarSym, tpe, loc)
+            case None =>
+              // It was not unconditionally inlined, so just update the variable
+              Expr.Var(freshVarSym, tpe, loc)
+          }
       }
-    }
 
     case Expr.Lambda(fparam, exp, tpe, loc) =>
       val (fp, varSubst1) = freshFormalParam(fparam)
@@ -175,14 +173,9 @@ object Inliner {
       Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
 
     case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
-      ctx0.varSubst.get(sym) match {
-        case Some(freshVarSym) =>
-          val es = exps.map(visitExp(_, ctx0))
-          Expr.ApplyLocalDef(freshVarSym, es, tpe, eff, loc)
-
-        case None =>
-          throw InternalCompilerException("unexpected stale local def symbol", loc)
-      }
+      val sym1 = ctx0.varSubst.getOrElse(sym, sym)
+      val es = exps.map(visitExp(_, ctx0))
+      Expr.ApplyLocalDef(sym1, es, tpe, eff, loc)
 
     case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) => (occur, exp1.eff) match {
       case (Occur.Dead, Type.Pure) =>
@@ -201,13 +194,14 @@ object Inliner {
         // Unconditionally inline
         sctx.changed.putIfAbsent(sym0, ())
         val freshVarSym = Symbol.freshVarSym(sym)
-        val ctx = ctx0.addVarSubst(sym, freshVarSym).addSubst(freshVarSym, SubstRange.SuspendedExpr(exp1))
+        val ctx = ctx0.addVarSubst(sym, freshVarSym)
+          .addSubst(freshVarSym, SubstRange.SuspendedExpr(exp1, ctx0.subst))
         visitExp(exp2, ctx)
 
-      case (_, Type.Pure) =>
+      case _ =>
         // Simplify and maybe do copy-propagation
         val e1 = visitExp(exp1, ctx0.withEmptyExprCtx)
-        if (isTrivial(e1)) {
+        if (isTrivial(e1) && exp1.eff == Type.Pure) {
           // Do copy propagation and drop let-binding
           sctx.changed.putIfAbsent(sym0, ())
           val freshVarSym = Symbol.freshVarSym(sym)
@@ -221,13 +215,6 @@ object Inliner {
           val e2 = visitExp(exp2, ctx)
           Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
         }
-
-      case _ =>
-        // Let-binding with effectful right hand side so we cannot inline it.
-        val e1 = visitExp(exp1, ctx0.withEmptyExprCtx)
-        val freshVarSym = Symbol.freshVarSym(sym)
-        val e2 = visitExp(exp2, ctx0.addVarSubst(sym, freshVarSym))
-        Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
     }
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) => occur match {
@@ -445,8 +432,13 @@ object Inliner {
 
   private object SubstRange {
 
-    /** An expression that will be inlined but is not yet visited. */
-    case class SuspendedExpr(exp: OccurrenceAst.Expr) extends SubstRange
+    /**
+      * An expression that will be inlined but is not yet visited.
+      * We must capture the substitution from its definition site to ensure
+      * we substitute the variables the inliner may have previously decided
+      * to inline.
+      */
+    case class SuspendedExpr(exp: OccurrenceAst.Expr, subst: Map[Symbol.VarSym, SubstRange]) extends SubstRange
 
     /** An expression that will be inlined but has already been visited. */
     case class DoneExpr(exp: OccurrenceAst.Expr) extends SubstRange
