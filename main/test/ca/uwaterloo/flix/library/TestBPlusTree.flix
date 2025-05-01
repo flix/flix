@@ -6,7 +6,6 @@ mod TestBPlusTree {
     def listToMap(l: List[(k, v)]): Map[k, v] with Order[k] =
         List.foldLeft(acc -> p -> let (x, y) = p; Map.insert(x, y, acc), Map#{}, l)
 
-
     /////////////////////////////////////////////////////////////////////////////
     // Test concurrency                                                        //
     /////////////////////////////////////////////////////////////////////////////
@@ -31,8 +30,8 @@ mod TestBPlusTree {
     /// If `inserted` is Some we check that they have been inserted.
     /// For both `gen` and `inserted` every element of the vector will be called `numInserts` times and, respectively, be inserted or test membership.
     ///
-    def concurrencyWithGenerators(gen: Vector[Unit -> (a, b) \ ef1], numInserts: Int64, inserted: Option[Vector[Unit -> (a, b) \ ef2]]): Bool \ ef2 + IO + NonDet - Random with Order[a] = region rc {
-        let tree: BPlusTree[a, b, rc]  = BPlusTree.empty(rc, 10); // Small order to get more splits.
+    def concurrencyWithGenerators(gen: Vector[Unit -> (a, b) \ ef1], numInserts: Int64, inserted: Option[Vector[Unit -> (a, b) \ ef2]]): Bool \ ef2 + IO + NonDet - Random with Order[a], Eq[b] = region rc {
+        let tree: BPlusTree[a, b, rc]  = BPlusTree.emptyWithOrder(rc, 10); // Small order to get more splits.
         let seeds = Random.runWithIO(() -> Vector.map(_ -> Random.randomInt64(), gen));
         let _: Unit = region rc2 {
             Vector.forEach(inputt -> {
@@ -66,8 +65,8 @@ mod TestBPlusTree {
     /// If `inserted` is Some we check that they have been inserted.
     /// For both `gen` and `inserted` every element of the vector will be called `numInserts` times and, respectively, be inserted or test membership
     ///
-    def concurrencyWithGeneratorsAndOccasionalTests(gen: Vector[Unit -> (a, b) \ ef1], numInserts: Int64, inserted: Vector[Unit -> (a, b) \ ef2], readEvery: Int64): Bool \ IO + NonDet - Random with Order[a] = region rc {
-        let tree: BPlusTree[a, b, rc]  = BPlusTree.empty(rc, 10); // Small order to get more splits.
+    def concurrencyWithGeneratorsAndOccasionalTests(gen: Vector[Unit -> (a, b) \ ef1], numInserts: Int64, inserted: Vector[Unit -> (a, b) \ ef2], readEvery: Int64): Bool \ IO + NonDet - Random with Order[a], Eq[b] = region rc {
+        let tree: BPlusTree[a, b, rc]  = BPlusTree.emptyWithOrder(rc, 10); // Small order to get more splits.
         let seeds = Random.runWithIO(() -> Vector.map(_ -> Random.randomInt64(), gen));
         let resultVec = Vector.map(_ -> Ref.fresh(rc, false), Vector.range(0, Vector.length(gen)));
         let insertWithSeed = Vector.map(match (seed, insert) -> Random.handleWithSeed(seed, insert), Vector.zip(seeds, inserted));
@@ -121,7 +120,7 @@ mod TestBPlusTree {
         let range = Vector.range(0, numThreads);
         let generators = Vector.map(reff -> () -> {let next = Ref.get(reff); Ref.put(next + 1i64, reff); (next, next)}, Vector.map(_ -> Ref.fresh(rc, 0i64), range));
         let insertions = Vector.map(reff -> () -> {let next = Ref.get(reff); Ref.put(next + 1i64, reff); (next, next)}, Vector.map(_ -> Ref.fresh(rc, 0i64), range));
-        concurrencyWithGenerators(generators, totalInserts / Int32.toInt64(numThreads), Some(insertions))
+        concurrencyWithGenerators(generators, totalInserts, Some(insertions))
     }
 
         ///
@@ -147,7 +146,7 @@ mod TestBPlusTree {
         let range = Vector.range(0, numThreads);
         let generators = Vector.map(reff -> () -> {let next = Ref.get(reff); Ref.put(next + 1i64, reff); (next, next)}, Vector.map(_ -> Ref.fresh(rc, 0i64), range));
         let insertions = Vector.map(reff -> () -> {let next = Ref.get(reff); Ref.put(next + 1i64, reff); (next, next)}, Vector.map(_ -> Ref.fresh(rc, 0i64), range));
-        concurrencyWithGeneratorsAndOccasionalTests(generators, totalInserts / Int32.toInt64(numThreads), insertions, readEvery)
+        concurrencyWithGeneratorsAndOccasionalTests(generators, totalInserts, insertions, readEvery)
     }
 
 
@@ -213,14 +212,14 @@ mod TestBPlusTree {
 
     @test
     def containsPair01(): Bool = region rc {
-        let tree = BPlusTree.empty(rc, 3);
+        let tree = BPlusTree.emptyWithOrder(rc, 3);
         not BPlusTree.containsPair(0, 0, tree) and
             not BPlusTree.containsPair(0, 1, tree) and
             not BPlusTree.containsPair(1, 0, tree)
     }
     @test
     def containsPair02(): Bool = region rc {
-        let tree = BPlusTree.empty(rc, 3);
+        let tree = BPlusTree.emptyWithOrder(rc, 3);
         BPlusTree.insert(1, 2, tree);
         BPlusTree.containsPair(1, 2, tree) and
             not BPlusTree.containsPair(2, 1, tree) and
@@ -228,23 +227,69 @@ mod TestBPlusTree {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // containsPairThreadUnsafe                                                //
+    // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
+
     @test
-    def containsPairUnsafe01(): Bool = region rc {
-        let tree = BPlusTree.empty(rc, 3);
-        not BPlusTree.containsPairThreadUnsafe(0, 0, tree) and
-            not BPlusTree.containsPairThreadUnsafe(0, 1, tree) and
-            not BPlusTree.containsPairThreadUnsafe(1, 0, tree)
+    def forEach01(): Bool = region rc {
+        let tree = rangeQueryDefaultTree(rc);
+        let list = MutList.empty(rc);
+        let f = k -> _ -> MutList.push(k, list);
+        BPlusTree.forEach(f, tree);
+        let res = Vector#{0, 1, 2, 3, 4, 5};
+        MutList.toVector(list) `Vector.equals` res
     }
+
     @test
-    def containsPairUnsafe02(): Bool = region rc {
-        let tree = BPlusTree.empty(rc, 3);
-        BPlusTree.insert(1, 2, tree);
-        BPlusTree.containsPairThreadUnsafe(1, 2, tree) and
-            not BPlusTree.containsPairThreadUnsafe(2, 1, tree) and
-            not BPlusTree.containsPairThreadUnsafe(1, 3, tree)
+    def forEach02(): Bool = region rc {
+        let tree = rangeQueryMultipleValues(rc);
+        let list = MutList.empty(rc);
+        let f = k -> v -> MutList.push((k, v), list);
+        BPlusTree.forEach(f, tree);
+        let res = Vector#{(0, 12), (1, 12), (2, 13), (3, 14)};
+        MutList.toVector(list) `Vector.equals` res
     }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // getWithDefault                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def getWithDefault01(): Bool = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithOrder(rc, 3);
+        42 == BPlusTree.getWithDefault(0, 42, tree)
+    }
+
+    @test
+    def getWithDefault02(): Bool = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithOrder(rc, 3);
+        BPlusTree.insert(0, 10, tree);
+        10 == BPlusTree.getWithDefault(0, 42, tree)
+    }
+
+    @test
+    def getWithDefault03(): Bool = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithOrder(rc, 3);
+        BPlusTree.insert(0, 10, tree);
+        BPlusTree.insert(1, 11, tree);
+        BPlusTree.insert(2, 12, tree);
+        BPlusTree.insert(3, 13, tree);
+        BPlusTree.insert(4, 14, tree);
+        BPlusTree.insert(5, 15, tree);
+        BPlusTree.insert(6, 16, tree);
+        10 == BPlusTree.getWithDefault(0, 42, tree)
+        and 11 == BPlusTree.getWithDefault(1, 42, tree)
+        and 12 == BPlusTree.getWithDefault(2, 42, tree)
+        and 13 == BPlusTree.getWithDefault(3, 42, tree)
+        and 14 == BPlusTree.getWithDefault(4, 42, tree)
+        and 15 == BPlusTree.getWithDefault(5, 42, tree)
+        and 16 == BPlusTree.getWithDefault(6, 42, tree)
+        and 42 == BPlusTree.getWithDefault(-1, 42, tree)
+        and 42 == BPlusTree.getWithDefault(-2, 42, tree)
+        and 42 == BPlusTree.getWithDefault(7, 42, tree)
+        and 42 == BPlusTree.getWithDefault(8, 42, tree)
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
@@ -252,20 +297,20 @@ mod TestBPlusTree {
 
     @test
     def isEmpty01(): Bool = region rc {
-        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc, 3);
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithOrder(rc, 3);
         BPlusTree.isEmpty(tree)
     }
 
     @test
     def isEmpty02(): Bool = region rc {
-        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc, 3);
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithOrder(rc, 3);
         BPlusTree.insert(1, 2, tree);
         not BPlusTree.isEmpty(tree)
     }
 
     @test
     def isEmpty03(): Bool = region rc {
-        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc, 3);
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithOrder(rc, 3);
         let empty0 = BPlusTree.isEmpty(tree);
         BPlusTree.insert(1, 2, tree);
         let empty1 = BPlusTree.isEmpty(tree);
@@ -279,54 +324,19 @@ mod TestBPlusTree {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // isEmptyThreadUnsafe                                                     //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def isEmptyThreadUnsafe01(): Bool = region rc {
-        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc, 3);
-        BPlusTree.isEmptyThreadUnsafe(tree)
-    }
-
-    @test
-    def isEmptyThreadUnsafe02(): Bool = region rc {
-        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc, 3);
-        BPlusTree.insert(1, 2, tree);
-        not BPlusTree.isEmptyThreadUnsafe(tree)
-    }
-
-    @test
-    def isEmptyThreadUnsafe03(): Bool = region rc {
-        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc, 3);
-        let empty0 = BPlusTree.isEmptyThreadUnsafe(tree);
-        BPlusTree.insert(1, 2, tree);
-        let empty1 = BPlusTree.isEmptyThreadUnsafe(tree);
-        BPlusTree.insert(2, 3, tree);
-        let empty2 = BPlusTree.isEmptyThreadUnsafe(tree);
-        BPlusTree.insert(3, 4, tree);
-        let empty3 = BPlusTree.isEmptyThreadUnsafe(tree);
-        BPlusTree.insert(4, 5, tree);
-        let empty4 = BPlusTree.isEmptyThreadUnsafe(tree);
-        empty0 and not empty1 and not empty2 and not empty3 and not empty4
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // insert                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    // def getRandomListOfPairs(n: Int32): List[(Int32, Int32)] \ Random =
-    //     List.map(_ -> (Random.randomInt32(), Random.randomInt32()), List.range(0, n))
-
     @test
     def insert01(): Bool = region rc {
-        let tree = BPlusTree.empty(rc, 3);
+        let tree = BPlusTree.emptyWithOrder(rc, 3);
         BPlusTree.insert(4, 2, tree);
         BPlusTree.containsPair(4, 2 ,tree) and BPlusTree.assertTreeInvariant(tree)
     }
 
     @test
     def insert02(): Bool = region rc {
-        let tree = BPlusTree.empty(rc, 3);
+        let tree = BPlusTree.emptyWithOrder(rc, 3);
         BPlusTree.insert(1, 10, tree);
         BPlusTree.insert(2, 11, tree);
         BPlusTree.insert(3, 12, tree);
@@ -338,7 +348,7 @@ mod TestBPlusTree {
 
     @test
     def insert03(): Bool = region rc {
-        let tree = BPlusTree.empty(rc, 3);
+        let tree = BPlusTree.emptyWithOrder(rc, 3);
         BPlusTree.insert(6, 15, tree);
         BPlusTree.insert(5, 14, tree);
         BPlusTree.insert(4, 13, tree);
@@ -356,7 +366,7 @@ mod TestBPlusTree {
 
     @test
     def insert04(): Bool = region rc {
-        let tree = BPlusTree.empty(rc, 5);
+        let tree = BPlusTree.emptyWithOrder(rc, 5);
         let pairs = List.map(p -> {
             let (x, y) = p;
             (Int32.modulo(x * 1000, 179), Int32.modulo(y * 1003, 109))
@@ -373,7 +383,7 @@ mod TestBPlusTree {
     @test
     def insert05(): Bool = region rc {
         List.forAll(order -> {
-            let tree = BPlusTree.empty(rc, order);
+            let tree = BPlusTree.emptyWithOrder(rc, order);
             let pairs = List.map(p -> {
                 let (x, y) = p;
                 (Int32.modulo(x * 1000, 179), Int32.modulo(y * 1003, 109))
@@ -394,7 +404,7 @@ mod TestBPlusTree {
 
     @test
     def memberOf01(): Bool = region rc {
-        let tree = BPlusTree.empty(rc, 3);
+        let tree = BPlusTree.emptyWithOrder(rc, 3);
         BPlusTree.insert(2, 3, tree);
         BPlusTree.memberOf(2, tree)
     }
@@ -402,7 +412,7 @@ mod TestBPlusTree {
 
     @test
     def memberOf02(): Bool = region rc {
-        let tree = BPlusTree.empty(rc, 3);
+        let tree = BPlusTree.emptyWithOrder(rc, 3);
         not BPlusTree.memberOf(0, tree) and
             not BPlusTree.memberOf(1, tree) and
             not BPlusTree.memberOf(-1, tree)
@@ -410,7 +420,7 @@ mod TestBPlusTree {
 
     @test
     def memberOf03(): Bool = region rc {
-        let tree = BPlusTree.empty(rc, 3);
+        let tree = BPlusTree.emptyWithOrder(rc, 3);
         BPlusTree.insert(1, 2, tree);
         BPlusTree.memberOf(1, tree) and
             not BPlusTree.memberOf(2, tree) and
@@ -418,39 +428,11 @@ mod TestBPlusTree {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // memberOfThreadUnsafe                                                          //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def memberOfUnsafe01(): Bool = region rc {
-        let tree = BPlusTree.empty(rc, 3);
-        BPlusTree.insert(2, 3, tree);
-        BPlusTree.memberOfThreadUnsafe(2, tree)
-    }
-
-    @test
-    def memberOfUnsafe02(): Bool = region rc {
-        let tree = BPlusTree.empty(rc, 3);
-        not BPlusTree.memberOfThreadUnsafe(0, tree) and
-            not BPlusTree.memberOfThreadUnsafe(1, tree) and
-            not BPlusTree.memberOfThreadUnsafe(-1, tree)
-    }
-
-    @test
-    def memberOfUnsafe03(): Bool = region rc {
-        let tree = BPlusTree.empty(rc, 3);
-        BPlusTree.insert(1, 2, tree);
-        BPlusTree.memberOfThreadUnsafe(1, tree) and
-            not BPlusTree.memberOfThreadUnsafe(2, tree) and
-            not BPlusTree.memberOfThreadUnsafe(0, tree)
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // rangeQueryWith                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
     def rangeQueryDefaultTree(rc: Region[r]): BPlusTree[Int32, Int32, r] \ r =
-        let tree: BPlusTree[Int32, Int32, r] = BPlusTree.empty(rc, 3);
+        let tree: BPlusTree[Int32, Int32, r] = BPlusTree.emptyWithOrder(rc, 3);
         BPlusTree.insert(0, 10, tree);
         BPlusTree.insert(1, 11, tree);
         BPlusTree.insert(2, 12, tree);
@@ -460,7 +442,7 @@ mod TestBPlusTree {
         tree
 
     def rangeQueryMultipleValues(rc: Region[r]): BPlusTree[Int32, Int32, r] \ r =
-        let tree = BPlusTree.empty(rc, 3);
+        let tree = BPlusTree.emptyWithOrder(rc, 3);
         BPlusTree.insert(0, 10, tree);
         BPlusTree.insert(0, 11, tree);
         BPlusTree.insert(0, 12, tree);
