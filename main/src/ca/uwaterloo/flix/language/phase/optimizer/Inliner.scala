@@ -143,7 +143,9 @@ object Inliner {
               visitExp(exp, ctx0.copy(subst = subst))
 
             case Some(SubstRange.DoneExpr(exp)) =>
-              // Copy-propagation of visited expr
+              // Copy-propagation of visited expr.
+              // Use the empty substitution because the context may indicate
+              // that variables in exp should be call-site inlined.
               sctx.changed.putIfAbsent(sym0, ())
               visitExp(exp, ctx0.copy(subst = Map.empty))
 
@@ -409,8 +411,10 @@ object Inliner {
     */
   private def callSiteInline(sym: Symbol.VarSym, lvl: Level, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     ctx0.inScopeVars.get(sym) match {
-      case Some(BoundKind.LetBound(rhs, occur)) if shouldInlineVar(rhs, occur, lvl, ctx0) =>
-        visitExp(rhs, ctx0.copy(subst = Map.empty))
+      case Some(BoundKind.LetBound(exp, occur)) if shouldInlineVar(exp, occur, lvl, ctx0) =>
+        // Use the empty substitution because the context may indicate
+        // that variables in exp should be call-site inlined.
+        visitExp(exp, ctx0.copy(subst = Map.empty))
 
       case Some(_) =>
         default
@@ -420,9 +424,15 @@ object Inliner {
     }
   }
 
-  private def shouldInlineVar(expr: Expr, occur: Occur, lvl: Level, ctx0: LocalContext): Boolean = {
-    false
+  private def shouldInlineVar(exp: Expr, occur: Occur, lvl: Level, ctx0: LocalContext): Boolean = (occur, exp.eff) match {
+    case (Occur.Dead, _) => throw InternalCompilerException("unexpected call site inline of dead variable", exp.loc)
+    case (Occur.Once, Type.Pure) => true
+    case (Occur.OnceInLambda, Type.Pure) => isTrivial(exp) && someBenefit(exp, lvl, ctx0)
+    case (Occur.OnceInLocalDef, Type.Pure) => isTrivial(exp) && someBenefit(exp, lvl, ctx0)
+    case _ => false
   }
+
+  private def someBenefit(exp: Expr, lvl: Level, ctx0: LocalContext): Boolean = false
 
   /**
     * Returns `true` if `exp0` is considered a trivial expression.
