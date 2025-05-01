@@ -121,8 +121,7 @@ class Flix {
     "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
 
-    // Channels and Threads
-    "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
+    // Threads
     "Thread.flix" -> LocalResource.get("/src/library/Thread.flix"),
     "Time.flix" -> LocalResource.get("/src/library/Time.flix"),
 
@@ -234,6 +233,7 @@ class Flix {
     "GetOpt.flix" -> LocalResource.get("/src/library/GetOpt.flix"),
     "Chalk.flix" -> LocalResource.get("/src/library/Chalk.flix"),
 
+    "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
     "Concurrent/Channel.flix" -> LocalResource.get("/src/library/Concurrent/Channel.flix"),
     "Concurrent/Condition.flix" -> LocalResource.get("/src/library/Concurrent/Condition.flix"),
     "Concurrent/CyclicBarrier.flix" -> LocalResource.get("/src/library/Concurrent/CyclicBarrier.flix"),
@@ -646,8 +646,7 @@ class Flix {
     initForkJoinPool()
 
     val loweringAst = Lowering.run(typedAst)
-    val treeShaker1Ast = TreeShaker1.run(loweringAst)
-    val monomorpherAst = Monomorpher.run(treeShaker1Ast)
+    val monomorpherAst = Monomorpher.run(loweringAst)
     val lambdaDropAst = LambdaDrop.run(monomorpherAst)
     val optimizerAst = Optimizer.run(lambdaDropAst)
     val simplifierAst = Simplifier.run(optimizerAst)
