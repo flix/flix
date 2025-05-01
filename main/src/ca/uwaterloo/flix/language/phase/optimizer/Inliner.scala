@@ -148,7 +148,8 @@ object Inliner {
               exp
 
             case None =>
-              callSiteInline(freshVarSym, Level.Nested, ctx0, Expr.Var(freshVarSym, tpe, loc))
+              // The variable was not unconditionally inlined, so we consider it for inlining at this occurrence.
+              callSiteInline(freshVarSym, Level.Nested, ctx0, default = Expr.Var(freshVarSym, tpe, loc))
           }
       }
 
