@@ -293,17 +293,17 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   test("No duplicated completions for vars") {
-    val charToTrim = 1
+    val numToTrim = 1
     Programs.foreach( program => {
       val (root1, _) = compile(program)
       val varOccurs = getVarSymOccurs()(root1)
       varOccurs.foreach{
-        case varOccur if isValidCodeToTrim(varOccur.text, varOccur.loc, charToTrim) =>
-          val alteredProgram = trimAfter(program, varOccur.loc, charToTrim)
-          val triggerPosition = Position(varOccur.loc.sp2.lineOneIndexed, varOccur.loc.sp2.colOneIndexed - charToTrim)
+        case varOccur if isValidCodeToTrim(varOccur.text, varOccur.loc, numToTrim) =>
+          val alteredProgram = trimAfter(program, varOccur.loc, numToTrim)
+          val triggerPosition = Position(varOccur.loc.sp2.lineOneIndexed, varOccur.loc.sp2.colOneIndexed - numToTrim)
           val (root, errors) = compile(alteredProgram)
           val completions = CompletionProvider.autoComplete(Uri, triggerPosition, errors)(root, Flix)
-          assertNoDuplicatedCompletions(completions, varOccur.text, varOccur.loc, program, charToTrim)
+          assertNoDuplicatedCompletions(completions, varOccur.text, varOccur.loc, program, numToTrim)
         case _ => ()
       }
     })
@@ -364,9 +364,17 @@ class TestCompletionProvider extends AnyFunSuite {
     * - It's not synthetic
     * - It's not a keyword after trimming
     */
-  private def isValidCodeToTrim(codeText: String, codeLoc: SourceLocation, charToTrim: Int) = {
-    val trimmedText = codeText.dropRight(charToTrim)
-    codeText.length > charToTrim && !codeLoc.isSynthetic && !isKeyword(trimmedText)
+  private def isValidCodeToTrim(codeText: String, codeLoc: SourceLocation, numToTrim: Int) = {
+    val trimmedText = codeText.dropRight(numToTrim)
+    val charsToTrim = codeText.takeRight(numToTrim)
+    codeText.length > numToTrim && !codeLoc.isSynthetic && charsToTrim.forall(isValidCharToTrim) && !isKeyword(trimmedText)
+  }
+
+  /**
+    * Returns `true` if the given character is a valid identifier character.
+    */
+  private def isValidCharToTrim(char: Char): Boolean = {
+    char.isLetterOrDigit || char == '_' || char == '-'
   }
 
   /**
