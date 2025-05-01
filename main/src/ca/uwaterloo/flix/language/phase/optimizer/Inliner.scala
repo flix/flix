@@ -137,15 +137,15 @@ object Inliner {
         case Some(freshVarSym) =>
           // Check for unconditional inlining / copy-propagation
           ctx0.subst.get(freshVarSym) match {
-            case Some(SubstRange.SuspendedExpr(exp)) =>
+            case Some(SubstRange.SuspendedExpr(exp, subst)) =>
               // Unconditional inline of variable that occurs once
               sctx.changed.putIfAbsent(sym0, ())
-              visitExp(exp, ctx0)
+              visitExp(exp, ctx0.copy(subst = subst))
 
             case Some(SubstRange.DoneExpr(exp)) =>
               // Copy-propagation of visited expr
               sctx.changed.putIfAbsent(sym0, ())
-              exp
+              visitExp(exp, ctx0.copy(subst = Map.empty))
 
             case None =>
               // The variable was not unconditionally inlined, so we consider it for inlining at this occurrence.
@@ -173,14 +173,9 @@ object Inliner {
       Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
 
     case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
-      ctx0.varSubst.get(sym) match {
-        case Some(freshVarSym) =>
-          val es = exps.map(visitExp(_, ctx0))
-          Expr.ApplyLocalDef(freshVarSym, es, tpe, eff, loc)
-
-        case None =>
-          throw InternalCompilerException(s"unexpected stale local def symbol $sym", loc)
-      }
+      val sym1 = ctx0.varSubst.getOrElse(sym, sym)
+      val es = exps.map(visitExp(_, ctx0))
+      Expr.ApplyLocalDef(sym1, es, tpe, eff, loc)
 
     case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) => (occur, exp1.eff) match {
       case (Occur.Dead, Type.Pure) =>
@@ -199,7 +194,8 @@ object Inliner {
         // Unconditionally inline
         sctx.changed.putIfAbsent(sym0, ())
         val freshVarSym = Symbol.freshVarSym(sym)
-        val ctx = ctx0.addVarSubst(sym, freshVarSym).addSubst(freshVarSym, SubstRange.SuspendedExpr(exp1))
+        val ctx = ctx0.addVarSubst(sym, freshVarSym)
+          .addSubst(freshVarSym, SubstRange.SuspendedExpr(exp1, ctx0.subst))
         visitExp(exp2, ctx)
 
       case _ =>
@@ -425,7 +421,7 @@ object Inliner {
   }
 
   private def shouldInlineVar(expr: Expr, occur: Occur, lvl: Level, ctx0: LocalContext): Boolean = {
-    expr.eff == Type.Pure
+    false
   }
 
   /**
@@ -457,7 +453,7 @@ object Inliner {
   private object SubstRange {
 
     /** An expression that will be inlined but is not yet visited. */
-    case class SuspendedExpr(exp: OccurrenceAst.Expr) extends SubstRange
+    case class SuspendedExpr(exp: OccurrenceAst.Expr, subst: Map[Symbol.VarSym, SubstRange]) extends SubstRange
 
     /** An expression that will be inlined but has already been visited. */
     case class DoneExpr(exp: OccurrenceAst.Expr) extends SubstRange
