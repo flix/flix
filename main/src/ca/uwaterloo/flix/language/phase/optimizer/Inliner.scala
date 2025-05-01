@@ -426,7 +426,7 @@ object Inliner {
 
   private def shouldInlineVar(exp: Expr, occur: Occur, lvl: Level, ctx0: LocalContext): Boolean = (occur, exp.eff) match {
     case (Occur.Dead, _) => throw InternalCompilerException("unexpected call site inline of dead variable", exp.loc)
-    case (Occur.Once, Type.Pure) => true
+    case (Occur.Once, Type.Pure) => throw InternalCompilerException("unexpected call site inline of unconditionally inlined variable", exp.loc)
     case (Occur.OnceInLambda, Type.Pure) => isTrivial(exp) && someBenefit(exp, lvl, ctx0)
     case (Occur.OnceInLocalDef, Type.Pure) => isTrivial(exp) && someBenefit(exp, lvl, ctx0)
     case _ => false
