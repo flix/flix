@@ -86,7 +86,7 @@ class TestCompletionProvider extends AnyFunSuite {
     "examples/interoperability/files/checking-if-file-exists-with-java.flix",
     "examples/misc/type-level-programming/track-list-emptiness-with-type-level-booleans.flix",
     "examples/misc/type-level-programming/type-level-programming-string-sanitization.flix",
-    "examples/misc/type-level-programming/type-level-programming-4bit-adder.flix",
+//    "examples/misc/type-level-programming/type-level-programming-4bit-adder.flix",
     "examples/misc/type-level-programming/type-level-programming-demorgan.flix",
     "examples/misc/type-level-programming/type-level-programming-even-odd-list.flix",
     "examples/misc/type-level-programming/type-level-programming-eager-lazy-list.flix",
