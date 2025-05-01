@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, Symbol, Type}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
+import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 
 /**
@@ -432,7 +433,52 @@ object Inliner {
     case _ => false
   }
 
-  private def someBenefit(exp: Expr, lvl: Level, ctx0: LocalContext): Boolean = false
+  private def someBenefit(exp: Expr, lvl: Level, ctx0: LocalContext): Boolean = exp match {
+    case Expr.Lambda(_, _, _, _) =>
+      argsAreReducible(exp, ctx0.exprCtx, ctx0) ||
+        fullyAppliedAndScrutinized(exp, ctx0.exprCtx) ||
+        nestedAndFullyApplied(exp, ctx0.exprCtx, lvl)
+    case _ => false
+  }
+
+  @tailrec
+  private def argsAreReducible(exp0: Expr, exprCtx: ExprContext, ctx0: LocalContext): Boolean = (exp0, exprCtx) match {
+    case (Expr.Lambda(_, body, _, _), ExprContext.AppCtx(expr, _, ctx)) =>
+      !isTrivial(expr) || notUnknownVar(expr, ctx0) || argsAreReducible(body, ctx, ctx0)
+    case _ => false
+  }
+
+  private def notUnknownVar(expr: OccurrenceAst.Expr, ctx0: LocalContext): Boolean = expr match {
+    case Expr.Var(sym, _, _) => ctx0.varSubst.get(sym) match {
+      case Some(freshSym) => ctx0.inScopeVars.get(freshSym) match {
+        case Some(BoundKind.ParameterOrPattern) => false
+        case Some(BoundKind.LetBound(_, _)) => true
+        case None => false
+      }
+      case None => false
+    }
+    case _ => false
+  }
+
+  private def fullyAppliedAndScrutinized(exp0: Expr, exprCtx: ExprContext): Boolean = {
+    val (fullyApplied, ctx) = checkFullyApplied(exp0, exprCtx)
+    ctx match {
+      case ExprContext.MatchCtx(_, _, _) => fullyApplied
+      case _ => false
+    }
+  }
+
+  private def nestedAndFullyApplied(exp0: Expr, exprCtx: ExprContext, lvl: Level): Boolean = {
+    val isNested = lvl == Level.Nested
+    isNested && checkFullyApplied(exp0, exprCtx)._1
+  }
+
+  @tailrec
+  private def checkFullyApplied(exp0: Expr, exprCtx: ExprContext): (Boolean, ExprContext) = (exp0, exprCtx) match {
+    case (Expr.Lambda(_, exp, _, _), ExprContext.AppCtx(_, _, ctx)) => checkFullyApplied(exp, ctx)
+    case (Expr.Lambda(_, _, _, _), _) => (false, exprCtx)
+    case _ => (true, exprCtx)
+  }
 
   /**
     * Returns `true` if `exp0` is considered a trivial expression.
