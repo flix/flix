@@ -274,8 +274,8 @@ object Inliner {
       Expr.Discard(e, eff, loc)
 
     case Expr.Match(exp, rules, tpe, eff, loc) =>
-      val rs = rules.map(visitMatchRule(_, ctx0))
       val e = visitExp(exp, ctx0)
+      val rs = rules.map(visitMatchRule(_, ctx0))
       Expr.Match(e, rs, tpe, eff, loc)
 
     case Expr.VectorLit(exps, tpe, eff, loc) =>
