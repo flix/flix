@@ -46,11 +46,11 @@ object CompletionProvider {
   /**
     * Returns all completions in the given `uri` at the given position `pos`.
     */
-  private def getCompletions(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[Completion] = {
+  private def getCompletions(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): Iterable[Completion] = {
     if (currentErrors.isEmpty)
       HoleCompleter.getHoleCompletion(uri, pos).toList
     else
-      nearestError(uri, pos, currentErrors).flatMap {
+      nearestError(uri, pos, currentErrors).toList.flatMap {
         case err: WeederError.UndefinedAnnotation => KeywordCompleter.getModKeywords(Range.from(err.loc))
 
         case err: WeederError.UnqualifiedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
@@ -141,18 +141,17 @@ object CompletionProvider {
   }
 
   /**
-    * Filters the list of errors to only those that occur at the given position.
+    * Finds the nearest error to the given position in the given URI.
+    *
+    * If none of the errors are in the given URI, returns None.
     */
-//  private def errorsAt(uri: String, pos: Position, errors: List[CompilationMessage]): List[CompilationMessage] =
-//    errors.filter(err => uri == err.loc.source.name && pos.line <= err.loc.beginLine)
-
-  private def nearestError(uri: String, pos: Position, errors: List[CompilationMessage]): List[CompilationMessage] = {
-    errors.filter(err => uri == err.loc.source.name).map(err => {
+  private def nearestError(uri: String, pos: Position, errors: List[CompilationMessage]): Option[CompilationMessage] = {
+    errors.filter(_.loc.source.name == uri).map(err => {
       val lineDiff = math.abs(err.loc.beginLine - pos.line)
       val columnDiff = math.abs(err.loc.beginCol - pos.character)
       (err, (lineDiff, columnDiff))
     }
-    ).minByOption { case (_, (lineDiff, columnDiff)) => (lineDiff, columnDiff) }.map(_._1).toList
+    ).minByOption { case (_, (lineDiff, columnDiff)) => (lineDiff, columnDiff) }.map(_._1)
   }
 
 }
