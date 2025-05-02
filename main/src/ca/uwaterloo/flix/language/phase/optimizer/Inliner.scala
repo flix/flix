@@ -231,7 +231,9 @@ object Inliner {
         val ctx1 = ctx0.addVarSubst(sym, freshVarSym)
         val e2 = visitExp(exp2, ctx1)
         val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
-        val ctx2 = ctx1.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
+        val ctx2 = ctx1.addVarSubsts(varSubsts)
+          .addInScopeVar(sym, BoundKind.ParameterOrPattern)
+          .addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
         val e1 = visitExp(exp1, ctx2)
         Expr.LocalDef(freshVarSym, fps, e1, e2, tpe, eff, occur, loc)
     }
