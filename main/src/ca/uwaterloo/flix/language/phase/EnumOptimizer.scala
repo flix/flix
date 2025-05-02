@@ -4,8 +4,12 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{Case, CatchRule, Def, Effect, Enum, Expr, FormalParam, HandlerRule, JvmMethod, MatchRule, Op, Pattern, Root, Spec, Struct, StructField, TypeParam}
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Scope}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.phase.unification.Substitution
+import ca.uwaterloo.flix.util.collection.{MapOps, MultiMap}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+
+import scala.collection.mutable
 
 /**
   * For an enums with a single constructor of a single value, like
@@ -32,6 +36,12 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
   * }}}
   *
   * It is assumed that enum types do not occur in effects.
+  *
+  * Optimization of wrapper enums CANNOT occur when:
+  *   - The enum refers to itself, directly or transitively. In that case you have to make sure that
+  *     only a subset of the enums in the cycle is optimized away to avoid infinite types.
+  *   - The enum type is used partially applied. To allow this we would need to erase the partial
+  *     enum type into a type function, representing the remaining transformation.
   */
 object EnumOptimizer {
 
@@ -39,39 +49,67 @@ object EnumOptimizer {
 
   type Enums = Map[Symbol.EnumSym, (List[TypeParam], Type)]
 
-  def run(root: Root)(implicit flix: Flix): Root = {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("EnumOptimizer") {
     implicit val wrapperEnums: Enums = getWrapperEnums(root)
 
-    val enums = root.enums.filterNot {
+    val enums = MapOps.mapValues(root.enums.filterNot {
       case (sym, _) => wrapperEnums.contains(sym)
-    }
+    })(visitEnum)
     val defs = ParOps.parMapValues(root.defs)(visitDef)
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
     Root(defs, enums, structs, effects, root.mainEntryPoint, root.entryPoints, root.sources)
-  }
+  }(AstPrinter.DebugMonoAst)
 
   private def getWrapperEnums(root: Root): Map[Symbol.EnumSym, (List[TypeParam], Type)] = {
-    root.enums.values.flatMap{
+    val enumGraph = enumDeps(root)
+    root.enums.values.flatMap {
       case Enum(_, _, _, sym, tparams, cases, _) =>
         cases.values.toList match {
-          case List(Case(_, List(tpe), _)) if !containsEnum(sym, tpe) => Some((sym, (tparams, tpe)))
+          case List(Case(_, List(tpe), _)) if !isCyclic(sym, enumGraph) => Some((sym, (tparams, tpe)))
           case _ => None
         }
     }.toMap
   }
 
-  private def containsEnum(enm: Symbol.EnumSym, tpe: Type): Boolean = tpe match {
-    case Type.Var(_, _) => false
-    case Type.Cst(TypeConstructor.Enum(sym, _), _) => enm == sym
-    case Type.Cst(_, _) => false
-    case Type.Apply(tpe1, tpe2, _) => containsEnum(enm, tpe1) || containsEnum(enm, tpe2)
-    case Type.Alias(_, _, _, loc) => throw InternalCompilerException(s"Unexpected type '$tpe'", loc)
-    case Type.AssocType(_, _, _, loc) => throw InternalCompilerException(s"Unexpected type '$tpe'", loc)
-    case Type.JvmToType(_, loc) => throw InternalCompilerException(s"Unexpected type '$tpe'", loc)
-    case Type.JvmToEff(_, loc) => throw InternalCompilerException(s"Unexpected type '$tpe'", loc)
-    case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException(s"Unexpected type '$tpe'", loc)
+  private def enumDeps(root: Root): MultiMap[Symbol.EnumSym, Symbol.EnumSym] = {
+    var m = MultiMap.empty[Symbol.EnumSym, Symbol.EnumSym]
+
+    def add(sym1: Symbol.EnumSym, sym2: Symbol.EnumSym): Unit = m = m + (sym1 -> sym2)
+
+    for (enm <- root.enums.values) {
+      enm.cases.values.foreach(caze => caze.tpes.flatMap(enumsOf).foreach(sym => add(enm.sym, sym)))
+    }
+    m
+  }
+
+  private def enumsOf(tpe: Type): Set[Symbol.EnumSym] = tpe match {
+    case Type.Var(_, _) => Set.empty
+    case Type.Cst(TypeConstructor.Enum(sym, _), _) => Set(sym)
+    case Type.Cst(_, _) => Set.empty
+    case Type.Apply(tpe1, tpe2, _) => enumsOf(tpe1) ++ enumsOf(tpe2)
+    case Type.Alias(_, _, _, _) => throw unexpectedTypeError(tpe)
+    case Type.AssocType(_, _, _, _) => throw unexpectedTypeError(tpe)
+    case Type.JvmToType(_, _) => throw unexpectedTypeError(tpe)
+    case Type.JvmToEff(_, _) => throw unexpectedTypeError(tpe)
+    case Type.UnresolvedJvmType(_, _) => throw unexpectedTypeError(tpe)
+  }
+
+  private def isCyclic(symToFind: Symbol.EnumSym, enumGraph: MultiMap[Symbol.EnumSym, Symbol.EnumSym]): Boolean = {
+    val seen = mutable.Set.empty[Symbol.EnumSym]
+    val todo = mutable.ArrayDeque.empty[Symbol.EnumSym]
+    todo.addOne(symToFind)
+    while (todo.nonEmpty) {
+      val curr = todo.removeHead()
+      seen.add(curr)
+      for (next <- enumGraph(curr)) {
+        if (next == symToFind) return true
+        else if (seen.contains(next)) () // nothing
+        else todo.append(next)
+      }
+    }
+    false
   }
 
   private def visitDef(defn: Def)(implicit wrappers: Enums, flix: Flix): Def = {
@@ -107,6 +145,16 @@ object EnumOptimizer {
     Op(op.sym, spec, op.loc)
   }
 
+  private def visitEnum(enm: Enum)(implicit wrappers: Enums, flix: Flix): Enum = {
+    val cases = MapOps.mapValues(enm.cases)(visitCase)
+    Enum(enm.doc, enm.ann, enm.mod, enm.sym, enm.tparams, cases, enm.loc)
+  }
+
+  private def visitCase(caze: Case)(implicit wrappers: Enums, flix: Flix): Case = {
+    val tpes = caze.tpes.map(visitType)
+    Case(caze.sym, tpes, caze.loc)
+  }
+
   private def visitFparam(fp: FormalParam)(implicit wrappers: Enums, flix: Flix): FormalParam = {
     val tpe = visitType(fp.tpe)
     FormalParam(fp.sym, fp.mod, tpe, fp.src, fp.loc)
@@ -119,20 +167,20 @@ object EnumOptimizer {
     case Expr.ApplyAtomic(op, exps0, tpe, eff, loc) =>
       val exps = exps0.map(visitExp)
       op match {
-      case AtomicOp.Is(sym) if wrappers.contains(sym.enumSym) && exps.sizeIs == 1 =>
-        val List(exp) = exps
-        val binder = Symbol.freshVarSym("eopt", BoundBy.Let, loc)
-        Expr.Let(binder, exp, Expr.Cst(Constant.Bool(true), Type.mkBool(loc), loc), Type.mkBool(loc), exp.eff, loc)
-      case AtomicOp.Tag(sym) if wrappers.contains(sym.enumSym) =>
-        val List(exp) = exps
-        exp
-      case AtomicOp.Untag(sym, _) if wrappers.contains(sym.enumSym) =>
-        val List(exp) = exps
-        exp
-      case _ =>
-        val t = visitType(tpe)
-        Expr.ApplyAtomic(op, exps, t, eff, loc)
-    }
+        case AtomicOp.Is(sym) if wrappers.contains(sym.enumSym) && exps.sizeIs == 1 =>
+          val List(exp) = exps
+          val binder = Symbol.freshVarSym("eopt", BoundBy.Let, loc)
+          Expr.Let(binder, exp, Expr.Cst(Constant.Bool(true), Type.mkBool(loc), loc), Type.mkBool(loc), exp.eff, loc)
+        case AtomicOp.Tag(sym) if wrappers.contains(sym.enumSym) =>
+          val List(exp) = exps
+          exp
+        case AtomicOp.Untag(sym, _) if wrappers.contains(sym.enumSym) =>
+          val List(exp) = exps
+          exp
+        case _ =>
+          val t = visitType(tpe)
+          Expr.ApplyAtomic(op, exps, t, eff, loc)
+      }
     case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
       Expr.ApplyClo(visitExp(exp1), visitExp(exp2), visitType(tpe), eff, loc)
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
@@ -176,22 +224,20 @@ object EnumOptimizer {
   private def visitType(tpe: Type)(implicit wrappers: Enums, flix: Flix): Type = {
     val base = tpe.baseType
     val targs = tpe.typeArguments.map(visitType)
-    val res = base match {
+    base match {
       case Type.Var(_, _) => Type.mkApply(base, targs, tpe.loc)
-      case Type.Cst(TypeConstructor.Enum(sym, kind), loc) if wrappers.contains(sym) =>
-        if (Kind.kindArgs(kind).sizeIs != targs.size) throw InternalCompilerException(s"Unexpected type '$tpe'", loc)
+      case Type.Cst(TypeConstructor.Enum(sym, kind), _) if wrappers.contains(sym) =>
+        if (Kind.kindArgs(kind).sizeIs != targs.size) throw unexpectedTypeError(tpe)
         val (args, res) = wrappers(sym)
         val substitutedType = Substitution(args.map(_.sym).zip(targs).toMap).apply(res)
         Monomorpher.simplify(visitType(substitutedType), isGround = false)(LoweredAst.empty, flix)
       case Type.Cst(_, _) => Type.mkApply(base, targs, tpe.loc)
-      case Type.Alias(_, _, _, loc) => throw InternalCompilerException(s"Unexpected type '$tpe'", loc)
-      case Type.AssocType(_, _, _, loc) => throw InternalCompilerException(s"Unexpected type '$tpe'", loc)
-      case Type.JvmToType(_, loc) => throw InternalCompilerException(s"Unexpected type '$tpe'", loc)
-      case Type.JvmToEff(_, loc) => throw InternalCompilerException(s"Unexpected type '$tpe'", loc)
-      case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException(s"Unexpected type '$tpe'", loc)
+      case Type.Alias(_, _, _, _) => throw unexpectedTypeError(tpe)
+      case Type.AssocType(_, _, _, _) => throw unexpectedTypeError(tpe)
+      case Type.JvmToType(_, _) => throw unexpectedTypeError(tpe)
+      case Type.JvmToEff(_, _) => throw unexpectedTypeError(tpe)
+      case Type.UnresolvedJvmType(_, _) => throw unexpectedTypeError(tpe)
     }
-    if (containsEnum(Symbol.mkEnumSym("Map"), res)) println(res)
-    res
   }
 
   private def visitMatchRule(r: MatchRule)(implicit wrappers: Enums, flix: Flix): MatchRule = {
@@ -252,5 +298,8 @@ object EnumOptimizer {
     val tpe = visitType(rpat.tpe)
     Pattern.Record.RecordLabelPattern(rpat.label, pat, tpe, rpat.loc)
   }
+
+  private def unexpectedTypeError(tpe: Type): InternalCompilerException =
+    InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
 
 }
