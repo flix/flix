@@ -337,6 +337,7 @@ object Inliner {
     * `exp` must be visited before calling [[tryDeforestation]]. `rules` must NOT be visited before calling [[tryDeforestation]].
     */
   private def tryDeforestation(exp: Expr, rules: List[OccurrenceAst.MatchRule], loc: SourceLocation, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
+    // TODO: remove `default` parameter and just visit rules as normal and return Match exp
     default
   }
 
