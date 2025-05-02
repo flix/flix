@@ -31,9 +31,3 @@ We kindly thank [EJ Technologies](https://www.ej-technologies.com/) for providin
 [JProfiler](http://www.ej-technologies.com/products/jprofiler/overview.html)
 and [JetBrains](https://www.jetbrains.com/) for providing us with 
 [IntelliJ IDEA](https://www.jetbrains.com/idea/).
-
-Down -> t
-Identity -> t
-SemiGroup.Any -> Bool
-SemiGroup.All -> Bool
-Time.Duration -> Int64
