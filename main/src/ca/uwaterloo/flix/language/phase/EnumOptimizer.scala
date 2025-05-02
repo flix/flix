@@ -35,8 +35,6 @@ import scala.collection.mutable
   *   Unit -> t \ ef
   * }}}
   *
-  * It is assumed that enum types do not occur in effects.
-  *
   * Optimization of wrapper enums CANNOT occur when:
   *   - The enum refers to itself, directly or transitively. In that case you have to make sure that
   *     only a subset of the enums in the cycle is optimized away to avoid infinite types.
@@ -113,16 +111,17 @@ object EnumOptimizer {
   }
 
   private def visitDef(defn: Def)(implicit wrappers: Enums, flix: Flix): Def = {
-    val spec = visitSpec(defn.spec)
+    val spec = visitSpec(defn.spec, isGround = true)
     val exp = visitExp(defn.exp)
     Def(defn.sym, spec, exp, defn.loc)
   }
 
-  private def visitSpec(spec: Spec)(implicit wrappers: Enums, flix: Flix): Spec = {
-    val fparams = spec.fparams.map(visitFparam)
-    val functionType = visitType(spec.functionType)
-    val retTpe = visitType(spec.retTpe)
-    Spec(spec.doc, spec.ann, spec.mod, fparams, functionType, retTpe, spec.eff)
+  private def visitSpec(spec: Spec, isGround: Boolean)(implicit wrappers: Enums, flix: Flix): Spec = {
+    val fparams = spec.fparams.map(visitFparam(_, isGround))
+    val functionType = visitType(spec.functionType, isGround)
+    val retTpe = visitType(spec.retTpe, isGround)
+    val eff = visitEff(spec.eff, isGround)
+    Spec(spec.doc, spec.ann, spec.mod, fparams, functionType, retTpe, eff)
   }
 
   private def visitStruct(struct: Struct)(implicit wrappers: Enums, flix: Flix): Struct = {
@@ -131,7 +130,7 @@ object EnumOptimizer {
   }
 
   private def visitStructField(field: StructField)(implicit wrappers: Enums, flix: Flix): StructField = {
-    val tpe = visitType(field.tpe)
+    val tpe = visitType(field.tpe, isGround = false)
     StructField(field.sym, tpe, field.loc)
   }
 
@@ -141,7 +140,7 @@ object EnumOptimizer {
   }
 
   private def visitOp(op: Op)(implicit wrappers: Enums, flix: Flix): Op = {
-    val spec = visitSpec(op.spec)
+    val spec = visitSpec(op.spec, isGround = true)
     Op(op.sym, spec, op.loc)
   }
 
@@ -151,87 +150,165 @@ object EnumOptimizer {
   }
 
   private def visitCase(caze: Case)(implicit wrappers: Enums, flix: Flix): Case = {
-    val tpes = caze.tpes.map(visitType)
+    val tpes = caze.tpes.map(visitType(_, isGround = false))
     Case(caze.sym, tpes, caze.loc)
   }
 
-  private def visitFparam(fp: FormalParam)(implicit wrappers: Enums, flix: Flix): FormalParam = {
-    val tpe = visitType(fp.tpe)
+  private def visitFparam(fp: FormalParam, isGround: Boolean)(implicit wrappers: Enums, flix: Flix): FormalParam = {
+    val tpe = visitType(fp.tpe, isGround)
     FormalParam(fp.sym, fp.mod, tpe, fp.src, fp.loc)
   }
 
   private def visitExp(expr: Expr)(implicit wrappers: Enums, flix: Flix): Expr = expr match {
-    case Expr.Cst(cst, tpe, loc) => Expr.Cst(cst, visitType(tpe), loc)
-    case Expr.Var(sym, tpe, loc) => Expr.Var(sym, visitType(tpe), loc)
-    case Expr.Lambda(fparam, exp, tpe, loc) => Expr.Lambda(visitFparam(fparam), visitExp(exp), visitType(tpe), loc)
-    case Expr.ApplyAtomic(op, exps0, tpe, eff, loc) =>
-      val exps = exps0.map(visitExp)
+    case Expr.Cst(cst, tpe, loc) =>
+      val t = visitType(tpe, isGround = true)
+      Expr.Cst(cst, t, loc)
+    case Expr.Var(sym, tpe, loc) =>
+      val t = visitType(tpe, isGround = true)
+      Expr.Var(sym, t, loc)
+    case Expr.Lambda(fparam, exp, tpe, loc) =>
+      val fp = visitFparam(fparam, isGround = true)
+      val e = visitExp(exp)
+      val t = visitType(tpe, isGround = true)
+      Expr.Lambda(fp, e, t, loc)
+    case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
       op match {
-        case AtomicOp.Is(sym) if wrappers.contains(sym.enumSym) && exps.sizeIs == 1 =>
-          val List(exp) = exps
-          val binder = Symbol.freshVarSym("eopt", BoundBy.Let, loc)
-          Expr.Let(binder, exp, Expr.Cst(Constant.Bool(true), Type.mkBool(loc), loc), Type.mkBool(loc), exp.eff, loc)
+        case AtomicOp.Is(sym) if wrappers.contains(sym.enumSym) =>
+          val List(e) = es
+          val freshVar = Symbol.freshVarSym("eopt", BoundBy.Let, loc)
+          val ef = visitEff(e.eff, isGround = true)
+          Expr.Let(freshVar, e, Expr.Cst(Constant.Bool(true), Type.mkBool(loc), loc), Type.mkBool(loc), ef, loc)
         case AtomicOp.Tag(sym) if wrappers.contains(sym.enumSym) =>
-          val List(exp) = exps
-          exp
+          val List(e) = es
+          e
         case AtomicOp.Untag(sym, _) if wrappers.contains(sym.enumSym) =>
-          val List(exp) = exps
-          exp
+          val List(e) = es
+          e
         case _ =>
-          val t = visitType(tpe)
-          Expr.ApplyAtomic(op, exps, t, eff, loc)
+          val t = visitType(tpe, isGround = true)
+          val ef = eff
+          Expr.ApplyAtomic(op, es, t, ef, loc)
       }
     case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
-      Expr.ApplyClo(visitExp(exp1), visitExp(exp2), visitType(tpe), eff, loc)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe, isGround = true)
+      val ef = visitEff(eff, isGround = true)
+      Expr.ApplyClo(e1, e2, t, ef, loc)
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
-      Expr.ApplyDef(sym, exps.map(visitExp), visitType(itpe), visitType(tpe), eff, loc)
+      val es = exps.map(visitExp)
+      val it = visitType(itpe, isGround = true)
+      val t = visitType(tpe, isGround = true)
+      val ef = visitEff(eff, isGround = true)
+      Expr.ApplyDef(sym, es, it, t, ef, loc)
     case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
-      Expr.ApplyLocalDef(sym, exps.map(visitExp), visitType(tpe), eff, loc)
+      val es = exps.map(visitExp)
+      val t = visitType(tpe, isGround = true)
+      val ef = visitEff(eff, isGround = true)
+      Expr.ApplyLocalDef(sym, es, t, ef, loc)
     case Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
-      Expr.Let(sym, visitExp(exp1), visitExp(exp2), visitType(tpe), eff, loc)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe, isGround = true)
+      val ef = visitEff(eff, isGround = true)
+      Expr.Let(sym, e1, e2, t, ef, loc)
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
-      Expr.LocalDef(sym, fparams.map(visitFparam), visitExp(exp1), visitExp(exp2), visitType(tpe), eff, loc)
+      val fps = fparams.map(visitFparam(_, isGround = true))
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe, isGround = true)
+      val ef = visitEff(eff, isGround = true)
+      Expr.LocalDef(sym, fps, e1, e2, t, ef, loc)
     case Expr.Scope(sym, regSym, exp, tpe, eff, loc) =>
-      Expr.Scope(sym, regSym, visitExp(exp), visitType(tpe), eff, loc)
+      val e1 = visitExp(exp)
+      val t = visitType(tpe, isGround = true)
+      val ef = visitEff(eff, isGround = true)
+      Expr.Scope(sym, regSym, e1, t, ef, loc)
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-      Expr.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), visitType(tpe), eff, loc)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      val t = visitType(tpe, isGround = true)
+      val ef = visitEff(eff, isGround = true)
+      Expr.IfThenElse(e1, e2, e3, t, ef, loc)
     case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-      Expr.Stm(visitExp(exp1), visitExp(exp2), visitType(tpe), eff, loc)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe, isGround = true)
+      val ef = visitEff(eff, isGround = true)
+      Expr.Stm(e1, e2, t, ef, loc)
     case Expr.Discard(exp, eff, loc) =>
-      Expr.Discard(visitExp(exp), eff, loc)
+      val e = visitExp(exp)
+      val ef = visitEff(eff, isGround = true)
+      Expr.Discard(e, ef, loc)
     case Expr.Match(exp, rules, tpe, eff, loc) =>
-      Expr.Match(visitExp(exp), rules.map(visitMatchRule), visitType(tpe), eff, loc)
+      val e = visitExp(exp)
+      val rs = rules.map(visitMatchRule)
+      val t = visitType(tpe, isGround = true)
+      val ef = visitEff(eff, isGround = true)
+      Expr.Match(e, rs, t, ef, loc)
     case Expr.VectorLit(exps, tpe, eff, loc) =>
-      Expr.VectorLit(exps, visitType(tpe), eff, loc)
+      val es = exps.map(visitExp)
+      val t = visitType(tpe, isGround = true)
+      val ef = visitEff(eff, isGround = true)
+      Expr.VectorLit(es, t, ef, loc)
     case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
-      Expr.VectorLoad(visitExp(exp1), visitExp(exp2), visitType(tpe), eff, loc)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe, isGround = true)
+      val ef = visitEff(eff, isGround = true)
+      Expr.VectorLoad(e1, e2, t, ef, loc)
     case Expr.VectorLength(exp, loc) =>
-      Expr.VectorLength(visitExp(exp), loc)
+      val e = visitExp(exp)
+      Expr.VectorLength(e, loc)
     case Expr.Ascribe(exp, tpe, eff, loc) =>
-      Expr.Ascribe(visitExp(exp), visitType(tpe), eff, loc)
+      val e = visitExp(exp)
+      val t = visitType(tpe, isGround = true)
+      val ef = visitEff(eff, isGround = true)
+      Expr.Ascribe(e, t, ef, loc)
     case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
-      Expr.Cast(visitExp(exp), declaredType.map(visitType), declaredEff, visitType(tpe), eff, loc)
+      val e = visitExp(exp)
+      val dt = declaredType.map(visitType(_, isGround = true))
+      val de = declaredEff.map(visitEff(_, isGround = true))
+      val t = visitType(tpe, isGround = true)
+      val ef = visitEff(eff, isGround = true)
+      Expr.Cast(e, dt, de, t, ef, loc)
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
-      Expr.TryCatch(visitExp(exp), rules.map(visitCatchRule), visitType(tpe), eff, loc)
+      val e = visitExp(exp)
+      val rs = rules.map(visitCatchRule)
+      val t = visitType(tpe, isGround = true)
+      val ef = visitEff(eff, isGround = true)
+      Expr.TryCatch(e, rs, t, ef, loc)
     case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
-      Expr.RunWith(visitExp(exp), effUse, rules.map(visitHandlerRule), visitType(tpe), eff, loc)
+      val e = visitExp(exp)
+      val rs = rules.map(visitHandlerRule)
+      val t = visitType(tpe, isGround = true)
+      val ef = visitEff(eff, isGround = true)
+      Expr.RunWith(e, effUse, rs, t, ef, loc)
     case Expr.Do(op, exps, tpe, eff, loc) =>
-      Expr.Do(op, exps.map(visitExp), visitType(tpe), eff, loc)
+      val es = exps.map(visitExp)
+      val t = visitType(tpe, isGround = true)
+      val ef = visitEff(eff, isGround = true)
+      Expr.Do(op, es, t, ef, loc)
     case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
-      Expr.NewObject(name, clazz, visitType(tpe), eff, methods.map(visitJvmMethod), loc)
+      val t = visitType(tpe, isGround = true)
+      val ef = visitEff(eff, isGround = true)
+      val ms = methods.map(visitJvmMethod)
+      Expr.NewObject(name, clazz, t, ef, ms, loc)
   }
 
-  private def visitType(tpe: Type)(implicit wrappers: Enums, flix: Flix): Type = {
+  private def visitType(tpe: Type, isGround: Boolean)(implicit wrappers: Enums, flix: Flix): Type = {
     val base = tpe.baseType
-    val targs = tpe.typeArguments.map(visitType)
+    val targs = tpe.typeArguments
     base match {
-      case Type.Var(_, _) => Type.mkApply(base, targs, tpe.loc)
+      case v@Type.Var(_, _) => Type.mkApply(v, targs.map(visitType(_, isGround)), tpe.loc)
       case Type.Cst(TypeConstructor.Enum(sym, kind), _) if wrappers.contains(sym) =>
         if (Kind.kindArgs(kind).sizeIs != targs.size) throw unexpectedTypeError(tpe)
         val (args, res) = wrappers(sym)
-        val substitutedType = Substitution(args.map(_.sym).zip(targs).toMap).apply(res)
-        Monomorpher.simplify(visitType(substitutedType), isGround = false)(LoweredAst.empty, flix)
-      case Type.Cst(_, _) => Type.mkApply(base, targs, tpe.loc)
+        val substitutedType = Substitution(args.map(_.sym).zip(targs.map(visitType(_, isGround))).toMap).apply(res)
+        Monomorpher.simplify(visitType(substitutedType, isGround), isGround)(LoweredAst.empty, flix)
+      case cst@Type.Cst(_, _) => Type.mkApply(cst, targs.map(visitType(_, isGround)), tpe.loc)
       case Type.Alias(_, _, _, _) => throw unexpectedTypeError(tpe)
       case Type.AssocType(_, _, _, _) => throw unexpectedTypeError(tpe)
       case Type.JvmToType(_, _) => throw unexpectedTypeError(tpe)
@@ -240,63 +317,69 @@ object EnumOptimizer {
     }
   }
 
+  private def visitEff(eff: Type, isGround: Boolean)(implicit wrappers: Enums, flix: Flix): Type = {
+    visitType(eff, isGround)
+  }
+
   private def visitMatchRule(r: MatchRule)(implicit wrappers: Enums, flix: Flix): MatchRule = {
-    val pat = visitPat(r.pat)
-    val guard = r.guard.map(visitExp)
-    val exp = visitExp(r.exp)
-    MatchRule(pat, guard, exp)
+    val p = visitPat(r.pat)
+    val g = r.guard.map(visitExp)
+    val e = visitExp(r.exp)
+    MatchRule(p, g, e)
   }
 
   private def visitCatchRule(r: CatchRule)(implicit wrappers: Enums, flix: Flix): CatchRule = {
-    val exp = visitExp(r.exp)
-    CatchRule(r.sym, r.clazz, exp)
+    val e = visitExp(r.exp)
+    CatchRule(r.sym, r.clazz, e)
   }
 
   private def visitHandlerRule(r: HandlerRule)(implicit wrappers: Enums, flix: Flix): HandlerRule = {
-    val fparams = r.fparams.map(visitFparam)
-    val exo = visitExp(r.exp)
-    HandlerRule(r.op, fparams, exo)
+    val fps = r.fparams.map(visitFparam(_, isGround = true))
+    val e = visitExp(r.exp)
+    HandlerRule(r.op, fps, e)
   }
 
   private def visitJvmMethod(m: JvmMethod)(implicit wrappers: Enums, flix: Flix): JvmMethod = {
-    val fparams = m.fparams.map(visitFparam)
-    val exp = visitExp(m.exp)
-    val retTpe = visitType(m.retTpe)
-    JvmMethod(m.ident, fparams, exp, retTpe, m.eff, m.loc)
+    val fps = m.fparams.map(visitFparam(_, isGround = true))
+    val e = visitExp(m.exp)
+    val rt = visitType(m.retTpe, isGround = true)
+    val ef = visitEff(m.eff, isGround = true)
+    JvmMethod(m.ident, fps, e, rt, ef, m.loc)
   }
 
   private def visitPat(pat0: Pattern)(implicit wrappers: Enums, flix: Flix): Pattern = pat0 match {
     case Pattern.Wild(tpe, loc) =>
-      val t = visitType(tpe)
+      val t = visitType(tpe, isGround = true)
       Pattern.Wild(t, loc)
     case Pattern.Var(sym, tpe, loc) =>
-      val t = visitType(tpe)
+      val t = visitType(tpe, isGround = true)
       Pattern.Var(sym, t, loc)
     case Pattern.Cst(cst, tpe, loc) =>
-      Pattern.Cst(cst, tpe, loc)
-    case Pattern.Tag(sym, pats, _, loc) if wrappers.contains(sym.sym.enumSym) => pats match {
+      val t = visitType(tpe, isGround = true)
+      Pattern.Cst(cst, t, loc)
+    case Pattern.Tag(sym, pats, _, _) if wrappers.contains(sym.sym.enumSym) => pats match {
       case List(pat) => visitPat(pat)
-      case _ => throw InternalCompilerException(s"Unexpected pattern '$pat0'", loc)
+      case _ => throw InternalCompilerException(s"Unexpected pattern '$pat0'", pat0.loc)
     }
     case Pattern.Tag(sym, pats, tpe, loc) =>
       val ps = pats.map(visitPat)
-      val t = visitType(tpe)
+      val t = visitType(tpe, isGround = true)
       Pattern.Tag(sym, ps, t, loc)
     case Pattern.Tuple(pats, tpe, loc) =>
       val ps = pats.map(visitPat)
-      val t = visitType(tpe)
+      val t = visitType(tpe, isGround = true)
       Pattern.Tuple(ps, t, loc)
     case Pattern.Record(pats, pat, tpe, loc) =>
       val ps = pats.map(visitRecordLabelPattern)
       val p = visitPat(pat)
-      val t = visitType(tpe)
+      val t = visitType(tpe, isGround = true)
       Pattern.Record(ps, p, t, loc)
   }
 
   private def visitRecordLabelPattern(rpat: Pattern.Record.RecordLabelPattern)(implicit wrappers: Enums, flix: Flix): Pattern.Record.RecordLabelPattern = {
-    val pat = visitPat(rpat.pat)
-    val tpe = visitType(rpat.tpe)
-    Pattern.Record.RecordLabelPattern(rpat.label, pat, tpe, rpat.loc)
+    val p = visitPat(rpat.pat)
+    val t = visitType(rpat.tpe, isGround = true)
+    Pattern.Record.RecordLabelPattern(rpat.label, p, t, rpat.loc)
   }
 
   private def unexpectedTypeError(tpe: Type): InternalCompilerException =

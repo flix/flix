@@ -32,9 +32,7 @@ mod Fixpoint.Boxable {
         case v: Int64   => Boxed.BoxedInt64(v)
         case v: Float32 => Boxed.BoxedFloat32(v)
         case v: Float64 => Boxed.BoxedFloat64(v)
-        case _: _ =>
-            let cmp = (o1, o2) -> Order.compare(unchecked_cast(o1 as a), unchecked_cast(o2 as a));
-            Boxed.BoxedObject(unchecked_cast(x as Object), cmp)
+        case _: _ => ?hmmm
     }
 
     ///
@@ -73,10 +71,7 @@ mod Fixpoint.Boxable {
             case Boxed.BoxedFloat64(v)   => unchecked_cast(v as a)
             case _                       => unreachable!()
         }
-        case _: _ => match x {
-            case Boxed.BoxedObject(v, _) => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
+        case _: _ => ?hmmm
     }
 
     ///
