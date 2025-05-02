@@ -20,7 +20,7 @@ package ca.uwaterloo.flix.language.phase.optimizer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Expr, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
-import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
@@ -167,9 +167,15 @@ object Inliner {
       Expr.ApplyAtomic(op, es, tpe, eff, loc)
 
     case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, ctx0)
-      val e2 = visitExp(exp2, ctx0)
-      Expr.ApplyClo(e1, e2, tpe, eff, loc)
+      exp1 match {
+        case Expr.Lambda(fparam, exp, _, _) =>
+          sctx.changed.putIfAbsent(sym0, ())
+          betaReduceLambda(fparam, exp, exp2, tpe, eff, loc, ctx0)
+
+        case e1 =>
+          val e2 = visitExp(exp2, ctx0)
+          Expr.ApplyClo(e1, e2, tpe, eff, loc)
+      }
 
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, ctx0))
@@ -316,6 +322,11 @@ object Inliner {
     case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map(visitJvmMethod(_, ctx0))
       Expr.NewObject(name, clazz, tpe, eff, methods, loc)
+  }
+
+  private def betaReduceLambda(fparam: OccurrenceAst.FormalParam, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
+    val binding = Expr.Let(fparam.sym, exp2, exp1, tpe, eff, fparam.occur, loc)
+    visitExp(binding, ctx0)
   }
 
   /**
