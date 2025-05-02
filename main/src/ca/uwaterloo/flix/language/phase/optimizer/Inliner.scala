@@ -188,7 +188,7 @@ object Inliner {
       // Check if it was unconditionally inlined
       ctx0.subst.get(sym1) match {
         case Some(SubstRange.SuspendedExpr(exp@Expr.LocalDef(_, _, _, _, _, _, _, _), subst)) =>
-          betaReduceLocalDef(exp, exps, loc, ctx0.copy(subst = subst))
+          betaReduceLocalDef(exp, exps, loc, ctx0.addSubsts(subst))
 
         case None | Some(_) =>
           // It was not unconditionally inlined, so just visit exps
@@ -604,6 +604,11 @@ object Inliner {
     /** Returns a [[LocalContext]] with the mapping `sym -> substExpr` added to [[subst]]. */
     def addSubst(sym: Symbol.VarSym, substExpr: SubstRange): LocalContext = {
       this.copy(subst = this.subst + (sym -> substExpr))
+    }
+
+    /** Returns a [[LocalContext]] with the mappings of `mappings` added to [[subst]]. */
+    def addSubsts(mappings: Map[Symbol.VarSym, SubstRange]): LocalContext = {
+      this.copy(subst = this.subst ++ mappings)
     }
 
     /** Returns a [[LocalContext]] with the mapping `sym -> boundKind` added to [[inScopeVars]]. */
