@@ -20,7 +20,7 @@ package ca.uwaterloo.flix.language.phase.optimizer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Expr, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
-import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
@@ -176,9 +176,19 @@ object Inliner {
       Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
 
     case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+      // Refresh the symbol
       val sym1 = ctx0.varSubst.getOrElse(sym, sym)
-      val es = exps.map(visitExp(_, ctx0))
-      Expr.ApplyLocalDef(sym1, es, tpe, eff, loc)
+      // Check if it was unconditionally inlined
+      ctx0.subst.get(sym1) match {
+        case Some(SubstRange.SuspendedExpr(exp@Expr.LocalDef(_, _, _, _, _, _, _, _), subst)) =>
+          betaReduceLocalDef(exp, exps, loc, ctx0.copy(subst = subst))
+
+        case None | Some(_) =>
+          // It was not unconditionally inlined, so just visit exps
+          val es = exps.map(visitExp(_, ctx0))
+          Expr.ApplyLocalDef(sym1, es, tpe, eff, loc)
+      }
+
 
     case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) => (occur, exp1.eff) match {
       case (Occur.Dead, Type.Pure) =>
@@ -225,6 +235,16 @@ object Inliner {
         // A function declaration is always pure so we do not care about the effect of exp1
         sctx.changed.putIfAbsent(sym0, ())
         visitExp(exp2, ctx0)
+
+      case Occur.Once =>
+        // It occurs exactly once in exp2, otherwise it would be OnceInLocalDef,
+        // so unconditionally inline
+        sctx.changed.putIfAbsent(sym0, ())
+        val freshVarSym = Symbol.freshVarSym(sym)
+        val exp = Expr.LocalDef(freshVarSym, fparams, exp1, exp2, tpe, eff, occur, loc)
+        val ctx = ctx0.addVarSubst(sym, freshVarSym)
+          .addSubst(freshVarSym, SubstRange.SuspendedExpr(exp, ctx0.subst))
+        visitExp(exp2, ctx)
 
       case _ =>
         val freshVarSym = Symbol.freshVarSym(sym)
@@ -405,6 +425,34 @@ object Inliner {
       val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
       val e = visitExp(exp, ctx)
       OccurrenceAst.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
+  }
+
+  /**
+    * Performs beta-reduction on a local def `exp` applied to `exps`.
+    *
+    * It is the responsibility of the caller to first `exps`.
+    *
+    * [[betaReduceLocalDef]] creates a series of let-bindings
+    * {{{
+    *   let sym1 = exp1;
+    *   // ...
+    *   let symn = expn;
+    *   exp'
+    * }}}
+    * where `symi` is the symbol of the i-th formal parameter and `exp'` is the body of the local def.
+    *
+    * Lastly, it visits the top-most let-binding, thus possibly removing the bindings.
+    */
+  private def betaReduceLocalDef(exp: Expr.LocalDef, exps: List[Expr], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
+    val bindings = exp.fparams.zip(exps).foldRight(exp.exp1) {
+      case ((fparam, arg), acc) =>
+        val sym = fparam.sym // visitExp will refresh the symbol
+        val tpe = acc.tpe
+        val eff = Type.mkUnion(arg.eff, acc.eff, loc)
+        val occur = fparam.occur
+        Expr.Let(sym, arg, acc, tpe, eff, occur, loc)
+    }
+    visitExp(bindings, ctx0.withEmptyExprCtx)
   }
 
   /**
