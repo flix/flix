@@ -167,10 +167,11 @@ object Inliner {
       Expr.ApplyAtomic(op, es, tpe, eff, loc)
 
     case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
-      exp1 match {
+      visitExp(exp1, ctx0) match {
         case Expr.Lambda(fparam, exp, _, _) =>
           sctx.changed.putIfAbsent(sym0, ())
-          betaReduceLambda(fparam, exp, exp2, tpe, eff, loc, ctx0)
+          val e2 = visitExp(exp2, ctx0)
+          betaReduceLambda(fparam, exp, e2, tpe, eff, loc)
 
         case e1 =>
           val e2 = visitExp(exp2, ctx0)
@@ -324,9 +325,9 @@ object Inliner {
       Expr.NewObject(name, clazz, tpe, eff, methods, loc)
   }
 
-  private def betaReduceLambda(fparam: OccurrenceAst.FormalParam, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
+  private def betaReduceLambda(fparam: OccurrenceAst.FormalParam, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
     val binding = Expr.Let(fparam.sym, exp2, exp1, tpe, eff, fparam.occur, loc)
-    visitExp(binding, ctx0)
+    visitExp(binding, LocalContext.Empty)
   }
 
   /**
