@@ -50,7 +50,7 @@ object CompletionProvider {
     if (currentErrors.isEmpty)
       HoleCompleter.getHoleCompletion(uri, pos).toList
     else
-      errorsAt(uri, pos, currentErrors).flatMap {
+      nearestError(uri, pos, currentErrors).flatMap {
         case err: WeederError.UndefinedAnnotation => KeywordCompleter.getModKeywords(Range.from(err.loc))
 
         case err: WeederError.UnqualifiedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
@@ -143,6 +143,16 @@ object CompletionProvider {
   /**
     * Filters the list of errors to only those that occur at the given position.
     */
-  private def errorsAt(uri: String, pos: Position, errors: List[CompilationMessage]): List[CompilationMessage] =
-    errors.filter(err => uri == err.loc.source.name && pos.line <= err.loc.beginLine)
+//  private def errorsAt(uri: String, pos: Position, errors: List[CompilationMessage]): List[CompilationMessage] =
+//    errors.filter(err => uri == err.loc.source.name && pos.line <= err.loc.beginLine)
+
+  private def nearestError(uri: String, pos: Position, errors: List[CompilationMessage]): List[CompilationMessage] = {
+    errors.filter(err => uri == err.loc.source.name).map(err => {
+      val lineDiff = math.abs(err.loc.beginLine - pos.line)
+      val columnDiff = math.abs(err.loc.beginCol - pos.character)
+      (err, (lineDiff, columnDiff))
+    }
+    ).minByOption { case (_, (lineDiff, columnDiff)) => (lineDiff, columnDiff) }.map(_._1).toList
+  }
+
 }
