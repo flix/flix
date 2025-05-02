@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{ReducedAst, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.unification.set.Equation
 
@@ -25,6 +25,16 @@ import ca.uwaterloo.flix.language.phase.unification.set.Equation
 sealed trait FlixEvent
 
 object FlixEvent {
+
+  /**
+    * An event that is fired after the tailpos phase.
+    */
+  case class AfterTailPos(root: ReducedAst.Root) extends FlixEvent
+
+  /**
+    * An event that is fired after the Typer phase.
+    */
+  case class AfterTyper(root: TypedAst.Root) extends FlixEvent
 
   /**
     * An event that is fired when new type constraints are collected for the given def symbol `sym`.

@@ -3,7 +3,6 @@ package ca.uwaterloo.flix.language.phase.optimizer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{MonoAst, OccurrenceAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
-import ca.uwaterloo.flix.language.phase.OccurrenceAnalyzer
 import ca.uwaterloo.flix.util.ParOps
 
 object Optimizer {
@@ -13,8 +12,12 @@ object Optimizer {
     */
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer") {
     var result = ToOccurrenceAst.run(root)
-    for (_ <- 1 to 20) {
-      result = OccurrenceAnalyzer.run(result)
+    var delta = result.defs.keys.toSet
+    for (_ <- 1 to 3) {
+      val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(result, delta)
+      val (inlinerRoot, inlinerChange) = Inliner.run(afterOccurrenceAnalyzer)
+      result = inlinerRoot
+      delta = inlinerChange
     }
     ToMonoAst.run(result)
   }

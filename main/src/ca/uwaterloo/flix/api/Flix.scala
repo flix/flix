@@ -22,8 +22,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
-import ca.uwaterloo.flix.language.phase.optimizer.Optimizer
-import ca.uwaterloo.flix.language.verifier.{ClassVerifier, EffectVerifier}
+import ca.uwaterloo.flix.language.phase.optimizer.{Optimizer, LambdaDrop}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
@@ -572,8 +571,6 @@ class Flix {
             val (afterTyper, typeErrors) = Typer.run(afterDeriver, cachedTyperAst, changeSet)
             errors ++= typeErrors
 
-            EffectVerifier.run(afterTyper)
-
             val (afterEntryPoint, entryPointErrors) = EntryPoints.run(afterTyper)
             errors ++= entryPointErrors
 
@@ -651,14 +648,17 @@ class Flix {
     val loweringAst = Lowering.run(typedAst)
     val treeShaker1Ast = TreeShaker1.run(loweringAst)
     val monomorpherAst = Monomorpher.run(treeShaker1Ast)
-    val optimizerAst = Optimizer.run(monomorpherAst)
+    val lambdaDropAst = LambdaDrop.run(monomorpherAst)
+    val optimizerAst = Optimizer.run(lambdaDropAst)
     val simplifierAst = Simplifier.run(optimizerAst)
     val closureConvAst = ClosureConv.run(simplifierAst)
     val lambdaLiftAst = LambdaLift.run(closureConvAst)
     val treeShaker2Ast = TreeShaker2.run(lambdaLiftAst)
     val effectBinderAst = EffectBinder.run(treeShaker2Ast)
+
     val tailPosAst = TailPos.run(effectBinderAst)
-    ClassVerifier.run(tailPosAst)
+    flix.emitEvent(FlixEvent.AfterTailPos(tailPosAst))
+
     val eraserAst = Eraser.run(tailPosAst)
     val reducerAst = Reducer.run(eraserAst)
     val varOffsetsAst = VarOffsets.run(reducerAst)
@@ -798,8 +798,8 @@ class Flix {
   /**
     * Returns the inputs for the given list of (path, text) pairs.
     */
-  private def getLibraryInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
-    case (ys, (virtualPath, text)) => Input.Text(virtualPath, text, SecurityContext.AllPermissions) :: ys
+  private def getLibraryInputs(l: List[(String, String)]): List[Input] = l.foldLeft(List.empty[Input]) {
+    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, SecurityContext.AllPermissions) :: xs
   }
 
   /**

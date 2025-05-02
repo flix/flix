@@ -16,8 +16,9 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.Range
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.OpCompletion
+import ca.uwaterloo.flix.api.lsp.{Position, Range}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Effect, Namespace, Op}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
 import ca.uwaterloo.flix.language.ast.{Name, Symbol, TypedAst}
@@ -26,14 +27,15 @@ object OpCompleter {
   /**
     * Returns a List of Completion for Op for UndefinedName.
     */
-  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
+  def getCompletions(uri: String, pos: Position, qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root, flix: Flix): Iterable[OpCompletion] = {
+    val ectx = ExprContext.getExprContext(uri, pos)
     if (qn.namespace.nonEmpty) {
-      fullyQualifiedCompletion(qn, range, ap) ++ partiallyQualifiedCompletions(qn, range, ap ,scp)
+      fullyQualifiedCompletion(qn, range, ap, ectx) ++ partiallyQualifiedCompletions(qn, range, ap ,scp, ectx)
     } else {
       root.effects.values.flatMap(eff =>
         eff.ops.collect {
           case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false) =>
-            OpCompletion(op, "", range, ap, qualified = false, inScope(op, scp))
+            OpCompletion(op, "", range, ap, qualified = false, inScope(op, scp), ectx)
         }
       )
     }
@@ -44,12 +46,12 @@ object OpCompleter {
     *
     * We assume the user is trying to type a fully qualified name and will only match against fully qualified names.
     */
-  private def fullyQualifiedCompletion(qn: Name.QName, range: Range, ap: AnchorPosition)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
+  private def fullyQualifiedCompletion(qn: Name.QName, range: Range, ap: AnchorPosition, ectx: ExprContext)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
     val effSym = Symbol.mkEffectSym(qn.namespace.toString)
     root.effects.get(effSym).toList.flatMap(eff =>
       eff.ops.collect {
         case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false) =>
-          OpCompletion(op, "", range, ap, qualified = true, inScope = true)
+          OpCompletion(op, "", range, ap, qualified = true, inScope = true, ectx)
       }
     )
   }
@@ -62,7 +64,7 @@ object OpCompleter {
     *
     * We assume the user is trying to type a partially qualified name and will only match against partially qualified names.
     */
-  private def partiallyQualifiedCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
+  private def partiallyQualifiedCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope, ectx: ExprContext)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
     val fullyQualifiedNamespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
       case Some(Resolution.Declaration(Effect(_, _, _, name, _, _))) => name.toString
       case Some(Resolution.Declaration(Namespace(name, _, _, _))) => name.toString
@@ -74,7 +76,7 @@ object OpCompleter {
       eff <- root.effects.get(Symbol.mkEffectSym(fullyQualifiedEffect)).toList
       op <- eff.ops
       if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false)
-    } yield OpCompletion(op, qn.namespace.toString, range, ap, qualified = true, inScope = true)
+    } yield OpCompletion(op, qn.namespace.toString, range, ap, qualified = true, inScope = true, ectx)
   }
 
   private def inScope(op: TypedAst.Op, scope: LocalScope): Boolean = {
