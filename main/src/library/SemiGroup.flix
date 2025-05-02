@@ -136,7 +136,7 @@ instance SemiGroup[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with SemiGroup[a1]
 mod SemiGroup {
 
     @Internal
-    pub enum Any(Bool)
+    pub enum Any(Bool) with Coerce
 
     instance SemiGroup[Any] {
         pub def combine(x: Any, y: Any): Any = match (x, y) {
@@ -152,7 +152,7 @@ mod SemiGroup {
 
 
     @Internal
-    pub enum All(Bool)
+    pub enum All(Bool) with Coerce
 
     instance SemiGroup[All] {
         pub def combine(x: All, y: All): All = match (x, y) {

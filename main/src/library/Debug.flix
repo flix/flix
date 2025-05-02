@@ -105,7 +105,13 @@ mod Debug {
                 unsafe Arrays.deepToString(unchecked_cast(y as Array[Object, Static]))
             case y: Array[_, _] =>
                 unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
-            case _: _ => ?hmmm
+            case y: Down[_] => stringify(coerce(y))
+            case y: Identity[_] => stringify(coerce(y))
+            case y: SemiGroup.Any => stringify(coerce(y))
+            case y: SemiGroup.All => stringify(coerce(y))
+            case y: Time.Duration => stringify(coerce(y))
+            case y: _ =>
+                unsafe Objects.toString(unchecked_cast(y as Object))
         }
     }
 

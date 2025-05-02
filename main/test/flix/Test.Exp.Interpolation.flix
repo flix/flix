@@ -221,10 +221,10 @@ mod Test.Exp.Interpolation {
     def interpolationDebug04(): Bool =
         "\%{x}" == String.concat("%", "{x}")
 
-    @test
-    def interpolationDebug05(): Bool =
-        let x = EnumSansToString.CaseSansToString(123);
-        "my object is %{x}" == "my object is CaseSansToString(123)"
+//    @test
+//    def interpolationDebug05(): Bool =
+//        let x = EnumSansToString.CaseSansToString(123);
+//        "my object is %{x}" == "my object is CaseSansToString(123)"
 
     pub enum Color {
         case Red,

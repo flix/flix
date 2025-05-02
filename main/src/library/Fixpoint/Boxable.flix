@@ -32,7 +32,34 @@ mod Fixpoint.Boxable {
         case v: Int64   => Boxed.BoxedInt64(v)
         case v: Float32 => Boxed.BoxedFloat32(v)
         case v: Float64 => Boxed.BoxedFloat64(v)
-        case _: _ => ?hmmm
+        case v: Down[Bool]    => Boxed.BoxedBool(coerce(v))
+        case v: Down[Char]    => Boxed.BoxedChar(coerce(v))
+        case v: Down[Int8]    => Boxed.BoxedInt8(coerce(v))
+        case v: Down[Int16]   => Boxed.BoxedInt16(coerce(v))
+        case v: Down[Int32]   => Boxed.BoxedInt32(coerce(v))
+        case v: Down[Int64]   => Boxed.BoxedInt64(coerce(v))
+        case v: Down[Float32] => Boxed.BoxedFloat32(coerce(v))
+        case v: Down[Float64] => Boxed.BoxedFloat64(coerce(v))
+        case _: Down[_] =>
+            let cmp = (o1, o2) -> Order.compare(unchecked_cast(o1 as a), unchecked_cast(o2 as a));
+            Boxed.BoxedObject(unchecked_cast(x as Object), cmp)
+        case v: Identity[Bool]    => Boxed.BoxedBool(coerce(v))
+        case v: Identity[Char]    => Boxed.BoxedChar(coerce(v))
+        case v: Identity[Int8]    => Boxed.BoxedInt8(coerce(v))
+        case v: Identity[Int16]   => Boxed.BoxedInt16(coerce(v))
+        case v: Identity[Int32]   => Boxed.BoxedInt32(coerce(v))
+        case v: Identity[Int64]   => Boxed.BoxedInt64(coerce(v))
+        case v: Identity[Float32] => Boxed.BoxedFloat32(coerce(v))
+        case v: Identity[Float64] => Boxed.BoxedFloat64(coerce(v))
+        case _: Identity[_] =>
+            let cmp = (o1, o2) -> Order.compare(unchecked_cast(o1 as a), unchecked_cast(o2 as a));
+            Boxed.BoxedObject(unchecked_cast(x as Object), cmp)
+        case v: SemiGroup.Any => Boxed.BoxedBool(coerce(v))
+        case v: SemiGroup.All => Boxed.BoxedBool(coerce(v))
+        case v: Time.Duration => Boxed.BoxedInt64(coerce(v))
+        case _: _ =>
+            let cmp = (o1, o2) -> Order.compare(unchecked_cast(o1 as a), unchecked_cast(o2 as a));
+            Boxed.BoxedObject(unchecked_cast(x as Object), cmp)
     }
 
     ///
@@ -71,7 +98,94 @@ mod Fixpoint.Boxable {
             case Boxed.BoxedFloat64(v)   => unchecked_cast(v as a)
             case _                       => unreachable!()
         }
-        case _: _ => ?hmmm
+        case _: Proxy[Down[Bool]] => match x {
+            case Boxed.BoxedBool(v)      => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Down[Char]] => match x {
+            case Boxed.BoxedChar(v)      => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Down[Int8]] => match x {
+            case Boxed.BoxedInt8(v)      => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Down[Int16]] => match x {
+            case Boxed.BoxedInt16(v)     => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Down[Int32]] => match x {
+            case Boxed.BoxedInt32(v)     => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Down[Int64]] => match x {
+            case Boxed.BoxedInt64(v)     => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Down[Float32]] => match x {
+            case Boxed.BoxedFloat32(v)   => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Down[Float64]] => match x {
+            case Boxed.BoxedFloat64(v)   => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Down[_]] => match x {
+            case Boxed.BoxedObject(v, _) => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Identity[Bool]] => match x {
+            case Boxed.BoxedBool(v)      => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Identity[Char]] => match x {
+            case Boxed.BoxedChar(v)      => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Identity[Int8]] => match x {
+            case Boxed.BoxedInt8(v)      => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Identity[Int16]] => match x {
+            case Boxed.BoxedInt16(v)     => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Identity[Int32]] => match x {
+            case Boxed.BoxedInt32(v)     => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Identity[Int64]] => match x {
+            case Boxed.BoxedInt64(v)     => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Identity[Float32]] => match x {
+            case Boxed.BoxedFloat32(v)   => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Identity[Float64]] => match x {
+            case Boxed.BoxedFloat64(v)   => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Identity[_]] => match x {
+            case Boxed.BoxedObject(v, _) => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[SemiGroup.Any] => match x {
+            case Boxed.BoxedBool(v)      => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[SemiGroup.All] => match x {
+            case Boxed.BoxedBool(v)      => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Time.Duration] => match x {
+            case Boxed.BoxedInt64(v)     => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: _ => match x {
+            case Boxed.BoxedObject(v, _) => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
     }
 
     ///

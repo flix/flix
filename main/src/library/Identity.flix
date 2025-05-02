@@ -18,7 +18,7 @@
 /// The Identity Functor / Monad.
 ///
 
-pub enum Identity[a] with Eq, Order, ToString, Hash { case Identity(a) }
+pub enum Identity[a] with Eq, Order, ToString, Hash, Coerce { case Identity(a) }
 
 instance SemiGroup[Identity[a]] with SemiGroup[a] {
     pub def combine(x: Identity[a], y: Identity[a]): Identity[a] =

@@ -17,5 +17,5 @@ mod Time {
     ///
     /// Represents a duration.
     ///
-    pub enum Duration(Int64)
+    pub enum Duration(Int64) with Coerce
 }
