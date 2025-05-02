@@ -39,8 +39,8 @@ import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError
 object CompletionProvider {
 
   def autoComplete(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): CompletionList = {
-      val items = getCompletions(uri, pos, currentErrors)(root, flix).map(_.toCompletionItem)
-      CompletionList(isIncomplete = true, items)
+    val items = getCompletions(uri, pos, currentErrors)(root, flix).map(_.toCompletionItem)
+    CompletionList(isIncomplete = true, items)
   }
 
   /**
@@ -153,5 +153,4 @@ object CompletionProvider {
     }
     ).minByOption { case (_, (lineDiff, columnDiff)) => (lineDiff, columnDiff) }.map(_._1)
   }
-
 }
