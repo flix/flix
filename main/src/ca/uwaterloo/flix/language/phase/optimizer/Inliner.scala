@@ -171,7 +171,7 @@ object Inliner {
         case e1@Expr.Lambda(_, _, _, _) =>
           sctx.changed.putIfAbsent(sym0, ())
           val e2 = visitExp(exp2, ctx0)
-          betaReduceLambda(e1, e2, loc)
+          betaReduceLambda(e1, e2, loc, ctx0)
 
         case e1 =>
           val e2 = visitExp(exp2, ctx0)
@@ -339,13 +339,13 @@ object Inliner {
     *
     * Lastly, it visits the let-binding, thus possibly removing the binding.
     */
-  private def betaReduceLambda(exp1: Expr.Lambda, exp2: Expr, loc: SourceLocation)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
+  private def betaReduceLambda(exp1: Expr.Lambda, exp2: Expr, loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
     val sym = exp1.fparam.sym // visitExp will refresh the symbol
     val tpe = exp1.exp.tpe
     val eff = Type.mkUnion(exp1.exp.eff, exp2.eff, loc)
     val occur = exp1.fparam.occur
-    val binding = Expr.Let(sym, exp2, exp1.exp, tpe, eff, occur, loc)
-    visitExp(binding, LocalContext.Empty)
+    val exp = Expr.Let(sym, exp2, exp1.exp, tpe, eff, occur, loc)
+    visitExp(exp, ctx0.withEmptyExprCtx)
   }
 
   /**
