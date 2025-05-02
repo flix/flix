@@ -333,6 +333,8 @@ object Inliner {
     * In some cases, unification may completely abort:
     *   - If there is a non-trivial guard since the value of the guard cannot be determined.
     *   - If there is a constant pattern and a non-constant expression in the scrutinee in that subterm since the value cannot be determined without constant folding.
+    *
+    * `exp` must be visited before calling [[tryDeforestation]]. `rules` must NOT be visited before calling [[tryDeforestation]].
     */
   private def tryDeforestation(exp: Expr, rules: List[OccurrenceAst.MatchRule], loc: SourceLocation, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
     default
