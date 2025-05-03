@@ -188,10 +188,11 @@ object Inliner {
       // Check if it was unconditionally inlined
       ctx0.subst.get(sym1) match {
         case Some(SubstRange.SuspendedExpr(exp@Expr.LocalDef(_, _, _, _, _, _, _, _), subst)) =>
-          betaReduceLocalDef(exp, exps, loc, ctx0.addSubsts(subst))
+          val es = exps.map(visitExp(_, ctx0))
+          betaReduceLocalDef(exp, es, loc, ctx0.copy(subst = subst))
 
         case None | Some(_) =>
-          // It was not unconditionally inlined, so just visit exps
+          // It was not unconditionally inlined, so return same expr with visited subexpressions
           val es = exps.map(visitExp(_, ctx0))
           Expr.ApplyLocalDef(sym1, es, tpe, eff, loc)
       }
@@ -462,7 +463,8 @@ object Inliner {
   /**
     * Performs beta-reduction on a local def `exp` applied to `exps`.
     *
-    * It is the responsibility of the caller to first `exps`.
+    * It is the responsibility of the caller to first visit `exps` and provide a substitution from the definition site
+    * of `exp`.
     *
     * [[betaReduceLocalDef]] creates a series of let-bindings
     * {{{
