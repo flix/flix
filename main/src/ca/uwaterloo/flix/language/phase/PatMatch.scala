@@ -183,7 +183,7 @@ object PatMatch {
         visitExp(exp)
         rules.foreach(r => visitExp(r.exp))
 
-      case Expr.JvmType(exp, _, _, _) =>
+      case Expr.JvmType(exp, _, _, _, _) =>
         visitExp(exp)
 
       case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>

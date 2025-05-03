@@ -453,9 +453,9 @@ object Kinder {
       val rules = rules0.map(visitTypeMatchRule(_, kenv0, taenv, root))
       KindedAst.Expr.TypeMatch(exp, rules, loc)
 
-    case ResolvedAst.Expr.JvmType(exp0, loc) =>
+    case ResolvedAst.Expr.JvmType(exp0, proxy, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, root)
-      KindedAst.Expr.JvmType(exp, loc)
+      KindedAst.Expr.JvmType(exp, proxy, loc)
 
     case ResolvedAst.Expr.RestrictableChoose(star, exp0, rules0, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, root)

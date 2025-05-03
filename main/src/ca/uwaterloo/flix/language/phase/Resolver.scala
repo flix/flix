@@ -1022,10 +1022,10 @@ object Resolver {
         case (e, rs) => ResolvedAst.Expr.TypeMatch(e, rs, loc)
       }
 
-    case NamedAst.Expr.JvmType(exp, loc) =>
+    case NamedAst.Expr.JvmType(exp, proxy, loc) =>
       val eVal = resolveExp(exp, scp0)
       mapN(eVal) {
-        case e => ResolvedAst.Expr.JvmType(e, loc)
+        case e => ResolvedAst.Expr.JvmType(e, proxy, loc)
       }
 
 

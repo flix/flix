@@ -560,58 +560,134 @@ object Monomorpher {
           }
       }.get // This is safe since the last case can always match.
 
-    case LoweredAst.Expr.JvmType(exp, tpe, eff, loc) =>
+    case LoweredAst.Expr.JvmType(exp, true, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
-      e.tpe match {
+      val argType = e.tpe match {
+        // Typing guarantees that `e.tpe` is `Proxy[?]`.
+        case Type.Apply(Type.Cst(_, _), arg, _) => arg
+        case _ => throw InternalCompilerException(s"Unexpected proxy type '${e.tpe}'", e.tpe.loc)
+      }
+      argType match {
         case Type.Char =>
           val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
           val jvmCharSym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmChar", loc))
           val op = AtomicOp.Tag(jvmCharSym)
-          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+          val tag = MonoAst.Expr.ApplyAtomic(op, Nil, tpe, eff, loc)
+          MonoAst.Expr.Stm(e, tag, tpe, eff, loc)
         case Type.Bool =>
           val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
           val jvmBoolSym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmBool", loc))
           val op = AtomicOp.Tag(jvmBoolSym)
-          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+          val tag = MonoAst.Expr.ApplyAtomic(op, Nil, tpe, eff, loc)
+          MonoAst.Expr.Stm(e, tag, tpe, eff, loc)
         case Type.Int8 =>
           val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
           val jvmInt8Sym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmInt8", loc))
           val op = AtomicOp.Tag(jvmInt8Sym)
-          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+          val tag = MonoAst.Expr.ApplyAtomic(op, Nil, tpe, eff, loc)
+          MonoAst.Expr.Stm(e, tag, tpe, eff, loc)
         case Type.Int16 =>
           val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
           val jvmInt16Sym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmInt16", loc))
           val op = AtomicOp.Tag(jvmInt16Sym)
-          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+          val tag = MonoAst.Expr.ApplyAtomic(op, Nil, tpe, eff, loc)
+          MonoAst.Expr.Stm(e, tag, tpe, eff, loc)
         case Type.Int32 =>
           val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
           val jvmInt32Sym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmInt32", loc))
           val op = AtomicOp.Tag(jvmInt32Sym)
-          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+          val tag = MonoAst.Expr.ApplyAtomic(op, Nil, tpe, eff, loc)
+          MonoAst.Expr.Stm(e, tag, tpe, eff, loc)
         case Type.Int64 =>
           val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
           val jvmInt64Sym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmInt64", loc))
           val op = AtomicOp.Tag(jvmInt64Sym)
-          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+          val tag = MonoAst.Expr.ApplyAtomic(op, Nil, tpe, eff, loc)
+          MonoAst.Expr.Stm(e, tag, tpe, eff, loc)
         case Type.Float32 =>
           val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
           val jvmFloat32Sym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmFloat32", loc))
           val op = AtomicOp.Tag(jvmFloat32Sym)
-          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+          val tag = MonoAst.Expr.ApplyAtomic(op, Nil, tpe, eff, loc)
+          MonoAst.Expr.Stm(e, tag, tpe, eff, loc)
         case Type.Float64 =>
           val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
           val jvmFloat64Sym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmFloat64", loc))
           val op = AtomicOp.Tag(jvmFloat64Sym)
-          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+          val tag = MonoAst.Expr.ApplyAtomic(op, Nil, tpe, eff, loc)
+          MonoAst.Expr.Stm(e, tag, tpe, eff, loc)
         case Type.Cst(_, _) =>
           val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
+          val jvmObjectSym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmObject", loc))
+          val op = AtomicOp.Tag(jvmObjectSym)
+          val tag = MonoAst.Expr.ApplyAtomic(op, Nil, tpe, eff, loc)
+          MonoAst.Expr.Stm(e, tag, tpe, eff, loc)
+        case Type.Apply(_, _, _) =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
+          val jvmObjectSym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmObject", loc))
+          val op = AtomicOp.Tag(jvmObjectSym)
+          val tag = MonoAst.Expr.ApplyAtomic(op, Nil, tpe, eff, loc)
+          MonoAst.Expr.Stm(e, tag, tpe, eff, loc)
+        case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected monomorphed type '${e.tpe}'", e.tpe.loc)
+        case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected monomorphed type '${e.tpe}'", e.tpe.loc)
+        case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected monomorphed type '${e.tpe}'", e.tpe.loc)
+        case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected monomorphed type '${e.tpe}'", e.tpe.loc)
+        case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected monomorphed type '${e.tpe}'", e.tpe.loc)
+        case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected monomorphed type '${e.tpe}'", e.tpe.loc)
+      }
+
+    case LoweredAst.Expr.JvmType(exp, false, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      e.tpe match {
+        case Type.Char =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmValue", loc))
+          val jvmCharSym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmChar", loc))
+          val op = AtomicOp.Tag(jvmCharSym)
+          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+        case Type.Bool =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmValue", loc))
+          val jvmBoolSym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmBool", loc))
+          val op = AtomicOp.Tag(jvmBoolSym)
+          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+        case Type.Int8 =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmValue", loc))
+          val jvmInt8Sym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmInt8", loc))
+          val op = AtomicOp.Tag(jvmInt8Sym)
+          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+        case Type.Int16 =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmValue", loc))
+          val jvmInt16Sym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmInt16", loc))
+          val op = AtomicOp.Tag(jvmInt16Sym)
+          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+        case Type.Int32 =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmValue", loc))
+          val jvmInt32Sym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmInt32", loc))
+          val op = AtomicOp.Tag(jvmInt32Sym)
+          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+        case Type.Int64 =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmValue", loc))
+          val jvmInt64Sym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmInt64", loc))
+          val op = AtomicOp.Tag(jvmInt64Sym)
+          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+        case Type.Float32 =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmValue", loc))
+          val jvmFloat32Sym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmFloat32", loc))
+          val op = AtomicOp.Tag(jvmFloat32Sym)
+          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+        case Type.Float64 =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmValue", loc))
+          val jvmFloat64Sym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmFloat64", loc))
+          val op = AtomicOp.Tag(jvmFloat64Sym)
+          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+        case Type.Cst(_, _) =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmValue", loc))
           val jvmObjectSym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmObject", loc))
           val op = AtomicOp.Tag(jvmObjectSym)
           val jvmObject = Type.mkNative(classOf[java.lang.Object], loc)
           val castedE = mkCast(e, jvmObject, eff, loc)
           MonoAst.Expr.ApplyAtomic(op, List(castedE), tpe, eff, loc)
         case Type.Apply(_, _, _) =>
-          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmValue", loc))
           val jvmObjectSym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmObject", loc))
           val op = AtomicOp.Tag(jvmObjectSym)
           val jvmObject = Type.mkNative(classOf[java.lang.Object], loc)
@@ -693,7 +769,7 @@ object Monomorpher {
       case (x, y) if !isPrimType(x) && !isPrimType(y) => MonoAst.Expr.Cast(e, None, None, tpe, eff, loc)
       case (_, _) =>
         val crash = MonoAst.Expr.ApplyAtomic(AtomicOp.MatchError, Nil, tpe, eff, loc)
-        MonoAst.Expr.Let(Symbol.freshVarSym("cast", BoundBy.Let, loc)(Scope.Top, flix), e, crash, tpe, eff, loc)
+        MonoAst.Expr.Stm(e, crash, tpe, eff, loc)
     }
   }
 

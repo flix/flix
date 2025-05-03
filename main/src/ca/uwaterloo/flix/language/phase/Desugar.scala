@@ -563,9 +563,9 @@ object Desugar {
       val rs = rules.map(visitTypeMatchRule)
       Expr.TypeMatch(e, rs, loc)
 
-    case WeededAst.Expr.JvmType(exp, loc) =>
+    case WeededAst.Expr.JvmType(exp, proxy, loc) =>
       val e = visitExp(exp)
-      Expr.JvmType(e, loc)
+      Expr.JvmType(e, proxy, loc)
 
     case WeededAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
       val e = visitExp(exp)

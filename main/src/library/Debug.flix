@@ -43,15 +43,15 @@ mod Debug {
     ///
     @Internal
     pub def stringify(x: a): String = match $JVM_TYPE$(x) {
-        case JvmType.JvmChar(c) => "\'" + escape("${c}") + "\'"
-        case JvmType.JvmBool(b) => if (b) "true" else "false"
-        case JvmType.JvmInt8(i) => Byte.toString(i) + "i8"
-        case JvmType.JvmInt16(i) => Short.toString(i) + "i16"
-        case JvmType.JvmInt32(i) => Integer.toString(i)
-        case JvmType.JvmInt64(i) => Long.toString(i) + "i64"
-        case JvmType.JvmFloat32(i) => Float.toString(i) + "f32"
-        case JvmType.JvmFloat64(i) => Double.toString(i)
-        case JvmType.JvmObject(obj) => unsafe Objects.toString(obj)
+        case JvmValue.JvmChar(c) => "\'" + escape("${c}") + "\'"
+        case JvmValue.JvmBool(b) => if (b) "true" else "false"
+        case JvmValue.JvmInt8(i) => Byte.toString(i) + "i8"
+        case JvmValue.JvmInt16(i) => Short.toString(i) + "i16"
+        case JvmValue.JvmInt32(i) => Integer.toString(i)
+        case JvmValue.JvmInt64(i) => Long.toString(i) + "i64"
+        case JvmValue.JvmFloat32(i) => Float.toString(i) + "f32"
+        case JvmValue.JvmFloat64(i) => Double.toString(i)
+        case JvmValue.JvmObject(obj) => unsafe Objects.toString(obj)
     }
 
 }

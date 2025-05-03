@@ -225,10 +225,15 @@ object TypeReconstruction {
       }
       TypedAst.Expr.TypeMatch(e1, rs, tpe, eff, loc)
 
-    case KindedAst.Expr.JvmType(exp, loc) =>
+    case KindedAst.Expr.JvmType(exp, true, loc) =>
       val e = visitExp(exp)
       val jvmTypeName = Symbol.mkEnumSym(Name.NName(Nil, loc.asSynthetic), Name.Ident("JvmType", loc.asSynthetic))
-      TypedAst.Expr.JvmType(e, Type.mkEnum(jvmTypeName, Kind.Star, loc.asSynthetic), e.eff, loc)
+      TypedAst.Expr.JvmType(e, proxy = true, Type.mkEnum(jvmTypeName, Kind.Star, loc.asSynthetic), e.eff, loc)
+
+    case KindedAst.Expr.JvmType(exp, false, loc) =>
+      val e = visitExp(exp)
+      val jvmTypeName = Symbol.mkEnumSym(Name.NName(Nil, loc.asSynthetic), Name.Ident("JvmValue", loc.asSynthetic))
+      TypedAst.Expr.JvmType(e, proxy = false, Type.mkEnum(jvmTypeName, Kind.Star, loc.asSynthetic), e.eff, loc)
 
     case KindedAst.Expr.RestrictableChoose(star, exp, rules, tvar, loc) =>
       val e = visitExp(exp)
@@ -372,10 +377,6 @@ object TypeReconstruction {
           val eff = Type.mkUnion(e.eff, subst(evar), loc)
           TypedAst.Expr.CheckedCast(cast, e, e.tpe, eff, loc)
       }
-
-    case KindedAst.Expr.UncheckedCast(KindedAst.Expr.Cst(Constant.Null, _), _, _, tvar, loc) =>
-      val t = subst(tvar)
-      TypedAst.Expr.Cst(Constant.Null, t, loc)
 
     case KindedAst.Expr.UncheckedCast(exp, declaredType0, declaredEff0, tvar, loc) =>
       val e = visitExp(exp)

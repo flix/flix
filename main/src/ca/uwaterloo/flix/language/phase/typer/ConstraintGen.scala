@@ -437,9 +437,19 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
-      case Expr.JvmType(exp, loc) =>
-        val (_, eff) = visitExp(exp)
+      case Expr.JvmType(exp, true, loc) =>
+        val (tpe, eff) = visitExp(exp)
+        val proxyEnumType = Type.mkEnum(Symbol.mkEnumSym(Name.NName(Nil, loc.asSynthetic), Name.Ident("Proxy", loc.asSynthetic)), Kind.Arrow(Kind.Star, Kind.Star), loc.asSynthetic)
+        val proxyType = Type.mkApply(proxyEnumType, List(Type.freshVar(Kind.Star, loc.asSynthetic)), loc.asSynthetic)
+        c.expectType(expected = proxyType, tpe, loc)
         val jvmTypeName = Symbol.mkEnumSym(Name.NName(Nil, loc.asSynthetic), Name.Ident("JvmType", loc.asSynthetic))
+        val resTpe = Type.mkEnum(jvmTypeName, Kind.Star, loc.asSynthetic)
+        val resEff = eff
+        (resTpe, resEff)
+
+      case Expr.JvmType(exp, false, loc) =>
+        val (tpe, eff) = visitExp(exp)
+        val jvmTypeName = Symbol.mkEnumSym(Name.NName(Nil, loc.asSynthetic), Name.Ident("JvmValue", loc.asSynthetic))
         val resTpe = Type.mkEnum(jvmTypeName, Kind.Star, loc.asSynthetic)
         val resEff = eff
         (resTpe, resEff)

@@ -154,7 +154,7 @@ object TypedAst {
 
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class JvmType(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class JvmType(exp: Expr, proxy: Boolean, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

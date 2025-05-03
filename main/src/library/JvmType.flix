@@ -16,7 +16,7 @@
 
 import java.lang.{Object => JObject}
 
-pub enum JvmType {
+pub enum JvmValue {
     case JvmChar(Char)
     case JvmBool(Bool)
     case JvmInt8(Int8)
@@ -26,4 +26,16 @@ pub enum JvmType {
     case JvmFloat32(Float32)
     case JvmFloat64(Float64)
     case JvmObject(JObject)
+}
+
+pub enum JvmType {
+    case JvmChar
+    case JvmBool
+    case JvmInt8
+    case JvmInt16
+    case JvmInt32
+    case JvmInt64
+    case JvmFloat32
+    case JvmFloat64
+    case JvmObject
 }

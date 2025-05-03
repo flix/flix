@@ -115,7 +115,7 @@ object LoweredAst {
 
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class JvmType(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class JvmType(exp: Expr, proxy: Boolean, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

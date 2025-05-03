@@ -86,7 +86,7 @@ object LoweredAstPrinter {
           (patD, tpeD, bodyD)
       }
       DocAst.Expr.TypeMatch(expD, rulesD)
-    case Expr.JvmType(exp, tpe, eff, loc) => DocAst.Expr.Unknown
+    case Expr.JvmType(exp, proxy, tpe, eff, loc) => DocAst.Expr.Unknown
     case Expr.VectorLit(exps, tpe, eff, loc) => DocAst.Expr.VectorLit(exps.map(print))
     case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => DocAst.Expr.VectorLoad(print(exp1), print(exp2))
     case Expr.VectorLength(exp, loc) => DocAst.Expr.ArrayLength(print(exp))
