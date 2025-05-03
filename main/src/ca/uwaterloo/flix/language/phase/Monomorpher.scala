@@ -468,7 +468,6 @@ object Monomorpher {
 
     case LoweredAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
-      println(s"At ${loc}")
       val newSym = specializeDefnSym(sym, it)
       val es = exps.map(specializeExp(_, env0, subst))
       MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
@@ -657,12 +656,7 @@ object Monomorpher {
     * N.B.: `tpe` must be normalized.
     */
   private def specializeDefnSym(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
-    val defn = try {
-      root.defs(sym)
-    } catch {
-      case e: Exception =>
-        throw e
-    }
+    val defn = root.defs(sym)
     if (defn.spec.tparams.isEmpty) {
       defn.sym
     } else {
