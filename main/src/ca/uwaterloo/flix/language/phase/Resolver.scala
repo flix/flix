@@ -1528,10 +1528,7 @@ object Resolver {
       val expVal = resolveExp(exp0, scp0)
       val expsVal = traverse(exps0)(resolveExp(_, scp0))
       mapN(expVal, expsVal) {
-        case (e, es) =>
-          es.foldLeft(e) {
-            case (acc, a) => ResolvedAst.Expr.ApplyClo(acc, a, loc.asSynthetic)
-          }
+        case (e, es) => mkApplyClo(e, es, loc.asSynthetic)
       }
   }
 
@@ -1542,11 +1539,23 @@ object Resolver {
     val expsVal = traverse(exps)(resolveExp(_, scp0))
     val exp: ResolvedAst.Expr = ResolvedAst.Expr.Error(err)
     mapN(expsVal) {
-      case es =>
-        es.foldLeft(exp) {
-          case (acc, a) => ResolvedAst.Expr.ApplyClo(acc, a, loc.asSynthetic)
-        }
+      case es => mkApplyClo(exp, es, loc.asSynthetic)
     }
+  }
+
+  /** A trait used by [[visitApplyFull]] to let-bind some partially-applied arguments. */
+  private sealed trait Arg {
+    def arg: ResolvedAst.Expr
+  }
+
+  private object Arg {
+
+    /** Expression is captured as is. */
+    case class Capture(arg: ResolvedAst.Expr) extends Arg
+
+    /** Expression `bound` is let-bound under the name `ref`. */
+    case class Bind(arg: ResolvedAst.Expr.Var, toBind: ResolvedAst.Expr) extends Arg
+
   }
 
   /**
@@ -1563,24 +1572,12 @@ object Resolver {
     if (argsGiven < arity) {
       // Case: under applied.
 
-      // Capture constants and variables directly, let-bind other expressions.
-      val argInfo = exps.map {
-        case cst@ResolvedAst.Expr.Cst(_, _) => Right(cst)
-        case v@ResolvedAst.Expr.Var(_, _) => Right(v)
-        case other =>
-          val varSym = freshVarSym("arg", BoundBy.Let, loc.asSynthetic)
-          Left((ResolvedAst.Expr.Var(varSym, loc.asSynthetic), other))
-      }
+      val argInfo = captureArgs(exps, loc)
       // The arguments to `base`.
-      val args = argInfo.map{
-        case Left((v, e)) => v
-        case Right(e) => e
-      }
-
       val fparamsPadding = mkFreshFparams(arity - exps.length, loc.asSynthetic)
       val argsPadding = fparamsPadding.map(fp => ResolvedAst.Expr.Var(fp.sym, loc.asSynthetic))
 
-      val fullDefApplication = base(args ++ argsPadding)
+      val fullDefApplication = base(argInfo.map(_.arg) ++ argsPadding)
 
       // For typing performance we make pure lambdas for all except the last.
       val (fullDefLambda, _) = fparamsPadding.foldRight((fullDefApplication, true)) {
@@ -1589,10 +1586,10 @@ object Resolver {
           else (mkPureLambda(fp, acc, loc.asSynthetic), false)
       }
 
-      // For the non-variable, non-constant expressions, let-bind them.
+      // Let-bind the arguments that require it.
       argInfo.foldRight(fullDefLambda) {
-        case (Left((v, e)), acc) => ResolvedAst.Expr.Let(v.sym, e, acc, loc.asSynthetic)
-        case (Right(_), acc) => acc
+        case (Arg.Capture(_), acc) => acc
+        case (Arg.Bind(arg, toBind), acc) => ResolvedAst.Expr.Let(arg.sym, toBind, acc, loc.asSynthetic)
       }
     } else if (argsGiven == arity) {
       // Case: fully applied.
@@ -1601,10 +1598,28 @@ object Resolver {
       // Case: over applied.
       val (directArgs, cloArgs) = exps.splitAt(arity)
       val defApplication = base(directArgs)
-      val closureApplication = cloArgs.foldLeft(defApplication) {
-        case (acc, cloArg) => ResolvedAst.Expr.ApplyClo(acc, cloArg, loc)
-      }
-      closureApplication
+      mkApplyClo(defApplication, cloArgs, loc.asSynthetic)
+    }
+  }
+
+  /**
+    * Returns `exps` where [[Arg.Capture]] marks expressions that can be captured and [[Arg.Bind]]
+    * must be let-bound.
+    */
+  private def captureArgs(exps: List[ResolvedAst.Expr], loc: SourceLocation)(implicit scope: Scope, flix: Flix): List[Arg] = {
+    exps.map {
+      case cst@ResolvedAst.Expr.Cst(_, _) => Arg.Capture(cst)
+      case v@ResolvedAst.Expr.Var(_, _) => Arg.Capture(v)
+      case other =>
+        val varSym = freshVarSym("arg", BoundBy.Let, loc.asSynthetic)
+        Arg.Bind(ResolvedAst.Expr.Var(varSym, loc.asSynthetic), other)
+    }
+  }
+
+  /** Returns `base(arg_0)(arg_1)..(arg_n)`. */
+  private def mkApplyClo(base: ResolvedAst.Expr, args: List[ResolvedAst.Expr], loc: SourceLocation): ResolvedAst.Expr = {
+    args.foldLeft(base) {
+      case (acc, cloArg) => ResolvedAst.Expr.ApplyClo(acc, cloArg, loc)
     }
   }
 
