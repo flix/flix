@@ -151,8 +151,8 @@ object Inliner {
               visitExp(exp, ctx0.copy(subst = Map.empty))
 
             case None =>
-              // It was not unconditionally inlined, so just update the variable
-              Expr.Var(freshVarSym, tpe, loc)
+              // It was not unconditionally inlined, so consider inlining at this occurrence site
+              callSiteInline(???)
           }
       }
 
@@ -487,6 +487,19 @@ object Inliner {
         Expr.Let(sym, arg, acc, tpe, eff, occur, loc)
     }
     visitExp(bindings, ctx0.withEmptyExprCtx)
+  }
+
+  private def callSiteInline(sym: Symbol.VarSym, lvl: Level, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+    ctx0.inScopeVars.get(sym) match {
+      case Some(BoundKind.LetBound(rhs, occur)) if shouldInlineVar(rhs, occur, lvl, ctx0) =>
+        visitExp(rhs, ctx0.copy(subst = Map.empty))
+
+      case Some(_) =>
+        default
+
+      case None =>
+        throw InternalCompilerException(s"unexpected evaluated var not in scope $sym", sym.loc)
+    }
   }
 
   /**
