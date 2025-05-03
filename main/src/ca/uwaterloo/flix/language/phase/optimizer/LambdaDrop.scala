@@ -75,14 +75,15 @@ object LambdaDrop {
     * A function is droppable if
     * (a) it contains at least one recursive call and
     * (b) is a higher-order function, i.e., it has at least one formal parameter
-    * with a function type.
+    * with a function type and
+    * (c) has at least one constant parameter.
     *
     * The latter condition can be checked by the [[isHigherOrder]] predicate.
     */
   private def isDroppable(defn: MonoAst.Def)(implicit lctx: LocalContext): Boolean = {
     if (isHigherOrder(defn)) {
       visitExp(defn.exp)(defn.sym, lctx)
-      lctx.recursiveCalls.nonEmpty
+      lctx.recursiveCalls.nonEmpty && hasConstantParameter(lctx.recursiveCalls.toList, defn.spec.fparams)
     } else {
       false
     }
@@ -385,6 +386,13 @@ object LambdaDrop {
           case Some((fp, _)) => (fp, ParamKind.NonConst)
           case None => throw InternalCompilerException("unexpected empty head", SourceLocation.Unknown)
         }
+    }
+  }
+
+  /** Returns `true` if there exists at least one constant parameter. */
+  private def hasConstantParameter(calls: List[Expr.ApplyDef], fparams: List[MonoAst.FormalParam]): Boolean = {
+    paramKinds(calls, fparams).exists {
+      case (_, pkind) => pkind == ParamKind.Const
     }
   }
 
