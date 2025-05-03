@@ -12,8 +12,12 @@ object Optimizer {
     */
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer") {
     var result = ToOccurrenceAst.run(root)
-    for (_ <- 1 to 10) {
-      result = OccurrenceAnalyzer.run(result)
+    var delta = result.defs.keys.toSet
+    for (_ <- 1 to 3) {
+      val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(result, delta)
+      val (inlinerRoot, inlinerChange) = Inliner.run(afterOccurrenceAnalyzer)
+      result = inlinerRoot
+      delta = inlinerChange
     }
     ToMonoAst.run(result)
   }
@@ -121,9 +125,9 @@ object Optimizer {
         val e = visitExp(exp)
         OccurrenceAst.Expr.Ascribe(e, tpe, eff, loc)
 
-      case MonoAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      case MonoAst.Expr.Cast(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        OccurrenceAst.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc)
+        OccurrenceAst.Expr.Cast(e, tpe, eff, loc)
 
       case MonoAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -290,9 +294,9 @@ object Optimizer {
         val e = visitExp(exp)
         MonoAst.Expr.Ascribe(e, tpe, eff, loc)
 
-      case OccurrenceAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      case OccurrenceAst.Expr.Cast(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        MonoAst.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc)
+        MonoAst.Expr.Cast(e, tpe, eff, loc)
 
       case OccurrenceAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
         val e = visitExp(exp)

@@ -22,8 +22,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
-import ca.uwaterloo.flix.language.phase.optimizer.Optimizer
-import ca.uwaterloo.flix.language.verifier.EffectVerifier
+import ca.uwaterloo.flix.language.phase.optimizer.{Optimizer, LambdaDrop}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
@@ -122,8 +121,7 @@ class Flix {
     "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
 
-    // Channels and Threads
-    "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
+    // Threads
     "Thread.flix" -> LocalResource.get("/src/library/Thread.flix"),
     "Time.flix" -> LocalResource.get("/src/library/Time.flix"),
 
@@ -235,6 +233,7 @@ class Flix {
     "GetOpt.flix" -> LocalResource.get("/src/library/GetOpt.flix"),
     "Chalk.flix" -> LocalResource.get("/src/library/Chalk.flix"),
 
+    "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
     "Concurrent/Channel.flix" -> LocalResource.get("/src/library/Concurrent/Channel.flix"),
     "Concurrent/Condition.flix" -> LocalResource.get("/src/library/Concurrent/Condition.flix"),
     "Concurrent/CyclicBarrier.flix" -> LocalResource.get("/src/library/Concurrent/CyclicBarrier.flix"),
@@ -573,8 +572,6 @@ class Flix {
             val (afterTyper, typeErrors) = Typer.run(afterDeriver, cachedTyperAst, changeSet)
             errors ++= typeErrors
 
-            EffectVerifier.run(afterTyper)
-
             val (afterEntryPoint, entryPointErrors) = EntryPoints.run(afterTyper)
             errors ++= entryPointErrors
 
@@ -652,7 +649,8 @@ class Flix {
     val loweringAst = Lowering.run(typedAst)
     val treeShaker1Ast = TreeShaker1.run(loweringAst)
     val monomorpherAst = Monomorpher.run(treeShaker1Ast)
-    val optimizerAst = Optimizer.run(monomorpherAst)
+    val lambdaDropAst = LambdaDrop.run(monomorpherAst)
+    val optimizerAst = Optimizer.run(lambdaDropAst)
     val simplifierAst = Simplifier.run(optimizerAst)
     val closureConvAst = ClosureConv.run(simplifierAst)
     val lambdaLiftAst = LambdaLift.run(closureConvAst)
