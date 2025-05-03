@@ -1572,7 +1572,7 @@ object Resolver {
     if (argsGiven < arity) {
       // Case: under applied.
 
-      val argInfo = captureArgs(exps, loc)
+      val argInfo = captureArgs(exps, loc.asSynthetic)
       // The arguments to `base`.
       val fparamsPadding = mkFreshFparams(arity - exps.length, loc.asSynthetic)
       val argsPadding = fparamsPadding.map(fp => ResolvedAst.Expr.Var(fp.sym, loc.asSynthetic))
@@ -1580,11 +1580,7 @@ object Resolver {
       val fullDefApplication = base(argInfo.map(_.arg) ++ argsPadding)
 
       // For typing performance we make pure lambdas for all except the last.
-      val (fullDefLambda, _) = fparamsPadding.foldRight((fullDefApplication, true)) {
-        case (fp, (acc, first)) =>
-          if (first) (ResolvedAst.Expr.Lambda(fp, acc, allowSubeffecting = false, loc.asSynthetic), false)
-          else (mkPureLambda(fp, acc, loc.asSynthetic), false)
-      }
+      val fullDefLambda = mkPrefixPureLambda(fparamsPadding, fullDefApplication, loc.asSynthetic)
 
       // Let-bind the arguments that require it.
       argInfo.foldRight(fullDefLambda) {
@@ -1603,8 +1599,22 @@ object Resolver {
   }
 
   /**
+    * Returns a lambda `(fp_0, fp_1, .., fp_n) -> body \ ef` where all but the last lambda is pure.
+    */
+  private def mkPrefixPureLambda(fparams: List[ResolvedAst.FormalParam], body: ResolvedAst.Expr, loc: SourceLocation) = {
+    val (lambda, _) = fparams.foldRight((body, true)) {
+      case (fp, (acc, first)) =>
+        if (first) (ResolvedAst.Expr.Lambda(fp, acc, allowSubeffecting = false, loc.asSynthetic), false)
+        else (mkPureLambda(fp, acc, loc.asSynthetic), false)
+    }
+    lambda
+  }
+
+  /**
     * Returns `exps` where [[Arg.Capture]] marks expressions that can be captured and [[Arg.Bind]]
     * must be let-bound.
+    *
+    * For `List("x", "Ref.get(y)")`, `List(Capture("x"), Bind("tmp$123", "Ref.get(y)"))` is returned.
     */
   private def captureArgs(exps: List[ResolvedAst.Expr], loc: SourceLocation)(implicit scope: Scope, flix: Flix): List[Arg] = {
     exps.map {
@@ -1619,7 +1629,7 @@ object Resolver {
   /** Returns `base(arg_0)(arg_1)..(arg_n)`. */
   private def mkApplyClo(base: ResolvedAst.Expr, args: List[ResolvedAst.Expr], loc: SourceLocation): ResolvedAst.Expr = {
     args.foldLeft(base) {
-      case (acc, cloArg) => ResolvedAst.Expr.ApplyClo(acc, cloArg, loc)
+      case (acc, cloArg) => ResolvedAst.Expr.ApplyClo(acc, cloArg, loc.asSynthetic)
     }
   }
 
