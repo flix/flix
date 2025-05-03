@@ -1579,7 +1579,6 @@ object Resolver {
 
       val fullDefApplication = base(argInfo.map(_.arg) ++ argsPadding)
 
-      // For typing performance we make pure lambdas for all except the last.
       val fullDefLambda = mkPrefixPureLambda(fparamsPadding, fullDefApplication, loc.asSynthetic)
 
       // Let-bind the arguments that require it.
@@ -1601,7 +1600,7 @@ object Resolver {
   /**
     * Returns a lambda `(fp_0, fp_1, .., fp_n) -> body \ ef` where all but the last lambda is pure.
     */
-  private def mkPrefixPureLambda(fparams: List[ResolvedAst.FormalParam], body: ResolvedAst.Expr, loc: SourceLocation) = {
+  private def mkPrefixPureLambda(fparams: List[ResolvedAst.FormalParam], body: ResolvedAst.Expr, loc: SourceLocation): ResolvedAst.Expr = {
     val (lambda, _) = fparams.foldRight((body, true)) {
       case (fp, (acc, first)) =>
         if (first) (ResolvedAst.Expr.Lambda(fp, acc, allowSubeffecting = false, loc.asSynthetic), false)
