@@ -125,9 +125,9 @@ object Optimizer {
         val e = visitExp(exp)
         OccurrenceAst.Expr.Ascribe(e, tpe, eff, loc)
 
-      case MonoAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      case MonoAst.Expr.Cast(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        OccurrenceAst.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc)
+        OccurrenceAst.Expr.Cast(e, tpe, eff, loc)
 
       case MonoAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -294,9 +294,9 @@ object Optimizer {
         val e = visitExp(exp)
         MonoAst.Expr.Ascribe(e, tpe, eff, loc)
 
-      case OccurrenceAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      case OccurrenceAst.Expr.Cast(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        MonoAst.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc)
+        MonoAst.Expr.Cast(e, tpe, eff, loc)
 
       case OccurrenceAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
         val e = visitExp(exp)
