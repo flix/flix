@@ -657,6 +657,7 @@ object Monomorpher {
     */
   private def specializeDefnSym(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
     val defn = root.defs(sym)
+
     if (defn.spec.tparams.isEmpty) {
       defn.sym
     } else {
