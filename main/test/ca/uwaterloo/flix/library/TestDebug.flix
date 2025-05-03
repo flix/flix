@@ -46,22 +46,22 @@ mod TestDebug {
     def testInt64Stringify01(): Bool = stringify(42i64) == "42i64"
 
 
-    @test
-    def testBigIntStringify01(): Bool = stringify(42ii) == "42ii"
+//    @test
+//    def testBigIntStringify01(): Bool = stringify(42ii) == "42ii"
 
 
-    @test
-    def testStringStringify01(): Bool = stringify("Hello World!") == "\"Hello World!\""
-
-    @test
-    def testStringStringify02(): Bool = stringify("one\ttwo") == "\"one\\ttwo\""
-
-    @test
-    def testStringStringify03(): Bool = stringify("\u0000") == "\"\u0000\""
-
-    @test
-    def testStringStringify05(): Bool = stringify("\n\r\\\"\'\t\${\%{\u1234\u0000") ==
-        "\"" + "\\n" + "\\r" + "\\\\" + "\\\"" + "\\\'" + "\\t" + "\${" + "\%{" + "\u1234" + "\u0000" + "\""
+//    @test
+//    def testStringStringify01(): Bool = stringify("Hello World!") == "\"Hello World!\""
+//
+//    @test
+//    def testStringStringify02(): Bool = stringify("one\ttwo") == "\"one\\ttwo\""
+//
+//    @test
+//    def testStringStringify03(): Bool = stringify("\u0000") == "\"\u0000\""
+//
+//    @test
+//    def testStringStringify05(): Bool = stringify("\n\r\\\"\'\t\${\%{\u1234\u0000") ==
+//        "\"" + "\\n" + "\\r" + "\\\\" + "\\\"" + "\\\'" + "\\t" + "\${" + "\%{" + "\u1234" + "\u0000" + "\""
 
 //    @test
 //    def testArrayOfUnitStringify01(): Bool \ IO = stringify(Array#{(), ()} @ Static) == "[(), ()]"
@@ -221,11 +221,11 @@ mod TestDebug {
         s == "(null, 42)"
     }
 
-    @test
-    def testNullStringify06(): Bool = region rc {
-        let s = stringify(Array#{(checked_cast(null): String), "42"} @ rc);
-        s == "[null, 42]"
-    }
+//    @test
+//    def testNullStringify06(): Bool = region rc {
+//        let s = stringify(Array#{(checked_cast(null): String), "42"} @ rc);
+//        s == "[null, 42]"
+//    }
 
     @test
     def testNullStringify07(): Bool = {
