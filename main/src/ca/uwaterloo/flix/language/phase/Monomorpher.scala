@@ -580,7 +580,7 @@ object Monomorpher {
     case LoweredAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>
       // Drop the declaredType and declaredEff.
       val e = specializeExp(exp, env0, subst)
-      mkCast(e, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.Cast(e, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
