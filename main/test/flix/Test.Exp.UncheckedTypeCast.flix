@@ -47,4 +47,12 @@ mod Test.Exp.UncheckedTypeCast {
         unchecked_cast(sb as Object)
     }
 
+    def castToString(x: a): String =
+        unchecked_cast(x as String)
+
+    @test
+    def testUncheckedTypeCast07(): Bool =
+        // Test that cast from primitive types to object types doesn't cause compile time crash.
+        if (-3 < 10) true else castToString(42) == ""
+
 }
