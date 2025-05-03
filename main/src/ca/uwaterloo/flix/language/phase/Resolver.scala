@@ -1562,13 +1562,25 @@ object Resolver {
     val argsGiven = exps.length
     if (argsGiven < arity) {
       // Case: under applied.
-      val binders = exps.zipWithIndex.map { case (arg, i) => (freshVarSym("arg" + i, BoundBy.Let, loc.asSynthetic), arg) }
-      val binderVars = binders.map { case (varSym, _) => ResolvedAst.Expr.Var(varSym, loc.asSynthetic) }
+
+      // Capture constants and variables directly, let-bind other expressions.
+      val argInfo = exps.map {
+        case cst@ResolvedAst.Expr.Cst(_, _) => Right(cst)
+        case v@ResolvedAst.Expr.Var(_, _) => Right(v)
+        case other =>
+          val varSym = freshVarSym("arg", BoundBy.Let, loc.asSynthetic)
+          Left((ResolvedAst.Expr.Var(varSym, loc.asSynthetic), other))
+      }
+      // The arguments to `base`.
+      val args = argInfo.map{
+        case Left((v, e)) => v
+        case Right(e) => e
+      }
 
       val fparamsPadding = mkFreshFparams(arity - exps.length, loc.asSynthetic)
       val argsPadding = fparamsPadding.map(fp => ResolvedAst.Expr.Var(fp.sym, loc.asSynthetic))
 
-      val fullDefApplication = base(binderVars ++ argsPadding)
+      val fullDefApplication = base(args ++ argsPadding)
 
       // For typing performance we make pure lambdas for all except the last.
       val (fullDefLambda, _) = fparamsPadding.foldRight((fullDefApplication, true)) {
@@ -1577,8 +1589,10 @@ object Resolver {
           else (mkPureLambda(fp, acc, loc.asSynthetic), false)
       }
 
-      binders.foldRight(fullDefLambda) {
-        case ((varSym, exp), acc) => ResolvedAst.Expr.Let(varSym, exp, acc, loc.asSynthetic)
+      // For the non-variable, non-constant expressions, let-bind them.
+      argInfo.foldRight(fullDefLambda) {
+        case (Left((v, e)), acc) => ResolvedAst.Expr.Let(v.sym, e, acc, loc.asSynthetic)
+        case (Right(_), acc) => acc
       }
     } else if (argsGiven == arity) {
       // Case: fully applied.
