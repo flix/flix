@@ -229,6 +229,11 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
+    case Expr.JvmType(exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
     case Expr.RestrictableChoose(_, exp, rules, tpe, eff, _) =>
       visitExp(exp)
       rules.foreach(visitRestrictableChooseRule)

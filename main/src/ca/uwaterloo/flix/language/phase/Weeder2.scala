@@ -2201,6 +2201,7 @@ object Weeder2 {
         case ("ARRAY_STORE", e1 :: e2 :: e3 :: Nil) => Validation.Success(Expr.ArrayStore(e1, e2, e3, loc))
         case ("VECTOR_GET", e1 :: e2 :: Nil) => Validation.Success(Expr.VectorLoad(e1, e2, loc))
         case ("VECTOR_LENGTH", e1 :: Nil) => Validation.Success(Expr.VectorLength(e1, loc))
+        case ("JVM_TYPE", e1 :: Nil) => Validation.Success(Expr.JvmType(e1, loc))
         case _ =>
           val error = UndefinedIntrinsic(loc)
           sctx.errors.add(error)

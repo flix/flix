@@ -42,72 +42,16 @@ mod Debug {
     /// Returns an automatic string representation of `x`.
     ///
     @Internal
-    pub def stringify(x: a): String = {
-        typematch x {
-            case _: Unit => "()"
-            case b: Bool =>  if (b) "true" else "false"
-            case c: Char => "\'" + escape("${(c: Char)}") + "\'"
-            case y: Float32 =>
-                Float.toString(y) + "f32"
-            case y: Float64 =>
-                Double.toString(y)
-            case y: BigDecimal =>
-                if (unsafe Objects.isNull(y)) {
-                    "null"
-                } else {
-                    unsafe y.toString() + "ff"
-                }
-            case y: Int8 =>
-                Byte.toString(y) + "i8"
-            case y: Int16 =>
-                Short.toString(y) + "i16"
-            case y: Int32 =>
-                Integer.toString(y)
-            case y: Int64 =>
-                Long.toString(y) + "i64"
-            case y: BigInt =>
-                if (unsafe Objects.isNull(y)) {
-                    "null"
-                } else {
-                    unsafe y.toString() + "ii"
-                }
-            case s: String =>
-                if (unsafe Objects.isNull(s)) {
-                    "null"
-                } else {
-                    "\"" + escape(s) + "\""
-                }
-            case y: Array[Bool, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Bool, Static]))
-            case y: Array[Char, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Char, Static]))
-            case y: Array[Float32, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Float32, Static]))
-            case y: Array[Float64, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Float64, Static]))
-            case y: Array[Int8, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Int8, Static]))
-            case y: Array[Int16, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Int16, Static]))
-            case y: Array[Int32, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Int32, Static]))
-            case y: Array[Int64, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Int64, Static]))
-            case y: Array[Unit, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
-            case y: Array[BigInt, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
-            case y: Array[BigDecimal, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
-            case y: Array[String, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
-            case y: Array[Array[_, _], _] =>
-                unsafe Arrays.deepToString(unchecked_cast(y as Array[Object, Static]))
-            case y: Array[_, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
-            case y: _ =>
-                unsafe Objects.toString(unchecked_cast(y as Object))
-        }
+    pub def stringify(x: a): String = match $JVM_TYPE$(x) {
+        case JvmType.JvmChar(c) => "\'" + escape("${c}") + "\'"
+        case JvmType.JvmBool(b) => if (b) "true" else "false"
+        case JvmType.JvmInt8(i) => Byte.toString(i) + "i8"
+        case JvmType.JvmInt16(i) => Short.toString(i) + "i16"
+        case JvmType.JvmInt32(i) => Integer.toString(i)
+        case JvmType.JvmInt64(i) => Long.toString(i) + "i64"
+        case JvmType.JvmFloat32(i) => Float.toString(i) + "f32"
+        case JvmType.JvmFloat64(i) => Double.toString(i)
+        case JvmType.JvmObject(obj) => unsafe Objects.toString(obj)
     }
 
 }

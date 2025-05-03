@@ -437,6 +437,13 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
+      case Expr.JvmType(exp, loc) =>
+        val (_, eff) = visitExp(exp)
+        val jvmTypeName = Symbol.mkEnumSym(Name.NName(Nil, loc.asSynthetic), Name.Ident("JvmType", loc.asSynthetic))
+        val resTpe = Type.mkEnum(jvmTypeName, Kind.Star, loc.asSynthetic)
+        val resEff = eff
+        (resTpe, resEff)
+
       case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
 
       case KindedAst.Expr.Tag(symUse, exps, tvar, loc) =>

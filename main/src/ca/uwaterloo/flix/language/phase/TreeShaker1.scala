@@ -114,6 +114,9 @@ object TreeShaker1 {
     case Expr.TypeMatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
+    case Expr.JvmType(exp, _, _, _) =>
+      visitExp(exp)
+
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps)
 

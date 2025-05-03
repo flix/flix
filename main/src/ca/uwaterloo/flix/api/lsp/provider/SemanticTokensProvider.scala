@@ -494,6 +494,9 @@ object SemanticTokensProvider {
           acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
       }
 
+    case Expr.JvmType(exp, _, _, _) =>
+      visitExp(exp)
+
     case Expr.RestrictableChoose(_, exp1, rules, _, _, _) =>
       val c = visitExp(exp1)
       rules.foldLeft(c) {

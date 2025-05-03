@@ -1022,6 +1022,13 @@ object Resolver {
         case (e, rs) => ResolvedAst.Expr.TypeMatch(e, rs, loc)
       }
 
+    case NamedAst.Expr.JvmType(exp, loc) =>
+      val eVal = resolveExp(exp, scp0)
+      mapN(eVal) {
+        case e => ResolvedAst.Expr.JvmType(e, loc)
+      }
+
+
     case NamedAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
       val expVal = resolveExp(exp, scp0)
       val rulesVal = traverse(rules) {

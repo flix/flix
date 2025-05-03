@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
-import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -560,6 +560,71 @@ object Monomorpher {
           }
       }.get // This is safe since the last case can always match.
 
+    case LoweredAst.Expr.JvmType(exp, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      e.tpe match {
+        case Type.Char =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
+          val jvmCharSym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmChar", loc))
+          val op = AtomicOp.Tag(jvmCharSym)
+          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+        case Type.Bool =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
+          val jvmBoolSym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmBool", loc))
+          val op = AtomicOp.Tag(jvmBoolSym)
+          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+        case Type.Int8 =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
+          val jvmInt8Sym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmInt8", loc))
+          val op = AtomicOp.Tag(jvmInt8Sym)
+          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+        case Type.Int16 =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
+          val jvmInt16Sym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmInt16", loc))
+          val op = AtomicOp.Tag(jvmInt16Sym)
+          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+        case Type.Int32 =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
+          val jvmInt32Sym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmInt32", loc))
+          val op = AtomicOp.Tag(jvmInt32Sym)
+          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+        case Type.Int64 =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
+          val jvmInt64Sym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmInt64", loc))
+          val op = AtomicOp.Tag(jvmInt64Sym)
+          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+        case Type.Float32 =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
+          val jvmFloat32Sym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmFloat32", loc))
+          val op = AtomicOp.Tag(jvmFloat32Sym)
+          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+        case Type.Float64 =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
+          val jvmFloat64Sym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmFloat64", loc))
+          val op = AtomicOp.Tag(jvmFloat64Sym)
+          MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+        case Type.Cst(_, _) =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
+          val jvmObjectSym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmObject", loc))
+          val op = AtomicOp.Tag(jvmObjectSym)
+          val jvmObject = Type.mkNative(classOf[java.lang.Object], loc)
+          val castedE = mkCast(e, jvmObject, eff, loc)
+          MonoAst.Expr.ApplyAtomic(op, List(castedE), tpe, eff, loc)
+        case Type.Apply(_, _, _) =>
+          val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
+          val jvmObjectSym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident("JvmObject", loc))
+          val op = AtomicOp.Tag(jvmObjectSym)
+          val jvmObject = Type.mkNative(classOf[java.lang.Object], loc)
+          val castedE = mkCast(e, jvmObject, eff, loc)
+          MonoAst.Expr.ApplyAtomic(op, List(castedE), tpe, eff, loc)
+        case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected monomorphed type '${e.tpe}'", e.tpe.loc)
+        case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected monomorphed type '${e.tpe}'", e.tpe.loc)
+        case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected monomorphed type '${e.tpe}'", e.tpe.loc)
+        case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected monomorphed type '${e.tpe}'", e.tpe.loc)
+        case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected monomorphed type '${e.tpe}'", e.tpe.loc)
+        case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected monomorphed type '${e.tpe}'", e.tpe.loc)
+      }
+
     case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
       MonoAst.Expr.VectorLit(es, subst(tpe), subst(eff), loc)
@@ -580,7 +645,7 @@ object Monomorpher {
     case LoweredAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>
       // Drop the declaredType and declaredEff.
       val e = specializeExp(exp, env0, subst)
-      MonoAst.Expr.Cast(e, None, None, subst(tpe), subst(eff), loc)
+      mkCast(e, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
@@ -612,6 +677,43 @@ object Monomorpher {
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
       MonoAst.Expr.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
 
+  }
+
+  private def mkCast(e: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): MonoAst.Expr = {
+    (e.tpe, tpe) match {
+      case (Type.Char, Type.Char) => MonoAst.Expr.Cast(e, None, None, tpe, eff, loc)
+      case (Type.Char, Type.Int32) => MonoAst.Expr.Cast(e, None, None, tpe, eff, loc)
+      case (Type.Bool, Type.Bool) => MonoAst.Expr.Cast(e, None, None, tpe, eff, loc)
+      case (Type.Int8, Type.Int8) => MonoAst.Expr.Cast(e, None, None, tpe, eff, loc)
+      case (Type.Int16, Type.Int16) => MonoAst.Expr.Cast(e, None, None, tpe, eff, loc)
+      case (Type.Int32, Type.Int32) => MonoAst.Expr.Cast(e, None, None, tpe, eff, loc)
+      case (Type.Int64, Type.Int64) => MonoAst.Expr.Cast(e, None, None, tpe, eff, loc)
+      case (Type.Float32, Type.Float32) => MonoAst.Expr.Cast(e, None, None, tpe, eff, loc)
+      case (Type.Float64, Type.Float64) => MonoAst.Expr.Cast(e, None, None, tpe, eff, loc)
+      case (x, y) if !isPrimType(x) && !isPrimType(y) => MonoAst.Expr.Cast(e, None, None, tpe, eff, loc)
+      case (_, _) =>
+        val crash = MonoAst.Expr.ApplyAtomic(AtomicOp.MatchError, Nil, tpe, eff, loc)
+        MonoAst.Expr.Let(Symbol.freshVarSym("cast", BoundBy.Let, loc)(Scope.Top, flix), e, crash, tpe, eff, loc)
+    }
+  }
+
+  private def isPrimType(tpe: Type): Boolean = tpe match {
+    case Type.Char => true
+    case Type.Bool => true
+    case Type.Int8 => true
+    case Type.Int16 => true
+    case Type.Int32 => true
+    case Type.Int64 => true
+    case Type.Float32 => true
+    case Type.Float64 => true
+    case Type.Cst(_, _) => false
+    case Type.Apply(_, _, _) => false
+    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected monomorphed type '$tpe'", tpe.loc)
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected monomorphed type '$tpe'", tpe.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected monomorphed type '$tpe'", tpe.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected monomorphed type '$tpe'", tpe.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected monomorphed type '$tpe'", tpe.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected monomorphed type '$tpe'", tpe.loc)
   }
 
   /**

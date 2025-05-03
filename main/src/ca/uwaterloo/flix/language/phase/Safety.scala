@@ -154,6 +154,9 @@ object Safety {
       visitExp(exp)
       rules.foreach(rule => visitExp(rule.exp))
 
+    case Expr.JvmType(exp, _, _, _) =>
+      visitExp(exp)
+
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
       rules.foreach(rule => visitExp(rule.exp))

@@ -23,18 +23,18 @@ mod Fixpoint.Boxable {
     ///
     /// Boxes the given `x`.
     ///
-    pub def box(x: a): Boxed with Order[a] = typematch x {
-        case v: Bool    => Boxed.BoxedBool(v)
-        case v: Char    => Boxed.BoxedChar(v)
-        case v: Int8    => Boxed.BoxedInt8(v)
-        case v: Int16   => Boxed.BoxedInt16(v)
-        case v: Int32   => Boxed.BoxedInt32(v)
-        case v: Int64   => Boxed.BoxedInt64(v)
-        case v: Float32 => Boxed.BoxedFloat32(v)
-        case v: Float64 => Boxed.BoxedFloat64(v)
-        case _: _ =>
+    pub def box(x: a): Boxed with Order[a] = match $JVM_TYPE$(x) {
+        case JvmType.JvmChar(c) => Boxed.BoxedChar(c)
+        case JvmType.JvmBool(b) => Boxed.BoxedBool(b)
+        case JvmType.JvmInt8(i) => Boxed.BoxedInt8(i)
+        case JvmType.JvmInt16(i) => Boxed.BoxedInt16(i)
+        case JvmType.JvmInt32(i) => Boxed.BoxedInt32(i)
+        case JvmType.JvmInt64(i) => Boxed.BoxedInt64(i)
+        case JvmType.JvmFloat32(i) => Boxed.BoxedFloat32(i)
+        case JvmType.JvmFloat64(i) => Boxed.BoxedFloat64(i)
+        case JvmType.JvmObject(obj) =>
             let cmp = (o1, o2) -> Order.compare(unchecked_cast(o1 as a), unchecked_cast(o2 as a));
-            Boxed.BoxedObject(unchecked_cast(x as Object), cmp)
+            Boxed.BoxedObject(obj, cmp)
     }
 
     ///
