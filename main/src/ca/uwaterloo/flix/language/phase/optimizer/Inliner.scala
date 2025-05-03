@@ -328,9 +328,9 @@ object Inliner {
       val e = visitExp(exp, ctx0)
       Expr.Ascribe(e, tpe, eff, loc)
 
-    case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+    case Expr.Cast(exp, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)
-      Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc)
+      Expr.Cast(e, tpe, eff, loc)
 
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)
