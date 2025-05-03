@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api.lsp.provider.completion.syntactic
+package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.Range
-import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, Priority}
 
 /**
   * Completions for keywords.
@@ -132,6 +131,7 @@ object KeywordCompleter {
       Completion.KeywordCompletion("query"       , range, Priority.Default),
       // R
       Completion.KeywordCompletion("region"      , range, Priority.Default),
+      Completion.KeywordCompletion("run"         , range, Priority.Default),
       // S
       Completion.KeywordCompletion("select"      , range, Priority.Higher),
       Completion.KeywordCompletion("solve"       , range, Priority.High),
