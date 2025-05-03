@@ -152,7 +152,7 @@ object Inliner {
 
             case None =>
               // It was not unconditionally inlined, so consider inlining at this occurrence site
-              callSiteInline(???)
+              callSiteInline(freshVarSym, Level.Nested, ctx0, Expr.Var(freshVarSym, tpe, loc))
           }
       }
 
