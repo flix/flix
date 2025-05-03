@@ -646,7 +646,8 @@ class Flix {
     initForkJoinPool()
 
     val loweringAst = Lowering.run(typedAst)
-    val monomorpherAst = Monomorpher.run(loweringAst)
+    val treeShaker1Ast = TreeShaker1.run(loweringAst)
+    val monomorpherAst = Monomorpher.run(treeShaker1Ast)
     val lambdaDropAst = LambdaDrop.run(monomorpherAst)
     val optimizerAst = Optimizer.run(lambdaDropAst)
     val simplifierAst = Simplifier.run(optimizerAst)
