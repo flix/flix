@@ -663,15 +663,13 @@ object Monomorpher {
   }
 
   private def mkJvmValueTag(tagName: String, e: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): MonoAst.Expr = {
-    val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmValue", loc))
-    val jvmCharSym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident(tagName, loc))
+    val jvmCharSym = Symbol.mkCaseSym(Symbol.JvmValue, Name.Ident(tagName, loc))
     val op = AtomicOp.Tag(jvmCharSym)
     MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
   }
 
   private def mkJvmTypeTag(tagName: String, tpe: Type, eff: Type, loc: SourceLocation): MonoAst.Expr = {
-    val jvmTypeSym = Symbol.mkEnumSym(Name.NName(Nil, loc), Name.Ident("JvmType", loc))
-    val jvmCharSym = Symbol.mkCaseSym(jvmTypeSym, Name.Ident(tagName, loc))
+    val jvmCharSym = Symbol.mkCaseSym(Symbol.JvmType, Name.Ident(tagName, loc))
     val op = AtomicOp.Tag(jvmCharSym)
     MonoAst.Expr.ApplyAtomic(op, Nil, tpe, eff, loc)
   }
