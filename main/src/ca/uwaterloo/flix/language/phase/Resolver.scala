@@ -1528,10 +1528,7 @@ object Resolver {
       val expVal = resolveExp(exp0, scp0)
       val expsVal = traverse(exps0)(resolveExp(_, scp0))
       mapN(expVal, expsVal) {
-        case (e, es) =>
-          es.foldLeft(e) {
-            case (acc, a) => ResolvedAst.Expr.ApplyClo(acc, a, loc.asSynthetic)
-          }
+        case (e, es) => mkApplyClo(e, es, loc.asSynthetic)
       }
   }
 
@@ -1542,45 +1539,97 @@ object Resolver {
     val expsVal = traverse(exps)(resolveExp(_, scp0))
     val exp: ResolvedAst.Expr = ResolvedAst.Expr.Error(err)
     mapN(expsVal) {
-      case es =>
-        es.foldLeft(exp) {
-          case (acc, a) => ResolvedAst.Expr.ApplyClo(acc, a, loc.asSynthetic)
-        }
+      case es => mkApplyClo(exp, es, loc.asSynthetic)
     }
+  }
+
+  /** A trait used by [[visitApplyFull]] to let-bind some partially-applied arguments. */
+  private sealed trait Arg {
+    def arg: ResolvedAst.Expr
+  }
+
+  private object Arg {
+
+    /** Expression is captured as is. */
+    case class Capture(arg: ResolvedAst.Expr) extends Arg
+
+    /** Expression `bound` is let-bound under the name `ref`. */
+    case class Bind(arg: ResolvedAst.Expr.Var, toBind: ResolvedAst.Expr) extends Arg
+
   }
 
   /**
     * Resolve the application of a top-level function or signature `base` with some `arity`.
     *
     * Example with `def f(a: Char, b: Char): Char -> Char`
-    *   - `   f     ===> x -> y -> f(x, y)`
-    *   - `  f(a)   ===> x -> f(a, x)`
-    *   - ` f(a,b)  ===> f(a, b)`
-    *   - `f(a,b,c) ===> f(a, b)(c)`
+    *   - under applied: `   f     ===> x -> y -> f(x, y)`
+    *   - under applied: `  f(a)   ===> let x = a; y -> f(x, y)`
+    *   - fully applied: ` f(a,b)  ===> f(a, b)`
+    *   - over applied:  `f(a,b,c) ===> f(a, b)(c)`
     */
   private def visitApplyFull(base: List[ResolvedAst.Expr] => ResolvedAst.Expr, arity: Int, exps: List[ResolvedAst.Expr], loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    val (directArgs, cloArgs) = exps.splitAt(arity)
+    val argsGiven = exps.length
+    if (argsGiven < arity) {
+      // Case: under applied.
 
-    val fparamsPadding = mkFreshFparams(arity - directArgs.length, loc.asSynthetic)
-    val argsPadding = fparamsPadding.map(fp => ResolvedAst.Expr.Var(fp.sym, loc.asSynthetic))
+      val argInfo = captureArgs(exps, loc.asSynthetic)
+      // The arguments to `base`.
+      val fparamsPadding = mkFreshFparams(arity - exps.length, loc.asSynthetic)
+      val argsPadding = fparamsPadding.map(fp => ResolvedAst.Expr.Var(fp.sym, loc.asSynthetic))
 
-    val fullArgs = directArgs ++ argsPadding
-    val fullDefApplication = base(fullArgs)
+      val fullDefApplication = base(argInfo.map(_.arg) ++ argsPadding)
 
-    // The ordering of lambdas and closure application doesn't matter,
-    // `fparamsPadding.isEmpty` iff `cloArgs.nonEmpty`.
-    // For typing performance we make pure lambdas for all except the last.
-    val (fullDefLambda, _) = fparamsPadding.foldRight((fullDefApplication: ResolvedAst.Expr, true)) {
+      val fullDefLambda = mkPrefixPureLambda(fparamsPadding, fullDefApplication, loc.asSynthetic)
+
+      // Let-bind the arguments that require it.
+      argInfo.foldRight(fullDefLambda) {
+        case (Arg.Capture(_), acc) => acc
+        case (Arg.Bind(arg, toBind), acc) => ResolvedAst.Expr.Let(arg.sym, toBind, acc, loc.asSynthetic)
+      }
+    } else if (argsGiven == arity) {
+      // Case: fully applied.
+      base(exps)
+    } else {
+      // Case: over applied.
+      val (directArgs, cloArgs) = exps.splitAt(arity)
+      val defApplication = base(directArgs)
+      mkApplyClo(defApplication, cloArgs, loc.asSynthetic)
+    }
+  }
+
+  /**
+    * Returns a lambda `(fp_0, fp_1, .., fp_n) -> body \ ef` where all but the last lambda is pure.
+    */
+  private def mkPrefixPureLambda(fparams: List[ResolvedAst.FormalParam], body: ResolvedAst.Expr, loc: SourceLocation): ResolvedAst.Expr = {
+    val (lambda, _) = fparams.foldRight((body, true)) {
       case (fp, (acc, first)) =>
         if (first) (ResolvedAst.Expr.Lambda(fp, acc, allowSubeffecting = false, loc.asSynthetic), false)
         else (mkPureLambda(fp, acc, loc.asSynthetic), false)
     }
+    lambda
+  }
 
-    val closureApplication = cloArgs.foldLeft(fullDefLambda) {
-      case (acc, cloArg) => ResolvedAst.Expr.ApplyClo(acc, cloArg, loc)
+  /**
+    * Returns `exps` where [[Arg.Capture]] marks expressions that can be captured and [[Arg.Bind]]
+    * must be let-bound.
+    *
+    * For `List("x", "Ref.get(y)")`, `List(Capture("x"), Bind("tmp$123", "Ref.get(y)"))` is returned.
+    */
+  private def captureArgs(exps: List[ResolvedAst.Expr], loc: SourceLocation)(implicit scope: Scope, flix: Flix): List[Arg] = {
+    exps.map {
+      case cst@ResolvedAst.Expr.Cst(_, _) => Arg.Capture(cst)
+      case v@ResolvedAst.Expr.Var(_, _) => Arg.Capture(v)
+      case other =>
+        val varSym = freshVarSym("arg", BoundBy.Let, loc.asSynthetic)
+        Arg.Bind(ResolvedAst.Expr.Var(varSym, loc.asSynthetic), other)
     }
+  }
 
-    closureApplication
+  /** Returns `base(arg_0)(arg_1)..(arg_n)`. */
+  private def mkApplyClo(base: ResolvedAst.Expr, args: List[ResolvedAst.Expr], loc: SourceLocation): ResolvedAst.Expr = {
+    args.foldLeft(base) {
+      case (acc, cloArg) => ResolvedAst.Expr.ApplyClo(acc, cloArg, loc.asSynthetic)
+    }
   }
 
   /**
