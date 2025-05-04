@@ -44,21 +44,25 @@ object TokenVerifier {
   /** Checks that tokens adhere to the invariants. */
   def verify(m: Map[Source, Array[Token]])(implicit flix: Flix): Unit = {
     ParOps.parMap(m) {
-      case (src, tokens) =>
-        val lastIndex = tokens.length - 1
-        checkEndOfFileA(src, tokens)
-        var prev: Token = null
-        for ((token, i) <- tokens.iterator.zipWithIndex) {
-          checkEndOfFileB(token, i == lastIndex)
-          checkSrc(src, token)
-          checkRange(token)
-          checkBounds(src, token)
-          if (prev != null) {
-            checkOffsetOrder(prev, token)
-            checkPositionOrder(prev, token)
-          }
-          prev = token
-        }
+      case (src, tokens) => checkSource(src, tokens)
+    }
+  }
+
+  /** Checks the token invariants of `tokens` of `src`. */
+  private def checkSource(src: Source, tokens: Array[Token]): Unit = {
+    val lastIndex = tokens.length - 1
+    checkEndOfFileA(src, tokens)
+    var prev: Token = null
+    for ((token, i) <- tokens.iterator.zipWithIndex) {
+      checkEndOfFileB(token, i == lastIndex)
+      checkSrc(src, token)
+      checkRange(token)
+      checkBounds(src, token)
+      if (prev != null) {
+        checkOffsetOrder(prev, token)
+        checkPositionOrder(prev, token)
+      }
+      prev = token
     }
   }
 
