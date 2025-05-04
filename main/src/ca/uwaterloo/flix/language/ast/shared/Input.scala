@@ -54,17 +54,38 @@ object Input {
   /**
     * Represents an input that originates from the filesystem.
     */
-  case class TxtFile(path: Path, sctx: SecurityContext) extends Input
+  case class TxtFile(path: Path, sctx: SecurityContext) extends Input {
+    override def hashCode(): Int = path.hashCode()
+
+    override def equals(obj: Any): Boolean = obj match {
+      case that: TxtFile => this.path == that.path
+      case _ => false
+    }
+  }
 
   /**
     * Represents an input, which is a package, on the filesystem.
     */
-  case class PkgFile(packagePath: Path, sctx: SecurityContext) extends Input
+  case class PkgFile(packagePath: Path, sctx: SecurityContext) extends Input {
+    override def hashCode(): Int = packagePath.hashCode()
+
+    override def equals(obj: Any): Boolean = obj match {
+      case that: PkgFile => this.packagePath == that.packagePath
+      case _ => false
+    }
+  }
 
   /**
     * Represents an input that originates from inside a package.
     */
-  case class FileInPackage(packagePath: Path, virtualPath: String, text: String, sctx: SecurityContext) extends Input
+  case class FileInPackage(packagePath: Path, virtualPath: String, text: String, sctx: SecurityContext) extends Input {
+    override def hashCode(): Int = packagePath.hashCode()
+
+    override def equals(obj: Any): Boolean = obj match {
+      case that: FileInPackage => this.packagePath == that.packagePath
+      case _ => false
+    }
+  }
 
   /**
     * Represents an input from an unknown source.
