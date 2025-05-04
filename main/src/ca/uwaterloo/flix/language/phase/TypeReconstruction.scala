@@ -227,8 +227,7 @@ object TypeReconstruction {
 
     case KindedAst.Expr.JvmReflection(exp, true, loc) =>
       val e = visitExp(exp)
-      val jvmTypeName = Symbol.mkEnumSym(Name.NName(Nil, loc.asSynthetic), Name.Ident("JvmType", loc.asSynthetic))
-      TypedAst.Expr.JvmReflection(e, proxy = true, Type.mkEnum(jvmTypeName, Kind.Star, loc.asSynthetic), e.eff, loc)
+      TypedAst.Expr.JvmReflection(e, proxy = true, Type.mkEnum(Symbol.JvmType, Kind.Star, loc.asSynthetic), e.eff, loc)
 
     case KindedAst.Expr.JvmReflection(exp, false, loc) =>
       val e = visitExp(exp)
