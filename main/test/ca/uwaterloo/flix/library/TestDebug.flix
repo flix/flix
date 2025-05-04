@@ -46,69 +46,69 @@ mod TestDebug {
     def testInt64Stringify01(): Bool = stringify(42i64) == "42i64"
 
 
-//    @test
-//    def testBigIntStringify01(): Bool = stringify(42ii) == "42ii"
+    @test
+    def testBigIntStringify01(): Bool = stringify(42ii) == "42ii"
 
 
-//    @test
-//    def testStringStringify01(): Bool = stringify("Hello World!") == "\"Hello World!\""
-//
-//    @test
-//    def testStringStringify02(): Bool = stringify("one\ttwo") == "\"one\\ttwo\""
-//
-//    @test
-//    def testStringStringify03(): Bool = stringify("\u0000") == "\"\u0000\""
-//
-//    @test
-//    def testStringStringify05(): Bool = stringify("\n\r\\\"\'\t\${\%{\u1234\u0000") ==
-//        "\"" + "\\n" + "\\r" + "\\\\" + "\\\"" + "\\\'" + "\\t" + "\${" + "\%{" + "\u1234" + "\u0000" + "\""
+    @test
+    def testStringStringify01(): Bool = stringify("Hello World!") == "\"Hello World!\""
 
-//    @test
-//    def testArrayOfUnitStringify01(): Bool \ IO = stringify(Array#{(), ()} @ Static) == "[(), ()]"
+    @test
+    def testStringStringify02(): Bool = stringify("one\ttwo") == "\"one\\ttwo\""
 
+    @test
+    def testStringStringify03(): Bool = stringify("\u0000") == "\"\u0000\""
 
-//    @test
-//    def testArrayOfBoolStringify01(): Bool \ IO = stringify(Array#{true, false} @ Static) == "[true, false]"
+    @test
+    def testStringStringify05(): Bool = stringify("\n\r\\\"\'\t\${\%{\u1234\u0000") ==
+        "\"" + "\\n" + "\\r" + "\\\\" + "\\\"" + "\\\'" + "\\t" + "\${" + "\%{" + "\u1234" + "\u0000" + "\""
+
+    @test
+    def testArrayOfUnitStringify01(): Bool \ IO = stringify(Array#{(), ()} @ Static) == "[(), ()]"
 
 
-//    @test
-//    def testArrayOfCharStringify01(): Bool \ IO = stringify(Array#{'a', 'b', 'c'} @ Static) == "[a, b, c]"
+    @test
+    def testArrayOfBoolStringify01(): Bool \ IO = stringify(Array#{true, false} @ Static) == "[true, false]"
 
 
-//    @test
-//    def testArrayOfFloat32Stringify01(): Bool \ IO = stringify(Array#{21.42f32, 98.6f32} @ Static) == "[21.42, 98.6]"
+    @test
+    def testArrayOfCharStringify01(): Bool \ IO = stringify(Array#{'a', 'b', 'c'} @ Static) == "[a, b, c]"
 
 
-//    @test
-//    def testArrayOfInt8Stringify01(): Bool \ IO = stringify(Array#{42i8, 43i8} @ Static) == "[42, 43]"
+    @test
+    def testArrayOfFloat32Stringify01(): Bool \ IO = stringify(Array#{21.42f32, 98.6f32} @ Static) == "[21.42, 98.6]"
 
 
-//    @test
-//    def testArrayOfInt16Stringify01(): Bool \ IO = stringify(Array#{42i16, 43i16} @ Static) == "[42, 43]"
+    @test
+    def testArrayOfInt8Stringify01(): Bool \ IO = stringify(Array#{42i8, 43i8} @ Static) == "[42, 43]"
 
 
-//    @test
-//    def testArrayOfInt32Stringify01(): Bool \ IO = stringify(Array#{42i32, 43i32} @ Static) == "[42, 43]"
+    @test
+    def testArrayOfInt16Stringify01(): Bool \ IO = stringify(Array#{42i16, 43i16} @ Static) == "[42, 43]"
 
 
-//    @test
-//    def testArrayOfInt64Stringify01(): Bool \ IO = stringify(Array#{42i64, 43i64} @ Static) == "[42, 43]"
+    @test
+    def testArrayOfInt32Stringify01(): Bool \ IO = stringify(Array#{42i32, 43i32} @ Static) == "[42, 43]"
 
 
-//    @test
-//    def testArrayOfBigIntStringify01(): Bool \ IO = stringify(Array#{42ii, 43ii} @ Static) == "[42, 43]"
+    @test
+    def testArrayOfInt64Stringify01(): Bool \ IO = stringify(Array#{42i64, 43i64} @ Static) == "[42, 43]"
 
 
-//    @test
-//    def testArrayOfStringStringify01(): Bool \ IO = stringify(Array#{"Hello", "World!"} @ Static) == "[Hello, World!]"
+    @test
+    def testArrayOfBigIntStringify01(): Bool \ IO = stringify(Array#{42ii, 43ii} @ Static) == "[42, 43]"
 
 
-//    @test
-//    def testArrayOfArrayOfIntStringify01(): Bool \ IO = stringify(Array#{Array#{1, 2} @ Static, Array#{3, 4} @ Static} @ Static) == "[[1, 2], [3, 4]]"
+    @test
+    def testArrayOfStringStringify01(): Bool \ IO = stringify(Array#{"Hello", "World!"} @ Static) == "[Hello, World!]"
 
 
-//    @test
-//    def testArrayOfArrayOfArrayOfIntStringify01(): Bool \ IO = stringify(Array#{Array#{Array#{1, 2} @ Static, Array#{3, 4} @ Static} @ Static, Array#{Array#{5, 6} @ Static, Array#{7, 8} @ Static} @ Static} @ Static) == "[[[1, 2], [3, 4]], [[5, 6], [7, 8]]]"
+    @test
+    def testArrayOfArrayOfIntStringify01(): Bool \ IO = stringify(Array#{Array#{1, 2} @ Static, Array#{3, 4} @ Static} @ Static) == "[[1, 2], [3, 4]]"
+
+
+    @test
+    def testArrayOfArrayOfArrayOfIntStringify01(): Bool \ IO = stringify(Array#{Array#{Array#{1, 2} @ Static, Array#{3, 4} @ Static} @ Static, Array#{Array#{5, 6} @ Static, Array#{7, 8} @ Static} @ Static} @ Static) == "[[[1, 2], [3, 4]], [[5, 6], [7, 8]]]"
 
 
     @test
@@ -221,11 +221,11 @@ mod TestDebug {
         s == "(null, 42)"
     }
 
-//    @test
-//    def testNullStringify06(): Bool = region rc {
-//        let s = stringify(Array#{(checked_cast(null): String), "42"} @ rc);
-//        s == "[null, 42]"
-//    }
+    @test
+    def testNullStringify06(): Bool = region rc {
+        let s = stringify(Array#{(checked_cast(null): String), "42"} @ rc);
+        s == "[null, 42]"
+    }
 
     @test
     def testNullStringify07(): Bool = {
