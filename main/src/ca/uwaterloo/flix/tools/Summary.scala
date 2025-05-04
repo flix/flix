@@ -212,7 +212,7 @@ object Summary {
     case Expr.TypeMatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.TypeMatchRule(_, _, exp, _) => countCheckedEcasts(exp)
     }.sum
-    case Expr.JvmType(exp, _, _, _, _) => countCheckedEcasts(exp)
+    case Expr.JvmReflection(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.RestrictableChooseRule(_, exp) => countCheckedEcasts(exp)
     }.sum

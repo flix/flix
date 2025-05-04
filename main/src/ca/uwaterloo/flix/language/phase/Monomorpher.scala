@@ -560,7 +560,7 @@ object Monomorpher {
           }
       }.get // This is safe since the last case can always match.
 
-    case LoweredAst.Expr.JvmType(exp, true, tpe, eff, loc) =>
+    case LoweredAst.Expr.JvmReflection(exp, true, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
       val argType = e.tpe match {
         // Typing guarantees that `e.tpe` is `Proxy[?]`.
@@ -583,7 +583,7 @@ object Monomorpher {
           throw InternalCompilerException(s"Unexpected type '${e.tpe}'", e.tpe.loc)
       }
 
-    case LoweredAst.Expr.JvmType(exp, false, tpe, eff, loc) =>
+    case LoweredAst.Expr.JvmReflection(exp, false, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
       e.tpe match {
         case Type.Char => mkJvmValueTag("JvmChar", e, tpe, eff, loc)

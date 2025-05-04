@@ -225,15 +225,15 @@ object TypeReconstruction {
       }
       TypedAst.Expr.TypeMatch(e1, rs, tpe, eff, loc)
 
-    case KindedAst.Expr.JvmType(exp, true, loc) =>
+    case KindedAst.Expr.JvmReflection(exp, true, loc) =>
       val e = visitExp(exp)
       val jvmTypeName = Symbol.mkEnumSym(Name.NName(Nil, loc.asSynthetic), Name.Ident("JvmType", loc.asSynthetic))
-      TypedAst.Expr.JvmType(e, proxy = true, Type.mkEnum(jvmTypeName, Kind.Star, loc.asSynthetic), e.eff, loc)
+      TypedAst.Expr.JvmReflection(e, proxy = true, Type.mkEnum(jvmTypeName, Kind.Star, loc.asSynthetic), e.eff, loc)
 
-    case KindedAst.Expr.JvmType(exp, false, loc) =>
+    case KindedAst.Expr.JvmReflection(exp, false, loc) =>
       val e = visitExp(exp)
       val jvmTypeName = Symbol.mkEnumSym(Name.NName(Nil, loc.asSynthetic), Name.Ident("JvmValue", loc.asSynthetic))
-      TypedAst.Expr.JvmType(e, proxy = false, Type.mkEnum(jvmTypeName, Kind.Star, loc.asSynthetic), e.eff, loc)
+      TypedAst.Expr.JvmReflection(e, proxy = false, Type.mkEnum(jvmTypeName, Kind.Star, loc.asSynthetic), e.eff, loc)
 
     case KindedAst.Expr.RestrictableChoose(star, exp, rules, tvar, loc) =>
       val e = visitExp(exp)
