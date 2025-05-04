@@ -578,9 +578,12 @@ object Monomorpher {
         case Type.Float64 => mkJvmTypeTag("JvmFloat64", tpe, eff, loc)
         case Type.Cst(_, _) => mkJvmTypeTag("JvmObject", tpe, eff, loc)
         case Type.Apply(_, _, _) => mkJvmTypeTag("JvmObject", tpe, eff, loc)
-        case Type.Var(_, _) | Type.Alias(_, _, _, _) | Type.AssocType(_, _, _, _) |
-             Type.JvmToType(_, _) | Type.JvmToEff(_, _) | Type.UnresolvedJvmType(_, _) =>
-          throw InternalCompilerException(s"Unexpected type '${e.tpe}'", e.tpe.loc)
+        case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+        case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+        case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+        case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+        case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+        case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
       }
 
     case LoweredAst.Expr.JvmReflection(exp, false, tpe, eff, loc) =>
@@ -597,9 +600,12 @@ object Monomorpher {
         case Type.Cst(_, _) | Type.Apply(_, _, _) =>
           val castToObject = mkCast(e, Type.mkNative(classOf[java.lang.Object], loc), eff, loc)
           mkJvmValueTag("JvmObject", castToObject, tpe, eff, loc)
-        case Type.Var(_, _) | Type.Alias(_, _, _, _) | Type.AssocType(_, _, _, _) |
-             Type.JvmToType(_, _) | Type.JvmToEff(_, _) | Type.UnresolvedJvmType(_, _) =>
-          throw InternalCompilerException(s"Unexpected type '${e.tpe}'", e.tpe.loc)
+        case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+        case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+        case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+        case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+        case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+        case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
       }
 
     case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
