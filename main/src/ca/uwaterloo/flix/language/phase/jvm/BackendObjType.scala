@@ -55,6 +55,7 @@ sealed trait BackendObjType {
     case BackendObjType.FlixError => JvmName(DevFlixRuntime, mkClassName("FlixError"))
     case BackendObjType.HoleError => JvmName(DevFlixRuntime, mkClassName("HoleError"))
     case BackendObjType.MatchError => JvmName(DevFlixRuntime, mkClassName("MatchError"))
+    case BackendObjType.CastError => JvmName(DevFlixRuntime, mkClassName("CastError"))
     case BackendObjType.UnhandledEffectError => JvmName(DevFlixRuntime, mkClassName("UnhandledEffectError"))
     case BackendObjType.Region => JvmName(DevFlixRuntime, mkClassName("Region"))
     case BackendObjType.UncaughtExceptionHandler => JvmName(DevFlixRuntime, mkClassName("UncaughtExceptionHandler"))
@@ -1035,6 +1036,34 @@ object BackendObjType {
         ALOAD(1) ~
         PUTFIELD(this.LocationField) ~
         RETURN()
+    ))
+  }
+
+  case object CastError extends BackendObjType with Generatable {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = FlixError.jvmName)
+
+      cm.mkConstructor(Constructor)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(ReifiedSourceLocation.toTpe, String.toTpe), Some(_ =>
+      withName(1, ReifiedSourceLocation.toTpe)(loc => withName(2, String.toTpe)(msg => {
+        thisLoad() ~
+        NEW(StringBuilder.jvmName) ~
+        DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
+        msg.load() ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        pushString(" at ") ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+        INVOKESPECIAL(FlixError.Constructor) ~
+        RETURN()
+      }))
     ))
   }
 

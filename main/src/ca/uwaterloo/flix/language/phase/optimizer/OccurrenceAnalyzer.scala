@@ -230,12 +230,12 @@ object OccurrenceAnalyzer {
           (OccurrenceAst.Expr.Ascribe(e, tpe, eff, loc), ctx)
         }
 
-      case OccurrenceAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      case OccurrenceAst.Expr.Cast(exp, tpe, eff, loc) =>
         val (e, ctx) = visitExp(exp)
         if (e eq exp) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (OccurrenceAst.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc), ctx)
+          (OccurrenceAst.Expr.Cast(e, tpe, eff, loc), ctx)
         }
 
       case OccurrenceAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>

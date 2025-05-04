@@ -453,6 +453,7 @@ object Safety {
       )
 
       (Type.eraseAliases(from).baseType, to.map(Type.eraseAliases).map(_.baseType)) match {
+        // Allow all null casts.
         case (Type.Null, _) => ()
 
         // Allow casts where one side is a type variable.
