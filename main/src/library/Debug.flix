@@ -90,7 +90,7 @@ mod Debug {
             unsafe Arrays.deepToString(unchecked_cast(y as Array[Object, Static]))
         case y: Array[_, _] =>
             unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
-        case y: _ => match $JVM_TYPE$(x) {
+        case y: _ => match $JVM_VALUE$(x) {
             case JvmValue.JvmChar(c) => "\'" + escape("${c}") + "\'"
             case JvmValue.JvmBool(b) => if (b) "true" else "false"
             case JvmValue.JvmInt8(i) => Byte.toString(i) + "i8"
