@@ -45,11 +45,11 @@ object TokenVerifier {
   def verify(m: Map[Source, Array[Token]])(implicit flix: Flix): Unit = {
     ParOps.parMap(m) {
       case (src, tokens) =>
-        val tokensLength = tokens.length
+        val lastIndex = tokens.length - 1
         checkEndOfFileA(src, tokens)
         var prev: Token = null
         for ((token, i) <- tokens.iterator.zipWithIndex) {
-          checkEndOfFileB(token, i == tokensLength)
+          checkEndOfFileB(token, i == lastIndex)
           checkSrc(src, token)
           checkRange(token)
           checkBounds(src, token)
