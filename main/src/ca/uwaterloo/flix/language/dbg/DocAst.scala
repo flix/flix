@@ -161,6 +161,9 @@ object DocAst {
     val MatchError: Expr =
       AsIs("?matchError")
 
+    val CastError: Expr =
+      AsIs("?castError")
+
     /** represents the error ast node when compiling partial programs */
     val Error: Expr =
       AsIs("?astError")

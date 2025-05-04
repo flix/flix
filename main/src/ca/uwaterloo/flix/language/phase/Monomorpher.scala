@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -580,7 +580,7 @@ object Monomorpher {
     case LoweredAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>
       // Drop the declaredType and declaredEff.
       val e = specializeExp(exp, env0, subst)
-      MonoAst.Expr.Cast(e, None, None, subst(tpe), subst(eff), loc)
+      mkCast(e, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
@@ -612,6 +612,78 @@ object Monomorpher {
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
       MonoAst.Expr.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
 
+  }
+
+  /**
+    * Returns the cast of `e` to `tpe` and `eff`.
+    *
+    * If `exp` and `tpe` is bytecode incompatible, a runtime crash is inserted to appease the
+    * bytecode verifier.
+    */
+  private def mkCast(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): MonoAst.Expr = {
+    (exp.tpe, tpe) match {
+      case (Type.Char, Type.Char) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Char, Type.Int32) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Bool, Type.Bool) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int8, Type.Int8) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int16, Type.Int16) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int32, Type.Int32) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int64, Type.Int64) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Float32, Type.Float32) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Float64, Type.Float64) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (x, y) if !isPrimType(x) && !isPrimType(y) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (x, y) =>
+        val crash = MonoAst.Expr.ApplyAtomic(AtomicOp.CastError(erasedString(x), erasedString(y)), Nil, tpe, eff, loc)
+        MonoAst.Expr.Stm(exp, crash, tpe, eff, loc)
+    }
+  }
+
+  /**
+    * Returns `true` if `tpe` is a primitive type.
+    *
+    * N.B.: `tpe` must be normalized.
+    */
+  private def isPrimType(tpe: Type): Boolean = tpe match {
+    case Type.Char => true
+    case Type.Bool => true
+    case Type.Int8 => true
+    case Type.Int16 => true
+    case Type.Int32 => true
+    case Type.Int64 => true
+    case Type.Float32 => true
+    case Type.Float64 => true
+    case Type.Cst(_, _) => false
+    case Type.Apply(_, _, _) => false
+    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+  }
+
+  /**
+    * Returns the erased string representation of `tpe`
+    *
+    * N.B.: `tpe` must be normalized.
+    */
+  private def erasedString(tpe: Type): String = tpe match {
+    case Type.Char => "Char"
+    case Type.Bool => "Bool"
+    case Type.Int8 => "Int8"
+    case Type.Int16 => "Int16"
+    case Type.Int32 => "Int32"
+    case Type.Int64 => "Int64"
+    case Type.Float32 => "Float32"
+    case Type.Float64 => "Float64"
+    case Type.Cst(_, _) => "Object"
+    case Type.Apply(_, _, _) => "Object"
+    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
   }
 
   /**

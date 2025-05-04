@@ -106,9 +106,12 @@ object Inliner {
     * occurrence bound by the defining function with symbol `sym0`.
     * If it obtains `x'` from the substitution, it does the following three things:
     *   1. If `x'` is in the expression substitution `subst` it replaces the variable with
-    *      the expression, recursively calling [[visitExp]] if it is a [[SubstRange.SuspendedExpr]].
+    *      the expression, recursively calling [[visitExp]] with the substitution from the definition site
+    *      if it is a [[SubstRange.SuspendedExpr]].
     *      This means that [[visitExp]] previously decided to unconditionally inline the let-binding
-    *      or decided to do copy-propagation of that binding (see below).
+    *   1. If it is a [[SubstRange.DoneExpr]] then it decided to do copy-propagation of that binding (see below).
+    *      It then recursively visits the expression using the empty substitution since the current substitution
+    *      is invalid in that scope.
     *   1. If `x'` is not in the expression substitution, it must be in the set of in-scope variable
     *      definitions and considers it for inlining if its definition is pure.
     *
@@ -325,9 +328,9 @@ object Inliner {
       val e = visitExp(exp, ctx0)
       Expr.Ascribe(e, tpe, eff, loc)
 
-    case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+    case Expr.Cast(exp, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)
-      Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc)
+      Expr.Cast(e, tpe, eff, loc)
 
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)

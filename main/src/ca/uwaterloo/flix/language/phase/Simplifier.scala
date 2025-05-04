@@ -216,7 +216,7 @@ object Simplifier {
 
     case MonoAst.Expr.Ascribe(exp, _, _, _) => visitExp(exp)
 
-    case MonoAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>
+    case MonoAst.Expr.Cast(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Cast, List(e), t, simplifyEffect(eff), loc)
