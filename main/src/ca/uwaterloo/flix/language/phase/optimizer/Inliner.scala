@@ -18,9 +18,9 @@
 package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Expr, Occur, Pattern}
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Expr, FormalParam, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
-import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
@@ -181,18 +181,17 @@ object Inliner {
           Expr.ApplyClo(e1, e2, tpe, eff, loc)
       }
 
-    case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
-      val es = exps.map(visitExp(_, ctx0))
-      Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
+    case exp@Expr.ApplyDef(_, _, _, _, _, _) =>
+      callSiteInlineDef(exp, ctx0)
 
     case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       // Refresh the symbol
       val sym1 = ctx0.varSubst.getOrElse(sym, sym)
       // Check if it was unconditionally inlined
       ctx0.subst.get(sym1) match {
-        case Some(SubstRange.SuspendedExpr(exp@Expr.LocalDef(_, _, _, _, _, _, _, _), subst)) =>
+        case Some(SubstRange.SuspendedExpr(Expr.LocalDef(_, fparams, exp, _, _, _, _, _), subst)) =>
           val es = exps.map(visitExp(_, ctx0))
-          betaReduceLocalDef(exp, es, loc, ctx0.copy(subst = subst))
+          betaReduce(exp, fparams.zip(es), loc, ctx0.copy(subst = subst))
 
         case None | Some(_) =>
           // It was not unconditionally inlined, so return same expr with visited subexpressions
@@ -464,24 +463,24 @@ object Inliner {
   }
 
   /**
-    * Performs beta-reduction on a local def `exp` applied to `exps`.
+    * Performs beta-reduction, binding `exps` as let-bindings.
     *
     * It is the responsibility of the caller to first visit `exps` and provide a substitution from the definition site
     * of `exp`.
     *
-    * [[betaReduceLocalDef]] creates a series of let-bindings
+    * [[betaReduce]] creates a series of let-bindings
     * {{{
     *   let sym1 = exp1;
     *   // ...
     *   let symn = expn;
-    *   exp'
+    *   exp
     * }}}
-    * where `symi` is the symbol of the i-th formal parameter and `exp'` is the body of the local def.
+    * where `symi` is the symbol of the i-th formal parameter and `exp` is the body of the function.
     *
     * Lastly, it visits the top-most let-binding, thus possibly removing the bindings.
     */
-  private def betaReduceLocalDef(exp: Expr.LocalDef, exps: List[Expr], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
-    val bindings = exp.fparams.zip(exps).foldRight(exp.exp1) {
+  private def betaReduce(exp: Expr, exps: List[(FormalParam, Expr)], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
+    val bindings = exps.foldRight(exp) {
       case ((fparam, arg), acc) =>
         val sym = fparam.sym // visitExp will refresh the symbol
         val tpe = acc.tpe
@@ -513,6 +512,40 @@ object Inliner {
     case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivial)
     case _ => false
+  }
+
+  private def callSiteInlineDef(exp0: Expr.ApplyDef, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = exp0 match {
+    case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) if shouldInlineDef(root.defs(sym)) =>
+      val es = exps.map(visitExp(_, ctx0))
+      val defn = root.defs(sym)
+      Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
+
+    case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, ctx0))
+      Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
+  }
+
+  /** Returns true if `defn` is not recursive and is either a higher-order function or is a direct call to another function. */
+  private def shouldInlineDef(defn: OccurrenceAst.Def)(implicit sym0: Symbol.DefnSym): Boolean = {
+    defn.sym != sym0 && (isDirectCall(defn) || isHigherOrder(defn))
+  }
+
+  /** Returns `true` if at least one formal parameter of `defn` has an arrow type. */
+  private def isHigherOrder(defn: OccurrenceAst.Def): Boolean = {
+    defn.spec.fparams.exists {
+      fp =>
+        fp.tpe.typeConstructor match {
+          case Some(TypeConstructor.Arrow(_)) => true
+          case Some(TypeConstructor.ArrowWithoutEffect(_)) => true
+          case Some(_) => false
+          case None => false
+        }
+    }
+  }
+
+  /** Returns `true` if `defn` is marked as a direct call. */
+  private def isDirectCall(defn: OccurrenceAst.Def): Boolean = {
+    defn.context.isDirectCall
   }
 
   /** Represents the range of a substitution from variables to expressions. */
