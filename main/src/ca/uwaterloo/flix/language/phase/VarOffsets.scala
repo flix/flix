@@ -115,18 +115,16 @@ object VarOffsets {
       offset
 
     case Expr.RunWith(exp, _, _, _, _, _, _) =>
-      // The expressions in RunWith are not executed here (concretely they're
-      // always closures) and should not have var offsets here.
-      // They don't contain binders so visiting them does nothing.
+      // The expressions in RunWith are not executed here (concretely they're always closures) and
+      // should not have var offsets here. They don't contain binders so visiting them does nothing.
       visitExp(exp, offset0)
 
     case Expr.Do(_, exps, _, _, _) =>
       visitExps(exps, offset0)
 
     case Expr.NewObject(_, _, _, _, _, _) =>
-      // The expressions in NewObject are not executed here (concretely they're
-      // always closures) and should not have var offsets here.
-      // They don't contain binders so visiting them does nothing.
+      // The expressions in NewObject are not executed here (concretely they're always closures) and
+      // should not have var offsets here. They don't contain binders so visiting them does nothing.
       offset0
 
   }
