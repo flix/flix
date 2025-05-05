@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.util.ParOps
   * Thus, the n-th variable may not necessarily be the n-th slot. This phase computes the specific
   * offsets used by each formal parameter and local variable.
   *
-  * This is an offset and not an index, since the first slot might actuallu be taken by the instance
+  * This is an offset and not an index, since the first slot might actually be taken by the instance
   * object if the code is generated in an instance function.
   */
 object VarOffsets {
