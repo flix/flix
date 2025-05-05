@@ -184,6 +184,7 @@ object Inliner {
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, ctx0))
       if (shouldInlineDef(root.defs(sym), ctx0)) {
+        sctx.changed.putIfAbsent(sym0, ())
         val defn = root.defs(sym)
         val ctx = ctx0.copy(subst = Map.empty, currentlyInlining = true)
         bindArgs(defn.exp, defn.fparams.zip(es), loc, ctx)
