@@ -6,7 +6,7 @@ mod Reflect {
     /// it acts as a placeholder to be replaced by a proper value.
     ///
     pub def default(): a = {
-        let proxy = (Proxy.Proxy: Proxy[a]);
+        let proxy: Proxy[a] = Proxy.Proxy;
         typematch proxy {
             case _: Proxy[Unit]         => unchecked_cast(() as a)
             case _: Proxy[BigDecimal]   => unchecked_cast(0.0ff as a)
