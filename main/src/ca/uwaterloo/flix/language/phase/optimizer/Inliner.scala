@@ -515,10 +515,10 @@ object Inliner {
   }
 
   private def callSiteInlineDef(exp0: Expr.ApplyDef, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = exp0 match {
-    case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) if shouldInlineDef(root.defs(sym)) =>
+    case Expr.ApplyDef(sym, exps, _, _, _, loc) if shouldInlineDef(root.defs(sym)) =>
       val es = exps.map(visitExp(_, ctx0))
       val defn = root.defs(sym)
-      Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
+      betaReduce(defn.exp, defn.fparams.zip(es), loc, ctx0.copy(subst = Map.empty))
 
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, ctx0))
