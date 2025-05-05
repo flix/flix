@@ -1,10 +1,10 @@
 ///
 /// Gets the language usage statistics for the user.
 ///
-/// Will print three kinds of statictics:
+/// Will print three kinds of statistics:
 ///   - The adds and dels of the user for each language for each repository.
 ///   - The total adds and dels of the user for each language.
-///   - The total bytes of code for each language for all the reporitorites the user has paticipated in.
+///   - The total bytes of code for each language for all the reporitorites the user has participated in.
 ///
 def main(): Unit \ IO + Sys + Net =
     run {
