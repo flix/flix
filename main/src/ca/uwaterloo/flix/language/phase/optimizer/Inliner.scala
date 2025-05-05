@@ -552,8 +552,8 @@ object Inliner {
     * Returns a tuple of the arg expression, its BoundKind ([[BoundKind.ParameterOrPattern]] if not applicable) and its own context.
     */
   private def collectLambdaArgs(exp0: Expr, ectx0: ExprContext, ctx0: LocalContext): List[(Expr, BoundKind, ExprContext)] = (exp0, ectx0) match {
-    case (Expr.Lambda(_, body, _, _), ExprContext.AppCtx(Expr.Var(sym, tpe, loc), _, ctx)) =>
-      (Expr.Var(sym, tpe, loc), getEvaluationState(sym, ctx0), ctx) :: collectLambdaArgs(body, ctx, ctx0)
+    case (Expr.Lambda(_, body, _, _), ExprContext.AppCtx(exp@Expr.Var(sym, _, _), _, ctx)) =>
+      (exp, getEvaluationState(sym, ctx0), ctx) :: collectLambdaArgs(body, ctx, ctx0)
     case (Expr.Lambda(_, body, _, _), ExprContext.AppCtx(exp, _, ctx)) =>
       (exp, BoundKind.ParameterOrPattern, ctx) :: collectLambdaArgs(body, ctx, ctx0)
     case _ => Nil
