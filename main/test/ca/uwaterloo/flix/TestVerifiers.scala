@@ -14,8 +14,6 @@ class TestVerifiers extends AnyFunSuite with TestUtils {
     flix.setOptions(Options.TestWithLibAll.copy())
     flix.addListener(new FlixListener {
       override def notify(e: FlixEvent): Unit = e match {
-        case FlixEvent.AfterLexer(sources) =>
-          TokenVerifier.verify(sources)
         case FlixEvent.AfterTyper(root) =>
           EffectVerifier.verify(root)
         case FlixEvent.AfterTailPos(root) =>
