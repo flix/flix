@@ -225,13 +225,9 @@ object TypeReconstruction {
       }
       TypedAst.Expr.TypeMatch(e1, rs, tpe, eff, loc)
 
-    case KindedAst.Expr.JvmReflection(exp, true, loc) =>
+    case KindedAst.Expr.JvmReflection(exp, loc) =>
       val e = visitExp(exp)
-      TypedAst.Expr.JvmReflection(e, proxy = true, Type.mkEnum(Symbol.JvmType, Kind.Star, loc.asSynthetic), e.eff, loc)
-
-    case KindedAst.Expr.JvmReflection(exp, false, loc) =>
-      val e = visitExp(exp)
-      TypedAst.Expr.JvmReflection(e, proxy = false, Type.mkEnum(Symbol.JvmValue, Kind.Star, loc.asSynthetic), e.eff, loc)
+      TypedAst.Expr.JvmReflection(e, Type.mkEnum(Symbol.JvmType, Kind.Star, loc.asSynthetic), e.eff, loc)
 
     case KindedAst.Expr.RestrictableChoose(star, exp, rules, tvar, loc) =>
       val e = visitExp(exp)

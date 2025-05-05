@@ -188,9 +188,9 @@ object Stratifier {
       val rs = rules.map(visitTypeMatchRule)
       Expr.TypeMatch(e, rs, tpe, eff, loc)
 
-    case Expr.JvmReflection(exp, proxy, tpe, eff, loc) =>
+    case Expr.JvmReflection(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.JvmReflection(e, proxy, tpe, eff, loc)
+      Expr.JvmReflection(e, tpe, eff, loc)
 
     case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)

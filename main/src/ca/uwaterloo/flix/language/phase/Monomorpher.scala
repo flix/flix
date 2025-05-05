@@ -560,18 +560,12 @@ object Monomorpher {
           }
       }.get // This is safe since the last case can always match.
 
-    case LoweredAst.Expr.JvmReflection(exp, true, tpe, eff, loc) =>
+    case LoweredAst.Expr.JvmReflection(exp, tpe, eff, loc) =>
       // Turn `$JVM_TYPE_OF_PROXY$(e: Proxy[t])` into `e; JvmType.Xyz`
       // where `Xyz` is a reflection of `t`.
       val e = specializeExp(exp, env0, subst)
       val jvmType = reflectProxyType(e.tpe, loc)
       MonoAst.Expr.Stm(e, jvmType, tpe, eff, loc)
-
-    case LoweredAst.Expr.JvmReflection(exp, false, _, eff, loc) =>
-      // Turn `$JVM_VALUE$(e: t)` into `JvmValue.Xyz(e)` where `Xyz` is a reflection of `t`.
-      // For object types, `e` also needs to be cast into `java.lang.Object`.
-      val e = specializeExp(exp, env0, subst)
-      reflectJvmValue(e, eff, loc)
 
     case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
@@ -625,40 +619,6 @@ object Monomorpher {
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
       MonoAst.Expr.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
 
-  }
-
-  /**
-    * Returns the `JvmValue` of `exp` with effect `eff`.
-    *
-    * E.g. `"hello"` returns `JvmValue.JvmObject(unchecked_cast("hello" as Object)): JvmValue \ eff`.
-    */
-  private def reflectJvmValue(exp: MonoAst.Expr, eff: Type, loc: SourceLocation): MonoAst.Expr = {
-    exp.tpe match {
-      case Type.Char => mkJvmValueTag("JvmChar", exp, eff, loc)
-      case Type.Bool => mkJvmValueTag("JvmBool", exp, eff, loc)
-      case Type.Int8 => mkJvmValueTag("JvmInt8", exp, eff, loc)
-      case Type.Int16 => mkJvmValueTag("JvmInt16", exp, eff, loc)
-      case Type.Int32 => mkJvmValueTag("JvmInt32", exp, eff, loc)
-      case Type.Int64 => mkJvmValueTag("JvmInt64", exp, eff, loc)
-      case Type.Float32 => mkJvmValueTag("JvmFloat32", exp, eff, loc)
-      case Type.Float64 => mkJvmValueTag("JvmFloat64", exp, eff, loc)
-      case Type.Cst(_, _) | Type.Apply(_, _, _) =>
-        val castToObject = mkCast(exp, Type.mkNative(classOf[Object], loc), eff, loc)
-        mkJvmValueTag("JvmObject", castToObject, eff, loc)
-      case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '${exp.tpe}'", exp.tpe.loc)
-      case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '${exp.tpe}'", exp.tpe.loc)
-      case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '${exp.tpe}'", exp.tpe.loc)
-      case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '${exp.tpe}'", exp.tpe.loc)
-      case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '${exp.tpe}'", exp.tpe.loc)
-      case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '${exp.tpe}'", exp.tpe.loc)
-    }
-  }
-
-  /** Returns `JvmValue.tagName(e): JvmValue \ eff` */
-  private def mkJvmValueTag(tagName: String, e: MonoAst.Expr, eff: Type, loc: SourceLocation): MonoAst.Expr = {
-    val jvmCharSym = Symbol.mkCaseSym(Symbol.JvmValue, Name.Ident(tagName, loc))
-    val op = AtomicOp.Tag(jvmCharSym)
-    MonoAst.Expr.ApplyAtomic(op, List(e), Type.mkEnum(Symbol.JvmValue, Kind.Star, loc), eff, loc)
   }
 
   /**

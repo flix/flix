@@ -658,9 +658,9 @@ object Namer {
       val rs = rules.map(visitTypeMatchRule)
       NamedAst.Expr.TypeMatch(e, rs, loc)
 
-    case DesugaredAst.Expr.JvmReflection(exp, proxy, loc) =>
+    case DesugaredAst.Expr.JvmReflection(exp, loc) =>
       val e = visitExp(exp)
-      NamedAst.Expr.JvmReflection(e, proxy, loc)
+      NamedAst.Expr.JvmReflection(e, loc)
 
     case DesugaredAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
       val e = visitExp(exp)

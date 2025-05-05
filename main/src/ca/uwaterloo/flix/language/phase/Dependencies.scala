@@ -229,7 +229,7 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.JvmReflection(exp, _, tpe, eff, _) =>
+    case Expr.JvmReflection(exp, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
