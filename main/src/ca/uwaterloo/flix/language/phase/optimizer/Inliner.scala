@@ -181,8 +181,16 @@ object Inliner {
           Expr.ApplyClo(e1, e2, tpe, eff, loc)
       }
 
-    case exp@Expr.ApplyDef(_, _, _, _, _, _) =>
-      callSiteInlineDef(exp, ctx0)
+    case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, ctx0))
+      if (shouldInlineDef(root.defs(sym), ctx0)) {
+        val defn = root.defs(sym)
+        val ctx = ctx0.copy(subst = Map.empty, currentlyInlining = true)
+        bindArgs(defn.exp, defn.fparams.zip(es), loc, ctx)
+      } else {
+        val es = exps.map(visitExp(_, ctx0))
+        Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
+      }
 
     case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       // Refresh the symbol
@@ -191,7 +199,7 @@ object Inliner {
       ctx0.subst.get(sym1) match {
         case Some(SubstRange.SuspendedExpr(Expr.LocalDef(_, fparams, exp, _, _, _, _, _), subst)) =>
           val es = exps.map(visitExp(_, ctx0))
-          betaReduce(exp, fparams.zip(es), loc, ctx0.copy(subst = subst))
+          bindArgs(exp, fparams.zip(es), loc, ctx0.copy(subst = subst))
 
         case None | Some(_) =>
           // It was not unconditionally inlined, so return same expr with visited subexpressions
@@ -468,7 +476,7 @@ object Inliner {
     * It is the responsibility of the caller to first visit `exps` and provide a substitution from the definition site
     * of `exp`.
     *
-    * [[betaReduce]] creates a series of let-bindings
+    * [[bindArgs]] creates a series of let-bindings
     * {{{
     *   let sym1 = exp1;
     *   // ...
@@ -479,7 +487,7 @@ object Inliner {
     *
     * Lastly, it visits the top-most let-binding, thus possibly removing the bindings.
     */
-  private def betaReduce(exp: Expr, exps: List[(FormalParam, Expr)], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
+  private def bindArgs(exp: Expr, exps: List[(FormalParam, Expr)], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
     val bindings = exps.foldRight(exp) {
       case ((fparam, arg), acc) =>
         val sym = fparam.sym // visitExp will refresh the symbol
@@ -515,34 +523,13 @@ object Inliner {
   }
 
   /**
-    * Returns an inlined and beta-reduced version of `exp0.sym` if the [[shouldInlineDef]] predicate holds.
-    * Otherwise, returns an [[Expr.ApplyDef]] expression , where the subexpressions have been visited.
+    * Returns `true` if
+    *   - the local context shows that we are not currently inlining and
+    *   - `defn` is not recursive and
+    *   - is a direct call to another function.
     */
-  private def callSiteInlineDef(exp0: Expr.ApplyDef, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = exp0 match {
-    case Expr.ApplyDef(sym, exps, _, _, _, loc) if shouldInlineDef(root.defs(sym), ctx0) =>
-      val es = exps.map(visitExp(_, ctx0))
-      val defn = root.defs(sym)
-      val ctx = ctx0.copy(subst = Map.empty, currentlyInlining = true)
-      betaReduce(defn.exp, defn.fparams.zip(es), loc, ctx)
-
-    case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
-      val es = exps.map(visitExp(_, ctx0))
-      Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
-  }
-
-  /** Returns `true` if `defn` is not recursive and is either a higher-order function or is a direct call to another function. */
-  private def shouldInlineDef(defn: OccurrenceAst.Def, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym): Boolean = {
-    !ctx0.currentlyInlining && !isRecursive(defn, sym0) && isDirectCall(defn)
-  }
-
-  /** Returns `true` if `defn.sym` is equal to `sym0` */
-  private def isRecursive(defn: OccurrenceAst.Def, sym0: Symbol.DefnSym) = {
-    defn.sym != sym0
-  }
-
-  /** Returns `true` if `defn` is marked as a direct call. */
-  private def isDirectCall(defn: OccurrenceAst.Def): Boolean = {
-    defn.context.isDirectCall
+  private def shouldInlineDef(defn: OccurrenceAst.Def, ctx0: LocalContext): Boolean = {
+    !ctx0.currentlyInlining && !defn.context.isSelfRecursive && defn.context.isDirectCall
   }
 
   /** Represents the range of a substitution from variables to expressions. */
