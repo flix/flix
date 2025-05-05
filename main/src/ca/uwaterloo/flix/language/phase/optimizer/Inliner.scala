@@ -525,9 +525,14 @@ object Inliner {
       Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
   }
 
-  /** Returns true if `defn` is not recursive and is either a higher-order function or is a direct call to another function. */
+  /** Returns `true` if `defn` is not recursive and is either a higher-order function or is a direct call to another function. */
   private def shouldInlineDef(defn: OccurrenceAst.Def)(implicit sym0: Symbol.DefnSym): Boolean = {
-    defn.sym != sym0 && (isDirectCall(defn) || isHigherOrder(defn))
+    isRecursive(defn, sym0) && (isDirectCall(defn) || isHigherOrder(defn))
+  }
+
+  /** Returns `true` if `defn.sym` is equal to `sym0` */
+  private def isRecursive(defn: OccurrenceAst.Def, sym0: Symbol.DefnSym) = {
+    defn.sym != sym0
   }
 
   /** Returns `true` if at least one formal parameter of `defn` has an arrow type. */
