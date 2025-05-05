@@ -170,7 +170,9 @@ object Inliner {
       Expr.ApplyAtomic(op, es, tpe, eff, loc)
 
     case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
-      visitExp(exp1, ctx0) match {
+      val appCtx = ExprContext.AppCtx(exp2, ctx0.subst, ctx0.exprCtx)
+      val ctx1 = ctx0.addExprCtx(appCtx)
+      visitExp(exp1, ctx1) match {
         case e1@Expr.Lambda(_, _, _, _) =>
           sctx.changed.putIfAbsent(sym0, ())
           val e2 = visitExp(exp2, ctx0)
@@ -265,6 +267,7 @@ object Inliner {
         val ctx2 = ctx1.addVarSubsts(varSubsts)
           .addInScopeVar(sym, BoundKind.ParameterOrPattern)
           .addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
+          .withEmptyExprCtx
         val e1 = visitExp(exp1, ctx2)
         Expr.LocalDef(freshVarSym, fps, e1, e2, tpe, eff, occur, loc)
     }
@@ -276,7 +279,7 @@ object Inliner {
       Expr.Scope(freshVarSym, rvar, e, tpe, eff, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, ctx0)
+      val e1 = visitExp(exp1, ctx0.withEmptyExprCtx)
       e1 match {
         case Expr.Cst(Constant.Bool(true), _, _) =>
           sctx.changed.putIfAbsent(sym0, ())
@@ -685,9 +688,17 @@ object Inliner {
     */
   private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], exprCtx: ExprContext, currentlyInlining: Boolean) {
 
-    /** Returns a [[LocalContext]] where [[exprCtx]] has be overwritten with [[ExprContext.Empty]]. */
+    /** Returns a [[LocalContext]] where [[exprCtx]] has been overwritten with [[ExprContext.Empty]]. */
     def withEmptyExprCtx: LocalContext = {
       this.copy(exprCtx = ExprContext.Empty)
+    }
+
+    /**
+      * Returns a [[LocalContext]] where [[exprCtx]] has been overwritten with `ctx`.
+      * Thus, it is the caller's responsibility to save the current expression context.
+      */
+    def addExprCtx(ctx: ExprContext): LocalContext = {
+      this.copy(exprCtx = ctx)
     }
 
     /** Returns a [[LocalContext]] with the mapping `old -> fresh` added to [[varSubst]]. */
