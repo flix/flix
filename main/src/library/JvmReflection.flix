@@ -37,5 +37,6 @@ pub enum JvmType {
     case JvmInt64
     case JvmFloat32
     case JvmFloat64
+    case JvmArray(JvmType - JvmArray)
     case JvmObject
 }
