@@ -536,9 +536,9 @@ object Inliner {
   /**
     * Returns `true` if `exp0` is a function call.
     */
-  private def isDirectCall(expr0: OccurrenceAst.Expr): Boolean = expr0 match {
-    case OccurrenceAst.Expr.ApplyDef(_, _, _, _, _, _) => true
-    case OccurrenceAst.Expr.ApplyClo(_, _, _, _, _) => true
+  private def isDirectCall(exp0: OccurrenceAst.Expr): Boolean = exp0 match {
+    case OccurrenceAst.Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isTrivial)
+    case OccurrenceAst.Expr.ApplyClo(exp1, exp2, _, _, _) => isTrivial(exp1) && isTrivial(exp2)
     case _ => false
   }
 
