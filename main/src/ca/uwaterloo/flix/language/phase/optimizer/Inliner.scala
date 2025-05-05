@@ -522,7 +522,8 @@ object Inliner {
     case _ => false
   }
 
-  /** Returns `true` if
+  /**
+    * Returns `true` if
     *   - the local context shows that we are not currently inlining and
     *   - `defn` is not recursive and
     *   - is either a higher-order function with a known lambda as argument or
