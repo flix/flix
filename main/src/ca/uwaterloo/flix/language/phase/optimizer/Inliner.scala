@@ -20,8 +20,8 @@ package ca.uwaterloo.flix.language.phase.optimizer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Expr, FormalParam, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
-import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
@@ -526,11 +526,20 @@ object Inliner {
   /**
     * Returns `true` if
     *   - the local context shows that we are not currently inlining and
-    *   - `defn` is not recursive and
+    *   - `defn` does not refer to itself.
     *   - is a direct call to another function.
     */
   private def shouldInlineDef(defn: OccurrenceAst.Def, ctx0: LocalContext): Boolean = {
-    !ctx0.currentlyInlining && !defn.context.isSelfRecursive && defn.context.isDirectCall
+    !ctx0.currentlyInlining && !defn.context.isSelfRef && isDirectCall(defn.exp)
+  }
+
+  /**
+    * Returns `true` if `exp0` is a function call.
+    */
+  private def isDirectCall(expr0: OccurrenceAst.Expr): Boolean = expr0 match {
+    case OccurrenceAst.Expr.ApplyDef(_, _, _, _, _, _) => true
+    case OccurrenceAst.Expr.ApplyClo(_, _, _, _, _) => true
+    case _ => false
   }
 
   /** Represents the range of a substitution from variables to expressions. */
