@@ -67,7 +67,7 @@ object TailPos {
       Expr.Stmt(exp1, e2, tpe, purity, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
-      // The branches are in til position.
+      // The branches are in tail position.
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       Expr.IfThenElse(exp1, e2, e3, tpe, purity, loc)
