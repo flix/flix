@@ -607,7 +607,7 @@ object Inliner {
     case Expr.VectorLoad(exp1, exp2, _, _, _) => size(exp1) + size(exp2) + 1
     case Expr.VectorLength(exp, _) => size(exp) + 1
     case Expr.Ascribe(exp, _, _, _) => size(exp) + 1
-    case Expr.Cast(exp, _, _, _, _, _) => size(exp) + 1
+    case Expr.Cast(exp, _, _, _) => size(exp) + 1
     case Expr.TryCatch(exp, rules, _, _, _) => size(exp) + rules.map(_.exp).map(size).sum + 1
     case Expr.RunWith(exp, _, rules, _, _, _) => size(exp) + rules.map(_.exp).map(size).sum + 1
     case Expr.Do(_, exps, _, _, _) => exps.map(size).sum + 1
