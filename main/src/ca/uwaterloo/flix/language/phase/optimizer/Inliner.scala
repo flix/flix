@@ -518,13 +518,15 @@ object Inliner {
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) if shouldInlineDef(root.defs(sym), ctx0) =>
       val es = exps.map(visitExp(_, ctx0))
       val defn = root.defs(sym)
-      if (hasKnownLambda(defn.fparams, es)) {
+      if (isHigherOrder(defn) && hasKnownLambda(defn.fparams, es)) {
+        val ctx = ctx0.copy(subst = Map.empty, currentlyInlining = true)
+        betaReduce(defn.exp, defn.fparams.zip(es), loc, ctx)
+      } else if (isDirectCall(defn)) {
         val ctx = ctx0.copy(subst = Map.empty, currentlyInlining = true)
         betaReduce(defn.exp, defn.fparams.zip(es), loc, ctx)
       } else {
         Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
       }
-
 
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, ctx0))
