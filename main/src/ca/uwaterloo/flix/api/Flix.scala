@@ -534,7 +534,6 @@ class Flix {
 
     val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
     errors ++= lexerErrors
-    flix.emitEvent(FlixEvent.AfterLexer(afterLexer))
 
     val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
     errors ++= parserErrors
@@ -658,6 +657,7 @@ class Flix {
     val effectBinderAst = EffectBinder.run(treeShaker2Ast)
 
     val tailPosAst = TailPos.run(effectBinderAst)
+    flix.emitEvent(FlixEvent.AfterTailPos(tailPosAst))
 
     val eraserAst = Eraser.run(tailPosAst)
     val reducerAst = Reducer.run(eraserAst)
