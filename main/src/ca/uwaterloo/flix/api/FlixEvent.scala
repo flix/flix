@@ -15,8 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.language.ast.shared.Source
-import ca.uwaterloo.flix.language.ast.{ReducedAst, Symbol, Token, TypedAst}
+import ca.uwaterloo.flix.language.ast.{ReducedAst, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.unification.set.Equation
 
@@ -26,8 +25,6 @@ import ca.uwaterloo.flix.language.phase.unification.set.Equation
 sealed trait FlixEvent
 
 object FlixEvent {
-
-  case class AfterLexer(sources: Map[Source, Array[Token]]) extends FlixEvent
 
   /**
     * An event that is fired after the tailpos phase.

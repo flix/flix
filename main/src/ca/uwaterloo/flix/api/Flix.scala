@@ -658,7 +658,6 @@ class Flix {
     val effectBinderAst = EffectBinder.run(treeShaker2Ast)
 
     val tailPosAst = TailPos.run(effectBinderAst)
-    flix.emitEvent(FlixEvent.AfterTailPos(tailPosAst))
 
     val eraserAst = Eraser.run(tailPosAst)
     val reducerAst = Reducer.run(eraserAst)
