@@ -542,7 +542,7 @@ object Inliner {
   private def noSizeIncrease(exp0: Expr, ctx0: LocalContext): Boolean = exp0 match {
     case Expr.Lambda(_, exp, _, _) =>
       val bodySize = size(exp)
-      val args = collectLambdaArgs(exp, ctx0.exprCtx, ctx0)
+      val args = collectLambdaArgs(exp0, ctx0.exprCtx, ctx0)
       val callSize = args.map(_._1).map(size).sum
       bodySize <= callSize
     case _ => false
