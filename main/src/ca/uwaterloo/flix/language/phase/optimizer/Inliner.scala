@@ -520,10 +520,10 @@ object Inliner {
   private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur, ctx0: LocalContext): Boolean = (occur, exp.eff) match {
     case (Occur.Dead, _) => throw InternalCompilerException(s"unexpected call site inline of dead variable $sym", exp.loc)
     case (Occur.Once, Type.Pure) => throw InternalCompilerException(s"unexpected call site inline of pre-inlined variable $sym", exp.loc)
-    case (Occur.OnceInLambda, Type.Pure) => isTrivial(exp)
-    case (Occur.OnceInLocalDef, Type.Pure) => isTrivial(exp)
+    case (Occur.OnceInLambda, Type.Pure) => weakHeadNormalForm(exp)
+    case (Occur.OnceInLocalDef, Type.Pure) => weakHeadNormalForm(exp)
     case (Occur.ManyBranch, Type.Pure) => shouldInlineMulti(exp, ctx0)
-    case (Occur.Many, Type.Pure) => isTrivial(exp) && shouldInlineMulti(exp, ctx0)
+    case (Occur.Many, Type.Pure) => weakHeadNormalForm(exp) && shouldInlineMulti(exp, ctx0)
     case _ => false // Impure so do not move expression
   }
 
@@ -571,20 +571,35 @@ object Inliner {
     * An expression is trivial if it is a:
     *   - primitive literal (float, string, int, bool, unit)
     *   - variable
-    *   - unary expression with a trivial operand
-    *   - binary expression with trivial operands
-    *   - tag with trivial arguments
-    *   - tuple with trivial arguments
     *
     * A pure and trivial expression can always be inlined even without duplicating work.
     */
   private def isTrivial(exp0: Expr): Boolean = exp0 match {
     case Expr.Cst(_, _, _) => true
     case Expr.Var(_, _, _) => true
-    case Expr.ApplyAtomic(AtomicOp.Unary(_), exps, _, _, _) => exps.forall(isTrivial)
-    case Expr.ApplyAtomic(AtomicOp.Binary(_), exps, _, _, _) => exps.forall(isTrivial)
-    case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivial)
-    case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivial)
+    case _ => false
+  }
+
+  /**
+    * Returns `true` if `exp0` is in weak head normal form.
+    *
+    * An expression is in weak head normal form if it is a:
+    *   - primitive literal (float, string, int, bool, unit)
+    *   - variable
+    *   - unary expression
+    *   - binary expression
+    *   - tag
+    *   - tuple
+    *   - lambda
+    */
+  private def weakHeadNormalForm(exp0: Expr): Boolean = exp0 match {
+    case Expr.Cst(_, _, _) => true
+    case Expr.Var(_, _, _) => true
+    case Expr.ApplyAtomic(AtomicOp.Unary(_), _, _, _, _) => true
+    case Expr.ApplyAtomic(AtomicOp.Binary(_), _, _, _, _) => true
+    case Expr.ApplyAtomic(AtomicOp.Tag(_), _, _, _, _) => true
+    case Expr.ApplyAtomic(AtomicOp.Tuple, _, _, _, _) => true
+    case Expr.Lambda(_, _, _, _) => true
     case _ => false
   }
 
