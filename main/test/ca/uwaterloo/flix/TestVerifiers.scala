@@ -11,7 +11,7 @@ class TestVerifiers extends AnyFunSuite with TestUtils {
   test("RunAllVerifiers") {
     implicit val flix: Flix = new Flix()
 
-    flix.setOptions(Options.TestWithLibAll.copy())
+    flix.setOptions(Options.TestWithLibAll)
     flix.addListener(new FlixListener {
       override def notify(e: FlixEvent): Unit = e match {
         case FlixEvent.AfterTyper(root) =>
