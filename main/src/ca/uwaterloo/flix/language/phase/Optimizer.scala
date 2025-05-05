@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.MonoAst
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur
 import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.language.phase.optimizer.Inliner
 import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.ListMap
 

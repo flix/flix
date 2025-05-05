@@ -15,15 +15,14 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.*
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Expr, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, OccurrenceAst, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase
+import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.Optimizer
 import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListMap}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
