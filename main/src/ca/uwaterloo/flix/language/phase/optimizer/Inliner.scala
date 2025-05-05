@@ -502,6 +502,7 @@ object Inliner {
     }
   }
 
+  /** Returns `true` if `exp` is pure and should be inlined at the occurrence of `sym`. */
   private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur, ctx0: LocalContext): Boolean = (occur, exp.eff) match {
     case (Occur.Dead, _) => throw InternalCompilerException(s"unexpected call site inline of dead variable $sym", exp.loc)
     case (Occur.Once, Type.Pure) => throw InternalCompilerException(s"unexpected call site inline of pre-inlined variable $sym", exp.loc)
@@ -544,6 +545,7 @@ object Inliner {
     case _ => Nil
   }
 
+  /** Returns the [[BoundKind]] for `sym`. The symbol must be in scope, otherwise an exception is thrown. */
   private def getEvaluationState(sym: Symbol.VarSym, ctx0: LocalContext): BoundKind = ctx0.varSubst.get(sym) match {
     case Some(freshSym) => ctx0.inScopeVars.getOrElse(freshSym, throw InternalCompilerException("unexpected not in-scope variable", freshSym.loc))
     case None => throw InternalCompilerException("unexpected not in-scope variable", sym.loc)
@@ -570,6 +572,35 @@ object Inliner {
     case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivial)
     case _ => false
+  }
+
+  /**
+    * Returns the number of subexpressions in `exp0` including itself.
+    */
+  private def size(exp0: Expr): Int = exp0 match {
+    case Expr.Cst(_, _, _) => 1
+    case Expr.Var(_, _, _) => 1
+    case Expr.Lambda(_, exp, _, _) => size(exp) + 1
+    case Expr.ApplyAtomic(_, exps, _, _, _) => exps.map(size).sum + 1
+    case Expr.ApplyClo(exp1, exp2, _, _, _) => size(exp1) + size(exp2) + 1
+    case Expr.ApplyDef(_, exps, _, _, _, _) => exps.map(size).sum + 1
+    case Expr.ApplyLocalDef(_, exps, _, _, _) => exps.map(size).sum + 1
+    case Expr.Let(_, exp1, exp2, _, _, _, _) => size(exp1) + size(exp2) + 1
+    case Expr.LocalDef(_, _, exp1, exp2, _, _, _, _) => size(exp1) + size(exp2) + 1
+    case Expr.Scope(_, _, exp, _, _, _) => size(exp) + 1
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => size(exp1) + size(exp2) + size(exp3) + 1
+    case Expr.Stm(exp1, exp2, _, _, _) => size(exp1) + size(exp2) + 1
+    case Expr.Discard(exp, _, _) => size(exp) + 1
+    case Expr.Match(exp, rules, _, _, _) => size(exp) + rules.map(_.exp).map(size).sum + 1
+    case Expr.VectorLit(exps, _, _, _) => exps.map(size).sum
+    case Expr.VectorLoad(exp1, exp2, _, _, _) => size(exp1) + size(exp2) + 1
+    case Expr.VectorLength(exp, _) => size(exp) + 1
+    case Expr.Ascribe(exp, _, _, _) => size(exp) + 1
+    case Expr.Cast(exp, _, _, _, _, _) => size(exp) + 1
+    case Expr.TryCatch(exp, rules, _, _, _) => size(exp) + rules.map(_.exp).map(size).sum + 1
+    case Expr.RunWith(exp, _, rules, _, _, _) => size(exp) + rules.map(_.exp).map(size).sum + 1
+    case Expr.Do(_, exps, _, _, _) => exps.map(size).sum + 1
+    case Expr.NewObject(_, _, _, _, methods, _) => methods.map(_.exp).map(size).sum + 1
   }
 
   /** Represents the range of a substitution from variables to expressions. */
