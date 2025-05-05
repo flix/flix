@@ -562,19 +562,6 @@ object Inliner {
 
   }
 
-  /** Denotes the level at which the binder is declared. */
-  sealed trait Level
-
-  private object Level {
-
-    /** A [[OccurrenceAst.Def]] declaration. The def can be in modules or top-level. */
-    case object Def extends Level
-
-    /** Nested inside a [[OccurrenceAst.Def]]. This can be a lambda or local def. */
-    case object Nested extends Level
-
-  }
-
   /**
     * A wrapper class for all the different inlining environments.
     *
@@ -609,11 +596,6 @@ object Inliner {
     /** Returns a [[LocalContext]] with the mapping `sym -> substExpr` added to [[subst]]. */
     def addSubst(sym: Symbol.VarSym, substExpr: SubstRange): LocalContext = {
       this.copy(subst = this.subst + (sym -> substExpr))
-    }
-
-    /** Returns a [[LocalContext]] with the mappings of `mappings` added to [[subst]]. */
-    def addSubsts(mappings: Map[Symbol.VarSym, SubstRange]): LocalContext = {
-      this.copy(subst = this.subst ++ mappings)
     }
 
     /** Returns a [[LocalContext]] with the mapping `sym -> boundKind` added to [[inScopeVars]]. */
