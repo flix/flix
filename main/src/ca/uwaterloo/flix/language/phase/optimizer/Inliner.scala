@@ -514,6 +514,10 @@ object Inliner {
     case _ => false
   }
 
+  /**
+    * Returns an inlined and beta-reduced version of `exp0.sym` if the [[shouldInlineDef]] predicate holds.
+    * Otherwise, returns an [[Expr.ApplyDef]] expression , where the subexpressions have been visited.
+    */
   private def callSiteInlineDef(exp0: Expr.ApplyDef, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = exp0 match {
     case Expr.ApplyDef(sym, exps, _, _, _, loc) if shouldInlineDef(root.defs(sym), ctx0) =>
       val es = exps.map(visitExp(_, ctx0))
@@ -540,7 +544,7 @@ object Inliner {
   private def isDirectCall(defn: OccurrenceAst.Def): Boolean = {
     defn.context.isDirectCall
   }
-  
+
   /** Represents the range of a substitution from variables to expressions. */
   sealed private trait SubstRange
 
