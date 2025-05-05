@@ -561,7 +561,7 @@ object Inliner {
 
   /** Returns the [[BoundKind]] for `sym`. The symbol must be in scope, otherwise an exception is thrown. */
   private def getEvaluationState(sym: Symbol.VarSym, ctx0: LocalContext): BoundKind = ctx0.varSubst.get(sym) match {
-    case Some(freshSym) => ctx0.inScopeVars.getOrElse(freshSym, throw InternalCompilerException(s"unexpected not in-scope variable $sym", freshSym.loc))
+    case Some(freshSym) => ctx0.inScopeVars.getOrElse(freshSym, throw InternalCompilerException(s"unexpected not in-scope variable $freshSym", freshSym.loc))
     case None => throw InternalCompilerException(s"unexpected not in-scope variable $sym", sym.loc)
   }
 
