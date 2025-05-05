@@ -22,124 +22,125 @@ import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
 import ca.uwaterloo.flix.util.ParOps
 
-import scala.annotation.tailrec
-
 /**
-  * Assigns stack offsets to each variable symbol in the program.
+  * Assigns stack offsets to each variable binder in the program by mutating the symbols.
   *
-  * On the JVM, each method has a local variable array, and each variable is referenced by a 0-based offset. The first
-  * few slots in the array are initialized to the values of the parameters. Normally each value takes up a single
-  * slot, but longs and doubles require two consecutive slots. Thus, the n-th variable may not necessarily be the
-  * n-th slot. This phase computes the specific offsets used by each formal parameter and local variable.
+  * On the JVM, each method has a local variable array, and each variable is referenced by a 0-based
+  * offset. The first slots are used for parameters. 64-bit types require two consecutive slots.
+  * Thus, the n-th variable may not necessarily be the n-th slot. This phase computes the specific
+  * offsets used by each formal parameter and local variable.
+  *
+  * This is an offset and not an index, since the first slot might actuallu be taken by the instance
+  * object if the code is generated in an instance function.
   */
 object VarOffsets {
 
-  /**
-    * Assigns a stack offset to each variable symbol in the program.
-    */
+  /** Assigns a stack offset to each variable symbol in the program. */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("VarOffsets") {
     ParOps.parMapValues(root.defs)(visitDef)
 
     root
   }
 
-  /**
-    * Assigns stack offsets to the given definition.
-    *
-    * Returns Unit since the variable symbols are mutated to store their stack offsets.
-    */
+  /** Assigns stack offsets to the given definition. */
   private def visitDef(defn: Def): Unit = {
-    // Compute the stack offset for each formal parameter.
     var offset = 0
-    for (FormalParam(sym, _, tpe, _) <- (defn.cparams ++ defn.fparams)) {
+
+    for (FormalParam(sym, _, tpe, _) <- defn.cparams ++ defn.fparams) {
       offset += setStackOffset(sym, tpe, offset)
     }
 
-    // Compute stack offset for the body.
     visitExp(defn.expr, offset)
   }
 
-  private def visitExp(e0: Expr, i0: Int): Int = e0 match {
-    case Expr.Cst(_, _, _) => i0
+  /** Assigns stack offsets to `e0` and returns the next available stack offset. */
+  private def visitExp(e0: Expr, offset0: Int): Int = e0 match {
+    case Expr.Cst(_, _, _) =>
+      offset0
 
-    case Expr.Var(_, _, _) => i0
+    case Expr.Var(_, _, _) =>
+      offset0
 
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
-      visitExps(exps, i0)
+      visitExps(exps, offset0)
 
     case Expr.ApplyClo(exp1, exp2, _, _, _, _) =>
-      val i = visitExp(exp1, i0)
-      visitExp(exp2, i)
+      var offset = offset0
+      offset = visitExp(exp1, offset)
+      visitExp(exp2, offset)
 
     case Expr.ApplyDef(_, args, _, _, _, _) =>
-      visitExps(args, i0)
+      visitExps(args, offset0)
 
     case Expr.ApplySelfTail(_, args, _, _, _) =>
-      visitExps(args, i0)
+      visitExps(args, offset0)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      val i1 = visitExp(exp1, i0)
-      val i2 = visitExp(exp2, i1)
-      visitExp(exp3, i2)
+      var offset = offset0
+      offset = visitExp(exp1, offset)
+      offset = visitExp(exp2, offset)
+      visitExp(exp3, offset)
 
     case Expr.Branch(exp, branches, _, _, _) =>
-      val i1 = visitExp(exp, i0)
-      visitExps(branches.values.toList, i1)
+      var offset = offset0
+      offset = visitExp(exp, offset)
+      visitExps(branches.values.toList, offset)
 
     case Expr.JumpTo(_, _, _, _) =>
-      i0
+      offset0
 
     case Expr.Let(sym, exp1, exp2, _, _, _) =>
-      val i1 = setStackOffset(sym, exp1.tpe, i0)
-      val i2 = visitExp(exp1, i1)
-      visitExp(exp2, i2)
+      var offset = offset0
+      offset = setStackOffset(sym, exp1.tpe, offset)
+      offset = visitExp(exp1, offset)
+      visitExp(exp2, offset)
 
     case Expr.Stmt(exp1, exp2, _, _, _) =>
-      val i1 = visitExp(exp1, i0)
-      visitExp(exp2, i1)
+      var offset = offset0
+      offset = visitExp(exp1, offset)
+      visitExp(exp2, offset)
 
     case Expr.Scope(sym, exp, _, _, _) =>
-      val i1 = setStackOffset(sym, MonoType.Unit, i0)
-      visitExp(exp, i1)
+      var offset = offset0
+      offset = setStackOffset(sym, MonoType.Region, offset)
+      visitExp(exp, offset)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
-      val i1 = visitExp(exp, i0)
-      rules.foldLeft(i1) {
-        case (i2, CatchRule(sym, _, body)) =>
-          val i3 = setStackOffset(sym, MonoType.Object, i2)
-          visitExp(body, i3)
+      var offset = offset0
+      offset = visitExp(exp, offset)
+      for (CatchRule(sym, _, body) <- rules) {
+        offset = setStackOffset(sym, MonoType.Object, offset)
+        offset = visitExp(body, offset)
       }
+      offset
 
     case Expr.RunWith(exp, _, _, _, _, _, _) =>
       // The expressions in RunWith are not executed here (concretely they're
       // always closures) and should not have var offsets here.
       // They don't contain binders so visiting them does nothing.
-      visitExp(exp, i0)
+      visitExp(exp, offset0)
 
     case Expr.Do(_, exps, _, _, _) =>
-      visitExps(exps, i0)
+      visitExps(exps, offset0)
 
     case Expr.NewObject(_, _, _, _, _, _) =>
       // The expressions in NewObject are not executed here (concretely they're
       // always closures) and should not have var offsets here.
       // They don't contain binders so visiting them does nothing.
-      i0
+      offset0
 
   }
 
-  @tailrec
-  private def visitExps(es: List[Expr], i0: Int): Int = es match {
-    case Nil => i0
-    case x :: xs =>
-      val i2 = visitExp(x, i0)
-      visitExps(xs, i2)
+  /** Assigns stack offsets to `exps` and returns the next available stack offset. */
+  private def visitExps(es: List[Expr], offset0: Int): Int = {
+    var offset = offset0
+    for (exp <- es) {
+      offset = visitExp(exp, offset)
+    }
+    offset
   }
 
-  /**
-    * Assigns `sym` its offset and returns the next available stack offset.
-    *
-    * Note: Uses mutation.
-    */
+  /** Assigns stack offset to `sym` and returns the next available stack offset. */
   private def setStackOffset(sym: Symbol.VarSym, tpe: MonoType, i0: Int): Int = {
     // Set the stack offset for the symbol.
     sym.setStackOffset(i0)
@@ -148,12 +149,7 @@ object VarOffsets {
     i0 + getStackSize(tpe)
   }
 
-  /**
-    * Returns the stack size used by the given type.
-    *
-    * A double or float uses two slots on the stack.
-    * Everything else uses one slot.
-    */
+  /** Returns the stack slots used by `tpe`. */
   private def getStackSize(tpe: MonoType): Int = tpe match {
     case MonoType.Float64 | MonoType.Int64 => 2
     case _ => 1
