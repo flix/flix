@@ -534,6 +534,22 @@ object Inliner {
   }
 
   /**
+    * Returns a tuple of the arg expression, its BoundKind ([[BoundKind.ParameterOrPattern]] if not applicable) and its own context.
+    */
+  private def collectLambdaArgs(exp0: Expr, ectx0: ExprContext, ctx0: LocalContext): List[(Expr, BoundKind, ExprContext)] = (exp0, ectx0) match {
+    case (Expr.Lambda(_, body, _, _), ExprContext.AppCtx(Expr.Var(sym, tpe, loc), _, ctx)) =>
+      (Expr.Var(sym, tpe, loc), getEvaluationState(sym, ctx0), ctx) :: collectLambdaArgs(body, ctx, ctx0)
+    case (Expr.Lambda(_, body, _, _), ExprContext.AppCtx(exp, _, ctx)) =>
+      (exp, BoundKind.ParameterOrPattern, ctx) :: collectLambdaArgs(body, ctx, ctx0)
+    case _ => Nil
+  }
+
+  private def getEvaluationState(sym: Symbol.VarSym, ctx0: LocalContext): BoundKind = ctx0.varSubst.get(sym) match {
+    case Some(freshSym) => ctx0.inScopeVars.getOrElse(freshSym, throw InternalCompilerException("unexpected not in-scope variable", freshSym.loc))
+    case None => throw InternalCompilerException("unexpected not in-scope variable", sym.loc)
+  }
+
+  /**
     * Returns `true` if `exp0` is considered a trivial expression.
     *
     * An expression is trivial if it is a:
