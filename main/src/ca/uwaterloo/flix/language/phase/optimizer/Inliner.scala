@@ -531,13 +531,13 @@ object Inliner {
   }
 
   /** Returns `true` if `defn` is not recursive and is either a higher-order function or is a direct call to another function. */
-  private def shouldInlineDef(defn: OccurrenceAst.Def, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym): Boolean = {
-    !ctx0.currentlyInlining && !isRecursive(defn, sym0) && (isDirectCall(defn) || isHigherOrder(defn))
+  private def shouldInlineDef(defn: OccurrenceAst.Def, ctx0: LocalContext): Boolean = {
+    !ctx0.currentlyInlining && !isRecursive(defn) && (isDirectCall(defn) || isHigherOrder(defn))
   }
 
   /** Returns `true` if `defn.sym` is equal to `sym0` */
-  private def isRecursive(defn: OccurrenceAst.Def, sym0: Symbol.DefnSym) = {
-    defn.sym != sym0
+  private def isRecursive(defn: OccurrenceAst.Def) = {
+    defn.context.isSelfRecursive
   }
 
   /** Returns `true` if at least one formal parameter of `defn` has an arrow type. */
