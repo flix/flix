@@ -506,6 +506,7 @@ object Inliner {
   private def callSiteInline(sym: Symbol.VarSym, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     ctx0.inScopeVars.get(sym) match {
       case Some(BoundKind.LetBound(exp, occur)) if shouldInlineVar(sym, exp, occur, ctx0) =>
+        sctx.changed.putIfAbsent(sym0, ())
         visitExp(exp, ctx0.copy(subst = Map.empty))
 
       case Some(_) =>
