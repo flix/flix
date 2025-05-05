@@ -522,7 +522,14 @@ object Inliner {
     case _ => false
   }
 
-  /** Returns `true` if `defn` is not recursive and is either a higher-order function or is a direct call to another function. */
+  /** Returns `true` if
+    *   - the local context shows that we are not currently inlining and
+    *   - `defn` is not recursive and
+    *   - is either a higher-order function with a known lambda as argument or
+    *   - is a direct call to another function.
+    *
+    * It is the responsibility of the caller to visit `exps` first.
+    */
   private def shouldInlineDef(defn: OccurrenceAst.Def, exps: List[Expr], ctx0: LocalContext): Boolean = {
     !ctx0.currentlyInlining && !defn.context.isSelfRecursive &&
       (defn.context.isDirectCall ||
