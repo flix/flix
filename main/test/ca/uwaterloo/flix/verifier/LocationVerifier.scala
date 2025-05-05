@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern, RestrictableChoosePattern}
-import ca.uwaterloo.flix.language.errors.LocationError
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.verifier.errors.LocationError
 
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -617,13 +617,22 @@ object LocationVerifier {
   private def verifyAppearanceOrder(locs: List[SourceLocation])(implicit sctx: SharedContext): Unit = {
     locs.sliding(2).foreach {
       case List(prevLoc, currLoc) =>
-        if (!prevLoc.isBefore(currLoc)) {
+        if (!isBefore(prevLoc, currLoc)) {
           sctx.add(
             LocationError.mkAppearanceOrderError(prevLoc, currLoc)
           )
         }
       case _ => ()
     }
+  }
+
+  /**
+    * Returns `true` if `thisLoc` is before `thatLoc`, otherwise `false`.
+    *
+    * 'Before' means that `thisLoc` ends before or in the same position as `thatLoc` begins.
+    */
+  def isBefore(thisLoc: SourceLocation, thatLoc: SourceLocation): Boolean = {
+    SourcePosition.PartialOrder.lteq(thisLoc.sp2, thatLoc.sp1)
   }
 
   /**

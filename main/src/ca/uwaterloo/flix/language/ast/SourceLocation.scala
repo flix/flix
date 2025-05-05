@@ -71,15 +71,6 @@ case class SourceLocation(isReal: Boolean, sp1: SourcePosition, sp2: SourcePosit
   }
 
   /**
-    * Returns `true` if `this` [[SourceLocation]] is before `that`, otherwise `false`.
-    *
-    * 'Before' means that `this` ends before or at the same position as `that` begins.
-    */
-  def isBefore(that: SourceLocation): Boolean = {
-    SourcePosition.PartialOrder.lteq(this.sp2, that.sp1)
-  }
-
-  /**
     * Returns the one-indexed line where the entity ends.
     */
   def endLine: Int = sp2.lineOneIndexed
@@ -132,11 +123,6 @@ case class SourceLocation(isReal: Boolean, sp1: SourcePosition, sp2: SourcePosit
     * Returns a string representation of `this` source location with the line and column numbers.
     */
   def format: String = s"${source.name}:$beginLine:$beginCol"
-
-  /**
-    * Returns a string representation of `this` source location with the line and column numbers for the start and end.
-    */
-  def toFullString: String = s"${source.name}:$beginLine:$beginCol-$endLine:$endCol"
 
   /**
     * Returns the source text of the source location.

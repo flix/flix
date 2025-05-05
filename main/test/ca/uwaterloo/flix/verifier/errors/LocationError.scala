@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.errors
+package ca.uwaterloo.flix.verifier.errors
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter.NoFormatter.code
@@ -29,7 +29,7 @@ object LocationError {
     */
   def mkChildOutOfBoundError(parentLoc: SourceLocation, loc: SourceLocation): InternalCompilerException = {
     val message =
-      s""">> The location of the child ${loc.toFullString} is not contained in the location of its parent ${parentLoc.toFullString}.
+      s""">> The location of the child ${toFullString(loc)} is not contained in the location of its parent ${toFullString(parentLoc)}.
          |
          |${code(loc, "Child location.")}
          |""".stripMargin
@@ -44,7 +44,7 @@ object LocationError {
   */
 def mkAppearanceOrderError(prevLoc: SourceLocation, loc: SourceLocation): InternalCompilerException = {
   val message: String =
-    s""">> The location of the node ${loc.toFullString} is not after the location of the preceding node ${prevLoc.toFullString}.
+    s""">> The location of the node ${toFullString(loc)} is not after the location of the preceding node ${toFullString(prevLoc)}.
        |
        |${code(loc, "node location.")}
        |""".stripMargin
@@ -59,10 +59,15 @@ def mkAppearanceOrderError(prevLoc: SourceLocation, loc: SourceLocation): Intern
     */
   def mkDifferentEndingError(parentLoc: SourceLocation, loc: SourceLocation): InternalCompilerException = {
     val message: String =
-      s""">> The location of the last child ${loc.toFullString} has a different ending than its parent ${parentLoc.toFullString}.
+      s""">> The location of the last child ${toFullString(loc)} has a different ending than its parent ${toFullString(parentLoc)}.
          |
          |${code(loc, "Child location.")}
          |""".stripMargin
     InternalCompilerException(message, loc)
   }
+
+  /**
+    * Returns a string representation of the source location with the line and column numbers for the start and end.
+    */
+  private def toFullString(loc: SourceLocation): String = s"${loc.source.name}:${loc.beginLine}:${loc.beginCol}-${loc.endLine}:${loc.endCol}"
 }
