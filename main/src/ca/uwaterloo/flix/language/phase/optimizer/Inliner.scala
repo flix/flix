@@ -518,7 +518,7 @@ object Inliner {
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) if shouldInlineDef(root.defs(sym), ctx0) =>
       val es = exps.map(visitExp(_, ctx0))
       val defn = root.defs(sym)
-      if (hasKnownLambda(defn.fparams, es) || isDirectCall(defn)) {
+      if (hasKnownLambda(defn.fparams, es) || defn.context.isDirectCall) {
         val ctx = ctx0.copy(subst = Map.empty, currentlyInlining = true)
         betaReduce(defn.exp, defn.fparams.zip(es), loc, ctx)
       } else {
@@ -532,12 +532,7 @@ object Inliner {
 
   /** Returns `true` if `defn` is not recursive and is either a higher-order function or is a direct call to another function. */
   private def shouldInlineDef(defn: OccurrenceAst.Def, ctx0: LocalContext): Boolean = {
-    !ctx0.currentlyInlining && !isRecursive(defn) && (isDirectCall(defn) || isHigherOrder(defn))
-  }
-
-  /** Returns `true` if `defn.sym` is equal to `sym0` */
-  private def isRecursive(defn: OccurrenceAst.Def) = {
-    defn.context.isSelfRecursive
+    !ctx0.currentlyInlining && !defn.context.isSelfRecursive && (defn.context.isDirectCall || isHigherOrder(defn))
   }
 
   /** Returns `true` if at least one formal parameter of `defn` has an arrow type. */
@@ -551,11 +546,6 @@ object Inliner {
           case None => false
         }
     }
-  }
-
-  /** Returns `true` if `defn` is marked as a direct call. */
-  private def isDirectCall(defn: OccurrenceAst.Def): Boolean = {
-    defn.context.isDirectCall
   }
 
   /**
