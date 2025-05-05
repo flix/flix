@@ -137,7 +137,7 @@ object VarOffsets {
     offset
   }
 
-  /** Assigns stack offset to `sym` and returns the next available stack offset. */
+  /** Assigns a stack offset to `sym` and returns the next available stack offset. */
   private def setStackOffset(sym: Symbol.VarSym, tpe: MonoType, offset: Int): Int = {
     // Set the stack offset for the symbol.
     sym.setStackOffset(offset)
