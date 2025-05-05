@@ -22,7 +22,7 @@ mod Object {
     /// Returns `true` if the given value `x` is `null`.
     ///
     pub def isNull(x: a): Bool =
-        match $JVM_VALUE$(x) {
+        match JvmReflection.reflectValue(x) {
             case JvmValue.JvmBool(_) => false
             case JvmValue.JvmChar(_) => false
             case JvmValue.JvmFloat32(_) => false

@@ -23,7 +23,7 @@ mod Fixpoint.Boxable {
     ///
     /// Boxes the given `x`.
     ///
-    pub def box(x: a): Boxed with Order[a] = match $JVM_VALUE$(x) {
+    pub def box(x: a): Boxed with Order[a] = match JvmReflection.reflectValue(x) {
         case JvmValue.JvmChar(c) => Boxed.BoxedChar(c)
         case JvmValue.JvmBool(b) => Boxed.BoxedBool(b)
         case JvmValue.JvmInt8(i) => Boxed.BoxedInt8(i)

@@ -39,3 +39,21 @@ pub enum JvmType {
     case JvmFloat64
     case JvmObject
 }
+
+mod JvmReflection {
+    import java.lang.{Object => JObject}
+
+    /// Returns the erased JVM representation of `x`.
+    pub def reflectValue(x: t): JvmValue = match $JVM_TYPE_OF_PROXY$((Proxy.Proxy: Proxy[t])) {
+        case JvmType.JvmChar => JvmValue.JvmChar(unchecked_cast(x as Char))
+        case JvmType.JvmBool => JvmValue.JvmBool(unchecked_cast(x as Bool))
+        case JvmType.JvmInt8 => JvmValue.JvmInt8(unchecked_cast(x as Int8))
+        case JvmType.JvmInt16 => JvmValue.JvmInt16(unchecked_cast(x as Int16))
+        case JvmType.JvmInt32 => JvmValue.JvmInt32(unchecked_cast(x as Int32))
+        case JvmType.JvmInt64 => JvmValue.JvmInt64(unchecked_cast(x as Int64))
+        case JvmType.JvmFloat32 => JvmValue.JvmFloat32(unchecked_cast(x as Float32))
+        case JvmType.JvmFloat64 => JvmValue.JvmFloat64(unchecked_cast(x as Float64))
+        case JvmType.JvmObject => JvmValue.JvmObject(unchecked_cast(x as JObject))
+    }
+}
+
