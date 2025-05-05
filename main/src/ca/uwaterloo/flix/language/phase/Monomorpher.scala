@@ -633,17 +633,17 @@ object Monomorpher {
       case Type.Apply(Type.Cst(_, _), arg, _) => arg
       case _ => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     }
-    val caze = innerType match {
-      case Type.Char => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmChar", loc))
-      case Type.Bool => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmBool", loc))
-      case Type.Int8 => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmInt8", loc))
-      case Type.Int16 => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmInt16", loc))
-      case Type.Int32 => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmInt32", loc))
-      case Type.Int64 => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmInt64", loc))
-      case Type.Float32 => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmFloat32", loc))
-      case Type.Float64 => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmFloat64", loc))
-      case Type.Cst(_, _) => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmObject", loc))
-      case Type.Apply(_, _, _) => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmObject", loc))
+    val constructorName = innerType match {
+      case Type.Char => "JvmChar"
+      case Type.Bool => "JvmBool"
+      case Type.Int8 => "JvmInt8"
+      case Type.Int16 => "JvmInt16"
+      case Type.Int32 => "JvmInt32"
+      case Type.Int64 => "JvmInt64"
+      case Type.Float32 => "JvmFloat32"
+      case Type.Float64 => "JvmFloat64"
+      case Type.Cst(_, _) => "JvmObject"
+      case Type.Apply(_, _, _) => "JvmObject"
       case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
       case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
       case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
@@ -651,7 +651,8 @@ object Monomorpher {
       case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
       case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
     }
-    MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(caze), Nil, Type.mkEnum(Symbol.JvmType, Kind.Star, loc), Type.Pure, loc)
+    val tag = Symbol.mkCaseSym(Symbol.JvmType, Name.Ident(constructorName, loc))
+    MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(tag), Nil, Type.mkEnum(Symbol.JvmType, Kind.Star, loc), Type.Pure, loc)
   }
 
   /**
