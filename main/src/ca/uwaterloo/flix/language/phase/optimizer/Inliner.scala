@@ -515,10 +515,16 @@ object Inliner {
   }
 
   private def callSiteInlineDef(exp0: Expr.ApplyDef, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = exp0 match {
-    case Expr.ApplyDef(sym, exps, _, _, _, loc) if shouldInlineDef(root.defs(sym)) =>
+    case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) if shouldInlineDef(root.defs(sym), ctx0) =>
       val es = exps.map(visitExp(_, ctx0))
       val defn = root.defs(sym)
-      betaReduce(defn.exp, defn.fparams.zip(es), loc, ctx0.copy(subst = Map.empty))
+      if (hasKnownLambda(defn.fparams, es)) {
+        val ctx = ctx0.copy(subst = Map.empty, currentlyInlining = true)
+        betaReduce(defn.exp, defn.fparams.zip(es), loc, ctx)
+      } else {
+        Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
+      }
+
 
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, ctx0))
@@ -526,8 +532,8 @@ object Inliner {
   }
 
   /** Returns `true` if `defn` is not recursive and is either a higher-order function or is a direct call to another function. */
-  private def shouldInlineDef(defn: OccurrenceAst.Def)(implicit sym0: Symbol.DefnSym): Boolean = {
-    !isRecursive(defn, sym0) && (isDirectCall(defn) || isHigherOrder(defn))
+  private def shouldInlineDef(defn: OccurrenceAst.Def, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym): Boolean = {
+    !ctx0.currentlyInlining && !isRecursive(defn, sym0) && (isDirectCall(defn) || isHigherOrder(defn))
   }
 
   /** Returns `true` if `defn.sym` is equal to `sym0` */
@@ -551,6 +557,20 @@ object Inliner {
   /** Returns `true` if `defn` is marked as a direct call. */
   private def isDirectCall(defn: OccurrenceAst.Def): Boolean = {
     defn.context.isDirectCall
+  }
+
+  /**
+    * Returns `true` if a formal parameter in `fparams` is an arrow type and the corresponding expression
+    * in `exps` is a [[Expr.Lambda]].
+    */
+  private def hasKnownLambda(fparams: List[FormalParam], exps: List[Expr]): Boolean = {
+    fparams.zip(exps).exists {
+      case (fp, Expr.Lambda(_, _, _, _)) => fp.tpe.typeConstructor match {
+        case Some(TypeConstructor.Arrow(_)) | Some(TypeConstructor.ArrowWithoutEffect(_)) => true
+        case Some(_) | None => false
+      }
+      case _ => false
+    }
   }
 
   /** Represents the range of a substitution from variables to expressions. */
