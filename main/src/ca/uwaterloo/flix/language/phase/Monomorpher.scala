@@ -561,52 +561,17 @@ object Monomorpher {
       }.get // This is safe since the last case can always match.
 
     case LoweredAst.Expr.JvmReflection(exp, true, tpe, eff, loc) =>
+      // Turn `$JVM_TYPE_OF_PROXY$(e: Proxy[t])` into `e; JvmType.Xyz`
+      // where `Xyz` is a reflection of `t`.
       val e = specializeExp(exp, env0, subst)
-      val argType = e.tpe match {
-        // Typing guarantees that `e.tpe` is `Proxy[?]`.
-        case Type.Apply(Type.Cst(_, _), arg, _) => arg
-        case _ => throw InternalCompilerException(s"Unexpected proxy type '${e.tpe}'", e.tpe.loc)
-      }
-      argType match {
-        case Type.Char => mkJvmTypeTag("JvmChar", tpe, eff, loc)
-        case Type.Bool => mkJvmTypeTag("JvmBool", tpe, eff, loc)
-        case Type.Int8 => mkJvmTypeTag("JvmInt8", tpe, eff, loc)
-        case Type.Int16 => mkJvmTypeTag("JvmInt16", tpe, eff, loc)
-        case Type.Int32 => mkJvmTypeTag("JvmInt32", tpe, eff, loc)
-        case Type.Int64 => mkJvmTypeTag("JvmInt64", tpe, eff, loc)
-        case Type.Float32 => mkJvmTypeTag("JvmFloat32", tpe, eff, loc)
-        case Type.Float64 => mkJvmTypeTag("JvmFloat64", tpe, eff, loc)
-        case Type.Cst(_, _) => mkJvmTypeTag("JvmObject", tpe, eff, loc)
-        case Type.Apply(_, _, _) => mkJvmTypeTag("JvmObject", tpe, eff, loc)
-        case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-        case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-        case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-        case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-        case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-        case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-      }
+      val jvmType = reflectProxyType(e.tpe, loc)
+      MonoAst.Expr.Stm(e, jvmType, tpe, eff, loc)
 
-    case LoweredAst.Expr.JvmReflection(exp, false, tpe, eff, loc) =>
+    case LoweredAst.Expr.JvmReflection(exp, false, _, eff, loc) =>
+      // Turn `$JVM_VALUE$(e: t)` into `JvmValue.Xyz(e)` where `Xyz` is a reflection of `t`.
+      // For object types, `e` also needs to be cast into `java.lang.Object`.
       val e = specializeExp(exp, env0, subst)
-      e.tpe match {
-        case Type.Char => mkJvmValueTag("JvmChar", e, tpe, eff, loc)
-        case Type.Bool => mkJvmValueTag("JvmBool", e, tpe, eff, loc)
-        case Type.Int8 => mkJvmValueTag("JvmInt8", e, tpe, eff, loc)
-        case Type.Int16 => mkJvmValueTag("JvmInt16", e, tpe, eff, loc)
-        case Type.Int32 => mkJvmValueTag("JvmInt32", e, tpe, eff, loc)
-        case Type.Int64 => mkJvmValueTag("JvmInt64", e, tpe, eff, loc)
-        case Type.Float32 => mkJvmValueTag("JvmFloat32", e, tpe, eff, loc)
-        case Type.Float64 => mkJvmValueTag("JvmFloat64", e, tpe, eff, loc)
-        case Type.Cst(_, _) | Type.Apply(_, _, _) =>
-          val castToObject = mkCast(e, Type.mkNative(classOf[java.lang.Object], loc), eff, loc)
-          mkJvmValueTag("JvmObject", castToObject, tpe, eff, loc)
-        case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-        case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-        case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-        case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-        case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-        case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
-      }
+      reflectJvmValue(e, eff, loc)
 
     case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
@@ -662,16 +627,71 @@ object Monomorpher {
 
   }
 
-  private def mkJvmValueTag(tagName: String, e: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): MonoAst.Expr = {
-    val jvmCharSym = Symbol.mkCaseSym(Symbol.JvmValue, Name.Ident(tagName, loc))
-    val op = AtomicOp.Tag(jvmCharSym)
-    MonoAst.Expr.ApplyAtomic(op, List(e), tpe, eff, loc)
+  /**
+    * Returns the `JvmValue` of `exp` with effect `eff`.
+    *
+    * E.g. `"hello"` returns `JvmValue.JvmObject(unchecked_cast("hello" as Object)): JvmValue \ eff`.
+    */
+  private def reflectJvmValue(exp: MonoAst.Expr, eff: Type, loc: SourceLocation): MonoAst.Expr = {
+    exp.tpe match {
+      case Type.Char => mkJvmValueTag("JvmChar", exp, eff, loc)
+      case Type.Bool => mkJvmValueTag("JvmBool", exp, eff, loc)
+      case Type.Int8 => mkJvmValueTag("JvmInt8", exp, eff, loc)
+      case Type.Int16 => mkJvmValueTag("JvmInt16", exp, eff, loc)
+      case Type.Int32 => mkJvmValueTag("JvmInt32", exp, eff, loc)
+      case Type.Int64 => mkJvmValueTag("JvmInt64", exp, eff, loc)
+      case Type.Float32 => mkJvmValueTag("JvmFloat32", exp, eff, loc)
+      case Type.Float64 => mkJvmValueTag("JvmFloat64", exp, eff, loc)
+      case Type.Cst(_, _) | Type.Apply(_, _, _) =>
+        val castToObject = mkCast(exp, Type.mkNative(classOf[Object], loc), eff, loc)
+        mkJvmValueTag("JvmObject", castToObject, eff, loc)
+      case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '${exp.tpe}'", exp.tpe.loc)
+      case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '${exp.tpe}'", exp.tpe.loc)
+      case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '${exp.tpe}'", exp.tpe.loc)
+      case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '${exp.tpe}'", exp.tpe.loc)
+      case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '${exp.tpe}'", exp.tpe.loc)
+      case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '${exp.tpe}'", exp.tpe.loc)
+    }
   }
 
-  private def mkJvmTypeTag(tagName: String, tpe: Type, eff: Type, loc: SourceLocation): MonoAst.Expr = {
-    val jvmCharSym = Symbol.mkCaseSym(Symbol.JvmType, Name.Ident(tagName, loc))
+  /** Returns `JvmValue.tagName(e): JvmValue \ eff` */
+  private def mkJvmValueTag(tagName: String, e: MonoAst.Expr, eff: Type, loc: SourceLocation): MonoAst.Expr = {
+    val jvmCharSym = Symbol.mkCaseSym(Symbol.JvmValue, Name.Ident(tagName, loc))
     val op = AtomicOp.Tag(jvmCharSym)
-    MonoAst.Expr.ApplyAtomic(op, Nil, tpe, eff, loc)
+    MonoAst.Expr.ApplyAtomic(op, List(e), Type.mkEnum(Symbol.JvmValue, Kind.Star, loc), eff, loc)
+  }
+
+  /**
+    * Returns the `JvmType` representing `tpe`.
+    *
+    * E.g. `String` returns `JvmType.JvmObject: JvmType \ {}`.
+    *
+    * N.B.: `tpe` must be `Proxy[t]` for some `t`.
+    */
+  private def reflectProxyType(tpe: Type, loc: SourceLocation): MonoAst.Expr = {
+    val innerType = tpe match {
+      case Type.Apply(Type.Cst(_, _), arg, _) => arg
+      case _ => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    }
+    val caze = innerType match {
+      case Type.Char => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmChar", loc))
+      case Type.Bool => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmBool", loc))
+      case Type.Int8 => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmInt8", loc))
+      case Type.Int16 => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmInt16", loc))
+      case Type.Int32 => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmInt32", loc))
+      case Type.Int64 => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmInt64", loc))
+      case Type.Float32 => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmFloat32", loc))
+      case Type.Float64 => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmFloat64", loc))
+      case Type.Cst(_, _) => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmObject", loc))
+      case Type.Apply(_, _, _) => Symbol.mkCaseSym(Symbol.JvmType, Name.Ident("JvmObject", loc))
+      case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
+      case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
+      case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
+      case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
+      case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
+      case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
+    }
+    MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(caze), Nil, Type.mkEnum(Symbol.JvmType, Kind.Star, loc), Type.Pure, loc)
   }
 
   /**
