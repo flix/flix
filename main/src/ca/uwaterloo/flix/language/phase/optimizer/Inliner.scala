@@ -489,6 +489,14 @@ object Inliner {
     visitExp(bindings, ctx0.withEmptyExprCtx)
   }
 
+  /**
+    * Returns the definition of `sym` if it is let-bound and the [[shouldInlineVar]] predicate holds.
+    *
+    * Returns `default` otherwise.
+    *
+    * Throws an error if `sym` is not in scope. This also implies that it is the responsibility of the caller
+    * to replace any symbol occurrence with the corresponding fresh symbol in the variable substitution.
+    */
   private def callSiteInline(sym: Symbol.VarSym, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     ctx0.inScopeVars.get(sym) match {
       case Some(BoundKind.LetBound(exp, occur)) if shouldInlineVar(sym, exp, occur, ctx0) =>
