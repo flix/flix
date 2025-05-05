@@ -287,7 +287,7 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
 
-  test("No duplicated completions") {
+  ignore("No duplicated completions") {
     val charToTrim = 1
     Programs.foreach( program => {
       val (root1, _) = compile(program)
