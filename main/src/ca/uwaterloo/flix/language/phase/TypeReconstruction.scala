@@ -368,10 +368,6 @@ object TypeReconstruction {
           TypedAst.Expr.CheckedCast(cast, e, e.tpe, eff, loc)
       }
 
-    case KindedAst.Expr.UncheckedCast(KindedAst.Expr.Cst(Constant.Null, _), _, _, tvar, loc) =>
-      val t = subst(tvar)
-      TypedAst.Expr.Cst(Constant.Null, t, loc)
-
     case KindedAst.Expr.UncheckedCast(exp, declaredType0, declaredEff0, tvar, loc) =>
       val e = visitExp(exp)
       val declaredType = declaredType0.map(tpe => subst(tpe))

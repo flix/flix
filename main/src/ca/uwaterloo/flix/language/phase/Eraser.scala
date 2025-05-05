@@ -155,6 +155,7 @@ object Eraser {
           castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.HoleError(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.MatchError => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.CastError(_, _) => ApplyAtomic(op, es, t, purity, loc)
       }
 
     case ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>

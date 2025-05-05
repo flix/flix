@@ -190,7 +190,7 @@ object LambdaDrop {
     case Expr.Ascribe(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Cast(exp, _, _, _, _, _) =>
+    case Expr.Cast(exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.TryCatch(exp1, rules, _, _, _) =>
@@ -319,9 +319,9 @@ object LambdaDrop {
       val e = rewriteExp(exp)
       Expr.Ascribe(e, tpe, eff, loc)
 
-    case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+    case Expr.Cast(exp, tpe, eff, loc) =>
       val e = rewriteExp(exp)
-      Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc)
+      Expr.Cast(e, tpe, eff, loc)
 
     case Expr.TryCatch(exp1, rules, tpe, eff, loc) =>
       val e1 = rewriteExp(exp1)
