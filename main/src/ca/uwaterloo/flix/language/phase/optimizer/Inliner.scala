@@ -152,7 +152,7 @@ object Inliner {
 
             case None =>
               // It was not unconditionally inlined, so consider inlining at this occurrence site
-              callSiteInline(freshVarSym, Level.Nested, ctx0, Expr.Var(freshVarSym, tpe, loc))
+              callSiteInline(freshVarSym, ctx0, Expr.Var(freshVarSym, tpe, loc))
           }
       }
 
@@ -489,10 +489,10 @@ object Inliner {
     visitExp(bindings, ctx0.withEmptyExprCtx)
   }
 
-  private def callSiteInline(sym: Symbol.VarSym, lvl: Level, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+  private def callSiteInline(sym: Symbol.VarSym, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     ctx0.inScopeVars.get(sym) match {
-      case Some(BoundKind.LetBound(rhs, occur)) if shouldInlineVar(rhs, occur, lvl, ctx0) =>
-        visitExp(rhs, ctx0.copy(subst = Map.empty))
+      case Some(BoundKind.LetBound(exp, occur)) if shouldInlineVar(sym, exp, occur, ctx0) =>
+        visitExp(exp, ctx0.copy(subst = Map.empty))
 
       case Some(_) =>
         default
@@ -500,6 +500,24 @@ object Inliner {
       case None =>
         throw InternalCompilerException(s"unexpected evaluated var not in scope $sym", sym.loc)
     }
+  }
+
+  private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur, ctx0: LocalContext): Boolean = (occur, exp.eff) match {
+    case (Occur.Dead, _) => throw InternalCompilerException(s"unexpected call site inline of dead variable $sym", exp.loc)
+    case (Occur.Once, Type.Pure) if exp.eff == Type.Pure => throw InternalCompilerException(s"unexpected call site inline of pre-inlined variable $sym", exp.loc)
+    case (Occur.OnceInLambda, Type.Pure) => isTrivial(exp)
+    case (Occur.OnceInLocalDef, Type.Pure) => isTrivial(exp)
+    case (Occur.ManyBranch, Type.Pure) => shouldInlineMulti(exp, ctx0)
+    case (Occur.Many, Type.Pure) => isTrivial(exp) && shouldInlineMulti(exp, ctx0)
+    case _ => false // Impure so do not move expression
+  }
+
+  private def shouldInlineMulti(exp: Expr, ctx0: LocalContext): Boolean = {
+    noSizeIncrease(exp, ctx0)
+  }
+
+  private def noSizeIncrease(exp: Expr, ctx0: LocalContext): Boolean = exp match {
+    case _ => false
   }
 
   /**
