@@ -53,8 +53,8 @@ object VarOffsets {
     visitExp(defn.expr, offset)
   }
 
-  /** Assigns stack offsets to `e0` and returns the next available stack offset. */
-  private def visitExp(e0: Expr, offset0: Int): Int = e0 match {
+  /** Assigns stack offsets to `exp0` and returns the next available stack offset. */
+  private def visitExp(exp0: Expr, offset0: Int): Int = exp0 match {
     case Expr.Cst(_, _, _) =>
       offset0
 
@@ -130,21 +130,21 @@ object VarOffsets {
   }
 
   /** Assigns stack offsets to `exps` and returns the next available stack offset. */
-  private def visitExps(es: List[Expr], offset0: Int): Int = {
+  private def visitExps(exps: List[Expr], offset0: Int): Int = {
     var offset = offset0
-    for (exp <- es) {
+    for (exp <- exps) {
       offset = visitExp(exp, offset)
     }
     offset
   }
 
   /** Assigns stack offset to `sym` and returns the next available stack offset. */
-  private def setStackOffset(sym: Symbol.VarSym, tpe: MonoType, i0: Int): Int = {
+  private def setStackOffset(sym: Symbol.VarSym, tpe: MonoType, offset: Int): Int = {
     // Set the stack offset for the symbol.
-    sym.setStackOffset(i0)
+    sym.setStackOffset(offset)
 
     // Compute the next free stack offset.
-    i0 + getStackSize(tpe)
+    offset + getStackSize(tpe)
   }
 
   /** Returns the stack slots used by `tpe`. */
