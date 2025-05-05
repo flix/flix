@@ -532,7 +532,8 @@ object Inliner {
 
   /** Returns `true` if `defn` is not recursive and is either a higher-order function or is a direct call to another function. */
   private def shouldInlineDef(defn: OccurrenceAst.Def, ctx0: LocalContext): Boolean = {
-    !ctx0.currentlyInlining && !defn.context.isSelfRecursive && (defn.context.isDirectCall || isHigherOrder(defn))
+    !ctx0.currentlyInlining && !defn.context.isSelfRecursive &&
+      (defn.context.isDirectCall || isHigherOrder(defn))
   }
 
   /** Returns `true` if at least one formal parameter of `defn` has an arrow type. */
