@@ -10,6 +10,8 @@
     "java.lang.Long": "",
     "java.lang.Short": "",
 
+    "java.lang.Object": "IO",
+
     "java.lang.Process": "Exec, IO",
     "java.lang.ProcessBuilder": "Exec, IO",
     "java.lang.ProcessHandle": "Exec, IO",
