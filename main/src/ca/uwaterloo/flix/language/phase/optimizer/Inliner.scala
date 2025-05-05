@@ -18,9 +18,9 @@
 package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Expr, Occur, Pattern}
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Expr, FormalParam, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
-import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
@@ -183,16 +183,24 @@ object Inliner {
 
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, ctx0))
-      Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
+      if (shouldInlineDef(root.defs(sym), ctx0)) {
+        sctx.changed.putIfAbsent(sym0, ())
+        val defn = root.defs(sym)
+        val ctx = ctx0.copy(subst = Map.empty, currentlyInlining = true)
+        bindArgs(defn.exp, defn.fparams.zip(es), loc, ctx)
+      } else {
+        val es = exps.map(visitExp(_, ctx0))
+        Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
+      }
 
     case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       // Refresh the symbol
       val sym1 = ctx0.varSubst.getOrElse(sym, sym)
       // Check if it was unconditionally inlined
       ctx0.subst.get(sym1) match {
-        case Some(SubstRange.SuspendedExpr(exp@Expr.LocalDef(_, _, _, _, _, _, _, _), subst)) =>
+        case Some(SubstRange.SuspendedExpr(Expr.LocalDef(_, fparams, exp, _, _, _, _, _), subst)) =>
           val es = exps.map(visitExp(_, ctx0))
-          betaReduceLocalDef(exp, es, loc, ctx0.copy(subst = subst))
+          bindArgs(exp, fparams.zip(es), loc, ctx0.copy(subst = subst))
 
         case None | Some(_) =>
           // It was not unconditionally inlined, so return same expr with visited subexpressions
@@ -464,24 +472,24 @@ object Inliner {
   }
 
   /**
-    * Performs beta-reduction on a local def `exp` applied to `exps`.
+    * Performs beta-reduction, binding `exps` as let-bindings.
     *
     * It is the responsibility of the caller to first visit `exps` and provide a substitution from the definition site
     * of `exp`.
     *
-    * [[betaReduceLocalDef]] creates a series of let-bindings
+    * [[bindArgs]] creates a series of let-bindings
     * {{{
     *   let sym1 = exp1;
     *   // ...
     *   let symn = expn;
-    *   exp'
+    *   exp
     * }}}
-    * where `symi` is the symbol of the i-th formal parameter and `exp'` is the body of the local def.
+    * where `symi` is the symbol of the i-th formal parameter and `exp` is the body of the function.
     *
     * Lastly, it visits the top-most let-binding, thus possibly removing the bindings.
     */
-  private def betaReduceLocalDef(exp: Expr.LocalDef, exps: List[Expr], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
-    val bindings = exp.fparams.zip(exps).foldRight(exp.exp1) {
+  private def bindArgs(exp: Expr, exps: List[(FormalParam, Expr)], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
+    val bindings = exps.foldRight(exp) {
       case ((fparam, arg), acc) =>
         val sym = fparam.sym // visitExp will refresh the symbol
         val tpe = acc.tpe
@@ -513,6 +521,16 @@ object Inliner {
     case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivial)
     case _ => false
+  }
+
+  /**
+    * Returns `true` if
+    *   - the local context shows that we are not currently inlining and
+    *   - `defn` is not recursive and
+    *   - is a direct call to another function.
+    */
+  private def shouldInlineDef(defn: OccurrenceAst.Def, ctx0: LocalContext): Boolean = {
+    !ctx0.currentlyInlining && !defn.context.isSelfRecursive && defn.context.isDirectCall
   }
 
   /** Represents the range of a substitution from variables to expressions. */
