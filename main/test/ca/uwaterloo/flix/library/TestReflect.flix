@@ -2,7 +2,7 @@ mod TestReflect {
     use Reflect.default
 
     @test
-    def testDefaultUnit(): Bool = Object.isNull((default(): Unit))
+    def testDefaultUnit(): Bool = (default(): Unit) == ()
 
     @test
     def testDefaultBool(): Bool = (default(): Bool) == false
@@ -17,7 +17,7 @@ mod TestReflect {
     def testDefaultFloat64(): Bool = (default(): Float64) == 0.0f64
 
     @test
-    def testDefaultBigDecimal(): Bool = Object.isNull((default(): BigDecimal))
+    def testDefaultBigDecimal(): Bool = (default(): BigDecimal) == 0.0ff
 
     @test
     def testDefaultInt8(): Bool = (default(): Int8) == 0i8
@@ -32,7 +32,7 @@ mod TestReflect {
     def testDefaultInt64(): Bool = (default(): Int64) == 0i64
 
     @test
-    def testDefaultBigInt(): Bool = Object.isNull((default(): BigInt))
+    def testDefaultBigInt(): Bool = (default(): BigInt) == 0ii
 
     @test
     def testDefaultList(): Bool = Object.isNull((default(): List[String]))
