@@ -1571,7 +1571,7 @@ mod Array {
     /// and include the specified range of `a`.
     ///
     pub def copyOfRange(_: Region[r2], b: Int32, e: Int32, a: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
-        match $JVM_TYPE_OF_PROXY$(Proxy.Proxy: Proxy[a]) {
+        match $JVM_TYPE_OF_PROXY$((Proxy.Proxy: Proxy[a])) {
             case JvmType.JvmBool =>
                 unchecked_cast(Arrays.copyOfRange(unchecked_cast(a as Array[Bool, r1]), b, e) as Array[a, r2] \ r1 + r2)
             case JvmType.JvmChar =>
