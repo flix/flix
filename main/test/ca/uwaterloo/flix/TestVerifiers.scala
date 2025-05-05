@@ -28,7 +28,7 @@ class TestVerifiers extends AnyFunSuite with TestUtils {
 
   }
 
-  /** "Complicated" Program to avoid tree shaking the whole AST away. */
+  /** "Complicated" main program to avoid tree shaking the whole AST away after the frontend. */
   private def exampleProgram: String =
     """
       |def main(): Bool = {
