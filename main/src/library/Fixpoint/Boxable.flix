@@ -40,7 +40,7 @@ mod Fixpoint.Boxable {
     ///
     /// Unboxes the given `x`.
     ///
-    pub def unbox(x: Boxed): a = match $JVM_TYPE_OF_PROXY$((Proxy.Proxy: Proxy[a])) {
+    pub def unbox(x: Boxed): a = match JvmReflection.reflectType((Proxy.Proxy: Proxy[a])) {
         case JvmType.JvmBool => match x {
             case Boxed.BoxedBool(v)      => unchecked_cast(v as a)
             case _                       => unreachable!()

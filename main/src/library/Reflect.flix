@@ -5,7 +5,7 @@ mod Reflect {
     /// The value returned should not be depended on;
     /// it acts as a placeholder to be replaced by a proper value.
     ///
-    pub def default(): a = match $JVM_TYPE_OF_PROXY$((Proxy.Proxy: Proxy[a])) {
+    pub def default(): a = match JvmReflection.reflectType((Proxy.Proxy: Proxy[a])) {
         case JvmType.JvmBool    => unchecked_cast(false as a)
         case JvmType.JvmChar    => unchecked_cast('0' as a)
         case JvmType.JvmFloat32 => unchecked_cast(0.0f32 as a)
