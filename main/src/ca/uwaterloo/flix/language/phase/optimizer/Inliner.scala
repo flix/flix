@@ -526,29 +526,15 @@ object Inliner {
   /**
     * Returns `true` if
     *   - the local context shows that we are not currently inlining and
-    *   - `defn` is not recursive and
+    *   - `defn` does not refer to itself and
     *   - is either a higher-order function with a known lambda as argument or
     *   - is a direct call to another function.
     *
     * It is the responsibility of the caller to visit `exps` first.
     */
   private def shouldInlineDef(defn: OccurrenceAst.Def, exps: List[Expr], ctx0: LocalContext): Boolean = {
-    !ctx0.currentlyInlining && !defn.context.isSelfRecursive &&
-      (defn.context.isDirectCall ||
-        (isHigherOrder(defn) && hasKnownLambda(defn.fparams, exps)))
-  }
-
-  /** Returns `true` if at least one formal parameter of `defn` has an arrow type. */
-  private def isHigherOrder(defn: OccurrenceAst.Def): Boolean = {
-    defn.spec.fparams.exists {
-      fp =>
-        fp.tpe.typeConstructor match {
-          case Some(TypeConstructor.Arrow(_)) => true
-          case Some(TypeConstructor.ArrowWithoutEffect(_)) => true
-          case Some(_) => false
-          case None => false
-        }
-    }
+    !ctx0.currentlyInlining && !defn.context.isSelfRef &&
+      (isDirectCall(defn.exp) || hasKnownLambda(defn.fparams, exps))
   }
 
   /**
@@ -563,6 +549,15 @@ object Inliner {
       }
       case _ => false
     }
+  }
+
+  /**
+    * Returns `true` if `exp0` is a function call with trivial arguments.
+    */
+  private def isDirectCall(exp0: OccurrenceAst.Expr): Boolean = exp0 match {
+    case OccurrenceAst.Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isTrivial)
+    case OccurrenceAst.Expr.ApplyClo(exp1, exp2, _, _, _) => isTrivial(exp1) && isTrivial(exp2)
+    case _ => false
   }
 
   /** Represents the range of a substitution from variables to expressions. */

@@ -210,10 +210,9 @@ object OccurrenceAst {
   /**
     * A [[DefContext]] contains various pieces of information on a function that are relevant for making an inlining decision.
     *
-    * @param localDefs       the number of local defs defined in a function.
-    * @param isDirectCall    true if the outermost expression of the body is a function call.
-    * @param isSelfRecursive true if the function symbol occurs in the body of the function being defined.
+    * @param localDefs the number of local defs defined in a function.
+    * @param isSelfRef true if a function body expression refers to the function itself.
     */
-  case class DefContext(localDefs: Int, isDirectCall: Boolean, isSelfRecursive: Boolean)
+  case class DefContext(localDefs: Int, isSelfRef: Boolean)
 
 }
