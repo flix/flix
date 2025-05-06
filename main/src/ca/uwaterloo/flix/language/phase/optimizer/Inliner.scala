@@ -597,11 +597,11 @@ object Inliner {
   @tailrec
   private def argsAreReducible(exp0: Expr, exprCtx: ExprContext, ctx0: LocalContext): Boolean = (exp0, exprCtx) match {
     case (Expr.Lambda(_, body, _, _), ExprContext.AppCtx(arg, _, ctx)) =>
-      !isTrivial(arg) || variableWithDefinition(arg, ctx0) || argsAreReducible(body, ctx, ctx0)
+      !isTrivial(arg) || letBoundVariable(arg, ctx0) || argsAreReducible(body, ctx, ctx0)
     case _ => false
   }
 
-  private def variableWithDefinition(expr: OccurrenceAst.Expr, ctx0: LocalContext): Boolean = expr match {
+  private def letBoundVariable(expr: OccurrenceAst.Expr, ctx0: LocalContext): Boolean = expr match {
     case Expr.Var(sym, _, _) => ctx0.varSubst.get(sym) match {
       case Some(freshSym) => ctx0.inScopeVars.get(freshSym) match {
         case Some(BoundKind.ParameterOrPattern) => false
