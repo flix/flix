@@ -563,7 +563,10 @@ object Inliner {
   }
 
   private def someBenefit(exp0: Expr, ctx0: LocalContext): Boolean = exp0 match {
-    case Expr.Lambda(_, _, _, _) => false
+    case Expr.Lambda(_, _, _, _) =>
+      argsAreReducible(exp0, ctx0.exprCtx, ctx0) ||
+        fullyAppliedAndScrutinized(exp0, ctx0.exprCtx) ||
+        nestedAndFullyApplied(exp0, ctx0.exprCtx)
 
     case Expr.ApplyAtomic(AtomicOp.Tag(_), _, _, _, _) => ctx0.exprCtx match {
       case ExprContext.MatchCtx(_, _, _) => true
