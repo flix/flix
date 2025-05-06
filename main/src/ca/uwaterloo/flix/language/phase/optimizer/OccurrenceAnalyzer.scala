@@ -24,8 +24,6 @@ import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.ConcurrentLinkedQueue
-import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
   * The occurrence analyzer collects occurrence information on binders according to the definition of [[Occur]].
@@ -48,7 +46,7 @@ object OccurrenceAnalyzer {
   private def visitDef(defn: OccurrenceAst.Def): OccurrenceAst.Def = {
     val lctx: LocalContext = LocalContext.mk()
     val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx)
-    val defContext = DefContext(lctx.localDefs.get(), isDirectCall(exp), isSelfRecursive(ctx.selfOccur))
+    val defContext = DefContext(lctx.localDefs.get(), isSelfRef(ctx.selfOccur))
     val fparams = defn.fparams.map(visitFormalParam(_, ctx))
     OccurrenceAst.Def(defn.sym, fparams, defn.spec, exp, defContext, defn.loc)
   }
@@ -230,12 +228,12 @@ object OccurrenceAnalyzer {
           (OccurrenceAst.Expr.Ascribe(e, tpe, eff, loc), ctx)
         }
 
-      case OccurrenceAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      case OccurrenceAst.Expr.Cast(exp, tpe, eff, loc) =>
         val (e, ctx) = visitExp(exp)
         if (e eq exp) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (OccurrenceAst.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc), ctx)
+          (OccurrenceAst.Expr.Cast(e, tpe, eff, loc), ctx)
         }
 
       case OccurrenceAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
@@ -526,18 +524,9 @@ object OccurrenceAnalyzer {
   }
 
   /**
-    * Returns true if `expr0` is a function call.
-    */
-  private def isDirectCall(expr0: OccurrenceAst.Expr): Boolean = expr0 match {
-    case OccurrenceAst.Expr.ApplyDef(_, _, _, _, _, _) => true
-    case OccurrenceAst.Expr.ApplyClo(_, _, _, _, _) => true
-    case _ => false
-  }
-
-  /**
     * Returns true if `defn` occurs in `ctx`.
     */
-  private def isSelfRecursive(occur: Occur): Boolean = occur match {
+  private def isSelfRef(occur: Occur): Boolean = occur match {
     case Occur.Dead => false
     case Occur.Once => true
     case Occur.OnceInLambda => true

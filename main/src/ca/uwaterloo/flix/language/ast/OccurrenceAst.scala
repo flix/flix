@@ -90,7 +90,7 @@ object OccurrenceAst {
 
     case class Ascribe(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Cast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Cast(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -210,10 +210,9 @@ object OccurrenceAst {
   /**
     * A [[DefContext]] contains various pieces of information on a function that are relevant for making an inlining decision.
     *
-    * @param localDefs       the number of local defs defined in a function.
-    * @param isDirectCall    true if the outermost expression of the body is a function call.
-    * @param isSelfRecursive true if the function symbol occurs in the body of the function being defined.
+    * @param localDefs the number of local defs defined in a function.
+    * @param isSelfRef true if a function body expression refers to the function itself.
     */
-  case class DefContext(localDefs: Int, isDirectCall: Boolean, isSelfRecursive: Boolean)
+  case class DefContext(localDefs: Int, isSelfRef: Boolean)
 
 }

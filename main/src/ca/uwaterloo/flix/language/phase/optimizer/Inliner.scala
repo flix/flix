@@ -18,10 +18,10 @@
 package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Expr, Occur, Pattern}
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Expr, FormalParam, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
@@ -106,9 +106,12 @@ object Inliner {
     * occurrence bound by the defining function with symbol `sym0`.
     * If it obtains `x'` from the substitution, it does the following three things:
     *   1. If `x'` is in the expression substitution `subst` it replaces the variable with
-    *      the expression, recursively calling [[visitExp]] if it is a [[SubstRange.SuspendedExpr]].
+    *      the expression, recursively calling [[visitExp]] with the substitution from the definition site
+    *      if it is a [[SubstRange.SuspendedExpr]].
     *      This means that [[visitExp]] previously decided to unconditionally inline the let-binding
-    *      or decided to do copy-propagation of that binding (see below).
+    *   1. If it is a [[SubstRange.DoneExpr]] then it decided to do copy-propagation of that binding (see below).
+    *      It then recursively visits the expression using the empty substitution since the current substitution
+    *      is invalid in that scope.
     *   1. If `x'` is not in the expression substitution, it must be in the set of in-scope variable
     *      definitions and considers it for inlining if its definition is pure.
     *
@@ -180,12 +183,31 @@ object Inliner {
 
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, ctx0))
-      Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
+      if (shouldInlineDef(root.defs(sym), ctx0)) {
+        sctx.changed.putIfAbsent(sym0, ())
+        val defn = root.defs(sym)
+        val ctx = ctx0.copy(subst = Map.empty, currentlyInlining = true)
+        bindArgs(defn.exp, defn.fparams.zip(es), loc, ctx)
+      } else {
+        val es = exps.map(visitExp(_, ctx0))
+        Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
+      }
 
     case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+      // Refresh the symbol
       val sym1 = ctx0.varSubst.getOrElse(sym, sym)
-      val es = exps.map(visitExp(_, ctx0))
-      Expr.ApplyLocalDef(sym1, es, tpe, eff, loc)
+      // Check if it was unconditionally inlined
+      ctx0.subst.get(sym1) match {
+        case Some(SubstRange.SuspendedExpr(Expr.LocalDef(_, fparams, exp, _, _, _, _, _), subst)) =>
+          val es = exps.map(visitExp(_, ctx0))
+          bindArgs(exp, fparams.zip(es), loc, ctx0.copy(subst = subst))
+
+        case None | Some(_) =>
+          // It was not unconditionally inlined, so return same expr with visited subexpressions
+          val es = exps.map(visitExp(_, ctx0))
+          Expr.ApplyLocalDef(sym1, es, tpe, eff, loc)
+      }
+
 
     case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) => (occur, exp1.eff) match {
       case (Occur.Dead, Type.Pure) =>
@@ -232,6 +254,16 @@ object Inliner {
         // A function declaration is always pure so we do not care about the effect of exp1
         sctx.changed.putIfAbsent(sym0, ())
         visitExp(exp2, ctx0)
+
+      case Occur.Once =>
+        // It occurs exactly once in exp2, otherwise it would be OnceInLocalDef,
+        // so unconditionally inline
+        sctx.changed.putIfAbsent(sym0, ())
+        val freshVarSym = Symbol.freshVarSym(sym)
+        val exp = Expr.LocalDef(freshVarSym, fparams, exp1, exp2, tpe, eff, occur, loc)
+        val ctx = ctx0.addVarSubst(sym, freshVarSym)
+          .addSubst(freshVarSym, SubstRange.SuspendedExpr(exp, ctx0.subst))
+        visitExp(exp2, ctx)
 
       case _ =>
         val freshVarSym = Symbol.freshVarSym(sym)
@@ -311,9 +343,9 @@ object Inliner {
       val e = visitExp(exp, ctx0)
       Expr.Ascribe(e, tpe, eff, loc)
 
-    case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+    case Expr.Cast(exp, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)
-      Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc)
+      Expr.Cast(e, tpe, eff, loc)
 
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)
@@ -463,6 +495,35 @@ object Inliner {
   }
 
   /**
+    * Performs beta-reduction, binding `exps` as let-bindings.
+    *
+    * It is the responsibility of the caller to first visit `exps` and provide a substitution from the definition site
+    * of `exp`.
+    *
+    * [[bindArgs]] creates a series of let-bindings
+    * {{{
+    *   let sym1 = exp1;
+    *   // ...
+    *   let symn = expn;
+    *   exp
+    * }}}
+    * where `symi` is the symbol of the i-th formal parameter and `exp` is the body of the function.
+    *
+    * Lastly, it visits the top-most let-binding, thus possibly removing the bindings.
+    */
+  private def bindArgs(exp: Expr, exps: List[(FormalParam, Expr)], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
+    val bindings = exps.foldRight(exp) {
+      case ((fparam, arg), acc) =>
+        val sym = fparam.sym // visitExp will refresh the symbol
+        val tpe = acc.tpe
+        val eff = Type.mkUnion(arg.eff, acc.eff, loc)
+        val occur = fparam.occur
+        Expr.Let(sym, arg, acc, tpe, eff, occur, loc)
+    }
+    visitExp(bindings, ctx0.withEmptyExprCtx)
+  }
+
+  /**
     * Returns `true` if `exp0` is considered a trivial expression.
     *
     * An expression is trivial if it is a:
@@ -482,6 +543,25 @@ object Inliner {
     case Expr.ApplyAtomic(AtomicOp.Binary(_), exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivial)
+    case _ => false
+  }
+
+  /**
+    * Returns `true` if
+    *   - the local context shows that we are not currently inlining and
+    *   - `defn` does not refer to itself.
+    *   - is a direct call to another function.
+    */
+  private def shouldInlineDef(defn: OccurrenceAst.Def, ctx0: LocalContext): Boolean = {
+    !ctx0.currentlyInlining && !defn.context.isSelfRef && isDirectCall(defn.exp)
+  }
+
+  /**
+    * Returns `true` if `exp0` is a function call.
+    */
+  private def isDirectCall(exp0: OccurrenceAst.Expr): Boolean = exp0 match {
+    case OccurrenceAst.Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isTrivial)
+    case OccurrenceAst.Expr.ApplyClo(exp1, exp2, _, _, _) => isTrivial(exp1) && isTrivial(exp2)
     case _ => false
   }
 
@@ -529,19 +609,6 @@ object Inliner {
 
     /** Match-case expression context. */
     case class MatchCtx(rules: List[OccurrenceAst.MatchRule], subst: Map[Symbol.VarSym, SubstRange], ctx: ExprContext) extends ExprContext
-
-  }
-
-  /** Denotes the level at which the binder is declared. */
-  sealed trait Level
-
-  private object Level {
-
-    /** A [[OccurrenceAst.Def]] declaration. The def can be in modules or top-level. */
-    case object Def extends Level
-
-    /** Nested inside a [[OccurrenceAst.Def]]. This can be a lambda or local def. */
-    case object Nested extends Level
 
   }
 

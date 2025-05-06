@@ -334,6 +334,9 @@ object TypeVerifier {
         case AtomicOp.MatchError =>
           tpe
 
+        case AtomicOp.CastError(_, _) =>
+          tpe
+
         case AtomicOp.RecordExtend(label) =>
           val List(t1, t2) = ts
           removeFromRecordType(tpe, label.name, loc) match {
