@@ -716,8 +716,9 @@ object Inliner {
     * Returns `true` if
     *   - the local context shows that we are not currently inlining and
     *   - `defn` does not refer to itself and
-    *   - is either a higher-order function with a known lambda as argument or
-    *   - is a direct call to another function.
+    *   - it is either a higher-order function with a known lambda as argument or
+    *   - it is a direct call to another function or
+    *   - the body is trivial.
     *
     * It is the responsibility of the caller to visit `exps` first.
     *
@@ -727,7 +728,7 @@ object Inliner {
     */
   private def shouldInlineDef(defn: OccurrenceAst.Def, exps: List[Expr], ctx0: LocalContext): Boolean = {
     !ctx0.currentlyInlining && !defn.context.isSelfRef &&
-      (isDirectCall(defn.exp) || hasKnownLambda(exps))
+      (isDirectCall(defn.exp) || isTrivial(defn.exp) || hasKnownLambda(exps))
   }
 
   /**
