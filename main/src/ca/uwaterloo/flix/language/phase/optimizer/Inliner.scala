@@ -523,7 +523,7 @@ object Inliner {
   }
 
   /** Returns `true` if `exp` is pure and should be inlined at the occurrence of `sym`. */
-  private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur, ctx0: LocalContext): Boolean = (occur, exp.eff) match {
+  private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur, ctx0: LocalContext)(implicit root: OccurrenceAst.Root): Boolean = (occur, exp.eff) match {
     case (Occur.Dead, _) => throw InternalCompilerException(s"unexpected call site inline of dead variable $sym", exp.loc)
     case (Occur.Once, Type.Pure) => throw InternalCompilerException(s"unexpected call site inline of pre-inlined variable $sym", exp.loc)
     case (Occur.OnceInLambda, Type.Pure) => (isTrivial(exp) || isLambda(exp))
@@ -537,7 +537,7 @@ object Inliner {
     * Returns `true` if the `exp` should be inlined at the calling occurrence site
     * for a variable that has occurrence information [[Occur.Many]].
     */
-  private def shouldInlineMulti(exp: Expr, ctx0: LocalContext): Boolean = {
+  private def shouldInlineMulti(exp: Expr, ctx0: LocalContext)(implicit root: OccurrenceAst.Root): Boolean = {
     noSizeIncrease(exp, ctx0)
   }
 
@@ -545,12 +545,19 @@ object Inliner {
     * Returns true if `exp0` is a lambda and the size of its definition is less than or equal to
     * the size of the call.
     */
-  private def noSizeIncrease(exp0: Expr, ctx0: LocalContext): Boolean = exp0 match {
+  private def noSizeIncrease(exp0: Expr, ctx0: LocalContext)(implicit root: OccurrenceAst.Root): Boolean = exp0 match {
     case Expr.Lambda(_, exp, _, _) =>
       val bodySize = size(exp)
       val args = collectLambdaArgs(exp0, ctx0.exprCtx, ctx0)
       val callSize = args.map(_._1).map(size).sum
       bodySize <= callSize
+
+    case Expr.ApplyDef(sym, exps, _, _, _, _) =>
+      val defn = root.defs(sym)
+      val bodySize = size(defn.exp)
+      val callSize = exps.map(size).sum
+      bodySize <= callSize
+
     case _ => false
   }
 
