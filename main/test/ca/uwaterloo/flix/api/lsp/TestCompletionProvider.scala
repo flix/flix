@@ -17,130 +17,414 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Token
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source, SymUse}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Token, TypedAst}
+import ca.uwaterloo.flix.language.phase.Lexer
+import ca.uwaterloo.flix.util.Formatter.NoFormatter.code
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
-class TestCompletionProvider extends AnyFunSuite  {
+import java.nio.file.{Files, Paths}
+
+class TestCompletionProvider extends AnyFunSuite {
+
   /**
-    * A list of programs to test invariants on.
+    * A list of program paths to test invariants on.
+    *
+    * Note: files from large-examples and package-manager are not included in this list
     */
-  private val Programs = List(
-    s"""
-       |def main(): Unit \\ IO =
-       |    run {
-       |        Console.println("Please enter your name: ");
-       |        let name = Console.readln();
-       |        Console.println("Hello $${name}")
-       |    } with Console.runWithIO
-       |
-       |""".stripMargin,
-    s"""
-       |def main(): Unit \\ IO =
-       |    run {
-       |        let timestamp = Clock.currentTime(TimeUnit.Milliseconds);
-       |        println("$${timestamp} ms since the epoc")
-       |    } with Clock.runWithIO
-       |
-       |""".stripMargin,
-    s"""
-       |def main(): Unit \\ {Net, IO} =
-       |    run {
-       |        let url = "http://example.com/";
-       |        Logger.info("Downloading URL: '$${url}'");
-       |        match HttpWithResult.get(url, Map.empty()) {
-       |            case Result.Ok(response) =>
-       |                let file = "data.txt";
-       |                Logger.info("Saving response to file: '$${file}'");
-       |                let body = Http.Response.body(response);
-       |                match FileWriteWithResult.write(str = body, file) {
-       |                    case Result.Ok(_) =>
-       |                        Logger.info("Response saved to file: '$${file}'")
-       |                    case Result.Err(err) =>
-       |                        Logger.fatal("Unable to write file: '$${err}'")
-       |                }
-       |            case Result.Err(err) =>
-       |                Logger.fatal("Unable to download URL: '$${err}'")
-       |        }
-       |    } with FileWriteWithResult.runWithIO
-       |      with HttpWithResult.runWithIO
-       |      with Logger.runWithIO
-       |
-       |""".stripMargin,
-    s"""
-       |def parMap(f: a -> b, l: List[a]): List[b] = match l {
-       |    case Nil     => Nil
-       |    case x :: xs =>
-       |        par (r <- f(x); rs <- parMap(f, xs))
-       |            yield r :: rs
-       |}
-       |
-       |def main(): Unit \\ IO =
-       |    let l = List.range(1, 100);
-       |    println(parMap(x -> x + 1, l))
-       |
-       |""".stripMargin
+  private val ProgramPathList = List(
+    "examples/concurrency-and-parallelism/spawning-threads.flix",
+    "examples/concurrency-and-parallelism/using-par-yield.flix",
+    "examples/concurrency-and-parallelism/using-par-yield-recursively.flix",
+    "examples/concurrency-and-parallelism/using-select-with-default.flix",
+    "examples/concurrency-and-parallelism/using-select.flix",
+    "examples/concurrency-and-parallelism/using-channels-for-message-passing.flix",
+    "examples/concurrency-and-parallelism/using-select-with-timeout.flix",
+    "examples/effects-and-handlers/advanced/collatz.flix",
+    "examples/effects-and-handlers/advanced/nqueens.flix",
+    "examples/effects-and-handlers/advanced/backtracking.flix",
+    "examples/effects-and-handlers/using-Random.flix",
+    "examples/effects-and-handlers/using-HttpWithResult.flix",
+    "examples/effects-and-handlers/using-ProcessWithResult.flix",
+    "examples/effects-and-handlers/using-FileWriteWithResult.flix",
+    "examples/effects-and-handlers/using-Console.flix",
+    "examples/effects-and-handlers/using-Logger.flix",
+    "examples/effects-and-handlers/running-multiple-effects.flix",
+    "examples/effects-and-handlers/using-Clock.flix",
+    "examples/fixpoints/railroad-network.flix",
+    "examples/fixpoints/pipelines-of-fixpoint-computations.flix",
+    "examples/fixpoints/compiler-puzzle.flix",
+    "examples/fixpoints/polymorphic-first-class-constraints.flix",
+    "examples/fixpoints/first-class-constraints-and-fixpoints.flix",
+    "examples/functional-style/lists-and-list-processing.flix",
+    "examples/functional-style/pure-and-impure-functions.flix",
+    "examples/functional-style/mutual-recursion-with-full-tail-call-elimination.flix",
+    "examples/functional-style/higher-order-functions.flix",
+    "examples/functional-style/effect-polymorphic-functions.flix",
+    "examples/functional-style/enums-and-parametric-polymorphism.flix",
+    "examples/functional-style/function-composition-pipelines-and-currying.flix",
+    "examples/functional-style/algebraic-data-types-and-pattern-matching.flix",
+    "examples/imperative-style/copying-characters-into-array-with-foreach.flix",
+    "examples/imperative-style/imperative-style-foreach-loops.flix",
+    "examples/imperative-style/internal-mutability-with-regions.flix",
+    "examples/imperative-style/iterating-over-lists-with-foreach.flix",
+    "examples/interoperability/calling-methods/calling-java-varargs-methods.flix",
+    "examples/interoperability/calling-methods/calling-java-static-methods.flix",
+    "examples/interoperability/anonymous-classes/implementing-java-closeable.flix",
+    "examples/interoperability/anonymous-classes/implementing-java-runnable.flix",
+    "examples/interoperability/swing/swing-dial.flix",
+    "examples/interoperability/swing/simple-swing-app.flix",
+    "examples/interoperability/swing/swing-dialog.flix",
+    "examples/interoperability/exceptions/catching-java-exceptions.flix",
+    "examples/interoperability/files/reading-a-file-with-java.flix",
+    "examples/interoperability/files/writing-a-file-with-java.flix",
+    "examples/interoperability/files/checking-if-file-exists-with-java.flix",
+    "examples/misc/type-level-programming/track-list-emptiness-with-type-level-booleans.flix",
+    "examples/misc/type-level-programming/type-level-programming-string-sanitization.flix",
+//    "examples/misc/type-level-programming/type-level-programming-4bit-adder.flix",
+    "examples/misc/type-level-programming/type-level-programming-demorgan.flix",
+    "examples/misc/type-level-programming/type-level-programming-even-odd-list.flix",
+    "examples/misc/type-level-programming/type-level-programming-eager-lazy-list.flix",
+    "examples/misc/type-aliases.flix",
+    "examples/misc/named-arguments.flix",
+    "examples/modules/use-from-a-module-locally.flix",
+    "examples/modules/declaring-a-module.flix",
+    "examples/modules/use-from-a-module.flix",
+    "examples/modules/companion-module-effect.flix",
+    "examples/modules/companion-module-struct.flix",
+    "examples/modules/companion-module-trait.flix",
+    "examples/modules/companion-module-enum.flix",
+    "examples/records/the-ast-typing-problem-with-polymorphic-records.flix",
+    "examples/records/polymorphic-record-update.flix",
+    "examples/records/polymorphic-record-extension-and-restriction.flix",
+    "examples/records/record-construction-and-use.flix",
+    "examples/structs/structs-and-parametric-polymorphism.flix",
+    "examples/structs/struct-person.flix",
+    "examples/structs/struct-tree-monadic.flix",
+    "examples/structs/struct-tree.flix",
+    "examples/traits/trait-with-higher-kinded-type.flix",
+    "examples/traits/trait-with-associated-effect.flix",
+    "examples/traits/deriving-traits-automatically.flix",
+    "examples/traits/trait-with-associated-type.flix",
+    "examples/traits/declaring-a-trait-with-instances.flix",
   )
 
-  test("No completions after complete keyword"){
-    Programs.foreach{ program =>
-      val (root, flix, errors) = compile(program, Options.Default)
-      val source = mkSource(program)
-      val keywordTokens = root.tokens(source).toList.filter(_.kind.isKeyword)
-      keywordTokens.foreach{ token =>
-        // We will test all possible offsets in the keyword, including the start and end of the keyword
-        getAllPositionsWithinToken(token).foreach { pos =>
-          val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, flix)
-          assert(completions.items.isEmpty)
-        }
-      }
-    }
+  /**
+    * The contents of the programs in the list.
+    *
+    * We read the files from the disk and cache them in this list.
+    */
+  private val Programs: List[String] = ProgramPathList.map { programPath =>
+    Files.readString(Paths.get(programPath))
   }
 
-  test("No completions after complete literal"){
-    Programs.foreach{ program =>
-      val (root, flix, errors) = compile(program, Options.Default)
-      val source = mkSource(program)
-      // Find all the literal tokens that are on a single line
-      val keywordTokens = root.tokens(source).toList.filter(_.kind.isLiteral).filter(token => token.sp1.line == token.sp2.line)
-      keywordTokens.foreach { token =>
-        // We will test all possible offsets in the keyword, including the start and end of the keyword
-        getAllPositionsWithinToken(token).foreach { pos =>
-          val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, flix)
-          assert(completions.items.isEmpty)
-        }
-      }
-    }
+  /**
+    * The Flix object used across all the tests.
+    *
+    * We first compile the stdlib so that every further compilation will be incremental.
+    */
+  private val Flix: Flix = {
+    val flix = new Flix().setOptions(Options.Default)
+    flix.check()
+    flix
   }
 
   /**
     * The uri of the test source.
+    *
+    * Every test will use the same uri so that adding a new source with this uri will replace the old one.
     */
   private val Uri = "<test>"
 
+  test("No crashes when calling autoComplete anywhere") {
+    Programs.foreach(program => {
+      val (root, errors) = compile(program)
+      program.scanLeft(Position(1, 1))({
+        case (Position(line, _), '\n') => Position(line + 1, 1)
+        case (Position(line, col), _) => Position(line, col + 1)
+      }).foreach(pos => CompletionProvider.autoComplete(Uri, pos, errors)(root, Flix))
+    })
+  }
+
+  test("No completions after complete keyword") {
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
+      val source = mkSource(program)
+      val keywordTokens = root.tokens(source).toList.filter(_.kind.isKeyword)
+      keywordTokens.foreach { token =>
+        // We will test all possible offsets in the keyword, including the start and end of the keyword
+        getAllPositionsWithinToken(token).foreach { pos =>
+          val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, Flix)
+          assertEmpty(completions, token.mkSourceLocation(), pos)
+        }
+      }
+    })
+  }
+
+  test("No completions after complete literal") {
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
+      val source = mkSource(program)
+      // Find all the literal tokens that are on a single line
+      val literalTokens = root.tokens(source).toList.filter(_.kind.isLiteral)
+      literalTokens.foreach { token =>
+        // We will test all possible offsets in the keyword, including the start and end of the keyword
+        getAllPositionsWithinToken(token).foreach { pos =>
+          val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, Flix)
+          assertEmpty(completions, token.mkSourceLocation(), pos)
+        }
+      }
+    })
+  }
+
+  test("No completions inside comment") {
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
+      val source = mkSource(program)
+      // Find all the literal tokens that are on a single line
+      val commentTokens = root.tokens(source).toList.filter(_.kind.isComment)
+      commentTokens.foreach { token =>
+        // We will test all possible offsets in the keyword, including the start and end of the keyword
+        getAllPositionsWithinToken(token).foreach { pos =>
+          val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, Flix)
+          assertEmpty(completions, token.mkSourceLocation(), pos)
+        }
+      }
+    })
+  }
+
+  test("No completions when defining the name for defs"){
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
+      val allNameDefLocs = root.defs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
+      allNameDefLocs.foreach{ loc =>
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
+        assertEmpty(completions, loc, Position.from(loc.sp2))
+      }
+    })
+  }
+
+  test("No completions when defining the name for enums"){
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
+      val allNameDefLocs = root.enums.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
+      allNameDefLocs.foreach{ loc =>
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
+        assertEmpty(completions, loc, Position.from(loc.sp2))
+      }
+    })
+  }
+
+  test("No completions when defining the name for sigs"){
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
+      val allNameDefLocs = root.sigs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
+      allNameDefLocs.foreach{ loc =>
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
+        assertEmpty(completions, loc, Position.from(loc.sp2))
+      }
+    })
+  }
+
+  test("No completions when defining the name for traits"){
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
+      val allNameDefLocs = root.traits.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
+      allNameDefLocs.foreach{ loc =>
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
+        assertEmpty(completions, loc, Position.from(loc.sp2))
+      }
+    })
+  }
+
+  test("No completions when defining the name for effects"){
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
+      val allNameDefLocs = root.effects.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
+      allNameDefLocs.foreach{ loc =>
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
+        assertEmpty(completions, loc, Position.from(loc.sp2))
+      }
+    })
+  }
+
+  test("No completions when defining the name for structs"){
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
+      val allNameDefLocs = root.structs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
+      allNameDefLocs.foreach{ loc =>
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
+        assertEmpty(completions, loc, Position.from(loc.sp2))
+      }
+    })
+  }
+
+  test("No completions when defining the name for type aliases"){
+    Programs.foreach( program => {
+      val (root, errors) = compile(program)
+      val allNameDefLocs = root.typeAliases.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
+      allNameDefLocs.foreach{ loc =>
+        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
+        assertEmpty(completions, loc, Position.from(loc.sp2))
+      }
+    })
+  }
+
+  test("No duplicated completions for defs") {
+    val charToTrim = 1
+    Programs.foreach( program => {
+      val (root1, _) = compile(program)
+      val defSymUses = getDefSymUseOccurs()(root1)
+      defSymUses.foreach{
+        case defSymUse if isValidCodeToTrim(defSymUse.sym.toString, defSymUse.loc, charToTrim) =>
+          val alteredProgram = trimAfter(program, defSymUse.loc, charToTrim)
+          val triggerPosition = Position(defSymUse.loc.sp2.lineOneIndexed, defSymUse.loc.sp2.colOneIndexed - charToTrim)
+          val (root, errors) = compile(alteredProgram)
+          val completions = CompletionProvider.autoComplete(Uri, triggerPosition, errors)(root, Flix)
+          assertNoDuplicatedCompletions(completions, defSymUse.sym.toString, defSymUse.loc, program, charToTrim)
+        case _ => ()
+      }
+    })
+  }
+
+  ignore("No duplicated completions for vars") {
+    val numToTrim = 1
+    Programs.foreach( program => {
+      val (root1, _) = compile(program)
+      val varOccurs = getVarSymOccurs()(root1)
+      varOccurs.foreach{
+        case varOccur if isValidCodeToTrim(varOccur.text, varOccur.loc, numToTrim) =>
+          val alteredProgram = trimAfter(program, varOccur.loc, numToTrim)
+          val triggerPosition = Position(varOccur.loc.sp2.lineOneIndexed, varOccur.loc.sp2.colOneIndexed - numToTrim)
+          val (root, errors) = compile(alteredProgram)
+          val completions = CompletionProvider.autoComplete(Uri, triggerPosition, errors)(root, Flix)
+          assertNoDuplicatedCompletions(completions, varOccur.text, varOccur.loc, program, numToTrim)
+        case _ => ()
+      }
+    })
+  }
+
   /**
-    * Compiles the given input string `s` with the given compilation options `o`.
+    * Asserts that the given completion list is empty at the given position.
     */
-  private def compile(s: String, o: Options): (Root, Flix, List[CompilationMessage]) = {
-    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-    val flix = new Flix().setOptions(o).addSourceCode(Uri, s)
-    flix.check() match {
-      case (Some(root), errors) => (root, flix, errors)
-      case (None, _) => fail("Compilation failed: a root is expected.")
+  private def assertEmpty(completions: CompletionList, sourceLocation: SourceLocation, pos: Position): Unit = {
+    if (completions.items.nonEmpty) {
+      println(code(sourceLocation, s"Unexpected completions at $pos"))
+      println(s"Found completions: ${completions.items.map(_.label)}")
+      fail(s"Expected no completions at position $pos, but found ${completions.items.toList.length} completions.")
     }
   }
 
   /**
-    * Creates a source object from the given string `content`.
+    * Asserts that there are no duplicated completions in the given completion list.
+    *
+    * @param completions The completion list to check.
+    * @param codeLoc     The source location of the code that we are changing.
+    * @param codeText    The text of the code that we are changing.
+    * @param program     The original program string.
     */
-  private def mkSource(content: String): Source = {
-    val sctx = SecurityContext.AllPermissions
-    val input = Input.Text(Uri, content, sctx)
-    Source(input, content.toCharArray)
+  private def assertNoDuplicatedCompletions(completions: CompletionList, codeText: String, codeLoc: SourceLocation, program: String, charToTrim: Int): Unit = {
+    // Two completion items are identical if all the immediately visible fields are identical.
+    completions.items.groupBy(item => (item.label, item.kind, item.labelDetails)).foreach {
+      case (completion, duplicates) if duplicates.size > 1 =>
+        println(s"Duplicated completions when selecting var \"$codeText\" at $codeLoc for program:\n $program")
+        println(code(codeLoc, s"""Duplicated completion with label "${completion._1}" after deleting $charToTrim char here"""))
+        fail("Duplicated completions")
+      case _ => ()
+    }
+  }
+
+  /**
+    * The absolute character offset into the source, zero-indexed.
+    */
+  private def calcOffset(loc: SourcePosition): Int = {
+      var offset = 0
+      for (i <- 1 until loc.lineOneIndexed) {
+        offset += loc.source.getLine(i).length + 1 // +1 for the newline
+      }
+      offset + loc.colOneIndexed - 1
+  }
+
+  /**
+    * Trims the given program string after the given location `loc` by `n` characters.
+    */
+  private def trimAfter(program: String, loc: SourceLocation, n: Int): String = {
+    val target = program.substring(calcOffset(loc.sp1), calcOffset(loc.sp2))
+    program.substring(0, calcOffset(loc.sp1)) + target.dropRight(n) + program.substring(calcOffset(loc.sp2))
+  }
+
+  /**
+    * A Var is valid for the test if:
+    * - It's not empty after trimming
+    * - It's not synthetic
+    * - It's not a keyword after trimming
+    */
+  private def isValidCodeToTrim(codeText: String, codeLoc: SourceLocation, numToTrim: Int) = {
+    val trimmedText = codeText.dropRight(numToTrim)
+    val charsToTrim = codeText.takeRight(numToTrim)
+    codeText.length > numToTrim && !codeLoc.isSynthetic && charsToTrim.forall(isValidCharToTrim) && !isKeyword(trimmedText)
+  }
+
+  /**
+    * Returns `true` if the given character is a valid identifier character.
+    */
+  private def isValidCharToTrim(char: Char): Boolean = {
+    char.isLetterOrDigit || char == '_' || char == '-'
+  }
+
+  /**
+    * Returns `true` if the given code is a keyword.
+    */
+  private def isKeyword(code: String): Boolean = Lexer.lex(mkSource(code))._1.exists(_.kind.isKeyword)
+
+  /**
+    * Returns the set of variable symbols that occur in the given root.
+    */
+  private def getVarSymOccurs()(implicit root: Root): Set[Symbol.VarSym] = {
+    var occurs: Set[Symbol.VarSym] = Set.empty
+
+    object VarConsumer extends Consumer {
+      override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
+          case TypedAst.Expr.Var(sym, _, _) => occurs += sym
+          case _ =>
+        }
+    }
+
+    Visitor.visitRoot(root, VarConsumer, FileAcceptor(Uri))
+
+    occurs
+  }
+
+  private def getDefSymUseOccurs()(implicit root: Root): Set[SymUse.DefSymUse] = {
+    var occurs: Set[SymUse.DefSymUse] = Set.empty
+
+    object DefSymUseConsumer extends Consumer {
+      override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
+        case TypedAst.Expr.ApplyDef(symUse, _, _, _, _, _) => occurs += symUse
+        case _ =>
+      }
+    }
+
+    Visitor.visitRoot(root, DefSymUseConsumer, FileAcceptor(Uri))
+
+    occurs
+  }
+
+  /**
+    * Compiles the given input string `s` with the given compilation options `o`.
+    */
+  private def compile(program: String): (Root, List[CompilationMessage]) = {
+    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    Flix.addSourceCode(Uri, program)
+    Flix.check() match {
+      case (Some(root), errors) => (root, errors)
+      case (None, _) => fail("Compilation failed: a root is expected.")
+    }
   }
 
   /**
@@ -151,9 +435,28 @@ class TestCompletionProvider extends AnyFunSuite  {
     * - d|ef
     * - de|f
     * - def|
+    *
+    * If the token spans multiple lines, we will return all the positions in all the lines, both sides inclusive.
     */
-  private def getAllPositionsWithinToken(token: Token): List[Position] =
-    (0 to token.text.length).map{ offset =>
-      Position(token.sp1.line, token.sp1.col + offset)
-    }.toList
+  private def getAllPositionsWithinToken(token: Token): List[Position] = {
+    val initialLine = token.sp1.lineOneIndexed
+    val initialCol = token.sp1.colOneIndexed.toInt
+
+    token.text
+      .scanLeft((initialLine, initialCol)) { case ((line, col), char) =>
+        if (char == '\n') (line + 1, 1)
+        else (line, col + 1)
+      }
+      .map { case (line, col) => Position(line, col) }
+      .toList
+  }
+
+  /**
+    * Creates a source object from the given string `content`.
+    */
+  private def mkSource(content: String): Source = {
+    val sctx = SecurityContext.AllPermissions
+    val input = Input.Text(Uri, content, sctx)
+    Source(input, content.toCharArray)
+  }
 }

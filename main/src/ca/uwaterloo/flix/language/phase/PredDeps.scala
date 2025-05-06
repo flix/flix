@@ -193,6 +193,7 @@ object PredDeps {
 
     case Expr.ArrayLit(elms, exp, _, _, _) =>
       elms.foreach(visitExp)
+      visitExp(exp)
 
     case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1)
@@ -251,6 +252,7 @@ object PredDeps {
       visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
+      visitExp(exp)
       rules.foreach{ case CatchRule(_, _, e, _) => visitExp(e) }
 
     case Expr.Throw(exp, _, _, _) =>
@@ -270,6 +272,7 @@ object PredDeps {
       args.foreach(visitExp)
 
     case Expr.InvokeMethod(_, exp, args, _, _, _) =>
+      visitExp(exp)
       args.foreach(visitExp)
 
     case Expr.InvokeStaticMethod(_, args, _, _, _) =>
@@ -312,6 +315,7 @@ object PredDeps {
       visitExp(exp2)
 
     case Expr.ParYield(frags, exp, _, _, _) =>
+      visitExp(exp)
       frags.foreach{
         case ParYieldFragment(_, e, _) => visitExp(e)
       }
@@ -356,9 +360,9 @@ object PredDeps {
 
       // We add all body predicates and the head to the labels of each edge
       val bodyLabels: Vector[Label] = body0.collect {
-        case Body.Atom(bodyPred, den, _, _, _, bodyTpe, _) =>
+        case Body.Atom(bodyPred, bodyDen, _, _, _, bodyTpe, _) =>
           val (terms, _) = termTypesAndDenotation(bodyTpe)
-          Label(bodyPred, den, terms.length, terms)
+          Label(bodyPred, bodyDen, terms.length, terms)
       }.toVector
 
       val labels = bodyLabels :+ Label(headPred, den, headTerms.length, headTerms)

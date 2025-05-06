@@ -20,10 +20,9 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils
 import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionKind, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.errors.{InstanceError, ResolutionError, TypeError}
-import ca.uwaterloo.flix.util.Similarity
+import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol}
+import ca.uwaterloo.flix.language.errors.ResolutionError
 
 /**
   * The CodeActionProvider offers quickfix suggestions.
@@ -35,21 +34,21 @@ import ca.uwaterloo.flix.util.Similarity
 object CodeActionProvider {
 
   def getCodeActions(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = {
-    getActionsFromErrors(uri, range, errors) ++ getActionsFromRange(uri, range)
+    getActionsFromErrors(uri, range, errors)
   }
 
   private def getActionsFromErrors(uri: String, range: Range, errors: List[CompilationMessage])(implicit root: Root): List[CodeAction] = errors.flatMap {
-    case ResolutionError.UndefinedEffect(qn, ap,  _, _, loc) if overlaps(range, loc) =>
+    case ResolutionError.UndefinedEffect(qn, ap, _, _, loc) if overlaps(range, loc) =>
       mkUseEffect(qn.ident, uri, ap)
 
     case ResolutionError.UndefinedStruct(qn, ap, loc) if overlaps(range, loc) =>
-      mkUseStruct(qn.ident, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
+      mkUseStruct(qn.ident, uri, ap)
 
     case ResolutionError.UndefinedJvmImport(name, ap, _, loc) if overlaps(range, loc) =>
       mkImportJava(Name.mkQName(name), uri, ap)
 
-    case ResolutionError.UndefinedName(qn, ap, env, loc) if overlaps(range, loc) =>
-      mkFixMisspelling(qn, loc, env, uri) ++ mkUseDef(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap) ++ mkNewDef(qn.ident.name, uri, ap)
+    case ResolutionError.UndefinedName(qn, ap, _, loc) if overlaps(range, loc) =>
+      mkUseDef(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap)
 
     case ResolutionError.UndefinedTrait(qn, _, ap, _, _, loc) if overlaps(range, loc) =>
       mkUseTrait(qn.ident, uri, ap)
@@ -58,32 +57,9 @@ object CodeActionProvider {
       mkUseTag(name.ident.name, uri, ap) ++ mkQualifyTag(name.ident.name, uri, loc)
 
     case ResolutionError.UndefinedType(qn, _, ap, _, loc) if overlaps(range, loc) =>
-      mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap) ++ mkNewEnum(qn.ident.name, uri, ap) ++ mkNewStruct(qn.ident.name, uri, ap)
-
-    case TypeError.MissingInstanceEq(tpe, _, loc) if overlaps(range, loc) =>
-      mkDeriveMissingEq(tpe, uri)
-
-    case TypeError.MissingInstanceOrder(tpe, _, loc) if overlaps(range, loc) =>
-      mkDeriveMissingOrder(tpe, uri)
-
-    case TypeError.MissingInstanceToString(tpe, _, loc) if overlaps(range, loc) =>
-      mkDeriveMissingToString(tpe, uri)
-
-    case InstanceError.MissingSuperTraitInstance(tpe, _, sup, loc) if overlaps(range, loc) =>
-      mkDeriveMissingSuperTrait(tpe, sup, uri)
+      mkUseType(qn.ident, uri, ap) ++ mkImportJava(qn, uri, ap)
 
     case _ => Nil
-  }
-
-  /**
-    * Returns code actions based on the current index and the given range.
-    */
-  private def getActionsFromRange(uri: String, range: Range)(implicit root: Root): List[CodeAction] = {
-    root.enums.foldLeft(List.empty[CodeAction]) {
-      case (acc, (sym, enm)) if overlaps(range, sym.loc) =>
-        List(mkDeriveEq(enm, uri), mkDeriveOrder(enm, uri), mkDeriveToString(enm, uri)).flatten ::: acc
-      case (acc, _) => acc
-    }
   }
 
   /**
@@ -145,8 +121,8 @@ object CodeActionProvider {
     * }}}
     */
   private def mkUseTag(tagName: String, uri: String, ap: AnchorPosition)(implicit root: Root): List[CodeAction] = {
-    val candidateEnums = root.enums.filter{ case (_, enm) => enm.cases.keys.exists(_.name == tagName) && CompletionUtils.isAvailable(enm)}
-    candidateEnums.keys.map{ enumName =>
+    val candidateEnums = root.enums.filter { case (_, enm) => enm.cases.keys.exists(_.name == tagName) && CompletionUtils.isAvailable(enm) }
+    candidateEnums.keys.map { enumName =>
       CodeAction(
         title = s"use '$enumName.$tagName'",
         kind = CodeActionKind.QuickFix,
@@ -173,8 +149,8 @@ object CodeActionProvider {
     * }}}
     */
   private def mkQualifyTag(tagName: String, uri: String, loc: SourceLocation)(implicit root: Root): List[CodeAction] = {
-    val candidateEnums = root.enums.filter{ case (_, enm) => enm.cases.keys.exists(_.name == tagName) && CompletionUtils.isAvailable(enm)}
-    candidateEnums.keys.map{ enumName =>
+    val candidateEnums = root.enums.filter { case (_, enm) => enm.cases.keys.exists(_.name == tagName) && CompletionUtils.isAvailable(enm) }
+    candidateEnums.keys.map { enumName =>
       CodeAction(
         title = s"Prefix with '$enumName.'",
         kind = CodeActionKind.QuickFix,
@@ -224,9 +200,9 @@ object CodeActionProvider {
     *   - add a newline at the end.
     *
     * Example:
-    *   Given text = "\ndef foo(): =\n", ap = AnchorPosition(line=1, col=0, spaces=4)
-    *   The result will be:
-    *   TextEdit(Range(Position(1, 0), Position(1, 0)), "    \n    def foo(): =\n    \n")
+    * Given text = "\ndef foo(): =\n", ap = AnchorPosition(line=1, col=0, spaces=4)
+    * The result will be:
+    * TextEdit(Range(Position(1, 0), Position(1, 0)), "    \n    def foo(): =\n    \n")
     */
   private def mkTextEdit(ap: AnchorPosition, text: String): TextEdit = {
     val insertPosition = Position(ap.line, ap.col)
@@ -273,62 +249,6 @@ object CodeActionProvider {
     }.toList.sortBy(_.title)
 
   /**
-    * Returns a code action that proposes to create a new enum.
-    *
-    * For example, if we have:
-    *
-    * {{{
-    *   def foo(): Abc = ???
-    * }}}
-    *
-    * where the `Abc` type is not defined this code action proposes to add:
-    * {{{
-    *   enum Abc { }
-    * }}}
-    */
-  private def mkNewEnum(name: String, uri: String, ap: AnchorPosition): List[CodeAction] = CodeAction(
-    title = s"Create enum '$name'",
-    kind = CodeActionKind.QuickFix,
-    edit = Some(WorkspaceEdit(
-      Map(uri -> List(mkTextEdit(ap,
-        s"""
-          |enum $name {
-          |
-          |}
-          |""".stripMargin
-      )))
-    )),
-    command = None
-  ) :: Nil
-
-  /**
-    * Returns a code action that proposes to create a new function.
-    *
-    * For example, if we have:
-    *
-    * {{{
-    *   let x = f()
-    * }}}
-    *
-    * where the name `f` is not defined this code action proposes to add:
-    * {{{
-    *   def f(): =
-    * }}}
-    */
-  private def mkNewDef(name: String, uri: String, ap: AnchorPosition): List[CodeAction] = CodeAction(
-    title = s"Create def '$name'",
-    kind = CodeActionKind.QuickFix,
-    edit = Some(WorkspaceEdit(
-      Map(uri -> List(mkTextEdit(ap,
-        s"""
-          |def $name(): =
-          |""".stripMargin
-      )))
-    )),
-    command = None
-  ) :: Nil
-
-  /**
     * Returns a code action that proposes to import the corresponding Java class.
     * First, we try to import the class with the name matching the head of the `qn.namespace.idents`.
     * If there is no namespace, we try to import the class with the name matching `qn.ident`.
@@ -362,184 +282,6 @@ object CodeActionProvider {
   }
 
   /**
-    * Returns a code action that proposes to create a new struct.
-    *
-    * For example, if we have:
-    *
-    * {{{
-    *   def foo(): Abc = ???
-    * }}}
-    *
-    * where the `Abc` type is not defined this code action proposes to add:
-    * {{{
-    *   struct Abc[r] { }
-    * }}}
-    */
-  private def mkNewStruct(name: String, uri: String, ap:AnchorPosition): List[CodeAction] = CodeAction(
-    title = s"Create struct '$name'",
-    kind = CodeActionKind.QuickFix,
-    edit = Some(WorkspaceEdit(
-      Map(uri -> List(mkTextEdit(ap,
-        s"""
-           |struct $name[r] {
-           |
-           |}
-           |""".stripMargin
-      )))
-    )),
-    command = None
-  ) :: Nil
-
-  /**
-    * Returns a list of quickfix code action to suggest possibly correct spellings.
-    *
-    * Uses Levenshtein Distance to find close spellings.
-    */
-  private def mkFixMisspelling(qn: Name.QName, loc: SourceLocation, scp: LocalScope, uri: String): List[CodeAction] = {
-    val minLength = 3
-    val maxDistance = 3
-    val possibleNames: List[String] = scp.m.toList.map(_._1).filter(n => (n.length - qn.ident.name.length).abs < maxDistance)
-      .filter(n => Similarity.levenshtein(n, qn.ident.name) < maxDistance)
-    if (qn.ident.name.length > minLength)
-      possibleNames.map(n => mkCorrectSpelling(n, loc, uri))
-    else
-      Nil
-  }
-
-  /**
-    * Internal helper function for `mkFixMisspelling`.
-    * Returns a quickfix code action for a possibly correct name.
-    */
-  private def mkCorrectSpelling(correctName: String, loc: SourceLocation, uri: String): CodeAction =
-    CodeAction(
-      title = s"Did you mean: '$correctName'?",
-      kind = CodeActionKind.QuickFix,
-      edit = Some(WorkspaceEdit(
-        Map(uri -> List(TextEdit(
-          Range(Position.fromBegin(loc), Position.fromEnd(loc)),
-          correctName
-        )))
-      )),
-      command = None
-    )
-
-  /**
-    * Returns a quickfix code action to derive the `Eq` trait for the given type `tpe` if it is an enum.
-    */
-  private def mkDeriveMissingEq(tpe: Type, uri: String)(implicit root: Root): Option[CodeAction] =
-    mkDeriveMissing(tpe, "Eq", uri)
-
-  /**
-    * Returns a quickfix code action to derive the `Order` trait for the given type `tpe` if it is an enum.
-    */
-  private def mkDeriveMissingOrder(tpe: Type, uri: String)(implicit root: Root): Option[CodeAction] =
-    mkDeriveMissing(tpe, "Order", uri)
-
-  /**
-    * Returns a quickfix code action to derive the `ToString` trait for the given type `tpe` if it is an enum.
-    */
-  private def mkDeriveMissingToString(tpe: Type, uri: String)(implicit root: Root): Option[CodeAction] =
-    mkDeriveMissing(tpe, "ToString", uri)
-
-  /**
-    * Returns a quickfix code action to derive the missing supertrait for the given subtrait.
-    */
-  private def mkDeriveMissingSuperTrait(tpe: Type, superTrait: Symbol.TraitSym, uri: String)(implicit root: Root): Option[CodeAction] =
-    mkDeriveMissing(tpe, superTrait.name, uri)
-
-  /**
-    * Internal helper function for all `mkDeriveMissingX`.
-    * Returns a quickfix code action to derive the given trait `trt`
-    * for the given type `tpe` if it is an enum in the root.
-    */
-  private def mkDeriveMissing(tpe: Type, trt: String, uri: String)(implicit root: Root): Option[CodeAction] = tpe.typeConstructor match {
-    case Some(TypeConstructor.Enum(sym, _)) =>
-      root.enums.get(sym).map { e =>
-        CodeAction(
-          title = s"Derive '$trt'",
-          kind = CodeActionKind.QuickFix,
-          edit = Some(addDerivation(e, trt, uri)),
-          command = None
-        )
-      }
-    case _ => None
-  }
-
-  /**
-    * Returns a code action to derive the `Eq` trait.
-    */
-  private def mkDeriveEq(e: TypedAst.Enum, uri: String): Option[CodeAction] = mkDerive(e, "Eq", uri)
-
-  /**
-    * Returns a code action to derive the `Order` trait.
-    */
-  private def mkDeriveOrder(e: TypedAst.Enum, uri: String): Option[CodeAction] = mkDerive(e, "Order", uri)
-
-  /**
-    * Returns a code action to derive the `ToString` trait.
-    */
-  private def mkDeriveToString(e: TypedAst.Enum, uri: String): Option[CodeAction] = mkDerive(e, "ToString", uri)
-
-  /**
-    * Returns a code action to derive the given trait `trt` for the given enum `e` if it isn't already.
-    * `None` otherwise.
-    */
-  private def mkDerive(e: TypedAst.Enum, trt: String, uri: String): Option[CodeAction] = {
-    val alreadyDerived = e.derives.traits.exists(d => d.sym.name == trt)
-    if (alreadyDerived)
-      None
-    else Some(
-      CodeAction(
-        title = s"Derive '$trt'",
-        kind = CodeActionKind.Refactor,
-        edit = Some(addDerivation(e, trt, uri)),
-        command = None
-      )
-    )
-  }
-
-  /**
-    * Returns a workspace edit that properly derives the given trait, `trt`, for the enum, `e`.
-    *
-    * For example, if we have:
-    * {{{
-    *   enum Abc {}
-    * }}}
-    * we could derive the trait 'Eq' like so:
-    * {{{
-    *   enum Abc with Eq { }
-    * }}}
-    *
-    * Or if there are already other derivations present:
-    * {{{
-    *   enum Abc with ToString {}
-    * }}}
-    * it will be appended at the end:
-    * {{{
-    *   enum Abc with ToString, Eq { }
-    * }}}
-    */
-  private def addDerivation(e: TypedAst.Enum, trt: String, uri: String): WorkspaceEdit = {
-    val text =
-      if (e.derives.traits.isEmpty)
-        s" with $trt"
-      else
-        s", $trt"
-
-    // Compute the end source location.
-    // If there is already a derives clause we use its source location.
-    // Otherwise, we use the source location of the enum symbol.
-    val end = if (e.derives.loc != SourceLocation.Unknown) e.derives.loc else e.sym.loc
-
-    WorkspaceEdit(
-      Map(uri -> List(TextEdit(
-        Range(Position.fromEnd(end), Position.fromEnd(end)),
-        text
-      )))
-    )
-  }
-
-  /**
     * Returns `true` if the given `range` starts on the same line as the given source location `loc`.
     */
   private def overlaps(range: Range, loc: SourceLocation): Boolean = {
@@ -548,7 +290,7 @@ object CodeActionProvider {
   }
 
   private def sourcePosition2Position(sourcePosition: SourcePosition): Position = {
-    Position(sourcePosition.line, sourcePosition.col)
+    Position(sourcePosition.lineOneIndexed, sourcePosition.colOneIndexed)
   }
 
   private def sourceLocation2Range(sourceLocation: SourceLocation): Range = {
