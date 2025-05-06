@@ -295,6 +295,9 @@ object DocAst {
     def ApplyDef(sym: Symbol.DefnSym, ds: List[Expr]): Expr =
       App(AsIs(sym.toString), ds)
 
+    def ApplyLocalDef(sym: Symbol.VarSym, ds: List[Expr]): Expr =
+      App(AsIs(sym.toString), ds)
+
     def ApplyDefWithTail(sym: Symbol.DefnSym, ds: List[Expr], ct: ExpPosition): Expr =
       AppWithTail(AsIs(sym.toString), ds, Some(ct))
 
