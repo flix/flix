@@ -368,116 +368,6 @@ object Inliner {
   }
 
   /**
-    * Tries to unify exp with each rule in `rules`.
-    * If exp successfully unifies with a rule, each variable in the pattern is let-bound from left to right
-    * and assigned to the expression that was unified with.
-    *
-    * In some cases, unification may completely abort:
-    *   - If there is a non-trivial guard since the value of the guard cannot be determined.
-    *   - If there is a constant pattern and a non-constant expression in the scrutinee in that subterm since the value cannot be determined without constant folding.
-    *
-    * `exp` must be visited before calling [[tryDeforestation]]. `rules` must NOT be visited before calling [[tryDeforestation]].
-    */
-  private def tryDeforestation(exp: Expr, rules: List[OccurrenceAst.MatchRule], loc: SourceLocation, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
-    unifyFirstRule(exp, rules) match {
-      case None => default
-      case Some((UnificationResult.Success(bindings), rule)) =>
-        val letExp = bindings.foldRight(rule.exp) {
-          case ((sym, BoundKind.LetBound(e, occur)), acc) =>
-            val eff = Type.mkUnion(e.eff, acc.eff, loc)
-            Expr.Let(sym, e, acc, acc.tpe, eff, occur, e.loc)
-        }
-        visitExp(letExp, ctx0.withEmptyExprCtx)
-    }
-  }
-
-  @tailrec
-  private def unifyFirstRule(exp: Expr, rules: List[OccurrenceAst.MatchRule])(implicit flix: Flix): Option[(UnificationResult.Success, OccurrenceAst.MatchRule)] = rules match {
-    case Nil =>
-      None
-
-    case r :: rs => r.guard match {
-      case Some(Expr.Cst(Constant.Bool(false), _, _)) =>
-        unifyFirstRule(exp, rs)
-
-      case None | Some(Expr.Cst(Constant.Bool(true), _, _)) => unifyPattern(exp, r.pat) match {
-        case UnificationResult.Abort =>
-          None
-
-        case UnificationResult.Failure =>
-          unifyFirstRule(exp, rs)
-
-        case UnificationResult.Success(bindings) =>
-          Some((UnificationResult.Success(bindings), r))
-      }
-
-      case Some(_) =>
-        None
-    }
-  }
-
-  private sealed trait UnificationResult
-
-  private object UnificationResult {
-
-    val SuccessEmpty: UnificationResult = UnificationResult.Success(List.empty)
-
-    case object Abort extends UnificationResult
-
-    case object Failure extends UnificationResult
-
-    case class Success(bindings: List[(Symbol.VarSym, BoundKind.LetBound)]) extends UnificationResult
-
-    def combine(ur1: UnificationResult, ur2: UnificationResult): UnificationResult = (ur1, ur2) match {
-      case (UnificationResult.Abort, _) =>
-        UnificationResult.Abort
-
-      case (_, UnificationResult.Abort) =>
-        UnificationResult.Abort
-
-      case (UnificationResult.Failure, _) =>
-        UnificationResult.Failure
-
-      case (_, UnificationResult.Failure) =>
-        UnificationResult.Failure
-
-      case (UnificationResult.Success(bindings1), UnificationResult.Success(bindings2)) =>
-        UnificationResult.Success(bindings1 ::: bindings2)
-    }
-  }
-
-  private def unifyPattern(exp0: Expr, pat0: Pattern)(implicit flix: Flix): UnificationResult = (exp0, pat0) match {
-    case (_, Pattern.Wild(_, _)) =>
-      UnificationResult.SuccessEmpty
-
-    case (exp, Pattern.Var(sym, _, occur, _)) =>
-      UnificationResult.Success(List(sym -> BoundKind.LetBound(exp, occur)))
-
-    case (Expr.Cst(cst1, _, _), Pattern.Cst(cst2, _, _)) =>
-      if (cst1 == cst2) {
-        UnificationResult.SuccessEmpty
-      } else {
-        UnificationResult.Failure
-      }
-
-    case (_, Pattern.Cst(_, _, _)) => UnificationResult.Abort
-
-    case (Expr.ApplyAtomic(AtomicOp.Tag(sym1), exps, _, _, _), Pattern.Tag(sym2, pats, _, _)) =>
-      if (sym1 == sym2.sym) {
-        exps.zip(pats).map { case (e, p) => unifyPattern(e, p) }
-          .foldLeft(UnificationResult.SuccessEmpty)(UnificationResult.combine)
-      } else {
-        UnificationResult.Failure
-      }
-
-    case (Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _), Pattern.Tuple(pats, _, _)) =>
-      exps.zip(pats).map { case (e, p) => unifyPattern(e, p) }
-        .foldLeft(UnificationResult.SuccessEmpty)(UnificationResult.combine)
-
-    case _ => UnificationResult.Failure
-  }
-
-  /**
     * Returns a pattern with fresh variables and a substitution mapping the old variables the fresh variables.
     *
     * If a variable is unused it is rewritten to a wildcard pattern.
@@ -660,6 +550,86 @@ object Inliner {
     case _ => false
   }
 
+  /**
+    * Tries to unify exp with each rule in `rules`.
+    * If exp successfully unifies with a rule, each variable in the pattern is let-bound from left to right
+    * and assigned to the expression that was unified with.
+    *
+    * In some cases, unification may completely abort:
+    *   - If there is a non-trivial guard since the value of the guard cannot be determined.
+    *   - If there is a constant pattern and a non-constant expression in the scrutinee in that subterm since the value cannot be determined without constant folding.
+    *
+    * `exp` must be visited before calling [[tryDeforestation]]. `rules` must NOT be visited before calling [[tryDeforestation]].
+    */
+  private def tryDeforestation(exp: Expr, rules: List[OccurrenceAst.MatchRule], loc: SourceLocation, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
+    unifyFirstRule(exp, rules) match {
+      case None => default
+      case Some((UnificationResult.Success(bindings), rule)) =>
+        val letExp = bindings.foldRight(rule.exp) {
+          case ((sym, BoundKind.LetBound(e, occur)), acc) =>
+            val eff = Type.mkUnion(e.eff, acc.eff, loc)
+            Expr.Let(sym, e, acc, acc.tpe, eff, occur, e.loc)
+        }
+        visitExp(letExp, ctx0.withEmptyExprCtx)
+    }
+  }
+
+  @tailrec
+  private def unifyFirstRule(exp: Expr, rules: List[OccurrenceAst.MatchRule])(implicit flix: Flix): Option[(UnificationResult.Success, OccurrenceAst.MatchRule)] = rules match {
+    case Nil =>
+      None
+
+    case r :: rs => r.guard match {
+      case Some(Expr.Cst(Constant.Bool(false), _, _)) =>
+        unifyFirstRule(exp, rs)
+
+      case None | Some(Expr.Cst(Constant.Bool(true), _, _)) => unifyPattern(exp, r.pat) match {
+        case UnificationResult.Abort =>
+          None
+
+        case UnificationResult.Failure =>
+          unifyFirstRule(exp, rs)
+
+        case UnificationResult.Success(bindings) =>
+          Some((UnificationResult.Success(bindings), r))
+      }
+
+      case Some(_) =>
+        None
+    }
+  }
+
+  private def unifyPattern(exp0: Expr, pat0: Pattern)(implicit flix: Flix): UnificationResult = (exp0, pat0) match {
+    case (_, Pattern.Wild(_, _)) =>
+      UnificationResult.SuccessEmpty
+
+    case (exp, Pattern.Var(sym, _, occur, _)) =>
+      UnificationResult.Success(List(sym -> BoundKind.LetBound(exp, occur)))
+
+    case (Expr.Cst(cst1, _, _), Pattern.Cst(cst2, _, _)) =>
+      if (cst1 == cst2) {
+        UnificationResult.SuccessEmpty
+      } else {
+        UnificationResult.Failure
+      }
+
+    case (_, Pattern.Cst(_, _, _)) => UnificationResult.Abort
+
+    case (Expr.ApplyAtomic(AtomicOp.Tag(sym1), exps, _, _, _), Pattern.Tag(sym2, pats, _, _)) =>
+      if (sym1 == sym2.sym) {
+        exps.zip(pats).map { case (e, p) => unifyPattern(e, p) }
+          .foldLeft(UnificationResult.SuccessEmpty)(UnificationResult.combine)
+      } else {
+        UnificationResult.Failure
+      }
+
+    case (Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _), Pattern.Tuple(pats, _, _)) =>
+      exps.zip(pats).map { case (e, p) => unifyPattern(e, p) }
+        .foldLeft(UnificationResult.SuccessEmpty)(UnificationResult.combine)
+
+    case _ => UnificationResult.Failure
+  }
+
   /** Represents the range of a substitution from variables to expressions. */
   sealed private trait SubstRange
 
@@ -753,6 +723,36 @@ object Inliner {
       this.copy(inScopeVars = this.inScopeVars ++ mappings)
     }
 
+  }
+
+  private sealed trait UnificationResult
+
+  private object UnificationResult {
+
+    val SuccessEmpty: UnificationResult = UnificationResult.Success(List.empty)
+
+    case object Abort extends UnificationResult
+
+    case object Failure extends UnificationResult
+
+    case class Success(bindings: List[(Symbol.VarSym, BoundKind.LetBound)]) extends UnificationResult
+
+    def combine(ur1: UnificationResult, ur2: UnificationResult): UnificationResult = (ur1, ur2) match {
+      case (UnificationResult.Abort, _) =>
+        UnificationResult.Abort
+
+      case (_, UnificationResult.Abort) =>
+        UnificationResult.Abort
+
+      case (UnificationResult.Failure, _) =>
+        UnificationResult.Failure
+
+      case (_, UnificationResult.Failure) =>
+        UnificationResult.Failure
+
+      case (UnificationResult.Success(bindings1), UnificationResult.Success(bindings2)) =>
+        UnificationResult.Success(bindings1 ::: bindings2)
+    }
   }
 
   private object LocalContext {
