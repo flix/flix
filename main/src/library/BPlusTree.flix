@@ -30,10 +30,7 @@
 /// `search` is a result of the primary usage being for vectors. A `Search` describes the
 /// order in which elements should be compared. E.g. [0, 1, 2, ..., n] is the natural order.
 ///
-/// When using vectors in this way the internal wrapped methods can be called directly.
-/// Otherwise values will be wrapped in a Vector of size 1.
-/// An unfortunate effect of this is that the unwrapped usage will look like the BPlusTree
-/// contains the base type, not vectors of the base type.
+/// For all other usages `search` will be a vector of size 0.
 
 type alias Search = Vector[Int32]
 
@@ -69,7 +66,7 @@ mod BPlusTree {
     /// The requirements are roughly that the new 'code' should be equivalent on a single-threaded machine
     /// and there are no happens-before relations which link to other threads preventing the reordering.
     /// If either variable were volatile we might avoid this, but volatile is expensive (and not in Flix).
-    /// 
+    ///
     /// For us this means that {array[size] = 5; size++} can be reordered to {oldSize = size++; array[oldSize] = 5}.
     /// Another thread reading may then see the increase of size and try to access that position getting null.
     /// This has not happened in our experiments, but we wish to handle the case. The risk is in binarySearch and we
@@ -170,7 +167,7 @@ mod BPlusTree {
             let Lock(l) = lock;
             unchecked_cast((l.writeLock(): _ \ IO) as _ \ r)
     }
-    
+
     ///
     /// Returns true if and only if `tree` is a structurally correct tree.
     /// Only used for internal testing
@@ -191,29 +188,20 @@ mod BPlusTree {
     /// Thread-safe.
     ///
     pub def containsPair(key: k, val: v, tree: BPlusTree[k, v, r]): Bool \ r with Order[k], Eq[v] =
-        containsPairWrapped(Vector#{key}, val, tree)
-
-    ///
-    /// Returns `true` if and only if `tree` contains the key-value pair `(key, val)`.
-    ///
-    /// Thread-safe.
-    ///
-    @Internal
-    pub def containsPairWrapped(key: Vector[k], val: v, tree: BPlusTree[k, v, r]): Bool \ r with Order[k], Eq[v] =
         let (leaf, stamp) = BPlusTree.findLeaf(key, tree);
         let res = Node.leafContainsPair(key, val, tree->search, leaf);
         if(Lock.valid(stamp, Node.getLock(leaf))) {
             res
         } else {
             Lock.dumbWait(Node.getLock(leaf));
-            containsPairWrapped(key, val, tree)
+            containsPair(key, val, tree)
         }
 
     ///
     /// Returns a fresh empty BPlusTree tree of standard order wrapping values of `k`.
     ///
     pub def empty(rc: Region[r]): BPlusTree[k, v, r] \ r =
-        emptyWrapped(rc, Vector#{0})
+        emptyWithSearch(rc, Vector#{})
 
     ///
     /// Returns a fresh empty BPlusTree tree of `order` (the maximum keys/values per node).
@@ -221,7 +209,7 @@ mod BPlusTree {
     ///
     @Internal
     pub def emptyWithOrder(rc: Region[r], order: Int32): BPlusTree[k, v, r] \ r =
-        emptyWithOrderAndSearch(rc, order, Vector#{0})
+        emptyWithOrderAndSearch(rc, order, Vector#{})
 
     ///
     /// Returns a fresh empty BPlusTree tree of `order` (the maximum keys/values per node).
@@ -246,14 +234,14 @@ mod BPlusTree {
     /// `search` decided the comparison order for the stored vectors.
     ///
     @Internal
-    pub def emptyWrapped(rc: Region[r], search: Search): BPlusTree[k, v, r] \ r =
+    pub def emptyWithSearch(rc: Region[r], search: Search): BPlusTree[k, v, r] \ r =
         emptyWithOrderAndSearch(rc, 64, search)
 
     ///
     /// Returns the leaf containing `key` and leaves it locked. If no node contains `key` the rightmost
     /// node with values strictly less than `key` is returned.
     ///
-    def findLeaf(key: Vector[k], tree: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r with Order[k] =
+    def findLeaf(key: k, tree: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r with Order[k] =
         let (node, stamp) = getLockedRoot(tree);
         Node.traverseDown(key, node, stamp, tree)
 
@@ -274,15 +262,6 @@ mod BPlusTree {
     /// Not thread-safe
     ///
     pub def forEach(f: k -> v -> Unit \ ef, tree: BPlusTree[k, v, r]): Unit \ ef + r with Order[k] =
-        forEachWrapped(wrappedK -> f(Vector.get(0, wrappedK)), tree)
-
-    ///
-    /// Apply `f` to all mapping `(key, val)` in `tree`
-    ///
-    /// Not thread-safe
-    ///
-    @Internal
-    pub def forEachWrapped(f: Vector[k] -> v -> Unit \ ef, tree: BPlusTree[k, v, r]): Unit \ ef + r with Order[k] =
         let minLeaf = Node.leftMostChild(tree->root);
         Node.traverseRightUnconditional(f, 0, minLeaf)
 
@@ -299,18 +278,11 @@ mod BPlusTree {
             Lock.dumbWait(tree->rootLock);
             getLockedRoot(tree)
         }
-    
-    ///
-    /// Returns `v` if `(key, v)` is in `tree`. Otherwise return `d`.
-    ///
-    pub def getWithDefault(key: k, d: v, tree: BPlusTree[k, v, r]): v \ r with Order[k] =
-        getWithDefaultWrapped(Vector#{key}, d, tree)
 
     ///
     /// Returns `v` if `(key, v)` is in `tree`. Otherwise return `d`.
     ///
-    @Internal
-    pub def getWithDefaultWrapped(key: Vector[k], d: v, tree: BPlusTree[k, v, r]): v \ r with Order[k] =
+    pub def getWithDefault(key: k, d: v, tree: BPlusTree[k, v, r]): v \ r with Order[k] =
         let (leaf, stamp) = BPlusTree.findLeaf(key, tree);
         let res = Node.getWithDefault(key, stamp, d, leaf, tree);
         res
@@ -322,7 +294,8 @@ mod BPlusTree {
     /// Thread-safe.
     ///
     pub def insert(key: k, val: v, tree: BPlusTree[k, v, r]): Unit \ r with Order[k], Eq[v] =
-        insertWrapped(Vector#{key}, val, tree)
+        let newRoot = insertInternal(key, val, tree);
+        fixRoot(newRoot, tree)
 
     ///
     /// Updates the BPlusTree `tree` with the key-value pair `(key, val)`. Replaces any
@@ -333,20 +306,9 @@ mod BPlusTree {
     /// Returns the `Some(newRoot, stamp)` if the root was split where `stamp` is a write-stamp
     /// on `rootLock`.
     ///
-    def insertInternal(key: Vector[k], val: v, tree: BPlusTree[k, v, r]): Option[(Node[k, v, r], Int64)] \ r with Order[k], Eq[v] =
+    def insertInternal(key: k, val: v, tree: BPlusTree[k, v, r]): Option[(Node[k, v, r], Int64)] \ r with Order[k], Eq[v] =
         let (leaf, stamp) = BPlusTree.findLeaf(key, tree);
         Node.insertIntoLeaf(key, val, leaf, stamp, tree)
-
-    ///
-    /// Updates the BPlusTree `tree` with the key-value pair `(key, val)`. Replaces any
-    /// existing key-value pair.
-    ///
-    /// Thread-safe.
-    ///
-    @Internal
-    pub def insertWrapped(key: Vector[k], val: v, tree: BPlusTree[k, v, r]): Unit \ r with Order[k], Eq[v] =
-        let newRoot = insertInternal(key, val, tree);
-        fixRoot(newRoot, tree)
 
     ///
     /// Returns `true` if and only if `tree` is the empty tree.
@@ -370,20 +332,11 @@ mod BPlusTree {
     /// Thread-safe.
     ///
     pub def memberOf(key: k, tree: BPlusTree[k, v, r]): Bool \ r with Order[k] =
-        memberOfWrapped(Vector#{key}, tree)
-
-    ///
-    /// Returns `true` if and only if `tree` contains the key `k`.
-    ///
-    /// Thread-safe.
-    ///
-    @Internal
-    pub def memberOfWrapped(key: Vector[k], tree: BPlusTree[k, v, r]): Bool \ r with Order[k] =
         let (leaf, stamp) = BPlusTree.findLeaf(key, tree);
         let res = Node.leafContains(key, tree->search, leaf);
         if(not Lock.valid(stamp, Node.getLock(leaf))) {
             Lock.dumbWait(Node.getLock(leaf));
-            memberOfWrapped(key, tree)
+            memberOf(key, tree)
         } else {
             res
         }
@@ -396,7 +349,7 @@ mod BPlusTree {
     /// Not thread-safe
     ///
     pub def merge(src: BPlusTree[k, v, r], dst: BPlusTree[k, v, r]): Unit \ r with Order[k], Eq[v] = {
-        BPlusTree.forEachWrapped(k -> v -> BPlusTree.insertWrapped(k, v, dst), src)
+        BPlusTree.forEach(k -> v -> BPlusTree.insert(k, v, dst), src)
     }
 
     ///
@@ -406,7 +359,7 @@ mod BPlusTree {
     /// Not thread-safe
     ///
     pub def mergeWith(f: v -> v -> v \ ef, src: BPlusTree[k, v, r], dst: BPlusTree[k, v, r]): Unit \ r + ef with Order[k], Eq[v] = {
-        BPlusTree.forEachWrapped(k -> v -> BPlusTree.putWithWrapped(f, k, v, dst), src)
+        BPlusTree.forEach(k -> v -> BPlusTree.putWith(f, k, v, dst), src)
     }
 
     ///
@@ -423,7 +376,8 @@ mod BPlusTree {
     /// Thread-safe
     ///
     pub def putWith(f: v -> v -> v \ ef, key: k, val: v, tree: BPlusTree[k, v, r]): Unit \ ef + r with Order[k], Eq[v] =
-        putWithWrapped(f, Vector#{key}, val, tree)
+        let optNewRoot = putWithInternal(f, key, val, tree);
+        fixRoot(optNewRoot, tree)
 
     ///
     /// Internal method to update the mapping as described by `putWith`.
@@ -432,21 +386,9 @@ mod BPlusTree {
     ///
     /// Thread-safe
     ///
-    def putWithInternal(f: v -> v -> v \ ef, k: Vector[k], val: v, tree: BPlusTree[k, v, r]): Option[(Node[k, v, r], Int64)] \ ef + r with Order[k], Eq[v] =
+    def putWithInternal(f: v -> v -> v \ ef, k: k, val: v, tree: BPlusTree[k, v, r]): Option[(Node[k, v, r], Int64)] \ ef + r with Order[k], Eq[v] =
         let (leaf, stamp) = findLeaf(k, tree);
         Node.putWith(f, k, val, tree, leaf, stamp)
-
-    ///
-    /// Updated `tree` with the mapping `(key, val)` if `key` is not inserted.
-    /// Otherwise if the mapping `(key, oldVal)` is in `tree` update the mapping
-    /// to `key->f(val, oldVal)`.
-    ///
-    /// Thread-safe
-    ///
-    @Internal
-    pub def putWithWrapped(f: v -> v -> v \ ef, key: Vector[k], val: v, tree: BPlusTree[k, v, r]): Unit \ ef + r with Order[k], Eq[v] =
-        let optNewRoot = putWithInternal(f, key, val, tree);
-        fixRoot(optNewRoot, tree)
 
     ///
     /// Applies `f` in ascending order to all key-value pairs `(k, v)` in `tree` where
@@ -455,16 +397,6 @@ mod BPlusTree {
     /// Not thread-safe.
     ///
     pub def rangeQueryWith(f: k -> v -> Unit \ ef, min: k, max: k, tree: BPlusTree[k, v, r]): Unit \ r + ef with Order[k] =
-        rangeQueryWithWrapped(wrappedV -> f(Vector.get(0, wrappedV)), Vector#{min}, Vector#{max}, tree)
-
-    ///
-    /// Applies `f` in ascending order to all key-value pairs `(k, v)` in `tree` where
-    /// `min <= k <= max`.
-    ///
-    /// Not thread-safe.
-    ///
-    @Internal
-    pub def rangeQueryWithWrapped(f: Vector[k] -> v -> Unit \ ef, min: Vector[k], max: Vector[k], tree: BPlusTree[k, v, r]): Unit \ r + ef with Order[k] =
         let (root, stamp) = getLockedRoot(tree);
         Node.rangeQueryWith(f, min, max, stamp, root, tree)
 
@@ -496,19 +428,20 @@ mod BPlusTree {
         res
 
     ///
-    /// The Node struct defines the tree, having either children or leaves depending on
-    /// whether the node is a leaf or internal. The following invariants hold for Node:
-    /// `parent` is `None` for the root and `Some(p)` for all other nodes where `p` is the
-    /// parent node. `next` is `None` for internal nodes and the rightmost leaf node and
-    /// `Some(p)` for all leaf-nodes where `p` is the node directly to the right. `isLeaf`
-    /// describes whether a `Node` is a leaf or an internal node.
+    /// The Node struct defines the tree, having either children or values depending on
+    /// whether the node is internal or a leaf, respectively. The following invariants
+    /// hold for Node: `parent` is `None` for the root and `Some(p)` for all other nodes
+    /// where `p` is the parent node. `next` is `None` for internal nodes and the
+    /// rightmost leaf node and `Some(p)` for all leaf nodes where `p` is the node
+    /// directly to the right. `isLeaf` is true if the node is a leaf and false
+    /// otherwise.
     ///
     /// If `isLeaf == true`
     ///
     ///     `children` is of size 0
     ///
-    ///     `keys` and `values` have the same size (which should be the `order` of
-    ///     the tree)
+    ///     `keys` and `values` have the same size (which is the `order` of the
+    ///     tree)
     ///
     ///     `keys[i]` should store the key for the value stored at `values[i]`
     ///
@@ -520,22 +453,22 @@ mod BPlusTree {
     ///
     ///      `children` is of size `order` and `keys` have size `order - 1`
     ///
-    ///      `keys[i]` store the smallest key in the subtree `children[i+1]`
+    ///      `keys[i]` stores the smallest key in the subtree `children[i+1]`
     ///
     ///      `size` is the number of children currently stored in the leaf
     ///
     /// Lock invariants:
     ///
-    ///     `lock` is the lock associated with the node. When it is held no other thread
-    ///     may modify the contents The only exception to the previous rule is that the
+    ///     `lock` is the lock associated with the node. When it is held, no other thread may
+    ///     modify the node's contents. The only exception to the previous rule is that the
     ///     `parent` pointer is owned by the `lock` on the parent For the root node with
-    ///     parent None the parent pointer is owned by the `rootLock` on the tree. When
-    ///     going up the tree locks are forcefully acquired. When going down the tree if
-    ///     a lock cannot be acquired immediately all current locks will be released and
-    ///     the attempt restarted after the wanted lock has been released by the holder.
+    ///     parent None the parent pointer is owned by the `rootLock` on the tree. When going
+    ///     up the tree locks are forcefully acquired. When going down the tree if a lock
+    ///     cannot be acquired immediately all current locks will be released and the attempt
+    ///     restarted after the wanted lock has been released by the holder.
     ///
     pub struct Node[k, v, r] {
-        keys:       Array[Vector[k], r],
+        keys:       Array[k, r],
         children:   Array[Node[k, v, r], r],
         values:     Array[v, r],
         lock:       Lock[r],
@@ -546,9 +479,9 @@ mod BPlusTree {
     }
 
     mod Node {
+        import java.lang.invoke.{VarHandle => JVarHandle}
         import java.lang.{Object => JObject}
         import java.util.{Objects => JObjects}
-        import java.lang.invoke.{VarHandle => JVarHandle}
         use BPlusTree.Lock
 
         ///
@@ -560,7 +493,7 @@ mod BPlusTree {
         /// - On invocation, the thread has a lock on `node`.
         ///
         def actualInsertLeaf(
-            key: Vector[k],
+            key: k,
             val: v,
             insertionPoint: Int32,
             node: Node[k, v, r]
@@ -575,7 +508,7 @@ mod BPlusTree {
         /// E.g. f(v[0], v[1]) and f(v[1], v[2]) and ... and f(v[n-1], v[n])
         /// Only used by the testing functions
         ///
-        def applyPredicate(v: Vector[Vector[k]], f: Vector[k] -> Vector[k] -> Bool \ r): Bool \ r =
+        def applyPredicate(v: Vector[k], f: k -> k -> Bool \ r): Bool \ r =
             let zipped = Vector.map(x -> (x, true), v);
             let reduced =  Vector.reduceLeft(old -> cur ->
                 let (oldNum, oldBool) = old;
@@ -608,7 +541,7 @@ mod BPlusTree {
             node: Node[k, v, r],
             order: Int32,
             isRightMost: Bool,
-            shouldBeBiggerThan: Option[Vector[k]],
+            shouldBeBiggerThan: Option[k],
             search: Search
         ): Bool \ r with Order[k] =
             def unwrapNode(opt: Option[Node[k, v, r]]): Node[k, v, r] = match opt {
@@ -637,7 +570,7 @@ mod BPlusTree {
                     let nodeIsUnlocked = not BPlusTree.Lock.isLocked(node->lock);
                     let isBiggerThanPrev = match shouldBeBiggerThan {
                         case None => true
-                        case Some(v) => comparison(Vector.get(0, keys), v, 0, Vector.length(search), search) == 1
+                        case Some(v) => comparison(Vector.get(0, keys), v, search) == 1
                     };
                     parentPointerCorrect and
                         lastHasNoNext and noLeaves and keysInOrder and
@@ -656,13 +589,12 @@ mod BPlusTree {
         /// Perform a binary search and return the index of `key` in `node->keys` if it exists.
         /// Otherwise, return `(-insertionPoint - 1)` where `insertionPoint` is the index
         /// where `key` would be inserted.
-        /// 
+        ///
         /// `search` defines the order in which elements of the vectors are compared.
         ///
-        def binarySearch(key: Vector[k], search: Search, node: Node[k, v, r]): Int32 \ r with Order[k] =
+        def binarySearch(key: k, search: Search, node: Node[k, v, r]): Int32 \ r with Order[k] =
             let length = if(not node->isLeaf) node->size - 1 else node->size;
             let arr = node->keys;
-            let len = Vector.length(search);
             def f(l: Int32, r: Int32): Int32 \ r = {
                 if (l <= r) {
                     let m = (l + r) `Int32.rightShift` 1;
@@ -673,7 +605,7 @@ mod BPlusTree {
                         // case attempt to validate its stamp, which will fail so the result will not be used.
                         -1
                     } else {
-                        let comp = comparison(key, elem, 0, len, search);
+                        let comp = comparison(key, elem, search);
                         if (comp == 1) f(m+1, r)
                         else if (comp == -1) f(l, m-1)
                         else m
@@ -683,24 +615,54 @@ mod BPlusTree {
             f(0, length - 1)
 
         ///
-        /// Compare `vec1` to `vec2` in the order defined by the values in `search` from `i` (inclusive) to `max` exclusive.
+        /// Compare `val1` to `val2`. If `search` has non-zero length and `val1` and `val2` are of type `Vector[Int64]`
+        /// compare the lements in the order defined by `search`.
         ///
-        def comparison(vec1: Vector[k], vec2: Vector[k], i: Int32, max: Int32, search: Search): Int32 with Order[k] = {
-            if(i >= max) {
-                0
-            } else {
-                let s = Vector.get(i, search);
-                let vec1P = Vector.get(s, vec1);
-                let vec2P = Vector.get(s, vec2);
-                if(vec1P < vec2P) {
-                    -1
-                } else if (vec1P > vec2P) {
-                    1
-                } else {
-                    comparison(vec1, vec2, i + 1, max, search)
-                }
+        def comparison(val1: k, val2: k, search: Search): Int32 with Order[k] = {
+            let len = Vector.length(search);
+            // If the values are of type Vector[Int64] check whether a specific search is given.
+            // If so use the custom compare function for that search.
+            typematch val1 {
+                case val_1: Vector[Int64] =>
+                    if(len == 0) {
+                        let comp = val1 <=> val2;
+                        if (comp == Comparison.GreaterThan) 1
+                        else if (comp == Comparison.LessThan) -1
+                        else 0
+                    } else {
+                        typematch val2 {
+                            case val_2: Vector[Int64] => vectorComp(val_1, val_2, len, 0, search)
+                            case _: _ => unreachable!()
+                        }
+                    }
+                case _: _ =>
+                    let comp = val1 <=> val2;
+                    if (comp == Comparison.GreaterThan) 1
+                    else if (comp == Comparison.LessThan) -1
+                    else 0
             }
         }
+
+        ///
+        /// Compare `vec1` to `vec2` from `i` (inclusive) to `max` (exlusive) in the order defined by `search`.
+        ///
+        def vectorComp(vec1: Vector[Int64], vec2: Vector[Int64], max: Int32, i: Int32, search: Vector[Int32]): Int32 = {
+                if(i >= max) {
+                    0
+                } else {
+                    let s = Vector.get(i, search);
+                    let vec1P = Vector.get(s, vec1);
+                    let vec2P = Vector.get(s, vec2);
+                    if(vec1P < vec2P) {
+                        -1
+                    } else if (vec1P > vec2P) {
+                        1
+                    } else {
+                        vectorComp(vec1, vec2, max, i + 1, search)
+                    }
+                }
+            }
+
 
         ///
         /// Returns `true` if the pointer of `o1` is equal to the pointer of `o2`.
@@ -721,7 +683,7 @@ mod BPlusTree {
         ///
         /// Returns `v` if `(key, v)` is in `tree`. Otherwise return `d`.
         ///
-        pub def getWithDefault(key: Vector[k], stamp: Int64, d: v, node: Node[k, v, r], tree: BPlusTree[k, v, r]): v \ r with Order[k] =
+        pub def getWithDefault(key: k, stamp: Int64, d: v, node: Node[k, v, r], tree: BPlusTree[k, v, r]): v \ r with Order[k] =
             let index = binarySearch(key, BPlusTree.search(tree), node);
             let result = if (index < 0)
                 d
@@ -730,7 +692,7 @@ mod BPlusTree {
             if(not Lock.valid(stamp, node->lock)) {
                 // Restart
                 Lock.dumbWait(node->lock);
-                BPlusTree.getWithDefaultWrapped(key, d, tree)
+                BPlusTree.getWithDefault(key, d, tree)
             } else {
                 result
             }
@@ -747,7 +709,7 @@ mod BPlusTree {
         ///     Otherwise it has a write-lock on `tree->rootLock` and `p` where `Some(p)` is returned
         ///
         pub def insertIntoLeaf(
-            key: Vector[k],
+            key: k,
             val: v,
             node: Node[k, v, r],
             stamp: Int64,
@@ -759,7 +721,7 @@ mod BPlusTree {
         }
 
         def insertIntoLeafPropagate(
-                key: Vector[k],
+                key: k,
                 val: v,
                 index: Int32,
                 node: Node[k, v, r],
@@ -824,13 +786,13 @@ mod BPlusTree {
         /// Returns true if and only if the elements of `v` are sorted.
         /// Only used for internal testing.
         ///
-        def isSorted(v: Vector[Vector[k]], search: Search): Bool with Order[k] =
-            applyPredicate(v, x -> y -> comparison(x, y, 0, Vector.length(search), search) == -1)
+        def isSorted(v: Vector[k], search: Search): Bool with Order[k] =
+            applyPredicate(v, x -> y -> comparison(x, y, search) == -1)
 
         ///
         /// Returns `true` if `key` is contained in the leaf `node`.
         ///
-        pub def leafContains(key: Vector[k], search: Search, node: Node[k, v, r]): Bool \ r with Order[k] =
+        pub def leafContains(key: k, search: Search, node: Node[k, v, r]): Bool \ r with Order[k] =
             let index = binarySearch(key, search, node);
             if (index < 0)
                 false
@@ -840,7 +802,7 @@ mod BPlusTree {
         ///
         /// Returns `true` if the mapping `(key, val)` is contained in the leaf `node`.
         ///
-        pub def leafContainsPair(key: Vector[k], val: v, search: Search, node: Node[k, v, r]): Bool \ r with Order[k], Eq[v] =
+        pub def leafContainsPair(key: k, val: v, search: Search, node: Node[k, v, r]): Bool \ r with Order[k], Eq[v] =
             let index1 = binarySearch(key, search, node);
             if (index1 < 0)
                 false
@@ -848,7 +810,7 @@ mod BPlusTree {
                 Array.get(index1, node->values) == val
 
         ///
-        /// Returns the left-most leaf tree rooted in `node`. 
+        /// Returns the left-most leaf tree rooted in `node`.
         ///
         /// Not thread-safe.
         ///
@@ -893,7 +855,7 @@ mod BPlusTree {
         ///
         pub def mkLeaf(
             rc: Region[r],
-            keys: Array[Vector[k], r],
+            keys: Array[k, r],
             values: Array[v, r],
             size: Int32,
             parent: Option[Node[k, v, r]],
@@ -915,7 +877,7 @@ mod BPlusTree {
         ///
         def mkInternal(
             rc: Region[r],
-            keys: Array[Vector[k], r],
+            keys: Array[k, r],
             children: Array[Node[k, v, r], r],
             size: Int32,
             parent: Option[Node[k, v, r]]
@@ -955,7 +917,7 @@ mod BPlusTree {
             leftChild: Node[k, v, r],
             rightChild: Node[k, v, r],
             parentStamp: Int64,
-            newKey: Vector[k],
+            newKey: k,
             tree: BPlusTree[k, v, r]
         ): Option[(Node[k, v, r], Int64)] \ r with Order[k] =
         match parent {
@@ -997,7 +959,7 @@ mod BPlusTree {
         ///
         /// Thread-safe
         ///
-        pub def putWith(f: v -> v -> v \ ef, key: Vector[k], val: v, tree: BPlusTree[k, v, r], node: Node[k, v, r], stamp: Int64): Option[(Node[k, v, r], Int64)] \ r + ef with Order[k], Eq[v] =
+        pub def putWith(f: v -> v -> v \ ef, key: k, val: v, tree: BPlusTree[k, v, r], node: Node[k, v, r], stamp: Int64): Option[(Node[k, v, r], Int64)] \ r + ef with Order[k], Eq[v] =
             let index = binarySearch(key, BPlusTree.search(tree), node);
             if (index < 0) {
                 insertIntoLeafPropagate(key, val, index, node, stamp, tree)
@@ -1022,9 +984,9 @@ mod BPlusTree {
         /// Not thread-safe.
         ///
         pub def rangeQueryWith(
-            f: Vector[k] -> v -> Unit \ r0,
-            min: Vector[k],
-            max: Vector[k],
+            f: k -> v -> Unit \ r0,
+            min: k,
+            max: k,
             stamp: Int64,
             node: Node[k, v, r],
             tree: BPlusTree[k, v, r]
@@ -1055,7 +1017,7 @@ mod BPlusTree {
         def splitLeaf(
             leftLeaf: Node[k, v, r],
             leftStamp: Int64,
-            key: Vector[k],
+            key: k,
             val: v,
             insertionPoint: Int32,
             tree: BPlusTree[k, v, r]
@@ -1095,7 +1057,7 @@ mod BPlusTree {
             leftNodeStamp: Int64,
             insertedChild: Node[k, v, r],
             insertionPoint: Int32,
-            newKey: Vector[k],
+            newKey: k,
             tree: BPlusTree[k, v, r]
         ): Option[(Node[k, v, r], Int64)] \ r with Order[k] =
             let order = BPlusTree.order(tree);
@@ -1124,7 +1086,7 @@ mod BPlusTree {
         /// Moves elements of `leftLeaf->keys` and `leftLeaf->values` from `mid` (inclusive) to `order` (exclusive)
         /// to the returned arrays, respectively.
         ///
-        def splitToRightLeaf(rc: Region[r], mid: Int32, order: Int32, leftLeaf: Node[k, v, r]): (Array[Vector[k], r], Array[v, r]) \ r with Order[k] = {
+        def splitToRightLeaf(rc: Region[r], mid: Int32, order: Int32, leftLeaf: Node[k, v, r]): (Array[k, r], Array[v, r]) \ r with Order[k] = {
             let rightKeys = Array.empty(rc, order);
             let rightValues = Array.empty(rc, order);
             Array.copyInto(srcPos = mid, dstPos = 0, len = order - mid, src = leftLeaf->keys, rightKeys);
@@ -1137,8 +1099,8 @@ mod BPlusTree {
         /// from `mid` (inclusive) to `order` (exclusive) to the returned
         /// arrays, respectively. Inserts `insertedChild` at `insertionPoint`
         /// in `leftNode`.
-        /// 
-        /// Note: This function assumes that `insertionPoint < mid - 1`. 
+        ///
+        /// Note: This function assumes that `insertionPoint < mid - 1`.
         /// In other words `insertedChild` is not the rightMost child.
         ///
         /// Returns `(key, rightKeys, rightChildren)` where `key` is the largest value in the left subtree.
@@ -1147,12 +1109,12 @@ mod BPlusTree {
             rc: Region[r],
             insertedChild: Node[k, v, r],
             insertionPoint: Int32,
-            newKey: Vector[k],
+            newKey: k,
             mid: Int32,
             order: Int32,
             rightSize: Int32,
             leftNode: Node[k, v, r]
-        ): (Vector[k], Array[Vector[k], r], Array[Node[k, v, r], r]) \ r with Order[k] = {
+        ): (k, Array[k, r], Array[Node[k, v, r], r]) \ r with Order[k] = {
             let keyToPass = Array.get(mid - 1, leftNode->keys);
             let leftChildren = leftNode->children;
             let leftKeys = leftNode->keys;
@@ -1168,7 +1130,7 @@ mod BPlusTree {
 
         ///
         /// Moves elements of `leftNode->keys` and `leftNode->children` from
-        /// `mid` (inclusive) to `order` (exclusive) to the returned arrays, respectively. 
+        /// `mid` (inclusive) to `order` (exclusive) to the returned arrays, respectively.
         /// Inserts `insertedChild` at `insertionPoint` in the right node.
         ///
         /// Returns `(key, rightKeys, rightChildren)` where `key` is the largest value in the left subtree.
@@ -1177,12 +1139,12 @@ mod BPlusTree {
             rc: Region[r],
             insertedChild: Node[k, v, r],
             insertionPoint: Int32,
-            newKey: Vector[k],
+            newKey: k,
             mid: Int32,
             order: Int32,
             rightSize: Int32,
             leftNode: Node[k, v, r]
-        ): (Vector[k], Array[Vector[k], r], Array[Node[k, v, r], r]) \ r = {
+        ): (k, Array[k, r], Array[Node[k, v, r], r]) \ r = {
             // Insert the new node in the new right node and copy the relevant elements of the leftNode (index>=mid).
             let rightKeys = Array.empty(rc, order - 1);
             let rightChildren = Array.empty(rc, order);
@@ -1252,7 +1214,7 @@ mod BPlusTree {
         /// `lock` on `cur`. If acquiring a lock at any point fails release the locks you
         /// hold and retry from the root.
         ///
-        pub def traverseDown(key: Vector[k], cur: Node[k, v, r], stamp: Int64, tree: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r with Order[k] =
+        pub def traverseDown(key: k, cur: Node[k, v, r], stamp: Int64, tree: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r with Order[k] =
             match cur->isLeaf {
                 case false =>
                     let children = cur->children;
@@ -1285,15 +1247,15 @@ mod BPlusTree {
         /// Not thread-safe.
         ///
         def traverseRight(
-            f: Vector[k] -> v -> Unit \ ef,
+            f: k -> v -> Unit \ ef,
             index: Int32,
-            max: Vector[k],
+            max: k,
             search: Search,
             node: Node[k, v, r]
         ): Unit \ ef + r with Order[k] =
             if(index < node->size) {
                 let k = Array.get(index, node->keys);
-                if(comparison(k, max, 0, Vector.length(search), search) != 1) {
+                if(comparison(k, max, search) != 1) {
                     f(k, Array.get(index, node->values));
                     traverseRight(f, index + 1, max, search, node)
                 } else ()
@@ -1308,7 +1270,7 @@ mod BPlusTree {
         /// Not thread-safe
         ///
         pub def traverseRightUnconditional(
-            f: Vector[k] -> v -> Unit \ ef,
+            f: k -> v -> Unit \ ef,
             index: Int32,
             node: Node[k, v, r]
         ): Unit \ ef + r with Order[k] =
