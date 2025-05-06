@@ -526,8 +526,8 @@ object Inliner {
   private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur, ctx0: LocalContext)(implicit root: OccurrenceAst.Root): Boolean = (occur, exp.eff) match {
     case (Occur.Dead, _) => throw InternalCompilerException(s"unexpected call site inline of dead variable $sym", exp.loc)
     case (Occur.Once, Type.Pure) => throw InternalCompilerException(s"unexpected call site inline of pre-inlined variable $sym", exp.loc)
-    case (Occur.OnceInLambda, Type.Pure) => (isTrivial(exp) || isLambda(exp))
-    case (Occur.OnceInLocalDef, Type.Pure) => (isTrivial(exp) || isLambda(exp))
+    case (Occur.OnceInLambda, Type.Pure) => (isTrivial(exp) || isLambda(exp)) && someBenefit(exp, ctx0)
+    case (Occur.OnceInLocalDef, Type.Pure) => (isTrivial(exp) || isLambda(exp)) && someBenefit(exp, ctx0)
     case (Occur.ManyBranch, Type.Pure) => shouldInlineMulti(exp, ctx0)
     case (Occur.Many, Type.Pure) => (isTrivial(exp) || isLambda(exp)) && shouldInlineMulti(exp, ctx0)
     case _ => false // Impure so do not move expression
@@ -538,7 +538,7 @@ object Inliner {
     * for a variable that has occurrence information [[Occur.Many]].
     */
   private def shouldInlineMulti(exp: Expr, ctx0: LocalContext)(implicit root: OccurrenceAst.Root): Boolean = {
-    noSizeIncrease(exp, ctx0)
+    noSizeIncrease(exp, ctx0) || (someBenefit(exp, ctx0))
   }
 
   /**
@@ -560,6 +560,22 @@ object Inliner {
 
     case _ => false
   }
+
+  private def someBenefit(exp0: Expr, ctx0: LocalContext): Boolean = exp0 match {
+    case Expr.Lambda(_, _, _, _) => false
+
+    case Expr.ApplyAtomic(AtomicOp.Tag(_), _, _, _, _) => ctx0.exprCtx match {
+      case ExprContext.MatchCtx(_, _, _) => true
+      case _ => false
+    }
+    case Expr.ApplyAtomic(AtomicOp.Tuple, _, _, _, _) => ctx0.exprCtx match {
+      case ExprContext.MatchCtx(_, _, _) => true
+      case _ => false
+    }
+
+    case _ => false
+  }
+
 
   /**
     * Returns a tuple of the arg expression, its BoundKind ([[BoundKind.ParameterOrPattern]] if not applicable) and its own context.
