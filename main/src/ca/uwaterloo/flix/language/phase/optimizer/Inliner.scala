@@ -588,7 +588,7 @@ object Inliner {
   private def tryDeforestation(exp: Expr, rules: List[OccurrenceAst.MatchRule], loc: SourceLocation, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
     unifyFirstRule(exp, rules) match {
       case None => default
-      case Some((UnificationResult.Success(bindings), rule)) =>
+      case Some((bindings, rule)) =>
         sctx.changed.putIfAbsent(sym0, ())
         val letExp = bindings.foldRight(rule.exp) {
           case ((sym, BoundKind.LetBound(e, occur)), acc) =>
@@ -599,8 +599,14 @@ object Inliner {
     }
   }
 
+  /**
+    * Attempts to unify `exp` with each rule in `rules` from left to right and returns
+    * the first successful rule along with each unified variable and expression pair.
+    *
+    * If unification failed or aborted then [[None]] is returned.
+    */
   @tailrec
-  private def unifyFirstRule(exp: Expr, rules: List[OccurrenceAst.MatchRule])(implicit flix: Flix): Option[(UnificationResult.Success, OccurrenceAst.MatchRule)] = rules match {
+  private def unifyFirstRule(exp: Expr, rules: List[OccurrenceAst.MatchRule])(implicit flix: Flix): Option[(List[(Symbol.VarSym, BoundKind.LetBound)], OccurrenceAst.MatchRule)] = rules match {
     case Nil =>
       None
 
@@ -616,7 +622,7 @@ object Inliner {
           unifyFirstRule(exp, rs)
 
         case UnificationResult.Success(bindings) =>
-          Some((UnificationResult.Success(bindings), r))
+          Some((bindings, r))
       }
 
       case Some(_) =>
@@ -624,6 +630,13 @@ object Inliner {
     }
   }
 
+  /**
+    * Attempts to unify `exp0` with `pat0`.
+    *
+    * Returns [[UnificationResult.Abort]] to signal that no further attempts at unification should be made.
+    * This can happen when `pat0` is a constant and `exp0` is not yet fully reduced.
+    *
+    */
   private def unifyPattern(exp0: Expr, pat0: Pattern)(implicit flix: Flix): UnificationResult = (exp0, pat0) match {
     case (_, Pattern.Wild(_, _)) =>
       UnificationResult.SuccessEmpty
@@ -755,18 +768,40 @@ object Inliner {
 
   }
 
+  /** Represents the result of unifying the scrutinee of a [[Expr.Match]] expression with a pattern. */
   private sealed trait UnificationResult
 
   private object UnificationResult {
 
     val SuccessEmpty: UnificationResult = UnificationResult.Success(List.empty)
 
+    /**
+      * Represents an unrecoverable failure.
+      * The caller should then no longer attempt any further unification with the expression.
+      */
     case object Abort extends UnificationResult
 
+    /**
+      * Represents a "normal" unification failure.
+      * The caller may attempt to unify the expression with another pattern.
+      */
     case object Failure extends UnificationResult
 
+    /**
+      * Represents a successful unification.
+      *
+      * @param bindings contains the unified variable and expression pairs that should be let-bound.
+      */
     case class Success(bindings: List[(Symbol.VarSym, BoundKind.LetBound)]) extends UnificationResult
 
+    /**
+      * Combines `ur1` and `ur2`.
+      *
+      * If either is [[UnificationResult.Abort]] then [[UnificationResult.Abort]] is returned.
+      * Then if either is [[UnificationResult.Failure]] then [[UnificationResult.Failure]] is returned.
+      * If both `ur1` and `ur2` are [[UnificationResult.Success]] then their lists are combined.
+      *
+      */
     def combine(ur1: UnificationResult, ur2: UnificationResult): UnificationResult = (ur1, ur2) match {
       case (UnificationResult.Abort, _) =>
         UnificationResult.Abort
