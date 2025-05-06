@@ -76,7 +76,9 @@ object DocAst {
 
     case class DoubleKeyword(word1: String, d1: Expr, word2: String, d2: Either[Expr, Type]) extends Composite
 
-    case class TripleKeyword(word1: String, d1: Expr, word2: String, d2: Type, word3: String, d3: Type) extends Composite
+    case class DoubleKeywordPost(d1: Expr, word1: String, d2: Type, word3: String, d3: Type) extends Composite
+
+    case class InfixKeyword(d1: Expr, word: String, d2: Type) extends Composite
 
     case class Unary(op: String, d: Expr) extends Composite
 
@@ -257,9 +259,9 @@ object DocAst {
       DoubleKeyword("cast", d, "as", Right(tpe))
 
     def UncheckedCast(d: Expr, tpe0: Option[Type], eff0: Option[Type]): Expr = (tpe0, eff0) match {
-      case (Some(tpe), Some(eff)) => TripleKeyword("unchecked_cast", d, "as", tpe, "\\", eff)
-      case (Some(tpe), None) => DoubleKeyword("unchecked_cast", d, "as", Right(tpe))
-      case (None, Some(eff)) => TripleKeyword("unchecked_cast", d, "as", Type.Wild, "\\", eff)
+      case (Some(tpe), Some(eff)) => App(AsIs("unchecked_cast"), List(DoubleKeywordPost(d, "as", tpe, "\\", eff)))
+      case (Some(tpe), None) => App(AsIs("unchecked_cast"), List(InfixKeyword(d, "as", tpe)))
+      case (None, Some(eff)) => App(AsIs("unchecked_cast"), List(DoubleKeywordPost(d, "as", Type.Wild, "\\", eff)))
       case (None, None) => d
     }
 

@@ -194,8 +194,10 @@ object DocAstFormatter {
           case Right(tpe) => formatType(tpe, paren = false)
         }
         group(text(word1) +: aux(d1, paren = false) +\: text(word2) +: d2Part)
-      case TripleKeyword(word1, d1, word2, d2, word3, d3) =>
-        group(text(word1) +: aux(d1, paren = false) +\: text(word2) +: formatType(d2, paren = false) +\: text(word3) +: formatType(d3, paren = false))
+      case DoubleKeywordPost(d1, word2, d2, word3, d3) =>
+        group(aux(d1, paren = false) +\: text(word2) +: formatType(d2, paren = false) +\: text(word3) +: formatType(d3, paren = false))
+      case InfixKeyword(d1, word, d2) =>
+        group(aux(d1, paren = false) +\: text(word) +: formatType(d2, paren = false))
       case TryCatch(d, rules) =>
         val rs = semiSepOpt(rules.map {
           case (sym, clazz, rule) =>
