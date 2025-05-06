@@ -475,7 +475,7 @@ object Inliner {
     * Performs beta-reduction, binding `exps` as let-bindings.
     *
     * It is the responsibility of the caller to first visit `exps` and provide a substitution from the definition site
-    * of `exp`. The call must not visit `exp`.
+    * of `exp`. The caller must not visit `exp`.
     *
     * [[bindArgs]] creates a series of let-bindings
     * {{{
