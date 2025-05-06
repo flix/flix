@@ -1,4 +1,5 @@
 mod Test.Exp.Regions {
+    import java.lang.NullPointerException
 
     // Uses references and regions (e.g. could just duplicate most test cases for both).
     // Test cases that use 0, 1, 2, and 3 nested regions.
@@ -1382,5 +1383,19 @@ mod Test.Exp.Regions {
                 }
             }
         }
+
+    @test
+    def testRegionsAndTryCatch(): Bool \ IO = {
+        region rc {
+            let res = Ref.fresh(rc, false);
+            try {
+                throw new NullPointerException("test");
+                Ref.put(false, res)
+            } catch {
+                case _: NullPointerException => Ref.put(true, res)
+            };
+            Ref.get(res)
+        }
+    }
 
 }

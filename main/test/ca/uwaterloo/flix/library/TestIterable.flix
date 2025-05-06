@@ -184,7 +184,7 @@ mod TestIterable {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // MutPriorityQueue instance                                                       //
+    // MutPriorityQueue instance                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
@@ -196,14 +196,14 @@ mod TestIterable {
     @test
     def iterableMutPriorityQueue02(): Bool = region rc {
         let mq = MutPriorityQueue.empty(rc);
-        MutPriorityQueue.enqueueAll(mq, List#{2, 5, 11, 8});
+        MutPriorityQueue.enqueueAll(List#{2, 5, 11, 8}, mq);
         Iterable.iterator(rc, mq) |> Iterator.toList == List#{11, 8, 5, 2}
     }
 
     @test
     def iterableMutPriorityQueue03(): Bool = region rc {
         let mq = MutPriorityQueue.empty(rc);
-        MutPriorityQueue.enqueueAll(mq, List#{'A', 'B', 'D', 'C'});
+        MutPriorityQueue.enqueueAll(List#{'A', 'B', 'D', 'C'}, mq);
         Iterable.iterator(rc, mq) |> Iterator.toList == List#{'D', 'C', 'B', 'A'}
     }
 

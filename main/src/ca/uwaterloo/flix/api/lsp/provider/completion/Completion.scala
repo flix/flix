@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, CompletionItemLabelDetails, InsertTextFormat, Position, Range, TextEdit}
+import ca.uwaterloo.flix.api.lsp.{Command, CompletionItem, CompletionItemKind, CompletionItemLabelDetails, InsertTextFormat, LspUtil, Position, Range, TextEdit}
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
@@ -158,10 +158,10 @@ sealed trait Completion {
         kind     = CompletionItemKind.Function
       )
 
-    case Completion.DefCompletion(decl, range, ap, qualified, inScope) =>
+    case Completion.DefCompletion(decl, range, ap, qualified, inScope, ectx) =>
       val qualifiedName = decl.sym.toString
       val label = if (qualified) qualifiedName else decl.sym.name
-      val snippet = CompletionUtils.getApplySnippet(label, decl.spec.fparams)
+      val snippet = LspUtil.mkSpecSnippet(label, decl.spec, ectx)
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
@@ -178,7 +178,8 @@ sealed trait Completion {
         documentation       = Some(decl.spec.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Function,
-        additionalTextEdits = additionalTextEdit
+        additionalTextEdits = additionalTextEdit,
+        command             = Some(Command("editor.action.triggerParameterHints", "editor.action.triggerParameterHints", Nil))
       )
 
     case Completion.EnumCompletion(enm, range, ap, qualified, inScope, withTypeParameters) =>
@@ -338,13 +339,13 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.OpCompletion(op, namespace, range, ap, qualified, inScope) =>
+    case Completion.OpCompletion(op, namespace, range, ap, qualified, inScope, ectx) =>
       val qualifiedName =  if (namespace.nonEmpty)
         s"$namespace.${op.sym.name}"
       else
         op.sym.toString
       val name = if (qualified) qualifiedName else op.sym.name
-      val snippet = CompletionUtils.getApplySnippet(name, op.spec.fparams)
+      val snippet = LspUtil.mkSpecSnippet(name, op.spec, ectx)
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
@@ -360,7 +361,8 @@ sealed trait Completion {
         documentation       = Some(op.spec.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Function,
-        additionalTextEdits = additionalTextEdit
+        additionalTextEdits = additionalTextEdit,
+        command             = Some(Command("editor.action.triggerParameterHints", "editor.action.triggerParameterHints", Nil))
       )
 
     case Completion.OpHandlerCompletion(op, range) =>
@@ -379,13 +381,13 @@ sealed trait Completion {
         kind                = CompletionItemKind.Function,
       )
 
-    case Completion.SigCompletion(sig, namespace, range, ap, qualified, inScope) =>
+    case Completion.SigCompletion(sig, namespace, range, ap, qualified, inScope, ectx) =>
       val qualifiedName =  if (namespace.nonEmpty)
         s"$namespace.${sig.sym.name}"
       else
         sig.sym.toString
       val name = if (qualified) qualifiedName else sig.sym.name
-      val snippet = CompletionUtils.getApplySnippet(name, sig.spec.fparams)
+      val snippet = LspUtil.mkSpecSnippet(name, sig.spec, ectx)
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
@@ -401,16 +403,24 @@ sealed trait Completion {
         documentation       = Some(sig.spec.doc.text),
         insertTextFormat    = InsertTextFormat.Snippet,
         kind                = CompletionItemKind.Function,
-        additionalTextEdits = additionalTextEdit
+        additionalTextEdits = additionalTextEdit,
+        command             = Some(Command("editor.action.triggerParameterHints", "editor.action.triggerParameterHints", Nil))
       )
 
-    case Completion.EnumTagCompletion(tag, namespace, range, ap, qualified, inScope) =>
+    case Completion.EnumTagCompletion(tag, namespace, range, ap, qualified, inScope, ectx) =>
       val qualifiedName = if (namespace.nonEmpty)
         s"$namespace.${tag.sym.name}"
       else
         tag.sym.toString
       val name = if (qualified) qualifiedName else tag.sym.name
-      val snippet = name + CompletionUtils.formatTypesSnippet(tag.tpes)
+      val snippet = ectx match {
+        case ExprContext.InsideApply => name
+        case ExprContext.InsidePipeline => name + CompletionUtils.formatTypesSnippet(tag.tpes.dropRight(1))
+        case ExprContext.InsideRunWith =>
+          // Technically not possible, but we just revert to default behavior.
+          name + CompletionUtils.formatTypesSnippet(tag.tpes)
+        case ExprContext.Unknown => name + CompletionUtils.formatTypesSnippet(tag.tpes)
+      }
       val label = name + CompletionUtils.formatTypes(tag.tpes)
       val description = if(!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
@@ -670,8 +680,9 @@ object Completion {
     * @param ap        the anchor position for the use statement.
     * @param qualified indicate whether to use a qualified label.
     * @param inScope   indicate whether to the def is inScope.
+    * @param ectx      the expression context.
     */
-  case class DefCompletion(decl: TypedAst.Def, range: Range, ap: AnchorPosition, qualified:Boolean, inScope: Boolean) extends Completion
+  case class DefCompletion(decl: TypedAst.Def, range: Range, ap: AnchorPosition, qualified:Boolean, inScope: Boolean, ectx: ExprContext) extends Completion
 
   /**
     * Represents an Enum completion
@@ -761,8 +772,9 @@ object Completion {
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the op is inScope.
+    * @param ectx       the expression context.
     */
-  case class OpCompletion(op: TypedAst.Op, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class OpCompletion(op: TypedAst.Op, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion
 
   /**
     * Represents an Op Handler completion
@@ -781,8 +793,9 @@ object Completion {
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the signature is inScope.
+    * @param ectx       the expression context.
     */
-  case class SigCompletion(sig: TypedAst.Sig, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class SigCompletion(sig: TypedAst.Sig, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion
 
   /**
     * Represents an Enum Tag completion
@@ -793,8 +806,9 @@ object Completion {
     * @param ap         the anchor position for the use statement.
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the signature is inScope.
+    * @param ectx       the expression context.
     */
-  case class EnumTagCompletion(tag: TypedAst.Case, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class EnumTagCompletion(tag: TypedAst.Case, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion
 
   /**
     * Represents a Module completion

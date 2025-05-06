@@ -312,8 +312,8 @@ pub trait Foldable[t : Type -> Type] {
     ///
     /// Returns an immutable list of all the elements in `t` that satisfy the predicate `f`.
     ///
-    pub def filter(f: a -> Bool, t: t[a]): List[a] \ Foldable.Aef[t] =
-        Foldable.foldRight((x, acc) -> if (f(x)) x :: acc else acc, Nil, t)
+    pub def filter(f: a -> Bool \ ef, t: t[a]): List[a] \ (ef + Foldable.Aef[t]) =
+        Foldable.foldLeft((acc, x) -> if (f(x)) x :: acc else acc, Nil, t) |> List.reverse
 
     ///
     /// Applies `f` to each element in `t`.

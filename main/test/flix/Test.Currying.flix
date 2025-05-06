@@ -48,6 +48,13 @@ mod Test.Currying {
     @test
     def testCurry16(): Bool = k(x -> x, 42) == k(x -> x)(42)
 
+    @test
+    def testPartial01(): Bool = region rc {
+        let count = Ref.fresh(rc, 0);
+        let inc = f({Ref.put(Ref.get(count) + 1, count); Ref.get(count)});
+        inc(1) + inc(2) == 5
+    }
+
     ///
     /// A function of arity 2.
     ///

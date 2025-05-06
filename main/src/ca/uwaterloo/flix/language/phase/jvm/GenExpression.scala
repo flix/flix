@@ -652,9 +652,6 @@ object GenExpression {
       case AtomicOp.RecordExtend(field) =>
         val List(exp1, exp2) = exps
 
-        // We get the JvmType of the record interface
-        val interfaceType = BackendObjType.Record
-
         val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(exp1.tpe))
         val classInternalName = recordType.jvmName.toInternalName
 
@@ -798,7 +795,7 @@ object GenExpression {
         // Pushes the 'length' of the array on top of stack
         mv.visitInsn(ARRAYLENGTH)
 
-      case AtomicOp.StructNew(_, fields) =>
+      case AtomicOp.StructNew(_, _) =>
         val region :: fieldExps = exps
         // Evaluate the region and ignore its value
         compileExpr(region)
@@ -1080,20 +1077,35 @@ object GenExpression {
         mv.visitInsn(SWAP)
         mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${BackendObjType.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
         mv.visitInsn(ATHROW)
+
+      case AtomicOp.CastError(from, to) =>
+        import BackendObjType.CastError
+        // Add source line number for debugging (failable by design)
+        addSourceLine(mv, loc)
+        val ins = {
+          import BytecodeInstructions.*
+          NEW(CastError.jvmName) ~
+          DUP() ~
+          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~
+          pushString(s"Cannot cast from type '$from' to '$to'") ~
+          INVOKESPECIAL(CastError.Constructor) ~
+          ATHROW()
+        }
+        ins(new BytecodeInstructions.F(mv))
     }
 
     case Expr.ApplyClo(exp1, exp2, ct, _, purity, loc) =>
+      // Type of the function abstract class
+      val functionInterface = JvmOps.getFunctionInterfaceType(exp1.tpe)
+      val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp1.tpe)
       ct match {
         case ExpPosition.Tail =>
-          // Type of the function abstract class
-          val functionInterface = JvmOps.getFunctionInterfaceType(exp1.tpe)
-          val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp1.tpe)
           // Evaluating the closure
           compileExpr(exp1)
           // Casting to JvmType of closure abstract class
-          mv.visitTypeInsn(CHECKCAST, closureAbstractClass.name.toInternalName)
+          mv.visitTypeInsn(CHECKCAST, closureAbstractClass.jvmName.toInternalName)
           // retrieving the unique thread object
-          mv.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
+          mv.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.jvmName.toInternalName, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, false)
           // Putting arg on the Fn class
           // Duplicate the FunctionInterface
           mv.visitInsn(DUP)
@@ -1105,15 +1117,11 @@ object GenExpression {
           mv.visitInsn(ARETURN)
 
         case ExpPosition.NonTail =>
-          // Type of the function abstract class
-          val functionInterface = JvmOps.getFunctionInterfaceType(exp1.tpe)
-          val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp1.tpe)
-
           compileExpr(exp1)
           // Casting to JvmType of closure abstract class
-          mv.visitTypeInsn(CHECKCAST, closureAbstractClass.name.toInternalName)
+          mv.visitTypeInsn(CHECKCAST, closureAbstractClass.jvmName.toInternalName)
           // retrieving the unique thread object
-          mv.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
+          mv.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.jvmName.toInternalName, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, false)
           // Putting arg on the Fn class
           // Duplicate the FunctionInterface
           mv.visitInsn(DUP)
@@ -1280,9 +1288,6 @@ object GenExpression {
       // Introduce a label after the finally block.
       val afterFinally = new Label()
 
-      // Emit try finally block.
-      mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, finallyBlock, null)
-
       // Create an instance of Region
       mv.visitTypeInsn(NEW, BackendObjType.Region.jvmName.toInternalName)
       mv.visitInsn(DUP)
@@ -1295,6 +1300,10 @@ object GenExpression {
       // Compile the scope body
       mv.visitLabel(beforeTryBlock)
       compileExpr(exp)
+
+      // Emit try finally block. It's important to do this after compiling sub-expressions to ensure
+      // correct catch case ordering.
+      mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, finallyBlock, null)
 
       // When we exit the scope, call the region's `exit` method
       val iLoad = AsmOps.getLoadInstruction(JvmType.Reference(BackendObjType.Region.jvmName))
@@ -1338,11 +1347,6 @@ object GenExpression {
         rule => rule -> new Label()
       }
 
-      // Emit a try catch block for each catch rule.
-      for ((CatchRule(_, clazz, _), handlerLabel) <- rulesAndLabels) {
-        mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, handlerLabel, asm.Type.getInternalName(clazz))
-      }
-
       // Emit code for the try block.
       mv.visitLabel(beforeTryBlock)
       compileExpr(exp)
@@ -1363,6 +1367,12 @@ object GenExpression {
         mv.visitJumpInsn(GOTO, afterTryAndCatch)
       }
 
+      // Emit a try catch block for each catch rule. It's important to do this after compiling
+      // sub-expressions to ensure correct catch case ordering.
+      for ((CatchRule(_, clazz, _), handlerLabel) <- rulesAndLabels) {
+        mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, handlerLabel, asm.Type.getInternalName(clazz))
+      }
+
       // Add the label after both the try and catch rules.
       mv.visitLabel(afterTryAndCatch)
 
@@ -1377,9 +1387,9 @@ object GenExpression {
         NEW(effectJvmName) ~ DUP() ~ cheat(_.visitMethodInsn(Opcodes.INVOKESPECIAL, effectJvmName.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)) ~
         // bind handler closures
         cheat(mv => rules.foreach{
-          case HandlerRule(op, _, exp) =>
+          case HandlerRule(op, _, body) =>
             mv.visitInsn(Opcodes.DUP)
-            compileExpr(exp)(mv, ctx, root, flix)
+            compileExpr(body)(mv, ctx, root, flix)
             mv.visitFieldInsn(Opcodes.PUTFIELD, effectJvmName.toInternalName, JvmOps.getEffectOpName(op.sym), GenEffectClasses.opFieldType(op.sym).toDescriptor)
         }) ~
         // frames
