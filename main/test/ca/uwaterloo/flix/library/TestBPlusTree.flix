@@ -1,3 +1,20 @@
+/*
+ * Copyright 2025 Casper Dalgaard Nielsen
+ *                Adam Yasser Tallouzi
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 mod TestBPlusTree {
     import java.lang.Object
     import java.util.Objects
@@ -13,7 +30,7 @@ mod TestBPlusTree {
     ///
     /// Calls `f` `callNum` times and returns the and of the result.
     ///
-    def repeatN(f: Unit -> Bool \ ef, callNum: Int64): Bool \ ef = 
+    def repeatN(f: Unit -> Bool \ ef, callNum: Int64): Bool \ ef =
         def repeatNInternal(callNumInternal: Int64, res: Bool): Bool \ ef = {
             if (callNumInternal <= 0i64) res else {
                 // If the call to f is inlined Flix crashes for some reason.
