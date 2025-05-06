@@ -420,8 +420,12 @@ object Inliner {
     case (exp, Pattern.Var(sym, _, _, _)) =>
       UnificationResult.Success(Map(sym -> exp))
 
-    case (Expr.Cst(cst1, _, _), Pattern.Cst(cst2, _, _)) if cst1 == cst2 =>
-      UnificationResult.Success(Map.empty)
+    case (Expr.Cst(cst1, _, _), Pattern.Cst(cst2, _, _)) =>
+      if (cst1 == cst2) {
+        UnificationResult.Success(Map.empty)
+      } else {
+        UnificationResult.Failure
+      }
 
     case (_, Pattern.Cst(_, _, _)) => UnificationResult.Abort
 
