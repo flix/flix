@@ -320,7 +320,8 @@ class TestCompletionProvider extends AnyFunSuite {
           val triggerPosition = Position(defSymUse.loc.sp2.lineOneIndexed, defSymUse.loc.sp2.colOneIndexed - charToTrim)
           val (root, errors) = compile(alteredProgram)
           val completions = CompletionProvider.autoComplete(Uri, triggerPosition, errors)(root, Flix)
-          assertLowerOrderForUseImport(completions, program, defSymUse.loc)
+          val (otherCompletions, useImportCompletions) = completions.items.partition(_.additionalTextEdits.isEmpty)
+          assertPriorityHigher(otherCompletions, useImportCompletions, program, defSymUse.loc)
         case _ => ()
       }
     })
@@ -335,20 +336,6 @@ class TestCompletionProvider extends AnyFunSuite {
       println(s"Found completions: ${completions.map(_.label)}")
       fail(s"Expected no completions at position $pos, but found ${completions.length} completions.")
     }
-  }
-
-  /**
-    * Asserts that the given completion list is ordered correctly for use/import completions.
-    *
-    * Auto use/import completions should be lower than all other completions.
-    *
-    * @param completions The completion list to check.
-    * @param program     The original program string.
-    * @param loc         The source location of the code that we are changing.
-    */
-  private def assertLowerOrderForUseImport(completions: CompletionList, program: String, loc: SourceLocation): Unit = {
-    val (otherCompletions, useImportCompletions) = completions.items.partition(_.additionalTextEdits.isEmpty)
-    assertPriorityHigher(otherCompletions, useImportCompletions, program, loc)
   }
 
   /**
