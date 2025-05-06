@@ -309,6 +309,23 @@ class TestCompletionProvider extends AnyFunSuite {
     })
   }
 
+  test("Auto use/import completions are lower than all other completions") {
+    val charToTrim = 1
+    Programs.foreach( program => {
+      val (root1, _) = compile(program)
+      val defSymUses = getDefSymUseOccurs()(root1)
+      defSymUses.foreach{
+        case defSymUse if isValidCodeToTrim(defSymUse.sym.toString, defSymUse.loc, charToTrim) =>
+          val alteredProgram = trimAfter(program, defSymUse.loc, charToTrim)
+          val triggerPosition = Position(defSymUse.loc.sp2.lineOneIndexed, defSymUse.loc.sp2.colOneIndexed - charToTrim)
+          val (root, errors) = compile(alteredProgram)
+          val completions = CompletionProvider.autoComplete(Uri, triggerPosition, errors)(root, Flix)
+          assertLowerOrderForUseImport(completions, program, defSymUse.loc)
+        case _ => ()
+      }
+    })
+  }
+
   /**
     * Asserts that the given completion list is empty at the given position.
     */
@@ -317,6 +334,26 @@ class TestCompletionProvider extends AnyFunSuite {
       println(code(sourceLocation, s"Unexpected completions at $pos"))
       println(s"Found completions: ${completions.map(_.label)}")
       fail(s"Expected no completions at position $pos, but found ${completions.length} completions.")
+    }
+  }
+
+  /**
+    * Asserts that the given completion list is ordered correctly for use/import completions.
+    *
+    * Auto use/import completions should be lower than all other completions.
+    *
+    * @param completions The completion list to check.
+    * @param program     The original program string.
+    * @param loc         The source location of the code that we are changing.
+    */
+  private def assertLowerOrderForUseImport(completions: CompletionList, program: String, loc: SourceLocation): Unit = {
+    val (otherCompletions, useImportCompletions) = completions.items.partition(_.additionalTextEdits.isEmpty)
+    val lowestOtherCompletionSortText = otherCompletions.map(_.sortText).min
+    val highestUseImportCompletionSortText = useImportCompletions.map(_.sortText).max
+    if (lowestOtherCompletionSortText < highestUseImportCompletionSortText) {
+      println(s"Invalid Order: auto use/import completions are not lower than others for program:\n$program")
+      println(code(loc, s"Here we have sortText($lowestOtherCompletionSortText) < sortText($highestUseImportCompletionSortText), which violates the invariant."))
+      fail("Invalid Order for use/import completions")
     }
   }
 
