@@ -615,6 +615,13 @@ object Inliner {
     case None => BoundKind.ParameterOrPattern
   }
 
+  /** Returns `true` if `ctx` is either [[ExprContext.AppCtx]] or [[ExprContext.MatchCtx]]. */
+  private def isMatchOrAppCtx(ctx: ExprContext): Boolean = ctx match {
+    case ExprContext.AppCtx(_, _, _) => true
+    case ExprContext.MatchCtx(_, _, _) => true
+    case _ => false
+  }
+
   /**
     * Returns `true` if `exp0` is considered a trivial expression.
     *
