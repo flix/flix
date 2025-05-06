@@ -666,7 +666,7 @@ object Inliner {
       exps.zip(pats).map { case (e, p) => unifyPattern(e, p) }
         .foldLeft(UnificationResult.SuccessEmpty)(UnificationResult.combine)
 
-    case (Expr.Cst(Constant.RecordEmpty, _, _), Pattern.Record(List.empty, Pattern.Cst(Constant.RecordEmpty, _, _), _, _)) =>
+    case (Expr.Cst(Constant.RecordEmpty, _, _), Pattern.Record(Nil, Pattern.Cst(Constant.RecordEmpty, _, _), _, _)) =>
       UnificationResult.SuccessEmpty
 
     case _ =>
