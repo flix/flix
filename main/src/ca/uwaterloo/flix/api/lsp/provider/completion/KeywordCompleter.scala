@@ -66,7 +66,7 @@ object KeywordCompleter {
       Completion.KeywordCompletion("use"              , range, Priority.Default),
       // W
       Completion.KeywordCompletion("with"             , range, Priority.Default),
-    ).filter(c => CompletionUtils.fuzzyMatch(name.getOrElse(""), c.name))
+    ).filter(c => c.name.startsWith(name.getOrElse("")))
 
   /**
     * Enum keywords. These are keywords that can appear within the declaration of an enum.
@@ -146,11 +146,11 @@ object KeywordCompleter {
       Completion.KeywordCompletion("without"     , range, Priority.Default),
       // Y
       Completion.KeywordCompletion("yield"       , range, Priority.Default)
-    ).filter(c => CompletionUtils.fuzzyMatch(name.getOrElse(""), c.name)) ++ List (
+    ).filter(c => c.name.startsWith(name.getOrElse(""))) ++ List (
       Completion.KeywordLiteralCompletion("false", range, Priority.Higher),
       Completion.KeywordLiteralCompletion("null" , range, Priority.Lower),
       Completion.KeywordLiteralCompletion("true" , range, Priority.Higher),
-    ).filter(c => CompletionUtils.fuzzyMatch(name.getOrElse(""), c.literal))
+    ).filter(c => c.literal.startsWith(name.getOrElse("")))
   }
 
   /**
