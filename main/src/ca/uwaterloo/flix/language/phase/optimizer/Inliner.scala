@@ -566,7 +566,7 @@ object Inliner {
 
   private def someBenefit(exp0: Expr, ctx0: LocalContext): Boolean = exp0 match {
     case Expr.Lambda(_, _, _, _) =>
-      argsAreReducible(exp0, ctx0.exprCtx, ctx0) || fullyApplied(exp0, ctx0.exprCtx)
+      argsAreReducible(exp0, ctx0.exprCtx, ctx0) || isFullyApplied(exp0, ctx0.exprCtx)
 
     case Expr.ApplyAtomic(AtomicOp.Tag(_), _, _, _, _) => ctx0.exprCtx match {
       case ExprContext.MatchCtx(_, _, _) => true
@@ -613,15 +613,11 @@ object Inliner {
     case _ => false
   }
 
-  private def fullyApplied(exp0: Expr, exprCtx: ExprContext): Boolean = {
-    checkFullyApplied(exp0, exprCtx)._1
-  }
-
   @tailrec
-  private def checkFullyApplied(exp0: Expr, exprCtx: ExprContext): (Boolean, ExprContext) = (exp0, exprCtx) match {
-    case (Expr.Lambda(_, exp, _, _), ExprContext.AppCtx(_, _, ctx)) => checkFullyApplied(exp, ctx)
-    case (Expr.Lambda(_, _, _, _), _) => (false, exprCtx)
-    case _ => (true, exprCtx)
+  private def isFullyApplied(exp0: Expr, exprCtx: ExprContext): Boolean = (exp0, exprCtx) match {
+    case (Expr.Lambda(_, exp, _, _), ExprContext.AppCtx(_, _, ctx)) => isFullyApplied(exp, ctx)
+    case (Expr.Lambda(_, _, _, _), _) => false
+    case _ => true
   }
 
   private def computeArgDiscount(args: List[(BoundKind, ExprContext)]): Int = args.map {
