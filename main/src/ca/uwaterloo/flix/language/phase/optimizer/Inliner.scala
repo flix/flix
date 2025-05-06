@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, SourceLocation, 
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
+import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 
 /**
@@ -581,21 +582,24 @@ object Inliner {
       val bodySize = size(exp)
       val args = collectLambdaArgs(exp, ctx0.exprCtx, ctx0)
       val callSize = args.map(_._1).map(size).sum
-      val argDiscount = args.map {
-        case (_, BoundKind.LetBound(_, _), ctx) if isMatchOrAppCtx(ctx) => 1
-        case _ => 0
-      }.sum
-      val resultDiscount = resultExp(exp) match {
-        case Expr.Lambda(_, _, _, _) => 1
-        case Expr.ApplyAtomic(AtomicOp.Tag(_), _, _, _, _) => 1
-        case Expr.ApplyAtomic(AtomicOp.Tuple, _, _, _, _) => 1
-        case _ => 0
-      }
+      val argDiscount = computeArgDiscount(args.map { case (_, bk, ctx) => (bk, ctx) })
+      val resultDiscount = computeResultDiscount(exp)
       val keenness = 1.5
       val threshold = 8
       bodySize - callSize - (argDiscount * keenness + resultDiscount * keenness) <= threshold
 
     case _ => false
+  }
+
+  private def computeArgDiscount(args: List[(BoundKind, ExprContext)]): Int = args.map {
+    case (BoundKind.LetBound(_, _), ExprContext.AppCtx(_, _, _)) => 1
+    case (BoundKind.LetBound(_, _), ExprContext.MatchCtx(_, _, _)) => 1
+    case _ => 0
+  }.sum
+
+  private def computeResultDiscount(exp: Expr): Int = {
+    val res = resultExp(exp)
+    if (isTrivial(res) || isLambda(res)) 1 else 0
   }
 
   /**
@@ -613,13 +617,6 @@ object Inliner {
   private def getEvaluationState(sym: Symbol.VarSym, ctx0: LocalContext): BoundKind = ctx0.varSubst.get(sym) match {
     case Some(freshSym) => ctx0.inScopeVars.getOrElse(freshSym, BoundKind.ParameterOrPattern)
     case None => BoundKind.ParameterOrPattern
-  }
-
-  /** Returns `true` if `ctx` is either [[ExprContext.AppCtx]] or [[ExprContext.MatchCtx]]. */
-  private def isMatchOrAppCtx(ctx: ExprContext): Boolean = ctx match {
-    case ExprContext.AppCtx(_, _, _) => true
-    case ExprContext.MatchCtx(_, _, _) => true
-    case _ => false
   }
 
   /**
@@ -671,6 +668,15 @@ object Inliner {
     case Expr.Do(_, exps, _, _, _) => exps.map(size).sum + 1
     case Expr.NewObject(_, _, _, _, methods, _) => methods.map(_.exp).map(size).sum + 1
   }
+
+  @tailrec
+  private def resultExp(exp0: Expr): Expr = exp0 match {
+    case Expr.Let(_, _, exp2, _, _, _, _) => resultExp(exp2)
+    case Expr.LocalDef(_, _, _, exp2, _, _, _, _) => resultExp(exp2)
+    case Expr.Stm(_, exp2, _, _, _) => resultExp(exp2)
+    case _ => exp0
+  }
+
 
   /**
     *
