@@ -382,6 +382,64 @@ object Inliner {
     default
   }
 
+  private sealed trait UnificationResult
+
+  private object UnificationResult {
+
+    case object Abort extends UnificationResult
+
+    case object Failure extends UnificationResult
+
+    case class Success(subst: Map[Symbol.VarSym, Expr]) extends UnificationResult // TODO: Maybe return a inscope-set
+
+    def combine(ur1: UnificationResult, ur2: UnificationResult): UnificationResult = (ur1, ur2) match {
+      case (UnificationResult.Abort, _) =>
+        UnificationResult.Abort
+
+      case (_, UnificationResult.Abort) =>
+        UnificationResult.Abort
+
+      case (UnificationResult.Failure, _) =>
+        UnificationResult.Failure
+
+      case (_, UnificationResult.Failure) =>
+        UnificationResult.Failure
+
+      case (_, UnificationResult.Failure) =>
+        UnificationResult.Failure
+
+      case (UnificationResult.Success(subst1), UnificationResult.Success(subst2)) =>
+        UnificationResult.Success(subst1 ++ subst2)
+    }
+  }
+
+  private def unifyPattern(exp0: Expr, pat0: Pattern): UnificationResult = (exp0, pat0) match {
+    case (_, Pattern.Wild(_, _)) =>
+      UnificationResult.Success(Map.empty)
+
+    case (exp, Pattern.Var(sym, _, _, _)) =>
+      UnificationResult.Success(Map(sym -> exp))
+
+    case (Expr.Cst(cst1, _, _), Pattern.Cst(cst2, _, _)) if cst1 == cst2 =>
+      UnificationResult.Success(Map.empty)
+
+    case (_, Pattern.Cst(_, _, _)) => UnificationResult.Abort
+
+    case (Expr.ApplyAtomic(AtomicOp.Tag(sym1), exps, _, _, _), Pattern.Tag(sym2, pats, _, _)) =>
+      if (sym1 == sym2.sym) {
+        exps.zip(pats).map { case (e, p) => unifyPattern(e, p) }
+          .foldLeft(UnificationResult.Success(Map.empty): UnificationResult)(UnificationResult.combine)
+      } else {
+        UnificationResult.Failure
+      }
+
+    case (Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _), Pattern.Tuple(pats, _, _)) =>
+      exps.zip(pats).map { case (e, p) => unifyPattern(e, p) }
+        .foldLeft(UnificationResult.Success(Map.empty): UnificationResult)(UnificationResult.combine)
+
+    case _ => UnificationResult.Failure
+  }
+
   /**
     * Returns a pattern with fresh variables and a substitution mapping the old variables the fresh variables.
     *
