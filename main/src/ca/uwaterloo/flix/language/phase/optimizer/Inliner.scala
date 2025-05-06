@@ -144,14 +144,14 @@ object Inliner {
               // Unconditional inline of variable that occurs once.
               // Use the expression substitution from the definition site.
               sctx.changed.putIfAbsent(sym0, ())
-              visitExp(exp, ctx0.copy(subst = subst))
+              visitExp(exp, ctx0.withSubst(subst))
 
             case Some(SubstRange.DoneExpr(exp)) =>
               // Copy-propagation of visited expr.
               // Use the empty expression substitution since this has already been visited
               // and the context might indicate that if exp is a var, it should be inlined again.
               sctx.changed.putIfAbsent(sym0, ())
-              visitExp(exp, ctx0.copy(subst = Map.empty))
+              visitExp(exp, ctx0.withSubst(Map.empty))
 
             case None =>
               // It was not unconditionally inlined, so just update the variable
@@ -186,7 +186,7 @@ object Inliner {
       if (shouldInlineDef(root.defs(sym), ctx0)) {
         sctx.changed.putIfAbsent(sym0, ())
         val defn = root.defs(sym)
-        val ctx = ctx0.copy(subst = Map.empty, currentlyInlining = true)
+        val ctx = ctx0.withSubst(Map.empty).enableInliningMode
         bindArgs(defn.exp, defn.fparams, es, loc, ctx)
       } else {
         val es = exps.map(visitExp(_, ctx0))
@@ -200,7 +200,7 @@ object Inliner {
       ctx0.subst.get(sym1) match {
         case Some(SubstRange.SuspendedExpr(Expr.LocalDef(_, fparams, exp, _, _, _, _, _), subst)) =>
           val es = exps.map(visitExp(_, ctx0))
-          bindArgs(exp, fparams, es, loc, ctx0.copy(subst = subst))
+          bindArgs(exp, fparams, es, loc, ctx0.withSubst(subst))
 
         case None | Some(_) =>
           // It was not unconditionally inlined, so return same expr with visited subexpressions
@@ -628,6 +628,11 @@ object Inliner {
       this.copy(subst = this.subst + (sym -> substExpr))
     }
 
+    /** Returns a [[LocalContext]] with [[subst]] overwritten by `newSubst`. */
+    def withSubst(newSubst: Map[Symbol.VarSym, SubstRange]): LocalContext = {
+      this.copy(subst = newSubst)
+    }
+
     /** Returns a [[LocalContext]] with the mapping `sym -> boundKind` added to [[inScopeVars]]. */
     def addInScopeVar(sym: Symbol.VarSym, boundKind: BoundKind): LocalContext = {
       this.copy(inScopeVars = this.inScopeVars + (sym -> boundKind))
@@ -638,6 +643,10 @@ object Inliner {
       this.copy(inScopeVars = this.inScopeVars ++ mappings)
     }
 
+    /** Returns a [[LocalContext]] where [[currentlyInlining]] is set to `true`. */
+    def enableInliningMode: LocalContext = {
+      this.copy(currentlyInlining = true)
+    }
   }
 
   private object LocalContext {
