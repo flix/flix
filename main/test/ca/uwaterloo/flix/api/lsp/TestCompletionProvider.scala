@@ -333,7 +333,7 @@ class TestCompletionProvider extends AnyFunSuite {
     completions.groupBy(item => (item.label, item.kind, item.labelDetails)).foreach {
       case (completion, duplicates) if duplicates.size > 1 =>
         println(s"Duplicated completions when selecting var \"$codeText\" at $codeLoc for program:\n$program")
-        println(code(codeLoc, s"""Duplicated completion with label "${completion._1}" after trimming to ${codeText.take(charsLeft)} here"""))
+        println(code(codeLoc, s"""Duplicated completion with label "${completion._1}" after trimming to "${codeText.take(charsLeft)}" here"""))
         fail("Duplicated completions")
       case _ => ()
     }
