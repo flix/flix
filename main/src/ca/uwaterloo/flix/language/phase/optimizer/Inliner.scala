@@ -21,9 +21,10 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Expr, FormalParam, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
+import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 
 /**
@@ -378,19 +379,54 @@ object Inliner {
     * `exp` must be visited before calling [[tryDeforestation]]. `rules` must NOT be visited before calling [[tryDeforestation]].
     */
   private def tryDeforestation(exp: Expr, rules: List[OccurrenceAst.MatchRule], loc: SourceLocation, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
-    // TODO: remove `default` parameter and just visit rules as normal and return Match exp
-    default
+    unifyFirstRule(exp, rules) match {
+      case None => default
+      case Some((UnificationResult.Success(bindings), rule)) =>
+        val letExp = bindings.foldRight(rule.exp) {
+          case ((sym, BoundKind.LetBound(e, occur)), acc) =>
+            val eff = Type.mkUnion(e.eff, acc.eff, loc)
+            Expr.Let(sym, e, acc, acc.tpe, eff, occur, e.loc)
+        }
+        visitExp(letExp, ctx0.withEmptyExprCtx)
+    }
+  }
+
+  @tailrec
+  private def unifyFirstRule(exp: Expr, rules: List[OccurrenceAst.MatchRule])(implicit flix: Flix): Option[(UnificationResult.Success, OccurrenceAst.MatchRule)] = rules match {
+    case Nil =>
+      None
+
+    case r :: rs => r.guard match {
+      case Some(Expr.Cst(Constant.Bool(false), _, _)) =>
+        unifyFirstRule(exp, rs)
+
+      case None | Some(Expr.Cst(Constant.Bool(true), _, _)) => unifyPattern(exp, r.pat) match {
+        case UnificationResult.Abort =>
+          None
+
+        case UnificationResult.Failure =>
+          unifyFirstRule(exp, rs)
+
+        case UnificationResult.Success(bindings) =>
+          Some((UnificationResult.Success(bindings), r))
+      }
+
+      case Some(_) =>
+        None
+    }
   }
 
   private sealed trait UnificationResult
 
   private object UnificationResult {
 
+    val SuccessEmpty: UnificationResult = UnificationResult.Success(List.empty)
+
     case object Abort extends UnificationResult
 
     case object Failure extends UnificationResult
 
-    case class Success(subst: Map[Symbol.VarSym, Expr]) extends UnificationResult // TODO: Maybe return a inscope-set
+    case class Success(bindings: List[(Symbol.VarSym, BoundKind.LetBound)]) extends UnificationResult
 
     def combine(ur1: UnificationResult, ur2: UnificationResult): UnificationResult = (ur1, ur2) match {
       case (UnificationResult.Abort, _) =>
@@ -405,24 +441,21 @@ object Inliner {
       case (_, UnificationResult.Failure) =>
         UnificationResult.Failure
 
-      case (_, UnificationResult.Failure) =>
-        UnificationResult.Failure
-
-      case (UnificationResult.Success(subst1), UnificationResult.Success(subst2)) =>
-        UnificationResult.Success(subst1 ++ subst2)
+      case (UnificationResult.Success(bindings1), UnificationResult.Success(bindings2)) =>
+        UnificationResult.Success(bindings1 ::: bindings2)
     }
   }
 
-  private def unifyPattern(exp0: Expr, pat0: Pattern): UnificationResult = (exp0, pat0) match {
+  private def unifyPattern(exp0: Expr, pat0: Pattern)(implicit flix: Flix): UnificationResult = (exp0, pat0) match {
     case (_, Pattern.Wild(_, _)) =>
-      UnificationResult.Success(Map.empty)
+      UnificationResult.SuccessEmpty
 
-    case (exp, Pattern.Var(sym, _, _, _)) =>
-      UnificationResult.Success(Map(sym -> exp))
+    case (exp, Pattern.Var(sym, _, occur, _)) =>
+      UnificationResult.Success(List(sym -> BoundKind.LetBound(exp, occur)))
 
     case (Expr.Cst(cst1, _, _), Pattern.Cst(cst2, _, _)) =>
       if (cst1 == cst2) {
-        UnificationResult.Success(Map.empty)
+        UnificationResult.SuccessEmpty
       } else {
         UnificationResult.Failure
       }
@@ -432,14 +465,14 @@ object Inliner {
     case (Expr.ApplyAtomic(AtomicOp.Tag(sym1), exps, _, _, _), Pattern.Tag(sym2, pats, _, _)) =>
       if (sym1 == sym2.sym) {
         exps.zip(pats).map { case (e, p) => unifyPattern(e, p) }
-          .foldLeft(UnificationResult.Success(Map.empty): UnificationResult)(UnificationResult.combine)
+          .foldLeft(UnificationResult.SuccessEmpty)(UnificationResult.combine)
       } else {
         UnificationResult.Failure
       }
 
     case (Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _), Pattern.Tuple(pats, _, _)) =>
       exps.zip(pats).map { case (e, p) => unifyPattern(e, p) }
-        .foldLeft(UnificationResult.Success(Map.empty): UnificationResult)(UnificationResult.combine)
+        .foldLeft(UnificationResult.SuccessEmpty)(UnificationResult.combine)
 
     case _ => UnificationResult.Failure
   }
