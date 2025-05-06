@@ -495,11 +495,8 @@ object Inliner {
     val e = visitExp(exp, ctx)
     fps.zip(exps).foldRight(e) {
       case ((fparam, arg), acc) =>
-        val sym = fparam.sym
-        val tpe = acc.tpe
         val eff = Type.mkUnion(arg.eff, acc.eff, loc)
-        val occur = fparam.occur
-        Expr.Let(sym, arg, acc, tpe, eff, occur, loc)
+        Expr.Let(fparam.sym, arg, acc, acc.tpe, eff, fparam.occur, loc)
     }
   }
 
