@@ -317,14 +317,11 @@ object Inliner {
 
     case Expr.Match(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)
-      lazy val default = { // TODO: Remove
+      if (isLiteral(e)) {
+        tryDeforestation(e, rules, tpe, eff, loc, ctx0)
+      } else {
         val rs = rules.map(visitMatchRule(_, ctx0))
         Expr.Match(e, rs, tpe, eff, loc)
-      }
-      if (isLiteral(e)) {
-        tryDeforestation(e, rules, loc, ctx0, default)
-      } else {
-        default
       }
 
     case Expr.VectorLit(exps, tpe, eff, loc) =>
@@ -585,9 +582,12 @@ object Inliner {
     *
     * `exp` must be visited before calling [[tryDeforestation]]. `rules` must NOT be visited before calling [[tryDeforestation]].
     */
-  private def tryDeforestation(exp: Expr, rules: List[OccurrenceAst.MatchRule], loc: SourceLocation, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
+  private def tryDeforestation(exp: Expr, rules: List[OccurrenceAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
     unifyFirstRule(exp, rules) match {
-      case None => default
+      case None =>
+        val rs = rules.map(visitMatchRule(_, ctx0))
+        Expr.Match(exp, rs, tpe, eff, loc)
+
       case Some((bindings, rule)) =>
         sctx.changed.putIfAbsent(sym0, ())
         val letExp = bindings.foldRight(rule.exp) {
