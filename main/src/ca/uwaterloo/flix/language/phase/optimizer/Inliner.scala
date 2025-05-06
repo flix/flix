@@ -528,7 +528,8 @@ object Inliner {
     case Expr.ApplyAtomic(AtomicOp.Binary(_), exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivial)
-    // TODO: Records
+    case Expr.ApplyAtomic(AtomicOp.RecordExtend(_), exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.RecordSelect(_), exps, _, _, _) => exps.forall(isTrivial)
     case _ => false
   }
 
@@ -545,7 +546,6 @@ object Inliner {
     * A pure literal can always be inlined even without duplicating work.
     */
   private def isLiteral(exp0: Expr): Boolean = exp0 match {
-    case Expr.Cst(Constant.RecordEmpty, _, _) => false
     case Expr.Cst(Constant.Regex(_), _, _) => false
     case Expr.Cst(_, _, _) => true
     case Expr.ApplyAtomic(AtomicOp.Unary(_), exps, _, _, _) => exps.forall(isLiteral)
@@ -638,7 +638,8 @@ object Inliner {
         UnificationResult.Failure
       }
 
-    case (_, Pattern.Cst(_, _, _)) => UnificationResult.Abort
+    case (_, Pattern.Cst(_, _, _)) =>
+      UnificationResult.Abort
 
     case (Expr.ApplyAtomic(AtomicOp.Tag(sym1), exps, _, _, _), Pattern.Tag(sym2, pats, _, _)) =>
       if (sym1 == sym2.sym) {
@@ -652,7 +653,11 @@ object Inliner {
       exps.zip(pats).map { case (e, p) => unifyPattern(e, p) }
         .foldLeft(UnificationResult.SuccessEmpty)(UnificationResult.combine)
 
-    case _ => UnificationResult.Failure
+    case (Expr.Cst(Constant.RecordEmpty, _, _), Pattern.Record(List.empty, Pattern.Cst(Constant.RecordEmpty, _, _), _, _)) =>
+      UnificationResult.SuccessEmpty
+
+    case _ =>
+      UnificationResult.Failure
   }
 
   /** Represents the range of a substitution from variables to expressions. */
