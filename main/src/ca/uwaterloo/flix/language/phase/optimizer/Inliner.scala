@@ -321,7 +321,7 @@ object Inliner {
         val rs = rules.map(visitMatchRule(_, ctx0))
         Expr.Match(e, rs, tpe, eff, loc)
       }
-      if (isTrivial(e)) {
+      if (isLiteral(e)) {
         tryDeforestation(e, rules, loc, ctx0, default)
       } else {
         default
@@ -528,6 +528,30 @@ object Inliner {
     case Expr.ApplyAtomic(AtomicOp.Binary(_), exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivial)
+    // TODO: Records
+    case _ => false
+  }
+
+  /**
+    * Returns `true` if `exp0` is a literal expression.
+    *
+    * An expression is a literal if it is a:
+    *   - primitive literal (float, string, int, bool, unit)
+    *   - unary expression with a literal operand
+    *   - binary expression with literal operands
+    *   - tag with literal arguments
+    *   - tuple with literal arguments
+    *
+    * A pure literal can always be inlined even without duplicating work.
+    */
+  private def isLiteral(exp0: Expr): Boolean = exp0 match {
+    case Expr.Cst(Constant.RecordEmpty, _, _) => false
+    case Expr.Cst(Constant.Regex(_), _, _) => false
+    case Expr.Cst(_, _, _) => true
+    case Expr.ApplyAtomic(AtomicOp.Unary(_), exps, _, _, _) => exps.forall(isLiteral)
+    case Expr.ApplyAtomic(AtomicOp.Binary(_), exps, _, _, _) => exps.forall(isLiteral)
+    case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isLiteral)
+    case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isLiteral)
     case _ => false
   }
 
@@ -565,6 +589,7 @@ object Inliner {
     unifyFirstRule(exp, rules) match {
       case None => default
       case Some((UnificationResult.Success(bindings), rule)) =>
+        sctx.changed.putIfAbsent(sym0, ())
         val letExp = bindings.foldRight(rule.exp) {
           case ((sym, BoundKind.LetBound(e, occur)), acc) =>
             val eff = Type.mkUnion(e.eff, acc.eff, loc)
