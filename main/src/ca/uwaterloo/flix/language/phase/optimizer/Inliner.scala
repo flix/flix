@@ -489,15 +489,12 @@ object Inliner {
     * Lastly, it visits the top-most let-binding, thus possibly removing the bindings.
     */
   private def bindArgs(exp: Expr, fparams: List[FormalParam], exps: List[Expr], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
-    val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
-    val inScopeVars = fps.zip(exps).map { case (fp, e) => fp.sym -> BoundKind.LetBound(e, fp.occur) }
-    val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(inScopeVars).withEmptyExprCtx
-    val e = visitExp(exp, ctx)
-    fps.zip(exps).foldRight(e) {
+    val letBindings = fparams.zip(exps).foldRight(exp) {
       case ((fparam, arg), acc) =>
         val eff = Type.mkUnion(arg.eff, acc.eff, loc)
         Expr.Let(fparam.sym, arg, acc, acc.tpe, eff, fparam.occur, loc)
     }
+    visitExp(letBindings, ctx0.withEmptyExprCtx)
   }
 
   /**
