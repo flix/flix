@@ -495,7 +495,7 @@ object Inliner {
     val e = visitExp(exp, ctx)
     fps.zip(exps).foldRight(e) {
       case ((fparam, arg), acc) =>
-        val sym = fparam.sym // visitExp will refresh the symbol
+        val sym = fparam.sym
         val tpe = acc.tpe
         val eff = Type.mkUnion(arg.eff, acc.eff, loc)
         val occur = fparam.occur
