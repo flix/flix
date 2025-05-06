@@ -145,14 +145,14 @@ object Inliner {
               // Unconditional inline of variable that occurs once.
               // Use the expression substitution from the definition site.
               sctx.changed.putIfAbsent(sym0, ())
-              visitExp(exp, ctx0.copy(subst = subst))
+              visitExp(exp, ctx0.withSubst(subst))
 
             case Some(SubstRange.DoneExpr(exp)) =>
               // Copy-propagation of visited expr.
               // Use the empty expression substitution since this has already been visited
               // and the context might indicate that if exp is a var, it should be inlined again.
               sctx.changed.putIfAbsent(sym0, ())
-              visitExp(exp, ctx0.copy(subst = Map.empty))
+              visitExp(exp, ctx0.withSubst(Map.empty))
 
             case None =>
               // It was not unconditionally inlined, so just update the variable
@@ -187,8 +187,8 @@ object Inliner {
       if (shouldInlineDef(root.defs(sym), ctx0)) {
         sctx.changed.putIfAbsent(sym0, ())
         val defn = root.defs(sym)
-        val ctx = ctx0.copy(subst = Map.empty, currentlyInlining = true)
-        bindArgs(defn.exp, defn.fparams.zip(es), loc, ctx)
+        val ctx = ctx0.withSubst(Map.empty).enableInliningMode
+        bindArgs(defn.exp, defn.fparams, es, loc, ctx)
       } else {
         val es = exps.map(visitExp(_, ctx0))
         Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
@@ -201,7 +201,7 @@ object Inliner {
       ctx0.subst.get(sym1) match {
         case Some(SubstRange.SuspendedExpr(Expr.LocalDef(_, fparams, exp, _, _, _, _, _), subst)) =>
           val es = exps.map(visitExp(_, ctx0))
-          bindArgs(exp, fparams.zip(es), loc, ctx0.copy(subst = subst))
+          bindArgs(exp, fparams, es, loc, ctx0.withSubst(subst))
 
         case None | Some(_) =>
           // It was not unconditionally inlined, so return same expr with visited subexpressions
@@ -480,7 +480,7 @@ object Inliner {
     * Performs beta-reduction, binding `exps` as let-bindings.
     *
     * It is the responsibility of the caller to first visit `exps` and provide a substitution from the definition site
-    * of `exp`.
+    * of `exp`. The caller must not visit `exp`.
     *
     * [[bindArgs]] creates a series of let-bindings
     * {{{
@@ -493,16 +493,13 @@ object Inliner {
     *
     * Lastly, it visits the top-most let-binding, thus possibly removing the bindings.
     */
-  private def bindArgs(exp: Expr, exps: List[(FormalParam, Expr)], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
-    val bindings = exps.foldRight(exp) {
+  private def bindArgs(exp: Expr, fparams: List[FormalParam], exps: List[Expr], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
+    val letBindings = fparams.zip(exps).foldRight(exp) {
       case ((fparam, arg), acc) =>
-        val sym = fparam.sym // visitExp will refresh the symbol
-        val tpe = acc.tpe
         val eff = Type.mkUnion(arg.eff, acc.eff, loc)
-        val occur = fparam.occur
-        Expr.Let(sym, arg, acc, tpe, eff, occur, loc)
+        Expr.Let(fparam.sym, arg, acc, acc.tpe, eff, fparam.occur, loc)
     }
-    visitExp(bindings, ctx0.withEmptyExprCtx)
+    visitExp(letBindings, ctx0.withEmptyExprCtx)
   }
 
   /**
@@ -756,6 +753,11 @@ object Inliner {
       this.copy(subst = this.subst + (sym -> substExpr))
     }
 
+    /** Returns a [[LocalContext]] with [[subst]] overwritten by `newSubst`. */
+    def withSubst(newSubst: Map[Symbol.VarSym, SubstRange]): LocalContext = {
+      this.copy(subst = newSubst)
+    }
+
     /** Returns a [[LocalContext]] with the mapping `sym -> boundKind` added to [[inScopeVars]]. */
     def addInScopeVar(sym: Symbol.VarSym, boundKind: BoundKind): LocalContext = {
       this.copy(inScopeVars = this.inScopeVars + (sym -> boundKind))
@@ -766,6 +768,10 @@ object Inliner {
       this.copy(inScopeVars = this.inScopeVars ++ mappings)
     }
 
+    /** Returns a [[LocalContext]] where [[currentlyInlining]] is set to `true`. */
+    def enableInliningMode: LocalContext = {
+      this.copy(currentlyInlining = true)
+    }
   }
 
   /** Represents the result of unifying the scrutinee of a [[Expr.Match]] expression with a pattern. */
