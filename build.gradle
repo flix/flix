@@ -9,6 +9,9 @@ application {
 
 repositories {
     mavenCentral()
+    maven {
+        url = 'https://repository.apache.org/snapshots/'
+    }
 }
 
 dependencies {
