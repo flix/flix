@@ -529,7 +529,7 @@ object Inliner {
     case (Occur.OnceInLambda, Type.Pure) => isTrivial(exp)
     case (Occur.OnceInLocalDef, Type.Pure) => isTrivial(exp)
     case (Occur.ManyBranch, Type.Pure) => shouldInlineMulti(exp, ctx0)
-    case (Occur.Many, Type.Pure) => weakHeadNormalForm(exp) && shouldInlineMulti(exp, ctx0)
+    case (Occur.Many, Type.Pure) => (isTrivial(exp) || isLambda(exp)) && shouldInlineMulti(exp, ctx0)
     case _ => false // Impure so do not move expression
   }
 
@@ -586,25 +586,8 @@ object Inliner {
     case _ => false
   }
 
-  /**
-    * Returns `true` if `exp0` is in weak head normal form.
-    *
-    * An expression is in weak head normal form if it is a:
-    *   - primitive literal (float, string, int, bool, unit)
-    *   - variable
-    *   - unary expression
-    *   - binary expression
-    *   - tag
-    *   - tuple
-    *   - lambda
-    */
-  private def weakHeadNormalForm(exp0: Expr): Boolean = exp0 match {
-    case Expr.Cst(_, _, _) => true
-    case Expr.Var(_, _, _) => true
-    case Expr.ApplyAtomic(AtomicOp.Unary(_), _, _, _, _) => true
-    case Expr.ApplyAtomic(AtomicOp.Binary(_), _, _, _, _) => true
-    case Expr.ApplyAtomic(AtomicOp.Tag(_), _, _, _, _) => true
-    case Expr.ApplyAtomic(AtomicOp.Tuple, _, _, _, _) => true
+  /** Returns `true` if `exp0` is a [[Expr.Lambda]] expression. */
+  private def isLambda(exp0: Expr): Boolean = exp0 match {
     case Expr.Lambda(_, _, _, _) => true
     case _ => false
   }
