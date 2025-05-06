@@ -523,11 +523,12 @@ object Inliner {
   /**
     * Returns `true` if
     *   - the local context shows that we are not currently inlining and
-    *   - `defn` does not refer to itself.
-    *   - is a direct call to another function.
+    *   - `defn` does not refer to itself and
+    *   - is a direct call to another function or
+    *   - the body is trivial.
     */
   private def shouldInlineDef(defn: OccurrenceAst.Def, ctx0: LocalContext): Boolean = {
-    !ctx0.currentlyInlining && !defn.context.isSelfRef && isDirectCall(defn.exp)
+    !ctx0.currentlyInlining && !defn.context.isSelfRef && (isDirectCall(defn.exp) || isTrivial(defn.exp))
   }
 
   /**
