@@ -654,12 +654,20 @@ object Inliner {
     * An expression is trivial if it is a:
     *   - primitive literal (float, string, int, bool, unit)
     *   - variable
+    *   - unary expression with a trivial operand
+    *   - binary expression with trivial operands
+    *   - tag with trivial arguments
+    *   - tuple with trivial arguments
     *
     * A pure and trivial expression can always be inlined even without duplicating work.
     */
   private def isTrivial(exp0: Expr): Boolean = exp0 match {
     case Expr.Cst(_, _, _) => true
     case Expr.Var(_, _, _) => true
+    case Expr.ApplyAtomic(AtomicOp.Unary(_), exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.Binary(_), exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivial)
     case _ => false
   }
 
