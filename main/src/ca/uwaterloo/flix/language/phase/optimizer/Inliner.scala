@@ -183,7 +183,7 @@ object Inliner {
 
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, ctx0))
-      if (shouldInlineDef(root.defs(sym), ctx0)) {
+      if (shouldInlineDef(root.defs(sym), es, ctx0)) {
         sctx.changed.putIfAbsent(sym0, ())
         val defn = root.defs(sym)
         val ctx = ctx0.withSubst(Map.empty).enableInliningMode
@@ -523,15 +523,33 @@ object Inliner {
   /**
     * Returns `true` if
     *   - the local context shows that we are not currently inlining and
-    *   - `defn` does not refer to itself.
+    *   - `defn` does not refer to itself and
+    *   - is either a higher-order function with a known lambda as argument or
     *   - is a direct call to another function.
+    *
+    * It is the responsibility of the caller to visit `exps` first.
+    *
+    * @param defn the definition of the function.
+    * @param exps the arguments to the function.
+    * @param ctx0 the local context.
     */
-  private def shouldInlineDef(defn: OccurrenceAst.Def, ctx0: LocalContext): Boolean = {
-    !ctx0.currentlyInlining && !defn.context.isSelfRef && isDirectCall(defn.exp)
+  private def shouldInlineDef(defn: OccurrenceAst.Def, exps: List[Expr], ctx0: LocalContext): Boolean = {
+    !ctx0.currentlyInlining && !defn.context.isSelfRef &&
+      (isDirectCall(defn.exp) || hasKnownLambda(exps))
   }
 
   /**
-    * Returns `true` if `exp0` is a function call.
+    * Returns `true` if there exists [[Expr.Lambda]] in `exps`.
+    */
+  private def hasKnownLambda(exps: List[Expr]): Boolean = {
+    exps.exists {
+      case Expr.Lambda(_, _, _, _) => true
+      case _ => false
+    }
+  }
+
+  /**
+    * Returns `true` if `exp0` is a function call with trivial arguments.
     */
   private def isDirectCall(exp0: OccurrenceAst.Expr): Boolean = exp0 match {
     case OccurrenceAst.Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isTrivial)
