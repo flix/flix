@@ -276,35 +276,35 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   test("No duplicated completions for defs") {
-    val charToTrim = 1
     Programs.foreach( program => {
       val (root1, _) = compile(program)
       val defSymUses = getDefSymUseOccurs()(root1)
-      defSymUses.foreach{
-        case defSymUse if isValidCodeToTrim(defSymUse.sym.toString, defSymUse.loc, charToTrim) =>
-          val alteredProgram = trimAfter(program, defSymUse.loc, charToTrim)
-          val triggerPosition = Position(defSymUse.loc.sp2.lineOneIndexed, defSymUse.loc.sp2.colOneIndexed - charToTrim)
+      for {
+        defSymUse <- defSymUses
+        charsLeft <- listValidCharsLeft(defSymUse.sym.toString, defSymUse.loc)
+      }{
+          val alteredProgram = alterLocationInCode(program, defSymUse.loc, charsLeft)
+          val triggerPosition = Position(defSymUse.loc.sp1.lineOneIndexed, defSymUse.loc.sp1.colOneIndexed + charsLeft )
           val (root, errors) = compile(alteredProgram)
           val completions = CompletionProvider.getCompletions(Uri, triggerPosition, errors)(root, Flix).map(_.toCompletionItem(Flix))
-          assertNoDuplicatedCompletions(completions, defSymUse.sym.toString, defSymUse.loc, program, charToTrim)
-        case _ => ()
+          assertNoDuplicatedCompletions(completions, defSymUse.sym.toString, defSymUse.loc, program, charsLeft)
       }
     })
   }
 
   ignore("No duplicated completions for vars") {
-    val numToTrim = 1
     Programs.foreach( program => {
       val (root1, _) = compile(program)
       val varOccurs = getVarSymOccurs()(root1)
-      varOccurs.foreach{
-        case (varSym, loc) if isValidCodeToTrim(varSym.text, loc, numToTrim) =>
-          val alteredProgram = trimAfter(program, loc, numToTrim)
-          val triggerPosition = Position(loc.sp2.lineOneIndexed, loc.sp2.colOneIndexed - numToTrim)
+      for {
+        (varSym, loc) <- varOccurs
+        charsLeft <- listValidCharsLeft(varSym.text, loc)
+      }{
+          val alteredProgram = alterLocationInCode(program, loc, charsLeft)
+          val triggerPosition = Position(loc.sp1.lineOneIndexed, loc.sp1.colOneIndexed + charsLeft )
           val (root, errors) = compile(alteredProgram)
           val completions = CompletionProvider.getCompletions(Uri, triggerPosition, errors)(root, Flix).map(_.toCompletionItem(Flix))
-          assertNoDuplicatedCompletions(completions, varSym.text, loc, program, numToTrim)
-        case _ => ()
+          assertNoDuplicatedCompletions(completions, varSym.text, loc, program, charsLeft)
       }
     })
   }
@@ -332,8 +332,8 @@ class TestCompletionProvider extends AnyFunSuite {
     // Two completion items are identical if all the immediately visible fields are identical.
     completions.groupBy(item => (item.label, item.kind, item.labelDetails)).foreach {
       case (completion, duplicates) if duplicates.size > 1 =>
-        println(s"Duplicated completions when selecting var \"$codeText\" at $codeLoc for program:\n $program")
-        println(code(codeLoc, s"""Duplicated completion with label "${completion._1}" after deleting $charToTrim char here"""))
+        println(s"Duplicated completions when selecting var \"$codeText\" at $codeLoc for program:\n$program")
+        println(code(codeLoc, s"""Duplicated completion with label "${completion._1}" after trimming to ${codeText.take(charsLeft)} here"""))
         fail("Duplicated completions")
       case _ => ()
     }
@@ -353,21 +353,26 @@ class TestCompletionProvider extends AnyFunSuite {
   /**
     * Trims the given program string after the given location `loc` by `n` characters.
     */
-  private def trimAfter(program: String, loc: SourceLocation, n: Int): String = {
+  private def alterLocationInCode(program: String, loc: SourceLocation, charsLeft: Int): String = {
     val target = program.substring(calcOffset(loc.sp1), calcOffset(loc.sp2))
-    program.substring(0, calcOffset(loc.sp1)) + target.dropRight(n) + program.substring(calcOffset(loc.sp2))
+    program.substring(0, calcOffset(loc.sp1)) + target.take(charsLeft) + program.substring(calcOffset(loc.sp2))
   }
 
   /**
-    * A Var is valid for the test if:
-    * - It's not empty after trimming
-    * - It's not synthetic
-    * - It's not a keyword after trimming
+    * Returns a list of all valid numbers of characters left after trimming the given code text.
+    *
+    * A number of characters is valid if:
+    * - The code text is not synthetic.
+    * - The code text left is not a keyword.
+    * - All trimmed characters are valid identifier characters.
     */
-  private def isValidCodeToTrim(codeText: String, codeLoc: SourceLocation, numToTrim: Int) = {
-    val trimmedText = codeText.dropRight(numToTrim)
-    val charsToTrim = codeText.takeRight(numToTrim)
-    codeText.length > numToTrim && !codeLoc.isSynthetic && charsToTrim.forall(isValidCharToTrim) && !isKeyword(trimmedText)
+  private def listValidCharsLeft(codeText: String, codeLoc: SourceLocation): List[Int] = {
+    (1 until codeText.length).collect {
+      case splitPosition if {
+        val (left, right) = codeText.splitAt(splitPosition)
+        !codeLoc.isSynthetic && right.forall(isValidCharToTrim) && !isKeyword(left)
+      } => splitPosition
+    }.toList
   }
 
   /**
