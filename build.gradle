@@ -22,7 +22,7 @@ dependencies {
     implementation('com.github.rjeschke:txtmark:0.13')
     implementation('com.github.scopt:scopt_2.13:4.1.0')
     implementation('com.google.guava:guava:33.3.1-jre')
-    implementation('org.apache.commons:commons-lang3:3.18.0-20250408.215834-18') // using snapshot version due to bug
+    implementation('org.apache.commons:commons-lang3:3.18.0-20250415.195543-19') // using snapshot version due to bug
     implementation("com.lihaoyi:sourcecode_2.13:0.4.2")
 
     implementation('io.get-coursier:coursier_2.13:2.1.24')
