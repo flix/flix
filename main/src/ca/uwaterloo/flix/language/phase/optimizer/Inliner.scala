@@ -529,7 +529,7 @@ object Inliner {
   /**
     * Returns `true` if
     *   - the local context shows that we are not currently inlining and
-    *   - `defn` does not refer to itself.
+    *   - `defn` does not refer to itself and
     *   - is a direct call to another function.
     */
   private def shouldInlineDef(defn: OccurrenceAst.Def, ctx0: LocalContext): Boolean = {
