@@ -70,7 +70,7 @@ object CompletionProvider {
           val ident = err.qn.ident.name
           val qn = err.qn
           val range = Range.from(err.loc)
-          val keywordCompletions = if (qn.namespace.nonEmpty)
+          val keywordCompletions = if (qn.namespace.isEmpty)
             KeywordCompleter.getExprKeywords(Some(qn.toString), range)
           else Nil
           AutoImportCompleter.getCompletions(ident, range, ap, scp) ++
