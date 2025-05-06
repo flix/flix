@@ -526,8 +526,8 @@ object Inliner {
   private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur, ctx0: LocalContext): Boolean = (occur, exp.eff) match {
     case (Occur.Dead, _) => throw InternalCompilerException(s"unexpected call site inline of dead variable $sym", exp.loc)
     case (Occur.Once, Type.Pure) => throw InternalCompilerException(s"unexpected call site inline of pre-inlined variable $sym", exp.loc)
-    case (Occur.OnceInLambda, Type.Pure) => isTrivial(exp)
-    case (Occur.OnceInLocalDef, Type.Pure) => isTrivial(exp)
+    case (Occur.OnceInLambda, Type.Pure) => (isTrivial(exp) || isLambda(exp))
+    case (Occur.OnceInLocalDef, Type.Pure) => (isTrivial(exp) || isLambda(exp))
     case (Occur.ManyBranch, Type.Pure) => shouldInlineMulti(exp, ctx0)
     case (Occur.Many, Type.Pure) => (isTrivial(exp) || isLambda(exp)) && shouldInlineMulti(exp, ctx0)
     case _ => false // Impure so do not move expression
