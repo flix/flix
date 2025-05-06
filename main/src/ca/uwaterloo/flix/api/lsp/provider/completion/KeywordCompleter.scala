@@ -35,7 +35,7 @@ object KeywordCompleter {
   /**
     * Module keywords. These are keywords that can occur in a module.
     */
-  def getModKeywords(range: Range): List[Completion] =
+  def getModKeywords(name: Option[String], range: Range): List[Completion.KeywordCompletion] =
     List(
       // D
       Completion.KeywordCompletion("@Deprecated"      , range, Priority.Low),
@@ -66,7 +66,7 @@ object KeywordCompleter {
       Completion.KeywordCompletion("use"              , range, Priority.Default),
       // W
       Completion.KeywordCompletion("with"             , range, Priority.Default),
-    )
+    ).filter(c => CompletionUtils.fuzzyMatch(name.getOrElse(""), c.name))
 
   /**
     * Enum keywords. These are keywords that can appear within the declaration of an enum.
@@ -87,7 +87,7 @@ object KeywordCompleter {
   /**
     * Expression keywords. These are keywords that can appear within expressions (fx within the body of a function).
     */
-  def getExprKeywords(range: Range): List[Completion] =
+  def getExprKeywords(name: Option[String], range: Range): List[Completion] = {
     List(
       // A
       Completion.KeywordCompletion("and"         , range, Priority.Default),
@@ -100,7 +100,6 @@ object KeywordCompleter {
       // E
       Completion.KeywordCompletion("else"        , range, Priority.Default),
       // F
-      Completion.KeywordLiteralCompletion("false", range, Priority.Higher),
       Completion.KeywordCompletion("forA"        , range, Priority.Lowest),
       Completion.KeywordCompletion("forM"        , range, Priority.Low),
       Completion.KeywordCompletion("force"       , range, Priority.High),
@@ -121,7 +120,6 @@ object KeywordCompleter {
       // N
       Completion.KeywordCompletion("new"         , range, Priority.Low),
       Completion.KeywordCompletion("not"         , range, Priority.High),
-      Completion.KeywordLiteralCompletion("null" , range, Priority.Lower),
       // O
       Completion.KeywordCompletion("or"          , range, Priority.Default),
       // P
@@ -138,7 +136,6 @@ object KeywordCompleter {
       Completion.KeywordCompletion("spawn"       , range, Priority.Low),
       // T
       Completion.KeywordCompletion("throw"       , range, Priority.Lowest),
-      Completion.KeywordLiteralCompletion("true" , range, Priority.Higher),
       Completion.KeywordCompletion("try"         , range, Priority.High),
       Completion.KeywordCompletion("typematch"   , range, Priority.Low),
       // U
@@ -149,7 +146,12 @@ object KeywordCompleter {
       Completion.KeywordCompletion("without"     , range, Priority.Default),
       // Y
       Completion.KeywordCompletion("yield"       , range, Priority.Default)
-    )
+    ).filter(c => CompletionUtils.fuzzyMatch(name.getOrElse(""), c.name)) ++ List (
+      Completion.KeywordLiteralCompletion("false", range, Priority.Higher),
+      Completion.KeywordLiteralCompletion("null" , range, Priority.Lower),
+      Completion.KeywordLiteralCompletion("true" , range, Priority.Higher),
+    ).filter(c => CompletionUtils.fuzzyMatch(name.getOrElse(""), c.literal))
+  }
 
   /**
     * Instance declaration keywords.
