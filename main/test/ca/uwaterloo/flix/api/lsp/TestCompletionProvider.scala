@@ -342,15 +342,17 @@ class TestCompletionProvider extends AnyFunSuite {
     *
     * Auto use/import completions should be lower than all other completions.
     *
+    * Note that a lower ranking means a larger sortText.
+    *
     * @param completions The completion list to check.
     * @param program     The original program string.
     * @param loc         The source location of the code that we are changing.
     */
   private def assertLowerOrderForUseImport(completions: CompletionList, program: String, loc: SourceLocation): Unit = {
     val (otherCompletions, useImportCompletions) = completions.items.partition(_.additionalTextEdits.isEmpty)
-    val lowestOtherCompletionSortText = otherCompletions.map(_.sortText).min
-    val highestUseImportCompletionSortText = useImportCompletions.map(_.sortText).max
-    if (lowestOtherCompletionSortText < highestUseImportCompletionSortText) {
+    val lowestOtherCompletionSortText = otherCompletions.map(_.sortText).max
+    val highestUseImportCompletionSortText = useImportCompletions.map(_.sortText).min
+    if (lowestOtherCompletionSortText > highestUseImportCompletionSortText) {
       println(s"Invalid Order: auto use/import completions are not lower than others for program:\n$program")
       println(code(loc, s"Here we have sortText($lowestOtherCompletionSortText) < sortText($highestUseImportCompletionSortText), which violates the invariant."))
       fail("Invalid Order for use/import completions")
