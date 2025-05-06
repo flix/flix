@@ -564,9 +564,7 @@ object Inliner {
 
   private def someBenefit(exp0: Expr, ctx0: LocalContext): Boolean = exp0 match {
     case Expr.Lambda(_, _, _, _) =>
-      argsAreReducible(exp0, ctx0.exprCtx, ctx0) ||
-        fullyAppliedAndScrutinized(exp0, ctx0.exprCtx) ||
-        nestedAndFullyApplied(exp0, ctx0.exprCtx)
+      argsAreReducible(exp0, ctx0.exprCtx, ctx0) || fullyApplied(exp0, ctx0.exprCtx)
 
     case Expr.ApplyAtomic(AtomicOp.Tag(_), _, _, _, _) => ctx0.exprCtx match {
       case ExprContext.MatchCtx(_, _, _) => true
@@ -592,6 +590,36 @@ object Inliner {
       bodySize - callSize - (argDiscount * keenness + resultDiscount * keenness) <= threshold
 
     case _ => false
+  }
+
+  @tailrec
+  private def argsAreReducible(exp0: Expr, exprCtx: ExprContext, ctx0: LocalContext): Boolean = (exp0, exprCtx) match {
+    case (Expr.Lambda(_, body, _, _), ExprContext.AppCtx(arg, _, ctx)) =>
+      !isTrivial(arg) || variableWithDefinition(arg, ctx0) || argsAreReducible(body, ctx, ctx0)
+    case _ => false
+  }
+
+  private def variableWithDefinition(expr: OccurrenceAst.Expr, ctx0: LocalContext): Boolean = expr match {
+    case Expr.Var(sym, _, _) => ctx0.varSubst.get(sym) match {
+      case Some(freshSym) => ctx0.inScopeVars.get(freshSym) match {
+        case Some(BoundKind.ParameterOrPattern) => false
+        case Some(BoundKind.LetBound(_, _)) => true
+        case None => false
+      }
+      case None => false
+    }
+    case _ => false
+  }
+
+  private def fullyApplied(exp0: Expr, exprCtx: ExprContext): Boolean = {
+    checkFullyApplied(exp0, exprCtx)._1
+  }
+
+  @tailrec
+  private def checkFullyApplied(exp0: Expr, exprCtx: ExprContext): (Boolean, ExprContext) = (exp0, exprCtx) match {
+    case (Expr.Lambda(_, exp, _, _), ExprContext.AppCtx(_, _, ctx)) => checkFullyApplied(exp, ctx)
+    case (Expr.Lambda(_, _, _, _), _) => (false, exprCtx)
+    case _ => (true, exprCtx)
   }
 
   private def computeArgDiscount(args: List[(BoundKind, ExprContext)]): Int = args.map {
