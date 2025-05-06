@@ -538,7 +538,7 @@ object Inliner {
     * for a variable that has occurrence information [[Occur.Many]].
     */
   private def shouldInlineMulti(exp: Expr, ctx0: LocalContext)(implicit root: OccurrenceAst.Root): Boolean = {
-    noSizeIncrease(exp, ctx0) || (someBenefit(exp, ctx0))
+    noSizeIncrease(exp, ctx0) || (someBenefit(exp, ctx0) && (isTrivial(exp) || smallEnough(exp, ctx0)))
   }
 
   /**
@@ -576,6 +576,27 @@ object Inliner {
     case _ => false
   }
 
+  private def smallEnough(exp0: Expr, ctx0: LocalContext): Boolean = exp0 match {
+    case Expr.Lambda(_, exp, _, _) =>
+      val bodySize = size(exp)
+      val args = collectLambdaArgs(exp, ctx0.exprCtx, ctx0)
+      val callSize = args.map(_._1).map(size).sum
+      val argDiscount = args.map {
+        case (_, BoundKind.LetBound(_, _), ctx) if isMatchOrAppCtx(ctx) => 1
+        case _ => 0
+      }.sum
+      val resultDiscount = resultExp(exp) match {
+        case Expr.Lambda(_, _, _, _) => 1
+        case Expr.ApplyAtomic(AtomicOp.Tag(_), _, _, _, _) => 1
+        case Expr.ApplyAtomic(AtomicOp.Tuple, _, _, _, _) => 1
+        case _ => 0
+      }
+      val keenness = 1.5
+      val threshold = 8
+      bodySize - callSize - (argDiscount * keenness + resultDiscount * keenness) <= threshold
+
+    case _ => false
+  }
 
   /**
     * Returns a tuple of the arg expression, its BoundKind ([[BoundKind.ParameterOrPattern]] if not applicable) and its own context.
