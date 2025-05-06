@@ -187,7 +187,7 @@ object Inliner {
         sctx.changed.putIfAbsent(sym0, ())
         val defn = root.defs(sym)
         val ctx = ctx0.copy(subst = Map.empty, currentlyInlining = true)
-        bindArgs(defn.exp, defn.fparams.zip(es), loc, ctx)
+        bindArgs(defn.exp, defn.fparams, es, loc, ctx)
       } else {
         val es = exps.map(visitExp(_, ctx0))
         Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
@@ -200,7 +200,7 @@ object Inliner {
       ctx0.subst.get(sym1) match {
         case Some(SubstRange.SuspendedExpr(Expr.LocalDef(_, fparams, exp, _, _, _, _, _), subst)) =>
           val es = exps.map(visitExp(_, ctx0))
-          bindArgs(exp, fparams.zip(es), loc, ctx0.copy(subst = subst))
+          bindArgs(exp, fparams, es, loc, ctx0.copy(subst = subst))
 
         case None | Some(_) =>
           // It was not unconditionally inlined, so return same expr with visited subexpressions
@@ -475,7 +475,7 @@ object Inliner {
     * Performs beta-reduction, binding `exps` as let-bindings.
     *
     * It is the responsibility of the caller to first visit `exps` and provide a substitution from the definition site
-    * of `exp`.
+    * of `exp`. The call must not visit `exp`.
     *
     * [[bindArgs]] creates a series of let-bindings
     * {{{
@@ -488,8 +488,12 @@ object Inliner {
     *
     * Lastly, it visits the top-most let-binding, thus possibly removing the bindings.
     */
-  private def bindArgs(exp: Expr, exps: List[(FormalParam, Expr)], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
-    val bindings = exps.foldRight(exp) {
+  private def bindArgs(exp: Expr, fparams: List[FormalParam], exps: List[Expr], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
+    val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
+    val inScopeVars = fps.zip(exps).map { case (fp, e) => fp.sym -> BoundKind.LetBound(e, fp.occur) }
+    val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(inScopeVars).withEmptyExprCtx
+    val e = visitExp(exp, ctx)
+    fps.zip(exps).foldRight(e) {
       case ((fparam, arg), acc) =>
         val sym = fparam.sym // visitExp will refresh the symbol
         val tpe = acc.tpe
@@ -497,7 +501,6 @@ object Inliner {
         val occur = fparam.occur
         Expr.Let(sym, arg, acc, tpe, eff, occur, loc)
     }
-    visitExp(bindings, ctx0.withEmptyExprCtx)
   }
 
   /**
