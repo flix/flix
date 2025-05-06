@@ -78,10 +78,6 @@ object DocAstFormatter {
         tuple(elms.map(aux(_, paren = false)))
       case Tag(sym, Nil) =>
         text(sym.toString)
-      case Tag(sym, List(Unit)) =>
-        text(sym.toString)
-      case Tag(sym, List(Tuple(args))) =>
-        text(sym.toString) |:: tuple(args.map(aux(_, paren = false)))
       case Tag(sym, args) =>
         text(sym.toString) |:: tuple(args.map(aux(_, paren = false)))
       case AsIs(s) =>

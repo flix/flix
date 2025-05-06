@@ -174,7 +174,7 @@ object OpPrinter {
     case (AtomicOp.Unary(sop), List(d)) => Unary(OpPrinter.print(sop), d)
     case (AtomicOp.Binary(sop), List(d1, d2)) => Binary(d1, OpPrinter.print(sop), d2)
     case (AtomicOp.Is(sym), List(d)) => Is(sym, d)
-    case (AtomicOp.Tag(sym), List(d)) => Tag(sym, List(d))
+    case (AtomicOp.Tag(sym), _) => Tag(sym, ds)
     case (AtomicOp.Untag(sym, idx), List(d)) => Untag(sym, d, idx)
     case (AtomicOp.InstanceOf(clazz), List(d)) => InstanceOf(d, clazz)
     case (AtomicOp.Cast, List(d)) => UncheckedCast(d, Some(tpe), Some(eff))
