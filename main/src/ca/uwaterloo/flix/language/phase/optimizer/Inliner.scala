@@ -531,22 +531,22 @@ object Inliner {
     *   - is a direct call to another function.
     *
     * It is the responsibility of the caller to visit `exps` first.
+    *
+    * @param defn the definition of the function.
+    * @param exps the arguments to the function.
+    * @param ctx0 the local context.
     */
   private def shouldInlineDef(defn: OccurrenceAst.Def, exps: List[Expr], ctx0: LocalContext): Boolean = {
     !ctx0.currentlyInlining && !defn.context.isSelfRef &&
-      (isDirectCall(defn.exp) || hasKnownLambda(defn.fparams, exps))
+      (isDirectCall(defn.exp) || hasKnownLambda(exps))
   }
 
   /**
-    * Returns `true` if a formal parameter in `fparams` is an arrow type and the corresponding expression
-    * in `exps` is a [[Expr.Lambda]].
+    * Returns `true` if there exists [[Expr.Lambda]] in `exps`.
     */
-  private def hasKnownLambda(fparams: List[FormalParam], exps: List[Expr]): Boolean = {
-    fparams.zip(exps).exists {
-      case (fp, Expr.Lambda(_, _, _, _)) => fp.tpe.typeConstructor match {
-        case Some(TypeConstructor.Arrow(_)) | Some(TypeConstructor.ArrowWithoutEffect(_)) => true
-        case Some(_) | None => false
-      }
+  private def hasKnownLambda(exps: List[Expr]): Boolean = {
+    exps.exists {
+      case Expr.Lambda(_, _, _, _) => true
       case _ => false
     }
   }
