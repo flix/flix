@@ -1,17 +1,19 @@
 /*
- *  Copyright 2021 Magnus Madsen
+ * Copyright 2021 Magnus Madsen
+ * Copyright 2025 Casper Dalgaard Nielsen
+ *                Adam Yasser Tallouzi
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 mod Fixpoint {
@@ -30,6 +32,7 @@ mod Fixpoint {
         case BoxedInt64(Int64)
         case BoxedFloat32(Float32)
         case BoxedFloat64(Float64)
+        case None
         case BoxedObject(
             Object,
             (Object, Object) -> Comparison
@@ -47,6 +50,9 @@ mod Fixpoint {
             case (Boxed.BoxedFloat32(v1),      Boxed.BoxedFloat32(v2))   => v1 == v2
             case (Boxed.BoxedFloat64(v1),      Boxed.BoxedFloat64(v2))   => v1 == v2
             case (Boxed.BoxedObject(v1, cmp1), Boxed.BoxedObject(v2, _)) => cmp1(v1, v2) == Comparison.EqualTo
+            case (Boxed.None, Boxed.None)                                => true
+            case (Boxed.None, _)                                         => false
+            case (_, Boxed.None)                                         => false
             case _                                                       => bug!("Mismatched types.")
         }
     }
@@ -77,6 +83,7 @@ mod Fixpoint {
             case Boxed.BoxedFloat32(v)   => ToString.toString(v)
             case Boxed.BoxedFloat64(v)   => ToString.toString(v)
             case Boxed.BoxedObject(v, _) => Debug.stringify(v)
+            case Boxed.None              => "Boxed.None"
         }
     }
 }
