@@ -50,7 +50,7 @@ object TypedAstPrinter {
     case Expr.Match(exp, rules, _, _, _) => DocAst.Expr.Match(print(exp), rules.map(printMatchRule))
     case Expr.TypeMatch(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.RestrictableChoose(_, _, _, _, _, _) => DocAst.Expr.Unknown
-    case Expr.ExtensibleMatch(_, _, _, _, _, _, _, _) => DocAst.Expr.Unknown // TODO: Ext-Variants
+    case Expr.ExtensibleMatch(_, _, _, _, _, _, _, _, _) => DocAst.Expr.Unknown // TODO: Ext-Variants
     case Expr.Tag(sym, exps, _, _, _) => DocAst.Expr.Tag(sym.sym, exps.map(print))
     case Expr.RestrictableTag(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.ExtensibleTag(_, _, _, _, _) => DocAst.Expr.Unknown // TODO: Ext-Variants

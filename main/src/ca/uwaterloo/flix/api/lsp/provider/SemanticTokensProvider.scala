@@ -501,7 +501,7 @@ object SemanticTokensProvider {
           acc ++ visitRestrictableChoosePat(pat) ++ visitExp(exp)
       }
 
-    case Expr.ExtensibleMatch(exp1, bnd1, exp2, bnd2, exp3, _, _, _) =>
+    case Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, _, _, _) =>
       val o1 = getSemanticTokenType(bnd1.sym, exp1.tpe)
       val o2 = getSemanticTokenType(bnd2.sym, exp1.tpe)
       val t1 = SemanticToken(o1, Nil, bnd1.sym.loc)

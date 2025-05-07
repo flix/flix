@@ -235,7 +235,7 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ExtensibleMatch(exp1, bnd1, exp2, bnd2, exp3, tpe, eff, _) =>
+    case Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, tpe, eff, _) =>
       visitExp(exp1)
       visitBinder(bnd1)
       visitExp(exp2)

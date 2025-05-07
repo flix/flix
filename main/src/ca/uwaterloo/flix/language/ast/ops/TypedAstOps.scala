@@ -61,7 +61,7 @@ object TypedAstOps {
     case Expr.Match(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ rule.guard.toList.flatMap(sigSymsOf))
     case Expr.TypeMatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
-    case Expr.ExtensibleMatch(exp1, _, exp2, _, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
+    case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expr.Tag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.RestrictableTag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.ExtensibleTag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
@@ -213,7 +213,7 @@ object TypedAstOps {
       }
       e ++ rs
 
-    case Expr.ExtensibleMatch(exp1, bnd1, exp2, bnd2, exp3, _, _, _) =>
+    case Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, _, _, _) =>
       freeVars(exp1) ++ (freeVars(exp2) - bnd1.sym) ++ (freeVars(exp3) - bnd2.sym)
 
     case Expr.Tag(_, exps, _, _, _) =>
