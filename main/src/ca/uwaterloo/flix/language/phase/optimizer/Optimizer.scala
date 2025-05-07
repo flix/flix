@@ -65,13 +65,13 @@ object Optimizer {
         val es = exps.map(visitExp)
         OccurrenceAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc)
 
-      case MonoAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
+      case MonoAst.Expr.Let(sym, exp1, exp2, tpe, eff, _, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         val occur = OccurrenceAst.Occur.Dead
         OccurrenceAst.Expr.Let(sym, e1, e2, tpe, eff, occur, loc)
 
-      case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+      case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _, loc) =>
         val fps = fparams.map(visitFormalParam)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
@@ -166,7 +166,7 @@ object Optimizer {
       case MonoAst.Pattern.Wild(tpe, loc) =>
         OccurrenceAst.Pattern.Wild(tpe, loc)
 
-      case MonoAst.Pattern.Var(sym, tpe, loc) =>
+      case MonoAst.Pattern.Var(sym, tpe, _, loc) =>
         OccurrenceAst.Pattern.Var(sym, tpe, OccurrenceAst.Occur.Dead, loc)
 
       case MonoAst.Pattern.Cst(cst, tpe, loc) =>
@@ -191,7 +191,7 @@ object Optimizer {
     }
 
     private def visitFormalParam(fp0: MonoAst.FormalParam): OccurrenceAst.FormalParam = fp0 match {
-      case MonoAst.FormalParam(sym, mod, tpe, src, loc) => OccurrenceAst.FormalParam(sym, mod, tpe, src, OccurrenceAst.Occur.Dead, loc)
+      case MonoAst.FormalParam(sym, mod, tpe, src, _, loc) => OccurrenceAst.FormalParam(sym, mod, tpe, src, OccurrenceAst.Occur.Dead, loc)
     }
   }
 
@@ -239,13 +239,13 @@ object Optimizer {
       case OccurrenceAst.Expr.Let(sym, exp1, exp2, tpe, eff, _, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        MonoAst.Expr.Let(sym, e1, e2, tpe, eff, loc)
+        MonoAst.Expr.Let(sym, e1, e2, tpe, eff, ???, loc)
 
       case OccurrenceAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _, loc) =>
         val fps = fparams.map(visitFormalParam)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        MonoAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, loc)
+        MonoAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, ???, loc)
 
       case OccurrenceAst.Expr.Scope(sym, regSym, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -336,7 +336,7 @@ object Optimizer {
         MonoAst.Pattern.Wild(tpe, loc)
 
       case OccurrenceAst.Pattern.Var(sym, tpe, _, loc) =>
-        MonoAst.Pattern.Var(sym, tpe, loc)
+        MonoAst.Pattern.Var(sym, tpe, ???, loc)
 
       case OccurrenceAst.Pattern.Cst(cst, tpe, loc) =>
         MonoAst.Pattern.Cst(cst, tpe, loc)
@@ -360,7 +360,7 @@ object Optimizer {
     }
 
     private def visitFormalParam(fp0: OccurrenceAst.FormalParam): MonoAst.FormalParam = fp0 match {
-      case OccurrenceAst.FormalParam(sym, mod, tpe, src, _, loc) => MonoAst.FormalParam(sym, mod, tpe, src, loc)
+      case OccurrenceAst.FormalParam(sym, mod, tpe, src, _, loc) => MonoAst.FormalParam(sym, mod, tpe, src, ???, loc)
     }
   }
 }
