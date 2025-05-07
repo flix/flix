@@ -501,6 +501,13 @@ object SemanticTokensProvider {
           acc ++ visitRestrictableChoosePat(pat) ++ visitExp(exp)
       }
 
+    case Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, _, _, _) =>
+      val o1 = getSemanticTokenType(bnd1.sym, exp1.tpe)
+      val o2 = getSemanticTokenType(bnd2.sym, exp1.tpe)
+      val t1 = SemanticToken(o1, Nil, bnd1.sym.loc)
+      val t2 = SemanticToken(o2, Nil, bnd2.sym.loc)
+      Iterator(t1) ++ Iterator(t2) ++ visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
     case Expr.Tag(CaseSymUse(_, loc), exps, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
       exps.foldLeft(Iterator(t)) {
@@ -508,6 +515,12 @@ object SemanticTokensProvider {
       }
 
     case Expr.RestrictableTag(RestrictableCaseSymUse(_, loc), exps, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
+      exps.foldLeft(Iterator(t)) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
+
+    case Expr.ExtensibleTag(_, exps, _, _, loc) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
       exps.foldLeft(Iterator(t)) {
         case (acc, exp) => acc ++ visitExp(exp)

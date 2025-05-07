@@ -459,6 +459,9 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Match(e, rs, t, eff, loc)
 
+    case TypedAst.Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, tpe, eff, loc) =>
+      ??? // TODO: Ext-Variants
+
     case TypedAst.Expr.Tag(sym, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
@@ -470,6 +473,9 @@ object Lowering {
       val es = exps.map(visitExp)
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Tag(caseSym), es, t, eff, loc)
+
+    case TypedAst.Expr.ExtensibleTag(label, exps, tpe, eff, loc) =>
+      ??? // TODO: Ext-Variants
 
     case TypedAst.Expr.Tuple(elms, tpe, eff, loc) =>
       val es = elms.map(visitExp)

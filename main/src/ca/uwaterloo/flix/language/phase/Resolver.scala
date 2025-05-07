@@ -1059,6 +1059,12 @@ object Resolver {
         case (e, rs) => ResolvedAst.Expr.RestrictableChoose(star, e, rs, loc)
       }
 
+    case NamedAst.Expr.ExtensibleTag(label, exps, loc) =>
+      val esVal = traverse(exps)(e => resolveExp(e, scp0))
+      mapN(esVal) {
+        es => ResolvedAst.Expr.ExtensibleTag(label, es, loc)
+      }
+
     case NamedAst.Expr.Tuple(elms, loc) =>
       val esVal = traverse(elms)(e => resolveExp(e, scp0))
       mapN(esVal) {

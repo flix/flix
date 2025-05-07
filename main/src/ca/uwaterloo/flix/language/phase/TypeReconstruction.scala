@@ -254,6 +254,9 @@ object TypeReconstruction {
       val es = exps.map(visitExp)
       TypedAst.Expr.RestrictableTag(symUse, es, subst(tvar), subst(evar), loc)
 
+    case KindedAst.Expr.ExtensibleTag(label, exps, tvar, loc) =>
+      ??? // TODO: Ext-Variants
+
     case KindedAst.Expr.Tuple(elms, loc) =>
       val es = elms.map(visitExp(_))
       val tpe = Type.mkTuple(es.map(_.tpe), loc)
