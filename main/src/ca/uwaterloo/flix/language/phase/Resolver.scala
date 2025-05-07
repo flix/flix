@@ -1059,6 +1059,12 @@ object Resolver {
         case (e, rs) => ResolvedAst.Expr.RestrictableChoose(star, e, rs, loc)
       }
 
+    case NamedAst.Expr.ExtensibleTag(label, exps, loc) =>
+      val esVal = traverse(exps)(e => resolveExp(e, scp0))
+      mapN(esVal) {
+        es => ResolvedAst.Expr.ExtensibleTag(label, es, loc)
+      }
+
     case NamedAst.Expr.Tuple(elms, loc) =>
       val esVal = traverse(elms)(e => resolveExp(e, scp0))
       mapN(esVal) {
@@ -2425,6 +2431,7 @@ object Resolver {
         case "Array" => Validation.Success(UnkindedType.Cst(TypeConstructor.Array, loc))
         case "Vector" => Validation.Success(UnkindedType.Cst(TypeConstructor.Vector, loc))
         case "Region" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToStar, loc))
+        case "XVar" => Validation.Success(UnkindedType.Cst(TypeConstructor.Extensible, loc))
 
         // Disambiguate type.
         case _ => // typeName

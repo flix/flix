@@ -439,6 +439,9 @@ object SimpleType {
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
+        case TypeConstructor.Extensible =>
+          ??? // TODO: Ext-Variants
+
         case TypeConstructor.SchemaRowEmpty => SchemaRow(Nil)
 
         case TypeConstructor.SchemaRowExtend(pred) =>

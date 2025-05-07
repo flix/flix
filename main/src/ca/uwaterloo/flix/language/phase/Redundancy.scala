@@ -556,6 +556,9 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
+    case Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, _, _, _) =>
+      // TODO: Ext-Variants
+      visitExp(exp1, env0, rc) ++ visitExp(exp2, env0 + bnd1.sym, rc) ++ visitExp(exp3, env0 + bnd2.sym, rc)
 
     case Expr.Tag(CaseSymUse(sym, _), exps, _, _, _) =>
       val us = visitExps(exps, env0, rc)
@@ -564,6 +567,9 @@ object Redundancy {
       us
 
     case Expr.RestrictableTag(_, exps, _, _, _) =>
+      visitExps(exps, env0, rc)
+
+    case Expr.ExtensibleTag(_, exps, _, _, _) =>
       visitExps(exps, env0, rc)
 
     case Expr.Tuple(elms, _, _, _) =>
