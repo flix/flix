@@ -568,6 +568,9 @@ object Desugar {
       val rs = rules.map(visitRestrictableChooseRule)
       Expr.RestrictableChoose(star, e, rs, loc)
 
+    case WeededAst.Expr.ExtensibleMatch(label, exp1, ident2, exp2, ident3, exp3, loc) =>
+      ??? // TODO: Ext-Variants
+
     case WeededAst.Expr.ApplicativeFor(frags, exp, loc) =>
       desugarApplicativeFor(frags, exp, loc)
 
@@ -582,6 +585,9 @@ object Desugar {
 
     case WeededAst.Expr.LetMatch(pat, tpe, exp1, exp2, loc) =>
       desugarLetMatch(pat, tpe, exp1, exp2, loc)
+
+    case WeededAst.Expr.ExtensibleTag(ident, exps, loc) =>
+      ??? // TODO: Ext-Variants
 
     case WeededAst.Expr.Tuple(exps, loc) =>
       desugarTuple(exps, loc)
