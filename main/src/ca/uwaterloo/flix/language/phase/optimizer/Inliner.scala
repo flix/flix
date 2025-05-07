@@ -173,10 +173,10 @@ object Inliner {
       val appCtx = ExprContext.AppCtx(exp2, ctx0.subst, ctx0.exprCtx)
       val ctx1 = ctx0.addExprCtx(appCtx)
       visitExp(exp1, ctx1) match {
-        case e1@Expr.Lambda(_, _, _, _) =>
+        case Expr.Lambda(fparam, e1, _, _) =>
           sctx.changed.putIfAbsent(sym0, ())
           val e2 = visitExp(exp2, ctx0)
-          betaReduceLambda(e1, e2, loc, ctx0)
+          bindArgs(e1, List(fparam), List(e2), loc, ctx0)
 
         case e1 =>
           val e2 = visitExp(exp2, ctx0)
@@ -451,29 +451,6 @@ object Inliner {
       val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
       val e = visitExp(exp, ctx)
       OccurrenceAst.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
-  }
-
-  /**
-    * Performs beta-reduction on a lambda `exp1` applied to `exp2`.
-    *
-    * It is the responsibility of the caller to first visit `exp1` and `exp2`.
-    *
-    * [[betaReduceLambda]] creates a let-binding
-    * {{{
-    *   let sym = exp2;
-    *   exp1'
-    * }}}
-    * where `sym` is the symbol of formal parameter and `exp1'` is the body of the lambda.
-    *
-    * Lastly, it visits the let-binding, thus possibly removing the binding.
-    */
-  private def betaReduceLambda(exp1: Expr.Lambda, exp2: Expr, loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
-    val sym = exp1.fparam.sym // visitExp will refresh the symbol
-    val tpe = exp1.exp.tpe
-    val eff = Type.mkUnion(exp1.exp.eff, exp2.eff, loc)
-    val occur = exp1.fparam.occur
-    val exp = Expr.Let(sym, exp2, exp1.exp, tpe, eff, occur, loc)
-    visitExp(exp, ctx0.withEmptyExprCtx)
   }
 
   /**
