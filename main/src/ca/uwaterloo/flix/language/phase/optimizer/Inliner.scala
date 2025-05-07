@@ -18,9 +18,9 @@
 package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Expr, FormalParam, Occur, Pattern}
+import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, FormalParam, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
-import ca.uwaterloo.flix.language.ast.{AtomicOp, OccurrenceAst, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
@@ -69,7 +69,7 @@ import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 object Inliner {
 
   /** Performs inlining on the given AST `root`. */
-  def run(root: OccurrenceAst.Root)(implicit flix: Flix): (OccurrenceAst.Root, Set[Symbol.DefnSym]) = {
+  def run(root: MonoAst.Root)(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
     val sctx: SharedContext = SharedContext.mk()
     val defs = ParOps.parMapValues(root.defs)(visitDef(_)(sctx, root, flix))
     val newDelta = sctx.changed.asScala.keys.toSet
@@ -77,10 +77,10 @@ object Inliner {
   }
 
   /** Performs inlining on the body of `def0`. */
-  private def visitDef(def0: OccurrenceAst.Def)(implicit sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.Def = def0 match {
-    case OccurrenceAst.Def(sym, fparams, spec, exp, ctx, loc) =>
+  private def visitDef(def0: MonoAst.Def)(implicit sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.Def = def0 match {
+    case MonoAst.Def(sym, spec, exp, loc) =>
       val e = visitExp(exp, LocalContext.Empty)(sym, sctx, root, flix)
-      OccurrenceAst.Def(sym, fparams, spec, e, ctx, loc)
+      MonoAst.Def(sym, spec, e, loc)
   }
 
   /**
@@ -128,7 +128,7 @@ object Inliner {
     *      (b) If the visited `e1` is nontrivial, it keeps the let-binding, adds the visited `e1` to the set
     *      of in-scope variable definitions and considers it for inlining at every occurrence.
     */
-  private def visitExp(exp0: Expr, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = exp0 match {
+  private def visitExp(exp0: Expr, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): Expr = exp0 match {
     case Expr.Cst(cst, tpe, loc) =>
       Expr.Cst(cst, tpe, loc)
 
@@ -190,7 +190,7 @@ object Inliner {
         sctx.changed.putIfAbsent(sym0, ())
         val defn = root.defs(sym)
         val ctx = ctx0.withSubst(Map.empty).enableInliningMode
-        bindArgs(defn.exp, defn.fparams, es, loc, ctx)
+        bindArgs(defn.exp, defn.spec.fparams, es, loc, ctx)
       } else {
         val es = exps.map(visitExp(_, ctx0))
         Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
@@ -375,6 +375,8 @@ object Inliner {
       (Pattern.Wild(tpe, loc), Map.empty)
 
     case Pattern.Var(sym, tpe, occur, loc) => occur match {
+      case Occur.Unknown => throw InternalCompilerException("unexpected unknown occurrence information", loc)
+
       case Occur.Dead =>
         (Pattern.Wild(tpe, loc), Map.empty)
 
@@ -414,44 +416,44 @@ object Inliner {
   }
 
   /** Returns a formal param with a fresh symbol and a substitution mapping the old variable the fresh variable. */
-  private def freshFormalParam(fp0: OccurrenceAst.FormalParam)(implicit flix: Flix): (OccurrenceAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = fp0 match {
-    case OccurrenceAst.FormalParam(sym, mod, tpe, src, occur, loc) =>
+  private def freshFormalParam(fp0: MonoAst.FormalParam)(implicit flix: Flix): (MonoAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = fp0 match {
+    case MonoAst.FormalParam(sym, mod, tpe, src, occur, loc) =>
       val freshVarSym = Symbol.freshVarSym(sym)
       val varSubst = Map(sym -> freshVarSym)
-      (OccurrenceAst.FormalParam(freshVarSym, mod, tpe, src, occur, loc), varSubst)
+      (MonoAst.FormalParam(freshVarSym, mod, tpe, src, occur, loc), varSubst)
   }
 
-  def visitMatchRule(rule: OccurrenceAst.MatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.MatchRule = rule match {
-    case OccurrenceAst.MatchRule(pat, guard, exp1) =>
+  def visitMatchRule(rule: MonoAst.MatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.MatchRule = rule match {
+    case MonoAst.MatchRule(pat, guard, exp1) =>
       val (p, varSubst1) = visitPattern(pat)
       val ctx = ctx0.addVarSubsts(varSubst1).addInScopeVars(varSubst1.values.map(sym => sym -> BoundKind.ParameterOrPattern))
       val g = guard.map(visitExp(_, ctx))
       val e1 = visitExp(exp1, ctx)
-      OccurrenceAst.MatchRule(p, g, e1)
+      MonoAst.MatchRule(p, g, e1)
   }
 
-  def visitCatchRule(rule: OccurrenceAst.CatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.CatchRule = rule match {
-    case OccurrenceAst.CatchRule(sym, clazz, exp1) =>
+  def visitCatchRule(rule: MonoAst.CatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.CatchRule = rule match {
+    case MonoAst.CatchRule(sym, clazz, exp1) =>
       val freshVarSym = Symbol.freshVarSym(sym)
       val ctx = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.ParameterOrPattern)
       val e1 = visitExp(exp1, ctx)
-      OccurrenceAst.CatchRule(freshVarSym, clazz, e1)
+      MonoAst.CatchRule(freshVarSym, clazz, e1)
   }
 
-  def visitHandlerRule(rule: OccurrenceAst.HandlerRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.HandlerRule = rule match {
-    case OccurrenceAst.HandlerRule(op, fparams, exp1) =>
+  def visitHandlerRule(rule: MonoAst.HandlerRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.HandlerRule = rule match {
+    case MonoAst.HandlerRule(op, fparams, exp1) =>
       val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
       val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
       val e1 = visitExp(exp1, ctx)
-      OccurrenceAst.HandlerRule(op, fps, e1)
+      MonoAst.HandlerRule(op, fps, e1)
   }
 
-  def visitJvmMethod(method: OccurrenceAst.JvmMethod, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): OccurrenceAst.JvmMethod = method match {
-    case OccurrenceAst.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
+  def visitJvmMethod(method: MonoAst.JvmMethod, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
+    case MonoAst.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
       val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
       val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
       val e = visitExp(exp, ctx)
-      OccurrenceAst.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
+      MonoAst.JvmMethod(ident, fps, e, retTpe, eff1, loc1)
   }
 
   /**
@@ -471,7 +473,7 @@ object Inliner {
     *
     * Lastly, it visits the top-most let-binding, thus possibly removing the bindings.
     */
-  private def bindArgs(exp: Expr, fparams: List[FormalParam], exps: List[Expr], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: OccurrenceAst.Root, flix: Flix): Expr = {
+  private def bindArgs(exp: Expr, fparams: List[FormalParam], exps: List[Expr], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): Expr = {
     val letBindings = fparams.zip(exps).foldRight(exp) {
       case ((fparam, arg), acc) =>
         val eff = Type.mkUnion(arg.eff, acc.eff, loc)
@@ -488,7 +490,7 @@ object Inliner {
     * Throws an error if `sym` is not in scope. This also implies that it is the responsibility of the caller
     * to replace any symbol occurrence with the corresponding fresh symbol in the variable substitution.
     */
-  private def callSiteInline(sym: Symbol.VarSym, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, root: OccurrenceAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+  private def callSiteInline(sym: Symbol.VarSym, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, root: MonoAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     ctx0.inScopeVars.get(sym) match {
       case Some(BoundKind.LetBound(exp, occur)) if shouldInlineVar(sym, exp, occur, ctx0) =>
         sctx.changed.putIfAbsent(sym0, ())
@@ -503,7 +505,7 @@ object Inliner {
   }
 
   /** Returns `true` if `exp` is pure and should be inlined at the occurrence of `sym`. */
-  private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur, ctx0: LocalContext)(implicit root: OccurrenceAst.Root): Boolean = (occur, exp.eff) match {
+  private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur, ctx0: LocalContext)(implicit root: MonoAst.Root): Boolean = (occur, exp.eff) match {
     case (Occur.Dead, _) => throw InternalCompilerException(s"unexpected call site inline of dead variable $sym", exp.loc)
     case (Occur.Once, Type.Pure) => throw InternalCompilerException(s"unexpected call site inline of pre-inlined variable $sym", exp.loc)
     case (Occur.OnceInLambda, Type.Pure) => (isTrivial(exp) || isLambda(exp)) && someBenefit(exp, ctx0)
@@ -517,7 +519,7 @@ object Inliner {
     * Returns `true` if the `exp` should be inlined at the calling occurrence site
     * for a variable that has occurrence information [[Occur.Many]].
     */
-  private def shouldInlineMulti(exp: Expr, ctx0: LocalContext)(implicit root: OccurrenceAst.Root): Boolean = {
+  private def shouldInlineMulti(exp: Expr, ctx0: LocalContext)(implicit root: MonoAst.Root): Boolean = {
     noSizeIncrease(exp, ctx0) || (someBenefit(exp, ctx0) && (isTrivial(exp) || smallEnough(exp, ctx0)))
   }
 
@@ -525,7 +527,7 @@ object Inliner {
     * Returns true if `exp0` is a lambda and the size of its definition is less than or equal to
     * the size of the call.
     */
-  private def noSizeIncrease(exp0: Expr, ctx0: LocalContext)(implicit root: OccurrenceAst.Root): Boolean = exp0 match {
+  private def noSizeIncrease(exp0: Expr, ctx0: LocalContext)(implicit root: MonoAst.Root): Boolean = exp0 match {
     case Expr.Lambda(_, exp, _, _) =>
       val bodySize = size(exp)
       val args = collectLambdaArgs(exp0, ctx0.exprCtx, ctx0)
@@ -578,7 +580,7 @@ object Inliner {
     case _ => false
   }
 
-  private def letBoundVariable(expr: OccurrenceAst.Expr, ctx0: LocalContext): Boolean = expr match {
+  private def letBoundVariable(expr: MonoAst.Expr, ctx0: LocalContext): Boolean = expr match {
     case Expr.Var(sym, _, _) => ctx0.varSubst.get(sym) match {
       case Some(freshSym) => ctx0.inScopeVars.get(freshSym) match {
         case Some(BoundKind.ParameterOrPattern) => false
@@ -707,8 +709,8 @@ object Inliner {
     * @param exps the arguments to the function.
     * @param ctx0 the local context.
     */
-  private def shouldInlineDef(defn: OccurrenceAst.Def, exps: List[Expr], ctx0: LocalContext): Boolean = {
-    !ctx0.currentlyInlining && !defn.context.isSelfRef &&
+  private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext): Boolean = {
+    !ctx0.currentlyInlining && !defn.spec.defContext.isSelfRef &&
       (isDirectCall(defn.exp) || isTrivial(defn.exp) || hasKnownLambda(exps))
   }
 
@@ -725,9 +727,9 @@ object Inliner {
   /**
     * Returns `true` if `exp0` is a function call with trivial arguments.
     */
-  private def isDirectCall(exp0: OccurrenceAst.Expr): Boolean = exp0 match {
-    case OccurrenceAst.Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isTrivial)
-    case OccurrenceAst.Expr.ApplyClo(exp1, exp2, _, _, _) => isTrivial(exp1) && isTrivial(exp2)
+  private def isDirectCall(exp0: MonoAst.Expr): Boolean = exp0 match {
+    case MonoAst.Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isTrivial)
+    case MonoAst.Expr.ApplyClo(exp1, exp2, _, _, _) => isTrivial(exp1) && isTrivial(exp2)
     case _ => false
   }
 
@@ -742,10 +744,10 @@ object Inliner {
       * we substitute the variables the inliner may have previously decided
       * to inline.
       */
-    case class SuspendedExpr(exp: OccurrenceAst.Expr, subst: Map[Symbol.VarSym, SubstRange]) extends SubstRange
+    case class SuspendedExpr(exp: MonoAst.Expr, subst: Map[Symbol.VarSym, SubstRange]) extends SubstRange
 
     /** An expression that will be inlined but has already been visited. */
-    case class DoneExpr(exp: OccurrenceAst.Expr) extends SubstRange
+    case class DoneExpr(exp: MonoAst.Expr) extends SubstRange
 
   }
 
@@ -758,7 +760,7 @@ object Inliner {
     object ParameterOrPattern extends BoundKind
 
     /** The right-hand side of a let-bound variable along with its occurrence information. */
-    case class LetBound(expr: OccurrenceAst.Expr, occur: Occur) extends BoundKind
+    case class LetBound(expr: MonoAst.Expr, occur: Occur) extends BoundKind
 
   }
 
@@ -774,7 +776,7 @@ object Inliner {
     case class AppCtx(expr: Expr, subst: Map[Symbol.VarSym, SubstRange], ctx: ExprContext) extends ExprContext
 
     /** Match-case expression context. */
-    case class MatchCtx(rules: List[OccurrenceAst.MatchRule], subst: Map[Symbol.VarSym, SubstRange], ctx: ExprContext) extends ExprContext
+    case class MatchCtx(rules: List[MonoAst.MatchRule], subst: Map[Symbol.VarSym, SubstRange], ctx: ExprContext) extends ExprContext
 
   }
 

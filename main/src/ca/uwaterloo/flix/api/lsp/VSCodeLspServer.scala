@@ -269,7 +269,11 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
 
     case Request.Complete(id, uri, pos) =>
       // Find the source of the given URI (which should always exist).
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionProvider.autoComplete(uri, pos, currentErrors)(root, flix).toJSON)
+      val completions = CompletionProvider
+        .getCompletions(uri, pos, currentErrors)(root, flix)
+        .map(_.toCompletionItem(flix))
+      val completionList = CompletionList(isIncomplete = true, completions)
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> completionList.toJSON)
 
     case Request.Highlight(id, uri, pos) =>
       val highlights = HighlightProvider.processHighlight(uri, pos)(root)
