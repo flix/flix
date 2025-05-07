@@ -570,6 +570,7 @@ object Inliner {
     case _ => false // Impure so do not move expression
   }
 
+  /** Returns `true` if `exp` is [[Expr.Lambda]]. */
   def isLambda(exp: MonoAst.Expr): Boolean = exp match {
     case Expr.Lambda(_, _, _, _) => true
     case _ => false
