@@ -456,12 +456,20 @@ object ConstraintGen {
       case e: Expr.RestrictableTag => RestrictableChooseConstraintGen.visitApplyRestrictableTag(e)
 
       case KindedAst.Expr.ExtensibleTag(label, exps, tvar, loc) =>
-        ??? // TODO: Ext-Variants
+        val pred = Name.Pred(label.name, label.loc)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val rest = Type.freshVar(Kind.SchemaRow, loc)
+        val row = Type.mkSchemaRowExtend(pred, Type.mkTuplish(tpes, loc), rest, loc)
+        val tagType = Type.mkVariant(row, loc)
+        c.unifyType(tvar, tagType, loc)
+        val resTpe = tagType
+        val resEff = Type.mkUnion(effs, loc)
+        (resTpe, resEff)
 
-      case Expr.Tuple(elms, loc) =>
-        val (elmTpes, elmEffs) = elms.map(visitExp).unzip
-        val resTpe = Type.mkTuple(elmTpes, loc)
-        val resEff = Type.mkUnion(elmEffs, loc)
+      case Expr.Tuple(exps, loc) =>
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val resTpe = Type.mkTuple(tpes, loc)
+        val resEff = Type.mkUnion(effs, loc)
         (resTpe, resEff)
 
       case Expr.RecordSelect(exp, label, tvar, loc) =>
