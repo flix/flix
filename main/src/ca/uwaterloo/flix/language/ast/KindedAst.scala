@@ -123,6 +123,8 @@ object KindedAst {
 
     case class RestrictableTag(symUse: RestrictableCaseSymUse, exps: List[Expr], isOpen: Boolean, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
+    case class ExtensibleTag(label: Name.Label, exps: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
+
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class RecordSelect(exp: Expr, label: Name.Label, tvar: Type.Var, loc: SourceLocation) extends Expr

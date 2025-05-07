@@ -663,6 +663,10 @@ object Namer {
       val rs = rules.map(visitRestrictableChooseRule)
       NamedAst.Expr.RestrictableChoose(star, e, rs, loc)
 
+    case DesugaredAst.Expr.ExtensibleTag(label, exps, loc) =>
+      val es = exps.map(visitExp(_))
+      NamedAst.Expr.ExtensibleTag(label, es, loc)
+
     case DesugaredAst.Expr.Tuple(exps, loc) =>
       val es = exps.map(visitExp(_))
       NamedAst.Expr.Tuple(es, loc)
