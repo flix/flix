@@ -621,7 +621,8 @@ object Inliner {
                                    inScopeVars: Map[Symbol.VarSym, BoundKind],
                                    exprCtx: ExprContext,
                                    currentlyInlining: Boolean,
-                                   depth: Int) {
+                                   depth: Int
+                                 ) {
 
     /** Returns a [[LocalContext]] where [[exprCtx]] has be overwritten with [[ExprContext.Empty]]. */
     def withEmptyExprCtx: LocalContext = {
