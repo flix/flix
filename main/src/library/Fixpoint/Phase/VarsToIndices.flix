@@ -23,7 +23,7 @@ mod Fixpoint.Phase.VarsToIndices {
     use Fixpoint.Ast.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
 
     @Internal
-    pub def lowerStmt(stmt: RamStmt[v]): RamStmt[v] = match stmt {
+    pub def lowerStmt(stmt: RamStmt): RamStmt = match stmt {
         case RamStmt.Insert(op) => RamStmt.Insert(lowerOp(op, Map#{}, 0))
         case RamStmt.Merge(_, _) => stmt
         case RamStmt.Assign(_, _) => stmt
@@ -33,7 +33,7 @@ mod Fixpoint.Phase.VarsToIndices {
         case RamStmt.Comment(_) => stmt
     }
 
-    def lowerOp(op: RelOp[v], rowVars: Map[RowVar, RowVar], depth: Int32): RelOp[v] =
+    def lowerOp(op: RelOp, rowVars: Map[RowVar, RowVar], depth: Int32): RelOp =
         match op {
             case RelOp.Search(var, ramSym, body) =>
                 let newVar = RowVar.Index(depth);
@@ -56,7 +56,7 @@ mod Fixpoint.Phase.VarsToIndices {
                  RelOp.If(Vector.map(lowerExp(rowVars), test), lowerOp(then, rowVars, depth))
         }
 
-    def lowerExp(rowVars: Map[RowVar, RowVar], exp: BoolExp[v]): BoolExp[v] =
+    def lowerExp(rowVars: Map[RowVar, RowVar], exp: BoolExp): BoolExp =
         match exp {
             case BoolExp.Empty(_) => exp
             case BoolExp.NotMemberOf(terms, ramSym) =>
@@ -93,7 +93,7 @@ mod Fixpoint.Phase.VarsToIndices {
                 BoolExp.Guard5(f, t1, t2, t3, t4, t5)
         }
 
-    def lowerTerm(rowVars: Map[RowVar, RowVar], term: RamTerm[v]): RamTerm[v] = match term {
+    def lowerTerm(rowVars: Map[RowVar, RowVar], term: RamTerm): RamTerm = match term {
         case RamTerm.Lit(_) => term
         case RamTerm.RowLoad(rowVar, index) =>
              RamTerm.RowLoad(Map.getWithDefault(rowVar, rowVar, rowVars), index)
