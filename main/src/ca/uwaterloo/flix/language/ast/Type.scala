@@ -981,6 +981,13 @@ object Type {
   }
 
   /**
+    * Constructs a Variant type.
+    */
+  def mkVariant(tpe: Type, loc: SourceLocation): Type = {
+    Apply(Type.Cst(TypeConstructor.Extensible, loc), tpe, loc)
+  }
+
+  /**
     * Constructs a Schema type.
     */
   def mkSchema(tpe: Type, loc: SourceLocation): Type = {
