@@ -154,8 +154,8 @@ object Inliner {
               visitExp(exp, ctx0.withSubst(Map.empty))
 
             case None =>
-              // It was not unconditionally inlined, so just update the variable
-              Expr.Var(freshVarSym, tpe, loc)
+              // It was not unconditionally inlined, so consider inlining at this occurrence site
+              callSiteInline(freshVarSym, ctx0, Expr.Var(freshVarSym, tpe, loc))
           }
       }
 
@@ -536,6 +536,45 @@ object Inliner {
     case MonoAst.Expr.ApplyClo(exp1, exp2, _, _, _) => isTrivial(exp1) && isTrivial(exp2)
     case _ => false
   }
+
+  /**
+    * Returns the definition of `sym` if it is let-bound and the [[shouldInlineVar]] predicate holds.
+    *
+    * Returns `default` otherwise.
+    *
+    * Throws an error if `sym` is not in scope. This also implies that it is the responsibility of the caller
+    * to replace any symbol occurrence with the corresponding fresh symbol in the variable substitution.
+    */
+  private def callSiteInline(sym: Symbol.VarSym, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, root: MonoAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+    ctx0.inScopeVars.get(sym) match {
+      case Some(BoundKind.LetBound(exp, occur)) if shouldInlineVar(sym, exp, occur) =>
+        sctx.changed.putIfAbsent(sym0, ())
+        visitExp(exp, ctx0.copy(subst = Map.empty))
+
+      case Some(_) =>
+        default
+
+      case None =>
+        throw InternalCompilerException(s"unexpected evaluated var not in scope $sym", sym.loc)
+    }
+  }
+
+  /** Returns `true` if `exp` is pure and should be inlined at the occurrence of `sym`. */
+  private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur): Boolean = (occur, exp.eff) match {
+    case (Occur.Dead, _) => throw InternalCompilerException(s"unexpected call site inline of dead variable $sym", exp.loc)
+    case (Occur.Once, Type.Pure) => throw InternalCompilerException(s"unexpected call site inline of pre-inlined variable $sym", exp.loc)
+    case (Occur.OnceInLambda, Type.Pure) => isLambda(exp)
+    case (Occur.OnceInLocalDef, Type.Pure) => isLambda(exp)
+    case (Occur.ManyBranch, Type.Pure) => false
+    case (Occur.Many, Type.Pure) => false
+    case _ => false // Impure so do not move expression
+  }
+
+  def isLambda(exp: MonoAst.Expr): Boolean = exp match {
+    case Expr.Lambda(_, _, _, _) => true
+    case _ => false
+  }
+
 
   /** Represents the range of a substitution from variables to expressions. */
   sealed private trait SubstRange
