@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
+import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Expr, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.VarSym
 import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -55,15 +55,15 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on `exp0`
     */
-  private def visitExp(exp0: MonoAst.Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (MonoAst.Expr, ExprContext) = {
+  private def visitExp(exp0: Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (Expr, ExprContext) = {
     exp0 match {
-      case MonoAst.Expr.Cst(_, _, _) =>
+      case Expr.Cst(_, _, _) =>
         (exp0, ExprContext.Empty)
 
-      case MonoAst.Expr.Var(sym, _, _) =>
+      case Expr.Var(sym, _, _) =>
         (exp0, ExprContext.Empty.addVar(sym, Occur.Once))
 
-      case MonoAst.Expr.Lambda(fparam, exp, tpe, loc) =>
+      case Expr.Lambda(fparam, exp, tpe, loc) =>
         val (e, ctx1) = visitExp(exp)
         val ctx2 = ctx1.map {
           case Occur.Once => Occur.OnceInLambda
@@ -74,48 +74,48 @@ object OccurrenceAnalyzer {
         if ((e eq exp) && (fp eq fparam)) {
           (exp0, ctx3) // Reuse exp0.
         } else {
-          (MonoAst.Expr.Lambda(fp, e, tpe, loc), ctx3)
+          (Expr.Lambda(fp, e, tpe, loc), ctx3)
         }
 
-      case MonoAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
+      case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
         if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (MonoAst.Expr.ApplyAtomic(op, es, tpe, eff, loc), ctx)
+          (Expr.ApplyAtomic(op, es, tpe, eff, loc), ctx)
         }
 
-      case MonoAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+      case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)
         val ctx3 = combineSeq(ctx1, ctx2)
         if ((e1 eq exp1) && (e2 eq exp2)) {
           (exp0, ctx3) // Reuse exp0.
         } else {
-          (MonoAst.Expr.ApplyClo(e1, e2, tpe, eff, loc), ctx3)
+          (Expr.ApplyClo(e1, e2, tpe, eff, loc), ctx3)
         }
 
-      case MonoAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+      case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx1 = if (sym == sym0) ExprContext.RecursiveOnce else ExprContext.Empty
         val ctx2 = ctxs.foldLeft(ctx1)(combineSeq)
         if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx2) // Reuse exp0.
         } else {
-          (MonoAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc), ctx2)
+          (Expr.ApplyDef(sym, es, itpe, tpe, eff, loc), ctx2)
         }
 
-      case MonoAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+      case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq).addVar(sym, Occur.Once)
         if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (MonoAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc), ctx)
+          (Expr.ApplyLocalDef(sym, es, tpe, eff, loc), ctx)
         }
 
-      case MonoAst.Expr.Let(sym, exp1, exp2, tpe, eff, occur0, loc) =>
+      case Expr.Let(sym, exp1, exp2, tpe, eff, occur0, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)
         val ctx3 = combineSeq(ctx1, ctx2)
@@ -124,10 +124,10 @@ object OccurrenceAnalyzer {
         if ((e1 eq exp1) && (e2 eq exp2) && (occur eq occur0)) {
           (exp0, ctx4) // Reuse exp0.
         } else {
-          (MonoAst.Expr.Let(sym, e1, e2, tpe, eff, occur, loc), ctx4)
+          (Expr.Let(sym, e1, e2, tpe, eff, occur, loc), ctx4)
         }
 
-      case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur0, loc) =>
+      case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur0, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val ctx2 = ctx1.map {
           case Occur.Once => Occur.OnceInLocalDef
@@ -143,18 +143,18 @@ object OccurrenceAnalyzer {
         if ((e1 eq exp1) && (e2 eq exp2) && fparams.zip(fps).forall { case (fp1, fp2) => fp1 eq fp2 } && (occur eq occur0)) {
           (exp0, ctx6) // Reuse exp0.
         } else {
-          (MonoAst.Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), ctx6)
+          (Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), ctx6)
         }
 
-      case MonoAst.Expr.Scope(sym, rsym, exp, tpe, eff, loc) =>
+      case Expr.Scope(sym, rsym, exp, tpe, eff, loc) =>
         val (e, ctx) = visitExp(exp)
         if (e eq exp) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (MonoAst.Expr.Scope(sym, rsym, e, tpe, eff, loc), ctx)
+          (Expr.Scope(sym, rsym, e, tpe, eff, loc), ctx)
         }
 
-      case MonoAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+      case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)
         val (e3, ctx3) = visitExp(exp3)
@@ -162,28 +162,28 @@ object OccurrenceAnalyzer {
         if ((e1 eq exp1) && (e2 eq exp2) && (e3 eq exp3)) {
           (exp0, ctx4) // Reuse exp0.
         } else {
-          (MonoAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc), ctx4)
+          (Expr.IfThenElse(e1, e2, e3, tpe, eff, loc), ctx4)
         }
 
-      case MonoAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
+      case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)
         val ctx3 = combineSeq(ctx1, ctx2)
         if ((e1 eq exp1) && (e2 eq exp2)) {
           (exp0, ctx3) // Reuse exp0.
         } else {
-          (MonoAst.Expr.Stm(e1, e2, tpe, eff, loc), ctx3)
+          (Expr.Stm(e1, e2, tpe, eff, loc), ctx3)
         }
 
-      case MonoAst.Expr.Discard(exp, eff, loc) =>
+      case Expr.Discard(exp, eff, loc) =>
         val (e, ctx) = visitExp(exp)
         if (e eq exp) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (MonoAst.Expr.Discard(e, eff, loc), ctx)
+          (Expr.Discard(e, eff, loc), ctx)
         }
 
-      case MonoAst.Expr.Match(exp, rules, tpe, eff, loc) =>
+      case Expr.Match(exp, rules, tpe, eff, loc) =>
         val (e, ctx1) = visitExp(exp)
         val (rs, ctxs) = rules.map(visitMatchRule).unzip
         val ctx2 = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
@@ -191,53 +191,53 @@ object OccurrenceAnalyzer {
         if ((e eq exp) && rules.zip(rs).forall { case (r1, r2) => r1 eq r2 }) {
           (exp0, ctx3) // Reuse exp0.
         } else {
-          (MonoAst.Expr.Match(e, rs, tpe, eff, loc), ctx3)
+          (Expr.Match(e, rs, tpe, eff, loc), ctx3)
         }
 
-      case MonoAst.Expr.VectorLit(exps, tpe, eff, loc) =>
+      case Expr.VectorLit(exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
         if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (MonoAst.Expr.VectorLit(es, tpe, eff, loc), ctx)
+          (Expr.VectorLit(es, tpe, eff, loc), ctx)
         }
 
-      case MonoAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+      case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)
         val ctx3 = combineSeq(ctx1, ctx2)
         if ((e1 eq exp1) && (e2 eq exp2)) {
           (exp0, ctx3) // Reuse exp0.
         } else {
-          (MonoAst.Expr.VectorLoad(e1, e2, tpe, eff, loc), ctx3)
+          (Expr.VectorLoad(e1, e2, tpe, eff, loc), ctx3)
         }
 
-      case MonoAst.Expr.VectorLength(exp, loc) =>
+      case Expr.VectorLength(exp, loc) =>
         val (e, ctx) = visitExp(exp)
         if (e eq exp) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (MonoAst.Expr.VectorLength(e, loc), ctx)
+          (Expr.VectorLength(e, loc), ctx)
         }
 
-      case MonoAst.Expr.Ascribe(exp, tpe, eff, loc) =>
+      case Expr.Ascribe(exp, tpe, eff, loc) =>
         val (e, ctx) = visitExp(exp)
         if (e eq exp) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (MonoAst.Expr.Ascribe(e, tpe, eff, loc), ctx)
+          (Expr.Ascribe(e, tpe, eff, loc), ctx)
         }
 
-      case MonoAst.Expr.Cast(exp, tpe, eff, loc) =>
+      case Expr.Cast(exp, tpe, eff, loc) =>
         val (e, ctx) = visitExp(exp)
         if (e eq exp) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (MonoAst.Expr.Cast(e, tpe, eff, loc), ctx)
+          (Expr.Cast(e, tpe, eff, loc), ctx)
         }
 
-      case MonoAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+      case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
         val (e, ctx1) = visitExp(exp)
         val (rs, ctxs) = rules.map(visitCatchRule).unzip
         val ctx2 = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
@@ -245,10 +245,10 @@ object OccurrenceAnalyzer {
         if ((e eq exp) && rules.zip(rs).forall { case (r1, r2) => r1 eq r2 }) {
           (exp0, ctx3) // Reuse exp0.
         } else {
-          (MonoAst.Expr.TryCatch(e, rs, tpe, eff, loc), ctx3)
+          (Expr.TryCatch(e, rs, tpe, eff, loc), ctx3)
         }
 
-      case MonoAst.Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
+      case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
         val (e, ctx1) = visitExp(exp)
         val (rs, ctxs) = rules.map(visitHandlerRule).unzip
         val ctx2 = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
@@ -256,25 +256,25 @@ object OccurrenceAnalyzer {
         if ((e eq exp) && rules.zip(rs).forall { case (r1, r2) => r1 eq r2 }) {
           (exp0, ctx3) // Reuse exp0.
         } else {
-          (MonoAst.Expr.RunWith(e, effUse, rs, tpe, eff, loc), ctx3)
+          (Expr.RunWith(e, effUse, rs, tpe, eff, loc), ctx3)
         }
 
-      case MonoAst.Expr.Do(op, exps, tpe, eff, loc) =>
+      case Expr.Do(op, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
         if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (MonoAst.Expr.Do(op, es, tpe, eff, loc), ctx)
+          (Expr.Do(op, es, tpe, eff, loc), ctx)
         }
 
-      case MonoAst.Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
+      case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
         val (ms, ctxs) = methods.map(visitJvmMethod).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
         if (methods.zip(ms).forall { case (m1, m2) => m1 eq m2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (MonoAst.Expr.NewObject(name, clazz, tpe, eff, ms, loc), ctx)
+          (Expr.NewObject(name, clazz, tpe, eff, ms, loc), ctx)
         }
     }
   }
@@ -487,7 +487,7 @@ object OccurrenceAnalyzer {
     * Stores various pieces of information extracted from an expression.
     *
     * @param selfOccur Occurrence information on how the function occurs in its own definition.
-    * @param vars      A map from variable symbols to occurrence information (this also includes uses of [[MonoAst.Expr.LocalDef]]).
+    * @param vars      A map from variable symbols to occurrence information (this also includes uses of [[Expr.LocalDef]]).
     *                  If the map does not contain a certain symbol, then the symbol is [[Occur.Dead]].
     */
   case class ExprContext(selfOccur: Occur, vars: Map[VarSym, Occur]) {
@@ -553,7 +553,7 @@ object OccurrenceAnalyzer {
     * A local context, scoped for each function definition.
     * No requirements on thread-safety since it is scoped.
     *
-    * @param localDefs The number of declared [[MonoAst.Expr.LocalDef]]s in the expression.
+    * @param localDefs The number of declared [[Expr.LocalDef]]s in the expression.
     *                  Must be mutable.
     */
   private case class LocalContext(localDefs: AtomicInteger)
