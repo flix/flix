@@ -125,6 +125,8 @@ object WeededAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
+    case class ExtensibleMatch(ident: Name.Ident, exp1: Expr, ident1: Name.Ident, exp2: Expr, ident2: Name.Ident, exp3: Expr, loc: SourceLocation) extends Expr
+
     case class ApplicativeFor(frags: List[ForFragment.Generator], exp: Expr, loc: SourceLocation) extends Expr
 
     case class ForEach(frags: List[ForFragment], exp: Expr, loc: SourceLocation) extends Expr

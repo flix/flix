@@ -895,6 +895,7 @@ object Weeder2 {
         case TreeKind.Expr.FixpointSolveWithProject => visitFixpointSolveExpr(tree)
         case TreeKind.Expr.FixpointQuery => visitFixpointQueryExpr(tree)
         case TreeKind.Expr.Debug => visitDebugExpr(tree)
+        case TreeKind.Expr.ExtensibleMatch => visitExtensibleMatch(tree)
         case TreeKind.Expr.ExtensibleTag => visitExtensibleTag(tree)
         case TreeKind.Expr.Intrinsic =>
           // Intrinsics must be applied to check that they have the right amount of arguments.
@@ -1533,6 +1534,23 @@ object Weeder2 {
               Validation.Success((e, Expr.Error(error)))
           }
           mapN(exprs)(exprs => Expr.LetMatch(pattern, tpe, exprs._1, exprs._2, tree.loc))
+      }
+    }
+
+    private def visitExtensibleMatch(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      def visitCase(caze: Tree): Validation[(Name.Ident, Expr), CompilationMessage] =
+        mapN(pickNameIdent(caze), pickExpr(caze)) {
+          case (id, e) => (id, e)
+        }
+
+      expect(tree, TreeKind.Expr.ExtensibleMatch)
+
+      // TODO: Ext-Var
+      mapN(pickExpr(tree), pickNameIdent(tree), traverse(pickAll(TreeKind.Case, tree))(visitCase)) {
+        case (exp1, label, (ident2, exp2) :: (ident3, exp3) :: Nil) =>
+          Expr.ExtensibleMatch(label, exp1, ident2, exp2, ident3, exp3, tree.loc)
+        case _ =>
+          throw InternalCompilerException("Illegal extensible match", tree.loc)
       }
     }
 
