@@ -35,7 +35,7 @@ object KeywordCompleter {
   /**
     * Module keywords. These are keywords that can occur in a module.
     */
-  def getModKeywords(name: Option[String], range: Range): List[Completion.KeywordCompletion] =
+  def getModKeywords(name: Option[String], range: Range): List[Completion] =
     List(
       // D
       Completion.KeywordCompletion("@Deprecated"      , range, Priority.Low),
@@ -100,6 +100,7 @@ object KeywordCompleter {
       // E
       Completion.KeywordCompletion("else"        , range, Priority.Default),
       // F
+      Completion.KeywordLiteralCompletion("false", range, Priority.Higher),
       Completion.KeywordCompletion("forA"        , range, Priority.Lowest),
       Completion.KeywordCompletion("forM"        , range, Priority.Low),
       Completion.KeywordCompletion("force"       , range, Priority.High),
@@ -120,6 +121,7 @@ object KeywordCompleter {
       // N
       Completion.KeywordCompletion("new"         , range, Priority.Low),
       Completion.KeywordCompletion("not"         , range, Priority.High),
+      Completion.KeywordLiteralCompletion("null" , range, Priority.Lower),
       // O
       Completion.KeywordCompletion("or"          , range, Priority.Default),
       // P
@@ -136,6 +138,7 @@ object KeywordCompleter {
       Completion.KeywordCompletion("spawn"       , range, Priority.Low),
       // T
       Completion.KeywordCompletion("throw"       , range, Priority.Lowest),
+      Completion.KeywordLiteralCompletion("true" , range, Priority.Higher),
       Completion.KeywordCompletion("try"         , range, Priority.High),
       Completion.KeywordCompletion("typematch"   , range, Priority.Low),
       // U
@@ -146,11 +149,7 @@ object KeywordCompleter {
       Completion.KeywordCompletion("without"     , range, Priority.Default),
       // Y
       Completion.KeywordCompletion("yield"       , range, Priority.Default)
-    ).filter(c => c.name.startsWith(name.getOrElse(""))) ++ List (
-      Completion.KeywordLiteralCompletion("false", range, Priority.Higher),
-      Completion.KeywordLiteralCompletion("null" , range, Priority.Lower),
-      Completion.KeywordLiteralCompletion("true" , range, Priority.Higher),
-    ).filter(c => c.literal.startsWith(name.getOrElse("")))
+    ).filter(c => c.name.startsWith(name.getOrElse("")))
   }
 
   /**
