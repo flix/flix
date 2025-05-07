@@ -48,6 +48,12 @@ object AtomicOp {
 
   case class RecordRestrict(label: Name.Label) extends AtomicOp
 
+  case class ExtensibleIs(label: Name.Label) extends AtomicOp
+
+  case class ExtensibleTag(label: Name.Label) extends AtomicOp
+
+  case class ExtensibleUntag(label: Name.Label) extends AtomicOp
+
   case object ArrayLit extends AtomicOp
 
   case object ArrayNew extends AtomicOp

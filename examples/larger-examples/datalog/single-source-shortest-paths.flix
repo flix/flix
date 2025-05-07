@@ -30,12 +30,12 @@ mod ShortestPath {
         }
     }
 
-    instance Order[Path[a]] {
+    instance Order[Path[a]] with Order[a] {
         pub def compare(x: Path[a], y: Path[a]): Comparison = match (x, y) {
-            case (Bot, Bot)           => Comparison.EqualTo
-            case (Bot, _)             => Comparison.LessThan
-            case (_, Bot)             => Comparison.GreaterThan
-            case (Path(xs), Path(ys)) => List.length(xs) <=> List.length(ys)
+            case (Bot, Bot)                 => Comparison.EqualTo
+            case (Bot, _)                   => Comparison.LessThan
+            case (_, Bot)                   => Comparison.GreaterThan
+            case (Path(list1), Path(list2)) => list1 <=> list2
         }
     }
 
