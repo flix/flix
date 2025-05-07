@@ -613,8 +613,15 @@ object Inliner {
     * @param inScopeVars       a set of variables considered to be in scope.
     * @param exprCtx           a compile-time evaluation context.
     * @param currentlyInlining a flag denoting whether the current traversal is part of an inline-expansion process.
+    * @param depth             the number of nested inlinings.
     */
-  private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], exprCtx: ExprContext, currentlyInlining: Boolean) {
+  private case class LocalContext(
+                                   varSubst: Map[Symbol.VarSym, Symbol.VarSym],
+                                   subst: Map[Symbol.VarSym, SubstRange],
+                                   inScopeVars: Map[Symbol.VarSym, BoundKind],
+                                   exprCtx: ExprContext,
+                                   currentlyInlining: Boolean,
+                                   depth: Int) {
 
     /** Returns a [[LocalContext]] where [[exprCtx]] has be overwritten with [[ExprContext.Empty]]. */
     def withEmptyExprCtx: LocalContext = {
@@ -665,7 +672,13 @@ object Inliner {
   private object LocalContext {
 
     /** Returns the empty context with `currentlyInlining` set to `false`. */
-    val Empty: LocalContext = LocalContext(Map.empty, Map.empty, Map.empty, ExprContext.Empty, currentlyInlining = false)
+    val Empty: LocalContext = LocalContext(
+      Map.empty,
+      Map.empty,
+      Map.empty,
+      ExprContext.Empty,
+      currentlyInlining = false,
+      0)
 
   }
 
