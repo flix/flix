@@ -2425,6 +2425,7 @@ object Resolver {
         case "Array" => Validation.Success(UnkindedType.Cst(TypeConstructor.Array, loc))
         case "Vector" => Validation.Success(UnkindedType.Cst(TypeConstructor.Vector, loc))
         case "Region" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToStar, loc))
+        case "XVar" => Validation.Success(UnkindedType.Cst(TypeConstructor.Extensible, loc))
 
         // Disambiguate type.
         case _ => // typeName
