@@ -177,7 +177,7 @@ object Inliner {
         case e1@Expr.Lambda(_, _, _, _) =>
           sctx.changed.putIfAbsent(sym0, ())
           val e2 = visitExp(exp2, ctx0)
-          betaReduceLambda(e1, e2, loc, ctx0)
+          betaReduceLambda(e1, e2, loc, ctx0.incrementDepth)
 
         case e1 =>
           val e2 = visitExp(exp2, ctx0)
@@ -189,7 +189,9 @@ object Inliner {
       if (shouldInlineDef(root.defs(sym), es, ctx0)) {
         sctx.changed.putIfAbsent(sym0, ())
         val defn = root.defs(sym)
-        val ctx = ctx0.withSubst(Map.empty).enableInliningMode
+        val ctx = ctx0.withSubst(Map.empty)
+          .incrementDepth
+          .enableInliningMode
         bindArgs(defn.exp, defn.fparams, es, loc, ctx)
       } else {
         val es = exps.map(visitExp(_, ctx0))
@@ -670,6 +672,11 @@ object Inliner {
     /** Returns a [[LocalContext]] where [[currentlyInlining]] is set to `true`. */
     def enableInliningMode: LocalContext = {
       this.copy(currentlyInlining = true)
+    }
+
+    /** Returns a [[LocalContext]] where [[depth]] has been incremented by one. */
+    def incrementDepth: LocalContext = {
+      this.copy(depth = this.depth + 1)
     }
   }
 
