@@ -13,9 +13,9 @@ object Optimizer {
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer") {
     var result = ToOccurrenceAst.run(root)
     var delta = result.defs.keys.toSet
-    for (_ <- 1 to 3) {
+    for (round <- 0 until 3) {
       val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(result, delta)
-      val (inlinerRoot, inlinerChange) = Inliner.run(afterOccurrenceAnalyzer)
+      val (inlinerRoot, inlinerChange) = Inliner.run(afterOccurrenceAnalyzer, round)
       result = inlinerRoot
       delta = inlinerChange
     }

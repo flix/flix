@@ -67,8 +67,11 @@ import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
   */
 object Inliner {
 
+  private var Round: Int = _
+
   /** Performs inlining on the given AST `root`. */
-  def run(root: OccurrenceAst.Root)(implicit flix: Flix): (OccurrenceAst.Root, Set[Symbol.DefnSym]) = {
+  def run(root: OccurrenceAst.Root, round: Int)(implicit flix: Flix): (OccurrenceAst.Root, Set[Symbol.DefnSym]) = {
+    this.Round = round
     val sctx: SharedContext = SharedContext.mk()
     val defs = ParOps.parMapValues(root.defs)(visitDef(_)(sctx, root, flix))
     val newDelta = sctx.changed.asScala.keys.toSet
