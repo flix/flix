@@ -439,6 +439,9 @@ object ConstraintGen {
 
       case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
 
+      case Expr.ExtensibleMatch(label, exp1, sym2, exp2, sym3, exp3, tvar, loc) =>
+        ??? // TODO: Ext-Var
+
       case KindedAst.Expr.Tag(symUse, exps, tvar, loc) =>
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)

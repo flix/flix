@@ -245,6 +245,9 @@ object TypeReconstruction {
       val eff = Type.mkUnion(rs.map(_.exp.eff), loc)
       TypedAst.Expr.RestrictableChoose(star, e, rs, subst(tvar), eff, loc)
 
+    case KindedAst.Expr.ExtensibleMatch(label, exp1, sym2, exp2, sym3, exp3, tvar, loc) =>
+      ??? // TODO: Ext-Var
+
     case KindedAst.Expr.Tag(symUse, exps, tvar, loc) =>
       val es = exps.map(visitExp)
       val eff = Type.mkUnion(es.map(_.eff), loc)
