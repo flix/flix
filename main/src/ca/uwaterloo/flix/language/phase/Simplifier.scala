@@ -926,7 +926,7 @@ object Simplifier {
     }
 
   private def visitEffOp(op: MonoAst.Op)(implicit universe: Set[Symbol.EffectSym]): SimplifiedAst.Op = op match {
-    case MonoAst.Op(sym, MonoAst.Spec(_, ann, mod, fparams0, _, retTpe0, eff0), loc) =>
+    case MonoAst.Op(sym, MonoAst.Spec(_, ann, mod, fparams0, _, retTpe0, eff0, _), loc) =>
       val fparams = fparams0.map(visitFormalParam)
       val retTpe = visitType(retTpe0)
       val eff = simplifyEffect(eff0)

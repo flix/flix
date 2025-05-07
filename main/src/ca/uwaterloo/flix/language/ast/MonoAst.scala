@@ -35,7 +35,7 @@ object MonoAst {
 
   case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr, loc: SourceLocation)
 
-  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, fparams: List[FormalParam], functionType: Type, retTpe: Type, eff: Type)
+  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, fparams: List[FormalParam], functionType: Type, retTpe: Type, eff: Type, defContext: DefContext)
 
   case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
@@ -239,5 +239,9 @@ object MonoAst {
     * @param isSelfRef true if a function body expression refers to the function itself.
     */
   case class DefContext(localDefs: Int, isSelfRef: Boolean)
+
+  object DefContext {
+    val Unknown: DefContext = DefContext(localDefs = 0, isSelfRef = false)
+  }
 
 }

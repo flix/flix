@@ -13,7 +13,7 @@ object MonoAstPrinter {
         DocAst.Enum(ann, mod, sym, tparams.map(printTypeParam), cases.values.map(printCase).toList)
     }.toList
     val defs = root.defs.values.map {
-      case MonoAst.Def(sym, MonoAst.Spec(_, ann, mod, fparams, _, retTpe, eff), exp, _) =>
+      case MonoAst.Def(sym, MonoAst.Spec(_, ann, mod, fparams, _, retTpe, eff, _), exp, _) =>
         val fps = fparams.map(printFormalParam)
         val rtpe = TypePrinter.print(retTpe)
         val ef = TypePrinter.print(eff)

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
-import ca.uwaterloo.flix.language.ast.MonoAst.Occur
+import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -414,7 +414,7 @@ object Monomorpher {
           case LoweredAst.FormalParam(varSym, fparamMod, tpe, src, fpLoc) =>
             MonoAst.FormalParam(varSym, fparamMod, StrictSubstitution.empty(tpe), src, Occur.Unknown, fpLoc)
         }
-        val spec = MonoAst.Spec(doc, ann, mod, fparams, declaredScheme.base, StrictSubstitution.empty(retTpe), StrictSubstitution.empty(eff))
+        val spec = MonoAst.Spec(doc, ann, mod, fparams, declaredScheme.base, StrictSubstitution.empty(retTpe), StrictSubstitution.empty(eff), DefContext.Unknown)
         MonoAst.Op(sym, spec, loc)
     }
 
@@ -432,7 +432,8 @@ object Monomorpher {
       specializedFparams,
       subst(defn.spec.declaredScheme.base),
       subst(spec0.retTpe),
-      subst(spec0.eff)
+      subst(spec0.eff),
+      DefContext.Unknown
     )
     MonoAst.Def(freshSym, spec, specializedExp, defn.loc)
   }
