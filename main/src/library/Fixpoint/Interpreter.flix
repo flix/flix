@@ -18,22 +18,23 @@ mod Fixpoint.Interpreter {
 
     use Fixpoint.Ast.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar, toDenotation}
     use Fixpoint.Ast.Shared.Denotation
+    use Fixpoint.Boxed
 
-    pub type alias Database[v: Type, r: Region] = MutMap[RamSym[v], MutMap[Vector[v], v, r], r]
+    pub type alias Database[r: Region] = MutMap[RamSym, MutMap[Vector[Boxed], Boxed, r], r]
 
-    pub type alias SearchEnv[v: Type, r: Region] = (Array[Vector[v], r], Array[v, r])
+    pub type alias SearchEnv[r: Region] = (Array[Vector[Boxed], r], Array[Boxed, r])
 
     @Internal
-    pub def interpret(rc: Region[r], stmt: RamStmt[v]): Database[v, r] \ r with Order[v] =
+    pub def interpret(rc: Region[r], stmt: RamStmt): Database[r] \ r =
         interpretWithDatabase(rc, MutMap.empty(rc), stmt)
 
     @Internal
-    pub def interpretWithDatabase(rc: Region[r], db: Database[v, r], stmt: RamStmt[v]): Database[v, r] \ r with Order[v] =
+    pub def interpretWithDatabase(rc: Region[r], db: Database[r], stmt: RamStmt): Database[r] \ r =
         let s = Fixpoint.Debugging.notifyPreInterpret(stmt);
         evalStmt(rc, db, s);
         db
 
-    def evalStmt(rc: Region[r], db: Database[v, r], stmt: RamStmt[v]): Unit \ r with Order[v] =
+    def evalStmt(rc: Region[r], db: Database[r], stmt: RamStmt): Unit \ r =
         match stmt {
             case RamStmt.Insert(relOp) => evalOp(rc, db, allocEnv(rc, 0, relOp), relOp)
             case RamStmt.Merge(srcSym, dstSym) =>
@@ -58,7 +59,7 @@ mod Fixpoint.Interpreter {
             case RamStmt.Comment(_) => ()
         }
 
-    def allocEnv(rc: Region[r], depth: Int32, relOp: RelOp[v]): SearchEnv[v, r] \ r = match relOp {
+    def allocEnv(rc: Region[r], depth: Int32, relOp: RelOp): SearchEnv[r] \ r = match relOp {
         case RelOp.Search(_, _, body)           => allocEnv(rc, depth + 1, body)
         case RelOp.Query(_, _, _, body)         => allocEnv(rc, depth + 1, body)
         case RelOp.Functional(_, _, _, body)    => allocEnv(rc, depth + 1, body)
@@ -66,7 +67,7 @@ mod Fixpoint.Interpreter {
         case RelOp.If(_, then)                  => allocEnv(rc, depth, then)
     }
 
-    def evalOp(rc1: Region[r1], db: Database[v, r1], env: SearchEnv[v, r2], op: RelOp[v]): Unit \ { r1, r2 } with Order[v] =
+    def evalOp(rc1: Region[r1], db: Database[r1], env: SearchEnv[r2], op: RelOp): Unit \ { r1, r2 } =
         match op {
             case RelOp.Search(RowVar.Index(i), ramSym, body) =>
                 let (tupleEnv, latEnv) = env;
@@ -118,7 +119,7 @@ mod Fixpoint.Interpreter {
             case _ => ()
         }
 
-    def evalQuery(env: SearchEnv[v, r], qry: List[(Int32, RamTerm[v])], tuple: Vector[v]): Comparison \ r with Order[v] =
+    def evalQuery(env: SearchEnv[r], qry: List[(Int32, RamTerm)], tuple: Vector[Boxed]): Comparison \ r =
         match qry {
             case Nil => Comparison.EqualTo
             case (j, t) :: tl => match Vector.get(j, tuple) <=> evalTerm(env, t) {
@@ -127,7 +128,7 @@ mod Fixpoint.Interpreter {
             }
         }
 
-    def evalBoolExp(rc1: Region[r1], db: Database[v, r1], env: SearchEnv[v, r2], es: Vector[BoolExp[v]]): Bool \ { r1, r2 } with Order[v] =
+    def evalBoolExp(rc1: Region[r1], db: Database[r1], env: SearchEnv[r2], es: Vector[BoolExp]): Bool \ { r1, r2 } =
         Vector.forAll(exp -> match exp {
             case BoolExp.Empty(ramSym) =>
                 MutMap.isEmpty(MutMap.getWithDefault(ramSym, MutMap.empty(rc1), db))
@@ -181,7 +182,7 @@ mod Fixpoint.Interpreter {
                 f(v1)(v2)(v3)(v4)(v5)
         }, es)
 
-    def evalTerm(env: SearchEnv[v, r], term: RamTerm[v]): v \ r = match term {
+    def evalTerm(env: SearchEnv[r], term: RamTerm): Boxed \ r = match term {
         case RamTerm.Lit(v) => v
         case RamTerm.RowLoad(RowVar.Index(i), index) =>
             let (tupleEnv, _) = env;

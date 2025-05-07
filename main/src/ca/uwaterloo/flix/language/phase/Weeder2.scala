@@ -895,6 +895,7 @@ object Weeder2 {
         case TreeKind.Expr.FixpointSolveWithProject => visitFixpointSolveExpr(tree)
         case TreeKind.Expr.FixpointQuery => visitFixpointQueryExpr(tree)
         case TreeKind.Expr.Debug => visitDebugExpr(tree)
+        case TreeKind.Expr.ExtensibleTag => visitExtensibleTag(tree)
         case TreeKind.Expr.Intrinsic =>
           // Intrinsics must be applied to check that they have the right amount of arguments.
           // This means that intrinsics are not "first-class" like other functions.
@@ -1532,6 +1533,13 @@ object Weeder2 {
               Validation.Success((e, Expr.Error(error)))
           }
           mapN(exprs)(exprs => Expr.LetMatch(pattern, tpe, exprs._1, exprs._2, tree.loc))
+      }
+    }
+
+    private def visitExtensibleTag(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.ExtensibleTag)
+      mapN(pickNameIdent(tree), pickExpr(tree)) {
+        (ident, e) => Expr.ExtensibleTag(Name.mkLabel(ident), List(e), tree.loc)
       }
     }
 

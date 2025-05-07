@@ -455,6 +455,9 @@ object ConstraintGen {
 
       case e: Expr.RestrictableTag => RestrictableChooseConstraintGen.visitApplyRestrictableTag(e)
 
+      case KindedAst.Expr.ExtensibleTag(label, exps, tvar, loc) =>
+        ??? // TODO: Ext-Variants
+
       case Expr.Tuple(elms, loc) =>
         val (elmTpes, elmEffs) = elms.map(visitExp).unzip
         val resTpe = Type.mkTuple(elmTpes, loc)

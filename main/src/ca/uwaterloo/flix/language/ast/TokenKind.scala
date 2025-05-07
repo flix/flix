@@ -143,6 +143,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordWithout => "'without'"
       case TokenKind.KeywordYield => "'yield'"
       case TokenKind.KeywordXor => "'xor'"
+      case TokenKind.KeywordXvar => "'xvar'"
       case TokenKind.ListHash => "'List#'"
       case TokenKind.MapHash => "'Map#'"
       case TokenKind.Minus => "'-'"
@@ -294,6 +295,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordWithout => true
     case TokenKind.KeywordYield => true
     case TokenKind.KeywordXor => true
+    case TokenKind.KeywordXvar => true
     case TokenKind.Ampersand
          | TokenKind.AngleL
          | TokenKind.AngleLEqual
@@ -625,6 +627,7 @@ sealed trait TokenKind {
          | TokenKind.KeywordWith
          | TokenKind.KeywordWithout
          | TokenKind.KeywordXor
+         | TokenKind.KeywordXvar
          | TokenKind.KeywordYield
          | TokenKind.LiteralDebugStringR
          | TokenKind.LiteralStringInterpolationR
@@ -1056,6 +1059,8 @@ object TokenKind {
   case object KeywordYield extends TokenKind
 
   case object KeywordXor extends TokenKind
+
+  case object KeywordXvar extends TokenKind
 
   case object ListHash extends TokenKind
 

@@ -1667,6 +1667,7 @@ object Parser2 {
         case TokenKind.KeywordDebug
              | TokenKind.KeywordDebugBang
              | TokenKind.KeywordDebugBangBang => debugExpr()
+        case TokenKind.KeywordXvar => extensibleTagExpr()
         case t =>
           val mark = open()
           val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation())
@@ -1822,6 +1823,18 @@ object Parser2 {
           expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
           close(mark, TreeKind.Expr.Paren)
       }
+    }
+
+    private def extensibleTagExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordXvar))
+      val mark = open()
+      expect(TokenKind.KeywordXvar, SyntacticContext.Expr.OtherExpr)
+      nameUnqualified(NAME_TAG, SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.ParenL)
+      // TODO: Ext-Variants: Limited to one expression.
+      expression()
+      expect(TokenKind.ParenR)
+      close(mark, TreeKind.Expr.ExtensibleTag)
     }
 
     private def unaryLambdaExpr()(implicit s: State): Mark.Closed = {

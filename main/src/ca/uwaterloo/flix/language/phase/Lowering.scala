@@ -44,14 +44,14 @@ object Lowering {
 
   private object Defs {
     lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.Boxable.box")
-    lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.Solver.runSolver")
-    lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.Solver.union")
-    lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.Solver.projectSym")
-    lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.Solver.rename")
+    lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.SolverApi.runSolver")
+    lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.SolverApi.union")
+    lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.SolverApi.projectSym")
+    lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.SolverApi.rename")
 
-    def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.Solver.injectInto$arity")
+    def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.SolverApi.injectInto$arity")
 
-    def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.Solver.facts$arity")
+    def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.SolverApi.facts$arity")
 
     lazy val ChannelNew: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannel")
     lazy val ChannelNewTuple: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannelTuple")
@@ -101,14 +101,14 @@ object Lowering {
     //
     // Data Types
     //
-    lazy val Datalog: Type = Type.mkEnum(Enums.Datalog, Boxed :: Nil, SourceLocation.Unknown)
-    lazy val Constraint: Type = Type.mkEnum(Enums.Constraint, Boxed :: Nil, SourceLocation.Unknown)
+    lazy val Datalog: Type = Type.mkEnum(Enums.Datalog, Nil, SourceLocation.Unknown)
+    lazy val Constraint: Type = Type.mkEnum(Enums.Constraint, Nil, SourceLocation.Unknown)
 
-    lazy val HeadPredicate: Type = Type.mkEnum(Enums.HeadPredicate, Boxed :: Nil, SourceLocation.Unknown)
-    lazy val BodyPredicate: Type = Type.mkEnum(Enums.BodyPredicate, Boxed :: Nil, SourceLocation.Unknown)
+    lazy val HeadPredicate: Type = Type.mkEnum(Enums.HeadPredicate, Nil, SourceLocation.Unknown)
+    lazy val BodyPredicate: Type = Type.mkEnum(Enums.BodyPredicate, Nil, SourceLocation.Unknown)
 
-    lazy val HeadTerm: Type = Type.mkEnum(Enums.HeadTerm, Boxed :: Nil, SourceLocation.Unknown)
-    lazy val BodyTerm: Type = Type.mkEnum(Enums.BodyTerm, Boxed :: Nil, SourceLocation.Unknown)
+    lazy val HeadTerm: Type = Type.mkEnum(Enums.HeadTerm, Nil, SourceLocation.Unknown)
+    lazy val BodyTerm: Type = Type.mkEnum(Enums.BodyTerm, Nil, SourceLocation.Unknown)
 
     lazy val PredSym: Type = Type.mkEnum(Enums.PredSym, Nil, SourceLocation.Unknown)
     lazy val VarSym: Type = Type.mkEnum(Enums.VarSym, Nil, SourceLocation.Unknown)
@@ -459,6 +459,9 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Match(e, rs, t, eff, loc)
 
+    case TypedAst.Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, tpe, eff, loc) =>
+      ??? // TODO: Ext-Variants
+
     case TypedAst.Expr.Tag(sym, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
@@ -470,6 +473,9 @@ object Lowering {
       val es = exps.map(visitExp)
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Tag(caseSym), es, t, eff, loc)
+
+    case TypedAst.Expr.ExtensibleTag(label, exps, tpe, eff, loc) =>
+      ??? // TODO: Ext-Variants
 
     case TypedAst.Expr.Tuple(elms, tpe, eff, loc) =>
       val es = elms.map(visitExp)

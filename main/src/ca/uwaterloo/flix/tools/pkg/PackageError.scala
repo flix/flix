@@ -40,12 +40,6 @@ object PackageError {
          |""".stripMargin
   }
 
-  case class NoReleasesFound(project: Project) extends PackageError {
-    override def message(f: Formatter): String =
-      s"""No releases found for project ${f.bold(project.toString)}.
-         |""".stripMargin
-  }
-
   case class ProjectNotFound(url: URL, project: Project) extends PackageError {
     override def message(f: Formatter): String =
       s"""An I/O error occurred while trying to read the following url:

@@ -363,6 +363,12 @@ object TypeVerifier {
             case None => failMismatchedShape(t1, s"Record with '${label.name}'", loc)
           }
 
+        case AtomicOp.ExtensibleIs(label) => ??? // TODO: Ext-Variants
+
+        case AtomicOp.ExtensibleTag(label) => ??? // TODO: Ext-Variants
+
+        case AtomicOp.ExtensibleUntag(label) => ??? // TODO: Ext-Variants
+
         case AtomicOp.Closure(sym) =>
           val defn = root.defs(sym)
           val signature = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
