@@ -365,9 +365,7 @@ object Simplifier {
             // The row types themselves return monotype records, so we do nothing here.
             visitType(elm)
 
-          case TypeConstructor.Extensible =>
-            // TODO: Monomorphization?
-            ??? // TODO: Ext-Variants
+          case TypeConstructor.Extensible => MonoType.Object
 
           case TypeConstructor.Region(_) => MonoType.Unit
 
