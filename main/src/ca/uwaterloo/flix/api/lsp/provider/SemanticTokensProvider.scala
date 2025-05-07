@@ -840,6 +840,7 @@ object SemanticTokensProvider {
     case TypeConstructor.RecordRowEmpty => false
     case TypeConstructor.RecordRowExtend(_) => false
     case TypeConstructor.Record => false
+    case TypeConstructor.Extensible => false
     case TypeConstructor.SchemaRowEmpty => false
     case TypeConstructor.SchemaRowExtend(_) => false
     case TypeConstructor.Schema => false
