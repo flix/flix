@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.MonoAst.Expr
+import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, Occur}
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope}
 import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
@@ -146,11 +146,11 @@ object LambdaDrop {
     case Expr.ApplyLocalDef(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.Let(_, exp1, exp2, _, _, _) =>
+    case Expr.Let(_, exp1, exp2, _, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
+    case Expr.LocalDef(_, _, exp1, exp2, _, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
@@ -263,15 +263,15 @@ object LambdaDrop {
       val es = exps.map(rewriteExp)
       Expr.ApplyLocalDef(sym, es, tpe, eff, loc)
 
-    case Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
+    case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) =>
       val e1 = rewriteExp(exp1)
       val e2 = rewriteExp(exp2)
-      Expr.Let(sym, e1, e2, tpe, eff, loc)
+      Expr.Let(sym, e1, e2, tpe, eff, occur, loc)
 
-    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
       val e1 = rewriteExp(exp1)
       val e2 = rewriteExp(exp2)
-      Expr.LocalDef(sym, fparams, e1, e2, tpe, eff, loc)
+      Expr.LocalDef(sym, fparams, e1, e2, tpe, eff, occur, loc)
 
     case Expr.Scope(sym, regSym, exp, tpe, eff, loc) =>
       val e = rewriteExp(exp)
@@ -428,7 +428,7 @@ object LambdaDrop {
     val tpe = applyLocalDefExpr.tpe
     val eff = applyLocalDefExpr.eff
     val loc = applyLocalDefExpr.loc.asSynthetic
-    Expr.LocalDef(sym, localDefParams, exp0, applyLocalDefExpr, tpe, eff, loc)
+    Expr.LocalDef(sym, localDefParams, exp0, applyLocalDefExpr, tpe, eff, Occur.Unknown, loc)
   }
 
   private object LocalContext {
