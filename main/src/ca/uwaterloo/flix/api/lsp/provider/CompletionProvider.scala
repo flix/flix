@@ -39,8 +39,8 @@ import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError
 object CompletionProvider {
 
   def autoComplete(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): CompletionList = {
-      val items = getCompletions(uri, pos, currentErrors)(root, flix).map(_.toCompletionItem)
-      CompletionList(isIncomplete = true, items)
+    val items = getCompletions(uri, pos, currentErrors)(root, flix).map(_.toCompletionItem)
+    CompletionList(isIncomplete = true, items)
   }
 
   /**
@@ -51,7 +51,7 @@ object CompletionProvider {
       HoleCompleter.getHoleCompletion(uri, pos).toList
     else
       errorsAt(uri, pos, currentErrors).flatMap {
-        case err: WeederError.UndefinedAnnotation => KeywordCompleter.getModKeywords(Range.from(err.loc))
+        case WeederError.UndefinedAnnotation(name, loc) => KeywordCompleter.getModKeywords(Some(name), Range.from(loc))
 
         case err: WeederError.UnqualifiedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
 
@@ -70,9 +70,11 @@ object CompletionProvider {
           val ident = err.qn.ident.name
           val qn = err.qn
           val range = Range.from(err.loc)
+          val keywordCompletions = if (qn.namespace.isEmpty)
+            KeywordCompleter.getExprKeywords(Some(qn.toString), range)
+          else Nil
           AutoImportCompleter.getCompletions(ident, range, ap, scp) ++
             LocalScopeCompleter.getCompletionsExpr(range, scp) ++
-            KeywordCompleter.getExprKeywords(range) ++
             DefCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
             EnumCompleter.getCompletions(qn, range, ap, scp, withTypeParameters = false) ++
             EffectCompleter.getCompletions(qn, range, ap, scp, inHandler = false) ++
@@ -80,7 +82,8 @@ object CompletionProvider {
             SignatureCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
             EnumTagCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
             TraitCompleter.getCompletions(qn, TraitUsageKind.Expr, range, ap, scp) ++
-            ModuleCompleter.getCompletions(qn, range, ap, scp)
+            ModuleCompleter.getCompletions(qn, range, ap, scp) ++
+            keywordCompletions
 
         case err: ResolutionError.UndefinedType =>
           val ap = err.ap
@@ -125,13 +128,13 @@ object CompletionProvider {
     else e.sctx match {
       // Expressions.
       case SyntacticContext.Expr.Constraint => (PredicateCompleter.getCompletions(uri, range) ++ KeywordCompleter.getConstraintKeywords(range)).toList
-      case SyntacticContext.Expr.OtherExpr => KeywordCompleter.getExprKeywords(range)
+      case SyntacticContext.Expr.OtherExpr => KeywordCompleter.getExprKeywords(None, range)
 
       // Declarations.
       case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords(range)
       case SyntacticContext.Decl.Effect => KeywordCompleter.getEffectKeywords(range)
       case SyntacticContext.Decl.Instance => KeywordCompleter.getInstanceKeywords(range)
-      case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords(range) ++ ExprSnippetCompleter.getCompletions(range)
+      case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords(None, range) ++ ExprSnippetCompleter.getCompletions(range)
       case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords(range)
       case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords(range)
       case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords(range)

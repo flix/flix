@@ -35,7 +35,7 @@ object KeywordCompleter {
   /**
     * Module keywords. These are keywords that can occur in a module.
     */
-  def getModKeywords(range: Range): List[Completion] =
+  def getModKeywords(name: Option[String], range: Range): List[Completion] =
     List(
       // D
       Completion.KeywordCompletion("@Deprecated"      , range, Priority.Low),
@@ -66,7 +66,7 @@ object KeywordCompleter {
       Completion.KeywordCompletion("use"              , range, Priority.Default),
       // W
       Completion.KeywordCompletion("with"             , range, Priority.Default),
-    )
+    ).filter(c => c.name.startsWith(name.getOrElse("")))
 
   /**
     * Enum keywords. These are keywords that can appear within the declaration of an enum.
@@ -87,7 +87,7 @@ object KeywordCompleter {
   /**
     * Expression keywords. These are keywords that can appear within expressions (fx within the body of a function).
     */
-  def getExprKeywords(range: Range): List[Completion] =
+  def getExprKeywords(name: Option[String], range: Range): List[Completion] = {
     List(
       // A
       Completion.KeywordCompletion("and"         , range, Priority.Default),
@@ -149,7 +149,8 @@ object KeywordCompleter {
       Completion.KeywordCompletion("without"     , range, Priority.Default),
       // Y
       Completion.KeywordCompletion("yield"       , range, Priority.Default)
-    )
+    ).filter(c => c.name.startsWith(name.getOrElse("")))
+  }
 
   /**
     * Instance declaration keywords.

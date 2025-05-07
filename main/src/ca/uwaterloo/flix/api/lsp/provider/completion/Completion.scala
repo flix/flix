@@ -534,6 +534,10 @@ sealed trait Completion {
   }
 }
 
+sealed trait NamedCompletion extends Completion{
+  def name: String
+}
+
 object Completion {
 
   /**
@@ -543,7 +547,7 @@ object Completion {
     * @param range     the range of the completion.
     * @param priority  the completion priority of the keyword.
     */
-  case class KeywordCompletion(name: String, range: Range, priority: Priority) extends Completion
+  case class KeywordCompletion(name: String, range: Range, priority: Priority) extends NamedCompletion
 
   /**
     * Represents a keyword literal completion (i.e. `true`).
@@ -562,11 +566,11 @@ object Completion {
     *
     * `f(fal)`  --->    `f(false˽)`
     *
-    * @param literal   the literal keyword text.
+    * @param name   the literal keyword text.
     * @param range     the range of the completion.
     * @param priority  the priority of the keyword.
     */
-  case class KeywordLiteralCompletion(literal: String, range: Range, priority: Priority) extends Completion
+  case class KeywordLiteralCompletion(name: String, range: Range, priority: Priority) extends NamedCompletion
 
   /**
     * Represents a completion for a kind.
