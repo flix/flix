@@ -75,9 +75,9 @@ object MonoAst {
 
     case class ApplyLocalDef(sym: Symbol.VarSym, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, occur: Occur, loc: SourceLocation) extends Expr
 
-    case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, occur: Occur, loc: SourceLocation) extends Expr
 
     case class Scope(sym: Symbol.VarSym, regSym: Symbol.RegionSym, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -125,7 +125,7 @@ object MonoAst {
 
     case class Wild(tpe: Type, loc: SourceLocation) extends Pattern
 
-    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends Pattern
+    case class Var(sym: Symbol.VarSym, tpe: Type, occur: Occur, loc: SourceLocation) extends Pattern
 
     case class Cst(cst: Constant, tpe: Type, loc: SourceLocation) extends Pattern
 
@@ -144,7 +144,7 @@ object MonoAst {
 
   case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: Type, src: TypeSource, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: Type, src: TypeSource, occur: Occur, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
