@@ -440,7 +440,25 @@ object ConstraintGen {
       case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
 
       case Expr.ExtensibleMatch(label, exp1, sym2, exp2, sym3, exp3, tvar, loc) =>
-        ??? // TODO: Ext-Var
+        val pred = Name.Pred(label.name, label.loc)
+
+        val (tpe1, eff1) = visitExp(exp1)
+        val (tpe2, eff2) = visitExp(exp2)
+        val (tpe3, eff3) = visitExp(exp3)
+
+        val freshTypeVar = freshVar(Kind.Star, loc)
+        val freshRowVar = freshVar(Kind.SchemaRow, loc)
+        val expectedRowType = Type.mkSchemaRowExtend(pred, Type.mkRelation(List(freshTypeVar), loc), freshRowVar, loc)
+        val expectedSchemaType = Type.mkExtensible(expectedRowType, loc)
+
+        c.unifyType(tpe1, expectedSchemaType, loc)
+        c.unifyType(sym2.tvar, freshTypeVar, loc)
+        c.unifyType(sym3.tvar, Type.mkExtensible(freshRowVar, loc), loc)
+
+        c.unifyType(tvar, tpe2, tpe3, loc)
+        val resTpe = tvar
+        val resEff = Type.mkUnion(eff1, eff2, eff3, loc)
+        (resTpe, resEff)
 
       case KindedAst.Expr.Tag(symUse, exps, tvar, loc) =>
         val decl = root.enums(symUse.sym.enumSym)
@@ -462,8 +480,9 @@ object ConstraintGen {
         val pred = Name.Pred(label.name, label.loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         val rest = Type.freshVar(Kind.SchemaRow, loc)
-        val row = Type.mkSchemaRowExtend(pred, Type.mkTuplish(tpes, loc), rest, loc)
-        val tagType = Type.mkVariant(row, loc)
+        val tpe = Type.mkRelation(tpes, loc) // TODO: Ext-Var
+        val row = Type.mkSchemaRowExtend(pred, tpe, rest, loc)
+        val tagType = Type.mkExtensible(row, loc)
         c.unifyType(tvar, tagType, loc)
         val resTpe = tagType
         val resEff = Type.mkUnion(effs, loc)
