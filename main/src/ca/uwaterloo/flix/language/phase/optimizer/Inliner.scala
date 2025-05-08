@@ -155,7 +155,14 @@ object Inliner {
 
             case None =>
               // It was not unconditionally inlined, so consider inlining at this occurrence site
-              useSiteInline(freshVarSym, ctx0, Expr.Var(freshVarSym, tpe, loc))
+              useSiteInline(freshVarSym, ctx0) match {
+                case Some(exp) =>
+                  sctx.changed.putIfAbsent(sym0, ())
+                  visitExp(exp, ctx0.withSubst(Map.empty))
+
+                case None =>
+                  Expr.Var(freshVarSym, tpe, loc)
+              }
           }
       }
 
@@ -538,21 +545,18 @@ object Inliner {
   }
 
   /**
-    * Returns the definition of `sym` if it is let-bound and the [[shouldInlineVar]] predicate holds.
+    * Returns a [[Some]] with the definition of `sym` if it is let-bound and the [[shouldInlineVar]] predicate holds.
+    * The caller should visit the expression with an empty `subst`, i.e., `visitExp(exp, ctx0.withSubst(Map.empty))`.
     *
-    * Returns `default` otherwise.
+    * Returns [[None]] otherwise.
     *
     * Throws an error if `sym` is not in scope. This also implies that it is the responsibility of the caller
     * to replace any symbol occurrence with the corresponding fresh symbol in the variable substitution.
     */
-  private def useSiteInline(sym: Symbol.VarSym, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, root: MonoAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+  private def useSiteInline(sym: Symbol.VarSym, ctx0: LocalContext): Option[Expr] = {
     ctx0.inScopeVars.get(sym) match {
       case Some(BoundKind.LetBound(exp, occur)) if shouldInlineVar(sym, exp, occur) =>
-        sctx.changed.putIfAbsent(sym0, ())
-        visitExp(exp, ctx0.copy(subst = Map.empty))
-
-      case Some(_) =>
-        default
+        Some(exp)
 
       case None =>
         throw InternalCompilerException(s"unexpected evaluated var not in scope $sym", sym.loc)
