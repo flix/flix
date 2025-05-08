@@ -1545,7 +1545,6 @@ object Weeder2 {
 
       expect(tree, TreeKind.Expr.ExtensibleMatch)
 
-      // TODO: Ext-Var
       mapN(pickExpr(tree), pickNameIdent(tree), traverse(pickAll(TreeKind.Case, tree))(visitCase)) {
         case (exp1, label, (ident2, exp2) :: (ident3, exp3) :: Nil) =>
           Expr.ExtensibleMatch(label, exp1, ident2, exp2, ident3, exp3, tree.loc)

@@ -480,7 +480,7 @@ object ConstraintGen {
         val pred = Name.Pred(label.name, label.loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         val rest = Type.freshVar(Kind.SchemaRow, loc)
-        val tpe = Type.mkRelation(tpes, loc) // TODO: Ext-Var
+        val tpe = Type.mkRelation(tpes, loc)
         val row = Type.mkSchemaRowExtend(pred, tpe, rest, loc)
         val tagType = Type.mkExtensible(row, loc)
         c.unifyType(tvar, tagType, loc)

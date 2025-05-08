@@ -981,7 +981,7 @@ object Type {
   }
 
   /**
-    * Constructs a Variant type.
+    * Constructs an Extensible Variant type.
     */
   def mkExtensible(tpe: Type, loc: SourceLocation): Type = {
     Apply(Type.Cst(TypeConstructor.Extensible, loc), tpe, loc)
