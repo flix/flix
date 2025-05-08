@@ -299,8 +299,8 @@ class TestCompletionProvider extends AnyFunSuite {
       val (root1, _) = compile(program)
       val varOccurs = getVarSymOccurs()(root1)
       for {
-        (varSym, loc) <- varOccurs
-        loc = mkLocForName(varOccur)
+        (varSym, loc0) <- varOccurs
+        loc = mkLocForName(varSym, loc0)
         charsLeft <- listValidCharsLeft(varSym.text, loc)
       }{
           val alteredProgram = alterLocationInCode(program, loc, charsLeft)
@@ -330,8 +330,9 @@ class TestCompletionProvider extends AnyFunSuite {
     * @param codeLoc     The source location of the code that we are changing.
     * @param codeText    The text of the code that we are changing.
     * @param program     The original program string.
+    * @param charsLeft   The number of characters left after trimming the code text.
     */
-  private def assertNoDuplicatedCompletions(completions: List[CompletionItem], codeText: String, codeLoc: SourceLocation, program: String, charToTrim: Int): Unit = {
+  private def assertNoDuplicatedCompletions(completions: List[CompletionItem], codeText: String, codeLoc: SourceLocation, program: String, charsLeft: Int): Unit = {
     // Two completion items are identical if all the immediately visible fields are identical.
     completions.groupBy(item => (item.label, item.kind, item.labelDetails)).foreach {
       case (completion, duplicates) if duplicates.size > 1 =>
@@ -373,10 +374,10 @@ class TestCompletionProvider extends AnyFunSuite {
   /**
     * Returns a new source location for the given VarSym that only contains the name of the symbol, namespace excluded.
     */
-  private def mkLocForName(varSym: Symbol.VarSym): SourceLocation = {
+  private def mkLocForName(varSym: Symbol.VarSym, loc0: SourceLocation): SourceLocation = {
     val name = varSym.text
-    val sp2 = varSym.loc.sp2
-    varSym.loc.copy(sp1 = SourcePosition.mkFromOneIndexed(sp2.source, sp2.lineOneIndexed, sp2.colOneIndexed - name.length))
+    val sp2 = loc0.sp2
+    loc0.copy(sp1 = SourcePosition.mkFromOneIndexed(sp2.source, sp2.lineOneIndexed, sp2.colOneIndexed - name.length))
   }
 
   /**
