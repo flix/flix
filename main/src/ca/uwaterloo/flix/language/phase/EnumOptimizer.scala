@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.MonoAst.{Case, CatchRule, Def, Effect, Enum, Expr, FormalParam, HandlerRule, JvmMethod, MatchRule, Op, Pattern, Root, Spec, Struct, StructField, TypeParam}
+import ca.uwaterloo.flix.language.ast.MonoAst.{Case, CatchRule, Def, Effect, Enum, Expr, FormalParam, HandlerRule, JvmMethod, MatchRule, Occur, Op, Pattern, Root, Spec, Struct, StructField, TypeParam}
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Scope}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
@@ -121,7 +121,7 @@ object EnumOptimizer {
     val functionType = visitType(spec.functionType, isGround)
     val retTpe = visitType(spec.retTpe, isGround)
     val eff = visitEff(spec.eff, isGround)
-    Spec(spec.doc, spec.ann, spec.mod, fparams, functionType, retTpe, eff)
+    Spec(spec.doc, spec.ann, spec.mod, fparams, functionType, retTpe, eff, spec.defContext)
   }
 
   private def visitStruct(struct: Struct)(implicit wrappers: Enums, flix: Flix): Struct = {
@@ -156,7 +156,7 @@ object EnumOptimizer {
 
   private def visitFparam(fp: FormalParam, isGround: Boolean)(implicit wrappers: Enums, flix: Flix): FormalParam = {
     val tpe = visitType(fp.tpe, isGround)
-    FormalParam(fp.sym, fp.mod, tpe, fp.src, fp.loc)
+    FormalParam(fp.sym, fp.mod, tpe, fp.src, fp.occur, fp.loc)
   }
 
   private def visitExp(expr: Expr)(implicit wrappers: Enums, flix: Flix): Expr = expr match {
@@ -178,7 +178,7 @@ object EnumOptimizer {
           val List(e) = es
           val freshVar = Symbol.freshVarSym("eopt", BoundBy.Let, loc)
           val ef = visitEff(e.eff, isGround = true)
-          Expr.Let(freshVar, e, Expr.Cst(Constant.Bool(true), Type.mkBool(loc), loc), Type.mkBool(loc), ef, loc)
+          Expr.Let(freshVar, e, Expr.Cst(Constant.Bool(true), Type.mkBool(loc), loc), Type.mkBool(loc), ef, Occur.Unknown, loc)
         case AtomicOp.Tag(sym) if wrappers.contains(sym.enumSym) =>
           val List(e) = es
           e
@@ -207,19 +207,19 @@ object EnumOptimizer {
       val t = visitType(tpe, isGround = true)
       val ef = visitEff(eff, isGround = true)
       Expr.ApplyLocalDef(sym, es, t, ef, loc)
-    case Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
+    case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe, isGround = true)
       val ef = visitEff(eff, isGround = true)
-      Expr.Let(sym, e1, e2, t, ef, loc)
-    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+      Expr.Let(sym, e1, e2, t, ef, occur, loc)
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
       val fps = fparams.map(visitFparam(_, isGround = true))
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe, isGround = true)
       val ef = visitEff(eff, isGround = true)
-      Expr.LocalDef(sym, fps, e1, e2, t, ef, loc)
+      Expr.LocalDef(sym, fps, e1, e2, t, ef, occur, loc)
     case Expr.Scope(sym, regSym, exp, tpe, eff, loc) =>
       val e1 = visitExp(exp)
       val t = visitType(tpe, isGround = true)
@@ -267,13 +267,11 @@ object EnumOptimizer {
       val t = visitType(tpe, isGround = true)
       val ef = visitEff(eff, isGround = true)
       Expr.Ascribe(e, t, ef, loc)
-    case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+    case Expr.Cast(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val dt = declaredType.map(visitType(_, isGround = true))
-      val de = declaredEff.map(visitEff(_, isGround = true))
       val t = visitType(tpe, isGround = true)
       val ef = visitEff(eff, isGround = true)
-      Expr.Cast(e, dt, de, t, ef, loc)
+      Expr.Cast(e, t, ef, loc)
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitCatchRule)
@@ -351,9 +349,9 @@ object EnumOptimizer {
     case Pattern.Wild(tpe, loc) =>
       val t = visitType(tpe, isGround = true)
       Pattern.Wild(t, loc)
-    case Pattern.Var(sym, tpe, loc) =>
+    case Pattern.Var(sym, tpe, occur, loc) =>
       val t = visitType(tpe, isGround = true)
-      Pattern.Var(sym, t, loc)
+      Pattern.Var(sym, t, occur, loc)
     case Pattern.Cst(cst, tpe, loc) =>
       val t = visitType(tpe, isGround = true)
       Pattern.Cst(cst, t, loc)
