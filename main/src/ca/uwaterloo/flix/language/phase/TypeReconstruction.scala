@@ -245,6 +245,16 @@ object TypeReconstruction {
       val eff = Type.mkUnion(rs.map(_.exp.eff), loc)
       TypedAst.Expr.RestrictableChoose(star, e, rs, subst(tvar), eff, loc)
 
+    case KindedAst.Expr.ExtensibleMatch(label, exp1, sym2, exp2, sym3, exp3, tvar, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      val b2 = TypedAst.Binder(sym2, subst(sym2.tvar))
+      val b3 = TypedAst.Binder(sym3, subst(sym3.tvar))
+      val tpe = subst(tvar)
+      val eff = Type.mkUnion(e1.eff, e2.eff, e3.eff, loc)
+      TypedAst.Expr.ExtensibleMatch(label, e1, b2, e2, b3, e3, tpe, eff, loc)
+
     case KindedAst.Expr.Tag(symUse, exps, tvar, loc) =>
       val es = exps.map(visitExp)
       val eff = Type.mkUnion(es.map(_.eff), loc)
@@ -253,6 +263,12 @@ object TypeReconstruction {
     case KindedAst.Expr.RestrictableTag(symUse, exps, _, tvar, evar, loc) =>
       val es = exps.map(visitExp)
       TypedAst.Expr.RestrictableTag(symUse, es, subst(tvar), subst(evar), loc)
+
+    case KindedAst.Expr.ExtensibleTag(label, exps, tvar, loc) =>
+      val es = exps.map(visitExp)
+      val tpe = subst(tvar)
+      val eff = Type.mkUnion(es.map(_.eff), loc)
+      TypedAst.Expr.ExtensibleTag(label, es, tpe, eff, loc)
 
     case KindedAst.Expr.Tuple(elms, loc) =>
       val es = elms.map(visitExp(_))

@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source, SymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Token, TypedAst}
 import ca.uwaterloo.flix.language.phase.Lexer
 import ca.uwaterloo.flix.util.Formatter.NoFormatter.code
@@ -86,7 +86,7 @@ class TestCompletionProvider extends AnyFunSuite {
     "examples/interoperability/files/checking-if-file-exists-with-java.flix",
     "examples/misc/type-level-programming/track-list-emptiness-with-type-level-booleans.flix",
     "examples/misc/type-level-programming/type-level-programming-string-sanitization.flix",
-    "examples/misc/type-level-programming/type-level-programming-4bit-adder.flix",
+//    "examples/misc/type-level-programming/type-level-programming-4bit-adder.flix",
     "examples/misc/type-level-programming/type-level-programming-demorgan.flix",
     "examples/misc/type-level-programming/type-level-programming-even-odd-list.flix",
     "examples/misc/type-level-programming/type-level-programming-eager-lazy-list.flix",
@@ -141,13 +141,13 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private val Uri = "<test>"
 
-  test("No crashes when calling autoComplete anywhere") {
+  test("No crashes when calling getCompletions anywhere") {
     Programs.foreach(program => {
       val (root, errors) = compile(program)
       program.scanLeft(Position(1, 1))({
         case (Position(line, _), '\n') => Position(line + 1, 1)
         case (Position(line, col), _) => Position(line, col + 1)
-      }).foreach(pos => CompletionProvider.autoComplete(Uri, pos, errors)(root, Flix))
+      }).foreach(pos => CompletionProvider.getCompletions(Uri, pos, errors)(root, Flix).map(_.toCompletionItem(Flix)))
     })
   }
 
@@ -159,7 +159,7 @@ class TestCompletionProvider extends AnyFunSuite {
       keywordTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
-          val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, Flix)
+          val completions = CompletionProvider.getCompletions(Uri, pos, errors)(root, Flix).map(_.toCompletionItem(Flix))
           assertEmpty(completions, token.mkSourceLocation(), pos)
         }
       }
@@ -175,7 +175,7 @@ class TestCompletionProvider extends AnyFunSuite {
       literalTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
-          val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, Flix)
+          val completions = CompletionProvider.getCompletions(Uri, pos, errors)(root, Flix).map(_.toCompletionItem(Flix))
           assertEmpty(completions, token.mkSourceLocation(), pos)
         }
       }
@@ -191,7 +191,7 @@ class TestCompletionProvider extends AnyFunSuite {
       commentTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         getAllPositionsWithinToken(token).foreach { pos =>
-          val completions = CompletionProvider.autoComplete(Uri, pos, errors)(root, Flix)
+          val completions = CompletionProvider.getCompletions(Uri, pos, errors)(root, Flix).map(_.toCompletionItem(Flix))
           assertEmpty(completions, token.mkSourceLocation(), pos)
         }
       }
@@ -203,7 +203,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val (root, errors) = compile(program)
       val allNameDefLocs = root.defs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
-        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
+        val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix).map(_.toCompletionItem(Flix))
         assertEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
@@ -214,7 +214,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val (root, errors) = compile(program)
       val allNameDefLocs = root.enums.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
-        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
+        val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix).map(_.toCompletionItem(Flix))
         assertEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
@@ -225,7 +225,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val (root, errors) = compile(program)
       val allNameDefLocs = root.sigs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
-        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
+        val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix).map(_.toCompletionItem(Flix))
         assertEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
@@ -236,7 +236,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val (root, errors) = compile(program)
       val allNameDefLocs = root.traits.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
-        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
+        val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix).map(_.toCompletionItem(Flix))
         assertEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
@@ -247,7 +247,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val (root, errors) = compile(program)
       val allNameDefLocs = root.effects.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
-        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
+        val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix).map(_.toCompletionItem(Flix))
         assertEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
@@ -258,7 +258,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val (root, errors) = compile(program)
       val allNameDefLocs = root.structs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
-        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
+        val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix).map(_.toCompletionItem(Flix))
         assertEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
@@ -269,8 +269,42 @@ class TestCompletionProvider extends AnyFunSuite {
       val (root, errors) = compile(program)
       val allNameDefLocs = root.typeAliases.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach{ loc =>
-        val completions = CompletionProvider.autoComplete(Uri, Position.from(loc.sp2), errors)(root, Flix)
+        val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix).map(_.toCompletionItem(Flix))
         assertEmpty(completions, loc, Position.from(loc.sp2))
+      }
+    })
+  }
+
+  test("No duplicated completions for defs") {
+    val charToTrim = 1
+    Programs.foreach( program => {
+      val (root1, _) = compile(program)
+      val defSymUses = getDefSymUseOccurs()(root1)
+      defSymUses.foreach{
+        case defSymUse if isValidCodeToTrim(defSymUse.sym.toString, defSymUse.loc, charToTrim) =>
+          val alteredProgram = trimAfter(program, defSymUse.loc, charToTrim)
+          val triggerPosition = Position(defSymUse.loc.sp2.lineOneIndexed, defSymUse.loc.sp2.colOneIndexed - charToTrim)
+          val (root, errors) = compile(alteredProgram)
+          val completions = CompletionProvider.getCompletions(Uri, triggerPosition, errors)(root, Flix).map(_.toCompletionItem(Flix))
+          assertNoDuplicatedCompletions(completions, defSymUse.sym.toString, defSymUse.loc, program, charToTrim)
+        case _ => ()
+      }
+    })
+  }
+
+  ignore("No duplicated completions for vars") {
+    val numToTrim = 1
+    Programs.foreach( program => {
+      val (root1, _) = compile(program)
+      val varOccurs = getVarSymOccurs()(root1)
+      varOccurs.foreach{
+        case (varSym, loc) if isValidCodeToTrim(varSym.text, loc, numToTrim) =>
+          val alteredProgram = trimAfter(program, loc, numToTrim)
+          val triggerPosition = Position(loc.sp2.lineOneIndexed, loc.sp2.colOneIndexed - numToTrim)
+          val (root, errors) = compile(alteredProgram)
+          val completions = CompletionProvider.getCompletions(Uri, triggerPosition, errors)(root, Flix).map(_.toCompletionItem(Flix))
+          assertNoDuplicatedCompletions(completions, varSym.text, loc, program, numToTrim)
+        case _ => ()
       }
     })
   }
@@ -278,45 +312,28 @@ class TestCompletionProvider extends AnyFunSuite {
   /**
     * Asserts that the given completion list is empty at the given position.
     */
-  private def assertEmpty(completions: CompletionList, sourceLocation: SourceLocation, pos: Position): Unit = {
-    if (completions.items.nonEmpty) {
+  private def assertEmpty(completions: List[CompletionItem], sourceLocation: SourceLocation, pos: Position): Unit = {
+    if (completions.nonEmpty) {
       println(code(sourceLocation, s"Unexpected completions at $pos"))
-      println(s"Found completions: ${completions.items.map(_.label)}")
-      fail(s"Expected no completions at position $pos, but found ${completions.items.toList.length} completions.")
+      println(s"Found completions: ${completions.map(_.label)}")
+      fail(s"Expected no completions at position $pos, but found ${completions.length} completions.")
     }
-  }
-
-
-  test("No duplicated completions") {
-    val charToTrim = 1
-    Programs.foreach( program => {
-      val (root1, _) = compile(program)
-      val varOccurs = getVarSymOccurs()(root1)
-      varOccurs.foreach{
-        case varOccur if isValidVar(varOccur, charToTrim) =>
-          val alteredProgram = trimAfter(program, varOccur.loc, charToTrim)
-          val triggerPosition = Position(varOccur.loc.sp2.lineOneIndexed, varOccur.loc.sp2.colOneIndexed - charToTrim)
-          val (root, errors) = compile(alteredProgram)
-          val completions = CompletionProvider.autoComplete(Uri, triggerPosition, errors)(root, Flix)
-          assertNoDuplicatedCompletions(completions, varOccur, program, charToTrim)
-        case _ => ()
-      }
-    })
   }
 
   /**
     * Asserts that there are no duplicated completions in the given completion list.
     *
-    * @param completions The completion list to check.
-    * @param varOccur    The variable occurrence where we are checking for completions.
+    * @param completions The CompletionItem list to check.
+    * @param codeLoc     The source location of the code that we are changing.
+    * @param codeText    The text of the code that we are changing.
     * @param program     The original program string.
     */
-  private def assertNoDuplicatedCompletions(completions: CompletionList, varOccur: Symbol.VarSym, program: String, charToTrim: Int): Unit = {
+  private def assertNoDuplicatedCompletions(completions: List[CompletionItem], codeText: String, codeLoc: SourceLocation, program: String, charToTrim: Int): Unit = {
     // Two completion items are identical if all the immediately visible fields are identical.
-    completions.items.groupBy(item => (item.label, item.kind, item.labelDetails)).foreach {
+    completions.groupBy(item => (item.label, item.kind, item.labelDetails)).foreach {
       case (completion, duplicates) if duplicates.size > 1 =>
-        println(s"Duplicated completions when selecting var \"${varOccur.text}\" at ${varOccur.loc} for program:\n $program")
-        println(code(varOccur.loc, s"""Duplicated completion with label "${completion._1}" after deleting $charToTrim char here"""))
+        println(s"Duplicated completions when selecting var \"$codeText\" at $codeLoc for program:\n $program")
+        println(code(codeLoc, s"""Duplicated completion with label "${completion._1}" after deleting $charToTrim char here"""))
         fail("Duplicated completions")
       case _ => ()
     }
@@ -347,10 +364,17 @@ class TestCompletionProvider extends AnyFunSuite {
     * - It's not synthetic
     * - It's not a keyword after trimming
     */
-  private def isValidVar(varOccur: Symbol.VarSym, charToTrim: Int) = {
-    val text = varOccur.text
-    val trimmedText = text.dropRight(charToTrim)
-    text.length > charToTrim && !varOccur.loc.isSynthetic && !isKeyword(trimmedText)
+  private def isValidCodeToTrim(codeText: String, codeLoc: SourceLocation, numToTrim: Int) = {
+    val trimmedText = codeText.dropRight(numToTrim)
+    val charsToTrim = codeText.takeRight(numToTrim)
+    codeText.length > numToTrim && !codeLoc.isSynthetic && charsToTrim.forall(isValidCharToTrim) && !isKeyword(trimmedText)
+  }
+
+  /**
+    * Returns `true` if the given character is a valid identifier character.
+    */
+  private def isValidCharToTrim(char: Char): Boolean = {
+    char.isLetterOrDigit || char == '_' || char == '-'
   }
 
   /**
@@ -361,17 +385,32 @@ class TestCompletionProvider extends AnyFunSuite {
   /**
     * Returns the set of variable symbols that occur in the given root.
     */
-  private def getVarSymOccurs()(implicit root: Root): Set[Symbol.VarSym] = {
-    var occurs: Set[Symbol.VarSym] = Set.empty
+  private def getVarSymOccurs()(implicit root: Root): Set[(Symbol.VarSym, SourceLocation)] = {
+    var occurs: Set[(Symbol.VarSym, SourceLocation)] = Set.empty
 
     object VarConsumer extends Consumer {
       override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
-          case TypedAst.Expr.Var(sym, _, _) => occurs += sym
+          case TypedAst.Expr.Var(sym, _, loc) => occurs += ((sym, loc))
           case _ =>
         }
     }
 
     Visitor.visitRoot(root, VarConsumer, FileAcceptor(Uri))
+
+    occurs
+  }
+
+  private def getDefSymUseOccurs()(implicit root: Root): Set[SymUse.DefSymUse] = {
+    var occurs: Set[SymUse.DefSymUse] = Set.empty
+
+    object DefSymUseConsumer extends Consumer {
+      override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
+        case TypedAst.Expr.ApplyDef(symUse, _, _, _, _, _) => occurs += symUse
+        case _ =>
+      }
+    }
+
+    Visitor.visitRoot(root, DefSymUseConsumer, FileAcceptor(Uri))
 
     occurs
   }

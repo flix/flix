@@ -34,10 +34,10 @@ mod Fixpoint.Phase.Simplifier {
     ///     end
     ///
     @Internal
-    pub def simplifyStmt(stmt: RamStmt[v]): RamStmt[v] =
+    pub def simplifyStmt(stmt: RamStmt): RamStmt =
         Option.getWithDefault(RamStmt.Seq(Vector#{}), simplifyHelper(Set#{}, stmt))
 
-    def simplifyHelper(stratum: Set[RamSym[v]], stmt: RamStmt[v]): Option[RamStmt[v]] = match stmt {
+    def simplifyHelper(stratum: Set[RamSym], stmt: RamStmt): Option[RamStmt] = match stmt {
         case RamStmt.Insert(op) =>
             forM (
                 newOp <- simplifyOp(stratum, op)
@@ -84,7 +84,7 @@ mod Fixpoint.Phase.Simplifier {
         case RamStmt.Comment(_) => Some(stmt)
     }
 
-    def simplifyOp(stratum: Set[RamSym[v]], op: RelOp[v]): Option[RelOp[v]] = match op {
+    def simplifyOp(stratum: Set[RamSym], op: RelOp): Option[RelOp] = match op {
         case RelOp.If(test, then) =>
             let (memberOf, rest) =
                 // Delete checks of the form `x[i] == x[i]` and `x ≤ x` and `x ⊓ y ≤ x`.
@@ -142,7 +142,7 @@ mod Fixpoint.Phase.Simplifier {
     ///
     /// Returns the set of variables that occur in `term`.
     ///
-    def ramTermVars(term: RamTerm[v]): Set[RowVar] = match term {
+    def ramTermVars(term: RamTerm): Set[RowVar] = match term {
         case RamTerm.Lit(_) => Set#{}
         case RamTerm.RowLoad(var, _) => Set#{var}
         case RamTerm.LoadLatVar(var) => Set#{var}
