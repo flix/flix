@@ -1667,6 +1667,7 @@ object Parser2 {
         case TokenKind.KeywordDebug
              | TokenKind.KeywordDebugBang
              | TokenKind.KeywordDebugBangBang => debugExpr()
+        case TokenKind.KeywordXmatch => extensibleMatchExpr()
         case TokenKind.KeywordXvar => extensibleTagExpr()
         case t =>
           val mark = open()
@@ -1823,6 +1824,34 @@ object Parser2 {
           expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
           close(mark, TreeKind.Expr.Paren)
       }
+    }
+
+    private def extensibleMatchExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordXmatch))
+      val mark = open()
+      expect(TokenKind.KeywordXmatch, SyntacticContext.Expr.OtherExpr)
+      expression()
+      expect(TokenKind.KeywordWith, SyntacticContext.Expr.OtherExpr)
+      nameUnqualified(NAME_TAG, SyntacticContext.Expr.OtherExpr)
+
+      expect(TokenKind.CurlyL)
+      val case1 = open()
+      expect(TokenKind.KeywordCase)
+      nameUnqualified(NAME_VARIABLE, SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.ArrowThickR)
+      expression()
+      close(case1, TreeKind.Case)
+
+      val case2 = open()
+      expect(TokenKind.KeywordCase)
+      nameUnqualified(NAME_VARIABLE, SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.ArrowThickR)
+      expression()
+      close(case2, TreeKind.Case)
+
+      expect(TokenKind.CurlyR)
+
+      close(mark, TreeKind.Expr.ExtensibleMatch)
     }
 
     private def extensibleTagExpr()(implicit s: State): Mark.Closed = {

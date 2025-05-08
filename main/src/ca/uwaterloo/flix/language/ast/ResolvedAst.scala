@@ -136,6 +136,8 @@ object ResolvedAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
+    case class ExtensibleMatch(label: Name.Label, exp1: Expr, sym2: Symbol.VarSym, exp2: Expr, sym3: Symbol.VarSym, exp3: Expr, loc: SourceLocation) extends Expr
+
     case class Tag(symUse: CaseSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class RestrictableTag(symUse: RestrictableCaseSymUse, exps: List[Expr], isOpen: Boolean, loc: SourceLocation) extends Expr
