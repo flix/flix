@@ -85,6 +85,10 @@ object MonoType {
 
   case class RecordExtend(label: String, value: MonoType, rest: MonoType) extends MonoType
 
+  case object ExtensibleEmpty extends MonoType
+
+  case class ExtensibleExtend(cons: Name.Pred, tpe: MonoType, rest: MonoType) extends MonoType
+
   case class Native(clazz: Class[?]) extends MonoType
 
   val Object: MonoType = Native(classOf[java.lang.Object])
@@ -102,7 +106,7 @@ object MonoType {
       case Int64 => Int64
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
            Lazy(_) | Tuple(_) | Enum(_, _) | Struct(_, _) | Arrow(_, _) | RecordEmpty |
-           RecordExtend(_, _, _) | Native(_) | Null =>
+           RecordExtend(_, _, _) | ExtensibleEmpty | ExtensibleExtend(_, _, _) | Native(_) | Null =>
         MonoType.Object
     }
   }
