@@ -167,8 +167,6 @@ mod TestBPlusTree {
         concurrencyWithGeneratorsAndOccasionalTests(generators, totalInserts, insertions, readEvery)
     }
 
-
-
     // Large concurrent insertion test-cases
     @test
     def concurrency01(): Bool \ IO + NonDet = concurrencyRandomInserts(10, totalInsertNum())
@@ -225,23 +223,23 @@ mod TestBPlusTree {
     def concurrency18(): Bool \ IO + NonDet = concurrencyLockStepIntermittentMemberOf(30, totalInsertNum(), 10i64)
 
     /////////////////////////////////////////////////////////////////////////////
-    // containsPair                                                            //
+    // memberOfPair                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def containsPair01(): Bool = region rc {
+    def memberOfPair01(): Bool = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 3);
-        not BPlusTree.containsPair(0, 0, tree) and
-            not BPlusTree.containsPair(0, 1, tree) and
-            not BPlusTree.containsPair(1, 0, tree)
+        not BPlusTree.memberOfPair(0, 0, tree) and
+            not BPlusTree.memberOfPair(0, 1, tree) and
+            not BPlusTree.memberOfPair(1, 0, tree)
     }
     @test
-    def containsPair02(): Bool = region rc {
+    def memberOfPair02(): Bool = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 3);
         BPlusTree.insert(1, 2, tree);
-        BPlusTree.containsPair(1, 2, tree) and
-            not BPlusTree.containsPair(2, 1, tree) and
-            not BPlusTree.containsPair(1, 3, tree)
+        BPlusTree.memberOfPair(1, 2, tree) and
+            not BPlusTree.memberOfPair(2, 1, tree) and
+            not BPlusTree.memberOfPair(1, 3, tree)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -308,7 +306,6 @@ mod TestBPlusTree {
         and 42 == BPlusTree.getWithDefault(8, 42, tree)
     }
 
-
     /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
@@ -349,7 +346,7 @@ mod TestBPlusTree {
     def insert01(): Bool = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 3);
         BPlusTree.insert(4, 2, tree);
-        BPlusTree.containsPair(4, 2 ,tree) and BPlusTree.assertTreeInvariant(tree)
+        BPlusTree.memberOfPair(4, 2 ,tree) and BPlusTree.assertTreeInvariant(tree)
     }
 
     @test
@@ -358,9 +355,9 @@ mod TestBPlusTree {
         BPlusTree.insert(1, 10, tree);
         BPlusTree.insert(2, 11, tree);
         BPlusTree.insert(3, 12, tree);
-        BPlusTree.containsPair(1, 10, tree) and
-            BPlusTree.containsPair(2, 11, tree) and
-            BPlusTree.containsPair(3, 12, tree) and
+        BPlusTree.memberOfPair(1, 10, tree) and
+            BPlusTree.memberOfPair(2, 11, tree) and
+            BPlusTree.memberOfPair(3, 12, tree) and
             BPlusTree.assertTreeInvariant(tree)
     }
 
@@ -373,12 +370,12 @@ mod TestBPlusTree {
         BPlusTree.insert(3, 12, tree);
         BPlusTree.insert(2, 11, tree);
         BPlusTree.insert(1, 10, tree);
-        BPlusTree.containsPair(1, 10, tree) and
-            BPlusTree.containsPair(2, 11, tree) and
-            BPlusTree.containsPair(3, 12, tree) and
-            BPlusTree.containsPair(4, 13, tree) and
-            BPlusTree.containsPair(5, 14, tree) and
-            BPlusTree.containsPair(6, 15, tree) and
+        BPlusTree.memberOfPair(1, 10, tree) and
+            BPlusTree.memberOfPair(2, 11, tree) and
+            BPlusTree.memberOfPair(3, 12, tree) and
+            BPlusTree.memberOfPair(4, 13, tree) and
+            BPlusTree.memberOfPair(5, 14, tree) and
+            BPlusTree.memberOfPair(6, 15, tree) and
             BPlusTree.assertTreeInvariant(tree)
     }
 
@@ -394,7 +391,7 @@ mod TestBPlusTree {
             BPlusTree.insert(x, y, tree)
         }, pairs);
         Map.forAll(x -> y -> {
-            BPlusTree.containsPair(x, y, tree)
+            BPlusTree.memberOfPair(x, y, tree)
         }, listToMap(pairs)) and BPlusTree.assertTreeInvariant(tree)
     }
 
@@ -411,7 +408,7 @@ mod TestBPlusTree {
                 BPlusTree.insert(x, y, tree)
             }, pairs);
             Map.forAll((x, y) -> {
-                BPlusTree.containsPair(x, y, tree)
+                BPlusTree.memberOfPair(x, y, tree)
             }, listToMap(pairs)) and BPlusTree.assertTreeInvariant(tree)
         }, List.range(3, 10))
     }
@@ -426,8 +423,7 @@ mod TestBPlusTree {
         BPlusTree.insert(2, 3, tree);
         BPlusTree.memberOf(2, tree)
     }
-
-
+    
     @test
     def memberOf02(): Bool = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 3);
@@ -443,6 +439,66 @@ mod TestBPlusTree {
         BPlusTree.memberOf(1, tree) and
             not BPlusTree.memberOf(2, tree) and
             not BPlusTree.memberOf(0, tree)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // insertWith                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+    
+    @test
+    def insertWith01(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.insert(1, 2, tree);
+        BPlusTree.insertWith(v1 -> v2 -> v1 + v2, 1, 3, tree);
+        BPlusTree.memberOfPair(1, 5, tree) and
+            not BPlusTree.memberOfPair(1, 2, tree) and
+            not BPlusTree.memberOfPair(1, 3, tree)
+    }
+
+    @test
+    def insertWith02(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.insert(1, 2, tree);
+        BPlusTree.insertWith(v1 -> v2 -> v1 - v2, 1, 1, tree);
+        BPlusTree.memberOfPair(1, -1, tree) and
+            not BPlusTree.memberOfPair(1, 2, tree) and
+            not BPlusTree.memberOfPair(1, 1, tree)
+    }
+
+    @test
+    def insertWith03(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.insertWith(v1 -> v2 -> v1 - v2, 1, 2, tree);
+        BPlusTree.memberOfPair(1, 2, tree)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toList                                                                  //
+    /////////////////////////////////////////////////////////////////////////////     
+        
+    @test
+    def toList01(): Bool = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc);
+        BPlusTree.toList(tree) == List.empty()
+    }
+
+    @test
+    def toList02(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        let pairs = (1, 12) :: (2, 23) :: (3, 34) :: (4, 45) :: Nil;
+        List.forEach(match (k, v) -> BPlusTree.insert(k, v, tree), pairs);
+        BPlusTree.toList(tree) == pairs        
+    }
+
+    @test
+    def toList03(): Bool \ NonDet + IO = region rc {
+        let tree = BPlusTree.empty(rc);
+        let getRandomPairs = () -> {
+            List.range(0, 10000) |> List.map(_ -> (Random.randomInt32(), Random.randomInt32()))
+        };
+        let pairs = Random.handle(getRandomPairs)();
+        List.forEach(match (k, v) -> BPlusTree.insert(k, v, tree), pairs);
+        BPlusTree.toList(tree) == List.sort(pairs)
     }
 
     /////////////////////////////////////////////////////////////////////////////

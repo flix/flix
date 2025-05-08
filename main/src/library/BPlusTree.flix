@@ -123,6 +123,7 @@ mod BPlusTree {
         /// For a better explanation see Netflix's encounter of a similar problem:
         /// https://netflixtechblog.com/java-21-virtual-threads-dude-wheres-my-lock-3052540e231d?gi=128dba0ad426
         ///
+        @Internal
         pub def yieldBasedOn(lock: Lock[r]): Unit \ r =
             let Lock(l) = lock;
             let stamp = unchecked_cast((l.readLock(): _ \ IO) as _ \ r);
@@ -141,15 +142,16 @@ mod BPlusTree {
         ///
         /// Returns a fresh lock.
         ///
+        @Internal
         pub def mkLock(_: Region[r]): Lock[r] \ r =
             Lock(unchecked_cast((new JStampedLock(): _ \ IO) as _ \ r))
-
 
         /// Attempt to upgrade `stamp` on `lock` to a write-lock on `lock`.
         /// The returned stamp cannot be invalidated if it was valid when issued.
         ///
         /// This operation is non-blocking.
         ///
+        @Internal
         pub def tryConvertToWrite(stamp: Int64, lock: Lock[r]): Int64 \ r =
             let Lock(l) = lock;
             unchecked_cast((l.tryConvertToWriteLock(stamp): _ \ IO) as _ \ r)
@@ -160,6 +162,7 @@ mod BPlusTree {
         ///
         /// This operation is non-blocking.
         ///
+        @Internal
         pub def tryReadLock(lock: Lock[r]): Int64 \ r =
             let Lock(l) = lock;
             unchecked_cast((l.tryOptimisticRead(): _ \ IO) as _ \ r)
@@ -169,6 +172,7 @@ mod BPlusTree {
         ///
         /// This operation is non-blocking.
         ///
+        @Internal
         pub def unlockWrite(stamp: Int64, lock: Lock[r]): Unit \ r =
             let Lock(l) = lock;
             unchecked_cast((l.unlockWrite(stamp): _ \ IO) as _ \ r)
@@ -179,6 +183,7 @@ mod BPlusTree {
         ///
         /// This operation is non-blocking.
         ///
+        @Internal
         pub def valid(stamp: Int64, lock: Lock[r]): Bool \ r =
             let Lock(l) = lock;
             unchecked_cast((l.validate(stamp): _ \ IO) as _ \ r)
@@ -188,39 +193,39 @@ mod BPlusTree {
         ///
         /// This operation is blocking.
         ///
+        @Internal
         pub def writeLock(lock: Lock[r]): Int64 \ r =
             let Lock(l) = lock;
             unchecked_cast((l.writeLock(): _ \ IO) as _ \ r)
     }
 
     ///
-    /// Returns true if and only if `tree` is a structurally correct tree.
+    /// Returns true if and only if `t` is a structurally correct tree.
     ///
     /// Only used for internal testing.
     ///
     @Internal
-    pub def assertTreeInvariant(tree: BPlusTree[k, v, r]): Bool \ r with Order[k] =
-        let root = tree->root;
-        let arity = BPlusTree.arity(tree);
-        let nodeWorks = Node.assertNodeInvariant(root, arity, true, None, tree->search);
-        let rootIsUnlocked = not BPlusTree.Lock.isLocked(tree->rootLock);
+    pub def assertTreeInvariant(t: BPlusTree[k, v, r]): Bool \ r with Order[k] =
+        let root = t->root;
+        let arity = BPlusTree.arity(t);
+        let nodeWorks = Node.assertNodeInvariant(root, arity, true, None, t->search);
+        let rootIsUnlocked = not BPlusTree.Lock.isLocked(t->rootLock);
         let rootHasNoParent = Option.isEmpty(Node.parent(root));
         nodeWorks and rootHasNoParent and rootIsUnlocked
 
-
     ///
-    /// Returns `true` if and only if `tree` contains the key-value pair `(key, val)`.
+    /// Returns `true` if and only if `t` contains the mapping `k => v`.
     ///
     /// Thread-safe.
     ///
-    pub def containsPair(key: k, val: v, tree: BPlusTree[k, v, r]): Bool \ r with Order[k], Eq[v] =
-        let (leaf, stamp) = BPlusTree.findLeaf(key, tree);
-        let res = Node.leafContainsPair(key, val, tree->search, leaf);
+    pub def memberOfPair(k: k, v: v, t: BPlusTree[k, v, r]): Bool \ r with Order[k], Eq[v] =
+        let (leaf, stamp) = BPlusTree.findLeaf(k, t);
+        let res = Node.leafMemberOfPair(k, v, t->search, leaf);
         if(Lock.valid(stamp, Node.getLock(leaf))) {
             res
         } else {
             Lock.yieldBasedOn(Node.getLock(leaf));
-            containsPair(key, val, tree)
+            memberOfPair(k, v, t)
         }
 
     ///
@@ -254,7 +259,7 @@ mod BPlusTree {
         }
 
     ///
-    /// Returns a fresh empty BPlusTree tree of standard arity.
+    /// Returns a fresh empty BPlusTree of standard arity.
     ///
     /// `search` decided the comparison order for the stored vectors.
     ///
@@ -263,104 +268,102 @@ mod BPlusTree {
         emptyWithArityAndSearch(rc, 64, search)
 
     ///
-    /// Returns the leaf containing `key` and leaves it locked. If no node contains `key` the rightmost
-    /// node with values strictly less than `key` is returned.
+    /// Returns the leaf in `t` containing key `k` and leaves it locked. If no node contains
+    /// `k`, the rightmost node with values strictly less than `k` is returned.
     ///
-    def findLeaf(key: k, tree: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r with Order[k] =
-        let (node, stamp) = getLockedRoot(tree);
-        Node.traverseDown(key, node, stamp, tree)
+    def findLeaf(k: k, t: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r with Order[k] =
+        let (node, stamp) = getLockedRoot(t);
+        Node.traverseDown(k, node, stamp, t)
 
     ///
-    /// Updates the root of `tree` if `newRoot` is some. Unlocks `tree->rootLock` using the stamp.
+    /// Updates the root of `t` if `newRoot` is `Some(...)`. Unlocks `t->rootLock` using the stamp.
     ///
-    def fixRoot(newRoot: Option[(Node[k, v, r], Int64)], tree: BPlusTree[k, v, r]): Unit \ r = match newRoot {
+    def fixRoot(newRoot: Option[(Node[k, v, r], Int64)], t: BPlusTree[k, v, r]): Unit \ r = match newRoot {
         case Some((root, rootStamp)) =>
-            tree->root = root;
-            Lock.unlockWrite(rootStamp, tree->rootLock);
+            t->root = root;
+            Lock.unlockWrite(rootStamp, t->rootLock);
             ()
         case None => ()
     }
 
     ///
-    /// Apply `f` to all mapping `(key, val)` in `tree`.
+    /// Applies `f` to all mappings `k => v` in `t`.
     ///
     /// Not thread-safe.
     ///
-    pub def forEach(f: k -> v -> Unit \ ef, tree: BPlusTree[k, v, r]): Unit \ ef + r with Order[k] =
-        let minLeaf = Node.leftMostChild(tree->root);
+    pub def forEach(f: k -> v -> Unit \ ef, t: BPlusTree[k, v, r]): Unit \ ef + r with Order[k] =
+        let minLeaf = Node.leftMostChild(t->root);
         Node.traverseRightUnconditional(f, 0, minLeaf)
 
     ///
-    /// Return the root of `tree` and a stamp on the lock of the returned node.
+    /// Returns the root of the `t` and a stamp on the lock of the returned node.
     ///
-    def getLockedRoot(tree: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r =
-        let rootPointerStamp = Lock.tryReadLock(tree->rootLock);
-        let rootNode = tree->root;
+    def getLockedRoot(t: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r =
+        let rootPointerStamp = Lock.tryReadLock(t->rootLock);
+        let rootNode = t->root;
         let nodeStamp = Lock.tryReadLock(Node.getLock(rootNode));
-        if(Lock.valid(rootPointerStamp, tree->rootLock)){
+        if(Lock.valid(rootPointerStamp, t->rootLock)){
             (rootNode, nodeStamp)
         } else {
-            Lock.yieldBasedOn(tree->rootLock);
-            getLockedRoot(tree)
+            Lock.yieldBasedOn(t->rootLock);
+            getLockedRoot(t)
         }
 
     ///
-    /// Returns `v` if `(key, v)` is in `tree`. Otherwise return `d`.
+    /// Returns `v` if `k => v` is in `t`. Otherwise, returns `d`.
     ///
-    pub def getWithDefault(key: k, d: v, tree: BPlusTree[k, v, r]): v \ r with Order[k] =
-        let (leaf, stamp) = BPlusTree.findLeaf(key, tree);
-        Node.getWithDefault(key, stamp, d, leaf, tree)
+    pub def getWithDefault(k: k, d: v, t: BPlusTree[k, v, r]): v \ r with Order[k] =
+        let (leaf, stamp) = BPlusTree.findLeaf(k, t);
+        Node.getWithDefault(k, stamp, d, leaf, t)
 
     ///
-    /// Updates the BPlusTree `tree` with the key-value pair `(key, val)`. Replaces any
-    /// existing key-value pair.
+    /// Updates the tree `t` with the mapping `k => v`. Replaces any
+    /// existing mapping.
     ///
     /// Thread-safe.
     ///
-    pub def insert(key: k, val: v, tree: BPlusTree[k, v, r]): Unit \ r with Order[k], Eq[v] =
-        let newRoot = insertInternal(key, val, tree);
-        fixRoot(newRoot, tree)
+    pub def insert(k: k, v: v, t: BPlusTree[k, v, r]): Unit \ r with Order[k], Eq[v] =
+        fixRoot(insertInternal(k, v, t), t)
 
     ///
-    /// Updates the BPlusTree `tree` with the key-value pair `(key, val)`. Replaces any
-    /// existing key-value pair.
+    /// Internal method for `insert`. 
     ///
-    /// Internal method for insert. Called when restarting.
+    /// Called when restarting.
     ///
     /// Returns the `Some(newRoot, stamp)` if the root was split where `stamp` is a write-stamp
     /// on `rootLock`.
     ///
-    def insertInternal(key: k, val: v, tree: BPlusTree[k, v, r]): Option[(Node[k, v, r], Int64)] \ r with Order[k], Eq[v] =
-        let (leaf, stamp) = BPlusTree.findLeaf(key, tree);
-        Node.insertIntoLeaf(key, val, leaf, stamp, tree)
+    def insertInternal(k: k, v: v, t: BPlusTree[k, v, r]): Option[(Node[k, v, r], Int64)] \ r with Order[k], Eq[v] =
+        let (leaf, stamp) = BPlusTree.findLeaf(k, t);
+        Node.insertIntoLeaf(k, v, leaf, stamp, t)
 
     ///
-    /// Returns `true` if and only if `tree` is the empty tree.
+    /// Returns `true` if and only if `t` is the empty tree.
     ///
     /// Thread-safe.
     ///
-    pub def isEmpty(tree: BPlusTree[k, v, r]): Bool \ r =
-        let (root, stamp) = BPlusTree.getLockedRoot(tree);
+    pub def isEmpty(t: BPlusTree[k, v, r]): Bool \ r =
+        let (root, stamp) = BPlusTree.getLockedRoot(t);
         let res = Node.isEmpty(root);
         if(Lock.valid(stamp, Node.getLock(root))) {
             res
         } else {
             // Restart
             Lock.yieldBasedOn(Node.getLock(root));
-            isEmpty(tree)
+            isEmpty(t)
         }
 
     ///
-    /// Returns `true` if and only if `tree` contains the key `k`.
+    /// Returns `true` if and only if `t` contains the key `k`.
     ///
     /// Thread-safe.
     ///
-    pub def memberOf(key: k, tree: BPlusTree[k, v, r]): Bool \ r with Order[k] =
-        let (leaf, stamp) = BPlusTree.findLeaf(key, tree);
-        let res = Node.leafContains(key, tree->search, leaf);
+    pub def memberOf(k: k, t: BPlusTree[k, v, r]): Bool \ r with Order[k] =
+        let (leaf, stamp) = BPlusTree.findLeaf(k, t);
+        let res = Node.leafMemberOf(k, t->search, leaf);
         if(not Lock.valid(stamp, Node.getLock(leaf))) {
             Lock.yieldBasedOn(Node.getLock(leaf));
-            memberOf(key, tree)
+            memberOf(k, t)
         } else {
             res
         }
@@ -368,87 +371,95 @@ mod BPlusTree {
     ///
     /// Merge `src` into `dst` modyfing `dst` in a left-biased manner.
     ///
-    /// That is, key collisions are resolved by taking the mapping from m1.
+    /// That is, key collisions are resolved by taking the mapping from `src`.
     ///
     /// Not thread-safe.
     ///
-    pub def merge(src: BPlusTree[k, v, r], dst: BPlusTree[k, v, r]): Unit \ r with Order[k], Eq[v] = {
+    pub def merge(src: BPlusTree[k, v, r], dst: BPlusTree[k, v, r]): Unit \ r with Order[k], Eq[v] = 
         BPlusTree.forEach(k -> v -> BPlusTree.insert(k, v, dst), src)
-    }
 
     ///
-    /// Merge `src` into `dst` modyfing `dst`. If `(key, val1)` is in `src` and `(key, val2)` is in `dst`
-    /// update `dst` to contain `(key, f(val1, val2))`.
+    /// Merges `src` into `dst` modyfing `dst`. If `k => v1` is in `src` and `k => v2` is
+    /// in `dst`, updates `dst` to with `k => f(v1, v2)`.
     ///
     /// Not thread-safe.
     ///
-    pub def mergeWith(f: v -> v -> v \ ef, src: BPlusTree[k, v, r], dst: BPlusTree[k, v, r]): Unit \ r + ef with Order[k], Eq[v] = {
-        BPlusTree.forEach(k -> v -> BPlusTree.putWith(f, k, v, dst), src)
-    }
+    pub def mergeWith(f: v -> v -> v \ ef, src: BPlusTree[k, v, r], dst: BPlusTree[k, v, r]): Unit \ r + ef with Order[k], Eq[v] = 
+        BPlusTree.forEach(k -> v -> BPlusTree.insertWith(f, k, v, dst), src)
 
     ///
-    /// Returns the arity of `tree`.
+    /// Returns the arity of `t`.
     ///
-    @Internal
-    pub def arity(tree: BPlusTree[k, v, r]): Int32 = tree->arity
+    pub def arity(t: BPlusTree[k, v, r]): Int32 = t->arity
 
     ///
-    /// Updated `tree` with the mapping `(key, val)` if `key` is not inserted.
-    /// Otherwise if the mapping `(key, oldVal)` is in `tree` update the mapping
-    /// to `key->f(val, oldVal)`.
+    /// Updates `t` with `k => f(k, v, v1)` if `k => v1` is in `t`.
+    ///
+    /// Otherwise, updates `t` with `k => v`.
     ///
     /// Thread-safe.
     ///
-    pub def putWith(f: v -> v -> v \ ef, key: k, val: v, tree: BPlusTree[k, v, r]): Unit \ ef + r with Order[k], Eq[v] =
-        let optNewRoot = putWithInternal(f, key, val, tree);
-        fixRoot(optNewRoot, tree)
+    pub def insertWith(f: v -> v -> v \ ef, k: k, v: v, t: BPlusTree[k, v, r]): Unit \ ef + r with Order[k], Eq[v] =
+        fixRoot(insertWithInternal(f, k, v, t), t)
 
     ///
-    /// Internal method to update the mapping as described by `putWith`.
+    /// Internal method to update the mapping as described by `insertWith`.
     ///
     /// Called when restarting.
     ///
     /// Thread-safe.
     ///
-    def putWithInternal(f: v -> v -> v \ ef, k: k, val: v, tree: BPlusTree[k, v, r]): Option[(Node[k, v, r], Int64)] \ ef + r with Order[k], Eq[v] =
-        let (leaf, stamp) = findLeaf(k, tree);
-        Node.putWith(f, k, val, tree, leaf, stamp)
+    def insertWithInternal(f: v -> v -> v \ ef, k: k, v: v, t: BPlusTree[k, v, r]): Option[(Node[k, v, r], Int64)] \ ef + r with Order[k], Eq[v] =
+        let (leaf, stamp) = findLeaf(k, t);
+        Node.insertWith(f, k, v, t, leaf, stamp)
 
     ///
-    /// Applies `f` in ascending order to all key-value pairs `(k, v)` in `tree` where
+    /// Applies `f` in ascending order to all mappings `k => v` in `t` where
     /// `min <= k <= max`.
     ///
     /// Not thread-safe.
     ///
-    pub def rangeQueryWith(f: k -> v -> Unit \ ef, min: k, max: k, tree: BPlusTree[k, v, r]): Unit \ r + ef with Order[k] =
-        let (root, stamp) = getLockedRoot(tree);
-        Node.rangeQueryWith(f, min, max, stamp, root, tree)
+    pub def rangeQueryWith(f: k -> v -> Unit \ ef, min: k, max: k, t: BPlusTree[k, v, r]): Unit \ r + ef with Order[k] =
+        let (root, stamp) = getLockedRoot(t);
+        Node.rangeQueryWith(f, min, max, stamp, root, t)
 
     ///
-    /// Returns the region of `tree`.
+    /// Returns the region of `t`.
     ///
     @Internal
-    pub def rc(tree: BPlusTree[k, v, r]): Region[r] = tree->rc
+    pub def rc(t: BPlusTree[k, v, r]): Region[r] = t->rc
 
     ///
-    /// Returns the search of `tree`.
+    /// Returns the search of `t`.
     ///
     @Internal
-    pub def search(tree: BPlusTree[k, v, r]): Search = tree->search
+    pub def search(t: BPlusTree[k, v, r]): Search = t->search
 
     ///
-    /// Returns a string representation of BPlusTree `tree`.
+    /// Returns a list of the key-value pairs in `t`. Elements are ordered from smallest
+    /// (left) to largest (right).
     ///
     /// Not thread-safe.
     ///
-    pub def toString(tree: BPlusTree[k, v, r]): String \ r with ToString[k], ToString[v] =
-        "Search: ${Vector.join(" < ", tree->search)}\nTree:\n${Node.toString(0, tree->rc, tree->root)}"
+    pub def toList(t: BPlusTree[k, v, r]): List[(k, v)] \ r with Order[k] = region rc {
+        let list = MutList.empty(rc);
+        forEach(k -> v -> MutList.push((k, v), list), t);
+        MutList.toList(list)
+    }
 
     ///
-    /// Write lock `tree->rootLock` and return the stamp.
+    /// Returns a string representation of `t`.
     ///
-    def writeLockRootPointer(tree: BPlusTree[k, v, r]): Int64 \ r =
-        Lock.writeLock(tree->rootLock)
+    /// Not thread-safe.
+    ///
+    pub def toString(t: BPlusTree[k, v, r]): String \ r with ToString[k], ToString[v] =
+        "Search: ${Vector.join(" < ", t->search)}\nTree:\n${Node.toString(0, t->rc, t->root)}"
+
+    ///
+    /// Write lock `t->rootLock` and return the stamp.
+    ///
+    def writeLockRootPointer(t: BPlusTree[k, v, r]): Int64 \ r =
+        Lock.writeLock(t->rootLock)
 
     ///
     /// The Node struct defines the tree, having either children or values depending on
@@ -557,7 +568,7 @@ mod BPlusTree {
             }
 
         ///
-        /// Returns true if and only if the node is structurally correct.
+        /// Returns `true` if and only if `node` is structurally correct.
         ///
         /// Only used for internal testing.
         ///
@@ -688,7 +699,6 @@ mod BPlusTree {
                 }
             }
 
-
         ///
         /// Returns `true` if the pointer of `o1` is equal to the pointer of `o2`.
         ///
@@ -698,7 +708,7 @@ mod BPlusTree {
             let obj1 = unchecked_cast(o1 as JObject);
             let obj2 = unchecked_cast(o2 as JObject);
             // Unchecked cast is here used to remove the IO effect from interacting with Java.
-            unchecked_cast((JObjects.equals(obj1, obj2): _ \ IO) as _ \ {})
+            unchecked_cast((JObjects.equals(obj1, obj2): _ \ IO) as _ \ {})        
 
         ///
         /// Provides access to the `lock` field of `node`.
@@ -706,7 +716,7 @@ mod BPlusTree {
         pub def getLock(node: Node[k, v, r]): Lock[r] = node->lock
 
         ///
-        /// Returns `v` if `(key, v)` is in `tree`. Otherwise return `d`.
+        /// Returns `val` if `key => val` is in `tree`. Otherwise return `d`.
         ///
         pub def getWithDefault(key: k, stamp: Int64, d: v, node: Node[k, v, r], tree: BPlusTree[k, v, r]): v \ r with Order[k] =
             let index = binarySearch(key, BPlusTree.search(tree), node);
@@ -723,7 +733,7 @@ mod BPlusTree {
             }
 
         ///
-        /// Insert key-value pair `(key, val)` into the leaf `node`, potentially causing a
+        /// Inserts the mapping `key => val` into the leaf `node`, potentially causing a
         /// split and returning a new root.
         ///
         /// Lock invariants:
@@ -817,7 +827,7 @@ mod BPlusTree {
         ///
         /// Returns `true` if `key` is contained in the leaf `node`.
         ///
-        pub def leafContains(key: k, search: Search, node: Node[k, v, r]): Bool \ r with Order[k] =
+        pub def leafMemberOf(key: k, search: Search, node: Node[k, v, r]): Bool \ r with Order[k] =
             let index = binarySearch(key, search, node);
             if (index < 0)
                 false
@@ -825,9 +835,9 @@ mod BPlusTree {
                 true
 
         ///
-        /// Returns `true` if the mapping `(key, val)` is contained in the leaf `node`.
+        /// Returns `true` if the mapping `key => val` is contained in the leaf `node`.
         ///
-        pub def leafContainsPair(key: k, val: v, search: Search, node: Node[k, v, r]): Bool \ r with Order[k], Eq[v] =
+        pub def leafMemberOfPair(key: k, val: v, search: Search, node: Node[k, v, r]): Bool \ r with Order[k], Eq[v] =
             let index1 = binarySearch(key, search, node);
             if (index1 < 0)
                 false
@@ -835,7 +845,7 @@ mod BPlusTree {
                 Array.get(index1, node->values) == val
 
         ///
-        /// Returns the left-most leaf tree rooted in `node`.
+        /// Returns the left-most leaf node rooted in `node`.
         ///
         /// Not thread-safe.
         ///
@@ -978,13 +988,14 @@ mod BPlusTree {
         }
 
         ///
-        /// Updated `node` with the mapping `(key, val)` if `key` is not inserted.
-        /// Otherwise if the mapping `(key, oldVal)` is in `node` update the mapping
-        /// to `key->f(val, oldVal)`. Returns `Some(newRoot, stamp)` if the root was split.
+        /// Inserts the mapping `key => f(val, val1)` if `key => val1` is in `node`.
+        /// Otherwise, inserts `key => val` into `node`. 
+        ///
+        /// Returns `Some(newRoot, stamp)` if the root was split.
         ///
         /// Thread-safe.
         ///
-        pub def putWith(f: v -> v -> v \ ef, key: k, val: v, tree: BPlusTree[k, v, r], node: Node[k, v, r], stamp: Int64): Option[(Node[k, v, r], Int64)] \ r + ef with Order[k], Eq[v] =
+        pub def insertWith(f: v -> v -> v \ ef, key: k, val: v, tree: BPlusTree[k, v, r], node: Node[k, v, r], stamp: Int64): Option[(Node[k, v, r], Int64)] \ r + ef with Order[k], Eq[v] =
             let index = binarySearch(key, BPlusTree.search(tree), node);
             if (index < 0) {
                 insertIntoLeafPropagate(key, val, index, node, stamp, tree)
@@ -993,7 +1004,7 @@ mod BPlusTree {
                 if(not Lock.valid(writeStamp, node->lock)) {
                     // Restart
                     Lock.yieldBasedOn(node->lock);
-                    BPlusTree.putWithInternal(f, key, val, tree)
+                    BPlusTree.insertWithInternal(f, key, val, tree)
                 } else {
                     let v1 = Array.get(index, node->values);
                     Array.put(f(val, v1), index, node->values);
@@ -1003,7 +1014,7 @@ mod BPlusTree {
             }
 
         ///
-        /// Applies `f` in ascending order to all key-value pairs `(k, v)` in the tree
+        /// Applies `f` in ascending order to all mappings `k => v` in the tree
         /// rooted in `node` where `min <= k <= max`.
         ///
         /// Not thread-safe.
@@ -1265,9 +1276,8 @@ mod BPlusTree {
             }
 
         ///
-        /// Applies `f` to key-value pairs `(k, v)` starting at
-        /// `node->keys[index]` until `node->keys[index] > max`. Uses the `next` pointer
-        /// to traverse to the next node.
+        /// Applies `f` to mappings `k => v` starting at `node->keys[index]` until 
+        /// `node->keys[index] > max`. Uses the `next` pointer to traverse to the next node.
         ///
         /// Not thread-safe.
         ///
