@@ -299,4 +299,8 @@ mod TestDebug {
             case Poly.This(x) => x == 's' case _ => false
         }
 
+    @test
+    def testDebugEffect01(): Bool \ IO =
+        dbg!(println("hey")) == ()
+
 }

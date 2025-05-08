@@ -60,7 +60,7 @@ mod Fixpoint.Phase.IndexSelection {
     /// Step 1 and Step 2 are implemented as one pass.
     ///
     @Internal
-    pub def queryStmt(stmt: RamStmt[v]): RamStmt[v] = match stmt {
+    pub def queryStmt(stmt: RamStmt): RamStmt = match stmt {
         case RamStmt.Insert(op) =>
             let (innerOp, ground) = queryOp(op, Set#{});
             if (Vector.isEmpty(ground))
@@ -80,7 +80,7 @@ mod Fixpoint.Phase.IndexSelection {
     /// `freeVars` is the set of variables bound by an outer loop.
     /// Returns the optimized op and the conditions that occur in `op` that have to be hoisted.
     ///
-    def queryOp(op: RelOp[v], freeVars: Set[RowVar]): (RelOp[v], Vector[BoolExp[v]]) = match op {
+    def queryOp(op: RelOp, freeVars: Set[RowVar]): (RelOp, Vector[BoolExp]) = match op {
         case RelOp.Search(var, ramSym, body) =>
             use Fixpoint.Ast.Ram.BoolExp.Eq;
             use Fixpoint.Ast.Ram.RamTerm.{RowLoad, Lit};
@@ -132,7 +132,7 @@ mod Fixpoint.Phase.IndexSelection {
             (innerOp, Vector.append(test, innerGround))
     }
 
-    def longestPrefixQuery(varQuery: Vector[BoolExp[v]]): (Vector[BoolExp[v]], Vector[BoolExp[v]]) =
+    def longestPrefixQuery(varQuery: Vector[BoolExp]): (Vector[BoolExp], Vector[BoolExp]) =
         use Fixpoint.Ast.Ram.BoolExp.Eq;
         use Fixpoint.Ast.Ram.RamTerm.{RowLoad, Lit};
         // Sort equalities of the form `var[i] = rhs` ascending on `i`.
@@ -158,7 +158,7 @@ mod Fixpoint.Phase.IndexSelection {
     ///
     /// An expression is ground if all its terms are ground.
     ///
-    def isExpGround(freeVars: Set[RowVar], exp: BoolExp[v]): Bool = match exp {
+    def isExpGround(freeVars: Set[RowVar], exp: BoolExp): Bool = match exp {
         case BoolExp.Empty(_) => true
         case BoolExp.NotMemberOf(terms, _) => Vector.forAll(isTermGround(freeVars), terms)
         case BoolExp.Eq(lhs, rhs) => isTermGround(freeVars, lhs) and isTermGround(freeVars, rhs)
@@ -188,7 +188,7 @@ mod Fixpoint.Phase.IndexSelection {
     ///
     /// A term is ground if it is a literal or a free variable.
     ///
-    def isTermGround(freeVars: Set[RowVar], term: RamTerm[v]): Bool = match term {
+    def isTermGround(freeVars: Set[RowVar], term: RamTerm): Bool = match term {
         case RamTerm.Lit(_) => true
         case RamTerm.RowLoad(var, _) => Set.memberOf(var, freeVars)
         case RamTerm.LoadLatVar(var) => Set.memberOf(var, freeVars)

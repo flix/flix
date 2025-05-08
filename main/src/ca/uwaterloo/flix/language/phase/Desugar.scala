@@ -568,6 +568,13 @@ object Desugar {
       val rs = rules.map(visitRestrictableChooseRule)
       Expr.RestrictableChoose(star, e, rs, loc)
 
+    case WeededAst.Expr.ExtensibleMatch(ident1, exp1, ident2, exp2, ident3, exp3, loc) =>
+      val label = Name.mkLabel(ident1)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      Expr.ExtensibleMatch(label, e1, ident2, e2, ident3, e3, loc)
+
     case WeededAst.Expr.ApplicativeFor(frags, exp, loc) =>
       desugarApplicativeFor(frags, exp, loc)
 
@@ -582,6 +589,10 @@ object Desugar {
 
     case WeededAst.Expr.LetMatch(pat, tpe, exp1, exp2, loc) =>
       desugarLetMatch(pat, tpe, exp1, exp2, loc)
+
+    case WeededAst.Expr.ExtensibleTag(label, exps, loc) =>
+      val es = visitExps(exps)
+      Expr.ExtensibleTag(label, es, loc)
 
     case WeededAst.Expr.Tuple(exps, loc) =>
       desugarTuple(exps, loc)
@@ -1535,8 +1546,7 @@ object Desugar {
     val e = visitExp(exp0)
     val prefix = mkDebugPrefix(e, kind0, loc0)
     val e1 = DesugaredAst.Expr.Cst(Constant.Str(prefix), loc0)
-    val call = mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc0)
-    DesugaredAst.Expr.UncheckedCast(call, None, Some(DesugaredAst.Type.Pure(loc0)), loc0)
+    mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc0)
   }
 
   /**

@@ -459,6 +459,13 @@ object Kinder {
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       KindedAst.Expr.RestrictableChoose(star, exp, rules, tvar, loc)
 
+    case ResolvedAst.Expr.ExtensibleMatch(label, exp1, sym2, exp2, sym3, exp3, loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val e1 = visitExp(exp1, kenv0, taenv, root)
+      val e2 = visitExp(exp2, kenv0, taenv, root)
+      val e3 = visitExp(exp3, kenv0, taenv, root)
+      KindedAst.Expr.ExtensibleMatch(label, e1, sym2, e2, sym3, e3, tvar, loc)
+
     case ResolvedAst.Expr.Tag(symUse, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, root))
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
@@ -469,6 +476,11 @@ object Kinder {
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
       KindedAst.Expr.RestrictableTag(symUse, exps, isOpen, tvar, evar, loc)
+
+    case ResolvedAst.Expr.ExtensibleTag(label, exps0, loc) =>
+      val exps = exps0.map(visitExp(_, kenv0, taenv, root))
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Expr.ExtensibleTag(label, exps, tvar, loc)
 
     case ResolvedAst.Expr.Tuple(exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, root))
@@ -1500,10 +1512,13 @@ object Kinder {
   private def getStructKind(struct0: ResolvedAst.Declaration.Struct): Kind = struct0 match {
     case ResolvedAst.Declaration.Struct(_, _, _, _, tparams0, _, _) =>
       // tparams default to zero except for the region param
-      val kenv1 = getKindEnvFromTypeParams(tparams0.init)
-      val kenv2 = getKindEnvFromRegion(tparams0.last)
-      // The last add is simply to verify that the last tparam was marked as Eff
-      val kenv = KindEnv.disjointAppend(kenv1, kenv2)
+      val kenv = tparams0 match {
+        case tparams@(_ :: _) =>
+          val kenv1 = getKindEnvFromTypeParams(tparams.init)
+          val kenv2 = getKindEnvFromRegion(tparams.last)
+          KindEnv.disjointAppend(kenv1, kenv2)
+        case Nil => KindEnv.empty
+      }
       tparams0.foldRight(Kind.Star: Kind) {
         case (tparam, acc) => kenv.map(tparam.sym) ->: acc
       }

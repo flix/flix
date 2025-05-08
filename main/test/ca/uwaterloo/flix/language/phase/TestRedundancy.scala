@@ -1453,7 +1453,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
            |}
            |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[RedundancyError.UnusedVarSym](result)
   }
 
@@ -1469,7 +1469,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
            |}
            |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[RedundancyError.UnusedVarSym](result)
   }
 

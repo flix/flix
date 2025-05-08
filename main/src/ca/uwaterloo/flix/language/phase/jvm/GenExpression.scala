@@ -691,6 +691,12 @@ object GenExpression {
         mv.visitMethodInsn(INVOKEINTERFACE, interfaceType.jvmName.toInternalName, interfaceType.RestrictFieldMethod.name,
           MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(interfaceType.toTpe).toDescriptor, true)
 
+      case AtomicOp.ExtensibleIs(label) => ??? // TODO: Ext-Variants
+
+      case AtomicOp.ExtensibleTag(label) => ??? // TODO: Ext-Variants
+
+      case AtomicOp.ExtensibleUntag(label) => ??? // TODO: Ext-Variants
+
       case AtomicOp.ArrayLit =>
         // We push the 'length' of the array on top of stack
         compileInt(exps.length)
@@ -1077,6 +1083,21 @@ object GenExpression {
         mv.visitInsn(SWAP)
         mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${BackendObjType.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
         mv.visitInsn(ATHROW)
+
+      case AtomicOp.CastError(from, to) =>
+        import BackendObjType.CastError
+        // Add source line number for debugging (failable by design)
+        addSourceLine(mv, loc)
+        val ins = {
+          import BytecodeInstructions.*
+          NEW(CastError.jvmName) ~
+          DUP() ~
+          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~
+          pushString(s"Cannot cast from type '$from' to '$to'") ~
+          INVOKESPECIAL(CastError.Constructor) ~
+          ATHROW()
+        }
+        ins(new BytecodeInstructions.F(mv))
     }
 
     case Expr.ApplyClo(exp1, exp2, ct, _, purity, loc) =>

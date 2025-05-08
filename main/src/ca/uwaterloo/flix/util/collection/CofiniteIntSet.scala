@@ -71,7 +71,7 @@ object CofiniteIntSet {
   def mkSet(i: Int): CofiniteIntSet = Set(SortedSet(i))
 
   /** Returns the complement of `s` (`!s`). */
-  def complement(s: CofiniteIntSet): CofiniteIntSet = s match {
+  def complement(set: CofiniteIntSet): CofiniteIntSet = set match {
     case Set(s) =>
       // !s
       Compl(s)
