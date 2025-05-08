@@ -395,8 +395,8 @@ object Type {
   val Chan: Type = Type.Cst(TypeConstructor.Effect(Symbol.Chan), SourceLocation.Unknown)
 
   /**
-   * Represents the Net effect.
-   */
+    * Represents the Net effect.
+    */
   val Net: Type = Type.Cst(TypeConstructor.Effect(Symbol.Net), SourceLocation.Unknown)
 
   /**
@@ -559,7 +559,7 @@ object Type {
       * Creates a new Type.Apply, reusing this one if they are equivalent.
       */
     def renew(newTpe1: Type, newTpe2: Type, newLoc: SourceLocation): Type.Apply = {
-      if ((tpe1 eq newTpe1) && (tpe2 eq newTpe2) && (loc eq newLoc )) {
+      if ((tpe1 eq newTpe1) && (tpe2 eq newTpe2) && (loc eq newLoc)) {
         this
       } else {
         Type.Apply(newTpe1, newTpe2, newLoc)
@@ -981,6 +981,13 @@ object Type {
   }
 
   /**
+    * Constructs an Extensible Variant type.
+    */
+  def mkExtensible(tpe: Type, loc: SourceLocation): Type = {
+    Apply(Type.Cst(TypeConstructor.Extensible, loc), tpe, loc)
+  }
+
+  /**
     * Constructs a Schema type.
     */
   def mkSchema(tpe: Type, loc: SourceLocation): Type = {
@@ -1253,7 +1260,7 @@ object Type {
     case Type.Var(_, _) => false
     case Type.Cst(_, _) => false
     case Type.Apply(tpe1, tpe2, _) => hasJvmType(tpe1) || hasJvmType(tpe2)
-    case Type.Alias(_, _, tpe, _) => hasJvmType(tpe)
+    case Type.Alias(_, _, t, _) => hasJvmType(t)
     case Type.AssocType(_, arg, _, _) => hasJvmType(arg)
     case Type.JvmToType(_, _) => true
     case Type.JvmToEff(_, _) => true
@@ -1270,7 +1277,7 @@ object Type {
       case _ => false
     }
     case Type.Apply(tpe1, tpe2, _) => hasError(tpe1) || hasError(tpe2)
-    case Type.Alias(_, _, tpe, _) => hasError(tpe)
+    case Type.Alias(_, _, t, _) => hasError(t)
     case Type.AssocType(_, arg, _, _) => hasError(arg)
     case Type.JvmToType(_, _) => false
     case Type.JvmToEff(_, _) => false
@@ -1287,29 +1294,29 @@ object Type {
   def getFlixType(c: Class[?]): Type = {
     if (c == java.lang.Boolean.TYPE) {
       Type.Bool
-    }  else if (c == java.lang.Byte.TYPE) {
+    } else if (c == java.lang.Byte.TYPE) {
       Type.Int8
-    }  else if (c == java.lang.Short.TYPE) {
+    } else if (c == java.lang.Short.TYPE) {
       Type.Int16
-    }  else if (c == java.lang.Integer.TYPE) {
+    } else if (c == java.lang.Integer.TYPE) {
       Type.Int32
-    }  else if (c == java.lang.Long.TYPE) {
+    } else if (c == java.lang.Long.TYPE) {
       Type.Int64
-    }  else if (c == java.lang.Character.TYPE) {
+    } else if (c == java.lang.Character.TYPE) {
       Type.Char
-    }  else if (c == java.lang.Float.TYPE) {
+    } else if (c == java.lang.Float.TYPE) {
       Type.Float32
-    }  else if (c == java.lang.Double.TYPE) {
+    } else if (c == java.lang.Double.TYPE) {
       Type.Float64
-    }  else if (c == classOf[java.math.BigDecimal]) {
+    } else if (c == classOf[java.math.BigDecimal]) {
       Type.BigDecimal
-    }  else if (c == classOf[java.math.BigInteger]) {
+    } else if (c == classOf[java.math.BigInteger]) {
       Type.BigInt
-    }  else if (c == classOf[java.lang.String]) {
+    } else if (c == classOf[java.lang.String]) {
       Type.Str
-    }  else if (c == classOf[java.util.regex.Pattern]) {
+    } else if (c == classOf[java.util.regex.Pattern]) {
       Type.Regex
-    }  else if (c == java.lang.Void.TYPE) {
+    } else if (c == java.lang.Void.TYPE) {
       Type.Unit
     } else if (c.isArray) {
       val comp = c.getComponentType

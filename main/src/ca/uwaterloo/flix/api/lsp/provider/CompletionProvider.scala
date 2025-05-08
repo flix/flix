@@ -38,15 +38,10 @@ import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError
   */
 object CompletionProvider {
 
-  def autoComplete(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): CompletionList = {
-      val items = getCompletions(uri, pos, currentErrors)(root, flix).map(_.toCompletionItem)
-      CompletionList(isIncomplete = true, items)
-  }
-
   /**
     * Returns all completions in the given `uri` at the given position `pos`.
     */
-  private def getCompletions(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[Completion] = {
+  def getCompletions(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[Completion] = {
     if (currentErrors.isEmpty)
       HoleCompleter.getHoleCompletion(uri, pos).toList
     else
