@@ -89,6 +89,8 @@ object SimpleType {
 
   case object Lazy extends SimpleType
 
+  case object LoweredExtensible extends SimpleType
+
   case object Pure extends SimpleType
 
   case object Univ extends SimpleType
@@ -453,6 +455,8 @@ object SimpleType {
             // Case 3: Too many args. Error.
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
+
+        case TypeConstructor.LoweredExtensible => mkApply(SimpleType.LoweredExtensible, t.typeArguments.map(visit))
 
         case TypeConstructor.SchemaRowEmpty => SchemaRow(Nil)
 

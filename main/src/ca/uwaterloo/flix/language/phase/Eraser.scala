@@ -238,6 +238,7 @@ object Eraser {
       case Arrow(args, result) => Arrow(args.map(visitType), box(result))
       case RecordEmpty => RecordEmpty
       case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
+      case Extensible => Extensible
       case Native(clazz) => Native(clazz)
     }
   }

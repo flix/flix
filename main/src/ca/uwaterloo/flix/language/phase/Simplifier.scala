@@ -365,9 +365,9 @@ object Simplifier {
             // The row types themselves return monotype records, so we do nothing here.
             visitType(elm)
 
-          case TypeConstructor.Extensible =>
-            // TODO: Monomorphization?
-            ??? // TODO: Ext-Variants
+
+          case TypeConstructor.LoweredExtensible =>
+            MonoType.Extensible
 
           case TypeConstructor.Region(_) => MonoType.Unit
 
@@ -389,6 +389,9 @@ object Simplifier {
           case TypeConstructor.CaseComplement(_) => MonoType.Unit
           case TypeConstructor.CaseIntersection(_) => MonoType.Unit
           case TypeConstructor.CaseUnion(_) => MonoType.Unit
+
+          case TypeConstructor.Extensible =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.Relation =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
@@ -533,9 +536,7 @@ object Simplifier {
             val List(elm) = tpe.typeArguments
             Type.mkRecord(visitPolyType(elm), loc)
 
-          case TypeConstructor.Extensible =>
-            // TODO: Monomorphization?
-            ??? // TODO: Ext-Variants
+          case TypeConstructor.LoweredExtensible => cst
 
           case TypeConstructor.Region(_) => Type.mkUnit(loc)
 
@@ -562,6 +563,9 @@ object Simplifier {
           case TypeConstructor.SchemaRowExtend(pred) =>
             val List(predType, restType) = tpe.typeArguments
             Type.mkSchemaRowExtend(pred, visitPolyType(predType), visitPolyType(restType), loc)
+
+          case TypeConstructor.Extensible =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.Relation =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)

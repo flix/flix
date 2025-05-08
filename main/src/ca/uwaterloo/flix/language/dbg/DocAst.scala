@@ -467,6 +467,8 @@ object DocAst {
 
     val Schema: Type = AsIs("Schema")
 
+    val LoweredExtensible: Type = AsIs("LoweredExtensible")
+
     val Error: Type = AsIs("Error")
 
     val Univ: Type = AsIs("Univ")

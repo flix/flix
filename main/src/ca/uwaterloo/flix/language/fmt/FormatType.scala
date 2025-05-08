@@ -180,6 +180,7 @@ object FormatType {
       case SimpleType.Sender => true
       case SimpleType.Receiver => true
       case SimpleType.Lazy => true
+      case SimpleType.LoweredExtensible => true
       case SimpleType.True => true
       case SimpleType.False => true
       case SimpleType.Pure => true
@@ -257,6 +258,7 @@ object FormatType {
       case SimpleType.Sender => "Sender"
       case SimpleType.Receiver => "Receiver"
       case SimpleType.Lazy => "Lazy"
+      case SimpleType.LoweredExtensible => "LoweredExtensible"
       case SimpleType.False => "false"
       case SimpleType.True => "true"
       case SimpleType.Pure => mode match {

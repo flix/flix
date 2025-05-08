@@ -186,6 +186,17 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represents the lowered type of extensible variants.
+    */
+  @IntroducedBy(Lowering.getClass)
+  case object LoweredExtensible extends TypeConstructor {
+    /**
+      * The shape of an extensible variant constructor is LoweredExtensible
+      */
+    def kind: Kind = Kind.Star
+  }
+
+  /**
     * A type constructor that represents the type of empty schema rows.
     */
   case object SchemaRowEmpty extends TypeConstructor {

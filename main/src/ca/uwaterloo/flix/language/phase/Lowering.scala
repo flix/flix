@@ -892,6 +892,9 @@ object Lowering {
     case Some(TypeConstructor.Schema) =>
       // We replace any Schema type, no matter the number of polymorphic type applications, with the erased Datalog type.
       Types.Datalog
+    case Some(TypeConstructor.Extensible) =>
+      // We replace any Schema type, no matter the number of polymorphic type applications, with the erased extensible variant type.
+      Type.Cst(TypeConstructor.LoweredExtensible, tpe0.loc)
     case _ => visitTypeNonSchema(tpe0)
   }
 
