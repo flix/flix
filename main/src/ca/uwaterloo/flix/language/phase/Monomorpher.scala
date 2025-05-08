@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
+import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -411,9 +412,9 @@ object Monomorpher {
         // The substitution can be left empty.
         val fparams = fparams0.map {
           case LoweredAst.FormalParam(varSym, fparamMod, tpe, src, fpLoc) =>
-            MonoAst.FormalParam(varSym, fparamMod, StrictSubstitution.empty(tpe), src, fpLoc)
+            MonoAst.FormalParam(varSym, fparamMod, StrictSubstitution.empty(tpe), src, Occur.Unknown, fpLoc)
         }
-        val spec = MonoAst.Spec(doc, ann, mod, fparams, declaredScheme.base, StrictSubstitution.empty(retTpe), StrictSubstitution.empty(eff))
+        val spec = MonoAst.Spec(doc, ann, mod, fparams, declaredScheme.base, StrictSubstitution.empty(retTpe), StrictSubstitution.empty(eff), DefContext.Unknown)
         MonoAst.Op(sym, spec, loc)
     }
 
@@ -431,7 +432,8 @@ object Monomorpher {
       specializedFparams,
       subst(defn.spec.declaredScheme.base),
       subst(spec0.retTpe),
-      subst(spec0.eff)
+      subst(spec0.eff),
+      DefContext.Unknown
     )
     MonoAst.Def(freshSym, spec, specializedExp, defn.loc)
   }
@@ -490,7 +492,7 @@ object Monomorpher {
       val env1 = env0 + (sym -> freshSym)
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env1, subst)
-      MonoAst.Expr.Let(freshSym, e1, e2, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.Let(freshSym, e1, e2, subst(tpe), subst(eff), Occur.Unknown, loc)
 
     case LoweredAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
@@ -500,7 +502,7 @@ object Monomorpher {
       val e2 = specializeExp(exp2, env1, subst)
       val t = subst(tpe)
       val ef = subst(eff)
-      MonoAst.Expr.LocalDef(freshSym, fps, e1, e2, t, ef, loc)
+      MonoAst.Expr.LocalDef(freshSym, fps, e1, e2, t, ef, Occur.Unknown, loc)
 
     case LoweredAst.Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
@@ -556,7 +558,7 @@ object Monomorpher {
               // Visit the body under the extended environment.
               val body = specializeExp(body0, env1, subst1)
               val eff = Type.mkUnion(e.eff, body.eff, loc.asSynthetic)
-              Some(MonoAst.Expr.Let(freshSym, e, body, subst1(tpe), subst1(eff), loc))
+              Some(MonoAst.Expr.Let(freshSym, e, body, subst1(tpe), subst1(eff), Occur.Unknown, loc))
           }
       }.get // This is safe since the last case can always match.
 
@@ -736,7 +738,7 @@ object Monomorpher {
       (MonoAst.Pattern.Wild(subst(tpe), loc), Map.empty)
     case LoweredAst.Pattern.Var(sym, tpe, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
-      (MonoAst.Pattern.Var(freshSym, subst(tpe), loc), Map(sym -> freshSym))
+      (MonoAst.Pattern.Var(freshSym, subst(tpe), Occur.Unknown, loc), Map(sym -> freshSym))
     case LoweredAst.Pattern.Cst(cst, tpe, loc) => (MonoAst.Pattern.Cst(cst, subst(tpe), loc), Map.empty)
     case LoweredAst.Pattern.Tag(sym, pats, tpe, loc) =>
       val (ps, envs) = pats.map(specializePat(_, subst)).unzip
@@ -879,7 +881,7 @@ object Monomorpher {
   private def specializeFormalParam(fparam0: LoweredAst.FormalParam, subst0: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
     val LoweredAst.FormalParam(sym, mod, tpe, src, loc) = fparam0
     val freshSym = Symbol.freshVarSym(sym)
-    (MonoAst.FormalParam(freshSym, mod, subst0(tpe), src, loc), Map(sym -> freshSym))
+    (MonoAst.FormalParam(freshSym, mod, subst0(tpe), src, Occur.Unknown, loc), Map(sym -> freshSym))
   }
 
   /** Unifies `tpe1` and `tpe2` which must be unifiable. */

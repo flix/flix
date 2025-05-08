@@ -176,12 +176,19 @@ object EffectVerifier {
       val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
+    case Expr.ExtensibleMatch(label, exp1, bnd1, exp2, bnd2, exp3, tpe, eff, loc) =>
+      () // TODO: Ext-Variants
     case Expr.Tag(sym, exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
     case Expr.RestrictableTag(sym, exps, tpe, eff, loc) =>
+      exps.foreach(visitExp)
+      val expected = Type.mkUnion(exps.map(_.eff), loc)
+      val actual = eff
+      expectType(expected, actual, loc)
+    case Expr.ExtensibleTag(_, exps, _, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(exps.map(_.eff), loc)
       val actual = eff

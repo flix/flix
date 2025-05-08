@@ -161,10 +161,18 @@ object Safety {
       visitExp(exp)
       rules.foreach(rule => visitExp(rule.exp))
 
+    case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      visitExp(exp3)
+
     case Expr.Tag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.RestrictableTag(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.ExtensibleTag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.Tuple(elms, _, _, _) =>

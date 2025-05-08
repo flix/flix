@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider.*
-import ca.uwaterloo.flix.api.lsp.{Position, PublishDiagnosticsParams, Range}
+import ca.uwaterloo.flix.api.lsp.{CompletionList, Position, PublishDiagnosticsParams, Range}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
@@ -327,11 +327,14 @@ object LspServer {
       CompletableFuture.completedFuture(codeLens)
     }
 
-    override def completion(params: CompletionParams): CompletableFuture[messages.Either[util.List[CompletionItem], CompletionList]] = {
+    override def completion(params: CompletionParams): CompletableFuture[messages.Either[util.List[CompletionItem], lsp4j.CompletionList]] = {
       val uri = params.getTextDocument.getUri
       val pos = Position.fromLsp4j(params.getPosition)
-      val completions = CompletionProvider.autoComplete(uri, pos, flixLanguageServer.currentErrors)(flixLanguageServer.root, flixLanguageServer.flix)
-      CompletableFuture.completedFuture(messages.Either.forRight[util.List[CompletionItem], CompletionList](completions.toLsp4j))
+      val completions = CompletionProvider
+        .getCompletions(uri, pos, flixLanguageServer.currentErrors)(flixLanguageServer.root, flixLanguageServer.flix)
+        .map(_.toCompletionItem(flixLanguageServer.flix))
+      val completionList = CompletionList(isIncomplete = true, completions).toLsp4j
+      CompletableFuture.completedFuture(messages.Either.forRight[util.List[CompletionItem], lsp4j.CompletionList](completionList))
     }
 
     override def definition(params: DefinitionParams): CompletableFuture[messages.Either[util.List[? <: Location], util.List[? <: LocationLink]]] = {
