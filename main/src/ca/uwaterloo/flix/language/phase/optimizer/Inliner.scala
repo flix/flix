@@ -563,7 +563,11 @@ object Inliner {
     }
   }
 
-  /** Returns `true` if `exp` is pure and should be inlined at the occurrence of `sym`. */
+  /**
+    * Returns `true` if `exp` is pure and should be inlined at the occurrence of `sym`.
+    *
+    * A lambda should be inlined if it has occurrence information [[Occur.OnceInLambda]] or [[Occur.OnceInLocalDef]].
+    */
   private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur): Boolean = (occur, exp.eff) match {
     case (Occur.Dead, _) => throw InternalCompilerException(s"unexpected call site inline of dead variable $sym", exp.loc)
     case (Occur.Once, Type.Pure) => throw InternalCompilerException(s"unexpected call site inline of pre-inlined variable $sym", exp.loc)
