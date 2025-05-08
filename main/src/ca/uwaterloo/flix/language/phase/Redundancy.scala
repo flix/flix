@@ -526,6 +526,9 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
+    case Expr.JvmReflection(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
+
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       // Visit the match expression.
       val usedMatch = visitExp(exp, env0, rc)

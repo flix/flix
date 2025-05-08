@@ -82,6 +82,8 @@ object Symbol {
     case _ => throw InternalCompilerException(s"Unknown primitive effect: '$s'.", SourceLocation.Unknown)
   }
 
+  val JvmType: Symbol.EnumSym = mkEnumSym(Name.NName(Nil, SourceLocation.Unknown), Name.Ident("JvmType", SourceLocation.Unknown))
+
   /**
     * Returns a fresh def symbol based on the given symbol.
     */

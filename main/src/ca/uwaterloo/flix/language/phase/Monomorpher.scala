@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
@@ -562,6 +562,13 @@ object Monomorpher {
           }
       }.get // This is safe since the last case can always match.
 
+    case LoweredAst.Expr.JvmReflection(exp, tpe, eff, loc) =>
+      // Turn `$JVM_TYPE_OF_PROXY$(e: Proxy[t])` into `e; JvmType.Xyz`
+      // where `Xyz` is a reflection of `t`.
+      val e = specializeExp(exp, env0, subst)
+      val jvmType = reflectProxyType(e.tpe, loc)
+      MonoAst.Expr.Stm(e, jvmType, tpe, eff, loc)
+
     case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
       MonoAst.Expr.VectorLit(es, subst(tpe), subst(eff), loc)
@@ -614,6 +621,40 @@ object Monomorpher {
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
       MonoAst.Expr.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
 
+  }
+
+  /**
+    * Returns the `JvmType` representing `tpe`.
+    *
+    * E.g. `String` returns `JvmType.JvmObject: JvmType \ {}`.
+    *
+    * N.B.: `tpe` must be `Proxy[t]` for some `t`.
+    */
+  private def reflectProxyType(tpe: Type, loc: SourceLocation): MonoAst.Expr = {
+    val innerType = tpe match {
+      case Type.Apply(Type.Cst(_, _), arg, _) => arg
+      case _ => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    }
+    val constructorName = innerType match {
+      case Type.Char => "JvmChar"
+      case Type.Bool => "JvmBool"
+      case Type.Int8 => "JvmInt8"
+      case Type.Int16 => "JvmInt16"
+      case Type.Int32 => "JvmInt32"
+      case Type.Int64 => "JvmInt64"
+      case Type.Float32 => "JvmFloat32"
+      case Type.Float64 => "JvmFloat64"
+      case Type.Cst(_, _) => "JvmObject"
+      case Type.Apply(_, _, _) => "JvmObject"
+      case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
+      case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
+      case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
+      case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
+      case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
+      case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
+    }
+    val tag = Symbol.mkCaseSym(Symbol.JvmType, Name.Ident(constructorName, loc))
+    MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(tag), Nil, Type.mkEnum(Symbol.JvmType, Kind.Star, loc), Type.Pure, loc)
   }
 
   /**

@@ -142,6 +142,7 @@ class Flix {
 
     // Reflect
     "Reflect.flix" -> LocalResource.get("/src/library/Reflect.flix"),
+    "JvmReflection.flix" -> LocalResource.get("/src/library/JvmReflection.flix"),
 
     // References
     "Ref.flix" -> LocalResource.get("/src/library/Ref.flix"),

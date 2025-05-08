@@ -60,6 +60,7 @@ object TypedAstOps {
     case Expr.Discard(exp, _, _) => sigSymsOf(exp)
     case Expr.Match(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ rule.guard.toList.flatMap(sigSymsOf))
     case Expr.TypeMatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
+    case Expr.JvmReflection(exp, _, _, _) => sigSymsOf(exp)
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expr.Tag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
@@ -205,6 +206,9 @@ object TypedAstOps {
       rules.foldLeft(freeVars(exp)) {
         case (acc, TypeMatchRule(bnd, _, body, _)) => acc ++ (freeVars(body) - bnd.sym)
       }
+
+    case Expr.JvmReflection(exp, _, _, _) =>
+      freeVars(exp)
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       val e = freeVars(exp)

@@ -23,166 +23,57 @@ mod Fixpoint.Boxable {
     ///
     /// Boxes the given `x`.
     ///
-    pub def box(x: a): Boxed with Order[a] = typematch x {
-        case v: Bool    => Boxed.BoxedBool(v)
-        case v: Char    => Boxed.BoxedChar(v)
-        case v: Int8    => Boxed.BoxedInt8(v)
-        case v: Int16   => Boxed.BoxedInt16(v)
-        case v: Int32   => Boxed.BoxedInt32(v)
-        case v: Int64   => Boxed.BoxedInt64(v)
-        case v: Float32 => Boxed.BoxedFloat32(v)
-        case v: Float64 => Boxed.BoxedFloat64(v)
-        case v: Down[Bool]    => Boxed.BoxedBool(coerce(v))
-        case v: Down[Char]    => Boxed.BoxedChar(coerce(v))
-        case v: Down[Int8]    => Boxed.BoxedInt8(coerce(v))
-        case v: Down[Int16]   => Boxed.BoxedInt16(coerce(v))
-        case v: Down[Int32]   => Boxed.BoxedInt32(coerce(v))
-        case v: Down[Int64]   => Boxed.BoxedInt64(coerce(v))
-        case v: Down[Float32] => Boxed.BoxedFloat32(coerce(v))
-        case v: Down[Float64] => Boxed.BoxedFloat64(coerce(v))
-        case _: Down[_] =>
+    pub def box(x: a): Boxed with Order[a] = match JvmReflection.reflectValue(x) {
+        case JvmValue.JvmChar(c) => Boxed.BoxedChar(c)
+        case JvmValue.JvmBool(b) => Boxed.BoxedBool(b)
+        case JvmValue.JvmInt8(i) => Boxed.BoxedInt8(i)
+        case JvmValue.JvmInt16(i) => Boxed.BoxedInt16(i)
+        case JvmValue.JvmInt32(i) => Boxed.BoxedInt32(i)
+        case JvmValue.JvmInt64(i) => Boxed.BoxedInt64(i)
+        case JvmValue.JvmFloat32(i) => Boxed.BoxedFloat32(i)
+        case JvmValue.JvmFloat64(i) => Boxed.BoxedFloat64(i)
+        case JvmValue.JvmObject(obj) =>
             let cmp = (o1, o2) -> Order.compare(unchecked_cast(o1 as a), unchecked_cast(o2 as a));
-            Boxed.BoxedObject(unchecked_cast(x as Object), cmp)
-        case v: Identity[Bool]    => Boxed.BoxedBool(coerce(v))
-        case v: Identity[Char]    => Boxed.BoxedChar(coerce(v))
-        case v: Identity[Int8]    => Boxed.BoxedInt8(coerce(v))
-        case v: Identity[Int16]   => Boxed.BoxedInt16(coerce(v))
-        case v: Identity[Int32]   => Boxed.BoxedInt32(coerce(v))
-        case v: Identity[Int64]   => Boxed.BoxedInt64(coerce(v))
-        case v: Identity[Float32] => Boxed.BoxedFloat32(coerce(v))
-        case v: Identity[Float64] => Boxed.BoxedFloat64(coerce(v))
-        case _: Identity[_] =>
-            let cmp = (o1, o2) -> Order.compare(unchecked_cast(o1 as a), unchecked_cast(o2 as a));
-            Boxed.BoxedObject(unchecked_cast(x as Object), cmp)
-        case v: SemiGroup.Any => Boxed.BoxedBool(coerce(v))
-        case v: SemiGroup.All => Boxed.BoxedBool(coerce(v))
-        case v: Time.Duration => Boxed.BoxedInt64(coerce(v))
-        case _: _ =>
-            let cmp = (o1, o2) -> Order.compare(unchecked_cast(o1 as a), unchecked_cast(o2 as a));
-            Boxed.BoxedObject(unchecked_cast(x as Object), cmp)
+            Boxed.BoxedObject(obj, cmp)
     }
 
     ///
     /// Unboxes the given `x`.
     ///
-    pub def unbox(x: Boxed): a = typematch (Proxy.Proxy: Proxy[a]) {
-        case _: Proxy[Bool] => match x {
+    pub def unbox(x: Boxed): a = match JvmReflection.reflectType((Proxy.Proxy: Proxy[a])) {
+        case JvmType.JvmBool => match x {
             case Boxed.BoxedBool(v)      => unchecked_cast(v as a)
             case _                       => unreachable!()
         }
-        case _: Proxy[Char] => match x {
+        case JvmType.JvmChar => match x {
             case Boxed.BoxedChar(v)      => unchecked_cast(v as a)
             case _                       => unreachable!()
         }
-        case _: Proxy[Int8] => match x {
+        case JvmType.JvmInt8 => match x {
             case Boxed.BoxedInt8(v)      => unchecked_cast(v as a)
             case _                       => unreachable!()
         }
-        case _: Proxy[Int16] => match x {
+        case JvmType.JvmInt16 => match x {
             case Boxed.BoxedInt16(v)     => unchecked_cast(v as a)
             case _                       => unreachable!()
         }
-        case _: Proxy[Int32] => match x {
+        case JvmType.JvmInt32 => match x {
             case Boxed.BoxedInt32(v)     => unchecked_cast(v as a)
             case _                       => unreachable!()
         }
-        case _: Proxy[Int64] => match x {
+        case JvmType.JvmInt64 => match x {
             case Boxed.BoxedInt64(v)     => unchecked_cast(v as a)
             case _                       => unreachable!()
         }
-        case _: Proxy[Float32] => match x {
+        case JvmType.JvmFloat32 => match x {
             case Boxed.BoxedFloat32(v)   => unchecked_cast(v as a)
             case _                       => unreachable!()
         }
-        case _: Proxy[Float64] => match x {
+        case JvmType.JvmFloat64 => match x {
             case Boxed.BoxedFloat64(v)   => unchecked_cast(v as a)
             case _                       => unreachable!()
         }
-        case _: Proxy[Down[Bool]] => match x {
-            case Boxed.BoxedBool(v)      => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[Down[Char]] => match x {
-            case Boxed.BoxedChar(v)      => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[Down[Int8]] => match x {
-            case Boxed.BoxedInt8(v)      => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[Down[Int16]] => match x {
-            case Boxed.BoxedInt16(v)     => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[Down[Int32]] => match x {
-            case Boxed.BoxedInt32(v)     => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[Down[Int64]] => match x {
-            case Boxed.BoxedInt64(v)     => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[Down[Float32]] => match x {
-            case Boxed.BoxedFloat32(v)   => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[Down[Float64]] => match x {
-            case Boxed.BoxedFloat64(v)   => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[Down[_]] => match x {
-            case Boxed.BoxedObject(v, _) => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[Identity[Bool]] => match x {
-            case Boxed.BoxedBool(v)      => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[Identity[Char]] => match x {
-            case Boxed.BoxedChar(v)      => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[Identity[Int8]] => match x {
-            case Boxed.BoxedInt8(v)      => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[Identity[Int16]] => match x {
-            case Boxed.BoxedInt16(v)     => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[Identity[Int32]] => match x {
-            case Boxed.BoxedInt32(v)     => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[Identity[Int64]] => match x {
-            case Boxed.BoxedInt64(v)     => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[Identity[Float32]] => match x {
-            case Boxed.BoxedFloat32(v)   => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[Identity[Float64]] => match x {
-            case Boxed.BoxedFloat64(v)   => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[Identity[_]] => match x {
-            case Boxed.BoxedObject(v, _) => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[SemiGroup.Any] => match x {
-            case Boxed.BoxedBool(v)      => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[SemiGroup.All] => match x {
-            case Boxed.BoxedBool(v)      => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: Proxy[Time.Duration] => match x {
-            case Boxed.BoxedInt64(v)     => unchecked_cast(v as a)
-            case _                       => unreachable!()
-        }
-        case _: _ => match x {
+        case JvmType.JvmObject => match x {
             case Boxed.BoxedObject(v, _) => unchecked_cast(v as a)
             case _                       => unreachable!()
         }

@@ -359,6 +359,9 @@ object Visitor {
         visitExpr(exp)
         rules.foreach(visitTypeMatchRule)
 
+      case Expr.JvmReflection(exp, _, _, _) =>
+        visitExpr(exp)
+
       case Expr.RestrictableChoose(_, _, _, _, _, _) => () // Not visited, unsupported feature.
 
       case Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, _, _, _) =>

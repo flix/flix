@@ -437,6 +437,15 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
+      case Expr.JvmReflection(exp, loc) =>
+        val (tpe, eff) = visitExp(exp)
+        val proxyEnumType = Type.mkEnum(Symbol.mkEnumSym(Name.NName(Nil, loc.asSynthetic), Name.Ident("Proxy", loc.asSynthetic)), Kind.Arrow(Kind.Star, Kind.Star), loc.asSynthetic)
+        val proxyType = Type.mkApply(proxyEnumType, List(Type.freshVar(Kind.Star, loc.asSynthetic)), loc.asSynthetic)
+        c.expectType(expected = proxyType, tpe, loc)
+        val resTpe = Type.mkEnum(Symbol.JvmType, Kind.Star, loc.asSynthetic)
+        val resEff = eff
+        (resTpe, resEff)
+
       case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
 
       case Expr.ExtensibleMatch(label, exp1, sym2, exp2, sym3, exp3, tvar, loc) =>
