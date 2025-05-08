@@ -234,7 +234,7 @@ object Reducer {
           case Struct(_, targs) => taskList.enqueueAll(targs)
           case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
           case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)
-          case ExtensibleExtend(_, elm, rest) => taskList.enqueue(elm).enqueue(rest)
+          case ExtensibleExtend(_, targs, rest) => taskList.enqueueAll(targs).enqueue(rest)
         }
         nestedTypesOf(acc + tpe, taskList1)
       case None => acc
