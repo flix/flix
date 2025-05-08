@@ -532,8 +532,9 @@ object Inliner {
     * Returns `true` if `exp0` is a function call with trivial arguments.
     */
   private def isDirectCall(exp0: MonoAst.Expr): Boolean = exp0 match {
-    case MonoAst.Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isTrivial)
-    case MonoAst.Expr.ApplyClo(exp1, exp2, _, _, _) => isTrivial(exp1) && isTrivial(exp2)
+    case Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyClo(exp1, exp2, _, _, _) => isTrivial(exp1) && isTrivial(exp2)
+    case Expr.LocalDef(_, _, _, Expr.ApplyLocalDef(_, exps, _, _, _), _, _, _, _) => exps.forall(isTrivial)
     case _ => false
   }
 
