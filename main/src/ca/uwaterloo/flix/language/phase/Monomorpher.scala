@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
+import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -411,9 +412,9 @@ object Monomorpher {
         // The substitution can be left empty.
         val fparams = fparams0.map {
           case LoweredAst.FormalParam(varSym, fparamMod, tpe, src, fpLoc) =>
-            MonoAst.FormalParam(varSym, fparamMod, StrictSubstitution.empty(tpe), src, fpLoc)
+            MonoAst.FormalParam(varSym, fparamMod, StrictSubstitution.empty(tpe), src, Occur.Unknown, fpLoc)
         }
-        val spec = MonoAst.Spec(doc, ann, mod, fparams, declaredScheme.base, StrictSubstitution.empty(retTpe), StrictSubstitution.empty(eff))
+        val spec = MonoAst.Spec(doc, ann, mod, fparams, declaredScheme.base, StrictSubstitution.empty(retTpe), StrictSubstitution.empty(eff), DefContext.Unknown)
         MonoAst.Op(sym, spec, loc)
     }
 
@@ -431,7 +432,8 @@ object Monomorpher {
       specializedFparams,
       subst(defn.spec.declaredScheme.base),
       subst(spec0.retTpe),
-      subst(spec0.eff)
+      subst(spec0.eff),
+      DefContext.Unknown
     )
     MonoAst.Def(freshSym, spec, specializedExp, defn.loc)
   }
@@ -490,7 +492,7 @@ object Monomorpher {
       val env1 = env0 + (sym -> freshSym)
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env1, subst)
-      MonoAst.Expr.Let(freshSym, e1, e2, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.Let(freshSym, e1, e2, subst(tpe), subst(eff), Occur.Unknown, loc)
 
     case LoweredAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
@@ -500,7 +502,7 @@ object Monomorpher {
       val e2 = specializeExp(exp2, env1, subst)
       val t = subst(tpe)
       val ef = subst(eff)
-      MonoAst.Expr.LocalDef(freshSym, fps, e1, e2, t, ef, loc)
+      MonoAst.Expr.LocalDef(freshSym, fps, e1, e2, t, ef, Occur.Unknown, loc)
 
     case LoweredAst.Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
@@ -556,7 +558,7 @@ object Monomorpher {
               // Visit the body under the extended environment.
               val body = specializeExp(body0, env1, subst1)
               val eff = Type.mkUnion(e.eff, body.eff, loc.asSynthetic)
-              Some(MonoAst.Expr.Let(freshSym, e, body, subst1(tpe), subst1(eff), loc))
+              Some(MonoAst.Expr.Let(freshSym, e, body, subst1(tpe), subst1(eff), Occur.Unknown, loc))
           }
       }.get // This is safe since the last case can always match.
 
@@ -580,7 +582,7 @@ object Monomorpher {
     case LoweredAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>
       // Drop the declaredType and declaredEff.
       val e = specializeExp(exp, env0, subst)
-      MonoAst.Expr.Cast(e, subst(tpe), subst(eff), loc)
+      mkCast(e, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
@@ -615,6 +617,78 @@ object Monomorpher {
   }
 
   /**
+    * Returns the cast of `e` to `tpe` and `eff`.
+    *
+    * If `exp` and `tpe` is bytecode incompatible, a runtime crash is inserted to appease the
+    * bytecode verifier.
+    */
+  private def mkCast(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): MonoAst.Expr = {
+    (exp.tpe, tpe) match {
+      case (Type.Char, Type.Char) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Char, Type.Int32) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Bool, Type.Bool) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int8, Type.Int8) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int16, Type.Int16) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int32, Type.Int32) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int64, Type.Int64) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Float32, Type.Float32) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Float64, Type.Float64) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (x, y) if !isPrimType(x) && !isPrimType(y) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (x, y) =>
+        val crash = MonoAst.Expr.ApplyAtomic(AtomicOp.CastError(erasedString(x), erasedString(y)), Nil, tpe, eff, loc)
+        MonoAst.Expr.Stm(exp, crash, tpe, eff, loc)
+    }
+  }
+
+  /**
+    * Returns `true` if `tpe` is a primitive type.
+    *
+    * N.B.: `tpe` must be normalized.
+    */
+  private def isPrimType(tpe: Type): Boolean = tpe match {
+    case Type.Char => true
+    case Type.Bool => true
+    case Type.Int8 => true
+    case Type.Int16 => true
+    case Type.Int32 => true
+    case Type.Int64 => true
+    case Type.Float32 => true
+    case Type.Float64 => true
+    case Type.Cst(_, _) => false
+    case Type.Apply(_, _, _) => false
+    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+  }
+
+  /**
+    * Returns the erased string representation of `tpe`
+    *
+    * N.B.: `tpe` must be normalized.
+    */
+  private def erasedString(tpe: Type): String = tpe match {
+    case Type.Char => "Char"
+    case Type.Bool => "Bool"
+    case Type.Int8 => "Int8"
+    case Type.Int16 => "Int16"
+    case Type.Int32 => "Int32"
+    case Type.Int64 => "Int64"
+    case Type.Float32 => "Float32"
+    case Type.Float64 => "Float64"
+    case Type.Cst(_, _) => "Object"
+    case Type.Apply(_, _, _) => "Object"
+    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+  }
+
+  /**
     * Specializes `p0` w.r.t. `subst` and returns a mapping from variable symbols to fresh variable
     * symbols.
     */
@@ -623,7 +697,7 @@ object Monomorpher {
       (MonoAst.Pattern.Wild(subst(tpe), loc), Map.empty)
     case LoweredAst.Pattern.Var(sym, tpe, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
-      (MonoAst.Pattern.Var(freshSym, subst(tpe), loc), Map(sym -> freshSym))
+      (MonoAst.Pattern.Var(freshSym, subst(tpe), Occur.Unknown, loc), Map(sym -> freshSym))
     case LoweredAst.Pattern.Cst(cst, tpe, loc) => (MonoAst.Pattern.Cst(cst, subst(tpe), loc), Map.empty)
     case LoweredAst.Pattern.Tag(sym, pats, tpe, loc) =>
       val (ps, envs) = pats.map(specializePat(_, subst)).unzip
@@ -766,7 +840,7 @@ object Monomorpher {
   private def specializeFormalParam(fparam0: LoweredAst.FormalParam, subst0: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
     val LoweredAst.FormalParam(sym, mod, tpe, src, loc) = fparam0
     val freshSym = Symbol.freshVarSym(sym)
-    (MonoAst.FormalParam(freshSym, mod, subst0(tpe), src, loc), Map(sym -> freshSym))
+    (MonoAst.FormalParam(freshSym, mod, subst0(tpe), src, Occur.Unknown, loc), Map(sym -> freshSym))
   }
 
   /** Unifies `tpe1` and `tpe2` which must be unifiable. */

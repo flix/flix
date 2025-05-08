@@ -334,6 +334,9 @@ object TypeVerifier {
         case AtomicOp.MatchError =>
           tpe
 
+        case AtomicOp.CastError(_, _) =>
+          tpe
+
         case AtomicOp.RecordExtend(label) =>
           val List(t1, t2) = ts
           removeFromRecordType(tpe, label.name, loc) match {
@@ -359,6 +362,12 @@ object TypeVerifier {
               checkEq(tpe, elmt, loc)
             case None => failMismatchedShape(t1, s"Record with '${label.name}'", loc)
           }
+
+        case AtomicOp.ExtensibleIs(label) => ??? // TODO: Ext-Variants
+
+        case AtomicOp.ExtensibleTag(label) => ??? // TODO: Ext-Variants
+
+        case AtomicOp.ExtensibleUntag(label) => ??? // TODO: Ext-Variants
 
         case AtomicOp.Closure(sym) =>
           val defn = root.defs(sym)
