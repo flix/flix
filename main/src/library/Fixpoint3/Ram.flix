@@ -29,7 +29,7 @@ mod Fixpoint3.Ast.Ram {
     /////////////////////////////////////////////////////////////////////////////
 
     ///
-    /// A `RamProgram` represents a Datalog program
+    /// A `RamProgram` represents a Datalog program.
     /// 
     pub enum RamProgram {
         case Program(RamStmt, Facts, Predicates, IndexInformation)
