@@ -375,12 +375,17 @@ object Simplifier {
 
           case TypeConstructor.SchemaRowExtend(pred) =>
             val List(predType, rest) = tpe.typeArguments
-            val consType = predType match {
+            val consType0 = predType match {
               case Type.Apply(Type.Cst(TypeConstructor.Relation, _), ct, _) => ct
               case Type.Apply(Type.Cst(TypeConstructor.Lattice, _), ct, _) => ct
               case other => throw InternalCompilerException(s"Unexpected type: '$other'.", other.loc)
             }
-            MonoType.ExtensibleExtend(pred, visitType(consType), visitType(rest))
+            val consTypes = consType0.baseType match {
+              case Type.Cst(TypeConstructor.Tuple(_), _) => consType0.typeArguments
+              case Type.Cst(_, _) => List(consType0)
+              case other => throw InternalCompilerException(s"Unexpected type: '$other'.", other.loc)
+            }
+            MonoType.ExtensibleExtend(pred, consTypes.map(visitType), visitType(rest))
 
           case TypeConstructor.Region(_) => MonoType.Unit
 
@@ -541,8 +546,8 @@ object Simplifier {
             Type.mkRecord(visitPolyType(elm), loc)
 
           case TypeConstructor.Extensible =>
-            // TODO: Monomorphization?
-            ??? // TODO: Ext-Variants
+            val List(elm) = tpe.typeArguments
+            Type.Apply(Type.Cst(TypeConstructor.Extensible, loc), visitPolyType(elm), loc)
 
           case TypeConstructor.Region(_) => Type.mkUnit(loc)
 

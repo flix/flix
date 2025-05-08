@@ -87,7 +87,7 @@ object MonoType {
 
   case object ExtensibleEmpty extends MonoType
 
-  case class ExtensibleExtend(cons: Name.Pred, tpe: MonoType, rest: MonoType) extends MonoType
+  case class ExtensibleExtend(cons: Name.Pred, tpes: List[MonoType], rest: MonoType) extends MonoType
 
   case class Native(clazz: Class[?]) extends MonoType
 
