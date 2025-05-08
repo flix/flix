@@ -155,7 +155,7 @@ object Inliner {
 
             case None =>
               // It was not unconditionally inlined, so consider inlining at this occurrence site
-              callSiteInline(freshVarSym, ctx0, Expr.Var(freshVarSym, tpe, loc))
+              useSiteInline(freshVarSym, ctx0, Expr.Var(freshVarSym, tpe, loc))
           }
       }
 
@@ -545,7 +545,7 @@ object Inliner {
     * Throws an error if `sym` is not in scope. This also implies that it is the responsibility of the caller
     * to replace any symbol occurrence with the corresponding fresh symbol in the variable substitution.
     */
-  private def callSiteInline(sym: Symbol.VarSym, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, root: MonoAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+  private def useSiteInline(sym: Symbol.VarSym, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, root: MonoAst.Root, sctx: SharedContext, flix: Flix): Expr = {
     ctx0.inScopeVars.get(sym) match {
       case Some(BoundKind.LetBound(exp, occur)) if shouldInlineVar(sym, exp, occur) =>
         sctx.changed.putIfAbsent(sym0, ())
