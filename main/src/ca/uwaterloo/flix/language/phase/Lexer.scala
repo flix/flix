@@ -423,6 +423,7 @@ object Lexer {
       case _ if isKeyword("without") => TokenKind.KeywordWithout
       case _ if isKeyword("yield") => TokenKind.KeywordYield
       case _ if isKeyword("xor") => TokenKind.KeywordXor
+      case _ if isKeyword("xmatch") => TokenKind.KeywordXmatch
       case _ if isKeyword("xvar") => TokenKind.KeywordXvar
       case _ if isKeyword("Set#") => TokenKind.SetHash
       case _ if isKeyword("Array#") => TokenKind.ArrayHash
