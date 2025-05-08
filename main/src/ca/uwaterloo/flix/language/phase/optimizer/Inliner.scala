@@ -558,6 +558,9 @@ object Inliner {
       case Some(BoundKind.LetBound(exp, occur)) if shouldInlineVar(sym, exp, occur) =>
         Some(exp)
 
+      case Some(_) =>
+        None
+
       case None =>
         throw InternalCompilerException(s"unexpected evaluated var not in scope $sym", sym.loc)
     }
