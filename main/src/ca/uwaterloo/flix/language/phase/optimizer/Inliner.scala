@@ -155,7 +155,14 @@ object Inliner {
 
             case None =>
               // It was not unconditionally inlined, so consider inlining at this occurrence site
-              callSiteInline(freshVarSym, ctx0, Expr.Var(freshVarSym, tpe, loc))
+              useSiteInline(freshVarSym, ctx0) match {
+                case Some(exp) =>
+                  sctx.changed.putIfAbsent(sym0, ())
+                  visitExp(exp, ctx0.withSubst(Map.empty))
+
+                case None =>
+                  Expr.Var(freshVarSym, tpe, loc)
+              }
           }
       }
 
@@ -538,28 +545,32 @@ object Inliner {
   }
 
   /**
-    * Returns the definition of `sym` if it is let-bound and the [[shouldInlineVar]] predicate holds.
+    * Returns a [[Some]] with the definition of `sym` if it is let-bound and the [[shouldInlineVar]] predicate holds.
+    * The caller should visit the expression with an empty `subst`, i.e., `visitExp(exp, ctx0.withSubst(Map.empty))`.
     *
-    * Returns `default` otherwise.
+    * Returns [[None]] otherwise.
     *
     * Throws an error if `sym` is not in scope. This also implies that it is the responsibility of the caller
     * to replace any symbol occurrence with the corresponding fresh symbol in the variable substitution.
     */
-  private def callSiteInline(sym: Symbol.VarSym, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, root: MonoAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+  private def useSiteInline(sym: Symbol.VarSym, ctx0: LocalContext): Option[Expr] = {
     ctx0.inScopeVars.get(sym) match {
       case Some(BoundKind.LetBound(exp, occur)) if shouldInlineVar(sym, exp, occur) =>
-        sctx.changed.putIfAbsent(sym0, ())
-        visitExp(exp, ctx0.copy(subst = Map.empty))
+        Some(exp)
 
       case Some(_) =>
-        default
+        None
 
       case None =>
         throw InternalCompilerException(s"unexpected evaluated var not in scope $sym", sym.loc)
     }
   }
 
-  /** Returns `true` if `exp` is pure and should be inlined at the occurrence of `sym`. */
+  /**
+    * Returns `true` if `exp` is pure and should be inlined at the occurrence of `sym`.
+    *
+    * A lambda should be inlined if it has occurrence information [[Occur.OnceInLambda]] or [[Occur.OnceInLocalDef]].
+    */
   private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur): Boolean = (occur, exp.eff) match {
     case (Occur.Dead, _) => throw InternalCompilerException(s"unexpected call site inline of dead variable $sym", exp.loc)
     case (Occur.Once, Type.Pure) => throw InternalCompilerException(s"unexpected call site inline of pre-inlined variable $sym", exp.loc)
