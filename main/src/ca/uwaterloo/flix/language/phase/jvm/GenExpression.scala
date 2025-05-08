@@ -691,6 +691,12 @@ object GenExpression {
         mv.visitMethodInsn(INVOKEINTERFACE, interfaceType.jvmName.toInternalName, interfaceType.RestrictFieldMethod.name,
           MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(interfaceType.toTpe).toDescriptor, true)
 
+      case AtomicOp.ExtensibleIs(label) => ??? // TODO: Ext-Variants
+
+      case AtomicOp.ExtensibleTag(label) => ??? // TODO: Ext-Variants
+
+      case AtomicOp.ExtensibleUntag(label) => ??? // TODO: Ext-Variants
+
       case AtomicOp.ArrayLit =>
         // We push the 'length' of the array on top of stack
         compileInt(exps.length)
