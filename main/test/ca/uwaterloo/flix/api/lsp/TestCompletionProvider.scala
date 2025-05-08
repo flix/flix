@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source, SymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Token, TypedAst}
 import ca.uwaterloo.flix.language.phase.Lexer
@@ -281,13 +282,14 @@ class TestCompletionProvider extends AnyFunSuite {
       val defSymUses = getDefSymUseOccurs()(root1)
       for {
         defSymUse <- defSymUses
-        charsLeft <- listValidCharsLeft(defSymUse.sym.toString, defSymUse.loc)
+        loc = mkLocForName(defSymUse)
+        charsLeft <- listValidCharsLeft(defSymUse.sym.name, loc)
       }{
-          val alteredProgram = alterLocationInCode(program, defSymUse.loc, charsLeft)
-          val triggerPosition = Position(defSymUse.loc.sp1.lineOneIndexed, defSymUse.loc.sp1.colOneIndexed + charsLeft )
+          val alteredProgram = alterLocationInCode(program, loc, charsLeft)
+          val triggerPosition = Position(loc.sp1.lineOneIndexed, loc.sp1.colOneIndexed + charsLeft )
           val (root, errors) = compile(alteredProgram)
           val completions = CompletionProvider.getCompletions(Uri, triggerPosition, errors)(root, Flix).map(_.toCompletionItem(Flix))
-          assertNoDuplicatedCompletions(completions, defSymUse.sym.toString, defSymUse.loc, program, charsLeft)
+          assertNoDuplicatedCompletions(completions, defSymUse.sym.toString, loc, program, charsLeft)
       }
     })
   }
@@ -298,6 +300,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val varOccurs = getVarSymOccurs()(root1)
       for {
         (varSym, loc) <- varOccurs
+        loc = mkLocForName(varOccur)
         charsLeft <- listValidCharsLeft(varSym.text, loc)
       }{
           val alteredProgram = alterLocationInCode(program, loc, charsLeft)
@@ -356,6 +359,24 @@ class TestCompletionProvider extends AnyFunSuite {
   private def alterLocationInCode(program: String, loc: SourceLocation, charsLeft: Int): String = {
     val target = program.substring(calcOffset(loc.sp1), calcOffset(loc.sp2))
     program.substring(0, calcOffset(loc.sp1)) + target.take(charsLeft) + program.substring(calcOffset(loc.sp2))
+  }
+
+  /**
+    * Returns a new source location for the given DefSymUse that only contains the name of the symbol, namespace excluded.
+    */
+  private def mkLocForName(defSymUse: DefSymUse): SourceLocation = {
+    val name = defSymUse.sym.name
+    val sp2 = defSymUse.loc.sp2
+    defSymUse.loc.copy(sp1 = SourcePosition.mkFromOneIndexed(sp2.source, sp2.lineOneIndexed, sp2.colOneIndexed - name.length))
+  }
+
+  /**
+    * Returns a new source location for the given VarSym that only contains the name of the symbol, namespace excluded.
+    */
+  private def mkLocForName(varSym: Symbol.VarSym): SourceLocation = {
+    val name = varSym.text
+    val sp2 = varSym.loc.sp2
+    varSym.loc.copy(sp1 = SourcePosition.mkFromOneIndexed(sp2.source, sp2.lineOneIndexed, sp2.colOneIndexed - name.length))
   }
 
   /**
