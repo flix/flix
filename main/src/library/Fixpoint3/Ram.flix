@@ -74,9 +74,9 @@ mod Fixpoint3.Ast.Ram {
     /////////////////////////////////////////////////////////////////////////////
 
     ///
-    /// `Insert(body) represents an insert statement.
+    /// `Insert(body)` represents an insert statement.
     ///
-    /// `Merge(r1, r2) represents merging the facts of `r1` into `r2`
+    /// `Merge(r1, r2)` represents merging the facts of `r1` into `r2`
     ///
     /// `Swap(newRel, deltaRel)` represents swapping the facts of `deltaRel` and `newRel`.
     /// For multi-indexed relations the only guarantee is that all indexes on `deltaRel`
