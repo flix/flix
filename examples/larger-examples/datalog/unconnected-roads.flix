@@ -1,5 +1,5 @@
 pub def unconnected(roads: List[(city, city)]): Vector[(city, city)] with Order[city] =
-    let r = inject roads into Road;
+    let r = inject roads into Road(_, _);
     let lp = #{
         City(x) :- Road(x, _).
         City(y) :- Road(_, y).
