@@ -42,7 +42,7 @@ object OccurrenceAnalyzer {
     val visitedDefs = ParOps.parMapValues(changedDefs)(visitDef)
     val liveSyms = sctx.live.asScala.keys.toSet
     val liveDefs = root.defs.filter(kv => liveSyms.contains(kv._1))
-    root.copy(defs = liveDefs ++ visitedDefs)
+    root.copy(defs = root.defs ++ visitedDefs)
   }
 
   /**
