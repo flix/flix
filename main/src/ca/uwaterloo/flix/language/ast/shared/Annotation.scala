@@ -150,4 +150,27 @@ object Annotation {
     override def toString: String = "@" + name
   }
 
+  /**
+    * An AST node that represents an `@Inline` annotation.
+    *
+    * A function marked with `@Inline` is guaranteed to be inlined by the compiler.
+    * If it is recursive, it is only ever unrolled once.
+    *
+    * @param loc the source location of the annotation.
+    */
+  case class Inline(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@Inline"
+  }
+
+  /**
+    * An AST node that represents a `@DontInline` annotation.
+    *
+    * A function marked with `@DontInline` is guaranteed to never be inlined by the compiler.
+    *
+    * @param loc the source location of the annotation.
+    */
+  case class DontInline(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@DontInline"
+  }
+
 }

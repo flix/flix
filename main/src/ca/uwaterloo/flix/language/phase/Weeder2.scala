@@ -668,6 +668,8 @@ object Weeder2 {
         case "@Skip" => Skip(loc)
         case "@Test" | "@test" => Test(loc)
         case "@TailRec" => TailRecursive(loc)
+        case "@Inline" => Inline(loc)
+        case "@DontInline" => DontInline(loc)
         case other =>
           val error = UndefinedAnnotation(other, loc)
           sctx.errors.add(error)
