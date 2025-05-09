@@ -72,7 +72,7 @@ object Inliner {
   def run(root: MonoAst.Root)(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
     val sctx: SharedContext = SharedContext.mk()
     val defs = ParOps.parMapValues(root.defs)(visitDef(_)(sctx, root, flix))
-    val liveDefs = defs.filter { case (_, defn) => defn.spec.defContext.refs.get() > 0 }
+    val liveDefs = defs.filter { case (sym, defn) => root.entryPoints.contains(sym) || defn.spec.defContext.refs.get() > 0 }
     val newDelta = sctx.changed.asScala.keys.toSet
     (root.copy(defs = liveDefs), newDelta)
   }
