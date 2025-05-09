@@ -28,15 +28,12 @@ object Optimizer {
     var currentRoot = root
     var currentDelta = currentRoot.defs.keys.toSet
     for (_ <- 0 until 5) {
-      if (currentDelta.isEmpty) {
-        // Return early if we have reached a fixpoint.
-        return currentRoot
+      if (currentDelta.nonEmpty) {
+        val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(currentRoot, currentDelta)
+        val (newRoot, newDelta) = Inliner.run(afterOccurrenceAnalyzer)
+        currentRoot = newRoot
+        currentDelta = newDelta
       }
-
-      val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(currentRoot, currentDelta)
-      val (newRoot, newDelta) = Inliner.run(afterOccurrenceAnalyzer)
-      currentRoot = newRoot
-      currentDelta = newDelta
     }
     currentRoot
   }
