@@ -606,8 +606,6 @@ object Inliner {
     case Expr.LocalDef(_, _, _, Expr.ApplyLocalDef(_, exps, _, _, _), _, _, _, _) => exps.forall(isSimple)
     case Expr.Cast(exp, _, _, _) => isSingleAction(exp)
     case Expr.ApplyAtomic(op, exps, _, _, _) => op match {
-      case AtomicOp.Index(_) => exps.forall(isSimple)
-      case AtomicOp.Untag(_, _) => exps.forall(isSimple)
       case AtomicOp.ArrayNew => exps.forall(isSimple)
       case AtomicOp.ArrayLoad => exps.forall(isSimple)
       case AtomicOp.ArrayStore => exps.forall(isSimple)
