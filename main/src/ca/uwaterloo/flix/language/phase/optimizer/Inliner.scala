@@ -28,44 +28,44 @@ import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 
 /**
-  * Rewrites the body of each def using, using the following transformations:
-  *   - Copy Propagation:
-  * {{{
-  *     let x = 1;
-  *     f(x)
-  * }}}
-  *     becomes
-  * {{{
-  *     let x = 1;
-  *     f(1)
-  * }}}
-  *   - Dead Code Elimination
-  * {{{
-  *     let x = 1;
-  *     f(1)
-  * }}}
-  *     becomes
-  * {{{
-  *     f(1)
-  * }}}
-  *   - Inline Expansion
-  * {{{
-  *     f(1)
-  * }}}
-  *     becomes (where the definition of `f` is `x + 2`)
-  * {{{
-  *     (x -> x + 2)(1)
-  * }}}
-  *   - Beta Reduction
-  * {{{
-  *     (x -> x + 2)(1)
-  * }}}
-  *     becomes
-  * {{{
-  *     let x = 1;
-  *     x + 2
-  * }}}
-  */
+ * Rewrites the body of each def using, using the following transformations:
+ *   - Copy Propagation:
+ * {{{
+ *     let x = 1;
+ *     f(x)
+ * }}}
+ *     becomes
+ * {{{
+ *     let x = 1;
+ *     f(1)
+ * }}}
+ *   - Dead Code Elimination
+ * {{{
+ *     let x = 1;
+ *     f(1)
+ * }}}
+ *     becomes
+ * {{{
+ *     f(1)
+ * }}}
+ *   - Inline Expansion
+ * {{{
+ *     f(1)
+ * }}}
+ *     becomes (where the definition of `f` is `x + 2`)
+ * {{{
+ *     (x -> x + 2)(1)
+ * }}}
+ *   - Beta Reduction
+ * {{{
+ *     (x -> x + 2)(1)
+ * }}}
+ *     becomes
+ * {{{
+ *     let x = 1;
+ *     x + 2
+ * }}}
+ */
 object Inliner {
 
   /** Performs inlining on the given AST `root`. */
@@ -86,50 +86,50 @@ object Inliner {
   }
 
   /**
-    * Performs inlining on the expression `exp0`.
-    *
-    * To avoid duplicating variable names, [[visitExp]] unconditionally
-    * assigns new names to all variables.
-    * When a binder is visited, it replaces it with a fresh variable and adds
-    * it to the variable substitution `varSubst` in th LocalContext `ctx0`.
-    * When a variable is visited, it replaces the old variable with the fresh one.
-    * Top-level function parameters are not substituted unless inlined, in which case
-    * the parameters are let-bound and added to the variable substitution.
-    *
-    * Within `ctx0` [[visitExp]] also maintains an 'expression substitution' `subst` mapping symbols
-    * to expressions ([[SubstRange]]) which it uses unconditionally replace some variable occurrences (see below).
-    * It also maintains a set of in-scope variables `inScopeVars` mapping symbols to [[BoundKind]], i.e.,
-    * information on how a variable is bound. This is used to consider inlining at a variable occurrence.
-    * If a let-bound variable has been visited and is not in `subst`, then it must always be in `inScopeVars`.
-    * Importantly, only fresh variables are mapped in both `subst` and `inScopeVars`, so when a variable
-    * is encountered, `varSubst` must always be applied first to obtain the corresponding fresh variable.
-    *
-    * When [[visitExp]] encounters a variable `x` it first applies the substitution `varSubst` to
-    * obtain the fresh variable. If it is not in the substitution then the variable is a function parameter
-    * occurrence bound by the defining function with symbol `sym0`.
-    * If it obtains `x'` from the substitution, it does the following three things:
-    *   1. If `x'` is in the expression substitution `subst` it replaces the variable with
-    *      the expression, recursively calling [[visitExp]] with the substitution from the definition site
-    *      if it is a [[SubstRange.SuspendedExpr]].
-    *      This means that [[visitExp]] previously decided to unconditionally inline the let-binding
-    *   1. If it is a [[SubstRange.DoneExpr]] then it decided to do copy-propagation of that binding (see below).
-    *      It then recursively visits the expression using the empty substitution since the current substitution
-    *      is invalid in that scope.
-    *   1. If `x'` is not in the expression substitution, it must be in the set of in-scope variable
-    *      definitions and considers it for inlining if its definition is pure.
-    *
-    * When [[visitExp]] encounters a let-binding `let sym = e1; e2` it considers four cases
-    * (note that it always refreshes `sym` to `sym'` as mentioned above):
-    *   1. If the binding is dead and pure, it drops the binding and returns `visitExp(e2)`.
-    *   1. If the binding is dead and impure, it rewrites the binding to a statement.
-    *   1. If the binding occurs once and is pure, it adds the unvisited `e1` to the substitution `subst`,
-    *      drops the binding and unconditionally inlines it at the occurrence of `sym`.
-    *   1. If the binding occurs more than once, it first visits `e1` and considers the following:
-    *      (a) If the visited `e1` is trivial and pure, it removes the let-binding and unconditionally inlines
-    *      the visited `e1` at every occurrence of `sym`. This corresponds to copy-propagation.
-    *      (b) If the visited `e1` is nontrivial, it keeps the let-binding, adds the visited `e1` to the set
-    *      of in-scope variable definitions and considers it for inlining at every occurrence.
-    */
+   * Performs inlining on the expression `exp0`.
+   *
+   * To avoid duplicating variable names, [[visitExp]] unconditionally
+   * assigns new names to all variables.
+   * When a binder is visited, it replaces it with a fresh variable and adds
+   * it to the variable substitution `varSubst` in th LocalContext `ctx0`.
+   * When a variable is visited, it replaces the old variable with the fresh one.
+   * Top-level function parameters are not substituted unless inlined, in which case
+   * the parameters are let-bound and added to the variable substitution.
+   *
+   * Within `ctx0` [[visitExp]] also maintains an 'expression substitution' `subst` mapping symbols
+   * to expressions ([[SubstRange]]) which it uses unconditionally replace some variable occurrences (see below).
+   * It also maintains a set of in-scope variables `inScopeVars` mapping symbols to [[BoundKind]], i.e.,
+   * information on how a variable is bound. This is used to consider inlining at a variable occurrence.
+   * If a let-bound variable has been visited and is not in `subst`, then it must always be in `inScopeVars`.
+   * Importantly, only fresh variables are mapped in both `subst` and `inScopeVars`, so when a variable
+   * is encountered, `varSubst` must always be applied first to obtain the corresponding fresh variable.
+   *
+   * When [[visitExp]] encounters a variable `x` it first applies the substitution `varSubst` to
+   * obtain the fresh variable. If it is not in the substitution then the variable is a function parameter
+   * occurrence bound by the defining function with symbol `sym0`.
+   * If it obtains `x'` from the substitution, it does the following three things:
+   *   1. If `x'` is in the expression substitution `subst` it replaces the variable with
+   *      the expression, recursively calling [[visitExp]] with the substitution from the definition site
+   *      if it is a [[SubstRange.SuspendedExpr]].
+   *      This means that [[visitExp]] previously decided to unconditionally inline the let-binding
+   *   1. If it is a [[SubstRange.DoneExpr]] then it decided to do copy-propagation of that binding (see below).
+   *      It then recursively visits the expression using the empty substitution since the current substitution
+   *      is invalid in that scope.
+   *   1. If `x'` is not in the expression substitution, it must be in the set of in-scope variable
+   *      definitions and considers it for inlining if its definition is pure.
+   *
+   * When [[visitExp]] encounters a let-binding `let sym = e1; e2` it considers four cases
+   * (note that it always refreshes `sym` to `sym'` as mentioned above):
+   *   1. If the binding is dead and pure, it drops the binding and returns `visitExp(e2)`.
+   *   1. If the binding is dead and impure, it rewrites the binding to a statement.
+   *   1. If the binding occurs once and is pure, it adds the unvisited `e1` to the substitution `subst`,
+   *      drops the binding and unconditionally inlines it at the occurrence of `sym`.
+   *   1. If the binding occurs more than once, it first visits `e1` and considers the following:
+   *      (a) If the visited `e1` is trivial and pure, it removes the let-binding and unconditionally inlines
+   *      the visited `e1` at every occurrence of `sym`. This corresponds to copy-propagation.
+   *      (b) If the visited `e1` is nontrivial, it keeps the let-binding, adds the visited `e1` to the set
+   *      of in-scope variable definitions and considers it for inlining at every occurrence.
+   */
   private def visitExp(exp0: Expr, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): Expr = exp0 match {
     case Expr.Cst(cst, tpe, loc) =>
       Expr.Cst(cst, tpe, loc)
@@ -243,7 +243,7 @@ object Inliner {
 
       case _ =>
         // Simplify and maybe do copy-propagation
-        val e1 = visitExp(exp1, ctx0.withEmptyExprCtx)
+        val e1 = visitExp(exp1, ctx0)
         if (isSimple(e1) && exp1.eff == Type.Pure) {
           // Do copy propagation and drop let-binding
           sctx.changed.putIfAbsent(sym0, ())
@@ -367,10 +367,10 @@ object Inliner {
   }
 
   /**
-    * Returns a pattern with fresh variables and a substitution mapping the old variables the fresh variables.
-    *
-    * If a variable is unused it is rewritten to a wildcard pattern.
-    */
+   * Returns a pattern with fresh variables and a substitution mapping the old variables the fresh variables.
+   *
+   * If a variable is unused it is rewritten to a wildcard pattern.
+   */
   private def visitPattern(pat0: Pattern)(implicit flix: Flix): (Pattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
     case Pattern.Wild(tpe, loc) =>
       (Pattern.Wild(tpe, loc), Map.empty)
@@ -458,66 +458,66 @@ object Inliner {
   }
 
   /**
-    * Performs beta-reduction, binding `exps` as let-bindings.
-    *
-    * It is the responsibility of the caller to first visit `exps` and provide a substitution from the definition site
-    * of `exp`. The caller must not visit `exp`.
-    *
-    * [[bindArgs]] creates a series of let-bindings
-    * {{{
-    *   let sym1 = exp1;
-    *   // ...
-    *   let symn = expn;
-    *   exp
-    * }}}
-    * where `symi` is the symbol of the i-th formal parameter and `exp` is the body of the function.
-    *
-    * Lastly, it visits the top-most let-binding, thus possibly removing the bindings.
-    */
+   * Performs beta-reduction, binding `exps` as let-bindings.
+   *
+   * It is the responsibility of the caller to first visit `exps` and provide a substitution from the definition site
+   * of `exp`. The caller must not visit `exp`.
+   *
+   * [[bindArgs]] creates a series of let-bindings
+   * {{{
+   *   let sym1 = exp1;
+   *   // ...
+   *   let symn = expn;
+   *   exp
+   * }}}
+   * where `symi` is the symbol of the i-th formal parameter and `exp` is the body of the function.
+   *
+   * Lastly, it visits the top-most let-binding, thus possibly removing the bindings.
+   */
   private def bindArgs(exp: Expr, fparams: List[FormalParam], exps: List[Expr], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): Expr = {
     val letBindings = fparams.zip(exps).foldRight(exp) {
       case ((fparam, arg), acc) =>
         val eff = Type.mkUnion(arg.eff, acc.eff, loc)
         Expr.Let(fparam.sym, arg, acc, acc.tpe, eff, fparam.occur, loc)
     }
-    visitExp(letBindings, ctx0.withEmptyExprCtx)
+    visitExp(letBindings, ctx0)
   }
 
   /**
-    * Returns `true` if
-    *   - the local context shows that we are not currently inlining and
-    *   - `defn` does not refer to itself and
-    *   - it is either a higher-order function with a known lambda as argument or
-    *   - it is a direct call with simple arguments to another function or
-    *   - the body is simple.
-    *
-    * It is the responsibility of the caller to visit `exps` first.
-    *
-    * @param defn the definition of the function.
-    * @param exps the arguments to the function.
-    * @param ctx0 the local context.
-    */
+   * Returns `true` if
+   *   - the local context shows that we are not currently inlining and
+   *   - `defn` does not refer to itself and
+   *   - it is either a higher-order function with a known lambda as argument or
+   *   - it is a direct call with simple arguments to another function or
+   *   - the body is simple.
+   *
+   * It is the responsibility of the caller to visit `exps` first.
+   *
+   * @param defn the definition of the function.
+   * @param exps the arguments to the function.
+   * @param ctx0 the local context.
+   */
   private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext): Boolean = {
     !ctx0.currentlyInlining && !defn.spec.defContext.isSelfRef &&
       (isSingleAction(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))
   }
 
   /**
-    * Returns `true` if there exists [[Expr.Lambda]] in `exps`.
-    */
+   * Returns `true` if there exists [[Expr.Lambda]] in `exps`.
+   */
   private def hasKnownLambda(exps: List[Expr]): Boolean = {
     exps.exists(isLambda)
   }
 
   /**
-    * Returns a [[Some]] with the definition of `sym` if it is let-bound and the [[shouldInlineVar]] predicate holds.
-    * The caller should visit the expression with an empty `subst`, i.e., `visitExp(exp, ctx0.withSubst(Map.empty))`.
-    *
-    * Returns [[None]] otherwise.
-    *
-    * Throws an error if `sym` is not in scope. This also implies that it is the responsibility of the caller
-    * to replace any symbol occurrence with the corresponding fresh symbol in the variable substitution.
-    */
+   * Returns a [[Some]] with the definition of `sym` if it is let-bound and the [[shouldInlineVar]] predicate holds.
+   * The caller should visit the expression with an empty `subst`, i.e., `visitExp(exp, ctx0.withSubst(Map.empty))`.
+   *
+   * Returns [[None]] otherwise.
+   *
+   * Throws an error if `sym` is not in scope. This also implies that it is the responsibility of the caller
+   * to replace any symbol occurrence with the corresponding fresh symbol in the variable substitution.
+   */
   private def useSiteInline(sym: Symbol.VarSym, ctx0: LocalContext): Option[Expr] = {
     ctx0.inScopeVars.get(sym) match {
       case Some(BoundKind.LetBound(exp, occur)) if shouldInlineVar(sym, exp, occur) =>
@@ -532,10 +532,10 @@ object Inliner {
   }
 
   /**
-    * Returns `true` if `exp` is pure and should be inlined at the occurrence of `sym`.
-    *
-    * A lambda should be inlined if it has occurrence information [[Occur.OnceInLambda]] or [[Occur.OnceInLocalDef]].
-    */
+   * Returns `true` if `exp` is pure and should be inlined at the occurrence of `sym`.
+   *
+   * A lambda should be inlined if it has occurrence information [[Occur.OnceInLambda]] or [[Occur.OnceInLocalDef]].
+   */
   private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur): Boolean = (occur, exp.eff) match {
     case (Occur.Dead, _) => throw InternalCompilerException(s"unexpected call site inline of dead variable $sym", exp.loc)
     case (Occur.Once, Type.Pure) => throw InternalCompilerException(s"unexpected call site inline of pre-inlined variable $sym", exp.loc)
@@ -560,24 +560,24 @@ object Inliner {
   }
 
   /**
-    * Returns `true` if `exp0` is considered a trivial expression.
-    *
-    * A trivial expression is one of the following:
-    *   - [[Expr.Var]]
-    *   - Any expression where [[isCst]] holds.
-    *
-    * A pure and trivial expression can always be inlined even without duplicating work.
-    */
+   * Returns `true` if `exp0` is considered a trivial expression.
+   *
+   * A trivial expression is one of the following:
+   *   - [[Expr.Var]]
+   *   - Any expression where [[isCst]] holds.
+   *
+   * A pure and trivial expression can always be inlined even without duplicating work.
+   */
   private def isTrivial(exp0: Expr): Boolean = exp0 match {
     case Expr.Var(_, _, _) => true
     case exp => isCst(exp)
   }
 
   /**
-    * Returns `true` if `exp0` is a simple expression.
-    *
-    * A simple expression is a value-like expression where sub-expressions are trivial.
-    */
+   * Returns `true` if `exp0` is a simple expression.
+   *
+   * A simple expression is a value-like expression where sub-expressions are trivial.
+   */
   private def isSimple(exp0: Expr): Boolean = exp0 match {
     case Expr.Lambda(_, _, _, _) => true
     case Expr.ApplyAtomic(AtomicOp.Unary(_), exps, _, _, _) => exps.forall(isTrivial)
@@ -591,14 +591,14 @@ object Inliner {
   }
 
   /**
-    * Returns `true` if `exp0` is a single action expression.
-    *
-    * An expression is a single action if it performs one computational step. For example:
-    * - A single call with simple arguments.
-    * - A single arithmetic operation with simple arguments.
-    * - A single array operation with simple arguments.
-    * - A single JVM operation with simple arguments.
-    */
+   * Returns `true` if `exp0` is a single action expression.
+   *
+   * An expression is a single action if it performs one computational step. For example:
+   * - A single call with simple arguments.
+   * - A single arithmetic operation with simple arguments.
+   * - A single array operation with simple arguments.
+   * - A single JVM operation with simple arguments.
+   */
   @tailrec
   private def isSingleAction(exp0: Expr): Boolean = exp0 match {
     case Expr.ApplyClo(exp1, exp2, _, _, _) => isSimple(exp1) && isSimple(exp2)
@@ -627,11 +627,11 @@ object Inliner {
   private object SubstRange {
 
     /**
-      * An expression that will be inlined but is not yet visited.
-      * We must capture the substitution from its definition site to ensure
-      * we substitute the variables the inliner may have previously decided
-      * to inline.
-      */
+     * An expression that will be inlined but is not yet visited.
+     * We must capture the substitution from its definition site to ensure
+     * we substitute the variables the inliner may have previously decided
+     * to inline.
+     */
     case class SuspendedExpr(exp: MonoAst.Expr, subst: Map[Symbol.VarSym, SubstRange]) extends SubstRange
 
     /** An expression that will be inlined but has already been visited. */
@@ -652,56 +652,34 @@ object Inliner {
 
   }
 
-  /** Represents the compile-time evaluation state and is used like a stack. */
-  private sealed trait ExprContext
-
-  private object ExprContext {
-
-    /** The empty evaluation context. */
-    case object Empty extends ExprContext
-
-    /** Function application context. */
-    case class AppCtx(expr: Expr, subst: Map[Symbol.VarSym, SubstRange], ctx: ExprContext) extends ExprContext
-
-    /** Match-case expression context. */
-    case class MatchCtx(rules: List[MonoAst.MatchRule], subst: Map[Symbol.VarSym, SubstRange], ctx: ExprContext) extends ExprContext
-
-  }
-
   /**
-    * A wrapper class for all the different inlining environments.
-    *
-    * @param varSubst          a substitution on variables to variables.
-    * @param subst             a substitution on variables to expressions.
-    * @param inScopeVars       a set of variables considered to be in scope.
-    * @param exprCtx           a compile-time evaluation context.
-    * @param currentlyInlining a flag denoting whether the current traversal is part of an inline-expansion process.
-    */
-  private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], exprCtx: ExprContext, currentlyInlining: Boolean) {
-
-    /** Returns a [[LocalContext]] where [[exprCtx]] has be overwritten with [[ExprContext.Empty]]. */
-    def withEmptyExprCtx: LocalContext = {
-      this.copy(exprCtx = ExprContext.Empty)
-    }
+   * A wrapper class for all the different inlining environments.
+   *
+   * @param varSubst          a substitution on variables to variables.
+   * @param subst             a substitution on variables to expressions.
+   * @param inScopeVars       a set of variables considered to be in scope.
+   * @param currentlyInlining a flag denoting whether the current traversal is part of an inline-expansion process.
+   */
+  private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], currentlyInlining: Boolean) {
 
     /** Returns a [[LocalContext]] with the mapping `old -> fresh` added to [[varSubst]]. */
-    def addVarSubst(old: Symbol.VarSym, fresh: Symbol.VarSym): LocalContext = {
-      this.copy(varSubst = this.varSubst + (old -> fresh))
+    def addVarSubst(oldVar: Symbol.VarSym, freshVar: Symbol.VarSym): LocalContext = {
+      this.copy(varSubst = this.varSubst.updated(oldVar, freshVar))
     }
 
-    /** Returns a [[LocalContext]] with the mappings of `mappings` added to [[varSubst]]. */
-    def addVarSubsts(mappings: Map[Symbol.VarSym, Symbol.VarSym]): LocalContext = {
-      this.copy(varSubst = this.varSubst ++ mappings)
+    /** Returns a [[LocalContext]] with the mappings of `subst` added to [[varSubst]]. */
+    def addVarSubsts(subst: Map[Symbol.VarSym, Symbol.VarSym]): LocalContext = {
+      this.copy(varSubst = this.varSubst ++ subst)
     }
 
-    /** Returns a [[LocalContext]] with the mappings of `mappings` added to [[varSubst]]. */
-    def addVarSubsts(mappings: List[Map[Symbol.VarSym, Symbol.VarSym]]): LocalContext = {
-      this.copy(varSubst = mappings.foldLeft(this.varSubst)(_ ++ _))
+    /** Returns a [[LocalContext]] with the mappings of `l` added to [[varSubst]]. */
+    def addVarSubsts(l: List[Map[Symbol.VarSym, Symbol.VarSym]]): LocalContext = {
+      this.copy(varSubst = l.foldLeft(this.varSubst)(_ ++ _))
     }
 
     /** Returns a [[LocalContext]] with the mapping `sym -> substExpr` added to [[subst]]. */
     def addSubst(sym: Symbol.VarSym, substExpr: SubstRange): LocalContext = {
-      this.copy(subst = this.subst + (sym -> substExpr))
+      this.copy(subst = this.subst.updated(sym, substExpr))
     }
 
     /** Returns a [[LocalContext]] with [[subst]] overwritten by `newSubst`. */
@@ -711,24 +689,25 @@ object Inliner {
 
     /** Returns a [[LocalContext]] with the mapping `sym -> boundKind` added to [[inScopeVars]]. */
     def addInScopeVar(sym: Symbol.VarSym, boundKind: BoundKind): LocalContext = {
-      this.copy(inScopeVars = this.inScopeVars + (sym -> boundKind))
+      this.copy(inScopeVars = this.inScopeVars.updated(sym, boundKind))
     }
 
     /** Returns a [[LocalContext]] with the mappings of `mappings` added to [[inScopeVars]]. */
-    def addInScopeVars(mappings: Iterable[(Symbol.VarSym, BoundKind)]): LocalContext = {
-      this.copy(inScopeVars = this.inScopeVars ++ mappings)
+    def addInScopeVars(xs: Iterable[(Symbol.VarSym, BoundKind)]): LocalContext = {
+      this.copy(inScopeVars = this.inScopeVars ++ xs)
     }
 
     /** Returns a [[LocalContext]] where [[currentlyInlining]] is set to `true`. */
     def enableInliningMode: LocalContext = {
       this.copy(currentlyInlining = true)
     }
+
   }
 
   private object LocalContext {
 
     /** Returns the empty context with `currentlyInlining` set to `false`. */
-    val Empty: LocalContext = LocalContext(Map.empty, Map.empty, Map.empty, ExprContext.Empty, currentlyInlining = false)
+    val Empty: LocalContext = LocalContext(Map.empty, Map.empty, Map.empty, currentlyInlining = false)
 
   }
 
@@ -740,11 +719,11 @@ object Inliner {
   }
 
   /**
-    * A globally shared thread-safe context.
-    *
-    * @param changed the set of symbols of changed functions.
-    * @param live    the set of symbols of live functions.
-    */
+   * A globally shared thread-safe context.
+   *
+   * @param changed the set of symbols of changed functions.
+   * @param live    the set of symbols of live functions.
+   */
   private case class SharedContext(changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit])
 
 }
