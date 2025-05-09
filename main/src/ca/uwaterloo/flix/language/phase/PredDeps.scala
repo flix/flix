@@ -74,6 +74,7 @@ object PredDeps {
     */
   def termTypesAndDenotation(tpe: Type): (List[Type], Denotation) = eraseAliases(tpe) match {
     case Type.Apply(Type.Cst(tc, _), t, _) =>
+      // MATT THIS IS THE BAD SPOT!!!!!
       val den = tc match {
         case TypeConstructor.Relation(_) => Denotation.Relational
         case TypeConstructor.Lattice(_) => Denotation.Latticenal
