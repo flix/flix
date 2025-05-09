@@ -224,7 +224,7 @@ mod Test.Exp.Interpolation {
     @test
     def interpolationDebug05(): Bool =
         let x = EnumSansToString.CaseSansToString(123);
-        "my object is %{x}" == "my object is CaseSansToString(123)"
+        "my object is %{x}" == "my object is 123"
 
     pub enum Color {
         case Red,

@@ -364,6 +364,9 @@ object Inliner {
     case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map(visitJvmMethod(_, ctx0))
       Expr.NewObject(name, clazz, tpe, eff, methods, loc)
+
+    case Expr.JvmReflection(_, _, _, loc) =>
+      throw InternalCompilerException("Unexpected JvmReflection", loc)
   }
 
   /**

@@ -268,6 +268,9 @@ object OccurrenceAnalyzer {
         } else {
           (Expr.NewObject(name, clazz, tpe, eff, ms, loc), ctx)
         }
+
+      case Expr.JvmReflection(_, _, _, loc) =>
+        throw InternalCompilerException("Unexpected JvmReflection", loc)
     }
   }
 

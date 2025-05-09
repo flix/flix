@@ -250,6 +250,8 @@ object Simplifier {
       val methods = methods0 map visitJvmMethod
       SimplifiedAst.Expr.NewObject(name, clazz, t, simplifyEffect(eff), methods, loc)
 
+    case MonoAst.Expr.JvmReflection(_, _, _, loc) =>
+      throw InternalCompilerException("Unexpected JvmReflection", loc)
   }
 
   /**

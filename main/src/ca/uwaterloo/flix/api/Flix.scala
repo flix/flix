@@ -142,6 +142,7 @@ class Flix {
 
     // Reflect
     "Reflect.flix" -> LocalResource.get("/src/library/Reflect.flix"),
+    "JvmReflection.flix" -> LocalResource.get("/src/library/JvmReflection.flix"),
 
     // Debug
     "Debug.flix" -> LocalResource.get("/src/library/Debug.flix"),
@@ -655,7 +656,8 @@ class Flix {
     val loweringAst = Lowering.run(typedAst)
     val treeShaker1Ast = TreeShaker1.run(loweringAst)
     val monomorpherAst = Monomorpher.run(treeShaker1Ast)
-    val lambdaDropAst = LambdaDrop.run(monomorpherAst)
+    val enumOptimizerAst = EnumOptimizer.run(monomorpherAst)
+    val lambdaDropAst = LambdaDrop.run(enumOptimizerAst)
     val optimizerAst = Optimizer.run(lambdaDropAst)
     val simplifierAst = Simplifier.run(optimizerAst)
     val closureConvAst = ClosureConv.run(simplifierAst)

@@ -49,6 +49,7 @@ object TypedAstPrinter {
     case Expr.Discard(exp, _, _) => DocAst.Expr.Discard(print(exp))
     case Expr.Match(exp, rules, _, _, _) => DocAst.Expr.Match(print(exp), rules.map(printMatchRule))
     case Expr.TypeMatch(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.JvmReflection(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.RestrictableChoose(_, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.ExtensibleMatch(_, _, _, _, _, _, _, _, _) => DocAst.Expr.Unknown // TODO: Ext-Variants
     case Expr.Tag(sym, exps, _, _, _) => DocAst.Expr.Tag(sym.sym, exps.map(print))

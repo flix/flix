@@ -132,6 +132,8 @@ object NamedAst {
 
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], loc: SourceLocation) extends Expr
 
+    case class JvmReflection(exp: Expr, loc: SourceLocation) extends Expr
+
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
     case class ExtensibleMatch(label: Name.Label, exp1: Expr, sym2: Symbol.VarSym, exp2: Expr, sym3: Symbol.VarSym, exp3: Expr, loc: SourceLocation) extends Expr

@@ -19,6 +19,8 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, EffectSymUse, OpSymUse}
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.EliminatedBy
+import ca.uwaterloo.flix.language.phase.EnumOptimizer
 import ca.uwaterloo.flix.util.collection.Nel
 
 object MonoAst {
@@ -90,6 +92,9 @@ object MonoAst {
     }
 
     case class Match(exp: Expr, rules: List[MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    @EliminatedBy(EnumOptimizer.getClass)
+    case class JvmReflection(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
