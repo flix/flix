@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
+import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 
 /**
@@ -499,7 +500,7 @@ object Inliner {
     */
   private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext): Boolean = {
     !ctx0.currentlyInlining && !defn.spec.defContext.isSelfRef &&
-      (isSingleCall(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))
+      (isSingleAction(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))
   }
 
   /**
@@ -584,7 +585,7 @@ object Inliner {
     *   - [[Expr.ApplyAtomic]] with [[AtomicOp.Tag]] where for all subexpressions either [[isTrivial]] or [[isSimple]] holds.
     *   - Any expression where [[isTrivial]] holds.
     *
-    * A simple expression can be reduced by beta reduction, constant folding or deforestation.
+    * A simple expression -- that is closed -- can be reduced by beta reduction, constant folding or deforestation.
     */
   private def isSimple(exp0: Expr): Boolean = exp0 match {
     case Expr.Lambda(_, _, _, _) => true
@@ -596,29 +597,27 @@ object Inliner {
   }
 
   /**
-    * Returns `true` if `exp0` is a single call expression.
+    * Returns `true` if `exp0` is a single action expression.
     *
-    * A single call is expression is one of the following:
-    *   - [[Expr.ApplyClo]] where [[isSimple]] holds for all subexpressions.
-    *   - [[Expr.ApplyDef]] where [[isSimple]] holds for all subexpressions.
-    *   - [[Expr.LocalDef]] where the following expression is [[Expr.ApplyLocalDef]] and
-    *     [[isSimple]] holds for all subexpressions of the latter.
-    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.InvokeMethod]] where for all subexpressions [[isSimple]] holds.
-    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.InvokeConstructor]] where for all subexpressions [[isSimple]] holds.
-    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.InvokeStaticMethod]] where for all subexpressions [[isSimple]] holds.
-    *   - [[Expr.Cast]] where [[isSingleCall]] holds for the subexpression.
-    *
-    * This captures functions that simply forward to another function with possibly additional simple arguments.
-    * Inlining such a function reduces code size.
+    * An expression is a single action if it performs one computational step. For example:
+    * - A single call with simple arguments.
+    * - A single arithmetic operation with simple arguments.
+    * - A single array operation with simple arguments.
+    * - A single JVM operation with simple arguments.
     */
-  private def isSingleCall(exp0: Expr): Boolean = exp0 match {
+  @tailrec
+  private def isSingleAction(exp0: Expr): Boolean = exp0 match {
     case Expr.ApplyClo(exp1, exp2, _, _, _) => isSimple(exp1) && isSimple(exp2)
     case Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isSimple)
     case Expr.LocalDef(_, _, _, Expr.ApplyLocalDef(_, exps, _, _, _), _, _, _, _) => exps.forall(isSimple)
-    case Expr.ApplyAtomic(AtomicOp.InvokeMethod(_), exps, _, _, _) => exps.forall(isSimple)
+    case Expr.Cast(exp, _, _, _) => isSingleAction(exp)
     case Expr.ApplyAtomic(AtomicOp.InvokeConstructor(_), exps, _, _, _) => exps.forall(isSimple)
+    case Expr.ApplyAtomic(AtomicOp.InvokeMethod(_), exps, _, _, _) => exps.forall(isSimple)
     case Expr.ApplyAtomic(AtomicOp.InvokeStaticMethod(_), exps, _, _, _) => exps.forall(isSimple)
-    case Expr.Cast(exp, _, _, _) => isSingleCall(exp)
+    case Expr.ApplyAtomic(AtomicOp.GetField(_), exps, _, _, _) => exps.forall(isSimple)
+    case Expr.ApplyAtomic(AtomicOp.PutField(_), exps, _, _, _) => exps.forall(isSimple)
+    case Expr.ApplyAtomic(AtomicOp.GetStaticField(_), exps, _, _, _) => exps.forall(isSimple)
+    case Expr.ApplyAtomic(AtomicOp.PutStaticField(_), exps, _, _, _) => exps.forall(isSimple)
     case _ => false
   }
 
