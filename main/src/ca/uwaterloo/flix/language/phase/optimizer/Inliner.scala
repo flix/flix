@@ -652,6 +652,11 @@ object Inliner {
 
   }
 
+  private object LocalContext {
+    /** Returns the empty context with `currentlyInlining` set to `false`. */
+    val Empty: LocalContext = LocalContext(Map.empty, Map.empty, Map.empty, currentlyInlining = false)
+  }
+
   /**
    * A wrapper class for all the different inlining environments.
    *
@@ -704,18 +709,9 @@ object Inliner {
 
   }
 
-  private object LocalContext {
-
-    /** Returns the empty context with `currentlyInlining` set to `false`. */
-    val Empty: LocalContext = LocalContext(Map.empty, Map.empty, Map.empty, currentlyInlining = false)
-
-  }
-
   private object SharedContext {
-
     /** Returns a fresh [[SharedContext]]. */
     def mk(): SharedContext = new SharedContext(new ConcurrentHashMap(), new ConcurrentHashMap())
-
   }
 
   /**
