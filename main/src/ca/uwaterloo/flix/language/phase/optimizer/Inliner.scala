@@ -609,9 +609,9 @@ object Inliner {
     case Expr.Var(_, _, _) => 1
     case Expr.Lambda(_, exp, _, _) => size(exp) + 1
     case Expr.ApplyAtomic(_, exps, _, _, _) => exps.map(size).sum + 1
-    case Expr.ApplyClo(exp1, exp2, _, _, _) => size(exp1) + size(exp2) + 1
-    case Expr.ApplyDef(_, exps, _, _, _, _) => exps.map(size).sum + 1
-    case Expr.ApplyLocalDef(_, exps, _, _, _) => exps.map(size).sum + 1
+    case Expr.ApplyClo(exp1, exp2, _, _, _) => size(exp1) + size(exp2) + 3
+    case Expr.ApplyDef(_, exps, _, _, _, _) => exps.map(size).sum + 3
+    case Expr.ApplyLocalDef(_, exps, _, _, _) => exps.map(size).sum + 3
     case Expr.Let(_, exp1, exp2, _, _, _, _) => size(exp1) + size(exp2) + 1
     case Expr.LocalDef(_, _, exp1, exp2, _, _, _, _) => size(exp1) + size(exp2) + 1
     case Expr.Scope(_, _, exp, _, _, _) => size(exp) + 1
