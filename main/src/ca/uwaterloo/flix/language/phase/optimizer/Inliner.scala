@@ -73,7 +73,9 @@ object Inliner {
     val sctx: SharedContext = SharedContext.mk()
     val defs = ParOps.parMapValues(root.defs)(visitDef(_)(sctx, root, flix))
     val newDelta = sctx.changed.asScala.keys.toSet
-    (root.copy(defs = defs), newDelta)
+    val liveSyms = root.entryPoints ++ sctx.live.asScala.keys.toSet
+    val liveDefs = defs.filter(kv => liveSyms.contains(kv._1))
+    (root.copy(defs = liveDefs), newDelta)
   }
 
   /** Performs inlining on the body of `def0`. */
