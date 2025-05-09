@@ -573,18 +573,39 @@ object Inliner {
   }
 
   /**
-    * Returns `true` if `exp` is considered a trivial expression.
+    * Returns `true` if `exp0` is considered a trivial expression.
     *
-    * An expression is trivial if it is a:
-    *   - primitive literal (float, string, int, bool, unit)
-    *   - variable
+    * A trivial expression is one of the following:
+    *   - [[Expr.Var]]
+    *   - Any expression where [[isCst]] holds.
     *
     * A pure and trivial expression can always be inlined even without duplicating work.
     */
-  private def isTrivial(exp: Expr): Boolean = exp match {
-    case Expr.Cst(_, _, _) => true
+  private def isTrivial(exp0: Expr): Boolean = exp0 match {
     case Expr.Var(_, _, _) => true
-    case _ => false
+    case exp => false
+  }
+
+  /**
+    * Returns `true` if `exp0` is considered simple.
+    *
+    * A simple expression is one of the following:
+    *   - [[Expr.Lambda]]
+    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.Unary]] where for all operands [[isTrivial]] holds.
+    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.Binary]] where for all operands [[isTrivial]] holds.
+    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.Tuple]] where for all operands either [[isTrivial]] or [[isSimple]] holds.
+    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.Tag]] where for all operands either [[isTrivial]] or [[isSimple]] holds.
+    *   - Any expression where [[isTrivial]] holds.
+    *
+    * A simple expression can be reduced by beta reduction, constant folding or deforestation.
+    */
+  private def isSimple(exp0: Expr): Boolean = exp0 match {
+    case Expr.Lambda(_, _, _, _) => true
+    case Expr.ApplyAtomic(AtomicOp.Unary(_), exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.Binary(_), exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(e => isTrivial(e) || isSimple(e))
+    case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(e => isTrivial(e) || isSimple(e))
+    case exp => isTrivial(exp)
   }
 
   /** Represents the range of a substitution from variables to expressions. */
