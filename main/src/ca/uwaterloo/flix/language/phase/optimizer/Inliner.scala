@@ -197,6 +197,7 @@ object Inliner {
         val ctx = ctx0.withSubst(Map.empty).enableInliningMode
         bindArgs(defn.exp, defn.spec.fparams, es, loc, ctx)
       } else {
+        sctx.live.putIfAbsent(sym, ())
         val es = exps.map(visitExp(_, ctx0))
         Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
       }
