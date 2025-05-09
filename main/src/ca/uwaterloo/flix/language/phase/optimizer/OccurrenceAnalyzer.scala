@@ -36,13 +36,12 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on the given AST `root`.
     */
-  def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym])(implicit flix: Flix): MonoAst.Root = {
+  def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym])(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
     implicit val sctx: SharedContext = SharedContext.mk()
     val changedDefs = root.defs.filter(kv => delta.contains(kv._1))
     val visitedDefs = ParOps.parMapValues(changedDefs)(visitDef)
-    val liveSyms = sctx.live.asScala.keys.toSet
-    val liveDefs = root.defs.filter(kv => liveSyms.contains(kv._1))
-    root.copy(defs = root.defs ++ visitedDefs)
+    val liveSyms = sctx.live.asScala.keys.toSet ++ delta
+    (root.copy(defs = root.defs ++ visitedDefs), liveSyms)
   }
 
   /**
@@ -572,7 +571,7 @@ object OccurrenceAnalyzer {
     *
     * Represents a shared context. Must be thread-safe.
     *
-    * @param live a concurrent set of reachable symbols.
+    * @param live a concurrent set of used symbols.
     */
   private case class SharedContext(live: ConcurrentHashMap[Symbol.DefnSym, Unit])
 
