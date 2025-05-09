@@ -484,35 +484,12 @@ object Inliner {
   }
 
   /**
-    * Returns `true` if `exp0` is considered a trivial expression.
-    *
-    * An expression is trivial if it is a:
-    *   - primitive literal (float, string, int, bool, unit)
-    *   - variable
-    *   - unary expression with a trivial operand
-    *   - binary expression with trivial operands
-    *   - tag with trivial arguments
-    *   - tuple with trivial arguments
-    *
-    * A pure and trivial expression can always be inlined even without duplicating work.
-    */
-  private def isTrivial(exp0: Expr): Boolean = exp0 match {
-    case Expr.Cst(_, _, _) => true
-    case Expr.Var(_, _, _) => true
-    case Expr.ApplyAtomic(AtomicOp.Unary(_), exps, _, _, _) => exps.forall(isTrivial)
-    case Expr.ApplyAtomic(AtomicOp.Binary(_), exps, _, _, _) => exps.forall(isTrivial)
-    case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivial)
-    case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivial)
-    case _ => false
-  }
-
-  /**
     * Returns `true` if
     *   - the local context shows that we are not currently inlining and
     *   - `defn` does not refer to itself and
     *   - it is either a higher-order function with a known lambda as argument or
-    *   - it is a direct call to another function or
-    *   - the body is trivial.
+    *   - it is a direct call with simple arguments to another function or
+    *   - the body is simple.
     *
     * It is the responsibility of the caller to visit `exps` first.
     *
@@ -522,27 +499,14 @@ object Inliner {
     */
   private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext): Boolean = {
     !ctx0.currentlyInlining && !defn.spec.defContext.isSelfRef &&
-      (isDirectCall(defn.exp) || isTrivial(defn.exp) || hasKnownLambda(exps))
+      (isSingleCall(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))
   }
 
   /**
     * Returns `true` if there exists [[Expr.Lambda]] in `exps`.
     */
   private def hasKnownLambda(exps: List[Expr]): Boolean = {
-    exps.exists {
-      case Expr.Lambda(_, _, _, _) => true
-      case _ => false
-    }
-  }
-
-  /**
-    * Returns `true` if `exp0` is a function call with trivial arguments.
-    */
-  private def isDirectCall(exp0: MonoAst.Expr): Boolean = exp0 match {
-    case Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isTrivial)
-    case Expr.ApplyClo(exp1, exp2, _, _, _) => isTrivial(exp1) && isTrivial(exp2)
-    case Expr.LocalDef(_, _, _, Expr.ApplyLocalDef(_, exps, _, _, _), _, _, _, _) => exps.forall(isTrivial)
-    case _ => false
+    exps.exists(isLambda)
   }
 
   /**
@@ -582,12 +546,81 @@ object Inliner {
     case _ => false // Impure so do not move expression
   }
 
+  /** Returns `true` if `exp` is [[Expr.Cst]] and the constant is not a [[Constant.Regex]]. */
+  private def isCst(exp: Expr): Boolean = exp match {
+    case Expr.Cst(Constant.Regex(_), _, _) => false
+    case Expr.Cst(_, _, _) => true
+    case _ => false
+  }
+
   /** Returns `true` if `exp` is [[Expr.Lambda]]. */
   def isLambda(exp: MonoAst.Expr): Boolean = exp match {
     case Expr.Lambda(_, _, _, _) => true
     case _ => false
   }
 
+  /**
+    * Returns `true` if `exp0` is considered a trivial expression.
+    *
+    * A trivial expression is one of the following:
+    *   - [[Expr.Var]]
+    *   - Any expression where [[isCst]] holds.
+    *
+    * A pure and trivial expression can always be inlined even without duplicating work.
+    */
+  private def isTrivial(exp0: Expr): Boolean = exp0 match {
+    case Expr.Var(_, _, _) => true
+    case exp => isCst(exp)
+  }
+
+  /**
+    * Returns `true` if `exp0` is considered simple.
+    *
+    * A simple expression is one of the following:
+    *   - [[Expr.Lambda]]
+    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.Unary]] where for all operands [[isTrivial]] holds.
+    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.Binary]] where for all operands [[isTrivial]] holds.
+    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.Tuple]] where for all subexpressions either [[isTrivial]] or [[isSimple]] holds.
+    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.Tag]] where for all subexpressions either [[isTrivial]] or [[isSimple]] holds.
+    *   - Any expression where [[isTrivial]] holds.
+    *
+    * A simple expression can be reduced by beta reduction, constant folding or deforestation.
+    */
+  private def isSimple(exp0: Expr): Boolean = exp0 match {
+    case Expr.Lambda(_, _, _, _) => true
+    case Expr.ApplyAtomic(AtomicOp.Unary(_), exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.Binary(_), exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(e => isTrivial(e) || isSimple(e))
+    case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(e => isTrivial(e) || isSimple(e))
+    case exp => isTrivial(exp)
+  }
+
+  /**
+    * Returns `true` if `exp0` is a single call expression.
+    *
+    * A single call is expression is one of the following:
+    *   - [[Expr.ApplyClo]] where [[isSimple]] holds for all subexpressions.
+    *   - [[Expr.ApplyDef]] where [[isSimple]] holds for all subexpressions.
+    *   - [[Expr.LocalDef]] where the following expression is [[Expr.ApplyLocalDef]] and
+    *     [[isSimple]] holds for all subexpressions of the latter.
+    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.InvokeMethod]] where for all subexpressions [[isSimple]] holds.
+    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.InvokeConstructor]] where for all subexpressions [[isSimple]] holds.
+    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.InvokeStaticMethod]] where for all subexpressions [[isSimple]] holds.
+    *   - [[Expr.Cast]] where [[isSingleCall]] holds for the subexpression.
+    *
+    * This captures functions that simply forward to another function with possibly additional simple arguments.
+    * Inlining such a function reduces code size.
+    */
+  private def isSingleCall(exp0: Expr): Boolean = exp0 match {
+    case Expr.ApplyClo(exp1, exp2, _, _, _) => isSimple(exp1) && isSimple(exp2)
+    case Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isSimple)
+    case Expr.LocalDef(_, _, _, Expr.ApplyLocalDef(_, exps, _, _, _), _, _, _, _) => exps.forall(isSimple)
+    case Expr.ApplyAtomic(AtomicOp.InvokeMethod(_), exps, _, _, _) => exps.forall(isSimple)
+    case Expr.ApplyAtomic(AtomicOp.InvokeConstructor(_), exps, _, _, _) => exps.forall(isSimple)
+    case Expr.ApplyAtomic(AtomicOp.InvokeStaticMethod(_), exps, _, _, _) => exps.forall(isSimple)
+    case Expr.Cast(exp, _, _, _) => isSingleCall(exp)
+    case _ => false
+  }
 
   /** Represents the range of a substitution from variables to expressions. */
   sealed private trait SubstRange
