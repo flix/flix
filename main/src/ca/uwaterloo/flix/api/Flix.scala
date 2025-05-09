@@ -162,6 +162,7 @@ class Flix {
     "BigDecimal.flix" -> LocalResource.get("/src/library/BigDecimal.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Box.flix" -> LocalResource.get("/src/library/Box.flix"),
+    "BPlusTree.flix" -> LocalResource.get("/src/library/BPlusTree.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "CodePoint.flix" -> LocalResource.get("/src/library/CodePoint.flix"),

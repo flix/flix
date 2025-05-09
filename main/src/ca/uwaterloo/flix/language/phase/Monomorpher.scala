@@ -583,8 +583,7 @@ object Monomorpher {
       MonoAst.Expr.VectorLength(e, loc)
 
     case LoweredAst.Expr.Ascribe(exp, tpe, eff, loc) =>
-      val e = specializeExp(exp, env0, subst)
-      MonoAst.Expr.Ascribe(e, subst(tpe), subst(eff), loc)
+      specializeExp(exp, env0, subst)
 
     case LoweredAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>
       // Drop the declaredType and declaredEff.
