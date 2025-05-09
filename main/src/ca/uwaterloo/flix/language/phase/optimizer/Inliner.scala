@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
+import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 
 /**
@@ -177,7 +178,9 @@ object Inliner {
       Expr.ApplyAtomic(op, es, tpe, eff, loc)
 
     case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
-      visitExp(exp1, ctx0) match {
+      val appCtx = ExprContext.AppCtx(exp2, ctx0.subst, ctx0.exprCtx)
+      val ctx1 = ctx0.addExprCtx(appCtx)
+      visitExp(exp1, ctx1) match {
         case Expr.Lambda(fparam, e1, _, _) =>
           sctx.changed.putIfAbsent(sym0, ())
           val e2 = visitExp(exp2, ctx0)
@@ -280,6 +283,7 @@ object Inliner {
         val ctx2 = ctx1.addVarSubsts(varSubsts)
           .addInScopeVar(sym, BoundKind.ParameterOrPattern)
           .addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
+          .withEmptyExprCtx
         val e1 = visitExp(exp1, ctx2)
         Expr.LocalDef(freshVarSym, fps, e1, e2, tpe, eff, occur, loc)
     }
@@ -291,7 +295,7 @@ object Inliner {
       Expr.Scope(freshVarSym, rvar, e, tpe, eff, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, ctx0)
+      val e1 = visitExp(exp1, ctx0.withEmptyExprCtx)
       e1 match {
         case Expr.Cst(Constant.Bool(true), _, _) =>
           sctx.changed.putIfAbsent(sym0, ())
@@ -322,8 +326,10 @@ object Inliner {
       Expr.Discard(e, eff, loc)
 
     case Expr.Match(exp, rules, tpe, eff, loc) =>
+      val matchCtx = ExprContext.MatchCtx(rules, ctx0.subst, ctx0.exprCtx)
+      val ctx = ctx0.addExprCtx(matchCtx)
+      val e = visitExp(exp, ctx)
       val rs = rules.map(visitMatchRule(_, ctx0))
-      val e = visitExp(exp, ctx0)
       Expr.Match(e, rs, tpe, eff, loc)
 
     case Expr.VectorLit(exps, tpe, eff, loc) =>
@@ -484,6 +490,153 @@ object Inliner {
   }
 
   /**
+    * Returns `true` if the `exp` should be inlined at the calling occurrence site
+    * for a variable that has occurrence information [[Occur.Many]].
+    */
+  private def shouldInlineMulti(exp: Expr, ctx0: LocalContext)(implicit root: MonoAst.Root): Boolean = {
+    noSizeIncrease(exp, ctx0) || (someBenefit(exp, ctx0) && (isTrivial(exp) || smallEnough(exp, ctx0)))
+  }
+
+  /**
+    * Returns true if `exp0` is a lambda and the size of its definition is less than or equal to
+    * the size of the call.
+    */
+  private def noSizeIncrease(exp0: Expr, ctx0: LocalContext)(implicit root: MonoAst.Root): Boolean = exp0 match {
+    case Expr.Lambda(_, exp, _, _) =>
+      val bodySize = size(exp)
+      val args = collectLambdaArgs(exp0, ctx0.exprCtx, ctx0)
+      val callSize = args.map(_._1).map(size).sum
+      bodySize <= callSize
+
+    case _ => false
+  }
+
+  private def someBenefit(exp0: Expr, ctx0: LocalContext): Boolean = exp0 match {
+    case Expr.Lambda(_, _, _, _) =>
+      argsAreReducible(exp0, ctx0.exprCtx, ctx0) || isFullyApplied(exp0, ctx0.exprCtx)
+
+    case Expr.ApplyAtomic(AtomicOp.Tag(_), _, _, _, _) => ctx0.exprCtx match {
+      case ExprContext.MatchCtx(_, _, _) => true
+      case _ => false
+    }
+    case Expr.ApplyAtomic(AtomicOp.Tuple, _, _, _, _) => ctx0.exprCtx match {
+      case ExprContext.MatchCtx(_, _, _) => true
+      case _ => false
+    }
+
+    case _ => false
+  }
+
+  private def smallEnough(exp0: Expr, ctx0: LocalContext): Boolean = exp0 match {
+    case Expr.Lambda(_, exp, _, _) =>
+      val bodySize = size(exp)
+      val args = collectLambdaArgs(exp, ctx0.exprCtx, ctx0)
+      val callSize = args.map(_._1).map(size).sum
+      val argDiscount = computeArgDiscount(args.map { case (_, bk, ctx) => (bk, ctx) })
+      val resultDiscount = computeResultDiscount(exp)
+      val keenness = 1.5
+      val threshold = 8
+      bodySize - callSize - (argDiscount * keenness + resultDiscount * keenness) <= threshold
+
+    case _ => false
+  }
+
+  @tailrec
+  private def argsAreReducible(exp0: Expr, exprCtx: ExprContext, ctx0: LocalContext): Boolean = (exp0, exprCtx) match {
+    case (Expr.Lambda(_, body, _, _), ExprContext.AppCtx(arg, _, ctx)) =>
+      !isTrivial(arg) || letBoundVariable(arg, ctx0) || argsAreReducible(body, ctx, ctx0)
+    case _ => false
+  }
+
+  private def letBoundVariable(expr: MonoAst.Expr, ctx0: LocalContext): Boolean = expr match {
+    case Expr.Var(sym, _, _) => ctx0.varSubst.get(sym) match {
+      case Some(freshSym) => ctx0.inScopeVars.get(freshSym) match {
+        case Some(BoundKind.ParameterOrPattern) => false
+        case Some(BoundKind.LetBound(_, _)) => true
+        case None => false
+      }
+      case None => false
+    }
+    case _ => false
+  }
+
+  @tailrec
+  private def isFullyApplied(exp0: Expr, exprCtx: ExprContext): Boolean = (exp0, exprCtx) match {
+    case (Expr.Lambda(_, exp, _, _), ExprContext.AppCtx(_, _, ctx)) => isFullyApplied(exp, ctx)
+    case (Expr.Lambda(_, _, _, _), _) => false
+    case _ => true
+  }
+
+  private def computeArgDiscount(args: List[(BoundKind, ExprContext)]): Int = args.map {
+    case (BoundKind.LetBound(_, _), ExprContext.AppCtx(_, _, _)) => 1
+    case (BoundKind.LetBound(_, _), ExprContext.MatchCtx(_, _, _)) => 1
+    case _ => 0
+  }.sum
+
+  private def computeResultDiscount(exp: Expr): Int = {
+    val res = resultExp(exp)
+    if (isTrivial(res) || isLambda(res)) 1 else 0
+  }
+
+  /**
+    * Returns a tuple of the arg expression, its BoundKind ([[BoundKind.ParameterOrPattern]] if not applicable) and its own context.
+    */
+  private def collectLambdaArgs(exp0: Expr, ectx0: ExprContext, ctx0: LocalContext): List[(Expr, BoundKind, ExprContext)] = (exp0, ectx0) match {
+    case (Expr.Lambda(_, body, _, _), ExprContext.AppCtx(exp@Expr.Var(sym, _, _), _, ctx)) =>
+      (exp, getEvaluationState(sym, ctx0), ctx) :: collectLambdaArgs(body, ctx, ctx0)
+    case (Expr.Lambda(_, body, _, _), ExprContext.AppCtx(exp, _, ctx)) =>
+      (exp, BoundKind.ParameterOrPattern, ctx) :: collectLambdaArgs(body, ctx, ctx0)
+    case _ => Nil
+  }
+
+  /** Returns the [[BoundKind]] for `sym`. The symbol must be in scope, otherwise an exception is thrown. */
+  private def getEvaluationState(sym: Symbol.VarSym, ctx0: LocalContext): BoundKind = ctx0.varSubst.get(sym) match {
+    case Some(freshSym) => ctx0.inScopeVars.getOrElse(freshSym, BoundKind.ParameterOrPattern)
+    case None => BoundKind.ParameterOrPattern
+  }
+
+  /**
+    * Returns the number of subexpressions in `exp0` including itself.
+    */
+  private def size(exp0: Expr): Int = exp0 match {
+    case Expr.Cst(_, _, _) => 1
+    case Expr.Var(_, _, _) => 1
+    case Expr.Lambda(_, exp, _, _) => size(exp) + 1
+    case Expr.ApplyAtomic(_, exps, _, _, _) => exps.map(size).sum + 1
+    case Expr.ApplyClo(exp1, exp2, _, _, _) => size(exp1) + size(exp2) + 3
+    case Expr.ApplyDef(_, exps, _, _, _, _) => exps.map(size).sum + 3
+    case Expr.ApplyLocalDef(_, exps, _, _, _) => exps.map(size).sum + 3
+    case Expr.Let(_, exp1, exp2, _, _, _, _) => size(exp1) + size(exp2) + 1
+    case Expr.LocalDef(_, _, exp1, exp2, _, _, _, _) => size(exp1) + size(exp2) + 1
+    case Expr.Scope(_, _, exp, _, _, _) => size(exp) + 1
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => size(exp1) + size(exp2) + size(exp3) + 1
+    case Expr.Stm(exp1, exp2, _, _, _) => size(exp1) + size(exp2) + 1
+    case Expr.Discard(exp, _, _) => size(exp) + 1
+    case Expr.Match(exp, rules, _, _, _) => size(exp) + rules.map(_.exp).map(size).sum + 1
+    case Expr.VectorLit(exps, _, _, _) => exps.map(size).sum
+    case Expr.VectorLoad(exp1, exp2, _, _, _) => size(exp1) + size(exp2) + 1
+    case Expr.VectorLength(exp, _) => size(exp) + 1
+    case Expr.Ascribe(exp, _, _, _) => size(exp) + 1
+    case Expr.Cast(exp, _, _, _) => size(exp) + 1
+    case Expr.TryCatch(exp, rules, _, _, _) => size(exp) + rules.map(_.exp).map(size).sum + 1
+    case Expr.RunWith(exp, _, rules, _, _, _) => size(exp) + rules.map(_.exp).map(size).sum + 1
+    case Expr.Do(_, exps, _, _, _) => exps.map(size).sum + 1
+    case Expr.NewObject(_, _, _, _, methods, _) => methods.map(_.exp).map(size).sum + 1
+  }
+
+  @tailrec
+  private def resultExp(exp0: Expr): Expr = exp0 match {
+    case Expr.Let(_, _, exp2, _, _, _, _) => resultExp(exp2)
+    case Expr.LocalDef(_, _, _, exp2, _, _, _, _) => resultExp(exp2)
+    case Expr.Scope(_, _, exp, _, _, _) => resultExp(exp)
+    case Expr.Stm(_, exp2, _, _, _) => resultExp(exp2)
+    case Expr.Ascribe(exp, _, _, _) => resultExp(exp)
+    case Expr.Cast(exp, _, _, _) => resultExp(exp)
+    case exp => exp
+  }
+
+  /**
+    *
     * Returns `true` if
     *   - the local context shows that we are not currently inlining and
     *   - `defn` does not refer to itself and
@@ -518,9 +671,9 @@ object Inliner {
     * Throws an error if `sym` is not in scope. This also implies that it is the responsibility of the caller
     * to replace any symbol occurrence with the corresponding fresh symbol in the variable substitution.
     */
-  private def useSiteInline(sym: Symbol.VarSym, ctx0: LocalContext): Option[Expr] = {
+  private def useSiteInline(sym: Symbol.VarSym, ctx0: LocalContext)(implicit root: MonoAst.Root): Option[Expr] = {
     ctx0.inScopeVars.get(sym) match {
-      case Some(BoundKind.LetBound(exp, occur)) if shouldInlineVar(sym, exp, occur) =>
+      case Some(BoundKind.LetBound(exp, occur)) if shouldInlineVar(sym, exp, occur, ctx0) =>
         Some(exp)
 
       case Some(_) =>
@@ -536,13 +689,13 @@ object Inliner {
     *
     * A lambda should be inlined if it has occurrence information [[Occur.OnceInLambda]] or [[Occur.OnceInLocalDef]].
     */
-  private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur): Boolean = (occur, exp.eff) match {
+  private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur, ctx0: LocalContext)(implicit root: MonoAst.Root): Boolean = (occur, exp.eff) match {
     case (Occur.Dead, _) => throw InternalCompilerException(s"unexpected call site inline of dead variable $sym", exp.loc)
     case (Occur.Once, Type.Pure) => throw InternalCompilerException(s"unexpected call site inline of pre-inlined variable $sym", exp.loc)
-    case (Occur.OnceInLambda, Type.Pure) => isLambda(exp)
-    case (Occur.OnceInLocalDef, Type.Pure) => isLambda(exp)
-    case (Occur.ManyBranch, Type.Pure) => false
-    case (Occur.Many, Type.Pure) => false
+    case (Occur.OnceInLambda, Type.Pure) => (isTrivial(exp) || isLambda(exp)) && someBenefit(exp, ctx0)
+    case (Occur.OnceInLocalDef, Type.Pure) => (isTrivial(exp) || isLambda(exp)) && someBenefit(exp, ctx0)
+    case (Occur.ManyBranch, Type.Pure) => shouldInlineMulti(exp, ctx0)
+    case (Occur.Many, Type.Pure) => (isTrivial(exp) || isLambda(exp)) && shouldInlineMulti(exp, ctx0)
     case _ => false // Impure so do not move expression
   }
 
@@ -611,6 +764,7 @@ object Inliner {
     * This captures functions that simply forward to another function with possibly additional simple arguments.
     * Inlining such a function reduces code size.
     */
+  @tailrec
   private def isSingleCall(exp0: Expr): Boolean = exp0 match {
     case Expr.ApplyClo(exp1, exp2, _, _, _) => isSimple(exp1) && isSimple(exp2)
     case Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isSimple)
@@ -680,9 +834,17 @@ object Inliner {
     */
   private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], exprCtx: ExprContext, currentlyInlining: Boolean) {
 
-    /** Returns a [[LocalContext]] where [[exprCtx]] has be overwritten with [[ExprContext.Empty]]. */
+    /** Returns a [[LocalContext]] where [[exprCtx]] has been overwritten with [[ExprContext.Empty]]. */
     def withEmptyExprCtx: LocalContext = {
       this.copy(exprCtx = ExprContext.Empty)
+    }
+
+    /**
+      * Returns a [[LocalContext]] where [[exprCtx]] has been overwritten with `ctx`.
+      * Thus, it is the caller's responsibility to save the current expression context.
+      */
+    def addExprCtx(ctx: ExprContext): LocalContext = {
+      this.copy(exprCtx = ctx)
     }
 
     /** Returns a [[LocalContext]] with the mapping `old -> fresh` added to [[varSubst]]. */
