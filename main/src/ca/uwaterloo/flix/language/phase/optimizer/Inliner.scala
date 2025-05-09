@@ -573,7 +573,7 @@ object Inliner {
   }
 
   /**
-    * Returns `true` if `exp0` is considered a trivial expression.
+    * Returns `true` if `exp` is considered a trivial expression.
     *
     * An expression is trivial if it is a:
     *   - primitive literal (float, string, int, bool, unit)
