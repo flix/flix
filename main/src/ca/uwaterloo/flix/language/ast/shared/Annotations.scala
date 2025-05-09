@@ -85,4 +85,16 @@ case class Annotations(annotations: List[Annotation]) {
     * Returns `true` if `this` sequence contains the `@Test` annotation.
     */
   def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
+
+
+  /**
+    * Returns `true` if `this` sequence contains the `@Inline` annotation.
+    */
+  def isInline: Boolean = annotations.exists(_.isInstanceOf[Annotation.Inline])
+
+  /**
+    * Returns `true` if `this` sequence contains the `@DontInline` annotation.
+    */
+  def isDontInline: Boolean = annotations.exists(_.isInstanceOf[Annotation.DontInline])
+
 }
