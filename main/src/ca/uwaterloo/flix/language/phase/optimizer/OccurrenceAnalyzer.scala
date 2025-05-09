@@ -31,15 +31,12 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
   */
 object OccurrenceAnalyzer {
 
-  private var hasCountedRefs: Boolean = false
-
   /**
     * Performs occurrence analysis on the given AST `root`.
     */
   def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym])(implicit flix: Flix): MonoAst.Root = {
     val changedDefs = root.defs.filter(kv => delta.contains(kv._1))
     val visitedDefs = ParOps.parMapValues(changedDefs)(visitDef(_)(root))
-    hasCountedRefs = true
     root.copy(defs = root.defs ++ visitedDefs)
   }
 
@@ -49,7 +46,7 @@ object OccurrenceAnalyzer {
   private def visitDef(defn: MonoAst.Def)(implicit root: MonoAst.Root): MonoAst.Def = {
     val lctx: LocalContext = LocalContext.mk()
     val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx, root)
-    val defContext = DefContext(lctx.localDefs.get(), isSelfRef(ctx.selfOccur), defn.spec.defContext.refs)
+    val defContext = defn.spec.defContext.copy(localDefs = lctx.localDefs.get(), isSelfRef = isSelfRef(ctx.selfOccur))
     val fparams = defn.spec.fparams.map(visitFormalParam(_, ctx))
     val spec = defn.spec.copy(fparams = fparams, defContext = defContext)
     MonoAst.Def(defn.sym, spec, exp, defn.loc)
@@ -104,9 +101,7 @@ object OccurrenceAnalyzer {
         val ctx1 = if (sym == sym0) {
           ExprContext.RecursiveOnce
         } else {
-          if (!hasCountedRefs) {
-            root.defs(sym).spec.defContext.refs.incrementAndGet()
-          }
+          root.defs(sym).spec.defContext.refs.incrementAndGet()
           ExprContext.Empty
         }
         val ctx2 = ctxs.foldLeft(ctx1)(combineSeq)
