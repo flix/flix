@@ -568,10 +568,9 @@ object OccurrenceAnalyzer {
   }
 
   /**
-    *
     * Represents a shared context. Must be thread-safe.
     *
-    * @param live a concurrent set of used symbols.
+    * @param live a concurrent set of live symbols.
     */
   private case class SharedContext(live: ConcurrentHashMap[Symbol.DefnSym, Unit])
 
