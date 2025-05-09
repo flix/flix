@@ -69,7 +69,7 @@ import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 object Inliner {
 
   /** Performs inlining on the given AST `root`. */
-  def run(root: MonoAst.Root)(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
+  def run(root: MonoAst.Root)(implicit inlined: ConcurrentHashMap[Symbol.DefnSym, Unit], flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
     val sctx: SharedContext = SharedContext.mk()
     val defs = ParOps.parMapValues(root.defs)(visitDef(_)(sctx, root, flix))
     val newDelta = sctx.changed.asScala.keys.toSet
@@ -79,9 +79,9 @@ object Inliner {
   }
 
   /** Performs inlining on the body of `def0`. */
-  private def visitDef(def0: MonoAst.Def)(implicit sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.Def = def0 match {
+  private def visitDef(def0: MonoAst.Def)(implicit sctx: SharedContext, root: MonoAst.Root, inlined: ConcurrentHashMap[Symbol.DefnSym, Unit], flix: Flix): MonoAst.Def = def0 match {
     case MonoAst.Def(sym, spec, exp, loc) =>
-      val e = visitExp(exp, LocalContext.Empty)(sym, sctx, root, flix)
+      val e = visitExp(exp, LocalContext.Empty)(sym, sctx, root, inlined, flix)
       MonoAst.Def(sym, spec, e, loc)
   }
 
@@ -130,7 +130,7 @@ object Inliner {
     *      (b) If the visited `e1` is nontrivial, it keeps the let-binding, adds the visited `e1` to the set
     *      of in-scope variable definitions and considers it for inlining at every occurrence.
     */
-  private def visitExp(exp0: Expr, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): Expr = exp0 match {
+  private def visitExp(exp0: Expr, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, inlined: ConcurrentHashMap[Symbol.DefnSym, Unit], flix: Flix): Expr = exp0 match {
     case Expr.Cst(cst, tpe, loc) =>
       Expr.Cst(cst, tpe, loc)
 

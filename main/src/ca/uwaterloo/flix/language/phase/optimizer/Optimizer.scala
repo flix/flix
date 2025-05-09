@@ -17,7 +17,10 @@ package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
+
+import java.util.concurrent.ConcurrentHashMap
 
 object Optimizer {
 
@@ -27,6 +30,7 @@ object Optimizer {
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer") {
     var currentRoot = root
     var currentDelta = currentRoot.defs.keys.toSet
+    implicit val inlined: ConcurrentHashMap[Symbol.DefnSym, Unit] = new ConcurrentHashMap()
     for (_ <- 0 until 5) {
       if (currentDelta.isEmpty) {
         // Return early if we have reached a fixpoint.
