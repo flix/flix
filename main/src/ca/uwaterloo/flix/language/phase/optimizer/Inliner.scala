@@ -503,10 +503,9 @@ object Inliner {
     */
   private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, inlined: ConcurrentHashMap[Symbol.DefnSym, ConcurrentHashMap[Symbol.DefnSym, Unit]]): Boolean = {
     val isInlinedHere = inlined.getOrDefault(defn.sym, new ConcurrentHashMap()).containsKey(sym0)
-    !defn.spec.ann.isDontInline &&
-      ((defn.spec.ann.isInline && defn.spec.defContext.isSelfRef && !isInlinedHere) || !defn.spec.defContext.isSelfRef || (defn.spec.ann.isInline && !defn.spec.defContext.isSelfRef)) &&
-      !ctx0.currentlyInlining &&
-      (isSingleAction(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))
+    (!defn.spec.ann.isDontInline && !defn.spec.defContext.isSelfRef && !ctx0.currentlyInlining &&
+      (isSingleAction(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))) ||
+      ((defn.spec.ann.isInline && defn.spec.defContext.isSelfRef && !isInlinedHere) || (defn.spec.ann.isInline && !defn.spec.defContext.isSelfRef))
   }
 
   /**
