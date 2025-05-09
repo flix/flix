@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
+import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 
 /**
@@ -611,6 +612,7 @@ object Inliner {
     * This captures functions that simply forward to another function with possibly additional simple arguments.
     * Inlining such a function reduces code size.
     */
+  @tailrec
   private def isSingleCall(exp0: Expr): Boolean = exp0 match {
     case Expr.ApplyClo(exp1, exp2, _, _, _) => isSimple(exp1) && isSimple(exp2)
     case Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isSimple)
