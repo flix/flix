@@ -225,6 +225,10 @@ object TypeReconstruction {
       }
       TypedAst.Expr.TypeMatch(e1, rs, tpe, eff, loc)
 
+    case KindedAst.Expr.JvmReflection(exp, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Expr.JvmReflection(e, Type.mkEnum(Symbol.JvmType, Kind.Star, loc.asSynthetic), e.eff, loc)
+
     case KindedAst.Expr.RestrictableChoose(star, exp, rules, tvar, loc) =>
       val e = visitExp(exp)
       val rs = rules.map {

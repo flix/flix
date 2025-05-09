@@ -1571,30 +1571,27 @@ mod Array {
     /// and include the specified range of `a`.
     ///
     pub def copyOfRange(_: Region[r2], b: Int32, e: Int32, a: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
-        // All of the below casts are required to cast the type to `Array[a, ...]`.
-        typematch a {
-            // The casts here are used to both modify the java method type and to simulate GADT typing
-            case arr: Array[Bool, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Char, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Float32, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Float64, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Int8, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Int16, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Int32, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Int64, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[a, r1] =>
-                // `a` must be non-primitive now
-                let arrObj = unchecked_cast(arr as Array[Object, r1]);
-                unchecked_cast(Arrays.copyOfRange(arrObj, b, e) as Array[a, r2] \ r1 + r2)
-            case _: _ => unreachable!()
+        match JvmReflection.reflectType((Proxy.Proxy: Proxy[a])) {
+            case JvmType.JvmBool =>
+                unchecked_cast(Arrays.copyOfRange(unchecked_cast(a as Array[Bool, r1]), b, e) as Array[a, r2] \ r1 + r2)
+            case JvmType.JvmChar =>
+                unchecked_cast(Arrays.copyOfRange(unchecked_cast(a as Array[Char, r1]), b, e) as Array[a, r2] \ r1 + r2)
+            case JvmType.JvmFloat32 =>
+                unchecked_cast(Arrays.copyOfRange(unchecked_cast(a as Array[Float32, r1]), b, e) as Array[a, r2] \ r1 + r2)
+            case JvmType.JvmFloat64 =>
+                unchecked_cast(Arrays.copyOfRange(unchecked_cast(a as Array[Float64, r1]), b, e) as Array[a, r2] \ r1 + r2)
+            case JvmType.JvmInt8 =>
+                unchecked_cast(Arrays.copyOfRange(unchecked_cast(a as Array[Int8, r1]), b, e) as Array[a, r2] \ r1 + r2)
+            case JvmType.JvmInt8 =>
+                unchecked_cast(Arrays.copyOfRange(unchecked_cast(a as Array[Int8, r1]), b, e) as Array[a, r2] \ r1 + r2)
+            case JvmType.JvmInt16 =>
+                unchecked_cast(Arrays.copyOfRange(unchecked_cast(a as Array[Int16, r1]), b, e) as Array[a, r2] \ r1 + r2)
+            case JvmType.JvmInt32 =>
+                unchecked_cast(Arrays.copyOfRange(unchecked_cast(a as Array[Int32, r1]), b, e) as Array[a, r2] \ r1 + r2)
+            case JvmType.JvmInt64 =>
+                unchecked_cast(Arrays.copyOfRange(unchecked_cast(a as Array[Int64, r1]), b, e) as Array[a, r2] \ r1 + r2)
+            case JvmType.JvmObject =>
+                unchecked_cast(Arrays.copyOfRange(unchecked_cast(a as Array[Object, r1]), b, e) as Array[a, r2] \ r1 + r2)
         }
 
     ///

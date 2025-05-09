@@ -452,6 +452,11 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.TypeMatch(e, rs, t, eff, loc)
 
+    case TypedAst.Expr.JvmReflection(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      LoweredAst.Expr.JvmReflection(e, t, eff, loc)
+
     case TypedAst.Expr.RestrictableChoose(_, exp, rules, tpe, eff, loc) =>
       // lower into an ordinary match
       val e = visitExp(exp)
@@ -1874,6 +1879,10 @@ object Lowering {
     case LoweredAst.Expr.Match(_, _, _, _, _) => ??? // TODO
 
     case LoweredAst.Expr.TypeMatch(_, _, _, _, _) => ??? // TODO
+
+    case LoweredAst.Expr.JvmReflection(exp, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      LoweredAst.Expr.JvmReflection(e, tpe, eff, loc)
 
     case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
