@@ -811,11 +811,6 @@ object Desugar {
     case WeededAst.Expr.FixpointQueryWithSelect(exps0, selects0, from0, where0, loc) =>
       desugarFixpointQueryWithSelect(exps0, selects0, from0, where0, loc)
 
-    case WeededAst.Expr.FixpointProject(pred, exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.FixpointProject(pred, e1, e2, loc)
-
     case WeededAst.Expr.Debug(exp, kind, loc) =>
       desugarDebug(exp, kind, loc)
 
