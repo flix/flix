@@ -73,7 +73,9 @@ object Inliner {
     val sctx: SharedContext = SharedContext.mk()
     val defs = ParOps.parMapValues(root.defs)(visitDef(_)(sctx, root, flix))
     val newDelta = sctx.changed.asScala.keys.toSet
-    (root.copy(defs = defs), newDelta)
+    val liveSyms = root.entryPoints ++ sctx.live.asScala.keys.toSet
+    val liveDefs = defs.filter(kv => liveSyms.contains(kv._1))
+    (root.copy(defs = liveDefs), newDelta)
   }
 
   /** Performs inlining on the body of `def0`. */
@@ -197,6 +199,7 @@ object Inliner {
         val ctx = ctx0.withSubst(Map.empty).enableInliningMode
         bindArgs(defn.exp, defn.spec.fparams, es, loc, ctx)
       } else {
+        sctx.live.putIfAbsent(sym, ())
         val es = exps.map(visitExp(_, ctx0))
         Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
       }
@@ -732,7 +735,7 @@ object Inliner {
   private object SharedContext {
 
     /** Returns a fresh [[SharedContext]]. */
-    def mk(): SharedContext = new SharedContext(new ConcurrentHashMap())
+    def mk(): SharedContext = new SharedContext(new ConcurrentHashMap(), new ConcurrentHashMap())
 
   }
 
@@ -740,7 +743,8 @@ object Inliner {
     * A globally shared thread-safe context.
     *
     * @param changed the set of symbols of changed functions.
+    * @param live    the set of symbols of live functions.
     */
-  private case class SharedContext(changed: ConcurrentHashMap[Symbol.DefnSym, Unit])
+  private case class SharedContext(changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit])
 
 }
