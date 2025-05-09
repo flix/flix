@@ -203,6 +203,9 @@ object LambdaDrop {
 
     case Expr.NewObject(_, _, _, _, methods, _) =>
       methods.foreach(m => visitExp(m.exp))
+
+    case Expr.JvmReflection(_, _, _, loc) =>
+      throw InternalCompilerException("Unexpected JvmReflection", loc)
   }
 
   /**
@@ -345,6 +348,9 @@ object LambdaDrop {
           MonoAst.JvmMethod(ident, fparams, e, retTpe, eff2, loc2)
       }
       Expr.NewObject(name, clazz, tpe, eff1, ms, loc1)
+
+    case Expr.JvmReflection(_, _, _, loc) =>
+      throw InternalCompilerException("Unexpected JvmReflection", loc)
 
   }
 

@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{Case, CatchRule, Def, Effect, Enum, Expr, FormalParam, HandlerRule, JvmMethod, MatchRule, Occur, Op, Pattern, Root, Spec, Struct, StructField, TypeParam}
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Scope}
-import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.{MapOps, MultiMap}
@@ -248,6 +248,12 @@ object EnumOptimizer {
       val t = visitType(tpe, isGround = true)
       val ef = visitEff(eff, isGround = true)
       Expr.Match(e, rs, t, ef, loc)
+    case Expr.JvmReflection(exp, tpe, eff, loc) =>
+      // Turn `$JVM_TYPE_OF_PROXY$(e: Proxy[t])` into `e; JvmType.Xyz`
+      // where `Xyz` is a reflection of `t`.
+      val e = visitExp(exp)
+      val jvmType = reflectProxyType(e.tpe, loc)
+      Expr.Stm(e, jvmType, tpe, eff, loc)
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe, isGround = true)
@@ -262,16 +268,11 @@ object EnumOptimizer {
     case Expr.VectorLength(exp, loc) =>
       val e = visitExp(exp)
       Expr.VectorLength(e, loc)
-    case Expr.Ascribe(exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe, isGround = true)
-      val ef = visitEff(eff, isGround = true)
-      Expr.Ascribe(e, t, ef, loc)
     case Expr.Cast(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe, isGround = true)
       val ef = visitEff(eff, isGround = true)
-      Expr.Cast(e, t, ef, loc)
+      mkCast(e, t, ef, loc)
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitCatchRule)
@@ -383,4 +384,109 @@ object EnumOptimizer {
   private def unexpectedTypeError(tpe: Type): InternalCompilerException =
     InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
 
+  /**
+    * Returns the cast of `e` to `tpe` and `eff`.
+    *
+    * If `exp` and `tpe` is bytecode incompatible, a runtime crash is inserted to appease the
+    * bytecode verifier.
+    */
+  private def mkCast(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation): Expr = {
+    (exp.tpe, tpe) match {
+      case (Type.Char, Type.Char) => Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Char, Type.Int32) => Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Bool, Type.Bool) => Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int8, Type.Int8) => Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int16, Type.Int16) => Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int32, Type.Int32) => Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int64, Type.Int64) => Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Float32, Type.Float32) => Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Float64, Type.Float64) => Expr.Cast(exp, tpe, eff, loc)
+      case (x, y) if !isPrimType(x) && !isPrimType(y) => Expr.Cast(exp, tpe, eff, loc)
+      case (x, y) =>
+        val crash = Expr.ApplyAtomic(AtomicOp.CastError(erasedString(x), erasedString(y)), Nil, tpe, eff, loc)
+        Expr.Stm(exp, crash, tpe, eff, loc)
+    }
+  }
+
+  /**
+    * Returns `true` if `tpe` is a primitive type.
+    *
+    * N.B.: `tpe` must be normalized.
+    */
+  private def isPrimType(tpe: Type): Boolean = tpe match {
+    case Type.Char => true
+    case Type.Bool => true
+    case Type.Int8 => true
+    case Type.Int16 => true
+    case Type.Int32 => true
+    case Type.Int64 => true
+    case Type.Float32 => true
+    case Type.Float64 => true
+    case Type.Cst(_, _) => false
+    case Type.Apply(_, _, _) => false
+    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+  }
+
+  /**
+    * Returns the erased string representation of `tpe`
+    *
+    * N.B.: `tpe` must be normalized.
+    */
+  private def erasedString(tpe: Type): String = tpe match {
+    case Type.Char => "Char"
+    case Type.Bool => "Bool"
+    case Type.Int8 => "Int8"
+    case Type.Int16 => "Int16"
+    case Type.Int32 => "Int32"
+    case Type.Int64 => "Int64"
+    case Type.Float32 => "Float32"
+    case Type.Float64 => "Float64"
+    case Type.Cst(_, _) => "Object"
+    case Type.Apply(_, _, _) => "Object"
+    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+  }
+
+  /**
+    * Returns the `JvmType` representing `tpe`.
+    *
+    * E.g. `String` returns `JvmType.JvmObject: JvmType \ {}`.
+    *
+    * N.B.: `tpe` must be `Proxy[t]` for some `t`.
+    */
+  private def reflectProxyType(tpe: Type, loc: SourceLocation): Expr = {
+    val innerType = tpe match {
+      case Type.Apply(Type.Cst(_, _), arg, _) => arg
+      case _ => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    }
+    val constructorName = innerType match {
+      case Type.Char => "JvmChar"
+      case Type.Bool => "JvmBool"
+      case Type.Int8 => "JvmInt8"
+      case Type.Int16 => "JvmInt16"
+      case Type.Int32 => "JvmInt32"
+      case Type.Int64 => "JvmInt64"
+      case Type.Float32 => "JvmFloat32"
+      case Type.Float64 => "JvmFloat64"
+      case Type.Cst(_, _) => "JvmObject"
+      case Type.Apply(_, _, _) => "JvmObject"
+      case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
+      case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
+      case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
+      case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
+      case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
+      case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$innerType'", innerType.loc)
+    }
+    val tag = Symbol.mkCaseSym(Symbol.JvmType, Name.Ident(constructorName, loc))
+    Expr.ApplyAtomic(AtomicOp.Tag(tag), Nil, Type.mkEnum(Symbol.JvmType, Kind.Star, loc), Type.Pure, loc)
+  }
 }
