@@ -214,8 +214,6 @@ object Simplifier {
       val purity = e.purity
       SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLength, List(e), MonoType.Int32, purity, loc)
 
-    case MonoAst.Expr.Ascribe(exp, _, _, _) => visitExp(exp)
-
     case MonoAst.Expr.Cast(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)

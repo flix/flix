@@ -221,14 +221,6 @@ object OccurrenceAnalyzer {
           (Expr.VectorLength(e, loc), ctx)
         }
 
-      case Expr.Ascribe(exp, tpe, eff, loc) =>
-        val (e, ctx) = visitExp(exp)
-        if (e eq exp) {
-          (exp0, ctx) // Reuse exp0.
-        } else {
-          (Expr.Ascribe(e, tpe, eff, loc), ctx)
-        }
-
       case Expr.Cast(exp, tpe, eff, loc) =>
         val (e, ctx) = visitExp(exp)
         if (e eq exp) {

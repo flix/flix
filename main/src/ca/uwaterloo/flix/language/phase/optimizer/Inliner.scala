@@ -343,10 +343,6 @@ object Inliner {
       val e = visitExp(exp, ctx0)
       Expr.VectorLength(e, loc)
 
-    case Expr.Ascribe(exp, tpe, eff, loc) =>
-      val e = visitExp(exp, ctx0)
-      Expr.Ascribe(e, tpe, eff, loc)
-
     case Expr.Cast(exp, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)
       Expr.Cast(e, tpe, eff, loc)
