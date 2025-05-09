@@ -736,7 +736,7 @@ object Inliner {
   private object SharedContext {
 
     /** Returns a fresh [[SharedContext]]. */
-    def mk(): SharedContext = new SharedContext(new ConcurrentHashMap())
+    def mk(): SharedContext = new SharedContext(new ConcurrentHashMap(), new ConcurrentHashMap())
 
   }
 
@@ -744,7 +744,8 @@ object Inliner {
     * A globally shared thread-safe context.
     *
     * @param changed the set of symbols of changed functions.
+    * @param live    the set of symbols of live functions.
     */
-  private case class SharedContext(changed: ConcurrentHashMap[Symbol.DefnSym, Unit])
+  private case class SharedContext(changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit])
 
 }
