@@ -506,10 +506,7 @@ object Inliner {
     * Returns `true` if there exists [[Expr.Lambda]] in `exps`.
     */
   private def hasKnownLambda(exps: List[Expr]): Boolean = {
-    exps.exists {
-      case Expr.Lambda(_, _, _, _) => true
-      case _ => false
-    }
+    exps.exists(isLambda)
   }
 
   /**
