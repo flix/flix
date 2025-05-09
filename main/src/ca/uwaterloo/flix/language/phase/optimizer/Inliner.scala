@@ -566,6 +566,12 @@ object Inliner {
     case _ => false
   }
 
+  /** Returns `true` if `exp` is [[Expr.Lambda]]. */
+  def isLambda(exp: MonoAst.Expr): Boolean = exp match {
+    case Expr.Lambda(_, _, _, _) => true
+    case _ => false
+  }
+
   /**
     * Returns `true` if `exp0` is considered a trivial expression.
     *
@@ -580,13 +586,6 @@ object Inliner {
     case Expr.Var(_, _, _) => true
     case _ => false
   }
-
-  /** Returns `true` if `exp` is [[Expr.Lambda]]. */
-  def isLambda(exp: MonoAst.Expr): Boolean = exp match {
-    case Expr.Lambda(_, _, _, _) => true
-    case _ => false
-  }
-
 
   /** Represents the range of a substitution from variables to expressions. */
   sealed private trait SubstRange
