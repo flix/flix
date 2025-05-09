@@ -14,28 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.verifier
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
+import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, SemanticOp, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+
 import scala.annotation.tailrec
 
-/**
-  * Verify the AST before bytecode generation.
-  */
-object Verifier {
+object TypeVerifier {
 
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Verifier") {
-    if (flix.options.xnoverify) {
-      root
-    } else {
-      ParOps.parMap(root.defs.values)(visitDef(_)(root))
-      root
-    }
+  /**
+    * Verifies that types in the given AST `root` are meaningful.
+    *
+    * Throws [[InternalCompilerException]] if they are not.
+    */
+  def verify(root: Root)(implicit flix: Flix): Unit = {
+    ParOps.parMap(root.defs.values)(visitDef(_)(root))
   }
 
   private def visitDef(decl: Def)(implicit root: Root): Unit = {
@@ -47,7 +44,6 @@ object Verifier {
   }
 
   private def visitExpr(expr: Expr)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = expr match {
-
     case Expr.Cst(cst, tpe, loc) => cst match {
       case Constant.Unit => check(expected = MonoType.Unit)(actual = tpe, loc)
       case Constant.Null => tpe
@@ -227,7 +223,7 @@ object Verifier {
           }
           tpe
 
-        case AtomicOp.Untag(sym, idx) =>
+        case AtomicOp.Untag(sym, _) =>
           val List(t1) = ts
           // Untag(Nil): Unit
           // Checking this requires instantiating the enum case
@@ -338,6 +334,9 @@ object Verifier {
         case AtomicOp.MatchError =>
           tpe
 
+        case AtomicOp.CastError(_, _) =>
+          tpe
+
         case AtomicOp.RecordExtend(label) =>
           val List(t1, t2) = ts
           removeFromRecordType(tpe, label.name, loc) match {
@@ -363,6 +362,12 @@ object Verifier {
               checkEq(tpe, elmt, loc)
             case None => failMismatchedShape(t1, s"Record with '${label.name}'", loc)
           }
+
+        case AtomicOp.ExtensibleIs(label) => ??? // TODO: Ext-Variants
+
+        case AtomicOp.ExtensibleTag(label) => ??? // TODO: Ext-Variants
+
+        case AtomicOp.ExtensibleUntag(label) => ??? // TODO: Ext-Variants
 
         case AtomicOp.Closure(sym) =>
           val defn = root.defs(sym)
@@ -492,6 +497,8 @@ object Verifier {
       checkEq(bodyType, tpe, loc)
 
     case Expr.Stmt(exp1, exp2, tpe, _, loc) =>
+      // Visit `exp1` to check types inside.
+      visitExpr(exp1)
       val secondType = visitExpr(exp2)
       checkEq(secondType, tpe, loc)
 

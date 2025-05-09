@@ -13,18 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api.lsp.provider.completion.syntactic
+package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.Range
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.FieldCompletion
+import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.util.JvmUtils
 
-object ExprSnippetCompleter {
+object GetStaticFieldCompleter {
 
-  def getCompletions(range: Range): Iterable[Completion] = List(
-    // NB: Please keep the list alphabetically sorted.
-    Completion.SnippetCompletion("main",
-      "def main(): Unit \\ IO = \n    println(\"Hello World!\")",
-      "snippet for Hello World Program"),
-  )
+  def getCompletions(clazz: Class[?], field: Name.Ident): List[Completion] = {
+    JvmUtils.getStaticFields(clazz).sortBy(_.getName).map(FieldCompletion(field, _))
+  }
 
 }

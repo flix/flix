@@ -177,7 +177,7 @@ object Namer {
       case LookupResult.NotDefined => addDeclToTable(table, ns, name, decl)
       case LookupResult.AlreadyDefined(loc) =>
         mkDuplicateNamePair(name, getSymLocation(decl), loc)
-        SymbolTable.empty
+         table
     }
   }
 
@@ -663,6 +663,18 @@ object Namer {
       val rs = rules.map(visitRestrictableChooseRule)
       NamedAst.Expr.RestrictableChoose(star, e, rs, loc)
 
+    case DesugaredAst.Expr.ExtensibleMatch(label, exp1, ident2, exp2, ident3, exp3, loc) =>
+      val sym2 = Symbol.freshVarSym(ident2, BoundBy.Pattern)
+      val sym3 = Symbol.freshVarSym(ident3, BoundBy.Pattern)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      NamedAst.Expr.ExtensibleMatch(label, e1, sym2, e2, sym3, e3, loc)
+
+    case DesugaredAst.Expr.ExtensibleTag(label, exps, loc) =>
+      val es = exps.map(visitExp(_))
+      NamedAst.Expr.ExtensibleTag(label, es, loc)
+
     case DesugaredAst.Expr.Tuple(exps, loc) =>
       val es = exps.map(visitExp(_))
       NamedAst.Expr.Tuple(es, loc)
@@ -906,7 +918,7 @@ object Namer {
   /**
     * Performs naming on the given struct field expression `exp0`.
     */
-  private def visitStructField(exp0: (Name.Label, DesugaredAst.Expr))(implicit scope: Scope, sctx: SharedContext, flix: Flix): (Name.Label, NamedAst.Expr) = exp0 match {
+  private def visitStructField(field: (Name.Label, DesugaredAst.Expr))(implicit scope: Scope, sctx: SharedContext, flix: Flix): (Name.Label, NamedAst.Expr) = field match {
     case (n, exp0) =>
       val e = visitExp(exp0)
       (n, e)
@@ -1212,13 +1224,13 @@ object Namer {
     case DesugaredAst.Pattern.Wild(_) => Nil
     case DesugaredAst.Pattern.Cst(_, _) => Nil
     case DesugaredAst.Pattern.Tag(_, ps, _) => ps.flatMap(freeVars)
-    case DesugaredAst.Pattern.Tuple(elms, _) => elms.flatMap(freeVars)
+    case DesugaredAst.Pattern.Tuple(elms, _) => elms.toList.flatMap(freeVars)
     case DesugaredAst.Pattern.Record(pats, pat, _) => recordPatternFreeVars(pats) ++ freeVars(pat)
     case DesugaredAst.Pattern.Error(_) => Nil
   }
 
   /**
-    * Returns the free variables in the list of [[Record.RecordLabelPattern]] `pats`.
+    * Returns the free variables in the list of [[DesugaredAst.Pattern.Record.RecordLabelPattern]] `pats`.
     */
   private def recordPatternFreeVars(pats: List[DesugaredAst.Pattern.Record.RecordLabelPattern]): List[Name.Ident] = {
     def optFreeVars(rfp: DesugaredAst.Pattern.Record.RecordLabelPattern): List[Name.Ident] = rfp.pat.map(freeVars).getOrElse(Nil)
@@ -1233,7 +1245,7 @@ object Namer {
     case DesugaredAst.Type.Var(ident, _) => ident :: Nil
     case DesugaredAst.Type.Ambiguous(_, _) => Nil
     case DesugaredAst.Type.Unit(_) => Nil
-    case DesugaredAst.Type.Tuple(elms, _) => elms.flatMap(freeTypeVars)
+    case DesugaredAst.Type.Tuple(elms, _) => elms.toList.flatMap(freeTypeVars)
     case DesugaredAst.Type.RecordRowEmpty(_) => Nil
     case DesugaredAst.Type.RecordRowExtend(_, t, r, _) => freeTypeVars(t) ::: freeTypeVars(r)
     case DesugaredAst.Type.Record(row, _) => freeTypeVars(row)

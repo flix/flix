@@ -28,7 +28,7 @@ object HoleCompleter {
   /**
     * Gets completions for when the cursor position is on a hole expression with an expression
     */
-  def getHoleCompletion(uri: String, pos: Position, root: TypedAst.Root)(implicit flix: Flix): Iterable[Completion] = {
+  def getHoleCompletion(uri: String, pos: Position)(implicit root: TypedAst.Root, flix: Flix): Iterable[Completion] = {
     val stack = StackConsumer()
 
     if (pos.character >= 2) {
@@ -37,7 +37,7 @@ object HoleCompleter {
     }
 
     stack.getStack.headOption match {
-      case Some(TypedAst.Expr.HoleWithExp(TypedAst.Expr.Var(sym, sourceType, _), env, targetType, _, loc)) =>
+      case Some(TypedAst.Expr.HoleWithExp(TypedAst.Expr.Var(sym, sourceType, _), _, targetType, _, loc)) =>
         HoleCompleter.candidates(sourceType, targetType, root)
           .map(root.defs(_))
           .filter(_.spec.mod.isPublic)

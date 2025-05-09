@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.verifier
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
@@ -38,12 +38,10 @@ object EffectVerifier {
   /**
     * Verifies the effects in the given root.
     */
-  def run(root: Root)(implicit flix: Flix): Unit = {
-    if (flix.options.xverifyeffects) {
-      ParOps.parMapValues(root.defs)(visitDef(_)(root.eqEnv, flix))
-      ParOps.parMapValues(root.sigs)(visitSig(_)(root.eqEnv, flix))
-      ParOps.parMap(root.instances.values)(visitInstance(_)(root.eqEnv, flix))
-    }
+  def verify(root: Root)(implicit flix: Flix): Unit = {
+    ParOps.parMapValues(root.defs)(visitDef(_)(root.eqEnv, flix))
+    ParOps.parMapValues(root.sigs)(visitSig(_)(root.eqEnv, flix))
+    ParOps.parMap(root.instances.values)(visitInstance(_)(root.eqEnv, flix))
   }
 
   /**
@@ -173,12 +171,19 @@ object EffectVerifier {
       val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
+    case Expr.ExtensibleMatch(label, exp1, bnd1, exp2, bnd2, exp3, tpe, eff, loc) =>
+      () // TODO: Ext-Variants
     case Expr.Tag(sym, exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
     case Expr.RestrictableTag(sym, exps, tpe, eff, loc) =>
+      exps.foreach(visitExp)
+      val expected = Type.mkUnion(exps.map(_.eff), loc)
+      val actual = eff
+      expectType(expected, actual, loc)
+    case Expr.ExtensibleTag(_, exps, _, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(exps.map(_.eff), loc)
       val actual = eff
@@ -232,11 +237,10 @@ object EffectVerifier {
       // TODO region stuff
       ()
     case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
-      val expected = Type.mkUnion(fields.map { case (k, v) => v.eff } :+ region.eff, loc)
-      val actual = eff
-      expectType(expected, actual, loc)
       fields.map { case (k, v) => v }.foreach(visitExp)
       visitExp(region)
+      // TODO region stuff
+      ()
     case Expr.StructGet(e, _, t, _, _) =>
       // JOE TODO region stuff
       visitExp(e)
@@ -281,7 +285,7 @@ object EffectVerifier {
       val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Throw(exp, eff, _, loc) =>
+    case Expr.Throw(exp, _, eff, loc) =>
       visitExp(exp)
       expectType(eff, Type.mkUnion(exp.eff, Type.IO, loc), loc)
     case Expr.Handler(sym, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>

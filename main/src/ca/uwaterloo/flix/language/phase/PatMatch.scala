@@ -187,9 +187,16 @@ object PatMatch {
         visitExp(exp)
         rules.foreach(r => visitExp(r.exp))
 
+      case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+        visitExp(exp3)
+
       case Expr.Tag(_, exps, _, _, _) => exps.foreach(visitExp)
 
       case Expr.RestrictableTag(_, exps, _, _, _) => exps.foreach(visitExp)
+
+      case Expr.ExtensibleTag(_, exps, _, _, _) => exps.foreach(visitExp)
 
       case Expr.Tuple(elms, _, _, _) => elms.foreach(visitExp)
 
@@ -504,7 +511,7 @@ object PatMatch {
         }
       case TypedAst.Pattern.Tuple(pats, _, _) =>
         if (ctor.isInstanceOf[TyCon.Tuple]) {
-          Some(pats ::: pat.tail)
+          Some(pats.toList ::: pat.tail)
         } else {
           None
         }
@@ -703,8 +710,8 @@ object PatMatch {
     // Two enums are the same constructor if they have the same case symbol
     case (TyCon.Enum(s1, _), TyCon.Enum(s2, _)) => s1 == s2
     // Everything else is the same constructor if they are the same type
-    case (a: TyCon.Tuple, b: TyCon.Tuple) => true
-    case (a: TyCon.Record, b: TyCon.Record) => true
+    case (_: TyCon.Tuple, _: TyCon.Tuple) => true
+    case (_: TyCon.Record, _: TyCon.Record) => true
     case (a, b) => a == b;
   }
 
@@ -719,7 +726,7 @@ object PatMatch {
     case Pattern.Var(_, _, _) => TyCon.Wild
     case Pattern.Cst(cst, _, _) => TyCon.Cst(cst)
     case Pattern.Tag(CaseSymUse(sym, _), pats, _, _) => TyCon.Enum(sym, pats.map(patToCtor))
-    case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
+    case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor).toList)
     case Pattern.Record(pats, pat, _, _) =>
       val patsVal = pats.map {
         case TypedAst.Pattern.Record.RecordLabelPattern(label, pat1, _, _) =>

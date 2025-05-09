@@ -131,7 +131,7 @@ trait TestUtils {
   }
 
   /**
-    * Returns the line where the error is expected, if specified.
+    * Returns the one-indexed line where the error is expected, if specified.
     */
   private def getExpectedErrorLine(error: CompilationMessage): Option[Int] = {
     val content = new String(error.source.data)
@@ -146,9 +146,9 @@ trait TestUtils {
   }
 
   /**
-    * Returns true if the compilation message is ONLY on the given line.
+    * Returns true if the compilation message is ONLY on the given line (one-indexed).
     */
   private def isOnLine(error: CompilationMessage, line: Int) = {
-    error.loc.sp1.line == line && error.loc.sp2.line == line
+    error.loc.sp1.lineOneIndexed == line && error.loc.sp2.lineOneIndexed == line
   }
 }

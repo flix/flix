@@ -473,7 +473,7 @@ object Redundancy {
 
       // Visit each match rule.
       val usedRules = rules map {
-        case MatchRule(pat, guard, body, loc) =>
+        case MatchRule(pat, guard, body, _) =>
           // Compute the free variables in the pattern.
           val fvs = freeVars(pat)
 
@@ -556,6 +556,9 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
+    case Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, _, _, _) =>
+      // TODO: Ext-Variants
+      visitExp(exp1, env0, rc) ++ visitExp(exp2, env0 + bnd1.sym, rc) ++ visitExp(exp3, env0 + bnd2.sym, rc)
 
     case Expr.Tag(CaseSymUse(sym, _), exps, _, _, _) =>
       val us = visitExps(exps, env0, rc)
@@ -564,6 +567,9 @@ object Redundancy {
       us
 
     case Expr.RestrictableTag(_, exps, _, _, _) =>
+      visitExps(exps, env0, rc)
+
+    case Expr.ExtensibleTag(_, exps, _, _, _) =>
       visitExps(exps, env0, rc)
 
     case Expr.Tuple(elms, _, _, _) =>
@@ -697,7 +703,7 @@ object Redundancy {
           acc ++ usedBody ++ dead.map(UnusedVarSym.apply)
       }
 
-    case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+    case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc)
 
     case Expr.Do(opUse, exps, _, _, _) =>
@@ -899,7 +905,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given list of pattern `ps`.
     */
-  private def visitPats(ps: List[Pattern])(implicit sctx: SharedContext): Used = ps.foldLeft(Used.empty) {
+  private def visitPats(ps: Iterable[Pattern])(implicit sctx: SharedContext): Used = ps.foldLeft(Used.empty) {
     case (acc, pat) => acc ++ visitPat(pat)
   }
 
@@ -1142,13 +1148,6 @@ object Redundancy {
       * Represents the empty environment.
       */
     val empty: Env = Env(Map.empty)
-
-    /**
-      * Returns an environment with the given variable symbols `varSyms` in it.
-      */
-    def of(varSyms: Iterable[Symbol.VarSym]): Env = varSyms.foldLeft(Env.empty) {
-      case (acc, sym) => acc + sym
-    }
   }
 
   /**

@@ -63,7 +63,7 @@ object Reducer {
 
       // Compute the types in the captured formal parameters.
       val cParamTypes = cparams.foldLeft(Set.empty[MonoType]) {
-        case (sacc, FormalParam(_, _, tpe, _)) => sacc + tpe
+        case (sacc, FormalParam(_, _, paramTpe, _)) => sacc + paramTpe
       }
 
       // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
@@ -148,9 +148,9 @@ object Reducer {
         if (ct == ExpPosition.NonTail) lctx.pcPoints += 1
         val e = visitExpr(exp)
         val rs = rules.map {
-          case HandlerRule(op, fparams, exp) =>
-            val e = visitExpr(exp)
-            HandlerRule(op, fparams, e)
+          case HandlerRule(op, fparams, body) =>
+            val b = visitExpr(body)
+            HandlerRule(op, fparams, b)
         }
         Expr.RunWith(e, effUse, rs, ct, tpe, purity, loc)
 
@@ -161,9 +161,9 @@ object Reducer {
 
       case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
         val specs = methods.map {
-          case JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
+          case JvmMethod(ident, fparams, clo, retTpe, methPurity, methLoc) =>
             val c = visitExpr(clo)
-            JvmMethod(ident, fparams, c, retTpe, purity, loc)
+            JvmMethod(ident, fparams, c, retTpe, methPurity, methLoc)
         }
         ctx.anonClasses.add(AnonClass(name, clazz, tpe, specs, loc))
 
@@ -225,7 +225,7 @@ object Reducer {
       case Some((tpe, taskList)) =>
         val taskList1 = tpe match {
           case Void | AnyType | Unit | Bool | Char | Float32 | Float64 | BigDecimal | Int8 | Int16 |
-               Int32 | Int64 | BigInt | String | Regex | Region | RecordEmpty |
+               Int32 | Int64 | BigInt | String | Regex | Region | RecordEmpty | ExtensibleEmpty |
                Native(_) | Null => taskList
           case Array(elm) => taskList.enqueue(elm)
           case Lazy(elm) => taskList.enqueue(elm)
@@ -234,6 +234,7 @@ object Reducer {
           case Struct(_, targs) => taskList.enqueueAll(targs)
           case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
           case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)
+          case ExtensibleExtend(_, targs, rest) => taskList.enqueueAll(targs).enqueue(rest)
         }
         nestedTypesOf(acc + tpe, taskList1)
       case None => acc

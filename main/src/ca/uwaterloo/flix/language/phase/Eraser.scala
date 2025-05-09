@@ -9,6 +9,8 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import ca.uwaterloo.flix.util.collection.MapOps
 
+import scala.annotation.unused
+
 /**
   * Erase types and introduce corresponding casting
   *
@@ -104,7 +106,7 @@ object Eraser {
       JvmMethod(ident, fparams.map(visitParam), visitExp(clo), visitType(retTpe), purity, loc)
   }
 
-  private def visitExp(exp: Expr): Expr = exp match {
+  private def visitExp(exp0: Expr): Expr = exp0 match {
     case Cst(cst, tpe, loc) =>
       Cst(cst, visitType(tpe), loc)
     case Var(sym, tpe, loc) =>
@@ -127,6 +129,9 @@ object Eraser {
           castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.RecordExtend(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.RecordRestrict(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ExtensibleIs(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ExtensibleTag(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ExtensibleUntag(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayLit => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayNew => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayLoad => ApplyAtomic(op, es, t, purity, loc)
@@ -153,6 +158,7 @@ object Eraser {
           castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.HoleError(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.MatchError => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.CastError(_, _) => ApplyAtomic(op, es, t, purity, loc)
       }
 
     case ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
@@ -204,9 +210,9 @@ object Eraser {
       Op(sym, ann, mod, fparams.map(visitParam), erase(tpe), purity, loc)
   }
 
-  private def visitType(tpe: MonoType): MonoType = {
+  private def visitType(tpe0: MonoType): MonoType = {
     import MonoType.*
-    tpe match {
+    tpe0 match {
       case Void => Void
       case AnyType => AnyType
       case Unit => Unit
@@ -232,6 +238,8 @@ object Eraser {
       case Arrow(args, result) => Arrow(args.map(visitType), box(result))
       case RecordEmpty => RecordEmpty
       case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
+      case ExtensibleExtend(cons, tpes, rest) => ExtensibleExtend(cons, tpes.map(erase), visitType(rest))
+      case ExtensibleEmpty => ExtensibleEmpty
       case Native(clazz) => Native(clazz)
     }
   }
@@ -272,6 +280,6 @@ object Eraser {
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
   }
 
-  private def box(tpe: MonoType): MonoType = MonoType.Object
+  private def box(@unused tpe: MonoType): MonoType = MonoType.Object
 
 }

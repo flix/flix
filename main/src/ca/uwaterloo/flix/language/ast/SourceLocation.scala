@@ -14,6 +14,10 @@ object SourceLocation {
     */
   val Unknown: SourceLocation = SourceLocation(isReal = true, SourcePosition.Unknown, SourcePosition.Unknown)
 
+  /** Returns the [[SourceLocation]] that refers the the zero-width location `sp`. */
+  def zeroPoint(isReal: Boolean, sp: SourcePosition): SourceLocation =
+    SourceLocation(isReal, sp, sp)
+
   implicit object Order extends Ordering[SourceLocation] {
 
     import scala.math.Ordered.orderingToOrdered
@@ -45,14 +49,14 @@ case class SourceLocation(isReal: Boolean, sp1: SourcePosition, sp2: SourcePosit
   def security: SecurityContext = sp1.source.input.security
 
   /**
-    * Returns the line where the entity begins.
+    * Returns the one-indexed line where the entity begins.
     */
-  def beginLine: Int = sp1.line
+  def beginLine: Int = sp1.lineOneIndexed
 
   /**
-    * Returns the column where the entity begins.
+    * Returns the one-indexed column where the entity begins.
     */
-  def beginCol: Int = sp1.col
+  def beginCol: Int = sp1.colOneIndexed
 
   /**
     * Returns `true` if `this` [[SourceLocation]] completely contains `that`, otherwise `false`.
@@ -67,14 +71,14 @@ case class SourceLocation(isReal: Boolean, sp1: SourcePosition, sp2: SourcePosit
   }
 
   /**
-    * Returns the line where the entity ends.
+    * Returns the one-indexed line where the entity ends.
     */
-  def endLine: Int = sp2.line
+  def endLine: Int = sp2.lineOneIndexed
 
   /**
-    * Returns the column where the entity ends.
+    * Returns the one-indexed column where the entity ends.
     */
-  def endCol: Int = sp2.col
+  def endCol: Int = sp2.colOneIndexed
 
   /**
     * Returns `true` if this source location spans a single line.

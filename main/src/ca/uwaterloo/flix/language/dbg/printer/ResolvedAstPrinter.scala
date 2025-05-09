@@ -50,7 +50,7 @@ object ResolvedAstPrinter {
     case Expr.Use(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Cst(cst, _) => ConstantPrinter.print(cst)
     case Expr.ApplyClo(exp1, exp2, _) => DocAst.Expr.App(print(exp1), List(print(exp2)))
-    case Expr.ApplyDef(DefSymUse(sym, _), exps, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
+    case Expr.ApplyDef(DefSymUse(sym, _), exps, _) => DocAst.Expr.ApplyDef(sym, exps.map(print))
     case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _) => DocAst.Expr.App(printVarSym(sym), exps.map(print))
     case Expr.ApplySig(SigSymUse(sym, _), exps, _) => DocAst.Expr.App(DocAst.Expr.AsIs(sym.name), exps.map(print))
     case Expr.Lambda(fparam, exp, _, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
@@ -70,8 +70,10 @@ object ResolvedAstPrinter {
       case ResolvedAst.TypeMatchRule(sym, tpe, exp, loc) => (printVarSym(sym), UnkindedTypePrinter.print(tpe), print(exp))
     })
     case Expr.RestrictableChoose(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.ExtensibleMatch(_, _, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Tag(symUse, exps, _) => DocAst.Expr.Tag(symUse.sym, exps.map(print))
     case Expr.RestrictableTag(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.ExtensibleTag(label, exps, loc) => DocAst.Expr.Unknown // TODO: Ext-Variants
     case Expr.Tuple(exps, _) => DocAst.Expr.Tuple(exps.map(print))
     case Expr.RecordSelect(exp, label, _) => DocAst.Expr.RecordSelect(label, print(exp))
     case Expr.RecordExtend(label, value, rest, _) => DocAst.Expr.RecordExtend(label, print(value), print(rest))
@@ -136,7 +138,7 @@ object ResolvedAstPrinter {
     case Pattern.Var(sym, _) => printVarSym(sym)
     case Pattern.Cst(cst, _) => ConstantPrinter.print(cst)
     case Pattern.Tag(symUse, pats, _) => DocAst.Expr.Tag(symUse.sym, pats.map(printPattern))
-    case Pattern.Tuple(pats, _) => DocAst.Expr.Tuple(pats.map(printPattern))
+    case Pattern.Tuple(pats, _) => DocAst.Expr.Tuple(pats.map(printPattern).toList)
     case Pattern.Record(_, _, _) => DocAst.Expr.Unknown
     case Pattern.Error(_) => DocAst.Expr.Error
   }

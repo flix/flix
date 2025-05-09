@@ -494,12 +494,19 @@ object SemanticTokensProvider {
           acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
       }
 
-    case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
-      val c = visitExp(exp)
+    case Expr.RestrictableChoose(_, exp1, rules, _, _, _) =>
+      val c = visitExp(exp1)
       rules.foldLeft(c) {
         case (acc, RestrictableChooseRule(pat, exp)) =>
           acc ++ visitRestrictableChoosePat(pat) ++ visitExp(exp)
       }
+
+    case Expr.ExtensibleMatch(_, exp1, bnd2, exp2, bnd3, exp3, _, _, _) =>
+      val o1 = getSemanticTokenType(bnd2.sym, exp1.tpe)
+      val o2 = getSemanticTokenType(bnd3.sym, exp1.tpe)
+      val t1 = SemanticToken(o1, Nil, bnd2.sym.loc)
+      val t2 = SemanticToken(o2, Nil, bnd3.sym.loc)
+      Iterator(t1) ++ Iterator(t2) ++ visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
     case Expr.Tag(CaseSymUse(_, loc), exps, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
@@ -508,6 +515,12 @@ object SemanticTokensProvider {
       }
 
     case Expr.RestrictableTag(RestrictableCaseSymUse(_, loc), exps, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
+      exps.foldLeft(Iterator(t)) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
+
+    case Expr.ExtensibleTag(_, exps, _, _, loc) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
       exps.foldLeft(Iterator(t)) {
         case (acc, exp) => acc ++ visitExp(exp)
@@ -585,8 +598,8 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Type, Nil, sym.qname.loc)
       Iterator(t) ++ visitExp(exp)
 
-    case Expr.TryCatch(exp, rules, _, _, _) =>
-      rules.foldLeft(visitExp(exp)) {
+    case Expr.TryCatch(exp1, rules, _, _, _) =>
+      rules.foldLeft(visitExp(exp1)) {
         case (acc, CatchRule(bnd, _, exp, _)) =>
           val t = SemanticToken(SemanticTokenType.Variable, Nil, bnd.sym.loc)
           acc ++ Iterator(t) ++ visitExp(exp)
@@ -600,7 +613,7 @@ object SemanticTokensProvider {
       val st1 = Iterator(t)
       val st2 = rules.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, HandlerRule(op, fparams, exp ,loc)) =>
-          val st = SemanticToken(SemanticTokenType.Type, Nil, op.loc)
+          val st = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
           val t1 = Iterator(st)
           val t2 = visitFormalParams(fparams)
           acc ++ t1 ++ t2 ++ visitExp(exp)
@@ -762,34 +775,38 @@ object SemanticTokensProvider {
   /**
     * Returns all semantic tokens in the given type `tpe0`.
     */
-  private def visitType(tpe0: Type): Iterator[SemanticToken] = tpe0 match {
-    case Type.Var(_, loc) =>
-      val t = SemanticToken(SemanticTokenType.TypeParameter, Nil, loc)
-      Iterator(t)
-
-    case Type.Cst(cst, loc) =>
-      if (isVisibleTypeConstructor(cst)) {
-        val t = SemanticToken(SemanticTokenType.Type, Nil, loc)
+  private def visitType(tpe0: Type): Iterator[SemanticToken] = {
+    if (tpe0.loc.isSynthetic)
+      Iterator.empty
+    else tpe0 match {
+      case Type.Var(_, loc) =>
+        val t = SemanticToken(SemanticTokenType.TypeParameter, Nil, loc)
         Iterator(t)
-      } else {
-        Iterator.empty
-      }
 
-    case Type.Apply(tpe1, tpe2, _) =>
-      visitType(tpe1) ++ visitType(tpe2)
+      case Type.Cst(cst, loc) =>
+        if (isVisibleTypeConstructor(cst)) {
+          val t = SemanticToken(SemanticTokenType.Type, Nil, loc)
+          Iterator(t)
+        } else {
+          Iterator.empty
+        }
 
-    case Type.Alias(cst, args, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
-      Iterator(t) ++ args.flatMap(visitType).iterator
+      case Type.Apply(tpe1, tpe2, _) =>
+        visitType(tpe1) ++ visitType(tpe2)
 
-    case Type.AssocType(cst, arg, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
-      Iterator(t) ++ visitType(arg)
+      case Type.Alias(cst, args, _, _) =>
+        val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
+        Iterator(t) ++ args.flatMap(visitType).iterator
 
-    // Jvm types should not be exposed to the user.
-    case _: Type.JvmToType => Iterator.empty
-    case _: Type.JvmToEff => Iterator.empty
-    case _: Type.UnresolvedJvmType => Iterator.empty
+      case Type.AssocType(cst, arg, _, _) =>
+        val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
+        Iterator(t) ++ visitType(arg)
+
+      // Jvm types should not be exposed to the user.
+      case _: Type.JvmToType => Iterator.empty
+      case _: Type.JvmToEff => Iterator.empty
+      case _: Type.UnresolvedJvmType => Iterator.empty
+    }
   }
 
   /**
@@ -836,6 +853,7 @@ object SemanticTokensProvider {
     case TypeConstructor.RecordRowEmpty => false
     case TypeConstructor.RecordRowExtend(_) => false
     case TypeConstructor.Record => false
+    case TypeConstructor.Extensible => false
     case TypeConstructor.SchemaRowEmpty => false
     case TypeConstructor.SchemaRowExtend(_) => false
     case TypeConstructor.Schema => false
@@ -914,9 +932,12 @@ object SemanticTokensProvider {
     */
   private def visitFormalParam(fparam0: FormalParam): Iterator[SemanticToken] = fparam0 match {
     case FormalParam(bnd, _, tpe, _, _) =>
-      val o = getSemanticTokenType(bnd.sym, tpe)
-      val t = SemanticToken(o, Nil, bnd.sym.loc)
-      Iterator(t) ++ visitType(tpe)
+      val bndToken = if (!bnd.sym.loc.isSynthetic) {
+        val o = getSemanticTokenType(bnd.sym, tpe)
+        val t = SemanticToken(o, Nil, bnd.sym.loc)
+        Iterator(t)
+      } else Iterator.empty
+      bndToken ++ visitType(tpe)
   }
 
   /**
@@ -1040,10 +1061,10 @@ object SemanticTokensProvider {
         splitTokens += token
       // Split the multiline token
       case SemanticToken(tpe, modifiers, loc) =>
-        for (line <- loc.sp1.line to loc.sp2.line) {
-          val begin = if (line == loc.sp1.line) loc.sp1.col else 1.toShort
-          val end = if (line == loc.sp2.line) loc.sp2.col else (loc.source.getLine(line).length + 1).toShort // Column is 1-indexed
-          val newLoc = SourceLocation(isReal = true, SourcePosition(loc.source, line, begin), SourcePosition(loc.source, line, end))
+        for (line <- loc.sp1.lineOneIndexed to loc.sp2.lineOneIndexed) {
+          val begin = if (line == loc.sp1.lineOneIndexed) loc.sp1.colOneIndexed else 1.toShort
+          val end = if (line == loc.sp2.lineOneIndexed) loc.sp2.colOneIndexed else (loc.source.getLine(line).length + 1).toShort // Column is 1-indexed
+          val newLoc = SourceLocation(isReal = true, SourcePosition.mkFromOneIndexed(loc.source, line, begin), SourcePosition.mkFromOneIndexed(loc.source, line, end))
           splitTokens += SemanticToken(tpe, modifiers, newLoc)
         }
     }
