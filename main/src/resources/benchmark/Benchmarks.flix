@@ -53,10 +53,10 @@ def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
         let l3 = Benchmark.Inliner.Optimized.rv(l2, Nil);
         blackhole(l3)
     },
-        "EnumSets" => () -> {
-            let formula = Benchmark.Enum.genExample(10_000);
-            let fv = Benchmark.Enum.variables(formula);
-            let size = Set.size(fv);
-            blackhole(size)
+    "EnumSets" => () -> {
+        let formula = Benchmark.Enum.genExample(10_000);
+        let fv = Benchmark.Enum.variables(formula);
+        let size = Set.size(fv);
+        blackhole(size)
     }
 }
