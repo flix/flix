@@ -144,6 +144,9 @@ class Flix {
     "Reflect.flix" -> LocalResource.get("/src/library/Reflect.flix"),
     "JvmReflection.flix" -> LocalResource.get("/src/library/JvmReflection.flix"),
 
+    // Debug
+    "Debug.flix" -> LocalResource.get("/src/library/Debug.flix"),
+
     // References
     "Ref.flix" -> LocalResource.get("/src/library/Ref.flix"),
   )
@@ -164,7 +167,6 @@ class Flix {
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "CodePoint.flix" -> LocalResource.get("/src/library/CodePoint.flix"),
     "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
-    "Debug.flix" -> LocalResource.get("/src/library/Debug.flix"),
     "DelayList.flix" -> LocalResource.get("/src/library/DelayList.flix"),
     "DelayMap.flix" -> LocalResource.get("/src/library/DelayMap.flix"),
     "Down.flix" -> LocalResource.get("/src/library/Down.flix"),
