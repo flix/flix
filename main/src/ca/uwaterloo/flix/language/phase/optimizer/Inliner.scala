@@ -559,6 +559,13 @@ object Inliner {
     case _ => false // Impure so do not move expression
   }
 
+  /** Returns `true` if `exp` is [[Expr.Cst]] and the constant is not a [[Constant.Regex]]. */
+  private def isCst(exp: Expr): Boolean = exp match {
+    case Expr.Cst(Constant.Regex(_), _, _) => false
+    case Expr.Cst(_, _, _) => true
+    case _ => false
+  }
+
   /**
     * Returns `true` if `exp0` is considered a trivial expression.
     *
