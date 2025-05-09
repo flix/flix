@@ -241,7 +241,7 @@ object Inliner {
       case _ =>
         // Simplify and maybe do copy-propagation
         val e1 = visitExp(exp1, ctx0.withEmptyExprCtx)
-        if (isTrivial(e1) && exp1.eff == Type.Pure) {
+        if (isSimple(e1) && exp1.eff == Type.Pure) {
           // Do copy propagation and drop let-binding
           sctx.changed.putIfAbsent(sym0, ())
           val freshVarSym = Symbol.freshVarSym(sym)
@@ -606,16 +606,19 @@ object Inliner {
     case Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isSimple)
     case Expr.LocalDef(_, _, _, Expr.ApplyLocalDef(_, exps, _, _, _), _, _, _, _) => exps.forall(isSimple)
     case Expr.Cast(exp, _, _, _) => isSingleAction(exp)
-    case Expr.ApplyAtomic(AtomicOp.ArrayNew, exps, _, _, _) => exps.forall(isSimple)
-    case Expr.ApplyAtomic(AtomicOp.ArrayLoad, exps, _, _, _) => exps.forall(isSimple)
-    case Expr.ApplyAtomic(AtomicOp.ArrayStore, exps, _, _, _) => exps.forall(isSimple)
-    case Expr.ApplyAtomic(AtomicOp.ArrayLength, exps, _, _, _) => exps.forall(isSimple)
-    case Expr.ApplyAtomic(AtomicOp.InvokeMethod(_), exps, _, _, _) => exps.forall(isSimple)
-    case Expr.ApplyAtomic(AtomicOp.InvokeStaticMethod(_), exps, _, _, _) => exps.forall(isSimple)
-    case Expr.ApplyAtomic(AtomicOp.GetField(_), exps, _, _, _) => exps.forall(isSimple)
-    case Expr.ApplyAtomic(AtomicOp.PutField(_), exps, _, _, _) => exps.forall(isSimple)
-    case Expr.ApplyAtomic(AtomicOp.GetStaticField(_), exps, _, _, _) => exps.forall(isSimple)
-    case Expr.ApplyAtomic(AtomicOp.PutStaticField(_), exps, _, _, _) => exps.forall(isSimple)
+    case Expr.ApplyAtomic(op, exps, _, _, _) => op match {
+      case AtomicOp.ArrayNew => exps.forall(isSimple)
+      case AtomicOp.ArrayLoad => exps.forall(isSimple)
+      case AtomicOp.ArrayStore => exps.forall(isSimple)
+      case AtomicOp.ArrayLength => exps.forall(isSimple)
+      case AtomicOp.InvokeMethod(_) => exps.forall(isSimple)
+      case AtomicOp.InvokeStaticMethod(_) => exps.forall(isSimple)
+      case AtomicOp.GetField(_) => exps.forall(isSimple)
+      case AtomicOp.PutField(_) => exps.forall(isSimple)
+      case AtomicOp.GetStaticField(_) => exps.forall(isSimple)
+      case AtomicOp.PutStaticField(_) => exps.forall(isSimple)
+      case _ => false
+    }
     case _ => false
   }
 
