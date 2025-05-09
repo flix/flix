@@ -657,8 +657,11 @@ object Inliner {
   private def resultExp(exp0: Expr): Expr = exp0 match {
     case Expr.Let(_, _, exp2, _, _, _, _) => resultExp(exp2)
     case Expr.LocalDef(_, _, _, exp2, _, _, _, _) => resultExp(exp2)
+    case Expr.Scope(_, _, exp, _, _, _) => resultExp(exp)
     case Expr.Stm(_, exp2, _, _, _) => resultExp(exp2)
-    case _ => exp0
+    case Expr.Ascribe(exp, _, _, _) => resultExp(exp)
+    case Expr.Cast(exp, _, _, _) => resultExp(exp)
+    case exp => exp
   }
 
   /**
