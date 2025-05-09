@@ -508,12 +508,6 @@ object Inliner {
       val callSize = args.map(_._1).map(size).sum
       bodySize <= callSize
 
-    case Expr.ApplyDef(sym, exps, _, _, _, _) =>
-      val defn = root.defs(sym)
-      val bodySize = size(defn.exp)
-      val callSize = exps.map(size).sum
-      bodySize <= callSize
-
     case _ => false
   }
 
