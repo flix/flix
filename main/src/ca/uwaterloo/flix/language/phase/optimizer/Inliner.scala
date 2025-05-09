@@ -194,6 +194,7 @@ object Inliner {
       if (shouldInlineDef(root.defs(sym), es, ctx0)) {
         sctx.changed.putIfAbsent(sym0, ())
         val defn = root.defs(sym)
+        defn.spec.defContext.refs.decrementAndGet()
         val ctx = ctx0.withSubst(Map.empty).enableInliningMode
         bindArgs(defn.exp, defn.spec.fparams, es, loc, ctx)
       } else {
