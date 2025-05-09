@@ -802,18 +802,6 @@ object Desugar {
       val e2 = visitExp(exp2)
       Expr.FixpointMerge(e1, e2, loc)
 
-    case WeededAst.Expr.FixpointSolve(exp, loc) =>
-      val e = visitExp(exp)
-      Expr.FixpointSolve(e, loc)
-
-    case WeededAst.Expr.FixpointFilter(pred, exp, loc) =>
-      val e = visitExp(exp)
-      Expr.FixpointFilter(pred, e, loc)
-
-    case WeededAst.Expr.FixpointInject(exp, pred, loc) =>
-      val e = visitExp(exp)
-      Expr.FixpointInject(e, pred, loc)
-
     case WeededAst.Expr.FixpointInjectInto(exps, idents, loc) =>
       desugarFixpointInjectInto(exps, idents, loc)
 
