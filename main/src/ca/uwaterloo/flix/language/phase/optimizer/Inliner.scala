@@ -71,7 +71,7 @@ object Inliner {
   /** Performs inlining on the given AST `root`. */
   def run(root: MonoAst.Root)(implicit inlined: ConcurrentHashMap[Symbol.DefnSym, Unit], flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
     val sctx: SharedContext = SharedContext.mk()
-    val defs = ParOps.parMapValues(root.defs)(visitDef(_)(sctx, root, flix))
+    val defs = ParOps.parMapValues(root.defs)(visitDef(_)(sctx, root, inlined, flix))
     val newDelta = sctx.changed.asScala.keys.toSet
     val liveSyms = root.entryPoints ++ sctx.live.asScala.keys.toSet
     val liveDefs = defs.filter(kv => liveSyms.contains(kv._1))
@@ -195,6 +195,7 @@ object Inliner {
       val es = exps.map(visitExp(_, ctx0))
       if (shouldInlineDef(root.defs(sym), es, ctx0)) {
         sctx.changed.putIfAbsent(sym0, ())
+        inlined.putIfAbsent(sym0, ())
         val defn = root.defs(sym)
         val ctx = ctx0.withSubst(Map.empty).enableInliningMode
         bindArgs(defn.exp, defn.spec.fparams, es, loc, ctx)
@@ -424,7 +425,7 @@ object Inliner {
       (MonoAst.FormalParam(freshVarSym, mod, tpe, src, occur, loc), varSubst)
   }
 
-  def visitMatchRule(rule: MonoAst.MatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.MatchRule = rule match {
+  def visitMatchRule(rule: MonoAst.MatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, inlined: ConcurrentHashMap[Symbol.DefnSym, Unit], flix: Flix): MonoAst.MatchRule = rule match {
     case MonoAst.MatchRule(pat, guard, exp1) =>
       val (p, varSubst1) = visitPattern(pat)
       val ctx = ctx0.addVarSubsts(varSubst1).addInScopeVars(varSubst1.values.map(sym => sym -> BoundKind.ParameterOrPattern))
@@ -433,7 +434,7 @@ object Inliner {
       MonoAst.MatchRule(p, g, e1)
   }
 
-  def visitCatchRule(rule: MonoAst.CatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.CatchRule = rule match {
+  def visitCatchRule(rule: MonoAst.CatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, inlined: ConcurrentHashMap[Symbol.DefnSym, Unit], flix: Flix): MonoAst.CatchRule = rule match {
     case MonoAst.CatchRule(sym, clazz, exp1) =>
       val freshVarSym = Symbol.freshVarSym(sym)
       val ctx = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.ParameterOrPattern)
@@ -441,7 +442,7 @@ object Inliner {
       MonoAst.CatchRule(freshVarSym, clazz, e1)
   }
 
-  def visitHandlerRule(rule: MonoAst.HandlerRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.HandlerRule = rule match {
+  def visitHandlerRule(rule: MonoAst.HandlerRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, inlined: ConcurrentHashMap[Symbol.DefnSym, Unit], flix: Flix): MonoAst.HandlerRule = rule match {
     case MonoAst.HandlerRule(op, fparams, exp1) =>
       val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
       val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
@@ -449,7 +450,7 @@ object Inliner {
       MonoAst.HandlerRule(op, fps, e1)
   }
 
-  def visitJvmMethod(method: MonoAst.JvmMethod, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
+  def visitJvmMethod(method: MonoAst.JvmMethod, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, inlined: ConcurrentHashMap[Symbol.DefnSym, Unit], flix: Flix): MonoAst.JvmMethod = method match {
     case MonoAst.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
       val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
       val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
@@ -474,7 +475,7 @@ object Inliner {
     *
     * Lastly, it visits the top-most let-binding, thus possibly removing the bindings.
     */
-  private def bindArgs(exp: Expr, fparams: List[FormalParam], exps: List[Expr], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): Expr = {
+  private def bindArgs(exp: Expr, fparams: List[FormalParam], exps: List[Expr], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, inlined: ConcurrentHashMap[Symbol.DefnSym, Unit], flix: Flix): Expr = {
     val letBindings = fparams.zip(exps).foldRight(exp) {
       case ((fparam, arg), acc) =>
         val eff = Type.mkUnion(arg.eff, acc.eff, loc)
@@ -497,8 +498,10 @@ object Inliner {
     * @param exps the arguments to the function.
     * @param ctx0 the local context.
     */
-  private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext): Boolean = {
-    !ctx0.currentlyInlining && !defn.spec.defContext.isSelfRef &&
+  private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext)(implicit inlined: ConcurrentHashMap[Symbol.DefnSym, Unit]): Boolean = {
+    !defn.spec.ann.isDontInline &&
+      ((defn.spec.ann.isInline && defn.spec.defContext.isSelfRef && !inlined.containsKey(defn.sym)) || !defn.spec.defContext.isSelfRef || (defn.spec.ann.isInline && !defn.spec.defContext.isSelfRef)) &&
+      !ctx0.currentlyInlining &&
       (isSingleAction(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))
   }
 
