@@ -241,7 +241,7 @@ object Inliner {
       case _ =>
         // Simplify and maybe do copy-propagation
         val e1 = visitExp(exp1, ctx0.withEmptyExprCtx)
-        if (isTrivial(e1) && exp1.eff == Type.Pure) {
+        if (isSimple(e1) && exp1.eff == Type.Pure) {
           // Do copy propagation and drop let-binding
           sctx.changed.putIfAbsent(sym0, ())
           val freshVarSym = Symbol.freshVarSym(sym)
