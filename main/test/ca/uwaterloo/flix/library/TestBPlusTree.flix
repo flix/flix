@@ -58,7 +58,7 @@ mod TestBPlusTree {
                 spawn unchecked_cast(() -> {
                     Random.runWithSeed(seed, () -> repeatN(() -> {
                         let (x, y) = f();
-                        BPlusTree.insert(x, y, tree);
+                        BPlusTree.put(x, y, tree);
                         true
                     }, numInserts)); ()
                 } as Unit -> Unit \ IO)() @ rc2}
@@ -96,7 +96,7 @@ mod TestBPlusTree {
                     let countRef = Ref.fresh(rc, 0i64);
                     Random.runWithSeed(seed, () -> Ref.put(repeatN(() -> {
                         let (x, y) = f();
-                        BPlusTree.insert(x, y, tree);
+                        BPlusTree.put(x, y, tree);
                         let cur = Ref.get(countRef);
                         if (cur >= readEvery) {
                             let (x_, _) = insertedFunc();
@@ -236,7 +236,7 @@ mod TestBPlusTree {
     @test
     def memberOfPair02(): Bool = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 3);
-        BPlusTree.insert(1, 2, tree);
+        BPlusTree.put(1, 2, tree);
         BPlusTree.memberOfPair(1, 2, tree) and
             not BPlusTree.memberOfPair(2, 1, tree) and
             not BPlusTree.memberOfPair(1, 3, tree)
@@ -279,20 +279,20 @@ mod TestBPlusTree {
     @test
     def getWithDefault02(): Bool = region rc {
         let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
-        BPlusTree.insert(0, 10, tree);
+        BPlusTree.put(0, 10, tree);
         10 == BPlusTree.getWithDefault(0, 42, tree)
     }
 
     @test
     def getWithDefault03(): Bool = region rc {
         let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
-        BPlusTree.insert(0, 10, tree);
-        BPlusTree.insert(1, 11, tree);
-        BPlusTree.insert(2, 12, tree);
-        BPlusTree.insert(3, 13, tree);
-        BPlusTree.insert(4, 14, tree);
-        BPlusTree.insert(5, 15, tree);
-        BPlusTree.insert(6, 16, tree);
+        BPlusTree.put(0, 10, tree);
+        BPlusTree.put(1, 11, tree);
+        BPlusTree.put(2, 12, tree);
+        BPlusTree.put(3, 13, tree);
+        BPlusTree.put(4, 14, tree);
+        BPlusTree.put(5, 15, tree);
+        BPlusTree.put(6, 16, tree);
         10 == BPlusTree.getWithDefault(0, 42, tree)
         and 11 == BPlusTree.getWithDefault(1, 42, tree)
         and 12 == BPlusTree.getWithDefault(2, 42, tree)
@@ -319,7 +319,7 @@ mod TestBPlusTree {
     @test
     def isEmpty02(): Bool = region rc {
         let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
-        BPlusTree.insert(1, 2, tree);
+        BPlusTree.put(1, 2, tree);
         not BPlusTree.isEmpty(tree)
     }
 
@@ -327,34 +327,34 @@ mod TestBPlusTree {
     def isEmpty03(): Bool = region rc {
         let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
         let empty0 = BPlusTree.isEmpty(tree);
-        BPlusTree.insert(1, 2, tree);
+        BPlusTree.put(1, 2, tree);
         let empty1 = BPlusTree.isEmpty(tree);
-        BPlusTree.insert(2, 3, tree);
+        BPlusTree.put(2, 3, tree);
         let empty2 = BPlusTree.isEmpty(tree);
-        BPlusTree.insert(3, 4, tree);
+        BPlusTree.put(3, 4, tree);
         let empty3 = BPlusTree.isEmpty(tree);
-        BPlusTree.insert(4, 5, tree);
+        BPlusTree.put(4, 5, tree);
         let empty4 = BPlusTree.isEmpty(tree);
         empty0 and not empty1 and not empty2 and not empty3 and not empty4
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // insert                                                                  //
+    // put                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def insert01(): Bool = region rc {
+    def put01(): Bool = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 3);
-        BPlusTree.insert(4, 2, tree);
+        BPlusTree.put(4, 2, tree);
         BPlusTree.memberOfPair(4, 2 ,tree) and BPlusTree.assertTreeInvariant(tree)
     }
 
     @test
-    def insert02(): Bool = region rc {
+    def put02(): Bool = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 3);
-        BPlusTree.insert(1, 10, tree);
-        BPlusTree.insert(2, 11, tree);
-        BPlusTree.insert(3, 12, tree);
+        BPlusTree.put(1, 10, tree);
+        BPlusTree.put(2, 11, tree);
+        BPlusTree.put(3, 12, tree);
         BPlusTree.memberOfPair(1, 10, tree) and
             BPlusTree.memberOfPair(2, 11, tree) and
             BPlusTree.memberOfPair(3, 12, tree) and
@@ -362,14 +362,14 @@ mod TestBPlusTree {
     }
 
     @test
-    def insert03(): Bool = region rc {
+    def put03(): Bool = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 3);
-        BPlusTree.insert(6, 15, tree);
-        BPlusTree.insert(5, 14, tree);
-        BPlusTree.insert(4, 13, tree);
-        BPlusTree.insert(3, 12, tree);
-        BPlusTree.insert(2, 11, tree);
-        BPlusTree.insert(1, 10, tree);
+        BPlusTree.put(6, 15, tree);
+        BPlusTree.put(5, 14, tree);
+        BPlusTree.put(4, 13, tree);
+        BPlusTree.put(3, 12, tree);
+        BPlusTree.put(2, 11, tree);
+        BPlusTree.put(1, 10, tree);
         BPlusTree.memberOfPair(1, 10, tree) and
             BPlusTree.memberOfPair(2, 11, tree) and
             BPlusTree.memberOfPair(3, 12, tree) and
@@ -380,7 +380,7 @@ mod TestBPlusTree {
     }
 
     @test
-    def insert04(): Bool = region rc {
+    def put04(): Bool = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 5);
         let pairs = List.map(p -> {
             let (x, y) = p;
@@ -388,7 +388,7 @@ mod TestBPlusTree {
         }, List.zip(List.range(1, 10_000), List.reverse(List.range(1, 10_000))));
         List.forEach(p -> {
             let (x, y) = p;
-            BPlusTree.insert(x, y, tree)
+            BPlusTree.put(x, y, tree)
         }, pairs);
         Map.forAll(x -> y -> {
             BPlusTree.memberOfPair(x, y, tree)
@@ -396,7 +396,7 @@ mod TestBPlusTree {
     }
 
     @test
-    def insert05(): Bool = region rc {
+    def put05(): Bool = region rc {
         List.forAll(arity -> {
             let tree = BPlusTree.emptyWithArity(rc, arity);
             let pairs = List.map(p -> {
@@ -405,12 +405,84 @@ mod TestBPlusTree {
             }, List.zip(List.range(1, 100_000), List.reverse(List.range(1, 100_000))));
             List.forEach(p -> {
                 let (x, y) = p;
-                BPlusTree.insert(x, y, tree)
+                BPlusTree.put(x, y, tree)
             }, pairs);
             Map.forAll((x, y) -> {
                 BPlusTree.memberOfPair(x, y, tree)
             }, listToMap(pairs)) and BPlusTree.assertTreeInvariant(tree)
         }, List.range(3, 10))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // get                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def get01(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.get(0, tree) |> Option.isEmpty
+    }
+
+    @test
+    def get02(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.put(0, 1, tree);
+        match BPlusTree.get(0, tree) {
+            case Some(v) => v == 1
+            case None => false
+        }
+    }
+
+    @test
+    def get03(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.put(0, 1, tree);
+        BPlusTree.get(1, tree) |> Option.isEmpty
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // computeIfAbsent                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def computeIfAbsent01(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.computeIfAbsent(() -> 2, 1, tree);
+        BPlusTree.memberOfPair(1, 2, tree)
+    }
+
+    @test
+    def computeIfAbsent02(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.put(1, 3, tree);
+        BPlusTree.computeIfAbsent(() -> 2, 1, tree);
+        BPlusTree.memberOfPair(1, 3, tree) and
+            not BPlusTree.memberOfPair(1, 2, tree)
+    }
+
+    @test
+    def computeIfAbsent03(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        let ref = Ref.fresh(rc, false);
+        let effectfulFunction = () -> {
+            Ref.put(true, ref);
+            2
+        };
+        BPlusTree.computeIfAbsent(effectfulFunction, 1, tree);
+        BPlusTree.memberOfPair(1, 2, tree) and Ref.get(ref)
+    }
+
+    @test
+    def computeIfAbsent04(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        let ref = Ref.fresh(rc, true);
+        let effectfulFunction = () -> {
+            Ref.put(false, ref);
+            2
+        };
+        BPlusTree.put(1, 3, tree);
+        BPlusTree.computeIfAbsent(effectfulFunction, 1, tree);
+        BPlusTree.memberOfPair(1, 3, tree) and Ref.get(ref)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -420,10 +492,10 @@ mod TestBPlusTree {
     @test
     def memberOf01(): Bool = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 3);
-        BPlusTree.insert(2, 3, tree);
+        BPlusTree.put(2, 3, tree);
         BPlusTree.memberOf(2, tree)
     }
-    
+
     @test
     def memberOf02(): Bool = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 3);
@@ -435,47 +507,47 @@ mod TestBPlusTree {
     @test
     def memberOf03(): Bool = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 3);
-        BPlusTree.insert(1, 2, tree);
+        BPlusTree.put(1, 2, tree);
         BPlusTree.memberOf(1, tree) and
             not BPlusTree.memberOf(2, tree) and
             not BPlusTree.memberOf(0, tree)
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // insertWith                                                              //
+    // putWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
-    
+
     @test
-    def insertWith01(): Bool = region rc {
+    def putWith01(): Bool = region rc {
         let tree = BPlusTree.empty(rc);
-        BPlusTree.insert(1, 2, tree);
-        BPlusTree.insertWith(v1 -> v2 -> v1 + v2, 1, 3, tree);
+        BPlusTree.put(1, 2, tree);
+        BPlusTree.putWith(v1 -> v2 -> v1 + v2, 1, 3, tree);
         BPlusTree.memberOfPair(1, 5, tree) and
             not BPlusTree.memberOfPair(1, 2, tree) and
             not BPlusTree.memberOfPair(1, 3, tree)
     }
 
     @test
-    def insertWith02(): Bool = region rc {
+    def putWith02(): Bool = region rc {
         let tree = BPlusTree.empty(rc);
-        BPlusTree.insert(1, 2, tree);
-        BPlusTree.insertWith(v1 -> v2 -> v1 - v2, 1, 1, tree);
+        BPlusTree.put(1, 2, tree);
+        BPlusTree.putWith(v1 -> v2 -> v1 - v2, 1, 1, tree);
         BPlusTree.memberOfPair(1, -1, tree) and
             not BPlusTree.memberOfPair(1, 2, tree) and
             not BPlusTree.memberOfPair(1, 1, tree)
     }
 
     @test
-    def insertWith03(): Bool = region rc {
+    def putWith03(): Bool = region rc {
         let tree = BPlusTree.empty(rc);
-        BPlusTree.insertWith(v1 -> v2 -> v1 - v2, 1, 2, tree);
+        BPlusTree.putWith(v1 -> v2 -> v1 - v2, 1, 2, tree);
         BPlusTree.memberOfPair(1, 2, tree)
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
-    /////////////////////////////////////////////////////////////////////////////     
-        
+    /////////////////////////////////////////////////////////////////////////////
+
     @test
     def toList01(): Bool = region rc {
         let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc);
@@ -486,8 +558,8 @@ mod TestBPlusTree {
     def toList02(): Bool = region rc {
         let tree = BPlusTree.empty(rc);
         let pairs = (1, 12) :: (2, 23) :: (3, 34) :: (4, 45) :: Nil;
-        List.forEach(match (k, v) -> BPlusTree.insert(k, v, tree), pairs);
-        BPlusTree.toList(tree) == pairs        
+        List.forEach(match (k, v) -> BPlusTree.put(k, v, tree), pairs);
+        BPlusTree.toList(tree) == pairs
     }
 
     @test
@@ -497,7 +569,7 @@ mod TestBPlusTree {
             List.range(0, 10000) |> List.map(_ -> (Random.randomInt32(), Random.randomInt32()))
         };
         let pairs = Random.handle(getRandomPairs)();
-        List.forEach(match (k, v) -> BPlusTree.insert(k, v, tree), pairs);
+        List.forEach(match (k, v) -> BPlusTree.put(k, v, tree), pairs);
         BPlusTree.toList(tree) == List.sort(pairs)
     }
 
@@ -507,23 +579,23 @@ mod TestBPlusTree {
 
     def rangeQueryDefaultTree(rc: Region[r]): BPlusTree[Int32, Int32, r] \ r =
         let tree: BPlusTree[Int32, Int32, r] = BPlusTree.emptyWithArity(rc, 3);
-        BPlusTree.insert(0, 10, tree);
-        BPlusTree.insert(1, 11, tree);
-        BPlusTree.insert(2, 12, tree);
-        BPlusTree.insert(3, 13, tree);
-        BPlusTree.insert(4, 14, tree);
-        BPlusTree.insert(5, 15, tree);
+        BPlusTree.put(0, 10, tree);
+        BPlusTree.put(1, 11, tree);
+        BPlusTree.put(2, 12, tree);
+        BPlusTree.put(3, 13, tree);
+        BPlusTree.put(4, 14, tree);
+        BPlusTree.put(5, 15, tree);
         tree
 
     def rangeQueryMultipleValues(rc: Region[r]): BPlusTree[Int32, Int32, r] \ r =
         let tree = BPlusTree.emptyWithArity(rc, 3);
-        BPlusTree.insert(0, 10, tree);
-        BPlusTree.insert(0, 11, tree);
-        BPlusTree.insert(0, 12, tree);
-        BPlusTree.insert(1, 11, tree);
-        BPlusTree.insert(1, 12, tree);
-        BPlusTree.insert(2, 13, tree);
-        BPlusTree.insert(3, 14, tree);
+        BPlusTree.put(0, 10, tree);
+        BPlusTree.put(0, 11, tree);
+        BPlusTree.put(0, 12, tree);
+        BPlusTree.put(1, 11, tree);
+        BPlusTree.put(1, 12, tree);
+        BPlusTree.put(2, 13, tree);
+        BPlusTree.put(3, 14, tree);
         tree
 
     @test
