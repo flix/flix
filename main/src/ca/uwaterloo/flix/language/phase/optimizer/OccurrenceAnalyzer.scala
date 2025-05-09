@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.Symbol.VarSym
 import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -35,6 +36,7 @@ object OccurrenceAnalyzer {
     * Performs occurrence analysis on the given AST `root`.
     */
   def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym])(implicit flix: Flix): MonoAst.Root = {
+    implicit val sctx: SharedContext = SharedContext.mk()
     val changedDefs = root.defs.filter(kv => delta.contains(kv._1))
     val visitedDefs = ParOps.parMapValues(changedDefs)(visitDef)
     root.copy(defs = root.defs ++ visitedDefs)
@@ -43,9 +45,9 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on `defn`.
     */
-  private def visitDef(defn: MonoAst.Def): MonoAst.Def = {
+  private def visitDef(defn: MonoAst.Def)(implicit sctx: SharedContext): MonoAst.Def = {
     val lctx: LocalContext = LocalContext.mk()
-    val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx)
+    val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx, sctx)
     val defContext = DefContext(lctx.localDefs.get(), isSelfRef(ctx.selfOccur))
     val fparams = defn.spec.fparams.map(visitFormalParam(_, ctx))
     val spec = defn.spec.copy(fparams = fparams, defContext = defContext)
@@ -55,7 +57,7 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on `exp0`
     */
-  private def visitExp(exp0: Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (Expr, ExprContext) = {
+  private def visitExp(exp0: Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext, sctx: SharedContext): (Expr, ExprContext) = {
     exp0 match {
       case Expr.Cst(_, _, _) =>
         (exp0, ExprContext.Empty)
@@ -97,6 +99,7 @@ object OccurrenceAnalyzer {
         }
 
       case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+        sctx.live.putIfAbsent(sym, ())
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx1 = if (sym == sym0) ExprContext.RecursiveOnce else ExprContext.Empty
         val ctx2 = ctxs.foldLeft(ctx1)(combineSeq)
@@ -279,7 +282,7 @@ object OccurrenceAnalyzer {
     }
   }
 
-  private def visitMatchRule(rule: MonoAst.MatchRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (MonoAst.MatchRule, ExprContext) = rule match {
+  private def visitMatchRule(rule: MonoAst.MatchRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext, sctx: SharedContext): (MonoAst.MatchRule, ExprContext) = rule match {
     case MonoAst.MatchRule(pat, guard, exp) =>
       val (g, ctx1) = guard.map(visitExp).unzip
       val (e, ctx2) = visitExp(exp)
@@ -293,7 +296,7 @@ object OccurrenceAnalyzer {
       }
   }
 
-  private def visitCatchRule(rule: MonoAst.CatchRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (MonoAst.CatchRule, ExprContext) = rule match {
+  private def visitCatchRule(rule: MonoAst.CatchRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext, sctx: SharedContext): (MonoAst.CatchRule, ExprContext) = rule match {
     case MonoAst.CatchRule(sym, clazz, exp) =>
       val (e, ctx1) = visitExp(exp)
       val ctx2 = ctx1.removeVar(sym)
@@ -304,7 +307,7 @@ object OccurrenceAnalyzer {
       }
   }
 
-  private def visitHandlerRule(rule: MonoAst.HandlerRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (MonoAst.HandlerRule, ExprContext) = rule match {
+  private def visitHandlerRule(rule: MonoAst.HandlerRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext, sctx: SharedContext): (MonoAst.HandlerRule, ExprContext) = rule match {
     case MonoAst.HandlerRule(op, fparams, exp) =>
       val (e, ctx1) = visitExp(exp)
       val fps = fparams.map(visitFormalParam(_, ctx1))
@@ -316,7 +319,7 @@ object OccurrenceAnalyzer {
       }
   }
 
-  private def visitJvmMethod(method: MonoAst.JvmMethod)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (MonoAst.JvmMethod, ExprContext) = method match {
+  private def visitJvmMethod(method: MonoAst.JvmMethod)(implicit sym0: Symbol.DefnSym, lctx: LocalContext, sctx: SharedContext): (MonoAst.JvmMethod, ExprContext) = method match {
     case MonoAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
       val (e, ctx1) = visitExp(exp)
       val fps = fparams.map(visitFormalParam(_, ctx1))
@@ -537,14 +540,10 @@ object OccurrenceAnalyzer {
     case Occur.ManyBranch => true
   }
 
-  /**
-    * Companion object for [[LocalContext]].
-    */
+  /** Companion object for [[LocalContext]]. */
   private object LocalContext {
 
-    /**
-      * Returns a fresh [[LocalContext]].
-      */
+    /** Returns a fresh [[LocalContext]]. */
     def mk(): LocalContext = new LocalContext(new AtomicInteger(0))
 
   }
@@ -557,5 +556,21 @@ object OccurrenceAnalyzer {
     *                  Must be mutable.
     */
   private case class LocalContext(localDefs: AtomicInteger)
+
+  /** Companion object for [[SharedContext]]. */
+  private object SharedContext {
+
+    /** Returns a fresh [[SharedContext]]. */
+    def mk(): SharedContext = new SharedContext(new ConcurrentHashMap())
+
+  }
+
+  /**
+    *
+    * Represents a shared context. Must be thread-safe.
+    *
+    * @param live a concurrent set of reachable symbols.
+    */
+  private case class SharedContext(live: ConcurrentHashMap[Symbol.DefnSym, Unit])
 
 }
