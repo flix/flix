@@ -35,7 +35,8 @@ object Optimizer {
     for (_ <- 0 until MaxRounds) {
       if (currentDelta.nonEmpty) {
         val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(currentRoot, currentDelta)
-        val (newRoot, newDelta) = Inliner.run(afterOccurrenceAnalyzer)
+        val (newRoot, newDelta) = Inliner.run(afterOccurrenceAnalyzer, currentDelta)
+        println(currentDelta.size)
         currentRoot = newRoot
         currentDelta = newDelta
       }

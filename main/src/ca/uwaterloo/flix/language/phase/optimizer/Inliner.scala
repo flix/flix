@@ -69,8 +69,8 @@ import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 object Inliner {
 
   /** Performs inlining on the given AST `root`. */
-  def run(root: MonoAst.Root)(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
-    val sctx: SharedContext = SharedContext.mk()
+  def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym])(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
+    val sctx: SharedContext = SharedContext.mk(delta)
     val defs = ParOps.parMapValues(root.defs)(visitDef(_)(sctx, root, flix))
     val newDelta = sctx.changed.asScala.keys.toSet
     val liveSyms = root.entryPoints ++ sctx.live.asScala.keys.toSet
@@ -484,12 +484,7 @@ object Inliner {
   }
 
   /**
-   * Returns `true` if
-   *   - the local context shows that we are not currently inlining and
-   *   - `defn` does not refer to itself and
-   *   - it is either a higher-order function with a known lambda as argument or
-   *   - it is a direct call with simple arguments to another function or
-   *   - the body is simple.
+   * Returns `true` if the given `defn` should be inlined.
    *
    * It is the responsibility of the caller to visit `exps` first.
    *
@@ -497,8 +492,10 @@ object Inliner {
    * @param exps the arguments to the function.
    * @param ctx0 the local context.
    */
-  private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext): Boolean = {
-    !ctx0.currentlyInlining && !defn.spec.defContext.isSelfRef &&
+  private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext)(implicit sctx: SharedContext): Boolean = {
+    !sctx.delta.contains(defn.sym) &&
+    !ctx0.currentlyInlining &&
+      !defn.spec.defContext.isSelfRef &&
       (isSingleAction(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))
   }
 
@@ -710,16 +707,21 @@ object Inliner {
   }
 
   private object SharedContext {
-    /** Returns a fresh [[SharedContext]]. */
-    def mk(): SharedContext = new SharedContext(new ConcurrentHashMap(), new ConcurrentHashMap())
+    /**
+     * Returns a fresh [[SharedContext]].
+     *
+     * The delta set does not change during the lifetime of the shared context.
+     */
+    def mk(delta: Set[Symbol.DefnSym]): SharedContext = new SharedContext(delta, new ConcurrentHashMap(), new ConcurrentHashMap())
   }
 
   /**
    * A globally shared thread-safe context.
    *
+   * @param delta   the set of symbols that changed in the last iteration.
    * @param changed the set of symbols of changed functions.
    * @param live    the set of symbols of live functions.
    */
-  private case class SharedContext(changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit])
+  private case class SharedContext(delta: Set[Symbol.DefnSym], changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit])
 
 }
