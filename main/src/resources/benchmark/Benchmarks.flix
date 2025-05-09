@@ -54,7 +54,7 @@ def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
         blackhole(l3)
     },
     "EnumSets" => () -> {
-        let formula = Benchmark.Enum.genExample(10_000);
+        let formula = Benchmark.Enum.genExample(4_500);
         let fv = Benchmark.Enum.variables(formula);
         let size = Set.size(fv);
         blackhole(size)
