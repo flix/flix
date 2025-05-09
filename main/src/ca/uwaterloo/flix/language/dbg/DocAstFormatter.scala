@@ -373,6 +373,23 @@ object DocAstFormatter {
           case None =>
             curlyTuple(exsf)
         }
+      case Type.ExtensibleEmpty =>
+        text("#EV#{}")
+      case ee: Type.ExtensibleExtend =>
+        val (extensions, restOpt) = collectExtensibleTypes(ee)
+        val extensionsf = extensions.map {
+          case Type.ExtensibleExtend(cons, Nil, _) =>
+            text(cons)
+          case Type.ExtensibleExtend(cons, tpes, _) =>
+            text(cons) |:: tuple(tpes.map(formatType(_, paren = false)))
+        }
+        restOpt match {
+          case Some(rest) =>
+            val restf = formatType(rest, paren = false)
+            curly(commaSep(extensionsf) +: text("|") +\: restf)
+          case None =>
+            text("#EV#") |:: curlyTuple(extensionsf)
+        }
       case Type.SchemaRowEmpty =>
         text("#()")
       case Type.SchemaRowExtend(label, value, rest) =>
@@ -456,6 +473,26 @@ object DocAstFormatter {
         case re@Type.RecordExtend(_, _, rest) =>
           chase(rest, re :: acc)
         case Type.RecordEmpty =>
+          (acc.reverse, None)
+        case other =>
+          (acc.reverse, Some(other))
+      }
+    }
+
+    chase(tpe, List())
+  }
+
+  /**
+    * Collects a sequence of [[Type.ExtensibleExtend]] into a shallow list. The tail
+    * is [[None]] if the sequence ends with a [[Type.ExtensibleEmpty]].
+    */
+  private def collectExtensibleTypes(tpe: Type): (List[Type.ExtensibleExtend], Option[Type]) = {
+    @tailrec
+    def chase(tpe0: Type, acc: List[Type.ExtensibleExtend]): (List[Type.ExtensibleExtend], Option[Type]) = {
+      tpe0 match {
+        case ee@Type.ExtensibleExtend(_, _, rest) =>
+          chase(rest, ee :: acc)
+        case Type.ExtensibleEmpty =>
           (acc.reverse, None)
         case other =>
           (acc.reverse, Some(other))

@@ -187,9 +187,6 @@ object LambdaDrop {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Ascribe(exp, _, _, _) =>
-      visitExp(exp)
-
     case Expr.Cast(exp, _, _, _) =>
       visitExp(exp)
 
@@ -314,10 +311,6 @@ object LambdaDrop {
     case Expr.VectorLength(exp, loc) =>
       val e = rewriteExp(exp)
       Expr.VectorLength(e, loc)
-
-    case Expr.Ascribe(exp, tpe, eff, loc) =>
-      val e = rewriteExp(exp)
-      Expr.Ascribe(e, tpe, eff, loc)
 
     case Expr.Cast(exp, tpe, eff, loc) =>
       val e = rewriteExp(exp)
