@@ -30,7 +30,7 @@ object Optimizer {
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer") {
     var currentRoot = root
     var currentDelta = currentRoot.defs.keys.toSet
-    implicit val inlined: ConcurrentHashMap[Symbol.DefnSym, Unit] = new ConcurrentHashMap()
+    implicit val inlined: ConcurrentHashMap[Symbol.DefnSym, ConcurrentHashMap[Symbol.DefnSym, Unit]] = new ConcurrentHashMap()
     for (_ <- 0 until 5) {
       if (currentDelta.isEmpty) {
         // Return early if we have reached a fixpoint.
