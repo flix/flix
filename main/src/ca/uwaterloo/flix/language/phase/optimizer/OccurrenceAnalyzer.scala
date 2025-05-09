@@ -36,12 +36,11 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on the given AST `root`.
     */
-  def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym])(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
+  def run(root: MonoAst.Root)(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
     implicit val sctx: SharedContext = SharedContext.mk()
-    val changedDefs = root.defs.filter(kv => delta.contains(kv._1))
-    val visitedDefs = ParOps.parMapValues(changedDefs)(visitDef)
-    val liveSyms = sctx.live.asScala.keys.toSet ++ delta
-    (root.copy(defs = root.defs ++ visitedDefs), liveSyms)
+    val defs = ParOps.parMapValues(root.defs)(visitDef)
+    val liveSyms = sctx.live.asScala.keys.toSet
+    (root.copy(defs = defs), liveSyms)
   }
 
   /**

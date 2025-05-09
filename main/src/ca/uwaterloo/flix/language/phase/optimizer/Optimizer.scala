@@ -33,7 +33,7 @@ object Optimizer {
         return currentRoot
       }
 
-      val (afterOccurrenceAnalyzer, liveSyms) = OccurrenceAnalyzer.run(currentRoot, currentDelta)
+      val (afterOccurrenceAnalyzer, liveSyms) = OccurrenceAnalyzer.run(currentRoot)
       val (newRoot, newDelta) = Inliner.run(afterOccurrenceAnalyzer, liveSyms)
       currentRoot = newRoot
       currentDelta = newDelta
