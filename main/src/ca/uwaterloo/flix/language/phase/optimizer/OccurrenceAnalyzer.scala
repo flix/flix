@@ -39,7 +39,7 @@ object OccurrenceAnalyzer {
   def run(root: MonoAst.Root)(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
     implicit val sctx: SharedContext = SharedContext.mk()
     val defs = ParOps.parMapValues(root.defs)(visitDef)
-    val liveSyms = sctx.live.asScala.keys.toSet
+    val liveSyms = sctx.live.asScala.keys.toSet ++ root.entryPoints
     (root.copy(defs = defs), liveSyms)
   }
 
