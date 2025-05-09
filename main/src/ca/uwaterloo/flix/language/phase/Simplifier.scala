@@ -176,11 +176,11 @@ object Simplifier {
       val t = visitType(d.tpe)
       SimplifiedAst.Expr.Let(sym, visitExp(exp), SimplifiedAst.Expr.Cst(Constant.Unit, MonoType.Unit, loc), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.Let(sym, e1, e2, tpe, eff, loc) =>
+    case MonoAst.Expr.Let(sym, e1, e2, tpe, eff, _, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.Let(sym, visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+    case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _, loc) =>
       val fps = fparams.map(visitFormalParam)
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -362,12 +362,30 @@ object Simplifier {
 
           case TypeConstructor.Record =>
             val List(elm) = tpe.typeArguments
-            // The row types themselves return monotype records, so we do nothing here.
+            // The visitType(row) returns a monotype record, so just use that.
             visitType(elm)
 
           case TypeConstructor.Extensible =>
-            // TODO: Monomorphization?
-            ??? // TODO: Ext-Variants
+            val List(row) = tpe.typeArguments
+            // The visitType(schemaRow) returns a monotype extensible variant, so just use that.
+            visitType(row)
+
+          case TypeConstructor.SchemaRowEmpty =>
+            MonoType.ExtensibleEmpty
+
+          case TypeConstructor.SchemaRowExtend(pred) =>
+            val List(predType, rest) = tpe.typeArguments
+            val consType0 = predType match {
+              case Type.Apply(Type.Cst(TypeConstructor.Relation, _), ct, _) => ct
+              case Type.Apply(Type.Cst(TypeConstructor.Lattice, _), ct, _) => ct
+              case other => throw InternalCompilerException(s"Unexpected type: '$other'.", other.loc)
+            }
+            val consTypes = consType0.baseType match {
+              case Type.Cst(TypeConstructor.Tuple(_), _) => consType0.typeArguments
+              case Type.Cst(_, _) => List(consType0)
+              case other => throw InternalCompilerException(s"Unexpected type: '$other'.", other.loc)
+            }
+            MonoType.ExtensibleExtend(pred, consTypes.map(visitType), visitType(rest))
 
           case TypeConstructor.Region(_) => MonoType.Unit
 
@@ -394,12 +412,6 @@ object Simplifier {
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.Lattice =>
-            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
-
-          case TypeConstructor.SchemaRowEmpty =>
-            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
-
-          case TypeConstructor.SchemaRowExtend(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.Schema =>
@@ -534,8 +546,8 @@ object Simplifier {
             Type.mkRecord(visitPolyType(elm), loc)
 
           case TypeConstructor.Extensible =>
-            // TODO: Monomorphization?
-            ??? // TODO: Ext-Variants
+            val List(elm) = tpe.typeArguments
+            Type.Apply(Type.Cst(TypeConstructor.Extensible, loc), visitPolyType(elm), loc)
 
           case TypeConstructor.Region(_) => Type.mkUnit(loc)
 
@@ -810,7 +822,7 @@ object Simplifier {
         * The body of the let-binding is computed by recursion on the
         * remaining patterns and variables.
         */
-      case (MonoAst.Pattern.Var(sym, tpe, loc) :: ps, v :: vs) =>
+      case (MonoAst.Pattern.Var(sym, tpe, _, loc) :: ps, v :: vs) =>
         val t = visitType(tpe)
         val exp = patternMatchList(ps, vs, guard, succ, fail)
         SimplifiedAst.Expr.Let(sym, SimplifiedAst.Expr.Var(v, t, loc), exp, succ.tpe, exp.purity, loc)
@@ -914,7 +926,7 @@ object Simplifier {
             (labelLetBinding, restrictedMatchVarExp)
         }
         pat match {
-          case MonoAst.Pattern.Var(sym, _, varLoc) =>
+          case MonoAst.Pattern.Var(sym, _, _, varLoc) =>
             // Extension is { ... | sym } so we generate a let-binding `let sym = matchVar`
             SimplifiedAst.Expr.Let(sym, restrictedMatchVar, one, succ.tpe, restrictedMatchVar.purity, varLoc)
           case _ =>
@@ -926,7 +938,7 @@ object Simplifier {
     }
 
   private def visitEffOp(op: MonoAst.Op)(implicit universe: Set[Symbol.EffectSym]): SimplifiedAst.Op = op match {
-    case MonoAst.Op(sym, MonoAst.Spec(_, ann, mod, fparams0, _, retTpe0, eff0), loc) =>
+    case MonoAst.Op(sym, MonoAst.Spec(_, ann, mod, fparams0, _, retTpe0, eff0, _), loc) =>
       val fparams = fparams0.map(visitFormalParam)
       val retTpe = visitType(retTpe0)
       val eff = simplifyEffect(eff0)

@@ -125,6 +125,8 @@ object WeededAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
+    case class ExtensibleMatch(ident1: Name.Ident, exp1: Expr, ident2: Name.Ident, exp2: Expr, ident3: Name.Ident, exp3: Expr, loc: SourceLocation) extends Expr
+
     case class ApplicativeFor(frags: List[ForFragment.Generator], exp: Expr, loc: SourceLocation) extends Expr
 
     case class ForEach(frags: List[ForFragment], exp: Expr, loc: SourceLocation) extends Expr
@@ -230,12 +232,6 @@ object WeededAst {
     case class FixpointLambda(pparams: List[PredicateParam], exp: Expr, loc: SourceLocation) extends Expr
 
     case class FixpointMerge(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
-    case class FixpointSolve(exp: Expr, loc: SourceLocation) extends Expr
-
-    case class FixpointFilter(pred: Name.Pred, exp: Expr, loc: SourceLocation) extends Expr
-
-    case class FixpointInject(exp: Expr, pred: Name.Pred, loc: SourceLocation) extends Expr
 
     case class FixpointInjectInto(exps: List[Expr], idents: List[Name.Ident], loc: SourceLocation) extends Expr
 
