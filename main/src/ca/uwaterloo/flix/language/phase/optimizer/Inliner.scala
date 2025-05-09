@@ -568,7 +568,7 @@ object Inliner {
     *
     * A pure and trivial expression can always be inlined even without duplicating work.
     */
-  private def isTrivial(exp0: Expr): Boolean = exp0 match {
+  private def isTrivial(exp: Expr): Boolean = exp match {
     case Expr.Cst(_, _, _) => true
     case Expr.Var(_, _, _) => true
     case _ => false
