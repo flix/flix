@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
+import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 
 /**
   * The occurrence analyzer collects occurrence information on binders according to the definition of [[Occur]].
@@ -39,7 +40,9 @@ object OccurrenceAnalyzer {
     implicit val sctx: SharedContext = SharedContext.mk()
     val changedDefs = root.defs.filter(kv => delta.contains(kv._1))
     val visitedDefs = ParOps.parMapValues(changedDefs)(visitDef)
-    root.copy(defs = root.defs ++ visitedDefs)
+    val liveSyms = sctx.live.asScala.keys.toSet
+    val liveDefs = root.defs.filter(kv => liveSyms.contains(kv._1))
+    root.copy(defs = liveDefs ++ visitedDefs)
   }
 
   /**
