@@ -69,11 +69,12 @@ import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 object Inliner {
 
   /** Performs inlining on the given AST `root`. */
-  def run(root: MonoAst.Root)(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
+  def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym])(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
     val sctx: SharedContext = SharedContext.mk()
-    val defs = ParOps.parMapValues(root.defs)(visitDef(_)(sctx, root, flix))
+    val changedDefs = root.defs.filter(kv => delta.contains(kv._1))
+    val visitedDefs = ParOps.parMapValues(changedDefs)(visitDef(_)(sctx, root, flix))
     val newDelta = sctx.changed.asScala.keys.toSet
-    (root.copy(defs = defs), newDelta)
+    (root.copy(defs = root.defs ++ visitedDefs), newDelta)
   }
 
   /** Performs inlining on the body of `def0`. */

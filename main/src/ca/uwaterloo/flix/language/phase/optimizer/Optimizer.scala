@@ -34,7 +34,7 @@ object Optimizer {
       }
 
       val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(currentRoot, currentDelta)
-      val (newRoot, newDelta) = Inliner.run(afterOccurrenceAnalyzer)
+      val (newRoot, newDelta) = Inliner.run(afterOccurrenceAnalyzer, currentDelta)
       currentRoot = newRoot
       currentDelta = newDelta
     }
