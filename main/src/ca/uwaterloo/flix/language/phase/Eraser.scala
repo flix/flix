@@ -129,6 +129,9 @@ object Eraser {
           castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.RecordExtend(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.RecordRestrict(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ExtensibleIs(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ExtensibleTag(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ExtensibleUntag(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayLit => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayNew => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayLoad => ApplyAtomic(op, es, t, purity, loc)
@@ -155,6 +158,7 @@ object Eraser {
           castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.HoleError(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.MatchError => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.CastError(_, _) => ApplyAtomic(op, es, t, purity, loc)
       }
 
     case ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
@@ -234,6 +238,8 @@ object Eraser {
       case Arrow(args, result) => Arrow(args.map(visitType), box(result))
       case RecordEmpty => RecordEmpty
       case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
+      case ExtensibleExtend(cons, tpes, rest) => ExtensibleExtend(cons, tpes.map(erase), visitType(rest))
+      case ExtensibleEmpty => ExtensibleEmpty
       case Native(clazz) => Native(clazz)
     }
   }

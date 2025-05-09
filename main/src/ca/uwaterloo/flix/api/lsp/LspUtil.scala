@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.acceptors.InsideAcceptor
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
+import ca.uwaterloo.flix.api.lsp.provider.completion.{CompletionUtils, ExprContext}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
@@ -69,5 +70,21 @@ object LspUtil {
       }
 
       s"(${args.mkString(", ")}): $retTpe$eff"
+  }
+
+  /**
+    * Generates a user-friendly snippet for the given spec.
+    * The spec could come from a function, a signature or an op.
+    *
+    * If the spec is inside an apply, like fo(...), we will only complete the label.
+    * If the spec is inside a pipeline, like 1 |> fo(...), we will complete the snippet with the rightmost parameter dropped.
+    * If the spec is inside a run with, like run { e1 } with fo(...), we will complete the snippet with the rightmost parameter dropped.
+    * Otherwise, we will complete the snippet with all parameters.
+    */
+  def mkSpecSnippet(label: String, spec: TypedAst.Spec, ectx: ExprContext): String = ectx match {
+    case ExprContext.InsideApply => CompletionUtils.getApplySnippet(label, Nil)
+    case ExprContext.InsidePipeline => CompletionUtils.getApplySnippet(label, spec.fparams.dropRight(1))
+    case ExprContext.InsideRunWith => CompletionUtils.getApplySnippet(label, spec.fparams.dropRight(1))
+    case ExprContext.Unknown => CompletionUtils.getApplySnippet(label, spec.fparams)
   }
 }

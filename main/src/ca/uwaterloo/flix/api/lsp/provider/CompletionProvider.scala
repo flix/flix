@@ -18,8 +18,6 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.api.lsp.provider.completion.*
-import ca.uwaterloo.flix.api.lsp.provider.completion.semantic.{GetStaticFieldCompleter, InvokeStaticMethodCompleter}
-import ca.uwaterloo.flix.api.lsp.provider.completion.syntactic.{ExprSnippetCompleter, KeywordCompleter}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{SyntacticContext, TraitUsageKind}
@@ -33,22 +31,17 @@ import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError
   * https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion
   *
   * This list is not displayed to the user as-is, the client always both sorts and filters the list (or at least,
-  * VSCode does). Therefore we always need to provide both filterText (currently copied from label) and sortText.
+  * VSCode does). Therefore, we always need to provide both filterText (currently copied from label) and sortText.
   *
   * Note that we use textEdit rather than insertText to avoid relying on VSCode's tokenisation, so we can ensure that
   * we're consistent with Flix's parser.
   */
 object CompletionProvider {
 
-  def autoComplete(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): CompletionList = {
-      val items = getCompletions(uri, pos, currentErrors)(root, flix).map(_.toCompletionItem)
-      CompletionList(isIncomplete = true, items)
-  }
-
   /**
     * Returns all completions in the given `uri` at the given position `pos`.
     */
-  private def getCompletions(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[Completion] = {
+  def getCompletions(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[Completion] = {
     if (currentErrors.isEmpty)
       HoleCompleter.getHoleCompletion(uri, pos).toList
     else
@@ -63,7 +56,7 @@ object CompletionProvider {
           val qn = err.qn
           val range = Range.from(err.loc)
           EnumCompleter.getCompletions(qn, range, ap, scp, withTypeParameters = false) ++
-            EnumTagCompleter.getCompletions(qn, range, ap, scp) ++
+            EnumTagCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
             ModuleCompleter.getCompletions(qn, range, ap, scp)
 
         case err: ResolutionError.UndefinedName =>
@@ -75,12 +68,12 @@ object CompletionProvider {
           AutoImportCompleter.getCompletions(ident, range, ap, scp) ++
             LocalScopeCompleter.getCompletionsExpr(range, scp) ++
             KeywordCompleter.getExprKeywords(range) ++
-            DefCompleter.getCompletions(qn, range, ap, scp) ++
+            DefCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
             EnumCompleter.getCompletions(qn, range, ap, scp, withTypeParameters = false) ++
             EffectCompleter.getCompletions(qn, range, ap, scp, inHandler = false) ++
-            OpCompleter.getCompletions(qn, range, ap, scp) ++
-            SignatureCompleter.getCompletions(qn, range, ap, scp) ++
-            EnumTagCompleter.getCompletions(qn, range, ap, scp) ++
+            OpCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
+            SignatureCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
+            EnumTagCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
             TraitCompleter.getCompletions(qn, TraitUsageKind.Expr, range, ap, scp) ++
             ModuleCompleter.getCompletions(qn, range, ap, scp)
 

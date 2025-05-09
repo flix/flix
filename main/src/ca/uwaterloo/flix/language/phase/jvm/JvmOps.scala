@@ -70,6 +70,8 @@ object JvmOps {
     case MonoType.Tuple(elms) => JvmType.Reference(BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType)).jvmName)
     case MonoType.RecordEmpty => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
+    case MonoType.ExtensibleExtend(_, _, _) => JvmType.Reference(BackendObjType.Extensible.jvmName)
+    case MonoType.ExtensibleEmpty => JvmType.Reference(BackendObjType.Extensible.jvmName)
     case MonoType.Enum(_, _) => JvmType.Object
     case MonoType.Struct(sym, targs) =>
       val elms = instantiateStruct(sym, targs.map(MonoType.erase))
@@ -98,7 +100,7 @@ object JvmOps {
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
            Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_, _) |
            Struct(_, _) | Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) |
-           Native(_) | Null =>
+           ExtensibleExtend(_, _, _) | ExtensibleEmpty | Native(_) | Null =>
         JvmType.Object
     }
   }
@@ -123,7 +125,7 @@ object JvmOps {
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
            Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_, _) |
            Struct(_, _) | Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) |
-           Native(_) | Null =>
+           ExtensibleExtend(_, _, _) | ExtensibleEmpty | Native(_) | Null =>
         throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     }
   }

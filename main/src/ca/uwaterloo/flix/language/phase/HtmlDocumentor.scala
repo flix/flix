@@ -407,9 +407,9 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterEffect(eff: Effect): Effect = eff match {
-    case Effect(eff, parent, _) =>
+    case Effect(e, parent, _) =>
       Effect(
-        eff,
+        e,
         parent,
         None,
       )
@@ -423,9 +423,9 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterEnum(enm: Enum): Enum = enm match {
-    case Enum(enm, instances, parent, _) =>
+    case Enum(e, instances, parent, _) =>
       Enum(
-        enm,
+        e,
         instances,
         parent,
         None,
@@ -845,7 +845,7 @@ object HtmlDocumentor {
        |<head>
        |<meta charset='utf-8'>
        |<meta name='viewport' content='width=device-width,initial-scale=1'>
-       |<meta name='description' content='API documentation for ${esc(name)} | The Flix Programming Language'>
+       |<meta name='description' content='API documentation for ${esc(name)}| The Flix Programming Language'>
        |<meta name='keywords' content='Flix, Programming, Language, API, Documentation, ${esc(name)}'>
        |<base href='${fileName}'></base>
        |<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>

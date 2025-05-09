@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
+import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.{Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, Progress, TypeReduction2}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -59,28 +60,29 @@ import scala.collection.mutable
   *
   * Enums and structs can both express type-recursion which cannot be resolved without erasure. This
   * means that those definitions are left polymorphic, but the types are still resolved of
-  * associated types fx.
+  * associated types fx. Throughout monomorphization, `visitX` is for conversion and `specializeX`
+  * is for monomorphization.
   *
   * At a high-level, monomorphization works as follows:
   *
-  *   1. We maintain a queue of functions and the concrete, normalized types they must be
+  *   - 1. We maintain a queue of functions and the concrete, normalized types they must be
   *      specialized to.
-  *   1. We populate the queue by specialization of non-parametric function definitions.
-  *   1. We iteratively extract a function from the queue and specialize it:
-  *      a. We replace every type variable appearing anywhere in the definition by its concrete
+  *   - 2. We populate the queue by specialization of non-parametric function definitions.
+  *   - 3. We iteratively extract a function from the queue and specialize it:
+  *      - a. We replace every type variable appearing anywhere in the definition by its concrete
   *         type.
-  *      a. We create new fresh local variable symbols (since the function is effectively being
+  *      - b. We create new fresh local variable symbols (since the function is effectively being
   *         copied).
-  *      a. We enqueue (or re-use) other functions referenced by the current function which require
+  *      - c. We enqueue (or re-use) other functions referenced by the current function which require
   *         specialization.
-  *   1. We reconstruct the AST from the specialized functions and remove all parametric functions.
+  *   - 4. We reconstruct the AST from the specialized functions and remove all parametric functions.
   *
   * Type normalization details:
   *
   *   - Record fields are in alphabetical order
   *   - Schema fields are in alphabetical order
-  *   - Effect formulas are flat unions of effects in alphabetical order.
-  *   - Case set formulas are a single CaseSet literal.
+  *   - Effect formulas are flat unions of effects in alphabetical order or a complement thereof.
+  *   - Case set formulas are a single CaseSet literal or a complement thererof.
   *
   */
 object Monomorpher {
@@ -267,9 +269,9 @@ object Monomorpher {
   /**
     * Returns a sorted record, assuming that `rest` is sorted.
     *
-    * Sorting is stable on duplicate fields.
+    * labels of the same name are not reordered.
     *
-    * Assumes that rest does not contain [[Type.AssocType]] or [[Type.Alias]].
+    * N.B: `rest` must not contain [[Type.AssocType]] or [[Type.Alias]].
     */
   private def mkRecordExtendSorted(label: Name.Label, tpe: Type, rest: Type, loc: SourceLocation): Type = rest match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(l), loc1), t, loc2), r, loc3) if l.name < label.name =>
@@ -310,9 +312,8 @@ object Monomorpher {
 
   /** Performs monomorphization of the given AST `root`. */
   def run(root: LoweredAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Monomorpher") {
-
     implicit val r: LoweredAst.Root = root
-    implicit val is: Map[(Symbol.TraitSym, TypeConstructor), Instance] = mkFastInstanceLookup(root.instances)
+    implicit val is: Map[(Symbol.TraitSym, TypeConstructor), Instance] = mkInstanceMap(root.instances)
     implicit val ctx: Context = new Context()
 
     // Collect all non-parametric function definitions.
@@ -328,7 +329,7 @@ object Monomorpher {
         // We use an empty substitution because the defs are non-parametric.
         // It's important that non-parametric functions keep their symbol to not
         // invalidate the set of entryPoints functions.
-        val specializedDefn = mkSpecializedDefn(sym, defn, StrictSubstitution.empty)
+        val specializedDefn = specializeDef(sym, defn, StrictSubstitution.empty)
         ctx.addSpecializedDef(sym, specializedDefn)
     }
 
@@ -339,17 +340,14 @@ object Monomorpher {
       val queue = ctx.dequeueAllSpecializations
       ParOps.parMap(queue) {
         case (freshSym, defn, subst) =>
-          val specializedDefn = mkSpecializedDefn(freshSym, defn, subst)
+          val specializedDefn = specializeDef(freshSym, defn, subst)
           ctx.addSpecializedDef(freshSym, specializedDefn)
       }
     }
 
     val effects = ParOps.parMapValues(root.effects) {
       case LoweredAst.Effect(doc, ann, mod, sym, ops0, loc) =>
-        val ops = ops0.map {
-          case LoweredAst.Op(opSym, spec, opLoc) =>
-            MonoAst.Op(opSym, visitEffectOpSpec(spec), opLoc)
-        }
+        val ops = ops0.map(visitEffectOp)
         MonoAst.Effect(doc, ann, mod, sym, ops, loc)
     }
 
@@ -367,7 +365,6 @@ object Monomorpher {
         MonoAst.Struct(doc, ann, mod, sym, tparams, newFields, loc)
     }
 
-    // Reassemble the AST.
     MonoAst.Root(
       ctx.getSpecializedDefs,
       enums,
@@ -380,13 +377,13 @@ object Monomorpher {
   }
 
   /** Creates a table for fast lookup of instances. */
-  private def mkFastInstanceLookup(instances: ListMap[Symbol.TraitSym, Instance]): Map[(Symbol.TraitSym, TypeConstructor), Instance] = {
+  private def mkInstanceMap(instances: ListMap[Symbol.TraitSym, Instance]): Map[(Symbol.TraitSym, TypeConstructor), Instance] = {
     instances.map {
       case (sym, inst) => ((sym, inst.tpe.typeConstructor.get), inst)
     }.toMap
   }
 
-  /** Visit a struct field, simplifying its polymorphic type. */
+  /** Converts `field`, simplifying its polymorphic type. */
   def visitStructField(field: LoweredAst.StructField)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.StructField = {
     field match {
       case LoweredAst.StructField(fieldSym, tpe, loc) =>
@@ -394,7 +391,7 @@ object Monomorpher {
     }
   }
 
-  /** Visit an enum case, simplifying its polymorphic type. */
+  /** Converts `caze`, simplifying its polymorphic type. */
   def visitEnumCase(caze: LoweredAst.Case)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.Case = {
     caze match {
       case LoweredAst.Case(sym, tpes, _, loc) =>
@@ -402,28 +399,30 @@ object Monomorpher {
     }
   }
 
-  /** Convert the type param directly. */
-  private def visitTypeParam(tp: LoweredAst.TypeParam): MonoAst.TypeParam = tp match {
+  /** Converts `tparam` directly. */
+  private def visitTypeParam(tparam: LoweredAst.TypeParam): MonoAst.TypeParam = tparam match {
     case LoweredAst.TypeParam(name, sym, loc) => MonoAst.TypeParam(name, sym, loc)
   }
 
-  /** Converts the given effect op spec. */
-  private def visitEffectOpSpec(spec: LoweredAst.Spec)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.Spec = spec match {
-    case LoweredAst.Spec(doc, ann, mod, _, fparams0, declaredScheme, retTpe, eff, _) =>
-      // Effect operations are monomorphic - they have no variables.
-      // The substitution can be left empty.
-      val fparams = fparams0.map {
-        case LoweredAst.FormalParam(sym, fparamMod, tpe, src, loc) =>
-          MonoAst.FormalParam(sym, fparamMod, StrictSubstitution.empty(tpe), src, loc)
-      }
-      MonoAst.Spec(doc, ann, mod, fparams, declaredScheme.base, StrictSubstitution.empty(retTpe), StrictSubstitution.empty(eff))
-  }
+  /** Converts `op`, simplifying its type. */
+  private def visitEffectOp(op: LoweredAst.Op)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.Op =
+    op match {
+      case LoweredAst.Op(sym, LoweredAst.Spec(doc, ann, mod, _, fparams0, declaredScheme, retTpe, eff, _), loc) =>
+        // Effect operations are monomorphic - they have no variables.
+        // The substitution can be left empty.
+        val fparams = fparams0.map {
+          case LoweredAst.FormalParam(varSym, fparamMod, tpe, src, fpLoc) =>
+            MonoAst.FormalParam(varSym, fparamMod, StrictSubstitution.empty(tpe), src, Occur.Unknown, fpLoc)
+        }
+        val spec = MonoAst.Spec(doc, ann, mod, fparams, declaredScheme.base, StrictSubstitution.empty(retTpe), StrictSubstitution.empty(eff), DefContext.Unknown)
+        MonoAst.Op(sym, spec, loc)
+    }
 
   /** Returns a specialization of `defn` with the name `freshSym` according to `subst`. */
-  private def mkSpecializedDefn(freshSym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): MonoAst.Def = {
+  private def specializeDef(freshSym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): MonoAst.Def = {
     val (specializedFparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
 
-    val specializedExp = visitExp(defn.exp, env0, subst)
+    val specializedExp = specializeExp(defn.exp, env0, subst)
 
     val spec0 = defn.spec
     val spec = MonoAst.Spec(
@@ -433,23 +432,22 @@ object Monomorpher {
       specializedFparams,
       subst(defn.spec.declaredScheme.base),
       subst(spec0.retTpe),
-      subst(spec0.eff)
+      subst(spec0.eff),
+      DefContext.Unknown
     )
     MonoAst.Def(freshSym, spec, specializedExp, defn.loc)
   }
 
   /**
-    * Performs specialization of the given expression `exp0` under the environment `env0` w.r.t. the
-    * given substitution `subst`.
+    * Specializes `exp0`, renaming variables according to `env0` and specializes
+    * w.r.t. `subst`.
     *
-    * Replaces every reference to a parametric function with a reference to its specialized version.
+    * Replaces every polymorphic function reference with a reference to a specialized version. If a
+    * specialized version of a function does not yet exist, a fresh symbol is created for it,
     *
     * Replaces every local variable symbol with a fresh local variable symbol.
-    *
-    * If a specialized version of a function does not yet exist, a fresh symbol is created for it,
-    * and the definition and substitution is enqueued.
     */
-  private def visitExp(exp0: LoweredAst.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): MonoAst.Expr = exp0 match {
+  private def specializeExp(exp0: LoweredAst.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): MonoAst.Expr = exp0 match {
     case LoweredAst.Expr.Var(sym, tpe, loc) =>
       MonoAst.Expr.Var(env0(sym), subst(tpe), loc)
 
@@ -458,86 +456,84 @@ object Monomorpher {
 
     case LoweredAst.Expr.Lambda(fparam, exp, tpe, loc) =>
       val (p, env1) = specializeFormalParam(fparam, subst)
-      val e = visitExp(exp, env0 ++ env1, subst)
+      val e = specializeExp(exp, env0 ++ env1, subst)
       MonoAst.Expr.Lambda(p, e, subst(tpe), loc)
 
     case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
-      val es = exps.map(visitExp(_, env0, subst))
+      val es = exps.map(specializeExp(_, env0, subst))
       MonoAst.Expr.ApplyAtomic(op, es, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, env0, subst)
-      val e2 = visitExp(exp2, env0, subst)
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
       MonoAst.Expr.ApplyClo(e1, e2, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
-      val newSym = specializeDefSym(sym, it)
-      val es = exps.map(visitExp(_, env0, subst))
+      val newSym = specializeDefnSym(sym, it)
+      val es = exps.map(specializeExp(_, env0, subst))
       MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.ApplySig(sym, exps, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
       val newSym = specializeSigSym(sym, it)
-      val es = exps.map(visitExp(_, env0, subst))
+      val es = exps.map(specializeExp(_, env0, subst))
       MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       val newSym = env0(sym)
-      val es = exps.map(visitExp(_, env0, subst))
+      val es = exps.map(specializeExp(_, env0, subst))
       val t = subst(tpe)
       val ef = subst(eff)
       MonoAst.Expr.ApplyLocalDef(newSym, es, t, ef, loc)
 
     case LoweredAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
-      // Generate a fresh symbol for the let-bound variable.
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
-      val e1 = visitExp(exp1, env0, subst)
-      val e2 = visitExp(exp2, env1, subst)
-      MonoAst.Expr.Let(freshSym, e1, e2, subst(tpe), subst(eff), loc)
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env1, subst)
+      MonoAst.Expr.Let(freshSym, e1, e2, subst(tpe), subst(eff), Occur.Unknown, loc)
 
     case LoweredAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
-      // Generate a fresh symbol for the let-bound variable.
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
       val (fps, env2) = specializeFormalParams(fparams, subst)
-      val e1 = visitExp(exp1, env1 ++ env2, subst)
-      val e2 = visitExp(exp2, env1, subst)
+      val e1 = specializeExp(exp1, env1 ++ env2, subst)
+      val e2 = specializeExp(exp2, env1, subst)
       val t = subst(tpe)
       val ef = subst(eff)
-      MonoAst.Expr.LocalDef(freshSym, fps, e1, e2, t, ef, loc)
+      MonoAst.Expr.LocalDef(freshSym, fps, e1, e2, t, ef, Occur.Unknown, loc)
 
     case LoweredAst.Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
-      MonoAst.Expr.Scope(freshSym, regionVar, visitExp(exp, env1, subst), subst(tpe), subst(eff), loc)
+      MonoAst.Expr.Scope(freshSym, regionVar, specializeExp(exp, env1, subst), subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, env0, subst)
-      val e2 = visitExp(exp2, env0, subst)
-      val e3 = visitExp(exp3, env0, subst)
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      val e3 = specializeExp(exp3, env0, subst)
       MonoAst.Expr.IfThenElse(e1, e2, e3, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, env0, subst)
-      val e2 = visitExp(exp2, env0, subst)
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
       MonoAst.Expr.Stm(e1, e2, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.Discard(exp, eff, loc) =>
-      val e = visitExp(exp, env0, subst)
+      val e = specializeExp(exp, env0, subst)
       MonoAst.Expr.Discard(e, subst(eff), loc)
 
     case LoweredAst.Expr.Match(exp, rules, tpe, eff, loc) =>
       val rs = rules map {
         case LoweredAst.MatchRule(pat, guard, body) =>
-          val (p, env1) = visitPat(pat, subst)
+          val (p, env1) = specializePat(pat, subst)
           val extendedEnv = env0 ++ env1
-          val g = guard.map(visitExp(_, extendedEnv, subst))
-          val b = visitExp(body, extendedEnv, subst)
+          val g = guard.map(specializeExp(_, extendedEnv, subst))
+          val b = specializeExp(body, extendedEnv, subst)
           MonoAst.MatchRule(p, g, b)
       }
-      MonoAst.Expr.Match(visitExp(exp, env0, subst), rs, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.Match(specializeExp(exp, env0, subst), rs, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.TypeMatch(exp, rules, tpe, _, loc) =>
       // Use the non-strict substitution to allow free type variables to match with anything.
@@ -555,143 +551,207 @@ object Monomorpher {
             // Types unify; use the substitution in the body.
             case Some(caseSubst) =>
               // Visit the base expression under the initial environment.
-              val e = visitExp(exp, env0, subst)
-              // Generate a fresh symbol for the let-bound variable.
+              val e = specializeExp(exp, env0, subst)
               val freshSym = Symbol.freshVarSym(sym)
               val env1 = env0 + (sym -> freshSym)
               val subst1 = StrictSubstitution.mk(caseSubst @@ subst.nonStrict)
               // Visit the body under the extended environment.
-              val body = visitExp(body0, env1, subst1)
+              val body = specializeExp(body0, env1, subst1)
               val eff = Type.mkUnion(e.eff, body.eff, loc.asSynthetic)
-              Some(MonoAst.Expr.Let(freshSym, e, body, subst1(tpe), subst1(eff), loc))
+              Some(MonoAst.Expr.Let(freshSym, e, body, subst1(tpe), subst1(eff), Occur.Unknown, loc))
           }
-      }.get // We are safe to call get because the last case will always match.
+      }.get // This is safe since the last case can always match.
 
     case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
-      val es = exps.map(visitExp(_, env0, subst))
+      val es = exps.map(specializeExp(_, env0, subst))
       MonoAst.Expr.VectorLit(es, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, env0, subst)
-      val e2 = visitExp(exp2, env0, subst)
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
       MonoAst.Expr.VectorLoad(e1, e2, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.VectorLength(exp, loc) =>
-      val e = visitExp(exp, env0, subst)
+      val e = specializeExp(exp, env0, subst)
       MonoAst.Expr.VectorLength(e, loc)
 
     case LoweredAst.Expr.Ascribe(exp, tpe, eff, loc) =>
-      val e = visitExp(exp, env0, subst)
-      MonoAst.Expr.Ascribe(e, subst(tpe), subst(eff), loc)
+      specializeExp(exp, env0, subst)
 
     case LoweredAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>
-      // We drop the declaredType and declaredEff here.
-      val e = visitExp(exp, env0, subst)
-      MonoAst.Expr.Cast(e, None, None, subst(tpe), subst(eff), loc)
+      // Drop the declaredType and declaredEff.
+      val e = specializeExp(exp, env0, subst)
+      mkCast(e, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
-      val e = visitExp(exp, env0, subst)
+      val e = specializeExp(exp, env0, subst)
       val rs = rules map {
         case LoweredAst.CatchRule(sym, clazz, body) =>
-          // Generate a fresh symbol.
           val freshSym = Symbol.freshVarSym(sym)
           val env1 = env0 + (sym -> freshSym)
-          val b = visitExp(body, env1, subst)
+          val b = specializeExp(body, env1, subst)
           MonoAst.CatchRule(freshSym, clazz, b)
       }
       MonoAst.Expr.TryCatch(e, rs, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.RunWith(exp, effect, rules, tpe, eff, loc) =>
-      val e = visitExp(exp, env0, subst)
+      val e = specializeExp(exp, env0, subst)
       val rs = rules map {
         case LoweredAst.HandlerRule(op, fparams0, body0) =>
           val (fparams, fparamEnv) = specializeFormalParams(fparams0, subst)
           val env1 = env0 ++ fparamEnv
-          val body = visitExp(body0, env1, subst)
+          val body = specializeExp(body0, env1, subst)
           MonoAst.HandlerRule(op, fparams, body)
       }
       MonoAst.Expr.RunWith(e, effect, rs, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.Do(op, exps, tpe, eff, loc) =>
-      val es = exps.map(visitExp(_, env0, subst))
+      val es = exps.map(specializeExp(_, env0, subst))
       MonoAst.Expr.Do(op, es, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
-      val methods = methods0.map(visitJvmMethod(_, env0, subst))
+      val methods = methods0.map(specializeJvmMethod(_, env0, subst))
       MonoAst.Expr.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
 
   }
 
   /**
-    * Specializes the given pattern `p0` w.r.t. the current substitution.
+    * Returns the cast of `e` to `tpe` and `eff`.
     *
-    * Returns the new pattern and a mapping from variable symbols to fresh variable symbols.
+    * If `exp` and `tpe` is bytecode incompatible, a runtime crash is inserted to appease the
+    * bytecode verifier.
     */
-  private def visitPat(p0: LoweredAst.Pattern, subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.Pattern, Map[Symbol.VarSym, Symbol.VarSym]) = p0 match {
-    case LoweredAst.Pattern.Wild(tpe, loc) => (MonoAst.Pattern.Wild(subst(tpe), loc), Map.empty)
-    case LoweredAst.Pattern.Var(sym, tpe, loc) =>
-      // Generate a fresh variable symbol for the pattern-bound variable.
-      val freshSym = Symbol.freshVarSym(sym)
-      (MonoAst.Pattern.Var(freshSym, subst(tpe), loc), Map(sym -> freshSym))
-    case LoweredAst.Pattern.Cst(cst, tpe, loc) => (MonoAst.Pattern.Cst(cst, subst(tpe), loc), Map.empty)
-    case LoweredAst.Pattern.Tag(sym, pats, tpe, loc) =>
-      val (ps, envs) = pats.map(visitPat(_, subst)).unzip
-      (MonoAst.Pattern.Tag(sym, ps, subst(tpe), loc), combineEnvs(envs))
-    case LoweredAst.Pattern.Tuple(elms, tpe, loc) =>
-      val (ps, envs) = elms.map(visitPat(_, subst)).unzip
-      (MonoAst.Pattern.Tuple(ps, subst(tpe), loc), combineEnvs(envs))
-    case LoweredAst.Pattern.Record(pats, pat, tpe, loc) =>
-      val (ps, envs) = pats.map {
-        case LoweredAst.Pattern.Record.RecordLabelPattern(label, pat1, tpe1, loc1) =>
-          val (p1, env1) = visitPat(pat1, subst)
-          (MonoAst.Pattern.Record.RecordLabelPattern(label, p1, subst(tpe1), loc1), env1)
-      }.unzip
-      val (p, env1) = visitPat(pat, subst)
-      val finalEnv = env1 :: envs
-      (MonoAst.Pattern.Record(ps, p, subst(tpe), loc), combineEnvs(finalEnv))
-  }
-
-  /**
-    * Specializes the given method `method` w.r.t. the current substitution.
-    *
-    * Returns the new method.
-    */
-  private def visitJvmMethod(method: LoweredAst.JvmMethod, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
-    case LoweredAst.JvmMethod(ident, fparams0, exp0, tpe, eff, loc) =>
-      val (fparams, env1) = specializeFormalParams(fparams0, subst)
-      val exp = visitExp(exp0, env0 ++ env1, subst)
-      MonoAst.JvmMethod(ident, fparams, exp, subst(tpe), subst(eff), loc)
-  }
-
-  /**
-    * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
-    *
-    * The given type must be a normalized type.
-    */
-  private def specializeDefSym(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
-    // Lookup the definition and its declared type.
-    val defn = root.defs(sym)
-
-    // Check if the function is non-polymorphic.
-    if (defn.spec.tparams.isEmpty) {
-      defn.sym
-    } else {
-      specializeDef(defn, tpe)
+  private def mkCast(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): MonoAst.Expr = {
+    (exp.tpe, tpe) match {
+      case (Type.Char, Type.Char) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Char, Type.Int32) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Bool, Type.Bool) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int8, Type.Int8) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int16, Type.Int16) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int32, Type.Int32) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Int64, Type.Int64) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Float32, Type.Float32) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (Type.Float64, Type.Float64) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (x, y) if !isPrimType(x) && !isPrimType(y) => MonoAst.Expr.Cast(exp, tpe, eff, loc)
+      case (x, y) =>
+        val crash = MonoAst.Expr.ApplyAtomic(AtomicOp.CastError(erasedString(x), erasedString(y)), Nil, tpe, eff, loc)
+        MonoAst.Expr.Stm(exp, crash, tpe, eff, loc)
     }
   }
 
   /**
-    * Returns a [[Symbol.DefnSym]] corresponding to the specialization of `sym`
-    * w.r.t. the normalized function type `tpe`.
+    * Returns `true` if `tpe` is a primitive type.
+    *
+    * N.B.: `tpe` must be normalized.
     */
-  private def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
-    val defn = resolveSigSym(sym, tpe)
-    specializeDef(defn, tpe)
+  private def isPrimType(tpe: Type): Boolean = tpe match {
+    case Type.Char => true
+    case Type.Bool => true
+    case Type.Int8 => true
+    case Type.Int16 => true
+    case Type.Int32 => true
+    case Type.Int64 => true
+    case Type.Float32 => true
+    case Type.Float64 => true
+    case Type.Cst(_, _) => false
+    case Type.Apply(_, _, _) => false
+    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
   }
 
   /**
-    * Returns a [[LoweredAst.Def]] corresponding to the resolved trait `sym`
-    * w.r.t. to the normalized function type `tpe`.
+    * Returns the erased string representation of `tpe`
+    *
+    * N.B.: `tpe` must be normalized.
+    */
+  private def erasedString(tpe: Type): String = tpe match {
+    case Type.Char => "Char"
+    case Type.Bool => "Bool"
+    case Type.Int8 => "Int8"
+    case Type.Int16 => "Int16"
+    case Type.Int32 => "Int32"
+    case Type.Int64 => "Int64"
+    case Type.Float32 => "Float32"
+    case Type.Float64 => "Float64"
+    case Type.Cst(_, _) => "Object"
+    case Type.Apply(_, _, _) => "Object"
+    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+  }
+
+  /**
+    * Specializes `p0` w.r.t. `subst` and returns a mapping from variable symbols to fresh variable
+    * symbols.
+    */
+  private def specializePat(p0: LoweredAst.Pattern, subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.Pattern, Map[Symbol.VarSym, Symbol.VarSym]) = p0 match {
+    case LoweredAst.Pattern.Wild(tpe, loc) =>
+      (MonoAst.Pattern.Wild(subst(tpe), loc), Map.empty)
+    case LoweredAst.Pattern.Var(sym, tpe, loc) =>
+      val freshSym = Symbol.freshVarSym(sym)
+      (MonoAst.Pattern.Var(freshSym, subst(tpe), Occur.Unknown, loc), Map(sym -> freshSym))
+    case LoweredAst.Pattern.Cst(cst, tpe, loc) => (MonoAst.Pattern.Cst(cst, subst(tpe), loc), Map.empty)
+    case LoweredAst.Pattern.Tag(sym, pats, tpe, loc) =>
+      val (ps, envs) = pats.map(specializePat(_, subst)).unzip
+      (MonoAst.Pattern.Tag(sym, ps, subst(tpe), loc), combineEnvs(envs))
+    case LoweredAst.Pattern.Tuple(elms, tpe, loc) =>
+      val (ps, envs) = elms.map(specializePat(_, subst)).unzip
+      (MonoAst.Pattern.Tuple(ps, subst(tpe), loc), combineEnvs(envs))
+    case LoweredAst.Pattern.Record(pats, pat, tpe, loc) =>
+      val (ps, envs) = pats.map {
+        case LoweredAst.Pattern.Record.RecordLabelPattern(label, pat1, tpe1, loc1) =>
+          val (p1, env1) = specializePat(pat1, subst)
+          (MonoAst.Pattern.Record.RecordLabelPattern(label, p1, subst(tpe1), loc1), env1)
+      }.unzip
+      val (p, env1) = specializePat(pat, subst)
+      val finalEnv = env1 :: envs
+      (MonoAst.Pattern.Record(ps, p, subst(tpe), loc), combineEnvs(finalEnv))
+  }
+
+  /** Specializes `method` w.r.t. `subst`. */
+  private def specializeJvmMethod(method: LoweredAst.JvmMethod, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
+    case LoweredAst.JvmMethod(ident, fparams0, exp0, tpe, eff, loc) =>
+      val (fparams, env1) = specializeFormalParams(fparams0, subst)
+      val exp = specializeExp(exp0, env0 ++ env1, subst)
+      MonoAst.JvmMethod(ident, fparams, exp, subst(tpe), subst(eff), loc)
+  }
+
+  /**
+    * Specializes `sym` w.r.t. `tpe`.
+    *
+    * N.B.: `tpe` must be normalized.
+    */
+  private def specializeDefnSym(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
+    val defn = root.defs(sym)
+
+    if (defn.spec.tparams.isEmpty) {
+      defn.sym
+    } else {
+      specializeDefCallsite(defn, tpe)
+    }
+  }
+
+  /**
+    * Resolves and specializes `sym` w.r.t. `tpe`.
+    *
+    * N.B.: `tpe` must be normalized.
+    */
+  private def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
+    val defn = resolveSigSym(sym, tpe)
+    specializeDefCallsite(defn, tpe)
+  }
+
+  /**
+    * Returns the concrete function that `sym` resolves to w.r.t. `tpe`.
+    *
+    * N.B.: `tpe` must be normalized.
     */
   private def resolveSigSym(sym: Symbol.SigSym, tpe: Type)(implicit instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): LoweredAst.Def = {
     val sig = root.sigs(sym)
@@ -721,11 +781,11 @@ object Monomorpher {
   }
 
   /**
-    * Returns the def symbol corresponding to the specialized def `defn` w.r.t. to the type `tpe`.
+    * Returns a function reference to the specialization of `defn` w.r.t. `tpe`.
     *
-    * The given type must be a normalized type.
+    * N.B.: `tpe` must be normalized.
     */
-  private def specializeDef(defn: LoweredAst.Def, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
+  private def specializeDefCallsite(defn: LoweredAst.Def, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
     val subst = infallibleUnify(defn.spec.declaredScheme.base, tpe, defn.sym)
 
@@ -763,30 +823,23 @@ object Monomorpher {
     envs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
 
   /**
-    * Specializes the given formal parameters `fparams0` w.r.t. the given substitution `subst0`.
-    *
-    * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
+    * Specializes `fparams0` w.r.t. `subst0` and returns a mapping from variable symbols to fresh
+    * variable symbols.
     */
   private def specializeFormalParams(fparams0: List[LoweredAst.FormalParam], subst0: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (List[MonoAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
-    // Return early if there are no formal parameters.
-    if (fparams0.isEmpty)
-      return (Nil, Map.empty)
-
     // Specialize each formal parameter and recombine the results.
     val (params, envs) = fparams0.map(p => specializeFormalParam(p, subst0)).unzip
     (params, combineEnvs(envs))
   }
 
   /**
-    * Specializes the given formal parameter `fparam0` w.r.t. the given substitution `subst0`.
-    *
-    * Returns the new formal parameter and an environment mapping the variable symbol to a fresh
-    * variable symbol.
+    * Specializes `fparam0` w.r.t. `subst0` and returns an environment mapping the variable symbol
+    * to a fresh variable symbol.
     */
   private def specializeFormalParam(fparam0: LoweredAst.FormalParam, subst0: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
     val LoweredAst.FormalParam(sym, mod, tpe, src, loc) = fparam0
     val freshSym = Symbol.freshVarSym(sym)
-    (MonoAst.FormalParam(freshSym, mod, subst0(tpe), src, loc), Map(sym -> freshSym))
+    (MonoAst.FormalParam(freshSym, mod, subst0(tpe), src, Occur.Unknown, loc), Map(sym -> freshSym))
   }
 
   /** Unifies `tpe1` and `tpe2` which must be unifiable. */
@@ -816,6 +869,8 @@ object Monomorpher {
   /**
     * Removes [[Type.Alias]] and [[Type.AssocType]], or crashes if some [[Type.AssocType]] is not
     * reducible.
+    *
+    * @param isGround If true, then `tpe` will be normalized.
     */
   private def simplify(tpe: Type, isGround: Boolean)(implicit root: LoweredAst.Root, flix: Flix): Type = tpe match {
     case v@Type.Var(_, _) => v
@@ -833,9 +888,11 @@ object Monomorpher {
   }
 
   /**
-    * Applies `normalize` on both sides of the application, then normalizing the remaining type.
+    * Applies `normalize` on both sides of the application, then simplifies the remaining type.
     *
-    * OBS: `normalize` must not output [[Type.AssocType]] or [[Type.Alias]].
+    * @param isGround If true then `app` will be normalized.
+    * @param normalize Must not output [[Type.AssocType]] or [[Type.Alias]]. If `isGround` is true
+    *                  then `normalize` should also normalize the type.
     */
   @inline
   private def normalizeApply(normalize: Type => Type, app: Type.Apply, isGround: Boolean): Type = {
@@ -868,11 +925,15 @@ object Monomorpher {
     }
   }
 
-  /** Returns a canonical effect type equivalent to `eff`. */
+  /** Returns the canonical effect equivalent to `eff`. */
   private def canonicalEffect(eff: Type): Type =
-    evalToType(eval(eff), eff.loc)
+    coSetToType(eval(eff), eff.loc)
 
-  /** Evaluates a ground, simplified effect type. */
+  /**
+    * Evaluates `eff`.
+    *
+    * N.B.: `eff` must be simplified and ground.
+    */
   private def eval(eff: Type): CofiniteSet[Symbol.EffectSym] = eff match {
     case Type.Univ => CofiniteSet.universe
     case Type.Pure => CofiniteSet.empty
@@ -894,19 +955,24 @@ object Monomorpher {
   }
 
   /** Returns the [[Type]] representation of `set` with `loc`. */
-  private def evalToType(set: CofiniteSet[Symbol.EffectSym], loc: SourceLocation): Type = set match {
+  private def coSetToType(set: CofiniteSet[Symbol.EffectSym], loc: SourceLocation): Type = set match {
     case CofiniteSet.Set(s) => Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc)
     case CofiniteSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc), loc)
   }
 
-  /** Returns the normalized default type for the kind of `tpe0`. */
+  /**
+    * Returns the default type of `tpe0`, depending on its kind.
+    *
+    * A default type is the choice we make for unconstrained type variables. Any choice will result
+    * in a well-typed program since the typer did not constrain them.
+    *
+    * All defaults are normalized types.
+    */
   private def default(tpe0: Type): Type = tpe0.kind match {
     case Kind.Wild => Type.mkAnyType(tpe0.loc)
     case Kind.WildCaseSet => Type.mkAnyType(tpe0.loc)
     case Kind.Star => Type.mkAnyType(tpe0.loc)
-    case Kind.Eff =>
-      // If an effect variable is free, we may assume its Pure due to the substitution lemma.
-      Type.Pure
+    case Kind.Eff => Type.Pure
     case Kind.Bool => Type.mkAnyType(tpe0.loc)
     case Kind.RecordRow => Type.RecordRowEmpty
     case Kind.SchemaRow => Type.SchemaRowEmpty

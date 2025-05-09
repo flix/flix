@@ -652,9 +652,6 @@ object GenExpression {
       case AtomicOp.RecordExtend(field) =>
         val List(exp1, exp2) = exps
 
-        // We get the JvmType of the record interface
-        val interfaceType = BackendObjType.Record
-
         val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(exp1.tpe))
         val classInternalName = recordType.jvmName.toInternalName
 
@@ -693,6 +690,12 @@ object GenExpression {
         // Invoking the restrictField method
         mv.visitMethodInsn(INVOKEINTERFACE, interfaceType.jvmName.toInternalName, interfaceType.RestrictFieldMethod.name,
           MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(interfaceType.toTpe).toDescriptor, true)
+
+      case AtomicOp.ExtensibleIs(label) => ??? // TODO: Ext-Variants
+
+      case AtomicOp.ExtensibleTag(label) => ??? // TODO: Ext-Variants
+
+      case AtomicOp.ExtensibleUntag(label) => ??? // TODO: Ext-Variants
 
       case AtomicOp.ArrayLit =>
         // We push the 'length' of the array on top of stack
@@ -798,7 +801,7 @@ object GenExpression {
         // Pushes the 'length' of the array on top of stack
         mv.visitInsn(ARRAYLENGTH)
 
-      case AtomicOp.StructNew(_, fields) =>
+      case AtomicOp.StructNew(_, _) =>
         val region :: fieldExps = exps
         // Evaluate the region and ignore its value
         compileExpr(region)
@@ -1080,6 +1083,21 @@ object GenExpression {
         mv.visitInsn(SWAP)
         mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${BackendObjType.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
         mv.visitInsn(ATHROW)
+
+      case AtomicOp.CastError(from, to) =>
+        import BackendObjType.CastError
+        // Add source line number for debugging (failable by design)
+        addSourceLine(mv, loc)
+        val ins = {
+          import BytecodeInstructions.*
+          NEW(CastError.jvmName) ~
+          DUP() ~
+          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~
+          pushString(s"Cannot cast from type '$from' to '$to'") ~
+          INVOKESPECIAL(CastError.Constructor) ~
+          ATHROW()
+        }
+        ins(new BytecodeInstructions.F(mv))
     }
 
     case Expr.ApplyClo(exp1, exp2, ct, _, purity, loc) =>
@@ -1375,9 +1393,9 @@ object GenExpression {
         NEW(effectJvmName) ~ DUP() ~ cheat(_.visitMethodInsn(Opcodes.INVOKESPECIAL, effectJvmName.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)) ~
         // bind handler closures
         cheat(mv => rules.foreach{
-          case HandlerRule(op, _, exp) =>
+          case HandlerRule(op, _, body) =>
             mv.visitInsn(Opcodes.DUP)
-            compileExpr(exp)(mv, ctx, root, flix)
+            compileExpr(body)(mv, ctx, root, flix)
             mv.visitFieldInsn(Opcodes.PUTFIELD, effectJvmName.toInternalName, JvmOps.getEffectOpName(op.sym), GenEffectClasses.opFieldType(op.sym).toDescriptor)
         }) ~
         // frames

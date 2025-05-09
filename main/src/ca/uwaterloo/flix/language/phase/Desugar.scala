@@ -568,6 +568,13 @@ object Desugar {
       val rs = rules.map(visitRestrictableChooseRule)
       Expr.RestrictableChoose(star, e, rs, loc)
 
+    case WeededAst.Expr.ExtensibleMatch(ident1, exp1, ident2, exp2, ident3, exp3, loc) =>
+      val label = Name.mkLabel(ident1)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      Expr.ExtensibleMatch(label, e1, ident2, e2, ident3, e3, loc)
+
     case WeededAst.Expr.ApplicativeFor(frags, exp, loc) =>
       desugarApplicativeFor(frags, exp, loc)
 
@@ -582,6 +589,10 @@ object Desugar {
 
     case WeededAst.Expr.LetMatch(pat, tpe, exp1, exp2, loc) =>
       desugarLetMatch(pat, tpe, exp1, exp2, loc)
+
+    case WeededAst.Expr.ExtensibleTag(label, exps, loc) =>
+      val es = visitExps(exps)
+      Expr.ExtensibleTag(label, es, loc)
 
     case WeededAst.Expr.Tuple(exps, loc) =>
       desugarTuple(exps, loc)
@@ -791,18 +802,6 @@ object Desugar {
       val e2 = visitExp(exp2)
       Expr.FixpointMerge(e1, e2, loc)
 
-    case WeededAst.Expr.FixpointSolve(exp, loc) =>
-      val e = visitExp(exp)
-      Expr.FixpointSolve(e, loc)
-
-    case WeededAst.Expr.FixpointFilter(pred, exp, loc) =>
-      val e = visitExp(exp)
-      Expr.FixpointFilter(pred, e, loc)
-
-    case WeededAst.Expr.FixpointInject(exp, pred, loc) =>
-      val e = visitExp(exp)
-      Expr.FixpointInject(e, pred, loc)
-
     case WeededAst.Expr.FixpointInjectInto(exps, idents, loc) =>
       desugarFixpointInjectInto(exps, idents, loc)
 
@@ -811,11 +810,6 @@ object Desugar {
 
     case WeededAst.Expr.FixpointQueryWithSelect(exps0, selects0, from0, where0, loc) =>
       desugarFixpointQueryWithSelect(exps0, selects0, from0, where0, loc)
-
-    case WeededAst.Expr.FixpointProject(pred, exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.FixpointProject(pred, e1, e2, loc)
 
     case WeededAst.Expr.Debug(exp, kind, loc) =>
       desugarDebug(exp, kind, loc)
@@ -1535,8 +1529,7 @@ object Desugar {
     val e = visitExp(exp0)
     val prefix = mkDebugPrefix(e, kind0, loc0)
     val e1 = DesugaredAst.Expr.Cst(Constant.Str(prefix), loc0)
-    val call = mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc0)
-    DesugaredAst.Expr.UncheckedCast(call, None, Some(DesugaredAst.Type.Pure(loc0)), loc0)
+    mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc0)
   }
 
   /**

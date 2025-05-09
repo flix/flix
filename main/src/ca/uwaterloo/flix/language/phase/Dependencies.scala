@@ -47,7 +47,7 @@ object Dependencies {
     val typeAliases = changeSet.updateStaleValues(root.typeAliases, oldRoot.typeAliases)(ParOps.parMapValues(_)(visitTypeAlias))
 
     var deps = MultiMap.empty[Input, Input]
-    sctx.deps.forEach((k, _) => deps = deps + k)
+    sctx.deps.forEach { case (k, _) => deps = deps + k }
     val dg = DependencyGraph(deps)
     (root.copy(
       dependencyGraph = dg,
@@ -235,6 +235,15 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
+    case Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, tpe, eff, _) =>
+      visitExp(exp1)
+      visitBinder(bnd1)
+      visitExp(exp2)
+      visitBinder(bnd2)
+      visitExp(exp3)
+      visitType(tpe)
+      visitType(eff)
+
     case Expr.Tag(sym, exps, tpe, eff, _) =>
       visitSymUse(sym)
       exps.foreach(visitExp)
@@ -243,6 +252,11 @@ object Dependencies {
 
     case Expr.RestrictableTag(sym, exps, tpe, eff, _) =>
       visitSymUse(sym)
+      exps.foreach(visitExp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.ExtensibleTag(_, exps, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)

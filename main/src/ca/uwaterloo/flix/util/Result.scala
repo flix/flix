@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.util.collection.Chain
 
-import scala.annotation.tailrec
+import scala.annotation.{tailrec, unused}
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -83,7 +83,7 @@ sealed trait Result[+T, +E] {
     * Required for pattern-matching in for-patterns.
     * Doesn't actually filter anything.
     */
-  final def withFilter(f: T => Boolean): Result[T, E] = this
+  final def withFilter(@unused f: T => Boolean): Result[T, E] = this
 }
 
 object Result {

@@ -114,9 +114,9 @@ object Parser2 {
     case class Closed(index: Int) extends Mark
   }
 
-  def run(tokens: Map[Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): (SyntaxTree.Root, List[CompilationMessage]) = flix.phaseNew("Parser2") {
+  def run(tokens0: Map[Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): (SyntaxTree.Root, List[CompilationMessage]) = flix.phaseNew("Parser2") {
     // Compute the stale and fresh sources.
-    val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
+    val (stale, fresh) = changeSet.partition(tokens0, oldRoot.units)
 
     // Sort the stale inputs by size to increase throughput (i.e. to start work early on the biggest tasks).
     val staleByDecreasingSize = stale.toList.sortBy(p => -p._2.length)
@@ -129,7 +129,7 @@ object Parser2 {
     }.unzip
 
     // Join refreshed syntax trees with the already fresh ones.
-    val result = SyntaxTree.Root(refreshed.toMap ++ fresh, tokens)
+    val result = SyntaxTree.Root(refreshed.toMap ++ fresh, tokens0)
     (result, errors.flatten.toList)
   }
 
@@ -1667,10 +1667,12 @@ object Parser2 {
         case TokenKind.KeywordDebug
              | TokenKind.KeywordDebugBang
              | TokenKind.KeywordDebugBangBang => debugExpr()
+        case TokenKind.KeywordXmatch => extensibleMatchExpr()
+        case TokenKind.KeywordXvar => extensibleTagExpr()
         case t =>
           val mark = open()
-          advance()
           val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation())
+          advance()
           closeWithError(mark, error)
       }
       close(mark, TreeKind.Expr.Expr)
@@ -1822,6 +1824,46 @@ object Parser2 {
           expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
           close(mark, TreeKind.Expr.Paren)
       }
+    }
+
+    private def extensibleMatchExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordXmatch))
+      val mark = open()
+      expect(TokenKind.KeywordXmatch, SyntacticContext.Expr.OtherExpr)
+      expression()
+      expect(TokenKind.KeywordWith, SyntacticContext.Expr.OtherExpr)
+      nameUnqualified(NAME_TAG, SyntacticContext.Expr.OtherExpr)
+
+      expect(TokenKind.CurlyL)
+      val case1 = open()
+      expect(TokenKind.KeywordCase)
+      nameUnqualified(NAME_VARIABLE, SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.ArrowThickR)
+      expression()
+      close(case1, TreeKind.Case)
+
+      val case2 = open()
+      expect(TokenKind.KeywordCase)
+      nameUnqualified(NAME_VARIABLE, SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.ArrowThickR)
+      expression()
+      close(case2, TreeKind.Case)
+
+      expect(TokenKind.CurlyR)
+
+      close(mark, TreeKind.Expr.ExtensibleMatch)
+    }
+
+    private def extensibleTagExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordXvar))
+      val mark = open()
+      expect(TokenKind.KeywordXvar, SyntacticContext.Expr.OtherExpr)
+      nameUnqualified(NAME_TAG, SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.ParenL)
+      // TODO: Ext-Variants: Limited to one expression.
+      expression()
+      expect(TokenKind.ParenR)
+      close(mark, TreeKind.Expr.ExtensibleTag)
     }
 
     private def unaryLambdaExpr()(implicit s: State): Mark.Closed = {
@@ -3324,7 +3366,7 @@ object Parser2 {
         delimiterL = TokenKind.HashCurlyL,
         delimiterR = TokenKind.CurlyR,
         breakWhen = _.isRecoverType,
-        optionallyWith = Some(TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE)),
+        optionallyWith = Some((TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE))),
       )
       close(mark, TreeKind.Type.Schema)
     }
@@ -3338,7 +3380,7 @@ object Parser2 {
         checkForItem = NAME_PREDICATE.contains,
         delimiterL = TokenKind.HashParenL,
         breakWhen = _.isRecoverType,
-        optionallyWith = Some(TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE)),
+        optionallyWith = Some((TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE))),
       )
       close(mark, TreeKind.Type.SchemaRow)
     }
@@ -3355,11 +3397,11 @@ object Parser2 {
           getItem = () => ttype(),
           checkForItem = _.isFirstType,
           breakWhen = _.isRecoverType,
-          optionallyWith = Some(TokenKind.Semi, () => {
+          optionallyWith = Some((TokenKind.Semi, () => {
             val mark = open()
             ttype()
             close(mark, TreeKind.Predicate.LatticeTerm)
-          })
+          }))
         )
         close(mark, TreeKind.Type.PredicateWithTypes)
       }
@@ -3438,11 +3480,11 @@ object Parser2 {
         checkForItem = _.isFirstExpr,
         breakWhen = _.isRecoverExpr,
         context = SyntacticContext.Expr.Constraint,
-        optionallyWith = Some(TokenKind.Semi, () => {
+        optionallyWith = Some((TokenKind.Semi, () => {
           val mark = open()
           Expr.expression()
           close(mark, TreeKind.Predicate.LatticeTerm)
-        })
+        }))
       )
       close(mark, TreeKind.Predicate.TermList)
     }
@@ -3455,11 +3497,11 @@ object Parser2 {
         checkForItem = _.isFirstPattern,
         breakWhen = _.isRecoverPattern,
         context = SyntacticContext.Expr.Constraint,
-        optionallyWith = Some(TokenKind.Semi, () => {
+        optionallyWith = Some((TokenKind.Semi, () => {
           val mark = open()
           Pattern.pattern()
           close(mark, TreeKind.Predicate.LatticeTerm)
-        })
+        }))
       )
       close(mark, TreeKind.Predicate.PatternList)
     }
@@ -3560,11 +3602,11 @@ object Parser2 {
         checkForItem = _.isFirstType,
         breakWhen = _.isRecoverType,
         context = SyntacticContext.Expr.Constraint,
-        optionallyWith = Some(TokenKind.Semi, () => {
+        optionallyWith = Some((TokenKind.Semi, () => {
           val mark = open()
           Type.ttype()
           close(mark, TreeKind.Predicate.LatticeTerm)
-        })
+        }))
       )
       close(mark, kind)
     }

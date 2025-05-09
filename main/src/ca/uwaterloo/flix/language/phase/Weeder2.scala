@@ -895,6 +895,8 @@ object Weeder2 {
         case TreeKind.Expr.FixpointSolveWithProject => visitFixpointSolveExpr(tree)
         case TreeKind.Expr.FixpointQuery => visitFixpointQueryExpr(tree)
         case TreeKind.Expr.Debug => visitDebugExpr(tree)
+        case TreeKind.Expr.ExtensibleMatch => visitExtensibleMatch(tree)
+        case TreeKind.Expr.ExtensibleTag => visitExtensibleTag(tree)
         case TreeKind.Expr.Intrinsic =>
           // Intrinsics must be applied to check that they have the right amount of arguments.
           // This means that intrinsics are not "first-class" like other functions.
@@ -1535,6 +1537,29 @@ object Weeder2 {
       }
     }
 
+    private def visitExtensibleMatch(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      def visitCase(caze: Tree): Validation[(Name.Ident, Expr), CompilationMessage] =
+        mapN(pickNameIdent(caze), pickExpr(caze)) {
+          case (id, e) => (id, e)
+        }
+
+      expect(tree, TreeKind.Expr.ExtensibleMatch)
+
+      mapN(pickExpr(tree), pickNameIdent(tree), traverse(pickAll(TreeKind.Case, tree))(visitCase)) {
+        case (exp1, label, (ident2, exp2) :: (ident3, exp3) :: Nil) =>
+          Expr.ExtensibleMatch(label, exp1, ident2, exp2, ident3, exp3, tree.loc)
+        case _ =>
+          throw InternalCompilerException("Illegal extensible match", tree.loc)
+      }
+    }
+
+    private def visitExtensibleTag(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.ExtensibleTag)
+      mapN(pickNameIdent(tree), pickExpr(tree)) {
+        (ident, e) => Expr.ExtensibleTag(Name.mkLabel(ident), List(e), tree.loc)
+      }
+    }
+
     private def visitTupleExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Tuple)
       mapN(traverse(pickAll(TreeKind.Argument, tree))(pickExpr), traverse(pickAll(TreeKind.ArgumentNamed, tree))(visitArgumentNamed)) {
@@ -1723,7 +1748,7 @@ object Weeder2 {
         traverse(maybeWith)(visitRunWithBody),
       ) {
         // Bad case: run expr
-        case (_, Nil) =>
+        case (expr, Nil) =>
           // Fall back on Expr.Error
           val error = UnexpectedToken(
             expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordCatch, TokenKind.KeywordWith)),
@@ -1731,7 +1756,7 @@ object Weeder2 {
             SyntacticContext.Expr.OtherExpr,
             loc = tree.loc)
           sctx.errors.add(error)
-          Validation.Success(Expr.Error(error))
+          Validation.Success(Expr.RunWith(expr, List(Expr.Error(error)), tree.loc))
         // Case: run expr [with expr]...
         case (expr, exprs) => Validation.Success(Expr.RunWith(expr, exprs, tree.loc))
       }
