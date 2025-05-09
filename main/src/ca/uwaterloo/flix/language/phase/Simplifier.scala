@@ -362,12 +362,30 @@ object Simplifier {
 
           case TypeConstructor.Record =>
             val List(elm) = tpe.typeArguments
-            // The row types themselves return monotype records, so we do nothing here.
+            // The visitType(row) returns a monotype record, so just use that.
             visitType(elm)
 
           case TypeConstructor.Extensible =>
-            // TODO: Monomorphization?
-            ??? // TODO: Ext-Variants
+            val List(row) = tpe.typeArguments
+            // The visitType(schemaRow) returns a monotype extensible variant, so just use that.
+            visitType(row)
+
+          case TypeConstructor.SchemaRowEmpty =>
+            MonoType.ExtensibleEmpty
+
+          case TypeConstructor.SchemaRowExtend(pred) =>
+            val List(predType, rest) = tpe.typeArguments
+            val consType0 = predType match {
+              case Type.Apply(Type.Cst(TypeConstructor.Relation, _), ct, _) => ct
+              case Type.Apply(Type.Cst(TypeConstructor.Lattice, _), ct, _) => ct
+              case other => throw InternalCompilerException(s"Unexpected type: '$other'.", other.loc)
+            }
+            val consTypes = consType0.baseType match {
+              case Type.Cst(TypeConstructor.Tuple(_), _) => consType0.typeArguments
+              case Type.Cst(_, _) => List(consType0)
+              case other => throw InternalCompilerException(s"Unexpected type: '$other'.", other.loc)
+            }
+            MonoType.ExtensibleExtend(pred, consTypes.map(visitType), visitType(rest))
 
           case TypeConstructor.Region(_) => MonoType.Unit
 
@@ -394,12 +412,6 @@ object Simplifier {
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.Lattice =>
-            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
-
-          case TypeConstructor.SchemaRowEmpty =>
-            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
-
-          case TypeConstructor.SchemaRowExtend(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.Schema =>
@@ -534,8 +546,8 @@ object Simplifier {
             Type.mkRecord(visitPolyType(elm), loc)
 
           case TypeConstructor.Extensible =>
-            // TODO: Monomorphization?
-            ??? // TODO: Ext-Variants
+            val List(elm) = tpe.typeArguments
+            Type.Apply(Type.Cst(TypeConstructor.Extensible, loc), visitPolyType(elm), loc)
 
           case TypeConstructor.Region(_) => Type.mkUnit(loc)
 

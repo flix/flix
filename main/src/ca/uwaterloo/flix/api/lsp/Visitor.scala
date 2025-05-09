@@ -361,7 +361,12 @@ object Visitor {
 
       case Expr.RestrictableChoose(_, _, _, _, _, _) => () // Not visited, unsupported feature.
 
-      case Expr.ExtensibleMatch(_, _, _, _, _, _, _, _, _) => () // TODO: Ext-Variants
+      case Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, _, _, _) =>
+        visitExpr(exp1)
+        visitBinder(bnd1)
+        visitExpr(exp2)
+        visitBinder(bnd2)
+        visitExpr(exp3)
 
       case Expr.Tag(symUse, exps, _, _, _) =>
         visitCaseSymUse(symUse)
@@ -369,7 +374,8 @@ object Visitor {
 
       case Expr.RestrictableTag(_, _, _, _, _) => () // Not visited, unsupported feature.
 
-      case Expr.ExtensibleTag(_, _, _, _, _) => () // TODO: Ext-Variants
+      case Expr.ExtensibleTag(_, exps, _, _, _) =>
+        exps.foreach(visitExpr)
 
       case Expr.Tuple(exps, _, _, _) =>
         exps.foreach(visitExpr)
