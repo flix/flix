@@ -717,6 +717,12 @@ object Inliner {
     *
     */
   private def unifyPattern(exp0: Expr, pat0: Pattern)(implicit flix: Flix): UnificationResult = (exp0, pat0) match {
+    case (Expr.Cast(exp, _, _, _), _) =>
+      unifyPattern(exp, pat0)
+
+    case (Expr.Ascribe(exp, _, _, _), _) =>
+      unifyPattern(exp, pat0)
+
     case (_, Pattern.Wild(_, _)) =>
       UnificationResult.SuccessEmpty
 
