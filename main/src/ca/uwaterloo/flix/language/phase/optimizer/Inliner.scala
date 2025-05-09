@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.locks.ReentrantLock
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 
@@ -195,10 +196,6 @@ object Inliner {
       val es = exps.map(visitExp(_, ctx0))
       if (shouldInlineDef(root.defs(sym), es, ctx0)) {
         sctx.changed.putIfAbsent(sym0, ())
-        val inlinedInto = inlined.get(sym)
-        if (inlinedInto != null) {
-          inlinedInto.putIfAbsent(sym0, ())
-        }
         val defn = root.defs(sym)
         val ctx = ctx0.withSubst(Map.empty).enableInliningMode
         bindArgs(defn.exp, defn.spec.fparams, es, loc, ctx)
@@ -501,11 +498,26 @@ object Inliner {
     * @param exps the arguments to the function.
     * @param ctx0 the local context.
     */
-  private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, inlined: ConcurrentHashMap[Symbol.DefnSym, ConcurrentHashMap[Symbol.DefnSym, Unit]]): Boolean = {
-    val isInlinedHere = inlined.getOrDefault(defn.sym, new ConcurrentHashMap()).containsKey(sym0)
+  private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, inlined: ConcurrentHashMap[Symbol.DefnSym, ConcurrentHashMap[Symbol.DefnSym, Unit]]): Boolean = {
     (!defn.spec.ann.isDontInline && !defn.spec.defContext.isSelfRef && !ctx0.currentlyInlining &&
-      (isSingleAction(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))) ||
-      ((defn.spec.ann.isInline && defn.spec.defContext.isSelfRef && !isInlinedHere) || (defn.spec.ann.isInline && !defn.spec.defContext.isSelfRef))
+      (isSingleAction(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))) || (defn.spec.ann.isInline && !defn.spec.defContext.isSelfRef) || {
+      // Atomically check if it has been inlined into sym0 and update if not
+      sctx.lock.lock()
+      val isInlinedInSym0 = inlined.getOrDefault(defn.sym, new ConcurrentHashMap()).containsKey(sym0)
+      val shouldInlineIntoSym0 = defn.spec.ann.isInline && defn.spec.defContext.isSelfRef && !isInlinedInSym0
+      if (shouldInlineIntoSym0) {
+        val inlinePlaces = inlined.get(defn.sym)
+        if (inlinePlaces != null) {
+          inlinePlaces.putIfAbsent(sym0, ())
+        } else {
+          val freshInlinedPlaces = new ConcurrentHashMap[Symbol.DefnSym, Unit]()
+          freshInlinedPlaces.putIfAbsent(sym0, ())
+          inlined.put(defn.sym, freshInlinedPlaces)
+        }
+      }
+      sctx.lock.unlock()
+      shouldInlineIntoSym0
+    }
   }
 
   /**
@@ -741,7 +753,7 @@ object Inliner {
   private object SharedContext {
 
     /** Returns a fresh [[SharedContext]]. */
-    def mk(): SharedContext = new SharedContext(new ConcurrentHashMap(), new ConcurrentHashMap())
+    def mk(): SharedContext = new SharedContext(new ConcurrentHashMap(), new ConcurrentHashMap(), new ReentrantLock())
 
   }
 
@@ -751,6 +763,6 @@ object Inliner {
     * @param changed the set of symbols of changed functions.
     * @param live    the set of symbols of live functions.
     */
-  private case class SharedContext(changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit])
+  private case class SharedContext(changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit], lock: ReentrantLock)
 
 }
