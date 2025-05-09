@@ -36,17 +36,17 @@ object OccurrenceAnalyzer {
     */
   def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym])(implicit flix: Flix): MonoAst.Root = {
     val changedDefs = root.defs.filter(kv => delta.contains(kv._1))
-    val visitedDefs = ParOps.parMapValues(changedDefs)(visitDef)
+    val visitedDefs = ParOps.parMapValues(changedDefs)(visitDef(_)(root))
     root.copy(defs = root.defs ++ visitedDefs)
   }
 
   /**
     * Performs occurrence analysis on `defn`.
     */
-  private def visitDef(defn: MonoAst.Def): MonoAst.Def = {
+  private def visitDef(defn: MonoAst.Def)(implicit root: MonoAst.Root): MonoAst.Def = {
     val lctx: LocalContext = LocalContext.mk()
-    val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx)
-    val defContext = DefContext(lctx.localDefs.get(), isSelfRef(ctx.selfOccur), new AtomicInteger())
+    val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx, root)
+    val defContext = DefContext(lctx.localDefs.get(), isSelfRef(ctx.selfOccur), defn.spec.defContext.refs)
     val fparams = defn.spec.fparams.map(visitFormalParam(_, ctx))
     val spec = defn.spec.copy(fparams = fparams, defContext = defContext)
     MonoAst.Def(defn.sym, spec, exp, defn.loc)
@@ -55,7 +55,7 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on `exp0`
     */
-  private def visitExp(exp0: Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (Expr, ExprContext) = {
+  private def visitExp(exp0: Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext, root: MonoAst.Root): (Expr, ExprContext) = {
     exp0 match {
       case Expr.Cst(_, _, _) =>
         (exp0, ExprContext.Empty)
@@ -98,7 +98,12 @@ object OccurrenceAnalyzer {
 
       case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
-        val ctx1 = if (sym == sym0) ExprContext.RecursiveOnce else ExprContext.Empty
+        val ctx1 = if (sym == sym0) {
+          ExprContext.RecursiveOnce
+        } else {
+          root.defs(sym).spec.defContext.refs.incrementAndGet()
+          ExprContext.Empty
+        }
         val ctx2 = ctxs.foldLeft(ctx1)(combineSeq)
         if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx2) // Reuse exp0.
