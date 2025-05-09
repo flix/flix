@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.Symbol.VarSym
 import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
 /**
   * The occurrence analyzer collects occurrence information on binders according to the definition of [[Occur]].
@@ -31,12 +31,15 @@ import java.util.concurrent.atomic.AtomicInteger
   */
 object OccurrenceAnalyzer {
 
+  private var hasCountedRefs: Boolean = false
+
   /**
     * Performs occurrence analysis on the given AST `root`.
     */
   def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym])(implicit flix: Flix): MonoAst.Root = {
     val changedDefs = root.defs.filter(kv => delta.contains(kv._1))
     val visitedDefs = ParOps.parMapValues(changedDefs)(visitDef(_)(root))
+    hasCountedRefs = true
     root.copy(defs = root.defs ++ visitedDefs)
   }
 
@@ -101,7 +104,9 @@ object OccurrenceAnalyzer {
         val ctx1 = if (sym == sym0) {
           ExprContext.RecursiveOnce
         } else {
-          root.defs(sym).spec.defContext.refs.incrementAndGet()
+          if (!hasCountedRefs) {
+            root.defs(sym).spec.defContext.refs.incrementAndGet()
+          }
           ExprContext.Empty
         }
         val ctx2 = ctxs.foldLeft(ctx1)(combineSeq)
