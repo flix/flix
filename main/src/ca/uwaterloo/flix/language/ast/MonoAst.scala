@@ -21,6 +21,8 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, EffectSymUse, O
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.util.collection.Nel
 
+import java.util.concurrent.atomic.AtomicInteger
+
 object MonoAst {
 
   val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty)
@@ -235,11 +237,12 @@ object MonoAst {
     *
     * @param localDefs the number of local defs defined in a function.
     * @param isSelfRef true if a function body expression refers to the function itself.
+    * @param refs      the number of references to this function excluding references from itself.
     */
-  case class DefContext(localDefs: Int, isSelfRef: Boolean)
+  case class DefContext(localDefs: Int, isSelfRef: Boolean, refs: AtomicInteger)
 
   object DefContext {
-    val Unknown: DefContext = DefContext(localDefs = 0, isSelfRef = false)
+    val Unknown: DefContext = DefContext(localDefs = 0, isSelfRef = false, refs = new AtomicInteger())
   }
 
 }

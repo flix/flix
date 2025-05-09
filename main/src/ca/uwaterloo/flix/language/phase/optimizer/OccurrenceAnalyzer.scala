@@ -46,7 +46,7 @@ object OccurrenceAnalyzer {
   private def visitDef(defn: MonoAst.Def): MonoAst.Def = {
     val lctx: LocalContext = LocalContext.mk()
     val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx)
-    val defContext = DefContext(lctx.localDefs.get(), isSelfRef(ctx.selfOccur))
+    val defContext = DefContext(lctx.localDefs.get(), isSelfRef(ctx.selfOccur), new AtomicInteger())
     val fparams = defn.spec.fparams.map(visitFormalParam(_, ctx))
     val spec = defn.spec.copy(fparams = fparams, defContext = defContext)
     MonoAst.Def(defn.sym, spec, exp, defn.loc)
