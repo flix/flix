@@ -488,8 +488,8 @@ object Inliner {
     *   - the local context shows that we are not currently inlining and
     *   - `defn` does not refer to itself and
     *   - it is either a higher-order function with a known lambda as argument or
-    *   - it is a direct call to another function or
-    *   - the body is trivial.
+    *   - it is a direct call with simple arguments to another function or
+    *   - the body is simple.
     *
     * It is the responsibility of the caller to visit `exps` first.
     *
@@ -499,7 +499,7 @@ object Inliner {
     */
   private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext): Boolean = {
     !ctx0.currentlyInlining && !defn.spec.defContext.isSelfRef &&
-      (isDirectCall(defn.exp) || isTrivial(defn.exp) || hasKnownLambda(exps))
+      (isSingleCall(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))
   }
 
   /**
@@ -507,16 +507,6 @@ object Inliner {
     */
   private def hasKnownLambda(exps: List[Expr]): Boolean = {
     exps.exists(isLambda)
-  }
-
-  /**
-    * Returns `true` if `exp0` is a function call with trivial arguments.
-    */
-  private def isDirectCall(exp0: MonoAst.Expr): Boolean = exp0 match {
-    case Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isTrivial)
-    case Expr.ApplyClo(exp1, exp2, _, _, _) => isTrivial(exp1) && isTrivial(exp2)
-    case Expr.LocalDef(_, _, _, Expr.ApplyLocalDef(_, exps, _, _, _), _, _, _, _) => exps.forall(isTrivial)
-    case _ => false
   }
 
   /**
