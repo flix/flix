@@ -593,8 +593,8 @@ object Inliner {
     *   - [[Expr.Lambda]]
     *   - [[Expr.ApplyAtomic]] with [[AtomicOp.Unary]] where for all operands [[isTrivial]] holds.
     *   - [[Expr.ApplyAtomic]] with [[AtomicOp.Binary]] where for all operands [[isTrivial]] holds.
-    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.Tuple]] where for all operands either [[isTrivial]] or [[isSimple]] holds.
-    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.Tag]] where for all operands either [[isTrivial]] or [[isSimple]] holds.
+    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.Tuple]] where for all subexpressions either [[isTrivial]] or [[isSimple]] holds.
+    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.Tag]] where for all subexpressions either [[isTrivial]] or [[isSimple]] holds.
     *   - Any expression where [[isTrivial]] holds.
     *
     * A simple expression can be reduced by beta reduction, constant folding or deforestation.
@@ -606,6 +606,33 @@ object Inliner {
     case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(e => isTrivial(e) || isSimple(e))
     case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(e => isTrivial(e) || isSimple(e))
     case exp => isTrivial(exp)
+  }
+
+  /**
+    * Returns `true` if `exp0` is a single call expression.
+    *
+    * A single call is expression is one of the following:
+    *   - [[Expr.ApplyClo]] where [[isSimple]] holds for all subexpressions.
+    *   - [[Expr.ApplyDef]] where [[isSimple]] holds for all subexpressions.
+    *   - [[Expr.LocalDef]] where the following expression is [[Expr.ApplyLocalDef]] and
+    *     [[isSimple]] holds for all subexpressions of the latter.
+    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.InvokeMethod]] where for all subexpressions [[isSimple]] holds.
+    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.InvokeConstructor]] where for all subexpressions [[isSimple]] holds.
+    *   - [[Expr.ApplyAtomic]] with [[AtomicOp.InvokeStaticMethod]] where for all subexpressions [[isSimple]] holds.
+    *   - [[Expr.Cast]] where [[isSingleCall]] holds for the subexpression.
+    *
+    * This captures functions that simply forward to another function with possibly additional simple arguments.
+    * Inlining such a function reduces code size.
+    */
+  private def isSingleCall(exp0: Expr): Boolean = exp0 match {
+    case Expr.ApplyClo(exp1, exp2, _, _, _) => isSimple(exp1) && isSimple(exp2)
+    case Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isSimple)
+    case Expr.LocalDef(_, _, _, Expr.ApplyLocalDef(_, exps, _, _, _), _, _, _, _) => exps.forall(isSimple)
+    case Expr.ApplyAtomic(AtomicOp.InvokeMethod(_), exps, _, _, _) => exps.forall(isSimple)
+    case Expr.ApplyAtomic(AtomicOp.InvokeConstructor(_), exps, _, _, _) => exps.forall(isSimple)
+    case Expr.ApplyAtomic(AtomicOp.InvokeStaticMethod(_), exps, _, _, _) => exps.forall(isSimple)
+    case Expr.Cast(exp, _, _, _) => isSingleCall(exp)
+    case _ => false
   }
 
   /** Represents the range of a substitution from variables to expressions. */
