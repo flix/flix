@@ -13,7 +13,7 @@ object MonoAstPrinter {
         DocAst.Enum(ann, mod, sym, tparams.map(printTypeParam), cases.values.map(printCase).toList)
     }.toList
     val defs = root.defs.values.map {
-      case MonoAst.Def(sym, MonoAst.Spec(_, ann, mod, fparams, _, retTpe, eff), exp, _) =>
+      case MonoAst.Def(sym, MonoAst.Spec(_, ann, mod, fparams, _, retTpe, eff, _), exp, _) =>
         val fps = fparams.map(printFormalParam)
         val rtpe = TypePrinter.print(retTpe)
         val ef = TypePrinter.print(eff)
@@ -31,8 +31,8 @@ object MonoAstPrinter {
     case Expr.ApplyClo(exp1, exp2, _, _, _) => DocAst.Expr.App(print(exp1), List(print(exp2)))
     case Expr.ApplyDef(sym, exps, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print))
     case Expr.ApplyLocalDef(sym, exps, _, _, _) => DocAst.Expr.ApplyLocalDef(sym, exps.map(print))
-    case Expr.Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVar(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)), print(exp1), print(exp2))
+    case Expr.Let(sym, exp1, exp2, _, _, _, _) => DocAst.Expr.Let(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _, _) => DocAst.Expr.LocalDef(printVar(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)), print(exp1), print(exp2))
     case Expr.Scope(sym, _, exp, _, _, _) => DocAst.Expr.Scope(printVar(sym), print(exp))
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Expr.Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
@@ -73,7 +73,7 @@ object MonoAstPrinter {
   /** Returns the [[DocAst.Expr]] representation of `pattern`. */
   private def printPattern(pattern: MonoAst.Pattern): DocAst.Expr = pattern match {
     case Pattern.Wild(_, _) => DocAst.Expr.Wild
-    case Pattern.Var(sym, _, _) => printVar(sym)
+    case Pattern.Var(sym, _, _, _) => printVar(sym)
     case Pattern.Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Pattern.Tag(sym, pats, _, _) => DocAst.Expr.Tag(sym.sym, pats.map(printPattern))
     case Pattern.Tuple(elms, _, _) => DocAst.Expr.Tuple(elms.map(printPattern).toList)
@@ -94,7 +94,7 @@ object MonoAstPrinter {
 
   /** Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`. */
   private def printFormalParam(fp: MonoAst.FormalParam): DocAst.Expr.AscriptionTpe = {
-    val MonoAst.FormalParam(sym, _, tpe, _, _) = fp
+    val MonoAst.FormalParam(sym, _, tpe, _, _, _) = fp
     DocAst.Expr.AscriptionTpe(DocAst.Expr.Var(sym), TypePrinter.print(tpe))
   }
 

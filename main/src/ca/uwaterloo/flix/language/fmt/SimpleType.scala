@@ -440,7 +440,19 @@ object SimpleType {
           }
 
         case TypeConstructor.Extensible =>
-          ??? // TODO: Ext-Variants
+          val args = t.typeArguments.map(visit)
+          args match {
+            // Case 1: No args. { ? }
+            case Nil => SchemaConstructor(Hole)
+            // Case 2: One row argument. Extract its values.
+            case tpe :: Nil => tpe match {
+              case SchemaRow(fields) => Schema(fields)
+              case SchemaRowExtend(fields, rest) => SchemaExtend(fields, rest)
+              case nonSchema => SchemaConstructor(nonSchema)
+            }
+            // Case 3: Too many args. Error.
+            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
+          }
 
         case TypeConstructor.SchemaRowEmpty => SchemaRow(Nil)
 
@@ -476,6 +488,7 @@ object SimpleType {
             // Case 3: Too many args. Error.
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
+
         case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(visit))
         case TypeConstructor.ArrayWithoutRegion => mkApply(ArrayWithoutRegion, t.typeArguments.map(visit))
         case TypeConstructor.Vector => mkApply(Vector, t.typeArguments.map(visit))
