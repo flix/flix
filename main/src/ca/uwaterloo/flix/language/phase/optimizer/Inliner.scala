@@ -504,7 +504,7 @@ object Inliner {
       // Atomically check if it has been inlined into sym0 and update if not
       sctx.lock.lock()
       val isInlinedInSym0 = inlined.getOrDefault(defn.sym, new ConcurrentHashMap()).containsKey(sym0)
-      val shouldInlineIntoSym0 = defn.spec.ann.isInline && defn.spec.defContext.isSelfRef && !isInlinedInSym0
+      val shouldInlineIntoSym0 = defn.spec.ann.isInline && defn.spec.defContext.isSelfRef && !isInlinedInSym0 && defn.sym != sym0
       if (shouldInlineIntoSym0) {
         val inlinePlaces = inlined.get(defn.sym)
         if (inlinePlaces != null) {
