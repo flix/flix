@@ -28,8 +28,8 @@ object LoweredAstPrinter {
     val enums = root.enums.values.map {
       case LoweredAst.Enum(_, ann, mod, sym, tparams, _, cases0, _) =>
         val cases = cases0.values.map {
-          case LoweredAst.Case(sym, tpes, _, _) =>
-            DocAst.Case(sym, tpes.map(TypePrinter.print))
+          case LoweredAst.Case(caseSym, tpes, _, _) =>
+            DocAst.Case(caseSym, tpes.map(TypePrinter.print))
         }.toList
         DocAst.Enum(ann, mod, sym, tparams.map(printTypeParam), cases)
     }.toList
@@ -52,21 +52,21 @@ object LoweredAstPrinter {
     * Returns the [[DocAst.Expr]] representation of `e`.
     */
   def print(e: LoweredAst.Expr): DocAst.Expr = e match {
-    case Expr.Cst(cst, tpe, loc) => ConstantPrinter.print(cst)
-    case Expr.Var(sym, tpe, loc) => DocAst.Expr.Var(sym)
-    case Expr.Lambda(fparam, exp, tpe, loc) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
-    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) => DocAst.Expr.ApplyClo(print(exp1), List(print(exp2)))
+    case Expr.Cst(cst, _, _) => ConstantPrinter.print(cst)
+    case Expr.Var(sym, _, _) => DocAst.Expr.Var(sym)
+    case Expr.Lambda(fparam, exp, _, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
+    case Expr.ApplyClo(exp1, exp2, _, _, _) => DocAst.Expr.ApplyClo(print(exp1), List(print(exp2)))
     case Expr.ApplyDef(sym, exps, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print))
     case Expr.ApplyLocalDef(sym, exps, _, _, _) => DocAst.Expr.ApplyClo(DocAst.Expr.Var(sym), exps.map(print))
     case Expr.ApplySig(sym, exps, _, _, _, _) => DocAst.Expr.ApplyClo(DocAst.Expr.Sig(sym), exps.map(print))
-    case Expr.ApplyAtomic(op, exps, tpe, eff, loc) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe), TypePrinter.print(eff))
-    case Expr.Let(sym, exp1, exp2, tpe, eff, loc) => DocAst.Expr.Let(DocAst.Expr.Var(sym), None, print(exp1), print(exp2))
+    case Expr.ApplyAtomic(op, exps, tpe, eff, _) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe), TypePrinter.print(eff))
+    case Expr.Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(DocAst.Expr.Var(sym), None, print(exp1), print(exp2))
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(DocAst.Expr.Var(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)), print(exp1), print(exp2))
-    case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => DocAst.Expr.Scope(DocAst.Expr.Var(sym), print(exp))
-    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
-    case Expr.Stm(exp1, exp2, tpe, eff, loc) => DocAst.Expr.Stm(print(exp1), print(exp2))
-    case Expr.Discard(exp, eff, loc) => DocAst.Expr.Discard(print(exp))
-    case Expr.Match(exp, rules, tpe, eff, loc) =>
+    case Expr.Scope(sym, _, exp, _, _, _) => DocAst.Expr.Scope(DocAst.Expr.Var(sym), print(exp))
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
+    case Expr.Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
+    case Expr.Discard(exp, _, _) => DocAst.Expr.Discard(print(exp))
+    case Expr.Match(exp, rules, _, _, _) =>
       val expD = print(exp)
       val rulesD = rules.map {
         case LoweredAst.MatchRule(pat, guard, body) =>
@@ -76,7 +76,7 @@ object LoweredAstPrinter {
           (patD, guardD, bodyD)
       }
       DocAst.Expr.Match(expD, rulesD)
-    case Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
+    case Expr.TypeMatch(exp, rules, _, _, _) =>
       val expD = print(exp)
       val rulesD = rules.map {
         case LoweredAst.TypeMatchRule(sym, tpe, body) =>
@@ -86,31 +86,31 @@ object LoweredAstPrinter {
           (patD, tpeD, bodyD)
       }
       DocAst.Expr.TypeMatch(expD, rulesD)
-    case Expr.VectorLit(exps, tpe, eff, loc) => DocAst.Expr.VectorLit(exps.map(print))
-    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => DocAst.Expr.VectorLoad(print(exp1), print(exp2))
-    case Expr.VectorLength(exp, loc) => DocAst.Expr.ArrayLength(print(exp))
-    case Expr.Ascribe(exp, tpe, eff, loc) => DocAst.Expr.AscriptionTpe(print(exp), TypePrinter.print(tpe))
-    case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) => declaredType match {
+    case Expr.VectorLit(exps, _, _, _) => DocAst.Expr.VectorLit(exps.map(print))
+    case Expr.VectorLoad(exp1, exp2, _, _, _) => DocAst.Expr.VectorLoad(print(exp1), print(exp2))
+    case Expr.VectorLength(exp, _) => DocAst.Expr.ArrayLength(print(exp))
+    case Expr.Ascribe(exp, tpe, _, _) => DocAst.Expr.AscriptionTpe(print(exp), TypePrinter.print(tpe))
+    case Expr.Cast(exp, declaredType, _, _, _, _) => declaredType match {
       case None => print(exp) // TODO needs eff
       case Some(t) => DocAst.Expr.Cast(print(exp), TypePrinter.print(t))
     }
-    case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+    case Expr.TryCatch(exp, rules, _, _, _) =>
       val expD = print(exp)
       val rulesD = rules.map {
         case LoweredAst.CatchRule(sym, clazz, body) => (sym, clazz, print(body))
       }
       DocAst.Expr.TryCatch(expD, rulesD)
-    case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
+    case Expr.RunWith(exp, effUse, rules, _, _, _) =>
       val expD = print(exp)
       val effD = effUse.sym
       val rulesD = rules.map {
-        case LoweredAst.HandlerRule(op, fparams, exp) => (op.sym, fparams.map(printFormalParam), print(exp))
+        case LoweredAst.HandlerRule(op, fparams, body) => (op.sym, fparams.map(printFormalParam), print(body))
       }
       DocAst.Expr.RunWithHandler(expD, effD, rulesD)
-    case Expr.Do(op, exps, tpe, eff, loc) => DocAst.Expr.Do(op.sym, exps.map(print))
-    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
+    case Expr.Do(op, exps, _, _, _) => DocAst.Expr.Do(op.sym, exps.map(print))
+    case Expr.NewObject(name, clazz, tpe, _, methods, _) =>
       val methodsD = methods.map {
-        case LoweredAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) => DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
+        case LoweredAst.JvmMethod(ident, fparams, exp, retTpe, _, _) => DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
       }
       DocAst.Expr.NewObject(name, clazz, TypePrinter.print(tpe), methodsD)
   }
@@ -119,12 +119,12 @@ object LoweredAstPrinter {
     * Converts the given pattern into a [[DocAst.Expr]].
     */
   private def printPattern(pat: LoweredAst.Pattern): DocAst.Expr = pat match {
-    case Pattern.Wild(tpe, loc) => DocAst.Expr.Wild
-    case Pattern.Var(sym, tpe, loc) => DocAst.Expr.Var(sym)
-    case Pattern.Cst(cst, tpe, loc) => DocAst.Expr.Cst(cst)
-    case Pattern.Tag(sym, pats, tpe, loc) => DocAst.Expr.Tag(sym.sym, pats.map(printPattern))
-    case Pattern.Tuple(elms, tpe, loc) => DocAst.Expr.Tuple(elms.map(printPattern).toList)
-    case Pattern.Record(pats, pat, tpe, loc) => printRecordPattern(pats, pat)
+    case Pattern.Wild(_, _) => DocAst.Expr.Wild
+    case Pattern.Var(sym, _, _) => DocAst.Expr.Var(sym)
+    case Pattern.Cst(cst, _, _) => DocAst.Expr.Cst(cst)
+    case Pattern.Tag(sym, pats, _, _) => DocAst.Expr.Tag(sym.sym, pats.map(printPattern))
+    case Pattern.Tuple(elms, _, _) => DocAst.Expr.Tuple(elms.map(printPattern).toList)
+    case Pattern.Record(pats, rest, _, _) => printRecordPattern(pats, rest)
   }
 
   /**
