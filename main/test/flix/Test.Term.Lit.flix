@@ -7,7 +7,7 @@ mod Test.Term.Lit {
     def testUnitLit01(): #{ R(Unit) } =
         let f = #{ A(()). };
         let p = #{ R(x) :- A(x). };
-        solve f, p project R
+        solve f, p project R(_)
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Bool                                                                    ///
@@ -16,13 +16,13 @@ mod Test.Term.Lit {
     def testBoolLit01(): #{ R(Bool) } =
         let f = #{ A(false). };
         let p = #{ R(x) :- A(x). };
-        solve f, p project R
+        solve f, p project R(_)
 
     @test
     def testBoolLit02(): #{ R(Bool) } =
         let f = #{ A(true). };
         let p = #{ R(x) :- A(x). };
-        solve f, p project R
+        solve f, p project R(_)
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Char                                                                    ///
@@ -31,19 +31,19 @@ mod Test.Term.Lit {
     def testCharLit01(): #{ R(Char) } =
         let f = #{ A(' '). };
         let p = #{ R(x) :- A(x). };
-        solve f, p project R
+        solve f, p project R(_)
 
     @test
     def testCharLit02(): #{ R(Char) } =
         let f = #{ A('a'). };
         let p = #{ R(x) :- A(x). };
-        solve f, p project R
+        solve f, p project R(_)
 
     @test
     def testCharLit03(): #{ R(Char) } =
         let f = #{ A('x'). };
         let p = #{ R(x) :- A(x). };
-        solve f, p project R
+        solve f, p project R(_)
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Int8                                                                    ///
