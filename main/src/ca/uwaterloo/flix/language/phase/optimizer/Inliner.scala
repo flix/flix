@@ -511,16 +511,9 @@ object Inliner {
       }
 
       if (defn.spec.defContext.isSelfRef) {
-        val shouldInline = !sctx.inlined.getOrDefault(defn.sym, new ConcurrentHashMap()).containsKey(sym0)
+        val shouldInline = !sctx.targetSet.getOrDefault(defn.sym, new ConcurrentHashMap()).containsKey(sym0)
         if (shouldInline) {
-          val inlinePlaces = sctx.inlined.get(defn.sym)
-          if (inlinePlaces != null) {
-            inlinePlaces.putIfAbsent(sym0, ())
-          } else {
-            val freshInlinedPlaces = new ConcurrentHashMap[Symbol.DefnSym, Unit]()
-            freshInlinedPlaces.put(sym0, ())
-            sctx.inlined.put(defn.sym, freshInlinedPlaces)
-          }
+          updateTargetSet(defn, sym0, sctx)
         }
         return shouldInline
       }
@@ -530,6 +523,18 @@ object Inliner {
 
     !defn.spec.defContext.isSelfRef &&
       (isSingleAction(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))
+  }
+
+  /** Adds `sym0` to the target set of `defn.sym` in `sctx`. */
+  private def updateTargetSet(defn: MonoAst.Def, sym0: Symbol.DefnSym, sctx: SharedContext): Unit = {
+    val targetSymbols = sctx.targetSet.get(defn.sym)
+    if (targetSymbols != null) {
+      targetSymbols.putIfAbsent(sym0, ())
+    } else {
+      val targetSymbols = new ConcurrentHashMap[Symbol.DefnSym, Unit]()
+      targetSymbols.put(sym0, ())
+      sctx.targetSet.put(defn.sym, targetSymbols)
+    }
   }
 
   /**
@@ -754,12 +759,12 @@ object Inliner {
   /**
     * A globally shared thread-safe context.
     *
-    * @param delta   the set of symbols that changed in the last iteration.
-    * @param changed the set of symbols of changed functions.
-    * @param live    the set of symbols of live functions.
-    * @param inlined a map of symbols that are marked with [[ca.uwaterloo.flix.language.ast.shared.Annotation.Inline]] to a set of symbols they have been inlined into.
-    *                This is necessary to avoid unrolling a recursive function more than once.
+    * @param delta     the set of symbols that changed in the last iteration.
+    * @param changed   the set of symbols of changed functions.
+    * @param live      the set of symbols of live functions.
+    * @param targetSet a map of symbols that are marked with [[ca.uwaterloo.flix.language.ast.shared.Annotation.Inline]] to a set of symbols they have been inlined into.
+    *                  This is necessary to avoid unrolling a recursive function more than once.
     */
-  private case class SharedContext(delta: Set[Symbol.DefnSym], changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit], inlined: ConcurrentHashMap[Symbol.DefnSym, ConcurrentHashMap[Symbol.DefnSym, Unit]])
+  private case class SharedContext(delta: Set[Symbol.DefnSym], changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit], targetSet: ConcurrentHashMap[Symbol.DefnSym, ConcurrentHashMap[Symbol.DefnSym, Unit]])
 
 }
