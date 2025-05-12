@@ -528,7 +528,7 @@ object Inliner {
         inlinePlaces.putIfAbsent(sym0, ())
       } else {
         val freshInlinedPlaces = new ConcurrentHashMap[Symbol.DefnSym, Unit]()
-        freshInlinedPlaces.putIfAbsent(sym0, ())
+        freshInlinedPlaces.put(sym0, ())
         sctx.inlined.put(defn.sym, freshInlinedPlaces)
       }
     }
