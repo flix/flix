@@ -181,7 +181,7 @@ object Inliner {
 
     case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
       visitExp(exp1, ctx0) match {
-        case Expr.Lambda(fparam, e1, _, _) =>
+        case Expr.Lambda(fparam, e1, _, _) if isSingleAction(e1) =>
           sctx.changed.putIfAbsent(sym0, ())
           val e2 = visitExp(exp2, ctx0)
           bindArgs(e1, List(fparam), List(e2), loc, ctx0)
