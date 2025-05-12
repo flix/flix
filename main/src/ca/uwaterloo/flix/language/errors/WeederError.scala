@@ -639,9 +639,9 @@ object WeederError {
       import formatter.*
       s""">> Annotated with both `@Inline` and `@DontInline`.
          |
-         |${code(inlineLoc, "the @Inline occurs here")}
+         |${code(inlineLoc, "the `@Inline` occurs here")}
          |
-         |${code(dontInlineLoc, "the @DontInline occurs here")}
+         |${code(dontInlineLoc, "the `@DontInline` occurs here")}
          |
          |""".stripMargin
     }
