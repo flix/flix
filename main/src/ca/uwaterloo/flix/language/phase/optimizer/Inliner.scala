@@ -741,12 +741,14 @@ object Inliner {
   }
 
   private object SharedContext {
+
     /**
       * Returns a fresh [[SharedContext]].
       *
       * The delta set does not change during the lifetime of the shared context.
       */
-    def mk(delta: Set[Symbol.DefnSym], inlined: ConcurrentHashMap[Symbol.DefnSym, ConcurrentHashMap[Symbol.DefnSym, Unit]]): SharedContext = new SharedContext(delta, new ConcurrentHashMap(), new ConcurrentHashMap(), inlined, new ReentrantLock())
+    def mk(delta: Set[Symbol.DefnSym], inlined: ConcurrentHashMap[Symbol.DefnSym, ConcurrentHashMap[Symbol.DefnSym, Unit]]): SharedContext = new SharedContext(delta, new ConcurrentHashMap(), new ConcurrentHashMap(), inlined)
+
   }
 
   /**
@@ -755,7 +757,9 @@ object Inliner {
     * @param delta   the set of symbols that changed in the last iteration.
     * @param changed the set of symbols of changed functions.
     * @param live    the set of symbols of live functions.
+    * @param inlined a map of symbols that are marked with [[ca.uwaterloo.flix.language.ast.shared.Annotation.Inline]] to a set of symbols they have been inlined into.
+    *                This is necessary to avoid unrolling a recursive function more than once.
     */
-  private case class SharedContext(delta: Set[Symbol.DefnSym], changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit], inlined: ConcurrentHashMap[Symbol.DefnSym, ConcurrentHashMap[Symbol.DefnSym, Unit]], lock: ReentrantLock)
+  private case class SharedContext(delta: Set[Symbol.DefnSym], changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit], inlined: ConcurrentHashMap[Symbol.DefnSym, ConcurrentHashMap[Symbol.DefnSym, Unit]])
 
 }
