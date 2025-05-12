@@ -100,8 +100,8 @@ object TypeError {
     * Java field not found type error.
     *
     * @param base the source location of the receiver expression.
-    * @param tpe the type of the receiver object.
-    * @param loc the location where the error occurred.
+    * @param tpe  the type of the receiver object.
+    * @param loc  the location where the error occurred.
     */
   case class FieldNotFound(base: SourceLocation, fieldName: Name.Ident, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Java field '$fieldName' in type '$tpe' not found."
@@ -673,9 +673,9 @@ object TypeError {
   }
 
   /**
-   * Unresolved constructor type error.
-   * This is a dummy error used in Java constructor type reconstruction for InvokeConstructor.
-   */
+    * Unresolved constructor type error.
+    * This is a dummy error used in Java constructor type reconstruction for InvokeConstructor.
+    */
   case class UnresolvedConstructor(loc: SourceLocation) extends TypeError {
     def summary: String = s"Unresolved constructor"
 
@@ -683,9 +683,9 @@ object TypeError {
   }
 
   /**
-   * Unresolved field type error.
-   * This is a dummy error used in Java field type reconstruction for GetField.
-   */
+    * Unresolved field type error.
+    * This is a dummy error used in Java field type reconstruction for GetField.
+    */
   case class UnresolvedField(loc: SourceLocation) extends TypeError {
     def summary: String = s"Unresolved field"
 
@@ -693,9 +693,9 @@ object TypeError {
   }
 
   /**
-   * Unresolved method type error.
-   * This is a dummy error used in Java method type reconstruction for InvokeMethod.
-   */
+    * Unresolved method type error.
+    * This is a dummy error used in Java method type reconstruction for InvokeMethod.
+    */
   case class UnresolvedMethod(loc: SourceLocation) extends TypeError {
     def summary: String = s"Unresolved method"
 
@@ -703,9 +703,9 @@ object TypeError {
   }
 
   /**
-   * Unresolved method type error.
-   * This is a dummy error used in Java method type reconstruction for InvokeStaticMethod.
-   */
+    * Unresolved method type error.
+    * This is a dummy error used in Java method type reconstruction for InvokeStaticMethod.
+    */
   case class UnresolvedStaticMethod(loc: SourceLocation) extends TypeError {
     def summary: String = s"Unresolved static method"
 

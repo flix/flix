@@ -538,14 +538,14 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedEffect](result)
   }
 
- test("UndefinedEffect.02") {
-   val input =
-     """
-       |def f(): Unit = run () with handler Ef
-       |""".stripMargin
-   val result = compile(input, Options.TestWithLibNix)
-   expectError[ResolutionError.UndefinedEffect](result)
- }
+  test("UndefinedEffect.02") {
+    val input =
+      """
+        |def f(): Unit = run () with handler Ef
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedEffect](result)
+  }
 
   test("UndefinedOp.01") {
     val input =

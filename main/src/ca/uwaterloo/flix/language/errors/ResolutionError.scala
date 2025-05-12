@@ -684,10 +684,10 @@ object ResolutionError {
   /**
     * An error raised to indicate that a class name was not found.
     *
-    * @param name  the class name.
-    * @param ap    the anchor position.
-    * @param msg   the Java error message.
-    * @param loc   the location of the class name.
+    * @param name the class name.
+    * @param ap   the anchor position.
+    * @param msg  the Java error message.
+    * @param loc  the location of the class name.
     */
   case class UndefinedJvmClass(name: Name.Ident, ap: AnchorPosition, msg: String, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined Java class: '$name'."
@@ -781,10 +781,10 @@ object ResolutionError {
   /**
     * Undefined Name Error.
     *
-    * @param qn    the unresolved name.
-    * @param ap    the anchor position.
-    * @param scp   the variables in the scope.
-    * @param loc   the location where the error occurred.
+    * @param qn  the unresolved name.
+    * @param ap  the anchor position.
+    * @param scp the variables in the scope.
+    * @param loc the location where the error occurred.
     */
   case class UndefinedName(qn: Name.QName, ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined name: '${qn.toString}'."
@@ -808,10 +808,10 @@ object ResolutionError {
   /**
     * Undefined Name Error (unrecoverable).
     *
-    * @param qn    the unresolved name.
-    * @param ns    the current namespace.
-    * @param scp   the variables in the scope.
-    * @param loc   the location where the error occurred.
+    * @param qn  the unresolved name.
+    * @param ns  the current namespace.
+    * @param scp the variables in the scope.
+    * @param loc the location where the error occurred.
     */
   case class UndefinedNameUnrecoverable(qn: Name.QName, ns: Name.NName, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined name: '${qn.toString}'."
@@ -858,8 +858,8 @@ object ResolutionError {
   /**
     * Undefined Op Error.
     *
-    * @param qn    the qualified name of the operation.
-    * @param loc   the location where the error occurred.
+    * @param qn  the qualified name of the operation.
+    * @param loc the location where the error occurred.
     */
   case class UndefinedOp(qn: Name.QName, ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined operation '${qn.toString}'."
@@ -934,7 +934,7 @@ object ResolutionError {
   /**
     * Undefined Tag Error.
     *
-    * @param qn the tag.
+    * @param qn  the tag.
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
@@ -989,10 +989,10 @@ object ResolutionError {
   /**
     * Undefined Type Error.
     *
-    * @param qn       the name.
-    * @param kindOpt  the kind of the type.
-    * @param ap       the enclosing module.
-    * @param loc      the location where the error occurred.
+    * @param qn      the name.
+    * @param kindOpt the kind of the type.
+    * @param ap      the enclosing module.
+    * @param loc     the location where the error occurred.
     */
   case class UndefinedType(qn: Name.QName, kindOpt: Option[Kind], ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined type: '${qn.toString}'."
@@ -1039,10 +1039,10 @@ object ResolutionError {
   /**
     * Undefined Use Error (unrecoverable).
     *
-    * @param qn    the unresolved name.
-    * @param ns    the current namespace.
-    * @param env   the variables in the scope.
-    * @param loc   the location where the error occurred.
+    * @param qn  the unresolved name.
+    * @param ns  the current namespace.
+    * @param env the variables in the scope.
+    * @param loc the location where the error occurred.
     */
   case class UndefinedUse(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined '${qn.toString}' use."

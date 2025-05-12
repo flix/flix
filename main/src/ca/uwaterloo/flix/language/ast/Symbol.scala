@@ -192,8 +192,8 @@ object Symbol {
   }
 
   /**
-   * Returns the struct symbol for the given name `ident` in the given namespace `ns`.
-   */
+    * Returns the struct symbol for the given name `ident` in the given namespace `ns`.
+    */
   def mkStructSym(ns: NName, ident: Ident): StructSym = {
     new StructSym(ns.parts, ident.name, ident.loc)
   }
@@ -306,12 +306,12 @@ object Symbol {
   }
 
   /**
-   * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
-   */
+    * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
+    */
   def mkEffectSym(fqn: String): EffectSym = split(fqn) match {
-      case None => new EffectSym(Nil, fqn, SourceLocation.Unknown)
-      case Some((ns, name)) => new EffectSym(ns, name, SourceLocation.Unknown)
-    }
+    case None => new EffectSym(Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new EffectSym(ns, name, SourceLocation.Unknown)
+  }
 
   /**
     * Returns the operation symbol for the given name `ident` in the effect associated with the given effect symbol `effectSym`.
@@ -531,8 +531,8 @@ object Symbol {
   }
 
   /**
-   * Struct Symbol.
-   */
+    * Struct Symbol.
+    */
   final class StructSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
     /**
       * Returns the name of `this` symbol.
@@ -623,31 +623,31 @@ object Symbol {
   }
 
   /**
-   * Struct Field Symbol.
-   */
+    * Struct Field Symbol.
+    */
   final class StructFieldSym(val structSym: Symbol.StructSym, val name: String, val idx: Int, val loc: SourceLocation) extends Symbol with QualifiedSym {
 
     /**
-     * Returns `true` if this symbol is equal to `that` symbol.
-     */
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
     override def equals(obj: scala.Any): Boolean = obj match {
       case that: StructFieldSym => this.structSym == that.structSym && this.name == that.name && this.idx == that.idx
       case _ => false
     }
 
     /**
-     * Returns the hash code of this symbol.
-     */
+      * Returns the hash code of this symbol.
+      */
     override val hashCode: Int = Objects.hash(structSym, name, idx)
 
     /**
-     * Human readable representation.
-     */
+      * Human readable representation.
+      */
     override def toString: String = structSym.toString + "." + name
 
     /**
-     * The symbol's namespace
-     */
+      * The symbol's namespace
+      */
     def namespace: List[String] = structSym.namespace :+ structSym.name
   }
 

@@ -45,8 +45,8 @@ object SymUse {
     * and `qname` represents the qualified name `Xxx.Yyy.Zzz` in its entirety, where [[QName.namespace]]
     * contains an [[Ident]] for `Xxx` and `Yyy` and [[QName.ident]] contains a [[Ident]] for `Zzz`.
     *
-    * @param sym    The [[Symbol]] being used.
-    * @param qname  The qualified name ([[QName]]) of the use of `sym`:
+    * @param sym   The [[Symbol]] being used.
+    * @param qname The qualified name ([[QName]]) of the use of `sym`:
     */
   case class EffectSymUse(sym: Symbol.EffectSym, qname: QName) extends SymUse
 

@@ -87,7 +87,7 @@ class TestCompletionProvider extends AnyFunSuite {
     "examples/interoperability/files/checking-if-file-exists-with-java.flix",
     "examples/misc/type-level-programming/track-list-emptiness-with-type-level-booleans.flix",
     "examples/misc/type-level-programming/type-level-programming-string-sanitization.flix",
-//    "examples/misc/type-level-programming/type-level-programming-4bit-adder.flix",
+    //    "examples/misc/type-level-programming/type-level-programming-4bit-adder.flix",
     "examples/misc/type-level-programming/type-level-programming-demorgan.flix",
     "examples/misc/type-level-programming/type-level-programming-even-odd-list.flix",
     "examples/misc/type-level-programming/type-level-programming-eager-lazy-list.flix",
@@ -153,7 +153,7 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   test("No completions after complete keyword") {
-    Programs.foreach( program => {
+    Programs.foreach(program => {
       val (root, errors) = compile(program)
       val source = mkSource(program)
       val keywordTokens = root.tokens(source).toList.filter(_.kind.isKeyword)
@@ -168,7 +168,7 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   test("No completions after complete literal") {
-    Programs.foreach( program => {
+    Programs.foreach(program => {
       val (root, errors) = compile(program)
       val source = mkSource(program)
       // Find all the literal tokens that are on a single line
@@ -184,7 +184,7 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   test("No completions inside comment") {
-    Programs.foreach( program => {
+    Programs.foreach(program => {
       val (root, errors) = compile(program)
       val source = mkSource(program)
       // Find all the literal tokens that are on a single line
@@ -199,77 +199,77 @@ class TestCompletionProvider extends AnyFunSuite {
     })
   }
 
-  test("No completions when defining the name for defs"){
-    Programs.foreach( program => {
+  test("No completions when defining the name for defs") {
+    Programs.foreach(program => {
       val (root, errors) = compile(program)
       val allNameDefLocs = root.defs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
-      allNameDefLocs.foreach{ loc =>
+      allNameDefLocs.foreach { loc =>
         val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix).map(_.toCompletionItem(Flix))
         assertEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
 
-  test("No completions when defining the name for enums"){
-    Programs.foreach( program => {
+  test("No completions when defining the name for enums") {
+    Programs.foreach(program => {
       val (root, errors) = compile(program)
       val allNameDefLocs = root.enums.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
-      allNameDefLocs.foreach{ loc =>
+      allNameDefLocs.foreach { loc =>
         val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix).map(_.toCompletionItem(Flix))
         assertEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
 
-  test("No completions when defining the name for sigs"){
-    Programs.foreach( program => {
+  test("No completions when defining the name for sigs") {
+    Programs.foreach(program => {
       val (root, errors) = compile(program)
       val allNameDefLocs = root.sigs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
-      allNameDefLocs.foreach{ loc =>
+      allNameDefLocs.foreach { loc =>
         val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix).map(_.toCompletionItem(Flix))
         assertEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
 
-  test("No completions when defining the name for traits"){
-    Programs.foreach( program => {
+  test("No completions when defining the name for traits") {
+    Programs.foreach(program => {
       val (root, errors) = compile(program)
       val allNameDefLocs = root.traits.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
-      allNameDefLocs.foreach{ loc =>
+      allNameDefLocs.foreach { loc =>
         val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix).map(_.toCompletionItem(Flix))
         assertEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
 
-  test("No completions when defining the name for effects"){
-    Programs.foreach( program => {
+  test("No completions when defining the name for effects") {
+    Programs.foreach(program => {
       val (root, errors) = compile(program)
       val allNameDefLocs = root.effects.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
-      allNameDefLocs.foreach{ loc =>
+      allNameDefLocs.foreach { loc =>
         val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix).map(_.toCompletionItem(Flix))
         assertEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
 
-  test("No completions when defining the name for structs"){
-    Programs.foreach( program => {
+  test("No completions when defining the name for structs") {
+    Programs.foreach(program => {
       val (root, errors) = compile(program)
       val allNameDefLocs = root.structs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
-      allNameDefLocs.foreach{ loc =>
+      allNameDefLocs.foreach { loc =>
         val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix).map(_.toCompletionItem(Flix))
         assertEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
 
-  test("No completions when defining the name for type aliases"){
-    Programs.foreach( program => {
+  test("No completions when defining the name for type aliases") {
+    Programs.foreach(program => {
       val (root, errors) = compile(program)
       val allNameDefLocs = root.typeAliases.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
-      allNameDefLocs.foreach{ loc =>
+      allNameDefLocs.foreach { loc =>
         val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix).map(_.toCompletionItem(Flix))
         assertEmpty(completions, loc, Position.from(loc.sp2))
       }
@@ -277,37 +277,37 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   test("No duplicated completions for defs") {
-    Programs.foreach( program => {
+    Programs.foreach(program => {
       val (root1, _) = compile(program)
       val defSymUses = getDefSymUseOccurs()(root1)
       for {
         defSymUse <- defSymUses
         loc = mkLocForName(defSymUse)
         charsLeft <- listValidCharsLeft(defSymUse.sym.name, loc)
-      }{
-          val alteredProgram = alterLocationInCode(program, loc, charsLeft)
-          val triggerPosition = Position(loc.sp1.lineOneIndexed, loc.sp1.colOneIndexed + charsLeft )
-          val (root, errors) = compile(alteredProgram)
-          val completions = CompletionProvider.getCompletions(Uri, triggerPosition, errors)(root, Flix).map(_.toCompletionItem(Flix))
-          assertNoDuplicatedCompletions(completions, defSymUse.sym.toString, loc, program, charsLeft)
+      } {
+        val alteredProgram = alterLocationInCode(program, loc, charsLeft)
+        val triggerPosition = Position(loc.sp1.lineOneIndexed, loc.sp1.colOneIndexed + charsLeft)
+        val (root, errors) = compile(alteredProgram)
+        val completions = CompletionProvider.getCompletions(Uri, triggerPosition, errors)(root, Flix).map(_.toCompletionItem(Flix))
+        assertNoDuplicatedCompletions(completions, defSymUse.sym.toString, loc, program, charsLeft)
       }
     })
   }
 
   ignore("No duplicated completions for vars") {
-    Programs.foreach( program => {
+    Programs.foreach(program => {
       val (root1, _) = compile(program)
       val varOccurs = getVarSymOccurs()(root1)
       for {
         (varSym, loc0) <- varOccurs
         loc = mkLocForName(varSym, loc0)
         charsLeft <- listValidCharsLeft(varSym.text, loc)
-      }{
-          val alteredProgram = alterLocationInCode(program, loc, charsLeft)
-          val triggerPosition = Position(loc.sp1.lineOneIndexed, loc.sp1.colOneIndexed + charsLeft )
-          val (root, errors) = compile(alteredProgram)
-          val completions = CompletionProvider.getCompletions(Uri, triggerPosition, errors)(root, Flix).map(_.toCompletionItem(Flix))
-          assertNoDuplicatedCompletions(completions, varSym.text, loc, program, charsLeft)
+      } {
+        val alteredProgram = alterLocationInCode(program, loc, charsLeft)
+        val triggerPosition = Position(loc.sp1.lineOneIndexed, loc.sp1.colOneIndexed + charsLeft)
+        val (root, errors) = compile(alteredProgram)
+        val completions = CompletionProvider.getCompletions(Uri, triggerPosition, errors)(root, Flix).map(_.toCompletionItem(Flix))
+        assertNoDuplicatedCompletions(completions, varSym.text, loc, program, charsLeft)
       }
     })
   }
@@ -347,11 +347,11 @@ class TestCompletionProvider extends AnyFunSuite {
     * The absolute character offset into the source, zero-indexed.
     */
   private def calcOffset(loc: SourcePosition): Int = {
-      var offset = 0
-      for (i <- 1 until loc.lineOneIndexed) {
-        offset += loc.source.getLine(i).length + 1 // +1 for the newline
-      }
-      offset + loc.colOneIndexed - 1
+    var offset = 0
+    for (i <- 1 until loc.lineOneIndexed) {
+      offset += loc.source.getLine(i).length + 1 // +1 for the newline
+    }
+    offset + loc.colOneIndexed - 1
   }
 
   /**
@@ -417,9 +417,9 @@ class TestCompletionProvider extends AnyFunSuite {
 
     object VarConsumer extends Consumer {
       override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
-          case TypedAst.Expr.Var(sym, _, loc) => occurs += ((sym, loc))
-          case _ =>
-        }
+        case TypedAst.Expr.Var(sym, _, loc) => occurs += ((sym, loc))
+        case _ =>
+      }
     }
 
     Visitor.visitRoot(root, VarConsumer, FileAcceptor(Uri))

@@ -245,7 +245,8 @@ class TestLexer extends AnyFunSuite with TestUtils {
   }
 
   test("LexerError.MultilineString.01") {
-    val input = s"""
+    val input =
+      s"""
          |def f(): String = "This is a
          |multi-line string"
          |""".stripMargin

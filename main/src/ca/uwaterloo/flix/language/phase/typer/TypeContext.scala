@@ -234,7 +234,7 @@ class TypeContext {
     */
   def enterRegion(sym: Symbol.RegionSym): Unit = {
     val newScope = currentScopeConstraints.scope.enter(sym)
-      // save the info from the parent region
+    // save the info from the parent region
     constraintStack.push(currentScopeConstraints)
     currentScopeConstraints = ScopeConstraints.emptyForScope(newScope)
   }

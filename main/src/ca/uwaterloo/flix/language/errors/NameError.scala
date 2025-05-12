@@ -32,6 +32,7 @@ object NameError {
   /**
     * An error raised to indicate a deprecated feature
     * *
+    *
     * @param loc the location of the deprecated feature.
     */
   case class Deprecated(loc: SourceLocation) extends NameError {

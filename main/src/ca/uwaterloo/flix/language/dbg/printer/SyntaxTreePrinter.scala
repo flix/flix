@@ -10,7 +10,7 @@ object SyntaxTreePrinter {
     * Returns the [[DocAst.Program]] representation of `root`.
     */
   def print(root: SyntaxTree.Root): DocAst.Program = {
-    val units = root.units.map{case (src, tree) => (src.name, print(tree))}.toList
+    val units = root.units.map { case (src, tree) => (src.name, print(tree)) }.toList
     DocAst.Program(Nil, Nil, units)
   }
 

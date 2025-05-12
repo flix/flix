@@ -69,7 +69,7 @@ object Dependencies {
     sctx.deps.put((src.sp1.source.input, dst.sp1.source.input), ())
   }
 
-  private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext): TypedAst.Def =  {
+  private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext): TypedAst.Def = {
     visitExp(defn.exp)
     visitSpec(defn.spec)
     defn
@@ -312,7 +312,7 @@ object Dependencies {
       visitType(eff)
 
     case Expr.StructNew(_, fields, region, tpe, eff, _) =>
-      fields.foreach{ field =>
+      fields.foreach { field =>
         visitSymUse(field._1)
         visitExp(field._2)
       }

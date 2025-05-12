@@ -8,6 +8,7 @@ object Graph {
     * A result of a topological sort.
     */
   sealed trait TopologicalSort[N]
+
   object TopologicalSort {
 
     /**

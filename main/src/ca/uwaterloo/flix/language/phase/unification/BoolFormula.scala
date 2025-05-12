@@ -23,13 +23,13 @@ import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
 /**
- * A common super-type for Boolean algebras.
- */
+  * A common super-type for Boolean algebras.
+  */
 sealed trait BoolFormula {
 
   /**
-   * Returns a human-readable string representation of `this` expression.
-   */
+    * Returns a human-readable string representation of `this` expression.
+    */
   override def toString: String = this match {
     case BoolFormula.True => "true"
     case BoolFormula.False => "false"
@@ -47,38 +47,38 @@ sealed trait BoolFormula {
 object BoolFormula {
 
   /**
-   * Represents the constant ⊤.
-   */
+    * Represents the constant ⊤.
+    */
   case object True extends BoolFormula
 
   /**
-   * Represents the constant ⊥.
-   */
+    * Represents the constant ⊥.
+    */
   case object False extends BoolFormula
 
   /**
-   * Represents a variable. Variables are numbered by integers.
-   */
+    * Represents a variable. Variables are numbered by integers.
+    */
   case class Var(x: Int) extends BoolFormula
 
   /**
-   * Represents ¬f
-   */
+    * Represents ¬f
+    */
   case class Not(f: BoolFormula) extends BoolFormula
 
   /**
-   * Represents f1 ⊓ f2
-   */
+    * Represents f1 ⊓ f2
+    */
   case class And(f1: BoolFormula, f2: BoolFormula) extends BoolFormula
 
   /**
-   * Represents f1 ⊔ f2
-   */
+    * Represents f1 ⊔ f2
+    */
   case class Or(f1: BoolFormula, f2: BoolFormula) extends BoolFormula
 
   /**
-   * An implementation of the [[BoolAlg]] interface for [[BoolFormula]].
-   */
+    * An implementation of the [[BoolAlg]] interface for [[BoolFormula]].
+    */
   object BoolFormulaAlg extends BoolAlg[BoolFormula] {
 
     override def isEquivBot(f: BoolFormula): Boolean = !isSat(f)
@@ -285,8 +285,8 @@ object BoolFormula {
     }
 
     /**
-     * Enumerates all assignments to `f` and checks if one of them is satisfiable.
-     */
+      * Enumerates all assignments to `f` and checks if one of them is satisfiable.
+      */
     private def evaluateAll(f: BoolFormula, l: List[Int], env: List[Int]): Boolean = l match {
       case Nil =>
         // All variables are bound. Compute the truth value.
@@ -297,9 +297,9 @@ object BoolFormula {
     }
 
     /**
-     * Computes the truth value of the formula `f` assuming the variables in `trueVars`
-     * are true and the rest are false.
-     */
+      * Computes the truth value of the formula `f` assuming the variables in `trueVars`
+      * are true and the rest are false.
+      */
     private def evaluate(f: BoolFormula, trueVars: List[Int]): Boolean = f match {
       case True => true
       case False => false

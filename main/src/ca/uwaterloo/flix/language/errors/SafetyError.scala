@@ -15,10 +15,10 @@ sealed trait SafetyError extends CompilationMessage {
 object SafetyError {
 
   /**
-   * An error raised to indicate a forbidden operation.
-   *
-   * @param loc  the source location of the forbidden operation.
-   */
+    * An error raised to indicate a forbidden operation.
+    *
+    * @param loc the source location of the forbidden operation.
+    */
   case class Forbidden(ctx: SecurityContext, loc: SourceLocation) extends SafetyError {
     override def summary: String = "Operation not permitted"
 
@@ -195,10 +195,10 @@ object SafetyError {
   }
 
   /**
-   * An error raised to indicate that the object in a `throw` expression is not a Throwable.
-   *
-   * @param loc the location of the object
-   */
+    * An error raised to indicate that the object in a `throw` expression is not a Throwable.
+    *
+    * @param loc the location of the object
+    */
   case class IllegalThrowType(loc: SourceLocation) extends SafetyError {
     def summary: String = s"Exception type is not a subclass of Throwable."
 

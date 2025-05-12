@@ -160,7 +160,7 @@ object JvmOps {
     */
   def getClosureAbstractClassType(tpe: MonoType): BackendObjType.AbstractArrow = tpe match {
     case MonoType.Arrow(targs, tresult) =>
-     BackendObjType.AbstractArrow(targs.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(tresult))
+      BackendObjType.AbstractArrow(targs.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(tresult))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
 
@@ -397,7 +397,7 @@ object JvmOps {
     *   - `instantiateType([x -> Int32], y) = throw InternalCompilerException`
     *   - `instantiateType(_, Option[Int32]) =  throw InternalCompilerException`
     *
-    * @param m Decides types for variables, must only contain erased types.
+    * @param m   Decides types for variables, must only contain erased types.
     * @param tpe the type to instantiate, must be a polymorphic erased type
     *            (either [[Type.Var]], a primitive type, or `java.lang.Object`)
     */

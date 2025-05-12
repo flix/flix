@@ -222,7 +222,7 @@ object TypeReduction2 {
     */
   private def usesBoxing(args: List[Class[?]], params: Array[Class[?]]): Boolean = {
     // This method is checking an existing match, so zip is fine.
-    args.zip(params).exists{
+    args.zip(params).exists {
       // Primitive type boxing.
       case (clazz, java.lang.Boolean.TYPE) if clazz != java.lang.Boolean.TYPE => true
       case (clazz, java.lang.Byte.TYPE) if clazz != java.lang.Byte.TYPE => true

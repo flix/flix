@@ -108,7 +108,7 @@ object EntryPointError {
   /**
     * An error raised to indicate that an exported function uses an illegal type.
     *
-    * @param t the type that is not allowed.
+    * @param t   the type that is not allowed.
     * @param loc the location of the type.
     */
   case class IllegalExportType(t: Type, loc: SourceLocation) extends EntryPointError {

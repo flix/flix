@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.ast.shared
 import ca.uwaterloo.flix.language.ast.{NamedAst, ResolvedAst, Symbol}
 
 /**
- * Result of a name resolution.
- */
+  * Result of a name resolution.
+  */
 sealed trait Resolution
 
 object Resolution {

@@ -48,7 +48,6 @@ object Instances {
   }
 
 
-
   /**
     * Checks that all signatures in `trait0` are used in laws if `trait0` is marked `lawful`.
     */

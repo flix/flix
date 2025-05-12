@@ -124,23 +124,23 @@ class TestStratifier extends AnyFunSuite with TestUtils {
     // stratification error:
     // ... <- A <- B <-x A <- ...
     val input =
-    """
-      |pub enum A(Int32)
-      |
-      |instance Eq[A] {
-      |  pub def eq(_a1: A, _a2: A): Bool =
-      |    let p1 = #{
-      |        B301(12).
-      |        A301(x) :- B301(x).
-      |    };
-      |    let p2 = #{
-      |        A301(15). C301(15).
-      |        B301(x) :- not A301(x), C301(x).
-      |    };
-      |    (query p1 select x from A301(x) |> Vector.length) +
-      |    (query p2 select x from B301(x) |> Vector.length)
-      |    > 0
-      |}
+      """
+        |pub enum A(Int32)
+        |
+        |instance Eq[A] {
+        |  pub def eq(_a1: A, _a2: A): Bool =
+        |    let p1 = #{
+        |        B301(12).
+        |        A301(x) :- B301(x).
+        |    };
+        |    let p2 = #{
+        |        A301(15). C301(15).
+        |        B301(x) :- not A301(x), C301(x).
+        |    };
+        |    (query p1 select x from A301(x) |> Vector.length) +
+        |    (query p2 select x from B301(x) |> Vector.length)
+        |    > 0
+        |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
     expectError[StratificationError](result)

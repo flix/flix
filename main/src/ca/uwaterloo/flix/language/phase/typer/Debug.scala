@@ -153,9 +153,17 @@ object Debug {
     case SubstitutionTree(subst, branches) =>
 
       val header = List(
-        s"subgraph cluster_${treeId{tree}} {",
+        s"subgraph cluster_${
+          treeId {
+            tree
+          }
+        } {",
         "label=\"\";",
-        s"handle_${treeId{tree}} [shape=point, style=invis]" // create a dummy node for connecting clusters
+        s"handle_${
+          treeId {
+            tree
+          }
+        } [shape=point, style=invis]" // create a dummy node for connecting clusters
       )
 
       val contents = subst.m.toList.sortBy(_._1).flatMap {

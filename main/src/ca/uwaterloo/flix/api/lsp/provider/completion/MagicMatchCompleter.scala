@@ -28,9 +28,9 @@ object MagicMatchCompleter {
     * typing `x.match` will trigger the completion to expand to:
     *
     * match x {
-    *   case Red   => ???
-    *   case Green => ???
-    *   case Blue  => ???
+    * case Red   => ???
+    * case Green => ???
+    * case Blue  => ???
     * }
     *
     * Example-2:
@@ -38,17 +38,17 @@ object MagicMatchCompleter {
     * typing `x.match` will trigger the completion to expand to:
     *
     * match x {
-    *  case (Red, Circle)   => ???
-    *  case (Red, Square)   => ???
-    *  case (Green, Circle) => ???
-    *  case (Green, Square) => ???
+    * case (Red, Circle)   => ???
+    * case (Red, Square)   => ???
+    * case (Green, Circle) => ???
+    * case (Green, Square) => ???
     * }
     *
     * @param tpe          The type of the expression.
     * @param range        The location of the completion.
     * @param baseLocation The location of the base expression, usually the expression before the '.'.
     */
-    def getCompletions(tpe: Type, range: Range, baseLocation: SourceLocation)(implicit root: TypedAst.Root): Iterable[Completion] = {
+  def getCompletions(tpe: Type, range: Range, baseLocation: SourceLocation)(implicit root: TypedAst.Root): Iterable[Completion] = {
     for {
       baseExp <- baseLocation.text
       patternMatchBody <- mkPatternMatchBody(tpe)
@@ -100,7 +100,7 @@ object MagicMatchCompleter {
     */
   private def type2member(tpe: Type, idx: Int)(implicit root: TypedAst.Root): Member =
     getEnumSym(tpe) match {
-      case Some(sym1) => root.enums(sym1).cases.toList.map{case (sym, cas) => EnumMemberItem(sym, cas)}
+      case Some(sym1) => root.enums(sym1).cases.toList.map { case (sym, cas) => EnumMemberItem(sym, cas) }
       case None => OtherMemberItem(s"_member$idx") :: Nil
     }
 
@@ -109,8 +109,8 @@ object MagicMatchCompleter {
     * The length of the returned list is the product of the lengths of each Member.
     *
     * Example:
-    *  Given [ [Red, Green], [Circle, Square] ]
-    *  The cartesian product is [ [Red, Circle], [Red, Square], [Green, Circle], [Green, Square] ]
+    * Given [ [Red, Green], [Circle, Square] ]
+    * The cartesian product is [ [Red, Circle], [Red, Square], [Green, Circle], [Green, Square] ]
     */
   private def cartesianProduct(casesPerType: List[Member]): List[Member] = {
     casesPerType.foldLeft(List(List.empty[MemberItem])) { (acc, list) =>
@@ -152,9 +152,9 @@ object MagicMatchCompleter {
   /**
     * Returns the length of a single member string
     * The member string has three forms:
-    *  (String,
-    *   String,
-    *   String)
+    * (String,
+    * String,
+    * String)
     * Thus an extra length of 2 is added to the length of the member string.
     */
   private def getMemberLength(cases: Member): Int = {
@@ -177,9 +177,9 @@ object MagicMatchCompleter {
 
   /**
     * Returns the length of the case String between "case " and " =>".
-    *  Unit:   case Color.Red                 => ???   where the length of "Color.Red" is 9
-    *  Tuple:  case Color.Red(_elem1, _elem2) => ???   where the length of "Color.Red(_elem1, _elem2)" is 25
-    *  Normal: case Color.Red(_elem)          => ???   where the length of "Color.Red(_elem)" is 16
+    * Unit:   case Color.Red                 => ???   where the length of "Color.Red" is 9
+    * Tuple:  case Color.Red(_elem1, _elem2) => ???   where the length of "Color.Red(_elem1, _elem2)" is 25
+    * Normal: case Color.Red(_elem)          => ???   where the length of "Color.Red(_elem)" is 16
     */
   private def getCaseLength(cas: TypedAst.Case): Int = {
     cas.tpes match {
@@ -205,7 +205,7 @@ object MagicMatchCompleter {
       case other =>
         val arity = other.length
         val elements = List.range(0, arity).map(i => s"$${${i + index}:_elem$i}").mkString(", ")
-        (s"$sym($elements)",  index + arity)
+        (s"$sym($elements)", index + arity)
     }
   }
 

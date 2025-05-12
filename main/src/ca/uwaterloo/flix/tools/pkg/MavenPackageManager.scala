@@ -58,7 +58,7 @@ object MavenPackageManager {
           (f, dep) => {
             out.println(s"  Adding `${formatter.blue(dep.module.toString)}' (${formatter.cyan(s"v${dep.version}")}).")
             f.addDependencies(dep)
-        })
+          })
         out.println("  Running Maven dependency resolver.")
         val paths = fetch.withCache(cache).run()
         paths.map(_.toPath).toList
