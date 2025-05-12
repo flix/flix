@@ -22,14 +22,12 @@ import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL.*
 
 object GotoProvider {
 
   /**
-   * Processes a goto request.
-   */
+    * Processes a goto request.
+    */
   def processGoto(uri: String, pos: Position)(implicit root: Root): Option[LocationLink] = {
     val gotoRight = searchRight(uri, pos).flatMap(goto)
     val gotoLeft = searchLeft(uri, pos).flatMap(goto)
@@ -49,8 +47,8 @@ object GotoProvider {
     * @param uri  the URI of the file that the cursor is in.
     * @param pos  the [[Position]] to the immediate right of the thin cursor.
     * @param root the root AST node of the Flix program.
-    * @return     the most specific AST node under the space immediately right of the thin cursor
-    *             if there is one. Otherwise, returns [[None]].
+    * @return the most specific AST node under the space immediately right of the thin cursor
+    *         if there is one. Otherwise, returns [[None]].
     */
   private def searchRight(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = search(uri, pos)
 
@@ -63,8 +61,8 @@ object GotoProvider {
     * @param uri  URI of the file that the cursor is in.
     * @param pos  [[Position]] to the immediate right of the thin cursor.
     * @param root Root AST node of the Flix Program.
-    * @return     the most specific AST node under the space immediately left of the thin cursor
-    *             if there is one. Otherwise, returns [[None]].
+    * @return the most specific AST node under the space immediately left of the thin cursor
+    *         if there is one. Otherwise, returns [[None]].
     */
   private def searchLeft(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     if (pos.character >= 2) {
@@ -82,8 +80,8 @@ object GotoProvider {
     * @param uri  URI of the file that the [[Position]] `pos` is in.
     * @param pos  [[Position]] that we're searching under.
     * @param root Root AST node of the Flix program.
-    * @return     The most specific AST node under the [[Position]] `pos`
-    *             if there is one. Otherwise, returns [[None]].
+    * @return The most specific AST node under the [[Position]] `pos`
+    *         if there is one. Otherwise, returns [[None]].
     */
   private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val consumer = StackConsumer();
@@ -100,8 +98,8 @@ object GotoProvider {
     *
     * @param x    Object that the cursor is on.
     * @param root Root AST node of the Flix program
-    * @return     LSP Goto response for when the cursor is on `x` if `x` is an occurrence of a [[Symbol]].
-    *             Otherwise, returns [[None]].
+    * @return LSP Goto response for when the cursor is on `x` if `x` is an occurrence of a [[Symbol]].
+    *         Otherwise, returns [[None]].
     */
   private def goto(x: AnyRef)(implicit root: Root): Option[LocationLink] = x match {
     // Assoc Types
@@ -129,7 +127,7 @@ object GotoProvider {
   }
 
   private def isReal(x: AnyRef): Boolean = x match {
-    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) =>  loc.isReal
+    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Instance(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Sig(_, _, _, loc) => loc.isReal
     case TypedAst.Def(_, _, _, loc) => loc.isReal

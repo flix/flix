@@ -16,15 +16,15 @@
 package ca.uwaterloo.flix.api.lsp
 
 import org.eclipse.lsp4j
-import org.json4s.JsonDSL.*
 import org.json4s.JValue
+import org.json4s.JsonDSL.*
 
 import scala.jdk.CollectionConverters.SeqHasAsJava
 
 /**
   * Represent `InlayHint` in LSP.
-  * @since 3.17.0
   *
+  * @since 3.17.0
   * @param position     The position of this hint
   * @param label        The label of this hint. A human readable string or an array of
   *                     InlayHintLabelPart label parts.

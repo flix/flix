@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.{MonoAst, Symbol}
 import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, Pattern}
+import ca.uwaterloo.flix.language.ast.{MonoAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
 object MonoAstPrinter {

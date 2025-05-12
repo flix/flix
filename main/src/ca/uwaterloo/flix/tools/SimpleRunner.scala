@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.util.*
-import ca.uwaterloo.flix.util.collection.Chain
 
 import java.nio.file.Path
 

@@ -16,10 +16,9 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
-
 import org.eclipse.lsp4j
-import org.json4s.JsonDSL.*
 import org.json4s.*
+import org.json4s.JsonDSL.*
 
 /**
   * Companion object of [[Location]].
@@ -33,5 +32,6 @@ object Location {
   */
 case class Location(uri: String, range: Range) {
   def toJSON: JValue = ("uri" -> uri) ~ ("range" -> range.toJSON)
+
   def toLsp4j: lsp4j.Location = new lsp4j.Location(uri, range.toLsp4j)
 }

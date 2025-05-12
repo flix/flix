@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.EliminatedBy
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.EliminatedBy
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
 import ca.uwaterloo.flix.language.phase.Resolver
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -144,8 +144,8 @@ object UnkindedType {
   }
 
   /**
-   * An unkinded struct.
-   */
+    * An unkinded struct.
+    */
   case class Struct(sym: Symbol.StructSym, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Struct(sym2, _) => sym == sym2
@@ -345,15 +345,15 @@ object UnkindedType {
   }
 
   /**
-   * Returns the Bool type.
-   */
+    * Returns the Bool type.
+    */
   def mkBool(loc: SourceLocation): UnkindedType = {
     UnkindedType.Cst(TypeConstructor.Bool, loc)
   }
 
   /**
-   * Returns the Unit type.
-   */
+    * Returns the Unit type.
+    */
   def mkUnit(loc: SourceLocation): UnkindedType = {
     UnkindedType.Cst(TypeConstructor.Unit, loc)
   }

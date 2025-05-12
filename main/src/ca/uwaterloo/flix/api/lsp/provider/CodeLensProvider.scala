@@ -15,11 +15,10 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{CodeLens, Command, Range, ResponseStatus}
+import ca.uwaterloo.flix.api.lsp.{CodeLens, Command, Range}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Root, Spec}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
-import org.json4s.JsonAST.{JArray, JObject, JString}
-import org.json4s.JsonDSL.*
+import org.json4s.JsonAST.JString
 
 object CodeLensProvider {
 

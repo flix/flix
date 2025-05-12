@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.api.lsp
 
 import org.eclipse.lsp4j
-import org.json4s.JsonDSL.*
 import org.json4s.*
+import org.json4s.JsonDSL.*
 
 import scala.jdk.CollectionConverters.*
 

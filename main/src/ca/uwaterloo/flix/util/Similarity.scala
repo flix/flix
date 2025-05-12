@@ -52,9 +52,9 @@ object Similarity {
       val cost = if (s1(i - 1) == s2(j - 1)) 0 else 1
 
       d(i)(j) = min(
-        d(i-1)(j  ) + 1,     // deletion
-        d(i  )(j-1) + 1,     // insertion
-        d(i-1)(j-1) + cost   // substitution
+        d(i - 1)(j) + 1, // deletion
+        d(i)(j - 1) + 1, // insertion
+        d(i - 1)(j - 1) + cost // substitution
       )
     }
 

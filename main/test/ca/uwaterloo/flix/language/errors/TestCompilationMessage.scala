@@ -1,8 +1,8 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import org.scalatest.funsuite.AnyFunSuite

@@ -15,13 +15,13 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.errors.ResolutionError
 
 object StructFieldCompleter {
   def getCompletions(e: ResolutionError.UndefinedStructField, root: TypedAst.Root): Iterable[Completion.StructFieldCompletion] = {
     val fields = root.structs.values.flatMap(struct => struct.fields.values)
-    val completions0 = fields.filter (_.sym.name.startsWith(e.field.name))
+    val completions0 = fields.filter(_.sym.name.startsWith(e.field.name))
     val completions = e.struct match {
       case Some(sym) => completions0.filter(_.sym.structSym == sym)
       case None => completions0

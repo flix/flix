@@ -18,14 +18,13 @@ package ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.api.Bootstrap
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.tools.pkg.Dependency.MavenDependency
-import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-
-import java.io.PrintStream
-import coursier.{Dependency as CoursierDependency, Fetch, Resolve}
+import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 import coursier.cache.{Cache, FileCache}
 import coursier.util.Task
+import coursier.{Fetch, Resolve, Dependency as CoursierDependency}
 
+import java.io.PrintStream
 import java.nio.file.{Files, Path, Paths}
 
 object MavenPackageManager {
@@ -58,7 +57,7 @@ object MavenPackageManager {
           (f, dep) => {
             out.println(s"  Adding `${formatter.blue(dep.module.toString)}' (${formatter.cyan(s"v${dep.version}")}).")
             f.addDependencies(dep)
-        })
+          })
         out.println("  Running Maven dependency resolver.")
         val paths = fetch.withCache(cache).run()
         paths.map(_.toPath).toList

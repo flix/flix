@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.util
 
 import java.io.InputStream
 import java.nio.file.{Files, Paths}
-
 import scala.collection.mutable
 
 object LocalResource {

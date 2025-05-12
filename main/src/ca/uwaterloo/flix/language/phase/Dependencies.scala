@@ -16,11 +16,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern, RestrictableChoosePattern, Root}
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.MultiMap
@@ -69,7 +69,7 @@ object Dependencies {
     sctx.deps.put((src.sp1.source.input, dst.sp1.source.input), ())
   }
 
-  private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext): TypedAst.Def =  {
+  private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext): TypedAst.Def = {
     visitExp(defn.exp)
     visitSpec(defn.spec)
     defn
@@ -312,7 +312,7 @@ object Dependencies {
       visitType(eff)
 
     case Expr.StructNew(_, fields, region, tpe, eff, _) =>
-      fields.foreach{ field =>
+      fields.foreach { field =>
         visitSymUse(field._1)
         visitExp(field._2)
       }

@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import ca.uwaterloo.flix.util.{Duration, Result}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
-import java.io.{ByteArrayOutputStream, OutputStream, PrintStream, PrintWriter, StringWriter}
+import java.io.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.logging.{Level, Logger}
 import scala.util.matching.Regex

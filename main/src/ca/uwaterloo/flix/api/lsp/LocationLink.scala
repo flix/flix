@@ -19,10 +19,9 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-
 import org.eclipse.lsp4j
-import org.json4s.JsonDSL.*
 import org.json4s.*
+import org.json4s.JsonDSL.*
 
 /**
   * Companion object of [[LocationLink]]
@@ -31,9 +30,9 @@ object LocationLink {
   /**
     * Returns a [[LocationLink]] from `originLoc` to the given target [[Symbol.AssocTypeSym]] `sym`.
     *
-    * @param sym        target [[Symbol.AssocTypeSym]] that the returned [[LocationLink]] points to.
-    * @param originLoc  origin [[SourceLocation]] for the [[LocationLink]].
-    * @return           [[LocationLink]] from `originLoc` to the target `sym`.
+    * @param sym       target [[Symbol.AssocTypeSym]] that the returned [[LocationLink]] points to.
+    * @param originLoc origin [[SourceLocation]] for the [[LocationLink]].
+    * @return [[LocationLink]] from `originLoc` to the target `sym`.
     */
   def fromAssocTypeSym(sym: Symbol.AssocTypeSym, originLoc: SourceLocation): LocationLink = {
     val originSelectionRange = Range.from(originLoc)
@@ -142,9 +141,9 @@ object LocationLink {
   /**
     * Returns a [[LocationLink]] from `originLoc` to the given target [[Symbol.TraitSym]] `sym`.
     *
-    * @param sym        target [[Symbol.TraitSym]] that the returned [[LocationLink]] points to.
-    * @param originLoc  origin [[SourceLocation]] for the [[LocationLink]].
-    * @return           [[LocationLink]] from `originLoc` to the target `sym`.
+    * @param sym       target [[Symbol.TraitSym]] that the returned [[LocationLink]] points to.
+    * @param originLoc origin [[SourceLocation]] for the [[LocationLink]].
+    * @return [[LocationLink]] from `originLoc` to the target `sym`.
     */
   def fromTraitSym(sym: Symbol.TraitSym, originLoc: SourceLocation): LocationLink = {
     val originSelectionRange = Range.from(originLoc)

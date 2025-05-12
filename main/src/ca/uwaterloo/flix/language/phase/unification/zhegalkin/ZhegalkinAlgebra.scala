@@ -23,13 +23,13 @@ import scala.collection.immutable.SortedSet
 object ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
 
   /**
-   * Controls if the SVE cache is enabled.
-   */
+    * Controls if the SVE cache is enabled.
+    */
   var EnableSVECache: Boolean = false
 
   /**
-   * A cache of SVE queries: a map from the query to its MGU (if it exists).
-   */
+    * A cache of SVE queries: a map from the query to its MGU (if it exists).
+    */
   private val cachedSVE: ConcurrentMap[ZhegalkinExpr, BoolSubstitution[ZhegalkinExpr]] = new ConcurrentHashMap()
 
   override def isEquivBot(f: ZhegalkinExpr): Boolean = ZhegalkinExpr.isEmpty(f)

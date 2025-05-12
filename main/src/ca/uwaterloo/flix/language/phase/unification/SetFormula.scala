@@ -416,7 +416,7 @@ object SetFormula {
       case _ => throw InternalCompilerException("Unexpected non-evalued formula", SourceLocation.Unknown)
     }
 
-    val assignmentResults = table(f.freeVars.toList, bot, top).map{case (_, assignment) => extractCst(applySubst(f, assignment))}
+    val assignmentResults = table(f.freeVars.toList, bot, top).map { case (_, assignment) => extractCst(applySubst(f, assignment)) }
     // intersect all possible results to get a lower bound
     val minimum = assignmentResults.reduceOption(_.intersect(_)).getOrElse(extractCst(applySubst(f, Map.empty)))
     // union all possible results to get an upper bound

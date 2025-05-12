@@ -36,9 +36,9 @@ object Summary {
     *|            Totals | 2,986 |  311 |  291 |           4 |         16 |             3 |           -311 |              -311 |           -311 |           -311 |
     * }}}
     *
-    * @param root the root to create data for
-    * @param nsDepth after this folder depth, files will be summarized under the
-    *                folder
+    * @param root     the root to create data for
+    * @param nsDepth  after this folder depth, files will be summarized under the
+    *                 folder
     * @param minLines all files with less lines than this will not be in the
     *                 table but it will still be reflected in the total row
     */

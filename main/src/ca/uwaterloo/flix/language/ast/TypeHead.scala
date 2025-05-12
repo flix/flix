@@ -28,6 +28,7 @@ trait TypeHead
 
 object TypeHead {
   case class Cst(tc: TypeConstructor) extends TypeHead
+
   case class Var(sym: Symbol.KindedTypeVarSym) extends TypeHead
 
   /**

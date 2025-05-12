@@ -16,17 +16,17 @@
 package ca.uwaterloo.flix.language.phase.unification.shared
 
 /**
- * Companion object for the [[BoolSubstitution]] class.
- */
+  * Companion object for the [[BoolSubstitution]] class.
+  */
 object BoolSubstitution {
   /**
-   * Returns the empty substitution.
-   */
+    * Returns the empty substitution.
+    */
   def empty[F]: BoolSubstitution[F] = BoolSubstitution(Map.empty)
 
   /**
-   * Returns the singleton substitution mapping the type variable `x` to `tpe`.
-   */
+    * Returns the singleton substitution mapping the type variable `x` to `tpe`.
+    */
   def singleton[F](x: Int, f: F)(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
     // Ensure that we do not add any `x -> x` mappings.
     if (f == alg.mkVar(x))
@@ -38,18 +38,18 @@ object BoolSubstitution {
 }
 
 /**
- * A substitution is a map from type variables to types.
- */
+  * A substitution is a map from type variables to types.
+  */
 case class BoolSubstitution[F](m: Map[Int, F]) {
 
   /**
-   * Returns `true` if `this` is the empty substitution.
-   */
+    * Returns `true` if `this` is the empty substitution.
+    */
   val isEmpty: Boolean = m.isEmpty
 
   /**
-   * Applies `this` substitution to the given type `tpe0`.
-   */
+    * Applies `this` substitution to the given type `tpe0`.
+    */
   def apply(f: F)(implicit alg: BoolAlg[F]): F = {
     // Optimization: Return the type if the substitution is empty. Otherwise, visit the type.
     if (isEmpty) {
@@ -62,13 +62,13 @@ case class BoolSubstitution[F](m: Map[Int, F]) {
   }
 
   /**
-   * Applies `this` substitution to the given types `ts`.
-   */
+    * Applies `this` substitution to the given types `ts`.
+    */
   def apply(ts: List[F])(implicit alg: BoolAlg[F]): List[F] = if (isEmpty) ts else ts map apply
 
   /**
-   * Returns the left-biased composition of `this` substitution with `that` substitution.
-   */
+    * Returns the left-biased composition of `this` substitution with `that` substitution.
+    */
   def ++(that: BoolSubstitution[F]): BoolSubstitution[F] = {
     if (this.isEmpty) {
       that
@@ -82,8 +82,8 @@ case class BoolSubstitution[F](m: Map[Int, F]) {
   }
 
   /**
-   * Returns the composition of `this` substitution with `that` substitution.
-   */
+    * Returns the composition of `this` substitution with `that` substitution.
+    */
   def @@(that: BoolSubstitution[F])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
     // Case 1: Return `that` if `this` is empty.
     if (this.isEmpty) {

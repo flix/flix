@@ -17,15 +17,15 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.*
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
 import org.json4s.JsonAST.*
-import org.json4s.jvalue2monadic
 import org.json4s.ParserUtil.ParseException
+import org.json4s.jvalue2monadic
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.*
 

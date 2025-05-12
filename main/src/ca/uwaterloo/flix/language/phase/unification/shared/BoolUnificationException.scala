@@ -16,6 +16,6 @@
 package ca.uwaterloo.flix.language.phase.unification.shared
 
 /**
- * An exception thrown to indicate that boolean unification failed.
- */
+  * An exception thrown to indicate that boolean unification failed.
+  */
 case class BoolUnificationException() extends RuntimeException

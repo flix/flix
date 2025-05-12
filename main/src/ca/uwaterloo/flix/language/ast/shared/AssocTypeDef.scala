@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.{Type, Symbol}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
 /**
   * Represents the definition of an associated type.
