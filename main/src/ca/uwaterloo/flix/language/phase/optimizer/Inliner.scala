@@ -70,8 +70,8 @@ import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 object Inliner {
 
   /** Performs inlining on the given AST `root`. */
-  def run(root: MonoAst.Root)(implicit inlined: ConcurrentHashMap[Symbol.DefnSym, ConcurrentHashMap[Symbol.DefnSym, Unit]], flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
-    val sctx: SharedContext = SharedContext.mk()
+  def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym])(implicit inlined: ConcurrentHashMap[Symbol.DefnSym, ConcurrentHashMap[Symbol.DefnSym, Unit]], flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
+    val sctx: SharedContext = SharedContext.mk(delta)
     val defs = ParOps.parMapValues(root.defs)(visitDef(_)(sctx, root, inlined, flix))
     val newDelta = sctx.changed.asScala.keys.toSet
     val liveSyms = root.entryPoints ++ sctx.live.asScala.keys.toSet
@@ -244,7 +244,7 @@ object Inliner {
 
       case _ =>
         // Simplify and maybe do copy-propagation
-        val e1 = visitExp(exp1, ctx0.withEmptyExprCtx)
+        val e1 = visitExp(exp1, ctx0)
         if (isSimple(e1) && exp1.eff == Type.Pure) {
           // Do copy propagation and drop let-binding
           sctx.changed.putIfAbsent(sym0, ())
@@ -481,16 +481,11 @@ object Inliner {
         val eff = Type.mkUnion(arg.eff, acc.eff, loc)
         Expr.Let(fparam.sym, arg, acc, acc.tpe, eff, fparam.occur, loc)
     }
-    visitExp(letBindings, ctx0.withEmptyExprCtx)
+    visitExp(letBindings, ctx0)
   }
 
   /**
-    * Returns `true` if
-    *   - the local context shows that we are not currently inlining and
-    *   - `defn` does not refer to itself and
-    *   - it is either a higher-order function with a known lambda as argument or
-    *   - it is a direct call with simple arguments to another function or
-    *   - the body is simple.
+    * Returns `true` if the given `defn` should be inlined.
     *
     * It is the responsibility of the caller to visit `exps` first.
     *
@@ -499,8 +494,9 @@ object Inliner {
     * @param ctx0 the local context.
     */
   private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, inlined: ConcurrentHashMap[Symbol.DefnSym, ConcurrentHashMap[Symbol.DefnSym, Unit]]): Boolean = {
-    (!defn.spec.ann.isDontInline && !defn.spec.defContext.isSelfRef && !ctx0.currentlyInlining &&
-      (isSingleAction(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))) || (defn.spec.ann.isInline && !defn.spec.defContext.isSelfRef) || {
+    !sctx.delta.contains(defn.sym) &&
+      (!defn.spec.ann.isDontInline && !defn.spec.defContext.isSelfRef && !ctx0.currentlyInlining &&
+        (isSingleAction(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))) || (defn.spec.ann.isInline && !defn.spec.defContext.isSelfRef) || {
       // Atomically check if it has been inlined into sym0 and update if not
       sctx.lock.lock()
       val isInlinedInSym0 = inlined.getOrDefault(defn.sym, new ConcurrentHashMap()).containsKey(sym0)
@@ -670,20 +666,9 @@ object Inliner {
 
   }
 
-  /** Represents the compile-time evaluation state and is used like a stack. */
-  private sealed trait ExprContext
-
-  private object ExprContext {
-
-    /** The empty evaluation context. */
-    case object Empty extends ExprContext
-
-    /** Function application context. */
-    case class AppCtx(expr: Expr, subst: Map[Symbol.VarSym, SubstRange], ctx: ExprContext) extends ExprContext
-
-    /** Match-case expression context. */
-    case class MatchCtx(rules: List[MonoAst.MatchRule], subst: Map[Symbol.VarSym, SubstRange], ctx: ExprContext) extends ExprContext
-
+  private object LocalContext {
+    /** Returns the empty context with `currentlyInlining` set to `false`. */
+    val Empty: LocalContext = LocalContext(Map.empty, Map.empty, Map.empty, currentlyInlining = false)
   }
 
   /**
@@ -692,34 +677,28 @@ object Inliner {
     * @param varSubst          a substitution on variables to variables.
     * @param subst             a substitution on variables to expressions.
     * @param inScopeVars       a set of variables considered to be in scope.
-    * @param exprCtx           a compile-time evaluation context.
     * @param currentlyInlining a flag denoting whether the current traversal is part of an inline-expansion process.
     */
-  private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], exprCtx: ExprContext, currentlyInlining: Boolean) {
-
-    /** Returns a [[LocalContext]] where [[exprCtx]] has be overwritten with [[ExprContext.Empty]]. */
-    def withEmptyExprCtx: LocalContext = {
-      this.copy(exprCtx = ExprContext.Empty)
-    }
+  private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], currentlyInlining: Boolean) {
 
     /** Returns a [[LocalContext]] with the mapping `old -> fresh` added to [[varSubst]]. */
-    def addVarSubst(old: Symbol.VarSym, fresh: Symbol.VarSym): LocalContext = {
-      this.copy(varSubst = this.varSubst + (old -> fresh))
+    def addVarSubst(oldVar: Symbol.VarSym, freshVar: Symbol.VarSym): LocalContext = {
+      this.copy(varSubst = this.varSubst.updated(oldVar, freshVar))
     }
 
-    /** Returns a [[LocalContext]] with the mappings of `mappings` added to [[varSubst]]. */
-    def addVarSubsts(mappings: Map[Symbol.VarSym, Symbol.VarSym]): LocalContext = {
-      this.copy(varSubst = this.varSubst ++ mappings)
+    /** Returns a [[LocalContext]] with the mappings of `subst` added to [[varSubst]]. */
+    def addVarSubsts(subst: Map[Symbol.VarSym, Symbol.VarSym]): LocalContext = {
+      this.copy(varSubst = this.varSubst ++ subst)
     }
 
-    /** Returns a [[LocalContext]] with the mappings of `mappings` added to [[varSubst]]. */
-    def addVarSubsts(mappings: List[Map[Symbol.VarSym, Symbol.VarSym]]): LocalContext = {
-      this.copy(varSubst = mappings.foldLeft(this.varSubst)(_ ++ _))
+    /** Returns a [[LocalContext]] with the mappings of `l` added to [[varSubst]]. */
+    def addVarSubsts(l: List[Map[Symbol.VarSym, Symbol.VarSym]]): LocalContext = {
+      this.copy(varSubst = l.foldLeft(this.varSubst)(_ ++ _))
     }
 
     /** Returns a [[LocalContext]] with the mapping `sym -> substExpr` added to [[subst]]. */
     def addSubst(sym: Symbol.VarSym, substExpr: SubstRange): LocalContext = {
-      this.copy(subst = this.subst + (sym -> substExpr))
+      this.copy(subst = this.subst.updated(sym, substExpr))
     }
 
     /** Returns a [[LocalContext]] with [[subst]] overwritten by `newSubst`. */
@@ -729,40 +708,37 @@ object Inliner {
 
     /** Returns a [[LocalContext]] with the mapping `sym -> boundKind` added to [[inScopeVars]]. */
     def addInScopeVar(sym: Symbol.VarSym, boundKind: BoundKind): LocalContext = {
-      this.copy(inScopeVars = this.inScopeVars + (sym -> boundKind))
+      this.copy(inScopeVars = this.inScopeVars.updated(sym, boundKind))
     }
 
     /** Returns a [[LocalContext]] with the mappings of `mappings` added to [[inScopeVars]]. */
-    def addInScopeVars(mappings: Iterable[(Symbol.VarSym, BoundKind)]): LocalContext = {
-      this.copy(inScopeVars = this.inScopeVars ++ mappings)
+    def addInScopeVars(xs: Iterable[(Symbol.VarSym, BoundKind)]): LocalContext = {
+      this.copy(inScopeVars = this.inScopeVars ++ xs)
     }
 
     /** Returns a [[LocalContext]] where [[currentlyInlining]] is set to `true`. */
     def enableInliningMode: LocalContext = {
       this.copy(currentlyInlining = true)
     }
-  }
-
-  private object LocalContext {
-
-    /** Returns the empty context with `currentlyInlining` set to `false`. */
-    val Empty: LocalContext = LocalContext(Map.empty, Map.empty, Map.empty, ExprContext.Empty, currentlyInlining = false)
 
   }
 
   private object SharedContext {
-
-    /** Returns a fresh [[SharedContext]]. */
-    def mk(): SharedContext = new SharedContext(new ConcurrentHashMap(), new ConcurrentHashMap(), new ReentrantLock())
-
+    /**
+      * Returns a fresh [[SharedContext]].
+      *
+      * The delta set does not change during the lifetime of the shared context.
+      */
+    def mk(delta: Set[Symbol.DefnSym]): SharedContext = new SharedContext(delta, new ConcurrentHashMap(), new ConcurrentHashMap(), new ReentrantLock())
   }
 
   /**
     * A globally shared thread-safe context.
     *
+    * @param delta   the set of symbols that changed in the last iteration.
     * @param changed the set of symbols of changed functions.
     * @param live    the set of symbols of live functions.
     */
-  private case class SharedContext(changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit], lock: ReentrantLock)
+  private case class SharedContext(delta: Set[Symbol.DefnSym], changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit], lock: ReentrantLock)
 
 }

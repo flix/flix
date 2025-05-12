@@ -25,22 +25,24 @@ import java.util.concurrent.ConcurrentHashMap
 object Optimizer {
 
   /**
+    * The maximum number of rounds to run the inliner for.
+    */
+  private val MaxRounds: Int = 5
+
+  /**
     * Returns an optimized version of the given AST `root`.
     */
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer") {
     var currentRoot = root
     var currentDelta = currentRoot.defs.keys.toSet
     implicit val inlined: ConcurrentHashMap[Symbol.DefnSym, ConcurrentHashMap[Symbol.DefnSym, Unit]] = new ConcurrentHashMap()
-    for (_ <- 0 until 5) {
-      if (currentDelta.isEmpty) {
-        // Return early if we have reached a fixpoint.
-        return currentRoot
+    for (_ <- 0 until MaxRounds) {
+      if (currentDelta.nonEmpty) {
+        val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(currentRoot, currentDelta)
+        val (newRoot, newDelta) = Inliner.run(afterOccurrenceAnalyzer, currentDelta)
+        currentRoot = newRoot
+        currentDelta = newDelta
       }
-
-      val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(currentRoot, currentDelta)
-      val (newRoot, newDelta) = Inliner.run(afterOccurrenceAnalyzer)
-      currentRoot = newRoot
-      currentDelta = newDelta
     }
     currentRoot
   }
