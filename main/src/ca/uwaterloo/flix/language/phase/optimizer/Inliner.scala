@@ -493,6 +493,10 @@ object Inliner {
     * @param ctx0 the local context.
     */
   private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext): Boolean = {
+    if (ctx0.currentlyInlining) {
+      return false
+    }
+
     if (defn.spec.ann.isDontInline) {
       return false
     }
@@ -507,32 +511,25 @@ object Inliner {
       }
 
       if (defn.spec.defContext.isSelfRef) {
-        return atomicallyCheckShouldInlineRecursive(defn)
+        val shouldInline = !sctx.inlined.getOrDefault(defn.sym, new ConcurrentHashMap()).containsKey(sym0)
+        if (shouldInline) {
+          val inlinePlaces = sctx.inlined.get(defn.sym)
+          if (inlinePlaces != null) {
+            inlinePlaces.putIfAbsent(sym0, ())
+          } else {
+            val freshInlinedPlaces = new ConcurrentHashMap[Symbol.DefnSym, Unit]()
+            freshInlinedPlaces.put(sym0, ())
+            sctx.inlined.put(defn.sym, freshInlinedPlaces)
+          }
+        }
+        return shouldInline
       }
 
       return true
     }
 
-    !defn.spec.defContext.isSelfRef && !ctx0.currentlyInlining &&
+    !defn.spec.defContext.isSelfRef &&
       (isSingleAction(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))
-  }
-
-  private def atomicallyCheckShouldInlineRecursive(defn: MonoAst.Def)(implicit sym0: Symbol.DefnSym, sctx: SharedContext): Boolean = {
-    sctx.lock.lock()
-    val isInlinedInSym0 = sctx.inlined.getOrDefault(defn.sym, new ConcurrentHashMap()).containsKey(sym0)
-    val shouldInline = !isInlinedInSym0
-    if (shouldInline) {
-      val inlinePlaces = sctx.inlined.get(defn.sym)
-      if (inlinePlaces != null) {
-        inlinePlaces.putIfAbsent(sym0, ())
-      } else {
-        val freshInlinedPlaces = new ConcurrentHashMap[Symbol.DefnSym, Unit]()
-        freshInlinedPlaces.put(sym0, ())
-        sctx.inlined.put(defn.sym, freshInlinedPlaces)
-      }
-    }
-    sctx.lock.unlock()
-    shouldInline
   }
 
   /**
