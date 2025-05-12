@@ -69,8 +69,8 @@ import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 object Inliner {
 
   /** Performs inlining on the given AST `root`. */
-  def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym])(implicit inlined: ConcurrentHashMap[Symbol.DefnSym, ConcurrentHashMap[Symbol.DefnSym, Unit]], flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
-    val sctx: SharedContext = SharedContext.mk(delta, inlined)
+  def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym])(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
+    val sctx: SharedContext = SharedContext.mk(delta)
     val defs = ParOps.parMapValues(root.defs)(visitDef(_)(sctx, root, flix))
     val newDelta = sctx.changed.asScala.keys.toSet
     val liveSyms = root.entryPoints ++ sctx.live.asScala.keys.toSet
@@ -508,31 +508,11 @@ object Inliner {
         return false
       }
 
-      if (defn.spec.defContext.isSelfRef) {
-        val shouldInline = !sctx.targetSet.getOrDefault(defn.sym, new ConcurrentHashMap()).containsKey(sym0)
-        if (shouldInline) {
-          updateTargetSet(defn, sym0, sctx)
-        }
-        return shouldInline
-      }
-
       return true
     }
 
     !defn.spec.defContext.isSelfRef &&
       (isSingleAction(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))
-  }
-
-  /** Adds `sym0` to the target set of `defn.sym` in `sctx`. */
-  private def updateTargetSet(defn: MonoAst.Def, sym0: Symbol.DefnSym, sctx: SharedContext): Unit = {
-    val targetSymbols = sctx.targetSet.get(defn.sym)
-    if (targetSymbols != null) {
-      targetSymbols.putIfAbsent(sym0, ())
-    } else {
-      val targetSymbols = new ConcurrentHashMap[Symbol.DefnSym, Unit]()
-      targetSymbols.put(sym0, ())
-      sctx.targetSet.put(defn.sym, targetSymbols)
-    }
   }
 
   /**
@@ -750,19 +730,17 @@ object Inliner {
       *
       * The delta set does not change during the lifetime of the shared context.
       */
-    def mk(delta: Set[Symbol.DefnSym], inlined: ConcurrentHashMap[Symbol.DefnSym, ConcurrentHashMap[Symbol.DefnSym, Unit]]): SharedContext = new SharedContext(delta, new ConcurrentHashMap(), new ConcurrentHashMap(), inlined)
+    def mk(delta: Set[Symbol.DefnSym]): SharedContext = new SharedContext(delta, new ConcurrentHashMap(), new ConcurrentHashMap())
 
   }
 
   /**
     * A globally shared thread-safe context.
     *
-    * @param delta     the set of symbols that changed in the last iteration.
-    * @param changed   the set of symbols of changed functions.
-    * @param live      the set of symbols of live functions.
-    * @param targetSet a map of symbols that are marked with [[ca.uwaterloo.flix.language.ast.shared.Annotation.Inline]] to a set of symbols they have been inlined into.
-    *                  This is necessary to avoid unrolling a recursive function more than once.
+    * @param delta   the set of symbols that changed in the last iteration.
+    * @param changed the set of symbols of changed functions.
+    * @param live    the set of symbols of live functions.
     */
-  private case class SharedContext(delta: Set[Symbol.DefnSym], changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit], targetSet: ConcurrentHashMap[Symbol.DefnSym, ConcurrentHashMap[Symbol.DefnSym, Unit]])
+  private case class SharedContext(delta: Set[Symbol.DefnSym], changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit])
 
 }
