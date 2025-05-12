@@ -297,15 +297,14 @@ object Inliner {
       Expr.Scope(freshVarSym, rvar, e, tpe, eff, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, ctx0)
-      e1 match {
+      visitExp(exp1, ctx0) match {
         case Expr.Cst(Constant.Bool(true), _, _) =>
           sctx.changed.putIfAbsent(sym0, ())
           visitExp(exp2, ctx0)
         case Expr.Cst(Constant.Bool(false), _, _) =>
           sctx.changed.putIfAbsent(sym0, ())
           visitExp(exp3, ctx0)
-        case _ =>
+        case e1 =>
           val e2 = visitExp(exp2, ctx0)
           val e3 = visitExp(exp3, ctx0)
           Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
@@ -328,8 +327,8 @@ object Inliner {
       Expr.Discard(e, eff, loc)
 
     case Expr.Match(exp, rules, tpe, eff, loc) =>
-      val rs = rules.map(visitMatchRule(_, ctx0))
       val e = visitExp(exp, ctx0)
+      val rs = rules.map(visitMatchRule(_, ctx0))
       Expr.Match(e, rs, tpe, eff, loc)
 
     case Expr.VectorLit(exps, tpe, eff, loc) =>
@@ -355,8 +354,8 @@ object Inliner {
       Expr.TryCatch(e, rs, tpe, eff, loc)
 
     case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
-      val rs = rules.map(visitHandlerRule(_, ctx0))
       val e = visitExp(exp, ctx0)
+      val rs = rules.map(visitHandlerRule(_, ctx0))
       Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
     case Expr.Do(op, exps, tpe, eff, loc) =>
