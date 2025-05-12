@@ -632,6 +632,25 @@ object WeederError {
     override def explain(formatter: Formatter): Option[String] = None
   }
 
+  case class InlineAndDontInline(inlineLoc: SourceLocation, dontInlineLoc: SourceLocation) extends WeederError {
+    override def summary: String = "Annotated with both `@Inline` and `@DontInline`"
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Annotated with both `@Inline` and `@DontInline`.
+         |
+         |${code(inlineLoc, "the @Inline occurs here")}
+         |
+         |${code(dontInlineLoc, "the @DontInline occurs here")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+
+    override def loc: SourceLocation = inlineLoc
+  }
+
   /**
     * An error raised to indicate a non-single character literal.
     *
