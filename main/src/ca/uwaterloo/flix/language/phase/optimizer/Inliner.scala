@@ -465,9 +465,6 @@ object Inliner {
     *
     * The caller must visit the returned expression.
     *
-    * It is the responsibility of the caller to first visit `exps` but the caller must not visit `exp`.
-    *
-    *
     * [[bindArgs]] creates a series of let-bindings
     * {{{
     *   let sym1 = exp1;
