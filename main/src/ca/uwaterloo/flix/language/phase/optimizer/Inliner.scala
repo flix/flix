@@ -184,7 +184,8 @@ object Inliner {
         case Expr.Lambda(fparam, e1, _, _) if isSingleAction(e1) =>
           sctx.changed.putIfAbsent(sym0, ())
           val e2 = visitExp(exp2, ctx0)
-          bindArgs(e1, List(fparam), List(e2), loc, ctx0)
+          val letBinding = bindArgs(e1, List(fparam), List(e2), loc)
+          visitExp(letBinding, ctx0)
 
         case e1 =>
           val e2 = visitExp(exp2, ctx0)
@@ -197,7 +198,8 @@ object Inliner {
         sctx.changed.putIfAbsent(sym0, ())
         val defn = root.defs(sym)
         val ctx = ctx0.withSubst(Map.empty).enableInliningMode
-        bindArgs(defn.exp, defn.spec.fparams, es, loc, ctx)
+        val letBinding = bindArgs(defn.exp, defn.spec.fparams, es, loc)
+        visitExp(letBinding, ctx)
       } else {
         sctx.live.putIfAbsent(sym, ())
         val es = exps.map(visitExp(_, ctx0))
@@ -211,7 +213,8 @@ object Inliner {
       ctx0.subst.get(sym1) match {
         case Some(SubstRange.SuspendedExpr(Expr.LocalDef(_, fparams, exp, _, _, _, _, _), subst)) =>
           val es = exps.map(visitExp(_, ctx0))
-          bindArgs(exp, fparams, es, loc, ctx0.withSubst(subst))
+          val letBinding = bindArgs(exp, fparams, es, loc)
+          visitExp(letBinding, ctx0.withSubst(subst))
 
         case None | Some(_) =>
           // It was not unconditionally inlined, so return same expr with visited subexpressions
@@ -460,8 +463,7 @@ object Inliner {
   /**
     * Performs beta-reduction, binding `exps` as let-bindings.
     *
-    * It is the responsibility of the caller to first visit `exps` and provide a substitution from the definition site
-    * of `exp`. The caller must not visit `exp`.
+    * The caller must visit the returned expression.
     *
     * [[bindArgs]] creates a series of let-bindings
     * {{{
@@ -472,15 +474,13 @@ object Inliner {
     * }}}
     * where `symi` is the symbol of the i-th formal parameter and `exp` is the body of the function.
     *
-    * Lastly, it visits the top-most let-binding, thus possibly removing the bindings.
     */
-  private def bindArgs(exp: Expr, fparams: List[FormalParam], exps: List[Expr], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): Expr = {
-    val letBindings = fparams.zip(exps).foldRight(exp) {
+  private def bindArgs(exp: Expr, fparams: List[FormalParam], exps: List[Expr], loc: SourceLocation): Expr = {
+    fparams.zip(exps).foldRight(exp) {
       case ((fparam, arg), acc) =>
         val eff = Type.mkUnion(arg.eff, acc.eff, loc)
         Expr.Let(fparam.sym, arg, acc, acc.tpe, eff, fparam.occur, loc)
     }
-    visitExp(letBindings, ctx0)
   }
 
   /**
