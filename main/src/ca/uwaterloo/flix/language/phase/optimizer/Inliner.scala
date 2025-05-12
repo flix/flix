@@ -494,26 +494,46 @@ object Inliner {
     * @param ctx0 the local context.
     */
   private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext): Boolean = {
-    !sctx.delta.contains(defn.sym) &&
-      (!defn.spec.ann.isDontInline && !defn.spec.defContext.isSelfRef && !ctx0.currentlyInlining &&
-        (isSingleAction(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))) || (defn.spec.ann.isInline && !defn.spec.defContext.isSelfRef) || {
-      // Atomically check if it has been inlined into sym0 and update if not
-      sctx.lock.lock()
-      val isInlinedInSym0 = sctx.inlined.getOrDefault(defn.sym, new ConcurrentHashMap()).containsKey(sym0)
-      val shouldInlineIntoSym0 = defn.spec.ann.isInline && defn.spec.defContext.isSelfRef && !isInlinedInSym0 && defn.sym != sym0
-      if (shouldInlineIntoSym0) {
-        val inlinePlaces = sctx.inlined.get(defn.sym)
-        if (inlinePlaces != null) {
-          inlinePlaces.putIfAbsent(sym0, ())
-        } else {
-          val freshInlinedPlaces = new ConcurrentHashMap[Symbol.DefnSym, Unit]()
-          freshInlinedPlaces.putIfAbsent(sym0, ())
-          sctx.inlined.put(defn.sym, freshInlinedPlaces)
-        }
-      }
-      sctx.lock.unlock()
-      shouldInlineIntoSym0
+    if (defn.spec.ann.isDontInline) {
+      return false
     }
+
+    if (sctx.delta.contains(defn.sym)) {
+      return false
+    }
+
+    if (defn.spec.ann.isInline) {
+      if (defn.sym == sym0) {
+        return false
+      }
+
+      if (defn.spec.defContext.isSelfRef) {
+        return atomicallyCheckShouldInlineRecursive(defn)
+      }
+
+      return true
+    }
+
+    !defn.spec.defContext.isSelfRef && !ctx0.currentlyInlining &&
+      (isSingleAction(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))
+  }
+
+  private def atomicallyCheckShouldInlineRecursive(defn: MonoAst.Def)(implicit sym0: Symbol.DefnSym, sctx: SharedContext): Boolean = {
+    sctx.lock.lock()
+    val isInlinedInSym0 = sctx.inlined.getOrDefault(defn.sym, new ConcurrentHashMap()).containsKey(sym0)
+    val shouldInline = !isInlinedInSym0
+    if (shouldInline) {
+      val inlinePlaces = sctx.inlined.get(defn.sym)
+      if (inlinePlaces != null) {
+        inlinePlaces.putIfAbsent(sym0, ())
+      } else {
+        val freshInlinedPlaces = new ConcurrentHashMap[Symbol.DefnSym, Unit]()
+        freshInlinedPlaces.putIfAbsent(sym0, ())
+        sctx.inlined.put(defn.sym, freshInlinedPlaces)
+      }
+    }
+    sctx.lock.unlock()
+    shouldInline
   }
 
   /**
