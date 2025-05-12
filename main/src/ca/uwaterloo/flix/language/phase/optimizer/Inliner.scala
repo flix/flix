@@ -202,7 +202,6 @@ object Inliner {
         visitExp(letBinding, ctx)
       } else {
         sctx.live.putIfAbsent(sym, ())
-        val es = exps.map(visitExp(_, ctx0))
         Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
       }
 
