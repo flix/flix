@@ -575,6 +575,7 @@ object Inliner {
     *
     * A simple expression is a value-like expression where sub-expressions are trivial.
     */
+  @tailrec
   private def isSimple(exp0: Expr): Boolean = exp0 match {
     case Expr.Lambda(_, _, _, _) => true
     case Expr.ApplyAtomic(AtomicOp.Unary(_), exps, _, _, _) => exps.forall(isTrivial)
