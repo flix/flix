@@ -579,8 +579,8 @@ object Inliner {
     case Expr.Lambda(_, _, _, _) => true
     case Expr.ApplyAtomic(AtomicOp.Unary(_), exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.Binary(_), exps, _, _, _) => exps.forall(isTrivial)
-    case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isSimple)
-    case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isSimple)
+    case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.ArrayLit, exps, _, _, _) => exps.forall(isTrivial)
     case Expr.ApplyAtomic(AtomicOp.StructNew(_, _), exps, _, _, _) => exps.forall(isTrivial)
     case Expr.Cast(exp, _, _, _) => isSimple(exp)
