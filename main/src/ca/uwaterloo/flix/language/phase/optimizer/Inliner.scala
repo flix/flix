@@ -24,7 +24,6 @@ import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.locks.ReentrantLock
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 
