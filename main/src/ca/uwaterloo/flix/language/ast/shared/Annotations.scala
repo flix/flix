@@ -37,6 +37,11 @@ case class Annotations(annotations: List[Annotation]) {
   def isDeprecated: Boolean = annotations exists (_.isInstanceOf[Annotation.Deprecated])
 
   /**
+    * Returns `true` if `this` sequence contains the `@DontInline` annotation.
+    */
+  def isDontInline: Boolean = annotations.exists(_.isInstanceOf[Annotation.DontInline])
+
+  /**
     * Returns `true` if `this` sequence contains the `@Experimental` annotation.
     */
   def isExperimental: Boolean = annotations exists (_.isInstanceOf[Annotation.Experimental])
@@ -45,6 +50,11 @@ case class Annotations(annotations: List[Annotation]) {
     * Returns `true` if `this` sequence contains the `@Export` annotation.
     */
   def isExport: Boolean = annotations exists (_.isInstanceOf[Annotation.Export])
+
+  /**
+    * Returns `true` if `this` sequence contains the `@Inline` annotation.
+    */
+  def isInline: Boolean = annotations.exists(_.isInstanceOf[Annotation.Inline])
 
   /**
     * Returns `true` if `this` sequence contains the `@Internal` annotation.
@@ -85,16 +95,5 @@ case class Annotations(annotations: List[Annotation]) {
     * Returns `true` if `this` sequence contains the `@Test` annotation.
     */
   def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
-
-
-  /**
-    * Returns `true` if `this` sequence contains the `@Inline` annotation.
-    */
-  def isInline: Boolean = annotations.exists(_.isInstanceOf[Annotation.Inline])
-
-  /**
-    * Returns `true` if `this` sequence contains the `@DontInline` annotation.
-    */
-  def isDontInline: Boolean = annotations.exists(_.isInstanceOf[Annotation.DontInline])
 
 }
