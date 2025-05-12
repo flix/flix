@@ -673,8 +673,10 @@ object Weeder2 {
       import Annotation.*
       token.text match {
         case "@Deprecated" => Deprecated(loc)
+        case "@DontInline" => DontInline(loc)
         case "@Experimental" => Experimental(loc)
         case "@Export" => Export(loc)
+        case "@Inline" => Inline(loc)
         case "@Internal" => Internal(loc)
         case "@Parallel" => Parallel(loc)
         case "@ParallelWhenPure" => ParallelWhenPure(loc)
@@ -684,8 +686,6 @@ object Weeder2 {
         case "@Skip" => Skip(loc)
         case "@Test" | "@test" => Test(loc)
         case "@TailRec" => TailRecursive(loc)
-        case "@Inline" => Inline(loc)
-        case "@DontInline" => DontInline(loc)
         case other =>
           val error = UndefinedAnnotation(other, loc)
           sctx.errors.add(error)
