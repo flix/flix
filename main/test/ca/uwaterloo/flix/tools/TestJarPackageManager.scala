@@ -48,17 +48,17 @@ class TestJarPackageManager extends AnyFunSuite {
     assertResult(expected = PackageError.DownloadErrorJar(missingUrl, missingName, None).message(f))(actual = {
       val toml = {
         s"""
-           |[package]
-           |name = "test"
-           |description = "test"
-           |version = "0.0.0"
-           |flix = "0.0.0"
-           |authors = ["Anna Blume"]
-           |
-           |[jar-dependencies]
-           |"$missingName" = "url:$missingUrl"
-           |
-           |""".stripMargin
+          |[package]
+          |name = "test"
+          |description = "test"
+          |version = "0.0.0"
+          |flix = "0.0.0"
+          |authors = ["Anna Blume"]
+          |
+          |[jar-dependencies]
+          |"$missingName" = "url:$missingUrl"
+          |
+          |""".stripMargin
       }
 
       val manifest = ManifestParser.parse(toml, null) match {

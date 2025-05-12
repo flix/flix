@@ -81,7 +81,7 @@ object ConstraintGen {
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(Type.mkArrowWithEffect(tpe2, lambdaBodyEff, lambdaBodyType, loc), tpe1, loc)
         c.unifyType(tvar, lambdaBodyType, loc)
-        c.unifyType(evar, Type.mkUnion(lambdaBodyEff :: eff1 :: eff2 :: Nil, loc), loc)
+        c.unifyType(evar,  Type.mkUnion(lambdaBodyEff :: eff1 :: eff2 :: Nil, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)

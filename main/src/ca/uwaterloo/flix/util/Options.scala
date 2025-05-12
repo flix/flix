@@ -74,19 +74,19 @@ object Options {
 /**
   * General Flix options.
   *
-  * @param lib            selects the level of libraries to include.
-  * @param entryPoint     specifies the main entry point.
-  * @param explain        enables additional explanations.
-  * @param githubToken    the API key to use for GitHub dependency resolution.
-  * @param incremental    enables incremental compilation.
-  * @param installDeps    enables automatic installation of dependencies.
-  * @param json           enable json output.
-  * @param output         the optional output directory where to place JVM bytecode.
-  * @param progress       print progress during compilation.
-  * @param target         the target JVM.
-  * @param threads        selects the number of threads to use.
-  * @param loadClassFiles loads the generated class files into the JVM.
-  * @param assumeYes      run non-interactively and assume answer to all prompts is yes.
+  * @param lib                 selects the level of libraries to include.
+  * @param entryPoint          specifies the main entry point.
+  * @param explain             enables additional explanations.
+  * @param githubToken         the API key to use for GitHub dependency resolution.
+  * @param incremental         enables incremental compilation.
+  * @param installDeps         enables automatic installation of dependencies.
+  * @param json                enable json output.
+  * @param output              the optional output directory where to place JVM bytecode.
+  * @param progress            print progress during compilation.
+  * @param target              the target JVM.
+  * @param threads             selects the number of threads to use.
+  * @param loadClassFiles      loads the generated class files into the JVM.
+  * @param assumeYes           run non-interactively and assume answer to all prompts is yes.
   */
 case class Options(lib: LibLevel,
                    entryPoint: Option[Symbol.DefnSym],

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.util.collection
 /**
   * A non-empty list (Nel) - always has at least one element.
   *
-  * @param x  the first element
+  * @param x the first element
   * @param xs the remaining elements
   * @tparam T the type of the elements
   */

@@ -247,10 +247,10 @@ object PrimitiveEffects {
   }
 
   /**
-    * Returns the given comma-separated string of effect symbols as a set of [[Symbol.EffectSym]].
-    *
-    * Returns the empty set if the string is empty.
-    */
+   * Returns the given comma-separated string of effect symbols as a set of [[Symbol.EffectSym]].
+   *
+   * Returns the empty set if the string is empty.
+   */
   private def parseEffSet(s: String): Set[Symbol.EffectSym] = {
     if (s.trim.isEmpty)
       Set.empty

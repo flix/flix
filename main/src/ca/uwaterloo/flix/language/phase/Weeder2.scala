@@ -1855,8 +1855,7 @@ object Weeder2 {
           visitMethodArguments(argumentList)
       }
       mapN(Types.pickType(tree), expsValidation) {
-        (tpe, exps) =>
-          tpe match {
+        (tpe, exps) => tpe match {
             case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
               Expr.InvokeConstructor(qname.ident, exps, tree.loc)
             case _ =>
@@ -3152,7 +3151,7 @@ object Weeder2 {
   }
 
   private def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
-    mapN(pick(TreeKind.QName, tree)) {
+    mapN(pick(TreeKind.QName, tree)){
       qname => Name.JavaName(pickAll(TreeKind.Ident, qname).flatMap(text), qname.loc)
     }
   }

@@ -89,9 +89,9 @@ object SemanticTokensProvider {
     // Construct an iterator of the semantic tokens from instances.
     //
     val instanceTokens = root.instances.values.flatMap {
-      case instance if include(uri, instance.trt.loc) => visitInstance(instance)
-      case _ => Nil
-    }
+        case instance if include(uri, instance.trt.loc) => visitInstance(instance)
+        case _ => Nil
+      }
 
     //
     // Construct an iterator of the semantic tokens from defs.
@@ -589,7 +589,7 @@ object SemanticTokensProvider {
       visitExp(exp)
 
     case Expr.UncheckedCast(exp, declaredType, declaredEff, _, _, _) =>
-      visitExp(exp) ++ declaredType.map(visitType).getOrElse(Iterator()) ++ declaredEff.map(visitType).getOrElse(Iterator())
+      visitExp(exp) ++ declaredType.map(visitType).getOrElse(Iterator())  ++ declaredEff.map(visitType).getOrElse(Iterator())
 
     case Expr.Unsafe(exp, runEff, _, _, _) =>
       visitType(runEff) ++ visitExp(exp)
@@ -612,7 +612,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Type, Nil, sym.qname.loc)
       val st1 = Iterator(t)
       val st2 = rules.foldLeft(Iterator.empty[SemanticToken]) {
-        case (acc, HandlerRule(op, fparams, exp, loc)) =>
+        case (acc, HandlerRule(op, fparams, exp ,loc)) =>
           val st = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
           val t1 = Iterator(st)
           val t2 = visitFormalParams(fparams)

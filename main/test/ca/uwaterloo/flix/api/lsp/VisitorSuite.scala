@@ -40,7 +40,7 @@ class VisitorSuite extends AnyFunSuite {
       SourcePosition.mkFromOneIndexed(source, 3, 4),
       SourcePosition.mkFromOneIndexed(source, 5, 2)
     )
-    val pos = Position(3, 5)
+    val  pos = Position(3, 5)
 
     assert(Visitor.inside(uri, pos)(loc))
   }
@@ -51,7 +51,7 @@ class VisitorSuite extends AnyFunSuite {
       SourcePosition.mkFromOneIndexed(source, 3, 4),
       SourcePosition.mkFromOneIndexed(source, 5, 2)
     )
-    val pos = Position(3, 4)
+    val  pos = Position(3, 4)
 
     assert(Visitor.inside(uri, pos)(loc))
   }
@@ -62,7 +62,7 @@ class VisitorSuite extends AnyFunSuite {
       SourcePosition.mkFromOneIndexed(source, 3, 4),
       SourcePosition.mkFromOneIndexed(source, 5, 3)
     )
-    val pos = Position(5, 1)
+    val  pos = Position(5, 1)
 
     assert(Visitor.inside(uri, pos)(loc))
   }
@@ -73,7 +73,7 @@ class VisitorSuite extends AnyFunSuite {
       SourcePosition.mkFromOneIndexed(source, 3, 4),
       SourcePosition.mkFromOneIndexed(source, 5, 3)
     )
-    val pos = Position(5, 2)
+    val  pos = Position(5, 2)
 
     assert(Visitor.inside(uri, pos)(loc))
   }
@@ -84,7 +84,7 @@ class VisitorSuite extends AnyFunSuite {
       SourcePosition.mkFromOneIndexed(source, 5, 2),
       SourcePosition.mkFromOneIndexed(source, 5, 10)
     )
-    val pos = Position(5, 4)
+    val  pos = Position(5, 4)
 
     assert(Visitor.inside(uri, pos)(loc))
   }
@@ -95,7 +95,7 @@ class VisitorSuite extends AnyFunSuite {
       SourcePosition.mkFromOneIndexed(source, 5, 2),
       SourcePosition.mkFromOneIndexed(source, 5, 10)
     )
-    val pos = Position(5, 2)
+    val  pos = Position(5, 2)
 
     assert(Visitor.inside(uri, pos)(loc))
   }
@@ -106,7 +106,7 @@ class VisitorSuite extends AnyFunSuite {
       SourcePosition.mkFromOneIndexed(source, 5, 2),
       SourcePosition.mkFromOneIndexed(source, 5, 10)
     )
-    val pos = Position(5, 9)
+    val  pos = Position(5, 9)
 
     assert(Visitor.inside(uri, pos)(loc))
   }

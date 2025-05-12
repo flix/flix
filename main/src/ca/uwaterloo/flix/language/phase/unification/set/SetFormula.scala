@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase.unification.set
 
 import ca.uwaterloo.flix.util.collection.TwoList
-
 import scala.collection.immutable.SortedSet
 
 /**

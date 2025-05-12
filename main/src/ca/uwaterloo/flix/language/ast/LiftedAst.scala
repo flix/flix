@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Purity.Pure
+import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.IntroducedBy
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffectSymUse, OpSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Modifiers, Source}
 

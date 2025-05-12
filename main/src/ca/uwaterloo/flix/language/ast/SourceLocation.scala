@@ -44,8 +44,8 @@ case class SourceLocation(isReal: Boolean, sp1: SourcePosition, sp2: SourcePosit
   def source: Source = sp1.source
 
   /**
-    * Returns the security context associated with the source location.
-    */
+   * Returns the security context associated with the source location.
+   */
   def security: SecurityContext = sp1.source.input.security
 
   /**

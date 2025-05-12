@@ -37,7 +37,7 @@ object LocalScope {
   *
   * @param scp the environment map containing variable names and their corresponding resolutions.
   */
-case class LocalScope(scp: ListMap[String, Resolution]) {
+case class LocalScope(scp: ListMap[String, Resolution]){
   /**
     * Returns the map of variable names to their resolutions.
     */

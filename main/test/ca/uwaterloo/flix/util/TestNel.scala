@@ -52,7 +52,7 @@ class TestNel extends AnyFunSuite {
   }
 
   test("iterator.02") {
-    assert(mkNel(1, 2, 3, 4).iterator.toList == List(1, 2, 3, 4))
+    assert(mkNel(1, 2, 3, 4).iterator.toList == List(1, 2, 3 ,4))
   }
 
   test("toList.01") {

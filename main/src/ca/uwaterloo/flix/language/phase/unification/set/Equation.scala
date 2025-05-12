@@ -20,6 +20,8 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 
+import scala.annotation.nowarn
+
 /**
   * Represents an equality equation between the formulas `f1` and `f2` (`f1 ~ f2`).
   *

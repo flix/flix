@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
 import ca.uwaterloo.flix.util.JvmUtils
+import ca.uwaterloo.flix.util.collection.ListMap
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -221,7 +222,7 @@ object TypeReduction2 {
     */
   private def usesBoxing(args: List[Class[?]], params: Array[Class[?]]): Boolean = {
     // This method is checking an existing match, so zip is fine.
-    args.zip(params).exists {
+    args.zip(params).exists{
       // Primitive type boxing.
       case (clazz, java.lang.Boolean.TYPE) if clazz != java.lang.Boolean.TYPE => true
       case (clazz, java.lang.Byte.TYPE) if clazz != java.lang.Byte.TYPE => true

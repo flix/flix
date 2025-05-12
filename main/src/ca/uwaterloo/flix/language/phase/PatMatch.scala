@@ -173,7 +173,7 @@ object PatMatch {
 
       case Expr.Match(exp, rules, _, _, _) =>
         visitExp(exp)
-        rules.foreach { r =>
+        rules.foreach{r =>
           visitExp(r.exp)
           r.guard.foreach(visitExp)
         }
@@ -302,7 +302,7 @@ object PatMatch {
         visitExp(exp2)
 
       case Expr.SelectChannel(rules, default, _, _, _) =>
-        rules.foreach { r =>
+        rules.foreach{r =>
           visitExp(r.exp)
           visitExp(r.chan)
         }
@@ -785,20 +785,20 @@ object PatMatch {
   }
 
   /**
-    * Companion object for [[SharedContext]]
-    */
+   * Companion object for [[SharedContext]]
+   */
   private object SharedContext {
 
     /**
-      * Returns a fresh shared context.
-      */
+     * Returns a fresh shared context.
+     */
     def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
   }
 
   /**
-    * A global shared context. Must be thread-safe.
-    *
-    * @param errors the [[NonExhaustiveMatchError]]s in the AST, if any.
-    */
+   * A global shared context. Must be thread-safe.
+   *
+   * @param errors the [[NonExhaustiveMatchError]]s in the AST, if any.
+   */
   private case class SharedContext(errors: ConcurrentLinkedQueue[NonExhaustiveMatchError])
 }

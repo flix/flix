@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.api.Bootstrap
 import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
 import ca.uwaterloo.flix.util.{Formatter, Result}
+import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
 
 import java.io.{IOException, PrintStream}
 import java.nio.file.{Files, Path, StandardCopyOption}

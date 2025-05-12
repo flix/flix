@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.{IsVolatile, NotVolatile}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.{ConstructorMethod, StaticConstructorMethod, *}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, JavaLangInvoke, JavaUtil, JavaUtilConcurrent, MethodDescriptor, RootPackage}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.Opcodes
 
@@ -188,37 +188,37 @@ object BackendObjType {
       withName(1, JavaObject.toTpe)(exp =>
         // super()
         thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
-          // this.exp = exp
-          thisLoad() ~ exp.load() ~ PUTFIELD(ExpField) ~
-          // this.lock = new ReentrantLock()
-          thisLoad() ~
-          NEW(ReentrantLock.jvmName) ~ DUP() ~ INVOKESPECIAL(ReentrantLock.Constructor) ~
-          PUTFIELD(LockField) ~
-          // return
-          RETURN()
+        // this.exp = exp
+        thisLoad() ~ exp.load() ~ PUTFIELD(ExpField) ~
+        // this.lock = new ReentrantLock()
+        thisLoad() ~
+        NEW(ReentrantLock.jvmName) ~ DUP() ~ INVOKESPECIAL(ReentrantLock.Constructor) ~
+        PUTFIELD(LockField) ~
+        // return
+        RETURN()
       )
     }))
 
     def ForceMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "force", mkDescriptor()(tpe), Some(_ => {
       val unlockLock = thisLoad() ~ GETFIELD(LockField) ~ INVOKEVIRTUAL(ReentrantLock.UnlockMethod)
       thisLoad() ~ GETFIELD(LockField) ~ INVOKEVIRTUAL(ReentrantLock.LockInterruptiblyMethod) ~
-        tryCatch {
-          thisLoad() ~ GETFIELD(ExpField) ~
-            // if the expression is not null, compute the value and erase the expression
-            ifCondition(Condition.NONNULL)(
-              thisLoad() ~
-                // get expression as thunk
-                DUP() ~ GETFIELD(ExpField) ~ CHECKCAST(Thunk.jvmName) ~
-                // this.value = thunk.unwind()
-                Result.unwindSuspensionFreeThunkToType(tpe, "during call to Lazy.force", SourceLocation.Unknown) ~ PUTFIELD(ValueField) ~
-                // this.exp = null
-                thisLoad() ~ pushNull() ~ PUTFIELD(ExpField)
-            ) ~
-            thisLoad() ~ GETFIELD(ValueField)
-        } {
-          // catch
-          unlockLock ~ ATHROW()
-        } ~
+      tryCatch{
+        thisLoad() ~ GETFIELD(ExpField) ~
+        // if the expression is not null, compute the value and erase the expression
+        ifCondition(Condition.NONNULL)(
+          thisLoad() ~
+          // get expression as thunk
+          DUP() ~ GETFIELD(ExpField) ~ CHECKCAST(Thunk.jvmName) ~
+          // this.value = thunk.unwind()
+          Result.unwindSuspensionFreeThunkToType(tpe, "during call to Lazy.force", SourceLocation.Unknown) ~ PUTFIELD(ValueField) ~
+          // this.exp = null
+          thisLoad() ~ pushNull() ~ PUTFIELD(ExpField)
+        ) ~
+        thisLoad() ~ GETFIELD(ValueField)
+      }{
+         // catch
+         unlockLock ~ ATHROW()
+      } ~
         unlockLock ~ xReturn(tpe)
     }))
 
@@ -239,23 +239,23 @@ object BackendObjType {
     def IndexField(i: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, s"field$i", elms(i))
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, elms, Some(_ => {
-      withNames(1, elms) { case (_, variables) =>
+      withNames(1, elms){ case (_, variables) =>
         thisLoad() ~
-          // super()
-          DUP() ~ INVOKESPECIAL(JavaObject.Constructor) ~
-          // this.field$i = var$j
-          // fields are numbered consecutively while variables skip indices based
-          // on their stack size
-          composeN(variables.zipWithIndex.map { case (elm, i) =>
-            DUP() ~ elm.load() ~ PUTFIELD(IndexField(i))
-          }) ~
-          RETURN()
+        // super()
+        DUP() ~ INVOKESPECIAL(JavaObject.Constructor) ~
+        // this.field$i = var$j
+        // fields are numbered consecutively while variables skip indices based
+        // on their stack size
+        composeN(variables.zipWithIndex.map{case (elm, i) =>
+          DUP() ~ elm.load() ~ PUTFIELD(IndexField(i))
+        }) ~
+        RETURN()
       }
     }))
 
     def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ => {
       Util.mkString(Some(pushString("(")), Some(pushString(")")), elms.length, getIndexField) ~
-        xReturn(String.toTpe)
+      xReturn(String.toTpe)
     }))
 
     /** `[] --> [this.index(i).xString()]` */
@@ -265,7 +265,6 @@ object BackendObjType {
     }
 
   }
-
   case class Struct(elms: List[BackendType]) extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
@@ -281,14 +280,14 @@ object BackendObjType {
     def IndexField(i: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, s"field$i", elms(i))
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, elms, Some(_ => {
-      withNames(1, elms) { case (_, variables) =>
+      withNames(1, elms){ case (_, variables) =>
         thisLoad() ~
           // super()
           DUP() ~ INVOKESPECIAL(JavaObject.Constructor) ~
           // this.field$i = var$j
           // fields are numbered consecutively while variables skip indices based
           // on their stack size
-          composeN(variables.zipWithIndex.map { case (elm, i) =>
+          composeN(variables.zipWithIndex.map{case (elm, i) =>
             DUP() ~ elm.load() ~ PUTFIELD(IndexField(i))
           }) ~
           RETURN()
@@ -297,7 +296,7 @@ object BackendObjType {
 
     def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ => {
       Util.mkString(Some(pushString("Struct(")), Some(pushString(")")), elms.length, getIndexString) ~
-        xReturn(String.toTpe)
+      xReturn(String.toTpe)
     }))
 
     /** `[] --> [this.index(i).xString()]` */
@@ -383,7 +382,7 @@ object BackendObjType {
 
     def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ =>
       Util.mkString(Some(thisLoad() ~ GETFIELD(NameField) ~ pushString("(") ~ INVOKEVIRTUAL(String.Concat)), Some(pushString(")")), elms.length, getIndexString) ~
-        xReturn(String.toTpe)
+      xReturn(String.toTpe)
     ))
 
     /** `[] --> [this.index(i).xString()]` */
@@ -405,8 +404,8 @@ object BackendObjType {
   /**
     * (Int, String) -> Bool example:
     * public abstract class Clo2$Int$Obj$Bool extends Fn2$Int$Obj$Bool {
-    * public Clo2$Int$Obj$Bool() { ... }
-    * public abstract Clo2$Int$Obj$Bool getUniqueThreadClosure();
+    *   public Clo2$Int$Obj$Bool() { ... }
+    *   public abstract Clo2$Int$Obj$Bool getUniqueThreadClosure();
     * }
     */
   case class AbstractArrow(args: List[BackendType], result: BackendType) extends BackendObjType with Generatable {
@@ -1063,17 +1062,17 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(ReifiedSourceLocation.toTpe, String.toTpe), Some(_ =>
       withName(1, ReifiedSourceLocation.toTpe)(loc => withName(2, String.toTpe)(msg => {
         thisLoad() ~
-          NEW(StringBuilder.jvmName) ~
-          DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
-          msg.load() ~
-          INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
-          pushString(" at ") ~
-          INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
-          loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
-          INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
-          INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
-          INVOKESPECIAL(FlixError.Constructor) ~
-          RETURN()
+        NEW(StringBuilder.jvmName) ~
+        DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
+        msg.load() ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        pushString(" at ") ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+        INVOKESPECIAL(FlixError.Constructor) ~
+        RETURN()
       }))
     ))
   }
@@ -1099,24 +1098,24 @@ object BackendObjType {
       withName(1, Suspension.toTpe)(suspension => withName(2, String.toTpe)(info => withName(3, ReifiedSourceLocation.toTpe)(loc => {
         val appendString = INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
         thisLoad() ~
-          NEW(StringBuilder.jvmName) ~
-          DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
-          pushString("Unhandled effect '") ~ appendString ~
-          suspension.load() ~ GETFIELD(Suspension.EffSymField) ~ appendString ~
-          pushString("' (") ~ appendString ~
-          info.load() ~ appendString ~
-          pushString(") at ") ~ appendString ~
-          loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ appendString ~
-          INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
-          INVOKESPECIAL(FlixError.Constructor) ~
-          // save arguments locally
-          thisLoad() ~
-          suspension.load() ~ GETFIELD(Suspension.EffSymField) ~
-          PUTFIELD(EffectNameField) ~
-          thisLoad() ~
-          loc.load() ~
-          PUTFIELD(LocationField) ~
-          RETURN()
+        NEW(StringBuilder.jvmName) ~
+        DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
+        pushString("Unhandled effect '") ~ appendString ~
+        suspension.load() ~ GETFIELD(Suspension.EffSymField) ~ appendString ~
+        pushString("' (") ~ appendString ~
+        info.load() ~ appendString ~
+        pushString(") at ") ~ appendString ~
+        loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ appendString ~
+        INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+        INVOKESPECIAL(FlixError.Constructor) ~
+        // save arguments locally
+        thisLoad() ~
+        suspension.load() ~ GETFIELD(Suspension.EffSymField) ~
+        PUTFIELD(EffectNameField) ~
+        thisLoad() ~
+        loc.load() ~
+        PUTFIELD(LocationField) ~
+        RETURN()
       })))
     ))
 
@@ -1158,17 +1157,17 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(_ =>
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
-        thisLoad() ~ NEW(BackendObjType.ConcurrentLinkedQueue.jvmName) ~
-        DUP() ~ invokeConstructor(BackendObjType.ConcurrentLinkedQueue.jvmName, MethodDescriptor.NothingToVoid) ~
-        PUTFIELD(ThreadsField) ~
-        thisLoad() ~ INVOKESTATIC(Thread.CurrentThreadMethod) ~
-        PUTFIELD(RegionThreadField) ~
-        thisLoad() ~ ACONST_NULL() ~
-        PUTFIELD(ChildExceptionField) ~
-        thisLoad() ~ NEW(BackendObjType.LinkedList.jvmName) ~
-        DUP() ~ invokeConstructor(BackendObjType.LinkedList.jvmName, MethodDescriptor.NothingToVoid) ~
-        PUTFIELD(OnExitField) ~
-        RETURN()
+      thisLoad() ~ NEW(BackendObjType.ConcurrentLinkedQueue.jvmName) ~
+      DUP() ~ invokeConstructor(BackendObjType.ConcurrentLinkedQueue.jvmName, MethodDescriptor.NothingToVoid) ~
+      PUTFIELD(ThreadsField) ~
+      thisLoad() ~ INVOKESTATIC(Thread.CurrentThreadMethod) ~
+      PUTFIELD(RegionThreadField) ~
+      thisLoad() ~ ACONST_NULL() ~
+      PUTFIELD(ChildExceptionField) ~
+      thisLoad() ~ NEW(BackendObjType.LinkedList.jvmName) ~
+      DUP() ~ invokeConstructor(BackendObjType.LinkedList.jvmName, MethodDescriptor.NothingToVoid) ~
+      PUTFIELD(OnExitField) ~
+      RETURN()
     ))
 
     // final public void spawn(Runnable r) {
@@ -1179,16 +1178,16 @@ object BackendObjType {
     // }
     def SpawnMethod(implicit flix: Flix): InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void), Some(_ =>
       INVOKESTATIC(Thread.OfVirtualMethod) ~ ALOAD(1) ~ INVOKEINTERFACE(ThreadBuilderOfVirtual.UnstartedMethod) ~
-        storeWithName(2, BackendObjType.Thread.toTpe) { thread =>
-          thread.load() ~ NEW(BackendObjType.UncaughtExceptionHandler.jvmName) ~
-            DUP() ~ thisLoad() ~
-            invokeConstructor(BackendObjType.UncaughtExceptionHandler.jvmName, mkDescriptor(BackendObjType.Region.toTpe)(VoidableType.Void)) ~
-            INVOKEVIRTUAL(Thread.SetUncaughtExceptionHandlerMethod) ~
-            thread.load() ~ INVOKEVIRTUAL(Thread.StartMethod) ~
-            thisLoad() ~ GETFIELD(ThreadsField) ~ thread.load() ~
-            INVOKEVIRTUAL(ConcurrentLinkedQueue.AddMethod) ~ POP() ~
-            RETURN()
-        }
+      storeWithName(2, BackendObjType.Thread.toTpe) { thread =>
+        thread.load() ~ NEW(BackendObjType.UncaughtExceptionHandler.jvmName) ~
+        DUP() ~ thisLoad() ~
+        invokeConstructor(BackendObjType.UncaughtExceptionHandler.jvmName, mkDescriptor(BackendObjType.Region.toTpe)(VoidableType.Void)) ~
+        INVOKEVIRTUAL(Thread.SetUncaughtExceptionHandlerMethod) ~
+        thread.load() ~ INVOKEVIRTUAL(Thread.StartMethod) ~
+        thisLoad() ~ GETFIELD(ThreadsField) ~ thread.load() ~
+        INVOKEVIRTUAL(ConcurrentLinkedQueue.AddMethod) ~ POP() ~
+        RETURN()
+      }
     ))
 
     // final public void exit() throws InterruptedException {
@@ -1202,24 +1201,24 @@ object BackendObjType {
       withName(1, BackendObjType.Thread.toTpe) { t =>
         whileLoop(Condition.NONNULL) {
           thisLoad() ~ GETFIELD(ThreadsField) ~
-            INVOKEVIRTUAL(ConcurrentLinkedQueue.PollMethod) ~
-            CHECKCAST(BackendObjType.Thread.jvmName) ~ DUP() ~ t.store()
+          INVOKEVIRTUAL(ConcurrentLinkedQueue.PollMethod) ~
+          CHECKCAST(BackendObjType.Thread.jvmName) ~ DUP() ~ t.store()
         } {
           t.load() ~ INVOKEVIRTUAL(Thread.JoinMethod)
         } ~
-          withName(2, BackendObjType.Iterator.toTpe) { i =>
-            thisLoad() ~ GETFIELD(OnExitField) ~
-              INVOKEVIRTUAL(LinkedList.IteratorMethod) ~
-              i.store() ~
-              whileLoop(Condition.NE) {
-                i.load() ~ INVOKEINTERFACE(Iterator.HasNextMethod)
-              } {
-                i.load() ~ INVOKEINTERFACE(Iterator.NextMethod) ~
-                  CHECKCAST(Runnable.jvmName) ~
-                  INVOKEINTERFACE(Runnable.RunMethod)
-              }
-          } ~
-          RETURN()
+        withName(2, BackendObjType.Iterator.toTpe) { i =>
+          thisLoad() ~ GETFIELD(OnExitField) ~
+          INVOKEVIRTUAL(LinkedList.IteratorMethod) ~
+          i.store() ~
+          whileLoop(Condition.NE) {
+            i.load() ~ INVOKEINTERFACE(Iterator.HasNextMethod)
+          } {
+            i.load() ~ INVOKEINTERFACE(Iterator.NextMethod) ~
+            CHECKCAST(Runnable.jvmName) ~
+            INVOKEINTERFACE(Runnable.RunMethod)
+          }
+        } ~
+        RETURN()
       }
     ))
 
@@ -1229,10 +1228,10 @@ object BackendObjType {
     // }
     def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reportChildException", mkDescriptor(JvmName.Throwable.toTpe)(VoidableType.Void), Some(_ =>
       thisLoad() ~ ALOAD(1) ~
-        PUTFIELD(ChildExceptionField) ~
-        thisLoad() ~ GETFIELD(RegionThreadField) ~
-        INVOKEVIRTUAL(Thread.InterruptMethod) ~
-        RETURN()
+      PUTFIELD(ChildExceptionField) ~
+      thisLoad() ~ GETFIELD(RegionThreadField) ~
+      INVOKEVIRTUAL(Thread.InterruptMethod) ~
+      RETURN()
     ))
 
     // final public void reThrowChildException() throws Throwable {
@@ -1241,11 +1240,11 @@ object BackendObjType {
     // }
     def ReThrowChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reThrowChildException", MethodDescriptor.NothingToVoid, Some(_ =>
       thisLoad() ~ GETFIELD(ChildExceptionField) ~
-        ifCondition(Condition.NONNULL) {
-          thisLoad() ~ GETFIELD(ChildExceptionField) ~
-            ATHROW()
-        } ~
-        RETURN()
+      ifCondition(Condition.NONNULL) {
+        thisLoad() ~ GETFIELD(ChildExceptionField) ~
+        ATHROW()
+      } ~
+      RETURN()
     ))
 
     // final public void runOnExit(Runnable r) {
@@ -1253,8 +1252,8 @@ object BackendObjType {
     // }
     def RunOnExitMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "runOnExit", mkDescriptor(BackendObjType.Runnable.toTpe)(VoidableType.Void), Some(_ =>
       thisLoad() ~ GETFIELD(OnExitField) ~ ALOAD(1) ~
-        INVOKEVIRTUAL(LinkedList.AddFirstMethod) ~
-        RETURN()
+      INVOKEVIRTUAL(LinkedList.AddFirstMethod) ~
+      RETURN()
     ))
   }
 
@@ -1276,15 +1275,15 @@ object BackendObjType {
     // UncaughtExceptionHandler(Region r) { this.r = r; }
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, BackendObjType.Region.toTpe :: Nil, Some(_ =>
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
-        thisLoad() ~ ALOAD(1) ~ PUTFIELD(RegionField) ~
-        RETURN()
+      thisLoad() ~ ALOAD(1) ~ PUTFIELD(RegionField) ~
+      RETURN()
     ))
 
     // public void uncaughtException(Thread t, Throwable e) { r.reportChildException(e); }
     def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "uncaughtException", ThreadUncaughtExceptionHandler.UncaughtExceptionMethod.d, Some(_ =>
       thisLoad() ~ GETFIELD(RegionField) ~
-        ALOAD(2) ~ INVOKEVIRTUAL(Region.ReportChildExceptionMethod) ~
-        RETURN()
+      ALOAD(2) ~ INVOKEVIRTUAL(Region.ReportChildExceptionMethod) ~
+      RETURN()
     ))
   }
 
@@ -1302,10 +1301,10 @@ object BackendObjType {
       val defName = JvmOps.getFunctionDefinitionClassType(sym).name
       withName(0, BackendType.Array(String.toTpe))(args =>
         args.load() ~ INVOKESTATIC(Global.SetArgsMethod) ~
-          NEW(defName) ~ DUP() ~ INVOKESPECIAL(defName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid) ~
-          DUP() ~ GETSTATIC(Unit.SingletonField) ~ PUTFIELD(InstanceField(defName, IsPublic, NotFinal, NotVolatile, "arg0", JavaObject.toTpe)) ~
-          Result.unwindSuspensionFreeThunk(s"in ${this.jvmName.toBinaryName}", SourceLocation.Unknown) ~
-          POP() ~ RETURN()
+        NEW(defName) ~ DUP() ~ INVOKESPECIAL(defName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid) ~
+        DUP() ~ GETSTATIC(Unit.SingletonField) ~ PUTFIELD(InstanceField(defName, IsPublic, NotFinal, NotVolatile, "arg0", JavaObject.toTpe)) ~
+        Result.unwindSuspensionFreeThunk(s"in ${this.jvmName.toBinaryName}", SourceLocation.Unknown) ~
+        POP() ~ RETURN()
       )
     }))
 
@@ -1545,25 +1544,25 @@ object BackendObjType {
       */
     def handleSuspension(pc: Int, newFrame: InstructionSet, setPc: InstructionSet): InstructionSet = {
       DUP() ~ INSTANCEOF(Suspension.jvmName) ~
-        ifCondition(Condition.NE) {
-          DUP() ~ CHECKCAST(Suspension.jvmName) ~ // [..., s]
-            // Add our new frame
-            NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~ // [..., s, s']
-            SWAP() ~ // [..., s', s]
-            DUP2() ~ // [..., s', s, s', s]
-            GETFIELD(Suspension.EffSymField) ~ PUTFIELD(Suspension.EffSymField) ~ // [..., s', s]
-            DUP2() ~ GETFIELD(Suspension.EffOpField) ~ PUTFIELD(Suspension.EffOpField) ~ // [..., s', s]
-            DUP2() ~ GETFIELD(Suspension.ResumptionField) ~ PUTFIELD(Suspension.ResumptionField) ~ // [..., s', s]
-            DUP2() ~ GETFIELD(Suspension.PrefixField) ~ // [..., s', s, s', s.prefix]
-            // Make the new frame and push it
-            newFrame ~
-            DUP() ~ cheat(mv => GenExpression.compileInt(pc)(mv)) ~ setPc ~
-            INVOKEINTERFACE(Frames.PushMethod) ~ // [..., s', s, s', prefix']
-            PUTFIELD(Suspension.PrefixField) ~ // [..., s', s]
-            POP() ~ // [..., s']
-            // Return the suspension up the stack
-            xReturn(Suspension.toTpe)
-        }
+      ifCondition(Condition.NE) {
+        DUP() ~ CHECKCAST(Suspension.jvmName) ~ // [..., s]
+        // Add our new frame
+        NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~ // [..., s, s']
+        SWAP() ~ // [..., s', s]
+        DUP2() ~ // [..., s', s, s', s]
+        GETFIELD(Suspension.EffSymField) ~ PUTFIELD(Suspension.EffSymField) ~ // [..., s', s]
+        DUP2() ~ GETFIELD(Suspension.EffOpField) ~ PUTFIELD(Suspension.EffOpField) ~ // [..., s', s]
+        DUP2() ~ GETFIELD(Suspension.ResumptionField) ~ PUTFIELD(Suspension.ResumptionField) ~ // [..., s', s]
+        DUP2() ~ GETFIELD(Suspension.PrefixField) ~ // [..., s', s, s', s.prefix]
+        // Make the new frame and push it
+        newFrame ~
+        DUP() ~ cheat(mv => GenExpression.compileInt(pc)(mv)) ~ setPc ~
+        INVOKEINTERFACE(Frames.PushMethod) ~ // [..., s', s, s', prefix']
+        PUTFIELD(Suspension.PrefixField) ~ // [..., s', s]
+        POP() ~ // [..., s']
+        // Return the suspension up the stack
+        xReturn(Suspension.toTpe)
+      }
     }
 
     /**
@@ -1574,8 +1573,8 @@ object BackendObjType {
       */
     def unwindThunkToValue(pc: Int, newFrame: InstructionSet, setPc: InstructionSet): InstructionSet = {
       unwindThunk() ~
-        handleSuspension(pc, newFrame, setPc) ~
-        CHECKCAST(Value.jvmName) // Cannot fail
+      handleSuspension(pc, newFrame, setPc) ~
+      CHECKCAST(Value.jvmName) // Cannot fail
     }
 
     /**
@@ -1586,9 +1585,9 @@ object BackendObjType {
       */
     def unwindSuspensionFreeThunkToType(tpe: BackendType, errorHint: String, loc: SourceLocation): InstructionSet = {
       unwindThunk() ~
-        crashIfSuspension(errorHint, loc) ~
-        CHECKCAST(Value.jvmName) ~ // Cannot fail
-        GETFIELD(Value.fieldFromType(tpe))
+      crashIfSuspension(errorHint, loc) ~
+      CHECKCAST(Value.jvmName) ~ // Cannot fail
+      GETFIELD(Value.fieldFromType(tpe))
     }
 
     /**
@@ -1607,17 +1606,17 @@ object BackendObjType {
       */
     def crashIfSuspension(errorHint: String, loc: SourceLocation): InstructionSet = {
       DUP() ~ INSTANCEOF(Suspension.jvmName) ~
-        ifCondition(Condition.NE)(
-          CHECKCAST(Suspension.jvmName) ~
-            NEW(UnhandledEffectError.jvmName) ~
-            // [.., suspension, UEE] -> [.., suspension, UEE, UEE, suspension]
-            DUP2() ~ SWAP() ~
-            pushString(errorHint) ~
-            cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~
-            // [.., suspension, UEE, UEE, suspension, info, rsl] -> [.., suspension, UEE]
-            INVOKESPECIAL(UnhandledEffectError.Constructor) ~
-            ATHROW()
-        )
+      ifCondition(Condition.NE)(
+        CHECKCAST(Suspension.jvmName) ~
+        NEW(UnhandledEffectError.jvmName) ~
+          // [.., suspension, UEE] -> [.., suspension, UEE, UEE, suspension]
+          DUP2() ~ SWAP() ~
+          pushString(errorHint) ~
+          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~
+          // [.., suspension, UEE, UEE, suspension, info, rsl] -> [.., suspension, UEE]
+          INVOKESPECIAL(UnhandledEffectError.Constructor) ~
+          ATHROW()
+      )
     }
   }
 
@@ -1680,7 +1679,7 @@ object BackendObjType {
     }
   }
 
-  /** Frame is really just java.util.Function<Value, Result> * */
+  /** Frame is really just java.util.Function<Value, Result> **/
   case object Frame extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
@@ -1700,12 +1699,9 @@ object BackendObjType {
       NotFinal,
       "applyFrameStatic",
       mkDescriptor(Frame.toTpe, Value.toTpe)(Result.toTpe),
-      Some(_ => withName(0, Frame.toTpe) { f =>
-        withName(1, Value.toTpe) { resumeArg => {
-          f.load() ~ resumeArg.load() ~ INVOKEINTERFACE(Frame.ApplyMethod) ~ ARETURN()
-        }
-        }
-      }))
+      Some(_ => withName(0, Frame.toTpe){f => withName(1, Value.toTpe){resumeArg => {
+        f.load() ~ resumeArg.load() ~ INVOKEINTERFACE(Frame.ApplyMethod) ~ ARETURN()
+      }}}))
   }
 
   case object Thunk extends BackendObjType with Generatable {
@@ -1743,11 +1739,8 @@ object BackendObjType {
     def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
     def EffSymField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "effSym", String.toTpe)
-
     def EffOpField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "effOp", EffectCall.toTpe)
-
     def PrefixField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "prefix", Frames.toTpe)
-
     def ResumptionField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "resumption", Resumption.toTpe)
 
   }
@@ -1802,11 +1795,11 @@ object BackendObjType {
     def ReverseOntoMethod: InstanceMethod = Frames.ReverseOntoMethod.implementation(this.jvmName, IsFinal, Some(_ =>
       withName(1, Frames.toTpe)(rest =>
         thisLoad() ~ GETFIELD(TailField) ~
-          NEW(FramesCons.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesCons.Constructor) ~
-          DUP() ~ thisLoad() ~ GETFIELD(HeadField) ~ PUTFIELD(HeadField) ~
-          DUP() ~ rest.load() ~ PUTFIELD(TailField) ~
-          INVOKEINTERFACE(Frames.ReverseOntoMethod) ~
-          xReturn(Frames.toTpe)
+        NEW(FramesCons.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesCons.Constructor) ~
+        DUP() ~ thisLoad() ~ GETFIELD(HeadField) ~ PUTFIELD(HeadField) ~
+        DUP() ~ rest.load() ~ PUTFIELD(TailField) ~
+        INVOKEINTERFACE(Frames.ReverseOntoMethod) ~
+        xReturn(Frames.toTpe)
       )
     ))
   }
@@ -1874,11 +1867,8 @@ object BackendObjType {
     def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
     def SymField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "sym", String.toTpe)
-
     def HandlerField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "handler", Handler.toTpe)
-
     def FramesField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "frames", Frames.toTpe)
-
     def TailField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "tail", Resumption.toTpe)
 
     def RewindMethod: InstanceMethod = Resumption.RewindMethod.implementation(this.jvmName, IsFinal, Some(_ =>
@@ -1929,66 +1919,60 @@ object BackendObjType {
       NotFinal,
       "installHandler",
       mkDescriptor(String.toTpe, Handler.toTpe, Frames.toTpe, Thunk.toTpe)(Result.toTpe),
-      Some(_ => withName(0, String.toTpe) { effSym =>
-        withName(1, Handler.toTpe) { handler =>
-          withName(2, Frames.toTpe) { frames =>
-            withName(3, Thunk.toTpe) { thunk =>
-              thunk.load() ~
-                // Thunk|Value|Suspension
-                Result.unwindThunk() ~
-                // Value|Suspension
-                { // handle suspension
-                  DUP() ~ INSTANCEOF(Suspension.jvmName) ~ ifCondition(Condition.NE) {
-                    DUP() ~ CHECKCAST(Suspension.jvmName) ~ storeWithName(4, Suspension.toTpe) { s =>
-                      NEW(ResumptionCons.jvmName) ~ DUP() ~ INVOKESPECIAL(ResumptionCons.Constructor) ~
-                        DUP() ~ effSym.load() ~ PUTFIELD(ResumptionCons.SymField) ~
-                        DUP() ~ handler.load() ~ PUTFIELD(ResumptionCons.HandlerField) ~
-                        DUP() ~
-                        s.load() ~ GETFIELD(Suspension.PrefixField) ~ frames.load() ~ INVOKEINTERFACE(Frames.ReverseOntoMethod) ~
-                        PUTFIELD(ResumptionCons.FramesField) ~
-                        DUP() ~ s.load() ~ GETFIELD(Suspension.ResumptionField) ~ PUTFIELD(ResumptionCons.TailField) ~
-                        storeWithName(5, ResumptionCons.toTpe) { r =>
-                          s.load() ~ GETFIELD(Suspension.EffSymField) ~ effSym.load() ~ INVOKEVIRTUAL(JavaObject.EqualsMethod) ~
-                            ifCondition(Condition.NE) {
-                              s.load() ~ GETFIELD(Suspension.EffOpField) ~ handler.load() ~ r.load() ~
-                                INVOKEINTERFACE(EffectCall.ApplyMethod) ~ xReturn(Result.toTpe)
-                            } ~
-                            NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~
-                            DUP() ~ s.load() ~ GETFIELD(Suspension.EffSymField) ~ PUTFIELD(Suspension.EffSymField) ~
-                            DUP() ~ s.load() ~ GETFIELD(Suspension.EffOpField) ~ PUTFIELD(Suspension.EffOpField) ~
-                            DUP() ~ NEW(FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesNil.Constructor) ~ PUTFIELD(Suspension.PrefixField) ~
-                            DUP() ~ r.load() ~ PUTFIELD(Suspension.ResumptionField) ~
-                            xReturn(Suspension.toTpe)
-                        }
-                    }
+      Some(_ => withName(0, String.toTpe){effSym => withName(1, Handler.toTpe){handler =>
+        withName(2, Frames.toTpe){frames => withName(3, Thunk.toTpe){thunk =>
+          thunk.load() ~
+          // Thunk|Value|Suspension
+          Result.unwindThunk() ~
+          // Value|Suspension
+          { // handle suspension
+            DUP() ~ INSTANCEOF(Suspension.jvmName) ~ ifCondition(Condition.NE) {
+              DUP() ~ CHECKCAST(Suspension.jvmName) ~ storeWithName(4, Suspension.toTpe) {s =>
+                NEW(ResumptionCons.jvmName) ~ DUP() ~ INVOKESPECIAL(ResumptionCons.Constructor) ~
+                  DUP() ~ effSym.load() ~ PUTFIELD(ResumptionCons.SymField) ~
+                  DUP() ~ handler.load() ~ PUTFIELD(ResumptionCons.HandlerField) ~
+                  DUP() ~
+                  s.load() ~ GETFIELD(Suspension.PrefixField) ~ frames.load() ~ INVOKEINTERFACE(Frames.ReverseOntoMethod) ~
+                  PUTFIELD(ResumptionCons.FramesField) ~
+                  DUP() ~ s.load() ~ GETFIELD(Suspension.ResumptionField) ~ PUTFIELD(ResumptionCons.TailField) ~
+                  storeWithName(5, ResumptionCons.toTpe){r =>
+                    s.load() ~ GETFIELD(Suspension.EffSymField) ~ effSym.load() ~ INVOKEVIRTUAL(JavaObject.EqualsMethod) ~
+                    ifCondition(Condition.NE){
+                      s.load() ~ GETFIELD(Suspension.EffOpField) ~ handler.load() ~ r.load() ~
+                      INVOKEINTERFACE(EffectCall.ApplyMethod) ~ xReturn(Result.toTpe)
+                    } ~
+                    NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~
+                    DUP() ~ s.load() ~ GETFIELD(Suspension.EffSymField) ~ PUTFIELD(Suspension.EffSymField) ~
+                    DUP() ~ s.load() ~ GETFIELD(Suspension.EffOpField) ~ PUTFIELD(Suspension.EffOpField) ~
+                    DUP() ~ NEW(FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesNil.Constructor) ~ PUTFIELD(Suspension.PrefixField) ~
+                    DUP() ~ r.load() ~ PUTFIELD(Suspension.ResumptionField) ~
+                    xReturn(Suspension.toTpe)
                   }
-                } ~
-                // Value
-                CHECKCAST(Value.jvmName) ~ storeWithName(6, Value.toTpe) { res =>
-                //
-                // Case on frames
-                // FramesNil
-                frames.load() ~ INSTANCEOF(FramesNil.jvmName) ~ ifCondition(Condition.NE) {
-                  res.load() ~ xReturn(Value.toTpe)
-                } ~
-                  // FramesCons
-                  frames.load() ~ CHECKCAST(FramesCons.jvmName) ~ storeWithName(7, FramesCons.toTpe) { cons => {
-                  effSym.load() ~
-                    handler.load() ~
-                    cons.load() ~ GETFIELD(FramesCons.TailField) ~
-                    // thunk
-                    cons.load() ~ GETFIELD(FramesCons.HeadField) ~
-                    res.load() ~
-                    mkStaticLambda(Thunk.InvokeMethod, Frame.StaticApplyMethod, drop = 0) ~
-                    INVOKESTATIC(InstallHandlerMethod) ~
-                    xReturn(Result.toTpe)
-                }
-                }
               }
             }
-          }
-        }
-      }
+          } ~
+          // Value
+          CHECKCAST(Value.jvmName) ~ storeWithName(6, Value.toTpe) {res =>
+            //
+            // Case on frames
+            // FramesNil
+            frames.load() ~ INSTANCEOF(FramesNil.jvmName) ~ ifCondition(Condition.NE) {
+              res.load() ~ xReturn(Value.toTpe)
+            } ~
+              // FramesCons
+              frames.load() ~ CHECKCAST(FramesCons.jvmName) ~ storeWithName(7, FramesCons.toTpe) { cons => {
+              effSym.load() ~
+              handler.load() ~
+              cons.load() ~ GETFIELD(FramesCons.TailField) ~
+              // thunk
+              cons.load() ~ GETFIELD(FramesCons.HeadField) ~
+              res.load() ~
+              mkStaticLambda(Thunk.InvokeMethod, Frame.StaticApplyMethod, drop = 0) ~
+              INVOKESTATIC(InstallHandlerMethod) ~
+              xReturn(Result.toTpe)
+            }
+          }}
+      }}}}
       )
     )
   }

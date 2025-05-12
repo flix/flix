@@ -38,7 +38,6 @@ object InlayHintKind {
     * An inlay hint that for a type annotation.
     */
   case object Type extends InlayHintKind
-
   /**
     * An inlay hint that is for a parameter.
     */

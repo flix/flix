@@ -16,8 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast.shared
 
-trait QualifiedSym {
+trait QualifiedSym{
   def namespace: List[String]
-
   def name: String
 }

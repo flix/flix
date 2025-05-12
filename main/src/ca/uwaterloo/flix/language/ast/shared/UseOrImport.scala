@@ -33,5 +33,5 @@ object UseOrImport {
     * An import of a Java class.
     */
   case class Import(clazz: Class[?], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
-
+  
 }

@@ -17,7 +17,8 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
+import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintGen.{visitExp, visitPattern}
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits

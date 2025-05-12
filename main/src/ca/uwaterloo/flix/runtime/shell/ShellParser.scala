@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.runtime.shell
 
 import org.jline.reader.{EOFError, ParsedLine, Parser}
+import org.jline.reader.Parser.ParseContext
 
 import java.util
 import scala.jdk.CollectionConverters.*
@@ -34,15 +35,10 @@ import scala.jdk.CollectionConverters.*
 class Parsed(s: String) extends ParsedLine {
 
   def wordIndex(): Int = -1
-
   def word(): String = s
-
   def wordCursor(): Int = s.length
-
   def words(): util.List[String] = Nil.asJava
-
   def cursor() = -1
-
   def line(): String = s
 }
 

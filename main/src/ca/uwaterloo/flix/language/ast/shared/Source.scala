@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.language.ast.Sourceable
 import scala.annotation.tailrec
 
 /**
-  * A source is a name and an array of character data.
-  */
+ * A source is a name and an array of character data.
+ */
 case class Source(input: Input, data: Array[Char]) extends Sourceable {
 
   def name: String = input match {
@@ -44,26 +44,26 @@ case class Source(input: Input, data: Array[Char]) extends Sourceable {
 
 
   /**
-    * Gets a line of text from the source as a string.
-    * If line is out of bounds the empty string is returned.
-    *
-    * This function has been adapted from parboiled2 when moving away from the library.
-    * We now produce its accompanying license in full:
-    *
-    * Copyright 2009-2019 Mathias Doenitz
-    *
-    * Licensed under the Apache License, Version 2.0 (the "License");
-    * you may not use this file except in compliance with the License.
-    * You may obtain a copy of the License at
-    *
-    * http://www.apache.org/licenses/LICENSE-2.0
-    *
-    * Unless required by applicable law or agreed to in writing, software
-    * distributed under the License is distributed on an "AS IS" BASIS,
-    * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    * See the License for the specific language governing permissions and
-    * limitations under the License.
-    */
+   * Gets a line of text from the source as a string.
+   * If line is out of bounds the empty string is returned.
+   *
+   * This function has been adapted from parboiled2 when moving away from the library.
+   * We now produce its accompanying license in full:
+   *
+   * Copyright 2009-2019 Mathias Doenitz
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   * http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   */
   def getLine(line: Int): String = {
     @tailrec
     def rec(ix: Int, lineStartIx: Int, lineNr: Int): String =

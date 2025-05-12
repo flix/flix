@@ -1,9 +1,9 @@
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.tools.pkg.Permission
 import org.scalatest.funsuite.AnyFunSuite
+import ca.uwaterloo.flix.tools.pkg.Permission
 
-class TestPermission extends AnyFunSuite {
+class TestPermission extends AnyFunSuite{
   test("toString-ofString-java-interop") {
     val perm = Permission.JavaInterop
     val res = Permission.mkPermission(perm.toString) match {

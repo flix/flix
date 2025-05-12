@@ -26,19 +26,19 @@ object AutoImportCompleter {
     * Returns a list of import completions to auto complete the class name and import the java class.
     *
     * Example:
-    * If we have an undefined name which is the prefix of an existing and unimported java class
+    *  If we have an undefined name which is the prefix of an existing and unimported java class
     *
-    * {{{
+    *  {{{
     *    let s = Mat // undefined name error
-    * }}}
+    *  }}}
     *
-    * We propose to complete the name to `Math` and import the class `java.lang.Math`
+    *  We propose to complete the name to `Math` and import the class `java.lang.Math`
     *
-    * {{{
+    *  {{{
     *    import java.lang.Math
     *    ...
     *    let s = Math
-    * }}}
+    *  }}}
     *
     * @param prefix the prefix of the class name, usually from the ident of a qname.
     * @param range  the range of the completion.
@@ -53,10 +53,10 @@ object AutoImportCompleter {
         val qualifiedName = namespace.mkString(".") + "." + className
         val priority = mkPriority(qualifiedName)
         val labelDetails = CompletionItemLabelDetails(None, Some(s"import $qualifiedName"))
-        AutoImportCompletion(className, qualifiedName, range, ap, labelDetails, priority)
+          AutoImportCompletion(className, qualifiedName, range, ap, labelDetails, priority)
       }
     }
-  }
+ }
 
   /**
     * Returns the priority of the completion item based on the qualified name.

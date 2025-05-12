@@ -120,7 +120,7 @@ object LspServer {
       *   - Flix source files (*.flix, src/**/*.flix, test/**/*.flix).
       *   - JAR files (lib/**/*.jar).
       *   - Flix package files (lib/**/*.fpkg).
-      *     */
+      */
     private def loadFlixProject(roots: List[WorkspaceFolder]): Unit = {
       for {
         root <- roots
@@ -137,12 +137,12 @@ object LspServer {
       *   - *.flix
       *   - src/**/*.flix
       *   - test/**/*.flix
-      *     */
+      */
     private def loadFlixSources(path: Path): Unit = {
       val flixSources =
         FileOps.getFilesIn(path, 1) ++
-          FileOps.getFilesIn(path.resolve("src"), Int.MaxValue) ++
-          FileOps.getFilesIn(path.resolve("test"), Int.MaxValue)
+        FileOps.getFilesIn(path.resolve("src"), Int.MaxValue) ++
+        FileOps.getFilesIn(path.resolve("test"), Int.MaxValue)
 
       flixSources.foreach { case p =>
         if (FileOps.checkExt(p, ".flix")) {
@@ -156,10 +156,10 @@ object LspServer {
       * Loads all JAR files and Flix package files in the workspace, including:
       *   - lib/**/*.jar
       *   - lib/**/*.fpkg
-      *     */
+      */
     private def loadJarsAndFkgs(path: Path): Unit = {
       FileOps.getFilesIn(path.resolve("lib"), Int.MaxValue)
-        .foreach { case p =>
+        .foreach{ case p =>
           // Load all JAR files in the workspace, the pattern should be lib/**/*.jar.
           if (FileOps.checkExt(p, ".jar"))
             flix.addJar(p)
@@ -193,7 +193,7 @@ object LspServer {
       serverCapabilities.setRenameProvider(new RenameOptions(false))
       serverCapabilities.setDocumentSymbolProvider(true)
       serverCapabilities.setWorkspaceSymbolProvider(true)
-      serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full) // TODO: make it incremental
+      serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)// TODO: make it incremental
 
       serverCapabilities
     }
@@ -271,6 +271,7 @@ object LspServer {
   }
 
 
+
   private class FlixTextDocumentService(flixLanguageServer: FlixLanguageServer) extends TextDocumentService {
     /**
       * Called when a text document is opened.
@@ -313,10 +314,10 @@ object LspServer {
       val range = Range.fromLsp4j(params.getRange)
       val codeActions =
         CodeActionProvider
-          .getCodeActions(uri, range, flixLanguageServer.currentErrors)(flixLanguageServer.root)
-          .map(_.toLsp4j)
-          .map(messages.Either.forRight[Command, CodeAction])
-          .asJava
+        .getCodeActions(uri, range, flixLanguageServer.currentErrors)(flixLanguageServer.root)
+        .map(_.toLsp4j)
+        .map(messages.Either.forRight[Command, CodeAction])
+        .asJava
       CompletableFuture.completedFuture(codeActions)
     }
 

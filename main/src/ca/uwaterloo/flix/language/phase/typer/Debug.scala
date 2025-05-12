@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
+import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 import java.nio.file.{Files, Path}
 import java.util.concurrent.{Executors, TimeUnit, TimeoutException}
@@ -152,17 +153,9 @@ object Debug {
     case SubstitutionTree(subst, branches) =>
 
       val header = List(
-        s"subgraph cluster_${
-          treeId {
-            tree
-          }
-        } {",
+        s"subgraph cluster_${treeId{tree}} {",
         "label=\"\";",
-        s"handle_${
-          treeId {
-            tree
-          }
-        } [shape=point, style=invis]" // create a dummy node for connecting clusters
+        s"handle_${treeId{tree}} [shape=point, style=invis]" // create a dummy node for connecting clusters
       )
 
       val contents = subst.m.toList.sortBy(_._1).flatMap {

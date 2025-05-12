@@ -35,7 +35,7 @@ object SymbolProvider {
     val sigs = root.sigs.values.collect { case sig if sig.sym.name.startsWith(query) => mkSigWorkspaceSymbol(sig) }
     val effs = root.effects.values.filter(_.sym.name.startsWith(query)).flatMap(mkEffectWorkspaceSymbol)
     val structs = root.structs.values.filter(_.sym.name.startsWith(query)).flatMap(mkStructWorkspaceSymbol)
-    (traits ++ defs ++ enums ++ sigs ++ effs ++ structs).toList.filter {
+    (traits ++ defs ++ enums ++ sigs ++ effs ++ structs).toList.filter{
       case WorkspaceSymbol(_, _, _, _, loc) => loc.uri.startsWith("file://")
     }
   }
@@ -105,13 +105,13 @@ object SymbolProvider {
   }
 
   /**
-    * Returns a Method SymbolInformation from a Struct node.
-    */
+   * Returns a Method SymbolInformation from a Struct node.
+   */
   private def mkStructWorkspaceSymbol(s: TypedAst.Struct): List[WorkspaceSymbol] = s match {
     case TypedAst.Struct(_, _, _, sym, _, _, fields, _) =>
       fields.values.map(mkFieldWorkspaceSymbol).toList :+ WorkspaceSymbol(
-        sym.name, SymbolKind.Struct, Nil, None, Location(sym.loc.source.name, Range.from(sym.loc)),
-      )
+      sym.name, SymbolKind.Struct, Nil, None, Location(sym.loc.source.name, Range.from(sym.loc)),
+    )
   }
 
   private def mkFieldWorkspaceSymbol(f: TypedAst.StructField): WorkspaceSymbol = f match {
@@ -121,8 +121,8 @@ object SymbolProvider {
   }
 
   /**
-    * Returns a Function DocumentSymbol from a Struct node.
-    */
+   * Returns a Function DocumentSymbol from a Struct node.
+   */
   private def mkStructDocumentSymbol(s: TypedAst.Struct): DocumentSymbol = s match {
     case TypedAst.Struct(doc, _, _, sym, tparams, _, fields, _) => DocumentSymbol(
       sym.name,
@@ -131,7 +131,7 @@ object SymbolProvider {
       Range.from(sym.loc),
       Range.from(sym.loc),
       Nil,
-      (fields.values.map(mkFieldDocumentSymbol).toList ++ tparams.map(mkTypeParamDocumentSymbol)).filter(_.name.nonEmpty),
+      (fields.values.map(mkFieldDocumentSymbol).toList ++  tparams.map(mkTypeParamDocumentSymbol)).filter(_.name.nonEmpty),
     )
   }
 

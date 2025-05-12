@@ -21,8 +21,7 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.KindCompletion
 object KindCompleter {
   def getCompletions(name: String, range: Range): List[Completion] = {
     val kinds = List("Type", "Eff", "Bool")
-    kinds.collect {
-      case kind if kind.startsWith(name) => KindCompletion(kind, range)
-    }
+    kinds.collect{
+      case kind if kind.startsWith(name) => KindCompletion(kind, range)}
   }
 }

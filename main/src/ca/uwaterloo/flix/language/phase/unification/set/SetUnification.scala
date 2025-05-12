@@ -27,8 +27,8 @@ import scala.collection.mutable
 object SetUnification {
 
   /**
-    * The maximum number of variables an equation may contain before it is considered too complex.
-    */
+   * The maximum number of variables an equation may contain before it is considered too complex.
+   */
   // Experiments suggest that 12 is too much.
   val MaxVars: Int = 11 // Up to 2^11 = 2,048 terms per Zhegalkin polynomial.
 
@@ -48,8 +48,8 @@ object SetUnification {
   val ElimPerRule: mutable.Map[Phase, Int] = mutable.Map.empty
 
   /**
-    * Tracks the number of variables eliminated by each rewrite rule.
-    */
+   * Tracks the number of variables eliminated by each rewrite rule.
+   */
   val VarElimPerRule: mutable.Map[Phase, Int] = mutable.Map.empty
 
   /**
@@ -172,7 +172,7 @@ object SetUnification {
               // Eliminated Vars
               val count = VarElimPerRule.getOrElse(phase, 0)
               val delta = numberOfVars - eqs.map(_.varsOf.size).sum
-              VarElimPerRule.put(phase, count + delta)
+              VarElimPerRule.put(phase,  count + delta)
             }
           }
         }
@@ -438,7 +438,7 @@ object SetUnification {
       // Eliminated Vars
       val count = VarElimPerRule.getOrElse(Phase.SuccessiveVariableElimination, 0)
       val delta = eqs.map(_.varsOf.size).sum
-      VarElimPerRule.put(Phase.SuccessiveVariableElimination, count + delta)
+      VarElimPerRule.put(Phase.SuccessiveVariableElimination,  count + delta)
     }
 
     // Return immediately if there is an equation that has too many variables.

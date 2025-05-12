@@ -30,10 +30,10 @@ object EnumTagCompleter {
   def getCompletions(uri: String, pos: Position, qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root, flix: Flix): Iterable[Completion] = {
     val ectx = ExprContext.getExprContext(uri, pos)
     if (qn.namespace.nonEmpty)
-      fullyQualifiedCompletion(qn, range, ap, ectx) ++ partiallyQualifiedCompletions(qn, range, ap, scp, ectx)
+        fullyQualifiedCompletion(qn, range, ap, ectx) ++ partiallyQualifiedCompletions(qn, range, ap, scp, ectx)
     else
       root.enums.values.flatMap(enm =>
-        enm.cases.values.collect {
+        enm.cases.values.collect{
           case tag if CompletionUtils.isAvailable(enm) && CompletionUtils.matchesName(tag.sym, qn, qualified = false) =>
             EnumTagCompletion(tag, "", range, ap, qualified = false, inScope = inScope(tag, scp), ectx)
         }
@@ -47,9 +47,9 @@ object EnumTagCompleter {
     */
   private def fullyQualifiedCompletion(qn: Name.QName, range: Range, ap: AnchorPosition, ectx: ExprContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
     root.enums.values.flatMap(enm =>
-      enm.cases.values.collect {
+      enm.cases.values.collect{
         case tag if CompletionUtils.isAvailable(enm) && CompletionUtils.matchesName(tag.sym, qn, qualified = true) =>
-          EnumTagCompletion(tag, "", range, ap, qualified = true, inScope = true, ectx)
+          EnumTagCompletion(tag, "", range,  ap, qualified = true, inScope = true, ectx)
       }
     )
   }

@@ -42,19 +42,16 @@ object AstPrinter {
 
   implicit object DebugWeededAst extends Debug[WeededAst.Root] {
     override val hasAst: Boolean = false
-
     override def emit(phase: String, root: WeededAst.Root)(implicit flix: Flix): Unit = ()
   }
 
   implicit object DebugDesugaredAst extends Debug[DesugaredAst.Root] {
     override val hasAst: Boolean = false
-
     override def emit(phase: String, root: DesugaredAst.Root)(implicit flix: Flix): Unit = ()
   }
 
   implicit object DebugNamedAst extends Debug[NamedAst.Root] {
     override val hasAst: Boolean = false
-
     override def emit(phase: String, root: NamedAst.Root)(implicit flix: Flix): Unit = ()
   }
 
@@ -65,7 +62,6 @@ object AstPrinter {
 
   implicit object DebugKindedAst extends Debug[KindedAst.Root] {
     override val hasAst: Boolean = false
-
     override def emit(phase: String, root: KindedAst.Root)(implicit flix: Flix): Unit = ()
   }
 

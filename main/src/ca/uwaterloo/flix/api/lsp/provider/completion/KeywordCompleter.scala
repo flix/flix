@@ -28,7 +28,7 @@ object KeywordCompleter {
   def getConstraintKeywords(range: Range): List[Completion] =
     List(
       Completion.KeywordCompletion("fix", range, Priority.Default),
-      Completion.KeywordCompletion("if", range, Priority.Default),
+      Completion.KeywordCompletion("if" , range, Priority.Default),
       Completion.KeywordCompletion("not", range, Priority.Default),
     )
 
@@ -38,34 +38,34 @@ object KeywordCompleter {
   def getModKeywords(range: Range): List[Completion] =
     List(
       // D
-      Completion.KeywordCompletion("@Deprecated", range, Priority.Low),
-      Completion.KeywordCompletion("def", range, Priority.High),
+      Completion.KeywordCompletion("@Deprecated"      , range, Priority.Low),
+      Completion.KeywordCompletion("def"              , range, Priority.High),
       // E
-      Completion.KeywordCompletion("eff", range, Priority.Low),
-      Completion.KeywordCompletion("enum", range, Priority.High),
+      Completion.KeywordCompletion("eff"              , range, Priority.Low),
+      Completion.KeywordCompletion("enum"             , range, Priority.High),
       // I
-      Completion.KeywordCompletion("import", range, Priority.Low),
-      Completion.KeywordCompletion("instance", range, Priority.High),
+      Completion.KeywordCompletion("import"           , range, Priority.Low),
+      Completion.KeywordCompletion("instance"         , range, Priority.High),
       // L
-      Completion.KeywordCompletion("@Lazy", range, Priority.High),
-      Completion.KeywordCompletion("@LazyWhenPure", range, Priority.Low),
+      Completion.KeywordCompletion("@Lazy"            , range, Priority.High),
+      Completion.KeywordCompletion("@LazyWhenPure"    , range, Priority.Low),
       // M
-      Completion.KeywordCompletion("mod", range, Priority.Default),
+      Completion.KeywordCompletion("mod"              , range, Priority.Default),
       // P
-      Completion.KeywordCompletion("@Parallel", range, Priority.Low),
+      Completion.KeywordCompletion("@Parallel"        , range, Priority.Low),
       Completion.KeywordCompletion("@ParallelWhenPure", range, Priority.Lower),
-      Completion.KeywordCompletion("pub", range, Priority.High),
+      Completion.KeywordCompletion("pub"              , range, Priority.High),
       // S
-      Completion.KeywordCompletion("sealed", range, Priority.Low),
-      Completion.KeywordCompletion("struct", range, Priority.High),
+      Completion.KeywordCompletion("sealed"           , range, Priority.Low),
+      Completion.KeywordCompletion("struct"           , range, Priority.High),
       // T
-      Completion.KeywordCompletion("@Test", range, Priority.Low),
-      Completion.KeywordCompletion("trait", range, Priority.High),
-      Completion.KeywordCompletion("type", range, Priority.Higher),
+      Completion.KeywordCompletion("@Test"            , range, Priority.Low),
+      Completion.KeywordCompletion("trait"            , range, Priority.High),
+      Completion.KeywordCompletion("type"             , range, Priority.Higher),
       // U
-      Completion.KeywordCompletion("use", range, Priority.Default),
+      Completion.KeywordCompletion("use"              , range, Priority.Default),
       // W
-      Completion.KeywordCompletion("with", range, Priority.Default),
+      Completion.KeywordCompletion("with"             , range, Priority.Default),
     )
 
   /**
@@ -90,65 +90,65 @@ object KeywordCompleter {
   def getExprKeywords(range: Range): List[Completion] =
     List(
       // A
-      Completion.KeywordCompletion("and", range, Priority.Default),
+      Completion.KeywordCompletion("and"         , range, Priority.Default),
       // C
-      Completion.KeywordCompletion("catch", range, Priority.Default),
+      Completion.KeywordCompletion("catch"       , range, Priority.Default),
       // D
-      Completion.KeywordCompletion("def", range, Priority.Higher),
-      Completion.KeywordCompletion("discard", range, Priority.Low),
-      Completion.KeywordCompletion("do", range, Priority.High),
+      Completion.KeywordCompletion("def"         , range, Priority.Higher),
+      Completion.KeywordCompletion("discard"     , range, Priority.Low),
+      Completion.KeywordCompletion("do"          , range, Priority.High),
       // E
-      Completion.KeywordCompletion("else", range, Priority.Default),
+      Completion.KeywordCompletion("else"        , range, Priority.Default),
       // F
       Completion.KeywordLiteralCompletion("false", range, Priority.Higher),
-      Completion.KeywordCompletion("forA", range, Priority.Lowest),
-      Completion.KeywordCompletion("forM", range, Priority.Low),
-      Completion.KeywordCompletion("force", range, Priority.High),
-      Completion.KeywordCompletion("foreach", range, Priority.Lower),
-      Completion.KeywordCompletion("from", range, Priority.Highest),
+      Completion.KeywordCompletion("forA"        , range, Priority.Lowest),
+      Completion.KeywordCompletion("forM"        , range, Priority.Low),
+      Completion.KeywordCompletion("force"       , range, Priority.High),
+      Completion.KeywordCompletion("foreach"     , range, Priority.Lower),
+      Completion.KeywordCompletion("from"        , range, Priority.Highest),
       // H
-      Completion.KeywordCompletion("handler", range, Priority.Default),
+      Completion.KeywordCompletion("handler"     , range, Priority.Default),
       // I
-      Completion.KeywordCompletion("if", range, Priority.Higher),
-      Completion.KeywordCompletion("inject", range, Priority.Low),
-      Completion.KeywordCompletion("instanceof", range, Priority.Lowest),
-      Completion.KeywordCompletion("into", range, Priority.High),
+      Completion.KeywordCompletion("if"          , range, Priority.Higher),
+      Completion.KeywordCompletion("inject"      , range, Priority.Low),
+      Completion.KeywordCompletion("instanceof"  , range, Priority.Lowest),
+      Completion.KeywordCompletion("into"        , range, Priority.High),
       // L
-      Completion.KeywordCompletion("lazy", range, Priority.Low),
-      Completion.KeywordCompletion("let", range, Priority.High),
+      Completion.KeywordCompletion("lazy"        , range, Priority.Low),
+      Completion.KeywordCompletion("let"         , range, Priority.High),
       // M
-      Completion.KeywordCompletion("match", range, Priority.Default),
+      Completion.KeywordCompletion("match"       , range, Priority.Default),
       // N
-      Completion.KeywordCompletion("new", range, Priority.Low),
-      Completion.KeywordCompletion("not", range, Priority.High),
-      Completion.KeywordLiteralCompletion("null", range, Priority.Lower),
+      Completion.KeywordCompletion("new"         , range, Priority.Low),
+      Completion.KeywordCompletion("not"         , range, Priority.High),
+      Completion.KeywordLiteralCompletion("null" , range, Priority.Lower),
       // O
-      Completion.KeywordCompletion("or", range, Priority.Default),
+      Completion.KeywordCompletion("or"          , range, Priority.Default),
       // P
-      Completion.KeywordCompletion("par", range, Priority.Low),
-      Completion.KeywordCompletion("project", range, Priority.High),
+      Completion.KeywordCompletion("par"         , range, Priority.Low),
+      Completion.KeywordCompletion("project"     , range, Priority.High),
       // Q
-      Completion.KeywordCompletion("query", range, Priority.Default),
+      Completion.KeywordCompletion("query"       , range, Priority.Default),
       // R
-      Completion.KeywordCompletion("region", range, Priority.Default),
-      Completion.KeywordCompletion("run", range, Priority.Default),
+      Completion.KeywordCompletion("region"      , range, Priority.Default),
+      Completion.KeywordCompletion("run"         , range, Priority.Default),
       // S
-      Completion.KeywordCompletion("select", range, Priority.Higher),
-      Completion.KeywordCompletion("solve", range, Priority.High),
-      Completion.KeywordCompletion("spawn", range, Priority.Low),
+      Completion.KeywordCompletion("select"      , range, Priority.Higher),
+      Completion.KeywordCompletion("solve"       , range, Priority.High),
+      Completion.KeywordCompletion("spawn"       , range, Priority.Low),
       // T
-      Completion.KeywordCompletion("throw", range, Priority.Lowest),
-      Completion.KeywordLiteralCompletion("true", range, Priority.Higher),
-      Completion.KeywordCompletion("try", range, Priority.High),
-      Completion.KeywordCompletion("typematch", range, Priority.Low),
+      Completion.KeywordCompletion("throw"       , range, Priority.Lowest),
+      Completion.KeywordLiteralCompletion("true" , range, Priority.Higher),
+      Completion.KeywordCompletion("try"         , range, Priority.High),
+      Completion.KeywordCompletion("typematch"   , range, Priority.Low),
       // U
-      Completion.KeywordCompletion("unsafe", range, Priority.Low),
-      Completion.KeywordCompletion("use", range, Priority.High),
+      Completion.KeywordCompletion("unsafe"      , range, Priority.Low),
+      Completion.KeywordCompletion("use"         , range, Priority.High),
       // W
-      Completion.KeywordCompletion("with", range, Priority.Default),
-      Completion.KeywordCompletion("without", range, Priority.Default),
+      Completion.KeywordCompletion("with"        , range, Priority.Default),
+      Completion.KeywordCompletion("without"     , range, Priority.Default),
       // Y
-      Completion.KeywordCompletion("yield", range, Priority.Default)
+      Completion.KeywordCompletion("yield"       , range, Priority.Default)
     )
 
   /**
@@ -156,8 +156,8 @@ object KeywordCompleter {
     */
   def getInstanceKeywords(range: Range): List[Completion] =
     List(
-      Completion.KeywordCompletion("def", range, Priority.Default),
-      Completion.KeywordCompletion("pub", range, Priority.Default),
+      Completion.KeywordCompletion("def"  , range, Priority.Default),
+      Completion.KeywordCompletion("pub"  , range, Priority.Default),
       Completion.KeywordCompletion("redef", range, Priority.Default),
     )
 

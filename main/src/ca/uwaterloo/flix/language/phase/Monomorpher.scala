@@ -66,15 +66,15 @@ import scala.collection.mutable
   * At a high-level, monomorphization works as follows:
   *
   *   - 1. We maintain a queue of functions and the concrete, normalized types they must be
-  *     specialized to.
+  *      specialized to.
   *   - 2. We populate the queue by specialization of non-parametric function definitions.
   *   - 3. We iteratively extract a function from the queue and specialize it:
   *      - a. We replace every type variable appearing anywhere in the definition by its concrete
-  *        type.
+  *         type.
   *      - b. We create new fresh local variable symbols (since the function is effectively being
-  *        copied).
+  *         copied).
   *      - c. We enqueue (or re-use) other functions referenced by the current function which require
-  *        specialization.
+  *         specialization.
   *   - 4. We reconstruct the AST from the specialized functions and remove all parametric functions.
   *
   * Type normalization details:
@@ -890,7 +890,7 @@ object Monomorpher {
   /**
     * Applies `normalize` on both sides of the application, then simplifies the remaining type.
     *
-    * @param isGround  If true then `app` will be normalized.
+    * @param isGround If true then `app` will be normalized.
     * @param normalize Must not output [[Type.AssocType]] or [[Type.Alias]]. If `isGround` is true
     *                  then `normalize` should also normalize the type.
     */

@@ -271,7 +271,7 @@ object BackendType {
     case MonoType.Native(clazz) => JvmName.ofClass(clazz).toTpe
     case MonoType.Void | MonoType.AnyType | MonoType.Unit | MonoType.Lazy(_) | MonoType.Tuple(_) |
          MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
-         MonoType.ExtensibleExtend(_, _, _) | MonoType.ExtensibleEmpty |
+        MonoType.ExtensibleExtend(_, _, _) | MonoType.ExtensibleEmpty |
          MonoType.Region | MonoType.Enum(_, _) | MonoType.Struct(_, _) | MonoType.Null =>
       BackendObjType.JavaObject.toTpe
   }

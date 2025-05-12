@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.tools.pkg.Dependency.JarDependency
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
-import java.io.{IOException, PrintStream}
+import java.io.{IOException, InputStream, PrintStream}
 import java.nio.file.{Files, Path, StandardCopyOption}
 import scala.util.Using
 

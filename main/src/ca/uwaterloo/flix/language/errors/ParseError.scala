@@ -26,9 +26,7 @@ import ca.uwaterloo.flix.util.Formatter
   */
 sealed trait ParseError extends CompilationMessage {
   def kind: CompilationMessageKind = CompilationMessageKind.ParseError(sctx)
-
   def sctx: SyntacticContext
-
   def loc: SourceLocation
 }
 

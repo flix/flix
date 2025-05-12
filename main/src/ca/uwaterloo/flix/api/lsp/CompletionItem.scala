@@ -48,18 +48,18 @@ object CompletionItem {
   *                         will be ignored.
   */
 case class CompletionItem(
-                           label: String,
-                           labelDetails: Option[CompletionItemLabelDetails] = None,
-                           sortText: String,
-                           filterText: Option[String] = None,
-                           textEdit: TextEdit,
-                           detail: Option[String] = None,
-                           documentation: Option[String] = None,
-                           kind: CompletionItemKind,
-                           additionalTextEdits: List[TextEdit] = Nil,
-                           insertTextFormat: InsertTextFormat = InsertTextFormat.PlainText,
-                           commitCharacters: List[String] = Nil,
-                           command: Option[Command] = None) {
+  label: String,
+  labelDetails: Option[CompletionItemLabelDetails] = None,
+  sortText: String,
+  filterText: Option[String] = None,
+  textEdit: TextEdit,
+  detail: Option[String] = None,
+  documentation: Option[String] = None,
+  kind: CompletionItemKind,
+  additionalTextEdits: List[TextEdit] = Nil,
+  insertTextFormat: InsertTextFormat = InsertTextFormat.PlainText,
+  commitCharacters: List[String] = Nil,
+  command: Option[Command] = None) {
 
   def toJSON: JValue =
     ("label" -> label) ~

@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 sealed trait Purity
@@ -26,7 +27,7 @@ sealed trait Purity
   *   - Pure expressions are treated as mathematical functions.
   *   - Impure expressions can use mutation or interact with the system.
   *   - Control-Impure expressions can do all the above but also use unhandled
-  *     algebraic effects.
+  *   algebraic effects.
   *
   * In terms of the set of expressions that is allowed under each effect the
   * following holds:

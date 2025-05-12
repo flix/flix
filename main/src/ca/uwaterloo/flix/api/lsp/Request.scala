@@ -132,8 +132,8 @@ object Request {
   case class DocumentSymbols(requestId: String, uri: String) extends Request
 
   /**
-    * A request to get semantic tokens for a file.
-    */
+   * A request to get semantic tokens for a file.
+   */
   case class SemanticTokens(requestId: String, uri: String) extends Request
 
   /**
@@ -393,8 +393,8 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[SemanticTokens]] request.
-    */
+   * Tries to parse the given `json` value as a [[SemanticTokens]] request.
+   */
   def parseSemanticTokens(json: JValue): Result[Request, String] = {
     for {
       id <- parseId(json)

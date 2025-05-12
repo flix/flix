@@ -28,10 +28,10 @@ object ZhegalkinCache {
   var EnableXorCache: Boolean = false
 
   /**
-    * A cache that represents the intersection of the given Zhegalkin constant and expression.
-    *
-    * Note: initial size and load factor determined by profiling.
-    */
+   * A cache that represents the intersection of the given Zhegalkin constant and expression.
+   *
+   * Note: initial size and load factor determined by profiling.
+   */
   private val cachedInterCst: ConcurrentMap[(ZhegalkinCst, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap(1024, 0.5f)
 
   /**
@@ -56,10 +56,10 @@ object ZhegalkinCache {
   private val cachedXor: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap(8192, 0.5f)
 
   /**
-    * Returns the intersection of the given Zhegalkin constant `c` and the expression `e`.
-    *
-    * Performs a lookup in the cache or computes the result.
-    */
+   * Returns the intersection of the given Zhegalkin constant `c` and the expression `e`.
+   *
+   * Performs a lookup in the cache or computes the result.
+   */
   @inline
   def lookupOrComputeInterCst(c: ZhegalkinCst, e: ZhegalkinExpr, mkInter: (ZhegalkinCst, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
     if (!EnableInterCstCache) {

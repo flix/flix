@@ -30,7 +30,7 @@ object TypeAliasCompleter {
     */
   def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
-      root.typeAliases.values.collect {
+      root.typeAliases.values.collect{
         case typeAlias if isStarKind(typeAlias) && CompletionUtils.isAvailable(typeAlias) && CompletionUtils.matchesName(typeAlias.sym, qn, qualified = true) =>
           TypeAliasCompletion(typeAlias, range, ap, qualified = true, inScope = true)
       }
@@ -59,7 +59,7 @@ object TypeAliasCompleter {
     * Checks if the type alias is a star kind.
     */
   private def isStarKind(typeAlias: TypedAst.TypeAlias): Boolean = typeAlias.tpe.kind match {
-    case Kind.Star => true
-    case _ => false
-  }
+      case Kind.Star => true
+      case _ => false
+    }
 }

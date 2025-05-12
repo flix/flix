@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -32,7 +32,6 @@ object NameError {
   /**
     * An error raised to indicate a deprecated feature
     * *
-    *
     * @param loc the location of the deprecated feature.
     */
   case class Deprecated(loc: SourceLocation) extends NameError {

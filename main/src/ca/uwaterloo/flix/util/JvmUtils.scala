@@ -25,7 +25,7 @@ object JvmUtils {
     *
     * Field name "length" of array classes always return `None` (see Class.getField).
     *
-    * @param clazz  the class to search
+    * @param clazz the class to search
     * @param static whether to find a static field or an instance field
     */
   def getField(clazz: Class[?], fieldName: String, static: Boolean): Option[Field] = {
@@ -84,8 +84,8 @@ object JvmUtils {
     *
     * Returns `Nil` if both `static` and `instance` is `false`.
     *
-    * @param clazz    the class to search
-    * @param static   whether to include static methods
+    * @param clazz the class to search
+    * @param static whether to include static methods
     * @param instance whether to include instance methods
     */
   private def getMethods(clazz: Class[?], static: Boolean, instance: Boolean): List[Method] = {

@@ -43,7 +43,7 @@ object KindUnification {
       Some(k)
 
     // WildCaseSet ~ CaseSet(s) = CaseSet(s)
-    case (Kind.WildCaseSet, Kind.CaseSet(sym)) =>
+    case (Kind.WildCaseSet , Kind.CaseSet(sym)) =>
       Some(Kind.CaseSet(sym))
     case (Kind.CaseSet(sym), Kind.WildCaseSet) =>
       Some(Kind.CaseSet(sym))

@@ -45,10 +45,10 @@ object SignatureHelpProvider {
   /**
     * Builds the signature help for the given symbol and its specification.
     *
-    * @param sym  the symbol of the function/signature.
-    * @param spec the specification of the function/signature.
-    * @param exps the expressions passed as arguments to the function/signature.
-    * @param pos  the position of the cursor.
+    * @param sym the symbol of the function/signature.
+    * @param spec   the specification of the function/signature.
+    * @param exps   the expressions passed as arguments to the function/signature.
+    * @param pos    the position of the cursor.
     * @return a SignatureHelp object containing the signature information.
     */
   private def mkSignatureHelp(sym: Symbol, spec: TypedAst.Spec, exps: List[TypedAst.Expr], pos: Position)(implicit flix: Flix): SignatureHelp = {

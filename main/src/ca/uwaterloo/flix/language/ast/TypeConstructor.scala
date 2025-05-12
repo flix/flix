@@ -176,12 +176,12 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represents the type of extensible variants.
-    */
+   * A type constructor that represents the type of extensible variants.
+   */
   case object Extensible extends TypeConstructor {
     /**
-      * The shape of an extensible variant constructor is Extensible[schemaRow]
-      */
+     * The shape of an extensible variant constructor is Extensible[schemaRow]
+     */
     def kind: Kind = Kind.SchemaRow ->: Kind.Star
   }
 
@@ -251,8 +251,8 @@ object TypeConstructor {
   case class Enum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
 
   /**
-    * A type constructor that represents the type of structs.
-    */
+   * A type constructor that represents the type of structs.
+   */
   @IntroducedBy(Kinder.getClass)
   case class Struct(sym: Symbol.StructSym, kind: Kind) extends TypeConstructor
 
@@ -270,15 +270,15 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represents the type of a Java constructor.
-    * */
+   * A type constructor that represents the type of a Java constructor.
+   * */
   case class JvmConstructor(constructor: Constructor[?]) extends TypeConstructor {
     def kind: Kind = Kind.Jvm
   }
 
   /**
-    * A type constructor that represents the type of a Java method.
-    */
+   * A type constructor that represents the type of a Java method.
+   */
   case class JvmMethod(method: Method) extends TypeConstructor {
     def kind: Kind = Kind.Jvm
   }

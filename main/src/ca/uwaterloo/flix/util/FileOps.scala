@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import org.json4s.JValue
 import org.json4s.native.JsonMethods
 
-import java.nio.file.*
+import java.nio.file.{Files, LinkOption, Path, Paths, StandardOpenOption}
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 object FileOps {
@@ -36,12 +36,12 @@ object FileOps {
   }
 
   /**
-    * Writes the given string `s` to the given file path `p`.
-    *
-    * Creates the parent directory of `p` if needed.
-    *
-    * @param append if set to true, the content will be appended to the file
-    */
+   * Writes the given string `s` to the given file path `p`.
+   *
+   * Creates the parent directory of `p` if needed.
+   *
+   * @param append if set to true, the content will be appended to the file
+   */
   def writeString(p: Path, s: String, append: Boolean = false): Unit = {
     Files.createDirectories(p.getParent)
 
@@ -66,10 +66,10 @@ object FileOps {
   }
 
   /**
-    * Writes the given json `j` to the given file path `p`.
-    *
-    * Creates the parent directory of `p` if needed.
-    */
+   * Writes the given json `j` to the given file path `p`.
+   *
+   * Creates the parent directory of `p` if needed.
+   */
   def writeJSON(p: Path, j: JValue): Unit = {
     FileOps.writeString(p, JsonMethods.pretty(JsonMethods.render(j)))
   }
@@ -101,9 +101,9 @@ object FileOps {
   /**
     * Returns an iterator of all files in the given path, visited recursively.
     * The depth parameter is the maximum number of levels of directories to visit.
-    * Use a depth of 0 to only visit the given directory.
-    * Use a depth of 1 to only visit the files in the given directory.
-    * Use a depth of MaxValue to visit all files in the directory and its subdirectories.
+    *   Use a depth of 0 to only visit the given directory.
+    *   Use a depth of 1 to only visit the files in the given directory.
+    *   Use a depth of MaxValue to visit all files in the directory and its subdirectories.
     */
   def getFilesIn(path: Path, depth: Int): List[Path] = {
     if (Files.exists(path) && Files.isDirectory(path))

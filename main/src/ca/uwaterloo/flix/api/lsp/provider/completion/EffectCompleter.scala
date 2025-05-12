@@ -14,7 +14,7 @@ object EffectCompleter {
     */
   def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope, inHandler: Boolean)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
-      root.effects.values.collect {
+      root.effects.values.collect{
         case effect if CompletionUtils.isAvailable(effect) && CompletionUtils.matchesName(effect.sym, qn, qualified = true) =>
           if (inHandler)
             HandlerCompletion(effect, range, ap, qualified = true, inScope = true)
@@ -27,7 +27,7 @@ object EffectCompleter {
           if (inHandler)
             HandlerCompletion(effect, range, ap, qualified = false, inScope = inScope(effect, scp))
           else
-            EffectCompletion(effect, range, ap, qualified = false, inScope = inScope(effect, scp))
+          EffectCompletion(effect, range, ap, qualified = false, inScope = inScope(effect, scp))
       })
   }
 
