@@ -666,7 +666,7 @@ object GenExpression {
         compileIsTag(sym.name, exp, tpes)
 
       case AtomicOp.ExtensibleTag(sym) =>
-        val tpes = exps.map(_.tpe).map(BackendType.asErasedBackendType)
+        val tpes = MonoType.findExtensibleTermTypes(sym, tpe).map(BackendType.asErasedBackendType)
         compileTag(sym.name, exps, tpes)
 
       case AtomicOp.ExtensibleUntag(sym, idx) =>
