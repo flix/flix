@@ -3142,7 +3142,7 @@ object Parser2 {
       oneOrMore(
         namedTokenSet = NamedTokenSet.Parameter,
         getItem = parameter,
-        checkForItem = kind => NAME_VARIABLE.contains(kind) || NAME_TYPE.contains(kind),
+        checkForItem = kind => NAME_VARIABLE.contains(kind),
         delimiterL = TokenKind.BracketL,
         delimiterR = TokenKind.BracketR,
         breakWhen = _.isRecoverType,
@@ -3154,7 +3154,7 @@ object Parser2 {
 
     private def parameter()(implicit s: State): Mark.Closed = {
       val mark = open()
-      nameUnqualified(NAME_VARIABLE ++ NAME_TYPE)
+      nameUnqualified(NAME_VARIABLE)
       if (at(TokenKind.Colon)) {
         expect(TokenKind.Colon)
         Type.kind()
