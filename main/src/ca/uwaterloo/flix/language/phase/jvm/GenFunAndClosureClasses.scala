@@ -184,7 +184,7 @@ object GenFunAndClosureClasses {
       desc.toDescriptor, null, null)
 
     // TODO: Declare local vars and mutable function args that can be mutated in a while loop.
-    val localOffset = ???
+    val localOffset = 0
     val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.sym.getStackOffset(localOffset), false, fp.tpe) }
     val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.sym.getStackOffset(localOffset), lp.sym.isWild, lp.tpe) }
 
