@@ -332,7 +332,7 @@ object Inliner {
       Expr.Match(e, rs, tpe, eff, loc)
 
     case Expr.ExtensibleMatch(label, exp1, sym1, exp2, sym2, exp3, tpe, eff, loc) =>
-      ??? // TODO EXT-VAR
+      ??? // TODO: Ext-Variants
 
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, ctx0))

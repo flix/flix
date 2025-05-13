@@ -195,7 +195,7 @@ object OccurrenceAnalyzer {
         }
 
       case Expr.ExtensibleMatch(_, _, _, _, _, _, _, _, _) =>
-        ??? // TODO EXT-VAR
+        ??? // TODO: Ext-Variants
 
       case Expr.VectorLit(exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip

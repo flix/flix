@@ -196,7 +196,7 @@ object Simplifier {
       patternMatchWithLabels(exp, rules, tpe, loc)
 
     case MonoAst.Expr.ExtensibleMatch(label, exp1, sym1, exp2, sym2, exp3, tpe, eff, loc) =>
-      ??? // TODO EXT-VAR
+      ??? // TODO: Ext-Variants
 
     case MonoAst.Expr.VectorLit(exps, tpe, _, loc) =>
       // Note: We simplify Vectors to Arrays.
