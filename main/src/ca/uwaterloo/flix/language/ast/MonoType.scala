@@ -122,13 +122,12 @@ object MonoType {
 
   /** Returns the term types of extensible constructor `cons` or crashes if `cons` is not in `tpe`. */
   @tailrec
-  def findExtensibleTermTypes(cons: Name.Label, tpe: MonoType): List[MonoType] = {
-    tpe match {
-      case MonoType.ExtensibleExtend(pred, tpes, rest) =>
-        if (pred.name == cons.name) tpes
-        else findExtensibleTermTypes(cons, rest)
-      case other => throw InternalCompilerException(s"Unexpected type: '$other'", cons.loc)
-    }
+  def findExtensibleTermTypes(cons: Name.Label, tpe: MonoType): List[MonoType] = tpe match {
+    case MonoType.ExtensibleExtend(pred, tpes, rest) =>
+      if (pred.name == cons.name) tpes
+      else findExtensibleTermTypes(cons, rest)
+    case other =>
+      throw InternalCompilerException(s"Unexpected type: '$other'", cons.loc)
   }
 
 }
