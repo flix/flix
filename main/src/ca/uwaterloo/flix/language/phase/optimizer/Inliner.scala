@@ -331,8 +331,13 @@ object Inliner {
       val rs = rules.map(visitMatchRule(_, ctx0))
       Expr.Match(e, rs, tpe, eff, loc)
 
-    case Expr.ExtensibleMatch(label, exp1, sym1, exp2, sym2, exp3, tpe, eff, loc) =>
-      ??? // TODO: Ext-Variants
+    case Expr.ExtensibleMatch(label, exp1, sym2, exp2, sym3, exp3, tpe, eff, loc) =>
+      val freshVarSym2 = Symbol.freshVarSym(sym2)
+      val freshVarSym3 = Symbol.freshVarSym(sym3)
+      val e1 = visitExp(exp1, ctx0)
+      val e2 = visitExp(exp2, ctx0.addVarSubst(sym2, freshVarSym2).addInScopeVar(freshVarSym2, BoundKind.ParameterOrPattern))
+      val e3 = visitExp(exp3, ctx0.addVarSubst(sym3, freshVarSym3).addInScopeVar(freshVarSym3, BoundKind.ParameterOrPattern))
+      Expr.ExtensibleMatch(label, e1, freshVarSym2, e2, freshVarSym3, e3, tpe, eff, loc)
 
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, ctx0))
