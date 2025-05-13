@@ -24,7 +24,7 @@ object DependencyGraph {
   /**
     * The empty dependency graph.
     */
-  val empty: DependencyGraph = DependencyGraph(MultiMap.empty)
+  def empty[A]: DependencyGraph[A] = DependencyGraph(MultiMap.empty[A, A])
 }
 
 /**
@@ -32,14 +32,14 @@ object DependencyGraph {
   *
   * If the graph contains an edge `src -> dst` that means that if `src` changes then `dst` must be recomputed.
   */
-case class DependencyGraph(deps: MultiMap[Input, Input]) {
+case class DependencyGraph[A](deps: MultiMap[A, A]) {
 
   /**
     * Returns all inputs that are transitively dirty (including `i`).
     *
     * We compute a fixpoint such that if `x` is dirty, `x -> {y}` and `y -> {z}` then `{x, y, z}` are dirty.
     */
-  def dirty(i: Input): Set[Input] = {
+  def dirty(i: A): Set[A] = {
     var current = deps(i) + i
     var changed = true
     while (changed) {

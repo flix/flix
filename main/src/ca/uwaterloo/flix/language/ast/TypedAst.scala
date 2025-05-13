@@ -46,7 +46,7 @@ object TypedAst {
                   eqEnv: EqualityEnv,
                   availableClasses: AvailableClasses,
                   precedenceGraph: LabelledPrecedenceGraph,
-                  dependencyGraph: DependencyGraph,
+                  dependencyGraph: DependencyGraph[Input],
                   tokens: Map[Source, Array[Token]])
 
   sealed trait Decl {
