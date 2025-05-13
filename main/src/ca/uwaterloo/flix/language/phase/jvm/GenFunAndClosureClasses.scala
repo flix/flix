@@ -180,7 +180,7 @@ object GenFunAndClosureClasses {
     // Method header
     val applyMethod = BackendObjType.Frame.StaticApplyMethod
     val desc = MethodDescriptor(defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe)), ???)
-    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, BackendObjType.Thunk.InvokeMethod.name + "Static",
+    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, applyMethod.name,
       desc.toDescriptor, null, null)
 
     // TODO: Declare local vars and mutable function args that can be mutated in a while loop.
