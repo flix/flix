@@ -16,7 +16,7 @@
  */
 
 ///
-/// `Counter` is a wrapper around `Ref` for a simple increment-only counter.
+/// `Counter` is a wrapper around `Ref` for a simple counter.
 ///
 /// Its primary use is for generating identifiers.
 ///
@@ -40,7 +40,7 @@ mod Fixpoint3 {
         ///
         @Internal
         pub def getAndIncrement(counter: Counter[r]): Int32 \ r =
-            let Counter(c) = counter; 
+            let Counter(c) = counter;
             let newID = Ref.get(c);
             Ref.put(newID + 1, c);
             newID
@@ -53,9 +53,21 @@ mod Fixpoint3 {
             getAndIncrement(counter);
             ()
 
+        ///
+        /// Returns the state of `counter`.
+        ///
         @Internal
-        pub def peek(counter: Counter[r]): Int32 \ r =
-            let Counter(c) = counter; 
+        pub def get(counter: Counter[r]): Int32 \ r =
+            let Counter(c) = counter;
             Ref.get(c)
+
+        ///
+        /// Sets the state of `counter` to `i`.
+        ///
+        @Internal
+        pub def set(i: Int32, counter: Counter[r]): Unit \ r =
+            let Counter(c) = counter;
+            Ref.put(i, c)
     }
+
 }
