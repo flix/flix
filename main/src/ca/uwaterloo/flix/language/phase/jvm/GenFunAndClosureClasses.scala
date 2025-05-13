@@ -178,9 +178,9 @@ object GenFunAndClosureClasses {
                                         classType: JvmType.Reference,
                                         defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
-    val applyMethod = BackendObjType.Frame.StaticApplyMethod
+    val invokeStaticMethod = BackendObjType.Thunk.InvokeStaticMethod
     val desc = MethodDescriptor(defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe)), ???)
-    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, applyMethod.name,
+    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, invokeStaticMethod.name,
       desc.toDescriptor, null, null)
 
     // TODO: Declare local vars and mutable function args that can be mutated in a while loop.
