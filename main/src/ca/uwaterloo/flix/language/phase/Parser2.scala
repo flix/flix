@@ -3142,7 +3142,7 @@ object Parser2 {
       oneOrMore(
         namedTokenSet = NamedTokenSet.Parameter,
         getItem = parameter,
-        checkForItem = kind => NAME_VARIABLE.contains(kind) || NAME_TYPE.contains(kind),
+        checkForItem = kind => NAME_VARIABLE.contains(kind),
         delimiterL = TokenKind.BracketL,
         delimiterR = TokenKind.BracketR,
         breakWhen = _.isRecoverType,
