@@ -194,8 +194,12 @@ object OccurrenceAnalyzer {
           (Expr.Match(e, rs, tpe, eff, loc), ctx3)
         }
 
-      case Expr.ExtensibleMatch(_, _, _, _, _, _, _, _, _) =>
-        ??? // TODO: Ext-Variants
+      case Expr.ExtensibleMatch(label, exp1, sym2, exp2, sym3, exp3, tpe, eff, loc) =>
+        val (e1, ctx1) = visitExp(exp1)
+        val (e2, ctx2) = visitExp(exp2)
+        val (e3, ctx3) = visitExp(exp3)
+        val ctx = combineSeq(ctx1, combineBranch(ctx2, ctx3)).removeVar(sym2).removeVar(sym3)
+        (Expr.ExtensibleMatch(label, e1, sym2, e2, sym3, e3, tpe, eff, loc), ctx)
 
       case Expr.VectorLit(exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
