@@ -187,8 +187,8 @@ object BackendType {
       case MonoType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
       case MonoType.RecordEmpty => BackendObjType.RecordEmpty.toTpe
       case MonoType.RecordExtend(_, value, _) => BackendObjType.RecordExtend(toBackendType(value)).toTpe
-      case MonoType.ExtensibleEmpty => BackendObjType.Extensible.toTpe
-      case MonoType.ExtensibleExtend(_, _, _) => BackendObjType.Extensible.toTpe
+      case MonoType.ExtensibleEmpty => BackendObjType.Tagged.toTpe
+      case MonoType.ExtensibleExtend(_, _, _) => BackendObjType.Tagged.toTpe
       case MonoType.Native(clazz) => BackendObjType.Native(JvmName.ofClass(clazz)).toTpe
     }
   }
