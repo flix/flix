@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.phase.jvm.BackendType
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.annotation.tailrec
