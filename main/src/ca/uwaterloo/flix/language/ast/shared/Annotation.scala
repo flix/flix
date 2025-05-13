@@ -68,7 +68,8 @@ object Annotation {
     * An AST node that represents an `@Inline` annotation.
     *
     * A function marked with `@Inline` is guaranteed to be inlined by the compiler.
-    * If it is recursive, it is only ever unrolled once into the same function.
+    * If it is recursive, it may be unrolled any number of times but never inside
+    * its own definition.
     *
     * @param loc the source location of the annotation.
     */
