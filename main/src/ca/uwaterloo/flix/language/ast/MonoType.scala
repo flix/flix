@@ -120,7 +120,11 @@ object MonoType {
     Bool, Char, Float32, Float64, Int8, Int16, Int32, Int64, MonoType.Object
   )
 
-  /** Returns the term types of extensible constructor `cons` or crashes if `cons` is not in `tpe`. */
+  /**
+    * Returns the term types of extensible constructor `cons` in `tpe`.
+    *
+    * N.B.: `tpe` must be a chain of [[MonoType.ExtensibleExtend]] that contains `cons`.
+    */
   @tailrec
   def findExtensibleTermTypes(cons: Name.Label, tpe: MonoType): List[MonoType] = tpe match {
     case MonoType.ExtensibleExtend(pred, tpes, rest) =>
