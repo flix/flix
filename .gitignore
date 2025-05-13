@@ -17,6 +17,7 @@ crash_report_*.txt
 # IntelliJ IDEA
 # Ignore most IDEA files, but include inspections
 .idea/*
+!.idea/codeStyles
 !.idea/inspectionProfiles
 
 # backup files and IntelliJ profiler reports
