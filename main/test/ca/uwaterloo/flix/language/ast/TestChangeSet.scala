@@ -24,7 +24,7 @@ class TestChangeSet extends AnyFunSuite {
   private val src4 = MySourceable(input4)
   private val src5 = MySourceable(input5)
 
-  private val dg1 = DependencyGraph.empty
+  private val dg1 = DependencyGraph.empty[Input]
   private val dg2 = DependencyGraph(MultiMap(Map(
     input1 -> Set(input2, input3), input2 -> Set(input4), input3 -> Set(input5)
   )))
