@@ -490,10 +490,28 @@ object Inliner {
     * @param exps the arguments to the function.
     * @param ctx0 the local context.
     */
-  private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext)(implicit sctx: SharedContext): Boolean = {
-    !sctx.delta.contains(defn.sym) &&
-      !ctx0.currentlyInlining &&
-      !defn.spec.defContext.isSelfRef &&
+  private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext): Boolean = {
+    if (ctx0.currentlyInlining) {
+      return false
+    }
+
+    if (defn.spec.ann.isDontInline) {
+      return false
+    }
+
+    if (sctx.delta.contains(defn.sym)) {
+      return false
+    }
+
+    if (defn.spec.ann.isInline) {
+      if (defn.sym == sym0) {
+        return false
+      }
+
+      return true
+    }
+
+    !defn.spec.defContext.isSelfRef &&
       (isSingleAction(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))
   }
 
@@ -706,12 +724,14 @@ object Inliner {
   }
 
   private object SharedContext {
+
     /**
       * Returns a fresh [[SharedContext]].
       *
       * The delta set does not change during the lifetime of the shared context.
       */
     def mk(delta: Set[Symbol.DefnSym]): SharedContext = new SharedContext(delta, new ConcurrentHashMap(), new ConcurrentHashMap())
+
   }
 
   /**
