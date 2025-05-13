@@ -233,15 +233,14 @@ object MonoAst {
   }
 
   /**
-    * A [[DefContext]] contains various pieces of information on a function that are relevant for making an inlining decision.
+    * A [[DefContext]] contains information relevant for inlining.
     *
-    * @param localDefs the number of local defs defined in a function.
-    * @param isSelfRef true if a function body expression refers to the function itself.
+    * @param isSelfRef true if a def refers to itself.
     */
-  case class DefContext(localDefs: Int, isSelfRef: Boolean)
+  case class DefContext(isSelfRef: Boolean)
 
   object DefContext {
-    val Unknown: DefContext = DefContext(localDefs = 0, isSelfRef = false)
+    val Unknown: DefContext = DefContext(isSelfRef = false)
   }
 
 }
