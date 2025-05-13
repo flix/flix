@@ -336,7 +336,7 @@ object Inliner {
       val freshVarSym3 = Symbol.freshVarSym(sym3)
       val e1 = visitExp(exp1, ctx0)
       val e2 = visitExp(exp2, ctx0.addVarSubst(sym2, freshVarSym2).addInScopeVar(freshVarSym2, BoundKind.ParameterOrPattern))
-      val e3 = visitExp(exp3, ctx0.addVarSubst(sym3, freshVarSym3).addInScopeVar(freshVarSym2, BoundKind.ParameterOrPattern))
+      val e3 = visitExp(exp3, ctx0.addVarSubst(sym3, freshVarSym3).addInScopeVar(freshVarSym3, BoundKind.ParameterOrPattern))
       Expr.ExtensibleMatch(label, e1, freshVarSym2, e2, freshVarSym3, e3, tpe, eff, loc)
 
     case Expr.VectorLit(exps, tpe, eff, loc) =>
