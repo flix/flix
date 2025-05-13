@@ -131,7 +131,7 @@ object Eraser {
         case AtomicOp.RecordRestrict(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ExtensibleIs(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ExtensibleTag(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.ExtensibleUntag(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ExtensibleUntag(_, _) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayLit => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayNew => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayLoad => ApplyAtomic(op, es, t, purity, loc)

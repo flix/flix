@@ -70,8 +70,8 @@ object JvmOps {
     case MonoType.Tuple(elms) => JvmType.Reference(BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType)).jvmName)
     case MonoType.RecordEmpty => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
-    case MonoType.ExtensibleExtend(_, _, _) => JvmType.Reference(BackendObjType.Extensible.jvmName)
-    case MonoType.ExtensibleEmpty => JvmType.Reference(BackendObjType.Extensible.jvmName)
+    case MonoType.ExtensibleExtend(_, _, _) => JvmType.Reference(BackendObjType.Tagged.jvmName)
+    case MonoType.ExtensibleEmpty => JvmType.Reference(BackendObjType.Tagged.jvmName)
     case MonoType.Enum(_, _) => JvmType.Object
     case MonoType.Struct(sym, targs) =>
       val elms = instantiateStruct(sym, targs.map(MonoType.erase))
@@ -261,7 +261,7 @@ object JvmOps {
     else "m_" + mangle(defn.sym.name)
   }
 
-  def getTagName(sym: Symbol.CaseSym): String = mangle(sym.name)
+  def getTagName(name: String): String = mangle(name)
 
   /**
     * Returns stringified name of the given JvmType `tpe`.
@@ -364,7 +364,7 @@ object JvmOps {
       case (acc, MonoType.Enum(sym, targs)) =>
         val tags = instantiateEnum(root.enums(sym), targs)
         tags.foldLeft(acc) {
-          case (acc, (sym, Nil)) => acc + BackendObjType.NullaryTag(sym)
+          case (acc, (sym, Nil)) => acc + BackendObjType.NullaryTag(sym.name)
           case (acc, (_, tagElms)) => acc + BackendObjType.Tag(tagElms)
         }
       case (acc, _) => acc
@@ -422,6 +422,19 @@ object JvmOps {
     case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
   }
+
+  /**
+    * Returns the set of erased extensible tag types in `types` without searching recursively.
+    */
+  def getErasedExtensibleTagTypesOf(types: Iterable[MonoType]): Set[BackendObjType.TagType] =
+    types.foldLeft(Set.empty[BackendObjType.TagType]) {
+      case (acc, MonoType.ExtensibleExtend(cons, targs, _)) =>
+        targs match {
+          case Nil => acc + BackendObjType.NullaryTag(cons.name)
+          case nary => acc + BackendObjType.Tag(nary.map(BackendType.asErasedBackendType))
+        }
+      case (acc, _) => acc
+    }
 
   /**
     * Writes the given JVM class `clazz` to a sub path under the given `prefixPath`.
