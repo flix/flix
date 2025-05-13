@@ -196,7 +196,12 @@ object Simplifier {
       patternMatchWithLabels(exp, rules, tpe, loc)
 
     case MonoAst.Expr.ExtensibleMatch(label, exp1, sym1, exp2, sym2, exp3, tpe, eff, loc) =>
-      ??? // TODO: Ext-Variants
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      val t = visitType(tpe)
+      val ef = simplifyEffect(eff)
+      extensibleMatch(label, e1, sym1, e2, sym2, e3, t, ef, loc)
 
     case MonoAst.Expr.VectorLit(exps, tpe, _, loc) =>
       // Note: We simplify Vectors to Arrays.
@@ -937,6 +942,37 @@ object Simplifier {
 
       case p => throw InternalCompilerException(s"Unsupported pattern '$p'.", xs.head.loc)
     }
+
+  private def extensibleMatch(label: Name.Label, exp: SimplifiedAst.Expr, sym1: Symbol.VarSym, exp1: SimplifiedAst.Expr, sym2: Symbol.VarSym, exp2: SimplifiedAst.Expr, tpe: MonoType, eff: Purity, loc: SourceLocation)(implicit flix: Flix): SimplifiedAst.Expr = {
+    import SimplifiedAst.*
+    //
+    // exp match {
+    //     case Label(sym1) => exp1
+    //     case sym2 => exp2
+    //
+    // Becomes
+    //
+    // let ext: tagType = exp;
+    // if (ext is Label) {
+    //     let sym1 = untag 0 ext;
+    //     exp1
+    // } else {
+    //     let sym2 = ext;
+    //     exp2
+    // }
+    //
+    val tagType = exp.tpe
+    val extName = Symbol.freshVarSym("ext", BoundBy.Let, exp.loc)(Scope.Top, flix)
+    val extVar = Expr.Var(extName, tagType, exp.loc)
+    val termTypes = MonoType.findExtensibleTermTypes(label, tagType)
+    val idx = 0 // Currently all extensible variants have 1 term.
+    val untag = Expr.ApplyAtomic(AtomicOp.ExtensibleUntag(label, idx), List(extVar), termTypes(idx), Purity.Pure, sym1.loc)
+    val branch1 = Expr.Let(sym1, untag, exp1, exp1.tpe, exp1.purity, exp1.loc)
+    val branch2 = Expr.Let(sym2, extVar, exp2, exp2.tpe, exp2.purity, exp2.loc)
+    val is = Expr.ApplyAtomic(AtomicOp.ExtensibleIs(label), List(extVar), MonoType.Bool, Purity.Pure, extVar.loc)
+    val ifte = Expr.IfThenElse(is, branch1, branch2, branch1.tpe, Purity.combine(branch1.purity, branch2.purity), loc)
+    Expr.Let(extName, exp, ifte, tpe, eff, loc)
+  }
 
   private def visitEffOp(op: MonoAst.Op)(implicit universe: Set[Symbol.EffectSym]): SimplifiedAst.Op = op match {
     case MonoAst.Op(sym, MonoAst.Spec(_, ann, mod, fparams0, _, retTpe0, eff0, _), loc) =>

@@ -662,7 +662,7 @@ object GenExpression {
 
       case AtomicOp.ExtensibleIs(sym) =>
         val List(exp) = exps
-        val tpes = findExtensibleTermTypes(sym, exp.tpe)
+        val tpes = MonoType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.asErasedBackendType)
         compileIsTag(sym.name, exp, tpes)
 
       case AtomicOp.ExtensibleTag(sym) =>
@@ -671,7 +671,7 @@ object GenExpression {
 
       case AtomicOp.ExtensibleUntag(sym, idx) =>
         val List(exp) = exps
-        val tpes = findExtensibleTermTypes(sym, exp.tpe)
+        val tpes = MonoType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.asErasedBackendType)
         compileUntag(exp, idx, tpes)
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
@@ -1511,17 +1511,6 @@ object GenExpression {
       CHECKCAST(tagType.jvmName) ~ GETFIELD(tagType.IndexField(idx))
     }
     ins(new BytecodeInstructions.F(mv))
-  }
-
-  /** Crashes if not found. */
-  @tailrec
-  private def findExtensibleTermTypes(sym: Name.Label, extType: MonoType): List[BackendType] = {
-    extType match {
-      case MonoType.ExtensibleExtend(cons, tpes, rest) =>
-        if (cons.name == sym.name) tpes.map(BackendType.asErasedBackendType)
-        else findExtensibleTermTypes(sym, rest)
-      case other => throw InternalCompilerException(s"Unexpected type: '$other'", sym.loc)
-    }
   }
 
   private def printPc(mv: MethodVisitor, pcPoint: Int): Unit = if (!GenFunAndClosureClasses.onCallDebugging) () else {
