@@ -91,6 +91,8 @@ object MonoAst {
 
     case class Match(exp: Expr, rules: List[MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
+    case class ExtensibleMatch(label: Name.Label, exp1: Expr, sym1: Symbol.VarSym, exp2: Expr, sym2: Symbol.VarSym, exp3: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
     case class VectorLit(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class VectorLoad(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
