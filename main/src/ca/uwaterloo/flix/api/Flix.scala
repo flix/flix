@@ -267,6 +267,7 @@ class Flix {
     "Fixpoint/Toggle.flix" -> LocalResource.get("/src/library/Fixpoint/Toggle.flix"),
     "Fixpoint/SolverApi.flix" -> LocalResource.get("/src/library/Fixpoint/SolverApi.flix"),
     "Fixpoint3/Solver.flix" -> LocalResource.get("/src/library/Fixpoint3/Solver.flix"),
+    "Fixpoint3/Ram.flix" -> LocalResource.get("/src/library/Fixpoint3/Ram.flix"),
 
 
     "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
