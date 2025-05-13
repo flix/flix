@@ -15,6 +15,11 @@
  */
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.phase.jvm.BackendType
+import ca.uwaterloo.flix.util.InternalCompilerException
+
+import scala.annotation.tailrec
+
 /**
   * Representation of monomorphed types.
   *
@@ -115,5 +120,16 @@ object MonoType {
   val ErasedTypes: Set[MonoType] = Set(
     Bool, Char, Float32, Float64, Int8, Int16, Int32, Int64, MonoType.Object
   )
+
+  /** Returns the term types of extensible constructor `cons` or crashes if `cons` is not in `tpe`. */
+  @tailrec
+  def findExtensibleTermTypes(cons: Name.Label, tpe: MonoType): List[MonoType] = {
+    tpe match {
+      case MonoType.ExtensibleExtend(pred, tpes, rest) =>
+        if (pred.name == cons.name) tpes
+        else findExtensibleTermTypes(cons, rest)
+      case other => throw InternalCompilerException(s"Unexpected type: '$other'", cons.loc)
+    }
+  }
 
 }
