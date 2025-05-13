@@ -200,23 +200,7 @@ object GenFunAndClosureClasses {
     val enterLabel = new Label()
     m.visitLabel(enterLabel)
 
-    if (onCallDebugging) {
-      m.visitVarInsn(ALOAD, 0)
-      m.visitVarInsn(ALOAD, 1)
-      m.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "onCall", MethodDescriptor.mkDescriptor(BackendObjType.Value.toTpe)(VoidableType.Void).toDescriptor, false)
-    }
-
     loadParamsOf(fparams)
-
-    val pcLabels: Vector[Label] = Vector.range(0, defn.pcPoints).map(_ => new Label())
-    if (defn.pcPoints > 0) {
-      // the default label is the starting point of the function if pc = 0
-      val defaultLabel = new Label()
-      m.visitVarInsn(ALOAD, 0)
-      m.visitFieldInsn(GETFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
-      m.visitTableSwitchInsn(1, pcLabels.length, defaultLabel, pcLabels *)
-      m.visitLabel(defaultLabel)
-    }
 
     // Generating the expression
     val newFrame = BytecodeInstructions.thisLoad() ~ BytecodeInstructions.cheat(_.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, copyName, nothingToTDescriptor(classType).toDescriptor, false))
