@@ -3154,7 +3154,7 @@ object Parser2 {
 
     private def parameter()(implicit s: State): Mark.Closed = {
       val mark = open()
-      nameUnqualified(NAME_VARIABLE ++ NAME_TYPE)
+      nameUnqualified(NAME_VARIABLE)
       if (at(TokenKind.Colon)) {
         expect(TokenKind.Colon)
         Type.kind()
