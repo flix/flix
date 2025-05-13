@@ -17,10 +17,7 @@ package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst
-import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
-
-import java.util.concurrent.ConcurrentHashMap
 
 object Optimizer {
 
