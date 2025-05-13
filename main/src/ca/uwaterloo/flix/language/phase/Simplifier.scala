@@ -195,6 +195,9 @@ object Simplifier {
     case MonoAst.Expr.Match(exp, rules, tpe, _, loc) =>
       patternMatchWithLabels(exp, rules, tpe, loc)
 
+    case MonoAst.Expr.ExtensibleMatch(label, exp1, sym1, exp2, sym2, exp3, tpe, eff, loc) =>
+      ??? // TODO EXT-VAR
+
     case MonoAst.Expr.VectorLit(exps, tpe, _, loc) =>
       // Note: We simplify Vectors to Arrays.
       val es = exps.map(visitExp)
