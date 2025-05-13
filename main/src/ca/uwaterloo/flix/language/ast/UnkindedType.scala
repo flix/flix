@@ -424,26 +424,14 @@ object UnkindedType {
     * Construct a relation type with the given list of type arguments `ts0`.
     */
   def mkRelation(ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
-    val ts = ts0 match {
-      case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
-      case x :: Nil => x
-      case x :: xs => mkTuple(Nel(x, xs), loc)
-    }
-
-    Apply(UnkindedType.Cst(TypeConstructor.Relation, loc), ts, loc)
+    mkApply(Cst(TypeConstructor.Relation(ts0.length), loc), ts0, loc)
   }
 
   /**
     * Construct a lattice type with the given list of type arguments `ts0`.
     */
   def mkLattice(ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
-    val ts = ts0 match {
-      case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
-      case x :: Nil => x
-      case x :: xs => mkTuple(Nel(x, xs), loc)
-    }
-
-    Apply(UnkindedType.Cst(TypeConstructor.Lattice, loc), ts, loc)
+    mkApply(Cst(TypeConstructor.Lattice(ts0.length), loc), ts0, loc)
   }
 
   /**
@@ -469,18 +457,13 @@ object UnkindedType {
   /**
     * Constructs a predicate type.
     */
-  def mkPredicate(den: Denotation, ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
+  def mkPredicate(den: Denotation, ts: List[UnkindedType], loc: SourceLocation): UnkindedType = {
     val tycon = den match {
-      case Denotation.Relational => UnkindedType.Cst(TypeConstructor.Relation, loc)
-      case Denotation.Latticenal => UnkindedType.Cst(TypeConstructor.Lattice, loc)
-    }
-    val ts = ts0 match {
-      case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
-      case x :: Nil => x
-      case x :: xs => UnkindedType.mkTuple(Nel(x, xs), loc)
+      case Denotation.Relational => UnkindedType.Cst(TypeConstructor.Relation(ts.length), loc)
+      case Denotation.Latticenal => UnkindedType.Cst(TypeConstructor.Lattice(ts.length), loc)
     }
 
-    UnkindedType.Apply(tycon, ts, loc)
+    UnkindedType.mkApply(tycon, ts, loc)
   }
 
   /**

@@ -1732,4 +1732,75 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     rejectError[TypeError](result)
   }
+
+  test("Fixpoint.Tuple.01") {
+    val input =
+      """
+        |def example1(): Unit = {
+        |    let lp = #{
+        |        Res(1, 2).
+        |    };
+        |    discard (query lp select x from Res(x))
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[TypeError](result)
+  }
+
+  test("Fixpoint.Tuple.02") {
+    val input =
+      """
+        |def example2(): Unit = {
+        |    let lp = #{
+        |        Res((1, 2)).
+        |    };
+        |    discard (query lp select (x, y) from Res(x, y))
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[TypeError](result)
+  }
+
+  test("Fixpoint.Tuple.03") {
+    val input =
+      """
+        |def example3(): Unit \ IO = {
+        |    let lp = #{
+        |        Res(1, 2).
+        |        Res((x, y)) :- Res(x, y).
+        |    };
+        |    println(query lp select (x, y) from Res(x, y))
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[TypeError](result)
+  }
+
+
+  test("Fixpoint.Tuple.04") {
+    val input =
+      """
+        |def example4(): Unit \ IO = {
+        |    let lp = inject (1, 2) :: (2, 3) :: Nil into Res;
+        |    println(query lp select x from Res(x))
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[TypeError](result)
+  }
+
+  test("Fixpoint.Tuple.05") {
+    val input =
+      """
+        |def example5(): Unit \ IO = {
+        |    let data = inject (1, 2) :: (2, 3) :: Nil into Data;
+        |    let lp = #{
+        |        Res(x) :- Data(x).
+        |    };
+        |    println(query data, lp select x from Res(x))
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[TypeError](result)
+  }
 }
