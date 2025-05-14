@@ -54,7 +54,7 @@ object Purity {
   case object ControlImpure extends Purity
 
   /**
-    * Returns true if `p` is is a purity that does not allows algebraic effects.
+    * Returns true if `p` is a purity that does not allows algebraic effects.
     */
   def isControlPure(p: Purity): Boolean = p match {
     case Pure => true
