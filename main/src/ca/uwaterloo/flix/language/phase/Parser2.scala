@@ -3372,7 +3372,7 @@ object Parser2 {
       close(mark, TreeKind.Type.RecordRow)
     }
 
-    def tuple()(implicit s: State): Mark.Closed = {
+    private def tuple()(implicit s: State): Mark.Closed = {
       implicit val context: SyntacticContext = SyntacticContext.Unknown
       assert(at(TokenKind.ParenL))
       val mark = open()
