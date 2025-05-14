@@ -189,15 +189,21 @@ object GenFunAndClosureClasses {
     val enterLabel = new Label()
     m.visitLabel(enterLabel)
 
-
-    // Generating the expression
-    val ctx = GenExpression.StaticContext(classType, enterLabel, Map(), 0)
+    // Generate the expression
+    val localOffset = 0
+    val ctx = GenExpression.StaticContext(classType, enterLabel, Map(), localOffset)
     GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
 
     val returnValue = BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
     returnValue(new BytecodeInstructions.F(m))
 
-    m.visitMaxs(999, 999)
+    try {
+      m.visitMaxs(999, 999)
+    } catch {
+      case e: Throwable =>
+        println(defn.sym)
+        throw e
+    }
     m.visitEnd()
   }
 
