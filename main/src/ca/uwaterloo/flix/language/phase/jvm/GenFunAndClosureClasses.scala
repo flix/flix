@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
-import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.language.ast.{MonoType, Purity, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression.compileInt
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
@@ -241,9 +241,21 @@ object GenFunAndClosureClasses {
         } ~
         POP()
     }
-    val ctx = GenExpression.EffectContext(classType, enterLabel, Map(), newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
+
+    val ctx = if (Purity.isControlPure(defn.expr.purity) && isFunction(defn)) {
+      GenExpression.DirectContext(classType, enterLabel, Map.empty, localOffset)
+    } else {
+      GenExpression.EffectContext(classType, enterLabel, Map.empty, newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
+    }
+
     GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
-    assert(ctx.pcCounter(0) == pcLabels.size, s"${(classType.name, ctx.pcCounter(0), pcLabels.size)}")
+
+    ctx match {
+      case GenExpression.EffectContext(_, _, _, _, _, _, _, pcCounter) =>
+        assert(pcCounter(0) == pcLabels.size, s"${(classType.name, pcCounter(0), pcLabels.size)}")
+      case GenExpression.DirectContext(_, _, _, _) =>
+    }
+
 
     val returnValue = BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
     returnValue(new BytecodeInstructions.F(m))
