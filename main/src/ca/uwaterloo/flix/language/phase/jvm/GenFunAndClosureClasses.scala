@@ -149,9 +149,6 @@ object GenFunAndClosureClasses {
 
     // Methods
     compileConstructor(functionInterface, visitor)
-    if (Purity.isControlPure(defn.expr.purity) && kind == Function) {
-      compileStaticInvokeMethod(visitor, classType, defn)
-    }
     compileInvokeMethod(visitor, classType)
     compileFrameMethod(visitor, classType, defn)
     compileCopyMethod(visitor, classType, defn)
@@ -173,34 +170,6 @@ object GenFunAndClosureClasses {
     constructor.visitMaxs(999, 999)
     constructor.visitEnd()
   }
-
-  private def compileStaticInvokeMethod(visitor: ClassWriter,
-                                        classType: JvmType.Reference,
-                                        defn: Def)(implicit root: Root, flix: Flix): Unit = {
-    // Method header
-    val desc = MethodDescriptor(defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe)), BackendObjType.Result.toTpe)
-    val name = "invokeStatic"
-    val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
-    val m = visitor.visitMethod(modifiers, name, desc.toDescriptor, null, null)
-
-    m.visitCode()
-
-    // used for self-recursive tail calls
-    val enterLabel = new Label()
-    m.visitLabel(enterLabel)
-
-
-    // Generating the expression
-    val ctx = GenExpression.StaticContext(classType, enterLabel, Map(), 0)
-    GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
-
-    val returnValue = BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
-    returnValue(new BytecodeInstructions.F(m))
-
-    m.visitMaxs(999, 999)
-    m.visitEnd()
-  }
-
 
   private def compileInvokeMethod(visitor: ClassWriter, classType: JvmType.Reference): Unit = {
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
