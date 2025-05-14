@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source, SymUse}
@@ -319,8 +320,8 @@ class TestCompletionProvider extends AnyFunSuite {
           val alteredProgram = trimAfter(program, defSymUse.loc, charToTrim)
           val triggerPosition = Position(defSymUse.loc.sp2.lineOneIndexed, defSymUse.loc.sp2.colOneIndexed - charToTrim)
           val (root, errors) = compile(alteredProgram)
-          val completions = CompletionProvider.autoComplete(Uri, triggerPosition, errors)(root, Flix)
-          val (otherCompletions, useImportCompletions) = completions.items.partition(_.additionalTextEdits.isEmpty)
+          val completions = CompletionProvider.getCompletions(Uri, triggerPosition, errors)(root, Flix)
+          val (useImportCompletions, otherCompletions) = partitionUseImportCompletions(completions)
           assertPriorityHigher(otherCompletions, useImportCompletions, program, defSymUse.loc)
         case _ => ()
       }
@@ -350,12 +351,12 @@ class TestCompletionProvider extends AnyFunSuite {
     * @param program           The original program string.
     * @param loc               The source location of the code that we are changing.
     */
-  private def assertPriorityHigher(higherCompletions: Iterable[CompletionItem], lowerCompletions: Iterable[CompletionItem], program: String, loc: SourceLocation): Unit = {
-    val lowerSortText = lowerCompletions.map(_.sortText).max
-    val higherSortText = higherCompletions.map(_.sortText).min
-    if (lowerSortText > higherSortText) {
+  private def assertPriorityHigher(higherCompletions: Iterable[Completion], lowerCompletions: Iterable[Completion], program: String, loc: SourceLocation): Unit = {
+    val lowerSortTextBound = lowerCompletions.map(_.toCompletionItem(Flix).sortText).min
+    val higherSortTextBound = higherCompletions.map(_.toCompletionItem(Flix).sortText).max
+    if (lowerSortTextBound < higherSortTextBound) {
       println(s"Invalid Order: auto use/import completions are not lower than others for program:\n$program")
-      println(code(loc, s"Here we have sortText($lowerSortText) < sortText($higherSortText), which violates the invariant."))
+      println(code(loc, s"Here we have sortText($lowerSortTextBound) < sortText($higherSortTextBound), which violates the invariant."))
       fail("Invalid Order for use/import completions")
     }
   }
@@ -498,5 +499,29 @@ class TestCompletionProvider extends AnyFunSuite {
     val sctx = SecurityContext.AllPermissions
     val input = Input.Text(Uri, content, sctx)
     Source(input, content.toCharArray)
+  }
+
+  /**
+    * Partitions the given list of completions into two lists:
+    * - The first list contains all completions that are auto use/import completions.
+    * - The second list contains all other completions.
+    */
+  private def partitionUseImportCompletions(completions: List[Completion]): (List[Completion], List[Completion]) = {
+    completions.partition {
+      case Completion.AutoImportCompletion(_, _, _, _, _, _)       => true
+      case Completion.DefCompletion(_, _, _, _, inScope, _)        => !inScope
+      case Completion.EffectCompletion(_, _, _, _, inScope)        => !inScope
+      case Completion.EnumCompletion(_, _, _, _, inScope, _)       => !inScope
+      case Completion.EnumTagCompletion(_, _, _, _, _, inScope, _) => !inScope
+      case Completion.HandlerCompletion(_, _, _, _, inScope)       => !inScope
+      case Completion.InstanceCompletion(_, _, _, _, inScope)      => !inScope
+      case Completion.ModuleCompletion(_, _, _, _, inScope)        => !inScope
+      case Completion.OpCompletion(_, _, _, _, _, inScope, _)      => !inScope
+      case Completion.SigCompletion(_, _, _, _, _, inScope, _)     => !inScope
+      case Completion.StructCompletion(_, _, _, _, inScope)        => !inScope
+      case Completion.TraitCompletion(_, _, _, _, inScope, _)      => !inScope
+      case Completion.TypeAliasCompletion(_, _, _, _, inScope)     => !inScope
+      case _                                                       => false
+   }
   }
 }
