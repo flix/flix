@@ -150,7 +150,7 @@ object GenFunAndClosureClasses {
     // Methods
     compileConstructor(functionInterface, visitor)
     if (Purity.isControlPure(defn.expr.purity) && kind == Function) {
-      // compileStaticInvokeMethod(visitor, classType, defn)
+      compileStaticInvokeMethod(visitor, classType, defn)
     }
     compileInvokeMethod(visitor, classType)
     compileFrameMethod(visitor, classType, defn)
@@ -178,7 +178,7 @@ object GenFunAndClosureClasses {
                                         classType: JvmType.Reference,
                                         defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
-    val desc = MethodDescriptor(defn.fparams.map(fp => BackendType.asErasedBackendType(fp.tpe)), BackendObjType.Result.toTpe)
+    val desc = MethodDescriptor(defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe)), BackendObjType.Result.toTpe)
     val name = "invokeStatic"
     val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
     val m = visitor.visitMethod(modifiers, name, desc.toDescriptor, null, null)
