@@ -51,7 +51,7 @@ object GenExpression {
       this match {
         case ctx: EffectContext =>
           ctx.copy(lenv = updatedLabels)
-        case ctx: StaticContext =>
+        case ctx: DirectContext =>
           ctx.copy(lenv = updatedLabels)
       }
     }
@@ -68,7 +68,7 @@ object GenExpression {
                            pcCounter: Ref[Int]
                             ) extends MethodContext
 
-  case class StaticContext(clazz: JvmType.Reference,
+  case class DirectContext(clazz: JvmType.Reference,
                            entryPoint: Label,
                            lenv: Map[Symbol.LabelSym, Label],
                            localOffset: Int,
@@ -1160,7 +1160,7 @@ object GenExpression {
 
                 mv.visitLabel(afterUnboxing)
 
-              case StaticContext(_, _, _, _) =>
+              case DirectContext(_, _, _, _) =>
                 throw InternalCompilerException("unexpected static method context in control impure function", loc)
             }
           }
@@ -1222,7 +1222,7 @@ object GenExpression {
 
               mv.visitLabel(afterUnboxing)
 
-            case StaticContext(_, _, _, _) =>
+            case DirectContext(_, _, _, _) =>
               throw InternalCompilerException("unexpected static method context in control impure function", loc)
           }
         }
@@ -1245,7 +1245,7 @@ object GenExpression {
         case EffectContext(_, _, _, _, setPc, _, _, _) =>
           setPc(new BytecodeInstructions.F(mv))
 
-        case StaticContext(_, _, _, _) =>
+        case DirectContext(_, _, _, _) =>
       }
       // Jump to the entry point of the method.
       mv.visitJumpInsn(GOTO, ctx.entryPoint)
@@ -1445,7 +1445,7 @@ object GenExpression {
             mv.visitLabel(pcPointLabel)
             printPc(mv, pcPoint)
 
-          case StaticContext(_, _, _, _) =>
+          case DirectContext(_, _, _, _) =>
             throw InternalCompilerException("figure it out later", loc)
         }
         mv.visitVarInsn(ALOAD, 1)
@@ -1455,7 +1455,7 @@ object GenExpression {
       }
 
     case Expr.Do(op, exps, tpe, _, loc) => ctx match {
-      case StaticContext(_, _, _, _) =>
+      case DirectContext(_, _, _, _) =>
         throw InternalCompilerException("unexpected do-expression in static method context", loc)
 
       case EffectContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
