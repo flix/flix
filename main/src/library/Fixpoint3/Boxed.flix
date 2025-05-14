@@ -53,9 +53,9 @@ mod Fixpoint3 {
             case (Boxed.BoxedFloat32(v1),      Boxed.BoxedFloat32(v2))   => v1 == v2
             case (Boxed.BoxedFloat64(v1),      Boxed.BoxedFloat64(v2))   => v1 == v2
             case (Boxed.BoxedObject(v1, cmp1), Boxed.BoxedObject(v2, _)) => cmp1(v1, v2) == Comparison.EqualTo
-            case (Boxed.NoValue, Boxed.NoValue)                                => true
-            case (Boxed.NoValue, _)                                         => false
-            case (_, Boxed.NoValue)                                         => false
+            case (Boxed.NoValue, Boxed.NoValue)                          => true
+            case (Boxed.NoValue, _)                                      => false
+            case (_, Boxed.NoValue)                                      => false
             case _                                                       => bug!("Mismatched types.")
         }
     }
@@ -86,8 +86,8 @@ mod Fixpoint3 {
             case Boxed.BoxedFloat32(v)   => ToString.toString(v)
             case Boxed.BoxedFloat64(v)   => ToString.toString(v)
             case Boxed.BoxedObject(v, _) => Debug.stringify(v)
-            case Boxed.NoValue              => "Boxed.NoValue"
+            case Boxed.NoValue           => "Boxed.NoValue"
         }
     }
-
+    
 }

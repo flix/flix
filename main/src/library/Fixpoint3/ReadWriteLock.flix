@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-///
+/// 
 /// A wrapper around a Java read-write-lock.
 ///
 mod Fixpoint3 {
     import java.util.concurrent.locks.{ReadWriteLock => JReadWriteLock}
+
     @Internal
-    pub enum ReadWriteLock[_: Region](JReadWriteLock)
+    enum ReadWriteLock[_: Region](JReadWriteLock)
 
     mod ReadWriteLock {
         import java.util.concurrent.locks.{StampedLock => JStampedLock}

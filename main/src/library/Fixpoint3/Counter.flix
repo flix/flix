@@ -20,10 +20,11 @@
 ///
 /// Its primary use is for generating identifiers.
 ///
+/// Not thread-safe.
+///
 mod Fixpoint3 {
-    @Internal
-    pub enum Counter[r: Region] {
-        case Counter(Ref[Int32, r])
+    struct Counter[r: Region] {
+        mut state: Int32
     }
 
     mod Counter {
@@ -33,17 +34,16 @@ mod Fixpoint3 {
         /// Returns a fresh `Counter` initialized to `0`.
         ///
         @Internal
-        pub def fresh(rc: Region[r]): Counter[r] \ r = Counter(Ref.fresh(rc, 0))
+        pub def fresh(rc: Region[r]): Counter[r] \ r = new Counter @ rc {state = 0}
 
         ///
         /// Returns the state of `counter` and increments it.
         ///
         @Internal
         pub def getAndIncrement(counter: Counter[r]): Int32 \ r =
-            let Counter(c) = counter;
-            let newID = Ref.get(c);
-            Ref.put(newID + 1, c);
-            newID
+            let newId = counter->state;
+            counter->state = newId + 1;
+            newId
 
         ///
         /// Increments the state of `counter`.
@@ -58,16 +58,14 @@ mod Fixpoint3 {
         ///
         @Internal
         pub def get(counter: Counter[r]): Int32 \ r =
-            let Counter(c) = counter;
-            Ref.get(c)
+            counter->state
 
         ///
         /// Sets the state of `counter` to `i`.
         ///
         @Internal
         pub def set(i: Int32, counter: Counter[r]): Unit \ r =
-            let Counter(c) = counter;
-            Ref.put(i, c)
+            counter->state = i
     }
 
 }

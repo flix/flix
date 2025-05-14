@@ -15,14 +15,13 @@
  * limitations under the License.
  */
 
-///
+/// 
 /// A thread-safe counter producing `Int64`.
-///
+/// 
 mod Fixpoint3 {
     import java.util.concurrent.atomic.{AtomicLong => JAtomicLong}
 
-    @Internal
-    pub enum AtomicCounter[_: Region](JAtomicLong)
+    enum AtomicCounter[_: Region](JAtomicLong)
 
     mod AtomicCounter {
         import java.util.concurrent.atomic.{AtomicLong => JAtomicLong}

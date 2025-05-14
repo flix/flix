@@ -15,16 +15,18 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.Helpers {
+mod Fixpoint3.Util {
+    use Fixpoint3.Boxed
+
     ///
     /// Unwraps an option.
     ///
     /// Causes runtime hole error when `x` is `None`.
     ///
     @Internal
-    pub def unwrapOrCrash(x: Option[a]): a = match x {
+    pub def getOrCrash(x: Option[a]): a = match x {
         case Some(v) => v
-        case None => ???
+        case None => bug!("Attempted unwrapping none in getOrCrash")
     }
 
 }
