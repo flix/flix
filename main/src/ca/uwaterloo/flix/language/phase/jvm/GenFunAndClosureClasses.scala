@@ -183,38 +183,15 @@ object GenFunAndClosureClasses {
     val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
     val m = visitor.visitMethod(modifiers, name, desc.toDescriptor, null, null)
 
-    // TODO: Declare local vars and mutable function args that can be mutated in a while loop.
-    val localOffset = 0
-    val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.sym.getStackOffset(localOffset), false, fp.tpe) }
-    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.sym.getStackOffset(localOffset), lp.sym.isWild, lp.tpe) }
-
-    // TODO: Update this
-    def loadParamsOf(params: List[(String, Int, Boolean, MonoType)]): Unit = {
-      params.foreach { case (name, offset, _, tpe) => loadFromField(m, classType, name, offset, tpe) }
-    }
-
     m.visitCode()
-    loadParamsOf(lparams)
 
     // used for self-recursive tail calls
     val enterLabel = new Label()
     m.visitLabel(enterLabel)
 
-    loadParamsOf(fparams)
 
     // Generating the expression
-    val newFrame = BytecodeInstructions.thisLoad() ~ BytecodeInstructions.cheat(_.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, copyName, nothingToTDescriptor(classType).toDescriptor, false))
-    val setPc = {
-      import BytecodeInstructions.*
-      SWAP() ~ DUP_X1() ~ SWAP() ~ // clo, pc ---> clo, clo, pc
-        BytecodeInstructions.cheat(_.visitFieldInsn(Opcodes.PUTFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)) ~
-        lparams.foldLeft(nop()) { case (acc, (name, index, isWild, tpe)) =>
-          val erasedTpe = BackendType.toErasedBackendType(tpe)
-          if (isWild) acc else acc ~ DUP() ~ xLoad(erasedTpe, index) ~ cheat(_.visitFieldInsn(Opcodes.PUTFIELD, classType.name.toInternalName, name, erasedTpe.toDescriptor))
-        } ~
-        POP()
-    }
-    val ctx = GenExpression.MethodContext(classType, enterLabel, Map(), newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
+    val ctx = GenExpression.InstanceContext(classType, enterLabel, Map(), newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
     GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
     assert(ctx.pcCounter(0) == pcLabels.size, s"${(classType.name, ctx.pcCounter(0), pcLabels.size)}")
 
@@ -296,7 +273,7 @@ object GenFunAndClosureClasses {
         } ~
         POP()
     }
-    val ctx = GenExpression.MethodContext(classType, enterLabel, Map(), newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
+    val ctx = GenExpression.InstanceContext(classType, enterLabel, Map(), newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
     GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
     assert(ctx.pcCounter(0) == pcLabels.size, s"${(classType.name, ctx.pcCounter(0), pcLabels.size)}")
 
