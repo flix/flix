@@ -76,6 +76,7 @@ object LoweredAstPrinter {
           (patD, guardD, bodyD)
       }
       DocAst.Expr.Match(expD, rulesD)
+    case Expr.ExtensibleMatch(_, _, _, _, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.TypeMatch(exp, rules, _, _, _) =>
       val expD = print(exp)
       val rulesD = rules.map {

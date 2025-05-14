@@ -46,7 +46,7 @@ object OccurrenceAnalyzer {
   private def visitDef(defn: MonoAst.Def): MonoAst.Def = {
     val lctx: LocalContext = LocalContext.mk()
     val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx)
-    val defContext = DefContext(lctx.localDefs.get(), isSelfRef(ctx.selfOccur))
+    val defContext = DefContext(isSelfRef(ctx.selfOccur))
     val fparams = defn.spec.fparams.map(visitFormalParam(_, ctx))
     val spec = defn.spec.copy(fparams = fparams, defContext = defContext)
     MonoAst.Def(defn.sym, spec, exp, defn.loc)
@@ -139,7 +139,6 @@ object OccurrenceAnalyzer {
         val ctx5 = combineSeq(ctx3, ctx4)
         val occur = ctx5.get(sym)
         val ctx6 = ctx5.removeVar(sym)
-        lctx.localDefs.incrementAndGet()
         if ((e1 eq exp1) && (e2 eq exp2) && fparams.zip(fps).forall { case (fp1, fp2) => fp1 eq fp2 } && (occur eq occur0)) {
           (exp0, ctx6) // Reuse exp0.
         } else {
@@ -193,6 +192,13 @@ object OccurrenceAnalyzer {
         } else {
           (Expr.Match(e, rs, tpe, eff, loc), ctx3)
         }
+
+      case Expr.ExtensibleMatch(label, exp1, sym2, exp2, sym3, exp3, tpe, eff, loc) =>
+        val (e1, ctx1) = visitExp(exp1)
+        val (e2, ctx2) = visitExp(exp2)
+        val (e3, ctx3) = visitExp(exp3)
+        val ctx = combineSeq(ctx1, combineBranch(ctx2, ctx3)).removeVar(sym2).removeVar(sym3)
+        (Expr.ExtensibleMatch(label, e1, sym2, e2, sym3, e3, tpe, eff, loc), ctx)
 
       case Expr.VectorLit(exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
@@ -537,17 +543,10 @@ object OccurrenceAnalyzer {
     /**
       * Returns a fresh [[LocalContext]].
       */
-    def mk(): LocalContext = new LocalContext(new AtomicInteger(0))
+    def mk(): LocalContext = new LocalContext()
 
   }
 
-  /**
-    * A local context, scoped for each function definition.
-    * No requirements on thread-safety since it is scoped.
-    *
-    * @param localDefs The number of declared [[Expr.LocalDef]]s in the expression.
-    *                  Must be mutable.
-    */
-  private case class LocalContext(localDefs: AtomicInteger)
+  private case class LocalContext()
 
 }

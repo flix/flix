@@ -29,6 +29,8 @@ import org.objectweb.asm
 import org.objectweb.asm.*
 import org.objectweb.asm.Opcodes.*
 
+import scala.annotation.tailrec
+
 /**
   * Generate expression
   */
@@ -549,54 +551,21 @@ object GenExpression {
         val List(exp) = exps
         val MonoType.Enum(_, targs) = exp.tpe
         val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
-        val terms = cases(sym)
-        compileExpr(exp)
-        val ins = terms match {
-          case Nil =>
-            import BytecodeInstructions.*
-            // nullary tags have their own distinct class
-            INSTANCEOF(BackendObjType.NullaryTag(sym).jvmName)
-          case _ =>
-            import BytecodeInstructions.*
-            val taggedType = BackendObjType.Tagged
-            CHECKCAST(taggedType.jvmName) ~ GETFIELD(taggedType.NameField) ~
-            BackendObjType.Tagged.mkTagName(sym) ~ BackendObjType.Tagged.eqTagName()
-        }
-        ins(new BytecodeInstructions.F(mv))
+        val termTypes = cases(sym)
+        compileIsTag(sym.name, exp, termTypes)
 
       case AtomicOp.Tag(sym) =>
         val MonoType.Enum(_, targs) = tpe
         val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
-        val terms = cases(sym)
-        val ins = terms match {
-          case Nil =>
-            import BytecodeInstructions.*
-            val tagType = BackendObjType.NullaryTag(sym)
-            GETSTATIC(tagType.SingletonField)
-          case _ =>
-            import BytecodeInstructions.*
-            val tagType = BackendObjType.Tag(terms)
-            NEW(tagType.jvmName) ~ DUP() ~ INVOKESPECIAL(tagType.Constructor) ~
-            DUP() ~ BackendObjType.Tagged.mkTagName(sym) ~ PUTFIELD(tagType.NameField) ~
-            composeN(exps.zipWithIndex.map {
-              case (e, i) => DUP() ~ cheat(mv => compileExpr(e)(mv, ctx, root, flix)) ~ PUTFIELD(tagType.IndexField(i))
-            })
-        }
-        ins(new BytecodeInstructions.F(mv))
+        val termTypes = cases(sym)
+        compileTag(sym.name, exps, termTypes)
 
       case AtomicOp.Untag(sym, idx) =>
         val List(exp) = exps
         val MonoType.Enum(_, targs) = exp.tpe
         val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
-        // BackendObjType.NullaryTag cannot happen here since terms must be non-empty.
-        val tagType = BackendObjType.Tag(cases(sym))
-
-        compileExpr(exp)
-        val ins = {
-          import BytecodeInstructions.*
-          CHECKCAST(tagType.jvmName) ~ GETFIELD(tagType.IndexField(idx))
-        }
-        ins(new BytecodeInstructions.F(mv))
+        val termTypes = cases(sym)
+        compileUntag(exp, idx, termTypes)
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
       case AtomicOp.Index(idx) =>
@@ -691,11 +660,20 @@ object GenExpression {
         mv.visitMethodInsn(INVOKEINTERFACE, interfaceType.jvmName.toInternalName, interfaceType.RestrictFieldMethod.name,
           MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(interfaceType.toTpe).toDescriptor, true)
 
-      case AtomicOp.ExtensibleIs(label) => ??? // TODO: Ext-Variants
+      case AtomicOp.ExtensibleIs(sym) =>
+        val List(exp) = exps
+        val tpes = MonoType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.asErasedBackendType)
+        compileIsTag(sym.name, exp, tpes)
 
-      case AtomicOp.ExtensibleTag(label) => ??? // TODO: Ext-Variants
+      case AtomicOp.ExtensibleTag(sym) =>
+        val tpes = MonoType.findExtensibleTermTypes(sym, tpe).map(BackendType.asErasedBackendType)
+        compileTag(sym.name, exps, tpes)
 
-      case AtomicOp.ExtensibleUntag(label) => ??? // TODO: Ext-Variants
+      case AtomicOp.ExtensibleUntag(sym, idx) =>
+        val List(exp) = exps
+        val tpes = MonoType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.asErasedBackendType)
+        compileUntag(exp, idx, tpes)
+        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
       case AtomicOp.ArrayLit =>
         // We push the 'length' of the array on top of stack
@@ -1486,6 +1464,53 @@ object GenExpression {
         mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(e.tpe).toDescriptor)
       }
 
+  }
+
+  private def compileIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+    compileExpr(exp)
+    val ins = tpes match {
+      case Nil =>
+        import BytecodeInstructions.*
+        // nullary tags have their own distinct class
+        INSTANCEOF(BackendObjType.NullaryTag(name).jvmName)
+      case _ =>
+        import BytecodeInstructions.*
+        val taggedType = BackendObjType.Tagged
+        CHECKCAST(taggedType.jvmName) ~ GETFIELD(taggedType.NameField) ~
+          BackendObjType.Tagged.mkTagName(name) ~ BackendObjType.Tagged.eqTagName()
+    }
+    ins(new BytecodeInstructions.F(mv))
+  }
+
+  private def compileTag(name: String, exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+    val ins = tpes match {
+      case Nil =>
+        import BytecodeInstructions.*
+        val tagType = BackendObjType.NullaryTag(name)
+        GETSTATIC(tagType.SingletonField)
+      case _ =>
+        import BytecodeInstructions.*
+        val tagType = BackendObjType.Tag(tpes)
+        NEW(tagType.jvmName) ~ DUP() ~ INVOKESPECIAL(tagType.Constructor) ~
+          DUP() ~ BackendObjType.Tagged.mkTagName(name) ~ PUTFIELD(tagType.NameField) ~
+          composeN(exps.zipWithIndex.map {
+            case (e, i) => DUP() ~ cheat(mv => compileExpr(e)(mv, ctx, root, flix)) ~ PUTFIELD(tagType.IndexField(i))
+          })
+    }
+    ins(new BytecodeInstructions.F(mv))
+  }
+
+  private def compileUntag(exp: Expr, idx: Int, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+    // BackendObjType.NullaryTag cannot happen here since terms must be non-empty.
+    if (tpes.isEmpty) throw InternalCompilerException(s"Unexpected empty tag types", exp.loc)
+
+    val tagType = BackendObjType.Tag(tpes)
+    compileExpr(exp)
+    val ins = {
+      import BytecodeInstructions.*
+      CHECKCAST(tagType.jvmName) ~ GETFIELD(tagType.IndexField(idx))
+    }
+    ins(new BytecodeInstructions.F(mv))
   }
 
   private def printPc(mv: MethodVisitor, pcPoint: Int): Unit = if (!GenFunAndClosureClasses.onCallDebugging) () else {

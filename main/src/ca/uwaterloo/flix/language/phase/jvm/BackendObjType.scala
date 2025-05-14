@@ -50,7 +50,6 @@ sealed trait BackendObjType {
     case BackendObjType.RecordEmpty => JvmName(RootPackage, mkClassName(s"RecordEmpty"))
     case BackendObjType.RecordExtend(value) => JvmName(RootPackage, mkClassName("RecordExtend", value))
     case BackendObjType.Record => JvmName(RootPackage, mkClassName("Record"))
-    case BackendObjType.Extensible => JvmName(RootPackage, mkClassName("Extensible"))
     case BackendObjType.ReifiedSourceLocation => JvmName(DevFlixRuntime, mkClassName("ReifiedSourceLocation"))
     case BackendObjType.Global => JvmName(DevFlixRuntime, "Global") // "Global" is fixed in source code, so should not be mangled and $ suffixed
     case BackendObjType.FlixError => JvmName(DevFlixRuntime, mkClassName("FlixError"))
@@ -323,7 +322,7 @@ object BackendObjType {
     def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
     /** [...] -> [..., tagName] */
-    def mkTagName(sym: Symbol.CaseSym): InstructionSet = pushString(JvmOps.getTagName(sym))
+    def mkTagName(name: String): InstructionSet = pushString(JvmOps.getTagName(name))
 
     /** [..., tagName1, tagName2] --> [..., tagName1 == tagName2] */
     def eqTagName(): InstructionSet = {
@@ -334,7 +333,7 @@ object BackendObjType {
 
   sealed trait TagType extends BackendObjType with Generatable
 
-  case class NullaryTag(sym: Symbol.CaseSym) extends TagType {
+  case class NullaryTag(name: String) extends TagType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = Tagged.jvmName)
 
@@ -352,12 +351,12 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(_ =>
       thisLoad() ~ INVOKESPECIAL(Tagged.Constructor) ~
-        thisLoad() ~ Tagged.mkTagName(sym) ~ PUTFIELD(Tagged.NameField) ~
+        thisLoad() ~ Tagged.mkTagName(name) ~ PUTFIELD(Tagged.NameField) ~
         RETURN()
     ))
 
     def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ =>
-      Tagged.mkTagName(sym) ~ xReturn(String.toTpe)
+      Tagged.mkTagName(name) ~ xReturn(String.toTpe)
     ))
   }
 
@@ -389,15 +388,6 @@ object BackendObjType {
     private def getIndexString(i: Int): InstructionSet = {
       val field = IndexField(i)
       thisLoad() ~ GETFIELD(field) ~ xToString(field.tpe)
-    }
-  }
-
-  /** Empty interface that Extensible tags implement to aid analyzability of generated code. */
-  case object Extensible extends BackendObjType with Generatable {
-
-    override def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkInterface(this.jvmName)
-      cm.closeClassMaker()
     }
   }
 
