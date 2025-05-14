@@ -63,7 +63,7 @@ object Purity {
   }
 
   /**
-    * Returns true if `p` is is a purity that allows algebraic effects.
+    * Returns true if `p` is a purity that allows algebraic effects.
     */
   def isControlImpure(p: Purity): Boolean = p match {
     case Pure => false
