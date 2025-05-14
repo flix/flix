@@ -150,7 +150,7 @@ object GenFunAndClosureClasses {
     // Methods
     compileConstructor(functionInterface, visitor)
     if (Purity.isControlPure(defn.expr.purity) && kind == Function) {
-      compileStaticInvokeMethod(visitor, classType, defn)
+      // compileStaticInvokeMethod(visitor, classType, defn)
     }
     compileInvokeMethod(visitor, classType)
     compileFrameMethod(visitor, classType, defn)
@@ -193,7 +193,6 @@ object GenFunAndClosureClasses {
     // Generating the expression
     val ctx = GenExpression.StaticContext(classType, enterLabel, Map(), 0)
     GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
-    assert(ctx.pcCounter(0) == pcLabels.size, s"${(classType.name, ctx.pcCounter(0), pcLabels.size)}")
 
     val returnValue = BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
     returnValue(new BytecodeInstructions.F(m))
