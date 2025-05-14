@@ -49,7 +49,7 @@ object GenExpression {
     def addLabels(labels: Map[Symbol.LabelSym, Label]): MethodContext = {
       val updatedLabels = this.lenv ++ labels
       this match {
-        case ctx: InstanceContext =>
+        case ctx: EffectContext =>
           ctx.copy(lenv = updatedLabels)
         case ctx: StaticContext =>
           ctx.copy(lenv = updatedLabels)
@@ -58,14 +58,14 @@ object GenExpression {
 
   }
 
-  case class InstanceContext(clazz: JvmType.Reference,
-                             entryPoint: Label,
-                             lenv: Map[Symbol.LabelSym, Label],
-                             newFrame: InstructionSet, // [...] -> [..., frame]
-                             setPc: InstructionSet, // [..., frame, pc] -> [...]
-                             localOffset: Int,
-                             pcLabels: Vector[Label],
-                             pcCounter: Ref[Int]
+  case class EffectContext(clazz: JvmType.Reference,
+                           entryPoint: Label,
+                           lenv: Map[Symbol.LabelSym, Label],
+                           newFrame: InstructionSet, // [...] -> [..., frame]
+                           setPc: InstructionSet, // [..., frame, pc] -> [...]
+                           localOffset: Int,
+                           pcLabels: Vector[Label],
+                           pcCounter: Ref[Int]
                             ) extends MethodContext
 
   case class StaticContext(clazz: JvmType.Reference,
@@ -1145,7 +1145,7 @@ object GenExpression {
             BackendObjType.Result.unwindSuspensionFreeThunk("in pure closure call", loc)(new BytecodeInstructions.F(mv))
           } else {
             ctx match {
-              case InstanceContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+              case EffectContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
                 val pcPoint = pcCounter(0) + 1
                 val pcPointLabel = pcLabels(pcPoint)
                 val afterUnboxing = new Label()
@@ -1208,7 +1208,7 @@ object GenExpression {
         }
         else {
           ctx match {
-            case InstanceContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+            case EffectContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
               val pcPoint = pcCounter(0) + 1
               val pcPointLabel = pcLabels(pcPoint)
               val afterUnboxing = new Label()
@@ -1242,7 +1242,7 @@ object GenExpression {
       mv.visitVarInsn(ALOAD, 0)
       compileInt(0)
       ctx match {
-        case InstanceContext(_, _, _, _, setPc, _, _, _) =>
+        case EffectContext(_, _, _, _, setPc, _, _, _) =>
           setPc(new BytecodeInstructions.F(mv))
 
         case StaticContext(_, _, _, _) =>
@@ -1436,7 +1436,7 @@ object GenExpression {
         val afterUnboxing = new Label()
 
         ctx match {
-          case InstanceContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+          case EffectContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
             val pcPoint = pcCounter(0) + 1
             val pcPointLabel = pcLabels(pcPoint)
             pcCounter(0) += 1
@@ -1458,7 +1458,7 @@ object GenExpression {
       case StaticContext(_, _, _, _) =>
         throw InternalCompilerException("unexpected do-expression in static method context", loc)
 
-      case InstanceContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+      case EffectContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
         val pcPoint = pcCounter(0) + 1
         val pcPointLabel = pcLabels(pcPoint)
         val afterUnboxing = new Label()

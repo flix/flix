@@ -241,7 +241,7 @@ object GenFunAndClosureClasses {
         } ~
         POP()
     }
-    val ctx = GenExpression.InstanceContext(classType, enterLabel, Map(), newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
+    val ctx = GenExpression.EffectContext(classType, enterLabel, Map(), newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
     GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
     assert(ctx.pcCounter(0) == pcLabels.size, s"${(classType.name, ctx.pcCounter(0), pcLabels.size)}")
 
