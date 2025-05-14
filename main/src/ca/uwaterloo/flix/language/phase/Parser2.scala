@@ -37,11 +37,11 @@ import scala.collection.mutable.ArrayBuffer
   *      Conceptually this is exactly the same as inserting parenthesis in a stream of tokens, only
   *      here each parenthesis is annotated with a kind.
   *      For instance:
-  *      {{{def main(): Int32 = 123}}}
+  * {{{def main(): Int32 = 123}}}
   *      Becomes:
-  *      {{{(Def 'def' (Name 'main' ) '(' ')' ':' (Type 'Int32' ) '=' (Literal '123' ) )}}}
+  * {{{(Def 'def' (Name 'main' ) '(' ')' ':' (Type 'Int32' ) '=' (Literal '123' ) )}}}
   *
-  *   2. The flat list of events is automatically turned into a SyntaxTree.Tree.
+  * 2. The flat list of events is automatically turned into a SyntaxTree.Tree.
   *
   * This parser is adopted from 'Resilient LL Parsing Tutorial' by Alex Kladov who works on
   * rust-analyzer. The tutorial is also a great resource for understanding this parser (and a great
@@ -735,6 +735,7 @@ object Parser2 {
     */
   private def comments(consumeDocComments: Boolean = false)(implicit s: State): Unit = {
     implicit val context: SyntacticContext = SyntacticContext.Decl.Module
+
     // This function does not use nth on purpose, to avoid consuming fuel.
     // Both open and close call this function, so using nth would consume all the parsers fuel on
     // comments.
@@ -1706,7 +1707,7 @@ object Parser2 {
 
     private def openVariantAsExpr()(implicit s: State): Mark.Closed = {
       implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
-        assert(at(TokenKind.KeywordOpenVariantAs))
+      assert(at(TokenKind.KeywordOpenVariantAs))
       val mark = open()
       expect(TokenKind.KeywordOpenVariantAs)
       nameAllowQualified(NAME_QNAME)
@@ -2570,7 +2571,7 @@ object Parser2 {
 
     private def handlerExpr()(implicit s: State): Mark.Closed = {
       implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
-        assert(at(TokenKind.KeywordHandler))
+      assert(at(TokenKind.KeywordHandler))
       val mark = open()
       expect(TokenKind.KeywordHandler)
       nameAllowQualified(NAME_EFFECT)
@@ -2743,7 +2744,7 @@ object Parser2 {
 
     private def selectExpr()(implicit s: State): Mark.Closed = {
       implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
-        assert(at(TokenKind.KeywordSelect))
+      assert(at(TokenKind.KeywordSelect))
       val mark = open()
       expect(TokenKind.KeywordSelect)
       expect(TokenKind.CurlyL)
@@ -3528,6 +3529,7 @@ object Parser2 {
 
     def kind()(implicit s: State): Mark.Closed = {
       implicit val context: SyntacticContext = SyntacticContext.Unknown
+
       def kindFragment(): Unit = {
         val inParens = eat(TokenKind.ParenL)
         nameUnqualified(NAME_KIND)
