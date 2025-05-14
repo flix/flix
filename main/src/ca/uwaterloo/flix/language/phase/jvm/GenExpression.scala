@@ -29,6 +29,8 @@ import org.objectweb.asm
 import org.objectweb.asm.*
 import org.objectweb.asm.Opcodes.*
 
+import scala.annotation.tailrec
+
 /**
   * Generate expression
   */
@@ -849,8 +851,8 @@ object GenExpression {
         val ins = {
           import BytecodeInstructions.*
           NEW(BackendObjType.Value.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.Value.Constructor) ~ DUP() ~
-            xSwap(lowerLarge = erasedExpTpe.is64BitWidth, higherLarge = true) ~ // two objects on top of the stack
-            PUTFIELD(valueField)
+          xSwap(lowerLarge = erasedExpTpe.is64BitWidth, higherLarge = true) ~ // two objects on top of the stack
+          PUTFIELD(valueField)
         }
         ins(new BytecodeInstructions.F(mv))
 
@@ -1009,7 +1011,7 @@ object GenExpression {
         val ins = {
           import BytecodeInstructions.*
           NEW(lazyType.jvmName) ~
-            DUP() ~ cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ INVOKESPECIAL(lazyType.Constructor)
+          DUP() ~ cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ INVOKESPECIAL(lazyType.Constructor)
         }
         ins(new BytecodeInstructions.F(mv))
 
@@ -1027,12 +1029,12 @@ object GenExpression {
         val ins = {
           import BytecodeInstructions.*
           CHECKCAST(lazyType.jvmName) ~
-            DUP() ~ GETFIELD(lazyType.ExpField) ~
-            ifConditionElse(Condition.NONNULL)(
-              INVOKEVIRTUAL(lazyType.ForceMethod)
-            )(
-              GETFIELD(lazyType.ValueField)
-            )
+          DUP() ~ GETFIELD(lazyType.ExpField) ~
+          ifConditionElse(Condition.NONNULL)(
+            INVOKEVIRTUAL(lazyType.ForceMethod)
+          )(
+            GETFIELD(lazyType.ValueField)
+          )
         }
         ins(new BytecodeInstructions.F(mv))
 
@@ -1067,11 +1069,11 @@ object GenExpression {
         val ins = {
           import BytecodeInstructions.*
           NEW(CastError.jvmName) ~
-            DUP() ~
-            cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~
-            pushString(s"Cannot cast from type '$from' to '$to'") ~
-            INVOKESPECIAL(CastError.Constructor) ~
-            ATHROW()
+          DUP() ~
+          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~
+          pushString(s"Cannot cast from type '$from' to '$to'") ~
+          INVOKESPECIAL(CastError.Constructor) ~
+          ATHROW()
         }
         ins(new BytecodeInstructions.F(mv))
     }
@@ -1365,23 +1367,23 @@ object GenExpression {
         import BytecodeInstructions.*
         // eff name
         pushString(effUse.sym.toString) ~
-          // handler
-          NEW(effectJvmName) ~ DUP() ~ cheat(_.visitMethodInsn(Opcodes.INVOKESPECIAL, effectJvmName.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)) ~
-          // bind handler closures
-          cheat(mv => rules.foreach {
-            case HandlerRule(op, _, body) =>
-              mv.visitInsn(Opcodes.DUP)
-              compileExpr(body)(mv, ctx, root, flix)
-              mv.visitFieldInsn(Opcodes.PUTFIELD, effectJvmName.toInternalName, JvmOps.getEffectOpName(op.sym), GenEffectClasses.opFieldType(op.sym).toDescriptor)
-          }) ~
-          // frames
-          NEW(BackendObjType.FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.FramesNil.Constructor) ~
-          // continuation
-          cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~
-          // exp.arg0 should be set to unit here but from lifting we know that it is unused so the
-          // implicit null is fine.
-          // call installHandler
-          INVOKESTATIC(BackendObjType.Handler.InstallHandlerMethod)
+        // handler
+        NEW(effectJvmName) ~ DUP() ~ cheat(_.visitMethodInsn(Opcodes.INVOKESPECIAL, effectJvmName.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)) ~
+        // bind handler closures
+        cheat(mv => rules.foreach {
+          case HandlerRule(op, _, body) =>
+            mv.visitInsn(Opcodes.DUP)
+            compileExpr(body)(mv, ctx, root, flix)
+            mv.visitFieldInsn(Opcodes.PUTFIELD, effectJvmName.toInternalName, JvmOps.getEffectOpName(op.sym), GenEffectClasses.opFieldType(op.sym).toDescriptor)
+        }) ~
+        // frames
+        NEW(BackendObjType.FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.FramesNil.Constructor) ~
+        // continuation
+        cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~
+        // exp.arg0 should be set to unit here but from lifting we know that it is unused so the
+        // implicit null is fine.
+        // call installHandler
+        INVOKESTATIC(BackendObjType.Handler.InstallHandlerMethod)
       }
       ins(new BytecodeInstructions.F(mv))
       // handle value/suspend/thunk if in non-tail position
@@ -1409,8 +1411,8 @@ object GenExpression {
 
       ctx.pcCounter(0) += 1
       val ins: InstructionSet = {
-        import BackendObjType.Suspension
         import BytecodeInstructions.*
+        import BackendObjType.Suspension
         val effectClass = JvmOps.getEffectDefinitionClassType(op.sym.eff)
         val effectStaticMethod = ClassMaker.StaticMethod(
           effectClass.name,
@@ -1421,22 +1423,22 @@ object GenExpression {
           None
         )
         NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~
-          DUP() ~ pushString(op.sym.eff.toString) ~ PUTFIELD(Suspension.EffSymField) ~
-          DUP() ~
-          // --- eff op ---
-          cheat(mv => exps.foreach(e => compileExpr(e)(mv, ctx, root, flix))) ~
-          mkStaticLambda(BackendObjType.EffectCall.ApplyMethod, effectStaticMethod, 2) ~
-          // --------------
-          PUTFIELD(Suspension.EffOpField) ~
-          DUP() ~
-          // create continuation
-          NEW(BackendObjType.FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.FramesNil.Constructor) ~
-          ctx.newFrame ~ DUP() ~ cheat(m => compileInt(pcPoint)(m)) ~ ctx.setPc ~
-          INVOKEVIRTUAL(BackendObjType.FramesNil.PushMethod) ~
-          // store continuation
-          PUTFIELD(Suspension.PrefixField) ~
-          DUP() ~ NEW(BackendObjType.ResumptionNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.ResumptionNil.Constructor) ~ PUTFIELD(Suspension.ResumptionField) ~
-          xReturn(Suspension.toTpe)
+        DUP() ~ pushString(op.sym.eff.toString) ~ PUTFIELD(Suspension.EffSymField) ~
+        DUP() ~
+        // --- eff op ---
+        cheat(mv => exps.foreach(e => compileExpr(e)(mv, ctx, root, flix))) ~
+        mkStaticLambda(BackendObjType.EffectCall.ApplyMethod, effectStaticMethod, 2) ~
+        // --------------
+        PUTFIELD(Suspension.EffOpField) ~
+        DUP() ~
+        // create continuation
+        NEW(BackendObjType.FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.FramesNil.Constructor) ~
+        ctx.newFrame ~ DUP() ~ cheat(m => compileInt(pcPoint)(m)) ~ ctx.setPc ~
+        INVOKEVIRTUAL(BackendObjType.FramesNil.PushMethod) ~
+        // store continuation
+        PUTFIELD(Suspension.PrefixField) ~
+        DUP() ~ NEW(BackendObjType.ResumptionNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.ResumptionNil.Constructor) ~ PUTFIELD(Suspension.ResumptionField) ~
+        xReturn(Suspension.toTpe)
       }
       ins(new BytecodeInstructions.F(mv))
 
