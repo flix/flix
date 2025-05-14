@@ -179,7 +179,7 @@ object GenFunAndClosureClasses {
                                         defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
     val invokeStaticMethod = BackendObjType.Thunk.InvokeStaticMethod
-    val desc = MethodDescriptor(defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe)), ???)
+    val desc = MethodDescriptor(defn.fparams.map(fp => BackendType.asErasedBackendType(fp.tpe)), BackendObjType.Result.toTpe)
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, invokeStaticMethod.name,
       desc.toDescriptor, null, null)
 
