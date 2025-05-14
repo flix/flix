@@ -1707,8 +1707,6 @@ object BackendObjType {
 
     def InvokeMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "invoke", mkDescriptor()(Result.toTpe))
 
-    def InvokeStaticMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "invokeStatic", mkDescriptor()(Result.toTpe))
-
     def RunMethod: DefaultMethod = DefaultMethod(this.jvmName, IsPublic, NotFinal, "run", mkDescriptor()(VoidableType.Void), Some(_ =>
       thisLoad() ~ Result.unwindSuspensionFreeThunk(s"in ${JvmName.Runnable.toBinaryName}", SourceLocation.Unknown) ~ POP() ~ RETURN()
     ))
