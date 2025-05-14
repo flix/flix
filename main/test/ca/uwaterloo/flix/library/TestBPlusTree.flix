@@ -563,14 +563,36 @@ mod TestBPlusTree {
     }
 
     @test
-    def toList03(): Bool \ NonDet + IO = region rc {
+    def toList03(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        let toBeOverridden = (1, 2) :: (2, 4) :: Nil;
+        let finalValues = (1, 3) :: (2, 5) :: Nil;
+        List.forEach(match (k, v) -> BPlusTree.put(k, v, tree), toBeOverridden);
+        List.forEach(match (k, v) -> BPlusTree.put(k, v, tree), finalValues);
+        BPlusTree.toList(tree) == finalValues
+    }
+
+    @test
+    def toList04(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        let pairs = (1, 2) :: (2, 4) :: (1, 3) :: (2, 5) :: Nil;
+        List.forEach(match (k, v) -> BPlusTree.put(k, v, tree), pairs);
+        let map = List.foldLeft(acc -> match (key, val) -> Map.insert(key, val, acc), Map#{}, pairs);
+        let finalPairs = Map.toList(map);
+        BPlusTree.toList(tree) == List.sort(finalPairs)
+    }
+
+    @test
+    def toList05(): Bool \ NonDet + IO = region rc {
         let tree = BPlusTree.empty(rc);
         let getRandomPairs = () -> {
-            List.range(0, 10000) |> List.map(_ -> (Random.randomInt32(), Random.randomInt32()))
+            List.range(0, 10_000) |> List.map(_ -> (Random.randomInt32(), Random.randomInt32()))
         };
         let pairs = Random.handle(getRandomPairs)();
         List.forEach(match (k, v) -> BPlusTree.put(k, v, tree), pairs);
-        BPlusTree.toList(tree) == List.sort(pairs)
+        let map = List.foldLeft(acc -> match (key, val) -> Map.insert(key, val, acc), Map#{}, pairs);
+        let finalPairs = Map.toList(map);
+        BPlusTree.toList(tree) == finalPairs
     }
 
     /////////////////////////////////////////////////////////////////////////////
