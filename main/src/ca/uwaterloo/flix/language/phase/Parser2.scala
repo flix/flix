@@ -388,32 +388,32 @@ object Parser2 {
     *
     * Means "if (" with no comment between "if" and "(".
     */
-  private def expect(kind: TokenKind, hint: Option[String] = None)(implicit context: SyntacticContext, s: State): Unit = {
+  private def expect(kind: TokenKind, hint: Option[String] = None)(implicit sctx: SyntacticContext, s: State): Unit = {
     if (eat(kind)) {
       return
     }
 
     val mark = open()
     val error = nth(0) match {
-      case TokenKind.CommentLine => MisplacedComments(context, currentSourceLocation())
-      case TokenKind.CommentBlock => MisplacedComments(context, currentSourceLocation())
-      case TokenKind.CommentDoc => MisplacedDocComments(context, currentSourceLocation())
-      case at => UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(kind)), actual = Some(at), context, hint = hint, loc = currentSourceLocation())
+      case TokenKind.CommentLine => MisplacedComments(sctx, currentSourceLocation())
+      case TokenKind.CommentBlock => MisplacedComments(sctx, currentSourceLocation())
+      case TokenKind.CommentDoc => MisplacedDocComments(sctx, currentSourceLocation())
+      case at => UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(kind)), actual = Some(at), sctx, hint = hint, loc = currentSourceLocation())
     }
     closeWithError(mark, error)
   }
 
   /** Advance past current token if it is of kind in `kinds`. Otherwise wrap it in an error. */
-  private def expectAny(kinds: Set[TokenKind], hint: Option[String] = None)(implicit context: SyntacticContext, s: State): Unit = {
+  private def expectAny(kinds: Set[TokenKind], hint: Option[String] = None)(implicit sctx: SyntacticContext, s: State): Unit = {
     if (eatAny(kinds)) {
       return
     }
     val mark = open()
     val error = nth(0) match {
-      case TokenKind.CommentLine => MisplacedComments(context, currentSourceLocation())
-      case TokenKind.CommentBlock => MisplacedComments(context, currentSourceLocation())
-      case TokenKind.CommentDoc => MisplacedDocComments(context, currentSourceLocation())
-      case at => UnexpectedToken(expected = NamedTokenSet.FromKinds(kinds), actual = Some(at), context, hint = hint, loc = currentSourceLocation())
+      case TokenKind.CommentLine => MisplacedComments(sctx, currentSourceLocation())
+      case TokenKind.CommentBlock => MisplacedComments(sctx, currentSourceLocation())
+      case TokenKind.CommentDoc => MisplacedDocComments(sctx, currentSourceLocation())
+      case at => UnexpectedToken(expected = NamedTokenSet.FromKinds(kinds), actual = Some(at), sctx, hint = hint, loc = currentSourceLocation())
     }
     closeWithError(mark, error)
   }
@@ -422,17 +422,17 @@ object Parser2 {
     * Advance past current token if it is of kind in `kinds`. Otherwise wrap it in an error.
     * Returns the found token if applicable.
     */
-  private def expectAnyOpt(kinds: Set[TokenKind], hint: Option[String] = None)(implicit context: SyntacticContext, s: State): Option[TokenKind] = {
+  private def expectAnyOpt(kinds: Set[TokenKind], hint: Option[String] = None)(implicit sctx: SyntacticContext, s: State): Option[TokenKind] = {
     eatAnyOpt(kinds) match {
       case some@Some(_) => return some
       case None => ()
     }
     val mark = open()
     val error = nth(0) match {
-      case TokenKind.CommentLine => MisplacedComments(context, currentSourceLocation())
-      case TokenKind.CommentBlock => MisplacedComments(context, currentSourceLocation())
-      case TokenKind.CommentDoc => MisplacedDocComments(context, currentSourceLocation())
-      case at => UnexpectedToken(expected = NamedTokenSet.FromKinds(kinds), actual = Some(at), context, hint = hint, loc = currentSourceLocation())
+      case TokenKind.CommentLine => MisplacedComments(sctx, currentSourceLocation())
+      case TokenKind.CommentBlock => MisplacedComments(sctx, currentSourceLocation())
+      case TokenKind.CommentDoc => MisplacedDocComments(sctx, currentSourceLocation())
+      case at => UnexpectedToken(expected = NamedTokenSet.FromKinds(kinds), actual = Some(at), sctx, hint = hint, loc = currentSourceLocation())
     }
     closeWithError(mark, error)
     None
@@ -518,7 +518,7 @@ object Parser2 {
                           delimiterL: TokenKind = TokenKind.ParenL,
                           delimiterR: TokenKind = TokenKind.ParenR,
                           optionallyWith: Option[(TokenKind, () => Unit)] = None
-                        )(implicit context: SyntacticContext, s: State): Int = {
+                        )(implicit sctx: SyntacticContext, s: State): Int = {
     def atEnd(): Boolean = at(delimiterR) || optionallyWith.exists { case (indicator, _) => at(indicator) }
 
     if (!at(delimiterL)) {
@@ -543,8 +543,8 @@ object Parser2 {
           // Check for trailing separator if needed.
           if (atEnd()) {
             separation match {
-              case Separation.Required(separator, false) => closeWithError(open(), TrailingSeparator(separator, context, previousSourceLocation()))
-              case Separation.Optional(separator, false) => closeWithError(open(), TrailingSeparator(separator, context, previousSourceLocation()))
+              case Separation.Required(separator, false) => closeWithError(open(), TrailingSeparator(separator, sctx, previousSourceLocation()))
+              case Separation.Optional(separator, false) => closeWithError(open(), TrailingSeparator(separator, sctx, previousSourceLocation()))
               case _ =>
             }
           }
@@ -556,7 +556,7 @@ object Parser2 {
           continue = false
         } else {
           // Otherwise eat one token and continue parsing next item.
-          val error = UnexpectedToken(expected = namedTokenSet, actual = Some(nth(0)), context, loc = currentSourceLocation())
+          val error = UnexpectedToken(expected = namedTokenSet, actual = Some(nth(0)), sctx, loc = currentSourceLocation())
           advanceWithError(error)
         }
       }
@@ -593,13 +593,13 @@ object Parser2 {
                          delimiterL: TokenKind = TokenKind.ParenL,
                          delimiterR: TokenKind = TokenKind.ParenR,
                          optionallyWith: Option[(TokenKind, () => Unit)] = None
-                       )(implicit context: SyntacticContext, s: State): Option[ParseError] = {
+                       )(implicit sctx: SyntacticContext, s: State): Option[ParseError] = {
     val locBefore = currentSourceLocation()
     val itemCount = zeroOrMore(namedTokenSet, getItem, checkForItem, breakWhen, separation, delimiterL, delimiterR, optionallyWith)
     val locAfter = previousSourceLocation()
     if (itemCount < 1) {
       val loc = SourceLocation(isReal = true, locBefore.sp1, locAfter.sp1)
-      Some(NeedAtleastOne(namedTokenSet, context, loc = loc))
+      Some(NeedAtleastOne(namedTokenSet, sctx, loc = loc))
     } else {
       None
     }
@@ -629,7 +629,7 @@ object Parser2 {
   private val NAME_PREDICATE: Set[TokenKind] = Set(TokenKind.NameUpperCase)
 
   /** Consumes a token if kind is in `kinds` and wraps it in a [[TreeKind.Ident]]. */
-  private def nameUnqualified(kinds: Set[TokenKind])(implicit context: SyntacticContext, s: State): Mark.Closed = {
+  private def nameUnqualified(kinds: Set[TokenKind])(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
     val mark = open(consumeDocComments = false)
 
     // Check if we are at a keyword and emit nice error if so.
@@ -642,7 +642,7 @@ object Parser2 {
       return closeWithError(mark, UnexpectedToken(
         NamedTokenSet.FromKinds(kinds),
         actual = Some(current),
-        sctx = context,
+        sctx = sctx,
         hint = Some(s"${current.display} is a keyword."),
         loc = previousSourceLocation()
       ))
@@ -659,7 +659,7 @@ object Parser2 {
     * @param tail If any kind found is in `tail` then no further dot separated tokens will be
     *             consumed.
     */
-  private def nameAllowQualified(kinds: Set[TokenKind], tail: Set[TokenKind] = Set(TokenKind.NameLowerCase))(implicit context: SyntacticContext, s: State): Mark.Closed = {
+  private def nameAllowQualified(kinds: Set[TokenKind], tail: Set[TokenKind] = Set(TokenKind.NameLowerCase))(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
     val mark = open(consumeDocComments = false)
 
     // Check if we are at a keyword and emit nice error if so.
@@ -672,7 +672,7 @@ object Parser2 {
       return closeWithError(mark, UnexpectedToken(
         NamedTokenSet.FromKinds(kinds),
         actual = Some(current),
-        sctx = context,
+        sctx = sctx,
         hint = Some(s"${current.display} is a keyword."),
         loc = previousSourceLocation()
       ))
@@ -691,7 +691,7 @@ object Parser2 {
             val error = UnexpectedToken(
               expected = NamedTokenSet.FromKinds(kinds),
               actual = None,
-              sctx = context,
+              sctx = sctx,
               hint = Some("expect ident after '.'."),
               loc = currentSourceLocation()
             )
@@ -712,7 +712,7 @@ object Parser2 {
           val error = UnexpectedToken(
             expected = NamedTokenSet.FromKinds(kinds),
             actual = None,
-            sctx = context,
+            sctx = sctx,
             hint = Some("expect ident after '.'."),
             loc = currentSourceLocation()
           )
@@ -734,7 +734,7 @@ object Parser2 {
     * @param consumeDocComments If true, allow doc-comments to be parsed as a regular comment.
     */
   private def comments(consumeDocComments: Boolean = false)(implicit s: State): Unit = {
-    implicit val context: SyntacticContext = SyntacticContext.Decl.Module
+    implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
 
     // This function does not use nth on purpose, to avoid consuming fuel.
     // Both open and close call this function, so using nth would consume all the parsers fuel on
@@ -760,7 +760,7 @@ object Parser2 {
       val isDanglingDoc = consumeDocComments && nth(-1) == TokenKind.CommentDoc && !nth(0).isDocumentable
       if (isDanglingDoc) {
         val errMark = open()
-        closeWithError(errMark, MisplacedDocComments(context, previousSourceLocation()))
+        closeWithError(errMark, MisplacedDocComments(sctx, previousSourceLocation()))
       }
       close(mark, TreeKind.CommentList)
     }
@@ -796,7 +796,7 @@ object Parser2 {
   }
 
   private def use()(implicit s: State): Mark.Closed = {
-    implicit val context: SyntacticContext = SyntacticContext.Unknown
+    implicit val sctx: SyntacticContext = SyntacticContext.Unknown
     assert(at(TokenKind.KeywordUse))
     val mark = open()
     expect(TokenKind.KeywordUse)
@@ -821,7 +821,7 @@ object Parser2 {
   }
 
   private def iimport()(implicit s: State): Mark.Closed = {
-    implicit val context: SyntacticContext = SyntacticContext.Unknown
+    implicit val sctx: SyntacticContext = SyntacticContext.Unknown
     assert(at(TokenKind.KeywordImport))
     val mark = open()
     expect(TokenKind.KeywordImport)
@@ -845,7 +845,7 @@ object Parser2 {
     close(mark, TreeKind.UsesOrImports.Import)
   }
 
-  private def aliasedName(names: Set[TokenKind])(implicit context: SyntacticContext, s: State): Mark.Closed = {
+  private def aliasedName(names: Set[TokenKind])(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
     var lhs = nameUnqualified(names)
     if (eat(TokenKind.ArrowThickR)) {
       nameUnqualified(names)
@@ -856,7 +856,7 @@ object Parser2 {
 
   private object Decl {
     def declaration(nestingLevel: Int = 0)(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Decl.Module
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
       val mark = open(consumeDocComments = false)
       docComment()
       // Handle modules.
@@ -878,7 +878,7 @@ object Parser2 {
         case TokenKind.Eof => close(mark, TreeKind.CommentList) // Last tokens in the file were comments.
         case at =>
           val loc = currentSourceLocation()
-          val error = UnexpectedToken(expected = NamedTokenSet.Declaration, actual = Some(at), context, loc = loc)
+          val error = UnexpectedToken(expected = NamedTokenSet.Declaration, actual = Some(at), sctx, loc = loc)
           if (nestingLevel == 0) {
             // If we are at top-level (nestingLevel == 0) skip ahead until we hit another declaration.
             // If we are in a module (nestingLevel > 0) we let the module rule handle recovery.
@@ -891,7 +891,7 @@ object Parser2 {
     }
 
     private def moduleDecl(mark: Mark.Opened, nestingLevel: Int = 0)(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Decl.Module
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
       assert(at(TokenKind.KeywordMod))
       expect(TokenKind.KeywordMod)
       nameAllowQualified(NAME_MODULE)
@@ -905,7 +905,7 @@ object Parser2 {
           case at =>
             val markErr = open()
             val loc = currentSourceLocation()
-            val error = UnexpectedToken(expected = NamedTokenSet.Declaration, actual = Some(at), context, loc = loc)
+            val error = UnexpectedToken(expected = NamedTokenSet.Declaration, actual = Some(at), sctx, loc = loc)
             // Skip ahead until we find another declaration or a '}', signifying the end of the module.
             while (!nth(0).isRecoverMod && !eof()) {
               advance()
@@ -918,7 +918,7 @@ object Parser2 {
     }
 
     private def traitDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Decl.Trait
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Trait
       assert(at(TokenKind.KeywordTrait))
       expect(TokenKind.KeywordTrait)
       nameUnqualified(NAME_DEFINITION)
@@ -945,7 +945,7 @@ object Parser2 {
               while (!nth(0).isFirstTrait && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
-              val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef, TokenKind.KeywordLaw)), actual = Some(at), context, loc = loc)
+              val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef, TokenKind.KeywordLaw)), actual = Some(at), sctx, loc = loc)
               closeWithError(errMark, error, Some(at))
           }
         }
@@ -955,7 +955,7 @@ object Parser2 {
     }
 
     private def instanceDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Decl.Instance
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Instance
       assert(at(TokenKind.KeywordInstance))
       expect(TokenKind.KeywordInstance)
       nameAllowQualified(NAME_DEFINITION)
@@ -988,7 +988,7 @@ object Parser2 {
               while (!nth(0).isFirstInstance && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
-              val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef)), actual = Some(at), context, loc = loc)
+              val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef)), actual = Some(at), sctx, loc = loc)
               closeWithError(errMark, error, Some(at))
           }
         }
@@ -998,7 +998,7 @@ object Parser2 {
     }
 
     private def signatureDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Decl.Module
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
       assert(at(TokenKind.KeywordDef))
       expect(TokenKind.KeywordDef)
       nameUnqualified(NAME_DEFINITION)
@@ -1022,7 +1022,7 @@ object Parser2 {
     }
 
     private def definitionDecl(mark: Mark.Opened, declKind: TokenKind = TokenKind.KeywordDef)(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Decl.Module
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
       assert(at(declKind))
       expect(declKind)
       nameUnqualified(NAME_DEFINITION)
@@ -1058,7 +1058,7 @@ object Parser2 {
     }
 
     private def lawDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Decl.Module
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
       assert(at(TokenKind.KeywordLaw))
       expect(TokenKind.KeywordLaw)
       nameUnqualified(NAME_DEFINITION)
@@ -1081,7 +1081,7 @@ object Parser2 {
     }
 
     private def enumerationDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Decl.Enum
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Enum
       assert(atAny(Set(TokenKind.KeywordRestrictable, TokenKind.KeywordEnum)))
       val isRestrictable = eat(TokenKind.KeywordRestrictable)
       expect(TokenKind.KeywordEnum)
@@ -1137,7 +1137,7 @@ object Parser2 {
     private def FIRST_ENUM_CASE: Set[TokenKind] = Set(TokenKind.CommentDoc, TokenKind.KeywordCase, TokenKind.Comma)
 
     private def enumCases()(implicit s: State): Unit = {
-      implicit val context: SyntacticContext = SyntacticContext.Decl.Enum
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Enum
       // Clear non-doc comments that appear before any cases.
       comments()
       while (!eof() && atAny(FIRST_ENUM_CASE)) {
@@ -1172,7 +1172,7 @@ object Parser2 {
     }
 
     private def structDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Decl.Struct
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Struct
       assert(at(TokenKind.KeywordStruct))
       expect(TokenKind.KeywordStruct)
       nameUnqualified(NAME_TYPE)
@@ -1189,7 +1189,7 @@ object Parser2 {
     }
 
     private def structField()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Decl.Struct
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Struct
       val mark = open()
       docComment()
       modifiers()
@@ -1200,7 +1200,7 @@ object Parser2 {
     }
 
     private def typeAliasDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Decl.Type
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Type
       assert(at(TokenKind.KeywordType))
       expect(TokenKind.KeywordType)
       expect(TokenKind.KeywordAlias)
@@ -1215,7 +1215,7 @@ object Parser2 {
     }
 
     private def associatedTypeSigDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Decl.Module
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
       assert(at(TokenKind.KeywordType))
       expect(TokenKind.KeywordType)
       nameUnqualified(NAME_TYPE)
@@ -1232,7 +1232,7 @@ object Parser2 {
     }
 
     private def associatedTypeDefDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Decl.Module
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
       expect(TokenKind.KeywordType)
       nameUnqualified(NAME_TYPE)
       if (at(TokenKind.BracketL)) {
@@ -1245,7 +1245,7 @@ object Parser2 {
     }
 
     private def effectDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Decl.Effect
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Effect
       assert(at(TokenKind.KeywordEff))
       expect(TokenKind.KeywordEff)
       nameUnqualified(NAME_EFFECT)
@@ -1274,7 +1274,7 @@ object Parser2 {
               while (!nth(0).isFirstEff && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
-              val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), actual = Some(at), context, loc = loc)
+              val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), actual = Some(at), sctx, loc = loc)
               closeWithError(errMark, error, Some(at))
           }
         }
@@ -1284,7 +1284,7 @@ object Parser2 {
     }
 
     private def operationDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Decl.Module
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
       expect(TokenKind.KeywordDef)
       nameUnqualified(NAME_DEFINITION)
 
@@ -1337,7 +1337,7 @@ object Parser2 {
       close(mark, TreeKind.Doc)
     }
 
-    def parameters()(implicit context: SyntacticContext, s: State): Mark.Closed = {
+    def parameters()(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
       val mark = open()
       zeroOrMore(
         namedTokenSet = NamedTokenSet.Parameter,
@@ -1348,7 +1348,7 @@ object Parser2 {
       close(mark, TreeKind.ParameterList)
     }
 
-    private def parameter()(implicit context: SyntacticContext, s: State): Mark.Closed = {
+    private def parameter()(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
       val mark = open()
       nameUnqualified(NAME_PARAMETER)
       if (eat(TokenKind.Colon)) {
@@ -1358,7 +1358,7 @@ object Parser2 {
     }
 
     private def equalityConstraints()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Decl.Module
+      implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
       assert(at(TokenKind.KeywordWhere))
       val mark = open()
       expect(TokenKind.KeywordWhere)
@@ -1384,7 +1384,7 @@ object Parser2 {
       * @param rhsIsOptional If false, the right-hand-side expression is not treated as optional.
       */
     def statement(rhsIsOptional: Boolean = true)(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       var lhs = expression()
       if (eat(TokenKind.Semi)) {
         statement()
@@ -1400,7 +1400,7 @@ object Parser2 {
     }
 
     def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false)(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       var lhs = exprDelimited()
       // Handle chained calls and record lookups.
       var continue = true
@@ -1504,7 +1504,7 @@ object Parser2 {
           closeWithError(open(), UnexpectedToken(
             expected = NamedTokenSet.Effect,
             actual = Some(nth(0)),
-            sctx = context,
+            sctx = sctx,
             hint = Some(s"supply at least one effect to ${TokenKind.KeywordWithout.display}."),
             loc = previousSourceLocation()))
         }
@@ -1574,7 +1574,7 @@ object Parser2 {
     }
 
     private def arguments()(implicit s: State): Unit = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       if (nth(0) != TokenKind.ParenL) return
       val mark = open()
       zeroOrMore(
@@ -1604,7 +1604,7 @@ object Parser2 {
     }
 
     private def exprDelimited()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       // If a new expression is added here then add it to FIRST_EXPR too.
       val mark = open()
       nth(0) match {
@@ -1689,7 +1689,7 @@ object Parser2 {
         case TokenKind.KeywordXvar => extensibleTagExpr()
         case t =>
           val mark = open()
-          val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), context, loc = currentSourceLocation())
+          val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), sctx, loc = currentSourceLocation())
           advance()
           closeWithError(mark, error)
       }
@@ -1697,7 +1697,7 @@ object Parser2 {
     }
 
     private def openVariantExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordOpenVariant))
       val mark = open()
       expect(TokenKind.KeywordOpenVariant)
@@ -1706,7 +1706,7 @@ object Parser2 {
     }
 
     private def openVariantAsExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordOpenVariantAs))
       val mark = open()
       expect(TokenKind.KeywordOpenVariantAs)
@@ -1716,7 +1716,7 @@ object Parser2 {
     }
 
     private def holeExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(atAny(Set(TokenKind.HoleNamed, TokenKind.HoleAnonymous)))
       val mark = open()
       nth(0) match {
@@ -1731,7 +1731,7 @@ object Parser2 {
     }
 
     private def holeVariableExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.HoleVariable))
       val mark = open()
       nameUnqualified(Set(TokenKind.HoleVariable))
@@ -1739,7 +1739,7 @@ object Parser2 {
     }
 
     private def useExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       use()
       expect(TokenKind.Semi)
@@ -1754,7 +1754,7 @@ object Parser2 {
     }
 
     private def parenOrTupleOrLambdaExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.ParenL))
       (nth(0), nth(1)) match {
         // Detect unit tuple.
@@ -1786,11 +1786,11 @@ object Parser2 {
                   if (curlyLevel == 0) {
                     // Hitting '}' on top-level is a clear indicator that something is wrong,
                     // most likely the terminating ')' was forgotten.
-                    return advanceWithError(Malformed(NamedTokenSet.Tuple, context, loc = currentSourceLocation()))
+                    return advanceWithError(Malformed(NamedTokenSet.Tuple, sctx, loc = currentSourceLocation()))
                   } else {
                     curlyLevel -= 1
                   }
-                case TokenKind.Eof => return advanceWithError(Malformed(NamedTokenSet.Tuple, context, loc = currentSourceLocation()))
+                case TokenKind.Eof => return advanceWithError(Malformed(NamedTokenSet.Tuple, sctx, loc = currentSourceLocation()))
                 case _ =>
               }
             }
@@ -1804,13 +1804,13 @@ object Parser2 {
           }
 
         case (t, _) =>
-          val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = Some(t), context, loc = currentSourceLocation())
+          val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = Some(t), sctx, loc = currentSourceLocation())
           advanceWithError(error)
       }
     }
 
     private def lambda()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       Decl.parameters()
       expect(TokenKind.ArrowThinR)
@@ -1819,7 +1819,7 @@ object Parser2 {
     }
 
     private def parenOrTupleOrAscribe()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       expect(TokenKind.ParenL)
       val markExpr = expression()
@@ -1853,7 +1853,7 @@ object Parser2 {
     }
 
     private def extensibleMatchExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordXmatch))
       val mark = open()
       expect(TokenKind.KeywordXmatch)
@@ -1882,7 +1882,7 @@ object Parser2 {
     }
 
     private def extensibleTagExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordXvar))
       val mark = open()
       expect(TokenKind.KeywordXvar)
@@ -1895,7 +1895,7 @@ object Parser2 {
     }
 
     private def unaryLambdaExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       val markParams = open()
       val markParam = open()
@@ -1918,7 +1918,7 @@ object Parser2 {
     )
 
     private def unaryExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       val op = nth(0)
       val markOp = open()
@@ -1929,7 +1929,7 @@ object Parser2 {
     }
 
     private def ifThenElseExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordIf))
       val mark = open()
       expect(TokenKind.KeywordIf)
@@ -1946,7 +1946,7 @@ object Parser2 {
     }
 
     private def letMatchExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordLet))
       val mark = open()
       expect(TokenKind.KeywordLet)
@@ -1960,7 +1960,7 @@ object Parser2 {
     }
 
     private def localDefExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(atAny(Set(TokenKind.Annotation, TokenKind.KeywordDef, TokenKind.CommentDoc)))
       val mark = open(consumeDocComments = false)
       Decl.docComment()
@@ -1977,7 +1977,7 @@ object Parser2 {
     }
 
     private def scopeExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordRegion))
       val mark = open()
       expect(TokenKind.KeywordRegion)
@@ -1989,7 +1989,7 @@ object Parser2 {
     }
 
     private def block()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.CurlyL))
       val mark = open()
       expect(TokenKind.CurlyL)
@@ -2008,7 +2008,7 @@ object Parser2 {
     )
 
     private def debugExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(atAny(FIRST_EXPR_DEBUG))
       val mark = open()
       expectAny(FIRST_EXPR_DEBUG)
@@ -2019,7 +2019,7 @@ object Parser2 {
     }
 
     private def matchOrMatchLambdaExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordMatch))
       val mark = open()
       expect(TokenKind.KeywordMatch)
@@ -2042,7 +2042,7 @@ object Parser2 {
             case TokenKind.ParenL => parenNestingLevel += 1; lookAhead += 1
             case TokenKind.ParenR => parenNestingLevel -= 1; lookAhead += 1
             case TokenKind.Eof =>
-              val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = None, context, loc = currentSourceLocation())
+              val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = None, sctx, loc = currentSourceLocation())
               return closeWithError(mark, error)
             case t if t.isFirstDecl =>
               // Advance past the erroneous region to the next stable token
@@ -2050,7 +2050,7 @@ object Parser2 {
               for (_ <- 0 until lookAhead) {
                 advance()
               }
-              val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), context, loc = currentSourceLocation())
+              val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), sctx, loc = currentSourceLocation())
               return closeWithError(mark, error)
             case _ => lookAhead += 1
           }
@@ -2079,7 +2079,7 @@ object Parser2 {
     }
 
     private def matchRule()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordCase))
       val mark = open()
       expect(TokenKind.KeywordCase)
@@ -2091,7 +2091,7 @@ object Parser2 {
         val error = UnexpectedToken(
           NamedTokenSet.FromKinds(Set(TokenKind.ArrowThickR)),
           actual = Some(TokenKind.Equal),
-          sctx = context,
+          sctx = sctx,
           hint = Some("match cases use '=>' instead of '='."),
           loc = previousSourceLocation())
         closeWithError(open(), error)
@@ -2103,7 +2103,7 @@ object Parser2 {
     }
 
     private def typematchExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordTypeMatch))
       val mark = open()
       expect(TokenKind.KeywordTypeMatch)
@@ -2121,7 +2121,7 @@ object Parser2 {
     }
 
     private def typematchRule()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordCase))
       val mark = open()
       expect(TokenKind.KeywordCase)
@@ -2137,7 +2137,7 @@ object Parser2 {
     }
 
     private def restrictableChooseExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(atAny(Set(TokenKind.KeywordChoose, TokenKind.KeywordChooseStar)))
       val mark = open()
       val isStar = eat(TokenKind.KeywordChooseStar)
@@ -2158,7 +2158,7 @@ object Parser2 {
     }
 
     private def forApplicativeExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordForA))
       val mark = open()
       expect(TokenKind.KeywordForA)
@@ -2170,7 +2170,7 @@ object Parser2 {
     }
 
     private def foreachExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordForeach))
       val mark = open()
       var kind: TreeKind = TreeKind.Expr.Foreach
@@ -2184,7 +2184,7 @@ object Parser2 {
     }
 
     private def forMonadicExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordForM))
       val mark = open()
       expect(TokenKind.KeywordForM)
@@ -2195,7 +2195,7 @@ object Parser2 {
     }
 
     private def forFragments()(implicit s: State): Unit = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       oneOrMore(
         namedTokenSet = NamedTokenSet.ForFragment,
         checkForItem = t => t.isFirstPattern || t == TokenKind.KeywordIf,
@@ -2211,7 +2211,7 @@ object Parser2 {
     }
 
     private def guardFragment()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordIf))
       val mark = open()
       expect(TokenKind.KeywordIf)
@@ -2220,7 +2220,7 @@ object Parser2 {
     }
 
     private def generatorOrLetFragment()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       Pattern.pattern()
       val isGenerator = eat(TokenKind.ArrowThinL)
@@ -2299,7 +2299,7 @@ object Parser2 {
     }
 
     private def recordLiteral()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.CurlyL))
       val mark = open()
       zeroOrMore(
@@ -2314,7 +2314,7 @@ object Parser2 {
     }
 
     private def recordLiteralField()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       nameUnqualified(NAME_FIELD)
       expect(TokenKind.Equal)
@@ -2324,7 +2324,7 @@ object Parser2 {
 
 
     private def recordOperation()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.CurlyL))
       val mark = open()
       oneOrMore(
@@ -2342,7 +2342,7 @@ object Parser2 {
     }
 
     private def recordOp()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       nth(0) match {
         case TokenKind.Plus =>
@@ -2361,13 +2361,13 @@ object Parser2 {
           expression()
           close(mark, TreeKind.Expr.RecordOpUpdate)
         case at =>
-          val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowerCase)), actual = Some(at), context, loc = currentSourceLocation())
+          val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowerCase)), actual = Some(at), sctx, loc = currentSourceLocation())
           advanceWithError(error, Some(mark))
       }
     }
 
     private def arrayLiteralExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.ArrayHash))
       val mark = open()
       expect(TokenKind.ArrayHash)
@@ -2384,7 +2384,7 @@ object Parser2 {
     }
 
     private def scopeName()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       expect(TokenKind.At)
       expression()
@@ -2392,7 +2392,7 @@ object Parser2 {
     }
 
     private def vectorLiteralExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.VectorHash))
       val mark = open()
       expect(TokenKind.VectorHash)
@@ -2408,7 +2408,7 @@ object Parser2 {
     }
 
     private def listLiteralExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.ListHash))
       val mark = open()
       expect(TokenKind.ListHash)
@@ -2424,7 +2424,7 @@ object Parser2 {
     }
 
     private def setLiteralExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.SetHash))
       val mark = open()
       expect(TokenKind.SetHash)
@@ -2440,7 +2440,7 @@ object Parser2 {
     }
 
     private def mapLiteralExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.MapHash))
       val mark = open()
       expect(TokenKind.MapHash)
@@ -2456,7 +2456,7 @@ object Parser2 {
     }
 
     private def mapLiteralValue()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       expression()
       expect(TokenKind.ArrowThickR)
@@ -2465,7 +2465,7 @@ object Parser2 {
     }
 
     private def dotdotdotLiteral()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.DotDotDot))
       val mark = open()
       expect(TokenKind.DotDotDot)
@@ -2481,7 +2481,7 @@ object Parser2 {
     }
 
     private def checkedTypeCastExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordCheckedCast))
       val mark = open()
       expect(TokenKind.KeywordCheckedCast)
@@ -2493,7 +2493,7 @@ object Parser2 {
     }
 
     private def checkedEffectCastExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordCheckedECast))
       val mark = open()
       expect(TokenKind.KeywordCheckedECast)
@@ -2505,7 +2505,7 @@ object Parser2 {
     }
 
     private def uncheckedCastExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordUncheckedCast))
       val mark = open()
       expect(TokenKind.KeywordUncheckedCast)
@@ -2520,7 +2520,7 @@ object Parser2 {
     }
 
     private def unsafeExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordUnsafe))
       val mark = open()
       expect(TokenKind.KeywordUnsafe)
@@ -2538,7 +2538,7 @@ object Parser2 {
       *     - TreeKind.Expr.Expr
       */
     private def unsafelyRunExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordUnsafely))
       val mark = open()
       expect(TokenKind.KeywordUnsafely)
@@ -2558,7 +2558,7 @@ object Parser2 {
       *     - .. (potentially zero)
       */
     private def runExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordRun))
       val mark = open()
       expect(TokenKind.KeywordRun)
@@ -2570,7 +2570,7 @@ object Parser2 {
     }
 
     private def handlerExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordHandler))
       val mark = open()
       expect(TokenKind.KeywordHandler)
@@ -2586,13 +2586,13 @@ object Parser2 {
           delimiterR = TokenKind.CurlyR
         )
       } else {
-        s.errors.append(ParseError.UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)), actual = Some(nth(0)), sctx = context, loc = currentSourceLocation()))
+        s.errors.append(ParseError.UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)), actual = Some(nth(0)), sctx = sctx, loc = currentSourceLocation()))
       }
       close(mark, TreeKind.Expr.Handler)
     }
 
     private def tryExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordTry))
       val mark = open()
       expect(TokenKind.KeywordTry)
@@ -2604,7 +2604,7 @@ object Parser2 {
     }
 
     private def catchBody()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordCatch))
       val mark = open()
       expect(TokenKind.KeywordCatch)
@@ -2623,7 +2623,7 @@ object Parser2 {
     }
 
     private def catchRule()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       expect(TokenKind.KeywordCase)
       nameUnqualified(NAME_VARIABLE)
@@ -2635,7 +2635,7 @@ object Parser2 {
     }
 
     private def withBody()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordWith))
       val mark = open()
       expect(TokenKind.KeywordWith)
@@ -2644,7 +2644,7 @@ object Parser2 {
     }
 
     private def withRule()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(nth(0).isComment || at(TokenKind.KeywordDef))
       val mark = open()
       expect(TokenKind.KeywordDef)
@@ -2656,7 +2656,7 @@ object Parser2 {
     }
 
     private def throwExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordThrow))
       val mark = open()
       expect(TokenKind.KeywordThrow)
@@ -2665,7 +2665,7 @@ object Parser2 {
     }
 
     private def ambiguousNewExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordNew))
       val mark = open()
       expect(TokenKind.KeywordNew)
@@ -2712,7 +2712,7 @@ object Parser2 {
     }
 
     private def structFieldInit()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       nameUnqualified(NAME_FIELD)
       expect(TokenKind.Equal)
@@ -2721,7 +2721,7 @@ object Parser2 {
     }
 
     private def jvmMethod()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordDef))
       val mark = open()
       expect(TokenKind.KeywordDef)
@@ -2735,7 +2735,7 @@ object Parser2 {
     }
 
     private def staticExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordStaticUppercase))
       val mark = open()
       expect(TokenKind.KeywordStaticUppercase)
@@ -2743,7 +2743,7 @@ object Parser2 {
     }
 
     private def selectExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordSelect))
       val mark = open()
       expect(TokenKind.KeywordSelect)
@@ -2784,7 +2784,7 @@ object Parser2 {
     }
 
     private def spawnExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordSpawn))
       val mark = open()
       expect(TokenKind.KeywordSpawn)
@@ -2794,7 +2794,7 @@ object Parser2 {
     }
 
     private def parYieldExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordPar))
       val mark = open()
       expect(TokenKind.KeywordPar)
@@ -2816,7 +2816,7 @@ object Parser2 {
     }
 
     private def parYieldFragment()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       Pattern.pattern()
       expect(TokenKind.ArrowThinL)
@@ -2825,7 +2825,7 @@ object Parser2 {
     }
 
     private def fixpointConstraintSetExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.HashCurlyL))
       val mark = open()
       zeroOrMore(
@@ -2853,7 +2853,7 @@ object Parser2 {
     }
 
     private def fixpointLambdaExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.HashParenL))
       val mark = open()
       Predicate.params()
@@ -2863,7 +2863,7 @@ object Parser2 {
     }
 
     private def fixpointSolveExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordSolve))
       val mark = open()
       expect(TokenKind.KeywordSolve)
@@ -2882,7 +2882,7 @@ object Parser2 {
     }
 
     private def fixpointInjectExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordInject))
       val mark = open()
       expect(TokenKind.KeywordInject)
@@ -2899,7 +2899,7 @@ object Parser2 {
     }
 
     private def fixpointQueryExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordQuery))
       val mark = open()
       expect(TokenKind.KeywordQuery)
@@ -2920,7 +2920,7 @@ object Parser2 {
     }
 
     private def fixpointQuerySelect()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordSelect))
       val mark = open()
       expect(TokenKind.KeywordSelect)
@@ -2938,7 +2938,7 @@ object Parser2 {
     }
 
     private def fixpointQueryFrom()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordFrom))
       val mark = open()
       expect(TokenKind.KeywordFrom)
@@ -2950,7 +2950,7 @@ object Parser2 {
     }
 
     private def fixpointQueryWhere()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordWhere))
       val mark = open()
       expect(TokenKind.KeywordWhere)
@@ -2967,7 +2967,7 @@ object Parser2 {
     private val FIRST_EXPR_INTERPOLATED_STRING: Set[TokenKind] = Set(TokenKind.LiteralStringInterpolationL, TokenKind.LiteralDebugStringL)
 
     private def interpolatedStringExpr()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(atAny(FIRST_EXPR_INTERPOLATED_STRING))
       val mark = open()
 
@@ -3040,7 +3040,7 @@ object Parser2 {
     }
 
     private def variablePat()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
       nameUnqualified(NAME_VARIABLE)
       close(mark, TreeKind.Pattern.Variable)
@@ -3053,7 +3053,7 @@ object Parser2 {
     }
 
     private def tagPat()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
       nameAllowQualified(NAME_TAG)
       if (at(TokenKind.ParenL)) {
@@ -3063,7 +3063,7 @@ object Parser2 {
     }
 
     private def tuplePat()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       assert(at(TokenKind.ParenL))
       val mark = open()
       zeroOrMore(
@@ -3076,7 +3076,7 @@ object Parser2 {
     }
 
     private def recordPat()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       assert(at(TokenKind.CurlyL))
       val mark = open()
       zeroOrMore(
@@ -3092,7 +3092,7 @@ object Parser2 {
     }
 
     private def recordField()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
       nameUnqualified(NAME_FIELD)
       if (eat(TokenKind.Equal)) {
@@ -3194,7 +3194,7 @@ object Parser2 {
     }
 
     def arguments()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
       zeroOrMore(
         namedTokenSet = NamedTokenSet.Type,
@@ -3214,7 +3214,7 @@ object Parser2 {
     }
 
     def parameters()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
       oneOrMore(
         namedTokenSet = NamedTokenSet.Parameter,
@@ -3230,7 +3230,7 @@ object Parser2 {
     }
 
     private def parameter()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
       nameUnqualified(NAME_VARIABLE)
       if (at(TokenKind.Colon)) {
@@ -3241,7 +3241,7 @@ object Parser2 {
     }
 
     def constraints()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       assert(at(TokenKind.KeywordWith))
       val mark = open()
       expect(TokenKind.KeywordWith)
@@ -3263,7 +3263,7 @@ object Parser2 {
     }
 
     private def constraint()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
       nameAllowQualified(NAME_DEFINITION)
       expect(TokenKind.BracketL)
@@ -3273,7 +3273,7 @@ object Parser2 {
     }
 
     def derivations()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       assert(at(TokenKind.KeywordWith))
       val mark = open()
       expect(TokenKind.KeywordWith)
@@ -3295,7 +3295,7 @@ object Parser2 {
     }
 
     private def typeDelimited()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       // If a new type is added here then add it to TYPE_FIRST too.
       val mark = open()
       nth(0) match {
@@ -3329,7 +3329,7 @@ object Parser2 {
     private val TYPE_VAR: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameGreek, TokenKind.NameMath, TokenKind.Underscore)
 
     private def variableType()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
       expectAny(TYPE_VAR)
       close(mark, TreeKind.Type.Variable)
@@ -3338,7 +3338,7 @@ object Parser2 {
     private val TYPE_CONSTANT: Set[TokenKind] = Set(TokenKind.KeywordUniv, TokenKind.KeywordFalse, TokenKind.KeywordTrue)
 
     private def constantType()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
       expectAny(TYPE_CONSTANT)
       close(mark, TreeKind.Type.Constant)
@@ -3359,7 +3359,7 @@ object Parser2 {
     }
 
     private def recordRow()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       assert(at(TokenKind.ParenL))
       val mark = open()
       zeroOrMore(
@@ -3373,7 +3373,7 @@ object Parser2 {
     }
 
     private def tuple()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       assert(at(TokenKind.ParenL))
       val mark = open()
       zeroOrMore(
@@ -3398,7 +3398,7 @@ object Parser2 {
     }
 
     private def record()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       assert(at(TokenKind.CurlyL))
       val mark = open()
       (nth(1), nth(2)) match {
@@ -3423,7 +3423,7 @@ object Parser2 {
     }
 
     private def recordField()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
       nameUnqualified(NAME_FIELD)
       expect(TokenKind.Equal)
@@ -3432,7 +3432,7 @@ object Parser2 {
     }
 
     private def effectSet()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
       zeroOrMore(
         namedTokenSet = NamedTokenSet.Effect,
@@ -3446,7 +3446,7 @@ object Parser2 {
     }
 
     private def schemaType()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       assert(at(TokenKind.HashCurlyL))
       val mark = open()
       zeroOrMore(
@@ -3462,7 +3462,7 @@ object Parser2 {
     }
 
     private def schemaRowType()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       assert(at(TokenKind.HashParenL))
       val mark = open()
       zeroOrMore(
@@ -3477,7 +3477,7 @@ object Parser2 {
     }
 
     private def schemaTerm()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
       nameAllowQualified(NAME_PREDICATE)
       if (at(TokenKind.BracketL)) {
@@ -3500,7 +3500,7 @@ object Parser2 {
     }
 
     private def caseSetType()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       assert(at(TokenKind.AngleL))
       val mark = open()
       zeroOrMore(
@@ -3517,7 +3517,7 @@ object Parser2 {
     private val FIRST_TYPE_UNARY: Set[TokenKind] = Set(TokenKind.Tilde, TokenKind.KeywordNot, TokenKind.KeywordRvnot)
 
     private def unaryType()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
       val op = nth(0)
       val markOp = open()
@@ -3528,7 +3528,7 @@ object Parser2 {
     }
 
     def kind()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Unknown
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
 
       def kindFragment(): Unit = {
         val inParens = eat(TokenKind.ParenL)
@@ -3551,7 +3551,7 @@ object Parser2 {
 
   private object Predicate {
     def head()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.Constraint
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
       val mark = open()
       nameUnqualified(NAME_PREDICATE)
       termList()
@@ -3559,14 +3559,14 @@ object Parser2 {
     }
 
     private def termList()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.Constraint
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
       val mark = open()
       // Check for missing term list.
       if (!at(TokenKind.ParenL)) {
         closeWithError(open(), UnexpectedToken(
           expected = NamedTokenSet.FromKinds(Set(TokenKind.ParenL)),
           actual = Some(nth(0)),
-          sctx = context,
+          sctx = sctx,
           hint = Some("provide a list of terms."),
           loc = previousSourceLocation())
         )
@@ -3587,7 +3587,7 @@ object Parser2 {
     }
 
     private def patternList()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.Constraint
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
       val mark = open()
       zeroOrMore(
         namedTokenSet = NamedTokenSet.Pattern,
@@ -3604,7 +3604,7 @@ object Parser2 {
     }
 
     def body()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.Constraint
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
       val mark = open()
       nth(0) match {
         case TokenKind.KeywordIf =>
@@ -3620,7 +3620,7 @@ object Parser2 {
           val error = UnexpectedToken(
             expected = NamedTokenSet.FixpointConstraint,
             actual = Some(at),
-            context,
+            sctx,
             loc = currentSourceLocation()
           )
           closeWithError(mark, error)
@@ -3628,7 +3628,7 @@ object Parser2 {
     }
 
     private def guard()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.Constraint
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
       assert(at(TokenKind.KeywordIf))
       val mark = open()
       expect(TokenKind.KeywordIf)
@@ -3639,7 +3639,7 @@ object Parser2 {
     }
 
     private def functional()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.Constraint
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
       assert(at(TokenKind.KeywordLet))
       val mark = open()
       expect(TokenKind.KeywordLet)
@@ -3658,7 +3658,7 @@ object Parser2 {
           val error = UnexpectedToken(
             expected = NamedTokenSet.FromKinds(Set(TokenKind.ParenL, TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)),
             actual = Some(at),
-            context,
+            sctx,
             loc = currentSourceLocation()
           )
           advanceWithError(error)
@@ -3669,7 +3669,7 @@ object Parser2 {
     }
 
     def atom()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.Constraint
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
       val mark = open()
       eat(TokenKind.KeywordNot)
       eat(TokenKind.KeywordFix)
@@ -3679,7 +3679,7 @@ object Parser2 {
     }
 
     def params()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.Constraint
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
       val mark = open()
       zeroOrMore(
         namedTokenSet = NamedTokenSet.Parameter,
@@ -3692,7 +3692,7 @@ object Parser2 {
     }
 
     private def param()(implicit s: State): Mark.Closed = {
-      implicit val context: SyntacticContext = SyntacticContext.Expr.Constraint
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
       var kind: TreeKind = TreeKind.Predicate.ParamUntyped
       val mark = open()
       nameUnqualified(NAME_PREDICATE)
