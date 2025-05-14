@@ -1370,7 +1370,7 @@ object GenExpression {
         // handler
         NEW(effectJvmName) ~ DUP() ~ cheat(_.visitMethodInsn(Opcodes.INVOKESPECIAL, effectJvmName.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)) ~
         // bind handler closures
-        cheat(mv => rules.foreach {
+        cheat(mv => rules.foreach{
           case HandlerRule(op, _, body) =>
             mv.visitInsn(Opcodes.DUP)
             compileExpr(body)(mv, ctx, root, flix)
