@@ -29,8 +29,6 @@ import org.objectweb.asm
 import org.objectweb.asm.*
 import org.objectweb.asm.Opcodes.*
 
-import scala.annotation.tailrec
-
 /**
   * Generate expression
   */
