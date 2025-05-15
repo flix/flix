@@ -193,7 +193,11 @@ object GenFunAndClosureClasses {
     // Method header
     val applyMethod = BackendObjType.Frame.ApplyMethod
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, applyMethod.name, applyMethod.d.toDescriptor, null, null)
-    val localOffset = 2 // [this: Obj, value: Obj, ...]
+    val localOffset = if (Purity.isControlImpure(defn.expr.purity)) {
+      2 // [this: Obj, value: Obj, ...]
+    } else {
+      1
+    }
 
     val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.sym.getStackOffset(localOffset), lp.sym.isWild, lp.tpe) }
     val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.sym.getStackOffset(localOffset), false, cp.tpe) }
