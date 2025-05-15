@@ -19,7 +19,7 @@
 mod Fixpoint3.Ast.Ram {
     use Fixpoint.Ast.Shared.{BoxedDenotation => Denotation, PredSym}
     use Fixpoint.Ast.Shared.Denotation.{Relational}
-    use Fixpoint.Boxed
+    use Fixpoint3.Boxed
     use Fixpoint.PredSymsOf
     use Fixpoint.SubstitutePredSym
 
@@ -30,6 +30,7 @@ mod Fixpoint3.Ast.Ram {
     ///
     /// A `RamProgram` represents a compiled Datalog program.
     /// 
+    @Internal
     pub enum RamProgram {
         case Program(RamStmt, Facts, Predicates, IndexInformation)
     }
@@ -38,11 +39,13 @@ mod Fixpoint3.Ast.Ram {
     /// Contains a set of `RelSym` representing the names of the relations in the program
     ///  and 1 + the maximal identifier of the `RelSym`s.
     ///
+    @Internal
     pub type alias Predicates = (Int64, Set[RelSym])
 
     ///
     /// The EDB of a program.
     ///
+    @Internal
     pub type alias Facts = Map[RelSym, Vector[Vector[Boxed]]]
 
     ///
@@ -61,22 +64,26 @@ mod Fixpoint3.Ast.Ram {
     /// `Vector#{2}` but gets expanded to `Vector#{2, 0, 1}`. Thus, the final search used
     /// by an index has length exactly equal to the relation's arity.
     ///
+    @Internal
     pub type alias Search = Vector[Int32]
 
     ///
     /// Maps to the set of `Search` for a `RelSym` in the Datalog program. It represents
     /// the indexes that will be created for `RelSym` during program evaluation.
     ///
+    @Internal
     pub type alias Indexes = Map[RelSym, Vector[Search]]
 
     ///
     /// Maps a `RelSym` and its place in `Indexes[RelSym]` to its final position in memory.
     ///
+    @Internal
     pub type alias IndexPositions = Map[(RelSym, Int32), Int32]
 
     ///
     /// The indexes to be created during program evaluation and their positions in memory.
     ///
+    @Internal
     pub type alias IndexInformation = (Indexes, IndexPositions)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -214,7 +221,6 @@ mod Fixpoint3.Ast.Ram {
     /// `Guard4(f, term1, term2, term3, term4)`: True if `f(term1, term2, term3, term4) == true`.
     /// `Guard5(f, term1, term2, term3, term4, term5)`: True if `f(term1, term2, term3, term4, term5) == true`.
     ///
-
     @Internal
     pub enum BoolExp {
         case Not(BoolExp)
@@ -331,7 +337,7 @@ mod Fixpoint3.Ast.Ram {
     /// `RelSym(predSym, arity, den)` represents the relation of `predSym`
     /// which has arity `arity` and denotation `den`.
     ///
-
+    @Internal
     pub enum RelSym {
         case Symbol(PredSym, Int32, Denotation)
     }
@@ -451,6 +457,7 @@ mod Fixpoint3.Ast.Ram {
     ///
     /// `RelPos(predId, i)` represents `i`'th index of the `RelSym` with PredSym-id `predId`.
     ///
+    @Internal
     pub enum RamId {
         case Id(Int32)
         case InId(Int32, Int32)

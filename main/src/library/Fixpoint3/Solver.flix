@@ -5,7 +5,7 @@ mod Fixpoint3.Solver {
     use Fixpoint.Ast.Datalog.Datalog
     use Fixpoint.Ast.Shared.PredSym
     use Fixpoint.Ast.Shared.PredSym.PredSym
-    use Fixpoint.Boxed
+    use Fixpoint3.Boxed
 
     ///
     /// Returns the minimal model of the given Datalog program `d`.
