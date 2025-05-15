@@ -1443,19 +1443,19 @@ object GenExpression {
             mv.visitJumpInsn(GOTO, afterUnboxing)
             mv.visitLabel(pcPointLabel)
             printPc(mv, pcPoint)
+            mv.visitVarInsn(ALOAD, 1)
+            mv.visitLabel(afterUnboxing)
 
           case DirectContext(_, _, _, _) =>
             throw InternalCompilerException("figure it out later", loc)
         }
-        mv.visitVarInsn(ALOAD, 1)
-        mv.visitLabel(afterUnboxing)
       } else {
         mv.visitInsn(ARETURN)
       }
 
     case Expr.Do(op, exps, tpe, _, loc) => ctx match {
       case DirectContext(_, _, _, _) =>
-        throw InternalCompilerException("unexpected do-expression in static method context", loc)
+        throw InternalCompilerException("unexpected do-expression in direct method context", loc)
 
       case EffectContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
         val pcPoint = pcCounter(0) + 1
