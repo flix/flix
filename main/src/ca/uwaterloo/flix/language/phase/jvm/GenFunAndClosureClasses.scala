@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
-import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.language.ast.{MonoType, Purity, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression.compileInt
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
@@ -149,6 +149,9 @@ object GenFunAndClosureClasses {
 
     // Methods
     compileConstructor(functionInterface, visitor)
+    if (Purity.isControlPure(defn.expr.purity) && kind == Function) {
+      compileStaticInvokeMethod(visitor, classType, defn)
+    }
     compileInvokeMethod(visitor, classType)
     compileFrameMethod(visitor, classType, defn)
     compileCopyMethod(visitor, classType, defn)
@@ -169,6 +172,39 @@ object GenFunAndClosureClasses {
 
     constructor.visitMaxs(999, 999)
     constructor.visitEnd()
+  }
+
+  private def compileStaticInvokeMethod(visitor: ClassWriter,
+                                        classType: JvmType.Reference,
+                                        defn: Def)(implicit root: Root, flix: Flix): Unit = {
+    // Method header
+    val desc = MethodDescriptor(defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe)), BackendObjType.Result.toTpe)
+    val name = "invokeStatic"
+    val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
+    val m = visitor.visitMethod(modifiers, name, desc.toDescriptor, null, null)
+
+    m.visitCode()
+
+    // used for self-recursive tail calls
+    val enterLabel = new Label()
+    m.visitLabel(enterLabel)
+
+    // Generate the expression
+    val localOffset = 0
+    val ctx = GenExpression.StaticContext(classType, enterLabel, Map(), localOffset)
+    GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
+
+    val returnValue = BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
+    returnValue(new BytecodeInstructions.F(m))
+
+    try {
+      m.visitMaxs(999, 999)
+    } catch {
+      case e: Throwable =>
+        println(defn.sym)
+        throw e
+    }
+    m.visitEnd()
   }
 
 
@@ -242,7 +278,7 @@ object GenFunAndClosureClasses {
         } ~
         POP()
     }
-    val ctx = GenExpression.MethodContext(classType, enterLabel, Map(), newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
+    val ctx = GenExpression.InstanceContext(classType, enterLabel, Map(), newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
     GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
     assert(ctx.pcCounter(0) == pcLabels.size, s"${(classType.name, ctx.pcCounter(0), pcLabels.size)}")
 
