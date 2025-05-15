@@ -23,8 +23,8 @@ import scala.jdk.CollectionConverters.SeqHasAsJava
 
 /**
   * Represent `InlayHint` in LSP.
-  * @since 3.17.0
   *
+  * @since 3.17.0
   * @param position     The position of this hint
   * @param label        The label of this hint. A human readable string or an array of
   *                     InlayHintLabelPart label parts.

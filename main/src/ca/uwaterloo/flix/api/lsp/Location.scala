@@ -33,5 +33,6 @@ object Location {
   */
 case class Location(uri: String, range: Range) {
   def toJSON: JValue = ("uri" -> uri) ~ ("range" -> range.toJSON)
+
   def toLsp4j: lsp4j.Location = new lsp4j.Location(uri, range.toLsp4j)
 }
