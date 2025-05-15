@@ -1431,7 +1431,7 @@ object GenExpression {
           DUP() ~
           // create continuation
           NEW(BackendObjType.FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.FramesNil.Constructor) ~
-          ctx.newFrame ~ DUP() ~ cheat(m => compileInt(pcPoint)(m)) ~ ctx.setPc ~
+          ctx.newFrame ~ DUP() ~ pushInt(pcPoint) ~ ctx.setPc ~
           INVOKEVIRTUAL(BackendObjType.FramesNil.PushMethod) ~
           // store continuation
           PUTFIELD(Suspension.PrefixField) ~
