@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
-import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.language.ast.{MonoType, Purity, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression.compileInt
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
@@ -142,10 +142,12 @@ object GenFunAndClosureClasses {
       val erasedArgType = JvmOps.getErasedJvmType(argType)
       AsmOps.compileField(visitor, s"clo$index", erasedArgType, isStatic = false, isPrivate = false, isVolatile = false)
     }
-    for ((x, i) <- defn.lparams.zipWithIndex) {
-      visitor.visitField(ACC_PUBLIC, s"l$i", JvmOps.getErasedJvmType(x.tpe).toDescriptor, null, null)
+    if (Purity.isControlImpure(defn.expr.purity)) {
+      for ((x, i) <- defn.lparams.zipWithIndex) {
+        visitor.visitField(ACC_PUBLIC, s"l$i", JvmOps.getErasedJvmType(x.tpe).toDescriptor, null, null)
+      }
+      visitor.visitField(ACC_PUBLIC, "pc", JvmType.PrimInt.toDescriptor, null, null)
     }
-    visitor.visitField(ACC_PUBLIC, "pc", JvmType.PrimInt.toDescriptor, null, null)
 
     // Methods
     compileConstructor(functionInterface, visitor)
@@ -171,7 +173,6 @@ object GenFunAndClosureClasses {
     constructor.visitEnd()
   }
 
-
   private def compileInvokeMethod(visitor: ClassWriter, classType: JvmType.Reference): Unit = {
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
       AsmOps.getMethodDescriptor(Nil, JvmType.Reference(BackendObjType.Result.jvmName)), null, null)
@@ -194,9 +195,13 @@ object GenFunAndClosureClasses {
     // Method header
     val applyMethod = BackendObjType.Frame.ApplyMethod
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, applyMethod.name, applyMethod.d.toDescriptor, null, null)
-    val localOffset = 2 // [this: Obj, value: Obj, ...]
+    val localOffset = if (Purity.isControlImpure(defn.expr.purity)) {
+      2 // [this: Obj, value: Obj, ...]
+    } else {
+      1
+    }
 
-    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.sym.getStackOffset(localOffset), lp.sym.isWild, lp.tpe) }
+    val lparams = if (Purity.isControlImpure(defn.expr.purity)) defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.sym.getStackOffset(localOffset), lp.sym.isWild, lp.tpe) } else List.empty
     val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.sym.getStackOffset(localOffset), false, cp.tpe) }
     val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.sym.getStackOffset(localOffset), false, fp.tpe) }
 
@@ -205,7 +210,9 @@ object GenFunAndClosureClasses {
     }
 
     m.visitCode()
-    loadParamsOf(lparams)
+    if (Purity.isControlImpure(defn.expr.purity)) {
+      loadParamsOf(lparams)
+    }
 
     // used for self-recursive tail calls
     val enterLabel = new Label()
@@ -221,13 +228,15 @@ object GenFunAndClosureClasses {
     loadParamsOf(fparams)
 
     val pcLabels: Vector[Label] = Vector.range(0, defn.pcPoints).map(_ => new Label())
-    if (defn.pcPoints > 0) {
-      // the default label is the starting point of the function if pc = 0
-      val defaultLabel = new Label()
-      m.visitVarInsn(ALOAD, 0)
-      m.visitFieldInsn(GETFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
-      m.visitTableSwitchInsn(1, pcLabels.length, defaultLabel, pcLabels *)
-      m.visitLabel(defaultLabel)
+    if (Purity.isControlImpure(defn.expr.purity)) {
+      if (defn.pcPoints > 0) {
+        // the default label is the starting point of the function if pc = 0
+        val defaultLabel = new Label()
+        m.visitVarInsn(ALOAD, 0)
+        m.visitFieldInsn(GETFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
+        m.visitTableSwitchInsn(1, pcLabels.length, defaultLabel, pcLabels *)
+        m.visitLabel(defaultLabel)
+      }
     }
 
     // Generating the expression
@@ -242,9 +251,21 @@ object GenFunAndClosureClasses {
         } ~
         POP()
     }
-    val ctx = GenExpression.MethodContext(classType, enterLabel, Map(), newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
+
+    val ctx = if (Purity.isControlPure(defn.expr.purity)) {
+      GenExpression.DirectContext(classType, enterLabel, Map.empty, localOffset)
+    } else {
+      GenExpression.EffectContext(classType, enterLabel, Map.empty, newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
+    }
+
     GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
-    assert(ctx.pcCounter(0) == pcLabels.size, s"${(classType.name, ctx.pcCounter(0), pcLabels.size)}")
+
+    ctx match {
+      case GenExpression.EffectContext(_, _, _, _, _, _, _, pcCounter) =>
+        assert(pcCounter(0) == pcLabels.size, s"${(classType.name, pcCounter(0), pcLabels.size)}")
+      case GenExpression.DirectContext(_, _, _, _) =>
+    }
+
 
     val returnValue = BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
     returnValue(new BytecodeInstructions.F(m))
@@ -271,10 +292,10 @@ object GenFunAndClosureClasses {
     */
   private def mkCopy(classType: JvmType.Reference, defn: Def): InstructionSet = {
     import BytecodeInstructions.*
-    val pc = List(("pc", MonoType.Int32))
+    val pc = if (Purity.isControlImpure(defn.expr.purity)) List(("pc", MonoType.Int32)) else List.empty
     val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", p._1.tpe))
     val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", p._1.tpe))
-    val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", p._1.tpe))
+    val lparams = if (Purity.isControlImpure(defn.expr.purity)) defn.lparams.zipWithIndex.map(p => (s"l${p._2}", p._1.tpe)) else List.empty
     val params = pc ++ fparams ++ cparams ++ lparams
 
     def getThenPutField(name: String, tpe: MonoType): InstructionSet = cheat(mv => {
@@ -326,7 +347,7 @@ object GenFunAndClosureClasses {
 
     val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", p._1.tpe))
     val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", p._1.tpe))
-    val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", p._1.tpe))
+    val lparams = if (Purity.isControlImpure(defn.expr.purity)) defn.lparams.zipWithIndex.map(p => (s"l${p._2}", p._1.tpe)) else List.empty
     val params = fparams ++ cparams ++ lparams
 
     val printStream = JvmName(List("java", "io"), "PrintStream")
@@ -342,12 +363,14 @@ object GenFunAndClosureClasses {
     m.visitLdcInsn(defn.sym.toString)
     m.visitInsn(AASTORE)
 
-    m.visitInsn(DUP)
-    compileInt(1)(m)
-    m.visitVarInsn(ALOAD, 0)
-    m.visitFieldInsn(GETFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
-    BytecodeInstructions.xToString(BackendType.Int32)(mf)
-    m.visitInsn(AASTORE)
+    if (Purity.isControlImpure(defn.expr.purity)) {
+      m.visitInsn(DUP)
+      compileInt(1)(m)
+      m.visitVarInsn(ALOAD, 0)
+      m.visitFieldInsn(GETFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
+      BytecodeInstructions.xToString(BackendType.Int32)(mf)
+      m.visitInsn(AASTORE)
+    }
 
     params.zipWithIndex.foreach {
       case ((fieldName, fieldType), i) =>

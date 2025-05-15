@@ -36,7 +36,29 @@ object GenExpression {
 
   type Ref[T] = Array[T]
 
-  case class MethodContext(clazz: JvmType.Reference,
+  sealed trait MethodContext {
+
+    def clazz: JvmType.Reference
+
+    def entryPoint: Label
+
+    def lenv: Map[Symbol.LabelSym, Label]
+
+    def localOffset: Int
+
+    def addLabels(labels: Map[Symbol.LabelSym, Label]): MethodContext = {
+      val updatedLabels = this.lenv ++ labels
+      this match {
+        case ctx: EffectContext =>
+          ctx.copy(lenv = updatedLabels)
+        case ctx: DirectContext =>
+          ctx.copy(lenv = updatedLabels)
+      }
+    }
+
+  }
+
+  case class EffectContext(clazz: JvmType.Reference,
                            entryPoint: Label,
                            lenv: Map[Symbol.LabelSym, Label],
                            newFrame: InstructionSet, // [...] -> [..., frame]
@@ -44,13 +66,18 @@ object GenExpression {
                            localOffset: Int,
                            pcLabels: Vector[Label],
                            pcCounter: Ref[Int]
-                          )
+                          ) extends MethodContext
+
+  case class DirectContext(clazz: JvmType.Reference,
+                           entryPoint: Label,
+                           lenv: Map[Symbol.LabelSym, Label],
+                           localOffset: Int,
+                          ) extends MethodContext
 
   /**
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
   def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
-
     case Expr.Cst(cst, tpe, loc) => cst match {
       case Constant.Unit =>
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName,
@@ -1113,21 +1140,28 @@ object GenExpression {
             "arg0", JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
           // Calling unwind and unboxing
 
-          if (Purity.isControlPure(purity)) BackendObjType.Result.unwindSuspensionFreeThunk("in pure closure call", loc)(new BytecodeInstructions.F(mv))
-          else {
-            val pcPoint = ctx.pcCounter(0) + 1
-            val pcPointLabel = ctx.pcLabels(pcPoint)
-            val afterUnboxing = new Label()
-            ctx.pcCounter(0) += 1
-            BackendObjType.Result.unwindThunkToValue(pcPoint, ctx.newFrame, ctx.setPc)(new BytecodeInstructions.F(mv))
-            mv.visitJumpInsn(GOTO, afterUnboxing)
+          if (Purity.isControlPure(purity)) {
+            BackendObjType.Result.unwindSuspensionFreeThunk("in pure closure call", loc)(new BytecodeInstructions.F(mv))
+          } else {
+            ctx match {
+              case EffectContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+                val pcPoint = pcCounter(0) + 1
+                val pcPointLabel = pcLabels(pcPoint)
+                val afterUnboxing = new Label()
+                pcCounter(0) += 1
+                BackendObjType.Result.unwindThunkToValue(pcPoint, newFrame, setPc)(new BytecodeInstructions.F(mv))
+                mv.visitJumpInsn(GOTO, afterUnboxing)
 
-            mv.visitLabel(pcPointLabel)
-            printPc(mv, pcPoint)
+                mv.visitLabel(pcPointLabel)
+                printPc(mv, pcPoint)
 
-            mv.visitVarInsn(ALOAD, 1)
+                mv.visitVarInsn(ALOAD, 1)
 
-            mv.visitLabel(afterUnboxing)
+                mv.visitLabel(afterUnboxing)
+
+              case DirectContext(_, _, _, _) =>
+                throw InternalCompilerException("unexpected static method context in control impure function", loc)
+            }
           }
       }
 
@@ -1168,24 +1202,32 @@ object GenExpression {
         }
         // Calling unwind and unboxing
 
-        if (Purity.isControlPure(purity)) BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)(new BytecodeInstructions.F(mv))
+        if (Purity.isControlPure(purity)) {
+          BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)(new BytecodeInstructions.F(mv))
+        }
         else {
-          val pcPoint = ctx.pcCounter(0) + 1
-          val pcPointLabel = ctx.pcLabels(pcPoint)
-          val afterUnboxing = new Label()
-          ctx.pcCounter(0) += 1
-          BackendObjType.Result.unwindThunkToValue(pcPoint, ctx.newFrame, ctx.setPc)(new BytecodeInstructions.F(mv))
-          mv.visitJumpInsn(GOTO, afterUnboxing)
+          ctx match {
+            case EffectContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+              val pcPoint = pcCounter(0) + 1
+              val pcPointLabel = pcLabels(pcPoint)
+              val afterUnboxing = new Label()
+              pcCounter(0) += 1
+              BackendObjType.Result.unwindThunkToValue(pcPoint, newFrame, setPc)(new BytecodeInstructions.F(mv))
+              mv.visitJumpInsn(GOTO, afterUnboxing)
 
-          mv.visitLabel(pcPointLabel)
-          printPc(mv, pcPoint)
-          mv.visitVarInsn(ALOAD, 1)
+              mv.visitLabel(pcPointLabel)
+              printPc(mv, pcPoint)
+              mv.visitVarInsn(ALOAD, 1)
 
-          mv.visitLabel(afterUnboxing)
+              mv.visitLabel(afterUnboxing)
+
+            case DirectContext(_, _, _, _) =>
+              throw InternalCompilerException("unexpected direct method context in control impure function", loc)
+          }
         }
     }
 
-    case Expr.ApplySelfTail(sym, exps, _, _, _) =>
+    case Expr.ApplySelfTail(sym, exps, _, purity, loc) =>
       // The function abstract class name
       val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
       // Evaluate each argument and put the result on the Fn class.
@@ -1198,7 +1240,18 @@ object GenExpression {
       }
       mv.visitVarInsn(ALOAD, 0)
       compileInt(0)
-      ctx.setPc(new BytecodeInstructions.F(mv))
+      if (Purity.isControlImpure(purity)) {
+        ctx match {
+          case EffectContext(_, _, _, _, setPc, _, _, _) =>
+            setPc(new BytecodeInstructions.F(mv))
+
+          case DirectContext(_, _, _, _) =>
+            throw InternalCompilerException("unexpected direct method context in control impure function", loc)
+        }
+      } else {
+        assert(ctx.isInstanceOf[DirectContext])
+      }
+
       // Jump to the entry point of the method.
       mv.visitJumpInsn(GOTO, ctx.entryPoint)
 
@@ -1214,9 +1267,8 @@ object GenExpression {
       mv.visitLabel(ifEnd)
 
     case Expr.Branch(exp, branches, _, _, _) =>
-      // Calculating the updated jumpLabels map
-      val updatedJumpLabels = branches.foldLeft(ctx.lenv)((map, branch) => map + (branch._1 -> new Label()))
-      val ctx1 = ctx.copy(lenv = updatedJumpLabels)
+      val updatedJumpLabels = branches.map(branch => branch._1 -> new Label())
+      val ctx1 = ctx.addLabels(updatedJumpLabels)
       // Compiling the exp
       compileExpr(exp)(mv, ctx1, root, flix)
       // Label for the end of all branches
@@ -1358,7 +1410,7 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       mv.visitLabel(afterTryAndCatch)
 
-    case Expr.RunWith(exp, effUse, rules, ct, _, _, _) =>
+    case Expr.RunWith(exp, effUse, rules, ct, _, _, loc) =>
       // exp is a Unit -> exp.tpe closure
       val effectJvmName = JvmOps.getEffectDefinitionClassType(effUse.sym).name
       val ins = {
@@ -1386,67 +1438,78 @@ object GenExpression {
       ins(new BytecodeInstructions.F(mv))
       // handle value/suspend/thunk if in non-tail position
       if (ct == ExpPosition.NonTail) {
-        val pcPoint = ctx.pcCounter(0) + 1
-        val pcPointLabel = ctx.pcLabels(pcPoint)
         val afterUnboxing = new Label()
-        ctx.pcCounter(0) += 1
-        BackendObjType.Result.unwindThunkToValue(pcPoint, ctx.newFrame, ctx.setPc)(new BytecodeInstructions.F(mv))
-        mv.visitJumpInsn(GOTO, afterUnboxing)
 
-        mv.visitLabel(pcPointLabel)
-        printPc(mv, pcPoint)
+        ctx match {
+          case EffectContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+            val pcPoint = pcCounter(0) + 1
+            val pcPointLabel = pcLabels(pcPoint)
+            pcCounter(0) += 1
+            BackendObjType.Result.unwindThunkToValue(pcPoint, newFrame, setPc)(new BytecodeInstructions.F(mv))
+            mv.visitJumpInsn(GOTO, afterUnboxing)
+            mv.visitLabel(pcPointLabel)
+            printPc(mv, pcPoint)
+
+          case DirectContext(_, _, _, _) =>
+            throw InternalCompilerException("figure it out later", loc)
+        }
         mv.visitVarInsn(ALOAD, 1)
         mv.visitLabel(afterUnboxing)
       } else {
         mv.visitInsn(ARETURN)
       }
 
-    case Expr.Do(op, exps, tpe, _, _) =>
-      val pcPoint = ctx.pcCounter(0) + 1
-      val pcPointLabel = ctx.pcLabels(pcPoint)
-      val afterUnboxing = new Label()
-      val erasedResult = BackendType.toErasedBackendType(tpe)
+    case Expr.Do(op, exps, tpe, _, loc) => ctx match {
+      case DirectContext(_, _, _, _) =>
+        throw InternalCompilerException("unexpected do-expression in direct method context", loc)
 
-      ctx.pcCounter(0) += 1
-      val ins: InstructionSet = {
-        import BackendObjType.Suspension
-        import BytecodeInstructions.*
-        val effectClass = JvmOps.getEffectDefinitionClassType(op.sym.eff)
-        val effectStaticMethod = ClassMaker.StaticMethod(
-          effectClass.name,
-          ClassMaker.Visibility.IsPublic,
-          ClassMaker.Final.NotFinal,
-          JvmOps.getEffectOpName(op.sym),
-          GenEffectClasses.opStaticFunctionDescriptor(op.sym),
-          None
-        )
-        NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~
-          DUP() ~ pushString(op.sym.eff.toString) ~ PUTFIELD(Suspension.EffSymField) ~
-          DUP() ~
-          // --- eff op ---
-          cheat(mv => exps.foreach(e => compileExpr(e)(mv, ctx, root, flix))) ~
-          mkStaticLambda(BackendObjType.EffectCall.ApplyMethod, effectStaticMethod, 2) ~
-          // --------------
-          PUTFIELD(Suspension.EffOpField) ~
-          DUP() ~
-          // create continuation
-          NEW(BackendObjType.FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.FramesNil.Constructor) ~
-          ctx.newFrame ~ DUP() ~ cheat(m => compileInt(pcPoint)(m)) ~ ctx.setPc ~
-          INVOKEVIRTUAL(BackendObjType.FramesNil.PushMethod) ~
-          // store continuation
-          PUTFIELD(Suspension.PrefixField) ~
-          DUP() ~ NEW(BackendObjType.ResumptionNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.ResumptionNil.Constructor) ~ PUTFIELD(Suspension.ResumptionField) ~
-          xReturn(Suspension.toTpe)
-      }
-      ins(new BytecodeInstructions.F(mv))
+      case EffectContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+        val pcPoint = pcCounter(0) + 1
+        val pcPointLabel = pcLabels(pcPoint)
+        val afterUnboxing = new Label()
+        val erasedResult = BackendType.toErasedBackendType(tpe)
 
-      mv.visitLabel(pcPointLabel)
-      printPc(mv, pcPoint)
-      mv.visitVarInsn(ALOAD, 1)
-      BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))(new BytecodeInstructions.F(mv))
+        pcCounter(0) += 1
+        val ins: InstructionSet = {
+          import BytecodeInstructions.*
+          import BackendObjType.Suspension
+          val effectClass = JvmOps.getEffectDefinitionClassType(op.sym.eff)
+          val effectStaticMethod = ClassMaker.StaticMethod(
+            effectClass.name,
+            ClassMaker.Visibility.IsPublic,
+            ClassMaker.Final.NotFinal,
+            JvmOps.getEffectOpName(op.sym),
+            GenEffectClasses.opStaticFunctionDescriptor(op.sym),
+            None
+          )
+          NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~
+            DUP() ~ pushString(op.sym.eff.toString) ~ PUTFIELD(Suspension.EffSymField) ~
+            DUP() ~
+            // --- eff op ---
+            cheat(mv => exps.foreach(e => compileExpr(e)(mv, ctx, root, flix))) ~
+            mkStaticLambda(BackendObjType.EffectCall.ApplyMethod, effectStaticMethod, 2) ~
+            // --------------
+            PUTFIELD(Suspension.EffOpField) ~
+            DUP() ~
+            // create continuation
+            NEW(BackendObjType.FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.FramesNil.Constructor) ~
+            newFrame ~ DUP() ~ cheat(m => compileInt(pcPoint)(m)) ~ setPc ~
+            INVOKEVIRTUAL(BackendObjType.FramesNil.PushMethod) ~
+            // store continuation
+            PUTFIELD(Suspension.PrefixField) ~
+            DUP() ~ NEW(BackendObjType.ResumptionNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.ResumptionNil.Constructor) ~ PUTFIELD(Suspension.ResumptionField) ~
+            xReturn(Suspension.toTpe)
+        }
+        ins(new BytecodeInstructions.F(mv))
 
-      mv.visitLabel(afterUnboxing)
-      AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+        mv.visitLabel(pcPointLabel)
+        printPc(mv, pcPoint)
+        mv.visitVarInsn(ALOAD, 1)
+        BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))(new BytecodeInstructions.F(mv))
+
+        mv.visitLabel(afterUnboxing)
+        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+    }
 
     case Expr.NewObject(name, _, _, _, methods, _) =>
       val exps = methods.map(_.exp)
