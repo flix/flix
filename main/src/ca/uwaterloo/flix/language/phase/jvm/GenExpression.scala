@@ -66,7 +66,7 @@ object GenExpression {
                            localOffset: Int,
                            pcLabels: Vector[Label],
                            pcCounter: Ref[Int]
-                            ) extends MethodContext
+                          ) extends MethodContext
 
   case class DirectContext(clazz: JvmType.Reference,
                            entryPoint: Label,
@@ -78,7 +78,6 @@ object GenExpression {
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
   def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
-
     case Expr.Cst(cst, tpe, loc) => cst match {
       case Constant.Unit =>
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName,
@@ -1223,12 +1222,12 @@ object GenExpression {
               mv.visitLabel(afterUnboxing)
 
             case DirectContext(_, _, _, _) =>
-              throw InternalCompilerException("unexpected static method context in control impure function", loc)
+              throw InternalCompilerException("unexpected direct method context in control impure function", loc)
           }
         }
     }
 
-    case Expr.ApplySelfTail(sym, exps, _, _, _) =>
+    case Expr.ApplySelfTail(sym, exps, _, purity, loc) =>
       // The function abstract class name
       val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
       // Evaluate each argument and put the result on the Fn class.
@@ -1241,12 +1240,18 @@ object GenExpression {
       }
       mv.visitVarInsn(ALOAD, 0)
       compileInt(0)
-      ctx match {
-        case EffectContext(_, _, _, _, setPc, _, _, _) =>
-          setPc(new BytecodeInstructions.F(mv))
+      if (Purity.isControlImpure(purity)) {
+        ctx match {
+          case EffectContext(_, _, _, _, setPc, _, _, _) =>
+            setPc(new BytecodeInstructions.F(mv))
 
-        case DirectContext(_, _, _, _) =>
+          case DirectContext(_, _, _, _) =>
+            throw InternalCompilerException("unexpected direct method context in control impure function", loc)
+        }
+      } else {
+        assert(ctx.isInstanceOf[DirectContext])
       }
+
       // Jump to the entry point of the method.
       mv.visitJumpInsn(GOTO, ctx.entryPoint)
 
