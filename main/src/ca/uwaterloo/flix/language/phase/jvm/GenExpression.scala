@@ -1238,10 +1238,10 @@ object GenExpression {
         mv.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
           s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
-      mv.visitVarInsn(ALOAD, 0)
-      compileInt(0)
       ctx match {
         case EffectContext(_, _, _, _, setPc, _, _, _) =>
+          mv.visitVarInsn(ALOAD, 0)
+          compileInt(0)
           setPc(new BytecodeInstructions.F(mv))
 
         case DirectContext(_, _, _, _) =>
