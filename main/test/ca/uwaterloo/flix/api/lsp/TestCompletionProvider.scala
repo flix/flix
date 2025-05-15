@@ -294,7 +294,7 @@ class TestCompletionProvider extends AnyFunSuite {
     })
   }
 
-  ignore("No duplicated completions for vars") {
+  test("No duplicated completions for vars") {
     Programs.foreach( program => {
       val (root1, _) = compile(program)
       val varOccurs = getVarSymOccurs()(root1)
@@ -417,7 +417,7 @@ class TestCompletionProvider extends AnyFunSuite {
 
     object VarConsumer extends Consumer {
       override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
-          case TypedAst.Expr.Var(sym, _, loc) => occurs += ((sym, loc))
+          case TypedAst.Expr.Var(sym, _, loc) if sym.loc.isReal => occurs += ((sym, loc))
           case _ =>
         }
     }

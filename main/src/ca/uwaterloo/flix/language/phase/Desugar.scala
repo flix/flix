@@ -1436,7 +1436,7 @@ object Desugar {
 
     // Introduce a tmp% variable that holds the minimal model of the merge of the exps.
     val freshVar = flix.genSym.freshId()
-    val localVar = Name.Ident(s"tmp" + Flix.Delimiter + freshVar, SourceLocation.Unknown)
+    val localVar = Name.Ident(s"tmp" + Flix.Delimiter + freshVar, loc0.asSynthetic)
 
     // Merge all the exps into one Datalog program value.
     val mergeExp = es.reduceRight[DesugaredAst.Expr] {
