@@ -208,7 +208,9 @@ object GenFunAndClosureClasses {
     }
 
     m.visitCode()
-    loadParamsOf(lparams)
+    if (Purity.isControlImpure(defn.expr.purity)) {
+      loadParamsOf(lparams)
+    }
 
     // used for self-recursive tail calls
     val enterLabel = new Label()
