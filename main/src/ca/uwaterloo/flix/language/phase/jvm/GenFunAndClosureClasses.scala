@@ -142,10 +142,12 @@ object GenFunAndClosureClasses {
       val erasedArgType = JvmOps.getErasedJvmType(argType)
       AsmOps.compileField(visitor, s"clo$index", erasedArgType, isStatic = false, isPrivate = false, isVolatile = false)
     }
-    for ((x, i) <- defn.lparams.zipWithIndex) {
-      visitor.visitField(ACC_PUBLIC, s"l$i", JvmOps.getErasedJvmType(x.tpe).toDescriptor, null, null)
+    if (Purity.isControlImpure(defn.expr.purity)) {
+      for ((x, i) <- defn.lparams.zipWithIndex) {
+        visitor.visitField(ACC_PUBLIC, s"l$i", JvmOps.getErasedJvmType(x.tpe).toDescriptor, null, null)
+      }
+      visitor.visitField(ACC_PUBLIC, "pc", JvmType.PrimInt.toDescriptor, null, null)
     }
-    visitor.visitField(ACC_PUBLIC, "pc", JvmType.PrimInt.toDescriptor, null, null)
 
     // Methods
     compileConstructor(functionInterface, visitor)
@@ -290,10 +292,10 @@ object GenFunAndClosureClasses {
     */
   private def mkCopy(classType: JvmType.Reference, defn: Def): InstructionSet = {
     import BytecodeInstructions.*
-    val pc = List(("pc", MonoType.Int32))
+    val pc = if (Purity.isControlImpure(defn.expr.purity)) List(("pc", MonoType.Int32)) else List.empty
     val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", p._1.tpe))
     val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", p._1.tpe))
-    val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", p._1.tpe))
+    val lparams = if (Purity.isControlImpure(defn.expr.purity)) defn.lparams.zipWithIndex.map(p => (s"l${p._2}", p._1.tpe)) else List.empty
     val params = pc ++ fparams ++ cparams ++ lparams
 
     def getThenPutField(name: String, tpe: MonoType): InstructionSet = cheat(mv => {
@@ -345,7 +347,7 @@ object GenFunAndClosureClasses {
 
     val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", p._1.tpe))
     val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", p._1.tpe))
-    val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", p._1.tpe))
+    val lparams = if (Purity.isControlImpure(defn.expr.purity)) defn.lparams.zipWithIndex.map(p => (s"l${p._2}", p._1.tpe)) else List.empty
     val params = fparams ++ cparams ++ lparams
 
     val printStream = JvmName(List("java", "io"), "PrintStream")
@@ -361,12 +363,14 @@ object GenFunAndClosureClasses {
     m.visitLdcInsn(defn.sym.toString)
     m.visitInsn(AASTORE)
 
-    m.visitInsn(DUP)
-    compileInt(1)(m)
-    m.visitVarInsn(ALOAD, 0)
-    m.visitFieldInsn(GETFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
-    BytecodeInstructions.xToString(BackendType.Int32)(mf)
-    m.visitInsn(AASTORE)
+    if (Purity.isControlImpure(defn.expr.purity)) {
+      m.visitInsn(DUP)
+      compileInt(1)(m)
+      m.visitVarInsn(ALOAD, 0)
+      m.visitFieldInsn(GETFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
+      BytecodeInstructions.xToString(BackendType.Int32)(mf)
+      m.visitInsn(AASTORE)
+    }
 
     params.zipWithIndex.foreach {
       case ((fieldName, fieldType), i) =>
