@@ -220,13 +220,15 @@ object GenFunAndClosureClasses {
     loadParamsOf(fparams)
 
     val pcLabels: Vector[Label] = Vector.range(0, defn.pcPoints).map(_ => new Label())
-    if (defn.pcPoints > 0) {
-      // the default label is the starting point of the function if pc = 0
-      val defaultLabel = new Label()
-      m.visitVarInsn(ALOAD, 0)
-      m.visitFieldInsn(GETFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
-      m.visitTableSwitchInsn(1, pcLabels.length, defaultLabel, pcLabels *)
-      m.visitLabel(defaultLabel)
+    if (Purity.isControlImpure(defn.expr.purity)) {
+      if (defn.pcPoints > 0) {
+        // the default label is the starting point of the function if pc = 0
+        val defaultLabel = new Label()
+        m.visitVarInsn(ALOAD, 0)
+        m.visitFieldInsn(GETFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
+        m.visitTableSwitchInsn(1, pcLabels.length, defaultLabel, pcLabels *)
+        m.visitLabel(defaultLabel)
+      }
     }
 
     // Generating the expression
@@ -242,7 +244,7 @@ object GenFunAndClosureClasses {
         POP()
     }
 
-    val ctx = if (Purity.isControlPure(defn.expr.purity) && isFunction(defn)) {
+    val ctx = if (Purity.isControlPure(defn.expr.purity)) {
       GenExpression.DirectContext(classType, enterLabel, Map.empty, localOffset)
     } else {
       GenExpression.EffectContext(classType, enterLabel, Map.empty, newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
