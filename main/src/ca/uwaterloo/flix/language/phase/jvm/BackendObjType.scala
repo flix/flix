@@ -1546,7 +1546,7 @@ object BackendObjType {
         DUP2() ~ GETFIELD(Suspension.PrefixField) ~ // [..., s', s, s', s.prefix]
         // Make the new frame and push it
         newFrame ~
-        DUP() ~ cheat(mv => GenExpression.compileInt(pc)(mv)) ~ setPc ~
+        DUP() ~ pushInt(pc) ~ setPc ~
         INVOKEINTERFACE(Frames.PushMethod) ~ // [..., s', s, s', prefix']
         PUTFIELD(Suspension.PrefixField) ~ // [..., s', s]
         POP() ~ // [..., s']
