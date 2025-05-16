@@ -196,16 +196,16 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that unsafely run was used on a pure expression.
+    * An error raised to indicate that an effect in unsafely run cannot ever occur.
     *
     * @param loc the source location of the unsafe run.
     */
-  case class RedundantUnsafe(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Redundant unsafe run, the expression is pure."
+  case class RedundantEffectInUnsafe(effSym: Symbol.EffectSym, loc: SourceLocation) extends RedundancyError {
+    def summary: String = s"Redundant unsafe run, the expression does not have effect '$effSym'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Redundant unsafe run, the expression is pure.
+      s""">> Redundant unsafe run, the expression does not have effect '$effSym'.
          |
          |${code(loc, "redundant unsafe run.")}
          |
