@@ -168,16 +168,16 @@ mod RedBlackTree {
     /// Otherwise, updates `t` with `k => v`.
     ///
     pub def insert(k: k, v: v, t: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] =
-        def loop(tt, sk) = match tt {
-            case Leaf                  => sk(Node(Color.Red, Leaf, k, v, Leaf))
+        def loop(tt) = match tt {
+            case Leaf => Node(Color.Red, Leaf, k, v, Leaf)
             case Node(c, a, k1, v1, b) => match k <=> k1 {
-                case Comparison.LessThan    => loop(a, ks -> sk(balance(Node(c, ks, k1, v1, b))))
-                case Comparison.EqualTo     => sk(Node(c, a, k, v, b))
-                case Comparison.GreaterThan => loop(b, ks -> sk(balance(Node(c, a, k1, v1, ks))))
+                case Comparison.LessThan    => balance(Node(c, loop(a), k1, v1, b))
+                case Comparison.EqualTo     => Node(c, a, k, v, b)
+                case Comparison.GreaterThan => balance(Node(c, a, k1, v1, loop(b)))
             }
-            case _ => sk(tt)
+            case _ => unreachable!()
         };
-        blacken(loop(t, identity))
+        blacken(loop(t))
 
     ///
     /// Updates `t` with `k => f(k, v, v1)` if `k => v1` is in `t`.
