@@ -18,6 +18,11 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.util.CyclicalGraph.Vertex
 
+/**
+  *
+  * @param vertices
+  * @tparam T
+  */
 case class CyclicalGraph[T](vertices: List[Vertex[T]])
 
 object CyclicalGraph {
