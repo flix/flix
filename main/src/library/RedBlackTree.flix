@@ -169,7 +169,7 @@ mod RedBlackTree {
     ///
     pub def insert(k: k, v: v, t: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] =
         def loop(tt) = match tt {
-            case Leaf => Node(Color.Red, Leaf, k, v, Leaf)
+            case Leaf                  => Node(Color.Red, Leaf, k, v, Leaf)
             case Node(c, a, k1, v1, b) => match k <=> k1 {
                 case Comparison.LessThan    => balance(Node(c, loop(a), k1, v1, b))
                 case Comparison.EqualTo     => Node(c, a, k, v, b)
