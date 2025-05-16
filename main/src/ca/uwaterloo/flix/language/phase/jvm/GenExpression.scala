@@ -798,7 +798,7 @@ object GenExpression {
         mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", constructorDescriptor.toDescriptor, false)
 
       case AtomicOp.StructGet(field) =>
-        val idx = field.idx
+        val idx = root.structs(field.structSym).fields.indexWhere(_.sym == field)
         val List(exp) = exps
         val MonoType.Struct(sym, targs) = exp.tpe
         val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
@@ -808,7 +808,7 @@ object GenExpression {
         mv.visitFieldInsn(GETFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.asErasedJvmType(tpe).toDescriptor)
 
       case AtomicOp.StructPut(field) =>
-        val idx = field.idx
+        val idx = root.structs(field.structSym).fields.indexWhere(_.sym == field)
         val List(exp1, exp2) = exps
         val MonoType.Struct(sym, targs) = exp1.tpe
         val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))

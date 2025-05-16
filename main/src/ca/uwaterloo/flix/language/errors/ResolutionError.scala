@@ -191,28 +191,6 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate a `new` struct expression initializes its fields in the wrong order.
-    *
-    * @param providedFields the order in which fields were initialized.
-    * @param expectedFields the order in which fields were declared.
-    * @param loc            the location where the error occurred
-    */
-  case class IllegalFieldOrderInNew(sym: Symbol.StructSym, providedFields: List[Name.Label], expectedFields: List[Name.Label], loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Struct fields must be initialized in their declaration order"
-
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Struct fields must be initialized in their declaration order.
-         |
-         |Expected: ${expectedFields.mkString(", ")}
-         |Actual  : ${providedFields.mkString(", ")}
-         |
-         |${code(loc, "incorrect order")}
-         |""".stripMargin
-    }
-  }
-
-  /**
     * Illegal Non-Java Type Error.
     *
     * @param tpe the illegal type.
