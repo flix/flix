@@ -49,7 +49,7 @@ sealed trait CompletionItemKind {
     case CompletionItemKind.TypeParameter => 25
   }
 
-  def toLsp4j : lsp4j.CompletionItemKind = this match {
+  def toLsp4j: lsp4j.CompletionItemKind = this match {
     case CompletionItemKind.Text => lsp4j.CompletionItemKind.Text
     case CompletionItemKind.Method => lsp4j.CompletionItemKind.Method
     case CompletionItemKind.Function => lsp4j.CompletionItemKind.Function

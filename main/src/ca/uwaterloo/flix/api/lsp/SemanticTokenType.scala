@@ -52,7 +52,8 @@ sealed trait SemanticTokenType {
     case SemanticTokenType.Regexp => 20
     case SemanticTokenType.Operator => 21
     case SemanticTokenType.Decorator => 22
-  }}
+  }
+}
 
 object SemanticTokenType {
 

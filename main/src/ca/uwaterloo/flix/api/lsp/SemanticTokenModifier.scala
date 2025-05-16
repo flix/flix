@@ -16,13 +16,13 @@
 package ca.uwaterloo.flix.api.lsp
 
 /**
- * Represents a semantic token modifier in LSP.
- *
- * Note: The intermediate TypeScript server is responsible for communicating the legend
- * to the client. The TS server must list the token modifiers in the same order as is used
- * here in the Scala code. The reason for this is that the response is encoded as a
- * sequence of integers, and a modifier is represented by its index in the legend.
- */
+  * Represents a semantic token modifier in LSP.
+  *
+  * Note: The intermediate TypeScript server is responsible for communicating the legend
+  * to the client. The TS server must list the token modifiers in the same order as is used
+  * here in the Scala code. The reason for this is that the response is encoded as a
+  * sequence of integers, and a modifier is represented by its index in the legend.
+  */
 sealed trait SemanticTokenModifier {
   def toInt: Int = this match {
     case SemanticTokenModifier.Declaration => 0

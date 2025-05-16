@@ -31,9 +31,9 @@ object LocationLink {
   /**
     * Returns a [[LocationLink]] from `originLoc` to the given target [[Symbol.AssocTypeSym]] `sym`.
     *
-    * @param sym        target [[Symbol.AssocTypeSym]] that the returned [[LocationLink]] points to.
-    * @param originLoc  origin [[SourceLocation]] for the [[LocationLink]].
-    * @return           [[LocationLink]] from `originLoc` to the target `sym`.
+    * @param sym       target [[Symbol.AssocTypeSym]] that the returned [[LocationLink]] points to.
+    * @param originLoc origin [[SourceLocation]] for the [[LocationLink]].
+    * @return [[LocationLink]] from `originLoc` to the target `sym`.
     */
   def fromAssocTypeSym(sym: Symbol.AssocTypeSym, originLoc: SourceLocation): LocationLink = {
     val originSelectionRange = Range.from(originLoc)
@@ -142,9 +142,9 @@ object LocationLink {
   /**
     * Returns a [[LocationLink]] from `originLoc` to the given target [[Symbol.TraitSym]] `sym`.
     *
-    * @param sym        target [[Symbol.TraitSym]] that the returned [[LocationLink]] points to.
-    * @param originLoc  origin [[SourceLocation]] for the [[LocationLink]].
-    * @return           [[LocationLink]] from `originLoc` to the target `sym`.
+    * @param sym       target [[Symbol.TraitSym]] that the returned [[LocationLink]] points to.
+    * @param originLoc origin [[SourceLocation]] for the [[LocationLink]].
+    * @return [[LocationLink]] from `originLoc` to the target `sym`.
     */
   def fromTraitSym(sym: Symbol.TraitSym, originLoc: SourceLocation): LocationLink = {
     val originSelectionRange = Range.from(originLoc)
