@@ -35,7 +35,7 @@ object CyclicalGraph {
     /**
       * Returns the list of outgoing edges of the component.
       */
-    def out: List[T]
+    def out: Set[T]
 
   }
 
@@ -44,21 +44,21 @@ object CyclicalGraph {
     *
     * @param out the list of outgoing edges.
     */
-  case class Singleton[T](value: T, out: List[T]) extends Vertex[T]
+  case class Singleton[T](value: T, out: Set[T]) extends Vertex[T]
 
   /**
     * Represents a strongly connected component.
     *
     * @param cycle the list of vertices that form the cycle.
     */
-  case class SCC[T](cycle: List[Singleton[T]]) extends Vertex[T] {
-    def out: List[T] = {
-      cycle.flatMap(singleton => singleton.out.filterNot(cycle.contains))
+  case class SCC[T](cycle: Set[Singleton[T]]) extends Vertex[T] {
+    def out: Set[T] = {
+      cycle.flatMap(singleton => singleton.out -- cycle.map(_.value))
     }
   }
 
   def from[T](graph: Map[T, List[T]]): CyclicalGraph[T] = {
-    val vertices = graph.map { case (k, vs) => Singleton(k, vs) }.toList
+    val vertices = graph.map { case (k, vs) => Singleton(k, vs.toSet) }.toList
     CyclicalGraph(vertices)
   }
 
@@ -68,8 +68,8 @@ object CyclicalGraph {
 
   def toMap[T](graph: CyclicalGraph[T]): Map[T, List[T]] = {
     graph.vertices.flatMap {
-      case Singleton(value, out) => Map(value -> out)
-      case SCC(cycle) => cycle.map(v => v.value -> v.out)
+      case Singleton(value, out) => Map(value -> out.toList)
+      case SCC(cycle) => cycle.map(v => v.value -> v.out.toList)
     }.toMap
   }
 
@@ -142,8 +142,8 @@ object CyclicalGraph {
     }
 
     CyclicalGraph(result.map {
-      case value :: Nil => Singleton(value, graph(value))
-      case l => SCC(l.reverse.map(value => Singleton(value, graph(value))))
+      case value :: Nil => Singleton(value, graph(value).toSet)
+      case l => SCC(l.reverse.map(value => Singleton(value, graph(value).toSet)).toSet)
     })
   }
 }
