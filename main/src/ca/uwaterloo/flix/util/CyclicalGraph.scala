@@ -115,11 +115,12 @@ object CyclicalGraph {
     val inverted = invert(graph)
     val sortedByFinishingTimes = inverted.keys.map(u => (u, discoveryTimes(u), finishingTimes(u)))
       .toArray.sortInPlaceBy { case (_, _, f) => f }
+      .reverse
 
     discoveryTimes.clear()
     finishingTimes.clear()
 
-    sortedByFinishingTimes.reverse.foreach { case (u, _, _) => if (!visited.contains(u)) visit(u, inverted) }
+    sortedByFinishingTimes.foreach { case (u, _, _) => if (!visited.contains(u)) visit(u, inverted) }
 
     val timesStack = mutable.Stack.from(sortedByFinishingTimes)
     var result = List.empty[List[T]]
