@@ -74,7 +74,7 @@ object CyclicalGraph {
     }.toMap
   }
 
-  private def invert[T](graph: Map[T, List[T]]): Map[T, List[T]] = {
+  def invert[T](graph: Map[T, List[T]]): Map[T, List[T]] = {
     val result: mutable.Map[T, List[T]] = mutable.Map.empty
     graph.foreach {
       case (u, edges) => edges.foreach {

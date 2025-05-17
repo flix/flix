@@ -20,6 +20,13 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
+  test("Invert.01") {
+    val graph = Map(1 -> List(2, 3, 4), 2 -> List.empty, 3 -> List(2), 4 -> List(1))
+    val result = CyclicalGraph.invert(graph)
+    val expected = Map(1 -> List(4), 2 -> List(1, 3), 3 -> List(1), 4 -> List(1))
+    assert(result == expected)
+  }
+
   test("Singleton.01") {
     val graph = Map(1 -> List(1))
     val cyclicalGraph = CyclicalGraph.from(graph)
