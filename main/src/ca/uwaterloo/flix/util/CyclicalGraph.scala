@@ -94,7 +94,7 @@ object CyclicalGraph {
 
   private def scc[T](graph: Map[T, List[T]]): CyclicalGraph[T] = {
     if (graph.isEmpty) {
-      throw InternalCompilerException("unexpected empty graph", SourceLocation.Unknown)
+      return CyclicalGraph(List.empty)
     }
 
     val visited: mutable.Set[T] = mutable.Set.empty
