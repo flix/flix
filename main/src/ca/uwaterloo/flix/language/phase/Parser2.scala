@@ -174,16 +174,16 @@ object Parser2 {
           val child = stack.head
           val openToken = locationStack.head
           stack.head.loc = if (stack.head.children.length == 0)
-            // If the subtree has no children, give it a zero length position just after the last
-            // token.
+          // If the subtree has no children, give it a zero length position just after the last
+          // token.
             SourceLocation(
               isReal = true,
               lastAdvance.sp2,
               lastAdvance.sp2
             )
           else
-            // Otherwise the source location can span from the first to the last token in the sub
-            // tree.
+          // Otherwise the source location can span from the first to the last token in the sub
+          // tree.
             SourceLocation(
               isReal = true,
               openToken.sp1,
@@ -1647,7 +1647,6 @@ object Parser2 {
         case TokenKind.Annotation | TokenKind.KeywordDef => localDefExpr()
         case TokenKind.KeywordRegion => scopeExpr()
         case TokenKind.KeywordMatch => matchOrMatchLambdaExpr()
-        case TokenKind.KeywordEMatch => ematchExpr()
         case TokenKind.KeywordTypeMatch => typematchExpr()
         case TokenKind.KeywordChoose
              | TokenKind.KeywordChooseStar => restrictableChooseExpr()
@@ -2079,24 +2078,6 @@ object Parser2 {
       }
     }
 
-    private def ematchExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordEMatch))
-      val mark = open()
-      expect(TokenKind.KeywordEMatch)
-      expression()
-      oneOrMore(
-        namedTokenSet = NamedTokenSet.EMatchRule,
-        checkForItem = _ == TokenKind.KeywordCase,
-        getItem = ematchRule,
-        breakWhen = _.isRecoverExpr,
-        delimiterL = TokenKind.CurlyL,
-        delimiterR = TokenKind.CurlyR,
-        separation = Separation.Optional(TokenKind.Comma)
-      )
-      close(mark, TreeKind.Expr.Match)
-    }
-
     private def matchRule()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordCase))
@@ -2119,45 +2100,6 @@ object Parser2 {
       }
       statement()
       close(mark, TreeKind.Expr.MatchRuleFragment)
-    }
-
-    private def ematchRule()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordCase))
-      val mark = open()
-      expect(TokenKind.KeywordCase)
-      val mark1 = open()
-      nameAllowQualified(NAME_TAG)
-      eat(TokenKind.Caret)
-      if (at(TokenKind.ParenL)) {
-        assert(at(TokenKind.ParenL))
-        val mark2 = open()
-        zeroOrMore(
-          namedTokenSet = NamedTokenSet.Pattern,
-          getItem = Pattern.pattern,
-          checkForItem = _.isFirstPattern,
-          breakWhen = _.isRecoverExpr,
-        )
-        close(mark2, TreeKind.Pattern.Tuple)
-      }
-      close(mark1, TreeKind.Pattern.ETag)
-
-      if (eat(TokenKind.KeywordIf)) {
-        expression()
-      }
-      if (eat(TokenKind.Equal)) {
-        val error = UnexpectedToken(
-          NamedTokenSet.FromKinds(Set(TokenKind.ArrowThickR)),
-          actual = Some(TokenKind.Equal),
-          sctx = sctx,
-          hint = Some("match cases use '=>' instead of '='."),
-          loc = previousSourceLocation())
-        closeWithError(open(), error)
-      } else {
-        expect(TokenKind.ArrowThickR)
-      }
-      statement()
-      close(mark, TreeKind.Expr.EMatchRuleFragment)
     }
 
     private def typematchExpr()(implicit s: State): Mark.Closed = {

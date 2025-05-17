@@ -379,7 +379,6 @@ object Lexer {
       case _ if isKeyword("lazy") => TokenKind.KeywordLazy
       case _ if isKeyword("let") => TokenKind.KeywordLet
       case _ if isKeyword("match") => TokenKind.KeywordMatch
-      case _ if isKeyword("ematch") => TokenKind.KeywordEMatch
       case _ if isKeyword("mod") => TokenKind.KeywordMod
       case _ if isKeyword("mut") => TokenKind.KeywordMut
       case _ if isKeyword("new") => TokenKind.KeywordNew

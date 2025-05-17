@@ -91,10 +91,6 @@ object ParseError {
       def display(fmt: Formatter): String = fmt.cyan("<match-rule>")
     }
 
-    case object EMatchRule extends NamedTokenSet {
-      def display(fmt: Formatter): String = fmt.cyan("<match-rule>")
-    }
-
     case object Name extends NamedTokenSet {
       def display(fmt: Formatter): String = fmt.cyan("<name>")
     }
