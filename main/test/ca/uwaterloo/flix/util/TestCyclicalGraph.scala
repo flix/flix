@@ -12,10 +12,17 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
+  test("ToMap.01") {
+    val graph = Map(1 -> List(1))
+    val cyclicalGraph = CyclicalGraph.from(graph)
+    val result = CyclicalGraph.toMap(cyclicalGraph)
+    val expected = graph
+    assert(result == expected)
+  }
+
   test("Singleton.01") {
     val graph = Map(1 -> List(1))
     val cyclicalGraph = CyclicalGraph.from(graph)
-    println(cyclicalGraph)
     val result = CyclicalGraph.scc(cyclicalGraph)
     val expected = CyclicalGraph(List(CyclicalGraph.Singleton(1, Set(1))))
     assert(result == expected)
