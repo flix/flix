@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.atomic.AtomicInteger
+import scala.collection.mutable
 
 /**
   * The occurrence analyzer collects occurrence information on binders according to the definition of [[Occur]].
@@ -543,10 +544,15 @@ object OccurrenceAnalyzer {
     /**
       * Returns a fresh [[LocalContext]].
       */
-    def mk(): LocalContext = new LocalContext()
+    def mk(): LocalContext = new LocalContext(mutable.ArrayBuffer.empty)
 
   }
 
-  private case class LocalContext()
+  /**
+    * A context scoped to each top level function. Must be mutable.
+    *
+    * @param dependencies a list of functions that the function depends on.
+    */
+  private case class LocalContext(dependencies: mutable.ArrayBuffer[Symbol.DefnSym])
 
 }
