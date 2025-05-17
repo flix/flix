@@ -42,7 +42,8 @@ object CyclicalGraph {
   /**
     * Represents a single vertex.
     *
-    * @param out the list of outgoing edges.
+    * @param value the value / label of the vertex. Must be unique in the graph.
+    * @param out   the list of outgoing edges.
     */
   case class Singleton[T](value: T, out: Set[T]) extends Vertex[T]
 
