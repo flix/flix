@@ -33,7 +33,7 @@ object CyclicalGraph {
   sealed trait Vertex[T] {
 
     /**
-      * Returns the list of outgoing edges.
+      * Returns the list of outgoing edges of the component.
       */
     def out: List[T]
 
@@ -50,7 +50,6 @@ object CyclicalGraph {
     * Represents a strongly connected component.
     *
     * @param cycle the list of vertices that form the cycle.
-    * @param out   the list of outgoing edges of the component.
     */
   case class SCC[T](cycle: List[Singleton[T]]) extends Vertex[T] {
     def out: List[T] = {
