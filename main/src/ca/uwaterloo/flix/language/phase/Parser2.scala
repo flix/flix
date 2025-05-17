@@ -174,16 +174,16 @@ object Parser2 {
           val child = stack.head
           val openToken = locationStack.head
           stack.head.loc = if (stack.head.children.length == 0)
-          // If the subtree has no children, give it a zero length position just after the last
-          // token.
+            // If the subtree has no children, give it a zero length position just after the last
+            // token.
             SourceLocation(
               isReal = true,
               lastAdvance.sp2,
               lastAdvance.sp2
             )
           else
-          // Otherwise the source location can span from the first to the last token in the sub
-          // tree.
+            // Otherwise the source location can span from the first to the last token in the sub
+            // tree.
             SourceLocation(
               isReal = true,
               openToken.sp1,
@@ -1858,26 +1858,15 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordXmatch)
       expression()
-      expect(TokenKind.KeywordWith)
-      nameUnqualified(NAME_TAG)
-
-      expect(TokenKind.CurlyL)
-      val case1 = open()
-      expect(TokenKind.KeywordCase)
-      nameUnqualified(NAME_VARIABLE)
-      expect(TokenKind.ArrowThickR)
-      expression()
-      close(case1, TreeKind.Case)
-
-      val case2 = open()
-      expect(TokenKind.KeywordCase)
-      nameUnqualified(NAME_VARIABLE)
-      expect(TokenKind.ArrowThickR)
-      expression()
-      close(case2, TreeKind.Case)
-
-      expect(TokenKind.CurlyR)
-
+      oneOrMore(
+        namedTokenSet = NamedTokenSet.ExtensibleMatchRule,
+        checkForItem = _ == TokenKind.KeywordCase,
+        getItem = extensibleMatchRule,
+        breakWhen = _.isRecoverExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        separation = Separation.Optional(TokenKind.Comma)
+      )
       close(mark, TreeKind.Expr.ExtensibleMatch)
     }
 
@@ -2100,6 +2089,30 @@ object Parser2 {
       }
       statement()
       close(mark, TreeKind.Expr.MatchRuleFragment)
+    }
+
+    private def extensibleMatchRule()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      assert(at(TokenKind.KeywordCase))
+      val mark = open()
+      expect(TokenKind.KeywordCase)
+      Pattern.extensiblePattern()
+      if (eat(TokenKind.KeywordIf)) {
+        expression()
+      }
+      if (eat(TokenKind.Equal)) {
+        val error = UnexpectedToken(
+          NamedTokenSet.FromKinds(Set(TokenKind.ArrowThickR)),
+          actual = Some(TokenKind.Equal),
+          sctx = sctx,
+          hint = Some("match cases use '=>' instead of '='."),
+          loc = previousSourceLocation())
+        closeWithError(open(), error)
+      } else {
+        expect(TokenKind.ArrowThickR)
+      }
+      statement()
+      close(mark, TreeKind.Expr.ExtensibleMatchRuleFragment)
     }
 
     private def typematchExpr()(implicit s: State): Mark.Closed = {
@@ -3039,6 +3052,19 @@ object Parser2 {
       close(mark, TreeKind.Pattern.Pattern)
     }
 
+    def extensiblePattern()(implicit s: State): Mark.Closed = {
+      // If a new pattern is added here then add it to FIRST_PATTERN too.
+      val mark = open()
+      nth(0) match {
+        case TokenKind.NameUpperCase => extensibleTagPat()
+        case t =>
+          val mark = open()
+          val error = UnexpectedToken(expected = NamedTokenSet.Pattern, actual = Some(t), loc = currentSourceLocation())
+          closeWithError(mark, error)
+      }
+      close(mark, TreeKind.Pattern.Pattern)
+    }
+
     private def variablePat()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
@@ -3060,6 +3086,17 @@ object Parser2 {
         tuplePat()
       }
       close(mark, TreeKind.Pattern.Tag)
+    }
+
+    private def extensibleTagPat()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
+      val mark = open()
+      nameAllowQualified(NAME_TAG)
+      eat(TokenKind.Caret)
+      if (at(TokenKind.ParenL)) {
+        tuplePat()
+      }
+      close(mark, TreeKind.Pattern.ExtensibleTag)
     }
 
     private def tuplePat()(implicit s: State): Mark.Closed = {

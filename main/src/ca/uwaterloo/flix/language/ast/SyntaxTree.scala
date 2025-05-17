@@ -196,6 +196,8 @@ object SyntaxTree {
 
       case object ExtensibleMatch extends Expr
 
+      case object ExtensibleMatchRuleFragment extends Expr
+
       case object ExtensibleTag extends Expr
 
       case object Index extends Expr
@@ -455,6 +457,8 @@ object SyntaxTree {
       //     Pattern
       //       Ident
       case object Pattern extends Pattern
+
+      case object ExtensibleTag extends Pattern
 
       case object FCons extends Pattern
 
