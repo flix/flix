@@ -62,10 +62,6 @@ object CyclicalGraph {
     CyclicalGraph(vertices)
   }
 
-  def invert[T](graph: CyclicalGraph[T]): CyclicalGraph[T] = {
-    from(invert(toMap(graph)))
-  }
-
   def scc[T](graph: CyclicalGraph[T]): CyclicalGraph[T] = {
     scc(toMap(graph))
   }
