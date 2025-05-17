@@ -174,14 +174,16 @@ object Parser2 {
           val child = stack.head
           val openToken = locationStack.head
           stack.head.loc = if (stack.head.children.length == 0)
-            // If the subtree has no children, give it a zero length position just after the last token.
+            // If the subtree has no children, give it a zero length position just after the last
+            // token.
             SourceLocation(
               isReal = true,
               lastAdvance.sp2,
               lastAdvance.sp2
             )
           else
-            // Otherwise the source location can span from the first to the last token in the subtree.
+            // Otherwise the source location can span from the first to the last token in the
+            // subtree.
             SourceLocation(
               isReal = true,
               openToken.sp1,
