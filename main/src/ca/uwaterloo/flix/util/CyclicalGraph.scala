@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.util
 import ca.uwaterloo.flix.util.CyclicalGraph.Vertex
 
 /**
+  * Represents a graph that may contain cycles.
   *
   * @param vertices the list of vertices that form the graph.
   */
@@ -28,7 +29,12 @@ object CyclicalGraph {
 
   sealed trait Vertex[T] {
 
+    /**
+      *
+      * @return the list of outgoing edges.
+      */
     def out: List[T]
+
   }
 
   /**
