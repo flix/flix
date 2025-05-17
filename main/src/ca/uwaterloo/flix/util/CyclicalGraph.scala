@@ -106,7 +106,7 @@ object CyclicalGraph {
       time += 1
       discoveryTimes.put(u, time)
       visited.addOne(u)
-      g(u).foreach(v => if (!visited.contains(v)) visit(v, g))
+      g.get(u).toList.flatten.foreach(v => if (!visited.contains(v)) visit(v, g))
       time += 1
       finishingTimes.put(u, time)
     }
