@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast.Symbol.VarSym
 import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
-import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable
 
 /**
@@ -99,7 +98,12 @@ object OccurrenceAnalyzer {
 
       case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
-        val ctx1 = if (sym == sym0) ExprContext.RecursiveOnce else ExprContext.Empty
+        val ctx1 = if (sym == sym0) {
+          ExprContext.RecursiveOnce
+        } else {
+          lctx.dependencies.addOne(sym)
+          ExprContext.Empty
+        }
         val ctx2 = ctxs.foldLeft(ctx1)(combineSeq)
         if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx2) // Reuse exp0.
