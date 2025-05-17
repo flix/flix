@@ -1556,18 +1556,31 @@ object Weeder2 {
     }
 
     private def visitExtensibleMatch(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      def visitCase(caze: Tree): Validation[(Name.Ident, Expr), CompilationMessage] =
-        mapN(pickNameIdent(caze), pickExpr(caze)) {
-          case (id, e) => (id, e)
-        }
-
       expect(tree, TreeKind.Expr.ExtensibleMatch)
+      val rules0 = pickAll(TreeKind.Expr.ExtensibleMatchRuleFragment, tree)
+      flatMapN(pickExpr(tree), traverse(rules0)(visitExtensibleMatchRule)) {
+        // Case: no valid match rule found in xmatch expr
+        case (expr, Nil) =>
+          val error = NeedAtleastOne(NamedTokenSet.ExtensibleMatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
+          // Fall back on Expr.Error. Parser has reported an error here.
+          Validation.Success(Expr.Error(error))
+        case (expr, rules) => Validation.Success(Expr.ExtensibleMatch(expr, rules, tree.loc))
+      }
 
-      mapN(pickExpr(tree), pickNameIdent(tree), traverse(pickAll(TreeKind.Case, tree))(visitCase)) {
-        case (exp1, label, (ident2, exp2) :: (ident3, exp3) :: Nil) =>
-          Expr.ExtensibleMatch(label, exp1, ident2, exp2, ident3, exp3, tree.loc)
-        case _ =>
-          throw InternalCompilerException("Illegal extensible match", tree.loc)
+    }
+
+    private def visitExtensibleMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[ExtMatchRule, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.ExtensibleMatchRuleFragment)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree)
+      flatMapN(Patterns.pickExtensiblePattern(tree), traverse(exprs)(visitExpr)) {
+        // case pattern => expr
+        case (pat, expr :: Nil) => Validation.Success(ExtMatchRule(pat, None, expr, tree.loc))
+        // case pattern if expr => expr
+        case (pat, expr1 :: expr2 :: Nil) => Validation.Success(ExtMatchRule(pat, Some(expr1), expr2, tree.loc))
+        // Fall back on Expr.Error. Parser has reported an error here.
+        case (_, _) =>
+          val error = Malformed(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          Validation.Success(ExtMatchRule(ExtPattern.Error(tree.loc), None, Expr.Error(error), tree.loc))
       }
     }
 
@@ -2257,6 +2270,10 @@ object Weeder2 {
       flatMapN(pick(TreeKind.Pattern.Pattern, tree))(visitPattern(_))
     }
 
+    def pickExtensiblePattern(tree: Tree)(implicit sctx: SharedContext): Validation[ExtPattern, CompilationMessage] = {
+      flatMapN(pick(TreeKind.Pattern.Pattern, tree))(visitExtensiblePattern(_))
+    }
+
     def visitPattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Pattern)
       tree.children.headOption match {
@@ -2274,6 +2291,26 @@ object Weeder2 {
             val error = UnexpectedToken(NamedTokenSet.Pattern, actual = None, SyntacticContext.Unknown, loc = tree.loc)
             sctx.errors.add(error)
             Validation.Success(Pattern.Error(tree.loc))
+        }
+        case _ => throw InternalCompilerException(s"Expected Pattern.Pattern to have tree child", tree.loc)
+      }
+    }
+
+    def visitExtensiblePattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit sctx: SharedContext): Validation[ExtPattern, CompilationMessage] = {
+      expect(tree, TreeKind.Pattern.Pattern)
+      tree.children.headOption match {
+        case Some(tree: Tree) => tree.kind match {
+          case TreeKind.Pattern.Variable => mapN(visitVariablePat(tree, seen)) {
+            case Pattern.Wild(loc) => ExtPattern.Wild(loc)
+            case Pattern.Var(ident, loc) => ExtPattern.Var(ident, loc)
+            case Pattern.Error(loc) => ExtPattern.Error(loc)
+            case other => ExtPattern.Error(other.loc)
+          }
+          case TreeKind.Pattern.ExtensibleTag => visitExtTagPat(tree, seen)
+          case _ =>
+            val error = UnexpectedToken(NamedTokenSet.Pattern, actual = None, SyntacticContext.Unknown, loc = tree.loc)
+            sctx.errors.add(error)
+            Validation.Success(ExtPattern.Error(tree.loc))
         }
         case _ => throw InternalCompilerException(s"Expected Pattern.Pattern to have tree child", tree.loc)
       }
@@ -2328,6 +2365,18 @@ object Weeder2 {
         (qname, maybePat) =>
           maybePat match {
             case None => Pattern.Tag(qname, Nil, tree.loc)
+            case Some(elms) => Pattern.Tag(qname, elms.toList, tree.loc)
+          }
+      }
+    }
+
+    private def visitExtTagPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[ExtPattern, CompilationMessage] = {
+      expect(tree, TreeKind.Pattern.ExtensibleTag)
+      val maybePat = tryPick(TreeKind.Pattern.Tuple, tree)
+      mapN(pickQName(tree), traverseOpt(maybePat)(visitTagTermsPat(_, seen))) {
+        (qname, maybePat) =>
+          maybePat match {
+            case None => ExtPattern(qname, Nil, tree.loc)
             case Some(elms) => Pattern.Tag(qname, elms.toList, tree.loc)
           }
       }
