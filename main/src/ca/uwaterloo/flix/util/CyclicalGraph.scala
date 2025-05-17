@@ -79,7 +79,20 @@ object CyclicalGraph {
 
   private def invert[T](graph: Map[T, List[T]]): Map[T, List[T]] = {
     val result: mutable.Map[T, List[T]] = mutable.Map.empty
-    ???
+    graph.foreach {
+      case (u, edges) => edges.foreach {
+        v =>
+          result.get(v) match {
+            case Some(es) =>
+              result.put(v, u :: es)
+            case None =>
+              result.put(v, List(u))
+          }
+      }
+    }
+    result.map {
+      case (u, edges) => u -> edges.reverse
+    }.toMap
   }
 
   private def scc[T](graph: Map[T, List[T]]): CyclicalGraph[T] = {
@@ -87,7 +100,7 @@ object CyclicalGraph {
       throw InternalCompilerException("unexpected empty graph", SourceLocation.Unknown)
     }
 
-    val visited: mutable.ArrayBuffer[T] = mutable.ArrayBuffer.empty
+    val visited: mutable.Set[T] = mutable.Set.empty
     val discoveryTimes: mutable.Map[T, Int] = mutable.Map.empty
     val finishingTimes: mutable.Map[T, Int] = mutable.Map.empty
     var time = 0
