@@ -27,7 +27,14 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("Singleton.01") {
+  test("Invert.02") {
+    val graph = Map(1 -> List(1, 2), 2 -> List.empty)
+    val result = CyclicalGraph.invert(graph)
+    val expected = Map(1 -> List(1), 2 -> List(1))
+    assert(result == expected)
+  }
+
+  test("SCC.01") {
     val graph = Map(1 -> List(1))
     val cyclicalGraph = CyclicalGraph.from(graph)
     val result = CyclicalGraph.scc(cyclicalGraph)
@@ -35,12 +42,20 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("Singleton.02") {
-    val graph = Map(1 -> List(1), 2 -> List.empty)
+  test("SCC.02") {
+    val graph = Map(1 -> List(1, 2), 2 -> List.empty)
     val result = CyclicalGraph.scc(CyclicalGraph.from(graph))
     val expected = CyclicalGraph(List(
       CyclicalGraph.Singleton(1, Set(1)),
       CyclicalGraph.Singleton(2, Set.empty),
+    ))
+    assert(result == expected)
+  }
+
+  test("SCC.03") {
+    val graph = Map(1 -> List(2, 3, 4), 2 -> List.empty, 3 -> List(2), 4 -> List(1))
+    val result = CyclicalGraph.scc(CyclicalGraph.from(graph))
+    val expected = CyclicalGraph(List(
     ))
     assert(result == expected)
   }
