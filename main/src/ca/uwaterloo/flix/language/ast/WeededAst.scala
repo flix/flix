@@ -439,7 +439,7 @@ object WeededAst {
 
   case class MatchRule(pat: Pattern, exp1: Option[Expr], exp2: Expr, loc: SourceLocation)
 
-  case class ExtMatchRule(qname: Name.QName, pats: List[ExtPattern], exp1: Option[Expr], exp2: Expr, loc: SourceLocation)
+  case class ExtMatchRule(qname: Name.QName, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
 
   case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr, loc: SourceLocation)
 

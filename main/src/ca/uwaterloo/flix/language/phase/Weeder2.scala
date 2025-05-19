@@ -1574,13 +1574,16 @@ object Weeder2 {
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
       flatMapN(Patterns.pickExtensiblePattern(tree), traverse(exprs)(visitExpr)) {
         // case pattern => expr
-        case ((qname, pats), expr :: Nil) => Validation.Success(ExtMatchRule(qname, pats, None, expr, tree.loc))
+        case ((qname, pats), expr :: Nil) =>
+          Validation.Success(ExtMatchRule(qname, pats, expr, tree.loc))
         // case pattern if expr => expr
-        case ((qname, pats), expr1 :: expr2 :: Nil) => Validation.Success(ExtMatchRule(qname, pats, Some(expr1), expr2, tree.loc))
+        case ((qname, pats), _ :: expr :: Nil) =>
+          val error = Malformed(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          Validation.Success(ExtMatchRule(qname, pats, expr, tree.loc))
         // Fall back on Expr.Error. Parser has reported an error here.
         case ((qname, _), _) =>
           val error = Malformed(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
-          Validation.Success(ExtMatchRule(qname, List(ExtPattern.Error(tree.loc)), None, Expr.Error(error), tree.loc))
+          Validation.Success(ExtMatchRule(qname, List(ExtPattern.Error(tree.loc)), Expr.Error(error), tree.loc))
       }
     }
 

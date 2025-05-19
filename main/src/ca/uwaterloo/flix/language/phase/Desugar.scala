@@ -837,11 +837,10 @@ object Desugar {
     * Desugars the given [[WeededAst.MatchRule]] `rule0`.
     */
   private def visitExtMatchRule(rule0: WeededAst.ExtMatchRule)(implicit flix: Flix): DesugaredAst.ExtMatchRule = rule0 match {
-    case WeededAst.ExtMatchRule(qname, pats, exp1, exp2, loc) =>
+    case WeededAst.ExtMatchRule(qname, pats, exp, loc) =>
       val ps = pats.map(visitExtPattern)
-      val e1 = exp1.map(visitExp)
-      val e2 = visitExp(exp2)
-      DesugaredAst.ExtMatchRule(qname, ps, e1, e2, loc)
+      val e = visitExp(exp)
+      DesugaredAst.ExtMatchRule(qname, ps, e, loc)
   }
 
   /**
