@@ -114,10 +114,10 @@ mod FileWrite {
         run {
             Ok(f(x))
         } with handler FileWrite {
-            def write(data, f, k) = {
+            def write(data, file, k) = {
                 try {
                     let bytes = data#str.getBytes(StandardCharsets.UTF_8);
-                    Files.write(Paths.get(f), bytes, (...{}: Vector[OpenOption]));
+                    Files.write(Paths.get(file), bytes, (...{}: Vector[OpenOption]));
                     k(())
                 } catch {
                     case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
@@ -126,9 +126,9 @@ mod FileWrite {
                 }
             }
 
-            def writeLines(data, f, k) = {
+            def writeLines(data, file, k) = {
                 try {
-                    let bf = Files.newBufferedWriter(Paths.get(f), (...{}: Vector[OpenOption]));
+                    let bf = Files.newBufferedWriter(Paths.get(file), (...{}: Vector[OpenOption]));
                     List.forEach(line -> {
                         bf.write(line, 0, String.length(line));
                         bf.newLine()
@@ -142,11 +142,11 @@ mod FileWrite {
                 }
             }
 
-            def writeBytes(data, f, k) = {
+            def writeBytes(data, file, k) = {
                 try {
                     region rc {
                         let bytes = Vector.toArray(rc, data);
-                        Files.write(Paths.get(f), bytes, (...{}: Vector[OpenOption]));
+                        Files.write(Paths.get(file), bytes, (...{}: Vector[OpenOption]));
                         k(())
                     }
                 } catch {
@@ -156,11 +156,11 @@ mod FileWrite {
                 }
             }
 
-            def append(data, f, k) = {
+            def append(data, file, k) = {
                 try {
                     let bytes = data#str.getBytes(StandardCharsets.UTF_8);
                     let opt: OpenOption = checked_cast(StandardOpenOption.APPEND);
-                    Files.write(Paths.get(f), bytes, ...{opt});
+                    Files.write(Paths.get(file), bytes, ...{opt});
                     k(())
                 } catch {
                     case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
@@ -169,10 +169,10 @@ mod FileWrite {
                 }
             }
 
-            def appendLines(data, f, k) = {
+            def appendLines(data, file, k) = {
                 try {
                     let opt: OpenOption = checked_cast(StandardOpenOption.APPEND);
-                    let bf = Files.newBufferedWriter(Paths.get(f), ...{opt});
+                    let bf = Files.newBufferedWriter(Paths.get(file), ...{opt});
                     List.forEach(line -> {
                         bf.write(line, 0, String.length(line));
                         bf.newLine()
@@ -186,12 +186,12 @@ mod FileWrite {
                 }
             }
 
-            def appendBytes(data, f, k) = {
+            def appendBytes(data, file, k) = {
                 try {
                     region rc {
                         let bytes = Vector.toArray(rc, data);
                         let opt: OpenOption = checked_cast(StandardOpenOption.APPEND);
-                        Files.write(Paths.get(f), bytes, ...{opt});
+                        Files.write(Paths.get(file), bytes, ...{opt});
                         k(())
                     }
                 } catch {
@@ -201,12 +201,12 @@ mod FileWrite {
                 }
             }
 
-            def truncate(f, k) = {
+            def truncate(file, k) = {
                 try {
                     region rc {
                         let opt: OpenOption = checked_cast(StandardOpenOption.TRUNCATE_EXISTING);
                         let arr: Array[Int8, rc] = Array#{} @ rc;
-                        Files.write(Paths.get(f), arr, ...{opt});
+                        Files.write(Paths.get(file), arr, ...{opt});
                         k(())
                     }
                 } catch {

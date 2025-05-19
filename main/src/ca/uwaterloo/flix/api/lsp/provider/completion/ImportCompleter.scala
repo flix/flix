@@ -30,7 +30,7 @@ object ImportCompleter {
   def getCompletions(name: String, range: Range)(implicit root: TypedAst.Root): Iterable[ImportCompletion] = {
     val path = name.split('.').toList
     // Get completions for if we are currently typing the next package/class and if we have just finished typing a package
-    javaClassCompletionsFromPrefix(path ,range)(root) ++ javaClassCompletionsFromPrefix(path.dropRight(1), range)(root)
+    javaClassCompletionsFromPrefix(path, range)(root) ++ javaClassCompletionsFromPrefix(path.dropRight(1), range)(root)
   }
 
   /**

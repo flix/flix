@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 /**
   * Priority for completions.
-  * 
+  *
   * Using a priority, we can make certain suggestions occur earlier in
   * the list of suggestions by generating a SortText using `Priority.toSortText`
   * on the relevant priority and label. This SortText can then be used in the `CompletionItem`
@@ -32,33 +32,40 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
   */
 sealed trait Priority {
 }
+
 object Priority {
   case object Highest extends Priority
+
   case object Higher extends Priority
+
   case object High extends Priority
+
   case object Default extends Priority
+
   case object Low extends Priority
+
   case object Lower extends Priority
+
   case object Lowest extends Priority
 
   /**
-    * Returns a sortText string which comes earlier alphabetically the higher the priority. 
+    * Returns a sortText string which comes earlier alphabetically the higher the priority.
     *
-    * The outputs of this, when sorted alphabetically, prefers inputs with 
+    * The outputs of this, when sorted alphabetically, prefers inputs with
     * higher priorities. The higher the priority, the earlier in an alphabetical
     * sorting it will occur.
     *
-    * @param p      the priority to be used in the sortText.
-    * @param label  the label to be used in the sortText.
+    * @param p     the priority to be used in the sortText.
+    * @param label the label to be used in the sortText.
     * @return a string which is listed earlier alphabetically the higher the priority.
     */
   def toSortText(p: Priority, label: String): String = p match {
-  	case Priority.Highest => s"1$label"
-  	case Priority.Higher  => s"2$label"
-  	case Priority.High    => s"3$label"
-  	case Priority.Default => s"4$label"
-  	case Priority.Low     => s"5$label"
-  	case Priority.Lower   => s"6$label"
-  	case Priority.Lowest  => s"7$label"
+    case Priority.Highest => s"1$label"
+    case Priority.Higher => s"2$label"
+    case Priority.High => s"3$label"
+    case Priority.Default => s"4$label"
+    case Priority.Low => s"5$label"
+    case Priority.Lower => s"6$label"
+    case Priority.Lowest => s"7$label"
   }
 }

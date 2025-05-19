@@ -198,6 +198,96 @@ mod TestRedBlackTree {
             List.map(_ -> rnd.nextInt(), List.range(0, n)))
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // insert                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def insert01(): Bool =
+        let tree = (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |>
+            RedBlackTree.insert(0, 1);
+        RedBlackTree.get(0, tree) == Some(1) and
+            RedBlackTree.get(1, tree) == None
+
+    @test
+    def insert02(): Bool =
+        let tree = (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |>
+            RedBlackTree.insert(0, 1) |>
+            RedBlackTree.insert(1, 2);
+        RedBlackTree.get(0, tree) == Some(1) and
+            RedBlackTree.get(1, tree) == Some(2) and
+            RedBlackTree.get(2, tree) == None
+
+    @test
+    def insert03(): Bool =
+        let inserts = Vector#{(0, 1), (3, 4), (4, 5), (1, 2), (8, 9), (6, 7), (2, 3), (10, 11), (9, 10)};
+        let tree = inserts |> Vector.foldRight(match (k, v) -> RedBlackTree.insert(k, v), RedBlackTree.empty());
+        inserts |> Vector.forAll(match (k, v) -> RedBlackTree.get(k, tree) == Some(v))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // insertWith                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def insertWith01(): Bool =
+        let tree = (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |>
+            RedBlackTree.insertWith(_k -> _v -> _v1 -> -1, 0, 1);
+        RedBlackTree.get(0, tree) == Some(1) and
+            RedBlackTree.get(1, tree) == None
+
+    @test
+    def insertWith02(): Bool =
+        let tree = (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |>
+            RedBlackTree.insert(1, 10) |>
+            RedBlackTree.insertWith(k -> v -> v1 -> k + v + v1, 1, 100);
+        RedBlackTree.get(1, tree) == Some(1 + 10 + 100) and
+            RedBlackTree.get(0, tree) == None
+
+    @test
+    def insertWith03(): Bool =
+        let inserts = Vector#{(0, 1), (3, 4), (4, 5), (1, 2), (8, 9), (6, 7), (2, 3), (10, 11), (9, 10)};
+        let (kept, overWrite) = Vector.splitAt(Vector.length(inserts), inserts);
+        let treeWithInserts = inserts |> Vector.foldRight(match (k, v) -> RedBlackTree.insert(k, v), RedBlackTree.empty());
+        let treeWithUpdates = overWrite |> Vector.foldRight(match (k, _) -> RedBlackTree.insertWith(k_ -> v -> v1 -> k_ + v + v1, -1, k), treeWithInserts);
+        kept |> Vector.forAll(match (k, v) -> RedBlackTree.get(k, treeWithUpdates) == Some(v)) and
+            overWrite |> Vector.forAll(match (k, v) -> RedBlackTree.get(k, treeWithUpdates) == Some(k + v - 1))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // updateWith                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def updateWith01(): Bool =
+        let tree = (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |>
+            RedBlackTree.updateWith(_k -> _v -> Some(1), 0);
+        RedBlackTree.get(0, tree) == None and
+            RedBlackTree.get(1, tree) == None
+
+    @test
+    def updateWith02(): Bool =
+        let tree = (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |>
+            RedBlackTree.insert(1, 10) |>
+            RedBlackTree.insert(2, 11) |>
+            RedBlackTree.updateWith(k -> v -> Some(k + v), 1) |>
+            RedBlackTree.updateWith(k -> v -> Some(k + v), 3) |>
+            RedBlackTree.updateWith(_ -> _ -> None, 1);
+        RedBlackTree.get(1, tree) == Some(1 + 10) and
+            RedBlackTree.get(2, tree) == Some(11) and
+            RedBlackTree.get(3, tree) == None and
+            RedBlackTree.get(10, tree) == None and
+            RedBlackTree.get(11, tree) == None
+
+    @test
+    def updateWith03(): Bool =
+        let inserts = Vector#{(0, 1), (3, 4), (4, 5), (1, 2), (8, 9), (6, 7), (2, 3), (10, 11), (9, 10)};
+        let nonReplacingUpdates = Vector#{(11, 12), (12, 13), (13, 14), (-1, -2), (-2, -3)};
+        let (kept, overWrite) = Vector.splitAt(Vector.length(inserts), inserts);
+        let updates = Vector.append(nonReplacingUpdates, overWrite);
+        let treeWithInserts = inserts |> Vector.foldRight(match (k, v) -> RedBlackTree.insert(k, v), RedBlackTree.empty());
+        let treeWithUpdates = updates |> Vector.foldRight(match (k, _) -> RedBlackTree.updateWith(k_ -> v -> Some(k_ + v), k), treeWithInserts);
+        kept |> Vector.forAll(match (k, v) -> RedBlackTree.get(k, treeWithUpdates) == Some(v)) and
+            overWrite |> Vector.forAll(match (k, v) -> RedBlackTree.get(k, treeWithUpdates) == Some(k + v)) and
+            nonReplacingUpdates |> Vector.forAll(match (k, _) -> RedBlackTree.get(k, treeWithUpdates) == None)
 
     /////////////////////////////////////////////////////////////////////////////
     // parMapWithKey                                                           //
