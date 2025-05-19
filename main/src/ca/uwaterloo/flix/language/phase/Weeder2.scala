@@ -1573,13 +1573,7 @@ object Weeder2 {
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
       flatMapN(Patterns.pickExtPattern(tree), traverse(exprs)(visitExpr)) {
         // case pattern => expr
-        case ((qname, pats), expr :: Nil) if pats.length == 2 =>
-          Validation.Success(ExtMatchRule(qname, pats, expr, tree.loc))
-
-        // At the moment we only allow to variables in ExtMatch
         case ((qname, pats), expr :: Nil) =>
-          val error = WeederError.MismatchedArity(2, pats.length, tree.loc)
-          sctx.errors.add(error)
           Validation.Success(ExtMatchRule(qname, pats, expr, tree.loc))
 
         // Fall back on Expr.Error. Parser has reported an error here.
