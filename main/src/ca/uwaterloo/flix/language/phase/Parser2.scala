@@ -182,8 +182,8 @@ object Parser2 {
               lastAdvance.sp2
             )
           else
-            // Otherwise the source location can span from the first to the last token in the sub
-            // tree.
+            // Otherwise the source location can span from the first to the last token in the
+            // subtree.
             SourceLocation(
               isReal = true,
               openToken.sp1,
