@@ -65,4 +65,25 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
+  test("SCC.04") {
+    val graph = Map(1 -> List(2), 2 -> List(3, 5, 6), 3 -> List(4, 7), 4 -> List(3, 8), 5 -> List(1, 6), 6 -> List(7), 7 -> List(6, 8), 8 -> List(8))
+    val result = CyclicalGraph.scc(CyclicalGraph.from(graph))
+    val expected = CyclicalGraph(Set[CyclicalGraph.Vertex[Int]](
+      CyclicalGraph.SCC(Set(
+        CyclicalGraph.Singleton(1, Set(2)),
+        CyclicalGraph.Singleton(2, Set(3, 5, 6)),
+        CyclicalGraph.Singleton(5, Set(1, 6)),
+      )),
+      CyclicalGraph.SCC(Set(
+        CyclicalGraph.Singleton(3, Set(4, 7)),
+        CyclicalGraph.Singleton(4, Set(3, 8)),
+      )),
+      CyclicalGraph.SCC(Set(
+        CyclicalGraph.Singleton(6, Set(7)),
+        CyclicalGraph.Singleton(7, Set(6, 8)),
+      )),
+      CyclicalGraph.Singleton(8, Set(8))
+    ))
+    assert(result == expected)
+  }
 }
