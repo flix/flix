@@ -459,7 +459,7 @@ object Kinder {
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       KindedAst.Expr.RestrictableChoose(star, exp, rules, tvar, loc)
 
-    case ResolvedAst.Expr.ExtensibleMatch(label, exp1, sym2, exp2, sym3, exp3, loc) =>
+    case ResolvedAst.Expr.ExtMatch(label, exp1, sym2, exp2, sym3, exp3, loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val e1 = visitExp(exp1, kenv0, taenv, root)
       val e2 = visitExp(exp2, kenv0, taenv, root)
@@ -477,7 +477,7 @@ object Kinder {
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
       KindedAst.Expr.RestrictableTag(symUse, exps, isOpen, tvar, evar, loc)
 
-    case ResolvedAst.Expr.ExtensibleTag(label, exps0, loc) =>
+    case ResolvedAst.Expr.ExtTag(label, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, root))
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       KindedAst.Expr.ExtensibleTag(label, exps, tvar, loc)

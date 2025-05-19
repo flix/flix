@@ -1059,18 +1059,18 @@ object Resolver {
         case (e, rs) => ResolvedAst.Expr.RestrictableChoose(star, e, rs, loc)
       }
 
-    case NamedAst.Expr.ExtMatch(exp, rules, loc) => ???
-    /*
-  case NamedAst.Expr.ExtMatch(label, exp1, sym2, exp2, sym3, exp3, loc) =>
-    mapN(resolveExp(exp1, scp0), resolveExp(exp2, scp0 ++ mkVarScp(sym2)), resolveExp(exp3, scp0 ++ mkVarScp(sym3))) {
-      case (e1, e2, e3) =>
-        ResolvedAst.Expr.ExtensibleMatch(label, e1, sym2, e2, sym3, e3, loc)
-    }
-*/
+    case NamedAst.Expr.ExtMatch(exp, rules, loc) =>
+      val eVal = resolveExp(exp, scp0)
+      val rsVal = rules.map(resolveExtMatchRule(_, scp0))
+      mapN(eVal, rsVal) {
+        case (e, rs) =>
+          ResolvedAst.Expr.ExtMatch(e, rs, loc)
+      }
+
     case NamedAst.Expr.ExtTag(label, exps, loc) =>
       val esVal = traverse(exps)(e => resolveExp(e, scp0))
       mapN(esVal) {
-        es => ResolvedAst.Expr.ExtensibleTag(label, es, loc)
+        es => ResolvedAst.Expr.ExtTag(label, es, loc)
       }
 
     case NamedAst.Expr.Tuple(elms, loc) =>
@@ -1960,6 +1960,20 @@ object Resolver {
   }
 
   /**
+    * Performs name resolution on the given pattern `pat0` in the namespace `ns0`.
+    */
+  private def resolveExtPattern(pat0: NamedAst.ExtPattern): ResolvedAst.ExtPattern = pat0 match {
+    case NamedAst.ExtPattern.Wild(loc) =>
+      ResolvedAst.ExtPattern.Wild(loc)
+
+    case NamedAst.ExtPattern.Var(sym, loc) =>
+      ResolvedAst.ExtPattern.Var(sym, loc)
+
+    case NamedAst.ExtPattern.Error(loc) =>
+      ResolvedAst.ExtPattern.Error(loc)
+  }
+
+  /**
     * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
     */
   private def resolvePredicateHead(h0: NamedAst.Predicate.Head, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
@@ -2185,6 +2199,20 @@ object Resolver {
     lookupTrait(derive0, TraitUsageKind.Derivation, scp0, ns0, root).map {
       trt => Derivation(trt.sym, derive0.loc)
     }
+  }
+
+  private def resolveExtMatchRule(rule0: NamedAst.ExtMatchRule, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.ExtMatchRule, ResolutionError] = rule0 match {
+    case NamedAst.ExtMatchRule(qname, pats, exp, loc) =>
+      val name =
+      val ps = pats.map(resolveExtPattern)
+      val scp = scp0 ++ ps.foldLeft(LocalScope.empty) {
+        case (acc, ResolvedAst.ExtPattern.Var(sym, _)) => acc ++ mkVarScp(sym)
+        case (acc, _) => acc
+      }
+      val eVal = resolveExp(exp, scp0)
+      mapN(eVal) {
+        case e => ResolvedAst.ExtMatchRule(qname, ps, e, loc)
+      }
   }
 
   /**

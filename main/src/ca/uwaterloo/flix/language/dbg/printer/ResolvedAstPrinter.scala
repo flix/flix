@@ -70,10 +70,10 @@ object ResolvedAstPrinter {
       case ResolvedAst.TypeMatchRule(sym, tpe, body, _) => (printVarSym(sym), UnkindedTypePrinter.print(tpe), print(body))
     })
     case Expr.RestrictableChoose(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.ExtensibleMatch(_, _, _, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.ExtMatch(_, _, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Tag(symUse, exps, _) => DocAst.Expr.Tag(symUse.sym, exps.map(print))
     case Expr.RestrictableTag(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.ExtensibleTag(_, _, _) => DocAst.Expr.Unknown // TODO: Ext-Variants
+    case Expr.ExtTag(_, _, _) => DocAst.Expr.Unknown // TODO: Ext-Variants
     case Expr.Tuple(exps, _) => DocAst.Expr.Tuple(exps.map(print))
     case Expr.RecordSelect(exp, label, _) => DocAst.Expr.RecordSelect(label, print(exp))
     case Expr.RecordExtend(label, value, rest, _) => DocAst.Expr.RecordExtend(label, print(value), print(rest))

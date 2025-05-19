@@ -136,13 +136,13 @@ object ResolvedAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
-    case class ExtensibleMatch(label: Name.Label, exp1: Expr, sym2: Symbol.VarSym, exp2: Expr, sym3: Symbol.VarSym, exp3: Expr, loc: SourceLocation) extends Expr
+    case class ExtMatch(label: Name.Label, exp1: Expr, sym2: Symbol.VarSym, exp2: Expr, sym3: Symbol.VarSym, exp3: Expr, loc: SourceLocation) extends Expr
 
     case class Tag(symUse: CaseSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class RestrictableTag(symUse: RestrictableCaseSymUse, exps: List[Expr], isOpen: Boolean, loc: SourceLocation) extends Expr
 
-    case class ExtensibleTag(label: Name.Label, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class ExtTag(label: Name.Label, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -248,6 +248,19 @@ object ResolvedAst {
 
   }
 
+  sealed trait ExtPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtPattern {
+
+    case class Wild(loc: SourceLocation) extends ExtPattern
+
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ExtPattern
+
+    case class Error(loc: SourceLocation) extends ExtPattern
+  }
+
   sealed trait Pattern {
     def loc: SourceLocation
   }
@@ -339,6 +352,8 @@ object ResolvedAst {
   case class HandlerRule(symUse: OpSymUse, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
+
+  case class ExtMatchRule(symUse: CaseSymUse, pats: List[Pattern], exp: Expr, loc: SourceLocation)
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr, loc: SourceLocation)
 
