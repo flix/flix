@@ -2203,7 +2203,7 @@ object Resolver {
 
   private def resolveExtMatchRule(rule0: NamedAst.ExtMatchRule, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.ExtMatchRule, ResolutionError] = rule0 match {
     case NamedAst.ExtMatchRule(qname, pats, exp, loc) =>
-      val name =
+      val name = ???
       val ps = pats.map(resolveExtPattern)
       val scp = scp0 ++ ps.foldLeft(LocalScope.empty) {
         case (acc, ResolvedAst.ExtPattern.Var(sym, _)) => acc ++ mkVarScp(sym)
