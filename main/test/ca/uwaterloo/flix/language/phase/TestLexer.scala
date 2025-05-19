@@ -295,7 +295,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
          |def f(): Int32 = 0x_1
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
+    expectError[LexerError.MalformedHexNumber](result)
   }
 
   test("LexerError.HexLiteralContinuesAfterSuffix.01") {
@@ -305,7 +305,27 @@ class TestLexer extends AnyFunSuite with TestUtils {
          |def f(): Int32 = 0xFFi32f
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
+    expectError[LexerError.IncorrectHexNumberSuffix](result)
+  }
+
+  test("LexerError.HexLiteralContinuesAfterSuffix.02") {
+    // Check that lexing doesn't naively stop after i32 and lex `f` as a name.
+    val input =
+      s"""
+         |def f(): Int32 = 0xFFi322
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.IncorrectHexNumberSuffix](result)
+  }
+
+  test("LexerError.HexLiteralDoubleUnderscore.01") {
+    // Check that lexing doesn't naively stop after i32 and lex `f` as a name.
+    val input =
+      s"""
+         |def f(): Int32 = 0xF__Fi32f
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.MalformedHexNumber](result)
   }
 
   test("TrailingUnderscoreInNumber.Int.03") {
@@ -314,7 +334,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
          |def f(): Int32 = 0x1_
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
+    expectError[LexerError.UnterminatedHexNumber](result)
   }
 
   test("LexerError.Int8.01") {
@@ -341,7 +361,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
          |def f(): Int8 = 0x_1i8
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
+    expectError[LexerError.MalformedHexNumber](result)
   }
 
   test("LexerError.Int8.04") {
@@ -350,7 +370,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
          |def f(): Int8 = 0x1_i8
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
+    expectError[LexerError.MalformedHexNumber](result)
   }
 
   test("LexerError.Int16.01") {
@@ -377,7 +397,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
          |def f(): Int16 = 0x_1i16
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
+    expectError[LexerError.MalformedHexNumber](result)
   }
 
   test("LexerError.Int16.04") {
@@ -386,7 +406,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
          |def f(): Int16 = 0x1_i16
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
+    expectError[LexerError.MalformedHexNumber](result)
   }
 
   test("LexerError.Int32.01") {
@@ -413,7 +433,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
          |def f(): Int32 = 0x_1i32
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
+    expectError[LexerError.MalformedHexNumber](result)
   }
 
   test("LexerError.Int32.04") {
@@ -422,7 +442,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
          |def f(): Int32 = 0x1_i32
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
+    expectError[LexerError.MalformedHexNumber](result)
   }
 
   test("LexerError.Int64.01") {
@@ -449,7 +469,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
          |def f(): Int64 = 0x_1i64
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
+    expectError[LexerError.MalformedHexNumber](result)
   }
 
   test("LexerError.Int64.04") {
@@ -458,7 +478,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
          |def f(): Int64 = 0x1_i64
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
+    expectError[LexerError.MalformedHexNumber](result)
   }
 
   test("LexerError.BigInt.01") {
@@ -485,7 +505,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
          |def f(): BigInt = 0x_1ii
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
+    expectError[LexerError.MalformedHexNumber](result)
   }
 
   test("LexerError.BigInt.04") {
@@ -494,7 +514,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
          |def f(): BigInt = 0x1_ii
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
+    expectError[LexerError.MalformedHexNumber](result)
   }
 
   test("LexerError.Float.01") {
