@@ -15,6 +15,10 @@
  */
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.util.InternalCompilerException
+
+import scala.annotation.tailrec
+
 /**
   * Representation of monomorphed types.
   *
@@ -85,6 +89,10 @@ object MonoType {
 
   case class RecordExtend(label: String, value: MonoType, rest: MonoType) extends MonoType
 
+  case object ExtensibleEmpty extends MonoType
+
+  case class ExtensibleExtend(cons: Name.Pred, tpes: List[MonoType], rest: MonoType) extends MonoType
+
   case class Native(clazz: Class[?]) extends MonoType
 
   val Object: MonoType = Native(classOf[java.lang.Object])
@@ -102,7 +110,7 @@ object MonoType {
       case Int64 => Int64
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
            Lazy(_) | Tuple(_) | Enum(_, _) | Struct(_, _) | Arrow(_, _) | RecordEmpty |
-           RecordExtend(_, _, _) | Native(_) | Null =>
+           RecordExtend(_, _, _) | ExtensibleEmpty | ExtensibleExtend(_, _, _) | Native(_) | Null =>
         MonoType.Object
     }
   }
@@ -111,5 +119,19 @@ object MonoType {
   val ErasedTypes: Set[MonoType] = Set(
     Bool, Char, Float32, Float64, Int8, Int16, Int32, Int64, MonoType.Object
   )
+
+  /**
+    * Returns the term types of extensible constructor `cons` in `tpe`.
+    *
+    * N.B.: `tpe` must be a chain of [[MonoType.ExtensibleExtend]] that contains `cons`.
+    */
+  @tailrec
+  def findExtensibleTermTypes(cons: Name.Label, tpe: MonoType): List[MonoType] = tpe match {
+    case MonoType.ExtensibleExtend(pred, tpes, rest) =>
+      if (pred.name == cons.name) tpes
+      else findExtensibleTermTypes(cons, rest)
+    case other =>
+      throw InternalCompilerException(s"Unexpected type: '$other'", cons.loc)
+  }
 
 }

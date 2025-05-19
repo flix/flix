@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
+import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 
 /**
@@ -68,11 +69,13 @@ import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 object Inliner {
 
   /** Performs inlining on the given AST `root`. */
-  def run(root: MonoAst.Root)(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
-    val sctx: SharedContext = SharedContext.mk()
+  def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym])(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
+    val sctx: SharedContext = SharedContext.mk(delta)
     val defs = ParOps.parMapValues(root.defs)(visitDef(_)(sctx, root, flix))
     val newDelta = sctx.changed.asScala.keys.toSet
-    (root.copy(defs = defs), newDelta)
+    val liveSyms = root.entryPoints ++ sctx.live.asScala.keys.toSet
+    val liveDefs = defs.filter(kv => liveSyms.contains(kv._1))
+    (root.copy(defs = liveDefs), newDelta)
   }
 
   /** Performs inlining on the body of `def0`. */
@@ -155,7 +158,14 @@ object Inliner {
 
             case None =>
               // It was not unconditionally inlined, so consider inlining at this occurrence site
-              callSiteInline(freshVarSym, ctx0, Expr.Var(freshVarSym, tpe, loc))
+              useSiteInline(freshVarSym, ctx0) match {
+                case Some(exp) =>
+                  sctx.changed.putIfAbsent(sym0, ())
+                  visitExp(exp, ctx0.withSubst(Map.empty))
+
+                case None =>
+                  Expr.Var(freshVarSym, tpe, loc)
+              }
           }
       }
 
@@ -174,7 +184,8 @@ object Inliner {
         case Expr.Lambda(fparam, e1, _, _) =>
           sctx.changed.putIfAbsent(sym0, ())
           val e2 = visitExp(exp2, ctx0)
-          bindArgs(e1, List(fparam), List(e2), loc, ctx0)
+          val letBinding = bindArgs(e1, List(fparam), List(e2), loc)
+          visitExp(letBinding, ctx0)
 
         case e1 =>
           val e2 = visitExp(exp2, ctx0)
@@ -187,9 +198,10 @@ object Inliner {
         sctx.changed.putIfAbsent(sym0, ())
         val defn = root.defs(sym)
         val ctx = ctx0.withSubst(Map.empty).enableInliningMode
-        bindArgs(defn.exp, defn.spec.fparams, es, loc, ctx)
+        val letBinding = bindArgs(defn.exp, defn.spec.fparams, es, loc)
+        visitExp(letBinding, ctx)
       } else {
-        val es = exps.map(visitExp(_, ctx0))
+        sctx.live.putIfAbsent(sym, ())
         Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
       }
 
@@ -200,7 +212,8 @@ object Inliner {
       ctx0.subst.get(sym1) match {
         case Some(SubstRange.SuspendedExpr(Expr.LocalDef(_, fparams, exp, _, _, _, _, _), subst)) =>
           val es = exps.map(visitExp(_, ctx0))
-          bindArgs(exp, fparams, es, loc, ctx0.withSubst(subst))
+          val letBinding = bindArgs(exp, fparams, es, loc)
+          visitExp(letBinding, ctx0.withSubst(subst))
 
         case None | Some(_) =>
           // It was not unconditionally inlined, so return same expr with visited subexpressions
@@ -232,8 +245,8 @@ object Inliner {
 
       case _ =>
         // Simplify and maybe do copy-propagation
-        val e1 = visitExp(exp1, ctx0.withEmptyExprCtx)
-        if (isTrivial(e1) && exp1.eff == Type.Pure) {
+        val e1 = visitExp(exp1, ctx0)
+        if (isSimple(e1) && exp1.eff == Type.Pure) {
           // Do copy propagation and drop let-binding
           sctx.changed.putIfAbsent(sym0, ())
           val freshVarSym = Symbol.freshVarSym(sym)
@@ -284,15 +297,14 @@ object Inliner {
       Expr.Scope(freshVarSym, rvar, e, tpe, eff, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, ctx0)
-      e1 match {
+      visitExp(exp1, ctx0) match {
         case Expr.Cst(Constant.Bool(true), _, _) =>
           sctx.changed.putIfAbsent(sym0, ())
           visitExp(exp2, ctx0)
         case Expr.Cst(Constant.Bool(false), _, _) =>
           sctx.changed.putIfAbsent(sym0, ())
           visitExp(exp3, ctx0)
-        case _ =>
+        case e1 =>
           val e2 = visitExp(exp2, ctx0)
           val e3 = visitExp(exp3, ctx0)
           Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
@@ -315,9 +327,17 @@ object Inliner {
       Expr.Discard(e, eff, loc)
 
     case Expr.Match(exp, rules, tpe, eff, loc) =>
-      val rs = rules.map(visitMatchRule(_, ctx0))
       val e = visitExp(exp, ctx0)
+      val rs = rules.map(visitMatchRule(_, ctx0))
       Expr.Match(e, rs, tpe, eff, loc)
+
+    case Expr.ExtensibleMatch(label, exp1, sym2, exp2, sym3, exp3, tpe, eff, loc) =>
+      val freshVarSym2 = Symbol.freshVarSym(sym2)
+      val freshVarSym3 = Symbol.freshVarSym(sym3)
+      val e1 = visitExp(exp1, ctx0)
+      val e2 = visitExp(exp2, ctx0.addVarSubst(sym2, freshVarSym2).addInScopeVar(freshVarSym2, BoundKind.ParameterOrPattern))
+      val e3 = visitExp(exp3, ctx0.addVarSubst(sym3, freshVarSym3).addInScopeVar(freshVarSym3, BoundKind.ParameterOrPattern))
+      Expr.ExtensibleMatch(label, e1, freshVarSym2, e2, freshVarSym3, e3, tpe, eff, loc)
 
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, ctx0))
@@ -332,10 +352,6 @@ object Inliner {
       val e = visitExp(exp, ctx0)
       Expr.VectorLength(e, loc)
 
-    case Expr.Ascribe(exp, tpe, eff, loc) =>
-      val e = visitExp(exp, ctx0)
-      Expr.Ascribe(e, tpe, eff, loc)
-
     case Expr.Cast(exp, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)
       Expr.Cast(e, tpe, eff, loc)
@@ -346,8 +362,8 @@ object Inliner {
       Expr.TryCatch(e, rs, tpe, eff, loc)
 
     case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
-      val rs = rules.map(visitHandlerRule(_, ctx0))
       val e = visitExp(exp, ctx0)
+      val rs = rules.map(visitHandlerRule(_, ctx0))
       Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
     case Expr.Do(op, exps, tpe, eff, loc) =>
@@ -453,8 +469,7 @@ object Inliner {
   /**
     * Performs beta-reduction, binding `exps` as let-bindings.
     *
-    * It is the responsibility of the caller to first visit `exps` and provide a substitution from the definition site
-    * of `exp`. The caller must not visit `exp`.
+    * The caller must visit the returned expression.
     *
     * [[bindArgs]] creates a series of let-bindings
     * {{{
@@ -465,47 +480,17 @@ object Inliner {
     * }}}
     * where `symi` is the symbol of the i-th formal parameter and `exp` is the body of the function.
     *
-    * Lastly, it visits the top-most let-binding, thus possibly removing the bindings.
     */
-  private def bindArgs(exp: Expr, fparams: List[FormalParam], exps: List[Expr], loc: SourceLocation, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): Expr = {
-    val letBindings = fparams.zip(exps).foldRight(exp) {
+  private def bindArgs(exp: Expr, fparams: List[FormalParam], exps: List[Expr], loc: SourceLocation): Expr = {
+    fparams.zip(exps).foldRight(exp) {
       case ((fparam, arg), acc) =>
         val eff = Type.mkUnion(arg.eff, acc.eff, loc)
         Expr.Let(fparam.sym, arg, acc, acc.tpe, eff, fparam.occur, loc)
     }
-    visitExp(letBindings, ctx0.withEmptyExprCtx)
   }
 
   /**
-    * Returns `true` if `exp0` is considered a trivial expression.
-    *
-    * An expression is trivial if it is a:
-    *   - primitive literal (float, string, int, bool, unit)
-    *   - variable
-    *   - unary expression with a trivial operand
-    *   - binary expression with trivial operands
-    *   - tag with trivial arguments
-    *   - tuple with trivial arguments
-    *
-    * A pure and trivial expression can always be inlined even without duplicating work.
-    */
-  private def isTrivial(exp0: Expr): Boolean = exp0 match {
-    case Expr.Cst(_, _, _) => true
-    case Expr.Var(_, _, _) => true
-    case Expr.ApplyAtomic(AtomicOp.Unary(_), exps, _, _, _) => exps.forall(isTrivial)
-    case Expr.ApplyAtomic(AtomicOp.Binary(_), exps, _, _, _) => exps.forall(isTrivial)
-    case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivial)
-    case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivial)
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if
-    *   - the local context shows that we are not currently inlining and
-    *   - `defn` does not refer to itself and
-    *   - it is either a higher-order function with a known lambda as argument or
-    *   - it is a direct call to another function or
-    *   - the body is trivial.
+    * Returns `true` if the given `defn` should be inlined.
     *
     * It is the responsibility of the caller to visit `exps` first.
     *
@@ -513,53 +498,65 @@ object Inliner {
     * @param exps the arguments to the function.
     * @param ctx0 the local context.
     */
-  private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext): Boolean = {
-    !ctx0.currentlyInlining && !defn.spec.defContext.isSelfRef &&
-      (isDirectCall(defn.exp) || isTrivial(defn.exp) || hasKnownLambda(exps))
+  private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext): Boolean = {
+    if (ctx0.currentlyInlining) {
+      return false
+    }
+
+    if (defn.spec.ann.isDontInline) {
+      return false
+    }
+
+    if (sctx.delta.contains(defn.sym)) {
+      return false
+    }
+
+    if (defn.spec.ann.isInline) {
+      if (defn.sym == sym0) {
+        return false
+      }
+
+      return true
+    }
+
+    !defn.spec.defContext.isSelfRef &&
+      (isSingleAction(defn.exp) || isSimple(defn.exp) || hasKnownLambda(exps))
   }
 
   /**
     * Returns `true` if there exists [[Expr.Lambda]] in `exps`.
     */
   private def hasKnownLambda(exps: List[Expr]): Boolean = {
-    exps.exists {
-      case Expr.Lambda(_, _, _, _) => true
-      case _ => false
-    }
+    exps.exists(isLambda)
   }
 
   /**
-    * Returns `true` if `exp0` is a function call with trivial arguments.
-    */
-  private def isDirectCall(exp0: MonoAst.Expr): Boolean = exp0 match {
-    case MonoAst.Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isTrivial)
-    case MonoAst.Expr.ApplyClo(exp1, exp2, _, _, _) => isTrivial(exp1) && isTrivial(exp2)
-    case _ => false
-  }
-
-  /**
-    * Returns the definition of `sym` if it is let-bound and the [[shouldInlineVar]] predicate holds.
+    * Returns a [[Some]] with the definition of `sym` if it is let-bound and the [[shouldInlineVar]] predicate holds.
+    * The caller should visit the expression with an empty `subst`, i.e., `visitExp(exp, ctx0.withSubst(Map.empty))`.
     *
-    * Returns `default` otherwise.
+    * Returns [[None]] otherwise.
     *
     * Throws an error if `sym` is not in scope. This also implies that it is the responsibility of the caller
     * to replace any symbol occurrence with the corresponding fresh symbol in the variable substitution.
     */
-  private def callSiteInline(sym: Symbol.VarSym, ctx0: LocalContext, default: => Expr)(implicit sym0: Symbol.DefnSym, root: MonoAst.Root, sctx: SharedContext, flix: Flix): Expr = {
+  private def useSiteInline(sym: Symbol.VarSym, ctx0: LocalContext): Option[Expr] = {
     ctx0.inScopeVars.get(sym) match {
       case Some(BoundKind.LetBound(exp, occur)) if shouldInlineVar(sym, exp, occur) =>
-        sctx.changed.putIfAbsent(sym0, ())
-        visitExp(exp, ctx0.copy(subst = Map.empty))
+        Some(exp)
 
       case Some(_) =>
-        default
+        None
 
       case None =>
         throw InternalCompilerException(s"unexpected evaluated var not in scope $sym", sym.loc)
     }
   }
 
-  /** Returns `true` if `exp` is pure and should be inlined at the occurrence of `sym`. */
+  /**
+    * Returns `true` if `exp` is pure and should be inlined at the occurrence of `sym`.
+    *
+    * A lambda should be inlined if it has occurrence information [[Occur.OnceInLambda]] or [[Occur.OnceInLocalDef]].
+    */
   private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur): Boolean = (occur, exp.eff) match {
     case (Occur.Dead, _) => throw InternalCompilerException(s"unexpected call site inline of dead variable $sym", exp.loc)
     case (Occur.Once, Type.Pure) => throw InternalCompilerException(s"unexpected call site inline of pre-inlined variable $sym", exp.loc)
@@ -570,12 +567,81 @@ object Inliner {
     case _ => false // Impure so do not move expression
   }
 
+  /** Returns `true` if `exp` is [[Expr.Cst]] and the constant is not a [[Constant.Regex]]. */
+  private def isCst(exp: Expr): Boolean = exp match {
+    case Expr.Cst(Constant.Regex(_), _, _) => false
+    case Expr.Cst(_, _, _) => true
+    case _ => false
+  }
+
   /** Returns `true` if `exp` is [[Expr.Lambda]]. */
   def isLambda(exp: MonoAst.Expr): Boolean = exp match {
     case Expr.Lambda(_, _, _, _) => true
     case _ => false
   }
 
+  /**
+    * Returns `true` if `exp0` is considered a trivial expression.
+    *
+    * A trivial expression is one of the following:
+    *   - [[Expr.Var]]
+    *   - Any expression where [[isCst]] holds.
+    *
+    * A pure and trivial expression can always be inlined even without duplicating work.
+    */
+  private def isTrivial(exp0: Expr): Boolean = exp0 match {
+    case Expr.Var(_, _, _) => true
+    case exp => isCst(exp)
+  }
+
+  /**
+    * Returns `true` if `exp0` is a simple expression.
+    *
+    * A simple expression is a value-like expression where sub-expressions are trivial.
+    */
+  @tailrec
+  private def isSimple(exp0: Expr): Boolean = exp0 match {
+    case Expr.Lambda(_, _, _, _) => true
+    case Expr.ApplyAtomic(AtomicOp.Unary(_), exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.Binary(_), exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.Tag(_), exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.ArrayLit, exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.ApplyAtomic(AtomicOp.StructNew(_, _), exps, _, _, _) => exps.forall(isTrivial)
+    case Expr.Cast(exp, _, _, _) => isSimple(exp)
+    case exp => isTrivial(exp)
+  }
+
+  /**
+    * Returns `true` if `exp0` is a single action expression.
+    *
+    * An expression is a single action if it performs one computational step. For example:
+    * - A single call with simple arguments.
+    * - A single arithmetic operation with simple arguments.
+    * - A single array operation with simple arguments.
+    * - A single JVM operation with simple arguments.
+    */
+  @tailrec
+  private def isSingleAction(exp0: Expr): Boolean = exp0 match {
+    case Expr.ApplyClo(exp1, exp2, _, _, _) => isSimple(exp1) && isSimple(exp2)
+    case Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isSimple)
+    case Expr.LocalDef(_, _, _, Expr.ApplyLocalDef(_, exps, _, _, _), _, _, _, _) => exps.forall(isSimple)
+    case Expr.Cast(exp, _, _, _) => isSingleAction(exp)
+    case Expr.ApplyAtomic(op, exps, _, _, _) => op match {
+      case AtomicOp.ArrayNew => exps.forall(isSimple)
+      case AtomicOp.ArrayLoad => exps.forall(isSimple)
+      case AtomicOp.ArrayStore => exps.forall(isSimple)
+      case AtomicOp.ArrayLength => exps.forall(isSimple)
+      case AtomicOp.InvokeMethod(_) => exps.forall(isSimple)
+      case AtomicOp.InvokeStaticMethod(_) => exps.forall(isSimple)
+      case AtomicOp.GetField(_) => exps.forall(isSimple)
+      case AtomicOp.PutField(_) => exps.forall(isSimple)
+      case AtomicOp.GetStaticField(_) => exps.forall(isSimple)
+      case AtomicOp.PutStaticField(_) => exps.forall(isSimple)
+      case _ => false
+    }
+    case _ => false
+  }
 
   /** Represents the range of a substitution from variables to expressions. */
   sealed private trait SubstRange
@@ -608,20 +674,9 @@ object Inliner {
 
   }
 
-  /** Represents the compile-time evaluation state and is used like a stack. */
-  private sealed trait ExprContext
-
-  private object ExprContext {
-
-    /** The empty evaluation context. */
-    case object Empty extends ExprContext
-
-    /** Function application context. */
-    case class AppCtx(expr: Expr, subst: Map[Symbol.VarSym, SubstRange], ctx: ExprContext) extends ExprContext
-
-    /** Match-case expression context. */
-    case class MatchCtx(rules: List[MonoAst.MatchRule], subst: Map[Symbol.VarSym, SubstRange], ctx: ExprContext) extends ExprContext
-
+  private object LocalContext {
+    /** Returns the empty context with `currentlyInlining` set to `false`. */
+    val Empty: LocalContext = LocalContext(Map.empty, Map.empty, Map.empty, currentlyInlining = false)
   }
 
   /**
@@ -630,34 +685,28 @@ object Inliner {
     * @param varSubst          a substitution on variables to variables.
     * @param subst             a substitution on variables to expressions.
     * @param inScopeVars       a set of variables considered to be in scope.
-    * @param exprCtx           a compile-time evaluation context.
     * @param currentlyInlining a flag denoting whether the current traversal is part of an inline-expansion process.
     */
-  private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], exprCtx: ExprContext, currentlyInlining: Boolean) {
-
-    /** Returns a [[LocalContext]] where [[exprCtx]] has be overwritten with [[ExprContext.Empty]]. */
-    def withEmptyExprCtx: LocalContext = {
-      this.copy(exprCtx = ExprContext.Empty)
-    }
+  private case class LocalContext(varSubst: Map[Symbol.VarSym, Symbol.VarSym], subst: Map[Symbol.VarSym, SubstRange], inScopeVars: Map[Symbol.VarSym, BoundKind], currentlyInlining: Boolean) {
 
     /** Returns a [[LocalContext]] with the mapping `old -> fresh` added to [[varSubst]]. */
-    def addVarSubst(old: Symbol.VarSym, fresh: Symbol.VarSym): LocalContext = {
-      this.copy(varSubst = this.varSubst + (old -> fresh))
+    def addVarSubst(oldVar: Symbol.VarSym, freshVar: Symbol.VarSym): LocalContext = {
+      this.copy(varSubst = this.varSubst.updated(oldVar, freshVar))
     }
 
-    /** Returns a [[LocalContext]] with the mappings of `mappings` added to [[varSubst]]. */
-    def addVarSubsts(mappings: Map[Symbol.VarSym, Symbol.VarSym]): LocalContext = {
-      this.copy(varSubst = this.varSubst ++ mappings)
+    /** Returns a [[LocalContext]] with the mappings of `subst` added to [[varSubst]]. */
+    def addVarSubsts(subst: Map[Symbol.VarSym, Symbol.VarSym]): LocalContext = {
+      this.copy(varSubst = this.varSubst ++ subst)
     }
 
-    /** Returns a [[LocalContext]] with the mappings of `mappings` added to [[varSubst]]. */
-    def addVarSubsts(mappings: List[Map[Symbol.VarSym, Symbol.VarSym]]): LocalContext = {
-      this.copy(varSubst = mappings.foldLeft(this.varSubst)(_ ++ _))
+    /** Returns a [[LocalContext]] with the mappings of `l` added to [[varSubst]]. */
+    def addVarSubsts(l: List[Map[Symbol.VarSym, Symbol.VarSym]]): LocalContext = {
+      this.copy(varSubst = l.foldLeft(this.varSubst)(_ ++ _))
     }
 
     /** Returns a [[LocalContext]] with the mapping `sym -> substExpr` added to [[subst]]. */
     def addSubst(sym: Symbol.VarSym, substExpr: SubstRange): LocalContext = {
-      this.copy(subst = this.subst + (sym -> substExpr))
+      this.copy(subst = this.subst.updated(sym, substExpr))
     }
 
     /** Returns a [[LocalContext]] with [[subst]] overwritten by `newSubst`. */
@@ -667,39 +716,39 @@ object Inliner {
 
     /** Returns a [[LocalContext]] with the mapping `sym -> boundKind` added to [[inScopeVars]]. */
     def addInScopeVar(sym: Symbol.VarSym, boundKind: BoundKind): LocalContext = {
-      this.copy(inScopeVars = this.inScopeVars + (sym -> boundKind))
+      this.copy(inScopeVars = this.inScopeVars.updated(sym, boundKind))
     }
 
     /** Returns a [[LocalContext]] with the mappings of `mappings` added to [[inScopeVars]]. */
-    def addInScopeVars(mappings: Iterable[(Symbol.VarSym, BoundKind)]): LocalContext = {
-      this.copy(inScopeVars = this.inScopeVars ++ mappings)
+    def addInScopeVars(xs: Iterable[(Symbol.VarSym, BoundKind)]): LocalContext = {
+      this.copy(inScopeVars = this.inScopeVars ++ xs)
     }
 
     /** Returns a [[LocalContext]] where [[currentlyInlining]] is set to `true`. */
     def enableInliningMode: LocalContext = {
       this.copy(currentlyInlining = true)
     }
-  }
-
-  private object LocalContext {
-
-    /** Returns the empty context with `currentlyInlining` set to `false`. */
-    val Empty: LocalContext = LocalContext(Map.empty, Map.empty, Map.empty, ExprContext.Empty, currentlyInlining = false)
 
   }
 
   private object SharedContext {
 
-    /** Returns a fresh [[SharedContext]]. */
-    def mk(): SharedContext = new SharedContext(new ConcurrentHashMap())
+    /**
+      * Returns a fresh [[SharedContext]].
+      *
+      * The delta set does not change during the lifetime of the shared context.
+      */
+    def mk(delta: Set[Symbol.DefnSym]): SharedContext = new SharedContext(delta, new ConcurrentHashMap(), new ConcurrentHashMap())
 
   }
 
   /**
     * A globally shared thread-safe context.
     *
+    * @param delta   the set of symbols that changed in the last iteration.
     * @param changed the set of symbols of changed functions.
+    * @param live    the set of symbols of live functions.
     */
-  private case class SharedContext(changed: ConcurrentHashMap[Symbol.DefnSym, Unit])
+  private case class SharedContext(delta: Set[Symbol.DefnSym], changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit])
 
 }

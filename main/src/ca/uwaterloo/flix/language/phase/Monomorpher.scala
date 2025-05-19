@@ -535,6 +535,15 @@ object Monomorpher {
       }
       MonoAst.Expr.Match(specializeExp(exp, env0, subst), rs, subst(tpe), subst(eff), loc)
 
+    case LoweredAst.Expr.ExtensibleMatch(label, exp1, sym1, exp2, sym2, exp3, tpe, eff, loc) =>
+      val freshSym1 = Symbol.freshVarSym(sym1)
+      val freshSym2 = Symbol.freshVarSym(sym2)
+      val env1 = env0 + (sym1 -> freshSym1) + (sym2 -> freshSym2)
+      val e1 = specializeExp(exp1, env1, subst)
+      val e2 = specializeExp(exp2, env1, subst)
+      val e3 = specializeExp(exp3, env1, subst)
+      MonoAst.Expr.ExtensibleMatch(label, e1, freshSym1, e2, freshSym2, e3, subst(tpe), subst(eff), loc)
+
     case LoweredAst.Expr.TypeMatch(exp, rules, tpe, _, loc) =>
       // Use the non-strict substitution to allow free type variables to match with anything.
       val expTpe = subst.nonStrict(exp.tpe)
@@ -576,8 +585,7 @@ object Monomorpher {
       MonoAst.Expr.VectorLength(e, loc)
 
     case LoweredAst.Expr.Ascribe(exp, tpe, eff, loc) =>
-      val e = specializeExp(exp, env0, subst)
-      MonoAst.Expr.Ascribe(e, subst(tpe), subst(eff), loc)
+      specializeExp(exp, env0, subst)
 
     case LoweredAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>
       // Drop the declaredType and declaredEff.

@@ -645,11 +645,27 @@ object Weeder2 {
               DuplicateAnnotation(name.stripPrefix("@"), loc1, loc2)
             })
             errors.foreach(sctx.errors.add)
-            tokens.toList.map(visitAnnotation)
+            val result = tokens.toList.map(visitAnnotation)
+            checkInlineAndDontInline(result)
+            result
           })
         .getOrElse(List.empty)
 
       Annotations(ann)
+    }
+
+    private def checkInlineAndDontInline(annotations: List[Annotation])(implicit sctx: SharedContext): Unit = {
+      val (optInline, optDontInline) = annotations.foldLeft((None: Option[SourceLocation], None: Option[SourceLocation])) {
+        case ((None, right), Annotation.Inline(loc)) => (Some(loc), right)
+        case ((left, None), Annotation.DontInline(loc)) => (left, Some(loc))
+        case (acc, _) => acc
+      }
+      (optInline, optDontInline) match {
+        case (Some(leftLoc), Some(rightLoc)) =>
+          sctx.errors.add(InlineAndDontInline(leftLoc, rightLoc))
+
+        case _ =>
+      }
     }
 
     private def visitAnnotation(token: Token)(implicit sctx: SharedContext): Annotation = {
@@ -657,8 +673,10 @@ object Weeder2 {
       import Annotation.*
       token.text match {
         case "@Deprecated" => Deprecated(loc)
+        case "@DontInline" => DontInline(loc)
         case "@Experimental" => Experimental(loc)
         case "@Export" => Export(loc)
+        case "@Inline" => Inline(loc)
         case "@Internal" => Internal(loc)
         case "@Parallel" => Parallel(loc)
         case "@ParallelWhenPure" => ParallelWhenPure(loc)
