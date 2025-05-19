@@ -29,7 +29,8 @@ object SetUnification {
   /**
    * The maximum number of variables an equation may contain before it is considered too complex.
    */
-  val MaxVars: Int = 12 // Up to 2^12 = 4,096 terms per Zhegalkin polynomial.
+  // Experiments suggest that 12 is too much.
+  val MaxVars: Int = 11 // Up to 2^11 = 2,048 terms per Zhegalkin polynomial.
 
   /**
     * Enable simple rewrite rules.

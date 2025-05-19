@@ -26,26 +26,6 @@ sealed trait LexerError extends CompilationMessage {
 object LexerError {
 
   /**
-    * An error raised when block-comments are nested too deep.
-    *
-    * @param loc The location of the opening "\*".
-    */
-  case class BlockCommentTooDeep(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Block-comment nested too deep."
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Block-comment nested too deep.
-         |
-         |${code(loc, "This is nested too deep.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised when more than one decimal dot is found in a number.
     * For instance `123.456.78f32`.
     *

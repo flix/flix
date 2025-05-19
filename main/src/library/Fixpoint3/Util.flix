@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 Magnus Madsen
+ * Copyright 2025 Casper Dalgaard Nielsen
+ *                Adam Yasser Tallouzi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api.lsp.provider.completion.semantic
 
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.FieldCompletion
-import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.JvmUtils
+mod Fixpoint3.Util {
+    use Fixpoint3.Boxed
 
-object GetStaticFieldCompleter {
-
-  def getCompletions(e: ResolutionError.UndefinedJvmStaticField): List[Completion] = {
-    JvmUtils.getStaticFields(e.clazz).sortBy(_.getName).map(FieldCompletion(e.field, _))
-  }
+    ///
+    /// Unwraps an option.
+    ///
+    /// Causes runtime hole error when `x` is `None`.
+    ///
+    @Internal
+    pub def getOrCrash(x: Option[a]): a = match x {
+        case Some(v) => v
+        case None => bug!("Attempted unwrapping none in getOrCrash")
+    }
 
 }

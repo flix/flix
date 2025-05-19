@@ -15,11 +15,11 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.lsp.Range
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.StructCompletion
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Struct
-import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
-import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 
 object StructCompleter {
 
@@ -28,27 +28,23 @@ object StructCompleter {
     * Whether the returned completions are qualified is based on whether the name in the error is qualified.
     * When providing completions for unqualified enums that is not in scope, we will also automatically use the enum.
     */
-  def getCompletions(err: ResolutionError.UndefinedType)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    getCompletions(err.qn.loc.source.name, err.ap, err.env, err.qn)
-  }
-
-  private def getCompletions(uri: String, ap: AnchorPosition, env: LocalScope, qn: Name.QName)(implicit root: TypedAst.Root): Iterable[Completion] = {
+  def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
-      root.structs.values.collect{
+      root.structs.values.collect {
         case struct if CompletionUtils.isAvailable(struct) && CompletionUtils.matchesName(struct.sym, qn, qualified = true) =>
-          StructCompletion(struct, ap, qualified = true, inScope = true)
+          StructCompletion(struct, range, ap, qualified = true, inScope = true)
       }
     else
       root.structs.values.collect({
         case struct if CompletionUtils.isAvailable(struct) && CompletionUtils.matchesName(struct.sym, qn, qualified = false) =>
-          StructCompletion(struct, ap, qualified = false, inScope = inScope(struct, env))
+          StructCompletion(struct, range, ap, qualified = false, inScope = inScope(struct, scp))
       })
   }
 
   /**
-   * Checks if the definition is in scope.
-   * If we can find the definition in the scope or the definition is in the root namespace, it is in scope.
-   */
+    * Checks if the definition is in scope.
+    * If we can find the definition in the scope or the definition is in the root namespace, it is in scope.
+    */
   private def inScope(struct: TypedAst.Struct, scope: LocalScope): Boolean = {
     val thisName = struct.sym.toString
     val isResolved = scope.m.values.exists(_.exists {

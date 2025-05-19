@@ -143,6 +143,8 @@ sealed trait TokenKind {
       case TokenKind.KeywordWithout => "'without'"
       case TokenKind.KeywordYield => "'yield'"
       case TokenKind.KeywordXor => "'xor'"
+      case TokenKind.KeywordXmatch => "'xmatch'"
+      case TokenKind.KeywordXvar => "'xvar'"
       case TokenKind.ListHash => "'List#'"
       case TokenKind.MapHash => "'Map#'"
       case TokenKind.Minus => "'-'"
@@ -294,6 +296,8 @@ sealed trait TokenKind {
     case TokenKind.KeywordWithout => true
     case TokenKind.KeywordYield => true
     case TokenKind.KeywordXor => true
+    case TokenKind.KeywordXmatch => true
+    case TokenKind.KeywordXvar => true
     case TokenKind.Ampersand
          | TokenKind.AngleL
          | TokenKind.AngleLEqual
@@ -521,6 +525,8 @@ sealed trait TokenKind {
          | TokenKind.KeywordUnsafe
          | TokenKind.KeywordUnsafely
          | TokenKind.KeywordUse
+         | TokenKind.KeywordXmatch
+         | TokenKind.KeywordXvar
          | TokenKind.ListHash
          | TokenKind.LiteralBigDecimal
          | TokenKind.LiteralBigInt
@@ -702,6 +708,28 @@ sealed trait TokenKind {
     case TokenKind.Plus
          | TokenKind.Minus
          | TokenKind.NameLowerCase => true
+    case _ => false
+  }
+
+  /**
+    * Checks if this token is a literal.
+    */
+  def isLiteral: Boolean = this match {
+    case TokenKind.LiteralBigDecimal
+         | TokenKind.LiteralBigInt
+         | TokenKind.LiteralChar
+         | TokenKind.LiteralDebugStringL
+         | TokenKind.LiteralDebugStringR
+         | TokenKind.LiteralFloat32
+         | TokenKind.LiteralFloat64
+         | TokenKind.LiteralInt8
+         | TokenKind.LiteralInt16
+         | TokenKind.LiteralInt32
+         | TokenKind.LiteralInt64
+         | TokenKind.LiteralRegex
+         | TokenKind.LiteralString
+         | TokenKind.LiteralStringInterpolationL
+         | TokenKind.LiteralStringInterpolationR => true
     case _ => false
   }
 
@@ -1034,6 +1062,10 @@ object TokenKind {
   case object KeywordYield extends TokenKind
 
   case object KeywordXor extends TokenKind
+
+  case object KeywordXmatch extends TokenKind
+
+  case object KeywordXvar extends TokenKind
 
   case object ListHash extends TokenKind
 

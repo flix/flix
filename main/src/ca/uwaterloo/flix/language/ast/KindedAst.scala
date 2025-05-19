@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
 
 import java.lang.reflect.Field
 
@@ -75,9 +75,9 @@ object KindedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends Expr
 
-    case class Hole(sym: Symbol.HoleSym, env: LocalScope, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class Hole(sym: Symbol.HoleSym, scp: LocalScope, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class HoleWithExp(exp: Expr, env: LocalScope, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class HoleWithExp(exp: Expr, scp: LocalScope, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class OpenAs(symUse: RestrictableEnumSymUse, exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -119,9 +119,13 @@ object KindedAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], tvar: Type.Var, loc: SourceLocation) extends Expr
 
+    case class ExtensibleMatch(label: Name.Label, exp1: Expr, sym2: Symbol.VarSym, exp2: Expr, sym3: Symbol.VarSym, exp3: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
+
     case class Tag(symUse: CaseSymUse, exps: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class RestrictableTag(symUse: RestrictableCaseSymUse, exps: List[Expr], isOpen: Boolean, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+
+    case class ExtensibleTag(label: Name.Label, exps: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -241,7 +245,7 @@ object KindedAst {
 
     case class Tag(symUse: CaseSymUse, pats: List[Pattern], tvar: Type.Var, loc: SourceLocation) extends Pattern
 
-    case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
+    case class Tuple(pats: Nel[Pattern], loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, tvar: Type.Var, loc: SourceLocation) extends Pattern
 

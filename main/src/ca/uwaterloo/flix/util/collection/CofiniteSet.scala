@@ -1,5 +1,6 @@
 /*
  * Copyright 2024 Jonathan Lindegaard Starup
+ * Copyright 2025 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +15,24 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.util
+package ca.uwaterloo.flix.util.collection
+
+import ca.uwaterloo.flix.language.ast.Symbol
 
 import scala.collection.immutable.SortedSet
 
 /**
-  * Represents a finite or co-finite set with an infinite universe of integers.
+  * Represents a finite or co-finite set with an infinite universe.
   *
   * All sets are either a [[SortedSet]] or a complement of it.
   *
   * No finite set is ever equivalent to universe.
   */
-sealed trait CofiniteIntSet {
+sealed trait CofiniteSet[T] {
 
-  import CofiniteIntSet.{Compl, Set}
+  import CofiniteSet.{Compl, Set}
 
-
-  /** Returns `true` if `this` is [[CofiniteIntSet.empty]]. */
+  /** Returns `true` if `this` is [[CofiniteSet.empty]]. */
   def isEmpty: Boolean = this match {
     case Set(s) if s.isEmpty => true
     case Set(_) => false
@@ -38,7 +40,7 @@ sealed trait CofiniteIntSet {
   }
 
   /**
-    * Returns `true` if `this` is [[CofiniteIntSet.universe]].
+    * Returns `true` if `this` is [[CofiniteSet.universe]].
     *
     * Remember that the universe is infinite, so no finite set is ever equivalent
     * to universe.
@@ -50,28 +52,66 @@ sealed trait CofiniteIntSet {
 
 }
 
-object CofiniteIntSet {
+object CofiniteSet {
 
-  /** Represents a finite set of integers. */
-  case class Set(s: SortedSet[Int]) extends CofiniteIntSet
+  /**
+    * A trait that indicates the empty and universal values of this type have been cached.
+    *
+    * We use this for performance:
+    * There is one value for `empty` and `universe` per instance of the trait.
+    * As long as the same trait is used as evidence to the [[CofiniteSet.empty]] and [[CofiniteSet.universe]] functions,
+    * the same object will be returned every time [[CofiniteSet.empty]] or [[CofiniteSet.universe]] is called.
+    *
+    * This avoids allocation of new objects every time an empty or universal set is created.
+    *
+    * Reusable instances of this trait should be added to the [[SingletonValues]] companion object,
+    * because that is where Scala looks for implicits (after checking in local scope).
+    */
+  trait SingletonValues[T] {
+    val empty: CofiniteSet[T]
+    val universe: CofiniteSet[T]
+  }
 
-  /** Represents a co-finite set of integers. */
-  case class Compl(s: SortedSet[Int]) extends CofiniteIntSet
+  object SingletonValues {
+
+    /**
+      * An instance of [[CofiniteSet.SingletonValues]] for integers.
+      */
+    implicit object IntSingletonValues extends SingletonValues[Int] {
+      override val empty: CofiniteSet[Int] = Set(SortedSet.empty)
+      override val universe: CofiniteSet[Int] = Compl(SortedSet.empty)
+    }
+
+    /**
+      * An instance of [[CofiniteSet.SingletonValues]] for effect symbols.
+      */
+    implicit object EffectSymSingletonValues extends CofiniteSet.SingletonValues[Symbol.EffectSym] {
+      override val empty: CofiniteSet[Symbol.EffectSym] = CofiniteSet.Set(SortedSet.empty)
+      override val universe: CofiniteSet[Symbol.EffectSym] = CofiniteSet.Compl(SortedSet.empty)
+    }
+  }
+
+
+  /** Represents a finite set. */
+  case class Set[T](s: SortedSet[T]) extends CofiniteSet[T]
+
+  /** Represents a co-finite set. */
+  case class Compl[T](s: SortedSet[T]) extends CofiniteSet[T]
 
   /** The empty set. */
-  val empty: CofiniteIntSet = Set(SortedSet.empty)
+  def empty[T](implicit ev: SingletonValues[T]): CofiniteSet[T] = ev.empty
 
   /** The universe set. */
-  val universe: CofiniteIntSet = Compl(SortedSet.empty)
+  def universe[T](implicit ev: SingletonValues[T]): CofiniteSet[T] = ev.universe
 
   /** Returns the wrapped set of `s`. */
-  def mkSet(s: SortedSet[Int]): CofiniteIntSet = Set(s)
+  def mkSet[T](s: SortedSet[T]): CofiniteSet[T] = Set(s)
 
   /** Returns the singleton set of `i`. */
-  def mkSet(i: Int): CofiniteIntSet = Set(SortedSet(i))
+  def mkSet[T](i: T)(implicit ev: Ordering[T]): CofiniteSet[T] = Set(SortedSet(i))
 
   /** Returns the complement of `s` (`!s`). */
-  def complement(s: CofiniteIntSet): CofiniteIntSet = s match {
+  def complement[T](s: CofiniteSet[T]): CofiniteSet[T] = s match {
     case Set(s) =>
       // !s
       Compl(s)
@@ -82,7 +122,7 @@ object CofiniteIntSet {
   }
 
   /** Returns the union of `s1` and `s2` (`s1 ∪ s2`). */
-  def union(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet = (s1, s2) match {
+  def union[T](s1: CofiniteSet[T], s2: CofiniteSet[T]): CofiniteSet[T] = (s1, s2) match {
     case (Set(x), Set(y)) =>
       // x ∪ y
       Set(x.union(y))
@@ -108,11 +148,11 @@ object CofiniteIntSet {
   }
 
   /** Returns the union of `s1` and `s2` (`s1 ∪ s2`). */
-  def union(s1: CofiniteIntSet, s2: SortedSet[Int]): CofiniteIntSet =
+  def union[T](s1: CofiniteSet[T], s2: SortedSet[T]): CofiniteSet[T] =
     union(s1, mkSet(s2))
 
   /** Returns the intersection of `s1` and `s2` (`s1 ∩ s2`). */
-  def intersection(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet = (s1, s2) match {
+  def intersection[T](s1: CofiniteSet[T], s2: CofiniteSet[T]): CofiniteSet[T] = (s1, s2) match {
     case (Set(x), Set(y)) =>
       // x ∩ y
       Set(x.intersect(y))
@@ -133,19 +173,18 @@ object CofiniteIntSet {
   }
 
   /** Returns the intersection of `s1` and `s2` (`s1 ∩ s2`). */
-  def intersection(s1: CofiniteIntSet, s2: SortedSet[Int]): CofiniteIntSet =
+  def intersection[T](s1: CofiniteSet[T], s2: SortedSet[T]): CofiniteSet[T] =
     intersection(s1, mkSet(s2))
 
   /** Returns the difference of `s1` and `s2` (`s1 - s2`). */
-  def difference(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet =
+  def difference[T](s1: CofiniteSet[T], s2: CofiniteSet[T]): CofiniteSet[T] =
     intersection(s1, complement(s2))
 
   /** Returns the difference of `s1` and `s2` (`s1 - s2`). */
-  def difference(s1: CofiniteIntSet, s2: SortedSet[Int]): CofiniteIntSet =
+  def difference[T](s1: CofiniteSet[T], s2: SortedSet[T]): CofiniteSet[T] =
     difference(s1, mkSet(s2))
 
   /** Returns the symmetric difference of `s1` and `s2`. */
-  def xor(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet =
+  def xor[T](s1: CofiniteSet[T], s2: CofiniteSet[T]): CofiniteSet[T] =
     union(difference(s1, s2), difference(s2, s1))
-
 }

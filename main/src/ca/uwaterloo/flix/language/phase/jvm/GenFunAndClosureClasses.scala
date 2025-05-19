@@ -129,12 +129,12 @@ object GenFunAndClosureClasses {
 
     // Header
     val functionInterface = kind match {
-      case Function => JvmOps.getFunctionInterfaceType(defn.arrowType)
-      case Closure => JvmOps.getClosureAbstractClassType(defn.arrowType)
+      case Function => JvmOps.getFunctionInterfaceType(defn.arrowType).name
+      case Closure => JvmOps.getClosureAbstractClassType(defn.arrowType).jvmName
     }
     val frameInterface = BackendObjType.Frame
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null,
-      functionInterface.name.toInternalName, Array(frameInterface.jvmName.toInternalName))
+      functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
 
     // Fields
     val closureArgTypes = defn.cparams.map(_.tpe)
@@ -159,11 +159,11 @@ object GenFunAndClosureClasses {
     visitor.toByteArray
   }
 
-  private def compileConstructor(superClass: JvmType.Reference, visitor: ClassWriter): Unit = {
+  private def compileConstructor(superClass: JvmName, visitor: ClassWriter): Unit = {
     val constructor = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
 
     constructor.visitVarInsn(ALOAD, 0)
-    constructor.visitMethodInsn(INVOKESPECIAL, superClass.name.toInternalName, JvmName.ConstructorMethod,
+    constructor.visitMethodInsn(INVOKESPECIAL, superClass.toInternalName, JvmName.ConstructorMethod,
       MethodDescriptor.NothingToVoid.toDescriptor, false)
     constructor.visitInsn(RETURN)
 
@@ -235,8 +235,8 @@ object GenFunAndClosureClasses {
     val setPc = {
       import BytecodeInstructions.*
       SWAP() ~ DUP_X1() ~ SWAP() ~ // clo, pc ---> clo, clo, pc
-      BytecodeInstructions.cheat(_.visitFieldInsn(Opcodes.PUTFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)) ~
-        lparams.foldLeft(nop()){case (acc, (name, index, isWild, tpe)) =>
+        BytecodeInstructions.cheat(_.visitFieldInsn(Opcodes.PUTFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)) ~
+        lparams.foldLeft(nop()) { case (acc, (name, index, isWild, tpe)) =>
           val erasedTpe = BackendType.toErasedBackendType(tpe)
           if (isWild) acc else acc ~ DUP() ~ xLoad(erasedTpe, index) ~ cheat(_.visitFieldInsn(Opcodes.PUTFIELD, classType.name.toInternalName, name, erasedTpe.toDescriptor))
         } ~
@@ -309,7 +309,7 @@ object GenFunAndClosureClasses {
 
   private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def): Unit = {
     val closureAbstractClass = JvmOps.getClosureAbstractClassType(defn.arrowType)
-    val m = visitor.visitMethod(ACC_PUBLIC, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), null, null)
+    val m = visitor.visitMethod(ACC_PUBLIC, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, null, null)
     m.visitCode()
 
     mkCopy(classType, defn)(new BytecodeInstructions.F(m))
@@ -349,10 +349,10 @@ object GenFunAndClosureClasses {
     BytecodeInstructions.xToString(BackendType.Int32)(mf)
     m.visitInsn(AASTORE)
 
-    params.zipWithIndex.foreach{
+    params.zipWithIndex.foreach {
       case ((fieldName, fieldType), i) =>
         m.visitInsn(DUP)
-        compileInt(i+2)(m)
+        compileInt(i + 2)(m)
         m.visitLdcInsn(fieldName)
         m.visitLdcInsn(" = ")
         m.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, "concat", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.String.toTpe).toDescriptor, false)

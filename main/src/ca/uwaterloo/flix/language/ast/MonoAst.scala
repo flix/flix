@@ -1,5 +1,6 @@
 /*
   * Copyright 2024 Jonathan Lindegaard Starup
+  * Copyright 2025 Jakob Schneider Villumsen
   *
   * Licensed under the Apache License, Version 2.0 (the "License");
   * you may not use this file except in compliance with the License.
@@ -18,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, EffectSymUse, OpSymUse}
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.util.collection.Nel
 
 object MonoAst {
 
@@ -33,7 +35,7 @@ object MonoAst {
 
   case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr, loc: SourceLocation)
 
-  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, fparams: List[FormalParam], functionType: Type, retTpe: Type, eff: Type)
+  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, fparams: List[FormalParam], functionType: Type, retTpe: Type, eff: Type, defContext: DefContext)
 
   case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
@@ -73,9 +75,9 @@ object MonoAst {
 
     case class ApplyLocalDef(sym: Symbol.VarSym, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, occur: Occur, loc: SourceLocation) extends Expr
 
-    case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, occur: Occur, loc: SourceLocation) extends Expr
 
     case class Scope(sym: Symbol.VarSym, regSym: Symbol.RegionSym, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -89,6 +91,8 @@ object MonoAst {
 
     case class Match(exp: Expr, rules: List[MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
+    case class ExtensibleMatch(label: Name.Label, exp1: Expr, sym2: Symbol.VarSym, exp2: Expr, sym3: Symbol.VarSym, exp3: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
     case class VectorLit(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class VectorLoad(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
@@ -99,9 +103,7 @@ object MonoAst {
       def tpe: Type = Type.Int32
     }
 
-    case class Ascribe(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
-    case class Cast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Cast(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -123,13 +125,13 @@ object MonoAst {
 
     case class Wild(tpe: Type, loc: SourceLocation) extends Pattern
 
-    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends Pattern
+    case class Var(sym: Symbol.VarSym, tpe: Type, occur: Occur, loc: SourceLocation) extends Pattern
 
     case class Cst(cst: Constant, tpe: Type, loc: SourceLocation) extends Pattern
 
     case class Tag(sym: CaseSymUse, pats: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
-    case class Tuple(pats: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
+    case class Tuple(pats: Nel[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Pattern.Record.RecordLabelPattern], pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
 
@@ -142,7 +144,7 @@ object MonoAst {
 
   case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: Type, src: TypeSource, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: Type, src: TypeSource, occur: Occur, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
@@ -152,10 +154,93 @@ object MonoAst {
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
 
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
-
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 
-  case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
+  /**
+    * Represents occurrence information of binders, i.e., how a binder occurs in the program.
+    * A binder may be a variable, function, or effect handler.
+    */
+  sealed trait Occur
+
+  object Occur {
+
+    /**
+      * Represents unknown occurrence information.
+      * This is for phases not in [[ca.uwaterloo.flix.language.phase.optimizer]].
+      */
+    case object Unknown extends Occur
+
+    /**
+      * Represents a binder that is not used in an expression.
+      *
+      * If the let-binding is pure, then it is safe to remove it, otherwise it can be rewritten to a statement.
+      * If the binder is a function, it is safe to remove it. However, [[ca.uwaterloo.flix.language.phase.TreeShaker2]] handles that.
+      *
+      * Removing the binder results in smaller code size and does not increase work.
+      */
+    case object Dead extends Occur
+
+    /**
+      * Represents a binder that occurs exactly once in an expression.
+      *
+      * If the let-binding is pure, then it is safe to move its definition to the occurrence.
+      *
+      * Doing so strictly decreases code size and does not increase work.
+      */
+    case object Once extends Occur
+
+    /**
+      * Represents a binder that occurs exactly once and that occurrence is in the body of a lambda abstraction.
+      *
+      * If the let-binding is pure, then it is safe to move its definition to the occurrence.
+      *
+      * Doing so strictly decreases code size but may increase work.
+      */
+    case object OnceInLambda extends Occur
+
+    /**
+      * Represents a binder that occurs exactly once and that occurrence is in the body of a local def.
+      *
+      * If the let-binding is pure, then it is safe to move its definition to the occurrence.
+      *
+      * Doing so strictly decreases code size but may increase work.
+      *
+      * However, it may be beneficial to move the definition of the binder to simplify the expression further.
+      * Local defs are often called multiple times so if work duplication is bounded, it may result in
+      * smaller code size and less memory usage.
+      */
+    case object OnceInLocalDef extends Occur
+
+    /**
+      * Represents a binder that occurs at most once in distinct branches, but never inside a lambda abstraction or local def.
+      *
+      * If the let-binding is pure, then it is safe to move its definition to an occurrence.
+      *
+      * Moving the definition to any or all occurrences increases code size but does not increase work
+      * since branches are exclusive.
+      */
+    case object ManyBranch extends Occur
+
+    /**
+      * Represents a binder that occurs more than once (including lambdas, local defs, branches).
+      *
+      * If the let-binding is pure, then it is safe to move its definition to an occurrence.
+      *
+      * Doing so may increase both code size and work.
+      */
+    case object Many extends Occur
+
+  }
+
+  /**
+    * A [[DefContext]] contains information relevant for inlining.
+    *
+    * @param isSelfRef true if a def refers to itself.
+    */
+  case class DefContext(isSelfRef: Boolean)
+
+  object DefContext {
+    val Unknown: DefContext = DefContext(isSelfRef = false)
+  }
 
 }

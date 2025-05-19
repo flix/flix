@@ -108,7 +108,7 @@ object Purity {
     *
     * Returns [[Pure]] if empty.
     */
-  def combineAll(p: List[Purity]): Purity = {
+  def combineAll(p: Iterable[Purity]): Purity = {
     p.foldLeft(Pure: Purity)(combine)
   }
 

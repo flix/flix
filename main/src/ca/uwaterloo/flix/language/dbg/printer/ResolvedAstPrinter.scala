@@ -42,7 +42,7 @@ object ResolvedAstPrinter {
   }
 
   /** Returns the [[DocAst.Expr]] representation of `exp`. */
-  private def print(exp: ResolvedAst.Expr): DocAst.Expr = exp match {
+  private def print(exp0: ResolvedAst.Expr): DocAst.Expr = exp0 match {
     case Expr.Var(sym, _) => printVarSym(sym)
     case Expr.Hole(sym, _, _) => DocAst.Expr.Hole(sym)
     case Expr.HoleWithExp(exp, _, _) => DocAst.Expr.HoleWithExp(print(exp))
@@ -50,7 +50,7 @@ object ResolvedAstPrinter {
     case Expr.Use(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Cst(cst, _) => ConstantPrinter.print(cst)
     case Expr.ApplyClo(exp1, exp2, _) => DocAst.Expr.App(print(exp1), List(print(exp2)))
-    case Expr.ApplyDef(DefSymUse(sym, _), exps, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
+    case Expr.ApplyDef(DefSymUse(sym, _), exps, _) => DocAst.Expr.ApplyDef(sym, exps.map(print))
     case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _) => DocAst.Expr.App(printVarSym(sym), exps.map(print))
     case Expr.ApplySig(SigSymUse(sym, _), exps, _) => DocAst.Expr.App(DocAst.Expr.AsIs(sym.name), exps.map(print))
     case Expr.Lambda(fparam, exp, _, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
@@ -64,14 +64,16 @@ object ResolvedAstPrinter {
     case Expr.Region(_, _) => DocAst.Expr.Region
     case Expr.Scope(sym, _, exp, _) => DocAst.Expr.Scope(printVarSym(sym), print(exp))
     case Expr.Match(exp, rules, _) => DocAst.Expr.Match(print(exp), rules.map {
-      case ResolvedAst.MatchRule(pat, guard, exp, _) => (printPattern(pat), guard.map(print), print(exp))
+      case ResolvedAst.MatchRule(pat, guard, body, _) => (printPattern(pat), guard.map(print), print(body))
     })
     case Expr.TypeMatch(exp, rules, _) => DocAst.Expr.TypeMatch(print(exp), rules.map {
-      case ResolvedAst.TypeMatchRule(sym, tpe, exp, loc) => (printVarSym(sym), UnkindedTypePrinter.print(tpe), print(exp))
+      case ResolvedAst.TypeMatchRule(sym, tpe, body, _) => (printVarSym(sym), UnkindedTypePrinter.print(tpe), print(body))
     })
     case Expr.RestrictableChoose(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.ExtensibleMatch(_, _, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Tag(symUse, exps, _) => DocAst.Expr.Tag(symUse.sym, exps.map(print))
     case Expr.RestrictableTag(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.ExtensibleTag(_, _, _) => DocAst.Expr.Unknown // TODO: Ext-Variants
     case Expr.Tuple(exps, _) => DocAst.Expr.Tuple(exps.map(print))
     case Expr.RecordSelect(exp, label, _) => DocAst.Expr.RecordSelect(label, print(exp))
     case Expr.RecordExtend(label, value, rest, _) => DocAst.Expr.RecordExtend(label, print(value), print(rest))
@@ -96,11 +98,11 @@ object ResolvedAstPrinter {
     case Expr.Unsafe(exp, runEff, _) => DocAst.Expr.Unsafe(print(exp), UnkindedTypePrinter.print(runEff))
     case Expr.Without(exp, symUse, _) => DocAst.Expr.Without(print(exp), symUse.sym)
     case Expr.TryCatch(exp, rules, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
-      case ResolvedAst.CatchRule(sym, clazz, exp, _) => (sym, clazz, print(exp))
+      case ResolvedAst.CatchRule(sym, clazz, body, _) => (sym, clazz, print(body))
     })
     case Expr.Throw(exp, _) => DocAst.Expr.Throw(print(exp))
     case Expr.Handler(symUse, rules, _) => DocAst.Expr.Handler(symUse.sym, rules.map {
-      case ResolvedAst.HandlerRule(symUse, fparams, exp, _) => (symUse.sym, fparams.map(printFormalParam), print(exp))
+      case ResolvedAst.HandlerRule(opSymUse, fparams, exp, _) => (opSymUse.sym, fparams.map(printFormalParam), print(exp))
     })
     case Expr.RunWith(exp1, exp2, _) => DocAst.Expr.RunWith(print(exp1), print(exp2))
     case Expr.Do(symUse, exps, _) => DocAst.Expr.Do(symUse.sym, exps.map(print))
@@ -136,7 +138,7 @@ object ResolvedAstPrinter {
     case Pattern.Var(sym, _) => printVarSym(sym)
     case Pattern.Cst(cst, _) => ConstantPrinter.print(cst)
     case Pattern.Tag(symUse, pats, _) => DocAst.Expr.Tag(symUse.sym, pats.map(printPattern))
-    case Pattern.Tuple(pats, _) => DocAst.Expr.Tuple(pats.map(printPattern))
+    case Pattern.Tuple(pats, _) => DocAst.Expr.Tuple(pats.map(printPattern).toList)
     case Pattern.Record(_, _, _) => DocAst.Expr.Unknown
     case Pattern.Error(_) => DocAst.Expr.Error
   }

@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
+import ca.uwaterloo.flix.util.collection.Nel
 
 
 object NamedAst {
@@ -133,6 +134,10 @@ object NamedAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
+    case class ExtensibleMatch(label: Name.Label, exp1: Expr, sym2: Symbol.VarSym, exp2: Expr, sym3: Symbol.VarSym, exp3: Expr, loc: SourceLocation) extends Expr
+
+    case class ExtensibleTag(label: Name.Label, exps: List[Expr], loc: SourceLocation) extends Expr
+
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class RecordSelect(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr
@@ -241,7 +246,7 @@ object NamedAst {
 
     case class Tag(qname: Name.QName, pats: List[Pattern], loc: SourceLocation) extends Pattern
 
-    case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
+    case class Tuple(pats: Nel[Pattern], loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
 
@@ -307,7 +312,7 @@ object NamedAst {
 
     case class Unit(loc: SourceLocation) extends Type
 
-    case class Tuple(tpes: List[Type], loc: SourceLocation) extends Type
+    case class Tuple(tpes: Nel[Type], loc: SourceLocation) extends Type
 
     case class RecordRowEmpty(loc: SourceLocation) extends Type
 

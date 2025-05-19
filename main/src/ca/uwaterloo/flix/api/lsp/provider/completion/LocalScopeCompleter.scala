@@ -15,9 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{AssocTypeDef, AssocTypeSig, StructField}
-import ca.uwaterloo.flix.language.ast.shared.Resolution
-import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.api.lsp.Range
+import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
 
 /**
   * Provides completions for items in local scope, including:
@@ -31,61 +30,43 @@ object LocalScopeCompleter {
     * Returns a list of completions for UndefinedName.
     * We will provide all sorts of completions except for Resolution.TypeVar
     */
-  def getCompletions(err: ResolutionError.UndefinedName): Iterable[Completion] =
-   err.env.env.m.foldLeft(List.empty[Completion]){case (acc, (name, resolutions)) =>
-      acc ++ mkDeclarationCompletionForExpr(name, resolutions) ++ mkJavaClassCompletion(name, resolutions) ++
-        mkVarCompletion(name, resolutions) ++ mkLocalDefCompletion(resolutions)
-   }
+  def getCompletionsExpr(range: Range, scp: LocalScope): Iterable[Completion] =
+    scp.scp.m.foldLeft(List.empty[Completion]) { case (acc, (name, resolutions)) =>
+      acc ++ mkJavaClassCompletion(name, resolutions, range) ++ mkVarCompletion(name, resolutions, range) ++ mkLocalDefCompletion(resolutions, range)
+    }
 
   /**
     * Returns a list of completions for UndefinedType.
     * We will provide completions for Resolution.Declaration and Resolution.JavaClass
     */
-  def getCompletions(err: ResolutionError.UndefinedType): Iterable[Completion] =
-    err.env.env.m.foldLeft(List.empty[Completion]){case (acc, (name, resolutions)) =>
-       acc ++ mkDeclarationCompletionForType(name, resolutions) ++ mkJavaClassCompletion(name, resolutions)
-    }
-
-  /**
-    * Tries to create a DeclarationCompletion for the given name and resolutions. the returned Completion should fit in an expression context.
-    */
-  private def mkDeclarationCompletionForExpr(k: String, v: List[Resolution]): Iterable[Completion] =
-    v.collect {
-      case Resolution.Declaration(StructField(_, _, _, _)) => Completion.LocalDeclarationCompletion(k)
-    }
-
-  /**
-    * Tries to create a DeclarationCompletion for the given name and resolutions, the returned Completion should fit in a type context.
-    */
-  private def mkDeclarationCompletionForType(k: String, v: List[Resolution]): Iterable[Completion] =
-    v.collect {
-      case Resolution.Declaration(AssocTypeSig(_, _, _, _, _, _, _)) |
-           Resolution.Declaration(AssocTypeDef(_, _, _, _, _, _)) => Completion.LocalDeclarationCompletion(k)
+  def getCompletionsType(range: Range, scp: LocalScope): Iterable[Completion] =
+    scp.scp.m.foldLeft(List.empty[Completion]) { case (acc, (name, resolutions)) =>
+      acc ++ mkJavaClassCompletion(name, resolutions, range)
     }
 
   /**
     * Tries to create a JavaClassCompletion for the given name and resolutions.
     */
-  private def mkJavaClassCompletion(name: String, resolutions: List[Resolution]): Iterable[Completion] = {
+  private def mkJavaClassCompletion(name: String, resolutions: List[Resolution], range: Range): Iterable[Completion] = {
     resolutions.collect {
-      case Resolution.JavaClass(clazz) => Completion.LocalJavaClassCompletion(name, clazz)
+      case Resolution.JavaClass(clazz) => Completion.LocalJavaClassCompletion(name, clazz, range)
     }
   }
 
   /**
     * Tries to create a VarCompletion for the given name and resolutions.
     */
-  private def mkVarCompletion(name: String, resolutions: List[Resolution]): Iterable[Completion] = {
-    if (resolutions.exists{
+  private def mkVarCompletion(name: String, resolutions: List[Resolution], range: Range): Iterable[Completion] = {
+    if (resolutions.exists {
       case Resolution.Var(_) => true
       case _ => false
-    }) Completion.LocalVarCompletion(name) :: Nil else Nil
+    }) Completion.LocalVarCompletion(name, range) :: Nil else Nil
   }
 
   /**
     * Tries to create a LocalDefCompletion for the given name and resolutions.
     */
-  private def mkLocalDefCompletion(resolutions: List[Resolution]): Iterable[Completion] =
-    resolutions.collect{ case Resolution.LocalDef(sym, fparams) => (sym, fparams)}.map(Completion.LocalDefCompletion.tupled)
+  private def mkLocalDefCompletion(resolutions: List[Resolution], range: Range): Iterable[Completion] =
+    resolutions.collect { case Resolution.LocalDef(sym, fparams) => Completion.LocalDefCompletion(sym, fparams, range) }
 
 }

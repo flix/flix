@@ -68,7 +68,7 @@ mod Process {
         run {
             Ok(f(x))
         } with handler Process {
-            def execWithCwdAndEnv(cmd, args, cwd, env, k) = region rc {
+            def execWithCwdAndEnv(cmd, args, cwdPath, env, k) = region rc {
                 try {
                     let arr = List.toArray(rc, cmd :: args);
                     let pb = new ProcessBuilder(arr);
@@ -76,7 +76,7 @@ mod Process {
                         pb.environment().put(fst(e), snd(e));
                         ()
                     };
-                    match cwd {
+                    match cwdPath {
                         case Some(cwd) => pb.directory(new JFile(cwd)); ()
                         case None => ()
                     };

@@ -44,7 +44,7 @@ object Lexer {
   private val EOF = '\u0000'
 
   /** The characters allowed in a user defined operator mapped to their `TokenKind`s. */
-  def isUserOp(c: Char): Option[TokenKind] = {
+  private def isUserOp(c: Char): Option[TokenKind] = {
     c match {
       case '+' => Some(TokenKind.Plus)
       case '-' => Some(TokenKind.Minus)
@@ -233,12 +233,9 @@ object Lexer {
     * `column`.
     */
   private def sourceLocationFromZeroIndex(src: Source, line: Int, column: Int): SourceLocation = {
-    // SourcePosition is one-indexed - so correct line and column.
-    val lineFixed = line + 1
-    val columnFixed = column + 1
-    val sp1 = SourcePosition(src, lineFixed, columnFixed.toShort)
-    // It is safe not consider line breaks because `columnFixed + 1` is an exclusive index.
-    val sp2 = SourcePosition(src, lineFixed, (columnFixed + 1).toShort)
+    val sp1 = SourcePosition.mkFromZeroIndexed(src, line, column)
+    // It is safe not consider line breaks because `column + 1` is an exclusive index.
+    val sp2 = SourcePosition.mkFromZeroIndexed(src, line, column + 1)
     SourceLocation(isReal = true, sp1, sp2)
   }
 
@@ -247,12 +244,12 @@ object Lexer {
     * Afterwards `s.start` is reset to the next position after the previous token.
     */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
-    val b = SourcePosition(s.src, s.start.line + 1, (s.start.column + 1).toShort)
+    val b = SourcePosition.mkFromZeroIndexed(s.src, s.start.line, s.start.column)
     // If we are currently at the start of a line, create a non-existent position and the
     // end of the previous line as the exclusive end position.
     // This should not happen for zero-width tokens at the start of lines.
     val (endLine, endColumn) = if (s.start.offset != s.sc.getOffset) s.sc.getExclusiveEndPosition else s.sc.getPosition
-    val e = SourcePosition(s.src, endLine + 1, (endColumn + 1).toShort)
+    val e = SourcePosition.mkFromZeroIndexed(s.src, endLine, endColumn)
     s.tokens.append(Token(kind, s.src, s.start.offset, s.sc.getOffset, b, e))
     s.resetStart()
   }
@@ -266,11 +263,9 @@ object Lexer {
     * strings, but in many cases one or two characters is enough.
     */
   private def scanToken()(implicit s: State): TokenKind = {
-    val c = advance()
-
     // Beware that the order of these match cases affect both behaviour and performance.
     // If the order needs to change, make sure to run tests and benchmarks.
-    c match {
+    advance() match {
       case '(' => TokenKind.ParenL
       case ')' => TokenKind.ParenR
       case '{' => TokenKind.CurlyL
@@ -428,14 +423,16 @@ object Lexer {
       case _ if isKeyword("without") => TokenKind.KeywordWithout
       case _ if isKeyword("yield") => TokenKind.KeywordYield
       case _ if isKeyword("xor") => TokenKind.KeywordXor
+      case _ if isKeyword("xmatch") => TokenKind.KeywordXmatch
+      case _ if isKeyword("xvar") => TokenKind.KeywordXvar
       case _ if isKeyword("Set#") => TokenKind.SetHash
       case _ if isKeyword("Array#") => TokenKind.ArrayHash
       case _ if isKeyword("Map#") => TokenKind.MapHash
       case _ if isKeyword("List#") => TokenKind.ListHash
       case _ if isKeyword("Vector#") => TokenKind.VectorHash
       case _ if isMatchPrev("regex\"") => acceptRegex()
-      case _ if isMathNameChar(c) => acceptMathName()
-      case _ if isGreekNameChar(c) => acceptGreekName()
+      case c if isMathNameChar(c) => acceptMathName()
+      case c if isGreekNameChar(c) => acceptGreekName()
       case '_' =>
         val p = peek()
         if (p.isLetterOrDigit) {
@@ -451,7 +448,7 @@ object Lexer {
       case '0' if peek() == 'x' => acceptHexNumber()
       case c if c.isDigit => acceptNumber()
       // User defined operators.
-      case _ if isUserOp(c).isDefined =>
+      case c if isUserOp(c).isDefined =>
         val p = peek()
         if (c == '<' && p == '>' && peekPeek().flatMap(isUserOp).isEmpty) {
           // Make sure '<>' is read as AngleL, AngleR and not UserDefinedOperator for empty case sets.
@@ -603,13 +600,21 @@ object Lexer {
     s.sc.advanceWhile(_.isWhitespace)
 
   /**
-    * Moves the current position past all pairs of `\` and any other character.
+    * Moves the current position past all pairs of `\` and any other character, returning
+    * true if any '\' are seen.
     *
-    * This is useful to avoid `\'` and `\"` ending the lexing of literals.
+    * This is useful to avoid `\'` and `\"` ending the lexing of literals, and to
+    * determine whether a '$' before a '{' is escaped or a string interpolation indicator.
     */
-  private def consumeSingleEscapes()(implicit s: State): Unit =
-    while (s.sc.advanceIfMatch('\\')) {
+  private def consumeSingleEscapes()(implicit s: State): Boolean =
+    if (s.sc.advanceIfMatch('\\')) {
       advance()
+      while (s.sc.advanceIfMatch('\\')) {
+        advance()
+      }
+      true
+    } else {
+      false
     }
 
   /**
@@ -640,7 +645,7 @@ object Lexer {
   }
 
   /** Checks whether `c` lies in unicode range U+0370 to U+03FF. */
-  def isGreekNameChar(c: Char): Boolean = {
+  private def isGreekNameChar(c: Char): Boolean = {
     val i = c.toInt
     0x0370 <= i && i <= 0x03FF
   }
@@ -655,9 +660,8 @@ object Lexer {
   }
 
   /** Checks whether `c` lies in unicode range U+2190 to U+22FF. */
-  def isMathNameChar(c: Char): Boolean = {
+  private def isMathNameChar(c: Char): Boolean =
     0x2190 <= c && c <= 0x22FF
-  }
 
   /** Moves current position past a named hole (e.g. "?foo"). */
   private def acceptNamedHole()(implicit s: State): TokenKind = {
@@ -695,14 +699,13 @@ object Lexer {
   private def acceptString()(implicit s: State): TokenKind = {
     var kind: TokenKind = TokenKind.LiteralString
     while (!eof()) {
-      consumeSingleEscapes()
+      val hasEscapes = consumeSingleEscapes()
       // Note: `sc.peek` returns `EOF` if out of bounds, different from `peek`.
       var p = s.sc.peek
       // Check for the beginning of a string interpolation.
-      val prevPrev = previousPrevious()
       val prev = previous()
-      val isInterpolation = !prevPrev.contains('\\') && prev.contains('$') && p == '{'
-      val isDebug = !prevPrev.contains('\\') && prev.contains('%') && p == '{'
+      val isInterpolation = !hasEscapes && prev.contains('$') & p == '{'
+      val isDebug = !hasEscapes && prev.contains('%') && p == '{'
       if (isInterpolation || isDebug) {
         acceptStringInterpolation(isDebug) match {
           case e@TokenKind.Err(_) => return e

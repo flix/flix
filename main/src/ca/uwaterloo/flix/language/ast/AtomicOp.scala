@@ -48,6 +48,12 @@ object AtomicOp {
 
   case class RecordRestrict(label: Name.Label) extends AtomicOp
 
+  case class ExtensibleIs(label: Name.Label) extends AtomicOp
+
+  case class ExtensibleTag(label: Name.Label) extends AtomicOp
+
+  case class ExtensibleUntag(label: Name.Label, idx: Int) extends AtomicOp
+
   case object ArrayLit extends AtomicOp
 
   case object ArrayNew extends AtomicOp
@@ -97,5 +103,7 @@ object AtomicOp {
   case class HoleError(sym: Symbol.HoleSym) extends AtomicOp
 
   case object MatchError extends AtomicOp
+
+  case class CastError(from: String, to: String) extends AtomicOp
 
 }

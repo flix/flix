@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, TraitEnv}
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
 
 object LoweredAst {
 
@@ -113,6 +113,8 @@ object LoweredAst {
 
     case class Match(exp: Expr, rules: List[MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
+    case class ExtensibleMatch(label: Name.Label, exp1: Expr, sym1: Symbol.VarSym, exp2: Expr, sym2: Symbol.VarSym, exp3: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
@@ -155,7 +157,7 @@ object LoweredAst {
 
     case class Tag(sym: CaseSymUse, pats: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
-    case class Tuple(pats: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
+    case class Tuple(pats: Nel[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Pattern.Record.RecordLabelPattern], pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
 

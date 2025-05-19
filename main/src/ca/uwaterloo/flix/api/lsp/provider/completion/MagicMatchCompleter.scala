@@ -15,9 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.api.lsp.{Position, Range}
-import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.api.lsp.Range
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 
 object MagicMatchCompleter {
 
@@ -35,7 +34,7 @@ object MagicMatchCompleter {
     * }
     *
     * Example-2:
-    * Given an identifier `x` of a tuple type `(Color, Shape)` with cases `Red` and `Green` for Color` and `Circle`, `Square` for `Shape`,
+    * Given an identifier `x` of a tuple type `(Color, Shape)` with cases `Red` and `Green` for `Color` and `Circle`, `Square` for `Shape`,
     * typing `x.match` will trigger the completion to expand to:
     *
     * match x {
@@ -44,14 +43,17 @@ object MagicMatchCompleter {
     *  case (Green, Circle) => ???
     *  case (Green, Square) => ???
     * }
+    *
+    * @param tpe          The type of the expression.
+    * @param range        The location of the completion.
+    * @param baseLocation The location of the base expression, usually the expression before the '.'.
     */
-  def getCompletions(err: TypeError.FieldNotFound)(implicit root: TypedAst.Root): Iterable[Completion] = {
+    def getCompletions(tpe: Type, range: Range, baseLocation: SourceLocation)(implicit root: TypedAst.Root): Iterable[Completion] = {
     for {
-      baseExp <- err.base.text
-      patternMatchBody <- mkPatternMatchBody(err.tpe)
+      baseExp <- baseLocation.text
+      patternMatchBody <- mkPatternMatchBody(tpe)
     } yield {
       val name = s"$baseExp.match"
-      val range = sourceLocation2Range(err.loc)
       val snippet = s"match $baseExp {\n$patternMatchBody}"
       Completion.MagicMatchCompletion(name, range, snippet, "match expr { ... }")
     }
@@ -61,13 +63,13 @@ object MagicMatchCompleter {
     * Returns the pattern match body for the given type.
     * Currently, only enums and tuples are supported.
     */
-  private def mkPatternMatchBody(tpe: Type)(implicit root: TypedAst.Root): Option[String] = {
-    tpe.typeConstructor match {
+  private def mkPatternMatchBody(tpe0: Type)(implicit root: TypedAst.Root): Option[String] = {
+    tpe0.typeConstructor match {
       case Some(TypeConstructor.Enum(sym, _)) =>
         val cases = root.enums(sym).cases
         if (cases.nonEmpty) Some(mkEnumMatchBody(cases)) else None
       case Some(TypeConstructor.Tuple(_)) =>
-        val memberList = tpe.typeArguments.zipWithIndex.map { case (tpe, idx) => type2member(tpe, idx) }
+        val memberList = tpe0.typeArguments.zipWithIndex.map { case (tpe, idx) => type2member(tpe, idx) }
         val memberCombinations = cartesianProduct(memberList)
         Some(mkTupleMatchBody(memberCombinations))
       case _ =>
@@ -98,7 +100,7 @@ object MagicMatchCompleter {
     */
   private def type2member(tpe: Type, idx: Int)(implicit root: TypedAst.Root): Member =
     getEnumSym(tpe) match {
-      case Some(sym) => root.enums(sym).cases.toList.map{case (sym, cas) => EnumMemberItem(sym, cas)}
+      case Some(sym1) => root.enums(sym1).cases.toList.map{case (sym, cas) => EnumMemberItem(sym, cas)}
       case None => OtherMemberItem(s"_member$idx") :: Nil
     }
 
@@ -199,26 +201,13 @@ object MagicMatchCompleter {
       case Nil =>
         (s"$sym", index)
       case List(_) =>
-        (s"$sym($${${index}:_elem})", index + 1)
+        (s"$sym($${$index:_elem})", index + 1)
       case other =>
         val arity = other.length
         val elements = List.range(0, arity).map(i => s"$${${i + index}:_elem$i}").mkString(", ")
         (s"$sym($elements)",  index + arity)
     }
   }
-
-  /**
-    * Converts a [[SourceLocation]] to an [[Range]].
-    */
-  private def sourceLocation2Range(loc: SourceLocation): Range = {
-    Range(sourcePosition2Position(loc.sp1), sourcePosition2Position(loc.sp2))
-  }
-
-  /**
-    * Converts a [[SourcePosition]] to a [[Position]].
-    */
-  private def sourcePosition2Position(pos: SourcePosition): Position =
-    Position(pos.line, pos.col)
 
   /**
     * Returns the length of the given integer.
