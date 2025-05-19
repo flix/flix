@@ -568,7 +568,10 @@ object Desugar {
       val rs = rules.map(visitRestrictableChooseRule)
       Expr.RestrictableChoose(star, e, rs, loc)
 
-    case WeededAst.Expr.ExtensibleMatch(exp, rules, loc) => ???
+    case WeededAst.Expr.ExtensibleMatch(exp, rules, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitExtMatchRule)
+      Expr.ExtensibleMatch(e, rs, loc)
 
     case WeededAst.Expr.ApplicativeFor(frags, exp, loc) =>
       desugarApplicativeFor(frags, exp, loc)
@@ -831,6 +834,17 @@ object Desugar {
   }
 
   /**
+    * Desugars the given [[WeededAst.MatchRule]] `rule0`.
+    */
+  private def visitExtMatchRule(rule0: WeededAst.ExtMatchRule)(implicit flix: Flix): DesugaredAst.ExtMatchRule = rule0 match {
+    case WeededAst.ExtMatchRule(qname, pats, exp1, exp2, loc) =>
+      val ps = pats.map(visitExtPattern)
+      val e1 = exp1.map(visitExp)
+      val e2 = visitExp(exp2)
+      DesugaredAst.ExtMatchRule(qname, ps, e1, e2, loc)
+  }
+
+  /**
     * Desugars the given [[WeededAst.Pattern]] `pat0`.
     */
   private def visitPattern(pat0: WeededAst.Pattern): DesugaredAst.Pattern = pat0 match {
@@ -858,6 +872,20 @@ object Desugar {
 
     case WeededAst.Pattern.Error(loc) =>
       DesugaredAst.Pattern.Error(loc)
+  }
+
+  /**
+    * Desugars the given [[WeededAst.ExtPattern]] `pat0`.
+    */
+  private def visitExtPattern(pat0: WeededAst.ExtPattern): DesugaredAst.ExtPattern = pat0 match {
+    case WeededAst.ExtPattern.Wild(loc) =>
+      DesugaredAst.ExtPattern.Wild(loc)
+
+    case WeededAst.ExtPattern.Var(ident, loc) =>
+      DesugaredAst.ExtPattern.Var(ident, loc)
+
+    case WeededAst.ExtPattern.Error(loc) =>
+      DesugaredAst.ExtPattern.Error(loc)
   }
 
   /**
