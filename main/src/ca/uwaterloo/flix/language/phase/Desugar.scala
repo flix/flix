@@ -568,7 +568,7 @@ object Desugar {
       val rs = rules.map(visitRestrictableChooseRule)
       Expr.RestrictableChoose(star, e, rs, loc)
 
-    case WeededAst.Expr.ExtensibleMatch(exp, rules, loc) =>
+    case WeededAst.Expr.ExtMatch(exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitExtMatchRule)
       Expr.ExtensibleMatch(e, rs, loc)

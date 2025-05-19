@@ -1564,7 +1564,7 @@ object Weeder2 {
           val error = NeedAtleastOne(NamedTokenSet.ExtensibleMatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
           // Fall back on Expr.Error. Parser has reported an error here.
           Validation.Success(Expr.Error(error))
-        case (expr, rules) => Validation.Success(Expr.ExtensibleMatch(expr, rules, tree.loc))
+        case (expr, rules) => Validation.Success(Expr.ExtMatch(expr, rules, tree.loc))
       }
 
     }
