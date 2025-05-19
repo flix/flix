@@ -57,7 +57,7 @@ object CyclicalGraph {
     */
   case class SCC[T](cycle: Set[Singleton[T]]) extends Vertex[T] {
     override def outgoing: Set[T] = {
-      cycle.flatMap(singleton => singleton.edges -- cycle.map(_.value))
+      cycle.flatMap(_.outgoing) -- cycle.map(_.value)
     }
   }
 
