@@ -43,9 +43,11 @@ object CyclicalGraph {
     * Represents a single vertex.
     *
     * @param value the value / label of the vertex. Must be unique in the graph.
-    * @param outgoing the list of outgoing edges.
+    * @param edges the list of edges (including edges to itself).
     */
-  case class Singleton[T](value: T, outgoing: Set[T]) extends Vertex[T]
+  case class Singleton[T](value: T, edges: Set[T]) extends Vertex[T] {
+    override def outgoing: Set[T] = edges - value
+  }
 
   /**
     * Represents a strongly connected component.
@@ -53,8 +55,8 @@ object CyclicalGraph {
     * @param cycle the list of vertices that form the cycle.
     */
   case class SCC[T](cycle: Set[Singleton[T]]) extends Vertex[T] {
-    def outgoing: Set[T] = {
-      cycle.flatMap(singleton => singleton.outgoing -- cycle.map(_.value))
+    override def outgoing: Set[T] = {
+      cycle.flatMap(singleton => singleton.edges -- cycle.map(_.value))
     }
   }
 
@@ -70,7 +72,7 @@ object CyclicalGraph {
   def toMap[T](graph: CyclicalGraph[T]): Map[T, List[T]] = {
     graph.vertices.flatMap {
       case Singleton(value, edges) => Map(value -> edges.toList)
-      case SCC(cycle) => cycle.map(v => v.value -> v.outgoing.toList)
+      case SCC(cycle) => cycle.map(v => v.value -> v.edges.toList)
     }.toMap
   }
 
