@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.CyclicalGraph.Vertex
+import ca.uwaterloo.flix.util.Graph.TopologicalSort
 
 import scala.collection.mutable
 
@@ -92,6 +93,17 @@ object CyclicalGraph {
     result.map {
       case (u, edges) => u -> edges.reverse
     }.toMap
+  }
+
+  def topologicalSort[T](graph: CyclicalGraph[T]): List[Vertex[T]] = {
+    val topSort = Graph.topologicalSort(graph.vertices, (v0: Vertex[T]) => v0.outgoing.flatMap(v => graph.vertices.filter {
+      case Singleton(u, _) => v == u
+      case SCC(cycle) => cycle.exists(_.value == v)
+    }).toList)
+    topSort match {
+      case TopologicalSort.Cycle(_) => ???
+      case TopologicalSort.Sorted(sorted) => sorted
+    }
   }
 
   private def scc[T](graph: Map[T, List[T]]): CyclicalGraph[T] = {
