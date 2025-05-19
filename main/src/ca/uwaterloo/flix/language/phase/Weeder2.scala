@@ -1566,7 +1566,6 @@ object Weeder2 {
           Validation.Success(Expr.Error(error))
         case (expr, rules) => Validation.Success(Expr.ExtMatch(expr, rules, tree.loc))
       }
-
     }
 
     private def visitExtMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[ExtMatchRule, CompilationMessage] = {
@@ -1579,6 +1578,7 @@ object Weeder2 {
         // case pattern if expr => expr
         case ((qname, pats), _ :: expr :: Nil) =>
           val error = Malformed(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          sctx.errors.add(error)
           Validation.Success(ExtMatchRule(qname, pats, expr, tree.loc))
         // Fall back on Expr.Error. Parser has reported an error here.
         case ((qname, _), _) =>
