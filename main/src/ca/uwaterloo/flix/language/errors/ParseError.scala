@@ -107,6 +107,10 @@ object ParseError {
       def display(fmt: Formatter): String = fmt.cyan("<pattern>")
     }
 
+    case object ExtPattern extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<ext-pattern>")
+    }
+
     case object Tuple extends NamedTokenSet {
       def display(fmt: Formatter): String = fmt.cyan("<tuple>")
     }
