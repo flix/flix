@@ -588,7 +588,7 @@ object Desugar {
     case WeededAst.Expr.LetMatch(pat, tpe, exp1, exp2, loc) =>
       desugarLetMatch(pat, tpe, exp1, exp2, loc)
 
-    case WeededAst.Expr.ExtensibleTag(label, exps, loc) =>
+    case WeededAst.Expr.ExtTag(label, exps, loc) =>
       val es = visitExps(exps)
       Expr.ExtensibleTag(label, es, loc)
 

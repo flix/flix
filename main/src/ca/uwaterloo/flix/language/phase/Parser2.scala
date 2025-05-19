@@ -1686,7 +1686,7 @@ object Parser2 {
              | TokenKind.KeywordDebugBang
              | TokenKind.KeywordDebugBangBang => debugExpr()
         case TokenKind.KeywordEMatch => extMatchExpr()
-        case TokenKind.KeywordXvar => extensibleTagExpr()
+        case TokenKind.KeywordXvar => extTagExpr()
         case t =>
           val mark = open()
           val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), sctx, loc = currentSourceLocation())
@@ -1870,7 +1870,7 @@ object Parser2 {
       close(mark, TreeKind.Expr.ExtMatch)
     }
 
-    private def extensibleTagExpr()(implicit s: State): Mark.Closed = {
+    private def extTagExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordXvar))
       val mark = open()

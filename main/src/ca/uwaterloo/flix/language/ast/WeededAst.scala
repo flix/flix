@@ -137,7 +137,7 @@ object WeededAst {
 
     case class LetMatch(pat: Pattern, tpe: Option[Type], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class ExtensibleTag(label: Name.Label, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class ExtTag(label: Name.Label, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
