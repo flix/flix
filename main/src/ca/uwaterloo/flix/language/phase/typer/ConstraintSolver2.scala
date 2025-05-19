@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.ChaosMonkey
 
 import scala.annotation.tailrec
 
@@ -128,7 +129,7 @@ object ConstraintSolver2 {
     * Solves the given constraint set as far as possible.
     */
   def solveAll(constrs0: List[TypeConstraint], initialSubst: SubstitutionTree)(implicit scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
-    val constrs = constrs0.map(initialSubst.apply)
+    val constrs = ChaosMonkey.chaos[TypeConstraint](constrs0.map(initialSubst.apply))
     val soup = new Soup(constrs, initialSubst)
     val progress = Progress()
     val res = soup.exhaustively(progress)(solveOne)

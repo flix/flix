@@ -103,6 +103,7 @@ object Main {
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfPar = cmdOpts.XPerfPar,
       XPerfN = cmdOpts.XPerfN,
+      xchaosMonkey = cmdOpts.xchaosMonkey,
       xiterations = cmdOpts.xiterations,
     )
 
@@ -356,6 +357,7 @@ object Main {
                      XPerfFrontend: Boolean = false,
                      XPerfPar: Boolean = false,
                      xiterations: Int = 1000,
+                     xchaosMonkey: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -562,6 +564,10 @@ object Main {
       // Xfuzzer
       opt[Unit]("Xfuzzer").action((_, c) => c.copy(xfuzzer = true)).
         text("[experimental] enables compiler fuzzing.")
+
+      // Xchaos-monkey
+      opt[Unit]("Xchaos-monkey").action((_, c) => c.copy(xchaosMonkey = true)).
+        text("[experimental] introduces randomness.")
 
       // Xprint-typer
       opt[String]("Xprint-typer").action((sym, c) => c.copy(xprinttyper = Some(sym))).

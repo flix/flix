@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin
 import ca.uwaterloo.flix.util.collection.SortedBimap
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, Result}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
@@ -52,11 +52,14 @@ object EffUnification3 {
     *
     * Note: Treats `Type.Error` as a constant, i.e. only equal to itself. Hence, it is better to drop equations that contain `Type.Error`.
     */
-  def unifyAll(eqs: List[TypeConstraint.Equality], scope: Scope, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, List[TypeConstraint]] = {
+  def unifyAll(eqs0: List[TypeConstraint.Equality], scope: Scope, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, List[TypeConstraint]] = {
     // Performance: Nothing to do if the equation list is empty
-    if (eqs.isEmpty) {
+    if (eqs0.isEmpty) {
       return Result.Ok(Substitution.empty)
     }
+
+    // Randomness: If chaos monkey flag is passed
+    val eqs = ChaosMonkey.chaos[TypeConstraint.Equality](eqs0)
 
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
