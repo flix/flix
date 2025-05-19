@@ -91,6 +91,8 @@ object MonoAst {
 
     case class Match(exp: Expr, rules: List[MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
+    case class ExtensibleMatch(label: Name.Label, exp1: Expr, sym2: Symbol.VarSym, exp2: Expr, sym3: Symbol.VarSym, exp3: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
     case class VectorLit(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class VectorLoad(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
@@ -100,8 +102,6 @@ object MonoAst {
 
       def tpe: Type = Type.Int32
     }
-
-    case class Ascribe(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Cast(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -233,15 +233,14 @@ object MonoAst {
   }
 
   /**
-    * A [[DefContext]] contains various pieces of information on a function that are relevant for making an inlining decision.
+    * A [[DefContext]] contains information relevant for inlining.
     *
-    * @param localDefs the number of local defs defined in a function.
-    * @param isSelfRef true if a function body expression refers to the function itself.
+    * @param isSelfRef true if a def refers to itself.
     */
-  case class DefContext(localDefs: Int, isSelfRef: Boolean)
+  case class DefContext(isSelfRef: Boolean)
 
   object DefContext {
-    val Unknown: DefContext = DefContext(localDefs = 0, isSelfRef = false)
+    val Unknown: DefContext = DefContext(isSelfRef = false)
   }
 
 }

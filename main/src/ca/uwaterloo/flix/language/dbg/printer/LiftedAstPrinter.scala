@@ -61,8 +61,8 @@ object LiftedAstPrinter {
       case LiftedAst.CatchRule(sym, clazz, rexp) => (sym, clazz, print(rexp))
     })
     case RunWith(exp, effUse, rules, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map {
-      case LiftedAst.HandlerRule(op, fparams, exp) =>
-        (op.sym, fparams.map(printFormalParam), print(exp))
+      case LiftedAst.HandlerRule(op, fparams, body) =>
+        (op.sym, fparams.map(printFormalParam), print(body))
     })
     case Do(op, exps, _, _, _) => DocAst.Expr.Do(op.sym, exps.map(print))
     case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map {

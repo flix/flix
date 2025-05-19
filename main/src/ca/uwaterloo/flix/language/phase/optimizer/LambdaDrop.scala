@@ -177,6 +177,11 @@ object LambdaDrop {
           visitExp(exp2)
       }
 
+    case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      visitExp(exp3)
+
     case Expr.VectorLit(exps, _, _, _) =>
       exps.foreach(visitExp)
 
@@ -185,9 +190,6 @@ object LambdaDrop {
       visitExp(exp2)
 
     case Expr.VectorLength(exp, _) =>
-      visitExp(exp)
-
-    case Expr.Ascribe(exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.Cast(exp, _, _, _) =>
@@ -302,6 +304,12 @@ object LambdaDrop {
       }
       Expr.Match(e1, rs, tpe, eff, loc)
 
+    case Expr.ExtensibleMatch(label, exp1, sym1, exp2, sym2, exp3, tpe, eff, loc) =>
+      val e1 = rewriteExp(exp1)
+      val e2 = rewriteExp(exp2)
+      val e3 = rewriteExp(exp3)
+      Expr.ExtensibleMatch(label, e1, sym1, e2, sym2, e3, tpe, eff, loc)
+
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(rewriteExp)
       Expr.VectorLit(es, tpe, eff, loc)
@@ -314,10 +322,6 @@ object LambdaDrop {
     case Expr.VectorLength(exp, loc) =>
       val e = rewriteExp(exp)
       Expr.VectorLength(e, loc)
-
-    case Expr.Ascribe(exp, tpe, eff, loc) =>
-      val e = rewriteExp(exp)
-      Expr.Ascribe(e, tpe, eff, loc)
 
     case Expr.Cast(exp, tpe, eff, loc) =>
       val e = rewriteExp(exp)

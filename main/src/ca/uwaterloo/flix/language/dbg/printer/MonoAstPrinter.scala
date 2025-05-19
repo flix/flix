@@ -38,10 +38,10 @@ object MonoAstPrinter {
     case Expr.Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
     case Expr.Discard(exp, _, _) => DocAst.Expr.Discard(print(exp))
     case Expr.Match(exp, rules, _, _, _) => DocAst.Expr.Match(print(exp), rules.map(printMatchRule))
+    case Expr.ExtensibleMatch(_, _, _, _, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.VectorLit(exps, _, _, _) => DocAst.Expr.VectorLit(exps.map(print))
     case Expr.VectorLoad(exp1, exp2, _, _, _) => DocAst.Expr.VectorLoad(print(exp1), print(exp2))
     case Expr.VectorLength(exp, _) => DocAst.Expr.VectorLength(print(exp))
-    case Expr.Ascribe(exp, tpe, _, _) => DocAst.Expr.AscriptionTpe(print(exp), TypePrinter.print(tpe))
     case Expr.Cast(exp, tpe, eff, _) => DocAst.Expr.UncheckedCast(print(exp), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)))
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map(printCatchRule))
     case Expr.RunWith(exp, effUse, rules, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map(printHandlerRule))

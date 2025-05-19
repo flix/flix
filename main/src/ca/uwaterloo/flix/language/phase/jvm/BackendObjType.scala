@@ -322,7 +322,7 @@ object BackendObjType {
     def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
     /** [...] -> [..., tagName] */
-    def mkTagName(sym: Symbol.CaseSym): InstructionSet = pushString(JvmOps.getTagName(sym))
+    def mkTagName(name: String): InstructionSet = pushString(JvmOps.getTagName(name))
 
     /** [..., tagName1, tagName2] --> [..., tagName1 == tagName2] */
     def eqTagName(): InstructionSet = {
@@ -333,7 +333,7 @@ object BackendObjType {
 
   sealed trait TagType extends BackendObjType with Generatable
 
-  case class NullaryTag(sym: Symbol.CaseSym) extends TagType {
+  case class NullaryTag(name: String) extends TagType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = Tagged.jvmName)
 
@@ -351,12 +351,12 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(_ =>
       thisLoad() ~ INVOKESPECIAL(Tagged.Constructor) ~
-        thisLoad() ~ Tagged.mkTagName(sym) ~ PUTFIELD(Tagged.NameField) ~
+        thisLoad() ~ Tagged.mkTagName(name) ~ PUTFIELD(Tagged.NameField) ~
         RETURN()
     ))
 
     def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ =>
-      Tagged.mkTagName(sym) ~ xReturn(String.toTpe)
+      Tagged.mkTagName(name) ~ xReturn(String.toTpe)
     ))
   }
 
@@ -1546,7 +1546,7 @@ object BackendObjType {
         DUP2() ~ GETFIELD(Suspension.PrefixField) ~ // [..., s', s, s', s.prefix]
         // Make the new frame and push it
         newFrame ~
-        DUP() ~ cheat(mv => GenExpression.compileInt(pc)(mv)) ~ setPc ~
+        DUP() ~ pushInt(pc) ~ setPc ~
         INVOKEINTERFACE(Frames.PushMethod) ~ // [..., s', s, s', prefix']
         PUTFIELD(Suspension.PrefixField) ~ // [..., s', s]
         POP() ~ // [..., s']

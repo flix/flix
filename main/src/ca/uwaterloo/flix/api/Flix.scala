@@ -161,6 +161,7 @@ class Flix {
     "BigDecimal.flix" -> LocalResource.get("/src/library/BigDecimal.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Box.flix" -> LocalResource.get("/src/library/Box.flix"),
+    "BPlusTree.flix" -> LocalResource.get("/src/library/BPlusTree.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "CodePoint.flix" -> LocalResource.get("/src/library/CodePoint.flix"),
@@ -265,7 +266,18 @@ class Flix {
 
     "Fixpoint/Toggle.flix" -> LocalResource.get("/src/library/Fixpoint/Toggle.flix"),
     "Fixpoint/SolverApi.flix" -> LocalResource.get("/src/library/Fixpoint/SolverApi.flix"),
+
+
+    "Fixpoint3/AtomicCounter.flix" -> LocalResource.get("/src/library/Fixpoint3/AtomicCounter.flix"),
+    "Fixpoint3/Boxed.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxed.flix"),
+    "Fixpoint3/BoxingType.flix" -> LocalResource.get("/src/library/Fixpoint3/BoxingType.flix"),
+    "Fixpoint3/Counter.flix" -> LocalResource.get("/src/library/Fixpoint3/Counter.flix"),
+    "Fixpoint3/Util.flix" -> LocalResource.get("/src/library/Fixpoint3/Util.flix"),
+    "Fixpoint3/ReadWriteLock.flix" -> LocalResource.get("/src/library/Fixpoint3/ReadWriteLock.flix"),
     "Fixpoint3/Solver.flix" -> LocalResource.get("/src/library/Fixpoint3/Solver.flix"),
+    "Fixpoint3/UniqueInts.flix" -> LocalResource.get("/src/library/Fixpoint3/UniqueInts.flix"),
+
+    "Fixpoint3/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/Ram.flix"),
 
 
     "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),

@@ -30,7 +30,7 @@ object StructCompleter {
     */
   def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
-      root.structs.values.collect{
+      root.structs.values.collect {
         case struct if CompletionUtils.isAvailable(struct) && CompletionUtils.matchesName(struct.sym, qn, qualified = true) =>
           StructCompletion(struct, range, ap, qualified = true, inScope = true)
       }
@@ -42,9 +42,9 @@ object StructCompleter {
   }
 
   /**
-   * Checks if the definition is in scope.
-   * If we can find the definition in the scope or the definition is in the root namespace, it is in scope.
-   */
+    * Checks if the definition is in scope.
+    * If we can find the definition in the scope or the definition is in the root namespace, it is in scope.
+    */
   private def inScope(struct: TypedAst.Struct, scope: LocalScope): Boolean = {
     val thisName = struct.sym.toString
     val isResolved = scope.m.values.exists(_.exists {

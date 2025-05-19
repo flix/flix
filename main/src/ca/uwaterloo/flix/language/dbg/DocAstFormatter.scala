@@ -31,16 +31,16 @@ object DocAstFormatter {
     val enums = enums0.map {
       case Enum(_, _, sym, tparams, cases) =>
         val tparamsf = if (tparams.isEmpty) empty else text("[") |:: sep(text(", "), tparams.map {
-          case DocAst.TypeParam(sym) => text(sym.text match {
+          case DocAst.TypeParam(tparamSym) => text(tparamSym.text match {
             case VarText.Absent => "?"
             case VarText.SourceText(s) => s
           })
         }) |:: text("]")
         val casesf = curly(sep(breakWith(" "), cases.map {
-          case Case(sym, Nil) =>
-            text("case") +: text(sym.name)
-          case Case(sym, tpes) =>
-            text("case") +: text(sym.name) |:: formatType(Type.Tuple(tpes), paren = false)
+          case Case(caseSym, Nil) =>
+            text("case") +: text(caseSym.name)
+          case Case(caseSym, tpes) =>
+            text("case") +: text(caseSym.name) |:: formatType(Type.Tuple(tpes), paren = false)
         }))
         val d = text("enum") +: text(sym.toString) |:: tparamsf +: casesf
         ((sym.namespace :+ sym.name: Seq[String], sym.name), d)
@@ -70,8 +70,8 @@ object DocAstFormatter {
   def format(d: Expr)(implicit i: Indent): Doc =
     aux(d, paren = false, inBlock = true)
 
-  private def aux(d: Expr, paren: Boolean = true, inBlock: Boolean = false)(implicit i: Indent): Doc = {
-    val doc = d match {
+  private def aux(d0: Expr, paren: Boolean = true, inBlock: Boolean = false)(implicit i: Indent): Doc = {
+    val doc = d0 match {
       case Unit =>
         text("()")
       case Tuple(elms) =>
@@ -223,7 +223,7 @@ object DocAstFormatter {
       case Native(clazz) =>
         formatJavaClass(clazz)
     }
-    d match {
+    d0 match {
       case _: Composite if paren => parens(doc)
       case _: Composite | _: Atom => doc
     }
@@ -252,13 +252,13 @@ object DocAstFormatter {
       case Let(v, tpe, bind, _) =>
         val bindf = aux(bind, paren = false)
         text("let") +: aux(v) |:: formatAscription(tpe) +: text("=") +: bindf
-      case LocalDef(name, parameters, resType, effect, body, _) =>
+      case LocalDef(name, parameters, resType, effect, defBody, _) =>
         val args = parameters.map(aux(_, paren = false))
         val colon = if (resType.isDefined) text(":") else Doc.empty
         val resTypef = resType.map(formatType(_, paren = false)).getOrElse(Doc.empty)
         val effectf = effect.map(formatEffectSuffix(_)).getOrElse(Doc.empty)
         val equals = if (effect.isDefined) effectf +: text("=") else text("=")
-        val bodyf = format(body)
+        val bodyf = format(defBody)
         group(
           text("local def") +: aux(name) |:: tuple(args) |::
             colon +: group(resTypef |:: equals |:: breakWith(" ")) |:: curlyOpen(bodyf)
@@ -307,7 +307,7 @@ object DocAstFormatter {
     chase(d, List())
   }
 
-  private def collectRecordOps(d: Expr)(implicit i: Indent): (List[RecordOp], Option[Expr]) = {
+  private def collectRecordOps(d: Expr): (List[RecordOp], Option[Expr]) = {
     @tailrec
     def chase(d0: Expr, acc: List[RecordOp]): (List[RecordOp], Option[Expr]) = {
       d0 match {
@@ -372,6 +372,23 @@ object DocAstFormatter {
             curly(commaSep(exsf) +: text("|") +\: restf)
           case None =>
             curlyTuple(exsf)
+        }
+      case Type.ExtensibleEmpty =>
+        text("#EV#{}")
+      case ee: Type.ExtensibleExtend =>
+        val (extensions, restOpt) = collectExtensibleTypes(ee)
+        val extensionsf = extensions.map {
+          case Type.ExtensibleExtend(cons, Nil, _) =>
+            text(cons)
+          case Type.ExtensibleExtend(cons, tpes, _) =>
+            text(cons) |:: tuple(tpes.map(formatType(_, paren = false)))
+        }
+        restOpt match {
+          case Some(rest) =>
+            val restf = formatType(rest, paren = false)
+            curly(commaSep(extensionsf) +: text("|") +\: restf)
+          case None =>
+            text("#EV#") |:: curlyTuple(extensionsf)
         }
       case Type.SchemaRowEmpty =>
         text("#()")
@@ -456,6 +473,26 @@ object DocAstFormatter {
         case re@Type.RecordExtend(_, _, rest) =>
           chase(rest, re :: acc)
         case Type.RecordEmpty =>
+          (acc.reverse, None)
+        case other =>
+          (acc.reverse, Some(other))
+      }
+    }
+
+    chase(tpe, List())
+  }
+
+  /**
+    * Collects a sequence of [[Type.ExtensibleExtend]] into a shallow list. The tail
+    * is [[None]] if the sequence ends with a [[Type.ExtensibleEmpty]].
+    */
+  private def collectExtensibleTypes(tpe: Type): (List[Type.ExtensibleExtend], Option[Type]) = {
+    @tailrec
+    def chase(tpe0: Type, acc: List[Type.ExtensibleExtend]): (List[Type.ExtensibleExtend], Option[Type]) = {
+      tpe0 match {
+        case ee@Type.ExtensibleExtend(_, _, rest) =>
+          chase(rest, ee :: acc)
+        case Type.ExtensibleEmpty =>
           (acc.reverse, None)
         case other =>
           (acc.reverse, Some(other))

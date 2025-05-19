@@ -377,6 +377,10 @@ object DocAst {
 
     case class RecordExtend(label: String, value: Type, rest: Type) extends Atom
 
+    case object ExtensibleEmpty extends Atom
+
+    case class ExtensibleExtend(cons: String, tpes: List[Type], rest: Type) extends Atom
+
     case object SchemaRowEmpty extends Atom
 
     case class SchemaRowExtend(label: String, tpe: Type, rest: Type) extends Atom

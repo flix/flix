@@ -45,14 +45,14 @@ object PredicateCompleter {
     //
     Visitor.visitRoot(root, PredConsumer, FileAcceptor(uri))
 
-    predsWithTypeAndLoc.map{case (predName, tpe) => Completion.PredicateCompletion(predName.name, arityOf(tpe), FormatType.formatType(tpe), range)}
+    predsWithTypeAndLoc.map { case (predName, tpe) => Completion.PredicateCompletion(predName.name, arityOf(tpe), FormatType.formatType(tpe), range) }
   }
 
   /**
-   * Returns the arity of the given predicate type `tpe`.
-   *
-   * The arity might not always be known. If so, we return 1.
-   */
+    * Returns the arity of the given predicate type `tpe`.
+    *
+    * The arity might not always be known. If so, we return 1.
+    */
   private def arityOf(tpe: Type): Int = {
     tpe.typeArguments match {
       case targ :: Nil => targ.typeConstructor match {

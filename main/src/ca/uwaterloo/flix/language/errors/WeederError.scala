@@ -633,6 +633,31 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate a function is annotated with both `@Inline` and `@DontInline`.
+    *
+    * @param inlineLoc     the source location of the `@Inline` annotation.
+    * @param dontInlineLoc the source location of the `@DontInline` annotation.
+    */
+  case class InlineAndDontInline(inlineLoc: SourceLocation, dontInlineLoc: SourceLocation) extends WeederError {
+    override def summary: String = "A def cannot be marked both `@Inline` and `@DontInline`"
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> A def cannot be marked both `@Inline` and `@DontInline`.
+         |
+         |${code(inlineLoc, "the `@Inline` occurs here")}
+         |
+         |${code(dontInlineLoc, "the `@DontInline` occurs here")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+
+    override def loc: SourceLocation = inlineLoc.min(dontInlineLoc)
+  }
+
+  /**
     * An error raised to indicate a non-single character literal.
     *
     * @param chars the characters in the character literal.

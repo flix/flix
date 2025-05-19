@@ -367,7 +367,7 @@ object TypeVerifier {
 
         case AtomicOp.ExtensibleTag(label) => ??? // TODO: Ext-Variants
 
-        case AtomicOp.ExtensibleUntag(label) => ??? // TODO: Ext-Variants
+        case AtomicOp.ExtensibleUntag(label, idx) => ??? // TODO: Ext-Variants
 
         case AtomicOp.Closure(sym) =>
           val defn = root.defs(sym)

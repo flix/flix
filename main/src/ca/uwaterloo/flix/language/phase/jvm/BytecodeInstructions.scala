@@ -58,6 +58,9 @@ object BytecodeInstructions {
     def visitLoadConstantInstruction(v: Any): Unit =
       visitor.visitLdcInsn(v)
 
+    def visitIntInstruction(opcode: Int, v: Int): Unit =
+      visitor.visitIntInsn(opcode, v)
+
     def visitTryCatchBlock(beforeTry: Label, afterTry: Label, handlerStart: Label): Unit =
       visitor.visitTryCatchBlock(beforeTry, afterTry, handlerStart, null)
 
@@ -177,6 +180,11 @@ object BytecodeInstructions {
 
   def ATHROW(): InstructionSet = f => {
     f.visitInstruction(Opcodes.ATHROW)
+    f
+  }
+
+  def BIPUSH(i: Byte): InstructionSet = f => {
+    f.visitIntInstruction(Opcodes.BIPUSH, i)
     f
   }
 
@@ -463,6 +471,11 @@ object BytecodeInstructions {
     f
   }
 
+  def SIPUSH(i: Short): InstructionSet = f => {
+    f.visitIntInstruction(Opcodes.SIPUSH, i)
+    f
+  }
+
   def SWAP(): InstructionSet = f => {
     f.visitInstruction(Opcodes.SWAP)
     f
@@ -574,6 +587,22 @@ object BytecodeInstructions {
   def pushString(s: String): InstructionSet = f => {
     f.visitLoadConstantInstruction(s)
     f
+  }
+
+  def pushInt(i: Int): InstructionSet = i match {
+    case -1 => ICONST_M1()
+    case 0 => ICONST_0()
+    case 1 => ICONST_1()
+    case 2 => ICONST_2()
+    case 3 => ICONST_3()
+    case 4 => ICONST_4()
+    case 5 => ICONST_5()
+    case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => BIPUSH(i.toByte)
+    case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => SIPUSH(i.toByte)
+    case _ => f => {
+      f.visitLoadConstantInstruction(i)
+      f
+    }
   }
 
   def storeWithName(index: Int, tpe: BackendType)(body: Variable => InstructionSet): InstructionSet =
@@ -733,7 +762,7 @@ object BytecodeInstructions {
       */
     def mkString(prefix: Option[InstructionSet], suffix: Option[InstructionSet], length: Int, getNthString: Int => InstructionSet): InstructionSet = {
       // [] --> [new String[length]] // Referred to as `elms`.
-      cheat(mv => GenExpression.compileInt(length)(mv)) ~ ANEWARRAY(BackendObjType.String.jvmName) ~
+      pushInt(length) ~ ANEWARRAY(BackendObjType.String.jvmName) ~
       // [elms] --> [elms, -1] // Running index referred to as `i`.
       ICONST_M1() ~
       // [elms, -1] --> [elms, length]
