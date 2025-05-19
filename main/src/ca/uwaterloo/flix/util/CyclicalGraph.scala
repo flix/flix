@@ -24,9 +24,9 @@ import scala.collection.mutable
 /**
   * Represents a graph that may contain cycles.
   *
-  * @param vertices the list of vertices that form the graph.
+  * @param vertices the set of vertices and edges that form the graph.
   */
-case class CyclicalGraph[T](vertices: List[Vertex[T]])
+case class CyclicalGraph[T](vertices: Set[Vertex[T]])
 
 object CyclicalGraph {
 
@@ -59,7 +59,7 @@ object CyclicalGraph {
   }
 
   def from[T](graph: Map[T, List[T]]): CyclicalGraph[T] = {
-    val vertices = graph.map { case (k, vs) => Singleton(k, vs.toSet) }.toList
+    val vertices: Set[Vertex[T]] = graph.map { case (k, vs) => Singleton(k, vs.toSet) }.toSet
     CyclicalGraph(vertices)
   }
 
@@ -94,7 +94,7 @@ object CyclicalGraph {
 
   private def scc[T](graph: Map[T, List[T]]): CyclicalGraph[T] = {
     if (graph.isEmpty) {
-      return CyclicalGraph(List.empty)
+      return CyclicalGraph(Set.empty)
     }
 
     val visited: mutable.Set[T] = mutable.Set.empty
@@ -125,7 +125,11 @@ object CyclicalGraph {
 
     sortedByFinishingTimes.foreach { case (u, _, _) => if (!visited.contains(u)) visit(u, inverted) }
 
-    val timesStack = mutable.Stack.from(sortedByFinishingTimes)
+    val sortedByFinishingTimes2 = inverted.keys.map(u => (u, discoveryTimes(u), finishingTimes(u)))
+      .toArray.sortInPlaceBy { case (_, _, f) => f }
+      .reverse
+
+    val timesStack = mutable.Stack.from(sortedByFinishingTimes2)
     var result = List.empty[List[T]]
     var (u, d, f) = timesStack.pop()
     var cycle = List(u)
@@ -141,10 +145,11 @@ object CyclicalGraph {
       d = d1
       f = f1
     }
+    result = cycle :: result
 
     CyclicalGraph(result.map {
       case value :: Nil => Singleton(value, graph(value).toSet)
       case l => SCC(l.reverse.map(value => Singleton(value, graph(value).toSet)).toSet)
-    })
+    }.toSet)
   }
 }
