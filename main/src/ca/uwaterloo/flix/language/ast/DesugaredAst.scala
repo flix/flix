@@ -121,7 +121,7 @@ object DesugaredAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
-    case class ExtensibleMatch(exp: Expr, rules: List[ExtMatchRule], loc: SourceLocation) extends Expr
+    case class ExtMatch(exp: Expr, rules: List[ExtMatchRule], loc: SourceLocation) extends Expr
 
     case class ExtensibleTag(label: Name.Label, exps: List[Expr], loc: SourceLocation) extends Expr
 

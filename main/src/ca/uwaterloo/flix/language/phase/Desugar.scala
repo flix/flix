@@ -571,7 +571,7 @@ object Desugar {
     case WeededAst.Expr.ExtMatch(exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitExtMatchRule)
-      Expr.ExtensibleMatch(e, rs, loc)
+      Expr.ExtMatch(e, rs, loc)
 
     case WeededAst.Expr.ApplicativeFor(frags, exp, loc) =>
       desugarApplicativeFor(frags, exp, loc)

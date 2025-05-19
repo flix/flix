@@ -913,8 +913,8 @@ object Weeder2 {
         case TreeKind.Expr.FixpointSolveWithProject => visitFixpointSolveExpr(tree)
         case TreeKind.Expr.FixpointQuery => visitFixpointQueryExpr(tree)
         case TreeKind.Expr.Debug => visitDebugExpr(tree)
-        case TreeKind.Expr.ExtensibleMatch => visitExtensibleMatch(tree)
-        case TreeKind.Expr.ExtensibleTag => visitExtensibleTag(tree)
+        case TreeKind.Expr.ExtMatch => visitExtMatch(tree)
+        case TreeKind.Expr.ExtTag => visitExtensibleTag(tree)
         case TreeKind.Expr.Intrinsic =>
           // Intrinsics must be applied to check that they have the right amount of arguments.
           // This means that intrinsics are not "first-class" like other functions.
@@ -1555,13 +1555,13 @@ object Weeder2 {
       }
     }
 
-    private def visitExtensibleMatch(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.ExtensibleMatch)
-      val rules0 = pickAll(TreeKind.Expr.ExtensibleMatchRuleFragment, tree)
-      flatMapN(pickExpr(tree), traverse(rules0)(visitExtensibleMatchRule)) {
+    private def visitExtMatch(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.ExtMatch)
+      val rules0 = pickAll(TreeKind.Expr.ExtMatchRuleFragment, tree)
+      flatMapN(pickExpr(tree), traverse(rules0)(visitExtMatchRule)) {
         // Case: no valid match rule found in ematch expr
         case (expr, Nil) =>
-          val error = NeedAtleastOne(NamedTokenSet.ExtensibleMatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
+          val error = NeedAtleastOne(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
           // Fall back on Expr.Error. Parser has reported an error here.
           Validation.Success(Expr.Error(error))
         case (expr, rules) => Validation.Success(Expr.ExtMatch(expr, rules, tree.loc))
@@ -1569,8 +1569,8 @@ object Weeder2 {
 
     }
 
-    private def visitExtensibleMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[ExtMatchRule, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.ExtensibleMatchRuleFragment)
+    private def visitExtMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[ExtMatchRule, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.ExtMatchRuleFragment)
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
       flatMapN(Patterns.pickExtensiblePattern(tree), traverse(exprs)(visitExpr)) {
         // case pattern => expr
@@ -1585,7 +1585,7 @@ object Weeder2 {
     }
 
     private def visitExtensibleTag(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.ExtensibleTag)
+      expect(tree, TreeKind.Expr.ExtTag)
       mapN(pickNameIdent(tree), pickExpr(tree)) {
         (ident, e) => Expr.ExtensibleTag(Name.mkLabel(ident), List(e), tree.loc)
       }
@@ -2299,7 +2299,7 @@ object Weeder2 {
 
     def visitExtensiblePattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit sctx: SharedContext): Validation[(Name.QName, List[ExtPattern]), CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Pattern)
-      val extTagPattern = tryPick(TreeKind.Pattern.ExtensibleTag, tree)
+      val extTagPattern = tryPick(TreeKind.Pattern.ExtTag, tree)
       extTagPattern match {
         case Some(pat) => visitExtensibleTagPattern(pat, seen)
         case None =>
@@ -2310,7 +2310,7 @@ object Weeder2 {
     }
 
     private def visitExtensibleTagPattern(tree: SyntaxTree.Tree, seen: mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[(Name.QName, List[ExtPattern]), CompilationMessage] = {
-      expect(tree, TreeKind.Pattern.ExtensibleTag)
+      expect(tree, TreeKind.Pattern.ExtTag)
       val maybePat = tryPick(TreeKind.Pattern.Tuple, tree)
 
       /*

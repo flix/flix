@@ -663,7 +663,7 @@ object Namer {
       val rs = rules.map(visitRestrictableChooseRule)
       NamedAst.Expr.RestrictableChoose(star, e, rs, loc)
 
-    case DesugaredAst.Expr.ExtensibleMatch(exp, rules, loc) => ???
+    case DesugaredAst.Expr.ExtMatch(exp, rules, loc) => ???
 
     case DesugaredAst.Expr.ExtensibleTag(label, exps, loc) =>
       val es = exps.map(visitExp(_))
