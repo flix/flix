@@ -663,11 +663,14 @@ object Namer {
       val rs = rules.map(visitRestrictableChooseRule)
       NamedAst.Expr.RestrictableChoose(star, e, rs, loc)
 
-    case DesugaredAst.Expr.ExtMatch(exp, rules, loc) => ???
+    case DesugaredAst.Expr.ExtMatch(exp, rules, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitExtMatchRule)
+      NamedAst.Expr.ExtMatch(e, rs, loc)
 
     case DesugaredAst.Expr.ExtensibleTag(label, exps, loc) =>
       val es = exps.map(visitExp(_))
-      NamedAst.Expr.ExtensibleTag(label, es, loc)
+      NamedAst.Expr.ExtTag(label, es, loc)
 
     case DesugaredAst.Expr.Tuple(exps, loc) =>
       val es = exps.map(visitExp(_))
@@ -889,6 +892,16 @@ object Namer {
   }
 
   /**
+    * Performs naming on the given ext match rule `rule0`.
+    */
+  private def visitExtMatchRule(rule0: DesugaredAst.ExtMatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.ExtMatchRule = rule0 match {
+    case DesugaredAst.ExtMatchRule(qname, pats, exp, loc) =>
+      val ps = pats.map(visitExtPattern)
+      val e = visitExp(exp)
+      NamedAst.ExtMatchRule(qname, ps, e, loc)
+  }
+
+  /**
     * Performs naming on the given typematch rule `rule0`.
     */
   private def visitTypeMatchRule(rule0: DesugaredAst.TypeMatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.TypeMatchRule = rule0 match {
@@ -994,6 +1007,22 @@ object Namer {
       NamedAst.Pattern.Record(psVal, pVal, loc)
 
     case DesugaredAst.Pattern.Error(loc) => NamedAst.Pattern.Error(loc)
+  }
+
+  /**
+    * Names the given ext pattern `pat0`.
+    */
+  private def visitExtPattern(pat0: DesugaredAst.ExtPattern)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.ExtPattern = pat0 match {
+    case DesugaredAst.ExtPattern.Wild(loc) =>
+      NamedAst.ExtPattern.Wild(loc)
+
+    case DesugaredAst.ExtPattern.Var(ident, loc) =>
+      // make a fresh variable symbol for the local variable.
+      val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
+      NamedAst.ExtPattern.Var(sym, loc)
+
+    case DesugaredAst.ExtPattern.Error(loc) =>
+      NamedAst.ExtPattern.Error(loc)
   }
 
   /**
