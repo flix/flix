@@ -48,7 +48,7 @@ object StructCompleter {
   private def inScope(struct: TypedAst.Struct, scope: LocalScope): Boolean = {
     val thisName = struct.sym.toString
     val isResolved = scope.m.values.exists(_.exists {
-      case Resolution.Declaration(Struct(_, _, _, thatName, _, _, _, _)) => thisName == thatName.toString
+      case Resolution.Declaration(Struct(_, _, _, thatName, _, _, _)) => thisName == thatName.toString
       case _ => false
     })
     val isRoot = struct.sym.namespace.isEmpty
