@@ -356,8 +356,8 @@ object Main {
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
                      XPerfPar: Boolean = false,
-                     xiterations: Int = 1000,
                      xchaosMonkey: Boolean = false,
+                     xiterations: Int = 1000,
                      files: Seq[File] = Seq())
 
   /**
@@ -565,10 +565,6 @@ object Main {
       opt[Unit]("Xfuzzer").action((_, c) => c.copy(xfuzzer = true)).
         text("[experimental] enables compiler fuzzing.")
 
-      // Xchaos-monkey
-      opt[Unit]("Xchaos-monkey").action((_, c) => c.copy(xchaosMonkey = true)).
-        text("[experimental] introduces randomness.")
-
       // Xprint-typer
       opt[String]("Xprint-typer").action((sym, c) => c.copy(xprinttyper = Some(sym))).
         text("[experimental] writes constraints to dot files.")
@@ -576,6 +572,10 @@ object Main {
       // Xsubeffecting
       opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).
         text("[experimental] enables sub-effecting in select places")
+
+      // Xchaos-monkey
+      opt[Unit]("Xchaos-monkey").action((_, c) => c.copy(xchaosMonkey = true)).
+        text("[experimental] introduces randomness.")
 
       // Xiterations
       opt[Int]("Xiterations").action((n, c) => c.copy(xiterations = n)).
