@@ -318,6 +318,24 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.IncorrectHexNumberSuffix](result)
   }
 
+  test("LexerError.HexUnterminated.01") {
+    val input =
+      s"""
+         |def f(): Int32 = 0x
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedHexNumber](result)
+  }
+
+  test("LexerError.HexUnterminated.02") {
+    val input =
+      s"""
+         |def f(): Int32 = 0xF_
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedHexNumber](result)
+  }
+
   test("LexerError.HexLiteralDoubleUnderscore.01") {
     // Check that lexing doesn't naively stop after i32 and lex `f` as a name.
     val input =
