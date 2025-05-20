@@ -64,6 +64,7 @@ object Optimizer {
     }
     // val liveDefs = currentRoot.defs.filter { case (sym, _) => currentLive.contains(sym) }
     // currentRoot.copy(defs = liveDefs)
+    // TODO: Figure out online tree shaking. Maybe return SCCs from OA and always include those.
     currentRoot
   }
 
