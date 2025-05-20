@@ -199,9 +199,13 @@ object CyclicalGraph {
     }
     result = cycle :: result
 
+    val diff = (graph.keys.toSet -- inverted.keys.toSet).map {
+      case u => Singleton(u, graph(u).toSet)
+    }
+
     CyclicalGraph(result.map {
       case value :: Nil => Singleton(value, graph(value).toSet)
       case l => SCC(l.reverse.map(value => Singleton(value, graph(value).toSet)).toSet)
-    }.toSet)
+    }.toSet ++ diff)
   }
 }
