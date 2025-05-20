@@ -31,7 +31,8 @@ object Graph {
   }
 
   /**
-    * Topologically sort the nodes, using the `getAdj` function to find adjacent nodes.
+    * Topologically sort the nodes, using the `getAdj` function to find adjacent nodes,
+    * i.e., the outgoing edges of a node `n`.
     *
     * `N` must have a well-defined equality and hashcode.
     */
