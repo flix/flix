@@ -201,7 +201,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("SCC.ComputeLayers.01") {
+  test("SCC.Layers.01") {
     val graph = nontrivialGraph1
     val result = CyclicalGraph.layers(CyclicalGraph.topologicalSort(CyclicalGraph.scc(CyclicalGraph.from(graph))))
     val expected = List(
@@ -217,7 +217,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("SCC.ComputeLayers.02") {
+  test("SCC.Layers.02") {
     val graph = nontrivialGraph2
     val result = CyclicalGraph.layers(CyclicalGraph.topologicalSort(CyclicalGraph.scc(CyclicalGraph.from(graph))))
     val expected = List(
@@ -242,7 +242,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("SCC.ComputeLayers.03") {
+  test("SCC.Layers.03") {
     val graph = CyclicalGraph.from(
       Map(
         "A" -> List("B", "C"),
@@ -265,7 +265,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("SCC.ComputeLayers.04") {
+  test("SCC.Layers.04") {
     val graph = CyclicalGraph.from(
       Map(
         "A" -> List("B", "C", "D"),
@@ -290,7 +290,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("SCC.ComputeLayers.05") {
+  test("SCC.Layers.05") {
     val graph = CyclicalGraph.from(
       Map(
         "A" -> List("B", "C", "D"),
