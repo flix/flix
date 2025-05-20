@@ -21,8 +21,11 @@ object Graph {
     /**
       * A topologically sorted result.
       *
-      * Fewest incoming edges on the left.
-      * The node at the head of the list has no incoming edges.
+      * Fewest outgoing edges on the left.
+      * The node at the head of the list has no outgoing edges.
+      * The last element has no incoming edges.
+      * In other words, the edges point from right to left:
+      * `leaf <- n1 <- n2 <- n3`
       */
     case class Sorted[N](sorted: List[N]) extends TopologicalSort[N]
   }
