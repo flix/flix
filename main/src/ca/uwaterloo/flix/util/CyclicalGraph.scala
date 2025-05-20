@@ -41,6 +41,11 @@ object CyclicalGraph {
       case SCC(cycle) => cycle.flatMap(_.outgoing) -- cycle.map(_.value)
     }
 
+    def equiv(v: T): Boolean = this match {
+      case Singleton(u, _) => u == v
+      case SCC(cycle) => cycle.exists(_.value == v)
+    }
+
   }
 
   /**
@@ -101,6 +106,37 @@ object CyclicalGraph {
       case TopologicalSort.Cycle(_) => ???
       case TopologicalSort.Sorted(sorted) => sorted
     }
+  }
+
+  def layers[T](sortedGraph: List[Vertex[T]]): List[List[Vertex[T]]] = {
+    if (sortedGraph.isEmpty) {
+      return List.empty
+    }
+
+    val seen = mutable.ArrayBuffer.empty[(Int, Vertex[T])]
+    for (u <- sortedGraph) {
+      val outgoing = u.outgoing
+      if (outgoing.isEmpty) {
+        // `u` is a leaf vertex
+        seen.addOne((0, u))
+      } else {
+        val max = seen.filter { case (_, v1) => outgoing.exists(v2 => v1.equiv(v2)) }
+          .map { case (layer, _) => layer }
+          .max
+        seen.addOne((max + 1, u))
+      }
+    }
+
+    val bufSize = seen.map { case (layer, _) => layer }.max + 1
+    val result = new mutable.ArrayBuffer[mutable.ArrayBuffer[Vertex[T]]](bufSize)
+    for (_ <- 0 until bufSize) {
+      result.addOne(mutable.ArrayBuffer.empty)
+    }
+    for ((layer, u) <- seen) {
+      val buf = result(layer)
+      buf.addOne(u)
+    }
+    result.map(_.toList).toList
   }
 
   private def scc[T](graph: Map[T, List[T]]): CyclicalGraph[T] = {
