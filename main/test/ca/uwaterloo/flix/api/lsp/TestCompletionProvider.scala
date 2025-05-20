@@ -140,7 +140,7 @@ class TestCompletionProvider extends AnyFunSuite {
     forAll(Programs) { prg =>
         val root = compileWithSuccess(prg)
         forAll(allPositions(prg)) { pos =>
-          autoComplete(pos, root)
+          autoComplete(pos, root).length >= 0
         }
     }
   }
