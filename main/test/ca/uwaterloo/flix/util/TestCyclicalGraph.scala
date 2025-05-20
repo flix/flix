@@ -307,8 +307,8 @@ class TestCyclicalGraph extends AnyFunSuite {
       List(
         CyclicalGraph.Singleton("B", Set("C", "E"))),
       List(
-        CyclicalGraph.Singleton("D", Set("E")),
-        CyclicalGraph.Singleton("C", Set("E"))),
+        CyclicalGraph.Singleton("C", Set("E")),
+        CyclicalGraph.Singleton("D", Set("E"))),
       List(
         CyclicalGraph.Singleton("E", Set())),
     ).reverse
