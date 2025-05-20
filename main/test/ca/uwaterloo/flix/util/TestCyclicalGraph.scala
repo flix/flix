@@ -220,4 +220,27 @@ class TestCyclicalGraph extends AnyFunSuite {
     ).reverse
     assert(result == expected)
   }
+
+  test("SCC.ComputeLayers.03") {
+    val graph = CyclicalGraph.from(
+      Map(
+        "A" -> List("B", "C"),
+        "B" -> List("D"),
+        "C" -> List("B", "D"),
+        "D" -> List.empty
+      )
+    )
+    val result = CyclicalGraph.computeLayers(CyclicalGraph.topologicalSort(graph))
+    val expected = List(
+      List(
+        CyclicalGraph.Singleton("A", Set("B", "C"))),
+      List(
+        CyclicalGraph.Singleton("C", Set("B", "D"))),
+      List(
+        CyclicalGraph.Singleton("B", Set("D"))),
+      List(
+        CyclicalGraph.Singleton("D", Set())),
+    ).reverse
+    assert(result == expected)
+  }
 }
