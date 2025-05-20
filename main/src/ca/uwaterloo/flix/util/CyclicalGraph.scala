@@ -144,6 +144,11 @@ object CyclicalGraph {
       return CyclicalGraph(Set.empty)
     }
 
+    val inverted = invert(graph)
+    if (inverted.isEmpty) {
+      return from(graph)
+    }
+
     val visited: mutable.Set[T] = mutable.Set.empty
     val discoveryTimes: mutable.Map[T, Int] = mutable.Map.empty
     val finishingTimes: mutable.Map[T, Int] = mutable.Map.empty
@@ -162,7 +167,7 @@ object CyclicalGraph {
     visited.clear()
     time = 0
 
-    val inverted = invert(graph)
+
     val sortedByFinishingTimes = inverted.keys.map(u => (u, discoveryTimes(u), finishingTimes(u)))
       .toArray.sortInPlaceBy { case (_, _, f) => f }
       .reverse
