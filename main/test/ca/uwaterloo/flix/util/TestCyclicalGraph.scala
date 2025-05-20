@@ -4,6 +4,17 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestCyclicalGraph extends AnyFunSuite {
 
+  private val complicatedGraph2: Map[Int, List[Int]] = Map(
+    1 -> List(2),
+    2 -> List(3, 5, 6),
+    3 -> List(4, 7),
+    4 -> List(3, 8),
+    5 -> List(1, 6),
+    6 -> List(7),
+    7 -> List(6, 8),
+    8 -> List(8)
+  )
+
   test("Empty.01") {
     val graph = Map.empty[Int, List[Int]]
     val cyclicalGraph = CyclicalGraph.from(graph)
@@ -66,7 +77,7 @@ class TestCyclicalGraph extends AnyFunSuite {
   }
 
   test("SCC.04") {
-    val graph = Map(1 -> List(2), 2 -> List(3, 5, 6), 3 -> List(4, 7), 4 -> List(3, 8), 5 -> List(1, 6), 6 -> List(7), 7 -> List(6, 8), 8 -> List(8))
+    val graph = complicatedGraph2
     val result = CyclicalGraph.scc(CyclicalGraph.from(graph))
     val expected = CyclicalGraph(Set[CyclicalGraph.Vertex[Int]](
       CyclicalGraph.SCC(Set(
@@ -88,7 +99,7 @@ class TestCyclicalGraph extends AnyFunSuite {
   }
 
   test("SCC.OutGoing.01") {
-    val graph = Map(1 -> List(2), 2 -> List(3, 5, 6), 3 -> List(4, 7), 4 -> List(3, 8), 5 -> List(1, 6), 6 -> List(7), 7 -> List(6, 8), 8 -> List(8))
+    val graph = complicatedGraph2
     val result = CyclicalGraph.scc(CyclicalGraph.from(graph)).vertices.map(_.outgoing).filter(_.nonEmpty)
     val expected = Set(
       Set(3, 6),
@@ -112,7 +123,7 @@ class TestCyclicalGraph extends AnyFunSuite {
   }
 
   test("SCC.TopologicalSort.02") {
-    val graph = Map(1 -> List(2), 2 -> List(3, 5, 6), 3 -> List(4, 7), 4 -> List(3, 8), 5 -> List(1, 6), 6 -> List(7), 7 -> List(6, 8), 8 -> List(8))
+    val graph = complicatedGraph2
     val result = CyclicalGraph.topologicalSort(CyclicalGraph.scc(CyclicalGraph.from(graph)))
     val expected = List(
       CyclicalGraph.SCC(Set(
