@@ -33,18 +33,37 @@ object Optimizer {
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer") {
     var currentRoot = root
     var currentDelta = currentRoot.defs.keys.toSet
-    var depGraph: Option[List[List[Symbol.DefnSym]]] = None
+    var currentLive = Set.empty[Symbol.DefnSym]
+    var depGraph = List.empty[List[Symbol.DefnSym]]
+    var hasComputedDepGraphOnce = false
     for (_ <- 0 until MaxRounds) {
       if (currentDelta.nonEmpty) {
-        val (afterOccurrenceAnalyzer, graph) = OccurrenceAnalyzer.run(currentRoot, currentDelta, depGraph.isEmpty)
-        if (depGraph.isEmpty) {
-          depGraph = Some(graph)
+        val (afterOccurrenceAnalyzer, graph) = OccurrenceAnalyzer.run(currentRoot, currentDelta, !hasComputedDepGraphOnce)
+        if (!hasComputedDepGraphOnce) {
+          hasComputedDepGraphOnce = true
+          depGraph = graph match {
+            case Nil =>
+              List.empty
+
+            case _ :: next =>
+              // Skip leaf group
+              next
+          }
         }
-        val (newRoot, newDelta) = Inliner.run(afterOccurrenceAnalyzer, currentDelta)
+        val depGroup = depGraph match {
+          case Nil => List.empty
+          case group :: next =>
+            depGraph = next
+            group
+        }
+        val (newRoot, newDelta, newLive) = Inliner.run(afterOccurrenceAnalyzer, depGroup)
         currentRoot = newRoot
         currentDelta = newDelta
+        currentLive ++= newLive
       }
     }
+    // val liveDefs = currentRoot.defs.filter { case (sym, _) => currentLive.contains(sym) }
+    // currentRoot.copy(defs = liveDefs)
     currentRoot
   }
 
