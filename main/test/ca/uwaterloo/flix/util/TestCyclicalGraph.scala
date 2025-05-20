@@ -22,7 +22,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     8 -> List(8)
   )
 
-  test("Empty.01") {
+  test("CyclicalGraph.Empty.01") {
     val graph = Map.empty[Int, List[Int]]
     val cyclicalGraph = CyclicalGraph.from(graph)
     val result = CyclicalGraph.scc(cyclicalGraph)
@@ -30,7 +30,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("ToMap.01") {
+  test("CyclicalGraph.ToMap.01") {
     val graph = Map(1 -> List(1))
     val cyclicalGraph = CyclicalGraph.from(graph)
     val result = CyclicalGraph.toMap(cyclicalGraph)
@@ -38,21 +38,21 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("Invert.01") {
+  test("CyclicalGraph.Invert.01") {
     val graph = nontrivialGraph1
     val result = CyclicalGraph.invert(graph)
     val expected = Map(1 -> List(4), 2 -> List(1, 3), 3 -> List(1), 4 -> List(1))
     assert(result == expected)
   }
 
-  test("Invert.02") {
+  test("CyclicalGraph.Invert.02") {
     val graph = Map(1 -> List(1, 2), 2 -> List.empty)
     val result = CyclicalGraph.invert(graph)
     val expected = Map(1 -> List(1), 2 -> List(1))
     assert(result == expected)
   }
 
-  test("SCC.01") {
+  test("CyclicalGraph.SCC.01") {
     val graph = Map(1 -> List(1))
     val cyclicalGraph = CyclicalGraph.from(graph)
     val result = CyclicalGraph.scc(cyclicalGraph)
@@ -60,7 +60,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("SCC.02") {
+  test("CyclicalGraph.SCC.02") {
     val graph = Map(1 -> List(1, 2), 2 -> List.empty)
     val result = CyclicalGraph.scc(CyclicalGraph.from(graph))
     val expected = CyclicalGraph(Set[CyclicalGraph.Vertex[Int]](
@@ -70,7 +70,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("SCC.03") {
+  test("CyclicalGraph.SCC.03") {
     val graph = nontrivialGraph1
     val result = CyclicalGraph.scc(CyclicalGraph.from(graph))
     val expected = CyclicalGraph(Set[CyclicalGraph.Vertex[Int]](
@@ -83,7 +83,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("SCC.04") {
+  test("CyclicalGraph.SCC.04") {
     val graph = nontrivialGraph2
     val result = CyclicalGraph.scc(CyclicalGraph.from(graph))
     val expected = CyclicalGraph(Set[CyclicalGraph.Vertex[Int]](
@@ -105,7 +105,24 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("SCC.OutGoing.01") {
+  test("CyclicalGraph.SCC.05") {
+    val graph = Map(
+      1 -> List.empty,
+      2 -> List.empty,
+      3 -> List.empty,
+      4 -> List.empty,
+    )
+    val result = CyclicalGraph.scc(CyclicalGraph.from(graph))
+    val expected = CyclicalGraph(Set[CyclicalGraph.Vertex[Int]](
+      CyclicalGraph.Singleton(1, Set.empty),
+      CyclicalGraph.Singleton(2, Set.empty),
+      CyclicalGraph.Singleton(3, Set.empty),
+      CyclicalGraph.Singleton(4, Set.empty),
+    ))
+    assert(result == expected)
+  }
+
+  test("CyclicalGraph.OutGoing.01") {
     val graph = nontrivialGraph1
     val result = CyclicalGraph.scc(CyclicalGraph.from(graph)).vertices.map(_.outgoing).filter(_.nonEmpty)
     val expected = Set(
@@ -115,7 +132,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("SCC.OutGoing.02") {
+  test("CyclicalGraph.OutGoing.02") {
     val graph = nontrivialGraph2
     val result = CyclicalGraph.scc(CyclicalGraph.from(graph)).vertices.map(_.outgoing).filter(_.nonEmpty)
     val expected = Set(
@@ -126,7 +143,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("SCC.TopologicalSort.01") {
+  test("CyclicalGraph.TopologicalSort.01") {
     val graph = nontrivialGraph1
     val result = CyclicalGraph.topologicalSort(CyclicalGraph.scc(CyclicalGraph.from(graph)))
     val expected = List(
@@ -139,7 +156,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("SCC.TopologicalSort.02") {
+  test("CyclicalGraph.TopologicalSort.02") {
     val graph = nontrivialGraph2
     val result = CyclicalGraph.topologicalSort(CyclicalGraph.scc(CyclicalGraph.from(graph)))
     val expected = List(
@@ -161,7 +178,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("SCC.TopologicalSort.03") {
+  test("CyclicalGraph.TopologicalSort.03") {
     val graph = CyclicalGraph.from(
       Map(
         "A" -> List("B", "C"),
@@ -180,7 +197,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("SCC.TopologicalSort.04") {
+  test("CyclicalGraph.TopologicalSort.04") {
     val graph = CyclicalGraph.from(
       Map(
         "A" -> List("B", "C", "D"),
@@ -201,7 +218,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("SCC.ComputeLayers.01") {
+  test("CyclicalGraph.Layers.01") {
     val graph = nontrivialGraph1
     val result = CyclicalGraph.layers(CyclicalGraph.topologicalSort(CyclicalGraph.scc(CyclicalGraph.from(graph))))
     val expected = List(
@@ -217,7 +234,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("SCC.ComputeLayers.02") {
+  test("CyclicalGraph.Layers.02") {
     val graph = nontrivialGraph2
     val result = CyclicalGraph.layers(CyclicalGraph.topologicalSort(CyclicalGraph.scc(CyclicalGraph.from(graph))))
     val expected = List(
@@ -242,7 +259,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("SCC.ComputeLayers.03") {
+  test("CyclicalGraph.Layers.03") {
     val graph = CyclicalGraph.from(
       Map(
         "A" -> List("B", "C"),
@@ -265,7 +282,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("SCC.ComputeLayers.04") {
+  test("CyclicalGraph.Layers.04") {
     val graph = CyclicalGraph.from(
       Map(
         "A" -> List("B", "C", "D"),
@@ -290,7 +307,7 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
-  test("SCC.ComputeLayers.05") {
+  test("CyclicalGraph.Layers.05") {
     val graph = CyclicalGraph.from(
       Map(
         "A" -> List("B", "C", "D"),
