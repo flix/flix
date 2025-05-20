@@ -157,15 +157,8 @@ object Inliner {
               visitExp(exp, ctx0.withSubst(Map.empty))
 
             case None =>
-              // It was not unconditionally inlined, so consider inlining at this occurrence site
-              useSiteInline(freshVarSym, ctx0) match {
-                case Some(exp) =>
-                  sctx.changed.putIfAbsent(sym0, ())
-                  visitExp(exp, ctx0.withSubst(Map.empty))
-
-                case None =>
-                  Expr.Var(freshVarSym, tpe, loc)
-              }
+              // It was not unconditionally inlined, so do not inline it.
+              Expr.Var(freshVarSym, tpe, loc)
           }
       }
 
@@ -246,7 +239,7 @@ object Inliner {
       case _ =>
         // Simplify and maybe do copy-propagation
         val e1 = visitExp(exp1, ctx0)
-        if (isSimple(e1) && exp1.eff == Type.Pure) {
+        if (shouldInlineVar(sym, e1, occur) || (isSimple(e1) && exp1.eff == Type.Pure)) {
           // Do copy propagation and drop let-binding
           sctx.changed.putIfAbsent(sym0, ())
           val freshVarSym = Symbol.freshVarSym(sym)
