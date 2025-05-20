@@ -180,6 +180,27 @@ class TestCyclicalGraph extends AnyFunSuite {
     assert(result == expected)
   }
 
+  test("SCC.TopologicalSort.04") {
+    val graph = CyclicalGraph.from(
+      Map(
+        "A" -> List("B", "C", "D"),
+        "B" -> List("C, E"),
+        "C" -> List("E"),
+        "D" -> List("E"),
+        "E" -> List.empty
+      )
+    )
+    val result = CyclicalGraph.topologicalSort(graph)
+    val expected = List(
+      CyclicalGraph.Singleton("A", Set("B", "C", "D")),
+      CyclicalGraph.Singleton("B", Set("C", "E")),
+      CyclicalGraph.Singleton("D", Set("E")),
+      CyclicalGraph.Singleton("C", Set("E")),
+      CyclicalGraph.Singleton("E", Set()),
+    ).reverse
+    assert(result == expected)
+  }
+
   test("SCC.ComputeLayers.01") {
     val graph = nontrivialGraph1
     val result = CyclicalGraph.computeLayers(CyclicalGraph.topologicalSort(CyclicalGraph.scc(CyclicalGraph.from(graph))))
@@ -240,6 +261,31 @@ class TestCyclicalGraph extends AnyFunSuite {
         CyclicalGraph.Singleton("B", Set("D"))),
       List(
         CyclicalGraph.Singleton("D", Set())),
+    ).reverse
+    assert(result == expected)
+  }
+
+  test("SCC.ComputeLayers.04") {
+    val graph = CyclicalGraph.from(
+      Map(
+        "A" -> List("B", "C", "D"),
+        "B" -> List("C, E"),
+        "C" -> List("E"),
+        "D" -> List("E"),
+        "E" -> List.empty
+      )
+    )
+    val result = CyclicalGraph.computeLayers(CyclicalGraph.topologicalSort(graph))
+    val expected = List(
+      List(
+        CyclicalGraph.Singleton("A", Set("B", "C", "D"))),
+      List(
+        CyclicalGraph.Singleton("B", Set("C", "E"))),
+      List(
+        CyclicalGraph.Singleton("C", Set("E")),
+        CyclicalGraph.Singleton("D", Set("E"))),
+      List(
+        CyclicalGraph.Singleton("E", Set())),
     ).reverse
     assert(result == expected)
   }
