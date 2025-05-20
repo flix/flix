@@ -34,16 +34,16 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on the given AST `root`.
     */
-  def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym], computeDependencyGraph: Boolean)(implicit flix: Flix): (MonoAst.Root, List[List[Symbol.DefnSym]]) = {
+  def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym], computeDependencyGraph: Boolean)(implicit flix: Flix): (MonoAst.Root, List[List[Symbol.DefnSym]], Set[Symbol.DefnSym]) = {
     val changedDefs = root.defs.filter(kv => delta.contains(kv._1))
     val visitedDefsWithDeps = ParOps.parMapValues(changedDefs)(visitDef(_)(LocalContext.mk(computeDependencyGraph)))
     val visitedDefs = visitedDefsWithDeps.map { case (sym, (defn, _)) => sym -> defn }
     val newRoot = root.copy(defs = root.defs ++ visitedDefs)
     if (computeDependencyGraph) {
-      val graph = mkDependencyGraph(visitedDefsWithDeps.map { case (sym, (_, deps)) => sym -> deps })
-      (newRoot, graph)
+      val (graph, sccs) = mkDependencyGraph(visitedDefsWithDeps.map { case (sym, (_, deps)) => sym -> deps })
+      (newRoot, graph, sccs)
     } else
-      (newRoot, List.empty)
+      (newRoot, List.empty, Set.empty)
   }
 
   /**
@@ -550,21 +550,19 @@ object OccurrenceAnalyzer {
     * of functions that do not depend on other functions that occur in the same list or any function in an
     * inner list to the right of it.
     * In other words, dependencies only flow from right to left.
-    * Additionally, mutually recursive functions are excluded from the graph.
     *
     * @param dependencies a map from functions to their dependencies.
     */
-  private def mkDependencyGraph(dependencies: Map[Symbol.DefnSym, List[Symbol.DefnSym]]): List[List[Symbol.DefnSym]] = {
-    val graph = CyclicalGraph.from(dependencies)
-    val scc = CyclicalGraph.scc(graph)
-    val sorted = CyclicalGraph.topologicalSort(scc)
-    CyclicalGraph.layers(sorted).map(_.filter {
-      case CyclicalGraph.Singleton(_, _) => true
-      case CyclicalGraph.SCC(_) => false
-    }.map {
-      case CyclicalGraph.Singleton(sym, _) => sym
-      case CyclicalGraph.SCC(_) => throw InternalCompilerException("unexpected strongly connected component", SourceLocation.Unknown)
-    })
+  private def mkDependencyGraph(dependencies: Map[Symbol.DefnSym, List[Symbol.DefnSym]]): (List[List[Symbol.DefnSym]], Set[Symbol.DefnSym]) = {
+    val sorted = CyclicalGraph.topologicalSort(CyclicalGraph.scc(CyclicalGraph.from(dependencies)))
+    val sccs = mutable.ArrayBuffer.empty[Symbol.DefnSym]
+    val deps = CyclicalGraph.layers(sorted).map(_.flatMap {
+      case CyclicalGraph.Singleton(sym, _) => List(sym)
+      case CyclicalGraph.SCC(cycle) =>
+        sccs.addAll(cycle.map(_.value))
+        cycle.map(_.value)
+    }).filter(_.nonEmpty)
+    (deps, sccs.toSet)
   }
 
   /**

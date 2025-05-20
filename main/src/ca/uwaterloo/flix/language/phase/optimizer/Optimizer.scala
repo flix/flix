@@ -16,9 +16,9 @@
 package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.MonoAst
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object Optimizer {
 
@@ -34,38 +34,44 @@ object Optimizer {
     var currentRoot = root
     var currentDelta = currentRoot.defs.keys.toSet
     var currentLive = Set.empty[Symbol.DefnSym]
-    var depGraph = List.empty[List[Symbol.DefnSym]]
-    var hasComputedDepGraphOnce = false
-    for (_ <- 0 until MaxRounds) {
-      if (currentDelta.nonEmpty) {
-        val (afterOccurrenceAnalyzer, graph) = OccurrenceAnalyzer.run(currentRoot, currentDelta, !hasComputedDepGraphOnce)
-        if (!hasComputedDepGraphOnce) {
-          hasComputedDepGraphOnce = true
-          depGraph = graph match {
-            case Nil =>
-              List.empty
+    val (afterOccurrenceAnalyzer0, graph, sccs) = OccurrenceAnalyzer.run(currentRoot, currentDelta, computeDependencyGraph = true)
+    var afterOccurrenceAnalyzer = afterOccurrenceAnalyzer0
+    var depGraph = graph match {
+      case Nil =>
+        List.empty
 
-            case _ :: next =>
-              // Skip leaf group
-              next
-          }
-        }
-        val depGroup = depGraph match {
-          case Nil => List.empty
-          case group :: next =>
-            depGraph = next
-            group
-        }
-        val (newRoot, newDelta, newLive) = Inliner.run(afterOccurrenceAnalyzer, depGroup)
-        currentRoot = newRoot
-        currentDelta = newDelta
-        currentLive ++= newLive
+      case _ :: next =>
+        // Skip leaf group
+        next
+    }
+    while (depGraph.nonEmpty) {
+      depGraph match {
+        case Nil =>
+          throw InternalCompilerException("unexpected empty dependency graph", SourceLocation.Unknown)
+
+        case group :: Nil =>
+          depGraph = List.empty
+          val (newRoot, newDelta, newLive) = Inliner.run(afterOccurrenceAnalyzer, group, sccs)
+          currentRoot = newRoot
+          currentDelta = newDelta
+          currentLive ++= newLive
+
+        case group :: rest =>
+          depGraph = rest
+          val (newRoot, newDelta, newLive) = Inliner.run(afterOccurrenceAnalyzer, group, sccs)
+          currentRoot = newRoot
+          currentDelta = newDelta
+          currentLive ++= newLive
+          val (afterOccurrenceAnalyzer1, _, _) = OccurrenceAnalyzer.run(currentRoot, currentDelta, computeDependencyGraph = false)
+          afterOccurrenceAnalyzer = afterOccurrenceAnalyzer1
       }
     }
-    // val liveDefs = currentRoot.defs.filter { case (sym, _) => currentLive.contains(sym) }
-    // currentRoot.copy(defs = liveDefs)
-    // TODO: Figure out online tree shaking. Maybe return SCCs from OA and always include those.
-    currentRoot
+    val liveDefs = currentRoot.defs.filter {
+      case (sym, _) =>
+        // Case 1: A def is live because it was not inlined.
+        // Case 4: It is an entrypoint so always include it.
+        currentLive.contains(sym) || currentRoot.entryPoints.contains(sym) || sccs.contains(sym)
+    }
+    currentRoot.copy(defs = liveDefs)
   }
-
 }

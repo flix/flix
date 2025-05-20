@@ -69,12 +69,12 @@ import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 object Inliner {
 
   /** Performs inlining on the given AST `root`. */
-  def run(root: MonoAst.Root, depGroup: List[Symbol.DefnSym])(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym], Set[Symbol.DefnSym]) = {
-    val sctx: SharedContext = SharedContext.mk()
-    val depGroupDefs = root.defs.filter(depGroup.contains)
+  def run(root: MonoAst.Root, depGroup: List[Symbol.DefnSym], sccs: Set[Symbol.DefnSym])(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym], Set[Symbol.DefnSym]) = {
+    val sctx: SharedContext = SharedContext.mk(sccs)
+    val depGroupDefs = root.defs.filter { case (sym, _) => depGroup.contains(sym) }
     val defs = ParOps.parMapValues(depGroupDefs)(visitDef(_)(sctx, root, flix))
     val newDelta = sctx.changed.asScala.keys.toSet
-    val liveSyms = root.entryPoints ++ sctx.live.asScala.keys.toSet
+    val liveSyms = sctx.live.asScala.keys.toSet
     (root.copy(defs = root.defs ++ defs), newDelta, liveSyms)
   }
 
@@ -491,7 +491,7 @@ object Inliner {
     * @param exps the arguments to the function.
     * @param ctx0 the local context.
     */
-  private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext)(implicit sym0: Symbol.DefnSym): Boolean = {
+  private def shouldInlineDef(defn: MonoAst.Def, exps: List[Expr], ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext): Boolean = {
     if (ctx0.currentlyInlining) {
       return false
     }
@@ -506,6 +506,10 @@ object Inliner {
       }
 
       return true
+    }
+
+    if (sctx.sccs.contains(defn.sym)) {
+      return false
     }
 
     !defn.spec.defContext.isSelfRef &&
@@ -725,16 +729,17 @@ object Inliner {
     /**
       * Returns a fresh [[SharedContext]].
       */
-    def mk(): SharedContext = new SharedContext(new ConcurrentHashMap(), new ConcurrentHashMap())
+    def mk(sccs: Set[Symbol.DefnSym]): SharedContext = new SharedContext(sccs, new ConcurrentHashMap(), new ConcurrentHashMap())
 
   }
 
   /**
     * A globally shared thread-safe context.
     *
+    * @param sccs    the set of symbols that occur in a mutually recursive group.
     * @param changed the set of symbols of changed functions.
     * @param live    the set of symbols of live functions.
     */
-  private case class SharedContext(changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit])
+  private case class SharedContext(sccs: Set[Symbol.DefnSym], changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit])
 
 }
