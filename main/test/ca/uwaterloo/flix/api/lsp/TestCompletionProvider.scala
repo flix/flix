@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
@@ -131,15 +132,22 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private val Limit: Int = 100
 
-  test("No crashes when calling getCompletions anywhere") {
-    Programs.foreach(program => {
-      val (root, errors) = compile(program)
-      program.scanLeft(Position(1, 1))({
-        case (Position(line, _), '\n') => Position(line + 1, 1)
-        case (Position(line, col), _) => Position(line, col + 1)
-      }).foreach(pos => CompletionProvider.getCompletions(Uri, pos, errors)(root, Flix).map(_.toCompletionItem(Flix)))
-    })
+  /////////////////////////////////////////////////////////////////////////////
+  // General Properties                                                      //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Autocomplete is well-defined") {
+    forAll(Programs) { prg =>
+        val root = compileWithSuccess(prg)
+        forAll(allPositions(prg)) { pos =>
+          autoComplete(pos, root)
+        }
+    }
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // General Properties                                                      //
+  /////////////////////////////////////////////////////////////////////////////
 
   test("No completions after complete keyword") {
     Programs.foreach(program => {
@@ -319,6 +327,14 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   /**
+    * Returns all autocomplete suggestions at the given position `pos` for the given AST `root`.
+    */
+  private def autoComplete(pos: Position, root: Root): List[Completion] = CompletionProvider.getCompletions(Uri, pos, Nil)(root, Flix)
+
+  // TODO: What should f return? Maybe Assertion = True | Cond? | Failed?
+  def forAll[A, B](l: List[A])(f: A => B): Unit = l.foreach(f)
+
+  /**
     * Asserts that the given completion list is empty at the given position.
     */
   private def assertEmpty(completions: List[CompletionItem], sourceLocation: SourceLocation, pos: Position): Unit = {
@@ -461,6 +477,22 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   /**
+    * Successfully compiles the given input string `s` with the given compilation options `o`.
+    *
+    * The program must compile without any errors.
+    *
+    * @throws RuntimeException if the program cannot be compiled without errors.
+    */
+  private def compileWithSuccess(program: String): Root = {
+    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    Flix.addSourceCode(Uri, program)
+    Flix.check() match {
+      case (Some(root), Nil) => root
+      case _ => fail("Compilation failed: a root is expected.")
+    }
+  }
+
+  /**
     * Returns all positions within the given token.
     *
     * For example, give a token "def", we will return a list of positions:
@@ -485,6 +517,16 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   /**
+    * Returns all valid positions in the given string `s`.
+    */
+  private def allPositions(p: String): List[Position] = {
+    p.scanLeft(Position(1, 1)) {
+      case (Position(line, _), '\n') => Position(line + 1, 1)
+      case (Position(line, col), _) => Position(line, col + 1)
+    }.toList
+  }
+
+  /**
     * Creates a source object from the given string `content`.
     */
   private def mkSource(content: String): Source = {
@@ -492,4 +534,5 @@ class TestCompletionProvider extends AnyFunSuite {
     val input = Input.Text(Uri, content, sctx)
     Source(input, content.toCharArray)
   }
+
 }
