@@ -4,6 +4,13 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestCyclicalGraph extends AnyFunSuite {
 
+  private val complicatedGraph1: Map[Int, List[Int]] = Map(
+    1 -> List(2, 3, 4),
+    2 -> List.empty,
+    3 -> List(2),
+    4 -> List(1)
+  )
+
   private val complicatedGraph2: Map[Int, List[Int]] = Map(
     1 -> List(2),
     2 -> List(3, 5, 6),
@@ -32,7 +39,7 @@ class TestCyclicalGraph extends AnyFunSuite {
   }
 
   test("Invert.01") {
-    val graph = Map(1 -> List(2, 3, 4), 2 -> List.empty, 3 -> List(2), 4 -> List(1))
+    val graph = complicatedGraph1
     val result = CyclicalGraph.invert(graph)
     val expected = Map(1 -> List(4), 2 -> List(1, 3), 3 -> List(1), 4 -> List(1))
     assert(result == expected)
@@ -64,7 +71,7 @@ class TestCyclicalGraph extends AnyFunSuite {
   }
 
   test("SCC.03") {
-    val graph = Map(1 -> List(2, 3, 4), 2 -> List.empty, 3 -> List(2), 4 -> List(1))
+    val graph = complicatedGraph1
     val result = CyclicalGraph.scc(CyclicalGraph.from(graph))
     val expected = CyclicalGraph(Set[CyclicalGraph.Vertex[Int]](
       CyclicalGraph.SCC(Set(
@@ -110,7 +117,7 @@ class TestCyclicalGraph extends AnyFunSuite {
   }
 
   test("SCC.TopologicalSort.01") {
-    val graph = Map(1 -> List(2, 3, 4), 2 -> List.empty, 3 -> List(2), 4 -> List(1))
+    val graph = complicatedGraph1
     val result = CyclicalGraph.topologicalSort(CyclicalGraph.scc(CyclicalGraph.from(graph)))
     val expected = List(
       CyclicalGraph.SCC(Set(
