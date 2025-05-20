@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Expr, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.VarSym
 import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{CyclicalGraph, InternalCompilerException, ParOps}
 
 import scala.collection.mutable
 
@@ -39,9 +39,12 @@ object OccurrenceAnalyzer {
     val visitedDefsWithDeps = ParOps.parMapValues(changedDefs)(visitDef)
     val visitedDefs = visitedDefsWithDeps.map { case (sym, (defn, _)) => sym -> defn }
     val newRoot = root.copy(defs = root.defs ++ visitedDefs)
-    if (computeDependencyGraph)
+    if (computeDependencyGraph) {
+      val graph = CyclicalGraph.from(visitedDefsWithDeps.map { case (sym, (_, deps)) => sym -> deps })
+      val scc = CyclicalGraph.scc(graph)
+      val sorted = CyclicalGraph.topologicalSort(scc)
       (newRoot, List.empty)
-    else
+    } else
       (newRoot, List.empty)
   }
 
