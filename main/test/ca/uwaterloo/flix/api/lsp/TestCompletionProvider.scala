@@ -146,17 +146,16 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // General Properties                                                      //
+  // No Completions                                                          //
   /////////////////////////////////////////////////////////////////////////////
 
   test("No completions after complete keyword") {
     forAll(Programs) { prg =>
       val root = compileWithSuccess(prg)
-      val keywordTokens = keywordsOf(prg, root)
-      keywordTokens.foreach { token =>
-        getAllPositionsWithinToken(token).foreach { pos =>
-          val completions = autoComplete(pos, root)
-          assertEmpty(completions, token.mkSourceLocation(), pos)
+      forAll(keywordsOf(prg, root)) { tok =>
+        forAll(getAllPositionsWithinToken(tok)) { pos => // TODO: Inclusive vs. exclusive?
+          // TODO: Custom assert
+          assertEmpty(autoComplete(pos, root), tok.mkSourceLocation(), pos)
         }
       }
     }
