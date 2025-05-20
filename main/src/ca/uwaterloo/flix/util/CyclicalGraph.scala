@@ -103,6 +103,10 @@ object CyclicalGraph {
     }
   }
 
+  def computeLayers[T](sortedGraph: List[Vertex[T]]): List[List[Vertex[T]]] = {
+    ???
+  }
+
   private def scc[T](graph: Map[T, List[T]]): CyclicalGraph[T] = {
     if (graph.isEmpty) {
       return CyclicalGraph(Set.empty)
