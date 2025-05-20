@@ -108,7 +108,7 @@ object CyclicalGraph {
     }
   }
 
-  def computeLayers[T](sortedGraph: List[Vertex[T]]): List[List[Vertex[T]]] = {
+  def layers[T](sortedGraph: List[Vertex[T]]): List[List[Vertex[T]]] = {
     if (sortedGraph.isEmpty) {
       return List.empty
     }

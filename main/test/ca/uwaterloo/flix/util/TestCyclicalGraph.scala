@@ -203,7 +203,7 @@ class TestCyclicalGraph extends AnyFunSuite {
 
   test("SCC.ComputeLayers.01") {
     val graph = nontrivialGraph1
-    val result = CyclicalGraph.computeLayers(CyclicalGraph.topologicalSort(CyclicalGraph.scc(CyclicalGraph.from(graph))))
+    val result = CyclicalGraph.layers(CyclicalGraph.topologicalSort(CyclicalGraph.scc(CyclicalGraph.from(graph))))
     val expected = List(
       List(
         CyclicalGraph.SCC(Set(
@@ -219,7 +219,7 @@ class TestCyclicalGraph extends AnyFunSuite {
 
   test("SCC.ComputeLayers.02") {
     val graph = nontrivialGraph2
-    val result = CyclicalGraph.computeLayers(CyclicalGraph.topologicalSort(CyclicalGraph.scc(CyclicalGraph.from(graph))))
+    val result = CyclicalGraph.layers(CyclicalGraph.topologicalSort(CyclicalGraph.scc(CyclicalGraph.from(graph))))
     val expected = List(
       List(
         CyclicalGraph.SCC(Set(
@@ -251,7 +251,7 @@ class TestCyclicalGraph extends AnyFunSuite {
         "D" -> List.empty
       )
     )
-    val result = CyclicalGraph.computeLayers(CyclicalGraph.topologicalSort(graph))
+    val result = CyclicalGraph.layers(CyclicalGraph.topologicalSort(graph))
     val expected = List(
       List(
         CyclicalGraph.Singleton("A", Set("B", "C"))),
@@ -275,7 +275,7 @@ class TestCyclicalGraph extends AnyFunSuite {
         "E" -> List.empty
       )
     )
-    val result = CyclicalGraph.computeLayers(CyclicalGraph.topologicalSort(graph))
+    val result = CyclicalGraph.layers(CyclicalGraph.topologicalSort(graph))
     val expected = List(
       List(
         CyclicalGraph.Singleton("A", Set("B", "C", "D"))),
@@ -300,7 +300,7 @@ class TestCyclicalGraph extends AnyFunSuite {
         "E" -> List.empty
       )
     )
-    val result = CyclicalGraph.computeLayers(CyclicalGraph.topologicalSort(graph))
+    val result = CyclicalGraph.layers(CyclicalGraph.topologicalSort(graph))
     val expected = List(
       List(
         CyclicalGraph.Singleton("A", Set("B", "C", "D"))),
