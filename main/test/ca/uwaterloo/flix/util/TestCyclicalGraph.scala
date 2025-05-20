@@ -135,7 +135,7 @@ class TestCyclicalGraph extends AnyFunSuite {
         CyclicalGraph.Singleton(4, Set(1)))),
       CyclicalGraph.Singleton(3, Set(2)),
       CyclicalGraph.Singleton(2, Set.empty)
-    )
+    ).reverse
     assert(result == expected)
   }
 
@@ -157,7 +157,7 @@ class TestCyclicalGraph extends AnyFunSuite {
         CyclicalGraph.Singleton(7, Set(6, 8)),
       )),
       CyclicalGraph.Singleton(8, Set(8))
-    )
+    ).reverse
     assert(result == expected)
   }
 }
