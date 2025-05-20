@@ -34,22 +34,27 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on the given AST `root`.
     */
-  def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym])(implicit flix: Flix): MonoAst.Root = {
+  def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym], computeDependencyGraph: Boolean = false)(implicit flix: Flix): (MonoAst.Root, List[List[Symbol.DefnSym]]) = {
     val changedDefs = root.defs.filter(kv => delta.contains(kv._1))
-    val visitedDefs = ParOps.parMapValues(changedDefs)(visitDef)
-    root.copy(defs = root.defs ++ visitedDefs)
+    val visitedDefsWithDeps = ParOps.parMapValues(changedDefs)(visitDef)
+    val visitedDefs = visitedDefsWithDeps.map { case (sym, (defn, _)) => sym -> defn }
+    val newRoot = root.copy(defs = root.defs ++ visitedDefs)
+    if (computeDependencyGraph)
+      (newRoot, List.empty)
+    else
+      (newRoot, List.empty)
   }
 
   /**
     * Performs occurrence analysis on `defn`.
     */
-  private def visitDef(defn: MonoAst.Def): MonoAst.Def = {
+  private def visitDef(defn: MonoAst.Def): (MonoAst.Def, List[Symbol.DefnSym]) = {
     val lctx: LocalContext = LocalContext.mk()
     val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx)
     val defContext = DefContext(isSelfRef(ctx.selfOccur))
     val fparams = defn.spec.fparams.map(visitFormalParam(_, ctx))
     val spec = defn.spec.copy(fparams = fparams, defContext = defContext)
-    MonoAst.Def(defn.sym, spec, exp, defn.loc)
+    (MonoAst.Def(defn.sym, spec, exp, defn.loc), lctx.dependencies.toList)
   }
 
   /**
