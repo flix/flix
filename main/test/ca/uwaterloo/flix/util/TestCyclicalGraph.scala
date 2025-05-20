@@ -193,8 +193,8 @@ class TestCyclicalGraph extends AnyFunSuite {
     val result = CyclicalGraph.topologicalSort(graph)
     val expected = List(
       CyclicalGraph.Singleton("A", Set("B", "C", "D")),
-      CyclicalGraph.Singleton("D", Set("E")),
       CyclicalGraph.Singleton("B", Set("C", "E")),
+      CyclicalGraph.Singleton("D", Set("E")),
       CyclicalGraph.Singleton("C", Set("E")),
       CyclicalGraph.Singleton("E", Set()),
     ).reverse
