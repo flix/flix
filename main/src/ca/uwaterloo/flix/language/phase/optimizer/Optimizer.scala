@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
 
 object Optimizer {
@@ -32,9 +33,13 @@ object Optimizer {
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer") {
     var currentRoot = root
     var currentDelta = currentRoot.defs.keys.toSet
+    var depGraph: Option[List[List[Symbol.DefnSym]]] = None
     for (_ <- 0 until MaxRounds) {
       if (currentDelta.nonEmpty) {
-        val (afterOccurrenceAnalyzer, _) = OccurrenceAnalyzer.run(currentRoot, currentDelta)
+        val (afterOccurrenceAnalyzer, graph) = OccurrenceAnalyzer.run(currentRoot, currentDelta, depGraph.isEmpty)
+        if (depGraph.isEmpty) {
+          depGraph = Some(graph)
+        }
         val (newRoot, newDelta) = Inliner.run(afterOccurrenceAnalyzer, currentDelta)
         currentRoot = newRoot
         currentDelta = newDelta

@@ -34,7 +34,7 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on the given AST `root`.
     */
-  def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym], computeDependencyGraph: Boolean = false)(implicit flix: Flix): (MonoAst.Root, List[List[Symbol.DefnSym]]) = {
+  def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym], computeDependencyGraph: Boolean)(implicit flix: Flix): (MonoAst.Root, List[List[Symbol.DefnSym]]) = {
     val changedDefs = root.defs.filter(kv => delta.contains(kv._1))
     val visitedDefsWithDeps = ParOps.parMapValues(changedDefs)(visitDef(_)(LocalContext.mk(computeDependencyGraph)))
     val visitedDefs = visitedDefsWithDeps.map { case (sym, (defn, _)) => sym -> defn }
