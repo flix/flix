@@ -58,7 +58,7 @@ object EffUnification3 {
       return Result.Ok(Substitution.empty)
     }
 
-    // Randomness: If chaos monkey flag is passed
+    // Randomly reorder the constraints using the chaos monkey.
     val eqs = ChaosMonkey.chaos(eqs0)
 
     // Add to implicit context.

@@ -26,11 +26,11 @@ object ChaosMonkey {
   /*
    * Static method for shuffling items in a container type.
    */
-  def chaos[A](lis: List[A])(implicit flix:Flix): List[A] = {
-    // when --Xchaos-monkey is passed shuffle
+  def chaos[A](l: List[A])(implicit flix: Flix): List[A] = {
+    // reorder the list when the Chaos Monkey is enabled.
     if (flix.options.xchaosMonkey)
-      Random.shuffle(lis)
+      Random.shuffle(l)
     else
-      lis
+      l
   }
 }
