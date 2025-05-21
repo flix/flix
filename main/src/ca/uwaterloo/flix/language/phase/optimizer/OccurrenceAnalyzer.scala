@@ -21,8 +21,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Expr, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.VarSym
 import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.{CyclicalGraph, InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{AcyclicalGraph, InternalCompilerException, ParOps}
 
+import scala.collection.immutable.HashSet
 import scala.collection.mutable
 
 /**
@@ -554,15 +555,11 @@ object OccurrenceAnalyzer {
     * @param dependencies a map from functions to their dependencies.
     */
   private def mkDependencyGraph(dependencies: Map[Symbol.DefnSym, List[Symbol.DefnSym]]): (List[List[Symbol.DefnSym]], Set[Symbol.DefnSym]) = {
-    val sorted = CyclicalGraph.topologicalSort(CyclicalGraph.scc(CyclicalGraph.from(dependencies)))
-    val sccs = mutable.ArrayBuffer.empty[Symbol.DefnSym]
-    val deps = CyclicalGraph.layers(sorted).map(_.flatMap {
-      case CyclicalGraph.Singleton(sym, _) => List(sym)
-      case CyclicalGraph.SCC(cycle) =>
-        sccs.addAll(cycle.map(_.value))
-        cycle.map(_.value)
-    }).filter(_.nonEmpty)
-    (deps, sccs.toSet)
+    val acyclicalGraph = AcyclicalGraph.scc(dependencies)
+    val sorted = AcyclicalGraph.topologicalSort(acyclicalGraph)
+    val layers = AcyclicalGraph.layers(sorted, acyclicalGraph)
+    val deps = layers.map(x => x.diff(x.flatMap(y => acyclicalGraph.cycles.getOrElse(y, HashSet.empty))))
+    (deps, acyclicalGraph.cycles.keys.toSet)
   }
 
   /**
