@@ -1583,6 +1583,10 @@ object Weeder2 {
         case ((label, List(ExtPattern.Var(ident, loc))), expr :: Nil) =>
           Validation.Success(ExtMatchRule(label, List(ExtPattern.Var(ident, loc)), expr, tree.loc))
 
+        // case pattern => expr
+        case ((label, List(ExtPattern.Wild(loc))), expr :: Nil) =>
+          Validation.Success(ExtMatchRule(label, List(ExtPattern.Wild(loc)), expr, tree.loc))
+
         // Fall back on Expr.Error. Parser has reported an error here.
         case ((label, _), _) =>
           val error = Malformed(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
