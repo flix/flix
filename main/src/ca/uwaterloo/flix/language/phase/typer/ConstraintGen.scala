@@ -476,7 +476,7 @@ object ConstraintGen {
 
       case e: Expr.RestrictableTag => RestrictableChooseConstraintGen.visitApplyRestrictableTag(e)
 
-      case KindedAst.Expr.ExtensibleTag(label, exps, tvar, loc) =>
+      case KindedAst.Expr.ExtTag(label, exps, tvar, loc) =>
         val pred = Name.Pred(label.name, label.loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         val rest = Type.freshVar(Kind.SchemaRow, loc)

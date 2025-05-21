@@ -264,7 +264,7 @@ object TypeReconstruction {
       val es = exps.map(visitExp)
       TypedAst.Expr.RestrictableTag(symUse, es, subst(tvar), subst(evar), loc)
 
-    case KindedAst.Expr.ExtensibleTag(label, exps, tvar, loc) =>
+    case KindedAst.Expr.ExtTag(label, exps, tvar, loc) =>
       val es = exps.map(visitExp)
       val tpe = subst(tvar)
       val eff = Type.mkUnion(es.map(_.eff), loc)

@@ -479,7 +479,7 @@ object Kinder {
     case ResolvedAst.Expr.ExtTag(label, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, root))
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      KindedAst.Expr.ExtensibleTag(label, exps, tvar, loc)
+      KindedAst.Expr.ExtTag(label, exps, tvar, loc)
 
     case ResolvedAst.Expr.Tuple(exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, root))
