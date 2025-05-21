@@ -36,14 +36,7 @@ object Optimizer {
     var currentLive = Set.empty[Symbol.DefnSym]
     val (afterOccurrenceAnalyzer0, graph, sccs) = OccurrenceAnalyzer.run(currentRoot, currentDelta, computeDependencyGraph = true)
     var afterOccurrenceAnalyzer = afterOccurrenceAnalyzer0
-    var depGraph = graph match {
-      case Nil =>
-        List.empty
-
-      case _ :: next =>
-        // Skip leaf group
-        next
-    }
+    var depGraph = graph
     while (depGraph.nonEmpty) {
       depGraph match {
         case Nil =>

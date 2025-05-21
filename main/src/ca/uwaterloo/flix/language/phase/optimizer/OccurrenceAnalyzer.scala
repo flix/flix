@@ -557,9 +557,8 @@ object OccurrenceAnalyzer {
   private def mkDependencyGraph(dependencies: Map[Symbol.DefnSym, List[Symbol.DefnSym]]): (List[List[Symbol.DefnSym]], Set[Symbol.DefnSym]) = {
     val acyclicalGraph = AcyclicalGraph.scc(dependencies)
     val sorted = AcyclicalGraph.topologicalSort(acyclicalGraph)
-    val layers = AcyclicalGraph.layers(sorted, acyclicalGraph)
-    val deps = layers.map(x => x.diff(x.flatMap(y => acyclicalGraph.cycles.getOrElse(y, HashSet.empty))))
-    (deps, acyclicalGraph.cycles.keys.toSet)
+    val layers = AcyclicalGraph.layers(sorted, acyclicalGraph).filter(_.nonEmpty)
+    (layers, acyclicalGraph.cycles.keys.toSet)
   }
 
   /**
