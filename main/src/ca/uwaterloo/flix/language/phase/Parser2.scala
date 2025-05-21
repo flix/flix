@@ -3091,7 +3091,7 @@ object Parser2 {
     private def extTagPat()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
-      nameAllowQualified(NAME_TAG)
+      nameUnqualified(NAME_TAG)
       expect(TokenKind.Caret)
       if (at(TokenKind.ParenL)) {
         tuplePat()

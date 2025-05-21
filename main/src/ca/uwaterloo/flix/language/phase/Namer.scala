@@ -890,10 +890,10 @@ object Namer {
     * Performs naming on the given ext match rule `rule0`.
     */
   private def visitExtMatchRule(rule0: DesugaredAst.ExtMatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.ExtMatchRule = rule0 match {
-    case DesugaredAst.ExtMatchRule(qname, pats, exp, loc) =>
+    case DesugaredAst.ExtMatchRule(label, pats, exp, loc) =>
       val ps = pats.map(visitExtPattern)
       val e = visitExp(exp)
-      NamedAst.ExtMatchRule(qname, ps, e, loc)
+      NamedAst.ExtMatchRule(label, ps, e, loc)
   }
 
   /**

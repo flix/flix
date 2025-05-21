@@ -1573,13 +1573,13 @@ object Weeder2 {
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
       flatMapN(Patterns.pickExtPattern(tree), traverse(exprs)(visitExpr)) {
         // case pattern => expr
-        case ((qname, pats), expr :: Nil) =>
-          Validation.Success(ExtMatchRule(qname, pats, expr, tree.loc))
+        case ((label, pats), expr :: Nil) =>
+          Validation.Success(ExtMatchRule(label, pats, expr, tree.loc))
 
         // Fall back on Expr.Error. Parser has reported an error here.
-        case ((qname, _), _) =>
+        case ((label, _), _) =>
           val error = Malformed(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
-          Validation.Success(ExtMatchRule(qname, List(ExtPattern.Error(tree.loc)), Expr.Error(error), tree.loc))
+          Validation.Success(ExtMatchRule(label, List(ExtPattern.Error(tree.loc)), Expr.Error(error), tree.loc))
       }
     }
 
@@ -2270,7 +2270,7 @@ object Weeder2 {
       flatMapN(pick(TreeKind.Pattern.Pattern, tree))(visitPattern(_))
     }
 
-    def pickExtPattern(tree: Tree)(implicit sctx: SharedContext): Validation[(Name.QName, List[ExtPattern]), CompilationMessage] = {
+    def pickExtPattern(tree: Tree)(implicit sctx: SharedContext): Validation[(Name.Label, List[ExtPattern]), CompilationMessage] = {
       flatMapN(pick(TreeKind.Pattern.Pattern, tree))(visitExtPattern(_))
     }
 
@@ -2296,7 +2296,7 @@ object Weeder2 {
       }
     }
 
-    def visitExtPattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit sctx: SharedContext): Validation[(Name.QName, List[ExtPattern]), CompilationMessage] = {
+    def visitExtPattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit sctx: SharedContext): Validation[(Name.Label, List[ExtPattern]), CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Pattern)
       val extTagPattern = tryPick(TreeKind.Pattern.ExtTag, tree)
       extTagPattern match {
@@ -2308,14 +2308,14 @@ object Weeder2 {
       }
     }
 
-    private def visitExtTagPattern(tree: SyntaxTree.Tree, seen: mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[(Name.QName, List[ExtPattern]), CompilationMessage] = {
+    private def visitExtTagPattern(tree: SyntaxTree.Tree, seen: mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[(Name.Label, List[ExtPattern]), CompilationMessage] = {
       expect(tree, TreeKind.Pattern.ExtTag)
       val maybePat = tryPick(TreeKind.Pattern.Tuple, tree)
-      mapN(pickQName(tree), traverseOpt(maybePat)(visitExtTagTermsPat(_, seen))) {
-        (qname, maybePat) =>
+      mapN(pickNameIdent(tree), traverseOpt(maybePat)(visitExtTagTermsPat(_, seen))) {
+        (ident, maybePat) =>
           maybePat match {
-            case None => (qname, List.empty)
-            case Some(elms) => (qname, elms.toList)
+            case None => (Name.mkLabel(ident), List.empty)
+            case Some(elms) => (Name.mkLabel(ident), elms.toList)
           }
       }
     }
