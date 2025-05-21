@@ -16,144 +16,92 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.util.AcyclicalGraph.Vertex
 import ca.uwaterloo.flix.util.Graph.TopologicalSort
 
+import scala.collection.immutable.{HashMap, HashSet}
 import scala.collection.mutable
 
 /**
   * Represents a graph that may contain strongly connected components.
   *
-  * @param vertices the set of vertices and edges that form the graph.
+  * @param graph          the set of vertices and edges that form the original graph.
+  * @param cycles         the set of cycles in [[graph]].
+  * @param acyclicalGraph the original graph without cycles, i.e. {{{ graph -- cycles }}}
   */
-case class AcyclicalGraph[T](vertices: Set[Vertex[T]])
+case class AcyclicalGraph[T](graph: HashMap[T, List[T]], cycles: HashMap[T, HashSet[T]], acyclicalGraph: HashMap[T, List[T]])
 
 object AcyclicalGraph {
 
-  sealed trait Vertex[T] {
+  def empty[T]: AcyclicalGraph[T] = AcyclicalGraph(HashMap.empty, HashMap.empty, HashMap.empty)
 
-    /**
-      * Returns the list of outgoing edges of the component.
-      */
-    def outgoing: Set[T] = this match {
-      case Singleton(value, edges) => edges - value
-      case SCC(cycle) => cycle.flatMap(_.outgoing) -- cycle.map(_.value)
-    }
-
-    def equiv(v: T): Boolean = this match {
-      case Singleton(u, _) => u == v
-      case SCC(cycle) => cycle.exists(_.value == v)
-    }
-
-  }
-
-  /**
-    * Represents a single vertex.
-    *
-    * @param value the value / label of the vertex. Must be unique in the graph.
-    * @param edges the list of edges (including edges to itself).
-    */
-  case class Singleton[T](value: T, edges: Set[T]) extends Vertex[T]
-
-  /**
-    * Represents a strongly connected component.
-    *
-    * @param cycle the list of vertices that form the cycle.
-    */
-  case class SCC[T](cycle: Set[Singleton[T]]) extends Vertex[T]
-
-  def from[T](graph: Map[T, List[T]]): AcyclicalGraph[T] = {
-    val vertices: Set[Vertex[T]] = graph.map { case (k, vs) => Singleton(k, vs.toSet) }.toSet
-    AcyclicalGraph(vertices)
-  }
-
-  def scc[T](graph: AcyclicalGraph[T]): AcyclicalGraph[T] = {
-    scc(toMap(graph))
-  }
-
-  def toMap[T](graph: AcyclicalGraph[T]): Map[T, List[T]] = {
-    graph.vertices.flatMap {
-      case Singleton(value, edges) => Map(value -> edges.toList)
-      case SCC(cycle) => cycle.map(v => v.value -> v.edges.toList)
-    }.toMap
-  }
-
-  def invert[T](graph: Map[T, List[T]]): Map[T, List[T]] = {
-    val result: mutable.Map[T, List[T]] = mutable.Map.empty
-    graph.foreach {
-      case (u, edges) => edges.foreach {
-        v =>
-          result.get(v) match {
-            case Some(es) =>
-              result.put(v, u :: es)
-            case None =>
-              result.put(v, List(u))
-          }
+  def invert[T](graph: Map[T, List[T]]): HashMap[T, List[T]] = {
+    graph.foldLeft(HashMap.empty[T, List[T]]) {
+      case (acc, (u, edges)) => edges.foldLeft(acc) {
+        case (acc1, v) => acc1.get(v) match {
+          case Some(es) => acc1 + (v -> (u :: es))
+          case None => acc1 + (v -> List(u))
+        }
       }
     }
-    result.map {
-      case (u, edges) => u -> edges.reverse
-    }.toMap
   }
 
-  def topologicalSort[T](graph: AcyclicalGraph[T]): List[Vertex[T]] = {
-    val topSort = Graph.topologicalSort(graph.vertices, (v0: Vertex[T]) => v0.outgoing.flatMap(v => graph.vertices.filter {
-      case Singleton(u, _) => v == u
-      case SCC(cycle) => cycle.exists(_.value == v)
-    }).toList)
-    topSort match {
+  def topologicalSort[T](graph: AcyclicalGraph[T]): List[T] = {
+    val next = (v: T) => graph.acyclicalGraph(v)
+    val vertices = graph.graph.keys
+    Graph.topologicalSort(vertices, next) match {
       case TopologicalSort.Cycle(_) => ???
       case TopologicalSort.Sorted(sorted) => sorted
     }
   }
 
-  def layers[T](sortedGraph: List[Vertex[T]]): List[List[Vertex[T]]] = {
+  def layers[T](sortedGraph: List[T], graph: AcyclicalGraph[T]): List[List[T]] = {
     if (sortedGraph.isEmpty) {
       return List.empty
     }
 
-    val seen = mutable.ArrayBuffer.empty[(Int, Vertex[T])]
+    val seen = mutable.HashMap.empty[T, Int]
     for (u <- sortedGraph) {
-      val outgoing = u.outgoing
-      if (outgoing.isEmpty) {
+      val outgoingEdges = graph.acyclicalGraph(u)
+      if (outgoingEdges.isEmpty) {
         // `u` is a leaf vertex
-        seen.addOne((0, u))
+        seen.put(u, 0)
       } else {
-        val max = seen.filter { case (_, v1) => outgoing.exists(v2 => v1.equiv(v2)) }
-          .map { case (layer, _) => layer }
+        val max = seen.filter { case (v, _) => outgoingEdges.contains(v) }
+          .map { case (_, layer) => layer }
           .max
-        seen.addOne((max + 1, u))
+        seen.put(u, max + 1)
       }
     }
 
-    val bufSize = seen.map { case (layer, _) => layer }.max + 1
-    val result = new mutable.ArrayBuffer[mutable.ArrayBuffer[Vertex[T]]](bufSize)
+    val bufSize = seen.values.max + 1
+    val result = new mutable.ArrayBuffer[mutable.ArrayBuffer[T]](bufSize)
     for (_ <- 0 until bufSize) {
       result.addOne(mutable.ArrayBuffer.empty)
     }
-    for ((layer, u) <- seen) {
+    for ((u, layer) <- seen) {
       val buf = result(layer)
       buf.addOne(u)
     }
     result.map(_.toList).toList
   }
 
-  private def scc[T](graph: Map[T, List[T]]): AcyclicalGraph[T] = {
+  def scc[T](graph: Map[T, List[T]]): AcyclicalGraph[T] = {
     if (graph.isEmpty) {
-      return AcyclicalGraph(Set.empty)
+      return AcyclicalGraph(HashMap.empty, HashMap.empty, HashMap.empty)
     }
 
+    val hashGraph = HashMap.from(graph)
     val inverted = invert(graph)
     if (inverted.isEmpty) {
-      return from(graph)
+      return AcyclicalGraph(hashGraph, HashMap.empty, hashGraph)
     }
 
-    val visited: mutable.Set[T] = mutable.Set.empty
-    val discoveryTimes: mutable.Map[T, Int] = mutable.Map.empty
-    val finishingTimes: mutable.Map[T, Int] = mutable.Map.empty
+    val visited: mutable.Set[T] = mutable.HashSet.empty
+    val discoveryTimes: mutable.HashMap[T, Int] = mutable.HashMap.empty
+    val finishingTimes: mutable.HashMap[T, Int] = mutable.HashMap.empty
     var time = 0
 
-    def visit(u: T, g: Map[T, List[T]]): Unit = {
+    def visit(u: T, g: HashMap[T, List[T]]): Unit = {
       time += 1
       discoveryTimes.put(u, time)
       visited.addOne(u)
@@ -162,7 +110,7 @@ object AcyclicalGraph {
       finishingTimes.put(u, time)
     }
 
-    graph.keys.foreach(u => if (!visited.contains(u)) visit(u, graph))
+    hashGraph.keys.foreach(u => if (!visited.contains(u)) visit(u, hashGraph))
     visited.clear()
     time = 0
 
@@ -180,8 +128,14 @@ object AcyclicalGraph {
       .toArray.sortInPlaceBy { case (_, _, f) => f }
       .reverse
 
+    var cycles = HashMap.empty[T, HashSet[T]]
+    val diff = hashGraph -- inverted.keys
+    diff.keys.foreach { k =>
+      cycles = cycles + (k -> HashSet(k))
+    }
+    var acyclicalGraph = HashMap.empty[T, List[T]]
+
     val timesStack = mutable.Stack.from(sortedByFinishingTimes2)
-    var result = List.empty[List[T]]
     var (u, d, f) = timesStack.pop()
     var cycle = List(u)
     while (timesStack.nonEmpty) {
@@ -189,22 +143,29 @@ object AcyclicalGraph {
       if (d < d1 && f1 < f) {
         cycle = v :: cycle
       } else {
-        result = cycle :: result
+        // Strongly Connected Component
+        val cycleAsSet = HashSet.from(cycle)
+        val cmap = HashMap.from(cycle.map(c => c -> cycleAsSet))
+        cycles = cycles ++ cmap
         cycle = List(v)
       }
       u = v
       d = d1
       f = f1
     }
-    result = cycle :: result
+    // Strongly Connected Component
+    val cycleAsSet = HashSet.from(cycle)
+    val cmap = HashMap.from(cycle.map(c => c -> cycleAsSet))
+    cycles = cycles ++ cmap
 
-    val diff = (graph.keys.toSet -- inverted.keys.toSet).map {
-      case u => Singleton(u, graph(u).toSet)
+    cycles.foreach {
+      case (k, cycle1) =>
+        val edgesInCycle = cycle1.flatMap(hashGraph.apply)
+        val outgoing = edgesInCycle.diff(cycle1)
+        val outgoingWithLambdaStep = outgoing ++ outgoing.flatMap(cycles.apply)
+        acyclicalGraph = acyclicalGraph + (k -> outgoingWithLambdaStep.toList)
     }
 
-    AcyclicalGraph(result.map {
-      case value :: Nil => Singleton(value, graph(value).toSet)
-      case l => SCC(l.reverse.map(value => Singleton(value, graph(value).toSet)).toSet)
-    }.toSet ++ diff)
+    AcyclicalGraph(hashGraph, cycles, acyclicalGraph)
   }
 }
