@@ -47,7 +47,7 @@ class TestAcyclicalGraph extends AnyFunSuite {
   test("CyclicalGraph.SCC.01") {
     val graph = Map(1 -> List(1))
     val result = AcyclicalGraph.scc(graph)
-    val expected = AcyclicalGraph(HashMap(1 -> List(1)), HashMap(1 -> HashSet(1)), HashMap(1 -> List.empty))
+    val expected = AcyclicalGraph(HashMap(1 -> List(1)), HashMap.empty[Int, HashSet[Int]], HashMap(1 -> List.empty))
     assert(result == expected)
   }
 
@@ -56,7 +56,7 @@ class TestAcyclicalGraph extends AnyFunSuite {
     val result = AcyclicalGraph.scc(graph)
     val expected = AcyclicalGraph(
       HashMap(1 -> List(1, 2), 2 -> List.empty),
-      HashMap(1 -> HashSet(1), 2 -> HashSet(2)),
+      HashMap.empty[Int, HashSet[Int]],
       HashMap(1 -> List(2), 2 -> List.empty)
     )
     assert(result == expected)
@@ -68,8 +68,6 @@ class TestAcyclicalGraph extends AnyFunSuite {
       HashMap.from(nontrivialGraph1),
       HashMap(
         1 -> HashSet(4, 1),
-        2 -> HashSet(2),
-        3 -> HashSet(3),
         4 -> HashSet(4, 1)
       ),
       HashMap(
@@ -94,7 +92,6 @@ class TestAcyclicalGraph extends AnyFunSuite {
         5 -> HashSet(1, 2, 5),
         6 -> HashSet(6, 7),
         7 -> HashSet(6, 7),
-        8 -> HashSet(8),
       ),
       HashMap(
         1 -> List(6, 7, 3, 4),
@@ -137,13 +134,7 @@ class TestAcyclicalGraph extends AnyFunSuite {
     val result = AcyclicalGraph.scc(graph)
     val expected = AcyclicalGraph(
       HashMap.from(graph),
-      HashMap(
-        "A" -> HashSet("A"),
-        "B" -> HashSet("B"),
-        "C" -> HashSet("C"),
-        "D" -> HashSet("D"),
-        "E" -> HashSet("E")
-      ),
+      HashMap.empty[String, HashSet[String]],
       HashMap(
         "A" -> List("B", "C", "D"),
         "B" -> List("E", "C"),

@@ -166,6 +166,12 @@ object AcyclicalGraph {
         acyclicalGraph = acyclicalGraph + (k -> outgoingWithLambdaStep.toList)
     }
 
+    cycles.foreach {
+      case (x, cycle) if cycle.size == 1 && cycle.contains(x) =>
+        cycles = cycles - x
+      case _ => ()
+    }
+
     AcyclicalGraph(hashGraph, cycles, acyclicalGraph)
   }
 }
