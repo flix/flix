@@ -1061,7 +1061,7 @@ object Resolver {
 
     case NamedAst.Expr.ExtMatch(exp, rules, loc) =>
       val eVal = resolveExp(exp, scp0)
-      val rsVal = rules.map(resolveExtMatchRule(_, scp0))
+      val rsVal = traverse(rules)(resolveExtMatchRule(_, scp0))
       mapN(eVal, rsVal) {
         case (e, rs) =>
           ResolvedAst.Expr.ExtMatch(e, rs, loc)
@@ -2199,16 +2199,15 @@ object Resolver {
   }
 
   private def resolveExtMatchRule(rule0: NamedAst.ExtMatchRule, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.ExtMatchRule, ResolutionError] = rule0 match {
-    case NamedAst.ExtMatchRule(qname, pats, exp, loc) =>
-      val name = ???
+    case NamedAst.ExtMatchRule(label, pats, exp, loc) =>
       val ps = pats.map(resolveExtPattern)
-      val scp = scp0 ++ ps.foldLeft(LocalScope.empty) {
+      val scp = ps.foldLeft(scp0) {
         case (acc, ResolvedAst.ExtPattern.Var(sym, _)) => acc ++ mkVarScp(sym)
         case (acc, _) => acc
       }
-      val eVal = resolveExp(exp, scp0)
+      val eVal = resolveExp(exp, scp)
       mapN(eVal) {
-        case e => ResolvedAst.ExtMatchRule(qname, ps, e, loc)
+        case e => ResolvedAst.ExtMatchRule(label, ps, e, loc)
       }
   }
 

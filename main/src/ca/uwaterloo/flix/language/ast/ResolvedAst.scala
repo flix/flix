@@ -353,7 +353,7 @@ object ResolvedAst {
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
-  case class ExtMatchRule(symUse: CaseSymUse, pats: List[Pattern], exp: Expr, loc: SourceLocation)
+  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr, loc: SourceLocation)
 
