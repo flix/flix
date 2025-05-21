@@ -40,7 +40,11 @@ object Priority {
 
   case object High extends Priority
 
-  case object Default extends Priority
+  case object AboveMedium extends Priority
+
+  case object Medium extends Priority
+
+  case object BelowMedium extends Priority
 
   case object Low extends Priority
 
@@ -63,9 +67,12 @@ object Priority {
     case Priority.Highest => s"1$label"
     case Priority.Higher => s"2$label"
     case Priority.High => s"3$label"
-    case Priority.Default => s"4$label"
-    case Priority.Low => s"5$label"
-    case Priority.Lower => s"6$label"
-    case Priority.Lowest => s"7$label"
+    case Priority.AboveMedium => s"4$label"
+    case Priority.Medium => s"5$label"
+    case Priority.BelowMedium => s"6$label"
+    case Priority.Low => s"7$label"
+    case Priority.Lower => s"8$label"
+    case Priority.Lowest => s"9$label"
   }
+
 }
