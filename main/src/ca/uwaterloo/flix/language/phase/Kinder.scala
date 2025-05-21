@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Kind.WildCaseSet
+import ca.uwaterloo.flix.language.ast.KindedAst.ExtPattern
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, DefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -463,7 +464,22 @@ object Kinder {
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val e = visitExp(exp, kenv0, taenv, root)
       val rs = rules.map(visitExtMatchRule(_, kenv0, taenv, root))
-      KindedAst.Expr.ExtMatch(e, rs, tvar, loc)
+      // Unsafely desugar
+      val List(r1, r2) = rs
+      val label = r1.label
+      val exp1 = r1.exp
+      val sym1 = r1.pats.head match {
+        case ExtPattern.Wild(_, loc1) => Symbol.freshVarSym("wildExtPattern", BoundBy.Pattern, loc1)
+        case ExtPattern.Var(sym, _, _) => sym
+        case ExtPattern.Error(_, _) => ??? // crash
+      }
+      val exp2 = r2.exp
+      val sym2 = r2.pats.head match {
+        case ExtPattern.Wild(_, loc1) => Symbol.freshVarSym("wildExtPattern", BoundBy.Pattern, loc1)
+        case ExtPattern.Var(sym, _, _) => sym
+        case ExtPattern.Error(_, _) => ??? // crash
+      }
+      KindedAst.Expr.ExtMatch(label, e, sym1, exp1, sym2, exp2, tvar, loc)
 
     case ResolvedAst.Expr.Tag(symUse, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, root))
