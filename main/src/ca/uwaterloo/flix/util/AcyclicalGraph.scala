@@ -66,9 +66,7 @@ object AcyclicalGraph {
         // `u` is a leaf vertex
         seen.put(u, 0)
       } else {
-        val max = seen.filter { case (v, _) => outgoingEdges.contains(v) }
-          .map { case (_, layer) => layer }
-          .max
+        val max = outgoingEdges.map(seen.apply).max
         seen.put(u, max + 1)
       }
     }
