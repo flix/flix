@@ -140,7 +140,7 @@ class TestCompletionProvider extends AnyFunSuite {
     forAll(Programs) { prg =>
       val root = compileWithSuccess(prg)
       forAll(allPositions(prg)) { pos =>
-        autoComplete(pos, root).length >= 0
+        Assert.cond(autoComplete(pos, root).length >= 0)
       }
     }
   }
@@ -176,21 +176,20 @@ class TestCompletionProvider extends AnyFunSuite {
     })
   }
 
-  test("No completions inside comment") {
-    Programs.foreach(program => {
-      val (root, errors) = compile(program)
-      val source = mkSource(program)
-      // Find all the literal tokens that are on a single line
+  // TODO: Have to account for different types of comments.
+  test("NoCompletions.InComment") {
+    Programs.foreach(prg => {
+      val root = compileWithSuccess(prg)
+      val source = mkSource(prg)
       val commentTokens = root.tokens(source).toList.filter(_.kind.isComment)
-      commentTokens.foreach { token =>
-        // We will test all possible offsets in the keyword, including the start and end of the keyword
-        rangeOfInclusive(token).foreach { pos =>
-          val completions = CompletionProvider.getCompletions(Uri, pos, errors)(root, Flix)
-          Assert.isEmpty(completions, token.mkSourceLocation(), pos)
+      commentTokens.foreach { tok =>
+        forAll(rangeOfExclusive(tok)) { pos =>
+          Assert.isEmpty(autoComplete(pos, root), pos)
         }
       }
     })
   }
+
 
   test("No completions when defining the name for defs") {
     Programs.foreach(program => {
@@ -327,8 +326,22 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private def autoComplete(pos: Position, root: Root): List[Completion] = CompletionProvider.getCompletions(Uri, pos, Nil)(root, Flix)
 
-  // TODO: What should f return? Maybe Assertion = True | Cond? | Failed?
-  def forAll[A, B](l: List[A])(f: A => B): Unit = l.foreach(f)
+  // TODO: DOC
+  def forAll[A](l: List[A])(f: A => Assert): Assert = {
+    for (x <- l) {
+      f(x) match {
+        case Assert.Ok =>
+        case Assert.Fail => return Assert.Fail
+      }
+    }
+    Assert.Ok
+  }
+
+  /**
+    * Returns all *comment* tokens in the given program `prg` associated with the given AST `root`.
+    */
+  private def commentsOf(prg: String, root: Root): List[Token] =
+    getTokens(prg, root).filter(_.kind.isComment)
 
   /**
     * Returns all *keyword* tokens in the given program `prg` associated with the given AST `root`.
@@ -343,13 +356,26 @@ class TestCompletionProvider extends AnyFunSuite {
     // TODO: Can we get rid of the need for mkSource?
     root.tokens(mkSource(prg)).toList
 
+  sealed trait Assert
+
   private object Assert {
+
+    case object Ok extends Assert
+
+    case object Fail extends Assert
+
+    /**
+      * Returns `Assert.Ok` if `c` is `true`. Returns `Assert.Fail` otherwise.
+      */
+    def cond(c: Boolean): Assert = if (c) Ok else Fail
 
     /**
       * Asserts that the given list of completion `l` for position `pos` is empty.
       */
-    def isEmpty(l: List[Completion], pos: Position): Unit = {
-      if (l.nonEmpty) {
+    def isEmpty(l: List[Completion], pos: Position): Assert = {
+      if (l.isEmpty) {
+        Assert.Ok
+      } else {
         println(s"Found completions: ${l.map(_.toCompletionItem(Flix)).map(_.label)}")
         fail(s"Expected no completions at position $pos, but found ${l.length} completions.")
       }
