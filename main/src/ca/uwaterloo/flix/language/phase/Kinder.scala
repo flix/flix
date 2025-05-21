@@ -461,7 +461,9 @@ object Kinder {
 
     case ResolvedAst.Expr.ExtMatch(exp, rules, loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      ???
+      val e = visitExp(exp, kenv0, taenv, root)
+      val rs = rules.map(visitExtMatchRule(_, kenv0, taenv, root))
+      KindedAst.Expr.ExtMatch(e, rs, tvar, loc)
 
     case ResolvedAst.Expr.Tag(symUse, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, root))
@@ -791,6 +793,16 @@ object Kinder {
   }
 
   /**
+    * Performs kinding on the given ext match rule under the given kind environment.
+    */
+  private def visitExtMatchRule(rule0: ResolvedAst.ExtMatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.ExtMatchRule = rule0 match {
+    case ResolvedAst.ExtMatchRule(label, pats0, exp0, loc) =>
+      val pats = pats0.map(visitExtPattern)
+      val exp = visitExp(exp0, kenv, taenv, root)
+      KindedAst.ExtMatchRule(label, pats, exp, loc)
+  }
+
+  /**
     * Performs kinding on the given match rule under the given kind environment.
     */
   private def visitTypeMatchRule(rule0: ResolvedAst.TypeMatchRule, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.TypeMatchRule = rule0 match {
@@ -878,6 +890,23 @@ object Kinder {
     case ResolvedAst.Pattern.Error(loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       KindedAst.Pattern.Error(tvar, loc)
+  }
+
+  /**
+    * Performs kinding on the given ext pattern under the given kind environment.
+    */
+  private def visitExtPattern(pat0: ResolvedAst.ExtPattern)(implicit scope: Scope, flix: Flix): KindedAst.ExtPattern = pat0 match {
+    case ResolvedAst.ExtPattern.Wild(loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.ExtPattern.Wild(tvar, loc)
+
+    case ResolvedAst.ExtPattern.Var(sym, loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.ExtPattern.Var(sym, tvar, loc)
+
+    case ResolvedAst.ExtPattern.Error(loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.ExtPattern.Error(tvar, loc)
   }
 
   /**
