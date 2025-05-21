@@ -1585,7 +1585,7 @@ object Weeder2 {
 
         // Fall back on Expr.Error. Parser has reported an error here.
         case ((label, _), _) =>
-          val error = Malformed(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          val error = Malformed(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
           sctx.errors.add(error)
           Validation.Failure(error) // Hard failure to prevent crash when desugaring in Kinder
         // Validation.Success(ExtMatchRule(label, List(ExtPattern.Error(tree.loc)), Expr.Error(error), tree.loc))
