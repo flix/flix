@@ -149,13 +149,12 @@ class TestCompletionProvider extends AnyFunSuite {
   // No Completions                                                          //
   /////////////////////////////////////////////////////////////////////////////
 
-  test("No completions after complete keyword") {
+  test("NoCompletions.OnKeyword") {
     forAll(Programs) { prg =>
       val root = compileWithSuccess(prg)
       forAll(keywordsOf(prg, root)) { tok =>
         forAll(allPositionsOnToken(tok)) { pos =>
-          // TODO: Custom assert
-          assertEmpty(autoComplete(pos, root), tok.mkSourceLocation(), pos)
+          Assert.isEmpty(autoComplete(pos, root), pos)
         }
       }
     }
@@ -171,7 +170,7 @@ class TestCompletionProvider extends AnyFunSuite {
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         allPositionsOnToken(token).foreach { pos =>
           val completions = CompletionProvider.getCompletions(Uri, pos, errors)(root, Flix)
-          assertEmpty(completions, token.mkSourceLocation(), pos)
+          Assert.isEmpty(completions, token.mkSourceLocation(), pos)
         }
       }
     })
@@ -187,7 +186,7 @@ class TestCompletionProvider extends AnyFunSuite {
         // We will test all possible offsets in the keyword, including the start and end of the keyword
         allPositionsOnToken(token).foreach { pos =>
           val completions = CompletionProvider.getCompletions(Uri, pos, errors)(root, Flix)
-          assertEmpty(completions, token.mkSourceLocation(), pos)
+          Assert.isEmpty(completions, token.mkSourceLocation(), pos)
         }
       }
     })
@@ -199,7 +198,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val allNameDefLocs = root.defs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach { loc =>
         val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        assertEmpty(completions, loc, Position.from(loc.sp2))
+        Assert.isEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
@@ -210,7 +209,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val allNameDefLocs = root.enums.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach { loc =>
         val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        assertEmpty(completions, loc, Position.from(loc.sp2))
+        Assert.isEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
@@ -221,7 +220,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val allNameDefLocs = root.sigs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach { loc =>
         val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        assertEmpty(completions, loc, Position.from(loc.sp2))
+        Assert.isEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
@@ -232,7 +231,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val allNameDefLocs = root.traits.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach { loc =>
         val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        assertEmpty(completions, loc, Position.from(loc.sp2))
+        Assert.isEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
@@ -243,7 +242,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val allNameDefLocs = root.effects.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach { loc =>
         val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        assertEmpty(completions, loc, Position.from(loc.sp2))
+        Assert.isEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
@@ -254,7 +253,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val allNameDefLocs = root.structs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach { loc =>
         val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        assertEmpty(completions, loc, Position.from(loc.sp2))
+        Assert.isEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
@@ -265,7 +264,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val allNameDefLocs = root.typeAliases.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach { loc =>
         val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        assertEmpty(completions, loc, Position.from(loc.sp2))
+        Assert.isEmpty(completions, loc, Position.from(loc.sp2))
       }
     })
   }
@@ -344,16 +343,32 @@ class TestCompletionProvider extends AnyFunSuite {
     // TODO: Can we get rid of the need for mkSource?
     root.tokens(mkSource(prg)).toList
 
-  /**
-    * Asserts that the given completion list is empty at the given position.
-    */
-  private def assertEmpty(completions: List[Completion], sourceLocation: SourceLocation, pos: Position): Unit = {
-    if (completions.nonEmpty) {
-      println(code(sourceLocation, s"Unexpected completions at $pos"))
-      println(s"Found completions: ${completions.map(_.toCompletionItem(Flix)).map(_.label)}")
-      fail(s"Expected no completions at position $pos, but found ${completions.length} completions.")
+  private object Assert {
+
+    /**
+      * Asserts that the given list of completion `l` for position `pos` is empty.
+      */
+    def isEmpty(l: List[Completion], pos: Position): Unit = {
+      if (l.nonEmpty) {
+        println(s"Found completions: ${l.map(_.toCompletionItem(Flix)).map(_.label)}")
+        fail(s"Expected no completions at position $pos, but found ${l.length} completions.")
+      }
     }
+
+    /**
+      * Asserts that the given completion list is empty at the given position.
+      */
+    // TODO: Deprecated
+    def isEmpty(completions: List[Completion], sourceLocation: SourceLocation, pos: Position): Unit = {
+      if (completions.nonEmpty) {
+        println(code(sourceLocation, s"Unexpected completions at $pos"))
+        println(s"Found completions: ${completions.map(_.toCompletionItem(Flix)).map(_.label)}")
+        fail(s"Expected no completions at position $pos, but found ${completions.length} completions.")
+      }
+    }
+
   }
+
 
   /**
     * Asserts that there are no duplicated completions in the given completion list.
