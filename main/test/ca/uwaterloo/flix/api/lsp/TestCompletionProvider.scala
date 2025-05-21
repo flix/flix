@@ -153,7 +153,7 @@ class TestCompletionProvider extends AnyFunSuite {
     forAll(Programs) { prg =>
       val root = compileWithSuccess(prg)
       forAll(keywordsOf(prg, root)) { tok =>
-        forAll(allPositionsOnToken(tok)) { pos =>
+        forAll(rangeOfInclusive(tok)) { pos =>
           Assert.isEmpty(autoComplete(pos, root), pos)
         }
       }
@@ -168,7 +168,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val literalTokens = root.tokens(source).toList.filter(_.kind.isLiteral)
       literalTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
-        allPositionsOnToken(token).foreach { pos =>
+        rangeOfInclusive(token).foreach { pos =>
           val completions = CompletionProvider.getCompletions(Uri, pos, errors)(root, Flix)
           Assert.isEmpty(completions, token.mkSourceLocation(), pos)
         }
@@ -184,7 +184,7 @@ class TestCompletionProvider extends AnyFunSuite {
       val commentTokens = root.tokens(source).toList.filter(_.kind.isComment)
       commentTokens.foreach { token =>
         // We will test all possible offsets in the keyword, including the start and end of the keyword
-        allPositionsOnToken(token).foreach { pos =>
+        rangeOfInclusive(token).foreach { pos =>
           val completions = CompletionProvider.getCompletions(Uri, pos, errors)(root, Flix)
           Assert.isEmpty(completions, token.mkSourceLocation(), pos)
         }
@@ -519,29 +519,39 @@ class TestCompletionProvider extends AnyFunSuite {
 
   /**
     * Returns all positions within a token, i.e., excluding the position where the token ends.
-    */
-  private def allPositionInToken(token: Token): List[Position] = allPositionsOnToken(token).init
-
-  /**
-    * Returns all positions on a token, i.e., including the position where the token ends.
     *
-    * For example, give a token "def", we will return a list of positions:
+    * For example, given the token `def`, we return the positions corresponding to:
     *
     * - |def
     * - d|ef
     * - de|f
-    * - def|
     *
-    * If the token spans multiple lines, we will return all the positions in all the lines, both sides inclusive.
+    * If the token spans multiple lines, we will return all the positions on all the lines.
     */
-  private def allPositionsOnToken(token: Token): List[Position] = {
-    val initialLine = token.sp1.lineOneIndexed
-    val initialCol = token.sp1.colOneIndexed.toInt
+  private def rangeOfExclusive(tok: Token): List[Position] = rangeOfInclusive(tok).init
 
-    token.text
-      .scanLeft((initialLine, initialCol)) { case ((line, col), char) =>
-        if (char == '\n') (line + 1, 1)
-        else (line, col + 1)
+  /**
+    * Returns all positions on a token, i.e., including the position where the token ends.
+    *
+    * For example, given the token `def`, we return the positions corresponding to:
+    *
+    * - |def
+    * - d|ef
+    * - de|f
+    *
+    * If the token spans multiple lines, we will return all the positions on all the lines.
+    */
+  private def rangeOfInclusive(tok: Token): List[Position] = {
+    val initLine = tok.sp1.lineOneIndexed
+    val initCol = tok.sp1.colOneIndexed.toInt
+
+    tok.text
+      .scanLeft((initLine, initCol)) {
+        case ((line, col), char) =>
+          if (char == '\n')
+            (line + 1, 1)
+          else
+            (line, col + 1)
       }
       .map { case (line, col) => Position(line, col) }
       .toList
