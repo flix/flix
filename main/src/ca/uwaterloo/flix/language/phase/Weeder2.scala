@@ -1564,7 +1564,14 @@ object Weeder2 {
           val error = NeedAtleastOne(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
           // Fall back on Expr.Error. Parser has reported an error here.
           Validation.Success(Expr.Error(error))
-        case (expr, rules) => Validation.Success(Expr.ExtMatch(expr, rules, tree.loc))
+
+        case (expr, rules) if rules.length == 2 => // Check for exactly 2 to prevent crash when desugaring in Kinder
+          Validation.Success(Expr.ExtMatch(expr, rules, tree.loc))
+
+        case (expr, rules) =>
+          val error = Malformed(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
+          sctx.errors.add(error)
+          Validation.Success(Expr.Error(error))
       }
     }
 
@@ -1573,13 +1580,15 @@ object Weeder2 {
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
       flatMapN(Patterns.pickExtPattern(tree), traverse(exprs)(visitExpr)) {
         // case pattern => expr
-        case ((label, pats), expr :: Nil) =>
-          Validation.Success(ExtMatchRule(label, pats, expr, tree.loc))
+        case ((label, List(ExtPattern.Var(ident, loc))), expr :: Nil) =>
+          Validation.Success(ExtMatchRule(label, List(ExtPattern.Var(ident, loc)), expr, tree.loc))
 
         // Fall back on Expr.Error. Parser has reported an error here.
         case ((label, _), _) =>
           val error = Malformed(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
-          Validation.Success(ExtMatchRule(label, List(ExtPattern.Error(tree.loc)), Expr.Error(error), tree.loc))
+          sctx.errors.add(error)
+          Validation.Failure(error) // Hard failure to prevent crash when desugaring in Kinder
+        // Validation.Success(ExtMatchRule(label, List(ExtPattern.Error(tree.loc)), Expr.Error(error), tree.loc))
       }
     }
 
