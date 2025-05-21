@@ -16,20 +16,19 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.util.CyclicalGraph.Vertex
+import ca.uwaterloo.flix.util.AcyclicalGraph.Vertex
 import ca.uwaterloo.flix.util.Graph.TopologicalSort
 
 import scala.collection.mutable
 
 /**
-  * Represents a graph that may contain cycles.
+  * Represents a graph that may contain strongly connected components.
   *
   * @param vertices the set of vertices and edges that form the graph.
   */
-case class CyclicalGraph[T](vertices: Set[Vertex[T]])
+case class AcyclicalGraph[T](vertices: Set[Vertex[T]])
 
-object CyclicalGraph {
+object AcyclicalGraph {
 
   sealed trait Vertex[T] {
 
@@ -63,16 +62,16 @@ object CyclicalGraph {
     */
   case class SCC[T](cycle: Set[Singleton[T]]) extends Vertex[T]
 
-  def from[T](graph: Map[T, List[T]]): CyclicalGraph[T] = {
+  def from[T](graph: Map[T, List[T]]): AcyclicalGraph[T] = {
     val vertices: Set[Vertex[T]] = graph.map { case (k, vs) => Singleton(k, vs.toSet) }.toSet
-    CyclicalGraph(vertices)
+    AcyclicalGraph(vertices)
   }
 
-  def scc[T](graph: CyclicalGraph[T]): CyclicalGraph[T] = {
+  def scc[T](graph: AcyclicalGraph[T]): AcyclicalGraph[T] = {
     scc(toMap(graph))
   }
 
-  def toMap[T](graph: CyclicalGraph[T]): Map[T, List[T]] = {
+  def toMap[T](graph: AcyclicalGraph[T]): Map[T, List[T]] = {
     graph.vertices.flatMap {
       case Singleton(value, edges) => Map(value -> edges.toList)
       case SCC(cycle) => cycle.map(v => v.value -> v.edges.toList)
@@ -97,7 +96,7 @@ object CyclicalGraph {
     }.toMap
   }
 
-  def topologicalSort[T](graph: CyclicalGraph[T]): List[Vertex[T]] = {
+  def topologicalSort[T](graph: AcyclicalGraph[T]): List[Vertex[T]] = {
     val topSort = Graph.topologicalSort(graph.vertices, (v0: Vertex[T]) => v0.outgoing.flatMap(v => graph.vertices.filter {
       case Singleton(u, _) => v == u
       case SCC(cycle) => cycle.exists(_.value == v)
@@ -139,9 +138,9 @@ object CyclicalGraph {
     result.map(_.toList).toList
   }
 
-  private def scc[T](graph: Map[T, List[T]]): CyclicalGraph[T] = {
+  private def scc[T](graph: Map[T, List[T]]): AcyclicalGraph[T] = {
     if (graph.isEmpty) {
-      return CyclicalGraph(Set.empty)
+      return AcyclicalGraph(Set.empty)
     }
 
     val inverted = invert(graph)
@@ -203,7 +202,7 @@ object CyclicalGraph {
       case u => Singleton(u, graph(u).toSet)
     }
 
-    CyclicalGraph(result.map {
+    AcyclicalGraph(result.map {
       case value :: Nil => Singleton(value, graph(value).toSet)
       case l => SCC(l.reverse.map(value => Singleton(value, graph(value).toSet)).toSet)
     }.toSet ++ diff)

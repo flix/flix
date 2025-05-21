@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.util
 import org.scalatest.Suites
 
 class UtilSuite extends Suites(
-  new TestCyclicalGraph,
+  new TestAcyclicalGraph,
   new TestGraph,
   new TestListMap,
   new TestNel,
