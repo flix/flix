@@ -3092,7 +3092,6 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
       nameUnqualified(NAME_TAG)
-      expect(TokenKind.Caret)
       if (at(TokenKind.ParenL)) {
         tuplePat()
       }
