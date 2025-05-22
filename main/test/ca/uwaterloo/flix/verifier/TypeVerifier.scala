@@ -373,12 +373,12 @@ object TypeVerifier {
 
 
         case AtomicOp.ExtensibleTag(label) =>
-          val List(t1) = ts // Tags only have one operand for now
-          tpe match {
-            case MonoType.ExtensibleExtend(cons, List(t2), _) if cons.name == label.name =>
-              checkEq(t1, t2, loc)
+          getExtensibleTagType(tpe, label.name, loc) match {
+            case Some(ts2) if ts.length == ts2.length =>
+              ts.zip(ts2).map { case (t1, t2) => checkEq(t1, t2, loc) }
               tpe
-            case _ => failMismatchedShape(t1, label.name, loc)
+            case _ =>
+              failMismatchedShape(tpe, label.name, loc)
           }
 
         case AtomicOp.ExtensibleUntag(label, idx) =>
@@ -685,6 +685,21 @@ object TypeVerifier {
         (MonoType.RecordExtend(lbl, valtype, rec), opt)
       }
     case _ => failMismatchedShape(rec, "Record", loc)
+  }
+
+  /**
+    * Remove the type associated with `label` from the given extensible tag type `tag`.
+    * If `tag` is not [[MonoType.ExtensibleExtend]], it returns `None`.
+    */
+  private def getExtensibleTagType(tag: MonoType, label: String, loc: SourceLocation): Option[List[MonoType]] = tag match {
+    case MonoType.ExtensibleEmpty => None
+    case MonoType.ExtensibleExtend(cons, tpes, rest) =>
+      if (label == cons.name)
+        Some(tpes)
+      else {
+        getExtensibleTagType(rest, label, loc)
+      }
+    case _ => failMismatchedShape(tag, s"ExtensibleExtend($label)", loc)
   }
 
   /**
