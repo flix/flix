@@ -52,6 +52,8 @@ class TestGraph extends AnyFunSuite {
       2 -> List(1)
     )
     val result = Graph.topologicalSort(graph.keys, graph.apply)
+    // expected:
+    //     1 <- 2
     val expected = Graph.TopologicalSort.Sorted(List(1, 2))
 
     assert(result == expected)
@@ -64,6 +66,8 @@ class TestGraph extends AnyFunSuite {
       3 -> List(2)
     )
     val result = Graph.topologicalSort(graph.keys, graph.apply)
+    // expected:
+    //     1 <- 2 <- 3
     val expected = Graph.TopologicalSort.Sorted(List(1, 2, 3))
 
     assert(result == expected)
@@ -76,6 +80,9 @@ class TestGraph extends AnyFunSuite {
       3 -> List(1)
     )
     val result = Graph.topologicalSort(graph.keys, graph.apply)
+    // expected:
+    //     1 <- 2
+    //     1 <- 3
     val expected = Graph.TopologicalSort.Sorted(List(1, 2, 3))
 
     assert(result == expected)
