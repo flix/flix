@@ -363,11 +363,22 @@ object TypeVerifier {
             case None => failMismatchedShape(t1, s"Record with '${label.name}'", loc)
           }
 
-        case AtomicOp.ExtensibleIs(label) => ??? // TODO: Ext-Variants
+        case AtomicOp.ExtensibleIs(label) =>
+          val List(t1) = ts
+          t1 match {
+            case MonoType.ExtensibleExtend(cons, _, _) if cons.name == label.name => ()
+            case _ => failMismatchedShape(t1, label.name, loc)
+          }
+          check(expected = MonoType.Bool)(actual = tpe, loc)
+
 
         case AtomicOp.ExtensibleTag(label) => ??? // TODO: Ext-Variants
 
-        case AtomicOp.ExtensibleUntag(label, idx) => ??? // TODO: Ext-Variants
+        case AtomicOp.ExtensibleUntag(label, idx) =>
+          val List(t1) = ts
+          val termTypes = MonoType.findExtensibleTermTypes(label, t1)
+          check(expected = termTypes(idx))(actual = tpe, loc)
+
 
         case AtomicOp.Closure(sym) =>
           val defn = root.defs(sym)
