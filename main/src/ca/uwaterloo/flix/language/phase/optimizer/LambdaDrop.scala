@@ -388,7 +388,7 @@ object LambdaDrop {
     *
     * See [[LambdaDrop]] for an example.
     *
-    * @param exp0 The body of the local def to be created.
+    * @param exp0   The body of the local def to be created.
     * @param sym    The symbol of the local def to be created.
     * @param subst  The variable substitution.
     * @param params The list of formal parameters and their [[ParamKind]].
