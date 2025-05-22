@@ -32,21 +32,12 @@ sealed trait Completion {
     */
   def toCompletionItem(implicit flix: Flix): CompletionItem = this match {
 
-    case Completion.KeywordCompletion(name, range, priority) =>
+    case Completion.KeywordCompletion(name, range, priority, withSpace) =>
       CompletionItem(
         label    = name,
         sortText = Priority.toSortText(priority, name),
-        textEdit = TextEdit(range, s"$name "),
+        textEdit = TextEdit(range, if (withSpace) name + " " else name),
         kind     = CompletionItemKind.Keyword
-      )
-
-    case Completion.KeywordLiteralCompletion(name, range, priority) =>
-      CompletionItem(
-        label            = name,
-        sortText         = Priority.toSortText(priority, name),
-        textEdit         = TextEdit(range, name),
-        insertTextFormat = InsertTextFormat.PlainText,
-        kind             = CompletionItemKind.Keyword
       )
 
     case Completion.KindCompletion(kind, range) =>
@@ -541,32 +532,10 @@ object Completion {
     *
     * @param name      the name of the keyword.
     * @param range     the range of the completion.
-    * @param priority  the completion priority of the keyword.
+    * @param priority  the priority of the completion.
+    * @param withSpace whether the completion should be followed by a space.
     */
-  case class KeywordCompletion(name: String, range: Range, priority: Priority) extends Completion
-
-  /**
-    * Represents a keyword literal completion (i.e. `true`).
-    *
-    * The reason we differentiate bewteen normal keywords and these literals
-    * is because completions for the former should include a trailing space
-    * whereas completions for the latter we might not want one.
-    *
-    * To illustrate this consider the two following correct completions (where ˽ denotes a space)
-    *
-    * `de`      --->    `def˽`
-    * `f(fal)`  --->    `f(false)`
-    *
-    * After the keyword `def` we *always* want a space but if we were
-    * to add a trailing space after `false` we would get the unnatural completion
-    *
-    * `f(fal)`  --->    `f(false˽)`
-    *
-    * @param literal   the literal keyword text.
-    * @param range     the range of the completion.
-    * @param priority  the priority of the keyword.
-    */
-  case class KeywordLiteralCompletion(literal: String, range: Range, priority: Priority) extends Completion
+  case class KeywordCompletion(name: String, range: Range, priority: Priority, withSpace: Boolean = true) extends Completion
 
   /**
     * Represents a completion for a kind.
