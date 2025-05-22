@@ -256,19 +256,6 @@ object KindedAst {
     }
   }
 
-  sealed trait ExtPattern {
-    def loc: SourceLocation
-  }
-
-  object ExtPattern {
-
-    case class Wild(tvar: Type.Var, loc: SourceLocation) extends ExtPattern
-
-    case class Var(sym: Symbol.VarSym, tvar: Type.Var, loc: SourceLocation) extends ExtPattern
-
-    case class Error(tvar: Type.Var, loc: SourceLocation) extends ExtPattern
-  }
-
   sealed trait RestrictableChoosePattern {
     def loc: SourceLocation
   }
@@ -285,6 +272,19 @@ object KindedAst {
 
     case class Error(tvar: Type.Var, loc: SourceLocation) extends VarOrWild with RestrictableChoosePattern
 
+  }
+
+  sealed trait ExtPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtPattern {
+
+    case class Wild(tvar: Type.Var, loc: SourceLocation) extends ExtPattern
+
+    case class Var(sym: Symbol.VarSym, tvar: Type.Var, loc: SourceLocation) extends ExtPattern
+
+    case class Error(tvar: Type.Var, loc: SourceLocation) extends ExtPattern
   }
 
   sealed trait Predicate
