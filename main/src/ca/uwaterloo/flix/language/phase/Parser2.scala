@@ -2097,9 +2097,6 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordCase)
       Pattern.extPattern()
-      if (eat(TokenKind.KeywordIf)) {
-        expression()
-      }
       if (eat(TokenKind.Equal)) {
         val error = UnexpectedToken(
           NamedTokenSet.FromKinds(Set(TokenKind.ArrowThickR)),
