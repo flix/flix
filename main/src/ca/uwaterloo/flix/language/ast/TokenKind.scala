@@ -77,6 +77,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordDiscard => "'discard'"
       case TokenKind.KeywordEff => "'eff'"
       case TokenKind.KeywordElse => "'else'"
+      case TokenKind.KeywordEMatch => "'ematch'"
       case TokenKind.KeywordEnum => "'enum'"
       case TokenKind.KeywordFalse => "'false'"
       case TokenKind.KeywordFix => "'fix'"
@@ -143,7 +144,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordWithout => "'without'"
       case TokenKind.KeywordYield => "'yield'"
       case TokenKind.KeywordXor => "'xor'"
-      case TokenKind.KeywordXmatch => "'xmatch'"
       case TokenKind.KeywordXvar => "'xvar'"
       case TokenKind.ListHash => "'List#'"
       case TokenKind.MapHash => "'Map#'"
@@ -233,6 +233,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordDiscard => true
     case TokenKind.KeywordEff => true
     case TokenKind.KeywordElse => true
+    case TokenKind.KeywordEMatch => true
     case TokenKind.KeywordEnum => true
     case TokenKind.KeywordFalse => true
     case TokenKind.KeywordFix => true
@@ -296,7 +297,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordWithout => true
     case TokenKind.KeywordYield => true
     case TokenKind.KeywordXor => true
-    case TokenKind.KeywordXmatch => true
     case TokenKind.KeywordXvar => true
     case TokenKind.Ampersand
          | TokenKind.AngleL
@@ -493,6 +493,7 @@ sealed trait TokenKind {
          | TokenKind.KeywordDebugBangBang
          | TokenKind.KeywordDef
          | TokenKind.KeywordDiscard
+         | TokenKind.KeywordEMatch
          | TokenKind.KeywordFalse
          | TokenKind.KeywordForA
          | TokenKind.KeywordForM
@@ -525,7 +526,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordUnsafe
          | TokenKind.KeywordUnsafely
          | TokenKind.KeywordUse
-         | TokenKind.KeywordXmatch
          | TokenKind.KeywordXvar
          | TokenKind.ListHash
          | TokenKind.LiteralBigDecimal
@@ -931,6 +931,8 @@ object TokenKind {
 
   case object KeywordElse extends TokenKind
 
+  case object KeywordEMatch extends TokenKind
+
   case object KeywordEnum extends TokenKind
 
   case object KeywordFalse extends TokenKind
@@ -1062,8 +1064,6 @@ object TokenKind {
   case object KeywordYield extends TokenKind
 
   case object KeywordXor extends TokenKind
-
-  case object KeywordXmatch extends TokenKind
 
   case object KeywordXvar extends TokenKind
 

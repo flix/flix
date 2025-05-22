@@ -930,6 +930,86 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectTypeParams](result)
   }
 
+  test("IllegalExtPattern.01") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A(1) {
+        |    case 1 => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("IllegalExtPattern.02") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A(1) {
+        |    case A.B(2) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("IllegalExtPattern.03") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A(1) {
+        |    case A((1, 2)) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("IllegalExtPattern.04") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A(1) {
+        |    case A(B(1)) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("IllegalExtPattern.05") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A(1) {
+        |    case A(1) => 1
+        |    case A(1) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("IllegalExtPattern.06") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A(1) {
+        |    case A(1) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("IllegalExtPattern.07") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A(1) {
+        |    case A(1) => 1
+        |    case A(1) => 1
+        |    case A(1) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
   test("IllegalOperationWithOutReturnType.01") {
     val input =
       """

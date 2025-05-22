@@ -1685,8 +1685,8 @@ object Parser2 {
         case TokenKind.KeywordDebug
              | TokenKind.KeywordDebugBang
              | TokenKind.KeywordDebugBangBang => debugExpr()
-        case TokenKind.KeywordXmatch => extensibleMatchExpr()
-        case TokenKind.KeywordXvar => extensibleTagExpr()
+        case TokenKind.KeywordEMatch => extMatchExpr()
+        case TokenKind.KeywordXvar => extTagExpr()
         case t =>
           val mark = open()
           val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), sctx, loc = currentSourceLocation())
@@ -1852,36 +1852,25 @@ object Parser2 {
       }
     }
 
-    private def extensibleMatchExpr()(implicit s: State): Mark.Closed = {
+    private def extMatchExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordXmatch))
+      assert(at(TokenKind.KeywordEMatch))
       val mark = open()
-      expect(TokenKind.KeywordXmatch)
+      expect(TokenKind.KeywordEMatch)
       expression()
-      expect(TokenKind.KeywordWith)
-      nameUnqualified(NAME_TAG)
-
-      expect(TokenKind.CurlyL)
-      val case1 = open()
-      expect(TokenKind.KeywordCase)
-      nameUnqualified(NAME_VARIABLE)
-      expect(TokenKind.ArrowThickR)
-      expression()
-      close(case1, TreeKind.Case)
-
-      val case2 = open()
-      expect(TokenKind.KeywordCase)
-      nameUnqualified(NAME_VARIABLE)
-      expect(TokenKind.ArrowThickR)
-      expression()
-      close(case2, TreeKind.Case)
-
-      expect(TokenKind.CurlyR)
-
-      close(mark, TreeKind.Expr.ExtensibleMatch)
+      oneOrMore(
+        namedTokenSet = NamedTokenSet.ExtMatchRule,
+        checkForItem = _ == TokenKind.KeywordCase,
+        getItem = extMatchRule,
+        breakWhen = _.isRecoverExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        separation = Separation.Optional(TokenKind.Comma)
+      )
+      close(mark, TreeKind.Expr.ExtMatch)
     }
 
-    private def extensibleTagExpr()(implicit s: State): Mark.Closed = {
+    private def extTagExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordXvar))
       val mark = open()
@@ -1891,7 +1880,7 @@ object Parser2 {
       // TODO: Ext-Variants: Limited to one expression.
       expression()
       expect(TokenKind.ParenR)
-      close(mark, TreeKind.Expr.ExtensibleTag)
+      close(mark, TreeKind.Expr.ExtTag)
     }
 
     private def unaryLambdaExpr()(implicit s: State): Mark.Closed = {
@@ -2100,6 +2089,27 @@ object Parser2 {
       }
       statement()
       close(mark, TreeKind.Expr.MatchRuleFragment)
+    }
+
+    private def extMatchRule()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      assert(at(TokenKind.KeywordCase))
+      val mark = open()
+      expect(TokenKind.KeywordCase)
+      Pattern.extPattern()
+      if (eat(TokenKind.Equal)) {
+        val error = UnexpectedToken(
+          NamedTokenSet.FromKinds(Set(TokenKind.ArrowThickR)),
+          actual = Some(TokenKind.Equal),
+          sctx = sctx,
+          hint = Some("match cases use '=>' instead of '='."),
+          loc = previousSourceLocation())
+        closeWithError(open(), error)
+      } else {
+        expect(TokenKind.ArrowThickR)
+      }
+      statement()
+      close(mark, TreeKind.Expr.ExtMatchRuleFragment)
     }
 
     private def typematchExpr()(implicit s: State): Mark.Closed = {
@@ -3039,6 +3049,19 @@ object Parser2 {
       close(mark, TreeKind.Pattern.Pattern)
     }
 
+    def extPattern()(implicit s: State): Mark.Closed = {
+      // If a new pattern is added here then add it to FIRST_PATTERN too.
+      val mark = open()
+      nth(0) match {
+        case TokenKind.NameUpperCase => extTagPat()
+        case t =>
+          val mark = open()
+          val error = UnexpectedToken(expected = NamedTokenSet.Pattern, actual = Some(t), loc = currentSourceLocation())
+          closeWithError(mark, error)
+      }
+      close(mark, TreeKind.Pattern.Pattern)
+    }
+
     private def variablePat()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
@@ -3060,6 +3083,16 @@ object Parser2 {
         tuplePat()
       }
       close(mark, TreeKind.Pattern.Tag)
+    }
+
+    private def extTagPat()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
+      val mark = open()
+      nameUnqualified(NAME_TAG)
+      if (at(TokenKind.ParenL)) {
+        tuplePat()
+      }
+      close(mark, TreeKind.Pattern.ExtTag)
     }
 
     private def tuplePat()(implicit s: State): Mark.Closed = {
