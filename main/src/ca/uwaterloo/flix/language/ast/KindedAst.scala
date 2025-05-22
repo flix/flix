@@ -231,19 +231,6 @@ object KindedAst {
 
   }
 
-  sealed trait ExtPattern {
-    def loc: SourceLocation
-  }
-
-  object ExtPattern {
-
-    case class Wild(tvar: Type.Var, loc: SourceLocation) extends ExtPattern
-
-    case class Var(sym: Symbol.VarSym, tvar: Type.Var, loc: SourceLocation) extends ExtPattern
-
-    case class Error(tvar: Type.Var, loc: SourceLocation) extends ExtPattern
-  }
-
   sealed trait Pattern {
     def loc: SourceLocation
   }
@@ -267,6 +254,19 @@ object KindedAst {
     object Record {
       case class RecordLabelPattern(label: Name.Label, pat: Pattern, tvar: Type.Var, loc: SourceLocation)
     }
+  }
+
+  sealed trait ExtPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtPattern {
+
+    case class Wild(tvar: Type.Var, loc: SourceLocation) extends ExtPattern
+
+    case class Var(sym: Symbol.VarSym, tvar: Type.Var, loc: SourceLocation) extends ExtPattern
+
+    case class Error(tvar: Type.Var, loc: SourceLocation) extends ExtPattern
   }
 
   sealed trait RestrictableChoosePattern {
@@ -335,9 +335,9 @@ object KindedAst {
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
-  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
-
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr, loc: SourceLocation)
+
+  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
 
   case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr, loc: SourceLocation)
 
