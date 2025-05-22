@@ -372,12 +372,12 @@ object TypeVerifier {
           check(expected = MonoType.Bool)(actual = tpe, loc)
 
 
-        case AtomicOp.ExtensibleTag(label) => ??? // TODO: Ext-Variants
+        case AtomicOp.ExtensibleTag(label) => ???
 
         case AtomicOp.ExtensibleUntag(label, idx) =>
           val List(t1) = ts
           val termTypes = MonoType.findExtensibleTermTypes(label, t1)
-          check(expected = termTypes(idx))(actual = tpe, loc)
+          checkEq(termTypes(idx), tpe, loc)
 
 
         case AtomicOp.Closure(sym) =>
@@ -578,7 +578,7 @@ object TypeVerifier {
   }
 
   /**
-    * Asserts that the the given type `expected` is equal to the `actual` type.
+    * Asserts that the given type `expected` is equal to the `actual` type.
     */
   private def check(expected: MonoType)(actual: MonoType, loc: SourceLocation): MonoType = {
     if (expected == actual)
@@ -610,7 +610,7 @@ object TypeVerifier {
   private def checkStructType(tpe: MonoType, sym0: Symbol.StructSym, loc: SourceLocation): Unit = {
     tpe match {
       case MonoType.Struct(sym, _) =>
-        if(sym0 != sym) {
+        if (sym0 != sym) {
           throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
         }
       case _ => failMismatchedShape(tpe, "Struct", loc)
@@ -629,16 +629,16 @@ object TypeVerifier {
       case MonoType.Native(k) if klazz.isAssignableFrom(k) =>
         tpe
 
-      case MonoType.Int8    if klazz == classOf[Byte] => tpe
-      case MonoType.Int16   if klazz == classOf[Short] => tpe
-      case MonoType.Int32   if klazz == classOf[Int] => tpe
-      case MonoType.Int64   if klazz == classOf[Long] => tpe
+      case MonoType.Int8 if klazz == classOf[Byte] => tpe
+      case MonoType.Int16 if klazz == classOf[Short] => tpe
+      case MonoType.Int32 if klazz == classOf[Int] => tpe
+      case MonoType.Int64 if klazz == classOf[Long] => tpe
       case MonoType.Float32 if klazz == classOf[Float] => tpe
       case MonoType.Float64 if klazz == classOf[Double] => tpe
-      case MonoType.Bool    if klazz == classOf[Boolean] => tpe
-      case MonoType.Char    if klazz == classOf[Char] => tpe
-      case MonoType.Unit    if klazz == classOf[Unit] => tpe
-      case MonoType.Null    if !klazz.isPrimitive => tpe
+      case MonoType.Bool if klazz == classOf[Boolean] => tpe
+      case MonoType.Char if klazz == classOf[Char] => tpe
+      case MonoType.Unit if klazz == classOf[Unit] => tpe
+      case MonoType.Null if !klazz.isPrimitive => tpe
 
       case MonoType.String if klazz.isAssignableFrom(classOf[java.lang.String]) => tpe
       case MonoType.BigInt if klazz.isAssignableFrom(classOf[java.math.BigInteger]) => tpe
