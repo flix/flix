@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source, SymUse}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Token, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Token, TokenKind, TypedAst}
 import ca.uwaterloo.flix.language.phase.Lexer
 import ca.uwaterloo.flix.util.Formatter.NoFormatter.code
 import ca.uwaterloo.flix.util.Options
@@ -149,6 +149,30 @@ class TestCompletionProvider extends AnyFunSuite {
   // No Completions                                                          //
   /////////////////////////////////////////////////////////////////////////////
 
+  test("NoCompletions.BlockComments") {
+    // Note: Block comments are exclusive.
+    forAll(Programs)(prg => {
+      val root = compileWithSuccess(prg)
+      forAll(blockCommentsOf(prg, root)) { tok =>
+        forAll(rangeOfExclusive(tok)) { pos =>
+          Assert.isEmpty(autoComplete(pos, root), pos)
+        }
+      }
+    })
+  }
+
+  test("NoCompletions.LineOrDocComments") {
+    // Note: Line or doc comments are inclusive.
+    forAll(Programs)(prg => {
+      val root = compileWithSuccess(prg)
+      forAll(lineOrDocCommentsOf(prg, root)) { tok =>
+        forAll(rangeOfInclusive(tok)) { pos =>
+          Assert.isEmpty(autoComplete(pos, root), pos)
+        }
+      }
+    })
+  }
+
   test("NoCompletions.OnKeyword") {
     forAll(Programs) { prg =>
       val root = compileWithSuccess(prg)
@@ -159,6 +183,7 @@ class TestCompletionProvider extends AnyFunSuite {
       }
     }
   }
+
 
   test("No completions after complete literal") {
     Programs.foreach(program => {
@@ -171,20 +196,6 @@ class TestCompletionProvider extends AnyFunSuite {
         rangeOfInclusive(token).foreach { pos =>
           val completions = CompletionProvider.getCompletions(Uri, pos, errors)(root, Flix)
           Assert.isEmpty(completions, token.mkSourceLocation(), pos)
-        }
-      }
-    })
-  }
-
-  // TODO: Have to account for different types of comments.
-  test("NoCompletions.InComment") {
-    Programs.foreach(prg => {
-      val root = compileWithSuccess(prg)
-      val source = mkSource(prg)
-      val commentTokens = root.tokens(source).toList.filter(_.kind.isComment)
-      commentTokens.foreach { tok =>
-        forAll(rangeOfExclusive(tok)) { pos =>
-          Assert.isEmpty(autoComplete(pos, root), pos)
         }
       }
     })
@@ -338,10 +349,33 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   /**
-    * Returns all *comment* tokens in the given program `prg` associated with the given AST `root`.
+    * Returns all *block comment* tokens in the given program `prg` associated with the given AST `root`.
+    *
+    * That is, comments surrounded by `/* */`.
     */
-  private def commentsOf(prg: String, root: Root): List[Token] =
-    getTokens(prg, root).filter(_.kind.isComment)
+  private def blockCommentsOf(prg: String, root: Root): List[Token] = {
+    def isBlockComment(tok: Token): Boolean = tok.kind match {
+      case TokenKind.CommentBlock => true
+      case _ => false
+    }
+
+    getTokens(prg, root).filter(isBlockComment)
+  }
+
+  /**
+    * Returns all *line comment* and *doc comment* tokens in the given program `prg` associated with the given AST `root`.
+    *
+    * Returns both regular line comments and documentation comments. That is, comments starting with `//` or `///`.
+    */
+  private def lineOrDocCommentsOf(prg: String, root: Root): List[Token] = {
+    def isLineOrDocComment(tok: Token): Boolean = tok.kind match {
+      case TokenKind.CommentLine => true
+      case TokenKind.CommentDoc => true
+      case _ => false
+    }
+
+    getTokens(prg, root).filter(isLineOrDocComment)
+  }
 
   /**
     * Returns all *keyword* tokens in the given program `prg` associated with the given AST `root`.
