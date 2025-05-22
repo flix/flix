@@ -687,9 +687,10 @@ object Weeder2 {
         case "@Test" | "@test" => Test(loc)
         case "@TailRec" => TailRecursive(loc)
         case other =>
-          val error = UndefinedAnnotation(other, loc)
+          val name = other.stripPrefix("@")
+          val error = UndefinedAnnotation(name, loc)
           sctx.errors.add(error)
-          Annotation.Error(other.stripPrefix("@"), loc)
+          Annotation.Error(name, loc)
       }
     }
 

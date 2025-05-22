@@ -46,7 +46,7 @@ object CompletionProvider {
       HoleCompleter.getHoleCompletion(uri, pos).toList
     else
       errorsAt(uri, pos, currentErrors).flatMap {
-        case err: WeederError.UndefinedAnnotation => KeywordCompleter.getModKeywords(Range.from(err.loc))
+        case err: WeederError.UndefinedAnnotation => AnnotationCompleter.getAnnotations(err.name, Range.from(err.loc))
 
         case err: WeederError.UnqualifiedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
 
