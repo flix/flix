@@ -273,19 +273,6 @@ object WeededAst {
 
   }
 
-  sealed trait ExtPattern {
-    def loc: SourceLocation
-  }
-
-  object ExtPattern {
-
-    case class Wild(loc: SourceLocation) extends ExtPattern
-
-    case class Var(ident: Name.Ident, loc: SourceLocation) extends ExtPattern
-
-    case class Error(loc: SourceLocation) extends ExtPattern
-  }
-
   sealed trait RestrictableChoosePattern {
     def loc: SourceLocation
   }
@@ -304,6 +291,18 @@ object WeededAst {
 
   }
 
+  sealed trait ExtPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtPattern {
+
+    case class Wild(loc: SourceLocation) extends ExtPattern
+
+    case class Var(ident: Name.Ident, loc: SourceLocation) extends ExtPattern
+
+    case class Error(loc: SourceLocation) extends ExtPattern
+  }
 
   sealed trait Predicate
 

@@ -258,19 +258,6 @@ object NamedAst {
 
   }
 
-  sealed trait ExtPattern {
-    def loc: SourceLocation
-  }
-
-  object ExtPattern {
-
-    case class Wild(loc: SourceLocation) extends ExtPattern
-
-    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ExtPattern
-
-    case class Error(loc: SourceLocation) extends ExtPattern
-  }
-
   sealed trait RestrictableChoosePattern
 
   object RestrictableChoosePattern {
@@ -285,6 +272,19 @@ object NamedAst {
 
     case class Error(loc: SourceLocation) extends VarOrWild with RestrictableChoosePattern
 
+  }
+
+  sealed trait ExtPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtPattern {
+
+    case class Wild(loc: SourceLocation) extends ExtPattern
+
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ExtPattern
+
+    case class Error(loc: SourceLocation) extends ExtPattern
   }
 
   sealed trait Predicate
