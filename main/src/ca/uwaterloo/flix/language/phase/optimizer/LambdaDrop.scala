@@ -438,7 +438,7 @@ object LambdaDrop {
   private object LocalContext {
 
     /** Returns a fresh [[LocalContext]] */
-    def mk(): LocalContext = new LocalContext(mutable.ArrayBuffer.empty)
+    def mk(): LocalContext = new LocalContext(mutable.ArrayBuffer.empty, ParamKinds())
 
   }
 
@@ -447,7 +447,7 @@ object LambdaDrop {
     *
     * @param recursiveCalls A mutable buffer to collect recursive calls.
     */
-  private case class LocalContext(recursiveCalls: mutable.ArrayBuffer[Expr.ApplyDef])
+  private case class LocalContext(recursiveCalls: mutable.ArrayBuffer[Expr.ApplyDef], paramKinds: ParamKinds)
 
   /**
     * A substitution defined on `vars`.
