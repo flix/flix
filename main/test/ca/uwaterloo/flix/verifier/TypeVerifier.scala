@@ -372,13 +372,19 @@ object TypeVerifier {
           check(expected = MonoType.Bool)(actual = tpe, loc)
 
 
-        case AtomicOp.ExtensibleTag(label) => ???
+        case AtomicOp.ExtensibleTag(label) =>
+          val List(t1) = ts // Tags only have one operand for now
+          tpe match {
+            case MonoType.ExtensibleExtend(cons, List(t2), _) if cons.name == label.name =>
+              checkEq(t1, t2, loc)
+              tpe
+            case _ => failMismatchedShape(t1, label.name, loc)
+          }
 
         case AtomicOp.ExtensibleUntag(label, idx) =>
           val List(t1) = ts
           val termTypes = MonoType.findExtensibleTermTypes(label, t1)
           checkEq(termTypes(idx), tpe, loc)
-
 
         case AtomicOp.Closure(sym) =>
           val defn = root.defs(sym)
