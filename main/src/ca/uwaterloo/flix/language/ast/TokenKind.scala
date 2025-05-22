@@ -233,6 +233,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordDiscard => true
     case TokenKind.KeywordEff => true
     case TokenKind.KeywordElse => true
+    case TokenKind.KeywordEMatch => true
     case TokenKind.KeywordEnum => true
     case TokenKind.KeywordFalse => true
     case TokenKind.KeywordFix => true
@@ -296,7 +297,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordWithout => true
     case TokenKind.KeywordYield => true
     case TokenKind.KeywordXor => true
-    case TokenKind.KeywordEMatch => true
     case TokenKind.KeywordXvar => true
     case TokenKind.Ampersand
          | TokenKind.AngleL
