@@ -27,54 +27,22 @@ mod Test.Exp.ExtMatch {
     def testExtMatch02Int32(): Bool = {
         ematch xvar A(1) {
             case A(x) => x == 1
-            case A(y) => y == 2
+            case B(_) => false
         }
     }
 
     @Test
     def testExtMatch03Int32(): Bool = {
-        ematch xvar A(1) {
-            case A(x) => x == 1
+        ematch xvar B(1) {
+            case B(x) => x == 1
             case B(_) => false
         }
     }
 
     @Test
     def testExtMatch04Int32(): Bool = {
-        ematch xvar A(1) {
-            case A(x) => x == 1
-            case B(y) => y == 2
-        }
-    }
-
-    @Test
-    def testExtMatch05Int32(): Bool = {
-        ematch xvar B(1) {
-            case B(x) => x == 1
-            case B(_) => false
-        }
-    }
-
-    @Test
-    def testExtMatch06Int32(): Bool = {
-        ematch xvar B(1) {
-            case B(x) => x == 1
-            case B(y) => x == 2
-        }
-    }
-
-    @Test
-    def testExtMatch07Int32(): Bool = {
         ematch xvar B(1) {
             case A(_) => false
-            case B(x) => x == 1
-        }
-    }
-
-    @Test
-    def testExtMatch08Int32(): Bool = {
-        ematch xvar B(1) {
-            case A(y) => y == 2
             case B(x) => x == 1
         }
     }
