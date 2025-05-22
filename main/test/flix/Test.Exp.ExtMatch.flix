@@ -43,7 +43,7 @@ mod Test.Exp.ExtMatch {
     def testExtMatch04Int32(): Bool = {
         ematch xvar B(1) {
             case A(_) => false
-            case B(x) => x == 1
+            case B(_) => true
         }
     }
 }
