@@ -1587,7 +1587,7 @@ object Weeder2 {
           // case Tag(_) => expr
           Validation.Success(ExtMatchRule(label, List(ExtPattern.Wild(loc)), expr, tree.loc))
 
-        case ((label, _), _) =>
+        case ((_, _), _) =>
           val error = Malformed(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
           sctx.errors.add(error)
           Validation.Failure(error) // Hard failure to prevent crash when desugaring in Kinder
