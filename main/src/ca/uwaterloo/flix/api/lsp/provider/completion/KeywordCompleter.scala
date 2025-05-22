@@ -38,14 +38,6 @@ object KeywordCompleter {
     */
   def getModKeywords(range: Range): List[Completion] =
     List(
-      // @
-      Completion.KeywordCompletion("@Deprecated"      , range, Priority.Low),
-      Completion.KeywordCompletion("@Lazy"            , range, Priority.Low),
-      Completion.KeywordCompletion("@LazyWhenPure"    , range, Priority.Low),
-      Completion.KeywordCompletion("@Parallel"        , range, Priority.Low),
-      Completion.KeywordCompletion("@ParallelWhenPure", range, Priority.Low),
-      Completion.KeywordCompletion("@Test"            , range, Priority.Low),
-
       // D
       Completion.KeywordCompletion("def"              , range, Priority.Medium),
       // E
