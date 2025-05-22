@@ -493,6 +493,7 @@ sealed trait TokenKind {
          | TokenKind.KeywordDebugBangBang
          | TokenKind.KeywordDef
          | TokenKind.KeywordDiscard
+         | TokenKind.KeywordEMatch
          | TokenKind.KeywordFalse
          | TokenKind.KeywordForA
          | TokenKind.KeywordForM
@@ -525,7 +526,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordUnsafe
          | TokenKind.KeywordUnsafely
          | TokenKind.KeywordUse
-         | TokenKind.KeywordEMatch
          | TokenKind.KeywordXvar
          | TokenKind.ListHash
          | TokenKind.LiteralBigDecimal
