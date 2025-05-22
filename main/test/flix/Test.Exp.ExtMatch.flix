@@ -16,6 +16,38 @@
 mod Test.Exp.ExtMatch {
 
     @Test
+    def testExtMatch01BigInt(): Bool = {
+        ematch xvar A(1ii) {
+            case A(x) => x == 1ii
+            case A(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch02BigInt(): Bool = {
+        ematch xvar A(1ii) {
+            case A(x) => x == 1ii
+            case B(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch03BigInt(): Bool = {
+        ematch xvar B(1ii) {
+            case B(x) => x == 1ii
+            case B(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch04BigInt(): Bool = {
+        ematch xvar B(1ii) {
+            case A(_) => false
+            case B(_) => true
+        }
+    }
+
+    @Test
     def testExtMatch01Bool(): Bool = {
         ematch xvar A(true) {
             case A(x) => x
@@ -42,6 +74,102 @@ mod Test.Exp.ExtMatch {
     @Test
     def testExtMatch04Bool(): Bool = {
         ematch xvar B(false) {
+            case A(_) => false
+            case B(_) => true
+        }
+    }
+
+    @Test
+    def testExtMatch01Char(): Bool = {
+        ematch xvar A('a') {
+            case A(x) => x == 'a'
+            case A(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch02Char(): Bool = {
+        ematch xvar A('a') {
+            case A(x) => x == 'a'
+            case B(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch03Char(): Bool = {
+        ematch xvar B('a') {
+            case B(x) => x == 'a'
+            case B(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch04Char(): Bool = {
+        ematch xvar B('a') {
+            case A(_) => false
+            case B(_) => true
+        }
+    }
+
+    @Test
+    def testExtMatch01Float32(): Bool = {
+        ematch xvar A(1.0f32) {
+            case A(x) => x == 1.0f32
+            case A(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch02Float32(): Bool = {
+        ematch xvar A(1.0f32) {
+            case A(x) => x == 1.0f32
+            case B(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch03Float32(): Bool = {
+        ematch xvar B(1.0f32) {
+            case B(x) => x == 1.0f32
+            case B(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch04Float32(): Bool = {
+        ematch xvar B(1.0f32) {
+            case A(_) => false
+            case B(_) => true
+        }
+    }
+
+    @Test
+    def testExtMatch01Float64(): Bool = {
+        ematch xvar A(1.0f64) {
+            case A(x) => x == 1.0f64
+            case A(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch02Float64(): Bool = {
+        ematch xvar A(1.0f64) {
+            case A(x) => x == 1.0f64
+            case B(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch03Float64(): Bool = {
+        ematch xvar B(1.0f64) {
+            case B(x) => x == 1.0f64
+            case B(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch04Float64(): Bool = {
+        ematch xvar B(1.0f64) {
             case A(_) => false
             case B(_) => true
         }
@@ -170,134 +298,6 @@ mod Test.Exp.ExtMatch {
     @Test
     def testExtMatch04Int64(): Bool = {
         ematch xvar B(1i64) {
-            case A(_) => false
-            case B(_) => true
-        }
-    }
-
-    @Test
-    def testExtMatch01Float32(): Bool = {
-        ematch xvar A(1.0f32) {
-            case A(x) => x == 1.0f32
-            case A(_) => false
-        }
-    }
-
-    @Test
-    def testExtMatch02Float32(): Bool = {
-        ematch xvar A(1.0f32) {
-            case A(x) => x == 1.0f32
-            case B(_) => false
-        }
-    }
-
-    @Test
-    def testExtMatch03Float32(): Bool = {
-        ematch xvar B(1.0f32) {
-            case B(x) => x == 1.0f32
-            case B(_) => false
-        }
-    }
-
-    @Test
-    def testExtMatch04Float32(): Bool = {
-        ematch xvar B(1.0f32) {
-            case A(_) => false
-            case B(_) => true
-        }
-    }
-
-    @Test
-    def testExtMatch01Float64(): Bool = {
-        ematch xvar A(1.0f64) {
-            case A(x) => x == 1.0f64
-            case A(_) => false
-        }
-    }
-
-    @Test
-    def testExtMatch02Float64(): Bool = {
-        ematch xvar A(1.0f64) {
-            case A(x) => x == 1.0f64
-            case B(_) => false
-        }
-    }
-
-    @Test
-    def testExtMatch03Float64(): Bool = {
-        ematch xvar B(1.0f64) {
-            case B(x) => x == 1.0f64
-            case B(_) => false
-        }
-    }
-
-    @Test
-    def testExtMatch04Float64(): Bool = {
-        ematch xvar B(1.0f64) {
-            case A(_) => false
-            case B(_) => true
-        }
-    }
-
-    @Test
-    def testExtMatch01BigInt(): Bool = {
-        ematch xvar A(1ii) {
-            case A(x) => x == 1ii
-            case A(_) => false
-        }
-    }
-
-    @Test
-    def testExtMatch02BigInt(): Bool = {
-        ematch xvar A(1ii) {
-            case A(x) => x == 1ii
-            case B(_) => false
-        }
-    }
-
-    @Test
-    def testExtMatch03BigInt(): Bool = {
-        ematch xvar B(1ii) {
-            case B(x) => x == 1ii
-            case B(_) => false
-        }
-    }
-
-    @Test
-    def testExtMatch04BigInt(): Bool = {
-        ematch xvar B(1ii) {
-            case A(_) => false
-            case B(_) => true
-        }
-    }
-
-    @Test
-    def testExtMatch01Char(): Bool = {
-        ematch xvar A('a') {
-            case A(x) => x == 'a'
-            case A(_) => false
-        }
-    }
-
-    @Test
-    def testExtMatch02Char(): Bool = {
-        ematch xvar A('a') {
-            case A(x) => x == 'a'
-            case B(_) => false
-        }
-    }
-
-    @Test
-    def testExtMatch03Char(): Bool = {
-        ematch xvar B('a') {
-            case B(x) => x == 'a'
-            case B(_) => false
-        }
-    }
-
-    @Test
-    def testExtMatch04Char(): Bool = {
-        ematch xvar B('a') {
             case A(_) => false
             case B(_) => true
         }
