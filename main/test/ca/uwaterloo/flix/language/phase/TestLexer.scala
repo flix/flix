@@ -299,7 +299,6 @@ class TestLexer extends AnyFunSuite with TestUtils {
   }
 
   test("LexerError.MalformedHexNumber.02") {
-    // Check that lexing doesn't naively stop after i32 and lex `f` as a name.
     val input =
       s"""
          |def f(): Int32 = 0xF__Fi32f
