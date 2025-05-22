@@ -1562,16 +1562,16 @@ object Weeder2 {
         // Case: no valid match rule found in ematch expr
         case (expr, Nil) =>
           val error = NeedAtleastOne(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
-          // Fall back on Expr.Error. Parser has reported an error here.
-          Validation.Success(Expr.Error(error))
+          // Parser has reported an error here so do not add to sctx.
+          Validation.Failure(error)
 
         case (expr, rules) if rules.length == 2 => // Check for exactly 2 to prevent crash when desugaring in Kinder
           Validation.Success(Expr.ExtMatch(expr, rules, tree.loc))
 
-        case (expr, rules) =>
+        case (expr, _) =>
           val error = Malformed(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
           sctx.errors.add(error)
-          Validation.Success(Expr.Error(error))
+          Validation.Failure(error)
       }
     }
 
@@ -1592,7 +1592,6 @@ object Weeder2 {
           val error = Malformed(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
           sctx.errors.add(error)
           Validation.Failure(error) // Hard failure to prevent crash when desugaring in Kinder
-        // Validation.Success(ExtMatchRule(label, List(ExtPattern.Error(tree.loc)), Expr.Error(error), tree.loc))
       }
     }
 
