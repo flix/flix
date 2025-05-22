@@ -991,6 +991,17 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
       """
         |def f(): Int32 = ematch xvar A(1) {
         |    case A(1) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEscapeSequence](result)
+  }
+
+  test("IllegalExtPattern.07") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A(1) {
+        |    case A(1) => 1
         |    case A(1) => 1
         |    case A(1) => 1
         |}
