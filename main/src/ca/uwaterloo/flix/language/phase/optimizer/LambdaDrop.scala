@@ -107,7 +107,7 @@ object LambdaDrop {
     * are closure captured.
     */
   private def lambdaDrop(defn: MonoAst.Def)(implicit lctx: LocalContext, flix: Flix): MonoAst.Def = {
-    implicit val params: List[(MonoAst.FormalParam, ParamKind)] = paramKinds(lctx.recursiveCalls.toList, defn.spec.fparams)
+    implicit val params: List[(MonoAst.FormalParam, ParamKind)] = lctx.paramKinds(lctx.recursiveCalls.toList, defn.spec.fparams)
     implicit val (newDefnSym, subst): (Symbol.VarSym, Substitution) = mkSubst(defn, params)
     val rewrittenExp = rewriteExp(defn.exp)(defn.sym, newDefnSym, subst, params)
     val body = mkLocalDefExpr(rewrittenExp, newDefnSym)
@@ -369,33 +369,9 @@ object LambdaDrop {
     (freshLocalDefSym, Substitution(substMap))
   }
 
-  /**
-    * Returns the [[ParamKind]] of each formal parameter in `fparams`.
-    *
-    * If all expressions in `calls` that are in the position of formal parameter `x`
-    * are the symbol `x` then it is marked [[ParamKind.Const]].
-    *
-    * Otherwise, it is marked [[ParamKind.NonConst]]
-    */
-  private def paramKinds(calls: List[Expr.ApplyDef], fparams: List[MonoAst.FormalParam]): List[(MonoAst.FormalParam, ParamKind)] = {
-    val matrix = calls.map(call => fparams.zip(call.exps)).transpose
-    matrix.map {
-      case invocations =>
-        val allConstant = invocations.forall {
-          case (fp, Expr.Var(sym, _, _)) => fp.sym == sym
-          case _ => false
-        }
-        invocations.headOption match {
-          case Some((fp, _)) if allConstant => (fp, ParamKind.Const)
-          case Some((fp, _)) => (fp, ParamKind.NonConst)
-          case None => throw InternalCompilerException("unexpected empty head", SourceLocation.Unknown)
-        }
-    }
-  }
-
   /** Returns `true` if there exists at least one constant parameter. */
-  private def hasConstantParameter(calls: List[Expr.ApplyDef], fparams: List[MonoAst.FormalParam]): Boolean = {
-    paramKinds(calls, fparams).exists {
+  private def hasConstantParameter(calls: List[Expr.ApplyDef], fparams: List[MonoAst.FormalParam])(implicit lctx: LocalContext): Boolean = {
+    lctx.paramKinds(calls, fparams).exists {
       case (_, pkind) => pkind == ParamKind.Const
     }
   }
@@ -475,6 +451,8 @@ object LambdaDrop {
       * are the symbol `x` then it is marked [[ParamKind.Const]].
       *
       * Otherwise, it is marked [[ParamKind.NonConst]]
+      *
+      * The result is memoized.
       */
     def apply(calls: List[Expr.ApplyDef], fparams: List[MonoAst.FormalParam]): List[(MonoAst.FormalParam, ParamKind)] = kinds match {
       case Some(result) => result
