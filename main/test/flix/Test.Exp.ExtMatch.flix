@@ -16,6 +16,70 @@
 mod Test.Exp.ExtMatch {
 
     @Test
+    def testExtMatch01Int8(): Bool = {
+        ematch xvar A(1i8) {
+            case A(x) => x == 1i8
+            case A(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch02Int8(): Bool = {
+        ematch xvar A(1i8) {
+            case A(x) => x == 1i8
+            case B(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch03Int8(): Bool = {
+        ematch xvar B(1i8) {
+            case B(x) => x == 1i8
+            case B(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch04Int8(): Bool = {
+        ematch xvar B(1i8) {
+            case A(_) => false
+            case B(_) => true
+        }
+    }
+
+    @Test
+    def testExtMatch01Int16(): Bool = {
+        ematch xvar A(1i16) {
+            case A(x) => x == 1i16
+            case A(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch02Int16(): Bool = {
+        ematch xvar A(1i16) {
+            case A(x) => x == 1i16
+            case B(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch03Int16(): Bool = {
+        ematch xvar B(1i16) {
+            case B(x) => x == 1i16
+            case B(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch04Int16(): Bool = {
+        ematch xvar B(1i16) {
+            case A(_) => false
+            case B(_) => true
+        }
+    }
+
+    @Test
     def testExtMatch01Int32(): Bool = {
         ematch xvar A(1) {
             case A(x) => x == 1
@@ -42,6 +106,38 @@ mod Test.Exp.ExtMatch {
     @Test
     def testExtMatch04Int32(): Bool = {
         ematch xvar B(1) {
+            case A(_) => false
+            case B(_) => true
+        }
+    }
+
+    @Test
+    def testExtMatch01Int64(): Bool = {
+        ematch xvar A(1i64) {
+            case A(x) => x == 1i64
+            case A(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch02Int64(): Bool = {
+        ematch xvar A(1i64) {
+            case A(x) => x == 1i64
+            case B(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch03Int64(): Bool = {
+        ematch xvar B(1i64) {
+            case B(x) => x == 1i64
+            case B(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatch04Int64(): Bool = {
+        ematch xvar B(1i64) {
             case A(_) => false
             case B(_) => true
         }
