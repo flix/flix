@@ -960,7 +960,7 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEscapeSequence](result)
+    expectError[ParseError](result)
   }
 
   test("IllegalExtPattern.04") {
@@ -971,7 +971,7 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEscapeSequence](result)
+    expectError[ParseError](result)
   }
 
   test("IllegalExtPattern.05") {
@@ -983,7 +983,7 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEscapeSequence](result)
+    expectError[ParseError](result)
   }
 
   test("IllegalExtPattern.06") {
@@ -994,7 +994,7 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEscapeSequence](result)
+    expectError[ParseError](result)
   }
 
   test("IllegalExtPattern.07") {
@@ -1007,7 +1007,7 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEscapeSequence](result)
+    expectError[ParseError](result)
   }
 
   test("IllegalOperationWithOutReturnType.01") {
