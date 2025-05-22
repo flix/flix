@@ -232,19 +232,6 @@ object NamedAst {
 
   }
 
-  sealed trait ExtPattern {
-    def loc: SourceLocation
-  }
-
-  object ExtPattern {
-
-    case class Wild(loc: SourceLocation) extends ExtPattern
-
-    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ExtPattern
-
-    case class Error(loc: SourceLocation) extends ExtPattern
-  }
-
   sealed trait Pattern {
     def loc: SourceLocation
   }
@@ -269,6 +256,19 @@ object NamedAst {
       case class RecordLabelPattern(label: Name.Label, pat: Pattern, loc: SourceLocation)
     }
 
+  }
+
+  sealed trait ExtPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtPattern {
+
+    case class Wild(loc: SourceLocation) extends ExtPattern
+
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ExtPattern
+
+    case class Error(loc: SourceLocation) extends ExtPattern
   }
 
   sealed trait RestrictableChoosePattern
