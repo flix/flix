@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.Range
+import ca.uwaterloo.flix.language.ast.Name
 
 /**
   * Completer for keywords.
@@ -87,8 +88,10 @@ object KeywordCompleter {
 
   /**
     * Returns keywords that may occur inside expressions.
+    *
+    * Returns only those keywords that are a prefix of the given `qname` (if present).
     */
-  def getExprKeywords(range: Range): List[Completion] =
+  def getExprKeywords(qname: Option[Name.QName], range: Range): List[Completion] =
     List(
       // A
       Completion.KeywordCompletion("and"         , range, Priority.Medium),
@@ -150,7 +153,12 @@ object KeywordCompleter {
       Completion.KeywordCompletion("without"     , range, Priority.Medium),
       // Y
       Completion.KeywordCompletion("yield"       , range, Priority.Medium)
-    )
+    ).filter {
+      case c => qname match {
+        case None => true
+        case Some(qn) => qn.isUnqualified && c.name.startsWith(qn.ident.name)
+      }
+    }
 
   /**
     * Returns keywords that may occur inside instance declarations.

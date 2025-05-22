@@ -67,7 +67,7 @@ object CompletionProvider {
           val range = Range.from(err.loc)
           AutoImportCompleter.getCompletions(ident, range, ap, scp) ++
             LocalScopeCompleter.getCompletionsExpr(range, scp) ++
-            KeywordCompleter.getExprKeywords(range) ++
+            KeywordCompleter.getExprKeywords(Some(err.qn), range) ++
             DefCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
             EnumCompleter.getCompletions(qn, range, ap, scp, withTypeParameters = false) ++
             EffectCompleter.getCompletions(qn, range, ap, scp, inHandler = false) ++
@@ -120,7 +120,7 @@ object CompletionProvider {
     else e.sctx match {
       // Expressions.
       case SyntacticContext.Expr.Constraint => (PredicateCompleter.getCompletions(uri, range) ++ KeywordCompleter.getConstraintKeywords(range)).toList
-      case SyntacticContext.Expr.OtherExpr => KeywordCompleter.getExprKeywords(range)
+      case SyntacticContext.Expr.OtherExpr => KeywordCompleter.getExprKeywords(None, range)
 
       // Declarations.
       case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords(range)
