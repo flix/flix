@@ -133,7 +133,7 @@ class TestCompletionProvider extends AnyFunSuite {
   private val Limit: Int = 100
 
   /////////////////////////////////////////////////////////////////////////////
-  // General Properties                                                      //
+  // General Properties
   /////////////////////////////////////////////////////////////////////////////
 
   test("Autocomplete is well-defined") {
@@ -146,7 +146,7 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // No Completions                                                          //
+  // No Completions: Comments
   /////////////////////////////////////////////////////////////////////////////
 
   test("NoCompletions.BlockComments") {
@@ -173,6 +173,10 @@ class TestCompletionProvider extends AnyFunSuite {
     })
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // No Completions: Keywords and Literals
+  /////////////////////////////////////////////////////////////////////////////
+
   test("NoCompletions.OnKeyword") {
     forAll(Programs) { prg =>
       val root = compileWithSuccess(prg)
@@ -183,7 +187,6 @@ class TestCompletionProvider extends AnyFunSuite {
       }
     }
   }
-
 
   test("No completions after complete literal") {
     Programs.foreach(program => {
@@ -201,6 +204,9 @@ class TestCompletionProvider extends AnyFunSuite {
     })
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // No Completions: Names
+  /////////////////////////////////////////////////////////////////////////////
 
   test("No completions when defining the name for defs") {
     Programs.foreach(program => {
