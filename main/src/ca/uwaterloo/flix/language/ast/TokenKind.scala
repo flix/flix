@@ -77,7 +77,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordDiscard => "'discard'"
       case TokenKind.KeywordEff => "'eff'"
       case TokenKind.KeywordElse => "'else'"
-      case TokenKind.KeywordEMatch => "'xmatch'"
+      case TokenKind.KeywordEMatch => "'ematch'"
       case TokenKind.KeywordEnum => "'enum'"
       case TokenKind.KeywordFalse => "'false'"
       case TokenKind.KeywordFix => "'fix'"
