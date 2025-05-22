@@ -247,19 +247,6 @@ object WeededAst {
 
   }
 
-  sealed trait ExtPattern {
-    def loc: SourceLocation
-  }
-
-  object ExtPattern {
-
-    case class Wild(loc: SourceLocation) extends ExtPattern
-
-    case class Var(ident: Name.Ident, loc: SourceLocation) extends ExtPattern
-
-    case class Error(loc: SourceLocation) extends ExtPattern
-  }
-
   sealed trait Pattern {
     def loc: SourceLocation
   }
@@ -284,6 +271,19 @@ object WeededAst {
       case class RecordLabelPattern(label: Name.Label, pat: Option[Pattern], loc: SourceLocation)
     }
 
+  }
+
+  sealed trait ExtPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtPattern {
+
+    case class Wild(loc: SourceLocation) extends ExtPattern
+
+    case class Var(ident: Name.Ident, loc: SourceLocation) extends ExtPattern
+
+    case class Error(loc: SourceLocation) extends ExtPattern
   }
 
   sealed trait RestrictableChoosePattern {
