@@ -121,7 +121,7 @@ object DesugaredAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
-    case class ExtensibleMatch(label: Name.Label, exp1: Expr, ident2: Name.Ident, exp2: Expr, ident3: Name.Ident, exp3: Expr, loc: SourceLocation) extends Expr
+    case class ExtMatch(exp: Expr, rules: List[ExtMatchRule], loc: SourceLocation) extends Expr
 
     case class ExtensibleTag(label: Name.Label, exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -243,6 +243,19 @@ object DesugaredAst {
       case class RecordLabelPattern(label: Name.Label, pat: Option[Pattern], loc: SourceLocation)
     }
 
+  }
+
+  sealed trait ExtPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtPattern {
+
+    case class Wild(loc: SourceLocation) extends ExtPattern
+
+    case class Var(ident: Name.Ident, loc: SourceLocation) extends ExtPattern
+
+    case class Error(loc: SourceLocation) extends ExtPattern
   }
 
   sealed trait RestrictableChoosePattern {
@@ -395,6 +408,8 @@ object DesugaredAst {
   case class Constraint(head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 
   case class MatchRule(pat: Pattern, exp1: Option[Expr], exp2: Expr, loc: SourceLocation)
+
+  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
 
   case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr, loc: SourceLocation)
 
