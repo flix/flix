@@ -931,6 +931,8 @@ object TokenKind {
 
   case object KeywordElse extends TokenKind
 
+  case object KeywordEMatch extends TokenKind
+
   case object KeywordEnum extends TokenKind
 
   case object KeywordFalse extends TokenKind
@@ -1062,8 +1064,6 @@ object TokenKind {
   case object KeywordYield extends TokenKind
 
   case object KeywordXor extends TokenKind
-
-  case object KeywordEMatch extends TokenKind
 
   case object KeywordXvar extends TokenKind
 
