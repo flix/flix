@@ -75,6 +75,10 @@ object ParseError {
       def display(fmt: Formatter): String = fmt.cyan("<extensible-match-rule>")
     }
 
+    case object ExtPattern extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<ext-pattern>")
+    }
+
     case object FixpointConstraint extends NamedTokenSet {
       def display(fmt: Formatter): String = fmt.cyan("<fixpoint-constraint>")
     }
@@ -105,10 +109,6 @@ object ParseError {
 
     case object Pattern extends NamedTokenSet {
       def display(fmt: Formatter): String = fmt.cyan("<pattern>")
-    }
-
-    case object ExtPattern extends NamedTokenSet {
-      def display(fmt: Formatter): String = fmt.cyan("<ext-pattern>")
     }
 
     case object Tuple extends NamedTokenSet {
