@@ -357,6 +357,7 @@ object Lexer {
       case _ if isKeyword("discard") => TokenKind.KeywordDiscard
       case _ if isKeyword("eff") => TokenKind.KeywordEff
       case _ if isKeyword("else") => TokenKind.KeywordElse
+      case _ if isKeyword("ematch") => TokenKind.KeywordEMatch
       case _ if isKeyword("enum") => TokenKind.KeywordEnum
       case _ if isKeywordLiteral("false") => TokenKind.KeywordFalse
       case _ if isKeyword("fix") => TokenKind.KeywordFix
@@ -423,7 +424,6 @@ object Lexer {
       case _ if isKeyword("without") => TokenKind.KeywordWithout
       case _ if isKeyword("yield") => TokenKind.KeywordYield
       case _ if isKeyword("xor") => TokenKind.KeywordXor
-      case _ if isKeyword("ematch") => TokenKind.KeywordEMatch
       case _ if isKeyword("xvar") => TokenKind.KeywordXvar
       case _ if isKeyword("Set#") => TokenKind.SetHash
       case _ if isKeyword("Array#") => TokenKind.ArrayHash
