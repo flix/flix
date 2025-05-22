@@ -1579,15 +1579,14 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.ExtMatchRuleFragment)
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
       flatMapN(Patterns.pickExtPattern(tree), traverse(exprs)(visitExpr)) {
-        // case pattern => expr
         case ((label, List(ExtPattern.Var(ident, loc))), expr :: Nil) =>
+          // case Tag(ident) => expr
           Validation.Success(ExtMatchRule(label, List(ExtPattern.Var(ident, loc)), expr, tree.loc))
 
-        // case pattern => expr
         case ((label, List(ExtPattern.Wild(loc))), expr :: Nil) =>
+          // case Tag(_) => expr
           Validation.Success(ExtMatchRule(label, List(ExtPattern.Wild(loc)), expr, tree.loc))
 
-        // Fall back on Expr.Error. Parser has reported an error here.
         case ((label, _), _) =>
           val error = Malformed(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
           sctx.errors.add(error)
