@@ -465,6 +465,38 @@ object LambdaDrop {
     }
   }
 
+  private case class ParamKinds() {
+    private var kinds: Option[List[(MonoAst.FormalParam, ParamKind)]] = None
+
+    /**
+      * Returns the [[ParamKind]] of each formal parameter in `fparams`.
+      *
+      * If all expressions in `calls` that are in the position of formal parameter `x`
+      * are the symbol `x` then it is marked [[ParamKind.Const]].
+      *
+      * Otherwise, it is marked [[ParamKind.NonConst]]
+      */
+    def apply(calls: List[Expr.ApplyDef], fparams: List[MonoAst.FormalParam]): List[(MonoAst.FormalParam, ParamKind)] = kinds match {
+      case Some(result) => result
+      case None =>
+        val matrix = calls.map(call => fparams.zip(call.exps)).transpose
+        val result = matrix.map {
+          case invocations =>
+            val allConstant = invocations.forall {
+              case (fp, Expr.Var(sym, _, _)) => fp.sym == sym
+              case _ => false
+            }
+            invocations.headOption match {
+              case Some((fp, _)) if allConstant => (fp, ParamKind.Const)
+              case Some((fp, _)) => (fp, ParamKind.NonConst)
+              case None => throw InternalCompilerException("unexpected empty head", SourceLocation.Unknown)
+            }
+        }
+        this.kinds = Some(result)
+        result
+    }
+  }
+
   private sealed trait ParamKind
 
   private object ParamKind {
