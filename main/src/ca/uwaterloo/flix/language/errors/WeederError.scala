@@ -955,7 +955,7 @@ object WeederError {
     * @param loc  the location of the annotation.
     */
   case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Undefined annotation $name"
+    def summary: String = s"Undefined annotation '$name'.'"
 
     def message(formatter: Formatter): String = {
       import formatter.*

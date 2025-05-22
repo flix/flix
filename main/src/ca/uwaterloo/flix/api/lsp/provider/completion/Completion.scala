@@ -32,6 +32,14 @@ sealed trait Completion {
     */
   def toCompletionItem(implicit flix: Flix): CompletionItem = this match {
 
+    case Completion.AnnotationCompletion(name, range, priority) =>
+      CompletionItem(
+        label    = "@" + name,
+        sortText = Priority.toSortText(priority, name),
+        textEdit = TextEdit(range, "@" + name),
+        kind     = CompletionItemKind.Constant
+      )
+
     case Completion.KeywordCompletion(name, range, priority, withSpace) =>
       CompletionItem(
         label    = name,
@@ -526,6 +534,15 @@ sealed trait Completion {
 }
 
 object Completion {
+
+  /**
+    * Represents an annotation completion.
+    *
+    * @param name      the name of the annotation.
+    * @param range     the range of the completion.
+    * @param priority  the priority of the completion.
+    */
+  case class AnnotationCompletion(name: String, range: Range, priority: Priority) extends Completion
 
   /**
     * Represents a keyword completion.

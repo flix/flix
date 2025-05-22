@@ -687,9 +687,10 @@ object Weeder2 {
         case "@Test" | "@test" => Test(loc)
         case "@TailRec" => TailRecursive(loc)
         case other =>
-          val error = UndefinedAnnotation(other, loc)
+          val name = other.stripPrefix("@")
+          val error = UndefinedAnnotation(name, loc)
           sctx.errors.add(error)
-          Annotation.Error(other.stripPrefix("@"), loc)
+          Annotation.Error(name, loc)
       }
     }
 
@@ -2527,8 +2528,8 @@ object Weeder2 {
     private def tryParseInt(token: Token, suffix: String, after: (Int, String, SourceLocation) => Expr)(implicit sctx: SharedContext): Expr = {
       val loc = token.mkSourceLocation()
       try {
-        val radix = if (token.text.contains("0x")) 16 else 10
-        val digits = token.text.replaceFirst("0x", "").stripSuffix(suffix).filterNot(_ == '_')
+        val radix = if (token.text.startsWith("0x")) 16 else 10
+        val digits = token.text.stripPrefix("0x").stripSuffix(suffix).filterNot(_ == '_')
         after(radix, digits, loc)
       } catch {
         case _: NumberFormatException =>
