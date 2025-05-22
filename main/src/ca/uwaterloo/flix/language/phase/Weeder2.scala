@@ -2385,7 +2385,6 @@ object Weeder2 {
       }
     }
 
-
     /** Extracts a tuple pattern as a list, expanding `()` to be `List(Unit)`. */
     private def visitTagTermsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Nel[Pattern], CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Tuple)
