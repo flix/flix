@@ -258,24 +258,25 @@ class TestCompletionProvider extends AnyFunSuite {
     }
   }
 
+  test("NoCompletions.onTypeAliasSyms") {
+    forAll(Programs) { prg =>
+      val root = compileWithSuccess(prg)
+      forAll(typeAliasSymsOf(root)) { sym =>
+        forAll(rangeOfInclusive(sym.loc)) { pos =>
+          Assert.isEmpty(autoComplete(pos, root), pos)
+        }
+      }
+    }
+  }
+
+
+
 
 
   test("No completions when defining the name for sigs") {
     Programs.foreach(program => {
       val (root, errors) = compile(program)
       val allNameDefLocs = root.sigs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
-      allNameDefLocs.foreach { loc =>
-        val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        Assert.isEmpty(completions, loc, Position.from(loc.sp2))
-      }
-    })
-  }
-
-
-  test("No completions when defining the name for type aliases") {
-    Programs.foreach(program => {
-      val (root, errors) = compile(program)
-      val allNameDefLocs = root.typeAliases.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
       allNameDefLocs.foreach { loc =>
         val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix)
         Assert.isEmpty(completions, loc, Position.from(loc.sp2))
@@ -564,6 +565,13 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private def traitSymsOf(root: Root): List[Symbol.TraitSym] =
     root.traits.keys.filter(_.src.name.startsWith(Uri)).toList
+
+  /**
+    * Returns all type alias symbols in the given AST `root` for the program.
+    */
+  private def typeAliasSymsOf(root: Root): List[Symbol.TypeAliasSym] =
+    root.typeAliases.keys.filter(_.src.name.startsWith(Uri)).toList
+
 
   /**
     * Returns the set of variable symbols that occur in the given root.
