@@ -124,11 +124,9 @@ object GenExpression {
         mv.visitMethodInsn(INVOKESTATIC, JvmName.Regex.toInternalName, "compile",
           AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Regex), false)
 
-      case Constant.RecordEmpty =>
-        // We get the JvmType of the class for the RecordEmpty
-        val classType = BackendObjType.RecordEmpty
-        // Instantiating a new object of tuple
-        mv.visitFieldInsn(GETSTATIC, classType.jvmName.toInternalName, BackendObjType.RecordEmpty.SingletonField.name, classType.toDescriptor)
+      case Constant.RecordEmpty => ({
+        BytecodeInstructions.GETSTATIC(BackendObjType.RecordEmpty.SingletonField)
+      })(new BytecodeInstructions.F(mv))
 
     }
 
