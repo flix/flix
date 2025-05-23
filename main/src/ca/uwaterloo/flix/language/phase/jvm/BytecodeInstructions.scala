@@ -209,6 +209,11 @@ object BytecodeInstructions {
     f
   }
 
+  def DNEG(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.DNEG)
+    f
+  }
+
   def DRETURN(): InstructionSet = f => {
     f.visitInstruction(Opcodes.DRETURN)
     f
@@ -251,18 +256,26 @@ object BytecodeInstructions {
 
   def FCONST_0(): InstructionSet = f => {
     f.visitInstruction(Opcodes.FCONST_0)
+    f
   }
 
   def FCONST_1(): InstructionSet = f => {
     f.visitInstruction(Opcodes.FCONST_1)
+    f
   }
 
   def FCONST_2(): InstructionSet = f => {
     f.visitInstruction(Opcodes.FCONST_2)
+    f
   }
 
   def FLOAD(index: Int): InstructionSet = f => {
     f.visitVarInstruction(Opcodes.FLOAD, index)
+    f
+  }
+
+  def FNEG(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.FNEG)
     f
   }
 
@@ -283,6 +296,21 @@ object BytecodeInstructions {
 
   def GETSTATIC(field: StaticField): InstructionSet = f => {
     f.visitFieldInstruction(Opcodes.GETSTATIC, field.clazz, field.name, field.tpe)
+    f
+  }
+
+  def I2B(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.I2B)
+    f
+  }
+
+  def I2L(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.I2L)
+    f
+  }
+
+  def I2S(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.I2S)
     f
   }
 
@@ -331,8 +359,18 @@ object BytecodeInstructions {
     f
   }
 
+  def INEG(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.INEG)
+    f
+  }
+
   def INSTANCEOF(tpe: JvmName): InstructionSet = f => {
     f.visitTypeInstruction(Opcodes.INSTANCEOF, tpe)
+    f
+  }
+
+  def IXOR(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.IXOR)
     f
   }
 
@@ -454,6 +492,11 @@ object BytecodeInstructions {
     f
   }
 
+  def LNEG(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.LNEG)
+    f
+  }
+
   def LRETURN(): InstructionSet = f => {
     f.visitInstruction(Opcodes.LRETURN)
     f
@@ -461,6 +504,11 @@ object BytecodeInstructions {
 
   def LSTORE(index: Int): InstructionSet = f => {
     f.visitVarInstruction(Opcodes.LSTORE, index)
+    f
+  }
+
+  def LXOR(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.LXOR)
     f
   }
 
@@ -508,7 +556,7 @@ object BytecodeInstructions {
   // ~~~~~~~~~~~~~~~~~~~~~~~~~ Meta JVM Instructions ~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
-  def addSourceLine(loc: SourceLocation): InstructionSet = ???
+  def addLoc(loc: SourceLocation): InstructionSet = ???
 
   def branch(c: Condition)(cases: Branch => InstructionSet): InstructionSet = f0 => {
     var f = f0

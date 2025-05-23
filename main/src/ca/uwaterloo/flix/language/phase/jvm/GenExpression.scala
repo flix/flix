@@ -46,11 +46,12 @@ object GenExpression {
                            pcCounter: Ref[Int]
                           )
 
-  object newAndCool {
+  object NewAndCool {
     import BytecodeInstructions.*
     import BackendObjType.*
     import BackendType.*
-    def compileExpr(exp0: Expr)(implicit root: Root): InstructionSet = exp0 match {
+    import MethodDescriptor.*
+    def compileExpr(exp0: Expr)(implicit ctx: MethodContext, root: Root): InstructionSet = exp0 match {
       case Expr.Cst(cst, tpe, loc) => cst match {
         case Constant.Unit => GETSTATIC(Unit.SingletonField)
         case Constant.Null => pushNull() ~ CHECKCAST(???)
@@ -59,18 +60,117 @@ object GenExpression {
         case Constant.Float32(lit) => pushFloat(lit)
         case Constant.Float64(lit) => pushDouble(lit)
         case Constant.BigDecimal(lit) =>
-          addSourceLine(exp0.loc) ~ NEW(BigDecimal.jvmName) ~ DUP() ~ pushString(lit.toString) ~ INVOKESPECIAL(BigDecimal.Constructor)
+          addLoc(loc) ~
+            NEW(BigDecimal.jvmName) ~
+            DUP() ~
+            pushString(lit.toString) ~
+            INVOKESPECIAL(BigDecimal.Constructor)
         case Constant.Int8(lit) => pushInt(lit)
         case Constant.Int16(lit) => pushInt(lit)
         case Constant.Int32(lit) => pushInt(lit)
-        case Constant.Int64(lit) => ???
-        case Constant.BigInt(lit) => ???
-        case Constant.Str(lit) => ???
-        case Constant.Regex(lit) => ???
-        case Constant.RecordEmpty => ???
+        case Constant.Int64(lit) => cheat(mv => compileLong(lit)(mv))
+        case Constant.BigInt(lit) =>
+          addLoc(loc) ~
+            NEW(BigInt.jvmName) ~
+            DUP() ~
+            pushString(lit.toString) ~
+            INVOKESPECIAL(BigInt.Constructor)
+        case Constant.Str(lit) => pushString(lit)
+        case Constant.Regex(lit) =>
+          addLoc(loc) ~
+            pushString(lit.pattern) ~
+            INVOKESTATIC(Regex.Compile)
+        case Constant.RecordEmpty =>
+          GETSTATIC(RecordEmpty.SingletonField)
       }
-      case Expr.Var(sym, tpe, loc) => ???
-      case Expr.ApplyAtomic(op, exps, tpe, purity, loc) => ???
+      case Expr.Var(sym, tpe, _) =>
+        xLoad(toBackendType(tpe), sym.getStackOffset(ctx.localOffset))
+      case Expr.ApplyAtomic(op, exps0, tpe, purity, loc) => op match {
+        case AtomicOp.Closure(sym) =>
+          val exps = exps0
+          val jvmType = JvmOps.getClosureClassType(sym)
+          cheat(_.visitTypeInsn(Opcodes.NEW, jvmType.name.toInternalName)) ~
+            DUP() ~
+            cheat(mv => mv.visitMethodInsn(Opcodes.INVOKESPECIAL, jvmType.name.toInternalName, JvmName.ConstructorMethod, NothingToVoid.toDescriptor, false)) ~
+            composeN(for ((arg, i) <- exps.zipWithIndex) yield {
+              DUP() ~
+                compileExpr(arg) ~
+                cheat(_.visitFieldInsn(Opcodes.PUTFIELD, jvmType.name.toInternalName, s"clo$i",  JvmOps.getErasedJvmType(arg.tpe).toDescriptor))
+            })
+        case AtomicOp.Unary(sop) =>
+          val List(exp) = exps0
+          val op = sop match {
+            case BoolOp.Not =>
+              ifConditionElse(Condition.Bool)(pushBool(false))(pushBool(true))
+            case Int8Op.Not => ICONST_M1() ~ IXOR()
+            case Int16Op.Not => ICONST_M1() ~ IXOR()
+            case Int32Op.Not => ICONST_M1() ~ IXOR()
+            case Int64Op.Not => ICONST_M1() ~ I2L() ~ LXOR()
+            case Float32Op.Neg => FNEG()
+            case Float64Op.Neg => DNEG()
+            case Int8Op.Neg => INEG() ~ I2B()
+            case Int16Op.Neg => INEG() ~ I2S()
+            case Int32Op.Neg => INEG()
+            case Int64Op.Neg => LNEG()
+          }
+          compileExpr(exp) ~ op
+        case AtomicOp.Binary(sop) => ???
+        case AtomicOp.Region =>
+          // TODO: For now, just emit null
+          pushNull() ~ CHECKCAST(Region.jvmName)
+        case AtomicOp.Is(sym) =>
+          val List(exp) = exps0
+          val MonoType.Enum(_, targs) = exp.tpe
+          val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
+          val termTypes = cases(sym)
+          compileIsTag(sym.name, exp, termTypes)
+        case AtomicOp.Tag(sym) =>
+          val exps = exps0
+          val MonoType.Enum(_, targs) = tpe
+          val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
+          val termTypes = cases(sym)
+          compileTag(sym.name, exps, termTypes)
+        case AtomicOp.Untag(sym, idx) =>
+          val List(exp) = exps0
+          val MonoType.Enum(_, targs) = exp.tpe
+          val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
+          val termTypes = cases(sym)
+          compileUntag(exp, idx, termTypes) ~ CHECKCAST(???)
+        case AtomicOp.Index(idx) => ???
+        case AtomicOp.Tuple => ???
+        case AtomicOp.RecordSelect(label) => ???
+        case AtomicOp.RecordExtend(label) => ???
+        case AtomicOp.RecordRestrict(label) => ???
+        case AtomicOp.ExtensibleIs(label) => ???
+        case AtomicOp.ExtensibleTag(label) => ???
+        case AtomicOp.ExtensibleUntag(label, idx) => ???
+        case AtomicOp.ArrayLit => ???
+        case AtomicOp.ArrayNew => ???
+        case AtomicOp.ArrayLoad => ???
+        case AtomicOp.ArrayStore => ???
+        case AtomicOp.ArrayLength => ???
+        case AtomicOp.StructNew(sym, fields) => ???
+        case AtomicOp.StructGet(sym) => ???
+        case AtomicOp.StructPut(sym) => ???
+        case AtomicOp.InstanceOf(clazz) => ???
+        case AtomicOp.Cast => ???
+        case AtomicOp.Unbox => ???
+        case AtomicOp.Box => ???
+        case AtomicOp.InvokeConstructor(constructor) => ???
+        case AtomicOp.InvokeMethod(method) => ???
+        case AtomicOp.InvokeStaticMethod(method) => ???
+        case AtomicOp.GetField(field) => ???
+        case AtomicOp.PutField(field) => ???
+        case AtomicOp.GetStaticField(field) => ???
+        case AtomicOp.PutStaticField(field) => ???
+        case AtomicOp.Throw => ???
+        case AtomicOp.Spawn => ???
+        case AtomicOp.Lazy => ???
+        case AtomicOp.Force => ???
+        case AtomicOp.HoleError(sym) => ???
+        case AtomicOp.MatchError => ???
+        case AtomicOp.CastError(from, to) => ???
+      }
       case Expr.ApplyClo(exp1, exp2, ct, tpe, purity, loc) => ???
       case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) => ???
       case Expr.ApplySelfTail(sym, actuals, tpe, purity, loc) => ???
@@ -85,6 +185,43 @@ object GenExpression {
       case Expr.Do(op, exps, tpe, purity, loc) => ???
       case Expr.NewObject(name, clazz, tpe, purity, methods, loc) => ???
     }
+
+    private def compileIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit ctx: MethodContext, root: Root): InstructionSet = {
+      tpes match {
+        case Nil =>
+          // nullary tags have their own distinct class
+          compileExpr(exp) ~
+            INSTANCEOF(BackendObjType.NullaryTag(name).jvmName)
+        case _ =>
+          compileExpr(exp) ~
+            CHECKCAST(Tagged.jvmName) ~
+            GETFIELD(Tagged.NameField) ~
+            Tagged.mkTagName(name) ~
+            Tagged.eqTagName()
+      }
+    }
+
+    private def compileTag(name: String, exps: List[Expr], tpes: List[BackendType])(implicit ctx: MethodContext, root: Root): InstructionSet = {
+      tpes match {
+        case Nil =>
+          GETSTATIC(BackendObjType.NullaryTag(name).SingletonField)
+        case _ =>
+          val tagType = BackendObjType.Tag(tpes)
+          NEW(tagType.jvmName) ~ DUP() ~ INVOKESPECIAL(tagType.Constructor) ~
+            DUP() ~ BackendObjType.Tagged.mkTagName(name) ~ PUTFIELD(tagType.NameField) ~
+            composeN(exps.zipWithIndex.map {
+              case (e, i) => DUP() ~ compileExpr(e) ~ PUTFIELD(tagType.IndexField(i))
+            })
+      }
+    }
+
+    private def compileUntag(exp: Expr, idx: Int, tpes: List[BackendType])(implicit ctx: MethodContext, root: Root): InstructionSet = {
+      // BackendObjType.NullaryTag cannot happen here since terms must be non-empty.
+      if (tpes.isEmpty) throw InternalCompilerException(s"Unexpected empty tag types", exp.loc)
+
+      val tagType = BackendObjType.Tag(tpes)
+      compileExpr(exp) ~ CHECKCAST(tagType.jvmName) ~ GETFIELD(tagType.IndexField(idx))
+    }
   }
 
   /**
@@ -92,104 +229,7 @@ object GenExpression {
     */
   def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
 
-    case Expr.Cst(cst, tpe, loc) => cst match {
-      case Constant.Null =>
-        mv.visitInsn(ACONST_NULL)
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
-
-      case Constant.Int64(l) =>
-        compileLong(l)
-
-      case Constant.BigInt(ii) =>
-        // Add source line number for debugging (can fail with NumberFormatException)
-        addSourceLine(mv, loc)
-        mv.visitTypeInsn(NEW, BackendObjType.BigInt.jvmName.toInternalName)
-        mv.visitInsn(DUP)
-        mv.visitLdcInsn(ii.toString)
-        mv.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigInt.jvmName.toInternalName, "<init>",
-          AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
-
-      case Constant.Str(s) =>
-        mv.visitLdcInsn(s)
-
-      case Constant.Regex(patt) =>
-        // Add source line number for debugging (can fail with PatternSyntaxException)
-        addSourceLine(mv, loc)
-        mv.visitLdcInsn(patt.pattern)
-        mv.visitMethodInsn(INVOKESTATIC, JvmName.Regex.toInternalName, "compile",
-          AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Regex), false)
-
-      case Constant.RecordEmpty =>
-        // We get the JvmType of the class for the RecordEmpty
-        val classType = BackendObjType.RecordEmpty
-        // Instantiating a new object of tuple
-        mv.visitFieldInsn(GETSTATIC, classType.jvmName.toInternalName, BackendObjType.RecordEmpty.SingletonField.name, classType.toDescriptor)
-
-    }
-
-    case Expr.Var(sym, tpe, _) =>
-      val varType = JvmOps.getJvmType(tpe)
-      val xLoad = AsmOps.getLoadInstruction(varType)
-      mv.visitVarInsn(xLoad, sym.getStackOffset(ctx.localOffset))
-
     case Expr.ApplyAtomic(op, exps, tpe, _, loc) => op match {
-
-      case AtomicOp.Closure(sym) =>
-        // JvmType of the closure
-        val jvmType = JvmOps.getClosureClassType(sym)
-        // new closure instance
-        mv.visitTypeInsn(NEW, jvmType.name.toInternalName)
-        // Duplicate
-        mv.visitInsn(DUP)
-        mv.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
-        // Capturing free args
-        for ((arg, i) <- exps.zipWithIndex) {
-          val erasedArgType = JvmOps.getErasedJvmType(arg.tpe)
-          mv.visitInsn(DUP)
-          compileExpr(arg)
-          mv.visitFieldInsn(PUTFIELD, jvmType.name.toInternalName, s"clo$i", erasedArgType.toDescriptor)
-        }
-
-      case AtomicOp.Unary(sop) =>
-        val List(exp) = exps
-        compileExpr(exp)
-
-        sop match {
-          case SemanticOp.BoolOp.Not =>
-            val condElse = new Label()
-            val condEnd = new Label()
-            mv.visitJumpInsn(IFNE, condElse)
-            mv.visitInsn(ICONST_1)
-            mv.visitJumpInsn(GOTO, condEnd)
-            mv.visitLabel(condElse)
-            mv.visitInsn(ICONST_0)
-            mv.visitLabel(condEnd)
-
-          case Float32Op.Neg => mv.visitInsn(FNEG)
-
-          case Float64Op.Neg => mv.visitInsn(DNEG)
-
-          case Int8Op.Neg =>
-            mv.visitInsn(INEG)
-            mv.visitInsn(I2B) // Sign extend so sign bit is also changed
-
-          case Int16Op.Neg =>
-            mv.visitInsn(INEG)
-            mv.visitInsn(I2S) // Sign extend so sign bit is also changed
-
-          case Int32Op.Neg => mv.visitInsn(INEG)
-
-          case Int64Op.Neg => mv.visitInsn(LNEG)
-
-          case Int8Op.Not | Int16Op.Not | Int32Op.Not =>
-            mv.visitInsn(ICONST_M1)
-            mv.visitInsn(IXOR)
-
-          case Int64Op.Not =>
-            mv.visitInsn(ICONST_M1)
-            mv.visitInsn(I2L)
-            mv.visitInsn(LXOR)
-        }
 
       case AtomicOp.Binary(sop) =>
         val List(exp1, exp2) = exps
@@ -534,24 +574,6 @@ object GenExpression {
           case StringOp.Concat =>
             throw InternalCompilerException(s"Unexpected BinaryOperator StringOp.Concat. It should have been eliminated by Simplifier", loc)
         }
-
-      case AtomicOp.Region =>
-        //!TODO: For now, just emit null
-        mv.visitInsn(ACONST_NULL)
-        mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
-
-      case AtomicOp.Is(sym) =>
-        val List(exp) = exps
-        val MonoType.Enum(_, targs) = exp.tpe
-        val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
-        val termTypes = cases(sym)
-        compileIsTag(sym.name, exp, termTypes)
-
-      case AtomicOp.Tag(sym) =>
-        val MonoType.Enum(_, targs) = tpe
-        val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
-        val termTypes = cases(sym)
-        compileTag(sym.name, exps, termTypes)
 
       case AtomicOp.Untag(sym, idx) =>
         val List(exp) = exps
