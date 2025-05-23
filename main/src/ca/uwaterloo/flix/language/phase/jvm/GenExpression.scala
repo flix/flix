@@ -46,61 +46,56 @@ object GenExpression {
                            pcCounter: Ref[Int]
                           )
 
+  object newAndCool {
+    import BytecodeInstructions.*
+    import BackendObjType.*
+    import BackendType.*
+    def compileExpr(exp0: Expr)(implicit root: Root): InstructionSet = exp0 match {
+      case Expr.Cst(cst, tpe, loc) => cst match {
+        case Constant.Unit => GETSTATIC(Unit.SingletonField)
+        case Constant.Null => pushNull() ~ CHECKCAST(???)
+        case Constant.Bool(lit) => pushBool(lit)
+        case Constant.Char(lit) => pushInt(lit)
+        case Constant.Float32(lit) => pushFloat(lit)
+        case Constant.Float64(lit) => pushDouble(lit)
+        case Constant.BigDecimal(lit) =>
+          addSourceLine(exp0.loc) ~ NEW(BigDecimal.jvmName) ~ DUP() ~ pushString(lit.toString) ~ INVOKESPECIAL(BigDecimal.Constructor)
+        case Constant.Int8(lit) => pushInt(lit)
+        case Constant.Int16(lit) => pushInt(lit)
+        case Constant.Int32(lit) => pushInt(lit)
+        case Constant.Int64(lit) => ???
+        case Constant.BigInt(lit) => ???
+        case Constant.Str(lit) => ???
+        case Constant.Regex(lit) => ???
+        case Constant.RecordEmpty => ???
+      }
+      case Expr.Var(sym, tpe, loc) => ???
+      case Expr.ApplyAtomic(op, exps, tpe, purity, loc) => ???
+      case Expr.ApplyClo(exp1, exp2, ct, tpe, purity, loc) => ???
+      case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) => ???
+      case Expr.ApplySelfTail(sym, actuals, tpe, purity, loc) => ???
+      case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) => ???
+      case Expr.Branch(exp, branches, tpe, purity, loc) => ???
+      case Expr.JumpTo(sym, tpe, purity, loc) => ???
+      case Expr.Let(sym, exp1, exp2, tpe, purity, loc) => ???
+      case Expr.Stmt(exp1, exp2, tpe, purity, loc) => ???
+      case Expr.Scope(sym, exp, tpe, purity, loc) => ???
+      case Expr.TryCatch(exp, rules, tpe, purity, loc) => ???
+      case Expr.RunWith(exp, effUse, rules, ct, tpe, purity, loc) => ???
+      case Expr.Do(op, exps, tpe, purity, loc) => ???
+      case Expr.NewObject(name, clazz, tpe, purity, methods, loc) => ???
+    }
+  }
+
   /**
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
   def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
 
     case Expr.Cst(cst, tpe, loc) => cst match {
-      case Constant.Unit =>
-        mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName,
-          BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.toDescriptor)
-
       case Constant.Null =>
         mv.visitInsn(ACONST_NULL)
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
-
-      case Constant.Bool(true) =>
-        mv.visitInsn(ICONST_1)
-
-      case Constant.Bool(false) =>
-        mv.visitInsn(ICONST_0)
-
-      case Constant.Char(c) =>
-        compileInt(c)
-
-      case Constant.Float32(f) =>
-        f match {
-          case 0f => mv.visitInsn(FCONST_0)
-          case 1f => mv.visitInsn(FCONST_1)
-          case 2f => mv.visitInsn(FCONST_2)
-          case _ => mv.visitLdcInsn(f)
-        }
-
-      case Constant.Float64(d) =>
-        d match {
-          case 0d => mv.visitInsn(DCONST_0)
-          case 1d => mv.visitInsn(DCONST_1)
-          case _ => mv.visitLdcInsn(d)
-        }
-
-      case Constant.BigDecimal(dd) =>
-        // Can fail with NumberFormatException
-        addSourceLine(mv, loc)
-        mv.visitTypeInsn(NEW, BackendObjType.BigDecimal.jvmName.toInternalName)
-        mv.visitInsn(DUP)
-        mv.visitLdcInsn(dd.toString)
-        mv.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigDecimal.jvmName.toInternalName, "<init>",
-          AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
-
-      case Constant.Int8(b) =>
-        compileInt(b)
-
-      case Constant.Int16(s) =>
-        compileInt(s)
-
-      case Constant.Int32(i) =>
-        compileInt(i)
 
       case Constant.Int64(l) =>
         compileLong(l)

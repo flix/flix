@@ -159,7 +159,9 @@ object BackendObjType {
     ))
   }
 
-  case object BigDecimal extends BackendObjType
+  case object BigDecimal extends BackendObjType {
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(String), None)
+  }
 
   case object BigInt extends BackendObjType
 

@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBranch, TrueBranch}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
@@ -193,6 +194,16 @@ object BytecodeInstructions {
     f
   }
 
+  def DCONST_0(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.DCONST_0)
+    f
+  }
+
+  def DCONST_1(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.DCONST_1)
+    f
+  }
+
   def DLOAD(index: Int): InstructionSet = f => {
     f.visitVarInstruction(Opcodes.DLOAD, index)
     f
@@ -236,6 +247,18 @@ object BytecodeInstructions {
   def DUP2_X2(): InstructionSet = f => {
     f.visitInstruction(Opcodes.DUP2_X2)
     f
+  }
+
+  def FCONST_0(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.FCONST_0)
+  }
+
+  def FCONST_1(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.FCONST_1)
+  }
+
+  def FCONST_2(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.FCONST_2)
   }
 
   def FLOAD(index: Int): InstructionSet = f => {
@@ -485,6 +508,8 @@ object BytecodeInstructions {
   // ~~~~~~~~~~~~~~~~~~~~~~~~~ Meta JVM Instructions ~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
+  def addSourceLine(loc: SourceLocation): InstructionSet = ???
+
   def branch(c: Condition)(cases: Branch => InstructionSet): InstructionSet = f0 => {
     var f = f0
     val jumpLabel = new Label()
@@ -599,6 +624,25 @@ object BytecodeInstructions {
     case 5 => ICONST_5()
     case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => BIPUSH(i.toByte)
     case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => SIPUSH(i.toByte)
+    case _ => f => {
+      f.visitLoadConstantInstruction(i)
+      f
+    }
+  }
+
+  def pushFloat(i: Float): InstructionSet = i match {
+    case 0f => FCONST_0()
+    case 1f => FCONST_1()
+    case 2f => FCONST_2()
+    case _ => f => {
+      f.visitLoadConstantInstruction(i)
+      f
+    }
+  }
+
+  def pushDouble(i: Double): InstructionSet = i match {
+    case 0d => DCONST_0()
+    case 1d => DCONST_1()
     case _ => f => {
       f.visitLoadConstantInstruction(i)
       f
