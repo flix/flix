@@ -498,7 +498,7 @@ object GenFunAndClosureClasses {
     loadParamsOf(cparams)
     loadParamsOf(fparams)
 
-    if (Purity.isControlPure(defn.expr.purity) && isFunction(defn)) {
+    if (Purity.isControlPure(defn.expr.purity)) {
       val ctx = GenExpression.DirectContext(classType, enterLabel, Map.empty, localOffset)
       GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
     } else {
