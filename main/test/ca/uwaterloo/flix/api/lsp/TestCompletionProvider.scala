@@ -225,10 +225,21 @@ class TestCompletionProvider extends AnyFunSuite {
     }
   }
 
-  test("NoCompletions.onEnumSyms") {
+  test("NoCompletions.onEffectSyms") {
     forAll(Programs) { prg =>
       val root = compileWithSuccess(prg)
       forAll(effectSymsOf(root)) { sym =>
+        forAll(rangeOfInclusive(sym.loc)) { pos =>
+          Assert.isEmpty(autoComplete(pos, root), pos)
+        }
+      }
+    }
+  }
+
+  test("NoCompletions.onSigSyms") {
+    forAll(Programs) { prg =>
+      val root = compileWithSuccess(prg)
+      forAll(sigSymsOf(root)) { sym =>
         forAll(rangeOfInclusive(sym.loc)) { pos =>
           Assert.isEmpty(autoComplete(pos, root), pos)
         }
@@ -267,21 +278,6 @@ class TestCompletionProvider extends AnyFunSuite {
         }
       }
     }
-  }
-
-
-
-
-
-  test("No completions when defining the name for sigs") {
-    Programs.foreach(program => {
-      val (root, errors) = compile(program)
-      val allNameDefLocs = root.sigs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
-      allNameDefLocs.foreach { loc =>
-        val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        Assert.isEmpty(completions, loc, Position.from(loc.sp2))
-      }
-    })
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -553,6 +549,12 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private def enumSymsOf(root: Root): List[Symbol.EnumSym] =
     root.enums.keys.filter(_.src.name.startsWith(Uri)).toList
+
+  /**
+    * Returns all sig symbols in the given AST `root` for the program.
+    */
+  private def sigSymsOf(root: Root): List[Symbol.SigSym] =
+    root.sigs.keys.filter(_.src.name.startsWith(Uri)).toList
 
   /**
     * Returns all struct symbols in the given AST `root` for the program.
