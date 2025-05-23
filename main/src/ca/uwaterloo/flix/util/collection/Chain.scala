@@ -39,7 +39,7 @@ sealed trait Chain[+A] {
   /**
     * Appends `that` to `this`.
     */
-  final def :+[B >: A](that: B): Chain[B] = this ++ Chain.Proxy(Seq(that))
+  final def :+[B >: A](that: B): Chain[B] = this ++ Chain.Single(that)
 
   /**
     * The empty chain.
@@ -53,6 +53,7 @@ sealed trait Chain[+A] {
     case Chain.Empty => true
     case Chain.Link(l, r) => l.isEmpty && r.isEmpty
     case Chain.Proxy(xs) => xs.isEmpty
+    case Chain.Single(_) => false
   }
 
   /**
@@ -64,6 +65,7 @@ sealed trait Chain[+A] {
     case Chain.Link(Chain.empty, r) => r.head
     case Chain.Link(l, _) => l.head
     case Chain.Proxy(xs) => xs.headOption
+    case Chain.Single(x) => Some(x)
   }
 
   /**
@@ -73,6 +75,7 @@ sealed trait Chain[+A] {
     case Chain.Empty => 0
     case Chain.Link(l, r) => l.length + r.length
     case Chain.Proxy(xs) => xs.length
+    case Chain.Single(_) => 1
   }
 
   /**
@@ -82,6 +85,7 @@ sealed trait Chain[+A] {
     case Chain.Empty => false
     case Chain.Link(l, r) => l.exists(f) || r.exists(f)
     case Chain.Proxy(xs) => xs.exists(f)
+    case Chain.Single(x) => f(x)
   }
 
   /**
@@ -91,6 +95,7 @@ sealed trait Chain[+A] {
     case Chain.Empty => Chain.empty
     case Chain.Link(l, r) => Chain.Link(l.map(f), r.map(f))
     case Chain.Proxy(xs) => Chain.Proxy(xs.map(f))
+    case Chain.Single(x) => Chain.Single(f(x))
   }
 
   /**
@@ -104,6 +109,7 @@ sealed trait Chain[+A] {
     case _: Chain.Empty.type => ()
     case c: Chain.Link[_] => c.l.foreach(f); c.r.foreach(f)
     case c: Chain.Proxy[_] => c.xs.foreach(f)
+    case c: Chain.Single[_] => f(c.x)
   }
 
   /**
@@ -113,6 +119,7 @@ sealed trait Chain[+A] {
     case Chain.Empty => Seq.empty
     case Chain.Link(l, r) => l.toSeq ++ r.toSeq
     case Chain.Proxy(xs) => xs
+    case Chain.Single(x) => Seq(x)
   }
 
   /**
@@ -166,6 +173,11 @@ object Chain {
   private case class Proxy[A](xs: Seq[A]) extends Chain[A]
 
   /**
+    * A Singleton Chain.
+    */
+  private case class Single[A](x: A) extends Chain[A]
+
+  /**
     * The empty chain.
     */
   val empty: Chain[Nothing] = Chain.Empty
@@ -178,7 +190,10 @@ object Chain {
   /**
     * Returns a chain containing the given elements.
     */
-  def from[A](xs: Seq[A]): Chain[A] = if (xs.isEmpty) Chain.empty else Chain.Proxy(xs)
+  def from[A](xs: Seq[A]): Chain[A] =
+    if (xs.isEmpty) Chain.empty
+    else if (xs.lengthIs == 1) Chain.Single(xs.head)
+    else Chain.Proxy(xs)
 
   /**
     * Returns a chain containing the given elements.
