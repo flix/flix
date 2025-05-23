@@ -214,17 +214,22 @@ class TestCompletionProvider extends AnyFunSuite {
     }
   }
 
-
-  test("No completions when defining the name for enums") {
-    Programs.foreach(program => {
-      val (root, errors) = compile(program)
-      val allNameDefLocs = root.enums.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
-      allNameDefLocs.foreach { loc =>
-        val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        Assert.isEmpty(completions, loc, Position.from(loc.sp2))
+  test("NoCompletions.onEnums") {
+    forAll(Programs) { prg =>
+      val root = compileWithSuccess(prg)
+      forAll(getEnumSyms(root)) { sym =>
+        forAll(rangeOfInclusive(sym.loc)) { pos =>
+          Assert.isEmpty(autoComplete(pos, root), pos)
+        }
       }
-    })
+    }
   }
+
+
+
+
+
+
 
   test("No completions when defining the name for sigs") {
     Programs.foreach(program => {
@@ -539,6 +544,12 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private def getDefSyms(root: Root): List[Symbol.DefnSym] =
     root.defs.keys.filter(_.src.name.startsWith(Uri)).toList
+
+  /**
+    * Returns all def symbols in the given AST `root` for the program.
+    */
+  private def getEnumSyms(root: Root): List[Symbol.EnumSym] =
+    root.enums.keys.filter(_.src.name.startsWith(Uri)).toList
 
   /**
     * Returns the set of variable symbols that occur in the given root.
