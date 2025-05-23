@@ -149,7 +149,7 @@ class TestCompletionProvider extends AnyFunSuite {
   // No Completions: Comments
   /////////////////////////////////////////////////////////////////////////////
 
-  test("NoCompletions.BlockComments") {
+  test("NoCompletions.inBlockComments") {
     // Note: Block comments are exclusive.
     forAll(Programs)(prg => {
       val root = compileWithSuccess(prg)
@@ -161,11 +161,11 @@ class TestCompletionProvider extends AnyFunSuite {
     })
   }
 
-  test("NoCompletions.LineOrDocComments") {
-    // Note: Line or doc comments are inclusive.
+  test("NoCompletions.onLineComments") {
+    // Note: Line (and doc) comments are inclusive.
     forAll(Programs)(prg => {
       val root = compileWithSuccess(prg)
-      forAll(lineOrDocCommentsOf(prg, root)) { tok =>
+      forAll(lineCommentsOf(prg, root)) { tok =>
         forAll(rangeOfInclusive(tok)) { pos =>
           Assert.isEmpty(autoComplete(pos, root), pos)
         }
@@ -177,7 +177,7 @@ class TestCompletionProvider extends AnyFunSuite {
   // No Completions: Keywords and Literals
   /////////////////////////////////////////////////////////////////////////////
 
-  test("NoCompletions.OnKeywords") {
+  test("NoCompletions.onKeywords") {
     forAll(Programs) { prg =>
       val root = compileWithSuccess(prg)
       forAll(keywordsOf(prg, root)) { tok =>
@@ -188,7 +188,7 @@ class TestCompletionProvider extends AnyFunSuite {
     }
   }
 
-  test("NoCompletions.OnLiterals") {
+  test("NoCompletions.onLiterals") {
     forAll(Programs) { prg =>
       val root = compileWithSuccess(prg)
       forAll(literalsOf(prg, root)) { tok =>
@@ -203,7 +203,7 @@ class TestCompletionProvider extends AnyFunSuite {
   // No Completions: Names
   /////////////////////////////////////////////////////////////////////////////
 
-  test("NoCompletions.OnDefSymDecl") {
+  test("NoCompletions.onDefs") {
     forAll(Programs) { prg =>
       val root = compileWithSuccess(prg)
       forAll(getDefSyms(root)) { sym =>
@@ -281,6 +281,11 @@ class TestCompletionProvider extends AnyFunSuite {
     })
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // No Duplicate Completions
+  /////////////////////////////////////////////////////////////////////////////
+
+  // TODO
   test("No duplicated completions for defs") {
     // Exhaustively generate all tests.
     val tests = Programs.flatMap(program => {
@@ -336,6 +341,8 @@ class TestCompletionProvider extends AnyFunSuite {
     }
   }
 
+  // TODO: More properties.
+
   /**
     * Returns all autocomplete suggestions at the given position `pos` for the given AST `root`.
     */
@@ -371,7 +378,7 @@ class TestCompletionProvider extends AnyFunSuite {
     *
     * Returns both regular line comments and documentation comments. That is, comments starting with `//` or `///`.
     */
-  private def lineOrDocCommentsOf(prg: String, root: Root): List[Token] = {
+  private def lineCommentsOf(prg: String, root: Root): List[Token] = {
     def isLineOrDocComment(tok: Token): Boolean = tok.kind match {
       case TokenKind.CommentLine => true
       case TokenKind.CommentDoc => true
