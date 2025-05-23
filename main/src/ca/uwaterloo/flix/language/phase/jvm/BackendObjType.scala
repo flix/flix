@@ -28,6 +28,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.{IsVolatile, N
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, JavaLangInvoke, JavaUtil, JavaUtilConcurrent, MethodDescriptor, RootPackage}
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.Chain
 import org.objectweb.asm.Opcodes
 
 /**
@@ -939,12 +940,11 @@ object BackendObjType {
     def ArgsField: StaticField =
       StaticField(this.jvmName, IsPrivate, NotFinal, NotVolatile, "args", BackendType.Array(String.toTpe))
 
-    private def arrayCopy(): InstructionSet = (f: F) => {
-      f.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
+    private def arrayCopy(): InstructionSet = Chain({
+      Instruction.MethodIns(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
         MethodDescriptor(List(JavaObject.toTpe, BackendType.Int32, JavaObject.toTpe, BackendType.Int32,
           BackendType.Int32), VoidableType.Void), isInterface = false)
-      f
-    }
+    })
   }
 
   case object Regex extends BackendObjType

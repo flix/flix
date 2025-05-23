@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.{InstructionSet, MethodEnricher}
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression.compileInt
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
@@ -182,7 +182,7 @@ object GenFunAndClosureClasses {
     m.visitInsn(ACONST_NULL)
     m.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, applyMethod.name, applyMethod.d.toDescriptor, false)
 
-    BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)(new BytecodeInstructions.F(m))
+    m.visitIns(BytecodeInstructions.xReturn(BackendObjType.Result.toTpe))
 
     m.visitMaxs(999, 999)
     m.visitEnd()
@@ -247,7 +247,7 @@ object GenFunAndClosureClasses {
     assert(ctx.pcCounter(0) == pcLabels.size, s"${(classType.name, ctx.pcCounter(0), pcLabels.size)}")
 
     val returnValue = BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
-    returnValue(new BytecodeInstructions.F(m))
+    m.visitIns(returnValue)
 
     m.visitMaxs(999, 999)
     m.visitEnd()
@@ -300,7 +300,7 @@ object GenFunAndClosureClasses {
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, copyName, nothingToTDescriptor(classType).toDescriptor, null, null)
     m.visitCode()
 
-    mkCopy(classType, defn)(new BytecodeInstructions.F(m))
+    m.visitIns(mkCopy(classType, defn))
     m.visitInsn(Opcodes.ARETURN)
 
     m.visitMaxs(999, 999)
@@ -312,7 +312,7 @@ object GenFunAndClosureClasses {
     val m = visitor.visitMethod(ACC_PUBLIC, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, null, null)
     m.visitCode()
 
-    mkCopy(classType, defn)(new BytecodeInstructions.F(m))
+    m.visitIns(mkCopy(classType, defn))
     m.visitInsn(Opcodes.ARETURN)
 
     m.visitMaxs(999, 999)
@@ -322,7 +322,6 @@ object GenFunAndClosureClasses {
   private def compileOnCall(v: ClassWriter, classType: JvmType.Reference, defn: Def): Unit = {
     val m = v.visitMethod(ACC_PUBLIC, "onCall", MethodDescriptor.mkDescriptor(BackendObjType.Value.toTpe)(VoidableType.Void).toDescriptor, null, null)
     m.visitCode()
-    val mf = new BytecodeInstructions.F(m)
 
     val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", p._1.tpe))
     val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", p._1.tpe))
@@ -346,7 +345,7 @@ object GenFunAndClosureClasses {
     compileInt(1)(m)
     m.visitVarInsn(ALOAD, 0)
     m.visitFieldInsn(GETFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
-    BytecodeInstructions.xToString(BackendType.Int32)(mf)
+    m.visitIns(BytecodeInstructions.xToString(BackendType.Int32))
     m.visitInsn(AASTORE)
 
     params.zipWithIndex.foreach {
@@ -359,7 +358,7 @@ object GenFunAndClosureClasses {
         m.visitVarInsn(ALOAD, 0)
         val bt = BackendType.toErasedBackendType(fieldType)
         m.visitFieldInsn(GETFIELD, classType.name.toInternalName, fieldName, bt.toDescriptor)
-        BytecodeInstructions.xToString(bt)(mf)
+        m.visitIns(BytecodeInstructions.xToString(bt))
         m.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, "concat", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.String.toTpe).toDescriptor, false)
         m.visitInsn(AASTORE)
     }
@@ -367,7 +366,7 @@ object GenFunAndClosureClasses {
     m.visitInsn(DUP)
     compileInt(strings - 1)(m)
     m.visitVarInsn(ALOAD, 1)
-    BytecodeInstructions.xToString(BackendObjType.Value.toTpe)(mf)
+    m.visitIns(BytecodeInstructions.xToString(BackendObjType.Value.toTpe))
     m.visitInsn(AASTORE)
 
     m.visitLdcInsn(", ")

@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBr
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
+import ca.uwaterloo.flix.util.collection.Chain
 import org.objectweb.asm
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
@@ -67,17 +68,56 @@ object BytecodeInstructions {
     def cheat(command: MethodVisitor => Unit): Unit = command(visitor)
   }
 
-  type InstructionSet = F => F
+  type InstructionSet = Chain[Instruction]
+
+  sealed trait Instruction
+
+  object Instruction {
+    case class Cheat(command: MethodVisitor => Unit) extends Instruction
+    case class FieldIns(opcode: Int, clazz: JvmName, name: String, tpe: BackendType) extends Instruction
+    case class Ins(opcode: Int) extends Instruction
+    case class IntIns(opcode: Int, value: Int) extends Instruction
+    case class InvokeDynamicIns(methodName: String, descriptor: MethodDescriptor, bootstrapMethodHandle: Handle, bootstrapMethodArguments: List[Any]) extends Instruction
+    case class JumpIns(opcode: Int, label: Label) extends Instruction
+    case class LoadConstantIns(constant: Any) extends Instruction
+    case class MethodIns(opcode: Int, clazz: JvmName, name: String, descriptor: MethodDescriptor, isInterface: Boolean) extends Instruction
+    case class PlaceLabel(label: Label) extends Instruction
+    case class TryCatchIns(beforeTry: Label, afterTry: Label, handlerStart: Label) extends Instruction
+    case class TypeIns(opcode: Int, clazz: JvmName) extends Instruction
+    case class VarIns(opcode: Int, index: Int) extends Instruction
+  }
 
   /**
     * Returns the sequential composition of the two instructions.
     */
   def compose(i1: InstructionSet, i2: InstructionSet): InstructionSet =
-    f => i2(i1(f))
+    i1 ++ i2
 
   implicit class ComposeOps(i1: InstructionSet) {
     def ~(i2: InstructionSet): InstructionSet =
       compose(i1, i2)
+  }
+
+  def visit(f: F, ins: Instruction): Unit = ins match {
+    case Instruction.Cheat(command) => f.cheat(command)
+    case Instruction.FieldIns(opcode, clazz, name, tpe) => f.visitFieldInstruction(opcode, clazz, name, tpe)
+    case Instruction.Ins(opcode) => f.visitInstruction(opcode)
+    case Instruction.IntIns(opcode, value) => f.visitIntInstruction(opcode, value)
+    case Instruction.InvokeDynamicIns(methodName, descriptor, bootstrapMethodHandle, bootstrapMethodArguments) => f.visitInvokeDynamicInstruction(methodName, descriptor, bootstrapMethodHandle, bootstrapMethodArguments *)
+    case Instruction.JumpIns(opcode, label) => f.visitJumpInstruction(opcode, label)
+    case Instruction.LoadConstantIns(constant) => f.visitLoadConstantInstruction(constant)
+    case Instruction.MethodIns(opcode, clazz, name, descriptor, isInterface) => f.visitMethodInstruction(opcode, clazz, name, descriptor, isInterface)
+    case Instruction.PlaceLabel(label) => f.visitLabel(label)
+    case Instruction.TryCatchIns(beforeTry, afterTry, handlerStart) => f.visitTryCatchBlock(beforeTry, afterTry, handlerStart)
+    case Instruction.TypeIns(opcode, clazz) => f.visitTypeInstruction(opcode, clazz)
+    case Instruction.VarIns(opcode, index) => f.visitVarInstruction(opcode, index)
+  }
+
+  implicit class MethodEnricher(mv: MethodVisitor) {
+    def visitIns(ins: InstructionSet): Unit = {
+      val f = new F(mv)
+      ins.foreach(visit(f, _))
+    }
   }
 
   sealed case class Handle(handle: asm.Handle)
@@ -143,175 +183,73 @@ object BytecodeInstructions {
   // ~~~~~~~~~~~~~~~~~~~~~~~~ Direct JVM Instructions ~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
-  def AASTORE(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.AASTORE)
-    f
-  }
+  def AASTORE(): InstructionSet = Chain(Instruction.Ins(Opcodes.AASTORE))
 
-  def ACONST_NULL(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.ACONST_NULL)
-    f
-  }
+  def ACONST_NULL(): InstructionSet = Chain(Instruction.Ins(Opcodes.ACONST_NULL))
 
-  def ALOAD(index: Int): InstructionSet = f => {
-    f.visitVarInstruction(Opcodes.ALOAD, index)
-    f
-  }
+  def ALOAD(index: Int): InstructionSet = Chain(Instruction.VarIns(Opcodes.ALOAD, index))
 
-  def ANEWARRAY(className: JvmName): InstructionSet = f => {
-    f.visitTypeInstruction(Opcodes.ANEWARRAY, className)
-    f
-  }
+  def ANEWARRAY(className: JvmName): InstructionSet = Chain(Instruction.TypeIns(Opcodes.ANEWARRAY, className))
 
-  def ARETURN(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.ARETURN)
-    f
-  }
+  def ARETURN(): InstructionSet = Chain(Instruction.Ins(Opcodes.ARETURN))
 
-  def ARRAYLENGTH(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.ARRAYLENGTH)
-    f
-  }
+  def ARRAYLENGTH(): InstructionSet = Chain(Instruction.Ins(Opcodes.ARRAYLENGTH))
 
-  def ASTORE(index: Int): InstructionSet = f => {
-    f.visitVarInstruction(Opcodes.ASTORE, index)
-    f
-  }
+  def ASTORE(index: Int): InstructionSet = Chain(Instruction.VarIns(Opcodes.ASTORE, index))
 
-  def ATHROW(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.ATHROW)
-    f
-  }
+  def ATHROW(): InstructionSet = Chain(Instruction.Ins(Opcodes.ATHROW))
 
-  def BIPUSH(i: Byte): InstructionSet = f => {
-    f.visitIntInstruction(Opcodes.BIPUSH, i)
-    f
-  }
+  def BIPUSH(i: Byte): InstructionSet = Chain(Instruction.IntIns(Opcodes.BIPUSH, i))
 
-  def CHECKCAST(className: JvmName): InstructionSet = f => {
-    f.visitTypeInstruction(Opcodes.CHECKCAST, className)
-    f
-  }
+  def CHECKCAST(className: JvmName): InstructionSet = Chain(Instruction.TypeIns(Opcodes.CHECKCAST, className))
 
-  def DLOAD(index: Int): InstructionSet = f => {
-    f.visitVarInstruction(Opcodes.DLOAD, index)
-    f
-  }
+  def DLOAD(index: Int): InstructionSet = Chain(Instruction.VarIns(Opcodes.DLOAD, index))
 
-  def DRETURN(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.DRETURN)
-    f
-  }
+  def DRETURN(): InstructionSet = Chain(Instruction.Ins(Opcodes.DRETURN))
 
-  def DSTORE(index: Int): InstructionSet = f => {
-    f.visitVarInstruction(Opcodes.DSTORE, index)
-    f
-  }
+  def DSTORE(index: Int): InstructionSet = Chain(Instruction.VarIns(Opcodes.DSTORE, index))
 
-  def DUP(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.DUP)
-    f
-  }
+  def DUP(): InstructionSet = Chain(Instruction.Ins(Opcodes.DUP))
 
-  def DUP2(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.DUP2)
-    f
-  }
+  def DUP2(): InstructionSet = Chain(Instruction.Ins(Opcodes.DUP2))
 
-  def DUP_X1(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.DUP_X1)
-    f
-  }
+  def DUP_X1(): InstructionSet = Chain(Instruction.Ins(Opcodes.DUP_X1))
 
-  def DUP_X2(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.DUP_X2)
-    f
-  }
+  def DUP_X2(): InstructionSet = Chain(Instruction.Ins(Opcodes.DUP_X2))
 
-  def DUP2_X1(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.DUP2_X1)
-    f
-  }
+  def DUP2_X1(): InstructionSet = Chain(Instruction.Ins(Opcodes.DUP2_X1))
 
-  def DUP2_X2(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.DUP2_X2)
-    f
-  }
+  def DUP2_X2(): InstructionSet = Chain(Instruction.Ins(Opcodes.DUP2_X2))
 
-  def FLOAD(index: Int): InstructionSet = f => {
-    f.visitVarInstruction(Opcodes.FLOAD, index)
-    f
-  }
+  def FLOAD(index: Int): InstructionSet = Chain(Instruction.VarIns(Opcodes.FLOAD, index))
 
-  def FRETURN(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.FRETURN)
-    f
-  }
+  def FRETURN(): InstructionSet = Chain(Instruction.Ins(Opcodes.FRETURN))
 
-  def FSTORE(index: Int): InstructionSet = f => {
-    f.visitVarInstruction(Opcodes.FSTORE, index)
-    f
-  }
+  def FSTORE(index: Int): InstructionSet = Chain(Instruction.VarIns(Opcodes.FSTORE, index))
 
-  def GETFIELD(field: InstanceField): InstructionSet = f => {
-    f.visitFieldInstruction(Opcodes.GETFIELD, field.clazz, field.name, field.tpe)
-    f
-  }
+  def GETFIELD(field: InstanceField): InstructionSet = Chain(Instruction.FieldIns(Opcodes.GETFIELD, field.clazz, field.name, field.tpe))
 
-  def GETSTATIC(field: StaticField): InstructionSet = f => {
-    f.visitFieldInstruction(Opcodes.GETSTATIC, field.clazz, field.name, field.tpe)
-    f
-  }
+  def GETSTATIC(field: StaticField): InstructionSet = Chain(Instruction.FieldIns(Opcodes.GETSTATIC, field.clazz, field.name, field.tpe))
 
-  def IADD(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.IADD)
-    f
-  }
+  def IADD(): InstructionSet = Chain(Instruction.Ins(Opcodes.IADD))
 
-  def ICONST_0(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.ICONST_0)
-    f
-  }
+  def ICONST_0(): InstructionSet = Chain(Instruction.Ins(Opcodes.ICONST_0))
 
-  def ICONST_1(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.ICONST_1)
-    f
-  }
+  def ICONST_1(): InstructionSet = Chain(Instruction.Ins(Opcodes.ICONST_1))
 
-  def ICONST_2(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.ICONST_2)
-    f
-  }
+  def ICONST_2(): InstructionSet = Chain(Instruction.Ins(Opcodes.ICONST_2))
 
-  def ICONST_3(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.ICONST_3)
-    f
-  }
+  def ICONST_3(): InstructionSet = Chain(Instruction.Ins(Opcodes.ICONST_3))
 
-  def ICONST_4(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.ICONST_4)
-    f
-  }
+  def ICONST_4(): InstructionSet = Chain(Instruction.Ins(Opcodes.ICONST_4))
 
-  def ICONST_5(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.ICONST_5)
-    f
-  }
+  def ICONST_5(): InstructionSet = Chain(Instruction.Ins(Opcodes.ICONST_5))
 
-  def ICONST_M1(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.ICONST_M1)
-    f
-  }
+  def ICONST_M1(): InstructionSet = Chain(Instruction.Ins(Opcodes.ICONST_M1))
 
-  def ILOAD(index: Int): InstructionSet = f => {
-    f.visitVarInstruction(Opcodes.ILOAD, index)
-    f
-  }
+  def ILOAD(index: Int): InstructionSet = Chain(Instruction.VarIns(Opcodes.ILOAD, index))
 
-  def INSTANCEOF(tpe: JvmName): InstructionSet = f => {
-    f.visitTypeInstruction(Opcodes.INSTANCEOF, tpe)
-    f
-  }
+  def INSTANCEOF(tpe: JvmName): InstructionSet = Chain(Instruction.TypeIns(Opcodes.INSTANCEOF, tpe))
 
   /**
     * Make an object which the functional interface of `lambdaMethod`. The
@@ -332,17 +270,18 @@ object BytecodeInstructions {
     * last `n` arguments to the original return type. This must of course
     * correspond to the type of `lambdaMethod`.
     */
-  def mkStaticLambda(lambdaMethod: InterfaceMethod, callD: MethodDescriptor, callHandle: Handle, drop: Int): InstructionSet = f => {
-    f.visitInvokeDynamicInstruction(
+  def mkStaticLambda(lambdaMethod: InterfaceMethod, callD: MethodDescriptor, callHandle: Handle, drop: Int): InstructionSet = Chain(
+    Instruction.InvokeDynamicIns(
       lambdaMethod.name,
       mkDescriptor(callD.arguments.dropRight(drop) *)(lambdaMethod.clazz.toTpe),
       mkStaticHandle(BackendObjType.LambdaMetaFactory.MetaFactoryMethod),
-      lambdaMethod.d.toAsmType,
-      callHandle.handle,
-      lambdaMethod.d.toAsmType
+      List(
+        lambdaMethod.d.toAsmType,
+        callHandle.handle,
+        lambdaMethod.d.toAsmType
+      )
     )
-    f
-  }
+  )
 
   def mkStaticLambda(lambdaMethod: InterfaceMethod, call: StaticMethod, drop: Int): InstructionSet =
     mkStaticLambda(lambdaMethod, call.d, mkStaticHandle(call), drop)
@@ -350,233 +289,154 @@ object BytecodeInstructions {
   def mkStaticLambda(lambdaMethod: InterfaceMethod, call: StaticInterfaceMethod, drop: Int): InstructionSet =
     mkStaticLambda(lambdaMethod, call.d, mkStaticHandle(call), drop)
 
-  def INVOKEINTERFACE(interfaceName: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKEINTERFACE, interfaceName, methodName, descriptor, isInterface = true)
-    f
-  }
+  def INVOKEINTERFACE(interfaceName: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = Chain(Instruction.MethodIns(Opcodes.INVOKEINTERFACE, interfaceName, methodName, descriptor, isInterface = true))
 
-  def INVOKEINTERFACE(m: InterfaceMethod): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKEINTERFACE, m.clazz, m.name, m.d, isInterface = true)
-    f
-  }
+  def INVOKEINTERFACE(m: InterfaceMethod): InstructionSet = Chain(Instruction.MethodIns(Opcodes.INVOKEINTERFACE, m.clazz, m.name, m.d, isInterface = true))
 
-  def INVOKESPECIAL(className: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
+  def INVOKESPECIAL(className: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = {
     val isInterface = false // OBS this is not technically true if you use it to call private interface methods(?)
-    f.visitMethodInstruction(Opcodes.INVOKESPECIAL, className, methodName, descriptor, isInterface = isInterface)
-    f
+    Chain(Instruction.MethodIns(Opcodes.INVOKESPECIAL, className, methodName, descriptor, isInterface = isInterface))
   }
 
-  def INVOKESPECIAL(c: ConstructorMethod): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKESPECIAL, c.clazz, c.name, c.d, isInterface = false)
-    f
-  }
+  def INVOKESPECIAL(c: ConstructorMethod): InstructionSet = Chain(Instruction.MethodIns(Opcodes.INVOKESPECIAL, c.clazz, c.name, c.d, isInterface = false))
 
-  def INVOKESTATIC(className: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean = false): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKESTATIC, className, methodName, descriptor, isInterface)
-    f
-  }
+  def INVOKESTATIC(className: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean = false): InstructionSet = Chain(Instruction.MethodIns(Opcodes.INVOKESTATIC, className, methodName, descriptor, isInterface))
 
-  def INVOKESTATIC(m: StaticMethod): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKESTATIC, m.clazz, m.name, m.d, isInterface = false)
-    f
-  }
+  def INVOKESTATIC(m: StaticMethod): InstructionSet = Chain(Instruction.MethodIns(Opcodes.INVOKESTATIC, m.clazz, m.name, m.d, isInterface = false))
 
-  def INVOKESTATIC(m: StaticInterfaceMethod): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKESTATIC, m.clazz, m.name, m.d, isInterface = true)
-    f
-  }
+  def INVOKESTATIC(m: StaticInterfaceMethod): InstructionSet = Chain(Instruction.MethodIns(Opcodes.INVOKESTATIC, m.clazz, m.name, m.d, isInterface = true))
 
-  def INVOKEVIRTUAL(className: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean = false): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, className, methodName, descriptor, isInterface)
-    f
-  }
+  def INVOKEVIRTUAL(className: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean = false): InstructionSet = Chain(Instruction.MethodIns(Opcodes.INVOKEVIRTUAL, className, methodName, descriptor, isInterface))
 
-  def INVOKEVIRTUAL(m: AbstractMethod): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, m.clazz, m.name, m.d, isInterface = false)
-    f
-  }
+  def INVOKEVIRTUAL(m: AbstractMethod): InstructionSet = Chain(Instruction.MethodIns(Opcodes.INVOKEVIRTUAL, m.clazz, m.name, m.d, isInterface = false))
 
-  def INVOKEVIRTUAL(m: InstanceMethod): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, m.clazz, m.name, m.d, isInterface = false)
-    f
-  }
+  def INVOKEVIRTUAL(m: InstanceMethod): InstructionSet = Chain(Instruction.MethodIns(Opcodes.INVOKEVIRTUAL, m.clazz, m.name, m.d, isInterface = false))
 
-  def IRETURN(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.IRETURN)
-    f
-  }
+  def IRETURN(): InstructionSet = Chain(Instruction.Ins(Opcodes.IRETURN))
 
-  def ISTORE(index: Int): InstructionSet = f => {
-    f.visitVarInstruction(Opcodes.ISTORE, index)
-    f
-  }
+  def ISTORE(index: Int): InstructionSet = Chain(Instruction.VarIns(Opcodes.ISTORE, index))
 
-  def LCMP(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.LCMP)
-    f
-  }
+  def LCMP(): InstructionSet = Chain(Instruction.Ins(Opcodes.LCMP))
 
-  def LCONST_0(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.LCONST_0)
-    f
-  }
+  def LCONST_0(): InstructionSet = Chain(Instruction.Ins(Opcodes.LCONST_0))
 
-  def LCONST_1(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.LCONST_1)
-    f
-  }
+  def LCONST_1(): InstructionSet = Chain(Instruction.Ins(Opcodes.LCONST_1))
 
-  def LLOAD(index: Int): InstructionSet = f => {
-    f.visitVarInstruction(Opcodes.LLOAD, index)
-    f
-  }
+  def LLOAD(index: Int): InstructionSet = Chain(Instruction.VarIns(Opcodes.LLOAD, index))
 
-  def LRETURN(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.LRETURN)
-    f
-  }
+  def LRETURN(): InstructionSet = Chain(Instruction.Ins(Opcodes.LRETURN))
 
-  def LSTORE(index: Int): InstructionSet = f => {
-    f.visitVarInstruction(Opcodes.LSTORE, index)
-    f
-  }
+  def LSTORE(index: Int): InstructionSet = Chain(Instruction.VarIns(Opcodes.LSTORE, index))
 
-  def NEW(className: JvmName): InstructionSet = f => {
-    f.visitTypeInstruction(Opcodes.NEW, className)
-    f
-  }
+  def NEW(className: JvmName): InstructionSet = Chain(Instruction.TypeIns(Opcodes.NEW, className))
 
-  def POP(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.POP)
-    f
-  }
+  def POP(): InstructionSet = Chain(Instruction.Ins(Opcodes.POP))
 
-  def POP2(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.POP2)
-    f
-  }
+  def POP2(): InstructionSet = Chain(Instruction.Ins(Opcodes.POP2))
 
-  def PUTFIELD(field: InstanceField): InstructionSet = f => {
-    f.visitFieldInstruction(Opcodes.PUTFIELD, field.clazz, field.name, field.tpe)
-    f
-  }
+  def PUTFIELD(field: InstanceField): InstructionSet = Chain(Instruction.FieldIns(Opcodes.PUTFIELD, field.clazz, field.name, field.tpe))
 
-  def PUTSTATIC(field: StaticField): InstructionSet = f => {
-    f.visitFieldInstruction(Opcodes.PUTSTATIC, field.clazz, field.name, field.tpe)
-    f
-  }
+  def PUTSTATIC(field: StaticField): InstructionSet = Chain(Instruction.FieldIns(Opcodes.PUTSTATIC, field.clazz, field.name, field.tpe))
 
-  def RETURN(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.RETURN)
-    f
-  }
+  def RETURN(): InstructionSet = Chain(Instruction.Ins(Opcodes.RETURN))
 
-  def SIPUSH(i: Short): InstructionSet = f => {
-    f.visitIntInstruction(Opcodes.SIPUSH, i)
-    f
-  }
+  def SIPUSH(i: Short): InstructionSet = Chain(Instruction.IntIns(Opcodes.SIPUSH, i))
 
-  def SWAP(): InstructionSet = f => {
-    f.visitInstruction(Opcodes.SWAP)
-    f
-  }
+  def SWAP(): InstructionSet = Chain(Instruction.Ins(Opcodes.SWAP))
 
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~~ Meta JVM Instructions ~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
-  def branch(c: Condition)(cases: Branch => InstructionSet): InstructionSet = f0 => {
-    var f = f0
+  def branch(c: Condition)(cases: Branch => InstructionSet): InstructionSet = {
+    var ins: Chain[Instruction] = Chain.empty
     val jumpLabel = new Label()
     val skipLabel = new Label()
-    f.visitJumpInstruction(opcodeOf(c), jumpLabel)
+    ins :+= Instruction.JumpIns(opcodeOf(c), jumpLabel)
 
-    f = cases(FalseBranch)(f)
-    f.visitJumpInstruction(Opcodes.GOTO, skipLabel)
+    ins ++= cases(FalseBranch)
+    ins :+= Instruction.JumpIns(Opcodes.GOTO, skipLabel)
 
-    f.visitLabel(jumpLabel)
-    f = cases(TrueBranch)(f)
-    f.visitLabel(skipLabel)
-    f
+    ins :+= Instruction.PlaceLabel(jumpLabel)
+    ins ++= cases(TrueBranch)
+    ins :+= Instruction.PlaceLabel(skipLabel)
+    ins
   }
 
-  def cheat(command: MethodVisitor => Unit): InstructionSet = f => {
-    f.cheat(command)
-    f
-  }
+  def cheat(command: MethodVisitor => Unit): InstructionSet = Chain(Instruction.Cheat(command))
 
-  /// do { i } while(c)
-  def doWhile(c: Condition)(i: InstructionSet): InstructionSet = f0 => {
-    var f = f0
+  /** do { body } while(c) */
+  def doWhile(c: Condition)(body: InstructionSet): InstructionSet = {
+    var ins: Chain[Instruction] = Chain.empty
     val start = new Label()
-    f.visitLabel(start)
-    f = i(f)
-    f.visitJumpInstruction(opcodeOf(c), start)
-    f
+    ins :+= Instruction.PlaceLabel(start)
+    ins ++= body
+    ins :+= Instruction.JumpIns(opcodeOf(c), start)
+    ins
   }
 
-  /// while(c(t)) { i }
-  def whileLoop(c: Condition)(t: InstructionSet)(i: InstructionSet): InstructionSet = f0 => {
-    var f = f0
+  /// while(c(t)) { body }
+  def whileLoop(c: Condition)(t: InstructionSet)(body: InstructionSet): InstructionSet = {
+    var ins: Chain[Instruction] = Chain.empty
     val startLabel = new Label()
     val doneLabel = new Label()
-    f.visitLabel(startLabel)
-    f = t(f)
-    f.visitJumpInstruction(opcodeOf(negated(c)), doneLabel)
-    f = i(f)
-    f.visitJumpInstruction(Opcodes.GOTO, startLabel)
-    f.visitLabel(doneLabel)
-    f
+    ins :+= Instruction.PlaceLabel(startLabel)
+    ins ++= t
+    ins :+= Instruction.JumpIns(opcodeOf(negated(c)), doneLabel)
+    ins ++= body
+    ins :+= Instruction.JumpIns(Opcodes.GOTO, startLabel)
+    ins :+= Instruction.PlaceLabel(doneLabel)
+    ins
   }
 
-  def ifCondition(c: Condition)(i: InstructionSet): InstructionSet = f0 => {
-    var f = f0
+  def ifCondition(c: Condition)(body: InstructionSet): InstructionSet = {
+    var ins: Chain[Instruction] = Chain.empty
     val jumpLabel = new Label()
-    f.visitJumpInstruction(opcodeOf(negated(c)), jumpLabel)
-    f = i(f)
-    f.visitLabel(jumpLabel)
-    f
+    ins :+= Instruction.JumpIns(opcodeOf(negated(c)), jumpLabel)
+    ins ++= body
+    ins :+= Instruction.PlaceLabel(jumpLabel)
+    ins
   }
 
   /**
     * Using [[ifCondition]] uses less jumps, so use that if the conditional code
     * is returns or throws
     */
-  def ifConditionElse(c: Condition)(i: InstructionSet)(otherwise: InstructionSet): InstructionSet = f0 => {
-    var f = f0
+  def ifConditionElse(c: Condition)(thenn: InstructionSet)(otherwise: InstructionSet): InstructionSet = {
+    var ins: Chain[Instruction] = Chain.empty
     val conditionLabel = new Label()
     val endLabel = new Label()
-    f.visitJumpInstruction(opcodeOf(c), conditionLabel)
-    f = otherwise(f)
-    f.visitJumpInstruction(Opcodes.GOTO, endLabel)
-    f.visitLabel(conditionLabel)
-    f = i(f)
-    f.visitLabel(endLabel)
-    f
+    ins :+= Instruction.JumpIns(opcodeOf(c), conditionLabel)
+    ins ++= otherwise
+    ins :+= Instruction.JumpIns(Opcodes.GOTO, endLabel)
+    ins :+= Instruction.PlaceLabel(conditionLabel)
+    ins ++= thenn
+    ins :+= Instruction.PlaceLabel(endLabel)
+    ins
   }
 
-  def tryCatch(body: InstructionSet)(catchI: InstructionSet): InstructionSet = f0 => {
-    var f = f0
+  def tryCatch(body: InstructionSet)(catchI: InstructionSet): InstructionSet = {
+    var ins: Chain[Instruction] = Chain.empty
     val beforeTry = new Label()
     val afterTry = new Label()
     val handlerStart = new Label()
     val afterEverything = new Label()
-    f.visitTryCatchBlock(beforeTry, afterTry, handlerStart)
-    f.visitLabel(beforeTry)
-    f = body(f)
-    f.visitLabel(afterTry)
-    f.visitJumpInstruction(Opcodes.GOTO, afterEverything)
-    f.visitLabel(handlerStart)
-    f = catchI(f)
-    f.visitLabel(afterEverything)
-    f
+    ins :+= Instruction.TryCatchIns(beforeTry, afterTry, handlerStart)
+    ins :+= Instruction.PlaceLabel(beforeTry)
+    ins ++= body
+    ins :+= Instruction.PlaceLabel(afterTry)
+    ins :+= Instruction.JumpIns(Opcodes.GOTO, afterEverything)
+    ins :+= Instruction.PlaceLabel(handlerStart)
+    ins ++= catchI
+    ins :+= Instruction.PlaceLabel(afterEverything)
+    ins
   }
 
   def invokeConstructor(className: JvmName, descriptor: MethodDescriptor): InstructionSet =
     INVOKESPECIAL(className, JvmName.ConstructorMethod, descriptor)
 
   def nop(): InstructionSet =
-    f => f
+    Chain.empty
 
   def pushBool(b: Boolean): InstructionSet =
     if (b) ICONST_1() else ICONST_0()
@@ -584,10 +444,7 @@ object BytecodeInstructions {
   def pushNull(): InstructionSet =
     ACONST_NULL()
 
-  def pushString(s: String): InstructionSet = f => {
-    f.visitLoadConstantInstruction(s)
-    f
-  }
+  def pushString(s: String): InstructionSet = Chain(Instruction.LoadConstantIns(s))
 
   def pushInt(i: Int): InstructionSet = i match {
     case -1 => ICONST_M1()
@@ -599,10 +456,7 @@ object BytecodeInstructions {
     case 5 => ICONST_5()
     case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => BIPUSH(i.toByte)
     case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => SIPUSH(i.toByte)
-    case _ => f => {
-      f.visitLoadConstantInstruction(i)
-      f
-    }
+    case _ => Chain(Instruction.LoadConstantIns(i))
   }
 
   def storeWithName(index: Int, tpe: BackendType)(body: Variable => InstructionSet): InstructionSet =

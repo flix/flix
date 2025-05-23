@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.MethodEnricher
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes.*
@@ -101,7 +102,7 @@ object GenNamespaceClasses {
       // Incrementing the offset
       offset += AsmOps.getStackSize(arg)
     }
-    BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(defn.unboxedType.tpe), s"in shim method of $name", defn.loc)(new BytecodeInstructions.F(method))
+    method.visitIns(BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(defn.unboxedType.tpe), s"in shim method of $name", defn.loc))
     // no erasure here because the ns function works on erased values
 
     // Return

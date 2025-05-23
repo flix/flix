@@ -37,6 +37,11 @@ sealed trait Chain[+A] {
   }
 
   /**
+    * Appends `that` to `this`.
+    */
+  final def :+[B >: A](that: B): Chain[B] = this ++ Chain.Proxy(Seq(that))
+
+  /**
     * The empty chain.
     */
   final val empty: Chain[A] = Chain.Empty
