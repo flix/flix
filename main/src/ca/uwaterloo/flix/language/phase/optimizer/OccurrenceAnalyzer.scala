@@ -21,9 +21,10 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Expr, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.VarSym
 import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{AcyclicalGraph, InternalCompilerException, ParOps}
 
-import java.util.concurrent.atomic.AtomicInteger
+import scala.collection.immutable.HashSet
+import scala.collection.mutable
 
 /**
   * The occurrence analyzer collects occurrence information on binders according to the definition of [[Occur]].
@@ -34,22 +35,27 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on the given AST `root`.
     */
-  def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym])(implicit flix: Flix): MonoAst.Root = {
+  def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym], computeDependencyGraph: Boolean)(implicit flix: Flix): (MonoAst.Root, List[List[Symbol.DefnSym]], Set[Symbol.DefnSym]) = {
     val changedDefs = root.defs.filter(kv => delta.contains(kv._1))
-    val visitedDefs = ParOps.parMapValues(changedDefs)(visitDef)
-    root.copy(defs = root.defs ++ visitedDefs)
+    val visitedDefsWithDeps = ParOps.parMapValues(changedDefs)(visitDef(_)(LocalContext.mk(computeDependencyGraph)))
+    val visitedDefs = visitedDefsWithDeps.map { case (sym, (defn, _)) => sym -> defn }
+    val newRoot = root.copy(defs = root.defs ++ visitedDefs)
+    if (computeDependencyGraph) {
+      val (graph, sccs) = mkDependencyGraph(visitedDefsWithDeps.map { case (sym, (_, deps)) => sym -> deps })
+      (newRoot, graph, sccs)
+    } else
+      (newRoot, List.empty, Set.empty)
   }
 
   /**
     * Performs occurrence analysis on `defn`.
     */
-  private def visitDef(defn: MonoAst.Def): MonoAst.Def = {
-    val lctx: LocalContext = LocalContext.mk()
+  private def visitDef(defn: MonoAst.Def)(implicit lctx: LocalContext): (MonoAst.Def, List[Symbol.DefnSym]) = {
     val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx)
     val defContext = DefContext(isSelfRef(ctx.selfOccur))
     val fparams = defn.spec.fparams.map(visitFormalParam(_, ctx))
     val spec = defn.spec.copy(fparams = fparams, defContext = defContext)
-    MonoAst.Def(defn.sym, spec, exp, defn.loc)
+    (MonoAst.Def(defn.sym, spec, exp, defn.loc), lctx.dependencies.toList)
   }
 
   /**
@@ -98,7 +104,12 @@ object OccurrenceAnalyzer {
 
       case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
-        val ctx1 = if (sym == sym0) ExprContext.RecursiveOnce else ExprContext.Empty
+        val ctx1 = if (sym == sym0) {
+          ExprContext.RecursiveOnce
+        } else {
+          lctx.addDependency(sym)
+          ExprContext.Empty
+        }
         val ctx2 = ctxs.foldLeft(ctx1)(combineSeq)
         if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx2) // Reuse exp0.
@@ -536,17 +547,60 @@ object OccurrenceAnalyzer {
   }
 
   /**
+    * Returns a dependency graph, represented as a list of lists, where each inner list represents a group
+    * of functions that do not depend on other functions that occur in the same list or any function in an
+    * inner list to the right of it.
+    * In other words, dependencies only flow from right to left.
+    *
+    * @param dependencies a map from functions to their dependencies.
+    */
+  private def mkDependencyGraph(dependencies: Map[Symbol.DefnSym, List[Symbol.DefnSym]]): (List[List[Symbol.DefnSym]], Set[Symbol.DefnSym]) = {
+    val acyclicalGraph = AcyclicalGraph.scc(dependencies)
+    val sorted = AcyclicalGraph.topologicalSort(acyclicalGraph)
+    val layers = AcyclicalGraph.layers(sorted, acyclicalGraph).filter(_.nonEmpty)
+    (layers, acyclicalGraph.cycles.keys.toSet)
+  }
+
+  /**
+    * A context scoped to each top level function. Must be mutable.
+    */
+  sealed private trait LocalContext {
+
+    /**
+      * @return a list of functions that the function depends on.
+      */
+    def dependencies: mutable.ArrayBuffer[Symbol.DefnSym]
+
+    def addDependency(sym: Symbol.DefnSym): Unit = this match {
+      case LocalContext.CollectingContext(dependencies) => dependencies.addOne(sym)
+      case LocalContext.EmptyContext => ()
+    }
+
+  }
+
+  /**
     * Companion object for [[LocalContext]].
     */
   private object LocalContext {
 
+    private case class CollectingContext(dependencies: mutable.ArrayBuffer[Symbol.DefnSym]) extends LocalContext
+
+    private case object EmptyContext extends LocalContext {
+      val dependencies: mutable.ArrayBuffer[Symbol.DefnSym] = mutable.ArrayBuffer.empty
+    }
+
     /**
       * Returns a fresh [[LocalContext]].
+      *
+      * @param computeDepGraph a boolean denoting whether dependencies should be collected.
       */
-    def mk(): LocalContext = new LocalContext()
-
+    def mk(computeDepGraph: Boolean): LocalContext = {
+      if (computeDepGraph) {
+        CollectingContext(mutable.ArrayBuffer.empty)
+      } else {
+        EmptyContext
+      }
+    }
   }
-
-  private case class LocalContext()
 
 }

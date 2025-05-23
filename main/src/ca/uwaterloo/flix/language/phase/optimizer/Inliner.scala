@@ -69,13 +69,13 @@ import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 object Inliner {
 
   /** Performs inlining on the given AST `root`. */
-  def run(root: MonoAst.Root, delta: Set[Symbol.DefnSym])(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym]) = {
-    val sctx: SharedContext = SharedContext.mk(delta)
-    val defs = ParOps.parMapValues(root.defs)(visitDef(_)(sctx, root, flix))
+  def run(root: MonoAst.Root, depGroup: List[Symbol.DefnSym], sccs: Set[Symbol.DefnSym])(implicit flix: Flix): (MonoAst.Root, Set[Symbol.DefnSym], Set[Symbol.DefnSym]) = {
+    val sctx: SharedContext = SharedContext.mk(sccs)
+    val depGroupDefs = root.defs.filter { case (sym, _) => depGroup.contains(sym) }
+    val defs = ParOps.parMapValues(depGroupDefs)(visitDef(_)(sctx, root, flix))
     val newDelta = sctx.changed.asScala.keys.toSet
-    val liveSyms = root.entryPoints ++ sctx.live.asScala.keys.toSet
-    val liveDefs = defs.filter(kv => liveSyms.contains(kv._1))
-    (root.copy(defs = liveDefs), newDelta)
+    val liveSyms = sctx.live.asScala.keys.toSet
+    (root.copy(defs = root.defs ++ defs), newDelta, liveSyms)
   }
 
   /** Performs inlining on the body of `def0`. */
@@ -157,15 +157,8 @@ object Inliner {
               visitExp(exp, ctx0.withSubst(Map.empty))
 
             case None =>
-              // It was not unconditionally inlined, so consider inlining at this occurrence site
-              useSiteInline(freshVarSym, ctx0) match {
-                case Some(exp) =>
-                  sctx.changed.putIfAbsent(sym0, ())
-                  visitExp(exp, ctx0.withSubst(Map.empty))
-
-                case None =>
-                  Expr.Var(freshVarSym, tpe, loc)
-              }
+              // It was not unconditionally inlined, so do not inline it.
+              Expr.Var(freshVarSym, tpe, loc)
           }
       }
 
@@ -246,7 +239,7 @@ object Inliner {
       case _ =>
         // Simplify and maybe do copy-propagation
         val e1 = visitExp(exp1, ctx0)
-        if (isSimple(e1) && exp1.eff == Type.Pure) {
+        if (shouldInlineVar(sym, e1, occur) || (isSimple(e1) && exp1.eff == Type.Pure)) {
           // Do copy propagation and drop let-binding
           sctx.changed.putIfAbsent(sym0, ())
           val freshVarSym = Symbol.freshVarSym(sym)
@@ -507,16 +500,16 @@ object Inliner {
       return false
     }
 
-    if (sctx.delta.contains(defn.sym)) {
-      return false
-    }
-
     if (defn.spec.ann.isInline) {
       if (defn.sym == sym0) {
         return false
       }
 
       return true
+    }
+
+    if (sctx.sccs.contains(defn.sym)) {
+      return false
     }
 
     !defn.spec.defContext.isSelfRef &&
@@ -735,20 +728,18 @@ object Inliner {
 
     /**
       * Returns a fresh [[SharedContext]].
-      *
-      * The delta set does not change during the lifetime of the shared context.
       */
-    def mk(delta: Set[Symbol.DefnSym]): SharedContext = new SharedContext(delta, new ConcurrentHashMap(), new ConcurrentHashMap())
+    def mk(sccs: Set[Symbol.DefnSym]): SharedContext = new SharedContext(sccs, new ConcurrentHashMap(), new ConcurrentHashMap())
 
   }
 
   /**
     * A globally shared thread-safe context.
     *
-    * @param delta   the set of symbols that changed in the last iteration.
+    * @param sccs    the set of symbols that occur in a mutually recursive group.
     * @param changed the set of symbols of changed functions.
     * @param live    the set of symbols of live functions.
     */
-  private case class SharedContext(delta: Set[Symbol.DefnSym], changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit])
+  private case class SharedContext(sccs: Set[Symbol.DefnSym], changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit])
 
 }
