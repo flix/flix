@@ -105,14 +105,15 @@ object GenExpression {
       case Constant.Int64(l) =>
         compileLong(l)
 
-      case Constant.BigInt(ii) =>
+      case Constant.BigInt(ii) => {
+        import BytecodeInstructions.*
         // Add source line number for debugging (can fail with NumberFormatException)
-        addSourceLine(mv, loc)
-        mv.visitTypeInsn(NEW, BackendObjType.BigInt.jvmName.toInternalName)
-        mv.visitInsn(DUP)
-        mv.visitLdcInsn(ii.toString)
-        mv.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigInt.jvmName.toInternalName, "<init>",
-          AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
+        addLoc(loc) ~
+          NEW(BackendObjType.BigInt.jvmName) ~
+          DUP() ~
+          pushString(ii.toString) ~
+          INVOKESPECIAL(BackendObjType.BigInt.Constructor)
+      }(new BytecodeInstructions.F(mv))
 
       case Constant.Str(s) =>
         mv.visitLdcInsn(s)

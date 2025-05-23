@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBranch, TrueBranch}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
@@ -54,6 +55,9 @@ object BytecodeInstructions {
 
     def visitLabel(label: Label): Unit =
       visitor.visitLabel(label)
+
+    def visitLineNumber(line: Int, label: Label): Unit =
+      visitor.visitLineNumber(line, label)
 
     def visitLoadConstantInstruction(v: Any): Unit =
       visitor.visitLdcInsn(v)
@@ -484,6 +488,13 @@ object BytecodeInstructions {
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~~ Meta JVM Instructions ~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
+
+  def addLoc(loc: SourceLocation): InstructionSet = f => {
+    val label = new Label()
+    f.visitLabel(label)
+    f.visitLineNumber(loc.beginLine, label)
+    f
+  }
 
   def branch(c: Condition)(cases: Branch => InstructionSet): InstructionSet = f0 => {
     var f = f0
