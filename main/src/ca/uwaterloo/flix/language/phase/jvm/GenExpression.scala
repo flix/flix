@@ -66,7 +66,7 @@ object GenExpression {
                            localOffset: Int,
                            pcLabels: Vector[Label],
                            pcCounter: Ref[Int]
-                            ) extends MethodContext
+                          ) extends MethodContext
 
   case class DirectContext(clazz: JvmType.Reference,
                            entryPoint: Label,
@@ -1138,8 +1138,8 @@ object GenExpression {
           compileExpr(exp2)
           mv.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
             "arg0", JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
-          // Calling unwind and unboxing
 
+          // Calling unwind and unboxing
           if (Purity.isControlPure(purity)) {
             BackendObjType.Result.unwindSuspensionFreeThunk("in pure closure call", loc)(new BytecodeInstructions.F(mv))
           } else {
@@ -1200,8 +1200,8 @@ object GenExpression {
           mv.visitFieldInsn(PUTFIELD, defJvmType.name.toInternalName,
             s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
         }
-        // Calling unwind and unboxing
 
+        // Calling unwind and unboxing
         if (Purity.isControlPure(purity)) {
           BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)(new BytecodeInstructions.F(mv))
         }
@@ -1430,12 +1430,18 @@ object GenExpression {
           INVOKESTATIC(BackendObjType.Handler.InstallHandlerMethod)
       }
       ins(new BytecodeInstructions.F(mv))
-      // handle value/suspend/thunk if in non-tail position
-      if (ct == ExpPosition.NonTail) {
-        val afterUnboxing = new Label()
 
-        ctx match {
+      ct match {
+        case ExpPosition.Tail =>
+          mv.visitInsn(ARETURN)
+
+        case ExpPosition.NonTail => ctx match {
+          // handle value/suspend/thunk if in non-tail position
+          case DirectContext(_, _, _, _) =>
+            BackendObjType.Result.unwindSuspensionFreeThunk("contextful unwind", loc)(new BytecodeInstructions.F(mv))
+
           case EffectContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+            val afterUnboxing = new Label()
             val pcPoint = pcCounter(0) + 1
             val pcPointLabel = pcLabels(pcPoint)
             pcCounter(0) += 1
@@ -1445,12 +1451,7 @@ object GenExpression {
             printPc(mv, pcPoint)
             mv.visitVarInsn(ALOAD, 1)
             mv.visitLabel(afterUnboxing)
-
-          case DirectContext(_, _, _, _) =>
-            BackendObjType.Result.unwindSuspensionFreeThunk("contextful unwind", loc)(new BytecodeInstructions.F(mv))
         }
-      } else {
-        mv.visitInsn(ARETURN)
       }
 
     case Expr.Do(op, exps, tpe, _, loc) => ctx match {
