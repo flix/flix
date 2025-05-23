@@ -136,13 +136,13 @@ object ResolvedAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
-    case class ExtensibleMatch(label: Name.Label, exp1: Expr, sym2: Symbol.VarSym, exp2: Expr, sym3: Symbol.VarSym, exp3: Expr, loc: SourceLocation) extends Expr
+    case class ExtMatch(exp: Expr, rules: List[ExtMatchRule], loc: SourceLocation) extends Expr
 
     case class Tag(symUse: CaseSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class RestrictableTag(symUse: RestrictableCaseSymUse, exps: List[Expr], isOpen: Boolean, loc: SourceLocation) extends Expr
 
-    case class ExtensibleTag(label: Name.Label, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class ExtTag(label: Name.Label, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -290,6 +290,20 @@ object ResolvedAst {
 
   }
 
+  sealed trait ExtPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtPattern {
+
+    case class Wild(loc: SourceLocation) extends ExtPattern
+
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ExtPattern
+
+    case class Error(loc: SourceLocation) extends ExtPattern
+  }
+
+
   sealed trait Predicate
 
   object Predicate {
@@ -341,6 +355,8 @@ object ResolvedAst {
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr, loc: SourceLocation)
+
+  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
 
   case class TypeMatchRule(sym: Symbol.VarSym, tpe: UnkindedType, exp: Expr, loc: SourceLocation)
 

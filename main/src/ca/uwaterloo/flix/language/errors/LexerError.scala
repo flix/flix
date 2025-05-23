@@ -108,6 +108,40 @@ object LexerError {
   }
 
   /**
+    * An error raised when a hexadecimal number suffix is unrecognized.
+    */
+  case class IncorrectHexNumberSuffix(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Incorrect hexadecimal number suffix."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Incorrect hexadecimal number suffix.
+         |
+         |${code(loc, "Here")}
+         |
+         |Hexadecimal number suffixes are i8, i16, i32, i64, and ii.
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when a hexadecimal number is malformed.
+    */
+  case class MalformedHexNumber(found: String, loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Malformed hexadecimal number, found '$found'."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Malformed hexadecimal number, found '$found'.
+         |
+         |${code(loc, "Number was correct up to here")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised when a number ends on an underscore.
     *
     * @param loc The location of the number literal.
@@ -118,26 +152,6 @@ object LexerError {
     override def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Number ends on a '_'.
-         |
-         |${code(loc, "Here")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised when the digits of a hex literal starts with an '_'
-    *
-    * @param loc The location of the number literal.
-    */
-  case class HexLiteralStartsOnUnderscore(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Hex literal starts on a '_'."
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Hex literal starts on a '_'.
          |
          |${code(loc, "Here")}
          |
@@ -246,6 +260,22 @@ object LexerError {
     }
 
     override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised when a hexadecimal number is unterminated (e.g. `0x` or `0xff_`).
+    */
+  case class UnterminatedHexNumber(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Unterminated Hexadecimal number."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unterminated Hexadecimal number.
+         |
+         |${code(loc, "Here")}
+         |
+         |""".stripMargin
+    }
   }
 
   /**

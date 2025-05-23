@@ -997,6 +997,7 @@ object Simplifier {
     // exp match {
     //     case Label(sym1) => exp1
     //     case sym2 => exp2
+    // }
     //
     // Becomes
     //

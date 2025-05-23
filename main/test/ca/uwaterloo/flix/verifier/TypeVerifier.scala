@@ -363,11 +363,28 @@ object TypeVerifier {
             case None => failMismatchedShape(t1, s"Record with '${label.name}'", loc)
           }
 
-        case AtomicOp.ExtensibleIs(label) => ??? // TODO: Ext-Variants
+        case AtomicOp.ExtensibleIs(label) =>
+          val List(t1) = ts
+          t1 match {
+            case MonoType.ExtensibleExtend(cons, _, _) if cons.name == label.name => ()
+            case _ => failMismatchedShape(t1, label.name, loc)
+          }
+          check(expected = MonoType.Bool)(actual = tpe, loc)
 
-        case AtomicOp.ExtensibleTag(label) => ??? // TODO: Ext-Variants
 
-        case AtomicOp.ExtensibleUntag(label, idx) => ??? // TODO: Ext-Variants
+        case AtomicOp.ExtensibleTag(label) =>
+          getExtensibleTagType(tpe, label.name, loc) match {
+            case Some(ts2) if ts.length == ts2.length =>
+              ts.zip(ts2).map { case (t1, t2) => checkEq(t1, t2, loc) }
+              tpe
+            case _ =>
+              failMismatchedShape(tpe, label.name, loc)
+          }
+
+        case AtomicOp.ExtensibleUntag(label, idx) =>
+          val List(t1) = ts
+          val termTypes = MonoType.findExtensibleTermTypes(label, t1)
+          checkEq(termTypes(idx), tpe, loc)
 
         case AtomicOp.Closure(sym) =>
           val defn = root.defs(sym)
@@ -567,7 +584,7 @@ object TypeVerifier {
   }
 
   /**
-    * Asserts that the the given type `expected` is equal to the `actual` type.
+    * Asserts that the given type `expected` is equal to the `actual` type.
     */
   private def check(expected: MonoType)(actual: MonoType, loc: SourceLocation): MonoType = {
     if (expected == actual)
@@ -599,7 +616,7 @@ object TypeVerifier {
   private def checkStructType(tpe: MonoType, sym0: Symbol.StructSym, loc: SourceLocation): Unit = {
     tpe match {
       case MonoType.Struct(sym, _) =>
-        if(sym0 != sym) {
+        if (sym0 != sym) {
           throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
         }
       case _ => failMismatchedShape(tpe, "Struct", loc)
@@ -618,16 +635,16 @@ object TypeVerifier {
       case MonoType.Native(k) if klazz.isAssignableFrom(k) =>
         tpe
 
-      case MonoType.Int8    if klazz == classOf[Byte] => tpe
-      case MonoType.Int16   if klazz == classOf[Short] => tpe
-      case MonoType.Int32   if klazz == classOf[Int] => tpe
-      case MonoType.Int64   if klazz == classOf[Long] => tpe
+      case MonoType.Int8 if klazz == classOf[Byte] => tpe
+      case MonoType.Int16 if klazz == classOf[Short] => tpe
+      case MonoType.Int32 if klazz == classOf[Int] => tpe
+      case MonoType.Int64 if klazz == classOf[Long] => tpe
       case MonoType.Float32 if klazz == classOf[Float] => tpe
       case MonoType.Float64 if klazz == classOf[Double] => tpe
-      case MonoType.Bool    if klazz == classOf[Boolean] => tpe
-      case MonoType.Char    if klazz == classOf[Char] => tpe
-      case MonoType.Unit    if klazz == classOf[Unit] => tpe
-      case MonoType.Null    if !klazz.isPrimitive => tpe
+      case MonoType.Bool if klazz == classOf[Boolean] => tpe
+      case MonoType.Char if klazz == classOf[Char] => tpe
+      case MonoType.Unit if klazz == classOf[Unit] => tpe
+      case MonoType.Null if !klazz.isPrimitive => tpe
 
       case MonoType.String if klazz.isAssignableFrom(classOf[java.lang.String]) => tpe
       case MonoType.BigInt if klazz.isAssignableFrom(classOf[java.math.BigInteger]) => tpe
@@ -668,6 +685,21 @@ object TypeVerifier {
         (MonoType.RecordExtend(lbl, valtype, rec), opt)
       }
     case _ => failMismatchedShape(rec, "Record", loc)
+  }
+
+  /**
+    * Remove the type associated with `label` from the given extensible tag type `tag`.
+    * If `tag` is not [[MonoType.ExtensibleExtend]], it returns `None`.
+    */
+  private def getExtensibleTagType(tag: MonoType, label: String, loc: SourceLocation): Option[List[MonoType]] = tag match {
+    case MonoType.ExtensibleEmpty => None
+    case MonoType.ExtensibleExtend(cons, tpes, rest) =>
+      if (label == cons.name)
+        Some(tpes)
+      else {
+        getExtensibleTagType(rest, label, loc)
+      }
+    case _ => failMismatchedShape(tag, s"ExtensibleExtend($label)", loc)
   }
 
   /**
