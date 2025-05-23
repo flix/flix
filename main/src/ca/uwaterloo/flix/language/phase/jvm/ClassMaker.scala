@@ -66,7 +66,7 @@ sealed trait ClassMaker {
       case None => ()
       case Some(ins) =>
         mv.visitCode()
-        mv.visitIns(ins)
+        mv.visitByteIns(ins)
         mv.visitMaxs(999, 999)
     }
     mv.visitEnd()

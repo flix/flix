@@ -102,7 +102,7 @@ object GenNamespaceClasses {
       // Incrementing the offset
       offset += AsmOps.getStackSize(arg)
     }
-    method.visitIns(BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(defn.unboxedType.tpe), s"in shim method of $name", defn.loc))
+    method.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(defn.unboxedType.tpe), s"in shim method of $name", defn.loc))
     // no erasure here because the ns function works on erased values
 
     // Return

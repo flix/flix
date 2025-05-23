@@ -182,7 +182,7 @@ object GenFunAndClosureClasses {
     m.visitInsn(ACONST_NULL)
     m.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, applyMethod.name, applyMethod.d.toDescriptor, false)
 
-    m.visitIns(BytecodeInstructions.xReturn(BackendObjType.Result.toTpe))
+    m.visitByteIns(BytecodeInstructions.xReturn(BackendObjType.Result.toTpe))
 
     m.visitMaxs(999, 999)
     m.visitEnd()
@@ -247,7 +247,7 @@ object GenFunAndClosureClasses {
     assert(ctx.pcCounter(0) == pcLabels.size, s"${(classType.name, ctx.pcCounter(0), pcLabels.size)}")
 
     val returnValue = BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
-    m.visitIns(returnValue)
+    m.visitByteIns(returnValue)
 
     m.visitMaxs(999, 999)
     m.visitEnd()
@@ -300,7 +300,7 @@ object GenFunAndClosureClasses {
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, copyName, nothingToTDescriptor(classType).toDescriptor, null, null)
     m.visitCode()
 
-    m.visitIns(mkCopy(classType, defn))
+    m.visitByteIns(mkCopy(classType, defn))
     m.visitInsn(Opcodes.ARETURN)
 
     m.visitMaxs(999, 999)
@@ -312,7 +312,7 @@ object GenFunAndClosureClasses {
     val m = visitor.visitMethod(ACC_PUBLIC, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, null, null)
     m.visitCode()
 
-    m.visitIns(mkCopy(classType, defn))
+    m.visitByteIns(mkCopy(classType, defn))
     m.visitInsn(Opcodes.ARETURN)
 
     m.visitMaxs(999, 999)
@@ -345,7 +345,7 @@ object GenFunAndClosureClasses {
     compileInt(1)(m)
     m.visitVarInsn(ALOAD, 0)
     m.visitFieldInsn(GETFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
-    m.visitIns(BytecodeInstructions.xToString(BackendType.Int32))
+    m.visitByteIns(BytecodeInstructions.xToString(BackendType.Int32))
     m.visitInsn(AASTORE)
 
     params.zipWithIndex.foreach {
@@ -358,7 +358,7 @@ object GenFunAndClosureClasses {
         m.visitVarInsn(ALOAD, 0)
         val bt = BackendType.toErasedBackendType(fieldType)
         m.visitFieldInsn(GETFIELD, classType.name.toInternalName, fieldName, bt.toDescriptor)
-        m.visitIns(BytecodeInstructions.xToString(bt))
+        m.visitByteIns(BytecodeInstructions.xToString(bt))
         m.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, "concat", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.String.toTpe).toDescriptor, false)
         m.visitInsn(AASTORE)
     }
@@ -366,7 +366,7 @@ object GenFunAndClosureClasses {
     m.visitInsn(DUP)
     compileInt(strings - 1)(m)
     m.visitVarInsn(ALOAD, 1)
-    m.visitIns(BytecodeInstructions.xToString(BackendObjType.Value.toTpe))
+    m.visitByteIns(BytecodeInstructions.xToString(BackendObjType.Value.toTpe))
     m.visitInsn(AASTORE)
 
     m.visitLdcInsn(", ")

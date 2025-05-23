@@ -74,16 +74,27 @@ object BytecodeInstructions {
 
   object Instruction {
     case class Cheat(command: MethodVisitor => Unit) extends Instruction
+
     case class FieldIns(opcode: Int, clazz: JvmName, name: String, tpe: BackendType) extends Instruction
+
     case class Ins(opcode: Int) extends Instruction
+
     case class IntIns(opcode: Int, value: Int) extends Instruction
+
     case class InvokeDynamicIns(methodName: String, descriptor: MethodDescriptor, bootstrapMethodHandle: Handle, bootstrapMethodArguments: List[Any]) extends Instruction
+
     case class JumpIns(opcode: Int, label: Label) extends Instruction
+
     case class LoadConstantIns(constant: Any) extends Instruction
+
     case class MethodIns(opcode: Int, clazz: JvmName, name: String, descriptor: MethodDescriptor, isInterface: Boolean) extends Instruction
+
     case class PlaceLabel(label: Label) extends Instruction
+
     case class TryCatchIns(beforeTry: Label, afterTry: Label, handlerStart: Label) extends Instruction
+
     case class TypeIns(opcode: Int, clazz: JvmName) extends Instruction
+
     case class VarIns(opcode: Int, index: Int) extends Instruction
   }
 
@@ -114,7 +125,7 @@ object BytecodeInstructions {
   }
 
   implicit class MethodEnricher(mv: MethodVisitor) {
-    def visitIns(ins: InstructionSet): Unit = {
+    def visitByteIns(ins: InstructionSet): Unit = {
       val f = new F(mv)
       ins.foreach(visit(f, _))
     }
@@ -617,29 +628,29 @@ object BytecodeInstructions {
     def mkString(prefix: Option[InstructionSet], suffix: Option[InstructionSet], length: Int, getNthString: Int => InstructionSet): InstructionSet = {
       // [] --> [new String[length]] // Referred to as `elms`.
       pushInt(length) ~ ANEWARRAY(BackendObjType.String.jvmName) ~
-      // [elms] --> [elms, -1] // Running index referred to as `i`.
-      ICONST_M1() ~
-      // [elms, -1] --> [elms, length]
-      composeN((0 until length).map { i =>
-        // [elms, i-1] -> [elms, i]
-        ICONST_1() ~ IADD() ~
-        // [elms, i] -> [elms, i, elms, i]
-        DUP2() ~
-        // [elms, i, elms, i] -> [elms, i, elms, i, nth(i)]
-        getNthString(i) ~
-        // [elms, i, elms, i, nth(i)] -> [elms, i]
-        AASTORE()
-      }) ~
-      // [elms, length] --> [elms]
-      POP() ~
-      // [elms] -> [", ", elms]
-      pushString(", ") ~ SWAP() ~
-      // [", ", elms] --> ["s1, s2, .."]
-      INVOKESTATIC(BackendObjType.String.JoinMethod) ~
-      // ["s1, s2, .."] --> [prefix + "s1, s2, .."]
-      prefix.map(ins => ins ~ SWAP() ~ INVOKEVIRTUAL(BackendObjType.String.Concat)).getOrElse(nop()) ~
-      // [prefix + "s1, s2, .."] --> [prefix + "s1, s2, .." + suffix]
-      suffix.map(ins => ins ~ INVOKEVIRTUAL(BackendObjType.String.Concat)).getOrElse(nop())
+        // [elms] --> [elms, -1] // Running index referred to as `i`.
+        ICONST_M1() ~
+        // [elms, -1] --> [elms, length]
+        composeN((0 until length).map { i =>
+          // [elms, i-1] -> [elms, i]
+          ICONST_1() ~ IADD() ~
+            // [elms, i] -> [elms, i, elms, i]
+            DUP2() ~
+            // [elms, i, elms, i] -> [elms, i, elms, i, nth(i)]
+            getNthString(i) ~
+            // [elms, i, elms, i, nth(i)] -> [elms, i]
+            AASTORE()
+        }) ~
+        // [elms, length] --> [elms]
+        POP() ~
+        // [elms] -> [", ", elms]
+        pushString(", ") ~ SWAP() ~
+        // [", ", elms] --> ["s1, s2, .."]
+        INVOKESTATIC(BackendObjType.String.JoinMethod) ~
+        // ["s1, s2, .."] --> [prefix + "s1, s2, .."]
+        prefix.map(ins => ins ~ SWAP() ~ INVOKEVIRTUAL(BackendObjType.String.Concat)).getOrElse(nop()) ~
+        // [prefix + "s1, s2, .."] --> [prefix + "s1, s2, .." + suffix]
+        suffix.map(ins => ins ~ INVOKEVIRTUAL(BackendObjType.String.Concat)).getOrElse(nop())
     }
 
   }

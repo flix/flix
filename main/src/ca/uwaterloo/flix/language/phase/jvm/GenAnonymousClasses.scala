@@ -151,7 +151,7 @@ object GenAnonymousClasses {
       }
 
       // Invoke the closure
-      methodVisitor.visitIns(BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(tpe), s"in anonymous class method ${ident.name} of ${obj.clazz.getSimpleName}", loc))
+      methodVisitor.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(tpe), s"in anonymous class method ${ident.name} of ${obj.clazz.getSimpleName}", loc))
 
       tpe match {
         case MonoType.Array(_) => methodVisitor.visitTypeInsn(CHECKCAST, getDescriptorHacked(tpe))
