@@ -159,9 +159,13 @@ object BackendObjType {
     ))
   }
 
-  case object BigDecimal extends BackendObjType
+  case object BigDecimal extends BackendObjType {
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(String.toTpe), None)
+  }
 
-  case object BigInt extends BackendObjType
+  case object BigInt extends BackendObjType {
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(String.toTpe), None)
+  }
 
   case class Lazy(tpe: BackendType) extends BackendObjType with Generatable {
 
