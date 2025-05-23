@@ -1447,7 +1447,7 @@ object GenExpression {
             mv.visitLabel(afterUnboxing)
 
           case DirectContext(_, _, _, _) =>
-            throw InternalCompilerException("figure it out later", loc)
+            BackendObjType.Result.unwindSuspensionFreeThunk("contextful unwind", loc)(new BytecodeInstructions.F(mv))
         }
       } else {
         mv.visitInsn(ARETURN)
