@@ -177,7 +177,7 @@ class TestCompletionProvider extends AnyFunSuite {
   // No Completions: Keywords and Literals
   /////////////////////////////////////////////////////////////////////////////
 
-  test("NoCompletions.OnKeyword") {
+  test("NoCompletions.OnKeywords") {
     forAll(Programs) { prg =>
       val root = compileWithSuccess(prg)
       forAll(keywordsOf(prg, root)) { tok =>
@@ -188,20 +188,15 @@ class TestCompletionProvider extends AnyFunSuite {
     }
   }
 
-  test("No completions after complete literal") {
-    Programs.foreach(program => {
-      val (root, errors) = compile(program)
-      val source = mkSource(program)
-      // Find all the literal tokens that are on a single line
-      val literalTokens = root.tokens(source).toList.filter(_.kind.isLiteral)
-      literalTokens.foreach { token =>
-        // We will test all possible offsets in the keyword, including the start and end of the keyword
-        rangeOfInclusive(token).foreach { pos =>
-          val completions = CompletionProvider.getCompletions(Uri, pos, errors)(root, Flix)
-          Assert.isEmpty(completions, token.mkSourceLocation(), pos)
+  test("NoCompletions.OnLiterals") {
+    forAll(Programs) { prg =>
+      val root = compileWithSuccess(prg)
+      forAll(literalsOf(prg, root)) { tok =>
+        forAll(rangeOfInclusive(tok)) { pos =>
+          Assert.isEmpty(autoComplete(pos, root), pos)
         }
       }
-    })
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -388,6 +383,13 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private def keywordsOf(prg: String, root: Root): List[Token] =
     getTokens(prg, root).filter(_.kind.isKeyword)
+
+  /**
+    * Returns all *literal* tokens in the given program `prg` associated with the given AST `root`.
+    */
+  private def literalsOf(prg: String, root: Root): List[Token] =
+    getTokens(prg, root).filter(_.kind.isLiteral)
+
 
   /**
     * Returns all tokens in the given program `prg` associated with the given AST `root`.
