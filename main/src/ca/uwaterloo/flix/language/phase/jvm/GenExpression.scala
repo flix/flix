@@ -105,7 +105,7 @@ object GenExpression {
       case Constant.Int64(l) =>
         compileLong(l)
 
-      case Constant.BigInt(ii) => {
+      case Constant.BigInt(ii) => ({
         import BytecodeInstructions.*
         // Add source line number for debugging (can fail with NumberFormatException)
         addLoc(loc) ~
@@ -113,7 +113,7 @@ object GenExpression {
           DUP() ~
           pushString(ii.toString) ~
           INVOKESPECIAL(BackendObjType.BigInt.Constructor)
-      }(new BytecodeInstructions.F(mv))
+      })(new BytecodeInstructions.F(mv))
 
       case Constant.Str(s) =>
         mv.visitLdcInsn(s)
