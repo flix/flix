@@ -498,47 +498,42 @@ object GenFunAndClosureClasses {
     loadParamsOf(cparams)
     loadParamsOf(fparams)
 
-    val pcLabels: Vector[Label] = Vector.range(0, defn.pcPoints).map(_ => new Label())
-    if (Purity.isControlImpure(defn.expr.purity) && defn.pcPoints > 0) {
-      // the default label is the starting point of the function if pc = 0
-      val defaultLabel = new Label()
-      m.visitVarInsn(ALOAD, 0)
-      m.visitFieldInsn(GETFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
-      m.visitTableSwitchInsn(1, pcLabels.length, defaultLabel, pcLabels *)
-      m.visitLabel(defaultLabel)
-    }
-
-    // Generating the expression
-    val newFrame = BytecodeInstructions.thisLoad() ~ BytecodeInstructions.cheat(_.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, copyName, nothingToTDescriptor(classType).toDescriptor, false))
-    val setPc = {
-      import BytecodeInstructions.*
-      SWAP() ~ DUP_X1() ~ SWAP() ~ // clo, pc ---> clo, clo, pc
-        BytecodeInstructions.cheat(_.visitFieldInsn(Opcodes.PUTFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)) ~
-        lparams.foldLeft(nop()) { case (acc, (name, index, isWild, tpe)) =>
-          val erasedTpe = BackendType.toErasedBackendType(tpe)
-          if (isWild) acc else acc ~ DUP() ~ xLoad(erasedTpe, index) ~ cheat(_.visitFieldInsn(Opcodes.PUTFIELD, classType.name.toInternalName, name, erasedTpe.toDescriptor))
-        } ~
-        POP()
-    }
-
-    val ctx = if (Purity.isControlPure(defn.expr.purity) && isFunction(defn)) {
-      GenExpression.DirectContext(classType, enterLabel, Map.empty, localOffset)
+    if (Purity.isControlPure(defn.expr.purity) && isFunction(defn)) {
+      val ctx = GenExpression.DirectContext(classType, enterLabel, Map.empty, localOffset)
+      GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
     } else {
-      GenExpression.EffectContext(classType, enterLabel, Map.empty, newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
+      val pcLabels: Vector[Label] = Vector.range(0, defn.pcPoints).map(_ => new Label())
+      if (defn.pcPoints > 0) {
+        // the default label is the starting point of the function if pc = 0
+        val defaultLabel = new Label()
+        m.visitVarInsn(ALOAD, 0)
+        m.visitFieldInsn(GETFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
+        m.visitTableSwitchInsn(1, pcLabels.length, defaultLabel, pcLabels *)
+        m.visitLabel(defaultLabel)
+      }
+
+      // Generating the expression
+      val newFrame = BytecodeInstructions.thisLoad() ~ BytecodeInstructions.cheat(_.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, copyName, nothingToTDescriptor(classType).toDescriptor, false))
+      val setPc = {
+        import BytecodeInstructions.*
+        SWAP() ~ DUP_X1() ~ SWAP() ~ // clo, pc ---> clo, clo, pc
+          BytecodeInstructions.cheat(_.visitFieldInsn(Opcodes.PUTFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)) ~
+          lparams.foldLeft(nop()) { case (acc, (name, index, isWild, tpe)) =>
+            val erasedTpe = BackendType.toErasedBackendType(tpe)
+            if (isWild) acc else acc ~ DUP() ~ xLoad(erasedTpe, index) ~ cheat(_.visitFieldInsn(Opcodes.PUTFIELD, classType.name.toInternalName, name, erasedTpe.toDescriptor))
+          } ~
+          POP()
+      }
+
+      val ctx = GenExpression.EffectContext(classType, enterLabel, Map.empty, newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
+      GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
+      assert(ctx.pcCounter(0) == pcLabels.size, s"${(classType.name, ctx.pcCounter(0), pcLabels.size)}")
     }
 
-    GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
-
-    ctx match {
-      case GenExpression.EffectContext(_, _, _, _, _, _, _, pcCounter) =>
-        assert(pcCounter(0) == pcLabels.size, s"${(classType.name, pcCounter(0), pcLabels.size)}")
-      case GenExpression.DirectContext(_, _, _, _) =>
-    }
 
     val returnValue = BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
     returnValue(new BytecodeInstructions.F(m))
 
-    // println(s"\n\n${classType.name.toBinaryName}\n$m")
 
     m.visitMaxs(999, 999)
     m.visitEnd()
