@@ -162,7 +162,10 @@ object GenFunAndClosureClasses {
 
     override def visitFrame(`type`: Int, numLocal: Int, local: Array[AnyRef], numStack: Int, stack: Array[AnyRef]): Unit = m.visitFrame(`type`, numLocal, local, numStack, stack)
 
-    override def visitTypeInsn(opcode: Int, `type`: String): Unit = m.visitTypeInsn(opcode, `type`)
+    override def visitTypeInsn(opcode: Int, `type`: String): Unit = {
+      instrs.addOne(s"${Debug.readableOpcode(opcode)} ${`type`}")
+      m.visitTypeInsn(opcode, `type`)
+    }
 
     override def visitMultiANewArrayInsn(descriptor: String, numDimensions: Int): Unit = m.visitMultiANewArrayInsn(descriptor, numDimensions)
 
@@ -532,10 +535,11 @@ object GenFunAndClosureClasses {
       case GenExpression.DirectContext(_, _, _, _) =>
     }
 
-
     val returnValue = BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
     returnValue(new BytecodeInstructions.F(m))
+
     println(s"\n\n${classType.name.toBinaryName}\n$m")
+
     m.visitMaxs(999, 999)
     m.visitEnd()
   }
