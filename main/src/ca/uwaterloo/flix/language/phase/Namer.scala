@@ -133,7 +133,7 @@ object Namer {
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       cases.foldLeft(table1)(tableDecl)
 
-    case NamedAst.Declaration.Struct(_, _, _, sym, _, fields, _, _) =>
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, fields, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       fields.foldLeft(table1)(tableDecl)
 
@@ -318,13 +318,9 @@ object Namer {
       val tparams = tparams0.map(visitTypeParam)
 
       val mod = visitModifiers(mod0, ns0)
-      val indices0 = fields0.zipWithIndex.map {
-        case (field, idx) => (field.name, (idx, field.name.loc))
-      }
-      val indices = indices0.toMap
-      val fields = fields0.map(visitField(sym, _, indices))
+      val fields = fields0.map(visitField(sym, _))
 
-      NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, indices, loc)
+      NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
   }
 
   /**
@@ -365,11 +361,10 @@ object Namer {
   /**
     * Performs naming on the given field.
     */
-  private def visitField(struct: Symbol.StructSym, field0: DesugaredAst.StructField, indices: Map[Name.Label, (Int, SourceLocation)])(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.StructField = field0 match {
+  private def visitField(struct: Symbol.StructSym, field0: DesugaredAst.StructField)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.StructField = field0 match {
     case DesugaredAst.StructField(mod, name, tpe, loc) =>
       val t = visitType(tpe)
-      val (idx, _) = indices(name)
-      val sym = Symbol.mkStructFieldSym(struct, idx, name)
+      val sym = Symbol.mkStructFieldSym(struct, name)
       NamedAst.Declaration.StructField(mod, sym, t, loc)
   }
 
@@ -663,17 +658,14 @@ object Namer {
       val rs = rules.map(visitRestrictableChooseRule)
       NamedAst.Expr.RestrictableChoose(star, e, rs, loc)
 
-    case DesugaredAst.Expr.ExtensibleMatch(label, exp1, ident2, exp2, ident3, exp3, loc) =>
-      val sym2 = Symbol.freshVarSym(ident2, BoundBy.Pattern)
-      val sym3 = Symbol.freshVarSym(ident3, BoundBy.Pattern)
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
-      NamedAst.Expr.ExtensibleMatch(label, e1, sym2, e2, sym3, e3, loc)
+    case DesugaredAst.Expr.ExtMatch(exp, rules, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitExtMatchRule)
+      NamedAst.Expr.ExtMatch(e, rs, loc)
 
     case DesugaredAst.Expr.ExtensibleTag(label, exps, loc) =>
       val es = exps.map(visitExp(_))
-      NamedAst.Expr.ExtensibleTag(label, es, loc)
+      NamedAst.Expr.ExtTag(label, es, loc)
 
     case DesugaredAst.Expr.Tuple(exps, loc) =>
       val es = exps.map(visitExp(_))
@@ -895,6 +887,16 @@ object Namer {
   }
 
   /**
+    * Performs naming on the given ext match rule `rule0`.
+    */
+  private def visitExtMatchRule(rule0: DesugaredAst.ExtMatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.ExtMatchRule = rule0 match {
+    case DesugaredAst.ExtMatchRule(label, pats, exp, loc) =>
+      val ps = pats.map(visitExtPattern)
+      val e = visitExp(exp)
+      NamedAst.ExtMatchRule(label, ps, e, loc)
+  }
+
+  /**
     * Performs naming on the given typematch rule `rule0`.
     */
   private def visitTypeMatchRule(rule0: DesugaredAst.TypeMatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.TypeMatchRule = rule0 match {
@@ -1000,6 +1002,22 @@ object Namer {
       NamedAst.Pattern.Record(psVal, pVal, loc)
 
     case DesugaredAst.Pattern.Error(loc) => NamedAst.Pattern.Error(loc)
+  }
+
+  /**
+    * Names the given ext pattern `pat0`.
+    */
+  private def visitExtPattern(pat0: DesugaredAst.ExtPattern)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.ExtPattern = pat0 match {
+    case DesugaredAst.ExtPattern.Wild(loc) =>
+      NamedAst.ExtPattern.Wild(loc)
+
+    case DesugaredAst.ExtPattern.Var(ident, loc) =>
+      // make a fresh variable symbol for the local variable.
+      val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
+      NamedAst.ExtPattern.Var(sym, loc)
+
+    case DesugaredAst.ExtPattern.Error(loc) =>
+      NamedAst.ExtPattern.Error(loc)
   }
 
   /**
@@ -1401,7 +1419,7 @@ object Namer {
     case NamedAst.Declaration.Sig(sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Def(sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.loc
-    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _, _) => sym.loc
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _) => sym.loc
     case NamedAst.Declaration.StructField(_, sym, _, _) => sym.loc
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.loc
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) => sym.loc

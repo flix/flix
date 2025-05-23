@@ -81,12 +81,11 @@ object LambdaDrop {
     * The latter condition can be checked by the [[isHigherOrder]] predicate.
     */
   private def isDroppable(defn: MonoAst.Def)(implicit lctx: LocalContext): Boolean = {
-    if (isHigherOrder(defn)) {
-      visitExp(defn.exp)(defn.sym, lctx)
-      lctx.recursiveCalls.nonEmpty && hasConstantParameter(lctx.recursiveCalls.toList, defn.spec.fparams)
-    } else {
-      false
+    if (!isHigherOrder(defn)) {
+      return false
     }
+    visitExp(defn.exp)(defn.sym, lctx)
+    lctx.recursiveCalls.nonEmpty && hasConstantParameter(lctx.recursiveCalls.toList, defn.spec.fparams)
   }
 
   /** Returns `true` if at least one formal parameter of `defn` has an arrow type. */

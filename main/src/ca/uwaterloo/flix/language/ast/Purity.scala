@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 sealed trait Purity
@@ -37,13 +36,13 @@ object Purity {
 
   /**
     * Represents a pure expression (i.e. an expression that cannot have
-    * side-effects).
+    * side effects).
     */
   case object Pure extends Purity
 
   /**
     * Represents an impure expression (i.e. an expression that could potentially
-    * have side-effects).
+    * have side effects).
     */
   case object Impure extends Purity
 
@@ -54,7 +53,7 @@ object Purity {
   case object ControlImpure extends Purity
 
   /**
-    * Returns true if `p` is a purity that does not allows algebraic effects.
+    * Returns true if `p` is a purity that does not allow algebraic effects.
     */
   def isControlPure(p: Purity): Boolean = p match {
     case Pure => true
@@ -63,7 +62,7 @@ object Purity {
   }
 
   /**
-    * Returns true if `p` is a purity that allows algebraic effects.
+    * Returns true if `p` is a purity that allow algebraic effects.
     */
   def isControlImpure(p: Purity): Boolean = p match {
     case Pure => false
@@ -72,7 +71,7 @@ object Purity {
   }
 
   /**
-    * Returns true if p is pure (has no side effects).
+    * Returns true if `p` is pure (has no side effects).
     */
   def isPure(p: Purity): Boolean = p match {
     case Pure => true

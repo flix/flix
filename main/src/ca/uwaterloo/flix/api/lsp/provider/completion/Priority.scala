@@ -31,6 +31,22 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
   *
   */
 sealed trait Priority {
+
+  /**
+    * Returns a priority that is one lower than `this`.
+    */
+  def downgrade: Priority = this match {
+    case Priority.Highest => Priority.Higher
+    case Priority.Higher => Priority.High
+    case Priority.High => Priority.MediumHigh
+    case Priority.MediumHigh => Priority.Medium
+    case Priority.Medium => Priority.MediumLow
+    case Priority.MediumLow => Priority.Low
+    case Priority.Low => Priority.Lower
+    case Priority.Lower => Priority.Lowest
+    case Priority.Lowest => Priority.Lowest
+  }
+
 }
 
 object Priority {
@@ -40,7 +56,11 @@ object Priority {
 
   case object High extends Priority
 
-  case object Default extends Priority
+  case object MediumHigh extends Priority
+
+  case object Medium extends Priority
+
+  case object MediumLow extends Priority
 
   case object Low extends Priority
 
@@ -63,9 +83,12 @@ object Priority {
     case Priority.Highest => s"1$label"
     case Priority.Higher => s"2$label"
     case Priority.High => s"3$label"
-    case Priority.Default => s"4$label"
-    case Priority.Low => s"5$label"
-    case Priority.Lower => s"6$label"
-    case Priority.Lowest => s"7$label"
+    case Priority.MediumHigh => s"4$label"
+    case Priority.Medium => s"5$label"
+    case Priority.MediumLow => s"6$label"
+    case Priority.Low => s"7$label"
+    case Priority.Lower => s"8$label"
+    case Priority.Lowest => s"9$label"
   }
+
 }

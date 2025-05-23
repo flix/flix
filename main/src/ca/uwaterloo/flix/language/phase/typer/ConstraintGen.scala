@@ -439,7 +439,7 @@ object ConstraintGen {
 
       case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
 
-      case Expr.ExtensibleMatch(label, exp1, sym2, exp2, sym3, exp3, tvar, loc) =>
+      case Expr.ExtMatch(label, exp1, sym2, exp2, sym3, exp3, tvar, loc) =>
         val pred = Name.Pred(label.name, label.loc)
 
         val (tpe1, eff1) = visitExp(exp1)
@@ -476,7 +476,7 @@ object ConstraintGen {
 
       case e: Expr.RestrictableTag => RestrictableChooseConstraintGen.visitApplyRestrictableTag(e)
 
-      case KindedAst.Expr.ExtensibleTag(label, exps, tvar, loc) =>
+      case KindedAst.Expr.ExtTag(label, exps, tvar, loc) =>
         val pred = Name.Pred(label.name, label.loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         val rest = Type.freshVar(Kind.SchemaRow, loc)

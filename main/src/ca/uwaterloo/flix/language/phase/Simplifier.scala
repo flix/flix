@@ -69,11 +69,7 @@ object Simplifier {
   private def visitStruct(struct: MonoAst.Struct): SimplifiedAst.Struct = struct match {
     case MonoAst.Struct(_, ann, mod, sym, tparams0, fields0, loc) =>
       val tparams = tparams0.map(param => SimplifiedAst.TypeParam(param.name, param.sym, param.loc))
-
-      // Note: The order of fields may have become scrambled. See #10057.
-      // We sort them here to re-establish the declaration order.
-      // This is a temporary solution until a better can be developed.
-      val fields = fields0.map(visitStructField).sortBy(_.sym.loc)
+      val fields = fields0.map(visitStructField)
       SimplifiedAst.Struct(ann, mod, sym, tparams, fields, loc)
   }
 
@@ -157,6 +153,58 @@ object Simplifier {
           // Simplify purity to impure, must be done after Monomorph
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(op, es, t, Purity.Impure, loc)
+
+        case AtomicOp.StructNew(sym, givenFields) =>
+          // Re-arrange the fields to be given in the declared order.
+          // Change the order by let-binding the field and region values.
+          //
+          // Example:
+          //
+          // struct MyStruct[r: Region] { x: Int32, y: Int32 }
+          //
+          // new MyStruct @ rc { y = 21, x = 42 }
+          //
+          // This becomes:
+          //
+          // let rc$tmp = rc;
+          // let y$tmp = 21;
+          // let x$tmp = 42;
+          // new MyStruct @ rc$tmp { x = x$tmp, y = y$tmp }
+          //
+          val regExp :: fieldExps = es
+          val synthLoc = loc.asSynthetic
+          val fieldsDeclaredOrder = root.structs(sym).fields
+          val fieldInitializations = givenFields.zip(fieldExps)
+
+          // Find types and new names.
+          val freshFieldNames = givenFields.map(
+            sym => (sym, Symbol.freshVarSym(sym.name, BoundBy.Let, synthLoc))
+          ).toMap
+          val fieldTypes = fieldInitializations.map {
+            case (sym, e) => (sym, e.tpe)
+          }.toMap
+          val freshRegName = Symbol.freshVarSym("r", BoundBy.Let, synthLoc)
+          val regType = regExp.tpe
+          val freshFieldInitialization = fieldInitializations.map { case (sym, e) => (freshFieldNames(sym), e) }
+
+          // Construct var expressions.
+          val regVar = SimplifiedAst.Expr.Var(freshRegName, regType, synthLoc)
+          val fieldVars = fieldsDeclaredOrder.map(
+            field => SimplifiedAst.Expr.Var(freshFieldNames(field.sym), fieldTypes(field.sym), synthLoc)
+          )
+
+          // Construct the full expression.
+          val newStructExp = SimplifiedAst.Expr.ApplyAtomic(
+            AtomicOp.StructNew(sym, fieldsDeclaredOrder.map(_.sym)),
+            regVar :: fieldVars,
+            visitType(tpe),
+            Purity.Pure,
+            loc
+          )
+          val fieldBoundExp = freshFieldInitialization.foldRight(newStructExp: SimplifiedAst.Expr) {
+            case ((sym, e), acc) => SimplifiedAst.Expr.Let(sym, e, acc, acc.tpe, Purity.combine(acc.purity, e.purity), synthLoc)
+          }
+          SimplifiedAst.Expr.Let(freshRegName, regExp, fieldBoundExp, fieldBoundExp.tpe, Purity.combine(fieldBoundExp.purity, regExp.purity), synthLoc)
 
         case _ =>
           val t = visitType(tpe)
@@ -949,6 +997,7 @@ object Simplifier {
     // exp match {
     //     case Label(sym1) => exp1
     //     case sym2 => exp2
+    // }
     //
     // Becomes
     //

@@ -78,3 +78,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Adam Yasser Tallouzi](https://github.com/JumpTwiice)
 - [Casper Dalgaard Nielsen](https://github.com/CasperDN)
 - [Gagan Chandan](https://github.com/gaganchandan)
+- [Cade Lueker](https://github.com/cademichael)
