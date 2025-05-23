@@ -203,10 +203,10 @@ class TestCompletionProvider extends AnyFunSuite {
   // No Completions: Names
   /////////////////////////////////////////////////////////////////////////////
 
-  test("NoCompletions.onDefs") {
+  test("NoCompletions.onDefSyms") {
     forAll(Programs) { prg =>
       val root = compileWithSuccess(prg)
-      forAll(getDefSyms(root)) { sym =>
+      forAll(defSymsOf(root)) { sym =>
         forAll(rangeOfInclusive(sym.loc)) { pos =>
           Assert.isEmpty(autoComplete(pos, root), pos)
         }
@@ -214,10 +214,10 @@ class TestCompletionProvider extends AnyFunSuite {
     }
   }
 
-  test("NoCompletions.onEnums") {
+  test("NoCompletions.onEnumSyms") {
     forAll(Programs) { prg =>
       val root = compileWithSuccess(prg)
-      forAll(getEnumSyms(root)) { sym =>
+      forAll(enumSymsOf(root)) { sym =>
         forAll(rangeOfInclusive(sym.loc)) { pos =>
           Assert.isEmpty(autoComplete(pos, root), pos)
         }
@@ -225,9 +225,38 @@ class TestCompletionProvider extends AnyFunSuite {
     }
   }
 
+  test("NoCompletions.onEnumSyms") {
+    forAll(Programs) { prg =>
+      val root = compileWithSuccess(prg)
+      forAll(effectSymsOf(root)) { sym =>
+        forAll(rangeOfInclusive(sym.loc)) { pos =>
+          Assert.isEmpty(autoComplete(pos, root), pos)
+        }
+      }
+    }
+  }
 
+  test("NoCompletions.onStructSyms") {
+    forAll(Programs) { prg =>
+      val root = compileWithSuccess(prg)
+      forAll(structSymsOf(root)) { sym =>
+        forAll(rangeOfInclusive(sym.loc)) { pos =>
+          Assert.isEmpty(autoComplete(pos, root), pos)
+        }
+      }
+    }
+  }
 
-
+  test("NoCompletions.onTraitSyms") {
+    forAll(Programs) { prg =>
+      val root = compileWithSuccess(prg)
+      forAll(traitSymsOf(root)) { sym =>
+        forAll(rangeOfInclusive(sym.loc)) { pos =>
+          Assert.isEmpty(autoComplete(pos, root), pos)
+        }
+      }
+    }
+  }
 
 
 
@@ -242,38 +271,6 @@ class TestCompletionProvider extends AnyFunSuite {
     })
   }
 
-  test("No completions when defining the name for traits") {
-    Programs.foreach(program => {
-      val (root, errors) = compile(program)
-      val allNameDefLocs = root.traits.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
-      allNameDefLocs.foreach { loc =>
-        val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        Assert.isEmpty(completions, loc, Position.from(loc.sp2))
-      }
-    })
-  }
-
-  test("No completions when defining the name for effects") {
-    Programs.foreach(program => {
-      val (root, errors) = compile(program)
-      val allNameDefLocs = root.effects.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
-      allNameDefLocs.foreach { loc =>
-        val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        Assert.isEmpty(completions, loc, Position.from(loc.sp2))
-      }
-    })
-  }
-
-  test("No completions when defining the name for structs") {
-    Programs.foreach(program => {
-      val (root, errors) = compile(program)
-      val allNameDefLocs = root.structs.keys.filter(_.src.name.startsWith(Uri)).map(_.loc)
-      allNameDefLocs.foreach { loc =>
-        val completions = CompletionProvider.getCompletions(Uri, Position.from(loc.sp2), errors)(root, Flix)
-        Assert.isEmpty(completions, loc, Position.from(loc.sp2))
-      }
-    })
-  }
 
   test("No completions when defining the name for type aliases") {
     Programs.foreach(program => {
@@ -313,8 +310,7 @@ class TestCompletionProvider extends AnyFunSuite {
         val triggerPosition = Position(loc.sp1.lineOneIndexed, loc.sp1.colOneIndexed + charsLeft)
         val (root, errors) = compile(alteredProgram)
         val completions = CompletionProvider.getCompletions(Uri, triggerPosition, errors)(root, Flix).map(_.toCompletionItem(Flix))
-        completions.foreach(println)
-        println("---")
+
         assertNoDuplicatedCompletions(completions, defSymUse.sym.toString, loc, program, charsLeft)
     }
 
@@ -542,14 +538,32 @@ class TestCompletionProvider extends AnyFunSuite {
   /**
     * Returns all def symbols in the given AST `root` for the program.
     */
-  private def getDefSyms(root: Root): List[Symbol.DefnSym] =
+  private def defSymsOf(root: Root): List[Symbol.DefnSym] =
     root.defs.keys.filter(_.src.name.startsWith(Uri)).toList
+
+  /**
+    * Returns all effects symbols in the given AST `root` for the program.
+    */
+  private def effectSymsOf(root: Root): List[Symbol.EffectSym] =
+    root.effects.keys.filter(_.src.name.startsWith(Uri)).toList
 
   /**
     * Returns all def symbols in the given AST `root` for the program.
     */
-  private def getEnumSyms(root: Root): List[Symbol.EnumSym] =
+  private def enumSymsOf(root: Root): List[Symbol.EnumSym] =
     root.enums.keys.filter(_.src.name.startsWith(Uri)).toList
+
+  /**
+    * Returns all struct symbols in the given AST `root` for the program.
+    */
+  private def structSymsOf(root: Root): List[Symbol.StructSym] =
+    root.structs.keys.filter(_.src.name.startsWith(Uri)).toList
+
+  /**
+    * Returns all trait symbols in the given AST `root` for the program.
+    */
+  private def traitSymsOf(root: Root): List[Symbol.TraitSym] =
+    root.traits.keys.filter(_.src.name.startsWith(Uri)).toList
 
   /**
     * Returns the set of variable symbols that occur in the given root.
