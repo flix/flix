@@ -499,7 +499,7 @@ object GenFunAndClosureClasses {
     loadParamsOf(fparams)
 
     val pcLabels: Vector[Label] = Vector.range(0, defn.pcPoints).map(_ => new Label())
-    if (defn.pcPoints > 0) {
+    if (Purity.isControlImpure(defn.expr.purity) && defn.pcPoints > 0) {
       // the default label is the starting point of the function if pc = 0
       val defaultLabel = new Label()
       m.visitVarInsn(ALOAD, 0)
