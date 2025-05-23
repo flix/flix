@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.phase.jvm.GenExpression.compileInt
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes.*
-import org.objectweb.asm.{ClassWriter, Handle, Label, MethodVisitor, Opcodes}
+import org.objectweb.asm.{AnnotationVisitor, Attribute, ClassWriter, Handle, Label, MethodVisitor, Opcodes, TypePath}
 
 import scala.collection.mutable
 
@@ -71,7 +71,7 @@ object GenFunAndClosureClasses {
   private case object Closure extends FunctionKind
 
   private class Debug(m: MethodVisitor) extends MethodVisitor(Opcodes.ASM9) {
-    val instrs = mutable.ArrayBuffer.empty[String]
+    private val instrs = mutable.ArrayBuffer.empty[String]
 
     override def toString: String = {
       instrs.mkString("\n")
@@ -141,6 +141,44 @@ object GenFunAndClosureClasses {
       instrs.addOne(s"IINC $varIndex $increment")
       m.visitIincInsn(varIndex, increment)
     }
+
+    override def getDelegate: MethodVisitor = m.getDelegate
+
+    override def visitParameter(name: String, access: Int): Unit = m.visitParameter(name, access)
+
+    override def visitAnnotationDefault(): AnnotationVisitor = m.visitAnnotationDefault()
+
+    override def visitAnnotation(descriptor: String, visible: Boolean): AnnotationVisitor = m.visitAnnotation(descriptor, visible)
+
+    override def visitTypeAnnotation(typeRef: Int, typePath: TypePath, descriptor: String, visible: Boolean): AnnotationVisitor = m.visitTypeAnnotation(typeRef, typePath, descriptor, visible)
+
+    override def visitAnnotableParameterCount(parameterCount: Int, visible: Boolean): Unit = m.visitAnnotableParameterCount(parameterCount, visible)
+
+    override def visitParameterAnnotation(parameter: Int, descriptor: String, visible: Boolean): AnnotationVisitor = m.visitParameterAnnotation(parameter, descriptor, visible)
+
+    override def visitAttribute(attribute: Attribute): Unit = m.visitAttribute(attribute)
+
+    override def visitCode(): Unit = m.visitCode()
+
+    override def visitFrame(`type`: Int, numLocal: Int, local: Array[AnyRef], numStack: Int, stack: Array[AnyRef]): Unit = m.visitFrame(`type`, numLocal, local, numStack, stack)
+
+    override def visitTypeInsn(opcode: Int, `type`: String): Unit = m.visitTypeInsn(opcode, `type`)
+
+    override def visitMultiANewArrayInsn(descriptor: String, numDimensions: Int): Unit = m.visitMultiANewArrayInsn(descriptor, numDimensions)
+
+    override def visitInsnAnnotation(typeRef: Int, typePath: TypePath, descriptor: String, visible: Boolean): AnnotationVisitor = m.visitInsnAnnotation(typeRef, typePath, descriptor, visible)
+
+    override def visitTryCatchBlock(start: Label, end: Label, handler: Label, `type`: String): Unit = m.visitTryCatchBlock(start, end, handler, `type`)
+
+    override def visitTryCatchAnnotation(typeRef: Int, typePath: TypePath, descriptor: String, visible: Boolean): AnnotationVisitor = m.visitTryCatchAnnotation(typeRef, typePath, descriptor, visible)
+
+    override def visitLocalVariableAnnotation(typeRef: Int, typePath: TypePath, start: Array[Label], end: Array[Label], index: Array[Int], descriptor: String, visible: Boolean): AnnotationVisitor = m.visitLocalVariableAnnotation(typeRef, typePath, start, end, index, descriptor, visible)
+
+    override def visitLineNumber(line: Int, start: Label): Unit = m.visitLineNumber(line, start)
+
+    override def visitMaxs(maxStack: Int, maxLocals: Int): Unit = m.visitMaxs(maxStack, maxLocals)
+
+    override def visitEnd(): Unit = m.visitEnd()
   }
 
   private object Debug {
