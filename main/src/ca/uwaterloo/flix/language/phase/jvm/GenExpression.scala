@@ -118,12 +118,13 @@ object GenExpression {
       case Constant.Str(s) =>
         mv.visitLdcInsn(s)
 
-      case Constant.Regex(patt) =>
+      case Constant.Regex(patt) => ({
+        import BytecodeInstructions.*
         // Add source line number for debugging (can fail with PatternSyntaxException)
-        addSourceLine(mv, loc)
-        mv.visitLdcInsn(patt.pattern)
-        mv.visitMethodInsn(INVOKESTATIC, JvmName.Regex.toInternalName, "compile",
-          AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Regex), false)
+        addLoc(loc) ~
+          pushString(patt.pattern) ~
+          INVOKESTATIC(BackendObjType.Regex.CompileMethod)
+      })(new BytecodeInstructions.F(mv))
 
       case Constant.RecordEmpty =>
         // We get the JvmType of the class for the RecordEmpty
