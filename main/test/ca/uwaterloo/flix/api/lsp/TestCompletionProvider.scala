@@ -303,6 +303,8 @@ class TestCompletionProvider extends AnyFunSuite {
         val triggerPosition = Position(loc.sp1.lineOneIndexed, loc.sp1.colOneIndexed + charsLeft)
         val (root, errors) = compile(alteredProgram)
         val completions = CompletionProvider.getCompletions(Uri, triggerPosition, errors)(root, Flix).map(_.toCompletionItem(Flix))
+        completions.foreach(println)
+        println("---")
         assertNoDuplicatedCompletions(completions, defSymUse.sym.toString, loc, program, charsLeft)
     }
 
