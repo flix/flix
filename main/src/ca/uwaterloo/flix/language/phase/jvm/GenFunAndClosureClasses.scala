@@ -538,7 +538,7 @@ object GenFunAndClosureClasses {
     val returnValue = BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
     returnValue(new BytecodeInstructions.F(m))
 
-    println(s"\n\n${classType.name.toBinaryName}\n$m")
+    // println(s"\n\n${classType.name.toBinaryName}\n$m")
 
     m.visitMaxs(999, 999)
     m.visitEnd()
