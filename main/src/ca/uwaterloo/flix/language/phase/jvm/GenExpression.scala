@@ -1176,6 +1176,17 @@ object GenExpression {
       }
 
     case Expr.ApplyDef(sym, exps, ct, _, purity, loc) => ct match {
+      case ExpPosition.Tail if Purity.isControlPure(purity) =>
+        // TODO
+        // Return a thunk that references the static method
+        // Put args on stack
+        for (arg <- exps) {
+          // Evaluating the expression
+          compileExpr(arg)
+        }
+        // Return the def
+        mv.visitInsn(ARETURN)
+
       case ExpPosition.Tail =>
         // Type of the function abstract class
         val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
