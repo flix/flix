@@ -74,7 +74,7 @@ object GenExpression {
                           ) extends MethodContext
 
   /**
-    * A context for control pure functions.
+    * A context for control pure functions that do not closure capture any variables.
     * Such functions never need to record their state and will always
     * return at the given return expressions except if they loop indefinitely.
     */
