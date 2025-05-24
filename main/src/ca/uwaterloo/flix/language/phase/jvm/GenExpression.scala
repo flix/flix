@@ -1170,7 +1170,7 @@ object GenExpression {
                 mv.visitLabel(afterUnboxing)
 
               case DirectContext(_, _, _, _) =>
-                throw InternalCompilerException("unexpected direct method context in control impure function", loc)
+                throw InternalCompilerException("Unexpected direct method context in control impure function", loc)
             }
           }
       }
@@ -1232,7 +1232,7 @@ object GenExpression {
               mv.visitLabel(afterUnboxing)
 
             case DirectContext(_, _, _, _) =>
-              throw InternalCompilerException("unexpected direct method context in control impure function", loc)
+              throw InternalCompilerException("Unexpected direct method context in control impure function", loc)
           }
         }
     }
@@ -1466,7 +1466,7 @@ object GenExpression {
 
     case Expr.Do(op, exps, tpe, _, loc) => ctx match {
       case DirectContext(_, _, _, _) =>
-        throw InternalCompilerException("unexpected do-expression in direct method context", loc)
+        throw InternalCompilerException("Unexpected do-expression in direct method context", loc)
 
       case EffectContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
         val pcPoint = pcCounter(0) + 1
