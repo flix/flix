@@ -58,16 +58,26 @@ object GenExpression {
 
   }
 
+  /**
+    * A context for methods with effect instrumentation, i.e., control impure functions.
+    * Such functions / methods need to record their internal state which `newFrame`,
+    * `setPc`, `pcLabels`, and `pcCounter` are for.
+    */
   case class EffectContext(clazz: JvmType.Reference,
                            entryPoint: Label,
                            lenv: Map[Symbol.LabelSym, Label],
+                           localOffset: Int,
                            newFrame: InstructionSet, // [...] -> [..., frame]
                            setPc: InstructionSet, // [..., frame, pc] -> [...]
-                           localOffset: Int,
                            pcLabels: Vector[Label],
                            pcCounter: Ref[Int]
                           ) extends MethodContext
 
+  /**
+    * A context for control pure functions.
+    * Such functions never need to record their state and will always
+    * return at the given return expressions except if they loop indefinitely.
+    */
   case class DirectContext(clazz: JvmType.Reference,
                            entryPoint: Label,
                            lenv: Map[Symbol.LabelSym, Label],
@@ -1160,7 +1170,7 @@ object GenExpression {
                 mv.visitLabel(afterUnboxing)
 
               case DirectContext(_, _, _, _) =>
-                throw InternalCompilerException("unexpected static method context in control impure function", loc)
+                throw InternalCompilerException("Unexpected direct method context in control impure function", loc)
             }
           }
       }
@@ -1222,7 +1232,7 @@ object GenExpression {
               mv.visitLabel(afterUnboxing)
 
             case DirectContext(_, _, _, _) =>
-              throw InternalCompilerException("unexpected static method context in control impure function", loc)
+              throw InternalCompilerException("Unexpected direct method context in control impure function", loc)
           }
         }
     }
@@ -1245,6 +1255,8 @@ object GenExpression {
           setPc(new BytecodeInstructions.F(mv))
 
         case DirectContext(_, _, _, _) =>
+          () // Do nothing
+
       }
       // Jump to the entry point of the method.
       mv.visitJumpInsn(GOTO, ctx.entryPoint)
@@ -1261,6 +1273,7 @@ object GenExpression {
       mv.visitLabel(ifEnd)
 
     case Expr.Branch(exp, branches, _, _, _) =>
+      // Calculating the updated jumpLabels map
       val updatedJumpLabels = branches.map(branch => branch._1 -> new Label())
       val ctx1 = ctx.addLabels(updatedJumpLabels)
       // Compiling the exp
@@ -1438,7 +1451,7 @@ object GenExpression {
         case ExpPosition.NonTail => ctx match {
           // handle value/suspend/thunk if in non-tail position
           case DirectContext(_, _, _, _) =>
-            BackendObjType.Result.unwindSuspensionFreeThunk("contextful unwind", loc)(new BytecodeInstructions.F(mv))
+            BackendObjType.Result.unwindSuspensionFreeThunk("in pure run-with call", loc)(new BytecodeInstructions.F(mv))
 
           case EffectContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
             val afterUnboxing = new Label()
@@ -1456,7 +1469,7 @@ object GenExpression {
 
     case Expr.Do(op, exps, tpe, _, loc) => ctx match {
       case DirectContext(_, _, _, _) =>
-        throw InternalCompilerException("unexpected do-expression in direct method context", loc)
+        throw InternalCompilerException("Unexpected do-expression in direct method context", loc)
 
       case EffectContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
         val pcPoint = pcCounter(0) + 1
