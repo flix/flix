@@ -167,9 +167,8 @@ object GenFunAndClosureClasses {
                                         defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
     val desc = MethodDescriptor(defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe)), BackendObjType.Result.toTpe)
-    val name = "invokeStatic"
     val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
-    val m = visitor.visitMethod(modifiers, name, desc.toDescriptor, null, null)
+    val m = visitor.visitMethod(modifiers, JvmName.StaticApplyMethod, desc.toDescriptor, null, null)
 
     m.visitCode()
 
