@@ -1170,7 +1170,7 @@ object GenExpression {
                 mv.visitLabel(afterUnboxing)
 
               case DirectContext(_, _, _, _) =>
-                throw InternalCompilerException("unexpected static method context in control impure function", loc)
+                throw InternalCompilerException("unexpected direct method context in control impure function", loc)
             }
           }
       }
@@ -1232,7 +1232,7 @@ object GenExpression {
               mv.visitLabel(afterUnboxing)
 
             case DirectContext(_, _, _, _) =>
-              throw InternalCompilerException("unexpected static method context in control impure function", loc)
+              throw InternalCompilerException("unexpected direct method context in control impure function", loc)
           }
         }
     }
