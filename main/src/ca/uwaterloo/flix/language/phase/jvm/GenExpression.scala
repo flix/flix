@@ -1273,6 +1273,7 @@ object GenExpression {
       mv.visitLabel(ifEnd)
 
     case Expr.Branch(exp, branches, _, _, _) =>
+      // Calculating the updated jumpLabels map
       val updatedJumpLabels = branches.map(branch => branch._1 -> new Label())
       val ctx1 = ctx.addLabels(updatedJumpLabels)
       // Compiling the exp
