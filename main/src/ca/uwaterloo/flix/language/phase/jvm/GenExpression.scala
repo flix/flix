@@ -1451,7 +1451,7 @@ object GenExpression {
         case ExpPosition.NonTail => ctx match {
           // handle value/suspend/thunk if in non-tail position
           case DirectContext(_, _, _, _) =>
-            BackendObjType.Result.unwindSuspensionFreeThunk("contextful unwind", loc)(new BytecodeInstructions.F(mv))
+            BackendObjType.Result.unwindSuspensionFreeThunk("in pure run-with call", loc)(new BytecodeInstructions.F(mv))
 
           case EffectContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
             val afterUnboxing = new Label()
