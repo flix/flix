@@ -1255,6 +1255,8 @@ object GenExpression {
           setPc(new BytecodeInstructions.F(mv))
 
         case DirectContext(_, _, _, _) =>
+          () // Do nothing
+
       }
       // Jump to the entry point of the method.
       mv.visitJumpInsn(GOTO, ctx.entryPoint)
