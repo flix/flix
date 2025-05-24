@@ -58,16 +58,26 @@ object GenExpression {
 
   }
 
+  /**
+    * A context for methods with effect instrumentation, i.e., control impure functions.
+    * Such functions / methods need to record their internal state which `newFrame`,
+    * `setPc`, `pcLabels`, and `pcCounter` are for.
+    */
   case class EffectContext(clazz: JvmType.Reference,
                            entryPoint: Label,
                            lenv: Map[Symbol.LabelSym, Label],
+                           localOffset: Int,
                            newFrame: InstructionSet, // [...] -> [..., frame]
                            setPc: InstructionSet, // [..., frame, pc] -> [...]
-                           localOffset: Int,
                            pcLabels: Vector[Label],
                            pcCounter: Ref[Int]
                           ) extends MethodContext
 
+  /**
+    * A context for control pure functions.
+    * Such functions never need to record their state and will always
+    * return at the given return expressions except if they loop indefinitely.
+    */
   case class DirectContext(clazz: JvmType.Reference,
                            entryPoint: Label,
                            lenv: Map[Symbol.LabelSym, Label],
