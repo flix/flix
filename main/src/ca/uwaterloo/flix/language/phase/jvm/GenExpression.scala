@@ -66,9 +66,9 @@ object GenExpression {
   case class EffectContext(clazz: JvmType.Reference,
                            entryPoint: Label,
                            lenv: Map[Symbol.LabelSym, Label],
-                           localOffset: Int,
                            newFrame: InstructionSet, // [...] -> [..., frame]
                            setPc: InstructionSet, // [..., frame, pc] -> [...]
+                           localOffset: Int,
                            pcLabels: Vector[Label],
                            pcCounter: Ref[Int]
                           ) extends MethodContext
