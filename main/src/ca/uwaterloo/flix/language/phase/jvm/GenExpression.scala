@@ -611,32 +611,23 @@ object GenExpression {
         // Retrieve the value field  (To get the proper value)
         mv.visitFieldInsn(GETFIELD, recordInternalName, recordType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
 
-      case AtomicOp.RecordExtend(field) =>
+      case AtomicOp.RecordExtend(field) => ({
+        import BytecodeInstructions.*
         val List(exp1, exp2) = exps
-
         val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(exp1.tpe))
-        val classInternalName = recordType.jvmName.toInternalName
-
-        // Instantiating a new object of tuple
-        mv.visitTypeInsn(NEW, classInternalName)
-        mv.visitInsn(DUP)
-        // Invoking the constructor
-        mv.visitMethodInsn(INVOKESPECIAL, classInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
-
-        // Put the label of field (which is going to be the extension).
-        mv.visitInsn(DUP)
-        mv.visitLdcInsn(field.name)
-        mv.visitFieldInsn(PUTFIELD, classInternalName, recordType.LabelField.name, BackendObjType.String.toDescriptor)
-
-        // Put the value of the field onto the stack, since it is an expression we first need to compile it.
-        mv.visitInsn(DUP)
-        compileExpr(exp1)
-        mv.visitFieldInsn(PUTFIELD, classInternalName, recordType.ValueField.name, recordType.ValueField.tpe.toDescriptor)
-
-        // Put the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
-        mv.visitInsn(DUP)
-        compileExpr(exp2)
-        mv.visitFieldInsn(PUTFIELD, classInternalName, recordType.RestField.name, recordType.RestField.tpe.toDescriptor)
+        NEW(recordType.jvmName) ~
+          DUP() ~
+          INVOKESPECIAL(recordType.Constructor) ~
+          DUP() ~
+          pushString(field.name) ~
+          PUTFIELD(recordType.LabelField) ~
+          DUP() ~
+          cheat(mv => compileExpr(exp1)(mv, ctx, root, flix)) ~
+          PUTFIELD(recordType.ValueField) ~
+          DUP() ~
+          cheat(mv => compileExpr(exp2)(mv, ctx, root, flix)) ~
+          PUTFIELD(recordType.RestField)
+      })(new BytecodeInstructions.F(mv))
 
       case AtomicOp.RecordRestrict(field) =>
         val List(exp) = exps
