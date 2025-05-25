@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
-import ca.uwaterloo.flix.language.ast.{MonoType, Purity, Symbol}
+import ca.uwaterloo.flix.language.ast.{MonoType, Purity, ReducedAst, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression.compileInt
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
@@ -61,6 +61,10 @@ object GenFunAndClosureClasses {
   private def isClosure(defn: Def): Boolean = defn.cparams.nonEmpty
 
   private def isFunction(defn: Def): Boolean = defn.cparams.isEmpty
+
+  private def isUnitParameter(params: List[ReducedAst.FormalParam]): Boolean = {
+    params.length == 1 && params.head.tpe == MonoType.Unit
+  }
 
   private sealed trait FunctionKind
 
@@ -169,7 +173,8 @@ object GenFunAndClosureClasses {
                                        classType: JvmType.Reference,
                                        defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
-    val desc = MethodDescriptor(defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe)), BackendObjType.Result.toTpe)
+    val params = if (isUnitParameter(defn.fparams)) List.empty else defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe))
+    val desc = MethodDescriptor(params, BackendObjType.Result.toTpe)
     val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
     val m = visitor.visitMethod(modifiers, JvmName.DirectApply, desc.toDescriptor, null, null)
 
@@ -198,11 +203,12 @@ object GenFunAndClosureClasses {
     val applyMethod = BackendObjType.Frame.DirectApplyMethod
 
     // Put fields on stack as args to static method
-    // TODO: Fix do not generate unit parameter and do not declare with parameter if unit parameter
-    for ((fp, i) <- defn.fparams.zipWithIndex) {
-      m.visitVarInsn(ALOAD, 0)
-      m.visitFieldInsn(GETFIELD, classType.name.toInternalName,
-        s"arg$i", JvmOps.getErasedJvmType(fp.tpe).toDescriptor)
+    if (!isUnitParameter(defn.fparams)) {
+      for ((fp, i) <- defn.fparams.zipWithIndex) {
+        m.visitVarInsn(ALOAD, 0)
+        m.visitFieldInsn(GETFIELD, classType.name.toInternalName,
+          s"arg$i", JvmOps.getErasedJvmType(fp.tpe).toDescriptor)
+      }
     }
 
     m.visitMethodInsn(INVOKESTATIC, classType.name.toInternalName, applyMethod.name, applyMethod.d.toDescriptor, false)
