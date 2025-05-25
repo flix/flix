@@ -84,14 +84,15 @@ object GenExpression {
           case _ => mv.visitLdcInsn(d)
         }
 
-      case Constant.BigDecimal(dd) =>
+      case Constant.BigDecimal(dd) => ({
+        import BytecodeInstructions.*
         // Can fail with NumberFormatException
-        addSourceLine(mv, loc)
-        mv.visitTypeInsn(NEW, BackendObjType.BigDecimal.jvmName.toInternalName)
-        mv.visitInsn(DUP)
-        mv.visitLdcInsn(dd.toString)
-        mv.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigDecimal.jvmName.toInternalName, "<init>",
-          AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
+        addLoc(loc) ~
+          NEW(BackendObjType.BigDecimal.jvmName) ~
+          DUP() ~
+          pushString(dd.toString) ~
+          INVOKESPECIAL(BackendObjType.BigDecimal.Constructor)
+      })(new BytecodeInstructions.F(mv))
 
       case Constant.Int8(b) =>
         compileInt(b)
