@@ -1689,6 +1689,8 @@ object BackendObjType {
 
     def ApplyMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "applyFrame", mkDescriptor(Value.toTpe)(Result.toTpe))
 
+    def DirectApplyMethod: InterfaceMethod = InterfaceMethod(this.jvmName, JvmName.DirectApply, mkDescriptor(Value.toTpe)(Result.toTpe))
+
     def StaticApplyMethod: StaticInterfaceMethod = StaticInterfaceMethod(
       this.jvmName,
       IsPublic,

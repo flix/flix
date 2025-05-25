@@ -151,10 +151,13 @@ object GenFunAndClosureClasses {
     // Methods
     if (Purity.isControlPure(defn.expr.purity) && kind == Function) {
       compileStaticApplyMethod(visitor, classType, defn)
+      compileStaticInvokeMethod(visitor, classType, defn)
+    } else {
+      compileInvokeMethod(visitor, classType)
+      compileFrameMethod(visitor, classType, defn)
     }
-    compileInvokeMethod(visitor, classType)
-    compileFrameMethod(visitor, classType, defn)
     compileCopyMethod(visitor, classType, defn)
+
     if (onCallDebugging) compileOnCall(visitor, classType, defn)
     if (kind == Closure) compileGetUniqueThreadClosureMethod(visitor, classType, defn)
 
@@ -163,12 +166,12 @@ object GenFunAndClosureClasses {
   }
 
   private def compileStaticApplyMethod(visitor: ClassWriter,
-                                        classType: JvmType.Reference,
-                                        defn: Def)(implicit root: Root, flix: Flix): Unit = {
+                                       classType: JvmType.Reference,
+                                       defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
     val desc = MethodDescriptor(defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe)), BackendObjType.Result.toTpe)
     val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
-    val m = visitor.visitMethod(modifiers, JvmName.StaticApplyMethod, desc.toDescriptor, null, null)
+    val m = visitor.visitMethod(modifiers, JvmName.DirectApply, desc.toDescriptor, null, null)
 
     m.visitCode()
 
@@ -187,6 +190,30 @@ object GenFunAndClosureClasses {
     m.visitEnd()
   }
 
+  private def compileStaticInvokeMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def): Unit = {
+    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
+      AsmOps.getMethodDescriptor(Nil, JvmType.Reference(BackendObjType.Result.jvmName)), null, null)
+    m.visitCode()
+
+    val applyMethod = BackendObjType.Frame.DirectApplyMethod
+
+    // Get `this` pointer
+    m.visitVarInsn(ALOAD, 0)
+
+    // Put fields on stack as args to static method
+    for ((fp, i) <- defn.fparams.zipWithIndex) {
+      m.visitInsn(DUP)
+      m.visitFieldInsn(PUTFIELD, classType.name.toInternalName,
+        s"arg$i", JvmOps.getErasedJvmType(fp.tpe).toDescriptor)
+    }
+
+    m.visitMethodInsn(INVOKESTATIC, classType.name.toInternalName, applyMethod.name, applyMethod.d.toDescriptor, false)
+
+    BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)(new BytecodeInstructions.F(m))
+
+    m.visitMaxs(999, 999)
+    m.visitEnd()
+  }
 
   private def compileConstructor(superClass: JvmName, visitor: ClassWriter): Unit = {
     val constructor = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)

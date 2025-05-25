@@ -67,7 +67,7 @@ object JvmName {
     * The name of the static method for invoking the function
     * if it is control pure.
     */
-  val StaticApplyMethod: String = "directApply"
+  val DirectApply: String = "directApply"
 
   /**
     * Returns the JvmName of the given string `s`.
