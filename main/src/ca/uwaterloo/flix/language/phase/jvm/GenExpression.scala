@@ -1041,13 +1041,13 @@ object GenExpression {
         import BytecodeInstructions.*
         // Add source line number for debugging (failable by design).
         addLoc(loc) ~
-          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~
-          NEW(BackendObjType.HoleError.jvmName) ~
-          DUP2() ~
-          SWAP() ~
-          pushString(sym.toString) ~
-          SWAP() ~
-          INVOKESPECIAL(BackendObjType.HoleError.Constructor) ~
+          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~ // Loc
+          NEW(BackendObjType.HoleError.jvmName) ~                     // Loc, HoleError
+          DUP2() ~                                                    // Loc, HoleError, Loc, HoleError
+          SWAP() ~                                                    // Loc, HoleError, HoleError, Loc
+          pushString(sym.toString) ~                                  // Loc, HoleError, HoleError, Loc, Sym
+          SWAP() ~                                                    // Loc, HoleError, HoleError, Sym, Loc
+          INVOKESPECIAL(BackendObjType.HoleError.Constructor) ~       // Loc, HoleError
           ATHROW()
       })(new BytecodeInstructions.F(mv))
 
