@@ -197,13 +197,10 @@ object GenFunAndClosureClasses {
 
     val applyMethod = BackendObjType.Frame.DirectApplyMethod
 
-    // Get `this` pointer
-    m.visitVarInsn(ALOAD, 0)
-
     // Put fields on stack as args to static method
     for ((fp, i) <- defn.fparams.zipWithIndex) {
-      m.visitInsn(DUP)
-      m.visitFieldInsn(PUTFIELD, classType.name.toInternalName,
+      m.visitVarInsn(ALOAD, 0)
+      m.visitFieldInsn(GETFIELD, classType.name.toInternalName,
         s"arg$i", JvmOps.getErasedJvmType(fp.tpe).toDescriptor)
     }
 
