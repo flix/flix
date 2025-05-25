@@ -576,21 +576,15 @@ object GenExpression {
         // Retrieving the field `field${offset}`
         mv.visitFieldInsn(GETFIELD, tupleType.jvmName.toInternalName, s"field$idx", JvmOps.asErasedJvmType(tpe).toDescriptor)
 
-      case AtomicOp.Tuple =>
-        // We get the JvmType of the class for the tuple
+      case AtomicOp.Tuple => ({
+        import BytecodeInstructions.*
         val MonoType.Tuple(elmTypes) = tpe
         val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.asErasedBackendType))
-        val internalClassName = tupleType.jvmName.toInternalName
-        // Instantiating a new object of tuple
-        mv.visitTypeInsn(NEW, internalClassName)
-        // Duplicating the class
-        mv.visitInsn(DUP)
-        // Evaluating all the elements to be stored in the tuple class
-        exps.foreach(compileExpr)
-        // Descriptor of constructor
-        val constructorDescriptor = MethodDescriptor(tupleType.elms, VoidableType.Void)
-        // Invoking the constructor
-        mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", constructorDescriptor.toDescriptor, false)
+        NEW(tupleType.jvmName) ~
+          DUP() ~
+          cheat(mv => exps.foreach(compileExpr(_)(mv, ctx, root, flix))) ~
+          INVOKESPECIAL(tupleType.Constructor)
+      })(new BytecodeInstructions.F(mv))
 
       case AtomicOp.RecordSelect(field) =>
         val List(exp) = exps
