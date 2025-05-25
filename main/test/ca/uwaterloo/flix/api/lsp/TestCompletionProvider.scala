@@ -291,7 +291,8 @@ class TestCompletionProvider extends AnyFunSuite {
       case ProgramWithHole(prg, pos) =>
         val (root, errors) = compile(prg)
         val l = autoComplete(pos, root, errors)
-        l.foreach(println)
+        println(prg)
+        //l.foreach(println)
         println("--")
         println()
         Assert.noDuplicateCompletions(l, pos)
@@ -371,7 +372,12 @@ class TestCompletionProvider extends AnyFunSuite {
       val suffix = prg.substring(eOffset, prg.length)
       val withHole = prefix + suffix
       val pos = Position(loc.sp1.lineOneIndexed, loc.sp1.colOneIndexed + i)
-      result += ProgramWithHole(withHole, pos)
+
+      val cut = prg.substring(bOffset, bOffset + i)
+      if (!isKeyword(cut)) {
+        // We ignore cuts where the string that is left is a keyword.
+        result += ProgramWithHole(withHole, pos)
+      }
     }
 
     result.toList
@@ -580,9 +586,13 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   /**
-    * Returns `true` if the given code is a keyword.
+    * Returns `true` if the given string `s` is a keyword.
     */
-  private def isKeyword(code: String): Boolean = Lexer.lex(mkSource(code))._1.exists(_.kind.isKeyword)
+  private def isKeyword(s: String): Boolean = {
+    // Use the lexer to determine if `s` is a keyword.
+    val (tokens, _) = Lexer.lex(mkSource(s))
+    tokens.exists(_.kind.isKeyword)
+  }
 
   /**
     * Returns all def symbols in the given AST `root` for the program.
