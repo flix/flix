@@ -65,7 +65,7 @@ case class Range(start: Position, end: Position) {
     * Returns the range that starts earlier.
     */
   private def earlierStart(that: Range): Range =
-     if (start < that.start) this else that
+    if (start < that.start) this else that
 
   /**
     * Returns the range that ends later.
@@ -87,6 +87,11 @@ case class Range(start: Position, end: Position) {
     fst == lst || fst.end > lst.start
   }
 
-  override def toString: String = s"Range(l${start.line}:${start.character} to l${end.line}:${end.character})"
+  override def toString: String = {
+    if (start.line == end.line)
+      s"Range(L${start.line}:${start.character}-${end.character})"
+    else
+      s"Range(L${start.line}:${start.character} -- L${end.line}:${end.character})"
+  }
 
 }

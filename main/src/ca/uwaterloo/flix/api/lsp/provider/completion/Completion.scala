@@ -612,7 +612,9 @@ object Completion {
     * @param labelDetails  to show the namespace of class we are going to import
     * @param priority      the priority of the completion.
     */
-  case class AutoImportCompletion(name:String, qualifiedName: String, range: Range, ap: AnchorPosition, labelDetails: CompletionItemLabelDetails, priority: Priority) extends Completion
+  case class AutoImportCompletion(name: String, qualifiedName: String, range: Range, ap: AnchorPosition, labelDetails: CompletionItemLabelDetails, priority: Priority) extends Completion {
+    override def toString: String = s"AutoImportCompletion($name, $qualifiedName, $priority, $range)"
+  }
 
   /**
     * Represents a Snippet completion
@@ -815,7 +817,9 @@ object Completion {
     * @param qualified  indicate whether to use a qualified label.
     * @param inScope    indicate whether to the signature is inScope.
     */
-  case class ModuleCompletion(module: Symbol.ModuleSym, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class ModuleCompletion(module: Symbol.ModuleSym, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion {
+    override def toString: String = s"ModuleCompletion($module, $range)"
+  }
 
   /**
     * Represents a Use completion.

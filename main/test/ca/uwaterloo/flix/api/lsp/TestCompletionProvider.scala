@@ -289,6 +289,9 @@ class TestCompletionProvider extends AnyFunSuite {
       case ProgramWithHole(prg, _, pos) =>
         val (root, errors) = compile(prg)
         val l = autoComplete(pos, root, errors)
+
+        //l.foreach(println)
+        //println("--")
         Assert.noDuplicateCompletions(l, pos)
     }
   }
@@ -329,7 +332,7 @@ class TestCompletionProvider extends AnyFunSuite {
     * Returns `true` if the given string is a meaningful cut-- that is if its omission will not lead to parse errors.
     */
   private def isCutEligible(cut: String): Boolean = {
-    cut.nonEmpty && !isKeyword(cut) && cut.forall(c => c.isLetterOrDigit || c == '.')
+    cut.nonEmpty && !isLexerKeyword(cut) && cut.forall(c => c.isLetterOrDigit || c == '.')
   }
 
   /**
@@ -498,7 +501,7 @@ class TestCompletionProvider extends AnyFunSuite {
   /**
     * Returns `true` if the given string `s` is a keyword.
     */
-  private def isKeyword(s: String): Boolean = {
+  private def isLexerKeyword(s: String): Boolean = {
     // Use the lexer to determine if `s` is a keyword.
     val (tokens, _) = Lexer.lex(mkSource(s))
     tokens.exists(_.kind.isKeyword)
