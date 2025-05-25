@@ -121,14 +121,15 @@ object GenExpression {
           case _ => mv.visitLdcInsn(d)
         }
 
-      case Constant.BigDecimal(dd) =>
+      case Constant.BigDecimal(dd) => ({
+        import BytecodeInstructions.*
         // Can fail with NumberFormatException
-        addSourceLine(mv, loc)
-        mv.visitTypeInsn(NEW, BackendObjType.BigDecimal.jvmName.toInternalName)
-        mv.visitInsn(DUP)
-        mv.visitLdcInsn(dd.toString)
-        mv.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigDecimal.jvmName.toInternalName, "<init>",
-          AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
+        addLoc(loc) ~
+          NEW(BackendObjType.BigDecimal.jvmName) ~
+          DUP() ~
+          pushString(dd.toString) ~
+          INVOKESPECIAL(BackendObjType.BigDecimal.Constructor)
+      })(new BytecodeInstructions.F(mv))
 
       case Constant.Int8(b) =>
         compileInt(b)
@@ -142,30 +143,30 @@ object GenExpression {
       case Constant.Int64(l) =>
         compileLong(l)
 
-      case Constant.BigInt(ii) =>
+      case Constant.BigInt(ii) => ({
+        import BytecodeInstructions.*
         // Add source line number for debugging (can fail with NumberFormatException)
-        addSourceLine(mv, loc)
-        mv.visitTypeInsn(NEW, BackendObjType.BigInt.jvmName.toInternalName)
-        mv.visitInsn(DUP)
-        mv.visitLdcInsn(ii.toString)
-        mv.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigInt.jvmName.toInternalName, "<init>",
-          AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
+        addLoc(loc) ~
+          NEW(BackendObjType.BigInt.jvmName) ~
+          DUP() ~
+          pushString(ii.toString) ~
+          INVOKESPECIAL(BackendObjType.BigInt.Constructor)
+      })(new BytecodeInstructions.F(mv))
 
       case Constant.Str(s) =>
         mv.visitLdcInsn(s)
 
-      case Constant.Regex(patt) =>
+      case Constant.Regex(patt) => ({
+        import BytecodeInstructions.*
         // Add source line number for debugging (can fail with PatternSyntaxException)
-        addSourceLine(mv, loc)
-        mv.visitLdcInsn(patt.pattern)
-        mv.visitMethodInsn(INVOKESTATIC, JvmName.Regex.toInternalName, "compile",
-          AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Regex), false)
+        addLoc(loc) ~
+          pushString(patt.pattern) ~
+          INVOKESTATIC(BackendObjType.Regex.CompileMethod)
+      })(new BytecodeInstructions.F(mv))
 
-      case Constant.RecordEmpty =>
-        // We get the JvmType of the class for the RecordEmpty
-        val classType = BackendObjType.RecordEmpty
-        // Instantiating a new object of tuple
-        mv.visitFieldInsn(GETSTATIC, classType.jvmName.toInternalName, BackendObjType.RecordEmpty.SingletonField.name, classType.toDescriptor)
+      case Constant.RecordEmpty => ({
+        BytecodeInstructions.GETSTATIC(BackendObjType.RecordEmpty.SingletonField)
+      })(new BytecodeInstructions.F(mv))
 
     }
 
