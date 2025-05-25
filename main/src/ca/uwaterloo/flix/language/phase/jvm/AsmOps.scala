@@ -224,17 +224,18 @@ object AsmOps {
   /**
     * Generates code which instantiate a reified source location.
     */
-  def compileReifiedSourceLocation(mv: MethodVisitor, loc: SourceLocation): Unit = {
+  def compileReifiedSourceLocation(mv: MethodVisitor, loc: SourceLocation): Unit = ({
+    import BytecodeInstructions.*
     val RslType = BackendObjType.ReifiedSourceLocation
-    mv.visitTypeInsn(NEW, RslType.jvmName.toInternalName)
-    mv.visitInsn(DUP)
-    mv.visitLdcInsn(loc.source.name)
-    mv.visitLdcInsn(loc.beginLine)
-    mv.visitLdcInsn(loc.beginCol)
-    mv.visitLdcInsn(loc.endLine)
-    mv.visitLdcInsn(loc.endCol)
-    mv.visitMethodInsn(INVOKESPECIAL, RslType.jvmName.toInternalName, JvmName.ConstructorMethod, RslType.Constructor.d.toDescriptor, false)
-  }
+    NEW(RslType.jvmName) ~
+      DUP() ~
+      pushString(loc.source.name) ~
+      pushInt(loc.beginLine) ~
+      pushInt(loc.beginCol) ~
+      pushInt(loc.endLine) ~
+      pushInt(loc.endCol) ~
+      INVOKESPECIAL(RslType.Constructor)
+  })(new BytecodeInstructions.F(mv))
 
   /**
     * Emits code that puts the function object of the def symbol `def` on top of the stack.
