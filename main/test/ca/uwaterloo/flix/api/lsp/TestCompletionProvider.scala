@@ -290,8 +290,12 @@ class TestCompletionProvider extends AnyFunSuite {
   test("New No duplicated completions for defs") {
     forAll(mkProgramsWithHoles()) { // TODO: Sample
       case ProgramWithHole(prg, pos) =>
-        val root = compileWithSuccess(prg)
-        ???
+        val (root, errors) = compile(prg)
+        val l = autoComplete(pos, root, errors)
+        l.foreach(println)
+        println("--")
+        println()
+        Assert.Ok
     }
   }
 
@@ -332,9 +336,10 @@ class TestCompletionProvider extends AnyFunSuite {
       val uses = getDefSymUseOccurs(root)
       uses.flatMap {
         case use =>
-          // We drop the first program with a whole since it may not parse (because no identifier is present).
+          // TODO: DOC
           val prgsWithHoles = cutHoles(prg, use.loc)
-          prgsWithHoles.init
+          // TODO DOC: We drop the first program with a whole since it may not parse (because no identifier is present).
+          prgsWithHoles.tail
       }
     })
   }
@@ -425,6 +430,10 @@ class TestCompletionProvider extends AnyFunSuite {
     * Returns all autocomplete suggestions at the given position `pos` for the given AST `root`.
     */
   private def autoComplete(pos: Position, root: Root): List[Completion] = CompletionProvider.getCompletions(Uri, pos, Nil)(root, Flix)
+
+  // TODO: Merge these?
+  private def autoComplete(pos: Position, root: Root, errors: List[CompilationMessage]): List[Completion] = CompletionProvider.getCompletions(Uri, pos, errors)(root, Flix)
+
 
   // TODO: DOC
   def forAll[A](l: List[A])(f: A => Assert): Assert = {
@@ -709,7 +718,7 @@ class TestCompletionProvider extends AnyFunSuite {
           val msg = error.message(NoFormatter)
           println(msg)
         }
-        fail("Compilation failed: a root is expected.")
+        fail("Compilation failed.")
     }
   }
 
