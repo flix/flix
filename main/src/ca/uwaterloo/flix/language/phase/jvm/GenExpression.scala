@@ -1037,18 +1037,19 @@ object GenExpression {
         }
         ins(new BytecodeInstructions.F(mv))
 
-      case AtomicOp.HoleError(sym) =>
-        // Add source line number for debugging (failable by design)
-        addSourceLine(mv, loc)
-        AsmOps.compileReifiedSourceLocation(mv, loc)
-        val className = BackendObjType.HoleError.jvmName
-        mv.visitTypeInsn(NEW, className.toInternalName)
-        mv.visitInsn(DUP2)
-        mv.visitInsn(SWAP)
-        mv.visitLdcInsn(sym.toString)
-        mv.visitInsn(SWAP)
-        mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${BackendObjType.String.toDescriptor}${BackendObjType.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
-        mv.visitInsn(ATHROW)
+      case AtomicOp.HoleError(sym) => ({
+        import BytecodeInstructions.*
+        // Add source line number for debugging (failable by design).
+        addLoc(loc) ~
+          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~
+          NEW(BackendObjType.HoleError.jvmName) ~
+          DUP2() ~
+          SWAP() ~
+          pushString(sym.toString) ~
+          SWAP() ~
+          INVOKESPECIAL(BackendObjType.HoleError.Constructor) ~
+          ATHROW()
+      })(new BytecodeInstructions.F(mv))
 
       case AtomicOp.MatchError =>
         // Add source line number for debugging (failable by design)
