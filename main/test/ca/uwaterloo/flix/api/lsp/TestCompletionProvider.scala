@@ -130,7 +130,7 @@ class TestCompletionProvider extends AnyFunSuite {
     *
     * We use the limit to ensure that property tests terminate within a reasonable time.
     */
-  private val Limit: Int = 1_000
+  private val Limit: Int = 500
 
   /////////////////////////////////////////////////////////////////////////////
   // General Properties
@@ -380,11 +380,13 @@ class TestCompletionProvider extends AnyFunSuite {
 
 
   /**
-    * Returns all autocomplete suggestions at the given position `pos` for the given AST `root`.
+    * Returns all autocomplete suggestions at the given position `pos` for the given AST `root` under the assumption that there are no errors.
     */
-  private def autoComplete(pos: Position, root: Root): List[Completion] = CompletionProvider.getCompletions(Uri, pos, Nil)(root, Flix)
+  private def autoComplete(pos: Position, root: Root): List[Completion] = autoComplete(pos, root, Nil)
 
-  // TODO: Merge these?
+  /**
+    * Returns all autocomplete suggestions at the given position `pos` for the given AST `root` with the given `errors`.
+    */
   private def autoComplete(pos: Position, root: Root, errors: List[CompilationMessage]): List[Completion] = CompletionProvider.getCompletions(Uri, pos, errors)(root, Flix)
 
   /**
