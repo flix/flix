@@ -1036,16 +1036,17 @@ object GenExpression {
           ATHROW()
       })(new BytecodeInstructions.F(mv))
 
-      case AtomicOp.MatchError =>
+      case AtomicOp.MatchError => ({
+        import BytecodeInstructions.*
         // Add source line number for debugging (failable by design)
-        addSourceLine(mv, loc)
-        val className = BackendObjType.MatchError.jvmName
-        AsmOps.compileReifiedSourceLocation(mv, loc)
-        mv.visitTypeInsn(NEW, className.toInternalName)
-        mv.visitInsn(DUP2)
-        mv.visitInsn(SWAP)
-        mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${BackendObjType.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
-        mv.visitInsn(ATHROW)
+        addLoc(loc) ~
+          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~ // Loc
+          NEW(BackendObjType.MatchError.jvmName) ~                    // Loc, MatchError
+          DUP2() ~                                                    // Loc, MatchError, Loc, MatchError
+          SWAP() ~                                                    // Loc, MatchError, MatchError, Loc
+          INVOKESPECIAL(BackendObjType.MatchError.Constructor) ~      // Loc, MatchError
+          ATHROW()
+      })(new BytecodeInstructions.F(mv))
 
       case AtomicOp.CastError(from, to) =>
         import BackendObjType.CastError
