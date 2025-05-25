@@ -62,10 +62,6 @@ object GenFunAndClosureClasses {
 
   private def isFunction(defn: Def): Boolean = defn.cparams.isEmpty
 
-  private def isUnitParameter(params: List[ReducedAst.FormalParam]): Boolean = {
-    params.length == 1 && params.head.tpe == MonoType.Unit
-  }
-
   private sealed trait FunctionKind
 
   private case object Function extends FunctionKind
@@ -173,7 +169,7 @@ object GenFunAndClosureClasses {
                                        classType: JvmType.Reference,
                                        defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
-    val params = if (isUnitParameter(defn.fparams)) List.empty else defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe))
+    val params = defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe))
     val desc = MethodDescriptor(params, BackendObjType.Result.toTpe)
     val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
     val m = visitor.visitMethod(modifiers, JvmName.DirectApply, desc.toDescriptor, null, null)
@@ -203,12 +199,10 @@ object GenFunAndClosureClasses {
     val applyMethod = BackendObjType.Frame.DirectApplyMethod
 
     // Put fields on stack as args to static method
-    if (!isUnitParameter(defn.fparams)) {
-      for ((fp, i) <- defn.fparams.zipWithIndex) {
-        m.visitVarInsn(ALOAD, 0)
-        m.visitFieldInsn(GETFIELD, classType.name.toInternalName,
-          s"arg$i", JvmOps.getErasedJvmType(fp.tpe).toDescriptor)
-      }
+    for ((fp, i) <- defn.fparams.zipWithIndex) {
+      m.visitVarInsn(ALOAD, 0)
+      m.visitFieldInsn(GETFIELD, classType.name.toInternalName,
+        s"arg$i", JvmOps.getErasedJvmType(fp.tpe).toDescriptor)
     }
 
     m.visitMethodInsn(INVOKESTATIC, classType.name.toInternalName, applyMethod.name, applyMethod.d.toDescriptor, false)
