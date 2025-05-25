@@ -292,10 +292,13 @@ class TestCompletionProvider extends AnyFunSuite {
       case ProgramWithHole(prg, pos) =>
         val (root, errors) = compile(prg)
         val l = autoComplete(pos, root, errors)
+        println(prg)
+        println(pos)
         l.foreach(println)
         println("--")
         println()
-        Assert.Ok
+//        Assert.Ok
+        ???
     }
   }
 
