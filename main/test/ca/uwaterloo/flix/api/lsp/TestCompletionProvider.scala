@@ -286,14 +286,11 @@ class TestCompletionProvider extends AnyFunSuite {
   // No Duplicate Completions
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO
-  test("New No duplicated completions for defs") {
-    forAll(mkProgramsWithHoles().take(5)) { // TODO: Sample
+  test("NoDuplicates.Defs") {
+    forAll(mkProgramsWithHoles().take(15)) { // TODO: Sample
       case ProgramWithHole(prg, pos) =>
         val (root, errors) = compile(prg)
         val l = autoComplete(pos, root, errors)
-        println(prg)
-        println(pos)
         l.foreach(println)
         println("--")
         println()
@@ -301,18 +298,16 @@ class TestCompletionProvider extends AnyFunSuite {
     }
   }
 
-  // TODO
-  test("No duplicated completions for defs") {
-
+  test("No duplicated completions for vars-- DEPRECATED") {
     // Exhaustively generate all tests.
     val tests = Programs.flatMap(program => {
       val (root1, _) = compile(program)
-      val defSymUses = getDefSymUseOccurs(root1).toList
+      val varOccurs = getVarSymOccurs()(root1)
       for {
-        defSymUse <- defSymUses
-        loc = mkLocForName(defSymUse)
-        charsLeft <- listValidCharsLeft(defSymUse.sym.name, loc)
-      } yield (program, defSymUse, loc, charsLeft)
+        (varSym, loc0) <- varOccurs
+        loc = mkLocForName(varSym, loc0)
+        charsLeft <- listValidCharsLeft(varSym.text, loc)
+      } yield (program, varSym, loc, charsLeft)
     })
 
     // Randomly sample the generated tests.
@@ -320,15 +315,13 @@ class TestCompletionProvider extends AnyFunSuite {
 
     // Run the selected tests.
     samples.foreach {
-      case (program, defSymUse, loc, charsLeft) =>
+      case (program, varSym, loc, charsLeft) =>
         val alteredProgram = alterLocationInCode(program, loc, charsLeft)
         val triggerPosition = Position(loc.sp1.lineOneIndexed, loc.sp1.colOneIndexed + charsLeft)
         val (root, errors) = compile(alteredProgram)
         val completions = CompletionProvider.getCompletions(Uri, triggerPosition, errors)(root, Flix).map(_.toCompletionItem(Flix))
-
-        assertNoDuplicatedCompletions(completions, defSymUse.sym.toString, loc, program, charsLeft)
+        assertNoDuplicatedCompletions(completions, varSym.text, loc, program, charsLeft)
     }
-
   }
 
   // TODO: DOC
@@ -384,11 +377,6 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   /**
-    * A program with a hole at the specified position.
-    */
-  case class ProgramWithHole(prg: String, pos: Position)
-
-  /**
     * Returns the index (absolute, zero-based) of the given position `pos` with the given program `prg`.
     */
   private def indexOf(pos: Position, prg: String): Int = {
@@ -400,33 +388,6 @@ class TestCompletionProvider extends AnyFunSuite {
     offset + pos.character - 1
   }
 
-  test("No duplicated completions for vars") {
-    // Exhaustively generate all tests.
-    val tests = Programs.flatMap(program => {
-      val (root1, _) = compile(program)
-      val varOccurs = getVarSymOccurs()(root1)
-      for {
-        (varSym, loc0) <- varOccurs
-        loc = mkLocForName(varSym, loc0)
-        charsLeft <- listValidCharsLeft(varSym.text, loc)
-      } yield (program, varSym, loc, charsLeft)
-    })
-
-    // Randomly sample the generated tests.
-    val samples = Random.shuffle(tests).take(Limit)
-
-    // Run the selected tests.
-    samples.foreach {
-      case (program, varSym, loc, charsLeft) =>
-        val alteredProgram = alterLocationInCode(program, loc, charsLeft)
-        val triggerPosition = Position(loc.sp1.lineOneIndexed, loc.sp1.colOneIndexed + charsLeft)
-        val (root, errors) = compile(alteredProgram)
-        val completions = CompletionProvider.getCompletions(Uri, triggerPosition, errors)(root, Flix).map(_.toCompletionItem(Flix))
-        assertNoDuplicatedCompletions(completions, varSym.text, loc, program, charsLeft)
-    }
-  }
-
-  // TODO: More properties.
 
   /**
     * Returns all autocomplete suggestions at the given position `pos` for the given AST `root`.
@@ -494,8 +455,7 @@ class TestCompletionProvider extends AnyFunSuite {
     * Returns all tokens in the given program `prg` associated with the given AST `root`.
     */
   private def getTokens(prg: String, root: Root): List[Token] =
-    // TODO: Can we get rid of the need for mkSource?
-    root.tokens(mkSource(prg)).toList
+    root.tokens(mkSource(prg)).toList // TODO: Can we get rid of the need for mkSource?
 
   sealed trait Assert
 
@@ -562,15 +522,6 @@ class TestCompletionProvider extends AnyFunSuite {
   private def alterLocationInCode(program: String, loc: SourceLocation, charsLeft: Int): String = {
     val target = program.substring(calcOffset(loc.sp1), calcOffset(loc.sp2))
     program.substring(0, calcOffset(loc.sp1)) + target.take(charsLeft) + program.substring(calcOffset(loc.sp2))
-  }
-
-  /**
-    * Returns a new source location for the given DefSymUse that only contains the name of the symbol, namespace excluded.
-    */
-  private def mkLocForName(defSymUse: DefSymUse): SourceLocation = {
-    val name = defSymUse.sym.name
-    val sp2 = defSymUse.loc.sp2
-    defSymUse.loc.copy(sp1 = SourcePosition.mkFromOneIndexed(sp2.source, sp2.lineOneIndexed, sp2.colOneIndexed - name.length))
   }
 
   /**
@@ -790,5 +741,10 @@ class TestCompletionProvider extends AnyFunSuite {
     val input = Input.Text(Uri, content, sctx)
     Source(input, content.toCharArray)
   }
+
+  /**
+    * A program `prg` with a hole at the specified position `pos`.
+    */
+  case class ProgramWithHole(prg: String, pos: Position)
 
 }
