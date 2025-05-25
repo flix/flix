@@ -1048,20 +1048,17 @@ object GenExpression {
           ATHROW()
       })(new BytecodeInstructions.F(mv))
 
-      case AtomicOp.CastError(from, to) =>
-        import BackendObjType.CastError
+      case AtomicOp.CastError(from, to) => ({
+        import BytecodeInstructions.*
         // Add source line number for debugging (failable by design)
-        addSourceLine(mv, loc)
-        val ins = {
-          import BytecodeInstructions.*
-          NEW(CastError.jvmName) ~
-            DUP() ~
-            cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~
-            pushString(s"Cannot cast from type '$from' to '$to'") ~
-            INVOKESPECIAL(CastError.Constructor) ~
-            ATHROW()
-        }
-        ins(new BytecodeInstructions.F(mv))
+        addLoc(loc) ~
+          NEW(BackendObjType.CastError.jvmName) ~
+          DUP() ~
+          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~
+          pushString(s"Cannot cast from type '$from' to '$to'") ~
+          INVOKESPECIAL(BackendObjType.CastError.Constructor) ~
+          ATHROW()
+      })(new BytecodeInstructions.F(mv))
     }
 
     case Expr.ApplyClo(exp1, exp2, ct, _, purity, loc) =>
