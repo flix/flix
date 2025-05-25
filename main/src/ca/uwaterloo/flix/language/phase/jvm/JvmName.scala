@@ -216,12 +216,7 @@ case class JvmName(pkg: List[String], name: String) {
   lazy val toPath: Path = Paths.get(pkg.mkString("/"), name + ".class")
 
   /**
-    * Wraps this name in `backendObjType.Native`.
-    */
-  def toObjTpe: BackendObjType.Native = BackendObjType.Native(this)
-
-  /**
     * Wraps this name in `BackendType.Reference(BackendObjType.Native(...))`.
     */
-  def toTpe: BackendType.Reference = this.toObjTpe.toTpe
+  def toTpe: BackendType.Reference = BackendObjType.Native(this).toTpe
 }
