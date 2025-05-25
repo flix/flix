@@ -758,7 +758,7 @@ object Completion {
   /**
     * Represents an Op completion
     *
-    * @param op         the op.
+    * @param decl       the operation declaration.
     * @param namespace  the namespace of the op, if not provided, we use the fully qualified name.
     * @param range      the range of the completion.
     * @param ap         the anchor position for the use statement.
@@ -766,7 +766,9 @@ object Completion {
     * @param inScope    indicate whether to the op is inScope.
     * @param ectx       the expression context.
     */
-  case class OpCompletion(op: TypedAst.Op, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion
+  case class OpCompletion(decl: TypedAst.Op, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion {
+    override def toString: String = s"OpCompletion(${decl.sym}, $range)"
+  }
 
   /**
     * Represents an Op Handler completion
@@ -779,7 +781,7 @@ object Completion {
   /**
     * Represents a Signature completion
     *
-    * @param sig        the signature.
+    * @param decl       the signature declaration.
     * @param namespace  the namespace of the signature, if not provided, we use the fully qualified name.
     * @param range      the range of the completion.
     * @param ap         the anchor position for the use statement.
@@ -787,7 +789,9 @@ object Completion {
     * @param inScope    indicate whether to the signature is inScope.
     * @param ectx       the expression context.
     */
-  case class SigCompletion(sig: TypedAst.Sig, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion
+  case class SigCompletion(decl: TypedAst.Sig, namespace: String, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion {
+    override def toString: String = s"SigCompletion(${decl.sym}, $range)"
+  }
 
   /**
     * Represents an Enum Tag completion

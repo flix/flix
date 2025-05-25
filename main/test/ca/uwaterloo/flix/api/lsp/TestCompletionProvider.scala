@@ -287,14 +287,14 @@ class TestCompletionProvider extends AnyFunSuite {
   /////////////////////////////////////////////////////////////////////////////
 
   test("NoDuplicates.Defs") {
-    forAll(mkProgramsWithDefUseHoles().take(15)) { // TODO: Sample
+    forAll(mkProgramsWithDefUseHoles().take(100)) { // TODO: Sample
       case ProgramWithHole(prg, pos) =>
         val (root, errors) = compile(prg)
         val l = autoComplete(pos, root, errors)
         l.foreach(println)
         println("--")
         println()
-        Assert.noDuplicateLabels(l, pos)
+        Assert.noDuplicateCompletions(l, pos)
     }
   }
 
@@ -486,12 +486,15 @@ class TestCompletionProvider extends AnyFunSuite {
     /**
       * Asserts that the given list of completions `l` at position `pos` contains no duplicates.
       *
-      * A completion is considered a duplicate if it has the same label and kind as another completion.
+      * A completion is considered a duplicate if it:
+      * - has the same label
+      * - has the same kind
+      * - had the same label details
       */
-    def noDuplicateLabels(l: List[Completion], pos: Position): Assert = {
+    def noDuplicateCompletions(l: List[Completion], pos: Position): Assert = {
       val xs = l.map(_.toCompletionItem(Flix))
       for (c1 <- xs; c2 <- xs) {
-        if (c1.label == c2.label && c1.kind == c2.kind && c1 != c2) {
+        if (c1.label == c2.label && c1.kind == c2.kind && c1.labelDetails == c2.labelDetails && c1 != c2) {
           println(s"Duplicate completions at $pos:")
           println(s"  $c1")
           println(s"  $c2")
