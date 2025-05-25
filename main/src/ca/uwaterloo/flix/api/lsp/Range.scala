@@ -86,4 +86,7 @@ case class Range(start: Position, end: Position) {
     val lst = laterEnd(that)
     fst == lst || fst.end > lst.start
   }
+
+  override def toString: String = s"Range(l${start.line}:${start.character} to l${end.line}:${end.character})"
+
 }

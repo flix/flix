@@ -553,7 +553,7 @@ object Completion {
     * @param withSpace whether the completion should be followed by a space.
     */
   case class KeywordCompletion(name: String, range: Range, priority: Priority, withSpace: Boolean = true) extends Completion {
-    override def toString: String = s"KeywordCompletion($name, $priority)"
+    override def toString: String = s"KeywordCompletion($name, $priority, $range)"
   }
 
   /**
@@ -641,7 +641,7 @@ object Completion {
     * @param range the range of the completion.
     */
   case class LocalVarCompletion(name: String, range: Range) extends Completion {
-    override def toString: String = s"LocalVarCompletion($name)"
+    override def toString: String = s"LocalVarCompletion($name, $range)"
   }
 
   /**
@@ -673,7 +673,7 @@ object Completion {
     * @param ectx      the expression context.
     */
   case class DefCompletion(decl: TypedAst.Def, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion {
-    override def toString: String = s"DefCompletion(${decl.sym})"
+    override def toString: String = s"DefCompletion(${decl.sym}, $range)"
   }
 
   /**
