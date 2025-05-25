@@ -294,7 +294,7 @@ class TestCompletionProvider extends AnyFunSuite {
         l.foreach(println)
         println("--")
         println()
-        Assert.Ok
+        Assert.noDuplicateLabels(l, pos)
     }
   }
 
@@ -472,7 +472,7 @@ class TestCompletionProvider extends AnyFunSuite {
     def cond(c: Boolean): Assert = if (c) Ok else Fail
 
     /**
-      * Asserts that the given list of completion `l` for position `pos` is empty.
+      * Asserts that the given list of completions `l` at position `pos` is empty.
       */
     def isEmpty(l: List[Completion], pos: Position): Assert = {
       if (l.isEmpty) {
@@ -483,6 +483,24 @@ class TestCompletionProvider extends AnyFunSuite {
       }
     }
 
+    /**
+      * Asserts that the given list of completions `l` at position `pos` contains no duplicates.
+      *
+      * A completion is considered a duplicate if it has the same label and kind as another completion.
+      */
+    def noDuplicateLabels(l: List[Completion], pos: Position): Assert = {
+      val xs = l.map(_.toCompletionItem(Flix))
+      for (c1 <- xs; c2 <- xs) {
+        if (c1.label == c2.label && c1.kind == c2.kind && c1 != c2) {
+          println(s"Duplicate completions at $pos:")
+          println(s"  $c1")
+          println(s"  $c2")
+          fail(s"Duplicate completions: ${c1.getClass.getName} and ${c2.getClass.getName}.")
+        }
+      }
+
+      Assert.Ok
+    }
   }
 
 
