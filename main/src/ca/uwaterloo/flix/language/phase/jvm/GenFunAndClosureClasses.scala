@@ -211,6 +211,7 @@ object GenFunAndClosureClasses {
       }
     }
 
+    m.visitVarInsn(ALOAD, 0)
     m.visitMethodInsn(INVOKESTATIC, classType.name.toInternalName, applyMethod.name, applyMethod.d.toDescriptor, false)
 
     BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)(new BytecodeInstructions.F(m))
