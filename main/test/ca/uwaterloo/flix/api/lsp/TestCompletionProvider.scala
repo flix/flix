@@ -287,7 +287,7 @@ class TestCompletionProvider extends AnyFunSuite {
   /////////////////////////////////////////////////////////////////////////////
 
   test("NoDuplicates.Defs") {
-    forAll(mkProgramsWithDefUseHoles().take(100)) { // TODO: Sample
+    forAll(mkProgramsWithDefUseHoles()) { // TODO: Sample
       case ProgramWithHole(prg, pos) =>
         val (root, errors) = compile(prg)
         val l = autoComplete(pos, root, errors)
@@ -337,7 +337,7 @@ class TestCompletionProvider extends AnyFunSuite {
         val prgsWithHoles = cutHoles(prg, use.loc)
 
         // We drop the very first cut since there the identifier is completely erased and the program does not parse.
-        prgsWithHoles.tail
+        prgsWithHoles.drop(1)
       }
     })
   }
@@ -374,8 +374,8 @@ class TestCompletionProvider extends AnyFunSuite {
       val pos = Position(loc.sp1.lineOneIndexed, loc.sp1.colOneIndexed + i)
 
       val cut = prg.substring(bOffset, bOffset + i)
-      if (!isKeyword(cut)) {
-        // We ignore cuts where the string that is left is a keyword.
+      // We ignore cuts where the string is (a) a keyword and (b) non-letter or digit.
+      if (!isKeyword(cut) && !(cut.forall(_.isLetterOrDigit))) {
         result += ProgramWithHole(withHole, pos)
       }
     }
