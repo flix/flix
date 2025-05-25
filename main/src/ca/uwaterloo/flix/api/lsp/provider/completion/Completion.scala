@@ -552,7 +552,9 @@ object Completion {
     * @param priority  the priority of the completion.
     * @param withSpace whether the completion should be followed by a space.
     */
-  case class KeywordCompletion(name: String, range: Range, priority: Priority, withSpace: Boolean = true) extends Completion
+  case class KeywordCompletion(name: String, range: Range, priority: Priority, withSpace: Boolean = true) extends Completion {
+    override def toString: String = s"KeywordCompletion($name, $priority)"
+  }
 
   /**
     * Represents a completion for a kind.
@@ -638,7 +640,9 @@ object Completion {
     * @param name the name of the variable to complete.
     * @param range the range of the completion.
     */
-  case class LocalVarCompletion(name: String, range: Range) extends Completion
+  case class LocalVarCompletion(name: String, range: Range) extends Completion {
+    override def toString: String = s"LocalVarCompletion($name)"
+  }
 
   /**
     * Represents a Java Class completion
@@ -668,7 +672,9 @@ object Completion {
     * @param inScope   indicate whether to the def is inScope.
     * @param ectx      the expression context.
     */
-  case class DefCompletion(decl: TypedAst.Def, range: Range, ap: AnchorPosition, qualified:Boolean, inScope: Boolean, ectx: ExprContext) extends Completion
+  case class DefCompletion(decl: TypedAst.Def, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion {
+    override def toString: String = s"DefCompletion(${decl.sym})"
+  }
 
   /**
     * Represents an Enum completion
