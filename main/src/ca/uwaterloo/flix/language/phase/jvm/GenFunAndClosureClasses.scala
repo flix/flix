@@ -150,7 +150,7 @@ object GenFunAndClosureClasses {
     compileConstructor(functionInterface, visitor)
     // Methods
     if (Purity.isControlPure(defn.expr.purity) && kind == Function) {
-      compileStaticInvokeMethod(visitor, classType, defn)
+      compileStaticApplyMethod(visitor, classType, defn)
     }
     compileInvokeMethod(visitor, classType)
     compileFrameMethod(visitor, classType, defn)
@@ -162,7 +162,7 @@ object GenFunAndClosureClasses {
     visitor.toByteArray
   }
 
-  private def compileStaticInvokeMethod(visitor: ClassWriter,
+  private def compileStaticApplyMethod(visitor: ClassWriter,
                                         classType: JvmType.Reference,
                                         defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
