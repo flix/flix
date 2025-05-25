@@ -985,19 +985,19 @@ object GenExpression {
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
 
-      case AtomicOp.Lazy =>
+      case AtomicOp.Lazy => ({
+        import BytecodeInstructions.*
         val List(exp) = exps
 
         // Find the Lazy class name (Lazy$tpe).
         val MonoType.Lazy(elmType) = tpe
         val lazyType = BackendObjType.Lazy(BackendType.asErasedBackendType(elmType))
 
-        val ins = {
-          import BytecodeInstructions.*
-          NEW(lazyType.jvmName) ~
-            DUP() ~ cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ INVOKESPECIAL(lazyType.Constructor)
-        }
-        ins(new BytecodeInstructions.F(mv))
+        NEW(lazyType.jvmName) ~
+          DUP() ~
+          cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~
+          INVOKESPECIAL(lazyType.Constructor)
+      })(new BytecodeInstructions.F(mv))
 
       case AtomicOp.Force =>
         val List(exp) = exps
