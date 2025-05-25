@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source, SymUse}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Token, TokenKind, TypedAst}
 import ca.uwaterloo.flix.language.phase.Lexer
+import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter.code
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
@@ -286,8 +287,16 @@ class TestCompletionProvider extends AnyFunSuite {
   /////////////////////////////////////////////////////////////////////////////
 
   // TODO
+  test("New No duplicated completions for defs") {
+    forAll(mkProgramsWithHoles()) { // TODO: Sample
+      case ProgramWithHole(prg, pos) =>
+        val root = compileWithSuccess(prg)
+        ???
+    }
+  }
+
+  // TODO
   test("No duplicated completions for defs") {
-    mkDefTests()
 
     // Exhaustively generate all tests.
     val tests = Programs.flatMap(program => {
@@ -316,23 +325,17 @@ class TestCompletionProvider extends AnyFunSuite {
 
   }
 
-  /**
-    * Returns a list of tuples where:
-    *
-    * - The 1st argument is a program.
-    * - The 2nd argument
-    */
-  def mkDefTests(): List[(String, Position, Position)] = {
+  // TODO: DOC
+  def mkProgramsWithHoles(): List[ProgramWithHole] = {
     Programs.flatMap(prg => {
       val root = compileWithSuccess(prg)
       val uses = getDefSymUseOccurs(root)
-      uses.map {
+      uses.flatMap {
         case use =>
-          val prgWithholes = cutHoles(prg, use.loc)
-          println(prgWithholes)
+          // We drop the first program with a whole since it may not parse (because no identifier is present).
+          val prgsWithHoles = cutHoles(prg, use.loc)
+          prgsWithHoles.init
       }
-
-      ???
     })
   }
 
@@ -367,9 +370,6 @@ class TestCompletionProvider extends AnyFunSuite {
       val suffix = prg.substring(eOffset, prg.length)
       val withHole = prefix + suffix
       val pos = Position(loc.sp1.lineOneIndexed, loc.sp1.colOneIndexed + i)
-      println(withHole)
-      println(pos)
-      println("---")
       result += ProgramWithHole(withHole, pos)
     }
 
@@ -704,7 +704,12 @@ class TestCompletionProvider extends AnyFunSuite {
     Flix.addSourceCode(Uri, program)
     Flix.check() match {
       case (Some(root), Nil) => root
-      case _ => fail("Compilation failed: a root is expected.")
+      case (_, errors) =>
+        for (error <- errors) {
+          val msg = error.message(NoFormatter)
+          println(msg)
+        }
+        fail("Compilation failed: a root is expected.")
     }
   }
 
