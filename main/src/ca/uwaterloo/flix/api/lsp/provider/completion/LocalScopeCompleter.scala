@@ -31,17 +31,17 @@ object LocalScopeCompleter {
     * We will provide all sorts of completions except for Resolution.TypeVar
     */
   def getCompletionsExpr(range: Range, scp: LocalScope): Iterable[Completion] =
-   scp.scp.m.foldLeft(List.empty[Completion]){case (acc, (name, resolutions)) =>
+    scp.scp.m.foldLeft(List.empty[Completion]) { case (acc, (name, resolutions)) =>
       acc ++ mkJavaClassCompletion(name, resolutions, range) ++ mkVarCompletion(name, resolutions, range) ++ mkLocalDefCompletion(resolutions, range)
-   }
+    }
 
   /**
     * Returns a list of completions for UndefinedType.
     * We will provide completions for Resolution.Declaration and Resolution.JavaClass
     */
   def getCompletionsType(range: Range, scp: LocalScope): Iterable[Completion] =
-    scp.scp.m.foldLeft(List.empty[Completion]){case (acc, (name, resolutions)) =>
-       acc ++ mkJavaClassCompletion(name, resolutions, range)
+    scp.scp.m.foldLeft(List.empty[Completion]) { case (acc, (name, resolutions)) =>
+      acc ++ mkJavaClassCompletion(name, resolutions, range)
     }
 
   /**
@@ -57,7 +57,7 @@ object LocalScopeCompleter {
     * Tries to create a VarCompletion for the given name and resolutions.
     */
   private def mkVarCompletion(name: String, resolutions: List[Resolution], range: Range): Iterable[Completion] = {
-    if (resolutions.exists{
+    if (resolutions.exists {
       case Resolution.Var(_) => true
       case _ => false
     }) Completion.LocalVarCompletion(name, range) :: Nil else Nil
@@ -67,6 +67,6 @@ object LocalScopeCompleter {
     * Tries to create a LocalDefCompletion for the given name and resolutions.
     */
   private def mkLocalDefCompletion(resolutions: List[Resolution], range: Range): Iterable[Completion] =
-    resolutions.collect{ case Resolution.LocalDef(sym, fparams) => Completion.LocalDefCompletion(sym, fparams, range)}
+    resolutions.collect { case Resolution.LocalDef(sym, fparams) => Completion.LocalDefCompletion(sym, fparams, range) }
 
 }

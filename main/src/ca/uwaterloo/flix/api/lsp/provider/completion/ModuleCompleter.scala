@@ -30,7 +30,7 @@ object ModuleCompleter {
     */
   def getCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root): Iterable[Completion] = {
     if (qn.namespace.nonEmpty)
-      root.modules.keys.collect{
+      root.modules.keys.collect {
         case module if module.ns.nonEmpty && matchesModule(module, qn, qualified = true) =>
           ModuleCompletion(module, range, ap, qualified = true, inScope = true)
       }
@@ -53,7 +53,7 @@ object ModuleCompleter {
       case Resolution.Declaration(Namespace(thatName, _, _, _)) => thatName.toString == thisName
       case Resolution.Declaration(Trait(_, _, _, thatName, _, _, _, _, _, _)) => thatName.toString == thisName
       case Resolution.Declaration(Enum(_, _, _, thatName, _, _, _, _)) => thatName.toString == thisName
-      case Resolution.Declaration(Struct(_, _, _, thatName, _, _, _, _)) => thatName.toString == thisName
+      case Resolution.Declaration(Struct(_, _, _, thatName, _, _, _)) => thatName.toString == thisName
       case Resolution.Declaration(Effect(_, _, _, thatName, _, _)) => thatName.toString == thisName
       case _ => false
     })

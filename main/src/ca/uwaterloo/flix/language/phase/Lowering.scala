@@ -459,8 +459,14 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Match(e, rs, t, eff, loc)
 
-    case TypedAst.Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, tpe, eff, loc) =>
-      ??? // TODO: Ext-Variants
+    case TypedAst.Expr.ExtensibleMatch(label, exp1, bnd1, exp2, bnd2, exp3, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val sym1 = bnd1.sym
+      val e2 = visitExp(exp2)
+      val sym2 = bnd2.sym
+      val e3 = visitExp(exp3)
+      val t = visitType(tpe)
+      LoweredAst.Expr.ExtensibleMatch(label, e1, sym1, e2, sym2, e3, t, eff, loc)
 
     case TypedAst.Expr.Tag(sym, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -1872,6 +1878,8 @@ object Lowering {
       LoweredAst.Expr.Discard(e, eff, loc)
 
     case LoweredAst.Expr.Match(_, _, _, _, _) => ??? // TODO
+
+    case LoweredAst.Expr.ExtensibleMatch(_, _, _, _, _, _, _, _, _) => ??? // TODO
 
     case LoweredAst.Expr.TypeMatch(_, _, _, _, _) => ??? // TODO
 

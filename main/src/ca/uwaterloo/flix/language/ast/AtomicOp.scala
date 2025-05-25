@@ -52,7 +52,7 @@ object AtomicOp {
 
   case class ExtensibleTag(label: Name.Label) extends AtomicOp
 
-  case class ExtensibleUntag(label: Name.Label) extends AtomicOp
+  case class ExtensibleUntag(label: Name.Label, idx: Int) extends AtomicOp
 
   case object ArrayLit extends AtomicOp
 

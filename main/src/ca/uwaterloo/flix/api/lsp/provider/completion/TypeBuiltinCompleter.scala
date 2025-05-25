@@ -30,13 +30,13 @@ object TypeBuiltinCompleter {
   def getCompletions(range: Range): Iterable[Completion] =
     List(
       // A
-      polycompletion("Array"   , List("a", "r")    , range,  Priority.Default),
+      polycompletion("Array"   , List("a", "r")    , range,  Priority.Medium),
       // B
       Completion.TypeBuiltinCompletion("BigDecimal", range, Priority.Low),
       Completion.TypeBuiltinCompletion("BigInt"    , range, Priority.High),
       Completion.TypeBuiltinCompletion("Bool"      , range, Priority.Higher),
       // C
-      Completion.TypeBuiltinCompletion("Char"      , range, Priority.Default),
+      Completion.TypeBuiltinCompletion("Char"      , range, Priority.Medium),
       // F
       Completion.TypeBuiltinCompletion("Float32"   , range, Priority.High),
       Completion.TypeBuiltinCompletion("Float64"   , range, Priority.Low),
@@ -46,7 +46,7 @@ object TypeBuiltinCompleter {
       Completion.TypeBuiltinCompletion("Int64"     , range, Priority.High),
       Completion.TypeBuiltinCompletion("Int8"      , range, Priority.Lower),
       // L
-      polycompletion("Lazy"    , List("t")         , range, Priority.Default),
+      polycompletion("Lazy"    , List("t")         , range, Priority.Medium),
       // R
       polycompletion("Receiver", List("t")         , range, Priority.Low),
       polycompletion("Region"  , List("r")         , range, Priority.High),
@@ -54,7 +54,7 @@ object TypeBuiltinCompleter {
       polycompletion("Sender"  , List("t")         , range, Priority.Low),
       Completion.TypeBuiltinCompletion("String"    , range, Priority.High),
       // U
-      Completion.TypeBuiltinCompletion("Unit"      , range, Priority.Default),
+      Completion.TypeBuiltinCompletion("Unit"      , range, Priority.Medium),
       // V
       polycompletion("Vector"  , List("a")         , range, Priority.High),
       Completion.TypeBuiltinCompletion("Void"      , range, Priority.Low),

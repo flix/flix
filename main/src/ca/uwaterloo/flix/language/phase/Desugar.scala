@@ -568,12 +568,10 @@ object Desugar {
       val rs = rules.map(visitRestrictableChooseRule)
       Expr.RestrictableChoose(star, e, rs, loc)
 
-    case WeededAst.Expr.ExtensibleMatch(ident1, exp1, ident2, exp2, ident3, exp3, loc) =>
-      val label = Name.mkLabel(ident1)
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
-      Expr.ExtensibleMatch(label, e1, ident2, e2, ident3, e3, loc)
+    case WeededAst.Expr.ExtMatch(exp, rules, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitExtMatchRule)
+      Expr.ExtMatch(e, rs, loc)
 
     case WeededAst.Expr.ApplicativeFor(frags, exp, loc) =>
       desugarApplicativeFor(frags, exp, loc)
@@ -590,7 +588,7 @@ object Desugar {
     case WeededAst.Expr.LetMatch(pat, tpe, exp1, exp2, loc) =>
       desugarLetMatch(pat, tpe, exp1, exp2, loc)
 
-    case WeededAst.Expr.ExtensibleTag(label, exps, loc) =>
+    case WeededAst.Expr.ExtTag(label, exps, loc) =>
       val es = visitExps(exps)
       Expr.ExtensibleTag(label, es, loc)
 
@@ -836,6 +834,16 @@ object Desugar {
   }
 
   /**
+    * Desugars the given [[WeededAst.MatchRule]] `rule0`.
+    */
+  private def visitExtMatchRule(rule0: WeededAst.ExtMatchRule)(implicit flix: Flix): DesugaredAst.ExtMatchRule = rule0 match {
+    case WeededAst.ExtMatchRule(label, pats, exp, loc) =>
+      val ps = pats.map(visitExtPattern)
+      val e = visitExp(exp)
+      DesugaredAst.ExtMatchRule(label, ps, e, loc)
+  }
+
+  /**
     * Desugars the given [[WeededAst.Pattern]] `pat0`.
     */
   private def visitPattern(pat0: WeededAst.Pattern): DesugaredAst.Pattern = pat0 match {
@@ -863,6 +871,20 @@ object Desugar {
 
     case WeededAst.Pattern.Error(loc) =>
       DesugaredAst.Pattern.Error(loc)
+  }
+
+  /**
+    * Desugars the given [[WeededAst.ExtPattern]] `pat0`.
+    */
+  private def visitExtPattern(pat0: WeededAst.ExtPattern): DesugaredAst.ExtPattern = pat0 match {
+    case WeededAst.ExtPattern.Wild(loc) =>
+      DesugaredAst.ExtPattern.Wild(loc)
+
+    case WeededAst.ExtPattern.Var(ident, loc) =>
+      DesugaredAst.ExtPattern.Var(ident, loc)
+
+    case WeededAst.ExtPattern.Error(loc) =>
+      DesugaredAst.ExtPattern.Error(loc)
   }
 
   /**
@@ -1436,7 +1458,7 @@ object Desugar {
 
     // Introduce a tmp% variable that holds the minimal model of the merge of the exps.
     val freshVar = flix.genSym.freshId()
-    val localVar = Name.Ident(s"tmp" + Flix.Delimiter + freshVar, SourceLocation.Unknown)
+    val localVar = Name.Ident(s"tmp" + Flix.Delimiter + freshVar, loc0.asSynthetic)
 
     // Merge all the exps into one Datalog program value.
     val mergeExp = es.reduceRight[DesugaredAst.Expr] {

@@ -357,7 +357,7 @@ object Resolver {
       resolveDef(defn, None, scp0)(ns0, taenv, sctx, root, flix)
     case enum0@NamedAst.Declaration.Enum(_, _, _, _, _, _, _, _) =>
       resolveEnum(enum0, scp0, taenv, ns0, root)
-    case struct@NamedAst.Declaration.Struct(_, _, _, _, _, _, _, _) =>
+    case struct@NamedAst.Declaration.Struct(_, _, _, _, _, _, _) =>
       resolveStruct(struct, scp0, taenv, ns0, root)
     case enum0@NamedAst.Declaration.RestrictableEnum(_, _, _, _, _, _, _, _, _) =>
       resolveRestrictableEnum(enum0, scp0, taenv, ns0, root)
@@ -547,7 +547,7 @@ object Resolver {
     * Performs name resolution on the given struct `s0` in the given namespace `ns0`.
     */
   private def resolveStruct(s0: NamedAst.Declaration.Struct, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Struct, ResolutionError] = s0 match {
-    case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, _, loc) =>
+    case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
       val tparamsVal = resolveTypeParams(tparams0, scp0, ns0, root)
       flatMapN(tparamsVal) {
         tparams =>
@@ -1059,16 +1059,18 @@ object Resolver {
         case (e, rs) => ResolvedAst.Expr.RestrictableChoose(star, e, rs, loc)
       }
 
-    case NamedAst.Expr.ExtensibleMatch(label, exp1, sym2, exp2, sym3, exp3, loc) =>
-      mapN(resolveExp(exp1, scp0), resolveExp(exp2, scp0 ++ mkVarScp(sym2)), resolveExp(exp3, scp0 ++ mkVarScp(sym3))) {
-        case (e1, e2, e3) =>
-          ResolvedAst.Expr.ExtensibleMatch(label, e1, sym2, e2, sym3, e3, loc)
+    case NamedAst.Expr.ExtMatch(exp, rules, loc) =>
+      val eVal = resolveExp(exp, scp0)
+      val rsVal = traverse(rules)(resolveExtMatchRule(_, scp0))
+      mapN(eVal, rsVal) {
+        case (e, rs) =>
+          ResolvedAst.Expr.ExtMatch(e, rs, loc)
       }
 
-    case NamedAst.Expr.ExtensibleTag(label, exps, loc) =>
+    case NamedAst.Expr.ExtTag(label, exps, loc) =>
       val esVal = traverse(exps)(e => resolveExp(e, scp0))
       mapN(esVal) {
-        es => ResolvedAst.Expr.ExtensibleTag(label, es, loc)
+        es => ResolvedAst.Expr.ExtTag(label, es, loc)
       }
 
     case NamedAst.Expr.Tuple(elms, loc) =>
@@ -1141,8 +1143,12 @@ object Resolver {
           val fieldsVal = traverse(fields0) {
             case (f, exp) =>
               val eVal = resolveExp(exp, scp0)
-              val (idx, defLoc) = st0.indicesAndLocs.getOrElse(f, (0, SourceLocation.Unknown))
-              val fieldSym = Symbol.mkStructFieldSym(st0.sym, idx, Name.Label(f.name, defLoc))
+              // Lookup the field symbol or make up a fictitious one.
+              val label = st0.fields.find(_.sym.name == f.name) match {
+                case Some(field) => Name.Label(field.sym.name, field.sym.loc)
+                case None => Name.Label(f.name, SourceLocation.Unknown)
+              }
+              val fieldSym = Symbol.mkStructFieldSym(st0.sym, label)
               val fieldSymUse = StructFieldSymUse(fieldSym, f.loc)
               mapN(eVal) {
                 case e => (fieldSymUse, e)
@@ -1161,14 +1167,7 @@ object Resolver {
 
           val extraFieldErrors = extraFields.map(ResolutionError.ExtraStructFieldInNew(st0.sym, _, loc))
           val missingFieldErrors = missingFields.map(ResolutionError.MissingStructFieldInNew(st0.sym, _, loc))
-          val errors0 = extraFieldErrors ++ missingFieldErrors
-          val errors = if (errors0.nonEmpty) {
-            errors0
-          } else if (providedFieldNames != expectedFieldNames) {
-            List(ResolutionError.IllegalFieldOrderInNew(st0.sym, providedFieldNames, expectedFieldNames, loc))
-          } else {
-            Nil
-          }
+          val errors = extraFieldErrors ++ missingFieldErrors
           errors.foreach(sctx.errors.add)
           structNew
         case Result.Err(error) =>
@@ -1958,6 +1957,20 @@ object Resolver {
   }
 
   /**
+    * Performs name resolution on the given pattern `pat0` in the namespace `ns0`.
+    */
+  private def resolveExtPattern(pat0: NamedAst.ExtPattern): ResolvedAst.ExtPattern = pat0 match {
+    case NamedAst.ExtPattern.Wild(loc) =>
+      ResolvedAst.ExtPattern.Wild(loc)
+
+    case NamedAst.ExtPattern.Var(sym, loc) =>
+      ResolvedAst.ExtPattern.Var(sym, loc)
+
+    case NamedAst.ExtPattern.Error(loc) =>
+      ResolvedAst.ExtPattern.Error(loc)
+  }
+
+  /**
     * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
     */
   private def resolvePredicateHead(h0: NamedAst.Predicate.Head, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
@@ -2183,6 +2196,19 @@ object Resolver {
     lookupTrait(derive0, TraitUsageKind.Derivation, scp0, ns0, root).map {
       trt => Derivation(trt.sym, derive0.loc)
     }
+  }
+
+  private def resolveExtMatchRule(rule0: NamedAst.ExtMatchRule, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.ExtMatchRule, ResolutionError] = rule0 match {
+    case NamedAst.ExtMatchRule(label, pats, exp, loc) =>
+      val ps = pats.map(resolveExtPattern)
+      val scp = ps.foldLeft(scp0) {
+        case (acc, ResolvedAst.ExtPattern.Var(sym, _)) => acc ++ mkVarScp(sym)
+        case (acc, _) => acc
+      }
+      val eVal = resolveExp(exp, scp)
+      mapN(eVal) {
+        case e => ResolvedAst.ExtMatchRule(label, ps, e, loc)
+      }
   }
 
   /**
@@ -2991,7 +3017,7 @@ object Resolver {
         case Declaration.Namespace(sym, _, _, _) => sym.ns
         case Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.Struct(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
+        case Declaration.Struct(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
         case Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Effect(_, _, _, sym, _, _) => sym.namespace :+ sym.name
       }
@@ -3001,7 +3027,7 @@ object Resolver {
         case Declaration.Namespace(sym, _, _, _) => sym.ns
         case Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.Struct(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
+        case Declaration.Struct(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
         case Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Effect(_, _, _, sym, _, _) => sym.namespace :+ sym.name
       }
@@ -3378,7 +3404,7 @@ object Resolver {
     case NamedAst.Declaration.Sig(sym, _, _, _) => sym
     case NamedAst.Declaration.Def(sym, _, _, _) => sym
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym
-    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _, _) => sym
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _) => sym
     case NamedAst.Declaration.StructField(_, sym, _, _) => sym
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) => sym

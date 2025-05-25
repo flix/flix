@@ -336,9 +336,9 @@ object CompletionUtils {
   /**
     * Checks if the sym and the given qualified name matches.
     *
-    * @param sym        The symbol to check, usually from root.
-    * @param qn         The qualified name to check, usually from user input.
-    * @param qualified  Whether the qualified name is qualified.
+    * @param sym       The symbol to check, usually from root.
+    * @param qn        The qualified name to check, usually from user input.
+    * @param qualified Whether the qualified name is qualified.
     */
   def matchesName(sym: QualifiedSym, qn: Name.QName, qualified: Boolean): Boolean = {
     if (qualified) {
@@ -351,7 +351,7 @@ object CompletionUtils {
     * Formats the given Op
     */
   def fmtOp(op: TypedAst.Op): String = {
-    val fparamsString = (op.spec.fparams.collect{ case p if p.tpe != Type.Unit => p.bnd.sym.text} :+ "k").mkString(", ")
+    val fparamsString = (op.spec.fparams.collect { case p if p.tpe != Type.Unit => p.bnd.sym.text } :+ "k").mkString(", ")
     s"    def ${op.sym.name}($fparamsString) = ???"
   }
 }
