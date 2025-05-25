@@ -31,6 +31,7 @@ import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
+import scala.collection.mutable
 import scala.util.Random
 
 class TestCompletionProvider extends AnyFunSuite {
@@ -286,10 +287,12 @@ class TestCompletionProvider extends AnyFunSuite {
 
   // TODO
   test("No duplicated completions for defs") {
+    mkDefTests()
+
     // Exhaustively generate all tests.
     val tests = Programs.flatMap(program => {
       val (root1, _) = compile(program)
-      val defSymUses = getDefSymUseOccurs()(root1).toList
+      val defSymUses = getDefSymUseOccurs(root1).toList
       for {
         defSymUse <- defSymUses
         loc = mkLocForName(defSymUse)
@@ -311,6 +314,83 @@ class TestCompletionProvider extends AnyFunSuite {
         assertNoDuplicatedCompletions(completions, defSymUse.sym.toString, loc, program, charsLeft)
     }
 
+  }
+
+  /**
+    * Returns a list of tuples where:
+    *
+    * - The 1st argument is a program.
+    * - The 2nd argument
+    */
+  def mkDefTests(): List[(String, Position, Position)] = {
+    Programs.flatMap(prg => {
+      val root = compileWithSuccess(prg)
+      val uses = getDefSymUseOccurs(root)
+      uses.map {
+        case use =>
+          val prgWithholes = cutHoles(prg, use.loc)
+          println(prgWithholes)
+      }
+
+      ???
+    })
+  }
+
+  /**
+    * Given a program `prg` and a source location `loc` within that program,
+    * returns a list programs with holes cut at the given location.
+    *
+    * For example, if the program is:
+    *
+    * {{{
+    *   def foo(): Int32 = let bar = 1; bar
+    * }}}
+    *
+    * and we give the source location of bar expression then we return the programs:
+    *
+    * {{{
+    *   def foo(): Int32 = let bar = 1; |
+    *   def foo(): Int32 = let bar = 1; b|
+    *   def foo(): Int32 = let bar = 1; ba|
+    * }}}
+    */
+  private def cutHoles(prg: String, loc: SourceLocation): List[ProgramWithHole] = {
+    assert(loc.isSingleLine)
+
+    val result = mutable.ListBuffer.empty[ProgramWithHole]
+    val bOffset = indexOf(Position.fromBegin(loc), prg)
+    val eOffset = indexOf(Position.fromEnd(loc), prg)
+    val length = loc.sp2.colOneIndexed - loc.sp1.colOneIndexed
+    for (i <- 0 until length) {
+      val o = bOffset + i
+      val prefix = prg.substring(0, o)
+      val suffix = prg.substring(eOffset, prg.length)
+      val withHole = prefix + suffix
+      val pos = Position(loc.sp1.lineOneIndexed, loc.sp1.colOneIndexed + i)
+      println(withHole)
+      println(pos)
+      println("---")
+      result += ProgramWithHole(withHole, pos)
+    }
+
+    result.toList
+  }
+
+  /**
+    * A program with a hole at the specified position.
+    */
+  case class ProgramWithHole(prg: String, pos: Position)
+
+  /**
+    * Returns the index (absolute, zero-based) of the given position `pos` with the given program `prg`.
+    */
+  private def indexOf(pos: Position, prg: String): Int = {
+    val lines = prg.split('\n')
+    var offset = 0
+    for (i <- 0 until pos.line - 1) {
+      offset += lines(i).length + 1 // +1 for the newline
+    }
+    offset + pos.character - 1
   }
 
   test("No duplicated completions for vars") {
@@ -428,18 +508,6 @@ class TestCompletionProvider extends AnyFunSuite {
       } else {
         println(s"Found completions: ${l.map(_.toCompletionItem(Flix)).map(_.label)}")
         fail(s"Expected no completions at position $pos, but found ${l.length} completions.")
-      }
-    }
-
-    /**
-      * Asserts that the given completion list is empty at the given position.
-      */
-    // TODO: Deprecated
-    def isEmpty(completions: List[Completion], sourceLocation: SourceLocation, pos: Position): Unit = {
-      if (completions.nonEmpty) {
-        println(code(sourceLocation, s"Unexpected completions at $pos"))
-        println(s"Found completions: ${completions.map(_.toCompletionItem(Flix)).map(_.label)}")
-        fail(s"Expected no completions at position $pos, but found ${completions.length} completions.")
       }
     }
 
@@ -593,19 +661,23 @@ class TestCompletionProvider extends AnyFunSuite {
     occurs
   }
 
-  private def getDefSymUseOccurs()(implicit root: Root): Set[SymUse.DefSymUse] = {
+  /**
+    * Computes all real uses of all defs for the given AST `root`.
+    */
+  private def getDefSymUseOccurs(root: Root): List[SymUse.DefSymUse] = {
     var occurs: Set[SymUse.DefSymUse] = Set.empty
 
     object DefSymUseConsumer extends Consumer {
       override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
-        case TypedAst.Expr.ApplyDef(symUse, _, _, _, _, _) => occurs += symUse
+        case TypedAst.Expr.ApplyDef(symUse, _, _, _, _, _) if symUse.loc.isReal =>
+          occurs += symUse
         case _ =>
       }
     }
 
     Visitor.visitRoot(root, DefSymUseConsumer, FileAcceptor(Uri))
 
-    occurs
+    occurs.toList
   }
 
   /**
