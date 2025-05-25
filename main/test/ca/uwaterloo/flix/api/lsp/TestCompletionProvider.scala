@@ -287,7 +287,7 @@ class TestCompletionProvider extends AnyFunSuite {
   /////////////////////////////////////////////////////////////////////////////
 
   test("NoDuplicates.Defs") {
-    forAll(mkProgramsWithHoles().take(15)) { // TODO: Sample
+    forAll(mkProgramsWithDefUseHoles().take(15)) { // TODO: Sample
       case ProgramWithHole(prg, pos) =>
         val (root, errors) = compile(prg)
         val l = autoComplete(pos, root, errors)
@@ -305,8 +305,8 @@ class TestCompletionProvider extends AnyFunSuite {
       val varOccurs = getVarSymOccurs()(root1)
       for {
         (varSym, loc0) <- varOccurs
-        loc = mkLocForName(varSym, loc0)
-        charsLeft <- listValidCharsLeft(varSym.text, loc)
+        loc = mkLocForNameDEPRECATED(varSym, loc0)
+        charsLeft <- listValidCharsLeftDEPRECATED(varSym.text, loc)
       } yield (program, varSym, loc, charsLeft)
     })
 
@@ -316,32 +316,33 @@ class TestCompletionProvider extends AnyFunSuite {
     // Run the selected tests.
     samples.foreach {
       case (program, varSym, loc, charsLeft) =>
-        val alteredProgram = alterLocationInCode(program, loc, charsLeft)
+        val alteredProgram = alterLocationInCodeDEPRECATED(program, loc, charsLeft)
         val triggerPosition = Position(loc.sp1.lineOneIndexed, loc.sp1.colOneIndexed + charsLeft)
         val (root, errors) = compile(alteredProgram)
         val completions = CompletionProvider.getCompletions(Uri, triggerPosition, errors)(root, Flix).map(_.toCompletionItem(Flix))
-        assertNoDuplicatedCompletions(completions, varSym.text, loc, program, charsLeft)
+        assertNoDuplicatedCompletionsDEPRECATED(completions, varSym.text, loc, program, charsLeft)
     }
   }
 
-  // TODO: DOC
-  def mkProgramsWithHoles(): List[ProgramWithHole] = {
+  /**
+    * Returns a list of programs with holes where DefUse expressions occur.
+    */
+  def mkProgramsWithDefUseHoles(): List[ProgramWithHole] = {
     Programs.flatMap(prg => {
       val root = compileWithSuccess(prg)
       val uses = getDefSymUseOccurs(root)
-      uses.flatMap {
-        case use =>
-          // TODO: DOC
-          val prgsWithHoles = cutHoles(prg, use.loc)
-          // TODO DOC: We drop the first program with a whole since it may not parse (because no identifier is present).
-          prgsWithHoles.tail
+      uses.flatMap { use =>
+        // We cut `n` holes into the program where `n` is length of `loc`.
+        val prgsWithHoles = cutHoles(prg, use.loc)
+
+        // We drop the very first cut since there the identifier is completely erased and the program does not parse.
+        prgsWithHoles.tail
       }
     })
   }
 
   /**
-    * Given a program `prg` and a source location `loc` within that program,
-    * returns a list programs with holes cut at the given location.
+    * Given a program `prg` and a source location `loc` within that progra, returns a list programs with holes cut at the given location.
     *
     * For example, if the program is:
     *
@@ -349,7 +350,7 @@ class TestCompletionProvider extends AnyFunSuite {
     *   def foo(): Int32 = let bar = 1; bar
     * }}}
     *
-    * and we give the source location of bar expression then we return the programs:
+    * and we give the source location of the `bar` expression then we return the programs and positions:
     *
     * {{{
     *   def foo(): Int32 = let bar = 1; |
@@ -377,7 +378,7 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   /**
-    * Returns the index (absolute, zero-based) of the given position `pos` with the given program `prg`.
+    * Returns the (absolute, zero-based) index of the given position `pos` within the given program `prg`.
     */
   private def indexOf(pos: Position, prg: String): Int = {
     val lines = prg.split('\n')
@@ -494,7 +495,7 @@ class TestCompletionProvider extends AnyFunSuite {
     * @param program     The original program string.
     * @param charsLeft   The number of characters left after trimming the code text.
     */
-  private def assertNoDuplicatedCompletions(completions: List[CompletionItem], codeText: String, codeLoc: SourceLocation, program: String, charsLeft: Int): Unit = {
+  private def assertNoDuplicatedCompletionsDEPRECATED(completions: List[CompletionItem], codeText: String, codeLoc: SourceLocation, program: String, charsLeft: Int): Unit = {
     // Two completion items are identical if all the immediately visible fields are identical.
     completions.groupBy(item => (item.label, item.kind, item.labelDetails)).foreach {
       case (completion, duplicates) if duplicates.size > 1 =>
@@ -508,7 +509,7 @@ class TestCompletionProvider extends AnyFunSuite {
   /**
     * The absolute character offset into the source, zero-indexed.
     */
-  private def calcOffset(loc: SourcePosition): Int = {
+  private def calcOffsetDEPRECATED(loc: SourcePosition): Int = {
     var offset = 0
     for (i <- 1 until loc.lineOneIndexed) {
       offset += loc.source.getLine(i).length + 1 // +1 for the newline
@@ -519,15 +520,15 @@ class TestCompletionProvider extends AnyFunSuite {
   /**
     * Trims the given program string after the given location `loc` by `n` characters.
     */
-  private def alterLocationInCode(program: String, loc: SourceLocation, charsLeft: Int): String = {
-    val target = program.substring(calcOffset(loc.sp1), calcOffset(loc.sp2))
-    program.substring(0, calcOffset(loc.sp1)) + target.take(charsLeft) + program.substring(calcOffset(loc.sp2))
+  private def alterLocationInCodeDEPRECATED(program: String, loc: SourceLocation, charsLeft: Int): String = {
+    val target = program.substring(calcOffsetDEPRECATED(loc.sp1), calcOffsetDEPRECATED(loc.sp2))
+    program.substring(0, calcOffsetDEPRECATED(loc.sp1)) + target.take(charsLeft) + program.substring(calcOffsetDEPRECATED(loc.sp2))
   }
 
   /**
     * Returns a new source location for the given VarSym that only contains the name of the symbol, namespace excluded.
     */
-  private def mkLocForName(varSym: Symbol.VarSym, loc0: SourceLocation): SourceLocation = {
+  private def mkLocForNameDEPRECATED(varSym: Symbol.VarSym, loc0: SourceLocation): SourceLocation = {
     val name = varSym.text
     val sp2 = loc0.sp2
     loc0.copy(sp1 = SourcePosition.mkFromOneIndexed(sp2.source, sp2.lineOneIndexed, sp2.colOneIndexed - name.length))
@@ -541,11 +542,11 @@ class TestCompletionProvider extends AnyFunSuite {
     * - The code text left is not a keyword.
     * - All trimmed characters are valid identifier characters.
     */
-  private def listValidCharsLeft(codeText: String, codeLoc: SourceLocation): List[Int] = {
+  private def listValidCharsLeftDEPRECATED(codeText: String, codeLoc: SourceLocation): List[Int] = {
     (1 until codeText.length).collect {
       case splitPosition if {
         val (left, right) = codeText.splitAt(splitPosition)
-        !codeLoc.isSynthetic && right.forall(isValidCharToTrim) && !isKeyword(left)
+        !codeLoc.isSynthetic && right.forall(isValidCharToTrimDEPRECATED) && !isKeyword(left)
       } => splitPosition
     }.toList
   }
@@ -553,7 +554,7 @@ class TestCompletionProvider extends AnyFunSuite {
   /**
     * Returns `true` if the given character is a valid identifier character.
     */
-  private def isValidCharToTrim(char: Char): Boolean = {
+  private def isValidCharToTrimDEPRECATED(char: Char): Boolean = {
     char.isLetterOrDigit || char == '_' || char == '-'
   }
 
