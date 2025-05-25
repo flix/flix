@@ -286,7 +286,7 @@ class TestCompletionProvider extends AnyFunSuite {
 
   test("NoDuplicates.Defs") {
     forAll(sample(mkProgramsWithDefUseHoles())) {
-      case ProgramWithHole(prg, pos) =>
+      case ProgramWithHole(prg, _, pos) =>
         val (root, errors) = compile(prg)
         val l = autoComplete(pos, root, errors)
         Assert.noDuplicateCompletions(l, pos)
@@ -319,10 +319,17 @@ class TestCompletionProvider extends AnyFunSuite {
         // We cut `n` holes into the program where `n` is length of `loc`.
         val prgsWithHoles = cutHoles(prg, use.loc)
 
-        // We drop the very first cut since there the identifier is completely erased and the program does not parse.
-        prgsWithHoles.drop(1)
+        // We filter some malformed programs.
+        prgsWithHoles.filter(p => isCutEligible(p.cut))
       }
     })
+  }
+
+  /**
+    * Returns `true` if the given string is a meaningful cut-- that is if its omission will not lead to parse errors.
+    */
+  private def isCutEligible(cut: String): Boolean = {
+    cut.nonEmpty && !isKeyword(cut) && cut.forall(c => c.isLetterOrDigit || c == '.')
   }
 
   /**
@@ -352,15 +359,11 @@ class TestCompletionProvider extends AnyFunSuite {
     for (i <- 0 until length) {
       val o = bOffset + i
       val prefix = prg.substring(0, o)
+      val cut = prg.substring(bOffset, bOffset + i)
       val suffix = prg.substring(eOffset, prg.length)
       val withHole = prefix + suffix
       val pos = Position(loc.sp1.lineOneIndexed, loc.sp1.colOneIndexed + i)
-
-      val cut = prg.substring(bOffset, bOffset + i)
-      // We ignore cuts where the string is (a) a keyword and (b) non-letter or digit.
-      if (!isKeyword(cut) && cut.forall(c => c.isLetterOrDigit || c == '.')) {
-        result += ProgramWithHole(withHole, pos)
-      }
+      result += ProgramWithHole(withHole, cut, pos)
     }
 
     result.toList
@@ -682,8 +685,8 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   /**
-    * A program `prg` with a hole at the specified position `pos`.
+    * A program `prg` with a hole - the cut - at the specified position `pos`.
     */
-  case class ProgramWithHole(prg: String, pos: Position)
+  case class ProgramWithHole(prg: String, cut: String, pos: Position)
 
 }
