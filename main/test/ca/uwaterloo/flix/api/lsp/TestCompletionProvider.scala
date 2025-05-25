@@ -22,12 +22,10 @@ import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source, SymUse}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Token, TokenKind, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Token, TokenKind, TypedAst}
 import ca.uwaterloo.flix.language.phase.Lexer
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
-import ca.uwaterloo.flix.util.Formatter.NoFormatter.code
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -132,7 +130,7 @@ class TestCompletionProvider extends AnyFunSuite {
     *
     * We use the limit to ensure that property tests terminate within a reasonable time.
     */
-  private val Limit: Int = 100
+  private val Limit: Int = 1_000
 
   /////////////////////////////////////////////////////////////////////////////
   // General Properties
@@ -287,42 +285,27 @@ class TestCompletionProvider extends AnyFunSuite {
   /////////////////////////////////////////////////////////////////////////////
 
   test("NoDuplicates.Defs") {
-    forAll(mkProgramsWithDefUseHoles()) { // TODO: Sample
+    forAll(sample(mkProgramsWithDefUseHoles())) {
       case ProgramWithHole(prg, pos) =>
         val (root, errors) = compile(prg)
         val l = autoComplete(pos, root, errors)
-        println(prg)
-        //l.foreach(println)
-        println("--")
-        println()
         Assert.noDuplicateCompletions(l, pos)
     }
   }
 
-  test("No duplicated completions for vars-- DEPRECATED") {
-    // Exhaustively generate all tests.
-    val tests = Programs.flatMap(program => {
-      val (root1, _) = compile(program)
-      val varOccurs = getVarSymOccurs()(root1)
-      for {
-        (varSym, loc0) <- varOccurs
-        loc = mkLocForNameDEPRECATED(varSym, loc0)
-        charsLeft <- listValidCharsLeftDEPRECATED(varSym.text, loc)
-      } yield (program, varSym, loc, charsLeft)
-    })
+  /////////////////////////////////////////////////////////////////////////////
+  // Infrastructure
+  /////////////////////////////////////////////////////////////////////////////
 
-    // Randomly sample the generated tests.
-    val samples = Random.shuffle(tests).take(Limit)
-
-    // Run the selected tests.
-    samples.foreach {
-      case (program, varSym, loc, charsLeft) =>
-        val alteredProgram = alterLocationInCodeDEPRECATED(program, loc, charsLeft)
-        val triggerPosition = Position(loc.sp1.lineOneIndexed, loc.sp1.colOneIndexed + charsLeft)
-        val (root, errors) = compile(alteredProgram)
-        val completions = CompletionProvider.getCompletions(Uri, triggerPosition, errors)(root, Flix).map(_.toCompletionItem(Flix))
-        assertNoDuplicatedCompletionsDEPRECATED(completions, varSym.text, loc, program, charsLeft)
+  // TODO: DOC
+  def forAll[A](l: List[A])(f: A => Assert): Assert = {
+    for (x <- l) {
+      f(x) match {
+        case Assert.Ok =>
+        case Assert.Fail => return Assert.Fail
+      }
     }
+    Assert.Ok
   }
 
   /**
@@ -343,7 +326,7 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   /**
-    * Given a program `prg` and a source location `loc` within that progra, returns a list programs with holes cut at the given location.
+    * Given a program `prg` and a source location `loc` within that program returns a list programs with holes cut at the given location.
     *
     * For example, if the program is:
     *
@@ -375,7 +358,7 @@ class TestCompletionProvider extends AnyFunSuite {
 
       val cut = prg.substring(bOffset, bOffset + i)
       // We ignore cuts where the string is (a) a keyword and (b) non-letter or digit.
-      if (!isKeyword(cut) && !(cut.forall(_.isLetterOrDigit))) {
+      if (!isKeyword(cut) && cut.forall(c => c.isLetterOrDigit || c == '.')) {
         result += ProgramWithHole(withHole, pos)
       }
     }
@@ -403,18 +386,6 @@ class TestCompletionProvider extends AnyFunSuite {
 
   // TODO: Merge these?
   private def autoComplete(pos: Position, root: Root, errors: List[CompilationMessage]): List[Completion] = CompletionProvider.getCompletions(Uri, pos, errors)(root, Flix)
-
-
-  // TODO: DOC
-  def forAll[A](l: List[A])(f: A => Assert): Assert = {
-    for (x <- l) {
-      f(x) match {
-        case Assert.Ok =>
-        case Assert.Fail => return Assert.Fail
-      }
-    }
-    Assert.Ok
-  }
 
   /**
     * Returns all *block comment* tokens in the given program `prg` associated with the given AST `root`.
@@ -464,6 +435,13 @@ class TestCompletionProvider extends AnyFunSuite {
   private def getTokens(prg: String, root: Root): List[Token] =
     root.tokens(mkSource(prg)).toList // TODO: Can we get rid of the need for mkSource?
 
+  /**
+    * Returns a random subset of the given list `l`.
+    */
+  def sample[A](l: List[A]): List[A] = {
+    Random.shuffle(l).take(Limit)
+  }
+
   sealed trait Assert
 
   private object Assert {
@@ -510,79 +488,6 @@ class TestCompletionProvider extends AnyFunSuite {
 
       Assert.Ok
     }
-  }
-
-
-  /**
-    * Asserts that there are no duplicated completions in the given completion list.
-    *
-    * @param completions The CompletionItem list to check.
-    * @param codeLoc     The source location of the code that we are changing.
-    * @param codeText    The text of the code that we are changing.
-    * @param program     The original program string.
-    * @param charsLeft   The number of characters left after trimming the code text.
-    */
-  private def assertNoDuplicatedCompletionsDEPRECATED(completions: List[CompletionItem], codeText: String, codeLoc: SourceLocation, program: String, charsLeft: Int): Unit = {
-    // Two completion items are identical if all the immediately visible fields are identical.
-    completions.groupBy(item => (item.label, item.kind, item.labelDetails)).foreach {
-      case (completion, duplicates) if duplicates.size > 1 =>
-        println(s"Duplicated completions when selecting var \"$codeText\" at $codeLoc for program:\n$program")
-        println(code(codeLoc, s"""Duplicated completion with label "${completion._1}" after trimming to "${codeText.take(charsLeft)}" here"""))
-        fail("Duplicated completions")
-      case _ => ()
-    }
-  }
-
-  /**
-    * The absolute character offset into the source, zero-indexed.
-    */
-  private def calcOffsetDEPRECATED(loc: SourcePosition): Int = {
-    var offset = 0
-    for (i <- 1 until loc.lineOneIndexed) {
-      offset += loc.source.getLine(i).length + 1 // +1 for the newline
-    }
-    offset + loc.colOneIndexed - 1
-  }
-
-  /**
-    * Trims the given program string after the given location `loc` by `n` characters.
-    */
-  private def alterLocationInCodeDEPRECATED(program: String, loc: SourceLocation, charsLeft: Int): String = {
-    val target = program.substring(calcOffsetDEPRECATED(loc.sp1), calcOffsetDEPRECATED(loc.sp2))
-    program.substring(0, calcOffsetDEPRECATED(loc.sp1)) + target.take(charsLeft) + program.substring(calcOffsetDEPRECATED(loc.sp2))
-  }
-
-  /**
-    * Returns a new source location for the given VarSym that only contains the name of the symbol, namespace excluded.
-    */
-  private def mkLocForNameDEPRECATED(varSym: Symbol.VarSym, loc0: SourceLocation): SourceLocation = {
-    val name = varSym.text
-    val sp2 = loc0.sp2
-    loc0.copy(sp1 = SourcePosition.mkFromOneIndexed(sp2.source, sp2.lineOneIndexed, sp2.colOneIndexed - name.length))
-  }
-
-  /**
-    * Returns a list of all valid numbers of characters left after trimming the given code text.
-    *
-    * A number of characters is valid if:
-    * - The code text is not synthetic.
-    * - The code text left is not a keyword.
-    * - All trimmed characters are valid identifier characters.
-    */
-  private def listValidCharsLeftDEPRECATED(codeText: String, codeLoc: SourceLocation): List[Int] = {
-    (1 until codeText.length).collect {
-      case splitPosition if {
-        val (left, right) = codeText.splitAt(splitPosition)
-        !codeLoc.isSynthetic && right.forall(isValidCharToTrimDEPRECATED) && !isKeyword(left)
-      } => splitPosition
-    }.toList
-  }
-
-  /**
-    * Returns `true` if the given character is a valid identifier character.
-    */
-  private def isValidCharToTrimDEPRECATED(char: Char): Boolean = {
-    char.isLetterOrDigit || char == '_' || char == '-'
   }
 
   /**
@@ -638,7 +543,7 @@ class TestCompletionProvider extends AnyFunSuite {
 
 
   /**
-    * Returns the set of variable symbols that occur in the given root.
+    * Returns all real uses of all vars for the given AST `root`.
     */
   private def getVarSymOccurs()(implicit root: Root): Set[(Symbol.VarSym, SourceLocation)] = {
     var occurs: Set[(Symbol.VarSym, SourceLocation)] = Set.empty
@@ -656,7 +561,7 @@ class TestCompletionProvider extends AnyFunSuite {
   }
 
   /**
-    * Computes all real uses of all defs for the given AST `root`.
+    * Returns all real uses of all defs for the given AST `root`.
     */
   private def getDefSymUseOccurs(root: Root): List[SymUse.DefSymUse] = {
     var occurs: Set[SymUse.DefSymUse] = Set.empty
