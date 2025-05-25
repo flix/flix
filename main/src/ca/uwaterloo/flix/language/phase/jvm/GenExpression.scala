@@ -580,7 +580,8 @@ object GenExpression {
         import BytecodeInstructions.*
         val MonoType.Tuple(elmTypes) = tpe
         val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.asErasedBackendType))
-        NEW(tupleType.jvmName) ~ DUP() ~
+        NEW(tupleType.jvmName) ~
+          DUP() ~
           cheat(mv => exps.foreach(compileExpr(_)(mv, ctx, root, flix))) ~
           INVOKESPECIAL(tupleType.Constructor)
       })(new BytecodeInstructions.F(mv))
