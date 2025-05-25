@@ -198,6 +198,7 @@ object GenFunAndClosureClasses {
     val applyMethod = BackendObjType.Frame.DirectApplyMethod
 
     // Put fields on stack as args to static method
+    // TODO: Fix do not generate unit parameter and do not declare with parameter if unit parameter
     for ((fp, i) <- defn.fparams.zipWithIndex) {
       m.visitVarInsn(ALOAD, 0)
       m.visitFieldInsn(GETFIELD, classType.name.toInternalName,
