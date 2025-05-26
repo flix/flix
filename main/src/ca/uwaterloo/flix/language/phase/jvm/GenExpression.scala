@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition}
 import ca.uwaterloo.flix.language.ast.{MonoType, *}
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.{InstructionSet, xStore}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm
@@ -1255,7 +1255,7 @@ object GenExpression {
         // Jump to the entry point of the method.
         mv.visitJumpInsn(GOTO, ctx.entryPoint)
 
-      case DirectInstanceContext(_, _, _, _) | DirectStaticContext(_, _, _, _) =>
+      case DirectInstanceContext(_, _, _, _) =>
         // The function abstract class name
         val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
         // Evaluate each argument and put the result on the Fn class.
@@ -1268,6 +1268,16 @@ object GenExpression {
         }
         // Jump to the entry point of the method.
         mv.visitJumpInsn(GOTO, ctx.entryPoint)
+
+      case DirectStaticContext(_, entryPoint, _, localOffset) =>
+        for ((arg, i) <- exps.zipWithIndex) {
+          // Evaluate the argument and push the result on the stack.
+          compileExpr(arg)
+          // Store it in the ith parameter
+          xStore(BackendType.toErasedBackendType(arg.tpe), i + localOffset)
+        }
+        // Jump to the entry point of the method.
+        mv.visitJumpInsn(GOTO, entryPoint)
     }
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
