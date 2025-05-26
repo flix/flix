@@ -56,9 +56,11 @@ object GenExpression {
         BytecodeInstructions.GETSTATIC(BackendObjType.Unit.SingletonField)
       })(new BytecodeInstructions.F(mv))
 
-      case Constant.Null =>
-        mv.visitInsn(ACONST_NULL)
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+      case Constant.Null => ({
+        import BytecodeInstructions.*
+        ACONST_NULL() ~
+          castIfNotPrim(BackendType.toBackendType(tpe))
+      })(new BytecodeInstructions.F(mv))
 
       case Constant.Bool(true) =>
         mv.visitInsn(ICONST_1)
