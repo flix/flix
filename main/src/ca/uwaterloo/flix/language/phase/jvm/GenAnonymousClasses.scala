@@ -145,7 +145,7 @@ object GenAnonymousClasses {
         val argType = JvmOps.getJvmType(arg.tpe)
         methodVisitor.visitVarInsn(AsmOps.getLoadInstruction(argType), offset)
         offset += AsmOps.getStackSize(argType)
-        methodVisitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
+        methodVisitor.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
           s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
 

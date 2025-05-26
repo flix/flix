@@ -96,7 +96,7 @@ object GenNamespaceClasses {
       method.visitVarInsn(iLoad, offset)
 
       // put the arg field
-      method.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName, s"arg$index", arg.toDescriptor)
+      method.visitFieldInsn(PUTFIELD, functionInterface.toInternalName, s"arg$index", arg.toDescriptor)
 
       // Incrementing the offset
       offset += AsmOps.getStackSize(arg)

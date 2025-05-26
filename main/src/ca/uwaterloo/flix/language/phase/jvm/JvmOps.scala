@@ -71,7 +71,7 @@ object JvmOps {
     case MonoType.Struct(sym, targs) =>
       val elms = instantiateStruct(sym, targs.map(MonoType.erase))
       JvmType.Reference(BackendObjType.Struct(elms).jvmName)
-    case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
+    case MonoType.Arrow(_, _) => JvmType.Reference(getFunctionInterfaceType(tpe))
     case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
   }
 
@@ -135,10 +135,10 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getFunctionInterfaceType(tpe: MonoType): JvmType.Reference = tpe match {
+  def getFunctionInterfaceType(tpe: MonoType): JvmName = tpe match {
     case MonoType.Arrow(targs, tresult) =>
       val arrowType = BackendObjType.Arrow(targs.map(BackendType.toErasedBackendType), BackendType.asErasedBackendType(tresult))
-      JvmType.Reference(arrowType.jvmName)
+      arrowType.jvmName
     case _ =>
       throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
