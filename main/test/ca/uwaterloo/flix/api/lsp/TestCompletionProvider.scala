@@ -318,14 +318,21 @@ class TestCompletionProvider extends AnyFunSuite {
     Programs.flatMap(prg => {
       val root = compileWithSuccess(prg)
       val uses = getDefSymUseOccurs(root)
-      uses.flatMap { use =>
-        // We cut `n` holes into the program where `n` is length of `loc`.
-        val prgsWithHoles = cutHoles(prg, use.loc)
-
-        // We filter some malformed programs.
-        prgsWithHoles.filter(p => isCutEligible(p.cut))
-      }
+      mkProgramHoles(prg, uses.map(_.loc))
     })
+  }
+
+  /**
+    * Cuts holes in the given program `prg` at all the given source locations `locs`.
+    */
+  private def mkProgramHoles(prg: String, locs: List[SourceLocation]): List[ProgramWithHole] = {
+    locs.flatMap { use =>
+      // We cut `n` holes into the program where `n` is length of `loc`.
+      val prgsWithHoles = cutHoles(prg, use)
+
+      // We filter some malformed programs.
+      prgsWithHoles.filter(p => isCutEligible(p.cut))
+    }
   }
 
   /**
