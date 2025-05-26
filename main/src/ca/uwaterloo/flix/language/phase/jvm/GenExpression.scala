@@ -842,6 +842,8 @@ object GenExpression {
         val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
         // evaluating the `base`
         compileExpr(exp)
+        // Cast to struct type
+        BytecodeInstructions.CHECKCAST(structType.jvmName)(new BytecodeInstructions.F(mv))
         // Retrieving the field `field${offset}`
         mv.visitFieldInsn(GETFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.asErasedJvmType(tpe).toDescriptor)
 
@@ -852,6 +854,8 @@ object GenExpression {
         val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
         // evaluating the `base`
         compileExpr(exp1)
+        // Cast to struct type
+        BytecodeInstructions.CHECKCAST(structType.jvmName)(new BytecodeInstructions.F(mv))
         // evaluating the `rhs`
         compileExpr(exp2)
         // set the field `field${offset}`
