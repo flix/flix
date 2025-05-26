@@ -92,7 +92,7 @@ object GenEffectClasses {
     val resumption = JvmType.Reference(BackendObjType.Resumption.jvmName)
     val writtenOpArgs = writtenOpArgsMono.map(JvmOps.getErasedJvmType)
     val opName = JvmOps.getEffectOpName(op.sym)
-    val opFunctionType = JvmOps.getFunctionInterfaceType(arrowType)
+    val opFunctionType = JvmOps.getFunctionInterfaceName(arrowType)
     visitor.visitField(ACC_PUBLIC, opName, opFunctionType.toDescriptor, null, null)
     // Method
     // 1. Cast the given generic handler to the current effect
@@ -117,7 +117,7 @@ object GenEffectClasses {
       val xLoad = AsmOps.getLoadInstruction(t)
       mv.visitInsn(DUP)
       mv.visitVarInsn(xLoad, localOffset)
-      mv.visitFieldInsn(PUTFIELD, opFunctionType.name.toInternalName, s"arg$i", t.toDescriptor)
+      mv.visitFieldInsn(PUTFIELD, opFunctionType.toInternalName, s"arg$i", t.toDescriptor)
     }
     // convert the resumption to a function
     mv.visitInsn(DUP)
@@ -129,10 +129,10 @@ object GenEffectClasses {
     mv.visitVarInsn(ALOAD, handlerOffset + 1) // the resumption is the stack offset after handler
     mv.visitMethodInsn(INVOKESPECIAL, wrapperName, JvmName.ConstructorMethod, wrapperType.Constructor.d.toDescriptor, false)
 
-    mv.visitFieldInsn(PUTFIELD, opFunctionType.name.toInternalName, s"arg${writtenOpArgs.size}", resumption.toErased.toDescriptor)
+    mv.visitFieldInsn(PUTFIELD, opFunctionType.toInternalName, s"arg${writtenOpArgs.size}", resumption.toErased.toDescriptor)
     // call invoke
     val invokeMethod = BackendObjType.Thunk.InvokeMethod
-    mv.visitMethodInsn(INVOKEVIRTUAL, opFunctionType.name.toInternalName, invokeMethod.name, invokeMethod.d.toDescriptor, false)
+    mv.visitMethodInsn(INVOKEVIRTUAL, opFunctionType.toInternalName, invokeMethod.name, invokeMethod.d.toDescriptor, false)
     mv.visitInsn(ARETURN)
 
     mv.visitMaxs(999, 999)
@@ -152,11 +152,11 @@ object GenEffectClasses {
     MethodDescriptor(methodArgs, methodResult)
   }
 
-  def opFieldType(sym: Symbol.OpSym)(implicit root: Root): JvmType = {
+  def opFieldType(sym: Symbol.OpSym)(implicit root: Root): JvmName = {
     val effect = root.effects(sym.eff)
     val op = effect.ops.find(op => op.sym == sym).getOrElse(throw InternalCompilerException(s"Could not find op '$sym' in effect '$effect'.", sym.loc))
     val writtenOpArgs = op.fparams.map(_.tpe)
-    JvmOps.getFunctionInterfaceType(MonoType.Arrow(writtenOpArgs :+ MonoType.Object, MonoType.Object))
+    JvmOps.getFunctionInterfaceName(MonoType.Arrow(writtenOpArgs :+ MonoType.Object, MonoType.Object))
   }
 
 }
