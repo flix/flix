@@ -56,9 +56,11 @@ object GenExpression {
         BytecodeInstructions.GETSTATIC(BackendObjType.Unit.SingletonField)
       })(new BytecodeInstructions.F(mv))
 
-      case Constant.Null =>
-        mv.visitInsn(ACONST_NULL)
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+      case Constant.Null => ({
+        import BytecodeInstructions.*
+        ACONST_NULL() ~
+          castIfNotPrim(BackendType.toBackendType(tpe))
+      })(new BytecodeInstructions.F(mv))
 
       case Constant.Bool(true) =>
         mv.visitInsn(ICONST_1)
@@ -1345,7 +1347,7 @@ object GenExpression {
 
     case Expr.RunWith(exp, effUse, rules, ct, _, _, _) =>
       // exp is a Unit -> exp.tpe closure
-      val effectJvmName = JvmOps.getEffectDefinitionClassType(effUse.sym).name
+      val effectJvmName = JvmOps.getEffectDefinitionClassName(effUse.sym)
       val ins = {
         import BytecodeInstructions.*
         // eff name
@@ -1396,9 +1398,9 @@ object GenExpression {
       val ins: InstructionSet = {
         import BackendObjType.Suspension
         import BytecodeInstructions.*
-        val effectClass = JvmOps.getEffectDefinitionClassType(op.sym.eff)
+        val effectName = JvmOps.getEffectDefinitionClassName(op.sym.eff)
         val effectStaticMethod = ClassMaker.StaticMethod(
-          effectClass.name,
+          effectName,
           ClassMaker.Visibility.IsPublic,
           ClassMaker.Final.NotFinal,
           JvmOps.getEffectOpName(op.sym),

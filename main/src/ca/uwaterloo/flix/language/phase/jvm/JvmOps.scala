@@ -199,10 +199,10 @@ object JvmOps {
     * Print       =>  Eff$Print
     * List.Crash  =>  List.Eff$Crash
     */
-  def getEffectDefinitionClassType(sym: Symbol.EffectSym): JvmType.Reference = {
+  def getEffectDefinitionClassName(sym: Symbol.EffectSym): JvmName = {
     val pkg = sym.namespace
     val name = JvmName.mkClassName("Eff", sym.name)
-    JvmType.Reference(JvmName(pkg, name))
+    JvmName(pkg, name)
   }
 
   /**

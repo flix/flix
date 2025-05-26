@@ -35,6 +35,9 @@ object BytecodeInstructions {
     def visitTypeInstruction(opcode: Int, tpe: JvmName): Unit =
       visitor.visitTypeInsn(opcode, tpe.toInternalName)
 
+    def visitTypeInstructionDirect(opcode: Int, tpe: String): Unit =
+      visitor.visitTypeInsn(opcode, tpe)
+
     def visitInstruction(opcode: Int): Unit = visitor.visitInsn(opcode)
 
     def visitMethodInstruction(opcode: Int, owner: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean): Unit =
@@ -509,6 +512,17 @@ object BytecodeInstructions {
     f = cases(TrueBranch)(f)
     f.visitLabel(skipLabel)
     f
+  }
+
+  def castIfNotPrim(tpe: BackendType): InstructionSet = {
+    tpe match {
+      case arr: BackendType.Array => f => {
+        f.visitTypeInstructionDirect(Opcodes.CHECKCAST, arr.toDescriptor)
+        f
+      }
+      case BackendType.Reference(ref) => CHECKCAST(ref.jvmName)
+      case _: BackendType.PrimitiveType => nop()
+    }
   }
 
   def cheat(command: MethodVisitor => Unit): InstructionSet = f => {

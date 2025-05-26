@@ -50,22 +50,21 @@ object GenEffectClasses {
   def gen(effects: Iterable[Effect])(implicit flix: Flix): Map[JvmName, JvmClass] = {
     ParOps.parAgg(effects, Map.empty[JvmName, JvmClass])({
       case (macc, effect) =>
-        val classType = JvmOps.getEffectDefinitionClassType(effect.sym)
-        val className = classType.name
-        macc + (className -> JvmClass(className, genByteCode(classType, effect)))
+        val className = JvmOps.getEffectDefinitionClassName(effect.sym)
+        macc + (className -> JvmClass(className, genByteCode(className, effect)))
     }, _ ++ _)
   }
 
-  private def genByteCode(effectType: JvmType.Reference, effect: Effect)(implicit flix: Flix): Array[Byte] = {
+  private def genByteCode(effectName: JvmName, effect: Effect)(implicit flix: Flix): Array[Byte] = {
     val visitor = AsmOps.mkClassWriter()
 
     val interfaces = Array(BackendObjType.Handler.jvmName.toInternalName)
     val superClass = BackendObjType.JavaObject.jvmName.toInternalName
 
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, effectType.name.toInternalName,
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, effectName.toInternalName,
       null, superClass, interfaces)
 
-    for (op <- effect.ops) genFieldAndMethod(visitor, effectType, op)
+    for (op <- effect.ops) genFieldAndMethod(visitor, effectName, op)
 
     genConstructor(visitor, superClass)
 
@@ -85,7 +84,7 @@ object GenEffectClasses {
     mv.visitEnd()
   }
 
-  private def genFieldAndMethod(visitor: ClassWriter, effectType: JvmType.Reference, op: Op): Unit = {
+  private def genFieldAndMethod(visitor: ClassWriter, effectName: JvmName, op: Op): Unit = {
     // Field
     val writtenOpArgsMono = op.fparams.map(_.tpe)
     val arrowType = MonoType.Arrow(writtenOpArgsMono :+ MonoType.Object, MonoType.Object)
@@ -106,13 +105,13 @@ object GenEffectClasses {
     val handlerType = JvmType.Reference(BackendObjType.Handler.jvmName)
     val methodArgs = writtenOpArgs ++ List(handlerType, resumption)
     val methodResult = JvmType.Reference(BackendObjType.Result.jvmName)
-    val effectName = effectType.name.toInternalName
+    val effectInternalName = effectName.toInternalName
     val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, opName, AsmOps.getMethodDescriptor(methodArgs, methodResult), null, null)
     mv.visitCode()
 
     mv.visitVarInsn(ALOAD, handlerOffset)
-    mv.visitTypeInsn(CHECKCAST, effectName)
-    mv.visitFieldInsn(GETFIELD, effectName, opName, opFunctionType.toDescriptor)
+    mv.visitTypeInsn(CHECKCAST, effectInternalName)
+    mv.visitFieldInsn(GETFIELD, effectInternalName, opName, opFunctionType.toDescriptor)
     // bind all regular arguments
     for (((t, localOffset), i) <- writtenOpArgsOffset.zipWithIndex) {
       val xLoad = AsmOps.getLoadInstruction(t)
