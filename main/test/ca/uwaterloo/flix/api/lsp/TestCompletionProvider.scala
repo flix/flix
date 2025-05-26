@@ -284,17 +284,32 @@ class TestCompletionProvider extends AnyFunSuite {
   // No Duplicate Completions
   /////////////////////////////////////////////////////////////////////////////
 
-  test("NoDuplicates.Defs") {
+  test("NoDuplicateCompletions.Defs") {
     forAll(sample(mkProgramsWithDefUseHoles())) {
       case ProgramWithHole(prg, _, pos) =>
         val (root, errors) = compile(prg)
         val l = autoComplete(pos, root, errors)
 
+        //println(prg)
         //l.foreach(println)
         //println("--")
         Assert.noDuplicateCompletions(l, pos)
     }
   }
+
+  test("NoDuplicateCompletions.Vars") {
+    forAll(sample(mkProgramsWithVarHoles())) {
+      case ProgramWithHole(prg, _, pos) =>
+        val (root, errors) = compile(prg)
+        val l = autoComplete(pos, root, errors)
+
+        //println(prg)
+        //l.foreach(println)
+        //println("--")
+        Assert.noDuplicateCompletions(l, pos)
+    }
+  }
+
 
   /////////////////////////////////////////////////////////////////////////////
   // Infrastructure
@@ -319,6 +334,17 @@ class TestCompletionProvider extends AnyFunSuite {
       val root = compileWithSuccess(prg)
       val uses = getDefSymUseOccurs(root)
       mkProgramHoles(prg, uses.map(_.loc))
+    })
+  }
+
+  /**
+    * Returns a list of programs with holes where variable expressions occur.
+    */
+  def mkProgramsWithVarHoles(): List[ProgramWithHole] = {
+    Programs.flatMap(prg => {
+      val root = compileWithSuccess(prg)
+      val uses = getVarSymOccurs(root)
+      mkProgramHoles(prg, uses.map(_._2))
     })
   }
 
@@ -558,24 +584,6 @@ class TestCompletionProvider extends AnyFunSuite {
 
 
   /**
-    * Returns all real uses of all vars for the given AST `root`.
-    */
-  private def getVarSymOccurs()(implicit root: Root): Set[(Symbol.VarSym, SourceLocation)] = {
-    var occurs: Set[(Symbol.VarSym, SourceLocation)] = Set.empty
-
-    object VarConsumer extends Consumer {
-      override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
-        case TypedAst.Expr.Var(sym, _, loc) if sym.loc.isReal => occurs += ((sym, loc))
-        case _ =>
-      }
-    }
-
-    Visitor.visitRoot(root, VarConsumer, FileAcceptor(Uri))
-
-    occurs
-  }
-
-  /**
     * Returns all real uses of all defs for the given AST `root`.
     */
   private def getDefSymUseOccurs(root: Root): List[SymUse.DefSymUse] = {
@@ -590,6 +598,24 @@ class TestCompletionProvider extends AnyFunSuite {
     }
 
     Visitor.visitRoot(root, DefSymUseConsumer, FileAcceptor(Uri))
+
+    occurs.toList
+  }
+
+  /**
+    * Returns all real uses of all vars for the given AST `root`.
+    */
+  private def getVarSymOccurs(root: Root): List[(Symbol.VarSym, SourceLocation)] = {
+    var occurs: Set[(Symbol.VarSym, SourceLocation)] = Set.empty
+
+    object VarConsumer extends Consumer {
+      override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
+        case TypedAst.Expr.Var(sym, _, loc) if sym.loc.isReal => occurs += ((sym, loc))
+        case _ =>
+      }
+    }
+
+    Visitor.visitRoot(root, VarConsumer, FileAcceptor(Uri))
 
     occurs.toList
   }
