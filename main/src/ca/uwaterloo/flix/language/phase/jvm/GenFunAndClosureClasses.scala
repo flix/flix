@@ -183,7 +183,7 @@ object GenFunAndClosureClasses {
 
     // Generate the expression
     val localOffset = 0
-    val ctx = GenExpression.DirectContext(classType, enterLabel, Map(), localOffset)
+    val ctx = GenExpression.DirectInstanceContext(classType, enterLabel, Map(), localOffset)
     GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
 
     BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)(new BytecodeInstructions.F(m))
@@ -277,7 +277,7 @@ object GenFunAndClosureClasses {
     loadParamsOf(fparams)
 
     if (Purity.isControlPure(defn.expr.purity)) {
-      val ctx = GenExpression.DirectContext(classType, enterLabel, Map.empty, localOffset)
+      val ctx = GenExpression.DirectInstanceContext(classType, enterLabel, Map.empty, localOffset)
       GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
     } else {
       val pcLabels: Vector[Label] = Vector.range(0, defn.pcPoints).map(_ => new Label())

@@ -51,7 +51,9 @@ object GenExpression {
       this match {
         case ctx: EffectContext =>
           ctx.copy(lenv = updatedLabels)
-        case ctx: DirectContext =>
+        case ctx: DirectInstanceContext =>
+          ctx.copy(lenv = updatedLabels)
+        case ctx: DirectStaticContext =>
           ctx.copy(lenv = updatedLabels)
       }
     }
@@ -74,15 +76,28 @@ object GenExpression {
                           ) extends MethodContext
 
   /**
-    * A context for control pure functions that do not closure capture any variables.
+    * A context for control pure functions that may capture variables and therefore use
+    * fields to store its arguments.
     * Such functions never need to record their state and will always
     * return at the given return expressions except if they loop indefinitely.
     */
-  case class DirectContext(clazz: JvmType.Reference,
-                           entryPoint: Label,
-                           lenv: Map[Symbol.LabelSym, Label],
-                           localOffset: Int,
-                          ) extends MethodContext
+  case class DirectInstanceContext(clazz: JvmType.Reference,
+                                   entryPoint: Label,
+                                   lenv: Map[Symbol.LabelSym, Label],
+                                   localOffset: Int,
+                                  ) extends MethodContext
+
+  /**
+    * A context for control pure functions that do not closure capture any variables and therefore
+    * never use any fields to store arguments.
+    * Such functions never need to record their state and will always
+    * return at the given return expressions except if they loop indefinitely.
+    */
+  case class DirectStaticContext(clazz: JvmType.Reference,
+                                 entryPoint: Label,
+                                 lenv: Map[Symbol.LabelSym, Label],
+                                 localOffset: Int,
+                                ) extends MethodContext
 
   /**
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
@@ -1064,12 +1079,12 @@ object GenExpression {
         // Add source line number for debugging (failable by design).
         addLoc(loc) ~
           cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~ // Loc
-          NEW(BackendObjType.HoleError.jvmName) ~                     // Loc, HoleError
-          DUP2() ~                                                    // Loc, HoleError, Loc, HoleError
-          SWAP() ~                                                    // Loc, HoleError, HoleError, Loc
-          pushString(sym.toString) ~                                  // Loc, HoleError, HoleError, Loc, Sym
-          SWAP() ~                                                    // Loc, HoleError, HoleError, Sym, Loc
-          INVOKESPECIAL(BackendObjType.HoleError.Constructor) ~       // Loc, HoleError
+          NEW(BackendObjType.HoleError.jvmName) ~ // Loc, HoleError
+          DUP2() ~ // Loc, HoleError, Loc, HoleError
+          SWAP() ~ // Loc, HoleError, HoleError, Loc
+          pushString(sym.toString) ~ // Loc, HoleError, HoleError, Loc, Sym
+          SWAP() ~ // Loc, HoleError, HoleError, Sym, Loc
+          INVOKESPECIAL(BackendObjType.HoleError.Constructor) ~ // Loc, HoleError
           ATHROW()
       })(new BytecodeInstructions.F(mv))
 
@@ -1078,10 +1093,10 @@ object GenExpression {
         // Add source line number for debugging (failable by design)
         addLoc(loc) ~
           cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~ // Loc
-          NEW(BackendObjType.MatchError.jvmName) ~                    // Loc, MatchError
-          DUP2() ~                                                    // Loc, MatchError, Loc, MatchError
-          SWAP() ~                                                    // Loc, MatchError, MatchError, Loc
-          INVOKESPECIAL(BackendObjType.MatchError.Constructor) ~      // Loc, MatchError
+          NEW(BackendObjType.MatchError.jvmName) ~ // Loc, MatchError
+          DUP2() ~ // Loc, MatchError, Loc, MatchError
+          SWAP() ~ // Loc, MatchError, MatchError, Loc
+          INVOKESPECIAL(BackendObjType.MatchError.Constructor) ~ // Loc, MatchError
           ATHROW()
       })(new BytecodeInstructions.F(mv))
 
@@ -1154,7 +1169,7 @@ object GenExpression {
 
                 mv.visitLabel(afterUnboxing)
 
-              case DirectContext(_, _, _, _) =>
+              case DirectInstanceContext(_, _, _, _) | DirectStaticContext(_, _, _, _) =>
                 throw InternalCompilerException("Unexpected direct method context in control impure function", loc)
             }
           }
@@ -1216,7 +1231,7 @@ object GenExpression {
 
               mv.visitLabel(afterUnboxing)
 
-            case DirectContext(_, _, _, _) =>
+            case DirectInstanceContext(_, _, _, _) | DirectStaticContext(_, _, _, _) =>
               throw InternalCompilerException("Unexpected direct method context in control impure function", loc)
           }
         }
@@ -1239,7 +1254,7 @@ object GenExpression {
           compileInt(0)
           setPc(new BytecodeInstructions.F(mv))
 
-        case DirectContext(_, _, _, _) =>
+        case DirectInstanceContext(_, _, _, _) | DirectStaticContext(_, _, _, _) =>
           () // Do nothing
 
       }
@@ -1435,7 +1450,7 @@ object GenExpression {
 
         case ExpPosition.NonTail => ctx match {
           // handle value/suspend/thunk if in non-tail position
-          case DirectContext(_, _, _, _) =>
+          case DirectInstanceContext(_, _, _, _) | DirectStaticContext(_, _, _, _) =>
             BackendObjType.Result.unwindSuspensionFreeThunk("in pure run-with call", loc)(new BytecodeInstructions.F(mv))
 
           case EffectContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
@@ -1453,7 +1468,7 @@ object GenExpression {
       }
 
     case Expr.Do(op, exps, tpe, _, loc) => ctx match {
-      case DirectContext(_, _, _, _) =>
+      case DirectInstanceContext(_, _, _, _) | DirectStaticContext(_, _, _, _) =>
         throw InternalCompilerException("Unexpected do-expression in direct method context", loc)
 
       case EffectContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
