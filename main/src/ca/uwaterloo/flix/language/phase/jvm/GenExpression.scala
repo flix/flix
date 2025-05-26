@@ -1274,7 +1274,7 @@ object GenExpression {
           // Evaluate the argument and push the result on the stack.
           compileExpr(arg)
           // Store it in the ith parameter
-          xStore(BackendType.toErasedBackendType(arg.tpe), i + localOffset)
+          xStore(BackendType.toErasedBackendType(arg.tpe), localOffset + i)
         }
         // Jump to the entry point of the method.
         mv.visitJumpInsn(GOTO, entryPoint)
