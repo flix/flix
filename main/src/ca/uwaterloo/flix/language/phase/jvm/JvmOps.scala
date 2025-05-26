@@ -29,11 +29,6 @@ import java.nio.file.{Files, LinkOption, Path}
 object JvmOps {
 
   /**
-    * The root package name.
-    */
-  val RootPackage: List[String] = Nil
-
-  /**
     * Returns the given Flix type `tpe` as JVM type.
     *
     * For example, if the type is:
@@ -264,24 +259,6 @@ object JvmOps {
   def getTagName(name: String): String = mangle(name)
 
   /**
-    * Returns stringified name of the given JvmType `tpe`.
-    *
-    * The stringified name is short hand used for generation of interface and class names.
-    */
-  def stringify(tpe: JvmType): String = tpe match {
-    case JvmType.Void => "Void"
-    case JvmType.PrimBool => "Bool"
-    case JvmType.PrimChar => "Char"
-    case JvmType.PrimFloat => "Float32"
-    case JvmType.PrimDouble => "Float64"
-    case JvmType.PrimByte => "Int8"
-    case JvmType.PrimShort => "Int16"
-    case JvmType.PrimInt => "Int32"
-    case JvmType.PrimLong => "Int64"
-    case JvmType.Reference(_) => "Obj"
-  }
-
-  /**
     * Returns the set of namespaces in the given AST `root`.
     */
   def namespacesOf(root: Root): Set[NamespaceInfo] = {
@@ -361,10 +338,10 @@ object JvmOps {
     */
   def getErasedTagTypesOf(root: Root, types: Iterable[MonoType]): Set[BackendObjType.TagType] =
     types.foldLeft(Set.empty[BackendObjType.TagType]) {
-      case (acc, MonoType.Enum(sym, targs)) =>
+      case (acc0, MonoType.Enum(sym, targs)) =>
         val tags = instantiateEnum(root.enums(sym), targs)
-        tags.foldLeft(acc) {
-          case (acc, (sym, Nil)) => acc + BackendObjType.NullaryTag(sym.name)
+        tags.foldLeft(acc0) {
+          case (acc, (tagSym, Nil)) => acc + BackendObjType.NullaryTag(tagSym.name)
           case (acc, (_, tagElms)) => acc + BackendObjType.Tag(tagElms)
         }
       case (acc, _) => acc

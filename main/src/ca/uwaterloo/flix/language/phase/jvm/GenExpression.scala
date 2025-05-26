@@ -89,9 +89,9 @@ object GenExpression {
     */
   def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
     case Expr.Cst(cst, tpe, loc) => cst match {
-      case Constant.Unit =>
-        mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName,
-          BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.toDescriptor)
+      case Constant.Unit => ({
+        BytecodeInstructions.GETSTATIC(BackendObjType.Unit.SingletonField)
+      })(new BytecodeInstructions.F(mv))
 
       case Constant.Null =>
         mv.visitInsn(ACONST_NULL)
@@ -613,21 +613,15 @@ object GenExpression {
         // Retrieving the field `field${offset}`
         mv.visitFieldInsn(GETFIELD, tupleType.jvmName.toInternalName, s"field$idx", JvmOps.asErasedJvmType(tpe).toDescriptor)
 
-      case AtomicOp.Tuple =>
-        // We get the JvmType of the class for the tuple
+      case AtomicOp.Tuple => ({
+        import BytecodeInstructions.*
         val MonoType.Tuple(elmTypes) = tpe
         val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.asErasedBackendType))
-        val internalClassName = tupleType.jvmName.toInternalName
-        // Instantiating a new object of tuple
-        mv.visitTypeInsn(NEW, internalClassName)
-        // Duplicating the class
-        mv.visitInsn(DUP)
-        // Evaluating all the elements to be stored in the tuple class
-        exps.foreach(compileExpr)
-        // Descriptor of constructor
-        val constructorDescriptor = MethodDescriptor(tupleType.elms, VoidableType.Void)
-        // Invoking the constructor
-        mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", constructorDescriptor.toDescriptor, false)
+        NEW(tupleType.jvmName) ~
+          DUP() ~
+          cheat(mv => exps.foreach(compileExpr(_)(mv, ctx, root, flix))) ~
+          INVOKESPECIAL(tupleType.Constructor)
+      })(new BytecodeInstructions.F(mv))
 
       case AtomicOp.RecordSelect(field) =>
         val List(exp) = exps
@@ -654,32 +648,23 @@ object GenExpression {
         // Retrieve the value field  (To get the proper value)
         mv.visitFieldInsn(GETFIELD, recordInternalName, recordType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
 
-      case AtomicOp.RecordExtend(field) =>
+      case AtomicOp.RecordExtend(field) => ({
+        import BytecodeInstructions.*
         val List(exp1, exp2) = exps
-
         val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(exp1.tpe))
-        val classInternalName = recordType.jvmName.toInternalName
-
-        // Instantiating a new object of tuple
-        mv.visitTypeInsn(NEW, classInternalName)
-        mv.visitInsn(DUP)
-        // Invoking the constructor
-        mv.visitMethodInsn(INVOKESPECIAL, classInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
-
-        // Put the label of field (which is going to be the extension).
-        mv.visitInsn(DUP)
-        mv.visitLdcInsn(field.name)
-        mv.visitFieldInsn(PUTFIELD, classInternalName, recordType.LabelField.name, BackendObjType.String.toDescriptor)
-
-        // Put the value of the field onto the stack, since it is an expression we first need to compile it.
-        mv.visitInsn(DUP)
-        compileExpr(exp1)
-        mv.visitFieldInsn(PUTFIELD, classInternalName, recordType.ValueField.name, recordType.ValueField.tpe.toDescriptor)
-
-        // Put the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
-        mv.visitInsn(DUP)
-        compileExpr(exp2)
-        mv.visitFieldInsn(PUTFIELD, classInternalName, recordType.RestField.name, recordType.RestField.tpe.toDescriptor)
+        NEW(recordType.jvmName) ~
+          DUP() ~
+          INVOKESPECIAL(recordType.Constructor) ~
+          DUP() ~
+          pushString(field.name) ~
+          PUTFIELD(recordType.LabelField) ~
+          DUP() ~
+          cheat(mv => compileExpr(exp1)(mv, ctx, root, flix)) ~
+          PUTFIELD(recordType.ValueField) ~
+          DUP() ~
+          cheat(mv => compileExpr(exp2)(mv, ctx, root, flix)) ~
+          PUTFIELD(recordType.RestField)
+      })(new BytecodeInstructions.F(mv))
 
       case AtomicOp.RecordRestrict(field) =>
         val List(exp) = exps
@@ -1037,19 +1022,19 @@ object GenExpression {
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
 
-      case AtomicOp.Lazy =>
+      case AtomicOp.Lazy => ({
+        import BytecodeInstructions.*
         val List(exp) = exps
 
         // Find the Lazy class name (Lazy$tpe).
         val MonoType.Lazy(elmType) = tpe
         val lazyType = BackendObjType.Lazy(BackendType.asErasedBackendType(elmType))
 
-        val ins = {
-          import BytecodeInstructions.*
-          NEW(lazyType.jvmName) ~
-            DUP() ~ cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ INVOKESPECIAL(lazyType.Constructor)
-        }
-        ins(new BytecodeInstructions.F(mv))
+        NEW(lazyType.jvmName) ~
+          DUP() ~
+          cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~
+          INVOKESPECIAL(lazyType.Constructor)
+      })(new BytecodeInstructions.F(mv))
 
       case AtomicOp.Force =>
         val List(exp) = exps
@@ -1074,44 +1059,43 @@ object GenExpression {
         }
         ins(new BytecodeInstructions.F(mv))
 
-      case AtomicOp.HoleError(sym) =>
-        // Add source line number for debugging (failable by design)
-        addSourceLine(mv, loc)
-        AsmOps.compileReifiedSourceLocation(mv, loc)
-        val className = BackendObjType.HoleError.jvmName
-        mv.visitTypeInsn(NEW, className.toInternalName)
-        mv.visitInsn(DUP2)
-        mv.visitInsn(SWAP)
-        mv.visitLdcInsn(sym.toString)
-        mv.visitInsn(SWAP)
-        mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${BackendObjType.String.toDescriptor}${BackendObjType.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
-        mv.visitInsn(ATHROW)
+      case AtomicOp.HoleError(sym) => ({
+        import BytecodeInstructions.*
+        // Add source line number for debugging (failable by design).
+        addLoc(loc) ~
+          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~ // Loc
+          NEW(BackendObjType.HoleError.jvmName) ~                     // Loc, HoleError
+          DUP2() ~                                                    // Loc, HoleError, Loc, HoleError
+          SWAP() ~                                                    // Loc, HoleError, HoleError, Loc
+          pushString(sym.toString) ~                                  // Loc, HoleError, HoleError, Loc, Sym
+          SWAP() ~                                                    // Loc, HoleError, HoleError, Sym, Loc
+          INVOKESPECIAL(BackendObjType.HoleError.Constructor) ~       // Loc, HoleError
+          ATHROW()
+      })(new BytecodeInstructions.F(mv))
 
-      case AtomicOp.MatchError =>
+      case AtomicOp.MatchError => ({
+        import BytecodeInstructions.*
         // Add source line number for debugging (failable by design)
-        addSourceLine(mv, loc)
-        val className = BackendObjType.MatchError.jvmName
-        AsmOps.compileReifiedSourceLocation(mv, loc)
-        mv.visitTypeInsn(NEW, className.toInternalName)
-        mv.visitInsn(DUP2)
-        mv.visitInsn(SWAP)
-        mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${BackendObjType.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
-        mv.visitInsn(ATHROW)
+        addLoc(loc) ~
+          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~ // Loc
+          NEW(BackendObjType.MatchError.jvmName) ~                    // Loc, MatchError
+          DUP2() ~                                                    // Loc, MatchError, Loc, MatchError
+          SWAP() ~                                                    // Loc, MatchError, MatchError, Loc
+          INVOKESPECIAL(BackendObjType.MatchError.Constructor) ~      // Loc, MatchError
+          ATHROW()
+      })(new BytecodeInstructions.F(mv))
 
-      case AtomicOp.CastError(from, to) =>
-        import BackendObjType.CastError
+      case AtomicOp.CastError(from, to) => ({
+        import BytecodeInstructions.*
         // Add source line number for debugging (failable by design)
-        addSourceLine(mv, loc)
-        val ins = {
-          import BytecodeInstructions.*
-          NEW(CastError.jvmName) ~
-            DUP() ~
-            cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~
-            pushString(s"Cannot cast from type '$from' to '$to'") ~
-            INVOKESPECIAL(CastError.Constructor) ~
-            ATHROW()
-        }
-        ins(new BytecodeInstructions.F(mv))
+        addLoc(loc) ~
+          NEW(BackendObjType.CastError.jvmName) ~
+          DUP() ~
+          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~
+          pushString(s"Cannot cast from type '$from' to '$to'") ~
+          INVOKESPECIAL(BackendObjType.CastError.Constructor) ~
+          ATHROW()
+      })(new BytecodeInstructions.F(mv))
     }
 
     case Expr.ApplyClo(exp1, exp2, ct, _, purity, loc) =>

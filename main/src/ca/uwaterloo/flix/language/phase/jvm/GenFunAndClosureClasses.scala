@@ -140,7 +140,8 @@ object GenFunAndClosureClasses {
     val closureArgTypes = defn.cparams.map(_.tpe)
     for ((argType, index) <- closureArgTypes.zipWithIndex) {
       val erasedArgType = JvmOps.getErasedJvmType(argType)
-      AsmOps.compileField(visitor, s"clo$index", erasedArgType, isStatic = false, isPrivate = false, isVolatile = false)
+      val field = visitor.visitField(ACC_PUBLIC, s"clo$index", erasedArgType.toDescriptor, null, null)
+      field.visitEnd()
     }
     for ((x, i) <- defn.lparams.zipWithIndex) {
       visitor.visitField(ACC_PUBLIC, s"l$i", JvmOps.getErasedJvmType(x.tpe).toDescriptor, null, null)
