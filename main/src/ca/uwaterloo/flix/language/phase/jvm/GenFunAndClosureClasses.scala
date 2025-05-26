@@ -183,7 +183,7 @@ object GenFunAndClosureClasses {
 
     // Generate the expression
     val localOffset = 0
-    val ctx = GenExpression.DirectContext(classType, enterLabel, Map(), localOffset, isStatic = true)
+    val ctx = GenExpression.DirectContext(classType, enterLabel, Map(), localOffset)
     GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
 
     BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)(new BytecodeInstructions.F(m))
