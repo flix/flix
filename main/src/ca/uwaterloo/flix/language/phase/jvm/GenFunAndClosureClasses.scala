@@ -196,7 +196,9 @@ object GenFunAndClosureClasses {
       AsmOps.getMethodDescriptor(Nil, JvmType.Reference(BackendObjType.Result.jvmName)), null, null)
     m.visitCode()
 
-    val applyMethod = BackendObjType.Frame.DirectApplyMethod
+    val applyMethodName = JvmName.DirectApply
+    val params = defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe))
+    val desc = MethodDescriptor(params, BackendObjType.Result.toTpe)
 
     // Put fields on stack as args to static method
     for ((fp, i) <- defn.fparams.zipWithIndex) {
@@ -205,7 +207,7 @@ object GenFunAndClosureClasses {
         s"arg$i", JvmOps.getErasedJvmType(fp.tpe).toDescriptor)
     }
 
-    m.visitMethodInsn(INVOKESTATIC, classType.name.toInternalName, applyMethod.name, applyMethod.d.toDescriptor, false)
+    m.visitMethodInsn(INVOKESTATIC, classType.name.toInternalName, applyMethodName, desc.toDescriptor, false)
 
     BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)(new BytecodeInstructions.F(m))
 
