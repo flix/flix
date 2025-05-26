@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition}
 import ca.uwaterloo.flix.language.ast.{MonoType, *}
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.{InstructionSet, xStore}
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm
@@ -1278,7 +1278,7 @@ object GenExpression {
           // Evaluate the argument and push the result on the stack.
           compileExpr(arg)
           // Store it in the ith parameter
-          xStore(BackendType.toErasedBackendType(arg.tpe), localOffset + i)
+          BytecodeInstructions.xStore(BackendType.toErasedBackendType(arg.tpe), localOffset + i)(new BytecodeInstructions.F(mv))
         }
         // Jump to the entry point of the method.
         mv.visitJumpInsn(GOTO, entryPoint)
