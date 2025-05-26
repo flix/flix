@@ -1137,7 +1137,7 @@ object GenExpression {
 
       case ExpPosition.NonTail =>
         // JvmType of Def
-        val defJvmType = JvmOps.getFunctionDefinitionClassType(sym)
+        val defJvmName = JvmOps.getFunctionDefinitionClassName(sym)
 
         // Put the def on the stack
         AsmOps.compileDefSymbol(sym, mv)
@@ -1148,7 +1148,7 @@ object GenExpression {
           mv.visitInsn(DUP)
           // Evaluating the expression
           compileExpr(arg)
-          mv.visitFieldInsn(PUTFIELD, defJvmType.name.toInternalName,
+          mv.visitFieldInsn(PUTFIELD, defJvmName.toInternalName,
             s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
         }
         // Calling unwind and unboxing
