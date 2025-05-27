@@ -448,7 +448,7 @@ object GenFunAndClosureClasses {
     // Method header
     val paramsTpes = defn.fparams.map(fp => JvmOps.getJvmType(fp.tpe))
     val resultTpe = BackendObjType.Result.toTpe
-    val desc = s"(${paramsTpes.map(_.toDescriptor)})${resultTpe.toDescriptor}"
+    val desc = s"(${paramsTpes.map(_.toDescriptor).mkString})${resultTpe.toDescriptor}"
     val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
     val m = visitor.visitMethod(modifiers, JvmName.DirectApply, desc, null, null)
     // val m = new Debug(m0)

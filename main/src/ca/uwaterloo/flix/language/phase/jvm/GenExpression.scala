@@ -1211,7 +1211,7 @@ object GenExpression {
           }
           val paramsTpes = defn.fparams.map(fp => JvmOps.getJvmType(fp.tpe))
           val resultTpe = BackendObjType.Result.toTpe
-          val desc = s"(${paramsTpes.map(_.toDescriptor)})${resultTpe.toDescriptor}"
+          val desc = s"(${paramsTpes.map(_.toDescriptor).mkString})${resultTpe.toDescriptor}"
           val classType = JvmOps.getFunctionDefinitionClassType(sym)
           mv.visitMethodInsn(INVOKESTATIC, classType.name.toInternalName, JvmName.DirectApply, desc, false)
           BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)(new BytecodeInstructions.F(mv))
