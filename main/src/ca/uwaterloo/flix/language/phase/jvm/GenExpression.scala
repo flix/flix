@@ -1499,13 +1499,12 @@ object GenExpression {
   }
 
   private def printPc(mv: MethodVisitor, pcPoint: Int): Unit = if (!GenFunAndClosureClasses.onCallDebugging) () else {
-    val printStream = JvmName(List("java", "io"), "PrintStream")
-    mv.visitFieldInsn(GETSTATIC, JvmName(List("java", "lang"), "System").toInternalName, "out", printStream.toDescriptor)
+    mv.visitFieldInsn(GETSTATIC, JvmName.System.toInternalName, "out", JvmName.PrintStream.toDescriptor)
     mv.visitLdcInsn("pc = ")
     compileInt(pcPoint)(mv)
     BytecodeInstructions.xToString(BackendType.Int32)(new BytecodeInstructions.F(mv))
     mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, "concat", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.String.toTpe).toDescriptor, false)
-    mv.visitMethodInsn(INVOKEVIRTUAL, printStream.toInternalName, "println", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void).toDescriptor, false)
+    mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.PrintStream.toInternalName, "println", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void).toDescriptor, false)
   }
 
   /**
