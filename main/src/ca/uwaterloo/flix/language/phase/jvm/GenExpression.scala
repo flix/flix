@@ -570,7 +570,7 @@ object GenExpression {
 
         compileUntag(exp, idx, termTypes) ~
           castIfNotPrim(BackendType.toBackendType(tpe))
-      })
+      })(new BytecodeInstructions.F(mv))
 
       case AtomicOp.Index(idx) =>
         val List(exp) = exps
