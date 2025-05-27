@@ -185,10 +185,10 @@ object JvmOps {
     * print         =>  Def$print
     * List.length   =>  List.Def$length
     */
-  def getFunctionDefinitionClassType(sym: Symbol.DefnSym): JvmType.Reference = {
+  def getFunctionDefinitionClassName(sym: Symbol.DefnSym): JvmName = {
     val pkg = sym.namespace
     val name = JvmName.mkClassName("Def", sym.name)
-    JvmType.Reference(JvmName(pkg, name))
+    JvmName(pkg, name)
   }
 
   /**

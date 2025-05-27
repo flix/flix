@@ -1294,7 +1294,7 @@ object BackendObjType {
     }
 
     def MainMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, NotFinal, "main", mkDescriptor(BackendType.Array(String.toTpe))(VoidableType.Void), Some(_ => {
-      val defName = JvmOps.getFunctionDefinitionClassType(sym).name
+      val defName = JvmOps.getFunctionDefinitionClassName(sym)
       withName(0, BackendType.Array(String.toTpe))(args =>
         args.load() ~ INVOKESTATIC(Global.SetArgsMethod) ~
         NEW(defName) ~ DUP() ~ INVOKESPECIAL(defName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid) ~

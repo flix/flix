@@ -47,10 +47,9 @@ object GenFunAndClosureClasses {
 
       case (macc, defn) if isFunction(defn) =>
         flix.subtask(defn.sym.toString, sample = true)
-        val functionType = JvmOps.getFunctionDefinitionClassType(defn.sym)
-        val functionname = functionType.name
-        val code = genCode(functionname, Function, defn)
-        macc + (functionname -> JvmClass(functionname, code))
+        val functionName = JvmOps.getFunctionDefinitionClassName(defn.sym)
+        val code = genCode(functionName, Function, defn)
+        macc + (functionName -> JvmClass(functionName, code))
 
       case (macc, _) =>
         macc
