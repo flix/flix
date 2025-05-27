@@ -1199,42 +1199,57 @@ object GenExpression {
         mv.visitInsn(ARETURN)
 
       case ExpPosition.NonTail =>
-        // JvmType of Def
-        val defJvmType = JvmOps.getFunctionDefinitionClassType(sym)
-
-        // Put the def on the stack
-        AsmOps.compileDefSymbol(sym, mv)
-
-        // Putting args on the Fn class
-        for ((arg, i) <- exps.zipWithIndex) {
-          // Duplicate the FunctionInterface
-          mv.visitInsn(DUP)
-          // Evaluating the expression
-          compileExpr(arg)
-          mv.visitFieldInsn(PUTFIELD, defJvmType.name.toInternalName,
-            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
-        }
-
-        // Calling unwind and unboxing
-        if (Purity.isControlPure(purity)) {
+        val defn = root.defs(sym)
+        val targetIsFunction = defn.cparams.isEmpty
+        val canCallStaticMethod = Purity.isControlPure(purity) && targetIsFunction
+        if (canCallStaticMethod) {
+          // Call the static method, casting to exact types
+          for ((arg, tpe) <- exps.zip(defn.fparams.map(_.tpe))) {
+            val jvmTpe = JvmOps.getJvmType(tpe)
+            compileExpr(arg)
+            AsmOps.castIfNotPrim(mv, jvmTpe)
+          }
+          val paramsTpes = defn.fparams.map(fp => JvmOps.getJvmType(fp.tpe))
+          val resultTpe = BackendObjType.Result.toTpe
+          val desc = s"(${paramsTpes.map(_.toDescriptor)})${resultTpe.toDescriptor}"
+          val classType = JvmOps.getFunctionDefinitionClassType(sym)
+          mv.visitMethodInsn(INVOKESTATIC, classType.name.toInternalName, JvmName.DirectApply, desc, false)
           BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)(new BytecodeInstructions.F(mv))
-        }
-        else {
+        } else {
           ctx match {
             case EffectContext(_, _, _, newFrame, setPc, _, pcLabels, pcCounter) =>
-              val pcPoint = pcCounter(0) + 1
-              val pcPointLabel = pcLabels(pcPoint)
-              val afterUnboxing = new Label()
-              pcCounter(0) += 1
-              BackendObjType.Result.unwindThunkToValue(pcPoint, newFrame, setPc)(new BytecodeInstructions.F(mv))
-              mv.visitJumpInsn(GOTO, afterUnboxing)
+              // JvmType of Def
+              val defJvmType = JvmOps.getFunctionDefinitionClassType(sym)
 
-              mv.visitLabel(pcPointLabel)
-              printPc(mv, pcPoint)
-              mv.visitVarInsn(ALOAD, 1)
+              // Put the def on the stack
+              AsmOps.compileDefSymbol(sym, mv)
 
-              mv.visitLabel(afterUnboxing)
+              // Putting args on the Fn class
+              for ((arg, i) <- exps.zipWithIndex) {
+                // Duplicate the FunctionInterface
+                mv.visitInsn(DUP)
+                // Evaluating the expression
+                compileExpr(arg)
+                mv.visitFieldInsn(PUTFIELD, defJvmType.name.toInternalName,
+                  s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+              }
+              if (Purity.isControlPure(purity)) {
+                BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)(new BytecodeInstructions.F(mv))
+              }
+              else {
+                val pcPoint = pcCounter(0) + 1
+                val pcPointLabel = pcLabels(pcPoint)
+                val afterUnboxing = new Label()
+                pcCounter(0) += 1
+                BackendObjType.Result.unwindThunkToValue(pcPoint, newFrame, setPc)(new BytecodeInstructions.F(mv))
+                mv.visitJumpInsn(GOTO, afterUnboxing)
 
+                mv.visitLabel(pcPointLabel)
+                printPc(mv, pcPoint)
+                mv.visitVarInsn(ALOAD, 1)
+
+                mv.visitLabel(afterUnboxing)
+              }
             case DirectInstanceContext(_, _, _, _) | DirectStaticContext(_, _, _, _) =>
               throw InternalCompilerException("Unexpected direct method context in control impure function", loc)
           }
