@@ -62,11 +62,9 @@ object GenExpression {
           castIfNotPrim(BackendType.toBackendType(tpe))
       })(new BytecodeInstructions.F(mv))
 
-      case Constant.Bool(true) =>
-        mv.visitInsn(ICONST_1)
-
-      case Constant.Bool(false) =>
-        mv.visitInsn(ICONST_0)
+      case Constant.Bool(b) => ({
+        BytecodeInstructions.pushBool(b)
+      })(new BytecodeInstructions.F(mv))
 
       case Constant.Char(c) =>
         compileInt(c)
