@@ -1277,8 +1277,10 @@ object GenExpression {
         for ((arg, i) <- exps.zipWithIndex) {
           // Evaluate the argument and push the result on the stack.
           compileExpr(arg)
-          // Store it in the ith parameter
-          BytecodeInstructions.xStore(BackendType.toErasedBackendType(arg.tpe), localOffset + i)(new BytecodeInstructions.F(mv))
+          // Store it in the ith parameter.
+          // We use the erased type since we only care about generating the correct store instruction.
+          val tpe = BackendType.toErasedBackendType(arg.tpe)
+          BytecodeInstructions.xStore(tpe, localOffset + i)(new BytecodeInstructions.F(mv))
         }
         // Jump to the entry point of the method.
         mv.visitJumpInsn(GOTO, entryPoint)
