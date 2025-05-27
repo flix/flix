@@ -123,7 +123,7 @@ object GenAnonymousClasses {
       val boxedResult = MonoType.Object
       val arrowType = MonoType.Arrow(args, boxedResult)
       val closureAbstractClass = BackendObjType.AbstractArrow(args.map(BackendType.toErasedBackendType), BackendObjType.JavaObject.toTpe)
-      val functionInterface = JvmOps.getFunctionInterfaceType(arrowType)
+      val functionInterface = JvmOps.getFunctionInterfaceName(arrowType)
 
       // Create the field that will store the closure implementing the body of the method
       classVisitor.visitField(ACC_PUBLIC, cloName, closureAbstractClass.toDescriptor, null, null)
@@ -146,7 +146,7 @@ object GenAnonymousClasses {
         val argType = JvmOps.getJvmType(arg.tpe)
         methodVisitor.visitVarInsn(AsmOps.getLoadInstruction(argType), offset)
         offset += AsmOps.getStackSize(argType)
-        methodVisitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
+        methodVisitor.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
           s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
 

@@ -38,7 +38,6 @@ object VarOffsets {
   /** Assigns a stack offset to each variable binder in the program. */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("VarOffsets") {
     ParOps.parMapValues(root.defs)(visitDef)
-
     root
   }
 
@@ -46,9 +45,8 @@ object VarOffsets {
   private def visitDef(defn: Def): Unit = {
     var offset = 0
     for (FormalParam(sym, _, tpe, _) <- defn.cparams ++ defn.fparams) {
-      offset += setStackOffset(sym, tpe, offset)
+      offset = setStackOffset(sym, tpe, offset)
     }
-
     visitExp(defn.expr, offset)
   }
 

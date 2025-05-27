@@ -86,7 +86,6 @@ object JvmName {
     * result in the string `"Tuple2$Obj$Int32$Obj"`.
     */
   def mkClassName(prefix: String, args: List[String]): String = {
-    // TODO: Should delimiter always be included?
     val cPrefix = mangle(prefix)
     if (args.isEmpty) s"$cPrefix${Flix.Delimiter}"
     else s"$cPrefix${Flix.Delimiter}${args.map(mangle).mkString(Flix.Delimiter)}"
@@ -101,7 +100,6 @@ object JvmName {
   /**
     * Performs name mangling on the given string `s` to avoid issues with special characters.
     */
-  // TODO: Magnus: Use this in appropriate places.
   def mangle(s: String): String = s.
     replace("+", Flix.Delimiter + "plus").
     replace("-", Flix.Delimiter + "minus").
@@ -216,12 +214,7 @@ case class JvmName(pkg: List[String], name: String) {
   lazy val toPath: Path = Paths.get(pkg.mkString("/"), name + ".class")
 
   /**
-    * Wraps this name in `backendObjType.Native`.
-    */
-  def toObjTpe: BackendObjType.Native = BackendObjType.Native(this)
-
-  /**
     * Wraps this name in `BackendType.Reference(BackendObjType.Native(...))`.
     */
-  def toTpe: BackendType.Reference = this.toObjTpe.toTpe
+  def toTpe: BackendType.Reference = BackendObjType.Native(this).toTpe
 }

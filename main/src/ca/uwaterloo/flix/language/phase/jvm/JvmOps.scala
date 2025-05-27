@@ -29,11 +29,6 @@ import java.nio.file.{Files, LinkOption, Path}
 object JvmOps {
 
   /**
-    * The root package name.
-    */
-  val RootPackage: List[String] = Nil
-
-  /**
     * Returns the given Flix type `tpe` as JVM type.
     *
     * For example, if the type is:
@@ -76,7 +71,7 @@ object JvmOps {
     case MonoType.Struct(sym, targs) =>
       val elms = instantiateStruct(sym, targs.map(MonoType.erase))
       JvmType.Reference(BackendObjType.Struct(elms).jvmName)
-    case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
+    case MonoType.Arrow(_, _) => JvmType.Reference(getFunctionInterfaceName(tpe))
     case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
   }
 
@@ -131,7 +126,7 @@ object JvmOps {
   }
 
   /**
-    * Returns the function abstract class type `FnX$Y$Z` for the given type `tpe`.
+    * Returns the function abstract class name `FnX$Y$Z` for the given type `tpe`.
     *
     * For example:
     *
@@ -140,10 +135,10 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getFunctionInterfaceType(tpe: MonoType): JvmType.Reference = tpe match {
+  def getFunctionInterfaceName(tpe: MonoType): JvmName = tpe match {
     case MonoType.Arrow(targs, tresult) =>
       val arrowType = BackendObjType.Arrow(targs.map(BackendType.toErasedBackendType), BackendType.asErasedBackendType(tresult))
-      JvmType.Reference(arrowType.jvmName)
+      arrowType.jvmName
     case _ =>
       throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
@@ -204,10 +199,10 @@ object JvmOps {
     * Print       =>  Eff$Print
     * List.Crash  =>  List.Eff$Crash
     */
-  def getEffectDefinitionClassType(sym: Symbol.EffectSym): JvmType.Reference = {
+  def getEffectDefinitionClassName(sym: Symbol.EffectSym): JvmName = {
     val pkg = sym.namespace
     val name = JvmName.mkClassName("Eff", sym.name)
-    JvmType.Reference(JvmName(pkg, name))
+    JvmName(pkg, name)
   }
 
   /**
@@ -262,24 +257,6 @@ object JvmOps {
   }
 
   def getTagName(name: String): String = mangle(name)
-
-  /**
-    * Returns stringified name of the given JvmType `tpe`.
-    *
-    * The stringified name is short hand used for generation of interface and class names.
-    */
-  def stringify(tpe: JvmType): String = tpe match {
-    case JvmType.Void => "Void"
-    case JvmType.PrimBool => "Bool"
-    case JvmType.PrimChar => "Char"
-    case JvmType.PrimFloat => "Float32"
-    case JvmType.PrimDouble => "Float64"
-    case JvmType.PrimByte => "Int8"
-    case JvmType.PrimShort => "Int16"
-    case JvmType.PrimInt => "Int32"
-    case JvmType.PrimLong => "Int64"
-    case JvmType.Reference(_) => "Obj"
-  }
 
   /**
     * Returns the set of namespaces in the given AST `root`.
@@ -361,10 +338,10 @@ object JvmOps {
     */
   def getErasedTagTypesOf(root: Root, types: Iterable[MonoType]): Set[BackendObjType.TagType] =
     types.foldLeft(Set.empty[BackendObjType.TagType]) {
-      case (acc, MonoType.Enum(sym, targs)) =>
+      case (acc0, MonoType.Enum(sym, targs)) =>
         val tags = instantiateEnum(root.enums(sym), targs)
-        tags.foldLeft(acc) {
-          case (acc, (sym, Nil)) => acc + BackendObjType.NullaryTag(sym.name)
+        tags.foldLeft(acc0) {
+          case (acc, (tagSym, Nil)) => acc + BackendObjType.NullaryTag(tagSym.name)
           case (acc, (_, tagElms)) => acc + BackendObjType.Tag(tagElms)
         }
       case (acc, _) => acc

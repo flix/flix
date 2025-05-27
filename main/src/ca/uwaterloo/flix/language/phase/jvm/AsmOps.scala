@@ -176,65 +176,20 @@ object AsmOps {
   }
 
   /**
-    * Generates a field for the class with with name `fieldName`, with descriptor `descriptor` using `visitor`.
-    *
-    * If `isStatic = true` then the field is static, otherwise the field will be non-static.
-    *
-    * For example calling this method with name = `field01`, descriptor = `I`, isStatic = `false` and isPrivate = `true`
-    * creates the following field:
-    *
-    * private int field01;
-    *
-    * calling this method with name = `value`, descriptor = `java/lang/Object`, isStatic = `false` and isPrivate = `true`
-    * creates the following:
-    *
-    * private Object value;
-    *
-    * calling this method with name = `unitInstance`, descriptor = `ca/waterloo/flix/enums/List/object/Nil`, `isStatic = true`
-    * and isPrivate = `false` generates the following:
-    *
-    * public static Nil unitInstance;
-    */
-  def compileField(visitor: ClassWriter, fieldName: String, fieldType: JvmType, isStatic: Boolean, isPrivate: Boolean, isVolatile: Boolean): Unit = {
-    val visibility =
-      if (isPrivate) {
-        ACC_PRIVATE
-      } else {
-        ACC_PUBLIC
-      }
-
-    val access =
-      if (isStatic) {
-        ACC_STATIC
-      } else {
-        0
-      }
-
-    val volatility =
-      if (isVolatile) {
-        ACC_VOLATILE
-      } else {
-        0
-      }
-
-    val field = visitor.visitField(visibility + access + volatility, fieldName, fieldType.toDescriptor, null, null)
-    field.visitEnd()
-  }
-
-  /**
     * Generates code which instantiate a reified source location.
     */
-  def compileReifiedSourceLocation(mv: MethodVisitor, loc: SourceLocation): Unit = {
+  def compileReifiedSourceLocation(mv: MethodVisitor, loc: SourceLocation): Unit = ({
+    import BytecodeInstructions.*
     val RslType = BackendObjType.ReifiedSourceLocation
-    mv.visitTypeInsn(NEW, RslType.jvmName.toInternalName)
-    mv.visitInsn(DUP)
-    mv.visitLdcInsn(loc.source.name)
-    mv.visitLdcInsn(loc.beginLine)
-    mv.visitLdcInsn(loc.beginCol)
-    mv.visitLdcInsn(loc.endLine)
-    mv.visitLdcInsn(loc.endCol)
-    mv.visitMethodInsn(INVOKESPECIAL, RslType.jvmName.toInternalName, JvmName.ConstructorMethod, RslType.Constructor.d.toDescriptor, false)
-  }
+    NEW(RslType.jvmName) ~
+      DUP() ~
+      pushString(loc.source.name) ~
+      pushInt(loc.beginLine) ~
+      pushInt(loc.beginCol) ~
+      pushInt(loc.endLine) ~
+      pushInt(loc.endCol) ~
+      INVOKESPECIAL(RslType.Constructor)
+  })(new BytecodeInstructions.F(mv))
 
   /**
     * Emits code that puts the function object of the def symbol `def` on top of the stack.

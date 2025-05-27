@@ -159,9 +159,13 @@ object BackendObjType {
     ))
   }
 
-  case object BigDecimal extends BackendObjType
+  case object BigDecimal extends BackendObjType {
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(String.toTpe), None)
+  }
 
-  case object BigInt extends BackendObjType
+  case object BigInt extends BackendObjType {
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(String.toTpe), None)
+  }
 
   case class Lazy(tpe: BackendType) extends BackendObjType with Generatable {
 
@@ -947,7 +951,9 @@ object BackendObjType {
     }
   }
 
-  case object Regex extends BackendObjType
+  case object Regex extends BackendObjType {
+    def CompileMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, NotFinal, "compile", mkDescriptor(String.toTpe)(Regex.toTpe), None)
+  }
 
   case object FlixError extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
