@@ -87,6 +87,12 @@ object BytecodeInstructions {
       compose(i1, i2)
   }
 
+  implicit class MethodEnricher(mv: MethodVisitor) {
+    def visitByteIns(ins: InstructionSet): Unit = {
+      ins(new F(mv))
+    }
+  }
+
   sealed case class Handle(handle: asm.Handle)
 
   def mkStaticHandle(m: StaticMethod): Handle = {
