@@ -231,8 +231,7 @@ object GenFunAndClosureClasses {
     }
 
     // Generating the expression
-    val d = MethodDescriptor.mkDescriptor(BackendObjType.Native(className).toTpe)(VoidableType.Void)
-    val newFrame = BytecodeInstructions.thisLoad() ~ BytecodeInstructions.cheat(_.visitMethodInsn(INVOKEVIRTUAL, className.toInternalName, copyName, d.toDescriptor, false))
+    val newFrame = BytecodeInstructions.thisLoad() ~ BytecodeInstructions.cheat(_.visitMethodInsn(INVOKEVIRTUAL, className.toInternalName, copyName, nothingToTDescriptor(className).toDescriptor, false))
     val setPc = {
       import BytecodeInstructions.*
       SWAP() ~ DUP_X1() ~ SWAP() ~ // clo, pc ---> clo, clo, pc
@@ -292,13 +291,12 @@ object GenFunAndClosureClasses {
 
   private val copyName: String = "copy"
 
-  private def nothingToTDescriptor(t: JvmType.Reference): MethodDescriptor = {
-    MethodDescriptor.mkDescriptor()(t.name.toTpe)
+  private def nothingToTDescriptor(t: JvmName): MethodDescriptor = {
+    MethodDescriptor.mkDescriptor()(t.toTpe)
   }
 
   private def compileCopyMethod(visitor: ClassWriter, className: JvmName, defn: Def): Unit = {
-    val d = MethodDescriptor.mkDescriptor(BackendObjType.Native(className).toTpe)(VoidableType.Void)
-    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, copyName, d.toDescriptor, null, null)
+    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, copyName, nothingToTDescriptor(className).toDescriptor, null, null)
     m.visitCode()
 
     mkCopy(className, defn)(new BytecodeInstructions.F(m))
