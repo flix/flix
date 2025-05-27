@@ -343,7 +343,7 @@ object GenFunAndClosureClasses {
     compileInt(1)(m)
     m.visitVarInsn(ALOAD, 0)
     m.visitFieldInsn(GETFIELD, className.toInternalName, "pc", BackendType.Int32.toDescriptor)
-    BytecodeInstructions.xToString(BackendType.Int32)(mf)
+    m.visitByteIns(BytecodeInstructions.xToString(BackendType.Int32))
     m.visitInsn(AASTORE)
 
     params.zipWithIndex.foreach {
@@ -356,7 +356,7 @@ object GenFunAndClosureClasses {
         m.visitVarInsn(ALOAD, 0)
         val bt = BackendType.toErasedBackendType(fieldType)
         m.visitFieldInsn(GETFIELD, className.toInternalName, fieldName, bt.toDescriptor)
-        BytecodeInstructions.xToString(bt)(mf)
+        m.visitByteIns(BytecodeInstructions.xToString(bt))
         m.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, "concat", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.String.toTpe).toDescriptor, false)
         m.visitInsn(AASTORE)
     }
