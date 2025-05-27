@@ -298,7 +298,7 @@ object GenFunAndClosureClasses {
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, copyName, nothingToTDescriptor(className).toDescriptor, null, null)
     m.visitCode()
 
-    mkCopy(className, defn)(new BytecodeInstructions.F(m))
+    m.visitByteIns(mkCopy(className, defn))
     m.visitInsn(Opcodes.ARETURN)
 
     m.visitMaxs(999, 999)
@@ -310,7 +310,7 @@ object GenFunAndClosureClasses {
     val m = visitor.visitMethod(ACC_PUBLIC, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, null, null)
     m.visitCode()
 
-    mkCopy(className, defn)(new BytecodeInstructions.F(m))
+    m.visitByteIns(mkCopy(className, defn))
     m.visitInsn(Opcodes.ARETURN)
 
     m.visitMaxs(999, 999)
