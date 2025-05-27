@@ -116,8 +116,9 @@ object GenExpression {
           INVOKESPECIAL(BackendObjType.BigInt.Constructor)
       })(new BytecodeInstructions.F(mv))
 
-      case Constant.Str(s) =>
-        mv.visitLdcInsn(s)
+      case Constant.Str(s) => ({
+        BytecodeInstructions.pushString(s)
+      })(new BytecodeInstructions.F(mv))
 
       case Constant.Regex(patt) => ({
         import BytecodeInstructions.*
