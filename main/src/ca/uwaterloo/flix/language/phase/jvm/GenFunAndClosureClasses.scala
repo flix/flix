@@ -154,11 +154,9 @@ object GenFunAndClosureClasses {
     // Methods
     if (Purity.isControlPure(defn.expr.purity) && kind == Function) {
       compileStaticApplyMethod(visitor, classType, defn)
-      compileStaticInvokeMethod(visitor, classType, defn)
-    } else {
-      compileInvokeMethod(visitor, classType)
-      compileFrameMethod(visitor, classType, defn)
     }
+    compileInvokeMethod(visitor, classType)
+    compileFrameMethod(visitor, classType, defn)
     compileCopyMethod(visitor, classType, defn)
 
     if (onCallDebugging) compileOnCall(visitor, classType, defn)
@@ -448,10 +446,11 @@ object GenFunAndClosureClasses {
                                        classType: JvmType.Reference,
                                        defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
-    val params = defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe))
-    val desc = MethodDescriptor(params, BackendObjType.Result.toTpe)
+    val paramsTpes = defn.fparams.map(fp => JvmOps.getJvmType(fp.tpe))
+    val resultTpe = BackendObjType.Result.toTpe
+    val desc = s"(${paramsTpes.map(_.toDescriptor)})${resultTpe.toDescriptor}"
     val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
-    val m = visitor.visitMethod(modifiers, JvmName.DirectApply, desc.toDescriptor, null, null)
+    val m = visitor.visitMethod(modifiers, JvmName.DirectApply, desc, null, null)
     // val m = new Debug(m0)
 
     m.visitCode()
@@ -469,30 +468,6 @@ object GenFunAndClosureClasses {
     BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)(new BytecodeInstructions.F(m))
 
     // println(s"\n\n${classType.name.toBinaryName}\n$m")
-
-    m.visitMaxs(999, 999)
-    m.visitEnd()
-  }
-
-  private def compileStaticInvokeMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def): Unit = {
-    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
-      AsmOps.getMethodDescriptor(Nil, JvmType.Reference(BackendObjType.Result.jvmName)), null, null)
-    m.visitCode()
-
-    val applyMethodName = JvmName.DirectApply
-    val params = defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe))
-    val desc = MethodDescriptor(params, BackendObjType.Result.toTpe)
-
-    // Put fields on stack as args to static method
-    for ((fp, i) <- defn.fparams.zipWithIndex) {
-      m.visitVarInsn(ALOAD, 0)
-      m.visitFieldInsn(GETFIELD, classType.name.toInternalName,
-        s"arg$i", JvmOps.getErasedJvmType(fp.tpe).toDescriptor)
-    }
-
-    m.visitMethodInsn(INVOKESTATIC, classType.name.toInternalName, applyMethodName, desc.toDescriptor, false)
-
-    BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)(new BytecodeInstructions.F(m))
 
     m.visitMaxs(999, 999)
     m.visitEnd()
