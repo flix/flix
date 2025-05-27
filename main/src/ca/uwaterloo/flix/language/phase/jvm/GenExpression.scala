@@ -1498,8 +1498,8 @@ object GenExpression {
     if (tpes.isEmpty) throw InternalCompilerException(s"Unexpected empty tag types", exp.loc)
     val tagType = BackendObjType.Tag(tpes)
 
-    cheat(mv => compileExpr(exp)(mv, ctx, root, flix))
-    CHECKCAST(tagType.jvmName) ~
+    cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~
+      CHECKCAST(tagType.jvmName) ~
       GETFIELD(tagType.IndexField(idx))
   }
 
