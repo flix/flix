@@ -143,18 +143,18 @@ object GenExpression {
 
       case AtomicOp.Closure(sym) =>
         // JvmType of the closure
-        val jvmType = JvmOps.getClosureClassName(sym)
+        val jvmName = JvmOps.getClosureClassName(sym)
         // new closure instance
-        mv.visitTypeInsn(NEW, jvmType.toInternalName)
+        mv.visitTypeInsn(NEW, jvmName.toInternalName)
         // Duplicate
         mv.visitInsn(DUP)
-        mv.visitMethodInsn(INVOKESPECIAL, jvmType.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+        mv.visitMethodInsn(INVOKESPECIAL, jvmName.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
         // Capturing free args
         for ((arg, i) <- exps.zipWithIndex) {
           val erasedArgType = JvmOps.getErasedJvmType(arg.tpe)
           mv.visitInsn(DUP)
           compileExpr(arg)
-          mv.visitFieldInsn(PUTFIELD, jvmType.toInternalName, s"clo$i", erasedArgType.toDescriptor)
+          mv.visitFieldInsn(PUTFIELD, jvmName.toInternalName, s"clo$i", erasedArgType.toDescriptor)
         }
 
       case AtomicOp.Unary(sop) =>
