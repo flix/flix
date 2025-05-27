@@ -636,6 +636,17 @@ object BytecodeInstructions {
     }
   }
 
+  def pushLoc(loc: SourceLocation): InstructionSet = {
+    NEW(BackendObjType.ReifiedSourceLocation.jvmName) ~
+      DUP() ~
+      pushString(loc.source.name) ~
+      pushInt(loc.beginLine) ~
+      pushInt(loc.beginCol) ~
+      pushInt(loc.endLine) ~
+      pushInt(loc.endCol) ~
+      INVOKESPECIAL(BackendObjType.ReifiedSourceLocation.Constructor)
+  }
+
   def storeWithName(index: Int, tpe: BackendType)(body: Variable => InstructionSet): InstructionSet =
     xStore(tpe, index) ~ body(new Variable(tpe, index))
 

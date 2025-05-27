@@ -166,7 +166,7 @@ object JvmOps {
     * List.length       =>    List/Clo$length
     * List.map          =>    List/Clo$map
     */
-  def getClosureClassType(sym: Symbol.DefnSym): JvmType.Reference = {
+  def getClosureClassName(sym: Symbol.DefnSym): JvmName = {
     // The JVM name is of the form Clo$sym.name
     val name = JvmName.mkClassName(s"Clo", sym.name)
 
@@ -174,7 +174,7 @@ object JvmOps {
     val pkg = sym.namespace
 
     // The result type.
-    JvmType.Reference(JvmName(pkg, name))
+    JvmName(pkg, name)
   }
 
   /**
@@ -185,10 +185,10 @@ object JvmOps {
     * print         =>  Def$print
     * List.length   =>  List.Def$length
     */
-  def getFunctionDefinitionClassType(sym: Symbol.DefnSym): JvmType.Reference = {
+  def getFunctionDefinitionClassName(sym: Symbol.DefnSym): JvmName = {
     val pkg = sym.namespace
     val name = JvmName.mkClassName("Def", sym.name)
-    JvmType.Reference(JvmName(pkg, name))
+    JvmName(pkg, name)
   }
 
   /**
