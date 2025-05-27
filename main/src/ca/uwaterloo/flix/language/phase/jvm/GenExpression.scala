@@ -1028,13 +1028,13 @@ object GenExpression {
         import BytecodeInstructions.*
         // Add source line number for debugging (failable by design).
         addLoc(loc) ~
-          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~ // Loc
-          NEW(BackendObjType.HoleError.jvmName) ~                     // Loc, HoleError
-          DUP2() ~                                                    // Loc, HoleError, Loc, HoleError
-          SWAP() ~                                                    // Loc, HoleError, HoleError, Loc
-          pushString(sym.toString) ~                                  // Loc, HoleError, HoleError, Loc, Sym
-          SWAP() ~                                                    // Loc, HoleError, HoleError, Sym, Loc
-          INVOKESPECIAL(BackendObjType.HoleError.Constructor) ~       // Loc, HoleError
+          pushLoc(loc) ~                                        // Loc
+          NEW(BackendObjType.HoleError.jvmName) ~               // Loc, HoleError
+          DUP2() ~                                              // Loc, HoleError, Loc, HoleError
+          SWAP() ~                                              // Loc, HoleError, HoleError, Loc
+          pushString(sym.toString) ~                            // Loc, HoleError, HoleError, Loc, Sym
+          SWAP() ~                                              // Loc, HoleError, HoleError, Sym, Loc
+          INVOKESPECIAL(BackendObjType.HoleError.Constructor) ~ // Loc, HoleError
           ATHROW()
       })(new BytecodeInstructions.F(mv))
 
@@ -1042,11 +1042,11 @@ object GenExpression {
         import BytecodeInstructions.*
         // Add source line number for debugging (failable by design)
         addLoc(loc) ~
-          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~ // Loc
-          NEW(BackendObjType.MatchError.jvmName) ~                    // Loc, MatchError
-          DUP2() ~                                                    // Loc, MatchError, Loc, MatchError
-          SWAP() ~                                                    // Loc, MatchError, MatchError, Loc
-          INVOKESPECIAL(BackendObjType.MatchError.Constructor) ~      // Loc, MatchError
+          pushLoc(loc) ~                                         // Loc
+          NEW(BackendObjType.MatchError.jvmName) ~               // Loc, MatchError
+          DUP2() ~                                               // Loc, MatchError, Loc, MatchError
+          SWAP() ~                                               // Loc, MatchError, MatchError, Loc
+          INVOKESPECIAL(BackendObjType.MatchError.Constructor) ~ // Loc, MatchError
           ATHROW()
       })(new BytecodeInstructions.F(mv))
 
@@ -1056,7 +1056,7 @@ object GenExpression {
         addLoc(loc) ~
           NEW(BackendObjType.CastError.jvmName) ~
           DUP() ~
-          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~
+          pushLoc(loc) ~
           pushString(s"Cannot cast from type '$from' to '$to'") ~
           INVOKESPECIAL(BackendObjType.CastError.Constructor) ~
           ATHROW()
