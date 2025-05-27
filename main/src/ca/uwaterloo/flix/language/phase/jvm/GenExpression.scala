@@ -133,10 +133,9 @@ object GenExpression {
 
     }
 
-    case Expr.Var(sym, tpe, _) =>
-      val varType = JvmOps.getJvmType(tpe)
-      val xLoad = AsmOps.getLoadInstruction(varType)
-      mv.visitVarInsn(xLoad, sym.getStackOffset(ctx.localOffset))
+    case Expr.Var(sym, tpe, _) => ({
+      BytecodeInstructions.xLoad(BackendType.toBackendType(tpe), sym.getStackOffset(ctx.localOffset))
+    })(new BytecodeInstructions.F(mv))
 
     case Expr.ApplyAtomic(op, exps, tpe, _, loc) => op match {
 
