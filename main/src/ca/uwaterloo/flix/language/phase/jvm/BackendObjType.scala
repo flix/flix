@@ -1608,7 +1608,7 @@ object BackendObjType {
           // [.., suspension, UEE] -> [.., suspension, UEE, UEE, suspension]
           DUP2() ~ SWAP() ~
           pushString(errorHint) ~
-          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~
+          pushLoc(loc) ~
           // [.., suspension, UEE, UEE, suspension, info, rsl] -> [.., suspension, UEE]
           INVOKESPECIAL(UnhandledEffectError.Constructor) ~
           ATHROW()
