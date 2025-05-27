@@ -543,10 +543,12 @@ object GenExpression {
             throw InternalCompilerException(s"Unexpected BinaryOperator StringOp.Concat. It should have been eliminated by Simplifier", loc)
         }
 
-      case AtomicOp.Region =>
+      case AtomicOp.Region => ({
+        import BytecodeInstructions.*
         //!TODO: For now, just emit null
-        mv.visitInsn(ACONST_NULL)
-        mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
+        ACONST_NULL() ~
+          CHECKCAST(BackendObjType.Region.jvmName)
+      })(new BytecodeInstructions.F(mv))
 
       case AtomicOp.Is(sym) =>
         val List(exp) = exps
