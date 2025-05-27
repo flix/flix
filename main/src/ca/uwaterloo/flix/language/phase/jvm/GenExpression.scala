@@ -55,9 +55,11 @@ object GenExpression {
         BytecodeInstructions.GETSTATIC(BackendObjType.Unit.SingletonField)
       })(new BytecodeInstructions.F(mv))
 
-      case Constant.Null =>
-        mv.visitInsn(ACONST_NULL)
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+      case Constant.Null => ({
+        import BytecodeInstructions.*
+        ACONST_NULL() ~
+          castIfNotPrim(BackendType.toBackendType(tpe))
+      })(new BytecodeInstructions.F(mv))
 
       case Constant.Bool(true) =>
         mv.visitInsn(ICONST_1)
@@ -1062,7 +1064,7 @@ object GenExpression {
 
     case Expr.ApplyClo(exp1, exp2, ct, _, purity, loc) =>
       // Type of the function abstract class
-      val functionInterface = JvmOps.getFunctionInterfaceType(exp1.tpe)
+      val functionInterface = JvmOps.getFunctionInterfaceName(exp1.tpe)
       val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp1.tpe)
       ct match {
         case ExpPosition.Tail =>
@@ -1077,7 +1079,7 @@ object GenExpression {
           mv.visitInsn(DUP)
           // Evaluating the expression
           compileExpr(exp2)
-          mv.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
+          mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
             "arg0", JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
           // Return the closure
           mv.visitInsn(ARETURN)
@@ -1093,7 +1095,7 @@ object GenExpression {
           mv.visitInsn(DUP)
           // Evaluating the expression
           compileExpr(exp2)
-          mv.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
+          mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
             "arg0", JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
           // Calling unwind and unboxing
 
@@ -1118,7 +1120,7 @@ object GenExpression {
     case Expr.ApplyDef(sym, exps, ct, _, purity, loc) => ct match {
       case ExpPosition.Tail =>
         // Type of the function abstract class
-        val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
+        val functionInterface = JvmOps.getFunctionInterfaceName(root.defs(sym).arrowType)
 
         // Put the def on the stack
         AsmOps.compileDefSymbol(sym, mv)
@@ -1128,7 +1130,7 @@ object GenExpression {
           mv.visitInsn(DUP)
           // Evaluating the expression
           compileExpr(arg)
-          mv.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
+          mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
             s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
         }
         // Return the def
@@ -1171,13 +1173,13 @@ object GenExpression {
 
     case Expr.ApplySelfTail(sym, exps, _, _, _) =>
       // The function abstract class name
-      val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
+      val functionInterface = JvmOps.getFunctionInterfaceName(root.defs(sym).arrowType)
       // Evaluate each argument and put the result on the Fn class.
       for ((arg, i) <- exps.zipWithIndex) {
         mv.visitVarInsn(ALOAD, 0)
         // Evaluate the argument and push the result on the stack.
         compileExpr(arg)
-        mv.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
+        mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
           s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
       mv.visitVarInsn(ALOAD, 0)
@@ -1344,7 +1346,7 @@ object GenExpression {
 
     case Expr.RunWith(exp, effUse, rules, ct, _, _, _) =>
       // exp is a Unit -> exp.tpe closure
-      val effectJvmName = JvmOps.getEffectDefinitionClassType(effUse.sym).name
+      val effectJvmName = JvmOps.getEffectDefinitionClassName(effUse.sym)
       val ins = {
         import BytecodeInstructions.*
         // eff name
@@ -1395,9 +1397,9 @@ object GenExpression {
       val ins: InstructionSet = {
         import BackendObjType.Suspension
         import BytecodeInstructions.*
-        val effectClass = JvmOps.getEffectDefinitionClassType(op.sym.eff)
+        val effectName = JvmOps.getEffectDefinitionClassName(op.sym.eff)
         val effectStaticMethod = ClassMaker.StaticMethod(
-          effectClass.name,
+          effectName,
           ClassMaker.Visibility.IsPublic,
           ClassMaker.Final.NotFinal,
           JvmOps.getEffectOpName(op.sym),
