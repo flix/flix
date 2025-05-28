@@ -185,8 +185,8 @@ object BackendType {
       case MonoType.Enum(_, _) => BackendObjType.Tagged.toTpe
       case MonoType.Struct(sym, targs) => BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs)).toTpe
       case MonoType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
-      case MonoType.RecordEmpty => BackendObjType.RecordEmpty.toTpe
-      case MonoType.RecordExtend(_, value, _) => BackendObjType.RecordExtend(toBackendType(value)).toTpe
+      case MonoType.RecordEmpty => BackendObjType.Record.toTpe
+      case MonoType.RecordExtend(_, value, _) => BackendObjType.Record.toTpe
       case MonoType.ExtensibleEmpty => BackendObjType.Tagged.toTpe
       case MonoType.ExtensibleExtend(_, _, _) => BackendObjType.Tagged.toTpe
       case MonoType.Native(clazz) => BackendObjType.Native(JvmName.ofClass(clazz)).toTpe
