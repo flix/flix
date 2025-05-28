@@ -1,11 +1,20 @@
-// Player Actions
-enum Action {
+import java.lang.System
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
+/// Player Actions
+enum Action with ToString {
     case Hit,
     case Stand
 }
 
-// Card Ranks
-enum Card with ToString {
+/// Player input
+eff Play {
+    def hitOrStand(): Result[String,Action]
+}
+
+/// Card Ranks
+enum Card with ToString, Eq {
     case Two,
     case Three,
     case Four,
@@ -21,7 +30,7 @@ enum Card with ToString {
     case Ace
 }
 
-// Deck Operations
+/// Deck Operations
 eff Deck {
     // generate and shuffle a 52 card deck
     def genDeck() : List[Card]
@@ -45,6 +54,7 @@ def cardValue(card: Card): Int32 = match card {
    case Card.Ace => 11
    case _ => 10 // 10 and face cards
 }
+
 def gameOver(p_val: Int32, d_val: Int32): Bool \ Terminal = match (p_val, d_val) {
     case (p, _) if p == 21 => Terminal.println("player -> ${p}, Player wins."); true
     case (p, _) if p > 21 => Terminal.println("player -> ${p}, Dealer wins."); true
@@ -54,44 +64,80 @@ def gameOver(p_val: Int32, d_val: Int32): Bool \ Terminal = match (p_val, d_val)
 }
 
 def handValue(cards: List[Card]): Int32 =
-    List.foldLeft((x, y) -> x + y, 0, List.map(cardValue, cards))
+    let value = List.foldLeft((x, y) -> x + y, 0, List.map(cardValue, cards));
+    if (value > 21 and List.exists(x -> x == Card.Ace, cards)) value - 10 else value
 
-def gameLoop(deck: List[Card], player: List[Card], dealer: List[Card]): Unit \ {Terminal, Deck} = {
-    match Deck.pullCard(deck) { // player draws
-        case (Some(p_card), afterPlayer)  => {
-            Terminal.println("Player => ${List.toString(p_card::player)}");
-            // players hand with new card
-            let p_val = handValue(p_card::player);
-            // dealer never hits after 16
-            if (handValue(dealer) > 16) {
-                if (gameOver(p_val, handValue(dealer))) { // check winner or loser
-                    Terminal.println("Done.")
-                } else {
-                    gameLoop(afterPlayer, p_card::player, dealer)
-                }
-            } else {
-                match Deck.pullCard(afterPlayer) { // dealer draws
-                    case (Some(d_card), afterDealer) => {
-                        Terminal.println("Dealer => ${List.toString(d_card::dealer)}");
-                        let d_val = handValue(d_card::dealer);
-                        if (gameOver(p_val, d_val)) { // check winner or loser
-                            Terminal.println("Done.")
+def gameLoop(deck: List[Card], player: List[Card], dealer: List[Card], actions: List[Action]): Unit \ {Terminal, Deck, Play} = {
+    if (List.length(player) == 0) 
+        // draw first 4 cards
+        match deck {
+            case p1::d1::p2::d2::rest => 
+                Terminal.println("player -> ${p2::p1::Nil}");
+                Terminal.println("dealer -> ${d2::d1::Nil}");
+                gameLoop(rest, p1::p2::player, d1::d2::dealer, actions)
+            case _ =>
+                Terminal.println("not enough cards")
+        }
+    else 
+        let p_value = handValue(player);
+        match actions {
+            case (Action.Stand :: _) => { // player stands
+                let d_value = handValue(dealer);
+                if (d_value >= 17) { // dealer stands
+                    if (gameOver(p_value, d_value)) { // check winner or loser
+                        Terminal.println("Done.")
+                    } else {
+                        if (p_value > d_value) { // who has the better hand
+                            Terminal.println("dealer -> ${d_value}\nplayer -> ${p_value}\n, Player wins.")
                         } else {
-                            gameLoop(afterDealer, p_card :: player, d_card :: dealer)
+                            Terminal.println("dealer -> ${d_value}\nplayer -> ${p_value}\n, Dealer wins.")
                         }
                     }
-                    case (None, _) => Terminal.println("No more cards")
+                } else {
+                    match Deck.pullCard(deck) { // dealer draws
+                        case (Some(d_card), afterDealer) => {
+                            Terminal.println("Dealer => ${List.toString(d_card::dealer)}");
+                            let d_val_new = handValue(d_card::dealer);
+                            if (gameOver(p_value, d_val_new)) { // check winner or loser
+                                Terminal.println("Done.")
+                            } else {
+                                gameLoop(afterDealer, player, d_card :: dealer, actions)
+                            }
+                        }
+                        case (None, _) => Terminal.println("No more cards")
+                    }
+                }
+            }
+            case _ => {
+                Terminal.println("Hit[y] or Stand[n]:");
+                match Play.hitOrStand() {
+                    case Result.Ok(Action.Hit) => // player hits
+                        match Deck.pullCard(deck) {
+                            case (Some(p_card), afterPlayer)  => {
+                                Terminal.println("Player => ${List.toString(p_card::player)}");
+                                Terminal.println("play -> ${Action.Hit::actions}");
+                                let p_val_new = handValue(p_card::player);
+                                if (gameOver(p_val_new, handValue(dealer))) { // check winner or loser
+                                    Terminal.println("Done.")
+                                } else {
+                                    gameLoop(afterPlayer, p_card::player, dealer, Action.Hit :: actions)
+                                }
+                            }
+                            case (None, _) => Terminal.println("No more cards")
+                        }
+                    case Result.Ok(Action.Stand) => // player stands
+                        Terminal.println("play -> ${Action.Stand::actions}");
+                        gameLoop(deck, player, dealer, Action.Stand :: actions)
+                    case Result.Err(e) => Terminal.println(e)
                 }
             }
         }
-        case (None, _) => Terminal.println("No more cards")
-    }
 }
 
 def main(): Unit \ {NonDet, IO} =
     run {
         let deck = Deck.genDeck();
-        gameLoop(deck, Nil, Nil)
+        gameLoop(deck, Nil, Nil, Nil)
     } with handler Deck {
         def genDeck(resume) = {
             // type of cards
@@ -112,4 +158,14 @@ def main(): Unit \ {NonDet, IO} =
         }
     } with handler Terminal {
         def println(s, resume) = {println(s); resume()}
+    } with handler Play {
+        def hitOrStand(resume) = 
+            let reader = new BufferedReader(new InputStreamReader(System.in));
+            let line = reader.readLine();
+            let result  = match line {
+                case "y" => Result.Ok(Action.Hit)
+                case "n" => Result.Ok(Action.Stand)
+                case _ => Result.Err("bad input")
+            };
+            resume(result)
     }
