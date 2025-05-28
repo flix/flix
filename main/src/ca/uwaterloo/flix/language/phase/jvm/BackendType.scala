@@ -65,22 +65,6 @@ sealed trait BackendType extends VoidableType {
   }
 
   /**
-    * Returns the erased type represented as [[JvmType]]. Arrays are erased.
-    */
-  def toErasedJvmType: JvmType = this match {
-    case BackendType.Array(_) => JvmType.Object
-    case BackendType.Reference(_) => JvmType.Object
-    case BackendType.Bool => JvmType.PrimBool
-    case BackendType.Char => JvmType.PrimChar
-    case BackendType.Int8 => JvmType.PrimByte
-    case BackendType.Int16 => JvmType.PrimShort
-    case BackendType.Int32 => JvmType.PrimInt
-    case BackendType.Int64 => JvmType.PrimLong
-    case BackendType.Float32 => JvmType.PrimFloat
-    case BackendType.Float64 => JvmType.PrimDouble
-  }
-
-  /**
     * A string representing the erased type. This is used for parametrized class names.
     */
   val toErasedString: String = this match {
@@ -186,7 +170,7 @@ object BackendType {
       case MonoType.Struct(sym, targs) => BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs)).toTpe
       case MonoType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
       case MonoType.RecordEmpty => BackendObjType.Record.toTpe
-      case MonoType.RecordExtend(_, value, _) => BackendObjType.Record.toTpe
+      case MonoType.RecordExtend(_, _, _) => BackendObjType.Record.toTpe
       case MonoType.ExtensibleEmpty => BackendObjType.Tagged.toTpe
       case MonoType.ExtensibleExtend(_, _, _) => BackendObjType.Tagged.toTpe
       case MonoType.Native(clazz) => BackendObjType.Native(JvmName.ofClass(clazz)).toTpe
@@ -248,16 +232,6 @@ object BackendType {
       throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
   }
 
-  sealed trait PrimitiveType extends BackendType {
-    def toArrayTypeCode: Int = this match {
-      case Bool => Opcodes.T_BOOLEAN
-      case Char => Opcodes.T_CHAR
-      case Int8 => Opcodes.T_BYTE
-      case Int16 => Opcodes.T_SHORT
-      case Int32 => Opcodes.T_INT
-      case Int64 => Opcodes.T_LONG
-      case Float32 => Opcodes.T_FLOAT
-      case Float64 => Opcodes.T_DOUBLE
-    }
-  }
+  sealed trait PrimitiveType extends BackendType
+
 }
