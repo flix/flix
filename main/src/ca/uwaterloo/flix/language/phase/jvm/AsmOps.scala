@@ -159,23 +159,6 @@ object AsmOps {
   }
 
   /**
-    * `tpe` is jvm type of value on top of the stack. If the value is not primitive, then we cast it to it's specific type,
-    * if the value is a primitive then since there is no boxing, then no casting is necessary.
-    */
-  def castIfNotPrim(visitor: MethodVisitor, tpe: JvmType): Unit = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-    case JvmType.PrimBool => ()
-    case JvmType.PrimChar => ()
-    case JvmType.PrimFloat => ()
-    case JvmType.PrimDouble => ()
-    case JvmType.PrimByte => ()
-    case JvmType.PrimShort => ()
-    case JvmType.PrimInt => ()
-    case JvmType.PrimLong => ()
-    case JvmType.Reference(name) => visitor.visitTypeInsn(CHECKCAST, name.toInternalName)
-  }
-
-  /**
     * Emits code that puts the function object of the def symbol `def` on top of the stack.
     */
   def compileDefSymbol(sym: Symbol.DefnSym, mv: MethodVisitor): Unit = {

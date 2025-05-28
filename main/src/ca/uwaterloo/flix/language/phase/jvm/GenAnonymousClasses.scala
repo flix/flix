@@ -153,10 +153,7 @@ object GenAnonymousClasses {
       // Invoke the closure
       methodVisitor.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(tpe), s"in anonymous class method ${ident.name} of ${obj.clazz.getSimpleName}", loc))
 
-      tpe match {
-        case MonoType.Array(_) => methodVisitor.visitTypeInsn(CHECKCAST, getDescriptorHacked(tpe))
-        case _ => AsmOps.castIfNotPrim(methodVisitor, JvmOps.getJvmType(tpe))
-      }
+      methodVisitor.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe)))
 
       val returnInstruction = tpe match {
         case MonoType.Unit => RETURN

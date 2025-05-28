@@ -566,7 +566,7 @@ object GenExpression {
         val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
         val termTypes = cases(sym)
         compileUntag(exp, idx, termTypes)
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+        mv.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe)))
 
       case AtomicOp.Index(idx) =>
         val List(exp) = exps
@@ -658,7 +658,7 @@ object GenExpression {
         val List(exp) = exps
         val tpes = MonoType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.asErasedBackendType)
         compileUntag(exp, idx, tpes)
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+        mv.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe)))
 
       case AtomicOp.ArrayLit =>
         // We push the 'length' of the array on top of stack
@@ -719,8 +719,6 @@ object GenExpression {
         val jvmType = JvmOps.getErasedJvmType(tpe)
         // Evaluating the 'base'
         compileExpr(exp1)
-        // Cast the object to Array
-        mv.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
         // Evaluating the 'index' to load from
         compileExpr(exp2)
         // Loads the 'element' at the given 'index' from the 'array'
@@ -736,8 +734,6 @@ object GenExpression {
           val jvmType = JvmOps.getErasedJvmType(exp3.tpe)
           // Evaluating the 'base'
           compileExpr(exp1)
-          // Cast the object to Array
-          mv.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
           // Evaluating the 'index' to be stored in
           compileExpr(exp2)
           // Evaluating the 'element' to be stored
@@ -759,8 +755,6 @@ object GenExpression {
         val jvmType = JvmOps.getErasedJvmType(exp.tpe.asInstanceOf[MonoType.Array].tpe)
         // Evaluating the 'base'
         compileExpr(exp)
-        // Cast the object to array
-        mv.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
         // Pushes the 'length' of the array on top of stack
         mv.visitInsn(ARRAYLENGTH)
 
@@ -815,7 +809,7 @@ object GenExpression {
       case AtomicOp.Cast =>
         val List(exp) = exps
         compileExpr(exp)
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+        mv.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe)))
 
       case AtomicOp.Unbox =>
         val List(exp) = exps
@@ -1229,7 +1223,7 @@ object GenExpression {
       val jvmType = JvmOps.getJvmType(exp1.tpe)
       // Store instruction for `jvmType`
       val iStore = AsmOps.getStoreInstruction(jvmType)
-      AsmOps.castIfNotPrim(mv, jvmType)
+      mv.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(exp1.tpe)))
       mv.visitVarInsn(iStore, sym.getStackOffset(ctx.localOffset))
       compileExpr(exp2)
 
@@ -1430,7 +1424,7 @@ object GenExpression {
       mv.visitByteIns(BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult)))
 
       mv.visitLabel(afterUnboxing)
-      AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+      mv.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe)))
 
     case Expr.NewObject(name, _, _, _, methods, _) =>
       val exps = methods.map(_.exp)
@@ -1636,21 +1630,7 @@ object GenExpression {
     // Evaluate arguments left-to-right and push them onto the stack.
     for ((arg, argType) <- args.zip(signature)) {
       compileExpr(arg)
-      if (!argType.isPrimitive) {
-        // NB: Really just a hack because the backend does not support array JVM types properly.
-        mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
-      } else {
-        arg.tpe match {
-          // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
-          case MonoType.Array(MonoType.Float32) => mv.visitTypeInsn(CHECKCAST, "[F")
-          case MonoType.Array(MonoType.Float64) => mv.visitTypeInsn(CHECKCAST, "[D")
-          case MonoType.Array(MonoType.Int8) => mv.visitTypeInsn(CHECKCAST, "[B")
-          case MonoType.Array(MonoType.Int16) => mv.visitTypeInsn(CHECKCAST, "[S")
-          case MonoType.Array(MonoType.Int32) => mv.visitTypeInsn(CHECKCAST, "[I")
-          case MonoType.Array(MonoType.Int64) => mv.visitTypeInsn(CHECKCAST, "[J")
-          case _ => // nop
-        }
-      }
+      mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
     }
   }
 }

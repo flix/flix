@@ -259,7 +259,7 @@ object GenFunAndClosureClasses {
     m.visitFieldInsn(GETFIELD, className.toInternalName, name, erasedVarType.toDescriptor)
     // cast the value and store it
     val varType = JvmOps.getJvmType(tpe)
-    AsmOps.castIfNotPrim(m, varType)
+    m.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe)))
     val xStore = AsmOps.getStoreInstruction(varType)
     m.visitVarInsn(xStore, localIndex)
   }
