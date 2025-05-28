@@ -566,7 +566,7 @@ object GenExpression {
         val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
         val termTypes = cases(sym)
         compileUntag(exp, idx, termTypes)
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+        mv.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe)))
 
       case AtomicOp.Index(idx) =>
         val List(exp) = exps
@@ -658,14 +658,14 @@ object GenExpression {
         val List(exp) = exps
         val tpes = MonoType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.asErasedBackendType)
         compileUntag(exp, idx, tpes)
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+        mv.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe)))
 
       case AtomicOp.ArrayLit =>
         // We push the 'length' of the array on top of stack
         compileInt(exps.length)
         // We get the inner type of the array
         val innerType = tpe.asInstanceOf[MonoType.Array].tpe
-        val backendType = BackendType.toFlixErasedBackendType(innerType)
+        val backendType = BackendType.toBackendType(innerType)
         // Instantiating a new array of type jvmType
         visitArrayInstantiate(mv, backendType)
         // For each element we generate code to store it into the array
@@ -685,7 +685,7 @@ object GenExpression {
         val List(exp1, exp2) = exps
         // We get the inner type of the array
         val innerType = tpe.asInstanceOf[MonoType.Array].tpe
-        val backendType = BackendType.toFlixErasedBackendType(innerType)
+        val backendType = BackendType.toBackendType(innerType)
         // Evaluating the value of the 'default element'
         compileExpr(exp1)
         // Evaluating the 'length' of the array
@@ -815,7 +815,7 @@ object GenExpression {
       case AtomicOp.Cast =>
         val List(exp) = exps
         compileExpr(exp)
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+        mv.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe)))
 
       case AtomicOp.Unbox =>
         val List(exp) = exps
@@ -912,7 +912,7 @@ object GenExpression {
         addSourceLine(mv, loc)
         compileExpr(exp)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(GETFIELD, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
+        mv.visitFieldInsn(GETFIELD, declaration, field.getName, BackendType.toBackendType(tpe).toDescriptor)
 
       case AtomicOp.PutField(field) =>
         val List(exp1, exp2) = exps
@@ -921,7 +921,7 @@ object GenExpression {
         compileExpr(exp1)
         compileExpr(exp2)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(PUTFIELD, declaration, field.getName, JvmOps.getJvmType(exp2.tpe).toDescriptor)
+        mv.visitFieldInsn(PUTFIELD, declaration, field.getName, BackendType.toBackendType(exp2.tpe).toDescriptor)
 
         // Push Unit on the stack.
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
@@ -930,7 +930,7 @@ object GenExpression {
         // Add source line number for debugging (can fail when calling java)
         addSourceLine(mv, loc)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(GETSTATIC, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
+        mv.visitFieldInsn(GETSTATIC, declaration, field.getName, BackendType.toBackendType(tpe).toDescriptor)
 
       case AtomicOp.PutStaticField(field) =>
         val List(exp) = exps
@@ -938,7 +938,7 @@ object GenExpression {
         addSourceLine(mv, loc)
         compileExpr(exp)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(PUTSTATIC, declaration, field.getName, JvmOps.getJvmType(exp.tpe).toDescriptor)
+        mv.visitFieldInsn(PUTSTATIC, declaration, field.getName, BackendType.toBackendType(exp.tpe).toDescriptor)
 
         // Push Unit on the stack.
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
@@ -1225,12 +1225,9 @@ object GenExpression {
 
     case Expr.Let(sym, exp1, exp2, _, _, _) =>
       compileExpr(exp1)
-      // Jvm Type of the `exp1`
-      val jvmType = JvmOps.getJvmType(exp1.tpe)
-      // Store instruction for `jvmType`
-      val iStore = AsmOps.getStoreInstruction(jvmType)
-      AsmOps.castIfNotPrim(mv, jvmType)
-      mv.visitVarInsn(iStore, sym.getStackOffset(ctx.localOffset))
+      val bType = BackendType.toBackendType(exp1.tpe)
+      mv.visitByteIns(BytecodeInstructions.castIfNotPrim(bType))
+      mv.visitByteIns(BytecodeInstructions.xStore(bType, sym.getStackOffset(ctx.localOffset)))
       compileExpr(exp2)
 
     case Expr.Stmt(exp1, exp2, _, _, _) =>
@@ -1430,7 +1427,7 @@ object GenExpression {
       mv.visitByteIns(BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult)))
 
       mv.visitLabel(afterUnboxing)
-      AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+      mv.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe)))
 
     case Expr.NewObject(name, _, _, _, methods, _) =>
       val exps = methods.map(_.exp)
@@ -1636,21 +1633,7 @@ object GenExpression {
     // Evaluate arguments left-to-right and push them onto the stack.
     for ((arg, argType) <- args.zip(signature)) {
       compileExpr(arg)
-      if (!argType.isPrimitive) {
-        // NB: Really just a hack because the backend does not support array JVM types properly.
-        mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
-      } else {
-        arg.tpe match {
-          // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
-          case MonoType.Array(MonoType.Float32) => mv.visitTypeInsn(CHECKCAST, "[F")
-          case MonoType.Array(MonoType.Float64) => mv.visitTypeInsn(CHECKCAST, "[D")
-          case MonoType.Array(MonoType.Int8) => mv.visitTypeInsn(CHECKCAST, "[B")
-          case MonoType.Array(MonoType.Int16) => mv.visitTypeInsn(CHECKCAST, "[S")
-          case MonoType.Array(MonoType.Int32) => mv.visitTypeInsn(CHECKCAST, "[I")
-          case MonoType.Array(MonoType.Int64) => mv.visitTypeInsn(CHECKCAST, "[J")
-          case _ => // nop
-        }
-      }
+      if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
     }
   }
 }

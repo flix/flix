@@ -248,34 +248,6 @@ object BackendType {
       throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
   }
 
-  /**
-    * Computes the `BackendType` based on the given `MonoType`.
-    * Types are erased except for the types that have built-in support in
-    * the Java standard library.
-    * Additionally, [[MonoType.Native]] is <b>not</b> erased.
-    */
-  def toFlixErasedBackendType(tpe: MonoType): BackendType = tpe match {
-    case MonoType.Bool => BackendType.Bool
-    case MonoType.Char => BackendType.Char
-    case MonoType.Int8 => BackendType.Int8
-    case MonoType.Int16 => BackendType.Int16
-    case MonoType.Int32 => BackendType.Int32
-    case MonoType.Int64 => BackendType.Int64
-    case MonoType.Float32 => BackendType.Float32
-    case MonoType.Float64 => BackendType.Float64
-    case MonoType.Array(t) => BackendType.Array(toFlixErasedBackendType(t))
-    case MonoType.BigDecimal => BackendObjType.BigDecimal.toTpe
-    case MonoType.BigInt => BackendObjType.BigInt.toTpe
-    case MonoType.String => BackendObjType.String.toTpe
-    case MonoType.Regex => BackendObjType.Regex.toTpe
-    case MonoType.Native(clazz) => JvmName.ofClass(clazz).toTpe
-    case MonoType.Void | MonoType.AnyType | MonoType.Unit | MonoType.Lazy(_) | MonoType.Tuple(_) |
-         MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
-        MonoType.ExtensibleExtend(_, _, _) | MonoType.ExtensibleEmpty |
-         MonoType.Region | MonoType.Enum(_, _) | MonoType.Struct(_, _) | MonoType.Null =>
-      BackendObjType.JavaObject.toTpe
-  }
-
   sealed trait PrimitiveType extends BackendType {
     def toArrayTypeCode: Int = this match {
       case Bool => Opcodes.T_BOOLEAN
