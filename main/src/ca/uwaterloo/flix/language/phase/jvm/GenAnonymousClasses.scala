@@ -159,11 +159,10 @@ object GenAnonymousClasses {
       }
 
       val returnInstruction = tpe match {
-        case MonoType.Unit => RETURN
-        case MonoType.Array(_) => ARETURN
-        case _ => AsmOps.getReturnInstruction(JvmOps.getJvmType(tpe))
+        case MonoType.Unit => BytecodeInstructions.RETURN()
+        case _ => BytecodeInstructions.xReturn(BackendType.toBackendType(tpe))
       }
-      methodVisitor.visitInsn(returnInstruction)
+      methodVisitor.visitByteIns(returnInstruction)
 
       methodVisitor.visitMaxs(999, 999)
       methodVisitor.visitEnd()
