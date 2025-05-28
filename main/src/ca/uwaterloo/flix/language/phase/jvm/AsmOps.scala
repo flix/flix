@@ -116,23 +116,6 @@ object AsmOps {
   }
 
   /**
-    * Returns the CheckCast type for the value of the type specified by `tpe`
-    */
-  def getArrayType(tpe: JvmType): String = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-    case JvmType.PrimBool => "[Z"
-    case JvmType.PrimChar => "[C"
-    case JvmType.PrimByte => "[B"
-    case JvmType.PrimShort => "[S"
-    case JvmType.PrimInt => "[I"
-    case JvmType.PrimLong => "[J"
-    case JvmType.PrimFloat => "[F"
-    case JvmType.PrimDouble => "[D"
-    case JvmType.String => "[Ljava/lang/String;"
-    case JvmType.Reference(_) => "[Ljava/lang/Object;"
-  }
-
-  /**
     * Returns the load instruction corresponding to the given type `tpe`
     */
   def getReturnInstruction(tpe: JvmType): Int = tpe match {

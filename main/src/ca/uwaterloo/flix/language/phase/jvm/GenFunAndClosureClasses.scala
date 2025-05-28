@@ -17,14 +17,17 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.Flix.IrFileExtension
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.{InstructionSet, MethodEnricher}
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression.compileInt
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{FileOps, ParOps}
 import org.objectweb.asm.Opcodes.*
-import org.objectweb.asm.{ClassWriter, Label, MethodVisitor, Opcodes}
+import org.objectweb.asm.{AnnotationVisitor, Attribute, ClassWriter, Handle, Label, MethodVisitor, Opcodes, TypePath}
+
+import java.nio.file.Path
 
 /**
   * Generates byte code for the function and closure classes.
@@ -192,7 +195,8 @@ object GenFunAndClosureClasses {
                                  defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
     val applyMethod = BackendObjType.Frame.ApplyMethod
-    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, applyMethod.name, applyMethod.d.toDescriptor, null, null)
+    val m0 = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, applyMethod.name, applyMethod.d.toDescriptor, null, null)
+    val m = new Debug(m0)
     val localOffset = 2 // [this: Obj, value: Obj, ...]
 
     val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.sym.getStackOffset(localOffset), lp.sym.isWild, lp.tpe) }
@@ -248,8 +252,366 @@ object GenFunAndClosureClasses {
     val returnValue = BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
     m.visitByteIns(returnValue)
 
+    val path = flix.options.output.getOrElse(Path.of("./build/")).resolve("asts/").resolve("jvm/").resolve(s"${className.toBinaryName}.$IrFileExtension")
+    FileOps.writeString(path, m.instructions)
     m.visitMaxs(999, 999)
     m.visitEnd()
+  }
+
+  class Debug(m: MethodVisitor) extends MethodVisitor(Opcodes.ASM9) {
+    private val sb: StringBuilder = new StringBuilder()
+
+    def instructions: String = sb.toString()
+
+    private def addLine(opcode: Int): Unit = {
+      sb.append(opcodeString(opcode))
+        .append("\n")
+    }
+
+    private def addIntLine(opcode: Int, i: Int): Unit = {
+      sb.append(opcodeString(opcode))
+        .append(" ")
+        .append(i)
+        .append("\n")
+    }
+
+    private def addStringLine(opcode: Int, s: String): Unit = {
+      sb.append(opcodeString(opcode))
+        .append(" ")
+        .append(s)
+        .append("\n")
+    }
+
+    override def getDelegate: MethodVisitor =
+      m.getDelegate
+
+    override def visitParameter(name: String, access: Int): Unit =
+      m.visitParameter(name, access)
+
+    override def visitAnnotationDefault(): AnnotationVisitor =
+      m.visitAnnotationDefault()
+
+    override def visitAnnotation(descriptor: String, visible: Boolean): AnnotationVisitor =
+      m.visitAnnotation(descriptor, visible)
+
+    override def visitTypeAnnotation(typeRef: Int, typePath: TypePath, descriptor: String, visible: Boolean): AnnotationVisitor =
+      m.visitTypeAnnotation(typeRef, typePath, descriptor, visible)
+
+    override def visitAnnotableParameterCount(parameterCount: Int, visible: Boolean): Unit =
+      m.visitAnnotableParameterCount(parameterCount, visible)
+
+    override def visitParameterAnnotation(parameter: Int, descriptor: String, visible: Boolean): AnnotationVisitor =
+      m.visitParameterAnnotation(parameter, descriptor, visible)
+
+    override def visitAttribute(attribute: Attribute): Unit =
+      m.visitAttribute(attribute)
+
+    override def visitCode(): Unit =
+      m.visitCode()
+
+    override def visitFrame(`type`: Int, numLocal: Int, local: Array[AnyRef], numStack: Int, stack: Array[AnyRef]): Unit =
+      m.visitFrame(`type`, numLocal, local, numStack, stack)
+
+    override def visitInsn(opcode: Int): Unit = {
+      addLine(opcode)
+      m.visitInsn(opcode)
+    }
+
+    override def visitIntInsn(opcode: Int, operand: Int): Unit = {
+      addIntLine(opcode, operand)
+      m.visitIntInsn(opcode, operand)
+    }
+
+    override def visitVarInsn(opcode: Int, varIndex: Int): Unit = {
+      addIntLine(opcode, varIndex)
+      m.visitVarInsn(opcode, varIndex)
+    }
+
+    override def visitTypeInsn(opcode: Int, `type`: String): Unit = {
+      addStringLine(opcode, `type`)
+      m.visitTypeInsn(opcode, `type`)
+    }
+
+    override def visitFieldInsn(opcode: Int, owner: String, name: String, descriptor: String): Unit = {
+      sb.append(opcodeString(opcode))
+        .append(" ")
+        .append(owner)
+        .append(" ")
+        .append(name)
+        .append(" ")
+        .append(descriptor)
+        .append("\n")
+      m.visitFieldInsn(opcode, owner, name, descriptor)
+    }
+
+    override def visitMethodInsn(opcode: Int, owner: String, name: String, descriptor: String, isInterface: Boolean): Unit = {
+      sb.append(opcodeString(opcode))
+        .append(" ")
+        .append(owner)
+        .append(" ")
+        .append(name)
+        .append(" ")
+        .append(descriptor)
+        .append("\n")
+      m.visitMethodInsn(opcode, owner, name, descriptor, isInterface)
+    }
+
+    override def visitInvokeDynamicInsn(name: String, descriptor: String, bootstrapMethodHandle: Handle, bootstrapMethodArguments: Object*): Unit = {
+      sb.append("dynamic")
+        .append("\n")
+      m.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, bootstrapMethodArguments *)
+    }
+
+    override def visitJumpInsn(opcode: Int, label: Label): Unit = {
+      sb.append(opcodeString(opcode))
+        .append(" ")
+        .append(label.toString)
+        .append("\n")
+      m.visitJumpInsn(opcode, label)
+    }
+
+    override def visitLabel(label: Label): Unit = {
+      sb.append("LABEL")
+        .append(" ")
+        .append(label.toString)
+        .append("\n")
+      m.visitLabel(label)
+    }
+
+    override def visitLdcInsn(value: Any): Unit = {
+      sb.append("LDC")
+        .append(" ")
+        .append(value.toString)
+        .append("\n")
+      m.visitLdcInsn(value)
+    }
+
+    override def visitIincInsn(varIndex: Int, increment: Int): Unit = {
+      sb.append("IINC")
+        .append(" ")
+        .append(varIndex)
+        .append(" ")
+        .append(increment)
+        .append("\n")
+      m.visitIincInsn(varIndex, increment)
+    }
+
+    override def visitTableSwitchInsn(min: Int, max: Int, dflt: Label, labels: Label*): Unit = {
+      sb.append("tableswitch")
+        .append("\n")
+      m.visitTableSwitchInsn(min, max, dflt, labels *)
+    }
+
+    override def visitLookupSwitchInsn(dflt: Label, keys: Array[Int], labels: Array[Label]): Unit = {
+      sb.append("lookupswitch")
+        .append("\n")
+      m.visitLookupSwitchInsn(dflt, keys, labels)
+    }
+
+    override def visitMultiANewArrayInsn(descriptor: String, numDimensions: Int): Unit = {
+      sb.append("ANEWARRAY")
+        .append(" ")
+        .append(descriptor)
+        .append(" ")
+        .append(numDimensions)
+        .append("\n")
+      m.visitMultiANewArrayInsn(descriptor, numDimensions)
+    }
+
+    override def visitInsnAnnotation(typeRef: Int, typePath: TypePath, descriptor: String, visible: Boolean): AnnotationVisitor =
+      m.visitInsnAnnotation(typeRef, typePath, descriptor, visible)
+
+    override def visitTryCatchBlock(start: Label, end: Label, handler: Label, `type`: String): Unit = {
+      sb.append("TRYCATCHBLOCK")
+        .append(" ")
+        .append(start.toString)
+        .append(" ")
+        .append(end.toString)
+        .append(" ")
+        .append(handler.toString)
+        .append(" ")
+        .append(`type`)
+        .append("\n")
+      m.visitTryCatchBlock(start, end, handler, `type`)
+    }
+
+    override def visitTryCatchAnnotation(typeRef: Int, typePath: TypePath, descriptor: String, visible: Boolean): AnnotationVisitor =
+      m.visitTryCatchAnnotation(typeRef, typePath, descriptor, visible)
+
+    override def visitLocalVariable(name: String, descriptor: String, signature: String, start: Label, end: Label, index: Int): Unit =
+      m.visitLocalVariable(name, descriptor, signature, start, end, index)
+
+    override def visitLocalVariableAnnotation(typeRef: Int, typePath: TypePath, start: Array[Label], end: Array[Label], index: Array[Int], descriptor: String, visible: Boolean): AnnotationVisitor =
+      m.visitLocalVariableAnnotation(typeRef, typePath, start, end, index, descriptor, visible)
+
+    override def visitLineNumber(line: Int, start: Label): Unit =
+      m.visitLineNumber(line, start)
+
+    override def visitMaxs(maxStack: Int, maxLocals: Int): Unit =
+      m.visitMaxs(maxStack, maxLocals)
+
+    override def visitEnd(): Unit =
+      m.visitEnd()
+  }
+
+  private def opcodeString(opcode: Int): String = opcode match {
+    case Opcodes.NOP => "NOP"
+    case Opcodes.ACONST_NULL => "ACONST_NULL"
+    case Opcodes.ICONST_M1 => "ICONST_M1"
+    case Opcodes.ICONST_0 => "ICONST_0"
+    case Opcodes.ICONST_1 => "ICONST_1"
+    case Opcodes.ICONST_2 => "ICONST_2"
+    case Opcodes.ICONST_3 => "ICONST_3"
+    case Opcodes.ICONST_4 => "ICONST_4"
+    case Opcodes.ICONST_5 => "ICONST_5"
+    case Opcodes.LCONST_0 => "LCONST_0"
+    case Opcodes.LCONST_1 => "LCONST_1"
+    case Opcodes.FCONST_0 => "FCONST_0"
+    case Opcodes.FCONST_1 => "FCONST_1"
+    case Opcodes.FCONST_2 => "FCONST_2"
+    case Opcodes.DCONST_0 => "DCONST_0"
+    case Opcodes.DCONST_1 => "DCONST_1"
+    case Opcodes.BIPUSH => "BIPUSH"
+    case Opcodes.SIPUSH => "SIPUSH"
+    case Opcodes.LDC => "LDC"
+    case Opcodes.ILOAD => "ILOAD"
+    case Opcodes.LLOAD => "LLOAD"
+    case Opcodes.FLOAD => "FLOAD"
+    case Opcodes.DLOAD => "DLOAD"
+    case Opcodes.ALOAD => "ALOAD"
+    case Opcodes.IALOAD => "IALOAD"
+    case Opcodes.LALOAD => "LALOAD"
+    case Opcodes.FALOAD => "FALOAD"
+    case Opcodes.DALOAD => "DALOAD"
+    case Opcodes.AALOAD => "AALOAD"
+    case Opcodes.BALOAD => "BALOAD"
+    case Opcodes.CALOAD => "CALOAD"
+    case Opcodes.SALOAD => "SALOAD"
+    case Opcodes.ISTORE => "ISTORE"
+    case Opcodes.LSTORE => "LSTORE"
+    case Opcodes.FSTORE => "FSTORE"
+    case Opcodes.DSTORE => "DSTORE"
+    case Opcodes.ASTORE => "ASTORE"
+    case Opcodes.IASTORE => "IASTORE"
+    case Opcodes.LASTORE => "LASTORE"
+    case Opcodes.FASTORE => "FASTORE"
+    case Opcodes.DASTORE => "DASTORE"
+    case Opcodes.AASTORE => "AASTORE"
+    case Opcodes.BASTORE => "BASTORE"
+    case Opcodes.CASTORE => "CASTORE"
+    case Opcodes.SASTORE => "SASTORE"
+    case Opcodes.POP => "POP"
+    case Opcodes.POP2 => "POP2"
+    case Opcodes.DUP => "DUP"
+    case Opcodes.DUP_X1 => "DUP_X1"
+    case Opcodes.DUP_X2 => "DUP_X2"
+    case Opcodes.DUP2 => "DUP2"
+    case Opcodes.DUP2_X1 => "DUP2_X1"
+    case Opcodes.DUP2_X2 => "DUP2_X2"
+    case Opcodes.SWAP => "SWAP"
+    case Opcodes.IADD => "IADD"
+    case Opcodes.LADD => "LADD"
+    case Opcodes.FADD => "FADD"
+    case Opcodes.DADD => "DADD"
+    case Opcodes.ISUB => "ISUB"
+    case Opcodes.LSUB => "LSUB"
+    case Opcodes.FSUB => "FSUB"
+    case Opcodes.DSUB => "DSUB"
+    case Opcodes.IMUL => "IMUL"
+    case Opcodes.LMUL => "LMUL"
+    case Opcodes.FMUL => "FMUL"
+    case Opcodes.DMUL => "DMUL"
+    case Opcodes.IDIV => "IDIV"
+    case Opcodes.LDIV => "LDIV"
+    case Opcodes.FDIV => "FDIV"
+    case Opcodes.DDIV => "DDIV"
+    case Opcodes.IREM => "IREM"
+    case Opcodes.LREM => "LREM"
+    case Opcodes.FREM => "FREM"
+    case Opcodes.DREM => "DREM"
+    case Opcodes.INEG => "INEG"
+    case Opcodes.LNEG => "LNEG"
+    case Opcodes.FNEG => "FNEG"
+    case Opcodes.DNEG => "DNEG"
+    case Opcodes.ISHL => "ISHL"
+    case Opcodes.LSHL => "LSHL"
+    case Opcodes.ISHR => "ISHR"
+    case Opcodes.LSHR => "LSHR"
+    case Opcodes.IUSHR => "IUSHR"
+    case Opcodes.LUSHR => "LUSHR"
+    case Opcodes.IAND => "IAND"
+    case Opcodes.LAND => "LAND"
+    case Opcodes.IOR => "IOR"
+    case Opcodes.LOR => "LOR"
+    case Opcodes.IXOR => "IXOR"
+    case Opcodes.LXOR => "LXOR"
+    case Opcodes.IINC => "IINC"
+    case Opcodes.I2L => "I2L"
+    case Opcodes.I2F => "I2F"
+    case Opcodes.I2D => "I2D"
+    case Opcodes.L2I => "L2I"
+    case Opcodes.L2F => "L2F"
+    case Opcodes.L2D => "L2D"
+    case Opcodes.F2I => "F2I"
+    case Opcodes.F2L => "F2L"
+    case Opcodes.F2D => "F2D"
+    case Opcodes.D2I => "D2I"
+    case Opcodes.D2L => "D2L"
+    case Opcodes.D2F => "D2F"
+    case Opcodes.I2B => "I2B"
+    case Opcodes.I2C => "I2C"
+    case Opcodes.I2S => "I2S"
+    case Opcodes.LCMP => "LCMP"
+    case Opcodes.FCMPL => "FCMPL"
+    case Opcodes.FCMPG => "FCMPG"
+    case Opcodes.DCMPL => "DCMPL"
+    case Opcodes.DCMPG => "DCMPG"
+    case Opcodes.IFEQ => "IFEQ"
+    case Opcodes.IFNE => "IFNE"
+    case Opcodes.IFLT => "IFLT"
+    case Opcodes.IFGE => "IFGE"
+    case Opcodes.IFGT => "IFGT"
+    case Opcodes.IFLE => "IFLE"
+    case Opcodes.IF_ICMPEQ => "IF_ICMPEQ"
+    case Opcodes.IF_ICMPNE => "IF_ICMPNE"
+    case Opcodes.IF_ICMPLT => "IF_ICMPLT"
+    case Opcodes.IF_ICMPGE => "IF_ICMPGE"
+    case Opcodes.IF_ICMPGT => "IF_ICMPGT"
+    case Opcodes.IF_ICMPLE => "IF_ICMPLE"
+    case Opcodes.IF_ACMPEQ => "IF_ACMPEQ"
+    case Opcodes.IF_ACMPNE => "IF_ACMPNE"
+    case Opcodes.GOTO => "GOTO"
+    case Opcodes.JSR => "JSR"
+    case Opcodes.RET => "RET"
+    case Opcodes.TABLESWITCH => "TABLESWITCH"
+    case Opcodes.LOOKUPSWITCH => "LOOKUPSWITCH"
+    case Opcodes.IRETURN => "IRETURN"
+    case Opcodes.LRETURN => "LRETURN"
+    case Opcodes.FRETURN => "FRETURN"
+    case Opcodes.DRETURN => "DRETURN"
+    case Opcodes.ARETURN => "ARETURN"
+    case Opcodes.RETURN => "RETURN"
+    case Opcodes.GETSTATIC => "GETSTATIC"
+    case Opcodes.PUTSTATIC => "PUTSTATIC"
+    case Opcodes.GETFIELD => "GETFIELD"
+    case Opcodes.PUTFIELD => "PUTFIELD"
+    case Opcodes.INVOKEVIRTUAL => "INVOKEVIRTUAL"
+    case Opcodes.INVOKESPECIAL => "INVOKESPECIAL"
+    case Opcodes.INVOKESTATIC => "INVOKESTATIC"
+    case Opcodes.INVOKEINTERFACE => "INVOKEINTERFACE"
+    case Opcodes.INVOKEDYNAMIC => "INVOKEDYNAMIC"
+    case Opcodes.NEW => "NEW"
+    case Opcodes.NEWARRAY => "NEWARRAY"
+    case Opcodes.ANEWARRAY => "ANEWARRAY"
+    case Opcodes.ARRAYLENGTH => "ARRAYLENGTH"
+    case Opcodes.ATHROW => "ATHROW"
+    case Opcodes.CHECKCAST => "CHECKCAST"
+    case Opcodes.INSTANCEOF => "INSTANCEOF"
+    case Opcodes.MONITORENTER => "MONITORENTER"
+    case Opcodes.MONITOREXIT => "MONITOREXIT"
+    case Opcodes.MULTIANEWARRAY => "MULTIANEWARRAY"
+    case Opcodes.IFNULL => "IFNULL"
+    case Opcodes.IFNONNULL => "IFNONNULL"
   }
 
   private def loadFromField(m: MethodVisitor, className: JvmName, name: String, localIndex: Int, tpe: MonoType)(implicit root: Root): Unit = {
@@ -258,10 +620,9 @@ object GenFunAndClosureClasses {
     m.visitVarInsn(ALOAD, 0)
     m.visitFieldInsn(GETFIELD, className.toInternalName, name, erasedVarType.toDescriptor)
     // cast the value and store it
-    val varType = JvmOps.getJvmType(tpe)
-    m.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe)))
-    val xStore = AsmOps.getStoreInstruction(varType)
-    m.visitVarInsn(xStore, localIndex)
+    val bType = BackendType.toBackendType(tpe)
+    m.visitByteIns(BytecodeInstructions.castIfNotPrim(bType))
+    m.visitByteIns(BytecodeInstructions.xStore(bType, localIndex))
   }
 
   /**

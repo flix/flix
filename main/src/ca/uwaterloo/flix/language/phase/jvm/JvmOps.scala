@@ -29,54 +29,6 @@ import java.nio.file.{Files, LinkOption, Path}
 object JvmOps {
 
   /**
-    * Returns the given Flix type `tpe` as JVM type.
-    *
-    * For example, if the type is:
-    *
-    * Bool                  =>      Boolean
-    * Char                  =>      Char
-    * Option$42             =>      Option$42
-    * Result$123            =>      Result$123
-    * Int -> Bool           =>      Fn1$Int$Bool
-    * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
-    */
-  def getJvmType(tpe: MonoType)(implicit root: ReducedAst.Root): JvmType = tpe match {
-    // Primitives
-    case MonoType.Void => JvmType.Object
-    case MonoType.AnyType => JvmType.Object
-    case MonoType.Unit => JvmType.Unit
-    case MonoType.Bool => JvmType.PrimBool
-    case MonoType.Char => JvmType.PrimChar
-    case MonoType.Float32 => JvmType.PrimFloat
-    case MonoType.Float64 => JvmType.PrimDouble
-    case MonoType.BigDecimal => JvmType.BigDecimal
-    case MonoType.Int8 => JvmType.PrimByte
-    case MonoType.Int16 => JvmType.PrimShort
-    case MonoType.Int32 => JvmType.PrimInt
-    case MonoType.Int64 => JvmType.PrimLong
-    case MonoType.BigInt => JvmType.BigInteger
-    case MonoType.String => JvmType.String
-    case MonoType.Regex => JvmType.Regex
-    case MonoType.Region => JvmType.Object
-    case MonoType.Null => JvmType.Object
-    // Compound
-    case MonoType.Array(_) => JvmType.Object
-    case MonoType.Lazy(_) => JvmType.Object
-    case MonoType.Tuple(elms) => JvmType.Reference(BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType)).jvmName)
-    case MonoType.RecordEmpty => JvmType.Reference(BackendObjType.Record.jvmName)
-    case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
-    case MonoType.ExtensibleExtend(_, _, _) => JvmType.Reference(BackendObjType.Tagged.jvmName)
-    case MonoType.ExtensibleEmpty => JvmType.Reference(BackendObjType.Tagged.jvmName)
-    case MonoType.Enum(_, _) => JvmType.Object
-    case MonoType.Struct(sym, targs) =>
-      val elms = instantiateStruct(sym, targs.map(MonoType.erase))
-      JvmType.Reference(BackendObjType.Struct(elms).jvmName)
-    case MonoType.Arrow(_, _) => JvmType.Reference(getFunctionInterfaceName(tpe))
-    case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
-  }
-
-
-  /**
     * Returns the erased JvmType of the given Flix type `tpe`.
     *
     * Every primitive type is mapped to itself and every other type is mapped to Object.

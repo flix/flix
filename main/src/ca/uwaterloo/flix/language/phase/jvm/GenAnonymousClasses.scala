@@ -98,9 +98,8 @@ object GenAnonymousClasses {
     * Hacked to half-work for array types. In the new backend we should handle all types, including multidim arrays.
     */
   private def getDescriptorHacked(tpe: MonoType)(implicit root: Root): String = tpe match {
-    case MonoType.Array(t) => s"[${JvmOps.getJvmType(t).toDescriptor}"
-    case MonoType.Unit => JvmType.Void.toDescriptor
-    case _ => JvmOps.getJvmType(tpe).toDescriptor
+    case MonoType.Unit => VoidableType.Void.toDescriptor
+    case _ => BackendType.toBackendType(tpe).toDescriptor
   }
 
   /**
@@ -143,9 +142,9 @@ object GenAnonymousClasses {
       var offset = 0
       fparams.zipWithIndex.foreach { case (arg, i) =>
         methodVisitor.visitInsn(DUP)
-        val argType = JvmOps.getJvmType(arg.tpe)
-        methodVisitor.visitVarInsn(AsmOps.getLoadInstruction(argType), offset)
-        offset += AsmOps.getStackSize(argType)
+        val argType = BackendType.toBackendType(arg.tpe)
+        methodVisitor.visitByteIns(BytecodeInstructions.xLoad(argType, offset))
+        offset += (if (argType.is64BitWidth) 2 else 1)
         methodVisitor.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
           s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
@@ -156,11 +155,10 @@ object GenAnonymousClasses {
       methodVisitor.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe)))
 
       val returnInstruction = tpe match {
-        case MonoType.Unit => RETURN
-        case MonoType.Array(_) => ARETURN
-        case _ => AsmOps.getReturnInstruction(JvmOps.getJvmType(tpe))
+        case MonoType.Unit => BytecodeInstructions.RETURN()
+        case _ => BytecodeInstructions.xReturn(BackendType.toBackendType(tpe))
       }
-      methodVisitor.visitInsn(returnInstruction)
+      methodVisitor.visitByteIns(returnInstruction)
 
       methodVisitor.visitMaxs(999, 999)
       methodVisitor.visitEnd()

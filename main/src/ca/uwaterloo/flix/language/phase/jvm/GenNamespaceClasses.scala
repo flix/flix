@@ -17,11 +17,14 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.Flix.IrFileExtension
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.MethodEnricher
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{FileOps, ParOps}
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes.*
+
+import java.nio.file.Path
 
 /**
   * Generates bytecode for the namespace classes.
@@ -69,7 +72,7 @@ object GenNamespaceClasses {
   /**
     * Adding a shim for the function `defn` on namespace `ns`
     */
-  private def compileShimMethod(visitor: ClassWriter, defn: Def): Unit = {
+  private def compileShimMethod(visitor: ClassWriter, defn: Def)(implicit flix: Flix): Unit = {
     // Name of the shim
     val name = JvmOps.getDefMethodNameInNamespaceClass(defn)
 
@@ -78,7 +81,8 @@ object GenNamespaceClasses {
     val erasedResult = JvmOps.getErasedJvmType(defn.unboxedType.tpe)
 
     // Method header
-    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, name, AsmOps.getMethodDescriptor(erasedArgs, erasedResult), null, null)
+    val method0 = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, name, AsmOps.getMethodDescriptor(erasedArgs, erasedResult), null, null)
+    val method = new GenFunAndClosureClasses.Debug(method0)
     method.visitCode()
 
     val functionInterface = JvmOps.getFunctionInterfaceName(defn.arrowType)
@@ -107,7 +111,8 @@ object GenNamespaceClasses {
 
     // Return
     method.visitInsn(AsmOps.getReturnInstruction(erasedResult))
-
+    val path = flix.options.output.getOrElse(Path.of("./build/")).resolve("asts/").resolve("jvm/").resolve(s"def-${defn.sym.toString}.$IrFileExtension")
+    FileOps.writeString(path, method.instructions)
     // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
     method.visitMaxs(65535, 65535)
     method.visitEnd()
