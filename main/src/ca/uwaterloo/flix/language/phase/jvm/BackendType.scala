@@ -233,5 +233,4 @@ object BackendType {
   }
 
   sealed trait PrimitiveType extends BackendType
-
 }
