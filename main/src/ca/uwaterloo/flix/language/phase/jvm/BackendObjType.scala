@@ -192,14 +192,14 @@ object BackendObjType {
       withName(1, JavaObject.toTpe)(exp =>
         // super()
         thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
-          // this.exp = exp
-          thisLoad() ~ exp.load() ~ PUTFIELD(ExpField) ~
-          // this.lock = new ReentrantLock()
-          thisLoad() ~
-          NEW(ReentrantLock.jvmName) ~ DUP() ~ INVOKESPECIAL(ReentrantLock.Constructor) ~
-          PUTFIELD(LockField) ~
-          // return
-          RETURN()
+        // this.exp = exp
+        thisLoad() ~ exp.load() ~ PUTFIELD(ExpField) ~
+        // this.lock = new ReentrantLock()
+        thisLoad() ~
+        NEW(ReentrantLock.jvmName) ~ DUP() ~ INVOKESPECIAL(ReentrantLock.Constructor) ~
+        PUTFIELD(LockField) ~
+        // return
+        RETURN()
       )
 
     def ForceMethod: InstanceMethod = InstanceMethod(this.jvmName, "force", mkDescriptor()(tpe))
@@ -208,24 +208,24 @@ object BackendObjType {
     private def forceIns: InstructionSet = {
       val unlockLock = thisLoad() ~ GETFIELD(LockField) ~ INVOKEVIRTUAL(ReentrantLock.UnlockMethod)
       thisLoad() ~ GETFIELD(LockField) ~ INVOKEVIRTUAL(ReentrantLock.LockInterruptiblyMethod) ~
-        tryCatch {
-          thisLoad() ~ GETFIELD(ExpField) ~
-            // if the expression is not null, compute the value and erase the expression
-            ifCondition(Condition.NONNULL)(
-              thisLoad() ~
-                // get expression as thunk
-                DUP() ~ GETFIELD(ExpField) ~ CHECKCAST(Thunk.jvmName) ~
-                // this.value = thunk.unwind()
-                Result.unwindSuspensionFreeThunkToType(tpe, "during call to Lazy.force", SourceLocation.Unknown) ~ PUTFIELD(ValueField) ~
-                // this.exp = null
-                thisLoad() ~ pushNull() ~ PUTFIELD(ExpField)
-            ) ~
-            thisLoad() ~ GETFIELD(ValueField)
-        } {
-          // catch
-          unlockLock ~ ATHROW()
-        } ~
-        unlockLock ~ xReturn(tpe)
+      tryCatch {
+        thisLoad() ~ GETFIELD(ExpField) ~
+        // if the expression is not null, compute the value and erase the expression
+        ifCondition(Condition.NONNULL)(
+          thisLoad() ~
+          // get expression as thunk
+          DUP() ~ GETFIELD(ExpField) ~ CHECKCAST(Thunk.jvmName) ~
+          // this.value = thunk.unwind()
+          Result.unwindSuspensionFreeThunkToType(tpe, "during call to Lazy.force", SourceLocation.Unknown) ~ PUTFIELD(ValueField) ~
+          // this.exp = null
+          thisLoad() ~ pushNull() ~ PUTFIELD(ExpField)
+        ) ~
+        thisLoad() ~ GETFIELD(ValueField)
+      } {
+        // catch
+        unlockLock ~ ATHROW()
+      } ~
+      unlockLock ~ xReturn(tpe)
     }
   }
 
@@ -236,7 +236,7 @@ object BackendObjType {
 
       elms.indices.foreach(i => cm.mkField(IndexField(i), IsPublic, NotFinal, NotVolatile))
       cm.mkConstructor(Constructor, IsPublic, constructorIns)
-      cm.mkMethod(JavaObject.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns)
+      cm.mkMethod(ToStringMethod, IsPublic, NotFinal, toStringIns)
 
       cm.closeClassMaker()
     }
@@ -248,17 +248,20 @@ object BackendObjType {
     /** `[] --> return` */
     private def constructorIns: InstructionSet =
       withNames(1, elms) { case (_, variables) =>
-        thisLoad() ~
-          // super()
-          DUP() ~ INVOKESPECIAL(JavaObject.Constructor) ~
-          // this.field$i = var$j
-          // fields are numbered consecutively while variables skip indices based
-          // on their stack size
-          composeN(variables.zipWithIndex.map { case (elm, i) =>
-            DUP() ~ elm.load() ~ PUTFIELD(IndexField(i))
-          }) ~
-          RETURN()
+      thisLoad() ~
+        // super()
+        DUP() ~ INVOKESPECIAL(JavaObject.Constructor) ~
+        // this.field$i = var$j
+        // fields are numbered consecutively while variables skip indices based
+        // on their stack size
+        composeN(variables.zipWithIndex.map{case (elm, i) =>
+          DUP() ~ elm.load() ~ PUTFIELD(IndexField(i))
+        }) ~
+        RETURN()
       }
+
+    def ToStringMethod: InstanceMethod =
+      JavaObject.ToStringMethod.implementation(this.jvmName)
 
     /** `[] --> return String` */
     private def toStringIns: InstructionSet = {
