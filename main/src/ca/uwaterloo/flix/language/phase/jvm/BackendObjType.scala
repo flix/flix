@@ -1172,7 +1172,7 @@ object BackendObjType {
     //   t.start();
     //   threads.add(t);
     // }
-    def SpawnMethod(implicit flix: Flix): InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void), Some(_ =>
+    def SpawnMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void), Some(_ =>
       INVOKESTATIC(Thread.OfVirtualMethod) ~ ALOAD(1) ~ INVOKEINTERFACE(ThreadBuilderOfVirtual.UnstartedMethod) ~
       storeWithName(2, BackendObjType.Thread.toTpe) { thread =>
         thread.load() ~ NEW(BackendObjType.UncaughtExceptionHandler.jvmName) ~

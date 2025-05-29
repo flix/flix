@@ -817,27 +817,27 @@ object GenExpression {
         compileExpr(exp)
         mv.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe)))
 
-      case AtomicOp.Unbox =>
+      case AtomicOp.Unbox => mv.visitByteIns({
+        import BytecodeInstructions.*
         val List(exp) = exps
-        compileExpr(exp)
-        // this is a value
-        val valueField = BackendObjType.Value.fieldFromType(BackendType.asErasedBackendType(tpe))
-        val ins = BytecodeInstructions.GETFIELD(valueField)
-        mv.visitTypeInsn(CHECKCAST, BackendObjType.Value.jvmName.toInternalName)
-        mv.visitByteIns(ins)
+        cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~
+          CHECKCAST(BackendObjType.Value.jvmName) ~
+          GETFIELD(BackendObjType.Value.fieldFromType(BackendType.asErasedBackendType(tpe)))
+      })
 
-      case AtomicOp.Box =>
+      case AtomicOp.Box => mv.visitByteIns({
+        import BytecodeInstructions.*
         val List(exp) = exps
-        compileExpr(exp)
         val erasedExpTpe = BackendType.toErasedBackendType(exp.tpe)
         val valueField = BackendObjType.Value.fieldFromType(erasedExpTpe)
-        val ins = {
-          import BytecodeInstructions.*
-          NEW(BackendObjType.Value.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.Value.Constructor) ~ DUP() ~
-            xSwap(lowerLarge = erasedExpTpe.is64BitWidth, higherLarge = true) ~ // two objects on top of the stack
-            PUTFIELD(valueField)
-        }
-        mv.visitByteIns(ins)
+        cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~
+          NEW(BackendObjType.Value.jvmName) ~
+          DUP() ~
+          INVOKESPECIAL(BackendObjType.Value.Constructor) ~
+          DUP() ~
+          xSwap(lowerLarge = erasedExpTpe.is64BitWidth, higherLarge = true) ~ // two objects on top of the stack
+          PUTFIELD(valueField)
+      })
 
       case AtomicOp.InvokeConstructor(constructor) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
@@ -950,39 +950,35 @@ object GenExpression {
         compileExpr(exp)
         mv.visitInsn(ATHROW)
 
-      case AtomicOp.Spawn =>
+      case AtomicOp.Spawn => mv.visitByteIns({
+        import BytecodeInstructions.*
         val List(exp1, exp2) = exps
-        // Add source line number for debugging (can fail when spawning thread)
-        addSourceLine(mv, loc)
-
         exp2 match {
           // The expression represents the `Static` region, just start a thread directly
           case Expr.ApplyAtomic(AtomicOp.Region, _, _, _, _) =>
-
-            // Compile the expression, putting a function implementing the Runnable interface on the stack
-            compileExpr(exp1)
-            mv.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
-
-            // make a thread and run it
-            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "startVirtualThread", s"(${JvmName.Runnable.toDescriptor})${JvmName.Thread.toDescriptor}", false)
-            mv.visitInsn(POP)
-
+            addLoc(loc) ~
+              cheat(mv => compileExpr(exp1)(mv, ctx, root, flix)) ~
+              CHECKCAST(BackendObjType.Runnable.jvmName) ~
+              INVOKESTATIC(ClassMaker.StaticMethod(
+                JvmName.Thread,
+                ClassMaker.Visibility.IsPublic,
+                ClassMaker.Final.NotFinal,
+                "startVirtualThread",
+                MethodDescriptor.mkDescriptor(BackendObjType.Runnable.toTpe)(BackendObjType.Thread.toTpe),
+                None
+              )) ~
+              POP() ~
+              GETSTATIC(BackendObjType.Unit.SingletonField)
           case _ =>
-            // Compile the expression representing the region
-            compileExpr(exp2)
-            mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
-
-            // Compile the expression, putting a function implementing the Runnable interface on the stack
-            compileExpr(exp1)
-            mv.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
-
-            // Call the Region's `spawn` method
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.SpawnMethod.name, BackendObjType.Region.SpawnMethod.d.toDescriptor, false)
+            addLoc(loc) ~
+              cheat(mv => compileExpr(exp2)(mv, ctx, root, flix)) ~
+              CHECKCAST(BackendObjType.Region.jvmName) ~
+              cheat(mv => compileExpr(exp1)(mv, ctx, root, flix)) ~
+              CHECKCAST(BackendObjType.Runnable.jvmName) ~
+              INVOKEVIRTUAL(BackendObjType.Region.SpawnMethod) ~
+              GETSTATIC(BackendObjType.Unit.SingletonField)
         }
-
-        // Put a Unit value on the stack
-        mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
-
+      })
 
       case AtomicOp.Lazy => mv.visitByteIns({
         import BytecodeInstructions.*
