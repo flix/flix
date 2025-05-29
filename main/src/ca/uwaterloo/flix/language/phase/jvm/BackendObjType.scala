@@ -208,7 +208,7 @@ object BackendObjType {
     private def forceIns: InstructionSet = {
       val unlockLock = thisLoad() ~ GETFIELD(LockField) ~ INVOKEVIRTUAL(ReentrantLock.UnlockMethod)
       thisLoad() ~ GETFIELD(LockField) ~ INVOKEVIRTUAL(ReentrantLock.LockInterruptiblyMethod) ~
-      tryCatch {
+      tryCatch{
         thisLoad() ~ GETFIELD(ExpField) ~
         // if the expression is not null, compute the value and erase the expression
         ifCondition(Condition.NONNULL)(
@@ -221,11 +221,11 @@ object BackendObjType {
           thisLoad() ~ pushNull() ~ PUTFIELD(ExpField)
         ) ~
         thisLoad() ~ GETFIELD(ValueField)
-      } {
-        // catch
-        unlockLock ~ ATHROW()
+      }{
+         // catch
+         unlockLock ~ ATHROW()
       } ~
-      unlockLock ~ xReturn(tpe)
+        unlockLock ~ xReturn(tpe)
     }
   }
 
@@ -260,13 +260,12 @@ object BackendObjType {
         RETURN()
       }
 
-    def ToStringMethod: InstanceMethod =
-      JavaObject.ToStringMethod.implementation(this.jvmName)
+    def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName)
 
     /** `[] --> return String` */
     private def toStringIns: InstructionSet = {
       Util.mkString(Some(pushString("(")), Some(pushString(")")), elms.length, getIndexField) ~
-        xReturn(String.toTpe)
+      xReturn(String.toTpe)
     }
 
     /** `[] --> [this.index(i).xString()]` */
@@ -310,7 +309,7 @@ object BackendObjType {
     /** `[] --> return String` */
     private def toStringIns: InstructionSet = {
       Util.mkString(Some(pushString("Struct(")), Some(pushString(")")), elms.length, getIndexString) ~
-        xReturn(String.toTpe)
+      xReturn(String.toTpe)
     }
 
     /** `[] --> [this.index(i).xString()]` */
@@ -355,7 +354,7 @@ object BackendObjType {
       cm.mkStaticConstructor(StaticConstructor, singletonStaticConstructor(Constructor, SingletonField))
       cm.mkField(SingletonField, IsPublic, IsFinal, NotVolatile)
       cm.mkConstructor(Constructor, IsPublic, constructorIns)
-      cm.mkMethod(JavaObject.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns)
+      cm.mkMethod(ToStringMethod, IsPublic, NotFinal, toStringIns)
 
       cm.closeClassMaker()
     }
@@ -365,6 +364,8 @@ object BackendObjType {
     def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
+
+    def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName)
 
     /** `[] --> return` */
     private def constructorIns: InstructionSet = {
@@ -387,7 +388,7 @@ object BackendObjType {
 
       cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(Tagged.Constructor))
       elms.indices.foreach(i => cm.mkField(IndexField(i), IsPublic, NotFinal, NotVolatile))
-      cm.mkMethod(JavaObject.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns)
+      cm.mkMethod(ToStringMethod, IsPublic, NotFinal, toStringIns)
 
       cm.closeClassMaker()
     }
@@ -398,10 +399,12 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
+    def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName)
+
     /** `[] --> return String` */
     private def toStringIns: InstructionSet = {
       Util.mkString(Some(thisLoad() ~ GETFIELD(NameField) ~ pushString("(") ~ INVOKEVIRTUAL(String.Concat)), Some(pushString(")")), elms.length, getIndexString) ~
-        xReturn(String.toTpe)
+      xReturn(String.toTpe)
     }
 
     /** `[] --> [this.index(i).xString()]` */
@@ -431,7 +434,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod =ConstructorMethod(this.jvmName, Nil)
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
     def GetUniqueThreadClosureMethod: AbstractMethod = AbstractMethod(this.jvmName, "getUniqueThreadClosure", mkDescriptor()(this.toTpe))
 
@@ -640,7 +643,7 @@ object BackendObjType {
       cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(JavaObject.Constructor))
       args.indices.foreach(argIndex => cm.mkField(ArgField(argIndex), IsPublic, NotFinal, NotVolatile))
       specializedInterface.foreach(i => cm.mkMethod(i.functionMethod, IsPublic, NotFinal, i.functionIns))
-      cm.mkMethod(JavaObject.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns)
+      cm.mkMethod(ToStringMethod, IsPublic, NotFinal, toStringIns)
 
       cm.closeClassMaker()
     }
@@ -648,6 +651,8 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
     def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, s"arg$index", args(index))
+
+    def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName)
 
     private def toStringIns: InstructionSet = {
       val argString = args match {
@@ -677,27 +682,23 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
-    private def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName)
+    def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName)
 
     def interface: Record.type = Record
 
     def SingletonField: StaticField = StaticField(this.jvmName, "INSTANCE", this.toTpe)
 
-    private def LookupFieldMethod: InstanceMethod =
-      interface.LookupFieldMethod.implementation(this.jvmName)
+    private def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName)
 
-    private def RestrictFieldMethod: InstanceMethod =
-      interface.RestrictFieldMethod.implementation(this.jvmName)
+    private def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName)
 
-    private def ToStringMethod: InstanceMethod =
-      JavaObject.ToStringMethod.implementation(this.jvmName)
-
-    private def ToTailStringMethod: InstanceMethod =
-      interface.ToTailStringMethod.implementation(this.jvmName)
+    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName)
 
     private def toStringIns: InstructionSet = {
       pushString("{}") ~ ARETURN()
     }
+
+    private def ToTailStringMethod: InstanceMethod = interface.ToTailStringMethod.implementation(this.jvmName)
 
     private def toTailStringIns: InstructionSet = {
       withName(1, StringBuilder.toTpe) { sb =>
@@ -736,8 +737,7 @@ object BackendObjType {
 
     def RestField: InstanceField = InstanceField(this.jvmName, "rest", Record.toTpe)
 
-    def LookupFieldMethod: InstanceMethod =
-      Record.LookupFieldMethod.implementation(this.jvmName)
+    def LookupFieldMethod: InstanceMethod = Record.LookupFieldMethod.implementation(this.jvmName)
 
     private def lookupFieldIns: InstructionSet = {
       caseOnLabelEquality {
@@ -751,8 +751,7 @@ object BackendObjType {
       }
     }
 
-    def RestrictFieldMethod: InstanceMethod =
-      Record.RestrictFieldMethod.implementation(this.jvmName)
+    def RestrictFieldMethod: InstanceMethod = Record.RestrictFieldMethod.implementation(this.jvmName)
 
     private def restrictFieldIns: InstructionSet = {
       caseOnLabelEquality {
@@ -771,8 +770,7 @@ object BackendObjType {
       }
     }
 
-    def ToStringMethod: InstanceMethod =
-      JavaObject.ToStringMethod.implementation(this.jvmName)
+    def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName)
 
     private def toStringIns: InstructionSet = {
       // save the `rest` for the last recursive call
@@ -786,8 +784,7 @@ object BackendObjType {
         INVOKEINTERFACE(Record.ToTailStringMethod) ~ ARETURN()
     }
 
-    def ToTailStringMethod: InstanceMethod =
-      Record.ToTailStringMethod.implementation(this.jvmName)
+    def ToTailStringMethod: InstanceMethod = Record.ToTailStringMethod.implementation(this.jvmName)
 
     private def toTailStringIns: InstructionSet = {
       withName(1, StringBuilder.toTpe) { sb =>
@@ -888,8 +885,7 @@ object BackendObjType {
     def EndColField: InstanceField =
       InstanceField(this.jvmName, "endCol", BackendType.Int32)
 
-    def ToStringMethod: InstanceMethod =
-      JavaObject.ToStringMethod.implementation(this.jvmName)
+    def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName)
 
     private def toStringIns: InstructionSet = {
       // create string builder
@@ -924,8 +920,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
-    def StaticConstructor: StaticConstructorMethod =
-      StaticConstructorMethod(this.jvmName)
+    def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName)
 
     private def staticConstructorIns: InstructionSet = {
       NEW(JvmName.AtomicLong) ~
@@ -956,7 +951,7 @@ object BackendObjType {
         ALOAD(0) ~
         ICONST_0() ~
         GETSTATIC(ArgsField) ~ ARRAYLENGTH() ~
-        INVOKESTATIC(arrayCopy) ~
+        arrayCopy() ~
         ALOAD(0) ~ ARETURN()
     }
 
@@ -970,7 +965,7 @@ object BackendObjType {
         ALOAD(1) ~
         ICONST_0() ~
         ALOAD(0) ~ ARRAYLENGTH() ~
-        INVOKESTATIC(arrayCopy) ~
+        arrayCopy() ~
         ALOAD(1) ~ PUTSTATIC(ArgsField) ~ RETURN()
     }
 
@@ -978,17 +973,12 @@ object BackendObjType {
 
     private def ArgsField: StaticField = StaticField(this.jvmName, "args", BackendType.Array(String.toTpe))
 
-    private def arrayCopy: StaticMethod = StaticMethod(
-      JvmName.System,
-      "arraycopy",
-      mkDescriptor(
-        JavaObject.toTpe,
-        BackendType.Int32,
-        JavaObject.toTpe,
-        BackendType.Int32,
-        BackendType.Int32
-      )(VoidableType.Void)
-    )
+    private def arrayCopy(): InstructionSet = (f: F) => {
+      f.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
+        MethodDescriptor(List(JavaObject.toTpe, BackendType.Int32, JavaObject.toTpe, BackendType.Int32,
+          BackendType.Int32), VoidableType.Void), isInterface = false)
+      f
+    }
   }
 
   case object Regex extends BackendObjType {
@@ -1103,17 +1093,17 @@ object BackendObjType {
     private def constructorIns: InstructionSet = {
       withName(1, ReifiedSourceLocation.toTpe)(loc => withName(2, String.toTpe)(msg => {
         thisLoad() ~
-          NEW(StringBuilder.jvmName) ~
-          DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
-          msg.load() ~
-          INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
-          pushString(" at ") ~
-          INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
-          loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
-          INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
-          INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
-          INVOKESPECIAL(FlixError.Constructor) ~
-          RETURN()
+        NEW(StringBuilder.jvmName) ~
+        DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
+        msg.load() ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        pushString(" at ") ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+        INVOKESPECIAL(FlixError.Constructor) ~
+        RETURN()
       }))
     }
   }
@@ -1141,24 +1131,24 @@ object BackendObjType {
       withName(1, Suspension.toTpe)(suspension => withName(2, String.toTpe)(info => withName(3, ReifiedSourceLocation.toTpe)(loc => {
         val appendString = INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
         thisLoad() ~
-          NEW(StringBuilder.jvmName) ~
-          DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
-          pushString("Unhandled effect '") ~ appendString ~
-          suspension.load() ~ GETFIELD(Suspension.EffSymField) ~ appendString ~
-          pushString("' (") ~ appendString ~
-          info.load() ~ appendString ~
-          pushString(") at ") ~ appendString ~
-          loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ appendString ~
-          INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
-          INVOKESPECIAL(FlixError.Constructor) ~
-          // save arguments locally
-          thisLoad() ~
-          suspension.load() ~ GETFIELD(Suspension.EffSymField) ~
-          PUTFIELD(EffectNameField) ~
-          thisLoad() ~
-          loc.load() ~
-          PUTFIELD(LocationField) ~
-          RETURN()
+        NEW(StringBuilder.jvmName) ~
+        DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
+        pushString("Unhandled effect '") ~ appendString ~
+        suspension.load() ~ GETFIELD(Suspension.EffSymField) ~ appendString ~
+        pushString("' (") ~ appendString ~
+        info.load() ~ appendString ~
+        pushString(") at ") ~ appendString ~
+        loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ appendString ~
+        INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+        INVOKESPECIAL(FlixError.Constructor) ~
+        // save arguments locally
+        thisLoad() ~
+        suspension.load() ~ GETFIELD(Suspension.EffSymField) ~
+        PUTFIELD(EffectNameField) ~
+        thisLoad() ~
+        loc.load() ~
+        PUTFIELD(LocationField) ~
+        RETURN()
       })))
     }
   }
@@ -1201,17 +1191,17 @@ object BackendObjType {
 
     private def constructorIns: InstructionSet = {
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
-        thisLoad() ~ NEW(BackendObjType.ConcurrentLinkedQueue.jvmName) ~
-        DUP() ~ invokeConstructor(BackendObjType.ConcurrentLinkedQueue.jvmName, MethodDescriptor.NothingToVoid) ~
-        PUTFIELD(ThreadsField) ~
-        thisLoad() ~ INVOKESTATIC(Thread.CurrentThreadMethod) ~
-        PUTFIELD(RegionThreadField) ~
-        thisLoad() ~ ACONST_NULL() ~
-        PUTFIELD(ChildExceptionField) ~
-        thisLoad() ~ NEW(BackendObjType.LinkedList.jvmName) ~
-        DUP() ~ invokeConstructor(BackendObjType.LinkedList.jvmName, MethodDescriptor.NothingToVoid) ~
-        PUTFIELD(OnExitField) ~
-        RETURN()
+      thisLoad() ~ NEW(BackendObjType.ConcurrentLinkedQueue.jvmName) ~
+      DUP() ~ invokeConstructor(BackendObjType.ConcurrentLinkedQueue.jvmName, MethodDescriptor.NothingToVoid) ~
+      PUTFIELD(ThreadsField) ~
+      thisLoad() ~ INVOKESTATIC(Thread.CurrentThreadMethod) ~
+      PUTFIELD(RegionThreadField) ~
+      thisLoad() ~ ACONST_NULL() ~
+      PUTFIELD(ChildExceptionField) ~
+      thisLoad() ~ NEW(BackendObjType.LinkedList.jvmName) ~
+      DUP() ~ invokeConstructor(BackendObjType.LinkedList.jvmName, MethodDescriptor.NothingToVoid) ~
+      PUTFIELD(OnExitField) ~
+      RETURN()
     }
 
     // final public void spawn(Runnable r) {
@@ -1224,16 +1214,16 @@ object BackendObjType {
 
     private def spawnIns: InstructionSet = {
       INVOKESTATIC(Thread.OfVirtualMethod) ~ ALOAD(1) ~ INVOKEINTERFACE(ThreadBuilderOfVirtual.UnstartedMethod) ~
-        storeWithName(2, BackendObjType.Thread.toTpe) { thread =>
-          thread.load() ~ NEW(BackendObjType.UncaughtExceptionHandler.jvmName) ~
-            DUP() ~ thisLoad() ~
-            invokeConstructor(BackendObjType.UncaughtExceptionHandler.jvmName, mkDescriptor(BackendObjType.Region.toTpe)(VoidableType.Void)) ~
-            INVOKEVIRTUAL(Thread.SetUncaughtExceptionHandlerMethod) ~
-            thread.load() ~ INVOKEVIRTUAL(Thread.StartMethod) ~
-            thisLoad() ~ GETFIELD(ThreadsField) ~ thread.load() ~
-            INVOKEVIRTUAL(ConcurrentLinkedQueue.AddMethod) ~ POP() ~
-            RETURN()
-        }
+      storeWithName(2, BackendObjType.Thread.toTpe) { thread =>
+        thread.load() ~ NEW(BackendObjType.UncaughtExceptionHandler.jvmName) ~
+        DUP() ~ thisLoad() ~
+        invokeConstructor(BackendObjType.UncaughtExceptionHandler.jvmName, mkDescriptor(BackendObjType.Region.toTpe)(VoidableType.Void)) ~
+        INVOKEVIRTUAL(Thread.SetUncaughtExceptionHandlerMethod) ~
+        thread.load() ~ INVOKEVIRTUAL(Thread.StartMethod) ~
+        thisLoad() ~ GETFIELD(ThreadsField) ~ thread.load() ~
+        INVOKEVIRTUAL(ConcurrentLinkedQueue.AddMethod) ~ POP() ~
+        RETURN()
+      }
     }
 
     // final public void exit() throws InterruptedException {
@@ -1249,24 +1239,24 @@ object BackendObjType {
       withName(1, BackendObjType.Thread.toTpe) { t =>
         whileLoop(Condition.NONNULL) {
           thisLoad() ~ GETFIELD(ThreadsField) ~
-            INVOKEVIRTUAL(ConcurrentLinkedQueue.PollMethod) ~
-            CHECKCAST(BackendObjType.Thread.jvmName) ~ DUP() ~ t.store()
+          INVOKEVIRTUAL(ConcurrentLinkedQueue.PollMethod) ~
+          CHECKCAST(BackendObjType.Thread.jvmName) ~ DUP() ~ t.store()
         } {
           t.load() ~ INVOKEVIRTUAL(Thread.JoinMethod)
         } ~
-          withName(2, BackendObjType.Iterator.toTpe) { i =>
-            thisLoad() ~ GETFIELD(OnExitField) ~
-              INVOKEVIRTUAL(LinkedList.IteratorMethod) ~
-              i.store() ~
-              whileLoop(Condition.NE) {
-                i.load() ~ INVOKEINTERFACE(Iterator.HasNextMethod)
-              } {
-                i.load() ~ INVOKEINTERFACE(Iterator.NextMethod) ~
-                  CHECKCAST(Runnable.jvmName) ~
-                  INVOKEINTERFACE(Runnable.RunMethod)
-              }
-          } ~
-          RETURN()
+        withName(2, BackendObjType.Iterator.toTpe) { i =>
+          thisLoad() ~ GETFIELD(OnExitField) ~
+          INVOKEVIRTUAL(LinkedList.IteratorMethod) ~
+          i.store() ~
+          whileLoop(Condition.NE) {
+            i.load() ~ INVOKEINTERFACE(Iterator.HasNextMethod)
+          } {
+            i.load() ~ INVOKEINTERFACE(Iterator.NextMethod) ~
+            CHECKCAST(Runnable.jvmName) ~
+            INVOKEINTERFACE(Runnable.RunMethod)
+          }
+        } ~
+        RETURN()
       }
     }
 
@@ -1274,43 +1264,40 @@ object BackendObjType {
     //   childException = e;
     //   regionThread.interrupt();
     // }
-    def ReportChildExceptionMethod: InstanceMethod =
-      InstanceMethod(this.jvmName, "reportChildException", mkDescriptor(JvmName.Throwable.toTpe)(VoidableType.Void))
+    def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, "reportChildException", mkDescriptor(JvmName.Throwable.toTpe)(VoidableType.Void))
 
     private def reportChildExceptionIns: InstructionSet = {
       thisLoad() ~ ALOAD(1) ~
-        PUTFIELD(ChildExceptionField) ~
-        thisLoad() ~ GETFIELD(RegionThreadField) ~
-        INVOKEVIRTUAL(Thread.InterruptMethod) ~
-        RETURN()
+      PUTFIELD(ChildExceptionField) ~
+      thisLoad() ~ GETFIELD(RegionThreadField) ~
+      INVOKEVIRTUAL(Thread.InterruptMethod) ~
+      RETURN()
     }
 
     // final public void reThrowChildException() throws Throwable {
     //   if (childException != null)
     //     throw childException;
     // }
-    def ReThrowChildExceptionMethod: InstanceMethod =
-      InstanceMethod(this.jvmName, "reThrowChildException", MethodDescriptor.NothingToVoid)
+    def ReThrowChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, "reThrowChildException", MethodDescriptor.NothingToVoid)
 
     private def reThrowChildExceptionIns: InstructionSet = {
       thisLoad() ~ GETFIELD(ChildExceptionField) ~
-        ifCondition(Condition.NONNULL) {
-          thisLoad() ~ GETFIELD(ChildExceptionField) ~
-            ATHROW()
-        } ~
-        RETURN()
+      ifCondition(Condition.NONNULL) {
+        thisLoad() ~ GETFIELD(ChildExceptionField) ~
+        ATHROW()
+      } ~
+      RETURN()
     }
 
     // final public void runOnExit(Runnable r) {
     //   onExit.addFirst(r);
     // }
-    def RunOnExitMethod: InstanceMethod =
-      InstanceMethod(this.jvmName, "runOnExit", mkDescriptor(BackendObjType.Runnable.toTpe)(VoidableType.Void))
+    def RunOnExitMethod: InstanceMethod = InstanceMethod(this.jvmName, "runOnExit", mkDescriptor(BackendObjType.Runnable.toTpe)(VoidableType.Void))
 
     private def runOnExitIns: InstructionSet = {
       thisLoad() ~ GETFIELD(OnExitField) ~ ALOAD(1) ~
-        INVOKEVIRTUAL(LinkedList.AddFirstMethod) ~
-        RETURN()
+      INVOKEVIRTUAL(LinkedList.AddFirstMethod) ~
+      RETURN()
     }
   }
 
@@ -1334,18 +1321,17 @@ object BackendObjType {
 
     private def constructorIns: InstructionSet = {
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
-        thisLoad() ~ ALOAD(1) ~ PUTFIELD(RegionField) ~
-        RETURN()
+      thisLoad() ~ ALOAD(1) ~ PUTFIELD(RegionField) ~
+      RETURN()
     }
 
     // public void uncaughtException(Thread t, Throwable e) { r.reportChildException(e); }
-    def UncaughtExceptionMethod: InstanceMethod =
-      InstanceMethod(this.jvmName, "uncaughtException", ThreadUncaughtExceptionHandler.UncaughtExceptionMethod.d)
+    def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, "uncaughtException", ThreadUncaughtExceptionHandler.UncaughtExceptionMethod.d)
 
     private def uncaughtExceptionsIns: InstructionSet = {
       thisLoad() ~ GETFIELD(RegionField) ~
-        ALOAD(2) ~ INVOKEVIRTUAL(Region.ReportChildExceptionMethod) ~
-        RETURN()
+      ALOAD(2) ~ INVOKEVIRTUAL(Region.ReportChildExceptionMethod) ~
+      RETURN()
     }
   }
 
@@ -1359,17 +1345,16 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def MainMethod: StaticMethod =
-      StaticMethod(this.jvmName, "main", mkDescriptor(BackendType.Array(String.toTpe))(VoidableType.Void))
+    def MainMethod: StaticMethod = StaticMethod(this.jvmName, "main", mkDescriptor(BackendType.Array(String.toTpe))(VoidableType.Void))
 
     private def mainIns: InstructionSet = {
       val defName = JvmOps.getFunctionDefinitionClassName(sym)
       withName(0, BackendType.Array(String.toTpe))(args =>
         args.load() ~ INVOKESTATIC(Global.SetArgsMethod) ~
-          NEW(defName) ~ DUP() ~ INVOKESPECIAL(defName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid) ~
-          DUP() ~ GETSTATIC(Unit.SingletonField) ~ PUTFIELD(InstanceField(defName, "arg0", JavaObject.toTpe)) ~
-          Result.unwindSuspensionFreeThunk(s"in ${this.jvmName.toBinaryName}", SourceLocation.Unknown) ~
-          POP() ~ RETURN()
+        NEW(defName) ~ DUP() ~ INVOKESPECIAL(defName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid) ~
+        DUP() ~ GETSTATIC(Unit.SingletonField) ~ PUTFIELD(InstanceField(defName, "arg0", JavaObject.toTpe)) ~
+        Result.unwindSuspensionFreeThunk(s"in ${this.jvmName.toBinaryName}", SourceLocation.Unknown) ~
+        POP() ~ RETURN()
       )
     }
   }
@@ -1380,74 +1365,74 @@ object BackendObjType {
 
   case object String extends BackendObjType {
 
-    def JoinMethod: StaticMethod = StaticMethod(this.jvmName, "join",
-      mkDescriptor(CharSequence.toTpe, BackendType.Array(CharSequence.toTpe))(String.toTpe))
+    def JoinMethod: StaticMethod = StaticMethod(this.jvmName,
+      "join", mkDescriptor(CharSequence.toTpe, BackendType.Array(CharSequence.toTpe))(String.toTpe))
 
-    def BoolValueOf: StaticMethod = StaticMethod(this.jvmName, "valueOf",
-      mkDescriptor(BackendType.Bool)(this.toTpe))
+    def BoolValueOf: StaticMethod = StaticMethod(this.jvmName,
+      "valueOf", mkDescriptor(BackendType.Bool)(this.toTpe))
 
-    def CharValueOf: StaticMethod = StaticMethod(this.jvmName, "valueOf",
-      mkDescriptor(BackendType.Char)(this.toTpe))
+    def CharValueOf: StaticMethod = StaticMethod(this.jvmName,
+      "valueOf", mkDescriptor(BackendType.Char)(this.toTpe))
 
     // implicit use of Int8 as Int32
-    def Int8ValueOf: StaticMethod = StaticMethod(this.jvmName, "valueOf",
-      mkDescriptor(BackendType.Int32)(this.toTpe))
+    def Int8ValueOf: StaticMethod = StaticMethod(this.jvmName,
+      "valueOf", mkDescriptor(BackendType.Int32)(this.toTpe))
 
     // implicit use of Int16 as Int32
-    def Int16ValueOf: StaticMethod = StaticMethod(this.jvmName, "valueOf",
-      mkDescriptor(BackendType.Int32)(this.toTpe))
+    def Int16ValueOf: StaticMethod = StaticMethod(this.jvmName,
+      "valueOf", mkDescriptor(BackendType.Int32)(this.toTpe))
 
-    def Int32ValueOf: StaticMethod = StaticMethod(this.jvmName, "valueOf",
-      mkDescriptor(BackendType.Int32)(this.toTpe))
+    def Int32ValueOf: StaticMethod = StaticMethod(this.jvmName,
+      "valueOf", mkDescriptor(BackendType.Int32)(this.toTpe))
 
-    def Int64ValueOf: StaticMethod = StaticMethod(this.jvmName, "valueOf",
-      mkDescriptor(BackendType.Int64)(this.toTpe))
+    def Int64ValueOf: StaticMethod = StaticMethod(this.jvmName,
+      "valueOf", mkDescriptor(BackendType.Int64)(this.toTpe))
 
-    def Float32ValueOf: StaticMethod = StaticMethod(this.jvmName, "valueOf",
-      mkDescriptor(BackendType.Float32)(this.toTpe))
+    def Float32ValueOf: StaticMethod = StaticMethod(this.jvmName,
+      "valueOf", mkDescriptor(BackendType.Float32)(this.toTpe))
 
-    def Float64ValueOf: StaticMethod = StaticMethod(this.jvmName, "valueOf",
-      mkDescriptor(BackendType.Float64)(this.toTpe))
+    def Float64ValueOf: StaticMethod = StaticMethod(this.jvmName,
+      "valueOf", mkDescriptor(BackendType.Float64)(this.toTpe))
 
-    def ObjectValueOf: StaticMethod = StaticMethod(this.jvmName, "valueOf",
-      mkDescriptor(BackendObjType.JavaObject.toTpe)(this.toTpe))
+    def ObjectValueOf: StaticMethod = StaticMethod(this.jvmName,
+      "valueOf", mkDescriptor(BackendObjType.JavaObject.toTpe)(this.toTpe))
 
-    def Concat: InstanceMethod =
-      InstanceMethod(this.jvmName, "concat", mkDescriptor(this.toTpe)(this.toTpe))
+    def Concat: InstanceMethod = InstanceMethod(this.jvmName,
+      "concat", mkDescriptor(this.toTpe)(this.toTpe))
   }
 
   case object CharSequence extends BackendObjType
 
   case object Arrays extends BackendObjType {
-    def BoolArrToString: StaticMethod = StaticMethod(this.jvmName, "toString",
-      mkDescriptor(BackendType.Array(BackendType.Bool))(BackendObjType.String.toTpe))
+    def BoolArrToString: StaticMethod = StaticMethod(this.jvmName,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Bool))(BackendObjType.String.toTpe))
 
-    def CharArrToString: StaticMethod = StaticMethod(this.jvmName, "toString",
-      mkDescriptor(BackendType.Array(BackendType.Char))(BackendObjType.String.toTpe))
+    def CharArrToString: StaticMethod = StaticMethod(this.jvmName,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Char))(BackendObjType.String.toTpe))
 
-    def Int8ArrToString: StaticMethod = StaticMethod(this.jvmName, "toString",
-      mkDescriptor(BackendType.Array(BackendType.Int8))(BackendObjType.String.toTpe))
+    def Int8ArrToString: StaticMethod = StaticMethod(this.jvmName,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int8))(BackendObjType.String.toTpe))
 
-    def Int16ArrToString: StaticMethod = StaticMethod(this.jvmName, "toString",
-      mkDescriptor(BackendType.Array(BackendType.Int16))(BackendObjType.String.toTpe))
+    def Int16ArrToString: StaticMethod = StaticMethod(this.jvmName,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int16))(BackendObjType.String.toTpe))
 
-    def Int32ArrToString: StaticMethod = StaticMethod(this.jvmName, "toString",
-      mkDescriptor(BackendType.Array(BackendType.Int32))(BackendObjType.String.toTpe))
+    def Int32ArrToString: StaticMethod = StaticMethod(this.jvmName,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int32))(BackendObjType.String.toTpe))
 
-    def Int64ArrToString: StaticMethod = StaticMethod(this.jvmName, "toString",
-      mkDescriptor(BackendType.Array(BackendType.Int64))(BackendObjType.String.toTpe))
+    def Int64ArrToString: StaticMethod = StaticMethod(this.jvmName,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int64))(BackendObjType.String.toTpe))
 
-    def Float32ArrToString: StaticMethod = StaticMethod(this.jvmName, "toString",
-      mkDescriptor(BackendType.Array(BackendType.Float32))(BackendObjType.String.toTpe))
+    def Float32ArrToString: StaticMethod = StaticMethod(this.jvmName,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Float32))(BackendObjType.String.toTpe))
 
-    def Float64ArrToString: StaticMethod = StaticMethod(this.jvmName, "toString",
-      mkDescriptor(BackendType.Array(BackendType.Float64))(BackendObjType.String.toTpe))
+    def Float64ArrToString: StaticMethod = StaticMethod(this.jvmName,
+      "toString", mkDescriptor(BackendType.Array(BackendType.Float64))(BackendObjType.String.toTpe))
 
-    def ObjArrToString: StaticMethod = StaticMethod(this.jvmName, "toString",
-      mkDescriptor(BackendType.Array(BackendObjType.JavaObject.toTpe))(BackendObjType.String.toTpe))
+    def ObjArrToString: StaticMethod = StaticMethod(this.jvmName,
+      "toString", mkDescriptor(BackendType.Array(BackendObjType.JavaObject.toTpe))(BackendObjType.String.toTpe))
 
-    def DeepToString: StaticMethod = StaticMethod(this.jvmName, "deepToString",
-      mkDescriptor(BackendType.Array(BackendObjType.JavaObject.toTpe))(BackendObjType.String.toTpe))
+    def DeepToString: StaticMethod = StaticMethod(this.jvmName,
+      "deepToString", mkDescriptor(BackendType.Array(BackendObjType.JavaObject.toTpe))(BackendObjType.String.toTpe))
   }
 
   case object JavaObject extends BackendObjType {
@@ -1846,7 +1831,7 @@ object BackendObjType {
       cm.mkField(HeadField, IsPublic, NotFinal, NotVolatile)
       cm.mkField(TailField, IsPublic, NotFinal, NotVolatile)
       cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(JavaObject.Constructor))
-      cm.mkMethod(Frames.PushMethod.implementation(this.jvmName), IsPublic, IsFinal, Frames.pushImplementation)
+      cm.mkMethod(PushMethod, IsPublic, IsFinal, Frames.pushImplementation)
       cm.mkMethod(ReverseOntoMethod, IsPublic, IsFinal, reverseOntoIns)
 
       cm.closeClassMaker()
@@ -1858,16 +1843,18 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
+    def PushMethod: InstanceMethod = Frames.PushMethod.implementation(this.jvmName)
+
     def ReverseOntoMethod: InstanceMethod = Frames.ReverseOntoMethod.implementation(this.jvmName)
 
     private def reverseOntoIns: InstructionSet = {
       withName(1, Frames.toTpe)(rest =>
         thisLoad() ~ GETFIELD(TailField) ~
-          NEW(FramesCons.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesCons.Constructor) ~
-          DUP() ~ thisLoad() ~ GETFIELD(HeadField) ~ PUTFIELD(HeadField) ~
-          DUP() ~ rest.load() ~ PUTFIELD(TailField) ~
-          INVOKEINTERFACE(Frames.ReverseOntoMethod) ~
-          xReturn(Frames.toTpe)
+        NEW(FramesCons.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesCons.Constructor) ~
+        DUP() ~ thisLoad() ~ GETFIELD(HeadField) ~ PUTFIELD(HeadField) ~
+        DUP() ~ rest.load() ~ PUTFIELD(TailField) ~
+        INVOKEINTERFACE(Frames.ReverseOntoMethod) ~
+        xReturn(Frames.toTpe)
       )
     }
   }
@@ -1913,7 +1900,9 @@ object BackendObjType {
       withName(0, Resumption.toTpe) { resumption =>
         withName(1, Value.toTpe) { v => {
           resumption.load() ~ v.load() ~ INVOKEINTERFACE(Resumption.RewindMethod) ~ ARETURN()
-      }}}
+        }
+        }
+      }
     }
   }
 
@@ -1964,12 +1953,14 @@ object BackendObjType {
       val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Resumption.jvmName))
 
       cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(JavaObject.Constructor))
-      cm.mkMethod(Resumption.RewindMethod.implementation(this.jvmName), IsPublic, IsFinal, rewindIns)
+      cm.mkMethod(RewindMethod, IsPublic, IsFinal, rewindIns)
 
       cm.closeClassMaker()
     }
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
+
+    def RewindMethod: InstanceMethod = Resumption.RewindMethod.implementation(this.jvmName)
 
     private def rewindIns: InstructionSet = {
       withName(1, Value.toTpe) { v =>
@@ -2036,14 +2027,14 @@ object BackendObjType {
               // FramesCons
               frames.load() ~ CHECKCAST(FramesCons.jvmName) ~ storeWithName(7, FramesCons.toTpe) { cons => {
               effSym.load() ~
-                handler.load() ~
-                cons.load() ~ GETFIELD(FramesCons.TailField) ~
-                // thunk
-                cons.load() ~ GETFIELD(FramesCons.HeadField) ~
-                res.load() ~
-                mkStaticLambda(Thunk.InvokeMethod, Frame.StaticApplyMethod, drop = 0) ~
-                INVOKESTATIC(InstallHandlerMethod) ~
-                xReturn(Result.toTpe)
+              handler.load() ~
+              cons.load() ~ GETFIELD(FramesCons.TailField) ~
+              // thunk
+              cons.load() ~ GETFIELD(FramesCons.HeadField) ~
+              res.load() ~
+              mkStaticLambda(Thunk.InvokeMethod, Frame.StaticApplyMethod, drop = 0) ~
+              INVOKESTATIC(InstallHandlerMethod) ~
+              xReturn(Result.toTpe)
             }
             }
           }
@@ -2073,7 +2064,7 @@ object BackendObjType {
       val cm = mkClass(this.jvmName, IsFinal, superClass.jvmName)
       cm.mkConstructor(Constructor, IsPublic, constructorIns)
       cm.mkField(ResumptionField, IsPrivate, IsFinal, NotVolatile)
-      cm.mkMethod(Thunk.InvokeMethod.implementation(this.jvmName), IsPublic, NotFinal, invokeIns)
+      cm.mkMethod(InvokeMethod, IsPublic, NotFinal, invokeIns)
       cm.mkMethod(UniqueMethod, IsPublic, NotFinal, uniqueIns)
       cm.closeClassMaker()
     }
@@ -2089,6 +2080,8 @@ object BackendObjType {
     }
 
     def ResumptionField: InstanceField = InstanceField(this.jvmName, "resumption", Resumption.toTpe)
+
+    def InvokeMethod: InstanceMethod = Thunk.InvokeMethod.implementation(this.jvmName)
 
     private def invokeIns: InstructionSet = {
       thisLoad() ~ GETFIELD(ResumptionField) ~
