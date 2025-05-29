@@ -817,27 +817,27 @@ object GenExpression {
         compileExpr(exp)
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
-      case AtomicOp.Unbox =>
+      case AtomicOp.Unbox => mv.visitByteIns({
+        import BytecodeInstructions.*
         val List(exp) = exps
-        compileExpr(exp)
-        // this is a value
-        val valueField = BackendObjType.Value.fieldFromType(BackendType.asErasedBackendType(tpe))
-        val ins = BytecodeInstructions.GETFIELD(valueField)
-        mv.visitTypeInsn(CHECKCAST, BackendObjType.Value.jvmName.toInternalName)
-        mv.visitByteIns(ins)
+        cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~
+          CHECKCAST(BackendObjType.Value.jvmName) ~
+          GETFIELD(BackendObjType.Value.fieldFromType(BackendType.asErasedBackendType(tpe)))
+      })
 
-      case AtomicOp.Box =>
+      case AtomicOp.Box => mv.visitByteIns({
+        import BytecodeInstructions.*
         val List(exp) = exps
-        compileExpr(exp)
         val erasedExpTpe = BackendType.toErasedBackendType(exp.tpe)
         val valueField = BackendObjType.Value.fieldFromType(erasedExpTpe)
-        val ins = {
-          import BytecodeInstructions.*
-          NEW(BackendObjType.Value.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.Value.Constructor) ~ DUP() ~
-            xSwap(lowerLarge = erasedExpTpe.is64BitWidth, higherLarge = true) ~ // two objects on top of the stack
-            PUTFIELD(valueField)
-        }
-        mv.visitByteIns(ins)
+        cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~
+          NEW(BackendObjType.Value.jvmName) ~
+          DUP() ~
+          INVOKESPECIAL(BackendObjType.Value.Constructor) ~
+          DUP() ~
+          xSwap(lowerLarge = erasedExpTpe.is64BitWidth, higherLarge = true) ~ // two objects on top of the stack
+          PUTFIELD(valueField)
+      })
 
       case AtomicOp.InvokeConstructor(constructor) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
