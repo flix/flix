@@ -33,8 +33,8 @@ import org.objectweb.asm.{ClassWriter, Opcodes}
 
 // TODO: There are further things you can constrain and assert, e.g. final classes have implicitly final methods.
 sealed trait ClassMaker {
-  def mkStaticConstructor(c: StaticConstructorMethod): Unit = {
-    makeMethod(Some(extractIns(c.ins)), c.name, c.d, c.v, c.f, IsStatic, NotAbstract)
+  def mkStaticConstructor(c: StaticConstructorMethod, ins: InstructionSet): Unit = {
+    makeMethod(Some(ins), c.name, c.d, IsDefault, NotFinal, IsStatic, NotAbstract)
   }
 
   /**
@@ -54,9 +54,9 @@ sealed trait ClassMaker {
     field.visitEnd()
   }
 
-  def mkField(f: Field): Unit = f match {
-    case InstanceField(_, v, f, vol, name, tpe) => makeField(name, tpe, v, f, vol, NotStatic)
-    case StaticField(_, v, f, vol, name, tpe) => makeField(name, tpe, v, f, vol, IsStatic)
+  def mkField(field: Field, v: Visibility, f: Final, vol: Volatility): Unit = field match {
+    case InstanceField(_, name, tpe) => makeField(name, tpe, v, f, vol, NotStatic)
+    case StaticField(_, name, tpe) => makeField(name, tpe, v, f, vol, IsStatic)
   }
 
   protected def makeMethod(i: Option[InstructionSet], methodName: String, d: MethodDescriptor, v: Visibility, f: Final, s: Static, a: Abstract): Unit = {
@@ -79,44 +79,35 @@ sealed trait ClassMaker {
 
 object ClassMaker {
 
-  private def extractIns(ins: Option[Unit => InstructionSet]): InstructionSet = ins match {
-    case Some(value) => value(())
-    case None => throw InternalCompilerException(s"Trying to generate code for external class", SourceLocation.Unknown)
-  }
-
   class InstanceClassMaker(cw: ClassWriter) extends ClassMaker {
     protected val visitor: ClassWriter = cw
 
-    def mkConstructor(ins: InstructionSet, d: MethodDescriptor, v: Visibility): Unit = {
-      makeMethod(Some(ins), JvmName.ConstructorMethod, d, v, NotFinal, NotStatic, NotAbstract)
+    def mkStaticMethod(m: StaticMethod, v: Visibility, f: Final, ins: InstructionSet): Unit = {
+      makeMethod(Some(ins), m.name, m.d, v, f, IsStatic, NotAbstract)
     }
 
-    def mkStaticMethod(m: StaticMethod): Unit = {
-      makeMethod(Some(extractIns(m.ins)), m.name, m.d, m.v, m.f, IsStatic, NotAbstract)
+    def mkConstructor(c: ConstructorMethod, v: Visibility, ins: InstructionSet): Unit = {
+      makeMethod(Some(ins), JvmName.ConstructorMethod, c.d, v, NotFinal, NotStatic, NotAbstract)
     }
 
-    def mkConstructor(c: ConstructorMethod): Unit = {
-      makeMethod(Some(extractIns(c.ins)), JvmName.ConstructorMethod, c.d, c.v, c.f, NotStatic, NotAbstract)
-    }
-
-    def mkMethod(m: InstanceMethod): Unit = {
-      makeMethod(Some(extractIns(m.ins)), m.name, m.d, m.v, m.f, NotStatic, NotAbstract)
+    def mkMethod(m: InstanceMethod, v: Visibility, f: Final, ins: InstructionSet): Unit = {
+      makeMethod(Some(ins), m.name, m.d, v, f, NotStatic, NotAbstract)
     }
   }
 
   class AbstractClassMaker(cw: ClassWriter) extends ClassMaker {
     protected val visitor: ClassWriter = cw
 
-    def mkConstructor(c: ConstructorMethod): Unit = {
-      makeMethod(Some(extractIns(c.ins)), c.name, c.d, c.v, c.f, NotStatic, NotAbstract)
+    def mkConstructor(c: ConstructorMethod, v: Visibility, ins: InstructionSet): Unit = {
+      makeMethod(Some(ins), c.name, c.d, v, NotFinal, NotStatic, NotAbstract)
     }
 
-    def mkStaticMethod(m: StaticMethod): Unit = {
-      makeMethod(Some(extractIns(m.ins)), m.name, m.d, m.v, m.f, IsStatic, NotAbstract)
+    def mkStaticMethod(m: StaticMethod, v: Visibility, f: Final, ins: InstructionSet): Unit = {
+      makeMethod(Some(ins), m.name, m.d, v, f, IsStatic, NotAbstract)
     }
 
-    def mkMethod(m: InstanceMethod): Unit = {
-      makeMethod(Some(extractIns(m.ins)), m.name, m.d, m.v, m.f, NotStatic, NotAbstract)
+    def mkMethod(m: InstanceMethod, v: Visibility, f: Final, ins: InstructionSet): Unit = {
+      makeMethod(Some(ins), m.name, m.d, v, f, NotStatic, NotAbstract)
     }
 
     def mkAbstractMethod(m: AbstractMethod): Unit = {
@@ -131,12 +122,12 @@ object ClassMaker {
       makeAbstractMethod(m.name, m.d)
     }
 
-    def mkStaticInterfaceMethod(m: StaticInterfaceMethod): Unit = {
-      makeMethod(Some(extractIns(m.ins)), m.name, m.d, m.v, m.f, IsStatic, NotAbstract)
+    def mkStaticInterfaceMethod(m: StaticInterfaceMethod, v: Visibility, f: Final, ins: InstructionSet): Unit = {
+      makeMethod(Some(ins), m.name, m.d, v, f, IsStatic, NotAbstract)
     }
 
-    def mkDefaultMethod(m: DefaultMethod): Unit = {
-      makeMethod(Some(extractIns(m.ins)), m.name, m.d, m.v, m.f, NotStatic, NotAbstract)
+    def mkDefaultMethod(m: DefaultMethod, v: Visibility, f: Final, ins: InstructionSet): Unit = {
+      makeMethod(Some(ins), m.name, m.d, v, f, NotStatic, NotAbstract)
     }
   }
 
@@ -248,17 +239,11 @@ object ClassMaker {
     def name: String
 
     def tpe: BackendType
-
-    def v: Visibility
-
-    def f: Final
-
-    def vol: Volatility
   }
 
-  sealed case class InstanceField(clazz: JvmName, v: Visibility, f: Final, vol: Volatility, name: String, tpe: BackendType) extends Field
+  sealed case class InstanceField(clazz: JvmName, name: String, tpe: BackendType) extends Field
 
-  sealed case class StaticField(clazz: JvmName, v: Visibility, f: Final, vol: Volatility, name: String, tpe: BackendType) extends Field
+  sealed case class StaticField(clazz: JvmName, name: String, tpe: BackendType) extends Field
 
   sealed trait Method {
     def clazz: JvmName
@@ -266,51 +251,35 @@ object ClassMaker {
     def name: String
 
     def d: MethodDescriptor
-
-    def v: Visibility
-
-    def f: Final
   }
 
-  sealed case class ConstructorMethod(clazz: JvmName, v: Visibility, args: List[BackendType], ins: Option[Unit => InstructionSet]) extends Method {
+  sealed case class ConstructorMethod(clazz: JvmName, args: List[BackendType]) extends Method {
     override def name: String = "<init>"
 
     override def d: MethodDescriptor = MethodDescriptor(args, VoidableType.Void)
-
-    override def f: Final = NotFinal
   }
 
-  case class StaticConstructorMethod(clazz: JvmName, ins: Option[Unit => InstructionSet]) extends Method {
+  case class StaticConstructorMethod(clazz: JvmName) extends Method {
     override def name: String = "<clinit>"
 
     override def d: MethodDescriptor = MethodDescriptor.NothingToVoid
-
-    override def v: Visibility = IsDefault
-
-    override def f: Final = NotFinal
   }
 
-  sealed case class InstanceMethod(clazz: JvmName, v: Visibility, f: Final, name: String, d: MethodDescriptor, ins: Option[Unit => InstructionSet]) extends Method {
-    def implementation(clazz: JvmName, ins: Option[Unit => InstructionSet]): InstanceMethod = InstanceMethod(clazz, v, f, name, d, ins)
+  sealed case class InstanceMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method {
+    def implementation(clazz: JvmName): InstanceMethod = InstanceMethod(clazz, name, d)
   }
 
-  sealed case class DefaultMethod(clazz: JvmName, v: Visibility, f: Final, name: String, d: MethodDescriptor, ins: Option[Unit => InstructionSet]) extends Method
+  sealed case class DefaultMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method
 
   sealed case class InterfaceMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method {
-    override def f: Final = NotFinal
-
-    override def v: Visibility = IsPublic
-
-    def implementation(clazz: JvmName, f: Final, ins: Option[Unit => InstructionSet]): InstanceMethod = InstanceMethod(clazz, IsPublic, f, name, d, ins)
+    def implementation(clazz: JvmName): InstanceMethod = InstanceMethod(clazz, name, d)
   }
 
-  sealed case class AbstractMethod(clazz: JvmName, v: Visibility, name: String, d: MethodDescriptor) extends Method {
-    override def f: Final = NotFinal
-
-    def implementation(clazz: JvmName, f: Final, ins: Option[Unit => InstructionSet]): InstanceMethod = InstanceMethod(clazz, v, f, name, d, ins)
+  sealed case class AbstractMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method {
+    def implementation(clazz: JvmName): InstanceMethod = InstanceMethod(clazz, name, d)
   }
 
-  sealed case class StaticMethod(clazz: JvmName, v: Visibility, f: Final, name: String, d: MethodDescriptor, ins: Option[Unit => InstructionSet]) extends Method
+  sealed case class StaticMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method
 
-  sealed case class StaticInterfaceMethod(clazz: JvmName, v: Visibility, f: Final, name: String, d: MethodDescriptor, ins: Option[Unit => InstructionSet]) extends Method
+  sealed case class StaticInterfaceMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method
 }

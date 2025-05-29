@@ -961,11 +961,8 @@ object GenExpression {
               CHECKCAST(BackendObjType.Runnable.jvmName) ~
               INVOKESTATIC(ClassMaker.StaticMethod(
                 JvmName.Thread,
-                ClassMaker.Visibility.IsPublic,
-                ClassMaker.Final.NotFinal,
                 "startVirtualThread",
-                MethodDescriptor.mkDescriptor(BackendObjType.Runnable.toTpe)(BackendObjType.Thread.toTpe),
-                None
+                MethodDescriptor.mkDescriptor(BackendObjType.Runnable.toTpe)(BackendObjType.Thread.toTpe)
               )) ~
               POP() ~
               GETSTATIC(BackendObjType.Unit.SingletonField)
@@ -1394,11 +1391,8 @@ object GenExpression {
         val effectName = JvmOps.getEffectDefinitionClassName(op.sym.eff)
         val effectStaticMethod = ClassMaker.StaticMethod(
           effectName,
-          ClassMaker.Visibility.IsPublic,
-          ClassMaker.Final.NotFinal,
           JvmOps.getEffectOpName(op.sym),
-          GenEffectClasses.opStaticFunctionDescriptor(op.sym),
-          None
+          GenEffectClasses.opStaticFunctionDescriptor(op.sym)
         )
         NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~
           DUP() ~ pushString(op.sym.eff.toString) ~ PUTFIELD(Suspension.EffSymField) ~
