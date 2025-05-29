@@ -140,18 +140,21 @@ object BackendObjType {
       cm.mkStaticConstructor(StaticConstructor, singletonStaticConstructor(Constructor, SingletonField))
       cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(JavaObject.Constructor))
       cm.mkField(SingletonField, IsPublic, IsFinal, NotVolatile)
-      cm.mkMethod(ToStringMethod, IsPublic, NotFinal, pushString("()") ~ ARETURN())
+      cm.mkMethod(JavaObject.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns)
 
       cm.closeClassMaker()
     }
 
-    private def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
-    private def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName)
+    def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName)
 
     def SingletonField: StaticField = StaticField(this.jvmName, "INSTANCE", this.toTpe)
 
-    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName)
+    /** `[] --> return String` */
+    private def toStringIns: InstructionSet =
+      pushString("()") ~ ARETURN()
+
   }
 
   case object BigDecimal extends BackendObjType {
@@ -180,7 +183,7 @@ object BackendObjType {
 
     def ValueField: InstanceField = InstanceField(this.jvmName, "value", tpe)
 
-    private def LockField: InstanceField = InstanceField(this.jvmName, "lock", ReentrantLock.toTpe)
+    def LockField: InstanceField = InstanceField(this.jvmName, "lock", ReentrantLock.toTpe)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(JavaObject.toTpe))
 
