@@ -95,18 +95,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the function abstract class name `FnX$Y$Z` for the given type `tpe`.
-    *
-    * For example:
-    *
-    * Int -> Int          =>  Fn2$Int$Int
-    * (Int, String) -> Int   =>  Fn3$Int$Obj$Int
-    *
-    * NB: The given type `tpe` must be an arrow type.
-    */
-  def getFunctionInterfaceName(tpe: MonoType): JvmName = getFunctionInterfaceType(tpe).jvmName
-
-  /**
     * Returns the closure abstract class type `CloX$Y$Z` for the given [[MonoType]].
     *
     * For example:

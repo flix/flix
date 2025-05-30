@@ -82,7 +82,7 @@ object GenNamespaceClasses {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, name, MethodDescriptor(erasedArgs, erasedResult).toDescriptor, null, null)
     method.visitCode()
 
-    val functionInterface = JvmOps.getFunctionInterfaceName(defn.arrowType)
+    val functionInterface = JvmOps.getFunctionInterfaceType(defn.arrowType).jvmName
 
     // Offset for each parameter
     var offset: Int = 0
