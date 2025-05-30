@@ -618,7 +618,7 @@ object GenExpression {
         val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.asErasedBackendType))
         NEW(tupleType.jvmName) ~
           DUP() ~
-          cheat(mv => exps.foreach(compileExpr(_)(mv, ctx, root, flix))) ~
+          composeN(exps.map(pushExpr)) ~
           INVOKESPECIAL(tupleType.Constructor)
       })
 
@@ -658,10 +658,10 @@ object GenExpression {
           pushString(field.name) ~
           PUTFIELD(recordType.LabelField) ~
           DUP() ~
-          cheat(mv => compileExpr(exp1)(mv, ctx, root, flix)) ~
+          pushExpr(exp1) ~
           PUTFIELD(recordType.ValueField) ~
           DUP() ~
-          cheat(mv => compileExpr(exp2)(mv, ctx, root, flix)) ~
+          pushExpr(exp2) ~
           PUTFIELD(recordType.RestField)
       })
 
@@ -807,11 +807,11 @@ object GenExpression {
         val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
 
         // Evaluate the region and ignore its value
-        cheat(mv => compileExpr(region)(mv, ctx, root, flix)) ~
+        pushExpr(region) ~
           xPop(BackendType.toBackendType(region.tpe)) ~
           NEW(structType.jvmName) ~
           DUP() ~
-          cheat(mv => fieldExps.foreach(compileExpr(_)(mv, ctx, root, flix))) ~
+          composeN(fieldExps.map(pushExpr)) ~
           INVOKESPECIAL(structType.Constructor)
       })
 
@@ -823,7 +823,7 @@ object GenExpression {
         val MonoType.Struct(sym, targs) = exp.tpe
         val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
 
-        cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~
+        pushExpr(exp) ~
           GETFIELD(structType.IndexField(idx))
       })
 
@@ -835,8 +835,8 @@ object GenExpression {
         val MonoType.Struct(sym, targs) = exp1.tpe
         val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
 
-        cheat(mv => compileExpr(exp1)(mv, ctx, root, flix)) ~
-          cheat(mv => compileExpr(exp2)(mv, ctx, root, flix)) ~
+        pushExpr(exp1) ~
+          pushExpr(exp2) ~
           PUTFIELD(structType.IndexField(idx)) ~
           GETSTATIC(BackendObjType.Unit.SingletonField)
       })
@@ -855,7 +855,7 @@ object GenExpression {
       case AtomicOp.Unbox => mv.visitByteIns({
         import BytecodeInstructions.*
         val List(exp) = exps
-        cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~
+        pushExpr(exp) ~
           CHECKCAST(BackendObjType.Value.jvmName) ~
           GETFIELD(BackendObjType.Value.fieldFromType(BackendType.asErasedBackendType(tpe)))
       })
@@ -865,7 +865,7 @@ object GenExpression {
         val List(exp) = exps
         val erasedExpTpe = BackendType.toErasedBackendType(exp.tpe)
         val valueField = BackendObjType.Value.fieldFromType(erasedExpTpe)
-        cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~
+        pushExpr(exp) ~
           NEW(BackendObjType.Value.jvmName) ~
           DUP() ~
           INVOKESPECIAL(BackendObjType.Value.Constructor) ~
@@ -992,23 +992,20 @@ object GenExpression {
           // The expression represents the `Static` region, just start a thread directly
           case Expr.ApplyAtomic(AtomicOp.Region, _, _, _, _) =>
             addLoc(loc) ~
-              cheat(mv => compileExpr(exp1)(mv, ctx, root, flix)) ~
+              pushExpr(exp1) ~
               CHECKCAST(BackendObjType.Runnable.jvmName) ~
               INVOKESTATIC(ClassMaker.StaticMethod(
                 JvmName.Thread,
-                ClassMaker.Visibility.IsPublic,
-                ClassMaker.Final.NotFinal,
                 "startVirtualThread",
-                MethodDescriptor.mkDescriptor(BackendObjType.Runnable.toTpe)(BackendObjType.Thread.toTpe),
-                None
+                MethodDescriptor.mkDescriptor(BackendObjType.Runnable.toTpe)(BackendObjType.Thread.toTpe)
               )) ~
               POP() ~
               GETSTATIC(BackendObjType.Unit.SingletonField)
           case _ =>
             addLoc(loc) ~
-              cheat(mv => compileExpr(exp2)(mv, ctx, root, flix)) ~
+              pushExpr(exp2) ~
               CHECKCAST(BackendObjType.Region.jvmName) ~
-              cheat(mv => compileExpr(exp1)(mv, ctx, root, flix)) ~
+              pushExpr(exp1) ~
               CHECKCAST(BackendObjType.Runnable.jvmName) ~
               INVOKEVIRTUAL(BackendObjType.Region.SpawnMethod) ~
               GETSTATIC(BackendObjType.Unit.SingletonField)
@@ -1025,7 +1022,7 @@ object GenExpression {
 
         NEW(lazyType.jvmName) ~
           DUP() ~
-          cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~
+          pushExpr(exp) ~
           INVOKESPECIAL(lazyType.Constructor)
       })
 
@@ -1141,7 +1138,6 @@ object GenExpression {
                 mv.visitJumpInsn(GOTO, afterUnboxing)
 
                 mv.visitLabel(pcPointLabel)
-                printPc(mv, pcPoint)
 
                 mv.visitVarInsn(ALOAD, 1)
 
@@ -1203,7 +1199,6 @@ object GenExpression {
               mv.visitJumpInsn(GOTO, afterUnboxing)
 
               mv.visitLabel(pcPointLabel)
-              printPc(mv, pcPoint)
               mv.visitVarInsn(ALOAD, 1)
 
               mv.visitLabel(afterUnboxing)
@@ -1409,7 +1404,7 @@ object GenExpression {
           // frames
           NEW(BackendObjType.FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.FramesNil.Constructor) ~
           // continuation
-          cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~
+          pushExpr(exp) ~
           // exp.arg0 should be set to unit here but from lifting we know that it is unused so the
           // implicit null is fine.
           // call installHandler
@@ -1430,7 +1425,6 @@ object GenExpression {
           mv.visitJumpInsn(GOTO, afterUnboxing)
 
           mv.visitLabel(pcPointLabel)
-          printPc(mv, pcPoint)
           mv.visitVarInsn(ALOAD, 1)
           mv.visitLabel(afterUnboxing)
       }} else {
@@ -1454,17 +1448,14 @@ object GenExpression {
           val effectName = JvmOps.getEffectDefinitionClassName(op.sym.eff)
           val effectStaticMethod = ClassMaker.StaticMethod(
             effectName,
-            ClassMaker.Visibility.IsPublic,
-            ClassMaker.Final.NotFinal,
             JvmOps.getEffectOpName(op.sym),
-            GenEffectClasses.opStaticFunctionDescriptor(op.sym),
-            None
+          GenEffectClasses.opStaticFunctionDescriptor(op.sym)
           )
           NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~
             DUP() ~ pushString(op.sym.eff.toString) ~ PUTFIELD(Suspension.EffSymField) ~
             DUP() ~
             // --- eff op ---
-            cheat(mv => exps.foreach(e => compileExpr(e)(mv, ctx, root, flix))) ~
+            composeN(exps.map(pushExpr)) ~
             mkStaticLambda(BackendObjType.EffectCall.ApplyMethod, effectStaticMethod, 2) ~
             // --------------
             PUTFIELD(Suspension.EffOpField) ~
@@ -1481,7 +1472,6 @@ object GenExpression {
         mv.visitByteIns(ins)
 
         mv.visitLabel(pcPointLabel)
-        printPc(mv, pcPoint)
         mv.visitVarInsn(ALOAD, 1)
         mv.visitByteIns(BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult)))
 
@@ -1504,6 +1494,10 @@ object GenExpression {
       }
 
   }
+
+  /** `[] --> [exp]` */
+  private def pushExpr(exp: Expr)(implicit ctx: MethodContext, root: Root, flix: Flix): InstructionSet =
+    BytecodeInstructions.cheat(mv => compileExpr(exp)(mv, ctx, root, flix))
 
   private def compileIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     compileExpr(exp)
@@ -1533,7 +1527,7 @@ object GenExpression {
         NEW(tagType.jvmName) ~ DUP() ~ INVOKESPECIAL(tagType.Constructor) ~
           DUP() ~ BackendObjType.Tagged.mkTagName(name) ~ PUTFIELD(tagType.NameField) ~
           composeN(exps.zipWithIndex.map {
-            case (e, i) => DUP() ~ cheat(mv => compileExpr(e)(mv, ctx, root, flix)) ~ PUTFIELD(tagType.IndexField(i))
+            case (e, i) => DUP() ~ pushExpr(e) ~ PUTFIELD(tagType.IndexField(i))
           })
     }
     mv.visitByteIns(ins)
@@ -1550,15 +1544,6 @@ object GenExpression {
       CHECKCAST(tagType.jvmName) ~ GETFIELD(tagType.IndexField(idx))
     }
     mv.visitByteIns(ins)
-  }
-
-  private def printPc(mv: MethodVisitor, pcPoint: Int): Unit = if (!GenFunAndClosureClasses.onCallDebugging) () else {
-    mv.visitFieldInsn(GETSTATIC, JvmName.System.toInternalName, "out", JvmName.PrintStream.toDescriptor)
-    mv.visitLdcInsn("pc = ")
-    compileInt(pcPoint)(mv)
-    mv.visitByteIns(BytecodeInstructions.xToString(BackendType.Int32))
-    mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, "concat", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.String.toTpe).toDescriptor, false)
-    mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.PrintStream.toInternalName, "println", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void).toDescriptor, false)
   }
 
   /**

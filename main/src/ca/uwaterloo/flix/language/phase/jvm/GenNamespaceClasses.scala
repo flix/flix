@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.MethodEnricher
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes.*
@@ -74,11 +75,11 @@ object GenNamespaceClasses {
     val name = JvmOps.getDefMethodNameInNamespaceClass(defn)
 
     // Erased argument and result type.
-    val erasedArgs = defn.fparams.map(_.tpe).map(JvmOps.getErasedJvmType)
-    val erasedResult = JvmOps.getErasedJvmType(defn.unboxedType.tpe)
+    val erasedArgs = defn.fparams.map(_.tpe).map(BackendType.toErasedBackendType)
+    val erasedResult = BackendType.toErasedBackendType(defn.unboxedType.tpe)
 
     // Method header
-    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, name, AsmOps.getMethodDescriptor(erasedArgs, erasedResult), null, null)
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, name, MethodDescriptor(erasedArgs, erasedResult).toDescriptor, null, null)
     method.visitCode()
 
     val functionInterface = JvmOps.getFunctionInterfaceName(defn.arrowType)
@@ -93,20 +94,19 @@ object GenNamespaceClasses {
       method.visitInsn(DUP)
 
       // Get the argument from the field
-      val iLoad = AsmOps.getLoadInstruction(arg)
-      method.visitVarInsn(iLoad, offset)
+      method.visitByteIns(BytecodeInstructions.xLoad(arg, offset))
 
       // put the arg field
       method.visitFieldInsn(PUTFIELD, functionInterface.toInternalName, s"arg$index", arg.toDescriptor)
 
       // Incrementing the offset
-      offset += AsmOps.getStackSize(arg)
+      offset += arg.stackSlots
     }
     method.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(defn.unboxedType.tpe), s"in shim method of $name", defn.loc))
     // no erasure here because the ns function works on erased values
 
     // Return
-    method.visitInsn(AsmOps.getReturnInstruction(erasedResult))
+    method.visitByteIns(BytecodeInstructions.xReturn(erasedResult))
 
     // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
     method.visitMaxs(65535, 65535)
@@ -118,14 +118,15 @@ object GenNamespaceClasses {
     */
   private def compileNamespaceConstructor(visitor: ClassWriter): Unit = {
     // Method header
-    val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
+    val constructor = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
 
     constructor.visitCode()
-    constructor.visitVarInsn(ALOAD, 0)
-    constructor.visitMethodInsn(INVOKESPECIAL, BackendObjType.JavaObject.jvmName.toInternalName, "<init>",
-      AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-    constructor.visitInsn(RETURN)
-
+    constructor.visitByteIns({
+      import BytecodeInstructions.*
+      ALOAD(0) ~
+        INVOKESPECIAL(BackendObjType.JavaObject.Constructor) ~
+        RETURN()
+    })
     constructor.visitMaxs(65535, 65535)
     constructor.visitEnd()
   }

@@ -31,9 +31,6 @@ import org.objectweb.asm.{ClassWriter, Label, MethodVisitor, Opcodes}
   */
 object GenFunAndClosureClasses {
 
-  /** Print functional call information at runtime if true */
-  val onCallDebugging = false
-
   /**
     * Returns a map of function- and closure-classes for the given set `defs`.
     */
@@ -151,7 +148,6 @@ object GenFunAndClosureClasses {
     compileInvokeMethod(visitor, className)
     compileFrameMethod(visitor, className, defn)
     compileCopyMethod(visitor, className, defn)
-    if (onCallDebugging) compileOnCall(visitor, className, defn)
     if (kind == Closure) compileGetUniqueThreadClosureMethod(visitor, className, defn)
 
     visitor.visitEnd()
@@ -209,12 +205,6 @@ object GenFunAndClosureClasses {
     // used for self-recursive tail calls
     val enterLabel = new Label()
     m.visitLabel(enterLabel)
-
-    if (onCallDebugging) {
-      m.visitVarInsn(ALOAD, 0)
-      m.visitVarInsn(ALOAD, 1)
-      m.visitMethodInsn(INVOKEVIRTUAL, className.toInternalName, "onCall", MethodDescriptor.mkDescriptor(BackendObjType.Value.toTpe)(VoidableType.Void).toDescriptor, false)
-    }
 
     loadParamsOf(cparams)
     loadParamsOf(fparams)
@@ -321,68 +311,5 @@ object GenFunAndClosureClasses {
     m.visitMaxs(999, 999)
     m.visitEnd()
   }
-
-  private def compileOnCall(v: ClassWriter, className: JvmName, defn: Def): Unit = {
-    val m = v.visitMethod(ACC_PUBLIC, "onCall", MethodDescriptor.mkDescriptor(BackendObjType.Value.toTpe)(VoidableType.Void).toDescriptor, null, null)
-    m.visitCode()
-
-    val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", p._1.tpe))
-    val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", p._1.tpe))
-    val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", p._1.tpe))
-    val params = fparams ++ cparams ++ lparams
-
-    val printStream = JvmName(List("java", "io"), "PrintStream")
-    m.visitFieldInsn(GETSTATIC, JvmName(List("java", "lang"), "System").toInternalName, "out", printStream.toDescriptor)
-
-    // The string
-    val strings = 3 + params.length
-    compileInt(strings)(m)
-    m.visitTypeInsn(ANEWARRAY, BackendObjType.String.jvmName.toInternalName)
-
-    m.visitInsn(DUP)
-    compileInt(0)(m)
-    m.visitLdcInsn(defn.sym.toString)
-    m.visitInsn(AASTORE)
-
-    m.visitInsn(DUP)
-    compileInt(1)(m)
-    m.visitVarInsn(ALOAD, 0)
-    m.visitFieldInsn(GETFIELD, className.toInternalName, "pc", BackendType.Int32.toDescriptor)
-    m.visitByteIns(BytecodeInstructions.xToString(BackendType.Int32))
-    m.visitInsn(AASTORE)
-
-    params.zipWithIndex.foreach {
-      case ((fieldName, fieldType), i) =>
-        m.visitInsn(DUP)
-        compileInt(i + 2)(m)
-        m.visitLdcInsn(fieldName)
-        m.visitLdcInsn(" = ")
-        m.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, "concat", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.String.toTpe).toDescriptor, false)
-        m.visitVarInsn(ALOAD, 0)
-        val bt = BackendType.toErasedBackendType(fieldType)
-        m.visitFieldInsn(GETFIELD, className.toInternalName, fieldName, bt.toDescriptor)
-        m.visitByteIns(BytecodeInstructions.xToString(bt))
-        m.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, "concat", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.String.toTpe).toDescriptor, false)
-        m.visitInsn(AASTORE)
-    }
-
-    m.visitInsn(DUP)
-    compileInt(strings - 1)(m)
-    m.visitVarInsn(ALOAD, 1)
-    m.visitByteIns(BytecodeInstructions.xToString(BackendObjType.Value.toTpe))
-    m.visitInsn(AASTORE)
-
-    m.visitLdcInsn(", ")
-    m.visitInsn(SWAP)
-    m.visitMethodInsn(INVOKESTATIC, "java/lang/String", "join", "(Ljava/lang/CharSequence;[Ljava/lang/CharSequence;)Ljava/lang/String;", false)
-
-    // println
-    m.visitMethodInsn(INVOKEVIRTUAL, printStream.toInternalName, "println", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void).toDescriptor, false)
-    m.visitInsn(RETURN)
-
-    m.visitMaxs(999, 999)
-    m.visitEnd()
-  }
-
 
 }
