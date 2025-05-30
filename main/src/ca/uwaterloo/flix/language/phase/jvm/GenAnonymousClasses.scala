@@ -144,7 +144,7 @@ object GenAnonymousClasses {
         methodVisitor.visitInsn(DUP)
         val argType = BackendType.toBackendType(arg.tpe)
         methodVisitor.visitByteIns(BytecodeInstructions.xLoad(argType, offset))
-        offset += (if (argType.is64BitWidth) 2 else 1)
+        offset += argType.stackSlots
         methodVisitor.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
           s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }

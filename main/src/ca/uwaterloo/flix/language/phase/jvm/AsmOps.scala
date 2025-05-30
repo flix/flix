@@ -133,18 +133,6 @@ object AsmOps {
   }
 
   /**
-    * Returns the load instruction corresponding to the given type `tpe`
-    */
-  def getReturnInstruction(tpe: JvmType): Int = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-    case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => IRETURN
-    case JvmType.PrimLong => LRETURN
-    case JvmType.PrimFloat => FRETURN
-    case JvmType.PrimDouble => DRETURN
-    case JvmType.Reference(_) => ARETURN
-  }
-
-  /**
     * Returns the descriptor of a method take takes the given `argumentTypes` and returns the given `resultType`.
     */
   def getMethodDescriptor(argumentTypes: List[JvmType], resultType: JvmType): String = {
@@ -156,23 +144,6 @@ object AsmOps {
 
     // Descriptor of the method
     s"($argumentDescriptor)$resultDescriptor"
-  }
-
-  /**
-    * `tpe` is jvm type of value on top of the stack. If the value is not primitive, then we cast it to it's specific type,
-    * if the value is a primitive then since there is no boxing, then no casting is necessary.
-    */
-  def castIfNotPrim(visitor: MethodVisitor, tpe: JvmType): Unit = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-    case JvmType.PrimBool => ()
-    case JvmType.PrimChar => ()
-    case JvmType.PrimFloat => ()
-    case JvmType.PrimDouble => ()
-    case JvmType.PrimByte => ()
-    case JvmType.PrimShort => ()
-    case JvmType.PrimInt => ()
-    case JvmType.PrimLong => ()
-    case JvmType.Reference(name) => visitor.visitTypeInsn(CHECKCAST, name.toInternalName)
   }
 
   /**

@@ -669,8 +669,7 @@ object BytecodeInstructions {
     var runningIndex = index
     val variables = tpes.map(tpe => {
       val variable = new Variable(tpe, runningIndex)
-      val stackSize = if (tpe.is64BitWidth) 2 else 1
-      runningIndex = runningIndex + stackSize
+      runningIndex = runningIndex + tpe.stackSlots
       variable
     })
     body(runningIndex, variables)
