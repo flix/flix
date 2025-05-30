@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.MethodEnricher
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes.*
@@ -80,7 +81,7 @@ object GenNamespaceClasses {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, name, AsmOps.getMethodDescriptor(erasedArgs, erasedResult), null, null)
     method.visitCode()
 
-    val functionInterface = JvmOps.getFunctionInterfaceType(defn.arrowType)
+    val functionInterface = JvmOps.getFunctionInterfaceName(defn.arrowType)
 
     // Offset for each parameter
     var offset: Int = 0
@@ -96,12 +97,12 @@ object GenNamespaceClasses {
       method.visitVarInsn(iLoad, offset)
 
       // put the arg field
-      method.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName, s"arg$index", arg.toDescriptor)
+      method.visitFieldInsn(PUTFIELD, functionInterface.toInternalName, s"arg$index", arg.toDescriptor)
 
       // Incrementing the offset
       offset += AsmOps.getStackSize(arg)
     }
-    BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(defn.unboxedType.tpe), s"in shim method of $name", defn.loc)(new BytecodeInstructions.F(method))
+    method.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(defn.unboxedType.tpe), s"in shim method of $name", defn.loc))
     // no erasure here because the ns function works on erased values
 
     // Return

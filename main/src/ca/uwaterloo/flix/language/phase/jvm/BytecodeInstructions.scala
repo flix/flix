@@ -35,6 +35,9 @@ object BytecodeInstructions {
     def visitTypeInstruction(opcode: Int, tpe: JvmName): Unit =
       visitor.visitTypeInsn(opcode, tpe.toInternalName)
 
+    def visitTypeInstructionDirect(opcode: Int, tpe: String): Unit =
+      visitor.visitTypeInsn(opcode, tpe)
+
     def visitInstruction(opcode: Int): Unit = visitor.visitInsn(opcode)
 
     def visitMethodInstruction(opcode: Int, owner: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean): Unit =
@@ -82,6 +85,12 @@ object BytecodeInstructions {
   implicit class ComposeOps(i1: InstructionSet) {
     def ~(i2: InstructionSet): InstructionSet =
       compose(i1, i2)
+  }
+
+  implicit class MethodEnricher(mv: MethodVisitor) {
+    def visitByteIns(ins: InstructionSet): Unit = {
+      ins(new F(mv))
+    }
   }
 
   sealed case class Handle(handle: asm.Handle)
@@ -511,6 +520,17 @@ object BytecodeInstructions {
     f
   }
 
+  def castIfNotPrim(tpe: BackendType): InstructionSet = {
+    tpe match {
+      case arr: BackendType.Array => f => {
+        f.visitTypeInstructionDirect(Opcodes.CHECKCAST, arr.toDescriptor)
+        f
+      }
+      case BackendType.Reference(ref) => CHECKCAST(ref.jvmName)
+      case _: BackendType.PrimitiveType => nop()
+    }
+  }
+
   def cheat(command: MethodVisitor => Unit): InstructionSet = f => {
     f.cheat(command)
     f
@@ -614,6 +634,17 @@ object BytecodeInstructions {
       f.visitLoadConstantInstruction(i)
       f
     }
+  }
+
+  def pushLoc(loc: SourceLocation): InstructionSet = {
+    NEW(BackendObjType.ReifiedSourceLocation.jvmName) ~
+      DUP() ~
+      pushString(loc.source.name) ~
+      pushInt(loc.beginLine) ~
+      pushInt(loc.beginCol) ~
+      pushInt(loc.endLine) ~
+      pushInt(loc.endCol) ~
+      INVOKESPECIAL(BackendObjType.ReifiedSourceLocation.Constructor)
   }
 
   def storeWithName(index: Int, tpe: BackendType)(body: Variable => InstructionSet): InstructionSet =

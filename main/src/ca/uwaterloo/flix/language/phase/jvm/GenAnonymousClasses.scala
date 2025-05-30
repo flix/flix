@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.MethodEnricher
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{MethodDescriptor, RootPackage}
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm
@@ -97,9 +98,8 @@ object GenAnonymousClasses {
     * Hacked to half-work for array types. In the new backend we should handle all types, including multidim arrays.
     */
   private def getDescriptorHacked(tpe: MonoType)(implicit root: Root): String = tpe match {
-    case MonoType.Array(t) => s"[${JvmOps.getJvmType(t).toDescriptor}"
-    case MonoType.Unit => JvmType.Void.toDescriptor
-    case _ => JvmOps.getJvmType(tpe).toDescriptor
+    case MonoType.Unit => VoidableType.Void.toDescriptor
+    case _ => BackendType.toBackendType(tpe).toDescriptor
   }
 
   /**
@@ -122,7 +122,7 @@ object GenAnonymousClasses {
       val boxedResult = MonoType.Object
       val arrowType = MonoType.Arrow(args, boxedResult)
       val closureAbstractClass = BackendObjType.AbstractArrow(args.map(BackendType.toErasedBackendType), BackendObjType.JavaObject.toTpe)
-      val functionInterface = JvmOps.getFunctionInterfaceType(arrowType)
+      val functionInterface = JvmOps.getFunctionInterfaceName(arrowType)
 
       // Create the field that will store the closure implementing the body of the method
       classVisitor.visitField(ACC_PUBLIC, cloName, closureAbstractClass.toDescriptor, null, null)
@@ -142,27 +142,23 @@ object GenAnonymousClasses {
       var offset = 0
       fparams.zipWithIndex.foreach { case (arg, i) =>
         methodVisitor.visitInsn(DUP)
-        val argType = JvmOps.getJvmType(arg.tpe)
-        methodVisitor.visitVarInsn(AsmOps.getLoadInstruction(argType), offset)
-        offset += AsmOps.getStackSize(argType)
-        methodVisitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
+        val argType = BackendType.toBackendType(arg.tpe)
+        methodVisitor.visitByteIns(BytecodeInstructions.xLoad(argType, offset))
+        offset += (if (argType.is64BitWidth) 2 else 1)
+        methodVisitor.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
           s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
 
       // Invoke the closure
-      BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(tpe), s"in anonymous class method ${ident.name} of ${obj.clazz.getSimpleName}", loc)(new BytecodeInstructions.F(methodVisitor))
+      methodVisitor.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(tpe), s"in anonymous class method ${ident.name} of ${obj.clazz.getSimpleName}", loc))
 
-      tpe match {
-        case MonoType.Array(_) => methodVisitor.visitTypeInsn(CHECKCAST, getDescriptorHacked(tpe))
-        case _ => AsmOps.castIfNotPrim(methodVisitor, JvmOps.getJvmType(tpe))
-      }
+      methodVisitor.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe)))
 
       val returnInstruction = tpe match {
-        case MonoType.Unit => RETURN
-        case MonoType.Array(_) => ARETURN
-        case _ => AsmOps.getReturnInstruction(JvmOps.getJvmType(tpe))
+        case MonoType.Unit => BytecodeInstructions.RETURN()
+        case _ => BytecodeInstructions.xReturn(BackendType.toBackendType(tpe))
       }
-      methodVisitor.visitInsn(returnInstruction)
+      methodVisitor.visitByteIns(returnInstruction)
 
       methodVisitor.visitMaxs(999, 999)
       methodVisitor.visitEnd()
