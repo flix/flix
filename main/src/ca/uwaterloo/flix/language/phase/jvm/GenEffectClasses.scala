@@ -112,12 +112,12 @@ object GenEffectClasses {
       import BytecodeInstructions.*
       ALOAD(handlerOffset) ~
         CHECKCAST(effectName) ~
-        GETFIELD(ClassMaker.InstanceField(effectName, null, null, null, opName, opFunction.toTpe)) ~
+        GETFIELD(ClassMaker.InstanceField(effectName, opName, opFunction.toTpe)) ~
         composeN(for (((t, localOffset), i) <- writtenOpArgsOffset.zipWithIndex) yield {
           // bind all regular arguments
           DUP() ~
             xLoad(t, localOffset) ~
-            PUTFIELD(ClassMaker.InstanceField(opFunction.jvmName, null, null, null, s"arg$i", t))
+            PUTFIELD(ClassMaker.InstanceField(opFunction.jvmName, s"arg$i", t))
         }) ~
         // convert the resumption to a function
         DUP() ~
@@ -125,7 +125,7 @@ object GenEffectClasses {
         DUP() ~
         ALOAD(handlerOffset + 1) ~ // the resumption is the stack offset after handler
         INVOKESPECIAL(wrapperType.Constructor) ~
-        PUTFIELD(ClassMaker.InstanceField(opFunction.jvmName, null, null, null, s"arg${writtenOpArgs.size}", BackendObjType.Resumption.toTpe.toErased)) ~
+        PUTFIELD(ClassMaker.InstanceField(opFunction.jvmName, s"arg${writtenOpArgs.size}", BackendObjType.Resumption.toTpe.toErased)) ~
         // call invoke
         INVOKEINTERFACE(BackendObjType.Thunk.InvokeMethod) ~
         ARETURN()
