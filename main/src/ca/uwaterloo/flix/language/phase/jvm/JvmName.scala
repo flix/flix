@@ -131,6 +131,7 @@ object JvmName {
   val JavaUtilConcurrent: List[String] = JavaUtil ::: List("concurrent")
   val JavaUtilConcurrentLocks: List[String] = JavaUtilConcurrent ::: List("locks")
   val JavaUtilRegex: List[String] = JavaUtil ::: List("regex")
+  val JavaIO: List[String] = List("java", "io")
 
   val AtomicLong: JvmName = JvmName(JavaUtil ::: List("concurrent", "atomic"), "AtomicLong")
   val Boolean: JvmName = JvmName(JavaLang, "Boolean")
@@ -159,6 +160,7 @@ object JvmName {
   val ObjFunction: JvmName = JvmName(JavaUtilFunction, "Function")
   val ObjConsumer: JvmName = JvmName(JavaUtilFunction, "Consumer")
   val ObjPredicate: JvmName = JvmName(JavaUtilFunction, "Predicate")
+  val PrintStream: JvmName = JvmName(JavaIO, "PrintStream")
   val ReentrantLock: JvmName = JvmName(JavaUtilConcurrentLocks, "ReentrantLock")
   val Regex: JvmName = JvmName(JavaUtilRegex, "Pattern")
   val Runnable: JvmName = JvmName(JavaLang, "Runnable")

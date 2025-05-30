@@ -1172,7 +1172,7 @@ object BackendObjType {
     //   t.start();
     //   threads.add(t);
     // }
-    def SpawnMethod(implicit flix: Flix): InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void), Some(_ =>
+    def SpawnMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void), Some(_ =>
       INVOKESTATIC(Thread.OfVirtualMethod) ~ ALOAD(1) ~ INVOKEINTERFACE(ThreadBuilderOfVirtual.UnstartedMethod) ~
       storeWithName(2, BackendObjType.Thread.toTpe) { thread =>
         thread.load() ~ NEW(BackendObjType.UncaughtExceptionHandler.jvmName) ~
@@ -1294,7 +1294,7 @@ object BackendObjType {
     }
 
     def MainMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, NotFinal, "main", mkDescriptor(BackendType.Array(String.toTpe))(VoidableType.Void), Some(_ => {
-      val defName = JvmOps.getFunctionDefinitionClassType(sym).name
+      val defName = JvmOps.getFunctionDefinitionClassName(sym)
       withName(0, BackendType.Array(String.toTpe))(args =>
         args.load() ~ INVOKESTATIC(Global.SetArgsMethod) ~
         NEW(defName) ~ DUP() ~ INVOKESPECIAL(defName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid) ~
@@ -1608,7 +1608,7 @@ object BackendObjType {
           // [.., suspension, UEE] -> [.., suspension, UEE, UEE, suspension]
           DUP2() ~ SWAP() ~
           pushString(errorHint) ~
-          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~
+          pushLoc(loc) ~
           // [.., suspension, UEE, UEE, suspension, info, rsl] -> [.., suspension, UEE]
           INVOKESPECIAL(UnhandledEffectError.Constructor) ~
           ATHROW()

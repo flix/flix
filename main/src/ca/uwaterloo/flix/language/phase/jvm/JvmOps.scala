@@ -29,54 +29,6 @@ import java.nio.file.{Files, LinkOption, Path}
 object JvmOps {
 
   /**
-    * Returns the given Flix type `tpe` as JVM type.
-    *
-    * For example, if the type is:
-    *
-    * Bool                  =>      Boolean
-    * Char                  =>      Char
-    * Option$42             =>      Option$42
-    * Result$123            =>      Result$123
-    * Int -> Bool           =>      Fn1$Int$Bool
-    * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
-    */
-  def getJvmType(tpe: MonoType)(implicit root: ReducedAst.Root): JvmType = tpe match {
-    // Primitives
-    case MonoType.Void => JvmType.Object
-    case MonoType.AnyType => JvmType.Object
-    case MonoType.Unit => JvmType.Unit
-    case MonoType.Bool => JvmType.PrimBool
-    case MonoType.Char => JvmType.PrimChar
-    case MonoType.Float32 => JvmType.PrimFloat
-    case MonoType.Float64 => JvmType.PrimDouble
-    case MonoType.BigDecimal => JvmType.BigDecimal
-    case MonoType.Int8 => JvmType.PrimByte
-    case MonoType.Int16 => JvmType.PrimShort
-    case MonoType.Int32 => JvmType.PrimInt
-    case MonoType.Int64 => JvmType.PrimLong
-    case MonoType.BigInt => JvmType.BigInteger
-    case MonoType.String => JvmType.String
-    case MonoType.Regex => JvmType.Regex
-    case MonoType.Region => JvmType.Object
-    case MonoType.Null => JvmType.Object
-    // Compound
-    case MonoType.Array(_) => JvmType.Object
-    case MonoType.Lazy(_) => JvmType.Object
-    case MonoType.Tuple(elms) => JvmType.Reference(BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType)).jvmName)
-    case MonoType.RecordEmpty => JvmType.Reference(BackendObjType.Record.jvmName)
-    case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
-    case MonoType.ExtensibleExtend(_, _, _) => JvmType.Reference(BackendObjType.Tagged.jvmName)
-    case MonoType.ExtensibleEmpty => JvmType.Reference(BackendObjType.Tagged.jvmName)
-    case MonoType.Enum(_, _) => JvmType.Object
-    case MonoType.Struct(sym, targs) =>
-      val elms = instantiateStruct(sym, targs.map(MonoType.erase))
-      JvmType.Reference(BackendObjType.Struct(elms).jvmName)
-    case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
-    case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
-  }
-
-
-  /**
     * Returns the erased JvmType of the given Flix type `tpe`.
     *
     * Every primitive type is mapped to itself and every other type is mapped to Object.
@@ -126,7 +78,7 @@ object JvmOps {
   }
 
   /**
-    * Returns the function abstract class type `FnX$Y$Z` for the given type `tpe`.
+    * Returns the function abstract class name `FnX$Y$Z` for the given type `tpe`.
     *
     * For example:
     *
@@ -135,10 +87,10 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getFunctionInterfaceType(tpe: MonoType): JvmType.Reference = tpe match {
+  def getFunctionInterfaceName(tpe: MonoType): JvmName = tpe match {
     case MonoType.Arrow(targs, tresult) =>
       val arrowType = BackendObjType.Arrow(targs.map(BackendType.toErasedBackendType), BackendType.asErasedBackendType(tresult))
-      JvmType.Reference(arrowType.jvmName)
+      arrowType.jvmName
     case _ =>
       throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
@@ -166,7 +118,7 @@ object JvmOps {
     * List.length       =>    List/Clo$length
     * List.map          =>    List/Clo$map
     */
-  def getClosureClassType(sym: Symbol.DefnSym): JvmType.Reference = {
+  def getClosureClassName(sym: Symbol.DefnSym): JvmName = {
     // The JVM name is of the form Clo$sym.name
     val name = JvmName.mkClassName(s"Clo", sym.name)
 
@@ -174,7 +126,7 @@ object JvmOps {
     val pkg = sym.namespace
 
     // The result type.
-    JvmType.Reference(JvmName(pkg, name))
+    JvmName(pkg, name)
   }
 
   /**
@@ -185,10 +137,10 @@ object JvmOps {
     * print         =>  Def$print
     * List.length   =>  List.Def$length
     */
-  def getFunctionDefinitionClassType(sym: Symbol.DefnSym): JvmType.Reference = {
+  def getFunctionDefinitionClassName(sym: Symbol.DefnSym): JvmName = {
     val pkg = sym.namespace
     val name = JvmName.mkClassName("Def", sym.name)
-    JvmType.Reference(JvmName(pkg, name))
+    JvmName(pkg, name)
   }
 
   /**
@@ -199,10 +151,10 @@ object JvmOps {
     * Print       =>  Eff$Print
     * List.Crash  =>  List.Eff$Crash
     */
-  def getEffectDefinitionClassType(sym: Symbol.EffectSym): JvmType.Reference = {
+  def getEffectDefinitionClassName(sym: Symbol.EffectSym): JvmName = {
     val pkg = sym.namespace
     val name = JvmName.mkClassName("Eff", sym.name)
-    JvmType.Reference(JvmName(pkg, name))
+    JvmName(pkg, name)
   }
 
   /**
