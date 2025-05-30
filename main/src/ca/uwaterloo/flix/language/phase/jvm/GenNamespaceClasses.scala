@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.MethodEnricher
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes.*
@@ -118,14 +119,15 @@ object GenNamespaceClasses {
     */
   private def compileNamespaceConstructor(visitor: ClassWriter): Unit = {
     // Method header
-    val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
+    val constructor = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
 
     constructor.visitCode()
-    constructor.visitVarInsn(ALOAD, 0)
-    constructor.visitMethodInsn(INVOKESPECIAL, BackendObjType.JavaObject.jvmName.toInternalName, "<init>",
-      AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-    constructor.visitInsn(RETURN)
-
+    constructor.visitByteIns({
+      import BytecodeInstructions.*
+      ALOAD(0) ~
+        INVOKESPECIAL(BackendObjType.JavaObject.Constructor) ~
+        RETURN()
+    })
     constructor.visitMaxs(65535, 65535)
     constructor.visitEnd()
   }
