@@ -124,7 +124,7 @@ object GenFunAndClosureClasses {
 
     // Header
     val functionInterface = kind match {
-      case Function => JvmOps.getFunctionInterfaceName(defn.arrowType)
+      case Function => JvmOps.getFunctionInterfaceType(defn.arrowType).jvmName
       case Closure => JvmOps.getClosureAbstractClassType(defn.arrowType).jvmName
     }
     val frameInterface = BackendObjType.Frame
