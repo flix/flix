@@ -87,6 +87,12 @@ object BytecodeInstructions {
       compose(i1, i2)
   }
 
+  implicit class MethodEnricher(mv: MethodVisitor) {
+    def visitByteIns(ins: InstructionSet): Unit = {
+      ins(new F(mv))
+    }
+  }
+
   sealed case class Handle(handle: asm.Handle)
 
   def mkStaticHandle(m: StaticMethod): Handle = {
@@ -630,6 +636,17 @@ object BytecodeInstructions {
     }
   }
 
+  def pushLoc(loc: SourceLocation): InstructionSet = {
+    NEW(BackendObjType.ReifiedSourceLocation.jvmName) ~
+      DUP() ~
+      pushString(loc.source.name) ~
+      pushInt(loc.beginLine) ~
+      pushInt(loc.beginCol) ~
+      pushInt(loc.endLine) ~
+      pushInt(loc.endCol) ~
+      INVOKESPECIAL(BackendObjType.ReifiedSourceLocation.Constructor)
+  }
+
   def storeWithName(index: Int, tpe: BackendType)(body: Variable => InstructionSet): InstructionSet =
     xStore(tpe, index) ~ body(new Variable(tpe, index))
 
@@ -652,8 +669,7 @@ object BytecodeInstructions {
     var runningIndex = index
     val variables = tpes.map(tpe => {
       val variable = new Variable(tpe, runningIndex)
-      val stackSize = if (tpe.is64BitWidth) 2 else 1
-      runningIndex = runningIndex + stackSize
+      runningIndex = runningIndex + tpe.stackSlots
       variable
     })
     body(runningIndex, variables)

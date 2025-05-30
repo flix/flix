@@ -133,18 +133,6 @@ object AsmOps {
   }
 
   /**
-    * Returns the load instruction corresponding to the given type `tpe`
-    */
-  def getReturnInstruction(tpe: JvmType): Int = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-    case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => IRETURN
-    case JvmType.PrimLong => LRETURN
-    case JvmType.PrimFloat => FRETURN
-    case JvmType.PrimDouble => DRETURN
-    case JvmType.Reference(_) => ARETURN
-  }
-
-  /**
     * Returns the descriptor of a method take takes the given `argumentTypes` and returns the given `resultType`.
     */
   def getMethodDescriptor(argumentTypes: List[JvmType], resultType: JvmType): String = {
@@ -159,48 +147,15 @@ object AsmOps {
   }
 
   /**
-    * `tpe` is jvm type of value on top of the stack. If the value is not primitive, then we cast it to it's specific type,
-    * if the value is a primitive then since there is no boxing, then no casting is necessary.
-    */
-  def castIfNotPrim(visitor: MethodVisitor, tpe: JvmType): Unit = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-    case JvmType.PrimBool => ()
-    case JvmType.PrimChar => ()
-    case JvmType.PrimFloat => ()
-    case JvmType.PrimDouble => ()
-    case JvmType.PrimByte => ()
-    case JvmType.PrimShort => ()
-    case JvmType.PrimInt => ()
-    case JvmType.PrimLong => ()
-    case JvmType.Reference(name) => visitor.visitTypeInsn(CHECKCAST, name.toInternalName)
-  }
-
-  /**
-    * Generates code which instantiate a reified source location.
-    */
-  def compileReifiedSourceLocation(mv: MethodVisitor, loc: SourceLocation): Unit = ({
-    import BytecodeInstructions.*
-    val RslType = BackendObjType.ReifiedSourceLocation
-    NEW(RslType.jvmName) ~
-      DUP() ~
-      pushString(loc.source.name) ~
-      pushInt(loc.beginLine) ~
-      pushInt(loc.beginCol) ~
-      pushInt(loc.endLine) ~
-      pushInt(loc.endCol) ~
-      INVOKESPECIAL(RslType.Constructor)
-  })(new BytecodeInstructions.F(mv))
-
-  /**
     * Emits code that puts the function object of the def symbol `def` on top of the stack.
     */
   def compileDefSymbol(sym: Symbol.DefnSym, mv: MethodVisitor): Unit = {
     // JvmType of Def
-    val defJvmType = JvmOps.getFunctionDefinitionClassType(sym)
+    val defJvmName = JvmOps.getFunctionDefinitionClassName(sym)
 
-    mv.visitTypeInsn(NEW, defJvmType.name.toInternalName)
+    mv.visitTypeInsn(NEW, defJvmName.toInternalName)
     mv.visitInsn(DUP)
-    mv.visitMethodInsn(INVOKESPECIAL, defJvmType.name.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+    mv.visitMethodInsn(INVOKESPECIAL, defJvmName.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
   }
 
 }

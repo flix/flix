@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Effect, Op, Root}
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.MethodEnricher
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import org.objectweb.asm.ClassWriter
@@ -59,26 +60,27 @@ object GenEffectClasses {
     val visitor = AsmOps.mkClassWriter()
 
     val interfaces = Array(BackendObjType.Handler.jvmName.toInternalName)
-    val superClass = BackendObjType.JavaObject.jvmName.toInternalName
-
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, effectName.toInternalName,
-      null, superClass, interfaces)
+      null, BackendObjType.JavaObject.jvmName.toInternalName, interfaces)
 
     for (op <- effect.ops) genFieldAndMethod(visitor, effectName, op)
 
-    genConstructor(visitor, superClass)
+    genConstructor(visitor)
 
     visitor.visitEnd()
     visitor.toByteArray
   }
 
-  private def genConstructor(visitor: ClassWriter, superClass: String): Unit = {
+  private def genConstructor(visitor: ClassWriter): Unit = {
     val mv = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
     mv.visitCode()
 
-    mv.visitVarInsn(ALOAD, 0)
-    mv.visitMethodInsn(INVOKESPECIAL, superClass, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
-    mv.visitInsn(RETURN)
+    mv.visitByteIns({
+      import BytecodeInstructions.*
+      ALOAD(0) ~
+        INVOKESPECIAL(BackendObjType.JavaObject.Constructor) ~
+        RETURN()
+    })
 
     mv.visitMaxs(999, 999)
     mv.visitEnd()
