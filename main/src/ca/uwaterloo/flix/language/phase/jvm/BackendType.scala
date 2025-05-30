@@ -90,6 +90,11 @@ sealed trait BackendType extends VoidableType {
   }
 
   /**
+    * Returns `2` if `this` is a 64 bit value, or `1` if it is a 32 bit value.
+    */
+  def stackSlots: Int = if (is64BitWidth) 2 else 1
+
+  /**
     * Returns the Array fill type for the value of the type specified by `tpe`.
     */
   def toArrayFillType: String = mkDescriptor(BackendType.Array(this.toErased), this.toErased)(VoidableType.Void).toDescriptor

@@ -78,6 +78,23 @@ object JvmOps {
   }
 
   /**
+    * Returns the erased arrow type of `tpe`.
+    *
+    * For example:
+    *
+    * Int -> Int          =>  Fn2$Int$Int
+    * (Int, String) -> Int   =>  Fn3$Int$Obj$Int
+    *
+    * NB: The given type `tpe` must be an arrow type.
+    */
+  def getFunctionInterfaceType(tpe: MonoType): BackendObjType.Arrow = tpe match {
+    case MonoType.Arrow(targs, tresult) =>
+      BackendObjType.Arrow(targs.map(BackendType.toErasedBackendType), BackendType.asErasedBackendType(tresult))
+    case _ =>
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
+  }
+
+  /**
     * Returns the function abstract class name `FnX$Y$Z` for the given type `tpe`.
     *
     * For example:
@@ -87,13 +104,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getFunctionInterfaceName(tpe: MonoType): JvmName = tpe match {
-    case MonoType.Arrow(targs, tresult) =>
-      val arrowType = BackendObjType.Arrow(targs.map(BackendType.toErasedBackendType), BackendType.asErasedBackendType(tresult))
-      arrowType.jvmName
-    case _ =>
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
-  }
+  def getFunctionInterfaceName(tpe: MonoType): JvmName = getFunctionInterfaceType(tpe).jvmName
 
   /**
     * Returns the closure abstract class type `CloX$Y$Z` for the given [[MonoType]].
