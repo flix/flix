@@ -1138,7 +1138,6 @@ object GenExpression {
                 mv.visitJumpInsn(GOTO, afterUnboxing)
 
                 mv.visitLabel(pcPointLabel)
-                printPc(mv, pcPoint)
 
                 mv.visitVarInsn(ALOAD, 1)
 
@@ -1200,7 +1199,6 @@ object GenExpression {
               mv.visitJumpInsn(GOTO, afterUnboxing)
 
               mv.visitLabel(pcPointLabel)
-              printPc(mv, pcPoint)
               mv.visitVarInsn(ALOAD, 1)
 
               mv.visitLabel(afterUnboxing)
@@ -1427,7 +1425,6 @@ object GenExpression {
           mv.visitJumpInsn(GOTO, afterUnboxing)
 
           mv.visitLabel(pcPointLabel)
-          printPc(mv, pcPoint)
           mv.visitVarInsn(ALOAD, 1)
           mv.visitLabel(afterUnboxing)
       }} else {
@@ -1475,7 +1472,6 @@ object GenExpression {
         mv.visitByteIns(ins)
 
         mv.visitLabel(pcPointLabel)
-        printPc(mv, pcPoint)
         mv.visitVarInsn(ALOAD, 1)
         mv.visitByteIns(BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult)))
 
@@ -1548,15 +1544,6 @@ object GenExpression {
       CHECKCAST(tagType.jvmName) ~ GETFIELD(tagType.IndexField(idx))
     }
     mv.visitByteIns(ins)
-  }
-
-  private def printPc(mv: MethodVisitor, pcPoint: Int): Unit = if (!GenFunAndClosureClasses.onCallDebugging) () else {
-    mv.visitFieldInsn(GETSTATIC, JvmName.System.toInternalName, "out", JvmName.PrintStream.toDescriptor)
-    mv.visitLdcInsn("pc = ")
-    compileInt(pcPoint)(mv)
-    mv.visitByteIns(BytecodeInstructions.xToString(BackendType.Int32))
-    mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, "concat", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.String.toTpe).toDescriptor, false)
-    mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.PrintStream.toInternalName, "println", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void).toDescriptor, false)
   }
 
   /**
