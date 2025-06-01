@@ -1097,7 +1097,7 @@ object GenExpression {
 
     case Expr.ApplyClo(exp1, exp2, ct, _, purity, loc) =>
       // Type of the function abstract class
-      val functionInterface = JvmOps.getFunctionInterfaceName(exp1.tpe)
+      val functionInterface = JvmOps.getFunctionInterfaceType(exp1.tpe).jvmName
       val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp1.tpe)
       ct match {
         case ExpPosition.Tail =>
@@ -1159,7 +1159,7 @@ object GenExpression {
     case Expr.ApplyDef(sym, exps, ct, _, purity, loc) => ct match {
       case ExpPosition.Tail =>
         // Type of the function abstract class
-        val functionInterface = JvmOps.getFunctionInterfaceName(root.defs(sym).arrowType)
+        val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType).jvmName
 
         // Put the def on the stack
         AsmOps.compileDefSymbol(sym, mv)
@@ -1218,7 +1218,7 @@ object GenExpression {
 
     case Expr.ApplySelfTail(sym, exps, _, _, _) =>
       // The function abstract class name
-      val functionInterface = JvmOps.getFunctionInterfaceName(root.defs(sym).arrowType)
+      val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType).jvmName
       // Evaluate each argument and put the result on the Fn class.
       for ((arg, i) <- exps.zipWithIndex) {
         mv.visitVarInsn(ALOAD, 0)
