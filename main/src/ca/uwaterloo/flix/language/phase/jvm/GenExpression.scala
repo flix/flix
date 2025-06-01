@@ -595,13 +595,16 @@ object GenExpression {
         val termTypes = cases(sym)
         compileTag(sym.name, exps, termTypes)
 
-      case AtomicOp.Untag(sym, idx) =>
+      case AtomicOp.Untag(sym, idx) => mv.visitByteIns({
+        import BytecodeInstructions.*
         val List(exp) = exps
         val MonoType.Enum(_, targs) = exp.tpe
         val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
         val termTypes = cases(sym)
-        compileUntag(exp, idx, termTypes)
-        mv.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe)))
+
+        compileUntag(exp, idx, termTypes) ~
+          castIfNotPrim(BackendType.toBackendType(tpe))
+      })
 
       case AtomicOp.Index(idx) =>
         val List(exp) = exps
@@ -689,11 +692,15 @@ object GenExpression {
         val tpes = MonoType.findExtensibleTermTypes(sym, tpe).map(BackendType.asErasedBackendType)
         compileTag(sym.name, exps, tpes)
 
-      case AtomicOp.ExtensibleUntag(sym, idx) =>
+      case AtomicOp.ExtensibleUntag(sym, idx) => mv.visitByteIns({
+        import BytecodeInstructions.*
+
         val List(exp) = exps
         val tpes = MonoType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.asErasedBackendType)
-        compileUntag(exp, idx, tpes)
-        mv.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe)))
+
+        compileUntag(exp, idx, tpes) ~
+          castIfNotPrim(BackendType.toBackendType(tpe))
+      })
 
       case AtomicOp.ArrayLit =>
         // We push the 'length' of the array on top of stack
@@ -1533,17 +1540,14 @@ object GenExpression {
     mv.visitByteIns(ins)
   }
 
-  private def compileUntag(exp: Expr, idx: Int, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def compileUntag(exp: Expr, idx: Int, tpes: List[BackendType])(implicit ctx: MethodContext, root: Root, flix: Flix): InstructionSet = {
+    import BytecodeInstructions.*
     // BackendObjType.NullaryTag cannot happen here since terms must be non-empty.
     if (tpes.isEmpty) throw InternalCompilerException(s"Unexpected empty tag types", exp.loc)
-
     val tagType = BackendObjType.Tag(tpes)
-    compileExpr(exp)
-    val ins = {
-      import BytecodeInstructions.*
-      CHECKCAST(tagType.jvmName) ~ GETFIELD(tagType.IndexField(idx))
-    }
-    mv.visitByteIns(ins)
+    pushExpr(exp) ~
+      CHECKCAST(tagType.jvmName) ~
+      GETFIELD(tagType.IndexField(idx))
   }
 
   /**
