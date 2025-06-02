@@ -44,51 +44,6 @@ object AsmOps {
   }
 
   /**
-    * Returns the store instruction for the value of the type specified by `tpe`
-    */
-  def getStoreInstruction(tpe: JvmType): Int = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-    case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => ISTORE
-    case JvmType.PrimLong => LSTORE
-    case JvmType.PrimFloat => FSTORE
-    case JvmType.PrimDouble => DSTORE
-    case JvmType.Reference(_) => ASTORE
-  }
-
-  /**
-    * Returns the array store instruction for arrays of the given JvmType tpe
-    */
-  def getArrayStoreInstruction(tpe: JvmType): Int = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-    case JvmType.PrimBool => BASTORE
-    case JvmType.PrimChar => CASTORE
-    case JvmType.PrimByte => BASTORE
-    case JvmType.PrimShort => SASTORE
-    case JvmType.PrimInt => IASTORE
-    case JvmType.PrimLong => LASTORE
-    case JvmType.PrimFloat => FASTORE
-    case JvmType.PrimDouble => DASTORE
-    case JvmType.Reference(_) => AASTORE
-  }
-
-  /**
-    * Returns the CheckCast type for the value of the type specified by `tpe`
-    */
-  def getArrayType(tpe: JvmType): String = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-    case JvmType.PrimBool => "[Z"
-    case JvmType.PrimChar => "[C"
-    case JvmType.PrimByte => "[B"
-    case JvmType.PrimShort => "[S"
-    case JvmType.PrimInt => "[I"
-    case JvmType.PrimLong => "[J"
-    case JvmType.PrimFloat => "[F"
-    case JvmType.PrimDouble => "[D"
-    case JvmType.String => "[Ljava/lang/String;"
-    case JvmType.Reference(_) => "[Ljava/lang/Object;"
-  }
-
-  /**
     * Returns the descriptor of a method take takes the given `argumentTypes` and returns the given `resultType`.
     */
   def getMethodDescriptor(argumentTypes: List[JvmType], resultType: JvmType): String = {
