@@ -675,6 +675,19 @@ object BytecodeInstructions {
     body(runningIndex, variables)
   }
 
+  def xArrayLoad(elmTpe: BackendType): InstructionSet = elmTpe match {
+    case BackendType.Array(_) => cheat(_.visitInsn(Opcodes.AALOAD))
+    case BackendType.Reference(_) => cheat(_.visitInsn(Opcodes.AALOAD))
+    case BackendType.Bool => cheat(_.visitInsn(Opcodes.BALOAD))
+    case BackendType.Char => cheat(_.visitInsn(Opcodes.CALOAD))
+    case BackendType.Int8 => cheat(_.visitInsn(Opcodes.BALOAD))
+    case BackendType.Int16 => cheat(_.visitInsn(Opcodes.SALOAD))
+    case BackendType.Int32 => cheat(_.visitInsn(Opcodes.IALOAD))
+    case BackendType.Int64 => cheat(_.visitInsn(Opcodes.LALOAD))
+    case BackendType.Float32 => cheat(_.visitInsn(Opcodes.FALOAD))
+    case BackendType.Float64 => cheat(_.visitInsn(Opcodes.DALOAD))
+  }
+
   def xArrayStore(elmTpe: BackendType): InstructionSet = elmTpe match {
     case BackendType.Array(_) => cheat(_.visitInsn(Opcodes.AASTORE))
     case BackendType.Reference(_) => cheat(_.visitInsn(Opcodes.AASTORE))
