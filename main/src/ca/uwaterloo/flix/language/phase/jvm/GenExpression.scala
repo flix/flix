@@ -609,14 +609,15 @@ object GenExpression {
           castIfNotPrim(BackendType.toBackendType(tpe))
       })
 
-      case AtomicOp.Index(idx) =>
+      case AtomicOp.Index(idx) => mv.visitByteIns({
+        import BytecodeInstructions.*
         val List(exp) = exps
         val MonoType.Tuple(elmTypes) = exp.tpe
-        val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.asErasedBackendType))
-        // evaluating the `base`
-        compileExpr(exp)
-        // Retrieving the field `field${offset}`
-        mv.visitFieldInsn(GETFIELD, tupleType.jvmName.toInternalName, s"field$idx", JvmOps.asErasedJvmType(tpe).toDescriptor)
+        val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toBackendType))
+
+        pushExpr(exp) ~
+          GETFIELD(tupleType.IndexField(idx))
+      })
 
       case AtomicOp.Tuple => mv.visitByteIns({
         import BytecodeInstructions.*
@@ -737,22 +738,16 @@ object GenExpression {
           INVOKESTATIC(fillMethod)
       })
 
-      case AtomicOp.ArrayLoad =>
+      case AtomicOp.ArrayLoad => mv.visitByteIns({
+        import BytecodeInstructions.*
         val List(exp1, exp2) = exps
-        // Add source line number for debugging (can fail with out of bounds)
-        addSourceLine(mv, loc)
 
-        // We get the jvmType of the element to be loaded
-        val jvmType = JvmOps.getErasedJvmType(tpe)
-        // Evaluating the 'base'
-        compileExpr(exp1)
-        // Cast the object to Array
-        mv.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
-        // Evaluating the 'index' to load from
-        compileExpr(exp2)
-        // Loads the 'element' at the given 'index' from the 'array'
-        // with the load instruction corresponding to the loaded element
-        mv.visitInsn(AsmOps.getArrayLoadInstruction(jvmType))
+        // Add source line number for debugging (can fail with out of bounds).
+        addLoc(loc) ~
+          pushExpr(exp1) ~
+          pushExpr(exp2) ~
+          xArrayLoad(BackendType.toBackendType(tpe))
+      })
 
       case AtomicOp.ArrayStore => exps match {
         case List(exp1, exp2, exp3) =>
@@ -1300,15 +1295,14 @@ object GenExpression {
       mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, finallyBlock, null)
 
       // When we exit the scope, call the region's `exit` method
-      val iLoad = AsmOps.getLoadInstruction(JvmType.Reference(BackendObjType.Region.jvmName))
-      mv.visitVarInsn(iLoad, sym.getStackOffset(ctx.localOffset))
+      mv.visitByteIns(BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, sym.getStackOffset(ctx.localOffset)))
       mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
       mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ExitMethod.name,
         BackendObjType.Region.ExitMethod.d.toDescriptor, false)
       mv.visitLabel(afterTryBlock)
 
       // Compile the finally block which gets called if no exception is thrown
-      mv.visitVarInsn(iLoad, sym.getStackOffset(ctx.localOffset))
+      mv.visitByteIns(BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, sym.getStackOffset(ctx.localOffset)))
       mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
       mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ReThrowChildExceptionMethod.name,
         BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
@@ -1316,7 +1310,7 @@ object GenExpression {
 
       // Compile the finally block which gets called if an exception is thrown
       mv.visitLabel(finallyBlock)
-      mv.visitVarInsn(iLoad, sym.getStackOffset(ctx.localOffset))
+      mv.visitByteIns(BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, sym.getStackOffset(ctx.localOffset)))
       mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
       mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ReThrowChildExceptionMethod.name,
         BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)

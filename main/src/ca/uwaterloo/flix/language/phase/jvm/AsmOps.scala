@@ -44,34 +44,6 @@ object AsmOps {
   }
 
   /**
-    * Returns the stack size of a variable of type `tpe` in jvm.
-    */
-  def getStackSize(tpe: JvmType): Int = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type: $tpe", SourceLocation.Unknown)
-    case JvmType.PrimBool => 1
-    case JvmType.PrimChar => 1
-    case JvmType.PrimFloat => 1
-    case JvmType.PrimDouble => 2
-    case JvmType.PrimByte => 1
-    case JvmType.PrimShort => 1
-    case JvmType.PrimInt => 1
-    case JvmType.PrimLong => 2
-    case JvmType.Reference(_) => 1
-  }
-
-  /**
-    * Returns the load instruction for the value of the type specified by `tpe`
-    */
-  def getLoadInstruction(tpe: JvmType): Int = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-    case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => ILOAD
-    case JvmType.PrimLong => LLOAD
-    case JvmType.PrimFloat => FLOAD
-    case JvmType.PrimDouble => DLOAD
-    case JvmType.Reference(_) => ALOAD
-  }
-
-  /**
     * Returns the store instruction for the value of the type specified by `tpe`
     */
   def getStoreInstruction(tpe: JvmType): Int = tpe match {
@@ -81,22 +53,6 @@ object AsmOps {
     case JvmType.PrimFloat => FSTORE
     case JvmType.PrimDouble => DSTORE
     case JvmType.Reference(_) => ASTORE
-  }
-
-  /**
-    * Returns the array load instruction for arrays of the given JvmType tpe
-    */
-  def getArrayLoadInstruction(tpe: JvmType): Int = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-    case JvmType.PrimBool => BALOAD
-    case JvmType.PrimChar => CALOAD
-    case JvmType.PrimByte => BALOAD
-    case JvmType.PrimShort => SALOAD
-    case JvmType.PrimInt => IALOAD
-    case JvmType.PrimLong => LALOAD
-    case JvmType.PrimFloat => FALOAD
-    case JvmType.PrimDouble => DALOAD
-    case JvmType.Reference(_) => AALOAD
   }
 
   /**
