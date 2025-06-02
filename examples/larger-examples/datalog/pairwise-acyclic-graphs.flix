@@ -1,5 +1,5 @@
 def isCyclic(edges: List[(Int32, Int32)]): Bool =
-    let e = inject edges into Edge;
+    let e = inject edges into Edge(_, _);
     let lp = #{
         Path(x, y) :- Edge(x, y).
         Path(x, z) :- Path(x, y), Edge(y, z).

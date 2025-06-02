@@ -2900,10 +2900,10 @@ object Parser2 {
       while (eat(TokenKind.Comma) && !eof()) {
         expression()
       }
-      expect(TokenKind.KeywordInto)
-      nameUnqualified(NAME_PREDICATE)
+      expect(TokenKind.KeywordInto, SyntacticContext.Expr.OtherExpr)
+      predicateShape()
       while (eat(TokenKind.Comma) && !eof()) {
-        nameUnqualified(NAME_PREDICATE)
+        predicateShape()
       }
       close(mark, TreeKind.Expr.FixpointInject)
     }
@@ -2966,6 +2966,36 @@ object Parser2 {
       expect(TokenKind.KeywordWhere)
       expression()
       close(mark, TreeKind.Expr.FixpointWhere)
+    }
+
+    private def predicateShape()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      nameUnqualified(NAME_PREDICATE, SyntacticContext.Expr.OtherExpr)
+
+      // check for shape (_, _, _ ...)
+      if (!at(TokenKind.ParenL)) {
+        closeWithError(open(), UnexpectedToken(
+          expected = NamedTokenSet.FromKinds(Set(TokenKind.ParenL)),
+          actual = Some(nth(0)),
+          sctx = SyntacticContext.Expr.OtherExpr,
+          hint = Some("provide a full predicate shape such as: Pred(_, _, _)"),
+          loc = previousSourceLocation())
+        )
+      }
+
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.Underscore, TokenKind.ParenR)),
+        getItem = underscore,
+        checkForItem = _ == TokenKind.Underscore,
+        breakWhen = _.isRecoverExpr,
+      )
+      close(mark, TreeKind.PredicateShape)
+    }
+
+    private def underscore()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      expect(TokenKind.Underscore)
+      close(mark, TreeKind.Underscore)
     }
 
     private def intrinsicExpr()(implicit s: State): Mark.Closed = {

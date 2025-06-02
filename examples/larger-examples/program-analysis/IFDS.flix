@@ -83,7 +83,7 @@ mod IFDS {
         };
 
 
-        let f1 = inject ifds#cfg, ifds#callGraph, ifds#startNodes, ifds#endNodes into CFG, CallGraph, StartNode, EndNode;
+        let f1 = inject ifds#cfg, ifds#callGraph, ifds#startNodes, ifds#endNodes into CFG(_, _), CallGraph(_, _), StartNode(_, _), EndNode(_, _);
 
         query p, f1 select (n, d) from Results(n, d)
 

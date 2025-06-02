@@ -2086,17 +2086,19 @@ object Weeder2 {
 
     private def visitFixpointInjectExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.FixpointInject)
-      val expressions = pickAll(TreeKind.Expr.Expr, tree)
-      val idents = pickAll(TreeKind.Ident, tree).map(tokenToIdent)
-      mapN(traverse(expressions)(visitExpr)) {
-        case exprs if exprs.length != idents.length =>
+      val expTrees = pickAll(TreeKind.Expr.Expr, tree)
+      val shapeTrees = pickAll(TreeKind.PredicateShape, tree)
+      val expsVal = traverse(expTrees)(visitExpr)
+      val shapesVal = traverse(shapeTrees)(visitPredicateShape)
+      mapN(expsVal, shapesVal) {
+        case (exprs, shapes) if exprs.length != shapes.length =>
           // Check for mismatched arity
-          val error = MismatchedArity(exprs.length, idents.length, tree.loc)
+          val error = MismatchedArity(exprs.length, shapes.length, tree.loc)
           sctx.errors.add(error)
           WeededAst.Expr.Error(error)
 
-        case exprs =>
-          Expr.FixpointInjectInto(exprs, idents, tree.loc)
+        case (exprs, shapes) =>
+          Expr.FixpointInjectInto(exprs, shapes, tree.loc)
       }
     }
 
@@ -3242,6 +3244,14 @@ object Weeder2 {
   private def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
     mapN(pick(TreeKind.QName, tree)) {
       qname => Name.JavaName(pickAll(TreeKind.Ident, qname).flatMap(text), qname.loc)
+    }
+  }
+
+  private def visitPredicateShape(tree: Tree)(implicit sctx: SharedContext): Validation[PredicateShape, CompilationMessage] = {
+    val identVal = pickNameIdent(tree)
+    val args = pickAll(TreeKind.Underscore, tree)
+    mapN(identVal) {
+      case ident => PredicateShape(ident, args.length)
     }
   }
 

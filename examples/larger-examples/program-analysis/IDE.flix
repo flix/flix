@@ -127,7 +127,7 @@ mod IDE {
         };
 
 
-        let f1 = inject ide#cfg, ide#callGraph, ide#startNodes, ide#endNodes into CFG, CallGraph, StartNode, EndNode;
+        let f1 = inject ide#cfg, ide#callGraph, ide#startNodes, ide#endNodes into CFG(_, _), CallGraph(_, _), StartNode(_, _), EndNode(_, _);
 
         query p, f1 select (n, d, l) from Results(n, d; l)
 
