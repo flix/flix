@@ -71,7 +71,7 @@ object ZhegalkinExpr {
     *
     * Uses identity laws to speed up the computation.
     */
-  def mkCompl(e: ZhegalkinExpr): ZhegalkinExpr = {
+  def mkCompl(e: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra.type): ZhegalkinExpr = {
     // ¬Ø = 𝓤
     if (e eq ZhegalkinExpr.zero) {
       return ZhegalkinExpr.one
@@ -92,7 +92,7 @@ object ZhegalkinExpr {
     *
     * Uses identity laws and caching to speed up the computation.
     */
-  def mkXor(z1: ZhegalkinExpr, z2: ZhegalkinExpr): ZhegalkinExpr = {
+  def mkXor(z1: ZhegalkinExpr, z2: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra.type): ZhegalkinExpr = {
     // 0 ⊕ a = a
     if (z1 eq ZhegalkinExpr.zero) {
       return z2
@@ -103,7 +103,7 @@ object ZhegalkinExpr {
     }
 
     // Perform a cache lookup or an actual computation.
-    ZhegalkinCache.lookupOrComputeXor(z1, z2, computeXor)
+    alg.Cache.lookupOrComputeXor(z1, z2, computeXor)
   }
 
   /**
@@ -145,7 +145,7 @@ object ZhegalkinExpr {
     *
     * Uses identity laws to speed up the computation.
     */
-  def mkUnion(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = {
+  def mkUnion(e1: ZhegalkinExpr, e2: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra.type): ZhegalkinExpr = {
     // Ø ∪ a = a
     if (e1 eq ZhegalkinExpr.zero) {
       return e2
@@ -155,13 +155,13 @@ object ZhegalkinExpr {
       return e1
     }
 
-    ZhegalkinCache.lookupOrComputeUnion(e1, e2, computeUnion)
+    alg.Cache.lookupOrComputeUnion(e1, e2, computeUnion)
   }
 
   /**
     * Computes the union of the given two Zhegalkin expressions `e1` and `e2`.
     */
-  private def computeUnion(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = {
+  private def computeUnion(e1: ZhegalkinExpr, e2: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra.type): ZhegalkinExpr = {
     // a ∪ b = 1 ⊕ (1 ⊕ a)(1 ⊕ b)
     //mkXor(ZhegalkinExpr.one, mkInter(mkXor(ZhegalkinExpr.one, e1), mkXor(ZhegalkinExpr.one, e2)))
 
@@ -174,7 +174,7 @@ object ZhegalkinExpr {
     *
     * Uses identity laws to speed up the computation.
     */
-  def mkInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = {
+  def mkInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra.type): ZhegalkinExpr = {
     // Ø ∩ a = Ø
     if (e1 eq ZhegalkinExpr.zero) {
       return ZhegalkinExpr.zero
@@ -193,7 +193,7 @@ object ZhegalkinExpr {
     }
 
     // Perform a cache lookup or an actual computation.
-    ZhegalkinCache.lookupOrComputeInter(e1, e2, computeInter)
+    alg.Cache.lookupOrComputeInter(e1, e2, computeInter)
   }
 
   /**
@@ -207,7 +207,7 @@ object ZhegalkinExpr {
     *       ⊕ ...
     * }}}
     */
-  private def computeInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = e1 match {
+  private def computeInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra.type): ZhegalkinExpr = e1 match {
     case ZhegalkinExpr(c1, ts1) =>
       val zero = mkInterConstantExpr(c1, e2)
       ts1.foldLeft(zero) {
@@ -218,9 +218,9 @@ object ZhegalkinExpr {
   /**
     * Computes the intersection of the given Zhegalkin constant `c` and the given Zhegalkin expression `e`.
     */
-  private def mkInterConstantExpr(c: ZhegalkinCst, e: ZhegalkinExpr): ZhegalkinExpr = {
+  private def mkInterConstantExpr(c: ZhegalkinCst, e: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra.type): ZhegalkinExpr = {
     // Perform a cache lookup or an actual computation.
-    ZhegalkinCache.lookupOrComputeInterCst(c, e, computeInterConstantExpr)
+    alg.Cache.lookupOrComputeInterCst(c, e, computeInterConstantExpr)
   }
 
   /**
@@ -260,7 +260,7 @@ object ZhegalkinExpr {
     * }}}
     *
     */
-  private def mkInterTermExpr(t: ZhegalkinTerm, e: ZhegalkinExpr): ZhegalkinExpr = e match {
+  private def mkInterTermExpr(t: ZhegalkinTerm, e: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra.type): ZhegalkinExpr = e match {
     case ZhegalkinExpr(c2, terms) =>
       val zero: ZhegalkinExpr = mkZhegalkinExpr(ZhegalkinCst.empty, List(mkInterConstantTerm(c2, t)))
       terms.foldLeft(zero) {
@@ -327,7 +327,7 @@ case class ZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]) {
     * }}}
     *
     */
-  def map(f: Int => ZhegalkinExpr): ZhegalkinExpr = {
+  def map(f: Int => ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra.type): ZhegalkinExpr = {
     if (terms == Nil) {
       return this
     }

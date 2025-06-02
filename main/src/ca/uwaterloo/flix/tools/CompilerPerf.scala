@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinCache
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{ZhegalkinAlgebra, ZhegalkinCache}
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
 import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options, StatUtils}
 import org.json4s.JValue
@@ -441,7 +441,7 @@ object CompilerPerf {
     */
   private def runSingle(flix: Flix): Run = {
     // Clear caches.
-    ZhegalkinCache.clearCaches()
+    ZhegalkinAlgebra.Cache.clearCaches()
 
     val frontendOnly = flix.options.XPerfFrontend
     val totalLines =

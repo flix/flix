@@ -453,6 +453,8 @@ object SetUnification {
     implicit val alg: BoolAlg[ZhegalkinExpr] = ZhegalkinAlgebra
     val l = eqs.map {
       case Equation(f1, f2, _, _) =>
+        implicit val alg: ZhegalkinAlgebra.type = ZhegalkinAlgebra
+
         val x = Zhegalkin.toZhegalkin(f1)
         val y = Zhegalkin.toZhegalkin(f2)
         (x, y)

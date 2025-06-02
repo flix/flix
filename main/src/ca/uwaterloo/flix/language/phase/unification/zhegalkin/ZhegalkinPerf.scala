@@ -294,11 +294,11 @@ object ZhegalkinPerf {
   private def runN(N: Int, c: Config): IndexedSeq[Run] = {
     SetUnification.EnableRewriteRules = c.rewriteRules
 
-    ZhegalkinCache.EnableInterCstCache = c.cacheInterCst
-    ZhegalkinCache.EnableUnionCache = c.cacheUnion
-    ZhegalkinCache.EnableInterCache = c.cacheInter
-    ZhegalkinCache.EnableXorCache = c.cacheXor
-    ZhegalkinAlgebra.EnableSVECache = c.cacheSVE
+    ZhegalkinAlgebra.Cache.EnableInterCstCache = c.cacheInterCst
+    ZhegalkinAlgebra.Cache.EnableUnionCache = c.cacheUnion
+    ZhegalkinAlgebra.Cache.EnableInterCache = c.cacheInter
+    ZhegalkinAlgebra.Cache.EnableXorCache = c.cacheXor
+    ZhegalkinAlgebra.Cache.EnableSVECache = c.cacheSVE
 
     EffUnification3.EnableSmartSubeffecting = c.smartSubeffecting
 
@@ -314,7 +314,7 @@ object ZhegalkinPerf {
     */
   private def runSingle(flix: Flix): Run = {
     // Clear caches.
-    ZhegalkinCache.clearCaches()
+    ZhegalkinAlgebra.Cache.clearCaches()
 
     // Run the Flix compiler
     val (root, errors) = flix.check()
