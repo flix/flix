@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition}
 import ca.uwaterloo.flix.language.ast.{MonoType, *}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.{InstructionSet, MethodEnricher}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm
 import org.objectweb.asm.*
@@ -706,26 +707,20 @@ object GenExpression {
           castIfNotPrim(BackendType.toBackendType(tpe))
       })
 
-      case AtomicOp.ArrayLit =>
-        // We push the 'length' of the array on top of stack
-        compileInt(exps.length)
-        // We get the inner type of the array
+      case AtomicOp.ArrayLit => mv.visitByteIns({
+        import BytecodeInstructions.*
         val innerType = tpe.asInstanceOf[MonoType.Array].tpe
         val backendType = BackendType.toBackendType(innerType)
-        // Instantiating a new array of type jvmType
-        visitArrayInstantiate(mv, backendType)
-        // For each element we generate code to store it into the array
-        for (i <- exps.indices) {
-          // Duplicates the 'array reference'
-          mv.visitInsn(DUP)
-          // We push the 'index' of the current element on top of stack
-          compileInt(i)
-          // Evaluating the 'element' to be stored
-          compileExpr(exps(i))
-          // Stores the 'element' at the given 'index' in the 'array'
-          // with the store instruction corresponding to the stored element
-          mv.visitInsn(backendType.getArrayStoreInstruction)
-        }
+
+        pushInt(exps.length) ~
+          xNewArray(backendType) ~
+          composeN(for ((e, i) <- exps.zipWithIndex) yield {
+            DUP() ~
+              pushInt(i) ~
+              pushExpr(e) ~
+              xArrayStore(backendType)
+          })
+      })
 
       case AtomicOp.ArrayNew => mv.visitByteIns({
         import BytecodeInstructions.*
@@ -733,12 +728,13 @@ object GenExpression {
         // We get the inner type of the array
         val innerType = tpe.asInstanceOf[MonoType.Array].tpe
         val backendType = BackendType.toBackendType(innerType)
+        val fillMethod = ClassMaker.StaticMethod(JvmName.Arrays, "fill", mkDescriptor(BackendType.Array(backendType.toErased), backendType.toErased)(VoidableType.Void))
         pushExpr(exp1) ~                                                      // default
           pushExpr(exp2) ~                                                    // default, length
           xNewArray(backendType) ~                                            // default, arr
           (if (backendType.is64BitWidth) DUP_X2() else DUP_X1()) ~            // arr, default, arr
           xSwap(lowerLarge = backendType.is64BitWidth, higherLarge = false) ~ // arr, arr, default
-          INVOKESTATIC(ClassMaker.StaticMethod(JvmName.Arrays, "fill", backendType.toArrayFillType))
+          INVOKESTATIC(fillMethod)
       })
 
       case AtomicOp.ArrayLoad => mv.visitByteIns({
@@ -1518,24 +1514,6 @@ object GenExpression {
     pushExpr(exp) ~
       CHECKCAST(tagType.jvmName) ~
       GETFIELD(tagType.IndexField(idx))
-  }
-
-  /**
-    * Emits code that instantiates an array of the type `tpe`.
-    */
-  private def visitArrayInstantiate(mv: MethodVisitor, tpe: BackendType): Unit = {
-    tpe match {
-      case BackendType.Array(_) => mv.visitTypeInsn(ANEWARRAY, tpe.toDescriptor)
-      case BackendType.Reference(ref) => mv.visitTypeInsn(ANEWARRAY, ref.jvmName.toInternalName)
-      case BackendType.Bool => mv.visitIntInsn(NEWARRAY, T_BOOLEAN)
-      case BackendType.Char => mv.visitIntInsn(NEWARRAY, T_CHAR)
-      case BackendType.Int8 => mv.visitIntInsn(NEWARRAY, T_BYTE)
-      case BackendType.Int16 => mv.visitIntInsn(NEWARRAY, T_SHORT)
-      case BackendType.Int32 => mv.visitIntInsn(NEWARRAY, T_INT)
-      case BackendType.Int64 => mv.visitIntInsn(NEWARRAY, T_LONG)
-      case BackendType.Float32 => mv.visitIntInsn(NEWARRAY, T_FLOAT)
-      case BackendType.Float64 => mv.visitIntInsn(NEWARRAY, T_DOUBLE)
-    }
   }
 
   private def visitComparisonPrologue(exp1: Expr, exp2: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): (Label, Label) = {

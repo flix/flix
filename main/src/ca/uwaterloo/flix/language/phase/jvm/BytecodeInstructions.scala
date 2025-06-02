@@ -629,7 +629,7 @@ object BytecodeInstructions {
     case 4 => ICONST_4()
     case 5 => ICONST_5()
     case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => BIPUSH(i.toByte)
-    case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => SIPUSH(i.toByte)
+    case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => SIPUSH(i.toShort)
     case _ => f => {
       f.visitLoadConstantInstruction(i)
       f
@@ -686,6 +686,18 @@ object BytecodeInstructions {
     case BackendType.Int64 => cheat(_.visitInsn(Opcodes.LALOAD))
     case BackendType.Float32 => cheat(_.visitInsn(Opcodes.FALOAD))
     case BackendType.Float64 => cheat(_.visitInsn(Opcodes.DALOAD))
+
+  def xArrayStore(elmTpe: BackendType): InstructionSet = elmTpe match {
+    case BackendType.Array(_) => cheat(_.visitInsn(Opcodes.AASTORE))
+    case BackendType.Reference(_) => cheat(_.visitInsn(Opcodes.AASTORE))
+    case BackendType.Bool => cheat(_.visitInsn(Opcodes.BASTORE))
+    case BackendType.Char => cheat(_.visitInsn(Opcodes.CASTORE))
+    case BackendType.Int8 => cheat(_.visitInsn(Opcodes.BASTORE))
+    case BackendType.Int16 => cheat(_.visitInsn(Opcodes.SASTORE))
+    case BackendType.Int32 => cheat(_.visitInsn(Opcodes.IASTORE))
+    case BackendType.Int64 => cheat(_.visitInsn(Opcodes.LASTORE))
+    case BackendType.Float32 => cheat(_.visitInsn(Opcodes.FASTORE))
+    case BackendType.Float64 => cheat(_.visitInsn(Opcodes.DASTORE))
   }
 
   def xLoad(tpe: BackendType, index: Int): InstructionSet = tpe match {
@@ -700,14 +712,14 @@ object BytecodeInstructions {
     case BackendType.Array(_) => cheat(mv => mv.visitTypeInsn(Opcodes.ANEWARRAY, elmTpe.toDescriptor))
     case BackendType.Reference(ref) => ANEWARRAY(ref.jvmName)
     case tpe: BackendType.PrimitiveType => tpe match {
-      case BackendType.Bool => cheat(mv => mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_BOOLEAN))
-      case BackendType.Char => cheat(mv => mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_CHAR))
-      case BackendType.Int8 => cheat(mv => mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_BYTE))
-      case BackendType.Int16 => cheat(mv => mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_SHORT))
-      case BackendType.Int32 => cheat(mv => mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_INT))
-      case BackendType.Int64 => cheat(mv => mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_LONG))
-      case BackendType.Float32 => cheat(mv => mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_FLOAT))
-      case BackendType.Float64 => cheat(mv => mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_DOUBLE))
+      case BackendType.Bool => cheat(_.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_BOOLEAN))
+      case BackendType.Char => cheat(_.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_CHAR))
+      case BackendType.Int8 => cheat(_.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_BYTE))
+      case BackendType.Int16 => cheat(_.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_SHORT))
+      case BackendType.Int32 => cheat(_.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_INT))
+      case BackendType.Int64 => cheat(_.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_LONG))
+      case BackendType.Float32 => cheat(_.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_FLOAT))
+      case BackendType.Float64 => cheat(_.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_DOUBLE))
     }
   }
 
