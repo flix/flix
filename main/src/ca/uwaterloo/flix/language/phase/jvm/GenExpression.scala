@@ -792,19 +792,12 @@ object GenExpression {
         case _ => throw InternalCompilerException("Mismatched Arity", loc)
       }
 
-      case AtomicOp.ArrayLength =>
+      case AtomicOp.ArrayLength => mv.visitByteIns({
+        import BytecodeInstructions.*
         val List(exp) = exps
-        // Add source line number for debugging (can fail with ???)
-        addSourceLine(mv, loc)
-
-        // We get the inner type of the array
-        val jvmType = JvmOps.getErasedJvmType(exp.tpe.asInstanceOf[MonoType.Array].tpe)
-        // Evaluating the 'base'
-        compileExpr(exp)
-        // Cast the object to array
-        mv.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
-        // Pushes the 'length' of the array on top of stack
-        mv.visitInsn(ARRAYLENGTH)
+        pushExpr(exp) ~
+          ARRAYLENGTH()
+      })
 
       case AtomicOp.StructNew(_, _) => mv.visitByteIns({
         import BytecodeInstructions.*
