@@ -56,22 +56,6 @@ object AsmOps {
   }
 
   /**
-    * Returns the array load instruction for arrays of the given JvmType tpe
-    */
-  def getArrayLoadInstruction(tpe: JvmType): Int = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-    case JvmType.PrimBool => BALOAD
-    case JvmType.PrimChar => CALOAD
-    case JvmType.PrimByte => BALOAD
-    case JvmType.PrimShort => SALOAD
-    case JvmType.PrimInt => IALOAD
-    case JvmType.PrimLong => LALOAD
-    case JvmType.PrimFloat => FALOAD
-    case JvmType.PrimDouble => DALOAD
-    case JvmType.Reference(_) => AALOAD
-  }
-
-  /**
     * Returns the array store instruction for arrays of the given JvmType tpe
     */
   def getArrayStoreInstruction(tpe: JvmType): Int = tpe match {
