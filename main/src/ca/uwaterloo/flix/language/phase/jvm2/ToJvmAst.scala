@@ -1,5 +1,5 @@
 /*
- * Copyright 20XX Name
+ * Copyright 2025 Cade Lueker
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import ca.uwaterloo.flix.language.ast.{JvmAst, MonoType, ReducedAst}
 import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugJvmAst
 
+import java.lang.constant.ClassDesc
+
 object ToJvm {
 
   def run(root: ReducedAst.Root)(implicit flix: Flix): JvmAst.Root = flix.phase("ToJvm") {
@@ -29,11 +31,12 @@ object ToJvm {
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
     val anonClasses = root.anonClasses.map(visitAnonClass)
-    JvmAst.Root(defs, enums, structs, effects, root.types, anonClasses, root.mainEntryPoint, root.entryPoints, root.sources)
+    val jvmRootTypes = root.types.map(toJvmType)
+    JvmAst.Root(defs, enums, structs, effects, jvmRootTypes, anonClasses, root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
-  private def toJvmType(tpe: MonoType): MonoType = {
-    tpe
+  private def toJvmType(tpe: MonoType): ClassDesc = {
+    ???
   }
 
   private def visitDef(defn: ReducedAst.Def): JvmAst.Def = {
@@ -74,7 +77,6 @@ object ToJvm {
   }
 
   private def visitExpr(expr: ReducedAst.Expr): JvmAst.Expr =
-    // ctx.defTypes.put(exp0.tpe, ())
     expr match {
       case ReducedAst.Expr.Cst(cst, tpe, loc) =>
         JvmAst.Expr.Cst(
@@ -96,14 +98,12 @@ object ToJvm {
         JvmAst.Expr.ApplyAtomic(op, es, jvmTpe, purity, loc)
 
       case ReducedAst.Expr.ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
-        // if (ct == ExpPosition.NonTail && Purity.isControlImpure(purity)) lctx.pcPoints += 1
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)
         val jvmTpe = toJvmType(tpe)
         JvmAst.Expr.ApplyClo(e1, e2, ct, jvmTpe, purity, loc)
 
       case ReducedAst.Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
-        // if (ct == ExpPosition.NonTail && Purity.isControlImpure(purity)) lctx.pcPoints += 1
         val es = exps.map(visitExpr)
         val jvmTpe = toJvmType(tpe)
         JvmAst.Expr.ApplyDef(sym, es, ct, jvmTpe, purity, loc)
@@ -137,7 +137,6 @@ object ToJvm {
         )
 
       case ReducedAst.Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
-        // lctx.lparams.addOne(LocalParam(sym, exp1.tpe))
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)
         val jvmTpe = toJvmType(tpe)
@@ -150,7 +149,6 @@ object ToJvm {
         JvmAst.Expr.Stmt(e1, e2, jvmTpe, purity, loc)
 
       case ReducedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
-        // lctx.lparams.addOne(LocalParam(sym, MonoType.Region))
         val e = visitExpr(exp)
         val jvmTpe = toJvmType(tpe)
         JvmAst.Expr.Scope(sym, e, jvmTpe, purity, loc)
@@ -159,7 +157,6 @@ object ToJvm {
         val e = visitExpr(exp)
         val rs = rules map {
           case ReducedAst.CatchRule(sym, clazz, body) =>
-            // lctx.lparams.addOne(LocalParam(sym, MonoType.Object))
             val b = visitExpr(body)
             JvmAst.CatchRule(sym, clazz, b)
         }
@@ -167,7 +164,6 @@ object ToJvm {
         JvmAst.Expr.TryCatch(e, rs, jvmTpe, purity, loc)
 
       case ReducedAst.Expr.RunWith(exp, effUse, rules, ct, tpe, purity, loc) =>
-        // if (ct == ExpPosition.NonTail) lctx.pcPoints += 1
         val e = visitExpr(exp)
         val rs = rules.map {
           case ReducedAst.HandlerRule(op, fparams, body) =>
@@ -178,7 +174,6 @@ object ToJvm {
         JvmAst.Expr.RunWith(e, effUse, rs, ct, jvmTpe, purity, loc)
 
       case ReducedAst.Expr.Do(op, exps, tpe, purity, loc) =>
-        // lctx.pcPoints += 1
         val es = exps.map(visitExpr)
         val jvmTpe = toJvmType(tpe)
         JvmAst.Expr.Do(op, es, jvmTpe, purity, loc)
@@ -187,9 +182,9 @@ object ToJvm {
         val specs = methods.map {
           case ReducedAst.JvmMethod(ident, fparams, clo, retTpe, methPurity, methLoc) =>
             val c = visitExpr(clo)
-            JvmAst.JvmMethod(ident, fparams.map(visitFParam), c, retTpe, methPurity, methLoc)
+            val jvmRetTpe = toJvmType(retTpe)
+            JvmAst.JvmMethod(ident, fparams.map(visitFParam), c, jvmRetTpe, methPurity, methLoc)
         }
-        // ctx.anonClasses.add(AnonClass(name, clazz, tpe, specs, loc))
         val jvmTpe = toJvmType(tpe)
 
         JvmAst.Expr.NewObject(name, clazz, jvmTpe, purity, specs, loc)

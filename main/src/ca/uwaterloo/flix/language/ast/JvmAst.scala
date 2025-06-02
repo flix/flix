@@ -1,5 +1,5 @@
 /*
- * Copyright 20XX Name
+ * Copyright 2025 Cade Lueker
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffectSymUse, OpSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, ExpPosition, Modifiers, Source}
 
 import java.lang.reflect.Method
+import java.lang.constant.ClassDesc
 
 object JvmAst {
 
@@ -30,7 +31,7 @@ object JvmAst {
                   enums: Map[Symbol.EnumSym, Enum],
                   structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffectSym, Effect],
-                  types: Set[MonoType],
+                  types: Set[ClassDesc],
                   anonClasses: List[AnonClass],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   entryPoints: Set[Symbol.DefnSym],
@@ -43,13 +44,13 @@ object JvmAst {
   /**
     * pcPoints is initialized by [[ca.uwaterloo.flix.language.phase.Reducer]].
     */
-  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, expr: Expr, tpe: MonoType, unboxedType: UnboxedType, loc: SourceLocation) {
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, expr: Expr, tpe: ClassDesc, unboxedType: UnboxedType, loc: SourceLocation) {
     var method: Method = _
-    val arrowType: MonoType.Arrow = MonoType.Arrow(fparams.map(_.tpe), tpe)
+    val arrowType: ClassDesc.Arrow = ClassDesc.Arrow(fparams.map(_.tpe), tpe)
   }
 
   /** Remember the unboxed return type for test function generation. */
-  case class UnboxedType(tpe: MonoType)
+  case class UnboxedType(tpe: ClassDesc)
 
   case class Enum(ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: Map[Symbol.CaseSym, Case], loc: SourceLocation)
 
@@ -57,10 +58,10 @@ object JvmAst {
 
   case class Effect(ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
-  case class Op(sym: Symbol.OpSym, ann: Annotations, mod: Modifiers, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
+  case class Op(sym: Symbol.OpSym, ann: Annotations, mod: Modifiers, fparams: List[FormalParam], tpe: ClassDesc, purity: Purity, loc: SourceLocation)
 
   sealed trait Expr {
-    def tpe: MonoType
+    def tpe: ClassDesc
 
     def purity: Purity
 
@@ -69,41 +70,41 @@ object JvmAst {
 
   object Expr {
 
-    case class Cst(cst: Constant, tpe: MonoType, loc: SourceLocation) extends Expr {
+    case class Cst(cst: Constant, tpe: ClassDesc, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
 
-    case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends Expr {
+    case class Var(sym: Symbol.VarSym, tpe: ClassDesc, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
 
-    case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: ClassDesc, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplyClo(exp1: Expr, exp2: Expr, ct: ExpPosition, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyClo(exp1: Expr, exp2: Expr, ct: ExpPosition, tpe: ClassDesc, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: ExpPosition, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: ExpPosition, tpe: ClassDesc, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplySelfTail(sym: Symbol.DefnSym, actuals: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplySelfTail(sym: Symbol.DefnSym, actuals: List[Expr], tpe: ClassDesc, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: ClassDesc, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Branch(exp: Expr, branches: Map[Symbol.LabelSym, Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class Branch(exp: Expr, branches: Map[Symbol.LabelSym, Expr], tpe: ClassDesc, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class JumpTo(sym: Symbol.LabelSym, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class JumpTo(sym: Symbol.LabelSym, tpe: ClassDesc, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: ClassDesc, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Stmt(exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class Stmt(exp1: Expr, exp2: Expr, tpe: ClassDesc, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Scope(sym: Symbol.VarSym, exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class Scope(sym: Symbol.VarSym, exp: Expr, tpe: ClassDesc, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: ClassDesc, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class RunWith(exp: Expr, effUse: EffectSymUse, rules: List[HandlerRule], ct: ExpPosition, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class RunWith(exp: Expr, effUse: EffectSymUse, rules: List[HandlerRule], ct: ExpPosition, tpe: ClassDesc, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Do(op: OpSymUse, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class Do(op: OpSymUse, exps: List[Expr], tpe: ClassDesc, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: MonoType, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: ClassDesc, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
   }
 
@@ -113,18 +114,18 @@ object JvmAst {
   /** [[Type]] is used here because [[Struct]] declarations are not monomorphized. */
   case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
-  case class AnonClass(name: String, clazz: java.lang.Class[?], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation)
+  case class AnonClass(name: String, clazz: java.lang.Class[?], tpe: ClassDesc, methods: List[JvmMethod], loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: ClassDesc, purity: Purity, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
 
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: MonoType, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: ClassDesc, loc: SourceLocation)
 
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 
-  case class LocalParam(sym: Symbol.VarSym, tpe: MonoType)
+  case class LocalParam(sym: Symbol.VarSym, tpe: ClassDesc)
 
 }
