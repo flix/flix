@@ -757,13 +757,15 @@ object GenExpression {
       case AtomicOp.ArrayStore => mv.visitByteIns({
         import BytecodeInstructions.*
         val List(exp1, exp2, exp3) = exps
+        val elmTpe = BackendType.toBackendType(exp3.tpe)
 
         // Add source line number for debugging (can fail with out of bounds).
         addLoc(loc) ~
           pushExpr(exp1) ~ // Evaluating the array
+          castIfNotPrim(BackendType.Array(elmTpe)) ~
           pushExpr(exp2) ~ // Evaluating the index
           pushExpr(exp3) ~ // Evaluating the element
-          xArrayStore(BackendType.toBackendType(exp3.tpe)) ~
+          xArrayStore(elmTpe) ~
           GETSTATIC(BackendObjType.Unit.SingletonField)
       })
 
