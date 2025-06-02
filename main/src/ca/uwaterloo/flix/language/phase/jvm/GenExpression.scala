@@ -583,18 +583,20 @@ object GenExpression {
           CHECKCAST(BackendObjType.Region.jvmName)
       })
 
-      case AtomicOp.Is(sym) =>
+      case AtomicOp.Is(sym) => mv.visitByteIns({
         val List(exp) = exps
         val MonoType.Enum(_, targs) = exp.tpe
         val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
         val termTypes = cases(sym)
         compileIsTag(sym.name, exp, termTypes)
+      })
 
-      case AtomicOp.Tag(sym) =>
+      case AtomicOp.Tag(sym) => mv.visitByteIns({
         val MonoType.Enum(_, targs) = tpe
         val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
         val termTypes = cases(sym)
         compileTag(sym.name, exps, termTypes)
+      })
 
       case AtomicOp.Untag(sym, idx) => mv.visitByteIns({
         import BytecodeInstructions.*
@@ -684,14 +686,16 @@ object GenExpression {
         mv.visitMethodInsn(INVOKEINTERFACE, interfaceType.jvmName.toInternalName, interfaceType.RestrictFieldMethod.name,
           MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(interfaceType.toTpe).toDescriptor, true)
 
-      case AtomicOp.ExtensibleIs(sym) =>
+      case AtomicOp.ExtensibleIs(sym) => mv.visitByteIns({
         val List(exp) = exps
         val tpes = MonoType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.asErasedBackendType)
         compileIsTag(sym.name, exp, tpes)
+      })
 
-      case AtomicOp.ExtensibleTag(sym) =>
+      case AtomicOp.ExtensibleTag(sym) => mv.visitByteIns({
         val tpes = MonoType.findExtensibleTermTypes(sym, tpe).map(BackendType.asErasedBackendType)
         compileTag(sym.name, exps, tpes)
+      })
 
       case AtomicOp.ExtensibleUntag(sym, idx) => mv.visitByteIns({
         import BytecodeInstructions.*
@@ -1480,30 +1484,25 @@ object GenExpression {
   private def pushExpr(exp: Expr)(implicit ctx: MethodContext, root: Root, flix: Flix): InstructionSet =
     BytecodeInstructions.cheat(mv => compileExpr(exp)(mv, ctx, root, flix))
 
-  private def compileIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
-    compileExpr(exp)
-    val ins = tpes match {
+  private def compileIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit ctx: MethodContext, root: Root, flix: Flix): InstructionSet = {
+    import BytecodeInstructions.*
+    tpes match {
       case Nil =>
-        import BytecodeInstructions.*
-        // nullary tags have their own distinct class
-        INSTANCEOF(BackendObjType.NullaryTag(name).jvmName)
+        pushExpr(exp) ~
+          INSTANCEOF(BackendObjType.NullaryTag(name).jvmName)
       case _ =>
-        import BytecodeInstructions.*
-        val taggedType = BackendObjType.Tagged
-        CHECKCAST(taggedType.jvmName) ~ GETFIELD(taggedType.NameField) ~
+        pushExpr(exp) ~
+          CHECKCAST(BackendObjType.Tagged.jvmName) ~ GETFIELD(BackendObjType.Tagged.NameField) ~
           BackendObjType.Tagged.mkTagName(name) ~ BackendObjType.Tagged.eqTagName()
     }
-    mv.visitByteIns(ins)
   }
 
-  private def compileTag(name: String, exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
-    val ins = tpes match {
+  private def compileTag(name: String, exps: List[Expr], tpes: List[BackendType])(implicit ctx: MethodContext, root: Root, flix: Flix): InstructionSet = {
+    import BytecodeInstructions.*
+    tpes match {
       case Nil =>
-        import BytecodeInstructions.*
-        val tagType = BackendObjType.NullaryTag(name)
-        GETSTATIC(tagType.SingletonField)
+        GETSTATIC(BackendObjType.NullaryTag(name).SingletonField)
       case _ =>
-        import BytecodeInstructions.*
         val tagType = BackendObjType.Tag(tpes)
         NEW(tagType.jvmName) ~ DUP() ~ INVOKESPECIAL(tagType.Constructor) ~
           DUP() ~ BackendObjType.Tagged.mkTagName(name) ~ PUTFIELD(tagType.NameField) ~
@@ -1511,7 +1510,6 @@ object GenExpression {
             case (e, i) => DUP() ~ pushExpr(e) ~ PUTFIELD(tagType.IndexField(i))
           })
     }
-    mv.visitByteIns(ins)
   }
 
   private def compileUntag(exp: Expr, idx: Int, tpes: List[BackendType])(implicit ctx: MethodContext, root: Root, flix: Flix): InstructionSet = {
