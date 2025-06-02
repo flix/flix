@@ -741,22 +741,16 @@ object GenExpression {
           INVOKESTATIC(ClassMaker.StaticMethod(JvmName.Arrays, "fill", backendType.toArrayFillType))
       })
 
-      case AtomicOp.ArrayLoad =>
+      case AtomicOp.ArrayLoad => mv.visitByteIns({
+        import BytecodeInstructions.*
         val List(exp1, exp2) = exps
-        // Add source line number for debugging (can fail with out of bounds)
-        addSourceLine(mv, loc)
 
-        // We get the jvmType of the element to be loaded
-        val jvmType = JvmOps.getErasedJvmType(tpe)
-        // Evaluating the 'base'
-        compileExpr(exp1)
-        // Cast the object to Array
-        mv.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
-        // Evaluating the 'index' to load from
-        compileExpr(exp2)
-        // Loads the 'element' at the given 'index' from the 'array'
-        // with the load instruction corresponding to the loaded element
-        mv.visitInsn(AsmOps.getArrayLoadInstruction(jvmType))
+        // Add source line number for debugging (can fail with out of bounds).
+        addLoc(loc) ~
+          pushExpr(exp1) ~
+          pushExpr(exp2) ~
+          xArrayLoad(BackendType.toBackendType(tpe))
+      })
 
       case AtomicOp.ArrayStore => exps match {
         case List(exp1, exp2, exp3) =>
