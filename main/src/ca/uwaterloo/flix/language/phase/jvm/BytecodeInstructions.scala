@@ -629,7 +629,7 @@ object BytecodeInstructions {
     case 4 => ICONST_4()
     case 5 => ICONST_5()
     case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => BIPUSH(i.toByte)
-    case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => SIPUSH(i.toByte)
+    case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => SIPUSH(i.toShort)
     case _ => f => {
       f.visitLoadConstantInstruction(i)
       f
