@@ -723,34 +723,19 @@ object GenExpression {
           mv.visitInsn(backendType.getArrayStoreInstruction)
         }
 
-      case AtomicOp.ArrayNew =>
+      case AtomicOp.ArrayNew => mv.visitByteIns({
+        import BytecodeInstructions.*
         val List(exp1, exp2) = exps
         // We get the inner type of the array
         val innerType = tpe.asInstanceOf[MonoType.Array].tpe
         val backendType = BackendType.toBackendType(innerType)
-        // Evaluating the value of the 'default element'
-        compileExpr(exp1)
-        // Evaluating the 'length' of the array
-        compileExpr(exp2)
-        // Instantiating a new array of type jvmType
-        visitArrayInstantiate(mv, backendType)
-        if (backendType.is64BitWidth) {
-          // Duplicates the 'array reference' three places down the stack
-          mv.visitInsn(DUP_X2)
-          // Duplicates the 'array reference' three places down the stack
-          mv.visitInsn(DUP_X2)
-          // Pops the 'ArrayRef' at the top of the stack
-          mv.visitInsn(POP)
-        } else {
-          // Duplicates the 'array reference' two places down the stack
-          mv.visitInsn(DUP_X1)
-          // Swaps the 'array reference' and 'default element'
-          mv.visitInsn(SWAP)
-        }
-        // We get the array fill type
-        val arrayFillType = backendType.toArrayFillType
-        // Invoking the method to fill the array with the default element
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Arrays", "fill", arrayFillType, false);
+        pushExpr(exp1) ~                                                      // default
+          pushExpr(exp2) ~                                                    // default, length
+          xNewArray(backendType) ~                                            // default, arr
+          (if (backendType.is64BitWidth) DUP_X2() else DUP_X1()) ~            // arr, default, arr
+          xSwap(lowerLarge = backendType.is64BitWidth, higherLarge = false) ~ // arr, arr, default
+          INVOKESTATIC(ClassMaker.StaticMethod(JvmName.Arrays, "fill", backendType.toArrayFillType))
+      })
 
       case AtomicOp.ArrayLoad =>
         val List(exp1, exp2) = exps

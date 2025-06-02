@@ -683,6 +683,21 @@ object BytecodeInstructions {
     case BackendType.Array(_) | BackendType.Reference(_) => ALOAD(index)
   }
 
+  def xNewArray(elmTpe: BackendType): InstructionSet = elmTpe match {
+    case BackendType.Array(_) => cheat(mv => mv.visitTypeInsn(Opcodes.ANEWARRAY, elmTpe.toDescriptor))
+    case BackendType.Reference(ref) => ANEWARRAY(ref.jvmName)
+    case tpe: BackendType.PrimitiveType => tpe match {
+      case BackendType.Bool => cheat(mv => mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_BOOLEAN))
+      case BackendType.Char => cheat(mv => mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_CHAR))
+      case BackendType.Int8 => cheat(mv => mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_BYTE))
+      case BackendType.Int16 => cheat(mv => mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_SHORT))
+      case BackendType.Int32 => cheat(mv => mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_INT))
+      case BackendType.Int64 => cheat(mv => mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_LONG))
+      case BackendType.Float32 => cheat(mv => mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_FLOAT))
+      case BackendType.Float64 => cheat(mv => mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_DOUBLE))
+    }
+  }
+
   /**
     * Pops the top of the stack using `POP` or `POP2` depending on the value size.
     */
