@@ -582,12 +582,13 @@ object GenExpression {
           CHECKCAST(BackendObjType.Region.jvmName)
       })
 
-      case AtomicOp.Is(sym) =>
+      case AtomicOp.Is(sym) => mv.visitByteIns({
         val List(exp) = exps
         val MonoType.Enum(_, targs) = exp.tpe
         val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
         val termTypes = cases(sym)
         compileIsTag(sym.name, exp, termTypes)
+      })
 
       case AtomicOp.Tag(sym) => mv.visitByteIns({
         val MonoType.Enum(_, targs) = tpe
@@ -684,10 +685,11 @@ object GenExpression {
         mv.visitMethodInsn(INVOKEINTERFACE, interfaceType.jvmName.toInternalName, interfaceType.RestrictFieldMethod.name,
           MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(interfaceType.toTpe).toDescriptor, true)
 
-      case AtomicOp.ExtensibleIs(sym) =>
+      case AtomicOp.ExtensibleIs(sym) => mv.visitByteIns({
         val List(exp) = exps
         val tpes = MonoType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.asErasedBackendType)
         compileIsTag(sym.name, exp, tpes)
+      })
 
       case AtomicOp.ExtensibleTag(sym) => mv.visitByteIns({
         val tpes = MonoType.findExtensibleTermTypes(sym, tpe).map(BackendType.asErasedBackendType)
@@ -1508,16 +1510,15 @@ object GenExpression {
   private def pushExpr(exp: Expr)(implicit ctx: MethodContext, root: Root, flix: Flix): InstructionSet =
     BytecodeInstructions.cheat(mv => compileExpr(exp)(mv, ctx, root, flix))
 
-  private def compileIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def compileIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit ctx: MethodContext, root: Root, flix: Flix): InstructionSet = {
     import BytecodeInstructions.*
     tpes match {
       case Nil =>
         pushExpr(exp) ~
           INSTANCEOF(BackendObjType.NullaryTag(name).jvmName)
       case _ =>
-        val taggedType = BackendObjType.Tagged
         pushExpr(exp) ~
-          CHECKCAST(taggedType.jvmName) ~ GETFIELD(taggedType.NameField) ~
+          CHECKCAST(BackendObjType.Tagged.jvmName) ~ GETFIELD(BackendObjType.Tagged.NameField) ~
           BackendObjType.Tagged.mkTagName(name) ~ BackendObjType.Tagged.eqTagName()
     }
   }
