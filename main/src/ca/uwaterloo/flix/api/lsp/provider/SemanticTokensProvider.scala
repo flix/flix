@@ -858,8 +858,8 @@ object SemanticTokensProvider {
     case TypeConstructor.SchemaRowExtend(_) => false
     case TypeConstructor.Schema => false
     case TypeConstructor.Tuple(_) => false
-    case TypeConstructor.Relation => false
-    case TypeConstructor.Lattice => false
+    case TypeConstructor.Relation(_) => false
+    case TypeConstructor.Lattice(_) => false
     case TypeConstructor.Not => false
     case TypeConstructor.And => false
     case TypeConstructor.Or => false

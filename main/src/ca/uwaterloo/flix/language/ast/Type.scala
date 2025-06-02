@@ -353,16 +353,6 @@ object Type {
   val Lazy: Type = Type.Cst(TypeConstructor.Lazy, SourceLocation.Unknown)
 
   /**
-    * Represents the Relation type constructor.
-    */
-  val Relation: Type = Type.Cst(TypeConstructor.Relation, SourceLocation.Unknown)
-
-  /**
-    * Represents the Lattice type constructor.
-    */
-  val Lattice: Type = Type.Cst(TypeConstructor.Lattice, SourceLocation.Unknown)
-
-  /**
     * Represents the type of an empty record.
     */
   val RecordRowEmpty: Type = Type.Cst(TypeConstructor.RecordRowEmpty, SourceLocation.Unknown)
@@ -998,26 +988,14 @@ object Type {
     * Construct a relation type with the given list of type arguments `ts0`.
     */
   def mkRelation(ts0: List[Type], loc: SourceLocation): Type = {
-    val ts = ts0 match {
-      case Nil => Type.Unit
-      case x :: Nil => x
-      case xs => mkTuple(xs, loc)
-    }
-
-    Apply(Relation, ts, loc)
+    mkApply(Type.Cst(TypeConstructor.Relation(ts0.length), loc), ts0, loc)
   }
 
   /**
     * Construct a lattice type with the given list of type arguments `ts0`.
     */
   def mkLattice(ts0: List[Type], loc: SourceLocation): Type = {
-    val ts = ts0 match {
-      case Nil => Type.Unit
-      case x :: Nil => x
-      case xs => mkTuple(xs, loc)
-    }
-
-    Apply(Lattice, ts, loc)
+    mkApply(Type.Cst(TypeConstructor.Lattice(ts0.length), loc), ts0, loc)
   }
 
   /**
