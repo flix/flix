@@ -95,26 +95,6 @@ sealed trait BackendType extends VoidableType {
     */
   def stackSlots: Int = if (is64BitWidth) 2 else 1
 
-  /**
-    * Returns the Array fill type for the value of the type specified by `tpe`.
-    */
-  def toArrayFillType: MethodDescriptor = mkDescriptor(BackendType.Array(this.toErased), this.toErased)(VoidableType.Void)
-
-  /**
-    * Returns the array store instruction for arrays of the given tpe.
-    */
-  def getArrayStoreInstruction: Int = this match {
-    case BackendType.Bool => Opcodes.BASTORE
-    case BackendType.Char => Opcodes.CASTORE
-    case BackendType.Int8 => Opcodes.BASTORE
-    case BackendType.Int16 => Opcodes.SASTORE
-    case BackendType.Int32 => Opcodes.IASTORE
-    case BackendType.Int64 => Opcodes.LASTORE
-    case BackendType.Float32 => Opcodes.FASTORE
-    case BackendType.Float64 => Opcodes.DASTORE
-    case BackendType.Reference(_) | BackendType.Array(_) => Opcodes.AASTORE
-  }
-
 }
 
 object BackendType {
