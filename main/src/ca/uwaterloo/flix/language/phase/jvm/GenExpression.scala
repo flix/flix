@@ -610,7 +610,6 @@ object GenExpression {
       })
 
       case AtomicOp.Index(idx) =>
-        import BytecodeInstructions.*
         val List(exp) = exps
         val MonoType.Tuple(elmTypes) = exp.tpe
         val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.asErasedBackendType))
