@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.{JvmAst, MonoType, ReducedAst}
 import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugJvmAst
 
+import java.lang.constant.ConstantDescs
 import java.lang.constant.ClassDesc
 
 object ToJvm {
@@ -35,8 +36,55 @@ object ToJvm {
     JvmAst.Root(defs, enums, structs, effects, jvmRootTypes, anonClasses, root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
-  private def toJvmType(tpe: MonoType): ClassDesc = {
-    ???
+  /** converting [[tpe]] to unboxed Java type, lower case is primitive */
+  private def toJvmType(tpe: MonoType): ClassDesc = tpe match {
+    case MonoType.Void => ConstantDescs.CD_Object
+    case MonoType.AnyType => ConstantDescs.CD_Object
+    case MonoType.Unit => ClassDesc.of("dev.flix.runtime.Unit") // flix/language/phase/jvm/BackendObjType
+    case MonoType.Bool => ConstantDescs.CD_boolean
+    case MonoType.Char => ConstantDescs.CD_char
+    case MonoType.Float32 => ConstantDescs.CD_float
+    case MonoType.Float64 => ConstantDescs.CD_double // primitive type
+    case MonoType.BigDecimal => ClassDesc.of("java.math.BigDecimal")
+    case MonoType.Int8 => ConstantDescs.CD_byte
+    case MonoType.Int16 => ConstantDescs.CD_short
+    case MonoType.Int32 => ConstantDescs.CD_int
+    case MonoType.Int64 => ConstantDescs.CD_long
+    case MonoType.BigInt => ClassDesc.of("java.math.BigInteger")
+    case MonoType.String => ConstantDescs.CD_String
+    case MonoType.Regex => ClassDesc.of("java.util.regex.Pattern")
+    case MonoType.Region => ConstantDescs.CD_Object // not sure about this one
+    case MonoType.Null => ConstantDescs.CD_Object // there is 'ConstantDescs.Null' but it isn't a ClassDesc
+    case MonoType.Array(t) => toJvmType(t).arrayType()
+    case MonoType.Lazy(t) =>
+      val _jvmType = toJvmType(t)
+      ???
+    case MonoType.Tuple(tpes) =>
+      val _len = tpes.size
+      val _typeString = tpes.map(toJvmType).foldLeft("")({ (acc, t) => acc + t.toString + "," }).dropRight(1)
+      ???
+
+    case MonoType.Enum(sym, targs) =>
+      val _typeString = targs.map(toJvmType).foldLeft("")({ (acc, t) => acc + t.toString + ","}).dropRight(1)
+      ???
+    case MonoType.Struct(sym, targs) =>
+      val _typeString = targs.map(toJvmType).foldLeft("")({ (acc, t) => acc + t.toString + ","}).dropRight(1)
+      ???
+    case MonoType.Arrow(args, result) =>
+      val _argTypes = args.map(toJvmType)
+      val _resType = toJvmType(result)
+      ???
+    case MonoType.RecordEmpty => ???
+    case MonoType.RecordExtend(label, value, rest) =>
+      val _valType = toJvmType(value)
+      val _resType = toJvmType(rest)
+      ???
+    case MonoType.ExtensibleEmpty => ???
+    case MonoType.ExtensibleExtend(cons, tpes, rest) =>
+      val _jvmTypes = tpes.map(toJvmType)
+      val _resType = toJvmType(rest)
+      ???
+    case MonoType.Native(clazz) => ???
   }
 
   private def visitDef(defn: ReducedAst.Def): JvmAst.Def = {
