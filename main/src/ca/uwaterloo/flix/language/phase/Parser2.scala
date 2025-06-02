@@ -2900,7 +2900,7 @@ object Parser2 {
       while (eat(TokenKind.Comma) && !eof()) {
         expression()
       }
-      expect(TokenKind.KeywordInto, SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.KeywordInto)
       predicateShape()
       while (eat(TokenKind.Comma) && !eof()) {
         predicateShape()
@@ -2969,8 +2969,9 @@ object Parser2 {
     }
 
     private def predicateShape()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
-      nameUnqualified(NAME_PREDICATE, SyntacticContext.Expr.OtherExpr)
+      nameUnqualified(NAME_PREDICATE)
 
       // check for shape (_, _, _ ...)
       if (!at(TokenKind.ParenL)) {
@@ -2993,6 +2994,7 @@ object Parser2 {
     }
 
     private def underscore()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       expect(TokenKind.Underscore)
       close(mark, TreeKind.Underscore)
