@@ -134,6 +134,7 @@ object JvmName {
   val JavaIO: List[String] = List("java", "io")
 
   val AtomicLong: JvmName = JvmName(JavaUtil ::: List("concurrent", "atomic"), "AtomicLong")
+  val Arrays: JvmName = JvmName(JavaUtil, "Arrays")
   val Boolean: JvmName = JvmName(JavaLang, "Boolean")
   val Byte: JvmName = JvmName(JavaLang, "Byte")
   val Character: JvmName = JvmName(JavaLang, "Character")

@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.ast.{MonoType, ReducedAst, SourceLocation}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.Opcodes
@@ -97,7 +98,7 @@ sealed trait BackendType extends VoidableType {
   /**
     * Returns the Array fill type for the value of the type specified by `tpe`.
     */
-  def toArrayFillType: String = mkDescriptor(BackendType.Array(this.toErased), this.toErased)(VoidableType.Void).toDescriptor
+  def toArrayFillType: MethodDescriptor = mkDescriptor(BackendType.Array(this.toErased), this.toErased)(VoidableType.Void)
 
   /**
     * Returns the array store instruction for arrays of the given tpe.
