@@ -686,6 +686,7 @@ object BytecodeInstructions {
     case BackendType.Int64 => cheat(_.visitInsn(Opcodes.LALOAD))
     case BackendType.Float32 => cheat(_.visitInsn(Opcodes.FALOAD))
     case BackendType.Float64 => cheat(_.visitInsn(Opcodes.DALOAD))
+  }
 
   def xArrayStore(elmTpe: BackendType): InstructionSet = elmTpe match {
     case BackendType.Array(_) => cheat(_.visitInsn(Opcodes.AASTORE))
