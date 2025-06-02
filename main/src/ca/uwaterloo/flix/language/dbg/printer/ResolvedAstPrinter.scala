@@ -127,8 +127,8 @@ object ResolvedAstPrinter {
     case Expr.FixpointMerge(_, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointSolve(_, _) => DocAst.Expr.Unknown
     case Expr.FixpointFilter(_, _, _) => DocAst.Expr.Unknown
-    case Expr.FixpointInject(_, _, _) => DocAst.Expr.Unknown
-    case Expr.FixpointProject(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointInject(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointProject(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Error(_) => DocAst.Expr.Error
   }
 
