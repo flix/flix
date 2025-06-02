@@ -749,28 +749,20 @@ object GenExpression {
           xArrayLoad(BackendType.toBackendType(tpe))
       })
 
-      case AtomicOp.ArrayStore => exps match {
-        case List(exp1, exp2, exp3) =>
-          // Add source line number for debugging (can fail with ???)
-          addSourceLine(mv, loc)
+      case AtomicOp.ArrayStore => mv.visitByteIns({
+        import BytecodeInstructions.*
+        val List(exp1, exp2, exp3) = exps
+        val elmTpe = BackendType.toBackendType(exp3.tpe)
 
-          // We get the jvmType of the element to be stored
-          val jvmType = JvmOps.getErasedJvmType(exp3.tpe)
-          // Evaluating the 'base'
-          compileExpr(exp1)
-          // Cast the object to Array
-          mv.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
-          // Evaluating the 'index' to be stored in
-          compileExpr(exp2)
-          // Evaluating the 'element' to be stored
-          compileExpr(exp3)
-          // Stores the 'element' at the given 'index' in the 'array'
-          // with the store instruction corresponding to the stored element
-          mv.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
-          // Since the return type is 'unit', we put an instance of 'unit' on top of the stack
-          mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
-        case _ => throw InternalCompilerException("Mismatched Arity", loc)
-      }
+        // Add source line number for debugging (can fail with out of bounds).
+        addLoc(loc) ~
+          pushExpr(exp1) ~ // Evaluating the array
+          castIfNotPrim(BackendType.Array(elmTpe)) ~
+          pushExpr(exp2) ~ // Evaluating the index
+          pushExpr(exp3) ~ // Evaluating the element
+          xArrayStore(elmTpe) ~
+          GETSTATIC(BackendObjType.Unit.SingletonField)
+      })
 
       case AtomicOp.ArrayLength => mv.visitByteIns({
         import BytecodeInstructions.*
