@@ -48,19 +48,19 @@ sealed trait Completion {
         kind     = CompletionItemKind.Keyword
       )
 
-    case Completion.KindCompletion(kind, range) =>
+    case Completion.KindCompletion(name, range, priority) =>
       CompletionItem(
-        label    = kind,
-        sortText = Priority.toSortText(Priority.Highest, kind),
-        textEdit = TextEdit(range, kind),
+        label    = name,
+        sortText = Priority.toSortText(priority, name),
+        textEdit = TextEdit(range, name),
         kind     = CompletionItemKind.TypeParameter
       )
 
-    case Completion.PredicateCompletion(name, arity, detail, range) =>
+    case Completion.PredicateCompletion(name, range, priority, arity, detail) =>
       val args = (1 until arity + 1).map(i => s"$${$i:x$i}").mkString(", ")
       CompletionItem(
         label            = s"$name/$arity",
-        sortText         = Priority.toSortText(Priority.Lower, name),
+        sortText         = Priority.toSortText(priority, name),
         textEdit         = TextEdit(range, s"$name($args)"),
         detail           = Some(detail),
         kind             = CompletionItemKind.Field,
@@ -84,10 +84,10 @@ sealed trait Completion {
         kind             = CompletionItemKind.Enum
       )
 
-    case Completion.ImportCompletion(name, range, isPackage) =>
+    case Completion.ImportCompletion(name, range, priority, isPackage) =>
       CompletionItem(
         label            = name,
-        sortText         = Priority.toSortText(Priority.Highest, name),
+        sortText         = Priority.toSortText(priority, name),
         textEdit         = TextEdit(range, name),
         documentation    = None,
         insertTextFormat = InsertTextFormat.PlainText,
@@ -108,30 +108,30 @@ sealed trait Completion {
         additionalTextEdits = List(Completion.mkTextEdit(ap, s"import $path"))
       )
 
-    case Completion.SnippetCompletion(name, snippet, documentation, range) =>
+    case Completion.SnippetCompletion(name, range, priority, snippet, documentation) =>
       CompletionItem(
         label            = name,
-        sortText         = Priority.toSortText(Priority.High, name),
+        sortText         = Priority.toSortText(priority, name),
         textEdit         = TextEdit(range, snippet),
         documentation    = Some(documentation),
         insertTextFormat = InsertTextFormat.Snippet,
         kind             = CompletionItemKind.Snippet
       )
 
-    case Completion.MagicMatchCompletion(name, range, snippet, documentation) =>
+    case Completion.MagicMatchCompletion(name, range, priority, snippet, documentation) =>
       CompletionItem(
         label            = name,
-        sortText         = Priority.toSortText(Priority.High, name),
+        sortText         = Priority.toSortText(priority, name),
         textEdit         = TextEdit(range, snippet),
         documentation    = Some(documentation),
         insertTextFormat = InsertTextFormat.Snippet,
         kind             = CompletionItemKind.Snippet
       )
 
-    case Completion.LocalVarCompletion(name, range) =>
+    case Completion.LocalVarCompletion(name, range, priority) =>
       CompletionItem(
         label    = name,
-        sortText = Priority.toSortText(Priority.High, name),
+        sortText = Priority.toSortText(priority, name),
         textEdit = TextEdit(range, name),
         kind     = CompletionItemKind.Variable
       )
@@ -561,18 +561,20 @@ object Completion {
     *
     * @param kind   the name of the kind.
     * @param range  the range of the completion.
+    * @param priority the priority of the completion.
     */
-  case class KindCompletion(kind: String, range: Range) extends Completion
+  case class KindCompletion(kind: String, range: Range, priority: Priority) extends Completion
 
   /**
     * Represents a predicate completion.
     *
     * @param name   the name of the predicate.
+    * @param range  the range of the completion.
+    * @param priority the priority of the completion.
     * @param arity  the arity of the predicate.
     * @param detail the type of the predicate.
-    * @param range  the range of the completion.
     */
-  case class PredicateCompletion(name: String, arity: Int, detail: String, range: Range) extends Completion
+  case class PredicateCompletion(name: String, range: Range, priority: Priority, arity: Int, detail: String) extends Completion
 
   /**
     * Represents a type completion for builtin
@@ -598,9 +600,10 @@ object Completion {
     *
     * @param name       the name to be completed.
     * @param range      the range of the completion.
+    * @param priority   the priority of the completion.
     * @param isPackage  whether the completion is a package.
     */
-  case class ImportCompletion(name: String, range: Range, isPackage: Boolean) extends Completion
+  case class ImportCompletion(name: String, range: Range, priority: Priority, isPackage: Boolean) extends Completion
 
   /**
     * Represents an auto-import completion.
@@ -620,30 +623,33 @@ object Completion {
     * Represents a Snippet completion
     *
     * @param name          the name of the snippet.
+    * @param range         the range of the completion.
+    * @param priority      the priority of the completion.
     * @param snippet       the snippet for TextEdit.
     * @param documentation a human-readable string that represents a doc-comment.
-    * @param range         the range of the completion.
     */
-  case class SnippetCompletion(name: String, snippet: String, documentation: String, range: Range) extends Completion
+  case class SnippetCompletion(name: String, range: Range, priority: Priority, snippet: String, documentation: String) extends Completion
 
   /**
     * Represents a Snippet completion
     *
     * @param name          the name of the snippet.
     * @param range         the range for TextEdit.
+    * @param priority      the priority of the completion.
     * @param snippet       the snippet for TextEdit.
     * @param documentation a human-readable string that represents a doc-comment.
     */
-  case class MagicMatchCompletion(name: String, range: Range, snippet: String, documentation: String) extends Completion
+  case class MagicMatchCompletion(name: String, range: Range, priority: Priority, snippet: String, documentation: String) extends Completion
 
   /**
     * Represents a Var completion
     *
     * @param name the name of the variable to complete.
     * @param range the range of the completion.
+    * @param priority the priority of the completion.
     */
-  case class LocalVarCompletion(name: String, range: Range) extends Completion {
-    override def toString: String = s"LocalVarCompletion($name, $range)"
+  case class LocalVarCompletion(name: String, range: Range, priority: Priority) extends Completion {
+    override def toString: String = s"LocalVarCompletion($name, $priority, $range)"
   }
 
   /**
@@ -778,7 +784,7 @@ object Completion {
     * @param op         the op.
     * @param range      the range of the completion.
     */
-  case class OpHandlerCompletion(op: TypedAst.Op,  range: Range) extends Completion
+  case class OpHandlerCompletion(op: TypedAst.Op, range: Range) extends Completion
 
   /**
     * Represents a Signature completion

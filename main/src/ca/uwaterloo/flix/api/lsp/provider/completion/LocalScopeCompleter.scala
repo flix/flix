@@ -60,7 +60,7 @@ object LocalScopeCompleter {
     if (resolutions.exists {
       case Resolution.Var(_) => true
       case _ => false
-    }) Completion.LocalVarCompletion(name, range) :: Nil else Nil
+    }) Completion.LocalVarCompletion(name, range, Priority.High) :: Nil else Nil
   }
 
   /**
