@@ -1042,13 +1042,11 @@ object GenExpression {
         import BytecodeInstructions.*
         // Add source line number for debugging (failable by design).
         addLoc(loc) ~
-          pushLoc(loc) ~                                        // Loc
-          NEW(BackendObjType.HoleError.jvmName) ~               // Loc, HoleError
-          DUP2() ~                                              // Loc, HoleError, Loc, HoleError
-          SWAP() ~                                              // Loc, HoleError, HoleError, Loc
-          pushString(sym.toString) ~                            // Loc, HoleError, HoleError, Loc, Sym
-          SWAP() ~                                              // Loc, HoleError, HoleError, Sym, Loc
-          INVOKESPECIAL(BackendObjType.HoleError.Constructor) ~ // Loc, HoleError
+          NEW(BackendObjType.HoleError.jvmName) ~               // HoleError
+          DUP() ~                                               // HoleError, HoleError
+          pushString(sym.toString) ~                            // HoleError, HoleError, Sym
+          pushLoc(loc) ~                                        // HoleError, HoleError, Sym, Loc
+          INVOKESPECIAL(BackendObjType.HoleError.Constructor) ~ // HoleError
           ATHROW()
       })
 
@@ -1056,11 +1054,10 @@ object GenExpression {
         import BytecodeInstructions.*
         // Add source line number for debugging (failable by design)
         addLoc(loc) ~
-          pushLoc(loc) ~                                         // Loc
-          NEW(BackendObjType.MatchError.jvmName) ~               // Loc, MatchError
-          DUP2() ~                                               // Loc, MatchError, Loc, MatchError
-          SWAP() ~                                               // Loc, MatchError, MatchError, Loc
-          INVOKESPECIAL(BackendObjType.MatchError.Constructor) ~ // Loc, MatchError
+          NEW(BackendObjType.MatchError.jvmName) ~               // MatchError
+          DUP() ~                                                // MatchError, MatchError
+          pushLoc(loc) ~                                         // MatchError, MatchError, Loc
+          INVOKESPECIAL(BackendObjType.MatchError.Constructor) ~ // MatchError
           ATHROW()
       })
 
@@ -1068,11 +1065,11 @@ object GenExpression {
         import BytecodeInstructions.*
         // Add source line number for debugging (failable by design)
         addLoc(loc) ~
-          NEW(BackendObjType.CastError.jvmName) ~
-          DUP() ~
-          pushLoc(loc) ~
-          pushString(s"Cannot cast from type '$from' to '$to'") ~
-          INVOKESPECIAL(BackendObjType.CastError.Constructor) ~
+          NEW(BackendObjType.CastError.jvmName) ~                 // CastError
+          DUP() ~                                                 // CastError, CastError
+          pushLoc(loc) ~                                          // CastError, CastError, Loc
+          pushString(s"Cannot cast from type '$from' to '$to'") ~ // CastError, CastError, Loc, String
+          INVOKESPECIAL(BackendObjType.CastError.Constructor) ~   // CastError
           ATHROW()
       })
     }
