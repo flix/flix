@@ -609,15 +609,15 @@ object GenExpression {
           castIfNotPrim(BackendType.toBackendType(tpe))
       })
 
-      case AtomicOp.Index(idx) => mv.visitByteIns({
+      case AtomicOp.Index(idx) =>
         import BytecodeInstructions.*
         val List(exp) = exps
         val MonoType.Tuple(elmTypes) = exp.tpe
-        val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toBackendType))
-
-        pushExpr(exp) ~
-          GETFIELD(tupleType.IndexField(idx))
-      })
+        val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.asErasedBackendType))
+        // evaluating the `base`
+        compileExpr(exp)
+        // Retrieving the field `field${offset}`
+        mv.visitFieldInsn(GETFIELD, tupleType.jvmName.toInternalName, s"field$idx", JvmOps.asErasedJvmType(tpe).toDescriptor)
 
       case AtomicOp.Tuple => mv.visitByteIns({
         import BytecodeInstructions.*
