@@ -126,9 +126,6 @@ object BackendType {
 
   /**
     * Converts the given [[MonoType]] into its [[BackendType]] representation.
-    *
-    * Note: Instead of using [[toBackendType]] and then [[BackendType.toErased]]
-    * use [[toErasedBackendType]].
     */
   def toBackendType(tpe0: MonoType)(implicit root: ReducedAst.Root): BackendType = {
     tpe0 match {
