@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, TraitEnv}
 import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
 
 import scala.annotation.tailrec
 
@@ -104,14 +105,14 @@ object ConstraintSolverInterface {
       val (leftovers, tree) = ConstraintSolver2.solveAll(constrs, initialTree)(Scope.Top, renv, tenv, eenv, flix)
       leftovers match {
         case Nil => (tree, Nil)
-        case errs@(_ :: _) => (tree, errs.flatMap(toTypeErrors(_, renv, tree)))
+        case errs@(_ :: _) => (tree, errs.flatMap(toTypeErrors(_, renv, tree, root)))
       }
   }
 
   /**
     * Converts the unresolved type constraint into an appropriate error.
     */
-  private def toTypeErrors(constr: TypeConstraint, renv: RigidityEnv, subst: SubstitutionTree)(implicit flix: Flix): List[TypeError] = constr match {
+  private def toTypeErrors(constr: TypeConstraint, renv: RigidityEnv, subst: SubstitutionTree, root: KindedAst.Root)(implicit flix: Flix): List[TypeError] = constr match {
     case TypeConstraint.Equality(Type.UnresolvedJvmType(member, _), _, prov) =>
       List(mkErrorFromUnresolvedJvmMember(member, renv, subst, prov.loc))
     case TypeConstraint.Equality(_, Type.UnresolvedJvmType(member, _), prov) =>
@@ -151,10 +152,18 @@ object ConstraintSolverInterface {
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
       List(TypeError.MismatchedTypes(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
 
-    case TypeConstraint.Trait(sym, tpe, loc) => List(TypeError.MissingInstance(sym, subst(tpe), renv, loc))
-
+    case TypeConstraint.Trait(sym, tpe, loc) =>
+      if (sym == PredefinedTraits.lookupTraitSym("Eq", root)) {
+        List(TypeError.MissingInstanceEq(subst(tpe), renv, loc))
+      } else if (sym == PredefinedTraits.lookupTraitSym("Order", root)) {
+        List(TypeError.MissingInstanceOrder(subst(tpe), renv, loc))
+      } else if (sym == PredefinedTraits.lookupTraitSym("ToString", root)) {
+        List(TypeError.MissingInstanceToString(subst(tpe), renv, loc))
+      } else {
+        List(TypeError.MissingInstance(sym, subst(tpe), renv, loc))
+      }
     case TypeConstraint.Purification(sym, _, _, _, nested) =>
-      nested.flatMap(toTypeErrors(_, renv, subst.branches.getOrElse(sym, SubstitutionTree.empty)))
+      nested.flatMap(toTypeErrors(_, renv, subst.branches.getOrElse(sym, SubstitutionTree.empty), root))
   }
 
   /**
