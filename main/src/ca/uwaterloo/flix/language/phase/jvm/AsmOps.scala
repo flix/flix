@@ -100,22 +100,6 @@ object AsmOps {
   }
 
   /**
-    * Returns the array store instruction for arrays of the given JvmType tpe
-    */
-  def getArrayStoreInstruction(tpe: JvmType): Int = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-    case JvmType.PrimBool => BASTORE
-    case JvmType.PrimChar => CASTORE
-    case JvmType.PrimByte => BASTORE
-    case JvmType.PrimShort => SASTORE
-    case JvmType.PrimInt => IASTORE
-    case JvmType.PrimLong => LASTORE
-    case JvmType.PrimFloat => FASTORE
-    case JvmType.PrimDouble => DASTORE
-    case JvmType.Reference(_) => AASTORE
-  }
-
-  /**
     * Returns the CheckCast type for the value of the type specified by `tpe`
     */
   def getArrayType(tpe: JvmType): String = tpe match {
