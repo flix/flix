@@ -1337,9 +1337,7 @@ object BackendObjType {
     }
   }
 
-  case class Namespace(ns: List[String]) extends BackendObjType {
-
-  }
+  case class Namespace(ns: List[String]) extends BackendObjType
 
   //
   // Java Types
