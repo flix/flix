@@ -1,4 +1,4 @@
-def readAndParseMove(): Result[String, Int32] \ {Interface.Interface} = 
+def readAndParseMove(): Result[String, Int32] \ {Interface.Interface} =
     forM(m <- Interface.Interface.getMove();
          n <- Int32.parse(10, m)
     ) yield n
@@ -9,7 +9,7 @@ def gameLoop(board: Board[r], symbol: Symbol): Unit \ {IO + r + Interface.Interf
         case Result.Ok(index) =>
             if(not(index >= 0 and index <= 8)) {
                 Interface.Interface.display(List.Nil, "Invalid move");
-                gameLoop(board, symbol) 
+                gameLoop(board, symbol)
             } else {
                 let (newBoard, moveSuccess) = Board.makeMove(board, symbol, index);
                 if (moveSuccess) {
@@ -26,7 +26,7 @@ def gameLoop(board: Board[r], symbol: Symbol): Unit \ {IO + r + Interface.Interf
                     }
                 } else {
                     Interface.Interface.display(List.Nil, "Cell already filled");
-                    gameLoop(board, symbol) 
+                    gameLoop(board, symbol)
                 }
             }
         case Result.Err(_) => Interface.Interface.display(List.Nil, "Invalid move")
@@ -54,6 +54,7 @@ def main(): Unit \ IO = region rc1 {
         println("Enter your move as one these numbers corresponding to a cell");
         println("");
         let board = Board.newBoard(rc1);
-        gameLoop(board, Symbol.X)      
-    } with Interface.interfaceWithIO
+        gameLoop(board, Symbol.X)
+    } with Interface.interfaceWithIOAndConsole
+    with Console.runWithIO
 }

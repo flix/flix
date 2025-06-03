@@ -1,15 +1,11 @@
 mod Interface {
 
-    import java.io.BufferedReader;
-    import java.io.InputStreamReader;
-    import java.lang.System;
-
     pub eff Interface {
         def display(board: List[Symbol], msg: String): Unit
         def getMove(): Result[String, String]
     }
 
-    pub def interfaceWithIO(f: Unit -> a \ ef): a \ ef - Interface + IO = 
+    pub def interfaceWithIOAndConsole(f: Unit -> a \ ef): a \ ef - Interface + IO + Console = 
         run {
             f()
         }
@@ -35,8 +31,7 @@ mod Interface {
                 }
             }
             def getMove(resume) = {
-                let reader = new BufferedReader(new InputStreamReader(System.in));
-                let line = reader.readLine();
+                let line = Console.readln();
                 if (Object.isNull(line)) 
                     resume(Result.Err("no input"))
                 else 
