@@ -813,16 +813,20 @@ object GenExpression {
           GETSTATIC(BackendObjType.Unit.SingletonField)
       })
 
-      case AtomicOp.InstanceOf(clazz) =>
+      case AtomicOp.InstanceOf(clazz) => mv.visitByteIns({
+        import BytecodeInstructions.*
         val List(exp) = exps
-        val className = asm.Type.getInternalName(clazz)
-        compileExpr(exp)
-        mv.visitTypeInsn(INSTANCEOF, className)
+        val jvmName = JvmName.ofClass(clazz)
+        pushExpr(exp) ~
+          INSTANCEOF(jvmName)
+      })
 
-      case AtomicOp.Cast =>
+      case AtomicOp.Cast => mv.visitByteIns({
+        import BytecodeInstructions.*
         val List(exp) = exps
-        compileExpr(exp)
-        mv.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe)))
+        pushExpr(exp) ~
+          castIfNotPrim(BackendType.toBackendType(tpe))
+      })
 
       case AtomicOp.Unbox => mv.visitByteIns({
         import BytecodeInstructions.*
