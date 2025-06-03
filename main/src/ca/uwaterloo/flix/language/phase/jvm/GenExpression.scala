@@ -1127,7 +1127,7 @@ object GenExpression {
 
       case ExpPosition.NonTail =>
         // JvmType of Def
-        val defJvmName = JvmOps.getFunctionDefinitionClassName(sym)
+        val defJvmName = BackendObjType.Defn(sym).jvmName
 
         // Put the def on the stack
         AsmOps.compileDefSymbol(sym, mv)

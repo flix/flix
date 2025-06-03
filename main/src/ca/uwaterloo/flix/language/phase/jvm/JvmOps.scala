@@ -104,20 +104,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the function definition class for the given symbol.
-    *
-    * For example:
-    *
-    * print         =>  Def$print
-    * List.length   =>  List.Def$length
-    */
-  def getFunctionDefinitionClassName(sym: Symbol.DefnSym): JvmName = {
-    val pkg = sym.namespace
-    val name = JvmName.mkClassName("Def", sym.name)
-    JvmName(pkg, name)
-  }
-
-  /**
     * Returns the effect definition class for the given symbol.
     *
     * For example:
