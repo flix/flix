@@ -27,6 +27,9 @@ import java.lang.reflect.{Field, Method}
   * A common super-type for auto-completions.
   */
 sealed trait Completion {
+
+  def priority: Priority
+
   /**
     * Returns a LSP completion item for `this`.
     */
@@ -136,22 +139,22 @@ sealed trait Completion {
         kind = CompletionItemKind.Variable
       )
 
-    case Completion.LocalJavaClassCompletion(name, clazz, range) =>
+    case Completion.LocalJavaClassCompletion(name, clazz, range, priority) =>
       val description = Option(clazz.getCanonicalName)
       val labelDetails = CompletionItemLabelDetails(None, description)
       CompletionItem(
         label = name,
         labelDetails = Some(labelDetails),
-        sortText = Priority.toSortText(Priority.High, name),
+        sortText = Priority.toSortText(priority, name),
         textEdit = TextEdit(range, name),
         kind = CompletionItemKind.Class
       )
 
-    case Completion.LocalDefCompletion(sym, fparams, range) =>
+    case Completion.LocalDefCompletion(sym, fparams, range, priority) =>
       val snippet = sym.text + fparams.zipWithIndex.map { case (fparam, idx) => s"$${${idx + 1}:${fparam.sym.text}}" }.mkString("(", ", ", ")")
       CompletionItem(
         label = sym.text,
-        sortText = Priority.toSortText(Priority.High, sym.text),
+        sortText = Priority.toSortText(priority, sym.text),
         textEdit = TextEdit(range, snippet),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Function
@@ -464,14 +467,14 @@ sealed trait Completion {
         kind = kind
       )
 
-    case Completion.FieldCompletion(ident, field) =>
+    case Completion.FieldCompletion(ident, priority, field) =>
       val label = field.getName
       val text = field.getName
       val range = Range.from(ident.loc)
 
       CompletionItem(
         label = label,
-        sortText = Priority.toSortText(Priority.Lowest, label),
+        sortText = Priority.toSortText(priority, label),
         textEdit = TextEdit(range, text),
         insertTextFormat = InsertTextFormat.PlainText,
         kind = CompletionItemKind.Method
@@ -486,7 +489,7 @@ sealed trait Completion {
         kind = CompletionItemKind.Property,
       )
 
-    case Completion.MethodCompletion(ident, method) =>
+    case Completion.MethodCompletion(ident, priority, method) =>
       val argsWithName = method.getParameters.map(_.getName)
       val argsWithNameAndType = method.getParameters.map(p => p.getName + ": " + p.getType.getSimpleName)
       val returnType = method.getReturnType.getSimpleName
@@ -503,7 +506,7 @@ sealed trait Completion {
       CompletionItem(
         label = label,
         labelDetails = Some(labelDetails),
-        sortText = Priority.toSortText(Priority.Lowest, label),
+        sortText = Priority.toSortText(priority, label),
         textEdit = TextEdit(range, text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Method
@@ -655,20 +658,22 @@ object Completion {
   /**
     * Represents a Java Class completion
     *
-    * @param name  the name of the java class to complete.
-    * @param clazz the java class to complete.
-    * @param range the range of the completion.
+    * @param name     the name of the java class to complete.
+    * @param clazz    the java class to complete.
+    * @param range    the range of the completion.
+    * @param priority the priority of the completion.
     */
-  case class LocalJavaClassCompletion(name: String, clazz: Class[?], range: Range) extends Completion
+  case class LocalJavaClassCompletion(name: String, clazz: Class[?], range: Range, priority: Priority) extends Completion
 
   /**
     * Represents a local def completion
     *
-    * @param sym     the symbol of the local function
-    * @param fparams the formal parameters of the local function
-    * @param range   the range of the completion.
+    * @param sym      the symbol of the local function
+    * @param fparams  the formal parameters of the local function
+    * @param range    the range of the completion.
+    * @param priority the priority of the completion.
     */
-  case class LocalDefCompletion(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam], range: Range) extends Completion
+  case class LocalDefCompletion(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam], range: Range, priority: Priority) extends Completion
 
   /**
     * Represents a Def completion
@@ -846,18 +851,20 @@ object Completion {
   /**
     * Represents a Java field completion.
     *
-    * @param ident the partial field name.
-    * @param field the candidate field.
+    * @param ident    the partial field name.
+    * @param priority the priority of the completion.
+    * @param field    the candidate field.
     */
-  case class FieldCompletion(ident: Name.Ident, field: Field) extends Completion
+  case class FieldCompletion(ident: Name.Ident, priority: Priority, field: Field) extends Completion
 
   /**
     * Represents a Java method completion.
     *
-    * @param ident  the partial method name.
-    * @param method the candidate method.
+    * @param ident    the partial method name.
+    * @param priority the priority of the completion.
+    * @param method   the candidate method.
     */
-  case class MethodCompletion(ident: Name.Ident, method: Method) extends Completion
+  case class MethodCompletion(ident: Name.Ident, priority: Priority, method: Method) extends Completion
 
   /**
     * Represents a hole completion.
