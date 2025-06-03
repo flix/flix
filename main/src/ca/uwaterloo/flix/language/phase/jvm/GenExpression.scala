@@ -685,20 +685,14 @@ object GenExpression {
           PUTFIELD(recordType.RestField)
       })
 
-      case AtomicOp.RecordRestrict(field) =>
+      case AtomicOp.RecordRestrict(field) => mv.visitByteIns({
+        import BytecodeInstructions.*
         val List(exp) = exps
 
-        // We get the JvmType of the record interface
-        val interfaceType = BackendObjType.Record
-
-        // Push the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
-        compileExpr(exp)
-        // Push the label of field (which is going to be the removed/restricted).
-        mv.visitLdcInsn(field.name)
-
-        // Invoking the restrictField method
-        mv.visitMethodInsn(INVOKEINTERFACE, interfaceType.jvmName.toInternalName, interfaceType.RestrictFieldMethod.name,
-          MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(interfaceType.toTpe).toDescriptor, true)
+        pushExpr(exp) ~
+          pushString(field.name) ~
+          INVOKEINTERFACE(BackendObjType.Record.RestrictFieldMethod)
+      })
 
       case AtomicOp.ExtensibleIs(sym) => mv.visitByteIns({
         val List(exp) = exps
