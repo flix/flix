@@ -71,7 +71,7 @@ object ZhegalkinExpr {
     *
     * Uses identity laws to speed up the computation.
     */
-  def mkCompl(e: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra.type): ZhegalkinExpr = {
+  def mkCompl(e: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra): ZhegalkinExpr = {
     // ¬Ø = 𝓤
     if (e eq ZhegalkinExpr.zero) {
       return ZhegalkinExpr.one
@@ -92,7 +92,7 @@ object ZhegalkinExpr {
     *
     * Uses identity laws and caching to speed up the computation.
     */
-  def mkXor(z1: ZhegalkinExpr, z2: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra.type): ZhegalkinExpr = {
+  def mkXor(z1: ZhegalkinExpr, z2: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra): ZhegalkinExpr = {
     // 0 ⊕ a = a
     if (z1 eq ZhegalkinExpr.zero) {
       return z2
@@ -145,7 +145,7 @@ object ZhegalkinExpr {
     *
     * Uses identity laws to speed up the computation.
     */
-  def mkUnion(e1: ZhegalkinExpr, e2: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra.type): ZhegalkinExpr = {
+  def mkUnion(e1: ZhegalkinExpr, e2: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra): ZhegalkinExpr = {
     // Ø ∪ a = a
     if (e1 eq ZhegalkinExpr.zero) {
       return e2
@@ -161,7 +161,7 @@ object ZhegalkinExpr {
   /**
     * Computes the union of the given two Zhegalkin expressions `e1` and `e2`.
     */
-  private def computeUnion(e1: ZhegalkinExpr, e2: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra.type): ZhegalkinExpr = {
+  private def computeUnion(e1: ZhegalkinExpr, e2: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra): ZhegalkinExpr = {
     // a ∪ b = 1 ⊕ (1 ⊕ a)(1 ⊕ b)
     //mkXor(ZhegalkinExpr.one, mkInter(mkXor(ZhegalkinExpr.one, e1), mkXor(ZhegalkinExpr.one, e2)))
 
@@ -174,7 +174,7 @@ object ZhegalkinExpr {
     *
     * Uses identity laws to speed up the computation.
     */
-  def mkInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra.type): ZhegalkinExpr = {
+  def mkInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra): ZhegalkinExpr = {
     // Ø ∩ a = Ø
     if (e1 eq ZhegalkinExpr.zero) {
       return ZhegalkinExpr.zero
@@ -207,7 +207,7 @@ object ZhegalkinExpr {
     *       ⊕ ...
     * }}}
     */
-  private def computeInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra.type): ZhegalkinExpr = e1 match {
+  private def computeInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra): ZhegalkinExpr = e1 match {
     case ZhegalkinExpr(c1, ts1) =>
       val zero = mkInterConstantExpr(c1, e2)
       ts1.foldLeft(zero) {
@@ -218,7 +218,7 @@ object ZhegalkinExpr {
   /**
     * Computes the intersection of the given Zhegalkin constant `c` and the given Zhegalkin expression `e`.
     */
-  private def mkInterConstantExpr(c: ZhegalkinCst, e: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra.type): ZhegalkinExpr = {
+  private def mkInterConstantExpr(c: ZhegalkinCst, e: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra): ZhegalkinExpr = {
     // Perform a cache lookup or an actual computation.
     alg.Cache.lookupOrComputeInterCst(c, e, computeInterConstantExpr)
   }
@@ -260,7 +260,7 @@ object ZhegalkinExpr {
     * }}}
     *
     */
-  private def mkInterTermExpr(t: ZhegalkinTerm, e: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra.type): ZhegalkinExpr = e match {
+  private def mkInterTermExpr(t: ZhegalkinTerm, e: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra): ZhegalkinExpr = e match {
     case ZhegalkinExpr(c2, terms) =>
       val zero: ZhegalkinExpr = mkZhegalkinExpr(ZhegalkinCst.empty, List(mkInterConstantTerm(c2, t)))
       terms.foldLeft(zero) {
@@ -327,7 +327,7 @@ case class ZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]) {
     * }}}
     *
     */
-  def map(f: Int => ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra.type): ZhegalkinExpr = {
+  def map(f: Int => ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra): ZhegalkinExpr = {
     if (terms == Nil) {
       return this
     }
