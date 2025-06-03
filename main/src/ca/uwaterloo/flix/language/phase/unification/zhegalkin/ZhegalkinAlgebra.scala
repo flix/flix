@@ -23,10 +23,10 @@ import scala.collection.immutable.SortedSet
 class ZhegalkinAlgebra[T] extends BoolAlg[ZhegalkinExpr[T]] {
 
   /** A Zhegalkin constant that represents the empty set. */
-  val empty: ZhegalkinCst = ZhegalkinCst(CofiniteIntSet.empty)
+  val empty: ZhegalkinCst[T] = ZhegalkinCst[T](CofiniteIntSet.empty)
 
   /** A Zhegalkin constant that represents the universe. */
-  val universe: ZhegalkinCst = ZhegalkinCst(CofiniteIntSet.universe)
+  val universe: ZhegalkinCst[T] = ZhegalkinCst[T](CofiniteIntSet.universe)
 
   /** A Zhegalkin expression that represents the empty set, i.e. the zero element of the algebra. */
   val zero: ZhegalkinExpr[T] = ZhegalkinExpr(empty, Nil)

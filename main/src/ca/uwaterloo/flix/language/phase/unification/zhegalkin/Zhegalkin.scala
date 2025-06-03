@@ -53,14 +53,14 @@ object Zhegalkin {
 
   /** Returns the given Zhegalkin expression as a SetFormula. */
   def toSetFormula[T](z: ZhegalkinExpr[T]): SetFormula = {
-    def visitCst(cst: ZhegalkinCst): SetFormula = cst match {
+    def visitCst(cst: ZhegalkinCst[T]): SetFormula = cst match {
       case ZhegalkinCst(c) => c match {
         case CofiniteIntSet.Set(s) => SetFormula.mkElemSet(s)
         case CofiniteIntSet.Compl(s) => SetFormula.mkCompl(SetFormula.mkElemSet(s))
       }
     }
 
-    def visitTerm(term: ZhegalkinTerm): SetFormula = term match {
+    def visitTerm(term: ZhegalkinTerm[T]): SetFormula = term match {
       case ZhegalkinTerm(cst, vars) =>
         // c ∩ x1 ∩ x2 ∩ ... ∩ xn
         val flexVars = vars.foldLeft(SetFormula.Univ: SetFormula) {
