@@ -33,6 +33,11 @@ import scala.collection.immutable.SortedSet
 object EffUnification3 {
 
   /**
+    * The Global Zhegalkin Algebra used for effects.
+    */
+  val Algebra: ZhegalkinAlgebra = new ZhegalkinAlgebra
+
+  /**
     * Controls whether to enable solve-and-retry for subeffecting.
     */
   var EnableSmartSubeffecting: Boolean = true
@@ -428,10 +433,8 @@ object EffUnification3 {
     implicit val renv: RigidityEnv = RigidityEnv.empty
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe))
 
-    implicit val alg: ZhegalkinAlgebra.type = ZhegalkinAlgebra
-
     val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
-    val z = Zhegalkin.toZhegalkin(f0)
+    val z = Zhegalkin.toZhegalkin(f0)(Algebra)
     val f1 = Zhegalkin.toSetFormula(z)
 
     fromSetFormula(f1, tpe.loc)

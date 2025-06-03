@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolSubstit
 
 import scala.collection.immutable.SortedSet
 
-object ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
+class ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
 
   /**
     * Zhegalkin Cache

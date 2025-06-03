@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.unification.set
 
+import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolUnificationException, SveAlgorithm}
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinExpr}
@@ -423,11 +424,9 @@ object SetUnification {
     }
 
     // Convert all equations to Zhegalkin polynomials.
-    implicit val alg: BoolAlg[ZhegalkinExpr] = ZhegalkinAlgebra
+    implicit val alg: ZhegalkinAlgebra = EffUnification3.Algebra
     val l = eqs.map {
       case Equation(f1, f2, _, _) =>
-        implicit val alg: ZhegalkinAlgebra.type = ZhegalkinAlgebra
-
         val x = Zhegalkin.toZhegalkin(f1)
         val y = Zhegalkin.toZhegalkin(f2)
         (x, y)
