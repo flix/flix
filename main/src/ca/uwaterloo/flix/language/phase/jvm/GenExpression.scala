@@ -622,7 +622,7 @@ object GenExpression {
       case AtomicOp.Tuple => mv.visitByteIns({
         import BytecodeInstructions.*
         val MonoType.Tuple(elmTypes) = tpe
-        val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.asErasedBackendType))
+        val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toBackendType))
         NEW(tupleType.jvmName) ~
           DUP() ~
           composeN(exps.map(pushExpr)) ~
@@ -689,12 +689,12 @@ object GenExpression {
 
       case AtomicOp.ExtensibleIs(sym) => mv.visitByteIns({
         val List(exp) = exps
-        val tpes = MonoType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.asErasedBackendType)
+        val tpes = MonoType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.toBackendType)
         compileIsTag(sym.name, exp, tpes)
       })
 
       case AtomicOp.ExtensibleTag(sym) => mv.visitByteIns({
-        val tpes = MonoType.findExtensibleTermTypes(sym, tpe).map(BackendType.asErasedBackendType)
+        val tpes = MonoType.findExtensibleTermTypes(sym, tpe).map(BackendType.toBackendType)
         compileTag(sym.name, exps, tpes)
       })
 
@@ -702,7 +702,7 @@ object GenExpression {
         import BytecodeInstructions.*
 
         val List(exp) = exps
-        val tpes = MonoType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.asErasedBackendType)
+        val tpes = MonoType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.toBackendType)
 
         compileUntag(exp, idx, tpes) ~
           castIfNotPrim(BackendType.toBackendType(tpe))
@@ -829,7 +829,7 @@ object GenExpression {
         val List(exp) = exps
         pushExpr(exp) ~
           CHECKCAST(BackendObjType.Value.jvmName) ~
-          GETFIELD(BackendObjType.Value.fieldFromType(BackendType.asErasedBackendType(tpe)))
+          GETFIELD(BackendObjType.Value.fieldFromType(BackendType.toBackendType(tpe)))
       })
 
       case AtomicOp.Box => mv.visitByteIns({
@@ -990,7 +990,7 @@ object GenExpression {
 
         // Find the Lazy class name (Lazy$tpe).
         val MonoType.Lazy(elmType) = tpe
-        val lazyType = BackendObjType.Lazy(BackendType.asErasedBackendType(elmType))
+        val lazyType = BackendObjType.Lazy(BackendType.toBackendType(elmType))
 
         NEW(lazyType.jvmName) ~
           DUP() ~
@@ -1003,7 +1003,7 @@ object GenExpression {
 
         // Find the Lazy class type (Lazy$tpe) and the inner value type.
         val MonoType.Lazy(elmType) = exp.tpe
-        val erasedElmType = BackendType.asErasedBackendType(elmType)
+        val erasedElmType = BackendType.toBackendType(elmType)
         val lazyType = BackendObjType.Lazy(erasedElmType)
 
         // Emit code for the lazy expression.

@@ -199,24 +199,5 @@ object BackendType {
       BackendObjType.JavaObject.toTpe
   }
 
-  def asErasedBackendType(tpe: MonoType): BackendType = tpe match {
-    case MonoType.Bool => BackendType.Bool
-    case MonoType.Char => BackendType.Char
-    case MonoType.Int8 => BackendType.Int8
-    case MonoType.Int16 => BackendType.Int16
-    case MonoType.Int32 => BackendType.Int32
-    case MonoType.Int64 => BackendType.Int64
-    case MonoType.Float32 => BackendType.Float32
-    case MonoType.Float64 => BackendType.Float64
-    case MonoType.Native(clazz) if clazz == classOf[Object] => BackendObjType.JavaObject.toTpe
-    case MonoType.Void | MonoType.AnyType | MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt |
-         MonoType.String | MonoType.Regex | MonoType.Array(_) | MonoType.Lazy(_) |
-         MonoType.Tuple(_) | MonoType.Enum(_, _) | MonoType.Struct(_, _) | MonoType.Arrow(_, _) |
-         MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
-         MonoType.ExtensibleExtend(_, _, _) | MonoType.ExtensibleEmpty | MonoType.Native(_) |
-         MonoType.Region | MonoType.Null =>
-      throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-  }
-
   sealed trait PrimitiveType extends BackendType
 }

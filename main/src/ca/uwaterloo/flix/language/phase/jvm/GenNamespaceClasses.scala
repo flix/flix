@@ -70,7 +70,7 @@ object GenNamespaceClasses {
   /**
     * Adding a shim for the function `defn` on namespace `ns`
     */
-  private def compileShimMethod(visitor: ClassWriter, defn: Def): Unit = {
+  private def compileShimMethod(visitor: ClassWriter, defn: Def)(implicit root: Root): Unit = {
     // Name of the shim
     val name = JvmOps.getDefMethodNameInNamespaceClass(defn)
 
