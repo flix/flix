@@ -365,7 +365,7 @@ sealed trait Completion {
         command = Some(Command("editor.action.triggerParameterHints", "editor.action.triggerParameterHints", Nil))
       )
 
-    case Completion.OpHandlerCompletion(op, range) =>
+    case Completion.OpHandlerCompletion(op, range, priority) =>
       val name = op.sym.name
       val snippet = CompletionUtils.getOpHandlerSnippet(name, op.spec.fparams)
       val description = Some(name)
@@ -373,7 +373,7 @@ sealed trait Completion {
       CompletionItem(
         label = name,
         labelDetails = Some(labelDetails),
-        sortText = Priority.toSortText(Priority.High, name),
+        sortText = Priority.toSortText(priority, name),
         textEdit = TextEdit(range, snippet),
         detail = Some(FormatScheme.formatScheme(op.spec.declaredScheme)(flix)),
         documentation = Some(op.spec.doc.text),
@@ -786,10 +786,11 @@ object Completion {
   /**
     * Represents an Op Handler completion
     *
-    * @param op    the op.
-    * @param range the range of the completion.
+    * @param op       the op.
+    * @param range    the range of the completion.
+    * @param priority the priority of the completion.
     */
-  case class OpHandlerCompletion(op: TypedAst.Op, range: Range) extends Completion
+  case class OpHandlerCompletion(op: TypedAst.Op, range: Range, priority: Priority) extends Completion
 
   /**
     * Represents a Signature completion
