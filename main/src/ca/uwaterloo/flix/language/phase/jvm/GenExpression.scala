@@ -1272,8 +1272,7 @@ object GenExpression {
       mv.visitMethodInsn(INVOKESPECIAL, BackendObjType.Region.jvmName.toInternalName, "<init>",
         AsmOps.getMethodDescriptor(List(), JvmType.Void), false)
 
-      val iStore = AsmOps.getStoreInstruction(JvmType.Reference(BackendObjType.Region.jvmName))
-      mv.visitVarInsn(iStore, sym.getStackOffset(ctx.localOffset))
+      mv.visitByteIns(BytecodeInstructions.xStore(BackendObjType.Region.toTpe, sym.getStackOffset(ctx.localOffset)))
 
       // Compile the scope body
       mv.visitLabel(beforeTryBlock)
@@ -1336,8 +1335,7 @@ object GenExpression {
         mv.visitLabel(handlerLabel)
 
         // Store the exception in a local variable.
-        val istore = AsmOps.getStoreInstruction(JvmType.Object)
-        mv.visitVarInsn(istore, sym.getStackOffset(ctx.localOffset))
+        mv.visitByteIns(BytecodeInstructions.xStore(BackendObjType.JavaObject.toTpe, sym.getStackOffset(ctx.localOffset)))
 
         // Emit code for the handler body expression.
         compileExpr(body)
