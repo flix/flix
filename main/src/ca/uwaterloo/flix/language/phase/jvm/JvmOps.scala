@@ -139,33 +139,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the namespace name for the given namespace `ns`.
-    *
-    * For example:
-    *
-    * <root>      =>  Root$
-    * Foo         =>  Foo
-    * Foo.Bar     =>  Foo.Bar
-    * Foo.Bar.Baz =>  Foo.Bar.Baz
-    */
-  def getNamespaceClassType(ns: NamespaceInfo): JvmName = {
-    getNamespaceName(ns.ns)
-  }
-
-  /**
-    * Returns the namespace name of the given definition symbol `sym`.
-    */
-  def getNamespaceName(sym: Symbol.DefnSym): JvmName = {
-    getNamespaceName(sym.namespace)
-  }
-
-  private def getNamespaceName(ns: List[String]): JvmName = {
-    val last = ns.lastOption.getOrElse(s"Root${Flix.Delimiter}")
-    val nsFixed = ns.dropRight(1)
-    JvmName(nsFixed, last)
-  }
-
-  /**
     * Returns the method name of a defn as used in a namespace class.
     *
     * For example:

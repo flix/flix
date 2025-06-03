@@ -60,6 +60,7 @@ sealed trait BackendObjType {
     case BackendObjType.Region => JvmName(DevFlixRuntime, mkClassName("Region"))
     case BackendObjType.UncaughtExceptionHandler => JvmName(DevFlixRuntime, mkClassName("UncaughtExceptionHandler"))
     case BackendObjType.Main(_) => JvmName.Main
+    case BackendObjType.Namespace(ns) => JvmName(ns.dropRight(1), ns.lastOption.getOrElse(s"Root${Flix.Delimiter}"))
     // Java classes
     case BackendObjType.Native(className) => className
     case BackendObjType.Regex => JvmName(List("java", "util", "regex"), "Pattern")
@@ -1335,6 +1336,8 @@ object BackendObjType {
       )
     }
   }
+
+  case class Namespace(ns: List[String]) extends BackendObjType
 
   //
   // Java Types
