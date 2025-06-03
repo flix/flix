@@ -1155,7 +1155,7 @@ object GenExpression {
       case ExpPosition.NonTail =>
         val defn = root.defs(sym)
         val targetIsFunction = defn.cparams.isEmpty
-        val canCallStaticMethod = Purity.isControlPure(purity) && targetIsFunction
+        val canCallStaticMethod = Purity.isControlPure(defn.expr.purity) && targetIsFunction
         if (canCallStaticMethod) {
           val paramTpes = defn.fparams.map(fp => BackendType.toBackendType(fp.tpe))
           // Call the static method, using exact types
