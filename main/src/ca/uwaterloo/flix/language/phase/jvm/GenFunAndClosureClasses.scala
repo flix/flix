@@ -23,9 +23,7 @@ import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.{InstructionSet
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes.*
-import org.objectweb.asm.{AnnotationVisitor, Attribute, ClassWriter, Handle, Label, MethodVisitor, Opcodes, TypePath}
-
-import scala.collection.mutable
+import org.objectweb.asm.{ClassWriter, Label, MethodVisitor, Opcodes}
 
 /**
   * Generates byte code for the function and closure classes.
