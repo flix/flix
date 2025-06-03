@@ -1193,28 +1193,38 @@ object GenExpression {
         }
     }
 
-    case Expr.ApplySelfTail(sym, exps, _, _, _) =>
-      // The function abstract class name
-      val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType).jvmName
-      // Evaluate each argument and put the result on the Fn class.
-      for ((arg, i) <- exps.zipWithIndex) {
-        mv.visitVarInsn(ALOAD, 0)
-        // Evaluate the argument and push the result on the stack.
-        compileExpr(arg)
-        mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
-          s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
-      }
-      ctx match {
-        case EffectContext(_, _, _, setPc, _, _, _) =>
+    case Expr.ApplySelfTail(sym, exps, _, _, _) => ctx match {
+      case EffectContext(_, _, _, setPc, _, _, _) =>
+        // The function abstract class name
+        val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType).jvmName
+        // Evaluate each argument and put the result on the Fn class.
+        for ((arg, i) <- exps.zipWithIndex) {
           mv.visitVarInsn(ALOAD, 0)
-          compileInt(0)
-          mv.visitByteIns(setPc)
+          // Evaluate the argument and push the result on the stack.
+          compileExpr(arg)
+          mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
+            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+        }
+        mv.visitVarInsn(ALOAD, 0)
+        compileInt(0)
+        mv.visitByteIns(setPc)
+        // Jump to the entry point of the method.
+        mv.visitJumpInsn(GOTO, ctx.entryPoint)
 
-        case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
-          () // Do nothing
-      }
-      // Jump to the entry point of the method.
-      mv.visitJumpInsn(GOTO, ctx.entryPoint)
+      case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
+        // The function abstract class name
+        val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType).jvmName
+        // Evaluate each argument and put the result on the Fn class.
+        for ((arg, i) <- exps.zipWithIndex) {
+          mv.visitVarInsn(ALOAD, 0)
+          // Evaluate the argument and push the result on the stack.
+          compileExpr(arg)
+          mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
+            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+        }
+        // Jump to the entry point of the method.
+        mv.visitJumpInsn(GOTO, ctx.entryPoint)
+    }
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => mv.visitByteIns({
       import BytecodeInstructions.*
