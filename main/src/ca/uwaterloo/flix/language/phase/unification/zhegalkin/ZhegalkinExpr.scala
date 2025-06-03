@@ -22,20 +22,14 @@ import scala.collection.mutable
 /** Companion object for [[ZhegalkinExpr]] */
 object ZhegalkinExpr {
 
-  /** A Zhegalkin expression that represents the empty set, i.e. the zero element of the algebra. */
-  val zero: ZhegalkinExpr = ZhegalkinExpr(ZhegalkinCst.empty, Nil)
-
-  /** A Zhegalkin expression that represents the universe, i.e. the one element of the algebra. */
-  val one: ZhegalkinExpr = ZhegalkinExpr(ZhegalkinCst.universe, Nil)
-
   /**
     * A smart constructor for Zhegalkin expressions that filters empty intersections.
     *
     * A Zhegalkin expression is of the form: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn
     */
-  def mkZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm]): ZhegalkinExpr = (cst, terms) match {
-    case (ZhegalkinCst.empty, Nil) => ZhegalkinExpr.zero
-    case (ZhegalkinCst.universe, Nil) => ZhegalkinExpr.one
+  def mkZhegalkinExpr(cst: ZhegalkinCst, terms: List[ZhegalkinTerm])(implicit alg: ZhegalkinAlgebra): ZhegalkinExpr = (cst, terms) match {
+    case (ZhegalkinCst.empty, Nil) => alg.zero
+    case (ZhegalkinCst.universe, Nil) => alg.one
     case _ =>
       // Construct a new polynomial.
 
@@ -45,10 +39,10 @@ object ZhegalkinExpr {
       // Special case: If ts is empty then this could be 0 or 1.
       if (ts.isEmpty) {
         if (cst eq ZhegalkinCst.empty) {
-          return ZhegalkinExpr.zero
+          return alg.zero
         }
         if (cst eq ZhegalkinCst.universe) {
-          return ZhegalkinExpr.one
+          return alg.one
         }
       }
 
@@ -64,7 +58,7 @@ object ZhegalkinExpr {
     *
     * Note: The representation of Zhegalkin polynomials is unique, hence we can use a simple equality check here.
     */
-  def isEmpty(e: ZhegalkinExpr): Boolean = e == ZhegalkinExpr.zero
+  def isEmpty(e: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra): Boolean = e == alg.zero
 
   /**
     * Returns the complement of the given Zhegalkin expression `e`.
@@ -73,8 +67,8 @@ object ZhegalkinExpr {
     */
   def mkCompl(e: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra): ZhegalkinExpr = {
     // ¬Ø = 𝓤
-    if (e eq ZhegalkinExpr.zero) {
-      return ZhegalkinExpr.one
+    if (e eq alg.zero) {
+      return alg.one
     }
 
     // Performance: A common case.
@@ -84,7 +78,7 @@ object ZhegalkinExpr {
     }
 
     // ¬a = 1 ⊕ a
-    mkXor(ZhegalkinExpr.one, e)
+    mkXor(alg.one, e)
   }
 
   /**
@@ -94,11 +88,11 @@ object ZhegalkinExpr {
     */
   def mkXor(z1: ZhegalkinExpr, z2: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra): ZhegalkinExpr = {
     // 0 ⊕ a = a
-    if (z1 eq ZhegalkinExpr.zero) {
+    if (z1 eq alg.zero) {
       return z2
     }
     // a ⊕ 0 = a
-    if (z2 eq ZhegalkinExpr.zero) {
+    if (z2 eq alg.zero) {
       return z1
     }
 
@@ -111,7 +105,7 @@ object ZhegalkinExpr {
     *
     * Does not use any simplification rules nor any cache.
     */
-  private def computeXor(e1: ZhegalkinExpr, e2: ZhegalkinExpr): ZhegalkinExpr = (e1, e2) match {
+  private def computeXor(e1: ZhegalkinExpr, e2: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra): ZhegalkinExpr = (e1, e2) match {
     case (ZhegalkinExpr(c1, ts1), ZhegalkinExpr(c2, ts2)) =>
       val c = ZhegalkinCst.mkXor(c1, c2)
       // Eliminate duplicates: a ⊕ a = 0
@@ -147,11 +141,11 @@ object ZhegalkinExpr {
     */
   def mkUnion(e1: ZhegalkinExpr, e2: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra): ZhegalkinExpr = {
     // Ø ∪ a = a
-    if (e1 eq ZhegalkinExpr.zero) {
+    if (e1 eq alg.zero) {
       return e2
     }
     // a ∪ Ø = a
-    if (e2 eq ZhegalkinExpr.zero) {
+    if (e2 eq alg.zero) {
       return e1
     }
 
@@ -176,19 +170,19 @@ object ZhegalkinExpr {
     */
   def mkInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra): ZhegalkinExpr = {
     // Ø ∩ a = Ø
-    if (e1 eq ZhegalkinExpr.zero) {
-      return ZhegalkinExpr.zero
+    if (e1 eq alg.zero) {
+      return alg.zero
     }
     // a ∩ Ø = Ø
-    if (e2 eq ZhegalkinExpr.zero) {
-      return ZhegalkinExpr.zero
+    if (e2 eq alg.zero) {
+      return alg.zero
     }
     // 𝓤 ∩ a = a
-    if (e1 eq ZhegalkinExpr.one) {
+    if (e1 eq alg.one) {
       return e2
     }
     // a ∩ 𝓤 = a
-    if (e2 eq ZhegalkinExpr.one) {
+    if (e2 eq alg.one) {
       return e1
     }
 
@@ -230,7 +224,7 @@ object ZhegalkinExpr {
     *   c ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m) = (c ∩ c2) ⊕ (c ∩ t21) ⊕ (c ∩ t22) ⊕ ... ⊕ (c ∩ t2m)
     * }}}
     */
-  private def computeInterConstantExpr(c: ZhegalkinCst, e: ZhegalkinExpr): ZhegalkinExpr = e match {
+  private def computeInterConstantExpr(c: ZhegalkinCst, e: ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra): ZhegalkinExpr = e match {
     case ZhegalkinExpr(c2, terms) =>
       val ts = terms.map(t => mkInterConstantTerm(c, t))
       mkZhegalkinExpr(c.inter(c2), ts)
