@@ -1153,42 +1153,57 @@ object GenExpression {
         mv.visitInsn(ARETURN)
 
       case ExpPosition.NonTail =>
-        // JvmType of Def
-        val defJvmName = JvmOps.getFunctionDefinitionClassName(sym)
-
-        // Put the def on the stack
-        AsmOps.compileDefSymbol(sym, mv)
-
-        // Putting args on the Fn class
-        for ((arg, i) <- exps.zipWithIndex) {
-          // Duplicate the FunctionInterface
-          mv.visitInsn(DUP)
-          // Evaluating the expression
-          compileExpr(arg)
-          mv.visitFieldInsn(PUTFIELD, defJvmName.toInternalName,
-            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
-        }
-        // Calling unwind and unboxing
-
-        if (Purity.isControlPure(purity)) {
-          mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc))
+        val defn = root.defs(sym)
+        val targetIsFunction = defn.cparams.isEmpty
+        val canCallStaticMethod = Purity.isControlPure(purity) && targetIsFunction
+        if (canCallStaticMethod) {
+          // Call the static method, using exact types
+          for ((arg, tpe) <- exps.zip(defn.fparams.map(_.tpe))) {
+            compileExpr(arg)
+          }
+          val paramsTpes = defn.fparams.map(fp => BackendType.toBackendType(fp.tpe))
+          val resultTpe = BackendObjType.Result.toTpe
+          val desc = MethodDescriptor(paramsTpes, resultTpe)
+          val className = JvmOps.getFunctionDefinitionClassName(sym)
+          mv.visitMethodInsn(INVOKESTATIC, className.toInternalName, JvmName.DirectApply, desc.toDescriptor, false)
+          BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)(new BytecodeInstructions.F(mv))
         } else {
-          ctx match {
-            case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
-              val pcPoint = pcCounter(0) + 1
-              val pcPointLabel = pcLabels(pcPoint)
-              val afterUnboxing = new Label()
-              pcCounter(0) += 1
-              mv.visitByteIns(BackendObjType.Result.unwindThunkToValue(pcPoint, newFrame, setPc))
-              mv.visitJumpInsn(GOTO, afterUnboxing)
+          // JvmType of Def
+          val defJvmName = JvmOps.getFunctionDefinitionClassName(sym)
 
-              mv.visitLabel(pcPointLabel)
-              mv.visitVarInsn(ALOAD, 1)
+          // Put the def on the stack
+          AsmOps.compileDefSymbol(sym, mv)
 
-              mv.visitLabel(afterUnboxing)
+          // Putting args on the Fn class
+          for ((arg, i) <- exps.zipWithIndex) {
+            // Duplicate the FunctionInterface
+            mv.visitInsn(DUP)
+            // Evaluating the expression
+            compileExpr(arg)
+            mv.visitFieldInsn(PUTFIELD, defJvmName.toInternalName,
+              s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+          }
+          // Calling unwind and unboxing
+          if (Purity.isControlPure(purity)) {
+            mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc))
+          } else {
+            ctx match {
+              case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+                val pcPoint = pcCounter(0) + 1
+                val pcPointLabel = pcLabels(pcPoint)
+                val afterUnboxing = new Label()
+                pcCounter(0) += 1
+                mv.visitByteIns(BackendObjType.Result.unwindThunkToValue(pcPoint, newFrame, setPc))
+                mv.visitJumpInsn(GOTO, afterUnboxing)
 
-            case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
-              throw InternalCompilerException("Unexpected direct method context in control impure function", loc)
+                mv.visitLabel(pcPointLabel)
+                mv.visitVarInsn(ALOAD, 1)
+
+                mv.visitLabel(afterUnboxing)
+
+              case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
+                throw InternalCompilerException("Unexpected direct method context in control impure function", loc)
+            }
           }
         }
     }
