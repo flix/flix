@@ -79,7 +79,7 @@ object GenExpression {
     * Such functions never need to record their state and will always
     * return at the given return expressions except if they loop indefinitely.
     */
-  case class DirectInstanceContext(                                   entryPoint: Label,
+  case class DirectInstanceContext(entryPoint: Label,
                                    lenv: Map[Symbol.LabelSym, Label],
                                    localOffset: Int,
                                   ) extends MethodContext
@@ -90,7 +90,7 @@ object GenExpression {
     * Such functions never need to record their state and will always
     * return at the given return expressions except if they loop indefinitely.
     */
-  case class DirectStaticContext(                                 entryPoint: Label,
+  case class DirectStaticContext(entryPoint: Label,
                                  lenv: Map[Symbol.LabelSym, Label],
                                  localOffset: Int,
                                 ) extends MethodContext
@@ -743,10 +743,10 @@ object GenExpression {
         val innerType = tpe.asInstanceOf[MonoType.Array].tpe
         val backendType = BackendType.toBackendType(innerType)
         val fillMethod = ClassMaker.StaticMethod(JvmName.Arrays, "fill", mkDescriptor(BackendType.Array(backendType.toErased), backendType.toErased)(VoidableType.Void))
-        pushExpr(exp1) ~                                                      // default
-          pushExpr(exp2) ~                                                    // default, length
-          xNewArray(backendType) ~                                            // default, arr
-          (if (backendType.is64BitWidth) DUP_X2() else DUP_X1()) ~            // arr, default, arr
+        pushExpr(exp1) ~ // default
+          pushExpr(exp2) ~ // default, length
+          xNewArray(backendType) ~ // default, arr
+          (if (backendType.is64BitWidth) DUP_X2() else DUP_X1()) ~ // arr, default, arr
           xSwap(lowerLarge = backendType.is64BitWidth, higherLarge = false) ~ // arr, arr, default
           INVOKESTATIC(fillMethod)
       })
@@ -1040,10 +1040,10 @@ object GenExpression {
         import BytecodeInstructions.*
         // Add source line number for debugging (failable by design).
         addLoc(loc) ~
-          NEW(BackendObjType.HoleError.jvmName) ~               // HoleError
-          DUP() ~                                               // HoleError, HoleError
-          pushString(sym.toString) ~                            // HoleError, HoleError, Sym
-          pushLoc(loc) ~                                        // HoleError, HoleError, Sym, Loc
+          NEW(BackendObjType.HoleError.jvmName) ~ // HoleError
+          DUP() ~ // HoleError, HoleError
+          pushString(sym.toString) ~ // HoleError, HoleError, Sym
+          pushLoc(loc) ~ // HoleError, HoleError, Sym, Loc
           INVOKESPECIAL(BackendObjType.HoleError.Constructor) ~ // HoleError
           ATHROW()
       })
@@ -1052,9 +1052,9 @@ object GenExpression {
         import BytecodeInstructions.*
         // Add source line number for debugging (failable by design)
         addLoc(loc) ~
-          NEW(BackendObjType.MatchError.jvmName) ~               // MatchError
-          DUP() ~                                                // MatchError, MatchError
-          pushLoc(loc) ~                                         // MatchError, MatchError, Loc
+          NEW(BackendObjType.MatchError.jvmName) ~ // MatchError
+          DUP() ~ // MatchError, MatchError
+          pushLoc(loc) ~ // MatchError, MatchError, Loc
           INVOKESPECIAL(BackendObjType.MatchError.Constructor) ~ // MatchError
           ATHROW()
       })
@@ -1063,11 +1063,11 @@ object GenExpression {
         import BytecodeInstructions.*
         // Add source line number for debugging (failable by design)
         addLoc(loc) ~
-          NEW(BackendObjType.CastError.jvmName) ~                 // CastError
-          DUP() ~                                                 // CastError, CastError
-          pushLoc(loc) ~                                          // CastError, CastError, Loc
+          NEW(BackendObjType.CastError.jvmName) ~ // CastError
+          DUP() ~ // CastError, CastError
+          pushLoc(loc) ~ // CastError, CastError, Loc
           pushString(s"Cannot cast from type '$from' to '$to'") ~ // CastError, CastError, Loc, String
-          INVOKESPECIAL(BackendObjType.CastError.Constructor) ~   // CastError
+          INVOKESPECIAL(BackendObjType.CastError.Constructor) ~ // CastError
           ATHROW()
       })
     }
@@ -1156,8 +1156,8 @@ object GenExpression {
         // JvmType of Def
         val defJvmName = JvmOps.getFunctionDefinitionClassName(sym)
 
-              // Put the def on the stack
-              AsmOps.compileDefSymbol(sym, mv)
+        // Put the def on the stack
+        AsmOps.compileDefSymbol(sym, mv)
 
         // Putting args on the Fn class
         for ((arg, i) <- exps.zipWithIndex) {
@@ -1187,7 +1187,7 @@ object GenExpression {
 
               mv.visitLabel(afterUnboxing)
 
-            case DirectInstanceContext(_, _, _) |DirectStaticContext(_, _, _) =>
+            case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
               throw InternalCompilerException("Unexpected direct method context in control impure function", loc)
           }
         }
@@ -1219,7 +1219,7 @@ object GenExpression {
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => mv.visitByteIns({
       import BytecodeInstructions.*
       pushExpr(exp1) ~
-        branch(Condition.Bool){
+        branch(Condition.Bool) {
           case Branch.TrueBranch => pushExpr(exp2)
           case Branch.FalseBranch => pushExpr(exp3)
         }
@@ -1391,22 +1391,24 @@ object GenExpression {
       }
       mv.visitByteIns(ins)
       // handle value/suspend/thunk if in non-tail position
-      if (ct == ExpPosition.NonTail) { ctx match {
-        case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
-          mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure run-with call", loc))
+      if (ct == ExpPosition.NonTail) {
+        ctx match {
+          case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
+            mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure run-with call", loc))
 
-        case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
-          val pcPoint = pcCounter(0) + 1
-          val pcPointLabel = pcLabels(pcPoint)
-          val afterUnboxing = new Label()
-          pcCounter(0) += 1
-          mv.visitByteIns(BackendObjType.Result.unwindThunkToValue(pcPoint, newFrame, setPc))
-          mv.visitJumpInsn(GOTO, afterUnboxing)
+          case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+            val pcPoint = pcCounter(0) + 1
+            val pcPointLabel = pcLabels(pcPoint)
+            val afterUnboxing = new Label()
+            pcCounter(0) += 1
+            mv.visitByteIns(BackendObjType.Result.unwindThunkToValue(pcPoint, newFrame, setPc))
+            mv.visitJumpInsn(GOTO, afterUnboxing)
 
-          mv.visitLabel(pcPointLabel)
-          mv.visitVarInsn(ALOAD, 1)
-          mv.visitLabel(afterUnboxing)
-      }} else {
+            mv.visitLabel(pcPointLabel)
+            mv.visitVarInsn(ALOAD, 1)
+            mv.visitLabel(afterUnboxing)
+        }
+      } else {
         mv.visitInsn(ARETURN)
       }
 
@@ -1428,7 +1430,7 @@ object GenExpression {
           val effectStaticMethod = ClassMaker.StaticMethod(
             effectName,
             JvmOps.getEffectOpName(op.sym),
-          GenEffectClasses.opStaticFunctionDescriptor(op.sym)
+            GenEffectClasses.opStaticFunctionDescriptor(op.sym)
           )
           NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~
             DUP() ~ pushString(op.sym.eff.toString) ~ PUTFIELD(Suspension.EffSymField) ~
