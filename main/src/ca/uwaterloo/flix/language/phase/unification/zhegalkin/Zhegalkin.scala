@@ -27,8 +27,8 @@ object Zhegalkin {
     * Returns the given set formula as a Zhegalkin polynomial.
     */
   def toZhegalkin(f: SetFormula)(implicit alg: ZhegalkinAlgebra): ZhegalkinExpr = f match {
-    case SetFormula.Univ => ZhegalkinExpr.one
-    case SetFormula.Empty => ZhegalkinExpr.zero
+    case SetFormula.Univ => alg.one
+    case SetFormula.Empty => alg.zero
     case Cst(c) => ZhegalkinExpr(ZhegalkinCst.empty, List(ZhegalkinTerm(ZhegalkinCst.universe, SortedSet(ZhegalkinVar(c, flexible = false)))))
     case Var(x) => ZhegalkinExpr(ZhegalkinCst.empty, List(ZhegalkinTerm(ZhegalkinCst.universe, SortedSet(ZhegalkinVar(x, flexible = true)))))
     case ElemSet(s) =>

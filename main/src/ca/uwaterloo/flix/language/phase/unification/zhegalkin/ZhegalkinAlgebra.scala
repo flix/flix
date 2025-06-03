@@ -21,16 +21,20 @@ import scala.collection.immutable.SortedSet
 
 class ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
 
-  /**
-    * Zhegalkin Cache
-    */
+  /** A Zhegalkin expression that represents the empty set, i.e. the zero element of the algebra. */
+  val zero: ZhegalkinExpr = ZhegalkinExpr(ZhegalkinCst.empty, Nil)
+
+  /** A Zhegalkin expression that represents the universe, i.e. the one element of the algebra. */
+  val one: ZhegalkinExpr = ZhegalkinExpr(ZhegalkinCst.universe, Nil)
+
+  /** Zhegalkin Cache. */
   val Cache: ZhegalkinCache = new ZhegalkinCache
 
-  override def isEquivBot(f: ZhegalkinExpr): Boolean = ZhegalkinExpr.isEmpty(f)
+  override def isEquivBot(f: ZhegalkinExpr): Boolean = ZhegalkinExpr.isEmpty(f)(this)
 
-  override def mkBot: ZhegalkinExpr = ZhegalkinExpr.zero
+  override def mkBot: ZhegalkinExpr = zero
 
-  override def mkTop: ZhegalkinExpr = ZhegalkinExpr.one
+  override def mkTop: ZhegalkinExpr = one
 
   override def mkCst(id: Int): ZhegalkinExpr = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = false))
 
