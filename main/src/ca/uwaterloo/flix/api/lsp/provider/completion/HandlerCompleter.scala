@@ -27,7 +27,7 @@ object HandlerCompleter {
     root.effects.get(effSym).toList.flatMap(eff =>
       eff.ops.collect {
         case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false) =>
-          OpHandlerCompletion(op, range)
+          OpHandlerCompletion(op, range, Priority.High)
       }
     )
   }
