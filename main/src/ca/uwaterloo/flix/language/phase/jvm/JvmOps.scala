@@ -29,54 +29,6 @@ import java.nio.file.{Files, LinkOption, Path}
 object JvmOps {
 
   /**
-    * Returns the given Flix type `tpe` as JVM type.
-    *
-    * For example, if the type is:
-    *
-    * Bool                  =>      Boolean
-    * Char                  =>      Char
-    * Option$42             =>      Option$42
-    * Result$123            =>      Result$123
-    * Int -> Bool           =>      Fn1$Int$Bool
-    * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
-    */
-  def getJvmType(tpe: MonoType)(implicit root: ReducedAst.Root): JvmType = tpe match {
-    // Primitives
-    case MonoType.Void => JvmType.Object
-    case MonoType.AnyType => JvmType.Object
-    case MonoType.Unit => JvmType.Unit
-    case MonoType.Bool => JvmType.PrimBool
-    case MonoType.Char => JvmType.PrimChar
-    case MonoType.Float32 => JvmType.PrimFloat
-    case MonoType.Float64 => JvmType.PrimDouble
-    case MonoType.BigDecimal => JvmType.BigDecimal
-    case MonoType.Int8 => JvmType.PrimByte
-    case MonoType.Int16 => JvmType.PrimShort
-    case MonoType.Int32 => JvmType.PrimInt
-    case MonoType.Int64 => JvmType.PrimLong
-    case MonoType.BigInt => JvmType.BigInteger
-    case MonoType.String => JvmType.String
-    case MonoType.Regex => JvmType.Regex
-    case MonoType.Region => JvmType.Object
-    case MonoType.Null => JvmType.Object
-    // Compound
-    case MonoType.Array(_) => JvmType.Object
-    case MonoType.Lazy(_) => JvmType.Object
-    case MonoType.Tuple(elms) => JvmType.Reference(BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType)).jvmName)
-    case MonoType.RecordEmpty => JvmType.Reference(BackendObjType.Record.jvmName)
-    case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
-    case MonoType.ExtensibleExtend(_, _, _) => JvmType.Reference(BackendObjType.Tagged.jvmName)
-    case MonoType.ExtensibleEmpty => JvmType.Reference(BackendObjType.Tagged.jvmName)
-    case MonoType.Enum(_, _) => JvmType.Object
-    case MonoType.Struct(sym, targs) =>
-      val elms = instantiateStruct(sym, targs.map(MonoType.erase))
-      JvmType.Reference(BackendObjType.Struct(elms).jvmName)
-    case MonoType.Arrow(_, _) => JvmType.Reference(getFunctionInterfaceName(tpe))
-    case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
-  }
-
-
-  /**
     * Returns the erased JvmType of the given Flix type `tpe`.
     *
     * Every primitive type is mapped to itself and every other type is mapped to Object.
@@ -101,32 +53,7 @@ object JvmOps {
   }
 
   /**
-    * Returns the erased JvmType of the given Flix type `tpe`.
-    *
-    * Every primitive type is mapped to itself and every other type is mapped to Object.
-    */
-  def asErasedJvmType(tpe: MonoType): JvmType = {
-    import MonoType.*
-    tpe match {
-      case Bool => JvmType.PrimBool
-      case Char => JvmType.PrimChar
-      case Float32 => JvmType.PrimFloat
-      case Float64 => JvmType.PrimDouble
-      case Int8 => JvmType.PrimByte
-      case Int16 => JvmType.PrimShort
-      case Int32 => JvmType.PrimInt
-      case Int64 => JvmType.PrimLong
-      case Native(clazz) if clazz == classOf[Object] => JvmType.Object
-      case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
-           Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_, _) |
-           Struct(_, _) | Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) |
-           ExtensibleExtend(_, _, _) | ExtensibleEmpty | Native(_) | Null =>
-        throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-    }
-  }
-
-  /**
-    * Returns the function abstract class name `FnX$Y$Z` for the given type `tpe`.
+    * Returns the erased arrow type of `tpe`.
     *
     * For example:
     *
@@ -135,10 +62,9 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getFunctionInterfaceName(tpe: MonoType): JvmName = tpe match {
+  def getFunctionInterfaceType(tpe: MonoType)(implicit root: Root): BackendObjType.Arrow = tpe match {
     case MonoType.Arrow(targs, tresult) =>
-      val arrowType = BackendObjType.Arrow(targs.map(BackendType.toErasedBackendType), BackendType.asErasedBackendType(tresult))
-      arrowType.jvmName
+      BackendObjType.Arrow(targs.map(BackendType.toErasedBackendType), BackendType.toBackendType(tresult))
     case _ =>
       throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
@@ -166,7 +92,7 @@ object JvmOps {
     * List.length       =>    List/Clo$length
     * List.map          =>    List/Clo$map
     */
-  def getClosureClassType(sym: Symbol.DefnSym): JvmType.Reference = {
+  def getClosureClassName(sym: Symbol.DefnSym): JvmName = {
     // The JVM name is of the form Clo$sym.name
     val name = JvmName.mkClassName(s"Clo", sym.name)
 
@@ -174,7 +100,7 @@ object JvmOps {
     val pkg = sym.namespace
 
     // The result type.
-    JvmType.Reference(JvmName(pkg, name))
+    JvmName(pkg, name)
   }
 
   /**
@@ -185,10 +111,10 @@ object JvmOps {
     * print         =>  Def$print
     * List.length   =>  List.Def$length
     */
-  def getFunctionDefinitionClassType(sym: Symbol.DefnSym): JvmType.Reference = {
+  def getFunctionDefinitionClassName(sym: Symbol.DefnSym): JvmName = {
     val pkg = sym.namespace
     val name = JvmName.mkClassName("Def", sym.name)
-    JvmType.Reference(JvmName(pkg, name))
+    JvmName(pkg, name)
   }
 
   /**
@@ -272,19 +198,19 @@ object JvmOps {
   /**
     * Returns the set of erased lazy types in `types` without searching recursively.
     */
-  def getErasedLazyTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Lazy] =
+  def getErasedLazyTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.Lazy] =
     types.foldLeft(Set.empty[BackendObjType.Lazy]) {
-      case (acc, MonoType.Lazy(tpe)) => acc + BackendObjType.Lazy(BackendType.asErasedBackendType(tpe))
+      case (acc, MonoType.Lazy(tpe)) => acc + BackendObjType.Lazy(BackendType.toBackendType(tpe))
       case (acc, _) => acc
     }
 
   /**
     * Returns the set of erased record extend types in `types` without searching recursively.
     */
-  def getErasedRecordExtendsOf(types: Iterable[MonoType]): Set[BackendObjType.RecordExtend] =
+  def getErasedRecordExtendsOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.RecordExtend] =
     types.foldLeft(Set.empty[BackendObjType.RecordExtend]) {
       case (acc, MonoType.RecordExtend(_, value, _)) =>
-        acc + BackendObjType.RecordExtend(BackendType.asErasedBackendType(value))
+        acc + BackendObjType.RecordExtend(BackendType.toBackendType(value))
       case (acc, _) => acc
     }
 
@@ -301,10 +227,10 @@ object JvmOps {
   /**
     * Returns the set of erased tuple types in `types` without searching recursively.
     */
-  def getErasedTupleTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Tuple] =
+  def getErasedTupleTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.Tuple] =
     types.foldLeft(Set.empty[BackendObjType.Tuple]) {
       case (acc, MonoType.Tuple(elms)) =>
-        acc + BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType))
+        acc + BackendObjType.Tuple(elms.map(BackendType.toBackendType))
       case (acc, _) => acc
     }
 
@@ -336,7 +262,7 @@ object JvmOps {
   /**
     * Returns the set of erased tag types in `types` without searching recursively.
     */
-  def getErasedTagTypesOf(root: Root, types: Iterable[MonoType]): Set[BackendObjType.TagType] =
+  def getErasedTagTypesOf(types: Iterable[MonoType])(implicit root: ReducedAst.Root): Set[BackendObjType.TagType] =
     types.foldLeft(Set.empty[BackendObjType.TagType]) {
       case (acc0, MonoType.Enum(sym, targs)) =>
         val tags = instantiateEnum(root.enums(sym), targs)
@@ -355,7 +281,7 @@ object JvmOps {
     *   - `instantiateEnum(E, List(Char)) = Map(A -> List(Char, Object), B -> List(Int32))`
     *     for `enum E[t] { case A(t, Object) case B(Int32) }`
     */
-  def instantiateEnum(enm: ReducedAst.Enum, targs: List[MonoType]): Map[Symbol.CaseSym, List[BackendType]] = {
+  def instantiateEnum(enm: ReducedAst.Enum, targs: List[MonoType])(implicit root: Root): Map[Symbol.CaseSym, List[BackendType]] = {
     assert(enm.tparams.length == targs.length)
     val map = enm.tparams.map(_.sym).zip(targs).toMap
     enm.cases.map {
@@ -378,8 +304,8 @@ object JvmOps {
     * @param tpe the type to instantiate, must be a polymorphic erased type
     *            (either [[Type.Var]], a primitive type, or `java.lang.Object`)
     */
-  private def instantiateType(m: Map[Symbol.KindedTypeVarSym, MonoType], tpe: Type): BackendType = tpe match {
-    case Type.Var(sym, _) => BackendType.asErasedBackendType(m(sym))
+  private def instantiateType(m: Map[Symbol.KindedTypeVarSym, MonoType], tpe: Type)(implicit root: Root): BackendType = tpe match {
+    case Type.Var(sym, _) => BackendType.toBackendType(m(sym))
     case Type.Cst(tc, _) => tc match {
       case TypeConstructor.Bool => BackendType.Bool
       case TypeConstructor.Char => BackendType.Char
@@ -403,12 +329,12 @@ object JvmOps {
   /**
     * Returns the set of erased extensible tag types in `types` without searching recursively.
     */
-  def getErasedExtensibleTagTypesOf(types: Iterable[MonoType]): Set[BackendObjType.TagType] =
+  def getErasedExtensibleTagTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.TagType] =
     types.foldLeft(Set.empty[BackendObjType.TagType]) {
       case (acc, MonoType.ExtensibleExtend(cons, targs, _)) =>
         targs match {
           case Nil => acc + BackendObjType.NullaryTag(cons.name)
-          case nary => acc + BackendObjType.Tag(nary.map(BackendType.asErasedBackendType))
+          case nary => acc + BackendObjType.Tag(nary.map(BackendType.toBackendType))
         }
       case (acc, _) => acc
     }

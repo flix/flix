@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra}
 import ca.uwaterloo.flix.util.collection.SortedBimap
 import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, Result}
 
@@ -31,6 +31,11 @@ import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
 object EffUnification3 {
+
+  /**
+    * The Global Zhegalkin Algebra used for effects.
+    */
+  val Algebra: ZhegalkinAlgebra = new ZhegalkinAlgebra
 
   /**
     * Controls whether to enable solve-and-retry for subeffecting.
@@ -64,7 +69,6 @@ object EffUnification3 {
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
-    implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.DoNothing
 
     // Choose a unique number for each atom.
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(getAtomsFromConstraints(eqs))
@@ -430,7 +434,7 @@ object EffUnification3 {
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe))
 
     val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
-    val z = Zhegalkin.toZhegalkin(f0)
+    val z = Zhegalkin.toZhegalkin(f0)(Algebra)
     val f1 = Zhegalkin.toSetFormula(z)
 
     fromSetFormula(f1, tpe.loc)

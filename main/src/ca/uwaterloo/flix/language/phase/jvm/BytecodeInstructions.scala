@@ -87,6 +87,12 @@ object BytecodeInstructions {
       compose(i1, i2)
   }
 
+  implicit class MethodEnricher(mv: MethodVisitor) {
+    def visitByteIns(ins: InstructionSet): Unit = {
+      ins(new F(mv))
+    }
+  }
+
   sealed case class Handle(handle: asm.Handle)
 
   def mkStaticHandle(m: StaticMethod): Handle = {
@@ -623,11 +629,22 @@ object BytecodeInstructions {
     case 4 => ICONST_4()
     case 5 => ICONST_5()
     case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => BIPUSH(i.toByte)
-    case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => SIPUSH(i.toByte)
+    case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => SIPUSH(i.toShort)
     case _ => f => {
       f.visitLoadConstantInstruction(i)
       f
     }
+  }
+
+  def pushLoc(loc: SourceLocation): InstructionSet = {
+    NEW(BackendObjType.ReifiedSourceLocation.jvmName) ~
+      DUP() ~
+      pushString(loc.source.name) ~
+      pushInt(loc.beginLine) ~
+      pushInt(loc.beginCol) ~
+      pushInt(loc.endLine) ~
+      pushInt(loc.endCol) ~
+      INVOKESPECIAL(BackendObjType.ReifiedSourceLocation.Constructor)
   }
 
   def storeWithName(index: Int, tpe: BackendType)(body: Variable => InstructionSet): InstructionSet =
@@ -652,11 +669,36 @@ object BytecodeInstructions {
     var runningIndex = index
     val variables = tpes.map(tpe => {
       val variable = new Variable(tpe, runningIndex)
-      val stackSize = if (tpe.is64BitWidth) 2 else 1
-      runningIndex = runningIndex + stackSize
+      runningIndex = runningIndex + tpe.stackSlots
       variable
     })
     body(runningIndex, variables)
+  }
+
+  def xArrayLoad(elmTpe: BackendType): InstructionSet = elmTpe match {
+    case BackendType.Array(_) => cheat(_.visitInsn(Opcodes.AALOAD))
+    case BackendType.Reference(_) => cheat(_.visitInsn(Opcodes.AALOAD))
+    case BackendType.Bool => cheat(_.visitInsn(Opcodes.BALOAD))
+    case BackendType.Char => cheat(_.visitInsn(Opcodes.CALOAD))
+    case BackendType.Int8 => cheat(_.visitInsn(Opcodes.BALOAD))
+    case BackendType.Int16 => cheat(_.visitInsn(Opcodes.SALOAD))
+    case BackendType.Int32 => cheat(_.visitInsn(Opcodes.IALOAD))
+    case BackendType.Int64 => cheat(_.visitInsn(Opcodes.LALOAD))
+    case BackendType.Float32 => cheat(_.visitInsn(Opcodes.FALOAD))
+    case BackendType.Float64 => cheat(_.visitInsn(Opcodes.DALOAD))
+  }
+
+  def xArrayStore(elmTpe: BackendType): InstructionSet = elmTpe match {
+    case BackendType.Array(_) => cheat(_.visitInsn(Opcodes.AASTORE))
+    case BackendType.Reference(_) => cheat(_.visitInsn(Opcodes.AASTORE))
+    case BackendType.Bool => cheat(_.visitInsn(Opcodes.BASTORE))
+    case BackendType.Char => cheat(_.visitInsn(Opcodes.CASTORE))
+    case BackendType.Int8 => cheat(_.visitInsn(Opcodes.BASTORE))
+    case BackendType.Int16 => cheat(_.visitInsn(Opcodes.SASTORE))
+    case BackendType.Int32 => cheat(_.visitInsn(Opcodes.IASTORE))
+    case BackendType.Int64 => cheat(_.visitInsn(Opcodes.LASTORE))
+    case BackendType.Float32 => cheat(_.visitInsn(Opcodes.FASTORE))
+    case BackendType.Float64 => cheat(_.visitInsn(Opcodes.DASTORE))
   }
 
   def xLoad(tpe: BackendType, index: Int): InstructionSet = tpe match {
@@ -665,6 +707,21 @@ object BytecodeInstructions {
     case BackendType.Float32 => FLOAD(index)
     case BackendType.Float64 => DLOAD(index)
     case BackendType.Array(_) | BackendType.Reference(_) => ALOAD(index)
+  }
+
+  def xNewArray(elmTpe: BackendType): InstructionSet = elmTpe match {
+    case BackendType.Array(_) => cheat(mv => mv.visitTypeInsn(Opcodes.ANEWARRAY, elmTpe.toDescriptor))
+    case BackendType.Reference(ref) => ANEWARRAY(ref.jvmName)
+    case tpe: BackendType.PrimitiveType => tpe match {
+      case BackendType.Bool => cheat(_.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_BOOLEAN))
+      case BackendType.Char => cheat(_.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_CHAR))
+      case BackendType.Int8 => cheat(_.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_BYTE))
+      case BackendType.Int16 => cheat(_.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_SHORT))
+      case BackendType.Int32 => cheat(_.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_INT))
+      case BackendType.Int64 => cheat(_.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_LONG))
+      case BackendType.Float32 => cheat(_.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_FLOAT))
+      case BackendType.Float64 => cheat(_.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_DOUBLE))
+    }
   }
 
   /**

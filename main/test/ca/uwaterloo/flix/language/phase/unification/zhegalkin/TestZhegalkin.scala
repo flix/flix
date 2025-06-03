@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestZhegalkin extends AnyFunSuite with TestUtils {
 
-  implicit val alg: BoolAlg[ZhegalkinExpr] = ZhegalkinAlgebra
+  implicit val alg: BoolAlg[ZhegalkinExpr] = new ZhegalkinAlgebra
 
   test("Test.Zhegalkin.Success.01") {
     val f1 = alg.mkBot

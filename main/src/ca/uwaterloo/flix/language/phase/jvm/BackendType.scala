@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.ast.{MonoType, ReducedAst, SourceLocation}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.Opcodes
@@ -65,22 +66,6 @@ sealed trait BackendType extends VoidableType {
   }
 
   /**
-    * Returns the erased type represented as [[JvmType]]. Arrays are erased.
-    */
-  def toErasedJvmType: JvmType = this match {
-    case BackendType.Array(_) => JvmType.Object
-    case BackendType.Reference(_) => JvmType.Object
-    case BackendType.Bool => JvmType.PrimBool
-    case BackendType.Char => JvmType.PrimChar
-    case BackendType.Int8 => JvmType.PrimByte
-    case BackendType.Int16 => JvmType.PrimShort
-    case BackendType.Int32 => JvmType.PrimInt
-    case BackendType.Int64 => JvmType.PrimLong
-    case BackendType.Float32 => JvmType.PrimFloat
-    case BackendType.Float64 => JvmType.PrimDouble
-  }
-
-  /**
     * A string representing the erased type. This is used for parametrized class names.
     */
   val toErasedString: String = this match {
@@ -106,24 +91,9 @@ sealed trait BackendType extends VoidableType {
   }
 
   /**
-    * Returns the Array fill type for the value of the type specified by `tpe`.
+    * Returns `2` if `this` is a 64 bit value, or `1` if it is a 32 bit value.
     */
-  def toArrayFillType: String = mkDescriptor(BackendType.Array(this.toErased), this.toErased)(VoidableType.Void).toDescriptor
-
-  /**
-    * Returns the array store instruction for arrays of the given tpe.
-    */
-  def getArrayStoreInstruction: Int = this match {
-    case BackendType.Bool => Opcodes.BASTORE
-    case BackendType.Char => Opcodes.CASTORE
-    case BackendType.Int8 => Opcodes.BASTORE
-    case BackendType.Int16 => Opcodes.SASTORE
-    case BackendType.Int32 => Opcodes.IASTORE
-    case BackendType.Int64 => Opcodes.LASTORE
-    case BackendType.Float32 => Opcodes.FASTORE
-    case BackendType.Float64 => Opcodes.DASTORE
-    case BackendType.Reference(_) | BackendType.Array(_) => Opcodes.AASTORE
-  }
+  def stackSlots: Int = if (is64BitWidth) 2 else 1
 
 }
 
@@ -185,8 +155,8 @@ object BackendType {
       case MonoType.Enum(_, _) => BackendObjType.Tagged.toTpe
       case MonoType.Struct(sym, targs) => BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs)).toTpe
       case MonoType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
-      case MonoType.RecordEmpty => BackendObjType.RecordEmpty.toTpe
-      case MonoType.RecordExtend(_, value, _) => BackendObjType.RecordExtend(toBackendType(value)).toTpe
+      case MonoType.RecordEmpty => BackendObjType.Record.toTpe
+      case MonoType.RecordExtend(_, _, _) => BackendObjType.Record.toTpe
       case MonoType.ExtensibleEmpty => BackendObjType.Tagged.toTpe
       case MonoType.ExtensibleExtend(_, _, _) => BackendObjType.Tagged.toTpe
       case MonoType.Native(clazz) => BackendObjType.Native(JvmName.ofClass(clazz)).toTpe
@@ -229,63 +199,5 @@ object BackendType {
       BackendObjType.JavaObject.toTpe
   }
 
-  def asErasedBackendType(tpe: MonoType): BackendType = tpe match {
-    case MonoType.Bool => BackendType.Bool
-    case MonoType.Char => BackendType.Char
-    case MonoType.Int8 => BackendType.Int8
-    case MonoType.Int16 => BackendType.Int16
-    case MonoType.Int32 => BackendType.Int32
-    case MonoType.Int64 => BackendType.Int64
-    case MonoType.Float32 => BackendType.Float32
-    case MonoType.Float64 => BackendType.Float64
-    case MonoType.Native(clazz) if clazz == classOf[Object] => BackendObjType.JavaObject.toTpe
-    case MonoType.Void | MonoType.AnyType | MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt |
-         MonoType.String | MonoType.Regex | MonoType.Array(_) | MonoType.Lazy(_) |
-         MonoType.Tuple(_) | MonoType.Enum(_, _) | MonoType.Struct(_, _) | MonoType.Arrow(_, _) |
-         MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
-         MonoType.ExtensibleExtend(_, _, _) | MonoType.ExtensibleEmpty | MonoType.Native(_) |
-         MonoType.Region | MonoType.Null =>
-      throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-  }
-
-  /**
-    * Computes the `BackendType` based on the given `MonoType`.
-    * Types are erased except for the types that have built-in support in
-    * the Java standard library.
-    * Additionally, [[MonoType.Native]] is <b>not</b> erased.
-    */
-  def toFlixErasedBackendType(tpe: MonoType): BackendType = tpe match {
-    case MonoType.Bool => BackendType.Bool
-    case MonoType.Char => BackendType.Char
-    case MonoType.Int8 => BackendType.Int8
-    case MonoType.Int16 => BackendType.Int16
-    case MonoType.Int32 => BackendType.Int32
-    case MonoType.Int64 => BackendType.Int64
-    case MonoType.Float32 => BackendType.Float32
-    case MonoType.Float64 => BackendType.Float64
-    case MonoType.Array(t) => BackendType.Array(toFlixErasedBackendType(t))
-    case MonoType.BigDecimal => BackendObjType.BigDecimal.toTpe
-    case MonoType.BigInt => BackendObjType.BigInt.toTpe
-    case MonoType.String => BackendObjType.String.toTpe
-    case MonoType.Regex => BackendObjType.Regex.toTpe
-    case MonoType.Native(clazz) => JvmName.ofClass(clazz).toTpe
-    case MonoType.Void | MonoType.AnyType | MonoType.Unit | MonoType.Lazy(_) | MonoType.Tuple(_) |
-         MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
-        MonoType.ExtensibleExtend(_, _, _) | MonoType.ExtensibleEmpty |
-         MonoType.Region | MonoType.Enum(_, _) | MonoType.Struct(_, _) | MonoType.Null =>
-      BackendObjType.JavaObject.toTpe
-  }
-
-  sealed trait PrimitiveType extends BackendType {
-    def toArrayTypeCode: Int = this match {
-      case Bool => Opcodes.T_BOOLEAN
-      case Char => Opcodes.T_CHAR
-      case Int8 => Opcodes.T_BYTE
-      case Int16 => Opcodes.T_SHORT
-      case Int32 => Opcodes.T_INT
-      case Int64 => Opcodes.T_LONG
-      case Float32 => Opcodes.T_FLOAT
-      case Float64 => Opcodes.T_DOUBLE
-    }
-  }
+  sealed trait PrimitiveType extends BackendType
 }

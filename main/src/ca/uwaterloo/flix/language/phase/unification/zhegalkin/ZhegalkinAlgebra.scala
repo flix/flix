@@ -17,20 +17,14 @@ package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolSubstitution}
 
-import java.util.concurrent.{ConcurrentHashMap, ConcurrentMap}
 import scala.collection.immutable.SortedSet
 
-object ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
+class ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
 
   /**
-   * Controls if the SVE cache is enabled.
-   */
-  var EnableSVECache: Boolean = false
-
-  /**
-   * A cache of SVE queries: a map from the query to its MGU (if it exists).
-   */
-  private val cachedSVE: ConcurrentMap[ZhegalkinExpr, BoolSubstitution[ZhegalkinExpr]] = new ConcurrentHashMap()
+    * Zhegalkin Cache
+    */
+  val Cache: ZhegalkinCache = new ZhegalkinCache
 
   override def isEquivBot(f: ZhegalkinExpr): Boolean = ZhegalkinExpr.isEmpty(f)
 
@@ -42,29 +36,21 @@ object ZhegalkinAlgebra extends BoolAlg[ZhegalkinExpr] {
 
   override def mkVar(id: Int): ZhegalkinExpr = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = true))
 
-  override def mkNot(f: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.mkCompl(f)
+  override def mkNot(f: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.mkCompl(f)(this)
 
-  override def mkOr(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.mkUnion(f1, f2)
+  override def mkOr(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.mkUnion(f1, f2)(this)
 
-  override def mkAnd(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.mkInter(f1, f2)
+  override def mkAnd(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.mkInter(f1, f2)(this)
 
   // Performance: We must override the default implementation of `mkXor` to increase performance.
-  override def mkXor(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.mkXor(f1, f2)
+  override def mkXor(f1: ZhegalkinExpr, f2: ZhegalkinExpr): ZhegalkinExpr = ZhegalkinExpr.mkXor(f1, f2)(this)
 
   override def freeVars(f: ZhegalkinExpr): SortedSet[Int] = f.freeVars.map(_.id)
 
-  override def map(f: ZhegalkinExpr)(fn: Int => ZhegalkinExpr): ZhegalkinExpr = f.map(fn)
+  override def map(f: ZhegalkinExpr)(fn: Int => ZhegalkinExpr): ZhegalkinExpr = f.map(fn)(this)
 
-  def lookupOrComputeSVE(q: ZhegalkinExpr, sve: ZhegalkinExpr => BoolSubstitution[ZhegalkinExpr]): BoolSubstitution[ZhegalkinExpr] = {
-    if (!EnableSVECache) {
-      return sve(q)
-    }
-
-    cachedSVE.computeIfAbsent(q, _ => sve(q))
-  }
-
-  def clearCache(): Unit = {
-    cachedSVE.clear()
+  override def lookupOrComputeSVE(q: ZhegalkinExpr, sve: ZhegalkinExpr => BoolSubstitution[ZhegalkinExpr]): BoolSubstitution[ZhegalkinExpr] = {
+    Cache.lookupOrComputeSVE(q, sve)
   }
 
 }

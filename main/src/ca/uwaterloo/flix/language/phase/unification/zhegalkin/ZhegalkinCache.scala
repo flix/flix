@@ -15,9 +15,11 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
+import ca.uwaterloo.flix.language.phase.unification.shared.BoolSubstitution
+
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentMap}
 
-object ZhegalkinCache {
+class ZhegalkinCache {
 
   /**
     * Controls what caches are enabled.
@@ -26,6 +28,7 @@ object ZhegalkinCache {
   var EnableUnionCache: Boolean = false
   var EnableInterCache: Boolean = true
   var EnableXorCache: Boolean = false
+  var EnableSVECache: Boolean = false
 
   /**
    * A cache that represents the intersection of the given Zhegalkin constant and expression.
@@ -56,11 +59,15 @@ object ZhegalkinCache {
   private val cachedXor: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap(8192, 0.5f)
 
   /**
+    * A cache of SVE queries: a map from the query to its MGU (if it exists).
+    */
+  private val cachedSVE: ConcurrentMap[ZhegalkinExpr, BoolSubstitution[ZhegalkinExpr]] = new ConcurrentHashMap()
+
+  /**
    * Returns the intersection of the given Zhegalkin constant `c` and the expression `e`.
    *
    * Performs a lookup in the cache or computes the result.
    */
-  @inline
   def lookupOrComputeInterCst(c: ZhegalkinCst, e: ZhegalkinExpr, mkInter: (ZhegalkinCst, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
     if (!EnableInterCstCache) {
       return mkInter(c, e)
@@ -73,7 +80,6 @@ object ZhegalkinCache {
     *
     * Performs a lookup in the cache or computes the result.
     */
-  @inline
   def lookupOrComputeUnion(e1: ZhegalkinExpr, e2: ZhegalkinExpr, mkUnion: (ZhegalkinExpr, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
     if (!EnableUnionCache) {
       return mkUnion(e1, e2)
@@ -86,7 +92,6 @@ object ZhegalkinCache {
     *
     * Performs a lookup in the cache or computes the result.
     */
-  @inline
   def lookupOrComputeInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr, mkInter: (ZhegalkinExpr, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
     if (!EnableInterCache) {
       return mkInter(e1, e2)
@@ -99,13 +104,25 @@ object ZhegalkinCache {
     *
     * Performs a lookup in the cache or computes the result.
     */
-  @inline
   def lookupOrComputeXor(e1: ZhegalkinExpr, e2: ZhegalkinExpr, mkXor: (ZhegalkinExpr, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
     if (!EnableXorCache) {
       return mkXor(e1, e2)
     }
 
     cachedXor.computeIfAbsent((e1, e2), _ => mkXor(e1, e2))
+  }
+
+  /**
+    * Returns the MGU of the given Zhegalkin query `q`.
+    *
+    * Performs a lookup in the cache or computes the result.
+    */
+  def lookupOrComputeSVE(q: ZhegalkinExpr, sve: ZhegalkinExpr => BoolSubstitution[ZhegalkinExpr]): BoolSubstitution[ZhegalkinExpr] = {
+    if (!EnableSVECache) {
+      return sve(q)
+    }
+
+    cachedSVE.computeIfAbsent(q, _ => sve(q))
   }
 
   /**
@@ -116,7 +133,7 @@ object ZhegalkinCache {
     cachedUnion.clear()
     cachedInter.clear()
     cachedXor.clear()
-    ZhegalkinAlgebra.clearCache()
+    cachedSVE.clear()
   }
 
 }
