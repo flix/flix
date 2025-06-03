@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, EqualityConstraint, Scope, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, Kind}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, TraitEnv}
@@ -153,14 +153,18 @@ object ConstraintSolverInterface {
       List(TypeError.MismatchedTypes(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
 
     case TypeConstraint.Trait(sym, tpe, loc) =>
-      if (sym == PredefinedTraits.lookupTraitSym("Eq", root)) {
-        List(TypeError.MissingInstanceEq(subst(tpe), renv, loc))
-      } else if (sym == PredefinedTraits.lookupTraitSym("Order", root)) {
-        List(TypeError.MissingInstanceOrder(subst(tpe), renv, loc))
-      } else if (sym == PredefinedTraits.lookupTraitSym("ToString", root)) {
-        List(TypeError.MissingInstanceToString(subst(tpe), renv, loc))
-      } else {
-        List(TypeError.MissingInstance(sym, subst(tpe), renv, loc))
+     tpe.typeConstructor match {
+        case Some(TypeConstructor.Arrow(_)) => List(TypeError.MissingInstanceArrow(sym, subst(tpe), renv, loc))
+        case _ =>
+          if (sym == PredefinedTraits.lookupTraitSym("Eq", root)) {
+            List(TypeError.MissingInstanceEq(subst(tpe), renv, loc))
+          } else if (sym == PredefinedTraits.lookupTraitSym("Order", root)) {
+            List(TypeError.MissingInstanceOrder(subst(tpe), renv, loc))
+          } else if (sym == PredefinedTraits.lookupTraitSym("ToString", root)) {
+            List(TypeError.MissingInstanceToString(subst(tpe), renv, loc))
+          } else {
+            List(TypeError.MissingInstance(sym, subst(tpe), renv, loc))
+          }
       }
     case TypeConstraint.Purification(sym, _, _, _, nested) =>
       nested.flatMap(toTypeErrors(_, renv, subst.branches.getOrElse(sym, SubstitutionTree.empty), root))
