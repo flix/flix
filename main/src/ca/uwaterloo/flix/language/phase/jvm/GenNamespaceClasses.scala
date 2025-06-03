@@ -38,7 +38,7 @@ object GenNamespaceClasses {
     //
     ParOps.parMap(namespaces) {
       case ns =>
-        val jvmName = JvmOps.getNamespaceClassType(ns)
+        val jvmName = BackendObjType.Namespace(ns.ns).jvmName
         jvmName -> JvmClass(jvmName, genBytecode(jvmName, ns))
     }.toMap
   }
