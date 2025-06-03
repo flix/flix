@@ -40,7 +40,7 @@ object ZhegalkinExpr {
       // Construct a new polynomial.
 
       // Compute non-empty terms (i.e. terms where the coefficient is non-empty).
-      val ts = terms.filter(t => !t.cst.s.isEmpty)
+      val ts = terms.filter(t => !t.cst.isEmpty)
 
       // Special case: If ts is empty then this could be 0 or 1.
       if (ts.isEmpty) {
