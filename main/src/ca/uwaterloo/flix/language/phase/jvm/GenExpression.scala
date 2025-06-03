@@ -1242,16 +1242,13 @@ object GenExpression {
 
       case DirectStaticContext(_, _, _) =>
         if (true) {
-          for ((arg, i) <- exps.zipWithIndex) {
+          val defn = root.defs(sym)
+          for ((arg, fp) <- exps.zip(defn.fparams)) {
             // Evaluate the argument and push the result on the stack.
             compileExpr(arg)
             // Store it in the ith parameter.
             val tpe = BackendType.toBackendType(arg.tpe)
-            val padding = arg.tpe match {
-              case MonoType.Float64 | MonoType.Int64 => 1
-              case _ => 0
-            }
-            val offset = ctx.localOffset + i + padding
+            val offset = fp.sym.getStackOffset(ctx.localOffset)
             BytecodeInstructions.xStore(tpe, offset)(new BytecodeInstructions.F(mv))
           }
           // Jump to the entry point of the method.
