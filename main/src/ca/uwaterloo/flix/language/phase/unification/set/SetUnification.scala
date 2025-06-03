@@ -424,7 +424,7 @@ object SetUnification {
     }
 
     // Convert all equations to Zhegalkin polynomials.
-    implicit val alg: ZhegalkinAlgebra = EffUnification3.Algebra
+    implicit val alg: ZhegalkinAlgebra[Unit] = EffUnification3.Algebra
     val l = eqs.map {
       case Equation(f1, f2, _, _) =>
         val x = Zhegalkin.toZhegalkin(f1)

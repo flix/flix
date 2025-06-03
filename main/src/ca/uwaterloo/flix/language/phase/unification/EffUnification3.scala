@@ -35,7 +35,7 @@ object EffUnification3 {
   /**
     * The Global Zhegalkin Algebra used for effects.
     */
-  val Algebra: ZhegalkinAlgebra = new ZhegalkinAlgebra
+  val Algebra: ZhegalkinAlgebra[Unit] = new ZhegalkinAlgebra[Unit]
 
   /**
     * Controls whether to enable solve-and-retry for subeffecting.
