@@ -400,7 +400,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    println(x -> x + 41i32)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError](result)
+    expectError[TypeError.MissingInstanceArrow](result)
   }
 
   test("Test.UnexpectedEffect.01") {

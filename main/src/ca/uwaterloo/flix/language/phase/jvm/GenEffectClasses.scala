@@ -48,7 +48,7 @@ import org.objectweb.asm.Opcodes.*
   */
 object GenEffectClasses {
 
-  def gen(effects: Iterable[Effect])(implicit flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(effects: Iterable[Effect])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     ParOps.parAgg(effects, Map.empty[JvmName, JvmClass])({
       case (macc, effect) =>
         val className = JvmOps.getEffectDefinitionClassName(effect.sym)
@@ -56,7 +56,7 @@ object GenEffectClasses {
     }, _ ++ _)
   }
 
-  private def genByteCode(effectName: JvmName, effect: Effect)(implicit flix: Flix): Array[Byte] = {
+  private def genByteCode(effectName: JvmName, effect: Effect)(implicit root: Root, flix: Flix): Array[Byte] = {
     val visitor = AsmOps.mkClassWriter()
 
     val interfaces = Array(BackendObjType.Handler.jvmName.toInternalName)
@@ -86,7 +86,7 @@ object GenEffectClasses {
     mv.visitEnd()
   }
 
-  private def genFieldAndMethod(visitor: ClassWriter, effectName: JvmName, op: Op): Unit = {
+  private def genFieldAndMethod(visitor: ClassWriter, effectName: JvmName, op: Op)(implicit root: Root): Unit = {
     // Field
     val writtenOpArgsMono = op.fparams.map(_.tpe)
     val arrowType = MonoType.Arrow(writtenOpArgsMono :+ MonoType.Object, MonoType.Object)
@@ -107,7 +107,7 @@ object GenEffectClasses {
     val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, opName, MethodDescriptor(methodArgs, BackendObjType.Result.toTpe).toDescriptor, null, null)
     mv.visitCode()
 
-    val wrapperType = BackendObjType.ResumptionWrapper(BackendType.asErasedBackendType(op.tpe))
+    val wrapperType = BackendObjType.ResumptionWrapper(BackendType.toBackendType(op.tpe))
     mv.visitByteIns({
       import BytecodeInstructions.*
       ALOAD(handlerOffset) ~

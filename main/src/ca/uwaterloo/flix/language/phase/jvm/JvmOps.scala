@@ -62,9 +62,9 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getFunctionInterfaceType(tpe: MonoType): BackendObjType.Arrow = tpe match {
+  def getFunctionInterfaceType(tpe: MonoType)(implicit root: Root): BackendObjType.Arrow = tpe match {
     case MonoType.Arrow(targs, tresult) =>
-      BackendObjType.Arrow(targs.map(BackendType.toErasedBackendType), BackendType.asErasedBackendType(tresult))
+      BackendObjType.Arrow(targs.map(BackendType.toErasedBackendType), BackendType.toBackendType(tresult))
     case _ =>
       throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
@@ -104,20 +104,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the function definition class for the given symbol.
-    *
-    * For example:
-    *
-    * print         =>  Def$print
-    * List.length   =>  List.Def$length
-    */
-  def getFunctionDefinitionClassName(sym: Symbol.DefnSym): JvmName = {
-    val pkg = sym.namespace
-    val name = JvmName.mkClassName("Def", sym.name)
-    JvmName(pkg, name)
-  }
-
-  /**
     * Returns the effect definition class for the given symbol.
     *
     * For example:
@@ -136,33 +122,6 @@ object JvmOps {
     */
   def getEffectOpName(op: Symbol.OpSym): String = {
     mangle(op.name)
-  }
-
-  /**
-    * Returns the namespace name for the given namespace `ns`.
-    *
-    * For example:
-    *
-    * <root>      =>  Root$
-    * Foo         =>  Foo
-    * Foo.Bar     =>  Foo.Bar
-    * Foo.Bar.Baz =>  Foo.Bar.Baz
-    */
-  def getNamespaceClassType(ns: NamespaceInfo): JvmName = {
-    getNamespaceName(ns.ns)
-  }
-
-  /**
-    * Returns the namespace name of the given definition symbol `sym`.
-    */
-  def getNamespaceName(sym: Symbol.DefnSym): JvmName = {
-    getNamespaceName(sym.namespace)
-  }
-
-  private def getNamespaceName(ns: List[String]): JvmName = {
-    val last = ns.lastOption.getOrElse(s"Root${Flix.Delimiter}")
-    val nsFixed = ns.dropRight(1)
-    JvmName(nsFixed, last)
   }
 
   /**
@@ -198,19 +157,19 @@ object JvmOps {
   /**
     * Returns the set of erased lazy types in `types` without searching recursively.
     */
-  def getErasedLazyTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Lazy] =
+  def getErasedLazyTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.Lazy] =
     types.foldLeft(Set.empty[BackendObjType.Lazy]) {
-      case (acc, MonoType.Lazy(tpe)) => acc + BackendObjType.Lazy(BackendType.asErasedBackendType(tpe))
+      case (acc, MonoType.Lazy(tpe)) => acc + BackendObjType.Lazy(BackendType.toBackendType(tpe))
       case (acc, _) => acc
     }
 
   /**
     * Returns the set of erased record extend types in `types` without searching recursively.
     */
-  def getErasedRecordExtendsOf(types: Iterable[MonoType]): Set[BackendObjType.RecordExtend] =
+  def getErasedRecordExtendsOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.RecordExtend] =
     types.foldLeft(Set.empty[BackendObjType.RecordExtend]) {
       case (acc, MonoType.RecordExtend(_, value, _)) =>
-        acc + BackendObjType.RecordExtend(BackendType.asErasedBackendType(value))
+        acc + BackendObjType.RecordExtend(BackendType.toBackendType(value))
       case (acc, _) => acc
     }
 
@@ -227,10 +186,10 @@ object JvmOps {
   /**
     * Returns the set of erased tuple types in `types` without searching recursively.
     */
-  def getErasedTupleTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Tuple] =
+  def getErasedTupleTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.Tuple] =
     types.foldLeft(Set.empty[BackendObjType.Tuple]) {
       case (acc, MonoType.Tuple(elms)) =>
-        acc + BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType))
+        acc + BackendObjType.Tuple(elms.map(BackendType.toBackendType))
       case (acc, _) => acc
     }
 
@@ -262,7 +221,7 @@ object JvmOps {
   /**
     * Returns the set of erased tag types in `types` without searching recursively.
     */
-  def getErasedTagTypesOf(root: Root, types: Iterable[MonoType]): Set[BackendObjType.TagType] =
+  def getErasedTagTypesOf(types: Iterable[MonoType])(implicit root: ReducedAst.Root): Set[BackendObjType.TagType] =
     types.foldLeft(Set.empty[BackendObjType.TagType]) {
       case (acc0, MonoType.Enum(sym, targs)) =>
         val tags = instantiateEnum(root.enums(sym), targs)
@@ -281,7 +240,7 @@ object JvmOps {
     *   - `instantiateEnum(E, List(Char)) = Map(A -> List(Char, Object), B -> List(Int32))`
     *     for `enum E[t] { case A(t, Object) case B(Int32) }`
     */
-  def instantiateEnum(enm: ReducedAst.Enum, targs: List[MonoType]): Map[Symbol.CaseSym, List[BackendType]] = {
+  def instantiateEnum(enm: ReducedAst.Enum, targs: List[MonoType])(implicit root: Root): Map[Symbol.CaseSym, List[BackendType]] = {
     assert(enm.tparams.length == targs.length)
     val map = enm.tparams.map(_.sym).zip(targs).toMap
     enm.cases.map {
@@ -304,8 +263,8 @@ object JvmOps {
     * @param tpe the type to instantiate, must be a polymorphic erased type
     *            (either [[Type.Var]], a primitive type, or `java.lang.Object`)
     */
-  private def instantiateType(m: Map[Symbol.KindedTypeVarSym, MonoType], tpe: Type): BackendType = tpe match {
-    case Type.Var(sym, _) => BackendType.asErasedBackendType(m(sym))
+  private def instantiateType(m: Map[Symbol.KindedTypeVarSym, MonoType], tpe: Type)(implicit root: Root): BackendType = tpe match {
+    case Type.Var(sym, _) => BackendType.toBackendType(m(sym))
     case Type.Cst(tc, _) => tc match {
       case TypeConstructor.Bool => BackendType.Bool
       case TypeConstructor.Char => BackendType.Char
@@ -329,12 +288,12 @@ object JvmOps {
   /**
     * Returns the set of erased extensible tag types in `types` without searching recursively.
     */
-  def getErasedExtensibleTagTypesOf(types: Iterable[MonoType]): Set[BackendObjType.TagType] =
+  def getErasedExtensibleTagTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.TagType] =
     types.foldLeft(Set.empty[BackendObjType.TagType]) {
       case (acc, MonoType.ExtensibleExtend(cons, targs, _)) =>
         targs match {
           case Nil => acc + BackendObjType.NullaryTag(cons.name)
-          case nary => acc + BackendObjType.Tag(nary.map(BackendType.asErasedBackendType))
+          case nary => acc + BackendObjType.Tag(nary.map(BackendType.toBackendType))
         }
       case (acc, _) => acc
     }

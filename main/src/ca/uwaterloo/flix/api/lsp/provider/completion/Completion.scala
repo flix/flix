@@ -27,6 +27,7 @@ import java.lang.reflect.{Field, Method}
   * A common super-type for auto-completions.
   */
 sealed trait Completion {
+
   /**
     * Returns a LSP completion item for `this`.
     */
@@ -136,22 +137,22 @@ sealed trait Completion {
         kind = CompletionItemKind.Variable
       )
 
-    case Completion.LocalJavaClassCompletion(name, clazz, range) =>
+    case Completion.LocalJavaClassCompletion(name, clazz, range, priority) =>
       val description = Option(clazz.getCanonicalName)
       val labelDetails = CompletionItemLabelDetails(None, description)
       CompletionItem(
         label = name,
         labelDetails = Some(labelDetails),
-        sortText = Priority.toSortText(Priority.High, name),
+        sortText = Priority.toSortText(priority, name),
         textEdit = TextEdit(range, name),
         kind = CompletionItemKind.Class
       )
 
-    case Completion.LocalDefCompletion(sym, fparams, range) =>
+    case Completion.LocalDefCompletion(sym, fparams, range, priority) =>
       val snippet = sym.text + fparams.zipWithIndex.map { case (fparam, idx) => s"$${${idx + 1}:${fparam.sym.text}}" }.mkString("(", ", ", ")")
       CompletionItem(
         label = sym.text,
-        sortText = Priority.toSortText(Priority.High, sym.text),
+        sortText = Priority.toSortText(priority, sym.text),
         textEdit = TextEdit(range, snippet),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Function
@@ -181,7 +182,7 @@ sealed trait Completion {
         command = Some(Command("editor.action.triggerParameterHints", "editor.action.triggerParameterHints", Nil))
       )
 
-    case Completion.EnumCompletion(enm, range, ap, qualified, inScope, withTypeParameters) =>
+    case Completion.EnumCompletion(enm, range, priority, ap, qualified, inScope, withTypeParameters) =>
       val qualifiedName = enm.sym.toString
       val name = if (qualified) qualifiedName else enm.sym.name
       val description = if (!qualified) {
@@ -189,7 +190,6 @@ sealed trait Completion {
       } else None
       val labelDetails = CompletionItemLabelDetails(None, description)
       val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
-      val priority = if (inScope) Priority.High else Priority.Lower
       val snippet = if (withTypeParameters)
         name + CompletionUtils.formatTParamsSnippet(enm.tparams)
       else
@@ -210,7 +210,7 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.StructCompletion(struct, range, ap, qualified, inScope) =>
+    case Completion.StructCompletion(struct, range, priority, ap, qualified, inScope) =>
       val qualifiedName = struct.sym.toString
       val name = if (qualified) qualifiedName else struct.sym.name
       val label = name + CompletionUtils.formatTParams(struct.tparams)
@@ -220,7 +220,6 @@ sealed trait Completion {
       } else None
       val labelDetails = CompletionItemLabelDetails(None, description)
       val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
-      val priority: Priority = if (inScope) Priority.High else Priority.Lower
       CompletionItem(
         label = label,
         labelDetails = Some(labelDetails),
@@ -232,7 +231,7 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.TraitCompletion(trt, range, ap, qualified, inScope, withTypeParameter) =>
+    case Completion.TraitCompletion(trt, range, priority, ap, qualified, inScope, withTypeParameter) =>
       val qualifiedName = trt.sym.toString
       val name = if (qualified) qualifiedName else trt.sym.name
       val description = if (!qualified) {
@@ -240,7 +239,6 @@ sealed trait Completion {
       } else None
       val labelDetails = CompletionItemLabelDetails(None, description)
       val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
-      val priority: Priority = if (inScope) Priority.High else Priority.Lower
       val label = if (withTypeParameter) name + CompletionUtils.formatTParams(List(trt.tparam)) else name
       val snippet = if (withTypeParameter) name + CompletionUtils.formatTParamsSnippet(List(trt.tparam)) else name
       CompletionItem(
@@ -364,7 +362,7 @@ sealed trait Completion {
         command = Some(Command("editor.action.triggerParameterHints", "editor.action.triggerParameterHints", Nil))
       )
 
-    case Completion.OpHandlerCompletion(op, range) =>
+    case Completion.OpHandlerCompletion(op, range, priority) =>
       val name = op.sym.name
       val snippet = CompletionUtils.getOpHandlerSnippet(name, op.spec.fparams)
       val description = Some(name)
@@ -372,7 +370,7 @@ sealed trait Completion {
       CompletionItem(
         label = name,
         labelDetails = Some(labelDetails),
-        sortText = Priority.toSortText(Priority.High, name),
+        sortText = Priority.toSortText(priority, name),
         textEdit = TextEdit(range, snippet),
         detail = Some(FormatScheme.formatScheme(op.spec.declaredScheme)(flix)),
         documentation = Some(op.spec.doc.text),
@@ -464,14 +462,14 @@ sealed trait Completion {
         kind = kind
       )
 
-    case Completion.FieldCompletion(ident, field) =>
+    case Completion.FieldCompletion(ident, priority, field) =>
       val label = field.getName
       val text = field.getName
       val range = Range.from(ident.loc)
 
       CompletionItem(
         label = label,
-        sortText = Priority.toSortText(Priority.Lowest, label),
+        sortText = Priority.toSortText(priority, label),
         textEdit = TextEdit(range, text),
         insertTextFormat = InsertTextFormat.PlainText,
         kind = CompletionItemKind.Method
@@ -486,7 +484,7 @@ sealed trait Completion {
         kind = CompletionItemKind.Property,
       )
 
-    case Completion.MethodCompletion(ident, method) =>
+    case Completion.MethodCompletion(ident, priority, method) =>
       val argsWithName = method.getParameters.map(_.getName)
       val argsWithNameAndType = method.getParameters.map(p => p.getName + ": " + p.getType.getSimpleName)
       val returnType = method.getReturnType.getSimpleName
@@ -503,7 +501,7 @@ sealed trait Completion {
       CompletionItem(
         label = label,
         labelDetails = Some(labelDetails),
-        sortText = Priority.toSortText(Priority.Lowest, label),
+        sortText = Priority.toSortText(priority, label),
         textEdit = TextEdit(range, text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Method
@@ -655,20 +653,22 @@ object Completion {
   /**
     * Represents a Java Class completion
     *
-    * @param name  the name of the java class to complete.
-    * @param clazz the java class to complete.
-    * @param range the range of the completion.
+    * @param name     the name of the java class to complete.
+    * @param clazz    the java class to complete.
+    * @param range    the range of the completion.
+    * @param priority the priority of the completion.
     */
-  case class LocalJavaClassCompletion(name: String, clazz: Class[?], range: Range) extends Completion
+  case class LocalJavaClassCompletion(name: String, clazz: Class[?], range: Range, priority: Priority) extends Completion
 
   /**
     * Represents a local def completion
     *
-    * @param sym     the symbol of the local function
-    * @param fparams the formal parameters of the local function
-    * @param range   the range of the completion.
+    * @param sym      the symbol of the local function
+    * @param fparams  the formal parameters of the local function
+    * @param range    the range of the completion.
+    * @param priority the priority of the completion.
     */
-  case class LocalDefCompletion(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam], range: Range) extends Completion
+  case class LocalDefCompletion(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam], range: Range, priority: Priority) extends Completion
 
   /**
     * Represents a Def completion
@@ -689,35 +689,38 @@ object Completion {
     *
     * @param enm                the enum construct.
     * @param range              the range of the completion
+    * @param priority           the priority of the completion.
     * @param ap                 the anchor position for the use statement.
     * @param qualified          indicate whether to use a qualified label.
     * @param inScope            indicate whether to the enum is inScope.
     * @param withTypeParameters indicate whether to include type parameters in the completion.
     */
-  case class EnumCompletion(enm: TypedAst.Enum, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, withTypeParameters: Boolean) extends Completion
+  case class EnumCompletion(enm: TypedAst.Enum, range: Range, priority: Priority, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, withTypeParameters: Boolean) extends Completion
 
   /**
     * Represents a struct completion
     *
     * @param struct    the struct construct.
     * @param range     the range of the completion.
+    * @param priority  the priority of the completion.
     * @param ap        the anchor position for the use statement.
     * @param qualified indicate whether to use a qualified label.
     * @param inScope   indicate whether to the enum is inScope.
     */
-  case class StructCompletion(struct: TypedAst.Struct, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class StructCompletion(struct: TypedAst.Struct, range: Range, priority: Priority, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
 
   /**
     * Represents a trait completion
     *
     * @param trt               trait construct.
     * @param range             the range of the completion.
+    * @param priority          the priority of the completion.
     * @param ap                the anchor position for the use statement.
     * @param qualified         indicate whether to use a qualified label.
     * @param inScope           indicate whether to the trait is inScope.
     * @param withTypeParameter indicate whether to include the type parameter in the completion.
     */
-  case class TraitCompletion(trt: TypedAst.Trait, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, withTypeParameter: Boolean) extends Completion
+  case class TraitCompletion(trt: TypedAst.Trait, range: Range, priority: Priority, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, withTypeParameter: Boolean) extends Completion
 
   /**
     * Represents a trait completion
@@ -781,10 +784,11 @@ object Completion {
   /**
     * Represents an Op Handler completion
     *
-    * @param op    the op.
-    * @param range the range of the completion.
+    * @param op       the op.
+    * @param range    the range of the completion.
+    * @param priority the priority of the completion.
     */
-  case class OpHandlerCompletion(op: TypedAst.Op, range: Range) extends Completion
+  case class OpHandlerCompletion(op: TypedAst.Op, range: Range, priority: Priority) extends Completion
 
   /**
     * Represents a Signature completion
@@ -846,18 +850,20 @@ object Completion {
   /**
     * Represents a Java field completion.
     *
-    * @param ident the partial field name.
-    * @param field the candidate field.
+    * @param ident    the partial field name.
+    * @param priority the priority of the completion.
+    * @param field    the candidate field.
     */
-  case class FieldCompletion(ident: Name.Ident, field: Field) extends Completion
+  case class FieldCompletion(ident: Name.Ident, priority: Priority, field: Field) extends Completion
 
   /**
     * Represents a Java method completion.
     *
-    * @param ident  the partial method name.
-    * @param method the candidate method.
+    * @param ident    the partial method name.
+    * @param priority the priority of the completion.
+    * @param method   the candidate method.
     */
-  case class MethodCompletion(ident: Name.Ident, method: Method) extends Completion
+  case class MethodCompletion(ident: Name.Ident, priority: Priority, method: Method) extends Completion
 
   /**
     * Represents a hole completion.

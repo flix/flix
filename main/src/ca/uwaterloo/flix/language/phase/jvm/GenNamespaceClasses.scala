@@ -38,7 +38,7 @@ object GenNamespaceClasses {
     //
     ParOps.parMap(namespaces) {
       case ns =>
-        val jvmName = JvmOps.getNamespaceClassType(ns)
+        val jvmName = BackendObjType.Namespace(ns.ns).jvmName
         jvmName -> JvmClass(jvmName, genBytecode(jvmName, ns))
     }.toMap
   }
@@ -70,7 +70,7 @@ object GenNamespaceClasses {
   /**
     * Adding a shim for the function `defn` on namespace `ns`
     */
-  private def compileShimMethod(visitor: ClassWriter, defn: Def): Unit = {
+  private def compileShimMethod(visitor: ClassWriter, defn: Def)(implicit root: Root): Unit = {
     // Name of the shim
     val name = JvmOps.getDefMethodNameInNamespaceClass(defn)
 
