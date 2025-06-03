@@ -1157,13 +1157,14 @@ object GenExpression {
         val targetIsFunction = defn.cparams.isEmpty
         val canCallStaticMethod = Purity.isControlPure(purity) && targetIsFunction
         if (canCallStaticMethod) {
+          val paramTpes = defn.fparams.map(fp => BackendType.toBackendType(fp.tpe))
           // Call the static method, using exact types
-          for (arg <- exps) {
+          for ((arg, tpe) <- exps.zip(paramTpes)) {
             compileExpr(arg)
+            BytecodeInstructions.castIfNotPrim(tpe)(new BytecodeInstructions.F(mv))
           }
-          val paramsTpes = defn.fparams.map(fp => BackendType.toBackendType(fp.tpe))
           val resultTpe = BackendObjType.Result.toTpe
-          val desc = MethodDescriptor(paramsTpes, resultTpe)
+          val desc = MethodDescriptor(paramTpes, resultTpe)
           val className = JvmOps.getFunctionDefinitionClassName(sym)
           mv.visitMethodInsn(INVOKESTATIC, className.toInternalName, JvmName.DirectApply, desc.toDescriptor, false)
           BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)(new BytecodeInstructions.F(mv))
