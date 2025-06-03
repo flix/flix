@@ -64,7 +64,7 @@ object JvmBackend {
     }.map(bt => genClass(bt, bt.genByteCode())).toMap
 
     val taggedAbstractClass = Map(genClass(BackendObjType.Tagged, BackendObjType.Tagged.genByteCode()))
-    val tagClasses = JvmOps.getErasedTagTypesOf(root, allTypes).map(bt => genClass(bt, bt.genByteCode())).toMap
+    val tagClasses = JvmOps.getErasedTagTypesOf(allTypes).map(bt => genClass(bt, bt.genByteCode())).toMap
     val extensibleTagClasses = JvmOps.getErasedExtensibleTagTypesOf(allTypes).map(bt => genClass(bt, bt.genByteCode())).toMap
 
     val tupleClasses = JvmOps.getErasedTupleTypesOf(allTypes).map(bt => genClass(bt, bt.genByteCode())).toMap
