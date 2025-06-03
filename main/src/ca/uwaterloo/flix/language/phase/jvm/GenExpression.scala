@@ -1161,8 +1161,7 @@ object GenExpression {
               mv.visitLabel(afterUnboxing)
 
             case DirectContext(_, _, _) =>
-              // Required for functions that use purity casts
-              mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc))
+              throw InternalCompilerException(s"Unexpected direct method context in control impure function: $sym", loc)
           }
         }
     }
