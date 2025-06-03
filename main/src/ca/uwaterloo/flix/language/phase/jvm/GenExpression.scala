@@ -1201,16 +1201,14 @@ object GenExpression {
       // Jump to the entry point of the method.
       mv.visitJumpInsn(GOTO, ctx.entryPoint)
 
-    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      val ifElse = new Label()
-      val ifEnd = new Label()
-      compileExpr(exp1)
-      mv.visitJumpInsn(IFEQ, ifElse)
-      compileExpr(exp2)
-      mv.visitJumpInsn(GOTO, ifEnd)
-      mv.visitLabel(ifElse)
-      compileExpr(exp3)
-      mv.visitLabel(ifEnd)
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => mv.visitByteIns({
+      import BytecodeInstructions.*
+      pushExpr(exp1) ~
+        branch(Condition.Bool){
+          case Branch.TrueBranch => pushExpr(exp2)
+          case Branch.FalseBranch => pushExpr(exp3)
+        }
+    })
 
     case Expr.Branch(exp, branches, _, _, _) =>
       // Calculating the updated jumpLabels map
