@@ -1156,7 +1156,7 @@ object GenExpression {
         val defn = root.defs(sym)
         val targetIsFunction = defn.cparams.isEmpty
         val canCallStaticMethod = Purity.isControlPure(purity) && targetIsFunction
-        if (canCallStaticMethod) {
+        if (canCallStaticMethod && false) {
           // Call the static method, using exact types
           for (arg <- exps) {
             compileExpr(arg)
@@ -1241,16 +1241,30 @@ object GenExpression {
         mv.visitJumpInsn(GOTO, ctx.entryPoint)
 
       case DirectStaticContext(_, _, _) =>
-        for ((arg, i) <- exps.zipWithIndex) {
-          // Evaluate the argument and push the result on the stack.
-          compileExpr(arg)
-          // Store it in the ith parameter.
-          // We use the erased type since we only care about generating the correct store instruction.
-          val tpe = BackendType.toBackendType(arg.tpe)
-          BytecodeInstructions.xStore(tpe, ctx.localOffset + i)(new BytecodeInstructions.F(mv))
+        if (false) {
+          for ((arg, i) <- exps.zipWithIndex) {
+            // Evaluate the argument and push the result on the stack.
+            compileExpr(arg)
+            // Store it in the ith parameter.
+            val tpe = BackendType.toBackendType(arg.tpe)
+            BytecodeInstructions.xStore(tpe, ctx.localOffset + i)(new BytecodeInstructions.F(mv))
+          }
+          // Jump to the entry point of the method.
+          mv.visitJumpInsn(GOTO, ctx.entryPoint)
+        } else {
+          // The function abstract class name
+          val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType).jvmName
+          // Evaluate each argument and put the result on the Fn class.
+          for ((arg, i) <- exps.zipWithIndex) {
+            mv.visitVarInsn(ALOAD, 0)
+            // Evaluate the argument and push the result on the stack.
+            compileExpr(arg)
+            mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
+              s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+          }
+          // Jump to the entry point of the method.
+          mv.visitJumpInsn(GOTO, ctx.entryPoint)
         }
-        // Jump to the entry point of the method.
-        mv.visitJumpInsn(GOTO, ctx.entryPoint)
     }
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => mv.visitByteIns({
