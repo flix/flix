@@ -233,7 +233,7 @@ sealed trait Completion {
         additionalTextEdits = additionalTextEdit
       )
 
-    case Completion.TraitCompletion(trt, range, ap, qualified, inScope, withTypeParameter) =>
+    case Completion.TraitCompletion(trt, range, priority, ap, qualified, inScope, withTypeParameter) =>
       val qualifiedName = trt.sym.toString
       val name = if (qualified) qualifiedName else trt.sym.name
       val description = if (!qualified) {
@@ -241,7 +241,6 @@ sealed trait Completion {
       } else None
       val labelDetails = CompletionItemLabelDetails(None, description)
       val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
-      val priority: Priority = if (inScope) Priority.High else Priority.Lower
       val label = if (withTypeParameter) name + CompletionUtils.formatTParams(List(trt.tparam)) else name
       val snippet = if (withTypeParameter) name + CompletionUtils.formatTParamsSnippet(List(trt.tparam)) else name
       CompletionItem(
@@ -717,12 +716,13 @@ object Completion {
     *
     * @param trt               trait construct.
     * @param range             the range of the completion.
+    * @param priority          the priority of the completion.
     * @param ap                the anchor position for the use statement.
     * @param qualified         indicate whether to use a qualified label.
     * @param inScope           indicate whether to the trait is inScope.
     * @param withTypeParameter indicate whether to include the type parameter in the completion.
     */
-  case class TraitCompletion(trt: TypedAst.Trait, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, withTypeParameter: Boolean) extends Completion
+  case class TraitCompletion(trt: TypedAst.Trait, range: Range, priority: Priority, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, withTypeParameter: Boolean) extends Completion
 
   /**
     * Represents a trait completion
