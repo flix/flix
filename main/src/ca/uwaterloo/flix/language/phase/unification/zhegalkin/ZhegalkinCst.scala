@@ -49,6 +49,9 @@ object ZhegalkinCst {
 
 /** Represents a set Zhegalkin constant (i.e. a set or co-set). A thin wrapper around [[CofiniteIntSet]]. */
 case class ZhegalkinCst(s: CofiniteIntSet) {
+  /** Returns `true` if `this` Zhegalkin constant is empty. */
+  def isEmpty: Boolean = s.isEmpty
+
   /** Returns the complement of `this` Zhegalkin constant. */
   def compl: ZhegalkinCst = ZhegalkinCst.mkCst(CofiniteIntSet.complement(s))
 
