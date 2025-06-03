@@ -950,12 +950,14 @@ object GenExpression {
         // Push Unit on the stack.
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
-      case AtomicOp.Throw =>
-        // Add source line number for debugging (can fail when handling exception)
-        addSourceLine(mv, loc)
+      case AtomicOp.Throw => mv.visitByteIns({
+        import BytecodeInstructions.*
         val List(exp) = exps
-        compileExpr(exp)
-        mv.visitInsn(ATHROW)
+        // Add source line number for debugging (can fail when handling exception).
+        addLoc(loc) ~
+          pushExpr(exp) ~
+          ATHROW()
+      })
 
       case AtomicOp.Spawn => mv.visitByteIns({
         import BytecodeInstructions.*
