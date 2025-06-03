@@ -1158,7 +1158,7 @@ object GenExpression {
         val canCallStaticMethod = Purity.isControlPure(purity) && targetIsFunction
         if (canCallStaticMethod) {
           // Call the static method, using exact types
-          for ((arg, tpe) <- exps.zip(defn.fparams.map(_.tpe))) {
+          for (arg <- exps) {
             compileExpr(arg)
           }
           val paramsTpes = defn.fparams.map(fp => BackendType.toBackendType(fp.tpe))
