@@ -28,8 +28,6 @@ import java.lang.reflect.{Field, Method}
   */
 sealed trait Completion {
 
-  def priority: Priority
-
   /**
     * Returns a LSP completion item for `this`.
     */
