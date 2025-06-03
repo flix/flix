@@ -629,30 +629,18 @@ object GenExpression {
           INVOKESPECIAL(tupleType.Constructor)
       })
 
-      case AtomicOp.RecordSelect(field) =>
+      case AtomicOp.RecordSelect(field) => mv.visitByteIns({
+        import BytecodeInstructions.*
         val List(exp) = exps
-
-        val interfaceType = BackendObjType.Record
-
-        // Compile the expression exp (which should be a record), as we need to have on the stack a record in order to call
-        // lookupField
-        compileExpr(exp)
-
-        // Push the desired label of the field we want get of the record onto the stack
-        mv.visitLdcInsn(field.name)
-
-        // Invoke the lookupField method on the record. (To get the proper record object)
-        mv.visitMethodInsn(INVOKEINTERFACE, interfaceType.jvmName.toInternalName, "lookupField",
-          MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(interfaceType.toTpe).toDescriptor, true)
-
-        // Now that the specific RecordExtend object is found, we cast it to its exact class
         val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(tpe))
-        val recordInternalName = recordType.jvmName.toInternalName
 
-        mv.visitTypeInsn(CHECKCAST, recordInternalName)
-
-        // Retrieve the value field  (To get the proper value)
-        mv.visitFieldInsn(GETFIELD, recordInternalName, recordType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
+        pushExpr(exp) ~
+          pushString(field.name) ~
+          INVOKEINTERFACE(BackendObjType.Record.LookupFieldMethod) ~
+          // Now that the specific RecordExtend object is found, we cast it to its exact class and extract the value.
+          CHECKCAST(recordType.jvmName) ~
+          GETFIELD(recordType.ValueField)
+      })
 
       case AtomicOp.RecordExtend(field) => mv.visitByteIns({
         import BytecodeInstructions.*
