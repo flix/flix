@@ -33,14 +33,14 @@ import scala.jdk.CollectionConverters.*
   *   1. Collect a list of the local parameters of each def
   *   1. Collect a set of all anonymous class / new object expressions
   *   1. Collect a flat set of all types of the program, i.e., if `List[String]` is
-  *   in the list, so is `String`.
+  *      in the list, so is `String`.
   */
 object Reducer {
 
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Reducer") {
     implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue, new ConcurrentHashMap())
 
-    val newDefs = ParOps.parMapValues(root.defs)(visitDef)
+    val newDefs = ParOps.parMapValues(root.defs)(visitDef(_)(root, ctx))
     val defTypes = ctx.defTypes.keys.asScala.toSet
 
     // This is an over approximation of the types in enums and structs since they are erased.
@@ -53,7 +53,7 @@ object Reducer {
     root.copy(defs = newDefs, anonClasses = ctx.anonClasses.asScala.toList, types = types)
   }
 
-  private def visitDef(d: Def)(implicit ctx: SharedContext): Def = d match {
+  private def visitDef(d: Def)(implicit root: Root, ctx: SharedContext): Def = d match {
     case Def(ann, mod, sym, cparams, fparams, lparams, _, exp, tpe, unboxedType, loc) =>
       implicit val lctx: LocalContext = LocalContext.mk()
       assert(lparams.isEmpty, s"Unexpected def local params before Reducer: $lparams")
@@ -74,7 +74,7 @@ object Reducer {
       Def(ann, mod, sym, cparams, fparams, ls, pcPoints, e, tpe, unboxedType, loc)
   }
 
-  private def visitExpr(exp0: Expr)(implicit lctx: LocalContext, ctx: SharedContext): Expr = {
+  private def visitExpr(exp0: Expr)(implicit lctx: LocalContext, root: Root, ctx: SharedContext): Expr = {
     ctx.defTypes.put(exp0.tpe, ())
     exp0 match {
       case Expr.Cst(cst, tpe, loc) =>
@@ -94,7 +94,8 @@ object Reducer {
         Expr.ApplyClo(e1, e2, ct, tpe, purity, loc)
 
       case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
-        if (ct == ExpPosition.NonTail && Purity.isControlImpure(purity)) lctx.pcPoints += 1
+        val defn = root.defs(sym)
+        if (ct == ExpPosition.NonTail && Purity.isControlImpure(defn.expr.purity)) lctx.pcPoints += 1
         val es = exps.map(visitExpr)
         Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
