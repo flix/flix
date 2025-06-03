@@ -35,7 +35,7 @@ object Loader {
     //
     for ((sym, defn) <- root.defs if root.entryPoints.contains(sym)) {
       // Retrieve the namespace name
-      val nsName = JvmOps.getNamespaceName(sym)
+      val nsName = BackendObjType.Namespace(sym.namespace).jvmName
 
       // Retrieve the reflective class object.
       val nsClass = loadedClasses.getOrElse(nsName, throw InternalCompilerException(s"Unknown namespace: '$nsName'.", sym.loc))

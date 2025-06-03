@@ -104,20 +104,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the function definition class for the given symbol.
-    *
-    * For example:
-    *
-    * print         =>  Def$print
-    * List.length   =>  List.Def$length
-    */
-  def getFunctionDefinitionClassName(sym: Symbol.DefnSym): JvmName = {
-    val pkg = sym.namespace
-    val name = JvmName.mkClassName("Def", sym.name)
-    JvmName(pkg, name)
-  }
-
-  /**
     * Returns the effect definition class for the given symbol.
     *
     * For example:
@@ -136,33 +122,6 @@ object JvmOps {
     */
   def getEffectOpName(op: Symbol.OpSym): String = {
     mangle(op.name)
-  }
-
-  /**
-    * Returns the namespace name for the given namespace `ns`.
-    *
-    * For example:
-    *
-    * <root>      =>  Root$
-    * Foo         =>  Foo
-    * Foo.Bar     =>  Foo.Bar
-    * Foo.Bar.Baz =>  Foo.Bar.Baz
-    */
-  def getNamespaceClassType(ns: NamespaceInfo): JvmName = {
-    getNamespaceName(ns.ns)
-  }
-
-  /**
-    * Returns the namespace name of the given definition symbol `sym`.
-    */
-  def getNamespaceName(sym: Symbol.DefnSym): JvmName = {
-    getNamespaceName(sym.namespace)
-  }
-
-  private def getNamespaceName(ns: List[String]): JvmName = {
-    val last = ns.lastOption.getOrElse(s"Root${Flix.Delimiter}")
-    val nsFixed = ns.dropRight(1)
-    JvmName(nsFixed, last)
   }
 
   /**
