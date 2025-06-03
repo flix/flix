@@ -28,8 +28,8 @@ object ZhegalkinExpr {
     * A Zhegalkin expression is of the form: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn
     */
   def mkZhegalkinExpr[T](cst: ZhegalkinCst, terms: List[ZhegalkinTerm])(implicit alg: ZhegalkinAlgebra[T]): ZhegalkinExpr[T] = (cst, terms) match {
-    case (ZhegalkinCst.empty, Nil) => alg.zero
-    case (ZhegalkinCst.universe, Nil) => alg.one
+    case (alg.empty, Nil) => alg.zero
+    case (alg.universe, Nil) => alg.one
     case _ =>
       // Construct a new polynomial.
 
@@ -38,10 +38,10 @@ object ZhegalkinExpr {
 
       // Special case: If ts is empty then this could be 0 or 1.
       if (ts.isEmpty) {
-        if (cst eq ZhegalkinCst.empty) {
+        if (cst eq alg.empty) {
           return alg.zero
         }
-        if (cst eq ZhegalkinCst.universe) {
+        if (cst eq alg.universe) {
           return alg.one
         }
       }
@@ -51,7 +51,7 @@ object ZhegalkinExpr {
   }
 
   /** Returns a Zhegalkin expression that represents a single variable, i.e. x ~~ Ø ⊕ (𝓤 ∩ x) */
-  def mkVar[T](x: ZhegalkinVar): ZhegalkinExpr[T] = ZhegalkinExpr(ZhegalkinCst.empty, List(ZhegalkinTerm(ZhegalkinCst.universe, SortedSet(x))))
+  def mkVar[T](x: ZhegalkinVar)(implicit alg: ZhegalkinAlgebra[T]): ZhegalkinExpr[T] = ZhegalkinExpr(alg.empty, List(ZhegalkinTerm(alg.universe, SortedSet(x))))
 
   /**
     * Returns `true` if the given Zhegalkin expression `e` represents the empty set.
@@ -73,8 +73,8 @@ object ZhegalkinExpr {
 
     // Performance: A common case.
     // Ø ⊕ (𝓤 ∩ x1 ∩ ...) ⊕ (𝓤 ∩ x2 ∩ ...) --> 𝓤 ⊕ (𝓤 ∩ x1 ∩ ...) ⊕ (𝓤 ∩ x2 ∩ ...)
-    if ((e.cst eq ZhegalkinCst.empty) && e.terms.forall(t => t.cst eq ZhegalkinCst.universe)) {
-      return e.copy(cst = ZhegalkinCst.universe)
+    if ((e.cst eq alg.empty) && e.terms.forall(t => t.cst eq alg.universe)) {
+      return e.copy(cst = alg.universe)
     }
 
     // ¬a = 1 ⊕ a
@@ -126,7 +126,7 @@ object ZhegalkinExpr {
       val termsGroupedByVarSet = allTermsNonDup.groupBy(_.vars).toList
       val mergedTerms = termsGroupedByVarSet.map {
         case (vars, l) =>
-          val mergedCst: ZhegalkinCst = l.foldLeft(ZhegalkinCst.empty) { // Neutral element for Xor.
+          val mergedCst: ZhegalkinCst = l.foldLeft(alg.empty) { // Neutral element for Xor.
             case (acc, t) => ZhegalkinCst.mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A.
           }
           ZhegalkinTerm(mergedCst, vars)
@@ -237,7 +237,7 @@ object ZhegalkinExpr {
     *   c ∩ (c2 ∩ x1 ∩ x2 ∩ ... ∩ xn) = (c ∩ c2) ∩ x1 ∩ x2 ∩ ... ∩ xn)
     * }}}
     */
-  private def mkInterConstantTerm(c: ZhegalkinCst, t: ZhegalkinTerm): ZhegalkinTerm = t match {
+  private def mkInterConstantTerm[T](c: ZhegalkinCst, t: ZhegalkinTerm)(implicit alg: ZhegalkinAlgebra[T]): ZhegalkinTerm = t match {
     case ZhegalkinTerm(c2, vars) =>
       if (c == c2) {
         return t
@@ -256,9 +256,9 @@ object ZhegalkinExpr {
     */
   private def mkInterTermExpr[T](t: ZhegalkinTerm, e: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T]): ZhegalkinExpr[T] = e match {
     case ZhegalkinExpr(c2, terms) =>
-      val zero: ZhegalkinExpr[T] = mkZhegalkinExpr(ZhegalkinCst.empty, List(mkInterConstantTerm(c2, t)))
+      val zero: ZhegalkinExpr[T] = mkZhegalkinExpr(alg.empty, List(mkInterConstantTerm(c2, t)))
       terms.foldLeft(zero) {
-        case (acc, t2) => mkXor(acc, mkZhegalkinExpr(ZhegalkinCst.empty, List(mkInterTermTerm(t, t2))))
+        case (acc, t2) => mkXor(acc, mkZhegalkinExpr(alg.empty, List(mkInterTermTerm(t, t2))))
       }
   }
 
@@ -270,7 +270,7 @@ object ZhegalkinExpr {
     * }}}
     */
   //
-  private def mkInterTermTerm(t1: ZhegalkinTerm, t2: ZhegalkinTerm): ZhegalkinTerm = {
+  private def mkInterTermTerm[T](t1: ZhegalkinTerm, t2: ZhegalkinTerm)(implicit alg: ZhegalkinAlgebra[T]): ZhegalkinTerm = {
     // a ∩ a = a
     if (t1 eq t2) {
       return t1

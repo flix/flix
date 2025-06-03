@@ -16,16 +16,23 @@
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolSubstitution}
+import ca.uwaterloo.flix.util.collection.CofiniteIntSet
 
 import scala.collection.immutable.SortedSet
 
 class ZhegalkinAlgebra[T] extends BoolAlg[ZhegalkinExpr[T]] {
 
+  /** A Zhegalkin constant that represents the empty set. */
+  val empty: ZhegalkinCst = ZhegalkinCst(CofiniteIntSet.empty)
+
+  /** A Zhegalkin constant that represents the universe. */
+  val universe: ZhegalkinCst = ZhegalkinCst(CofiniteIntSet.universe)
+
   /** A Zhegalkin expression that represents the empty set, i.e. the zero element of the algebra. */
-  val zero: ZhegalkinExpr[T] = ZhegalkinExpr(ZhegalkinCst.empty, Nil)
+  val zero: ZhegalkinExpr[T] = ZhegalkinExpr(empty, Nil)
 
   /** A Zhegalkin expression that represents the universe, i.e. the one element of the algebra. */
-  val one: ZhegalkinExpr[T] = ZhegalkinExpr(ZhegalkinCst.universe, Nil)
+  val one: ZhegalkinExpr[T] = ZhegalkinExpr(universe, Nil)
 
   /** Zhegalkin Cache. */
   val Cache: ZhegalkinCache[T] = new ZhegalkinCache[T]
@@ -36,9 +43,9 @@ class ZhegalkinAlgebra[T] extends BoolAlg[ZhegalkinExpr[T]] {
 
   override def mkTop: ZhegalkinExpr[T] = one
 
-  override def mkCst(id: Int): ZhegalkinExpr[T] = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = false))
+  override def mkCst(id: Int): ZhegalkinExpr[T] = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = false))(this)
 
-  override def mkVar(id: Int): ZhegalkinExpr[T] = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = true))
+  override def mkVar(id: Int): ZhegalkinExpr[T] = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = true))(this)
 
   override def mkNot(f: ZhegalkinExpr[T]): ZhegalkinExpr[T] = ZhegalkinExpr.mkCompl(f)(this)
 

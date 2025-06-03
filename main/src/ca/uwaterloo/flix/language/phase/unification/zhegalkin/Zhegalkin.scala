@@ -29,8 +29,8 @@ object Zhegalkin {
   def toZhegalkin[T](f: SetFormula)(implicit alg: ZhegalkinAlgebra[T]): ZhegalkinExpr[T] = f match {
     case SetFormula.Univ => alg.one
     case SetFormula.Empty => alg.zero
-    case Cst(c) => ZhegalkinExpr(ZhegalkinCst.empty, List(ZhegalkinTerm(ZhegalkinCst.universe, SortedSet(ZhegalkinVar(c, flexible = false)))))
-    case Var(x) => ZhegalkinExpr(ZhegalkinCst.empty, List(ZhegalkinTerm(ZhegalkinCst.universe, SortedSet(ZhegalkinVar(x, flexible = true)))))
+    case Cst(c) => ZhegalkinExpr(alg.empty, List(ZhegalkinTerm(alg.universe, SortedSet(ZhegalkinVar(c, flexible = false)))))
+    case Var(x) => ZhegalkinExpr(alg.empty, List(ZhegalkinTerm(alg.universe, SortedSet(ZhegalkinVar(x, flexible = true)))))
     case ElemSet(s) =>
       ZhegalkinExpr(ZhegalkinCst.mkCst(CofiniteIntSet.mkSet(s)), Nil)
     case Compl(f1) => ZhegalkinExpr.mkCompl(toZhegalkin(f1))
