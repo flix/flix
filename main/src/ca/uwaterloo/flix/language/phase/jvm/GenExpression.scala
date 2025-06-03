@@ -1167,7 +1167,7 @@ object GenExpression {
           val desc = MethodDescriptor(paramTpes, resultTpe)
           val className = JvmOps.getFunctionDefinitionClassName(sym)
           mv.visitMethodInsn(INVOKESTATIC, className.toInternalName, JvmName.DirectApply, desc.toDescriptor, false)
-          BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)(new BytecodeInstructions.F(mv))
+          mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc))
         } else {
           // JvmType of Def
           val defJvmName = JvmOps.getFunctionDefinitionClassName(sym)
@@ -1250,7 +1250,7 @@ object GenExpression {
             // Store it in the ith parameter.
             val tpe = BackendType.toBackendType(arg.tpe)
             val offset = fp.sym.getStackOffset(ctx.localOffset)
-            BytecodeInstructions.xStore(tpe, offset)(new BytecodeInstructions.F(mv))
+            mv.visitByteIns(BytecodeInstructions.xStore(tpe, offset))
           }
           // Jump to the entry point of the method.
           mv.visitJumpInsn(GOTO, ctx.entryPoint)
