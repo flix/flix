@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra}
 import ca.uwaterloo.flix.util.collection.SortedBimap
 import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, Result}
 
@@ -428,6 +428,8 @@ object EffUnification3 {
     implicit val scope: Scope = Scope.Top
     implicit val renv: RigidityEnv = RigidityEnv.empty
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe))
+
+    implicit val alg: ZhegalkinAlgebra.type = ZhegalkinAlgebra
 
     val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
     val z = Zhegalkin.toZhegalkin(f0)
