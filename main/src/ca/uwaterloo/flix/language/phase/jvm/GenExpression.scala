@@ -1161,7 +1161,7 @@ object GenExpression {
           // Call the static method, using exact types
           for ((arg, tpe) <- exps.zip(paramTpes)) {
             compileExpr(arg)
-            BytecodeInstructions.castIfNotPrim(tpe)(new BytecodeInstructions.F(mv))
+            mv.visitByteIns(BytecodeInstructions.castIfNotPrim(tpe))
           }
           val resultTpe = BackendObjType.Result.toTpe
           val desc = MethodDescriptor(paramTpes, resultTpe)
