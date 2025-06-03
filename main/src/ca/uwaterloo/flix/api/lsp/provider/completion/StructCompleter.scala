@@ -32,12 +32,15 @@ object StructCompleter {
     if (qn.namespace.nonEmpty)
       root.structs.values.collect {
         case struct if CompletionUtils.isAvailable(struct) && CompletionUtils.matchesName(struct.sym, qn, qualified = true) =>
-          StructCompletion(struct, range, ap, qualified = true, inScope = true)
+          val priority = Priority.Lower
+          StructCompletion(struct, range, priority, ap, qualified = true, inScope = true)
       }
     else
       root.structs.values.collect({
         case struct if CompletionUtils.isAvailable(struct) && CompletionUtils.matchesName(struct.sym, qn, qualified = false) =>
-          StructCompletion(struct, range, ap, qualified = false, inScope = inScope(struct, scp))
+          val s = inScope(struct, scp)
+          val priority = if (s) Priority.High else Priority.Lower
+          StructCompletion(struct, range, priority, ap, qualified = false, inScope = s)
       })
   }
 
