@@ -1243,9 +1243,11 @@ object GenExpression {
 
       case DirectStaticContext(_, _, _) =>
         val defn = root.defs(sym)
-        for ((arg, fp) <- exps.zip(defn.fparams)) {
+        for (arg <- exps) {
           // Evaluate the argument and push the result on the stack.
           compileExpr(arg)
+        }
+        for ((arg, fp) <- exps.zip(defn.fparams).reverse) {
           // Store it in the ith parameter.
           val tpe = BackendType.toBackendType(arg.tpe)
           val offset = fp.sym.getStackOffset(ctx.localOffset)
