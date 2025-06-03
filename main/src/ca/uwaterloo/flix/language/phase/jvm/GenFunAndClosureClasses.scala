@@ -147,7 +147,7 @@ object GenFunAndClosureClasses {
     compileConstructor(functionInterface, visitor)
     // Methods
     if (Purity.isControlPure(defn.expr.purity) && kind == Function) {
-      compileStaticApplyMethod(visitor, defn)
+      compileStaticApplyMethod(visitor, className, defn)
     }
     compileInvokeMethod(visitor, className)
     compileFrameMethod(visitor, className, defn)
@@ -446,11 +446,11 @@ object GenFunAndClosureClasses {
     constructor.visitEnd()
   }
 
-  private def compileStaticApplyMethod(visitor: ClassWriter, defn: Def)(implicit root: Root, flix: Flix): Unit = {
+  private def compileStaticApplyMethod(visitor: ClassWriter, className: JvmName, defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
-    val paramsTpes = defn.fparams.map(fp => BackendType.toBackendType(fp.tpe))
+    val paramTpes = defn.fparams.map(fp => BackendType.toBackendType(fp.tpe))
     val resultTpe = BackendObjType.Result.toTpe
-    val desc = MethodDescriptor(paramsTpes, resultTpe)
+    val desc = MethodDescriptor(paramTpes, resultTpe)
     val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
     val m = visitor.visitMethod(modifiers, JvmName.DirectApply, desc.toDescriptor, null, null)
     // val m = new Debug(m0)
@@ -467,9 +467,9 @@ object GenFunAndClosureClasses {
     val ctx = GenExpression.DirectStaticContext(enterLabel, labelEnv, localOffset)
     GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
 
-    BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)(new BytecodeInstructions.F(m))
+    m.visitByteIns(BytecodeInstructions.xReturn(BackendObjType.Result.toTpe))
 
-    // println(s"\n\n${classType.name.toBinaryName}\n$m")
+    // println(s"\n\n${className.toBinaryName}\n$m")
 
     m.visitMaxs(999, 999)
     m.visitEnd()
