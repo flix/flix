@@ -1211,7 +1211,7 @@ object GenExpression {
         // Jump to the entry point of the method.
         mv.visitJumpInsn(GOTO, ctx.entryPoint)
 
-      case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
+      case DirectInstanceContext(_, _, _) =>
         // The function abstract class name
         val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType).jvmName
         // Evaluate each argument and put the result on the Fn class.
@@ -1221,6 +1221,18 @@ object GenExpression {
           compileExpr(arg)
           mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
             s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+        }
+        // Jump to the entry point of the method.
+        mv.visitJumpInsn(GOTO, ctx.entryPoint)
+
+      case DirectStaticContext(_, _, _) =>
+        for ((arg, i) <- exps.zipWithIndex) {
+          // Evaluate the argument and push the result on the stack.
+          compileExpr(arg)
+          // Store it in the ith parameter.
+          // We use the erased type since we only care about generating the correct store instruction.
+          val tpe = BackendType.toBackendType(arg.tpe)
+          BytecodeInstructions.xStore(tpe, ctx.localOffset + i)(new BytecodeInstructions.F(mv))
         }
         // Jump to the entry point of the method.
         mv.visitJumpInsn(GOTO, ctx.entryPoint)
