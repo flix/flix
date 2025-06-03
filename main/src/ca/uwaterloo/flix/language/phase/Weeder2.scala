@@ -2087,10 +2087,10 @@ object Weeder2 {
     private def visitFixpointInjectExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.FixpointInject)
       val expTrees = pickAll(TreeKind.Expr.Expr, tree)
-      val shapeTrees = pickAll(TreeKind.PredicateShape, tree)
+      val predAndArityTrees = pickAll(TreeKind.PredicateAndArity, tree)
       val expsVal = traverse(expTrees)(visitExpr)
-      val shapesVal = traverse(shapeTrees)(visitPredicateShape)
-      mapN(expsVal, shapesVal) {
+      val predAndAritiesVal = traverse(predAndArityTrees)(visitPredicateAndArity)
+      mapN(expsVal, predAndAritiesVal) {
         case (exprs, shapes) if exprs.length != shapes.length =>
           // Check for mismatched arity
           val error = MismatchedArity(exprs.length, shapes.length, tree.loc)
@@ -3247,11 +3247,16 @@ object Weeder2 {
     }
   }
 
-  private def visitPredicateShape(tree: Tree)(implicit sctx: SharedContext): Validation[PredicateShape, CompilationMessage] = {
+  private def visitPredicateAndArity(tree: Tree)(implicit sctx: SharedContext): Validation[PredicateAndArity, CompilationMessage] = {
     val identVal = pickNameIdent(tree)
-    val args = pickAll(TreeKind.Underscore, tree)
-    mapN(identVal) {
-      case ident => PredicateShape(ident, args.length)
+    val arityTreeVal = pick(TreeKind.Integer, tree)
+    mapN(identVal, arityTreeVal) {
+      case (ident, arityTree) =>
+        val arity = arityTree.children(0) match {
+          case t: Token => t.text.toInt
+          case _ => throw InternalCompilerException("unexpected non-token", arityTree.loc)
+        }
+        PredicateAndArity(ident, arity)
     }
   }
 

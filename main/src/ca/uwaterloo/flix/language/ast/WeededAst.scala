@@ -233,7 +233,7 @@ object WeededAst {
 
     case class FixpointMerge(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class FixpointInjectInto(exps: List[Expr], shapes: List[PredicateShape], loc: SourceLocation) extends Expr
+    case class FixpointInjectInto(exps: List[Expr], shapes: List[PredicateAndArity], loc: SourceLocation) extends Expr
 
     case class FixpointSolveWithProject(exps: List[Expr], optIdents: Option[List[Name.Ident]], loc: SourceLocation) extends Expr
 
@@ -484,6 +484,6 @@ object WeededAst {
 
   }
 
-  case class PredicateShape(ident: Name.Ident, arity: Int)
+  case class PredicateAndArity(ident: Name.Ident, arity: Int)
 
 }

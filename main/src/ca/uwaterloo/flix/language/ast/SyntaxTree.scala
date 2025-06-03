@@ -99,6 +99,8 @@ object SyntaxTree {
 
     case object Ident extends TreeKind
 
+    case object Integer extends TreeKind
+
     case object Kind extends TreeKind
 
     case object ModifierList extends TreeKind
@@ -109,7 +111,7 @@ object SyntaxTree {
 
     case object ParameterList extends TreeKind
 
-    case object PredicateShape extends TreeKind
+    case object PredicateAndArity extends TreeKind
 
     case object QName extends TreeKind
 
@@ -122,8 +124,6 @@ object SyntaxTree {
     case object TypeParameter extends TreeKind
 
     case object TypeParameterList extends TreeKind
-
-    case object Underscore extends TreeKind
 
     //////////////////////////////////////////////////////////////////////////////////////////
     // DECLARATIONS                                                                         //
