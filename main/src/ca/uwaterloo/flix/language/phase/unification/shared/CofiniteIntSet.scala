@@ -1,5 +1,6 @@
 /*
  * Copyright 2024 Jonathan Lindegaard Starup
+ * Copyright 2025 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,21 +20,13 @@ package ca.uwaterloo.flix.language.phase.unification.shared
 import scala.collection.immutable.SortedSet
 
 /**
-  * Represents a finite or co-finite set with an infinite universe of integers.
-  *
-  * All sets are either a [[SortedSet]] or a complement of it.
+  * Represents a finite or co-finite set of integers with an infinite universe.
   *
   * No finite set is ever equivalent to the universe.
   */
 sealed trait CofiniteIntSet
 
 object CofiniteIntSet {
-
-  /** THE empty set. */
-  private val Empty: CofiniteIntSet = Set(SortedSet.empty)
-
-  /** THE universe set. */
-  private val Universe: CofiniteIntSet = Compl(SortedSet.empty)
 
   /** Represents a finite set of integers. */
   case class Set(s: SortedSet[Int]) extends CofiniteIntSet {
@@ -45,8 +38,17 @@ object CofiniteIntSet {
     override def toString: String = if (s.isEmpty) "𝓤" else s"¬{${s.mkString(", ")}}"
   }
 
-  /** Returns the wrapped set of `s`. */
-  def mkSet(s: SortedSet[Int]): CofiniteIntSet = if (s.isEmpty) Empty else Set(s)
+  /** THE empty set. */
+  private val Empty: CofiniteIntSet = Set(SortedSet.empty)
+
+  /** THE universe set. */
+  private val Universe: CofiniteIntSet = Compl(SortedSet.empty)
+
+  /** Returns the set of `s`. */
+  def mkSet(s: SortedSet[Int]): CofiniteIntSet = {
+    // Note: We must check whether `s` is empty to ensure correctness.
+    if (s.isEmpty) Empty else Set(s)
+  }
 
   /** An instance for [[CofiniteIntSet]]. */
   object LatticeOps extends BoolLattice[CofiniteIntSet] {
@@ -55,8 +57,7 @@ object CofiniteIntSet {
     override def Top: CofiniteIntSet = CofiniteIntSet.Universe
 
     override def isBot(t: CofiniteIntSet): Boolean = t match {
-      case CofiniteIntSet.Set(s) if s.isEmpty => true
-      case CofiniteIntSet.Set(_) => false
+      case CofiniteIntSet.Set(s) => s.isEmpty
       case CofiniteIntSet.Compl(_) => false
     }
 
