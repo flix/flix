@@ -23,137 +23,108 @@ import scala.collection.immutable.SortedSet
   *
   * All sets are either a [[SortedSet]] or a complement of it.
   *
-  * No finite set is ever equivalent to universe.
+  * No finite set is ever equivalent to the universe.
   */
-sealed trait CofiniteIntSet {
-
-  /** Returns `true` if `this` is [[CofiniteIntSet.empty]]. */
-  def isEmpty: Boolean = this match {
-    case CofiniteIntSet.Set(s) if s.isEmpty => true
-    case CofiniteIntSet.Set(_) => false
-    case CofiniteIntSet.Compl(_) => false
-  }
-
-  /**
-    * Returns `true` if `this` is [[CofiniteIntSet.universe]].
-    *
-    * Remember that the universe is infinite, so no finite set is ever equivalent
-    * to universe.
-    */
-  def isUniverse: Boolean = this match {
-    case CofiniteIntSet.Set(_) => false
-    case CofiniteIntSet.Compl(s) => s.isEmpty
-  }
-
-  /** Returns a human-readable string representation of `this`. */
-  override def toString: String = {
-    if (isEmpty) "Ø"
-    else if (isUniverse) "𝓤"
-    else this match {
-      case CofiniteIntSet.Set(xs) => s"{${xs.mkString(", ")}}"
-      case CofiniteIntSet.Compl(xs) => s"¬{${xs.mkString(", ")}}"
-    }
-  }
-
-}
+sealed trait CofiniteIntSet
 
 object CofiniteIntSet {
 
+  /** THE empty set. */
+  private val Empty: CofiniteIntSet = Set(SortedSet.empty)
+
+  /** THE universe set. */
+  private val Universe: CofiniteIntSet = Compl(SortedSet.empty)
+
   /** Represents a finite set of integers. */
-  case class Set(s: SortedSet[Int]) extends CofiniteIntSet
+  case class Set(s: SortedSet[Int]) extends CofiniteIntSet {
+    override def toString: String = if (s.isEmpty) "Ø" else s"{${s.mkString(", ")}}"
+  }
 
   /** Represents a co-finite set of integers. */
-  case class Compl(s: SortedSet[Int]) extends CofiniteIntSet
-
-  /** The empty set. */
-  val empty: CofiniteIntSet = Set(SortedSet.empty)
-
-  /** The universe set. */
-  val universe: CofiniteIntSet = Compl(SortedSet.empty)
+  case class Compl(s: SortedSet[Int]) extends CofiniteIntSet {
+    override def toString: String = if (s.isEmpty) "𝓤" else s"¬{${s.mkString(", ")}}"
+  }
 
   /** Returns the wrapped set of `s`. */
-  def mkSet(s: SortedSet[Int]): CofiniteIntSet = if (s.isEmpty) empty else Set(s)
-
-  /** Returns the singleton set of `i`. */
-  def mkSet(i: Int): CofiniteIntSet = Set(SortedSet(i))
-
-  /** Returns the complement of `s` (`!s`). */
-  def complement(set: CofiniteIntSet): CofiniteIntSet = set match {
-    case Set(s) =>
-      // !s
-      Compl(s)
-    case Compl(s) =>
-      // !!s
-      // = s             (double negation)
-      Set(s)
-  }
-
-  /** Returns the union of `s1` and `s2` (`s1 ∪ s2`). */
-  def union(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet = (s1, s2) match {
-    case (Set(x), Set(y)) =>
-      // x ∪ y
-      Set(x.union(y))
-    case (Set(x), Compl(y)) =>
-      // x ∪ !y
-      // = !!(x ∪ !y)    (double complement)
-      // = !(!x ∩ y)     (complement distribution)
-      // = !(y ∩ !x)     (intersection symmetry)
-      // = !(y - x)      (difference definition)
-      Compl(y.diff(x))
-    case (Compl(x), Set(y)) =>
-      // !x ∪ y
-      // = !!(!x ∪ y)    (double complement)
-      // = !(x ∩ !y)     (complement distribution)
-      // = !(x - y)      (difference definition)
-      Compl(x.diff(y))
-    case (Compl(x), Compl(y)) =>
-      // !x ∪ !y
-      // = !!(!x ∪ !y)   (double complement)
-      // = !(!!x ∩ !!y)  (complement distribution)
-      // = !(x ∩ y)      (double complement)
-      Compl(x.intersect(y))
-  }
-
-  /** Returns the union of `s1` and `s2` (`s1 ∪ s2`). */
-  def union(s1: CofiniteIntSet, s2: SortedSet[Int]): CofiniteIntSet =
-    union(s1, mkSet(s2))
-
-  /** Returns the intersection of `s1` and `s2` (`s1 ∩ s2`). */
-  def intersection(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet = (s1, s2) match {
-    case (Set(x), Set(y)) =>
-      // x ∩ y
-      Set(x.intersect(y))
-    case (Set(x), Compl(y)) =>
-      // x ∩ !y
-      // = x - y         (difference definition)
-      Set(x.diff(y))
-    case (Compl(x), Set(y)) =>
-      // !x ∩ y
-      // = y ∩ !x        (intersection symmetry)
-      // = y - x         (difference definition)
-      Set(y.diff(x))
-    case (Compl(x), Compl(y)) =>
-      // !x ∩ !y
-      // = !!(!x ∩ !y)   (double complement)
-      // = !(x ∪ y)      (complement distribution)
-      Compl(x.union(y))
-  }
+  def mkSet(s: SortedSet[Int]): CofiniteIntSet = if (s.isEmpty) Empty else Set(s)
 
   /** An instance for [[CofiniteIntSet]]. */
-  object Witness extends BoolLattice[CofiniteIntSet] {
-    override def Bot: CofiniteIntSet = CofiniteIntSet.empty
+  object LatticeOps extends BoolLattice[CofiniteIntSet] {
+    override def Bot: CofiniteIntSet = CofiniteIntSet.Empty
 
-    override def Top: CofiniteIntSet = CofiniteIntSet.universe
+    override def Top: CofiniteIntSet = CofiniteIntSet.Universe
 
-    override def isBot(t: CofiniteIntSet): Boolean = t.isEmpty
+    override def isBot(t: CofiniteIntSet): Boolean = t match {
+      case CofiniteIntSet.Set(s) if s.isEmpty => true
+      case CofiniteIntSet.Set(_) => false
+      case CofiniteIntSet.Compl(_) => false
+    }
 
-    override def isTop(t: CofiniteIntSet): Boolean = t.isUniverse
+    override def isTop(t: CofiniteIntSet): Boolean = t match {
+      case CofiniteIntSet.Set(_) => false
+      case CofiniteIntSet.Compl(s) => s.isEmpty
+    }
 
-    override def comp(t: CofiniteIntSet): CofiniteIntSet = CofiniteIntSet.complement(t)
+    override def comp(t: CofiniteIntSet): CofiniteIntSet = {
+      t match {
+        case Set(s) =>
+          // !s
+          Compl(s)
+        case Compl(s) =>
+          // !!s
+          // = s             (double negation)
+          Set(s)
+      }
+    }
 
-    override def join(t1: CofiniteIntSet, t2: CofiniteIntSet): CofiniteIntSet = CofiniteIntSet.union(t1, t2)
+    override def join(t1: CofiniteIntSet, t2: CofiniteIntSet): CofiniteIntSet = {
+      (t1, t2) match {
+        case (Set(x), Set(y)) =>
+          // x ∪ y
+          Set(x.union(y))
+        case (Set(x), Compl(y)) =>
+          // x ∪ !y
+          // = !!(x ∪ !y)    (double complement)
+          // = !(!x ∩ y)     (complement distribution)
+          // = !(y ∩ !x)     (intersection symmetry)
+          // = !(y - x)      (difference definition)
+          Compl(y.diff(x))
+        case (Compl(x), Set(y)) =>
+          // !x ∪ y
+          // = !!(!x ∪ y)    (double complement)
+          // = !(x ∩ !y)     (complement distribution)
+          // = !(x - y)      (difference definition)
+          Compl(x.diff(y))
+        case (Compl(x), Compl(y)) =>
+          // !x ∪ !y
+          // = !!(!x ∪ !y)   (double complement)
+          // = !(!!x ∩ !!y)  (complement distribution)
+          // = !(x ∩ y)      (double complement)
+          Compl(x.intersect(y))
+      }
+    }
 
-    override def meet(t1: CofiniteIntSet, t2: CofiniteIntSet): CofiniteIntSet = CofiniteIntSet.intersection(t1, t2)
+    override def meet(t1: CofiniteIntSet, t2: CofiniteIntSet): CofiniteIntSet = {
+      (t1, t2) match {
+        case (Set(x), Set(y)) =>
+          // x ∩ y
+          Set(x.intersect(y))
+        case (Set(x), Compl(y)) =>
+          // x ∩ !y
+          // = x - y         (difference definition)
+          Set(x.diff(y))
+        case (Compl(x), Set(y)) =>
+          // !x ∩ y
+          // = y ∩ !x        (intersection symmetry)
+          // = y - x         (difference definition)
+          Set(y.diff(x))
+        case (Compl(x), Compl(y)) =>
+          // !x ∩ !y
+          // = !!(!x ∩ !y)   (double complement)
+          // = !(x ∪ y)      (complement distribution)
+          Compl(x.union(y))
+      }
+    }
   }
 
 }

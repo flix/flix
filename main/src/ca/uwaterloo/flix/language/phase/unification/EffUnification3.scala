@@ -36,7 +36,7 @@ object EffUnification3 {
   /**
     * The Global Zhegalkin Algebra used for effects.
     */
-  val Algebra: ZhegalkinAlgebra[CofiniteIntSet] = new ZhegalkinAlgebra[CofiniteIntSet](CofiniteIntSet.Witness)
+  val Algebra: ZhegalkinAlgebra[CofiniteIntSet] = new ZhegalkinAlgebra[CofiniteIntSet](CofiniteIntSet.LatticeOps)
 
   /**
     * Controls whether to enable solve-and-retry for subeffecting.
@@ -435,7 +435,7 @@ object EffUnification3 {
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe))
 
     val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
-    val z = Zhegalkin.toZhegalkin(f0)(Algebra, CofiniteIntSet.Witness)
+    val z = Zhegalkin.toZhegalkin(f0)(Algebra, CofiniteIntSet.LatticeOps)
     val f1 = Zhegalkin.toSetFormula(z)
 
     fromSetFormula(f1, tpe.loc)

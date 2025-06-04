@@ -427,8 +427,8 @@ object SetUnification {
     implicit val alg: ZhegalkinAlgebra[CofiniteIntSet] = EffUnification3.Algebra
     val l = eqs.map {
       case Equation(f1, f2, _, _) =>
-        val x = Zhegalkin.toZhegalkin(f1)(alg, CofiniteIntSet.Witness)
-        val y = Zhegalkin.toZhegalkin(f2)(alg, CofiniteIntSet.Witness)
+        val x = Zhegalkin.toZhegalkin(f1)(alg, CofiniteIntSet.LatticeOps)
+        val y = Zhegalkin.toZhegalkin(f2)(alg, CofiniteIntSet.LatticeOps)
         (x, y)
     }
 
