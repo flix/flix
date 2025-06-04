@@ -88,14 +88,14 @@ object Reducer {
         Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
       case Expr.ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
-        if (ct == ExpPosition.NonTail && Purity.isControlImpure(purity)) lctx.addPcPoints(1)
+        if (ct == ExpPosition.NonTail && Purity.isControlImpure(purity)) lctx.addPcPoint()
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)
         Expr.ApplyClo(e1, e2, ct, tpe, purity, loc)
 
       case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
         val defn = root.defs(sym)
-        if (ct == ExpPosition.NonTail && Purity.isControlImpure(defn.expr.purity)) lctx.addPcPoints(1)
+        if (ct == ExpPosition.NonTail && Purity.isControlImpure(defn.expr.purity)) lctx.addPcPoint()
         val es = exps.map(visitExpr)
         Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
@@ -146,7 +146,7 @@ object Reducer {
         Expr.TryCatch(e, rs, tpe, purity, loc)
 
       case Expr.RunWith(exp, effUse, rules, ct, tpe, purity, loc) =>
-        if (ct == ExpPosition.NonTail) lctx.addPcPoints(1)
+        if (ct == ExpPosition.NonTail) lctx.addPcPoint()
         val e = visitExpr(exp)
         val rs = rules.map {
           case HandlerRule(op, fparams, body) =>
@@ -156,7 +156,7 @@ object Reducer {
         Expr.RunWith(e, effUse, rs, ct, tpe, purity, loc)
 
       case Expr.Do(op, exps, tpe, purity, loc) =>
-        lctx.addPcPoints(1)
+        lctx.addPcPoint()
         val es = exps.map(visitExpr)
         Expr.Do(op, es, tpe, purity, loc)
 
@@ -190,9 +190,9 @@ object Reducer {
     /**
       * Adds n to the private [[pcPoints]] field.
       */
-    def addPcPoints(n: Int): Unit = {
+    def addPcPoint(): Unit = {
       if (isControlImpure) {
-        pcPoints += n
+        pcPoints += 1
       }
     }
 
