@@ -191,14 +191,14 @@ object BackendObjType {
       withName(1, JavaObject.toTpe)(exp =>
         // super()
         thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
-        // this.exp = exp
-        thisLoad() ~ exp.load() ~ PUTFIELD(ExpField) ~
-        // this.lock = new ReentrantLock()
-        thisLoad() ~
-        NEW(ReentrantLock.jvmName) ~ DUP() ~ INVOKESPECIAL(ReentrantLock.Constructor) ~
-        PUTFIELD(LockField) ~
-        // return
-        RETURN()
+          // this.exp = exp
+          thisLoad() ~ exp.load() ~ PUTFIELD(ExpField) ~
+          // this.lock = new ReentrantLock()
+          thisLoad() ~
+          NEW(ReentrantLock.jvmName) ~ DUP() ~ INVOKESPECIAL(ReentrantLock.Constructor) ~
+          PUTFIELD(LockField) ~
+          // return
+          RETURN()
       )
 
     def ForceMethod: InstanceMethod = InstanceMethod(this.jvmName, "force", mkDescriptor()(tpe))
@@ -207,23 +207,23 @@ object BackendObjType {
     private def forceIns: InstructionSet = {
       val unlockLock = thisLoad() ~ GETFIELD(LockField) ~ INVOKEVIRTUAL(ReentrantLock.UnlockMethod)
       thisLoad() ~ GETFIELD(LockField) ~ INVOKEVIRTUAL(ReentrantLock.LockInterruptiblyMethod) ~
-      tryCatch{
-        thisLoad() ~ GETFIELD(ExpField) ~
-        // if the expression is not null, compute the value and erase the expression
-        ifCondition(Condition.NONNULL)(
-          thisLoad() ~
-          // get expression as thunk
-          DUP() ~ GETFIELD(ExpField) ~ CHECKCAST(Thunk.jvmName) ~
-          // this.value = thunk.unwind()
-          Result.unwindSuspensionFreeThunkToType(tpe, "during call to Lazy.force", SourceLocation.Unknown) ~ PUTFIELD(ValueField) ~
-          // this.exp = null
-          thisLoad() ~ pushNull() ~ PUTFIELD(ExpField)
-        ) ~
-        thisLoad() ~ GETFIELD(ValueField)
-      }{
-         // catch
-         unlockLock ~ ATHROW()
-      } ~
+        tryCatch {
+          thisLoad() ~ GETFIELD(ExpField) ~
+            // if the expression is not null, compute the value and erase the expression
+            ifCondition(Condition.NONNULL)(
+              thisLoad() ~
+                // get expression as thunk
+                DUP() ~ GETFIELD(ExpField) ~ CHECKCAST(Thunk.jvmName) ~
+                // this.value = thunk.unwind()
+                Result.unwindSuspensionFreeThunkToType(tpe, "during call to Lazy.force", SourceLocation.Unknown) ~ PUTFIELD(ValueField) ~
+                // this.exp = null
+                thisLoad() ~ pushNull() ~ PUTFIELD(ExpField)
+            ) ~
+            thisLoad() ~ GETFIELD(ValueField)
+        } {
+          // catch
+          unlockLock ~ ATHROW()
+        } ~
         unlockLock ~ xReturn(tpe)
     }
   }
@@ -247,22 +247,22 @@ object BackendObjType {
     /** `[] --> return` */
     private def constructorIns: InstructionSet =
       withNames(1, elms) { case (_, variables) =>
-      thisLoad() ~
-        // super()
-        DUP() ~ INVOKESPECIAL(JavaObject.Constructor) ~
-        // this.field$i = var$j
-        // fields are numbered consecutively while variables skip indices based
-        // on their stack size
-        composeN(variables.zipWithIndex.map{case (elm, i) =>
-          DUP() ~ elm.load() ~ PUTFIELD(IndexField(i))
-        }) ~
-        RETURN()
+        thisLoad() ~
+          // super()
+          DUP() ~ INVOKESPECIAL(JavaObject.Constructor) ~
+          // this.field$i = var$j
+          // fields are numbered consecutively while variables skip indices based
+          // on their stack size
+          composeN(variables.zipWithIndex.map { case (elm, i) =>
+            DUP() ~ elm.load() ~ PUTFIELD(IndexField(i))
+          }) ~
+          RETURN()
       }
 
     /** `[] --> return String` */
     private def toStringIns: InstructionSet = {
       Util.mkString(Some(pushString("(")), Some(pushString(")")), elms.length, getIndexField) ~
-      xReturn(String.toTpe)
+        xReturn(String.toTpe)
     }
 
     /** `[] --> [this.index(i).xString()]` */
@@ -272,6 +272,7 @@ object BackendObjType {
     }
 
   }
+
   case class Struct(elms: List[BackendType]) extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
@@ -289,14 +290,14 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, elms)
 
     private def constructorIns: InstructionSet = {
-      withNames(1, elms){ case (_, variables) =>
+      withNames(1, elms) { case (_, variables) =>
         thisLoad() ~
           // super()
           DUP() ~ INVOKESPECIAL(JavaObject.Constructor) ~
           // this.field$i = var$j
           // fields are numbered consecutively while variables skip indices based
           // on their stack size
-          composeN(variables.zipWithIndex.map{case (elm, i) =>
+          composeN(variables.zipWithIndex.map { case (elm, i) =>
             DUP() ~ elm.load() ~ PUTFIELD(IndexField(i))
           }) ~
           RETURN()
@@ -306,7 +307,7 @@ object BackendObjType {
     /** `[] --> return String` */
     private def toStringIns: InstructionSet = {
       Util.mkString(Some(pushString("Struct(")), Some(pushString(")")), elms.length, getIndexString) ~
-      xReturn(String.toTpe)
+        xReturn(String.toTpe)
     }
 
     /** `[] --> [this.index(i).xString()]` */
@@ -397,7 +398,7 @@ object BackendObjType {
     /** `[] --> return String` */
     private def toStringIns: InstructionSet = {
       Util.mkString(Some(thisLoad() ~ GETFIELD(NameField) ~ pushString("(") ~ INVOKEVIRTUAL(String.Concat)), Some(pushString(")")), elms.length, getIndexString) ~
-      xReturn(String.toTpe)
+        xReturn(String.toTpe)
     }
 
     /** `[] --> [this.index(i).xString()]` */
@@ -410,8 +411,8 @@ object BackendObjType {
   /**
     * (Int, String) -> Bool example:
     * public abstract class Clo2$Int$Obj$Bool extends Fn2$Int$Obj$Bool {
-    *   public Clo2$Int$Obj$Bool() { ... }
-    *   public abstract Clo2$Int$Obj$Bool getUniqueThreadClosure();
+    * public Clo2$Int$Obj$Bool() { ... }
+    * public abstract Clo2$Int$Obj$Bool getUniqueThreadClosure();
     * }
     */
   case class AbstractArrow(args: List[BackendType], result: BackendType) extends BackendObjType {
@@ -507,61 +508,61 @@ object BackendObjType {
             DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
             Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ ARETURN()
         case ObjConsumer =>
-            thisLoad() ~
-              DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ RETURN()
+          thisLoad() ~
+            DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
+            Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ RETURN()
         case ObjPredicate =>
-            thisLoad() ~
-              DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
+          thisLoad() ~
+            DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
+            Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
         case IntFunction =>
-            thisLoad() ~
-              DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ ARETURN()
+          thisLoad() ~
+            DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
+            Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ ARETURN()
         case IntConsumer =>
-            thisLoad() ~
-              DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ RETURN()
+          thisLoad() ~
+            DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
+            Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ RETURN()
         case IntPredicate =>
-            thisLoad() ~
-              DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
+          thisLoad() ~
+            DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
+            Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
         case IntUnaryOperator =>
-            thisLoad() ~
-              DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Int32, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
+          thisLoad() ~
+            DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
+            Result.unwindSuspensionFreeThunkToType(BackendType.Int32, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
         case LongFunction =>
-            thisLoad() ~
-              DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ ARETURN()
+          thisLoad() ~
+            DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
+            Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ ARETURN()
         case LongConsumer =>
-            thisLoad() ~
-              DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ RETURN()
+          thisLoad() ~
+            DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
+            Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ RETURN()
         case LongPredicate =>
-            thisLoad() ~
-              DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
+          thisLoad() ~
+            DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
+            Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
         case LongUnaryOperator =>
-            thisLoad() ~
-              DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Int64, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ LRETURN()
+          thisLoad() ~
+            DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
+            Result.unwindSuspensionFreeThunkToType(BackendType.Int64, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ LRETURN()
         case DoubleFunction =>
-            thisLoad() ~
-              DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ ARETURN()
+          thisLoad() ~
+            DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
+            Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ ARETURN()
         case DoubleConsumer =>
-            thisLoad() ~
-              DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ RETURN()
+          thisLoad() ~
+            DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
+            Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ RETURN()
         case DoublePredicate =>
-            thisLoad() ~
-              DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
+          thisLoad() ~
+            DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
+            Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
         case DoubleUnaryOperator =>
-            thisLoad() ~
-              DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Float64, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ DRETURN()
+          thisLoad() ~
+            DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
+            Result.unwindSuspensionFreeThunkToType(BackendType.Float64, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ DRETURN()
       }
     }
 
@@ -1074,17 +1075,17 @@ object BackendObjType {
     private def constructorIns: InstructionSet = {
       withName(1, ReifiedSourceLocation.toTpe)(loc => withName(2, String.toTpe)(msg => {
         thisLoad() ~
-        NEW(StringBuilder.jvmName) ~
-        DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
-        msg.load() ~
-        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
-        pushString(" at ") ~
-        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
-        loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
-        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
-        INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
-        INVOKESPECIAL(FlixError.Constructor) ~
-        RETURN()
+          NEW(StringBuilder.jvmName) ~
+          DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
+          msg.load() ~
+          INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+          pushString(" at ") ~
+          INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+          loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+          INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+          INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+          INVOKESPECIAL(FlixError.Constructor) ~
+          RETURN()
       }))
     }
   }
@@ -1112,24 +1113,24 @@ object BackendObjType {
       withName(1, Suspension.toTpe)(suspension => withName(2, String.toTpe)(info => withName(3, ReifiedSourceLocation.toTpe)(loc => {
         val appendString = INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
         thisLoad() ~
-        NEW(StringBuilder.jvmName) ~
-        DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
-        pushString("Unhandled effect '") ~ appendString ~
-        suspension.load() ~ GETFIELD(Suspension.EffSymField) ~ appendString ~
-        pushString("' (") ~ appendString ~
-        info.load() ~ appendString ~
-        pushString(") at ") ~ appendString ~
-        loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ appendString ~
-        INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
-        INVOKESPECIAL(FlixError.Constructor) ~
-        // save arguments locally
-        thisLoad() ~
-        suspension.load() ~ GETFIELD(Suspension.EffSymField) ~
-        PUTFIELD(EffectNameField) ~
-        thisLoad() ~
-        loc.load() ~
-        PUTFIELD(LocationField) ~
-        RETURN()
+          NEW(StringBuilder.jvmName) ~
+          DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
+          pushString("Unhandled effect '") ~ appendString ~
+          suspension.load() ~ GETFIELD(Suspension.EffSymField) ~ appendString ~
+          pushString("' (") ~ appendString ~
+          info.load() ~ appendString ~
+          pushString(") at ") ~ appendString ~
+          loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ appendString ~
+          INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+          INVOKESPECIAL(FlixError.Constructor) ~
+          // save arguments locally
+          thisLoad() ~
+          suspension.load() ~ GETFIELD(Suspension.EffSymField) ~
+          PUTFIELD(EffectNameField) ~
+          thisLoad() ~
+          loc.load() ~
+          PUTFIELD(LocationField) ~
+          RETURN()
       })))
     }
   }
@@ -1172,17 +1173,17 @@ object BackendObjType {
 
     private def constructorIns: InstructionSet = {
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
-      thisLoad() ~ NEW(BackendObjType.ConcurrentLinkedQueue.jvmName) ~
-      DUP() ~ invokeConstructor(BackendObjType.ConcurrentLinkedQueue.jvmName, MethodDescriptor.NothingToVoid) ~
-      PUTFIELD(ThreadsField) ~
-      thisLoad() ~ INVOKESTATIC(Thread.CurrentThreadMethod) ~
-      PUTFIELD(RegionThreadField) ~
-      thisLoad() ~ ACONST_NULL() ~
-      PUTFIELD(ChildExceptionField) ~
-      thisLoad() ~ NEW(BackendObjType.LinkedList.jvmName) ~
-      DUP() ~ invokeConstructor(BackendObjType.LinkedList.jvmName, MethodDescriptor.NothingToVoid) ~
-      PUTFIELD(OnExitField) ~
-      RETURN()
+        thisLoad() ~ NEW(BackendObjType.ConcurrentLinkedQueue.jvmName) ~
+        DUP() ~ invokeConstructor(BackendObjType.ConcurrentLinkedQueue.jvmName, MethodDescriptor.NothingToVoid) ~
+        PUTFIELD(ThreadsField) ~
+        thisLoad() ~ INVOKESTATIC(Thread.CurrentThreadMethod) ~
+        PUTFIELD(RegionThreadField) ~
+        thisLoad() ~ ACONST_NULL() ~
+        PUTFIELD(ChildExceptionField) ~
+        thisLoad() ~ NEW(BackendObjType.LinkedList.jvmName) ~
+        DUP() ~ invokeConstructor(BackendObjType.LinkedList.jvmName, MethodDescriptor.NothingToVoid) ~
+        PUTFIELD(OnExitField) ~
+        RETURN()
     }
 
     // final public void spawn(Runnable r) {
@@ -1195,16 +1196,16 @@ object BackendObjType {
 
     private def spawnIns: InstructionSet = {
       INVOKESTATIC(Thread.OfVirtualMethod) ~ ALOAD(1) ~ INVOKEINTERFACE(ThreadBuilderOfVirtual.UnstartedMethod) ~
-      storeWithName(2, BackendObjType.Thread.toTpe) { thread =>
-        thread.load() ~ NEW(BackendObjType.UncaughtExceptionHandler.jvmName) ~
-        DUP() ~ thisLoad() ~
-        invokeConstructor(BackendObjType.UncaughtExceptionHandler.jvmName, mkDescriptor(BackendObjType.Region.toTpe)(VoidableType.Void)) ~
-        INVOKEVIRTUAL(Thread.SetUncaughtExceptionHandlerMethod) ~
-        thread.load() ~ INVOKEVIRTUAL(Thread.StartMethod) ~
-        thisLoad() ~ GETFIELD(ThreadsField) ~ thread.load() ~
-        INVOKEVIRTUAL(ConcurrentLinkedQueue.AddMethod) ~ POP() ~
-        RETURN()
-      }
+        storeWithName(2, BackendObjType.Thread.toTpe) { thread =>
+          thread.load() ~ NEW(BackendObjType.UncaughtExceptionHandler.jvmName) ~
+            DUP() ~ thisLoad() ~
+            invokeConstructor(BackendObjType.UncaughtExceptionHandler.jvmName, mkDescriptor(BackendObjType.Region.toTpe)(VoidableType.Void)) ~
+            INVOKEVIRTUAL(Thread.SetUncaughtExceptionHandlerMethod) ~
+            thread.load() ~ INVOKEVIRTUAL(Thread.StartMethod) ~
+            thisLoad() ~ GETFIELD(ThreadsField) ~ thread.load() ~
+            INVOKEVIRTUAL(ConcurrentLinkedQueue.AddMethod) ~ POP() ~
+            RETURN()
+        }
     }
 
     // final public void exit() throws InterruptedException {
@@ -1220,24 +1221,24 @@ object BackendObjType {
       withName(1, BackendObjType.Thread.toTpe) { t =>
         whileLoop(Condition.NONNULL) {
           thisLoad() ~ GETFIELD(ThreadsField) ~
-          INVOKEVIRTUAL(ConcurrentLinkedQueue.PollMethod) ~
-          CHECKCAST(BackendObjType.Thread.jvmName) ~ DUP() ~ t.store()
+            INVOKEVIRTUAL(ConcurrentLinkedQueue.PollMethod) ~
+            CHECKCAST(BackendObjType.Thread.jvmName) ~ DUP() ~ t.store()
         } {
           t.load() ~ INVOKEVIRTUAL(Thread.JoinMethod)
         } ~
-        withName(2, BackendObjType.Iterator.toTpe) { i =>
-          thisLoad() ~ GETFIELD(OnExitField) ~
-          INVOKEVIRTUAL(LinkedList.IteratorMethod) ~
-          i.store() ~
-          whileLoop(Condition.NE) {
-            i.load() ~ INVOKEINTERFACE(Iterator.HasNextMethod)
-          } {
-            i.load() ~ INVOKEINTERFACE(Iterator.NextMethod) ~
-            CHECKCAST(Runnable.jvmName) ~
-            INVOKEINTERFACE(Runnable.RunMethod)
-          }
-        } ~
-        RETURN()
+          withName(2, BackendObjType.Iterator.toTpe) { i =>
+            thisLoad() ~ GETFIELD(OnExitField) ~
+              INVOKEVIRTUAL(LinkedList.IteratorMethod) ~
+              i.store() ~
+              whileLoop(Condition.NE) {
+                i.load() ~ INVOKEINTERFACE(Iterator.HasNextMethod)
+              } {
+                i.load() ~ INVOKEINTERFACE(Iterator.NextMethod) ~
+                  CHECKCAST(Runnable.jvmName) ~
+                  INVOKEINTERFACE(Runnable.RunMethod)
+              }
+          } ~
+          RETURN()
       }
     }
 
@@ -1249,10 +1250,10 @@ object BackendObjType {
 
     private def reportChildExceptionIns: InstructionSet = {
       thisLoad() ~ ALOAD(1) ~
-      PUTFIELD(ChildExceptionField) ~
-      thisLoad() ~ GETFIELD(RegionThreadField) ~
-      INVOKEVIRTUAL(Thread.InterruptMethod) ~
-      RETURN()
+        PUTFIELD(ChildExceptionField) ~
+        thisLoad() ~ GETFIELD(RegionThreadField) ~
+        INVOKEVIRTUAL(Thread.InterruptMethod) ~
+        RETURN()
     }
 
     // final public void reThrowChildException() throws Throwable {
@@ -1263,11 +1264,11 @@ object BackendObjType {
 
     private def reThrowChildExceptionIns: InstructionSet = {
       thisLoad() ~ GETFIELD(ChildExceptionField) ~
-      ifCondition(Condition.NONNULL) {
-        thisLoad() ~ GETFIELD(ChildExceptionField) ~
-        ATHROW()
-      } ~
-      RETURN()
+        ifCondition(Condition.NONNULL) {
+          thisLoad() ~ GETFIELD(ChildExceptionField) ~
+            ATHROW()
+        } ~
+        RETURN()
     }
 
     // final public void runOnExit(Runnable r) {
@@ -1277,8 +1278,8 @@ object BackendObjType {
 
     private def runOnExitIns: InstructionSet = {
       thisLoad() ~ GETFIELD(OnExitField) ~ ALOAD(1) ~
-      INVOKEVIRTUAL(LinkedList.AddFirstMethod) ~
-      RETURN()
+        INVOKEVIRTUAL(LinkedList.AddFirstMethod) ~
+        RETURN()
     }
   }
 
@@ -1302,8 +1303,8 @@ object BackendObjType {
 
     private def constructorIns: InstructionSet = {
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
-      thisLoad() ~ ALOAD(1) ~ PUTFIELD(RegionField) ~
-      RETURN()
+        thisLoad() ~ ALOAD(1) ~ PUTFIELD(RegionField) ~
+        RETURN()
     }
 
     // public void uncaughtException(Thread t, Throwable e) { r.reportChildException(e); }
@@ -1311,8 +1312,8 @@ object BackendObjType {
 
     private def uncaughtExceptionsIns: InstructionSet = {
       thisLoad() ~ GETFIELD(RegionField) ~
-      ALOAD(2) ~ INVOKEVIRTUAL(Region.ReportChildExceptionMethod) ~
-      RETURN()
+        ALOAD(2) ~ INVOKEVIRTUAL(Region.ReportChildExceptionMethod) ~
+        RETURN()
     }
   }
 
@@ -1332,10 +1333,10 @@ object BackendObjType {
       val defName = BackendObjType.Defn(sym).jvmName
       withName(0, BackendType.Array(String.toTpe))(args =>
         args.load() ~ INVOKESTATIC(Global.SetArgsMethod) ~
-        NEW(defName) ~ DUP() ~ INVOKESPECIAL(defName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid) ~
-        DUP() ~ GETSTATIC(Unit.SingletonField) ~ PUTFIELD(InstanceField(defName, "arg0", JavaObject.toTpe)) ~
-        Result.unwindSuspensionFreeThunk(s"in ${this.jvmName.toBinaryName}", SourceLocation.Unknown) ~
-        POP() ~ RETURN()
+          NEW(defName) ~ DUP() ~ INVOKESPECIAL(defName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid) ~
+          DUP() ~ GETSTATIC(Unit.SingletonField) ~ PUTFIELD(InstanceField(defName, "arg0", JavaObject.toTpe)) ~
+          Result.unwindSuspensionFreeThunk(s"in ${this.jvmName.toBinaryName}", SourceLocation.Unknown) ~
+          POP() ~ RETURN()
       )
     }
   }
@@ -1557,25 +1558,25 @@ object BackendObjType {
       */
     private def handleSuspension(pc: Int, newFrame: InstructionSet, setPc: InstructionSet): InstructionSet = {
       DUP() ~ INSTANCEOF(Suspension.jvmName) ~
-      ifCondition(Condition.NE) {
-        DUP() ~ CHECKCAST(Suspension.jvmName) ~ // [..., s]
-        // Add our new frame
-        NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~ // [..., s, s']
-        SWAP() ~ // [..., s', s]
-        DUP2() ~ // [..., s', s, s', s]
-        GETFIELD(Suspension.EffSymField) ~ PUTFIELD(Suspension.EffSymField) ~ // [..., s', s]
-        DUP2() ~ GETFIELD(Suspension.EffOpField) ~ PUTFIELD(Suspension.EffOpField) ~ // [..., s', s]
-        DUP2() ~ GETFIELD(Suspension.ResumptionField) ~ PUTFIELD(Suspension.ResumptionField) ~ // [..., s', s]
-        DUP2() ~ GETFIELD(Suspension.PrefixField) ~ // [..., s', s, s', s.prefix]
-        // Make the new frame and push it
-        newFrame ~
-        DUP() ~ pushInt(pc) ~ setPc ~
-        INVOKEINTERFACE(Frames.PushMethod) ~ // [..., s', s, s', prefix']
-        PUTFIELD(Suspension.PrefixField) ~ // [..., s', s]
-        POP() ~ // [..., s']
-        // Return the suspension up the stack
-        xReturn(Suspension.toTpe)
-      }
+        ifCondition(Condition.NE) {
+          DUP() ~ CHECKCAST(Suspension.jvmName) ~ // [..., s]
+            // Add our new frame
+            NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~ // [..., s, s']
+            SWAP() ~ // [..., s', s]
+            DUP2() ~ // [..., s', s, s', s]
+            GETFIELD(Suspension.EffSymField) ~ PUTFIELD(Suspension.EffSymField) ~ // [..., s', s]
+            DUP2() ~ GETFIELD(Suspension.EffOpField) ~ PUTFIELD(Suspension.EffOpField) ~ // [..., s', s]
+            DUP2() ~ GETFIELD(Suspension.ResumptionField) ~ PUTFIELD(Suspension.ResumptionField) ~ // [..., s', s]
+            DUP2() ~ GETFIELD(Suspension.PrefixField) ~ // [..., s', s, s', s.prefix]
+            // Make the new frame and push it
+            newFrame ~
+            DUP() ~ pushInt(pc) ~ setPc ~
+            INVOKEINTERFACE(Frames.PushMethod) ~ // [..., s', s, s', prefix']
+            PUTFIELD(Suspension.PrefixField) ~ // [..., s', s]
+            POP() ~ // [..., s']
+            // Return the suspension up the stack
+            xReturn(Suspension.toTpe)
+        }
     }
 
     /**
@@ -1586,8 +1587,8 @@ object BackendObjType {
       */
     def unwindThunkToValue(pc: Int, newFrame: InstructionSet, setPc: InstructionSet): InstructionSet = {
       unwindThunk() ~
-      handleSuspension(pc, newFrame, setPc) ~
-      CHECKCAST(Value.jvmName) // Cannot fail
+        handleSuspension(pc, newFrame, setPc) ~
+        CHECKCAST(Value.jvmName) // Cannot fail
     }
 
     /**
@@ -1598,9 +1599,9 @@ object BackendObjType {
       */
     def unwindSuspensionFreeThunkToType(tpe: BackendType, errorHint: String, loc: SourceLocation): InstructionSet = {
       unwindThunk() ~
-      crashIfSuspension(errorHint, loc) ~
-      CHECKCAST(Value.jvmName) ~ // Cannot fail
-      GETFIELD(Value.fieldFromType(tpe))
+        crashIfSuspension(errorHint, loc) ~
+        CHECKCAST(Value.jvmName) ~ // Cannot fail
+        GETFIELD(Value.fieldFromType(tpe))
     }
 
     /**
@@ -1619,17 +1620,17 @@ object BackendObjType {
       */
     def crashIfSuspension(errorHint: String, loc: SourceLocation): InstructionSet = {
       DUP() ~ INSTANCEOF(Suspension.jvmName) ~
-      ifCondition(Condition.NE)(
-        CHECKCAST(Suspension.jvmName) ~
-        NEW(UnhandledEffectError.jvmName) ~
-          // [.., suspension, UEE] -> [.., suspension, UEE, UEE, suspension]
-          DUP2() ~ SWAP() ~
-          pushString(errorHint) ~
-          pushLoc(loc) ~
-          // [.., suspension, UEE, UEE, suspension, info, rsl] -> [.., suspension, UEE]
-          INVOKESPECIAL(UnhandledEffectError.Constructor) ~
-          ATHROW()
-      )
+        ifCondition(Condition.NE)(
+          CHECKCAST(Suspension.jvmName) ~
+            NEW(UnhandledEffectError.jvmName) ~
+            // [.., suspension, UEE] -> [.., suspension, UEE, UEE, suspension]
+            DUP2() ~ SWAP() ~
+            pushString(errorHint) ~
+            pushLoc(loc) ~
+            // [.., suspension, UEE, UEE, suspension, info, rsl] -> [.., suspension, UEE]
+            INVOKESPECIAL(UnhandledEffectError.Constructor) ~
+            ATHROW()
+        )
     }
   }
 
@@ -1692,7 +1693,7 @@ object BackendObjType {
     }
   }
 
-  /** Frame is really just java.util.Function<Value, Result> **/
+  /** Frame is really just java.util.Function<Value, Result> * */
   case object Frame extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
@@ -1716,7 +1717,9 @@ object BackendObjType {
       withName(0, Frame.toTpe) { f =>
         withName(1, Value.toTpe) { resumeArg => {
           f.load() ~ resumeArg.load() ~ INVOKEINTERFACE(Frame.ApplyMethod) ~ ARETURN()
-      }}}
+        }
+        }
+      }
     }
   }
 
@@ -1757,8 +1760,11 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
     def EffSymField: InstanceField = InstanceField(this.jvmName, "effSym", String.toTpe)
+
     def EffOpField: InstanceField = InstanceField(this.jvmName, "effOp", EffectCall.toTpe)
+
     def PrefixField: InstanceField = InstanceField(this.jvmName, "prefix", Frames.toTpe)
+
     def ResumptionField: InstanceField = InstanceField(this.jvmName, "resumption", Resumption.toTpe)
 
   }
@@ -1813,11 +1819,11 @@ object BackendObjType {
     private def reverseOntoIns: InstructionSet = {
       withName(1, Frames.toTpe)(rest =>
         thisLoad() ~ GETFIELD(TailField) ~
-        NEW(FramesCons.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesCons.Constructor) ~
-        DUP() ~ thisLoad() ~ GETFIELD(HeadField) ~ PUTFIELD(HeadField) ~
-        DUP() ~ rest.load() ~ PUTFIELD(TailField) ~
-        INVOKEINTERFACE(Frames.ReverseOntoMethod) ~
-        xReturn(Frames.toTpe)
+          NEW(FramesCons.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesCons.Constructor) ~
+          DUP() ~ thisLoad() ~ GETFIELD(HeadField) ~ PUTFIELD(HeadField) ~
+          DUP() ~ rest.load() ~ PUTFIELD(TailField) ~
+          INVOKEINTERFACE(Frames.ReverseOntoMethod) ~
+          xReturn(Frames.toTpe)
       )
     }
   }
@@ -1887,8 +1893,11 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
     def SymField: InstanceField = InstanceField(this.jvmName, "sym", String.toTpe)
+
     def HandlerField: InstanceField = InstanceField(this.jvmName, "handler", Handler.toTpe)
+
     def FramesField: InstanceField = InstanceField(this.jvmName, "frames", Frames.toTpe)
+
     def TailField: InstanceField = InstanceField(this.jvmName, "tail", Resumption.toTpe)
 
     private def rewindIns: InstructionSet = {
@@ -1941,62 +1950,66 @@ object BackendObjType {
     )
 
     private def installHandlerIns: InstructionSet = {
-      withName(0, String.toTpe) { effSym => withName(1, Handler.toTpe) { handler =>
-        withName(2, Frames.toTpe) { frames => withName(3, Thunk.toTpe) { thunk =>
-          thunk.load() ~
-            // Thunk|Value|Suspension
-            Result.unwindThunk() ~
-            // Value|Suspension
-            { // handle suspension
-              DUP() ~ INSTANCEOF(Suspension.jvmName) ~ ifCondition(Condition.NE) {
-                DUP() ~ CHECKCAST(Suspension.jvmName) ~ storeWithName(4, Suspension.toTpe) { s =>
-                  NEW(ResumptionCons.jvmName) ~ DUP() ~ INVOKESPECIAL(ResumptionCons.Constructor) ~
-                    DUP() ~ effSym.load() ~ PUTFIELD(ResumptionCons.SymField) ~
-                    DUP() ~ handler.load() ~ PUTFIELD(ResumptionCons.HandlerField) ~
-                    DUP() ~
-                    s.load() ~ GETFIELD(Suspension.PrefixField) ~ frames.load() ~ INVOKEINTERFACE(Frames.ReverseOntoMethod) ~
-                    PUTFIELD(ResumptionCons.FramesField) ~
-                    DUP() ~ s.load() ~ GETFIELD(Suspension.ResumptionField) ~ PUTFIELD(ResumptionCons.TailField) ~
-                    storeWithName(5, ResumptionCons.toTpe) { r =>
-                      s.load() ~ GETFIELD(Suspension.EffSymField) ~ effSym.load() ~ INVOKEVIRTUAL(JavaObject.EqualsMethod) ~
-                        ifCondition(Condition.NE) {
-                          s.load() ~ GETFIELD(Suspension.EffOpField) ~ handler.load() ~ r.load() ~
-                            INVOKEINTERFACE(EffectCall.ApplyMethod) ~ xReturn(Result.toTpe)
-                        } ~
-                        NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~
-                        DUP() ~ s.load() ~ GETFIELD(Suspension.EffSymField) ~ PUTFIELD(Suspension.EffSymField) ~
-                        DUP() ~ s.load() ~ GETFIELD(Suspension.EffOpField) ~ PUTFIELD(Suspension.EffOpField) ~
-                        DUP() ~ NEW(FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesNil.Constructor) ~ PUTFIELD(Suspension.PrefixField) ~
-                        DUP() ~ r.load() ~ PUTFIELD(Suspension.ResumptionField) ~
-                        xReturn(Suspension.toTpe)
+      withName(0, String.toTpe) { effSym =>
+        withName(1, Handler.toTpe) { handler =>
+          withName(2, Frames.toTpe) { frames =>
+            withName(3, Thunk.toTpe) { thunk =>
+              thunk.load() ~
+                // Thunk|Value|Suspension
+                Result.unwindThunk() ~
+                // Value|Suspension
+                { // handle suspension
+                  DUP() ~ INSTANCEOF(Suspension.jvmName) ~ ifCondition(Condition.NE) {
+                    DUP() ~ CHECKCAST(Suspension.jvmName) ~ storeWithName(4, Suspension.toTpe) { s =>
+                      NEW(ResumptionCons.jvmName) ~ DUP() ~ INVOKESPECIAL(ResumptionCons.Constructor) ~
+                        DUP() ~ effSym.load() ~ PUTFIELD(ResumptionCons.SymField) ~
+                        DUP() ~ handler.load() ~ PUTFIELD(ResumptionCons.HandlerField) ~
+                        DUP() ~
+                        s.load() ~ GETFIELD(Suspension.PrefixField) ~ frames.load() ~ INVOKEINTERFACE(Frames.ReverseOntoMethod) ~
+                        PUTFIELD(ResumptionCons.FramesField) ~
+                        DUP() ~ s.load() ~ GETFIELD(Suspension.ResumptionField) ~ PUTFIELD(ResumptionCons.TailField) ~
+                        storeWithName(5, ResumptionCons.toTpe) { r =>
+                          s.load() ~ GETFIELD(Suspension.EffSymField) ~ effSym.load() ~ INVOKEVIRTUAL(JavaObject.EqualsMethod) ~
+                            ifCondition(Condition.NE) {
+                              s.load() ~ GETFIELD(Suspension.EffOpField) ~ handler.load() ~ r.load() ~
+                                INVOKEINTERFACE(EffectCall.ApplyMethod) ~ xReturn(Result.toTpe)
+                            } ~
+                            NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~
+                            DUP() ~ s.load() ~ GETFIELD(Suspension.EffSymField) ~ PUTFIELD(Suspension.EffSymField) ~
+                            DUP() ~ s.load() ~ GETFIELD(Suspension.EffOpField) ~ PUTFIELD(Suspension.EffOpField) ~
+                            DUP() ~ NEW(FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesNil.Constructor) ~ PUTFIELD(Suspension.PrefixField) ~
+                            DUP() ~ r.load() ~ PUTFIELD(Suspension.ResumptionField) ~
+                            xReturn(Suspension.toTpe)
+                        }
                     }
+                  }
+                } ~
+                // Value
+                CHECKCAST(Value.jvmName) ~ storeWithName(6, Value.toTpe) { res =>
+                //
+                // Case on frames
+                // FramesNil
+                frames.load() ~ INSTANCEOF(FramesNil.jvmName) ~ ifCondition(Condition.NE) {
+                  res.load() ~ xReturn(Value.toTpe)
+                } ~
+                  // FramesCons
+                  frames.load() ~ CHECKCAST(FramesCons.jvmName) ~ storeWithName(7, FramesCons.toTpe) { cons => {
+                  effSym.load() ~
+                    handler.load() ~
+                    cons.load() ~ GETFIELD(FramesCons.TailField) ~
+                    // thunk
+                    cons.load() ~ GETFIELD(FramesCons.HeadField) ~
+                    res.load() ~
+                    mkStaticLambda(Thunk.InvokeMethod, Frame.StaticApplyMethod, drop = 0) ~
+                    INVOKESTATIC(InstallHandlerMethod) ~
+                    xReturn(Result.toTpe)
+                }
                 }
               }
-            } ~
-            // Value
-            CHECKCAST(Value.jvmName) ~ storeWithName(6, Value.toTpe) { res =>
-            //
-            // Case on frames
-            // FramesNil
-            frames.load() ~ INSTANCEOF(FramesNil.jvmName) ~ ifCondition(Condition.NE) {
-              res.load() ~ xReturn(Value.toTpe)
-            } ~
-              // FramesCons
-              frames.load() ~ CHECKCAST(FramesCons.jvmName) ~ storeWithName(7, FramesCons.toTpe) { cons => {
-              effSym.load() ~
-              handler.load() ~
-              cons.load() ~ GETFIELD(FramesCons.TailField) ~
-              // thunk
-              cons.load() ~ GETFIELD(FramesCons.HeadField) ~
-              res.load() ~
-              mkStaticLambda(Thunk.InvokeMethod, Frame.StaticApplyMethod, drop = 0) ~
-              INVOKESTATIC(InstallHandlerMethod) ~
-              xReturn(Result.toTpe)
-            }
             }
           }
-        }}
-      }}
+        }
+      }
     }
   }
 
