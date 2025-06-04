@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{ReducedAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkClassName
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.*
@@ -1341,7 +1341,47 @@ object BackendObjType {
     }
   }
 
-  case class Namespace(ns: List[String]) extends BackendObjType
+  case class Namespace(ns: List[String]) extends BackendObjType {
+
+    def genByteCode(defs: List[ReducedAst.Def])(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
+
+      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(JavaObject.Constructor))
+
+      for (defn <- defs) {
+        cm.mkStaticMethod(ShimMethod(defn), IsPublic, IsFinal, shimIns(defn))
+      }
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
+
+    def ShimMethod(defn: ReducedAst.Def): StaticMethod = {
+      val erasedArgs = defn.fparams.map(_.tpe).map(BackendType.toErasedBackendType)
+      val erasedResult = BackendType.toErasedBackendType(defn.unboxedType.tpe)
+      // Exported names are checked in Safety, so no mangling is needed.
+      val name = if (defn.ann.isExport) defn.sym.name else "m_" + JvmName.mangle(defn.sym.name)
+      StaticMethod(this.jvmName, name, MethodDescriptor(erasedArgs, erasedResult))
+    }
+
+    private def shimIns(defn: ReducedAst.Def): InstructionSet = {
+      val defnT = Defn(defn.sym)
+      val paramTypes = defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe))
+      withNames(0, paramTypes) {
+        case (_, args) =>
+          val erasedResult = BackendType.toErasedBackendType(defn.unboxedType.tpe)
+          NEW(defnT.jvmName) ~
+            DUP() ~
+            INVOKESPECIAL(ConstructorMethod(defnT.jvmName, Nil)) ~
+            composeN(for ((arg, index) <- args.zipWithIndex) yield {
+              DUP() ~ arg.load() ~ PUTFIELD(InstanceField(defnT.jvmName, s"arg$index", arg.tpe))
+            }) ~
+            Result.unwindSuspensionFreeThunkToType(erasedResult, s"in shim method of ${defn.sym}", defn.loc) ~
+            xReturn(erasedResult)
+      }
+    }
+  }
 
   //
   // Java Types

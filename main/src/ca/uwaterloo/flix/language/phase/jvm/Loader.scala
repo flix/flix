@@ -34,14 +34,12 @@ object Loader {
     // Decorate each defn in the ast with its method object unless its a closure.
     //
     for ((sym, defn) <- root.defs if root.entryPoints.contains(sym)) {
-      // Retrieve the namespace name
-      val nsName = BackendObjType.Namespace(sym.namespace).jvmName
-
+      val ns = BackendObjType.Namespace(sym.namespace)
       // Retrieve the reflective class object.
-      val nsClass = loadedClasses.getOrElse(nsName, throw InternalCompilerException(s"Unknown namespace: '$nsName'.", sym.loc))
+      val nsClass = loadedClasses.getOrElse(ns.jvmName, throw InternalCompilerException(s"Unknown namespace: '${ns.jvmName}'.", sym.loc))
 
       // Retrieve the method name of the symbol.
-      val methodName = JvmOps.getDefMethodNameInNamespaceClass(defn)
+      val methodName = ns.ShimMethod(defn).name
 
       // Retrieve the method object.
       val method = allMethods.get(nsClass) match {

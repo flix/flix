@@ -124,23 +124,6 @@ object JvmOps {
     mangle(op.name)
   }
 
-  /**
-    * Returns the method name of a defn as used in a namespace class.
-    *
-    * For example:
-    *
-    * find      =>  m_find
-    * length    =>  m_length
-    */
-  def getDefMethodNameInNamespaceClass(defn: ReducedAst.Def): String = {
-    /**
-      * Exported names are checked in [[ca.uwaterloo.flix.language.phase.Safety]]
-      * so no mangling is needed.
-      */
-    if (defn.ann.isExport) defn.sym.name
-    else "m_" + mangle(defn.sym.name)
-  }
-
   def getTagName(name: String): String = mangle(name)
 
   /**
