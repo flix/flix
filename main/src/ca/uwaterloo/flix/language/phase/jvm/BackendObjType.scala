@@ -1359,6 +1359,7 @@ object BackendObjType {
     def ShimMethod(defn: ReducedAst.Def): StaticMethod = {
       val erasedArgs = defn.fparams.map(_.tpe).map(BackendType.toErasedBackendType)
       val erasedResult = BackendType.toErasedBackendType(defn.unboxedType.tpe)
+      // Exported names are checked in Safety, so no mangling is needed.
       val name = if (defn.ann.isExport) defn.sym.name else "m_" + JvmName.mangle(defn.sym.name)
       StaticMethod(this.jvmName, name, MethodDescriptor(erasedArgs, erasedResult))
     }
