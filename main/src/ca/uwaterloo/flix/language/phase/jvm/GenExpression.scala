@@ -1106,7 +1106,7 @@ object GenExpression {
           }
       }
 
-    case Expr.ApplyDef(sym, exps, ct, _, purity, loc) => ct match {
+    case Expr.ApplyDef(sym, exps, ct, _, _, loc) => ct match {
       case ExpPosition.Tail =>
         // Type of the function abstract class
         val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType).jvmName
@@ -1142,12 +1142,12 @@ object GenExpression {
             s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
         }
         // Calling unwind and unboxing
-
-        if (Purity.isControlPure(purity)) {
-          mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc))
-        } else {
-          ctx match {
-            case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+        ctx match {
+          case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+            val defn = root.defs(sym)
+            if (Purity.isControlPure(defn.expr.purity)) {
+              mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc))
+            } else {
               val pcPoint = pcCounter(0) + 1
               val pcPointLabel = pcLabels(pcPoint)
               val afterUnboxing = new Label()
@@ -1159,10 +1159,9 @@ object GenExpression {
               mv.visitVarInsn(ALOAD, 1)
 
               mv.visitLabel(afterUnboxing)
-
-            case DirectContext(_, _, _) =>
-              throw InternalCompilerException("Unexpected direct method context in control impure function", loc)
-          }
+            }
+          case DirectContext(_, _, _) =>
+            mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc))
         }
     }
 
@@ -1391,7 +1390,7 @@ object GenExpression {
 
     case Expr.Do(op, exps, tpe, _, loc) => ctx match {
       case DirectContext(_, _, _) =>
-        throw InternalCompilerException("Unexpected do-expression in direct method context", loc)
+        BackendObjType.Result.crashIfSuspension("Unexpected do-expression in direct method context", loc)
 
       case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
         val pcPoint = pcCounter(0) + 1
