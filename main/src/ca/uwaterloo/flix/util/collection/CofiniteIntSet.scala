@@ -29,7 +29,6 @@ sealed trait CofiniteIntSet {
 
   import CofiniteIntSet.{Compl, Set}
 
-
   /** Returns `true` if `this` is [[CofiniteIntSet.empty]]. */
   def isEmpty: Boolean = this match {
     case Set(s) if s.isEmpty => true
@@ -46,6 +45,16 @@ sealed trait CofiniteIntSet {
   def isUniverse: Boolean = this match {
     case Set(_) => false
     case Compl(s) => s.isEmpty
+  }
+
+  /** Returns a human-readable string representation of `this`. */
+  override def toString: String = {
+    if (isEmpty) "Ø"
+    else if (isUniverse) "𝓤"
+    else this match {
+      case CofiniteIntSet.Set(xs) => s"{${xs.mkString(", ")}}"
+      case CofiniteIntSet.Compl(xs) => s"¬{${xs.mkString(", ")}}"
+    }
   }
 
 }

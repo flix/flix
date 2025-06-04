@@ -24,6 +24,20 @@ import scala.collection.immutable.SortedSet
 object Zhegalkin {
 
   /**
+    * A smart constructor for Zhegalkin constants.
+    *
+    * Ensures that the empty and the universe has a unique representation.
+    */
+  def mkCst[T](s: CofiniteIntSet)(implicit alg: ZhegalkinAlgebra[T]): ZhegalkinCst[T] = {
+    if (s.isEmpty)
+      alg.empty
+    else if (s.isUniverse)
+      alg.universe
+    else
+      ZhegalkinCst(s)
+  }
+
+  /**
     * Returns the given set formula as a Zhegalkin polynomial.
     */
   def toZhegalkin[T](f: SetFormula)(implicit alg: ZhegalkinAlgebra[T]): ZhegalkinExpr[T] = f match {
@@ -32,7 +46,7 @@ object Zhegalkin {
     case Cst(c) => ZhegalkinExpr(alg.empty, List(ZhegalkinTerm(alg.universe, SortedSet(ZhegalkinVar(c, flexible = false)))))
     case Var(x) => ZhegalkinExpr(alg.empty, List(ZhegalkinTerm(alg.universe, SortedSet(ZhegalkinVar(x, flexible = true)))))
     case ElemSet(s) =>
-      ZhegalkinExpr(ZhegalkinCst.mkCst(CofiniteIntSet.mkSet(s)), Nil)
+      ZhegalkinExpr(mkCst(CofiniteIntSet.mkSet(s)), Nil)
     case Compl(f1) => ZhegalkinExpr.mkCompl(toZhegalkin(f1))
     case Inter(l) =>
       val polys = l.toList.map(x => toZhegalkin(x)(alg))

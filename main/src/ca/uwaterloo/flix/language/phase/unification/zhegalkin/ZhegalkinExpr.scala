@@ -82,6 +82,15 @@ object ZhegalkinExpr {
   }
 
   /**
+    * Returns the xor of the two given Zhegalkin constants `c1` and `c2`.
+    * */
+  def mkXor[T](c1: ZhegalkinCst[T], c2: ZhegalkinCst[T])(implicit alg: ZhegalkinAlgebra[T]): ZhegalkinCst[T] = {
+    // Note: use of union, inter, compl ensures a canonical representation.
+    // a ⊕ b = (a ∪ b) - (a ∩ b) = (a ∪ b) ∩ ¬(a ∩ b)
+    c1.union(c2).inter(c1.inter(c2).compl()(alg))
+  }
+
+  /**
     * Returns the xor of the two Zhegalkin expressions.
     *
     * Uses identity laws and caching to speed up the computation.
@@ -107,7 +116,7 @@ object ZhegalkinExpr {
     */
   private def computeXor[T](e1: ZhegalkinExpr[T], e2: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T]): ZhegalkinExpr[T] = (e1, e2) match {
     case (ZhegalkinExpr(c1, ts1), ZhegalkinExpr(c2, ts2)) =>
-      val c = ZhegalkinCst.mkXor(c1, c2)
+      val c = mkXor(c1, c2)
       // Eliminate duplicates: a ⊕ a = 0
 
       // We want to retain all terms that occur an odd number of times.
@@ -127,7 +136,7 @@ object ZhegalkinExpr {
       val mergedTerms = termsGroupedByVarSet.map {
         case (vars, l) =>
           val mergedCst: ZhegalkinCst[T] = l.foldLeft(alg.empty) { // Neutral element for Xor.
-            case (acc, t) => ZhegalkinCst.mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A.
+            case (acc, t) => mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A.
           }
           ZhegalkinTerm(mergedCst, vars)
       }
