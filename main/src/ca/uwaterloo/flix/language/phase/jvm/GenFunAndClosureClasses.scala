@@ -142,8 +142,11 @@ object GenFunAndClosureClasses {
     }
     visitor.visitField(ACC_PUBLIC, "pc", JvmType.PrimInt.toDescriptor, null, null)
 
-    // Methods
     compileConstructor(functionInterface, visitor)
+    // Methods
+    if (Purity.isControlPure(defn.expr.purity) && kind == Function) {
+      compileStaticApplyMethod(visitor, defn)
+    }
     compileInvokeMethod(visitor, className)
     compileFrameMethod(visitor, className, defn)
     compileCopyMethod(visitor, className, defn)
@@ -165,6 +168,32 @@ object GenFunAndClosureClasses {
     constructor.visitEnd()
   }
 
+  private def compileStaticApplyMethod(visitor: ClassWriter, defn: Def)(implicit root: Root, flix: Flix): Unit = {
+    // Method header
+    val paramTpes = defn.fparams.map(fp => BackendType.toBackendType(fp.tpe))
+    val resultTpe = BackendObjType.Result.toTpe
+    val desc = MethodDescriptor(paramTpes, resultTpe)
+    val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
+    val m = visitor.visitMethod(modifiers, JvmName.DirectApply, desc.toDescriptor, null, null)
+
+    m.visitCode()
+
+    // used for self-recursive tail calls
+    val enterLabel = new Label()
+    m.visitLabel(enterLabel)
+
+    // Generate the expression
+    val localOffset = 0
+    val labelEnv = Map.empty[Symbol.LabelSym, Label]
+    val ctx = GenExpression.DirectStaticContext(enterLabel, labelEnv, localOffset)
+    GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
+
+    m.visitByteIns(BytecodeInstructions.xReturn(BackendObjType.Result.toTpe))
+
+
+    m.visitMaxs(999, 999)
+    m.visitEnd()
+  }
 
   private def compileInvokeMethod(visitor: ClassWriter, className: JvmName): Unit = {
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
@@ -209,7 +238,7 @@ object GenFunAndClosureClasses {
     loadParamsOf(fparams)
 
     if (Purity.isControlPure(defn.expr.purity)) {
-      val ctx = GenExpression.DirectContext(enterLabel, Map.empty, localOffset)
+      val ctx = GenExpression.DirectInstanceContext(enterLabel, Map.empty, localOffset)
       GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
     } else {
       val pcLabels: Vector[Label] = Vector.range(0, defn.pcPoints).map(_ => new Label())
@@ -242,6 +271,7 @@ object GenFunAndClosureClasses {
 
     val returnValue = BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
     m.visitByteIns(returnValue)
+
 
     m.visitMaxs(999, 999)
     m.visitEnd()

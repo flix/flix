@@ -50,7 +50,9 @@ object GenExpression {
       this match {
         case ctx: EffectContext =>
           ctx.copy(lenv = updatedLabels)
-        case ctx: DirectContext =>
+        case ctx: DirectInstanceContext =>
+          ctx.copy(lenv = updatedLabels)
+        case ctx: DirectStaticContext =>
           ctx.copy(lenv = updatedLabels)
       }
     }
@@ -72,20 +74,31 @@ object GenExpression {
                           ) extends MethodContext
 
   /**
-    * A context for control pure functions that do not closure capture any variables.
+    * A context for control pure functions that may capture variables and therefore use
+    * fields to store its arguments.
     * Such functions never need to record their state and will always
     * return at the given return expressions except if they loop indefinitely.
     */
-  case class DirectContext(entryPoint: Label,
-                           lenv: Map[Symbol.LabelSym, Label],
-                           localOffset: Int,
-                          ) extends MethodContext
+  case class DirectInstanceContext(entryPoint: Label,
+                                   lenv: Map[Symbol.LabelSym, Label],
+                                   localOffset: Int,
+                                  ) extends MethodContext
+
+  /**
+    * A context for control pure functions that do not closure capture any variables and therefore
+    * never use any fields to store arguments.
+    * Such functions never need to record their state and will always
+    * return at the given return expressions except if they loop indefinitely.
+    */
+  case class DirectStaticContext(entryPoint: Label,
+                                 lenv: Map[Symbol.LabelSym, Label],
+                                 localOffset: Int,
+                                ) extends MethodContext
 
   /**
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
   def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
-
     case Expr.Cst(cst, tpe, loc) => cst match {
       case Constant.Unit => mv.visitByteIns({
         BytecodeInstructions.GETSTATIC(BackendObjType.Unit.SingletonField)
@@ -1080,8 +1093,8 @@ object GenExpression {
           compileExpr(exp2)
           mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
             "arg0", JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
-          // Calling unwind and unboxing
 
+          // Calling unwind and unboxing
           if (Purity.isControlPure(purity)) {
             mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure closure call", loc))
           } else {
@@ -1100,7 +1113,7 @@ object GenExpression {
 
                 mv.visitLabel(afterUnboxing)
 
-              case DirectContext(_, _, _) =>
+              case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
                 throw InternalCompilerException("Unexpected direct method context in control impure function", loc)
             }
           }
@@ -1126,6 +1139,22 @@ object GenExpression {
         mv.visitInsn(ARETURN)
 
       case ExpPosition.NonTail =>
+        val defn = root.defs(sym)
+        val targetIsFunction = defn.cparams.isEmpty
+        val canCallStaticMethod = Purity.isControlPure(defn.expr.purity) && targetIsFunction
+        if (canCallStaticMethod) {
+          val paramTpes = defn.fparams.map(fp => BackendType.toBackendType(fp.tpe))
+          // Call the static method, using exact types
+          for ((arg, tpe) <- exps.zip(paramTpes)) {
+            compileExpr(arg)
+            mv.visitByteIns(BytecodeInstructions.castIfNotPrim(tpe))
+          }
+          val resultTpe = BackendObjType.Result.toTpe
+          val desc = MethodDescriptor(paramTpes, resultTpe)
+          val className = BackendObjType.Defn(sym).jvmName
+          mv.visitMethodInsn(INVOKESTATIC, className.toInternalName, JvmName.DirectApply, desc.toDescriptor, false)
+          mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc))
+        } else {
         // JvmType of Def
         val defJvmName = BackendObjType.Defn(sym).jvmName
 
@@ -1160,33 +1189,59 @@ object GenExpression {
 
               mv.visitLabel(afterUnboxing)
             }
-          case DirectContext(_, _, _) =>
+          case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
             mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc))
+          }
         }
     }
 
-    case Expr.ApplySelfTail(sym, exps, _, _, _) =>
-      // The function abstract class name
-      val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType).jvmName
-      // Evaluate each argument and put the result on the Fn class.
-      for ((arg, i) <- exps.zipWithIndex) {
-        mv.visitVarInsn(ALOAD, 0)
-        // Evaluate the argument and push the result on the stack.
-        compileExpr(arg)
-        mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
-          s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
-      }
-      ctx match {
-        case EffectContext(_, _, _, setPc, _, _, _) =>
+    case Expr.ApplySelfTail(sym, exps, _, _, _) => ctx match {
+      case EffectContext(_, _, _, setPc, _, _, _) =>
+        // The function abstract class name
+        val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType).jvmName
+        // Evaluate each argument and put the result on the Fn class.
+        for ((arg, i) <- exps.zipWithIndex) {
           mv.visitVarInsn(ALOAD, 0)
-          mv.visitByteIns(BytecodeInstructions.pushInt(0))
-          mv.visitByteIns(setPc)
+          // Evaluate the argument and push the result on the stack.
+          compileExpr(arg)
+          mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
+            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+        }
+        mv.visitVarInsn(ALOAD, 0)
+        mv.visitByteIns(BytecodeInstructions.pushInt(0))
+        mv.visitByteIns(setPc)
+        // Jump to the entry point of the method.
+        mv.visitJumpInsn(GOTO, ctx.entryPoint)
 
-        case DirectContext(_, _, _) =>
-          () // Do nothing
-      }
-      // Jump to the entry point of the method.
-      mv.visitJumpInsn(GOTO, ctx.entryPoint)
+      case DirectInstanceContext(_, _, _) =>
+        // The function abstract class name
+        val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType).jvmName
+        // Evaluate each argument and put the result on the Fn class.
+        for ((arg, i) <- exps.zipWithIndex) {
+          mv.visitVarInsn(ALOAD, 0)
+          // Evaluate the argument and push the result on the stack.
+          compileExpr(arg)
+          mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
+            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+        }
+        // Jump to the entry point of the method.
+        mv.visitJumpInsn(GOTO, ctx.entryPoint)
+
+      case DirectStaticContext(_, _, _) =>
+        val defn = root.defs(sym)
+        for (arg <- exps) {
+          // Evaluate the argument and push the result on the stack.
+          compileExpr(arg)
+        }
+        for ((arg, fp) <- exps.zip(defn.fparams).reverse) {
+          // Store it in the ith parameter.
+          val tpe = BackendType.toBackendType(arg.tpe)
+          val offset = fp.sym.getStackOffset(ctx.localOffset)
+          mv.visitByteIns(BytecodeInstructions.xStore(tpe, offset))
+        }
+        // Jump to the entry point of the method.
+        mv.visitJumpInsn(GOTO, ctx.entryPoint)
+    }
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => mv.visitByteIns({
       import BytecodeInstructions.*
@@ -1369,7 +1424,7 @@ object GenExpression {
       // handle value/suspend/thunk if in non-tail position
       if (ct == ExpPosition.NonTail) {
         ctx match {
-          case DirectContext(_, _, _) =>
+          case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
             mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure run-with call", loc))
 
           case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
@@ -1389,7 +1444,7 @@ object GenExpression {
       }
 
     case Expr.Do(op, exps, tpe, _, loc) => ctx match {
-      case DirectContext(_, _, _) =>
+      case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
         BackendObjType.Result.crashIfSuspension("Unexpected do-expression in direct method context", loc)
 
       case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
