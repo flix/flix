@@ -27,31 +27,36 @@ object ZhegalkinExpr {
     *
     * A Zhegalkin expression is of the form: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn
     */
-  def mkZhegalkinExpr[T](cst: T, terms: List[ZhegalkinTerm[T]])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = (cst, terms) match {
-    case (alg.empty, Nil) => alg.zero
-    case (alg.universe, Nil) => alg.one
-    case _ =>
-      // Construct a new polynomial.
+  def mkZhegalkinExpr[T](cst: T, terms: List[ZhegalkinTerm[T]])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = {
+    if (cst == lat.Empty && terms.isEmpty) {
+      return alg.zero
+    }
+    if (cst == lat.Universe && terms.isEmpty) {
+      return alg.one
+    }
 
-      // Compute non-empty terms (i.e. terms where the coefficient is non-empty).
-      val ts = terms.filter(t => !lat.isEmpty(t.cst))
+    // Construct a new polynomial.
 
-      // Special case: If ts is empty then this could be 0 or 1.
-      if (ts.isEmpty) {
-        if (lat.isEmpty(cst)) {
-          return alg.zero
-        }
-        if (lat.isUniverse(cst)) {
-          return alg.one
-        }
+    // Compute non-empty terms (i.e. terms where the coefficient is non-empty).
+    val ts = terms.filter(t => !lat.isEmpty(t.cst))
+
+    // Special case: If ts is empty then this could be 0 or 1.
+    if (ts.isEmpty) {
+      if (lat.isEmpty(cst)) {
+        return alg.zero
       }
+      if (lat.isUniverse(cst)) {
+        return alg.one
+      }
+    }
 
-      // General case:
-      ZhegalkinExpr(cst, ts.sortBy(t => t.vars.size))
+    // General case:
+    ZhegalkinExpr(cst, ts.sortBy(t => t.vars.size))
   }
 
   /** Returns a Zhegalkin expression that represents a single variable, i.e. x ~~ Ø ⊕ (𝓤 ∩ x) */
-  def mkVar[T](x: ZhegalkinVar)(implicit alg: ZhegalkinAlgebra[T]): ZhegalkinExpr[T] = ZhegalkinExpr(alg.empty, List(ZhegalkinTerm(alg.universe, SortedSet(x))))
+  def mkVar[T](x: ZhegalkinVar)(implicit lat: BoolLattice[T]): ZhegalkinExpr[T] =
+    ZhegalkinExpr(lat.Empty, List(ZhegalkinTerm(lat.Universe, SortedSet(x))))
 
   /**
     * Returns `true` if the given Zhegalkin expression `e` represents the empty set.
@@ -74,7 +79,7 @@ object ZhegalkinExpr {
     // Performance: A common case.
     // Ø ⊕ (𝓤 ∩ x1 ∩ ...) ⊕ (𝓤 ∩ x2 ∩ ...) --> 𝓤 ⊕ (𝓤 ∩ x1 ∩ ...) ⊕ (𝓤 ∩ x2 ∩ ...)
     if (lat.isEmpty(e.cst) && e.terms.forall(t => lat.isUniverse(t.cst))) {
-      return e.copy(cst = alg.universe)
+      return e.copy(cst = lat.Universe)
     }
 
     // ¬a = 1 ⊕ a
@@ -135,7 +140,7 @@ object ZhegalkinExpr {
       val termsGroupedByVarSet = allTermsNonDup.groupBy(_.vars).toList
       val mergedTerms = termsGroupedByVarSet.map {
         case (vars, l) =>
-          val mergedCst: T = l.foldLeft(alg.empty) { // Neutral element for Xor.
+          val mergedCst: T = l.foldLeft(lat.Empty) { // Neutral element for Xor.
             case (acc, t) => mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A.
           }
           ZhegalkinTerm(mergedCst, vars)
@@ -265,9 +270,9 @@ object ZhegalkinExpr {
     */
   private def mkInterTermExpr[T](t: ZhegalkinTerm[T], e: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = e match {
     case ZhegalkinExpr(c2, terms) =>
-      val zero: ZhegalkinExpr[T] = mkZhegalkinExpr(alg.empty, List(mkInterConstantTerm(c2, t)))
+      val zero: ZhegalkinExpr[T] = mkZhegalkinExpr(lat.Empty, List(mkInterConstantTerm(c2, t)))
       terms.foldLeft(zero) {
-        case (acc, t2) => mkXor(acc, mkZhegalkinExpr(alg.empty, List(mkInterTermTerm(t, t2))))
+        case (acc, t2) => mkXor(acc, mkZhegalkinExpr(lat.Empty, List(mkInterTermTerm(t, t2))))
       }
   }
 
