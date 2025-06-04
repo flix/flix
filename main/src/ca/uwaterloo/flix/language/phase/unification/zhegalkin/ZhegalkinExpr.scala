@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
+import ca.uwaterloo.flix.language.phase.unification.shared.BoolLattice
+
 import java.util.Objects
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
@@ -28,24 +30,24 @@ object ZhegalkinExpr {
     * A Zhegalkin expression is of the form: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn
     */
   def mkZhegalkinExpr[T](cst: T, terms: List[ZhegalkinTerm[T]])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = {
-    if (cst == lat.Empty && terms.isEmpty) {
+    if (cst == lat.Bot && terms.isEmpty) {
       return alg.zero
     }
-    if (cst == lat.Universe && terms.isEmpty) {
+    if (cst == lat.Top && terms.isEmpty) {
       return alg.one
     }
 
     // Construct a new polynomial.
 
     // Compute non-empty terms (i.e. terms where the coefficient is non-empty).
-    val ts = terms.filter(t => !lat.isEmpty(t.cst))
+    val ts = terms.filter(t => !lat.isBot(t.cst))
 
     // Special case: If ts is empty then this could be 0 or 1.
     if (ts.isEmpty) {
-      if (lat.isEmpty(cst)) {
+      if (lat.isBot(cst)) {
         return alg.zero
       }
-      if (lat.isUniverse(cst)) {
+      if (lat.isTop(cst)) {
         return alg.one
       }
     }
@@ -56,7 +58,7 @@ object ZhegalkinExpr {
 
   /** Returns a Zhegalkin expression that represents a single variable, i.e. x ~~ Ø ⊕ (𝓤 ∩ x) */
   def mkVar[T](x: ZhegalkinVar)(implicit lat: BoolLattice[T]): ZhegalkinExpr[T] =
-    ZhegalkinExpr(lat.Empty, List(ZhegalkinTerm(lat.Universe, SortedSet(x))))
+    ZhegalkinExpr(lat.Bot, List(ZhegalkinTerm(lat.Top, SortedSet(x))))
 
   /**
     * Returns `true` if the given Zhegalkin expression `e` represents the empty set.
@@ -78,8 +80,8 @@ object ZhegalkinExpr {
 
     // Performance: A common case.
     // Ø ⊕ (𝓤 ∩ x1 ∩ ...) ⊕ (𝓤 ∩ x2 ∩ ...) --> 𝓤 ⊕ (𝓤 ∩ x1 ∩ ...) ⊕ (𝓤 ∩ x2 ∩ ...)
-    if (lat.isEmpty(e.cst) && e.terms.forall(t => lat.isUniverse(t.cst))) {
-      return e.copy(cst = lat.Universe)
+    if (lat.isBot(e.cst) && e.terms.forall(t => lat.isTop(t.cst))) {
+      return e.copy(cst = lat.Top)
     }
 
     // ¬a = 1 ⊕ a
@@ -92,7 +94,7 @@ object ZhegalkinExpr {
   def mkXor[T](c1: T, c2: T)(implicit lat: BoolLattice[T]): T = {
     // Note: use of union, inter, compl ensures a canonical representation.
     // a ⊕ b = (a ∪ b) - (a ∩ b) = (a ∪ b) ∩ ¬(a ∩ b)
-    lat.intersection(lat.union(c1, c2), lat.complement(lat.intersection(c1, c2)))
+    lat.meet(lat.join(c1, c2), lat.comp(lat.meet(c1, c2)))
   }
 
   /**
@@ -140,7 +142,7 @@ object ZhegalkinExpr {
       val termsGroupedByVarSet = allTermsNonDup.groupBy(_.vars).toList
       val mergedTerms = termsGroupedByVarSet.map {
         case (vars, l) =>
-          val mergedCst: T = l.foldLeft(lat.Empty) { // Neutral element for Xor.
+          val mergedCst: T = l.foldLeft(lat.Bot) { // Neutral element for Xor.
             case (acc, t) => mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A.
           }
           ZhegalkinTerm(mergedCst, vars)
@@ -241,7 +243,7 @@ object ZhegalkinExpr {
   private def computeInterConstantExpr[T](c: T, e: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = e match {
     case ZhegalkinExpr(c2, terms) =>
       val ts = terms.map(t => mkInterConstantTerm(c, t))
-      mkZhegalkinExpr(lat.intersection(c, c2), ts)
+      mkZhegalkinExpr(lat.meet(c, c2), ts)
   }
 
   /**
@@ -257,7 +259,7 @@ object ZhegalkinExpr {
         return t
       }
 
-      ZhegalkinTerm(lat.intersection(c, c2), vars)
+      ZhegalkinTerm(lat.meet(c, c2), vars)
   }
 
   /**
@@ -270,9 +272,9 @@ object ZhegalkinExpr {
     */
   private def mkInterTermExpr[T](t: ZhegalkinTerm[T], e: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = e match {
     case ZhegalkinExpr(c2, terms) =>
-      val zero: ZhegalkinExpr[T] = mkZhegalkinExpr(lat.Empty, List(mkInterConstantTerm(c2, t)))
+      val zero: ZhegalkinExpr[T] = mkZhegalkinExpr(lat.Bot, List(mkInterConstantTerm(c2, t)))
       terms.foldLeft(zero) {
-        case (acc, t2) => mkXor(acc, mkZhegalkinExpr(lat.Empty, List(mkInterTermTerm(t, t2))))
+        case (acc, t2) => mkXor(acc, mkZhegalkinExpr(lat.Bot, List(mkInterTermTerm(t, t2))))
       }
   }
 
@@ -303,7 +305,7 @@ object ZhegalkinExpr {
           }
         }
         // General case:
-        ZhegalkinTerm(lat.intersection(c1, c2), vars1 ++ vars2)
+        ZhegalkinTerm(lat.meet(c1, c2), vars1 ++ vars2)
     }
   }
 

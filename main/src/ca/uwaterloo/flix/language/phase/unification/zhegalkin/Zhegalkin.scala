@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
+import ca.uwaterloo.flix.language.phase.unification.shared.{BoolLattice, CofiniteIntSet}
 
 import scala.collection.immutable.SortedSet
 
@@ -28,8 +29,8 @@ object Zhegalkin {
   def toZhegalkin(f: SetFormula)(implicit alg: ZhegalkinAlgebra[CofiniteIntSet], lat: BoolLattice[CofiniteIntSet]): ZhegalkinExpr[CofiniteIntSet] = f match {
     case SetFormula.Univ => alg.one
     case SetFormula.Empty => alg.zero
-    case Cst(c) => ZhegalkinExpr(lat.Empty, List(ZhegalkinTerm(lat.Universe, SortedSet(ZhegalkinVar(c, flexible = false)))))
-    case Var(x) => ZhegalkinExpr(lat.Empty, List(ZhegalkinTerm(lat.Universe, SortedSet(ZhegalkinVar(x, flexible = true)))))
+    case Cst(c) => ZhegalkinExpr(lat.Bot, List(ZhegalkinTerm(lat.Top, SortedSet(ZhegalkinVar(c, flexible = false)))))
+    case Var(x) => ZhegalkinExpr(lat.Bot, List(ZhegalkinTerm(lat.Top, SortedSet(ZhegalkinVar(x, flexible = true)))))
     case ElemSet(s) =>
       ZhegalkinExpr(CofiniteIntSet.mkSet(s), Nil)
     case Compl(f1) => ZhegalkinExpr.mkCompl(toZhegalkin(f1))
