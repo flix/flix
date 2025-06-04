@@ -47,6 +47,7 @@ sealed trait BackendObjType {
     case BackendObjType.Tag(tpes) => JvmName(RootPackage, mkClassName("Tag", tpes))
     case BackendObjType.AbstractArrow(args, result) => JvmName(RootPackage, mkClassName(s"Clo${args.length}", args :+ result))
     case BackendObjType.Arrow(args, result) => JvmName(RootPackage, mkClassName(s"Fn${args.length}", args :+ result))
+    case BackendObjType.Defn(sym) => JvmName(sym.namespace, JvmName.mkClassName("Def", sym.name))
     case BackendObjType.RecordEmpty => JvmName(RootPackage, mkClassName(s"RecordEmpty"))
     case BackendObjType.RecordExtend(value) => JvmName(RootPackage, mkClassName("RecordExtend", value))
     case BackendObjType.Record => JvmName(RootPackage, mkClassName("Record"))
@@ -59,7 +60,8 @@ sealed trait BackendObjType {
     case BackendObjType.UnhandledEffectError => JvmName(DevFlixRuntime, mkClassName("UnhandledEffectError"))
     case BackendObjType.Region => JvmName(DevFlixRuntime, mkClassName("Region"))
     case BackendObjType.UncaughtExceptionHandler => JvmName(DevFlixRuntime, mkClassName("UncaughtExceptionHandler"))
-    case BackendObjType.Main(_) => JvmName.Main
+    case BackendObjType.Main => JvmName.Main
+    case BackendObjType.Namespace(ns) => JvmName(ns.dropRight(1), ns.lastOption.getOrElse(s"Root${Flix.Delimiter}"))
     // Java classes
     case BackendObjType.Native(className) => className
     case BackendObjType.Regex => JvmName(List("java", "util", "regex"), "Pattern")
@@ -653,6 +655,8 @@ object BackendObjType {
         ARETURN()
     }
   }
+
+  case class Defn(sym: Symbol.DefnSym) extends BackendObjType
 
   case object RecordEmpty extends BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
@@ -1312,20 +1316,20 @@ object BackendObjType {
     }
   }
 
-  case class Main(sym: Symbol.DefnSym) extends BackendObjType {
+  case object Main extends BackendObjType {
 
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+    def genByteCode(sym: Symbol.DefnSym)(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
 
-      cm.mkStaticMethod(MainMethod, IsPublic, NotFinal, mainIns)
+      cm.mkStaticMethod(MainMethod, IsPublic, NotFinal, mainIns(sym))
 
       cm.closeClassMaker()
     }
 
     private def MainMethod: StaticMethod = StaticMethod(this.jvmName, "main", mkDescriptor(BackendType.Array(String.toTpe))(VoidableType.Void))
 
-    private def mainIns: InstructionSet = {
-      val defName = JvmOps.getFunctionDefinitionClassName(sym)
+    private def mainIns(sym: Symbol.DefnSym): InstructionSet = {
+      val defName = BackendObjType.Defn(sym).jvmName
       withName(0, BackendType.Array(String.toTpe))(args =>
         args.load() ~ INVOKESTATIC(Global.SetArgsMethod) ~
         NEW(defName) ~ DUP() ~ INVOKESPECIAL(defName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid) ~
@@ -1335,6 +1339,8 @@ object BackendObjType {
       )
     }
   }
+
+  case class Namespace(ns: List[String]) extends BackendObjType
 
   //
   // Java Types

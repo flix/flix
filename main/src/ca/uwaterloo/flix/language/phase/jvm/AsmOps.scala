@@ -62,7 +62,7 @@ object AsmOps {
     */
   def compileDefSymbol(sym: Symbol.DefnSym, mv: MethodVisitor): Unit = {
     // JvmType of Def
-    val defJvmName = JvmOps.getFunctionDefinitionClassName(sym)
+    val defJvmName = BackendObjType.Defn(sym).jvmName
 
     mv.visitTypeInsn(NEW, defJvmName.toInternalName)
     mv.visitInsn(DUP)

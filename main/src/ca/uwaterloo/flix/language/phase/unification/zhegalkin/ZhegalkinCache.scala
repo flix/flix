@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.language.phase.unification.shared.BoolSubstitution
 
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentMap}
 
-class ZhegalkinCache {
+class ZhegalkinCache[T] {
 
   /**
     * Controls what caches are enabled.
@@ -35,40 +35,40 @@ class ZhegalkinCache {
    *
    * Note: initial size and load factor determined by profiling.
    */
-  private val cachedInterCst: ConcurrentMap[(ZhegalkinCst, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap(1024, 0.5f)
+  private val cachedInterCst: ConcurrentMap[(ZhegalkinCst[T], ZhegalkinExpr[T]), ZhegalkinExpr[T]] = new ConcurrentHashMap(1024, 0.5f)
 
   /**
     * A cache that represents the union of the two given Zhegalkin expressions.
     *
     * Note: initial size and load factor determined by profiling.
     */
-  private val cachedUnion: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap(1024, 0.5f)
+  private val cachedUnion: ConcurrentMap[(ZhegalkinExpr[T], ZhegalkinExpr[T]), ZhegalkinExpr[T]] = new ConcurrentHashMap(1024, 0.5f)
 
   /**
     * A cache that represents the intersection of the two given Zhegalkin expressions.
     *
     * Note: initial size and load factor determined by profiling.
     */
-  private val cachedInter: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap(2048, 0.5f)
+  private val cachedInter: ConcurrentMap[(ZhegalkinExpr[T], ZhegalkinExpr[T]), ZhegalkinExpr[T]] = new ConcurrentHashMap(2048, 0.5f)
 
   /**
     * A cache that represents the exclusive-or of the two given Zhegalkin expressions.
     *
     * Note: initial size and load factor determined by profiling.
     */
-  private val cachedXor: ConcurrentMap[(ZhegalkinExpr, ZhegalkinExpr), ZhegalkinExpr] = new ConcurrentHashMap(8192, 0.5f)
+  private val cachedXor: ConcurrentMap[(ZhegalkinExpr[T], ZhegalkinExpr[T]), ZhegalkinExpr[T]] = new ConcurrentHashMap(8192, 0.5f)
 
   /**
     * A cache of SVE queries: a map from the query to its MGU (if it exists).
     */
-  private val cachedSVE: ConcurrentMap[ZhegalkinExpr, BoolSubstitution[ZhegalkinExpr]] = new ConcurrentHashMap()
+  private val cachedSVE: ConcurrentMap[ZhegalkinExpr[T], BoolSubstitution[ZhegalkinExpr[T]]] = new ConcurrentHashMap()
 
   /**
    * Returns the intersection of the given Zhegalkin constant `c` and the expression `e`.
    *
    * Performs a lookup in the cache or computes the result.
    */
-  def lookupOrComputeInterCst(c: ZhegalkinCst, e: ZhegalkinExpr, mkInter: (ZhegalkinCst, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
+  def lookupOrComputeInterCst(c: ZhegalkinCst[T], e: ZhegalkinExpr[T], mkInter: (ZhegalkinCst[T], ZhegalkinExpr[T]) => ZhegalkinExpr[T]): ZhegalkinExpr[T] = {
     if (!EnableInterCstCache) {
       return mkInter(c, e)
     }
@@ -80,7 +80,7 @@ class ZhegalkinCache {
     *
     * Performs a lookup in the cache or computes the result.
     */
-  def lookupOrComputeUnion(e1: ZhegalkinExpr, e2: ZhegalkinExpr, mkUnion: (ZhegalkinExpr, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
+  def lookupOrComputeUnion(e1: ZhegalkinExpr[T], e2: ZhegalkinExpr[T], mkUnion: (ZhegalkinExpr[T], ZhegalkinExpr[T]) => ZhegalkinExpr[T]): ZhegalkinExpr[T] = {
     if (!EnableUnionCache) {
       return mkUnion(e1, e2)
     }
@@ -92,7 +92,7 @@ class ZhegalkinCache {
     *
     * Performs a lookup in the cache or computes the result.
     */
-  def lookupOrComputeInter(e1: ZhegalkinExpr, e2: ZhegalkinExpr, mkInter: (ZhegalkinExpr, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
+  def lookupOrComputeInter(e1: ZhegalkinExpr[T], e2: ZhegalkinExpr[T], mkInter: (ZhegalkinExpr[T], ZhegalkinExpr[T]) => ZhegalkinExpr[T]): ZhegalkinExpr[T] = {
     if (!EnableInterCache) {
       return mkInter(e1, e2)
     }
@@ -104,7 +104,7 @@ class ZhegalkinCache {
     *
     * Performs a lookup in the cache or computes the result.
     */
-  def lookupOrComputeXor(e1: ZhegalkinExpr, e2: ZhegalkinExpr, mkXor: (ZhegalkinExpr, ZhegalkinExpr) => ZhegalkinExpr): ZhegalkinExpr = {
+  def lookupOrComputeXor(e1: ZhegalkinExpr[T], e2: ZhegalkinExpr[T], mkXor: (ZhegalkinExpr[T], ZhegalkinExpr[T]) => ZhegalkinExpr[T]): ZhegalkinExpr[T] = {
     if (!EnableXorCache) {
       return mkXor(e1, e2)
     }
@@ -117,7 +117,7 @@ class ZhegalkinCache {
     *
     * Performs a lookup in the cache or computes the result.
     */
-  def lookupOrComputeSVE(q: ZhegalkinExpr, sve: ZhegalkinExpr => BoolSubstitution[ZhegalkinExpr]): BoolSubstitution[ZhegalkinExpr] = {
+  def lookupOrComputeSVE(q: ZhegalkinExpr[T], sve: ZhegalkinExpr[T] => BoolSubstitution[ZhegalkinExpr[T]]): BoolSubstitution[ZhegalkinExpr[T]] = {
     if (!EnableSVECache) {
       return sve(q)
     }

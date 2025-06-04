@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.util.collection
+package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import scala.collection.immutable.SortedSet
 
@@ -27,14 +27,11 @@ import scala.collection.immutable.SortedSet
   */
 sealed trait CofiniteIntSet {
 
-  import CofiniteIntSet.{Compl, Set}
-
-
   /** Returns `true` if `this` is [[CofiniteIntSet.empty]]. */
   def isEmpty: Boolean = this match {
-    case Set(s) if s.isEmpty => true
-    case Set(_) => false
-    case Compl(_) => false
+    case CofiniteIntSet.Set(s) if s.isEmpty => true
+    case CofiniteIntSet.Set(_) => false
+    case CofiniteIntSet.Compl(_) => false
   }
 
   /**
@@ -44,8 +41,18 @@ sealed trait CofiniteIntSet {
     * to universe.
     */
   def isUniverse: Boolean = this match {
-    case Set(_) => false
-    case Compl(s) => s.isEmpty
+    case CofiniteIntSet.Set(_) => false
+    case CofiniteIntSet.Compl(s) => s.isEmpty
+  }
+
+  /** Returns a human-readable string representation of `this`. */
+  override def toString: String = {
+    if (isEmpty) "Ø"
+    else if (isUniverse) "𝓤"
+    else this match {
+      case CofiniteIntSet.Set(xs) => s"{${xs.mkString(", ")}}"
+      case CofiniteIntSet.Compl(xs) => s"¬{${xs.mkString(", ")}}"
+    }
   }
 
 }
@@ -131,21 +138,5 @@ object CofiniteIntSet {
       // = !(x ∪ y)      (complement distribution)
       Compl(x.union(y))
   }
-
-  /** Returns the intersection of `s1` and `s2` (`s1 ∩ s2`). */
-  def intersection(s1: CofiniteIntSet, s2: SortedSet[Int]): CofiniteIntSet =
-    intersection(s1, mkSet(s2))
-
-  /** Returns the difference of `s1` and `s2` (`s1 - s2`). */
-  def difference(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet =
-    intersection(s1, complement(s2))
-
-  /** Returns the difference of `s1` and `s2` (`s1 - s2`). */
-  def difference(s1: CofiniteIntSet, s2: SortedSet[Int]): CofiniteIntSet =
-    difference(s1, mkSet(s2))
-
-  /** Returns the symmetric difference of `s1` and `s2`. */
-  def xor(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet =
-    union(difference(s1, s2), difference(s2, s1))
 
 }

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 import scala.collection.immutable.SortedSet
 
 /** Represents a Zhegalkin term: c ∩ x1 ∩ x2 ∩ ... ∩ xn */
-case class ZhegalkinTerm(cst: ZhegalkinCst, vars: SortedSet[ZhegalkinVar]) {
+case class ZhegalkinTerm[T](cst: ZhegalkinCst[T], vars: SortedSet[ZhegalkinVar]) {
 
   /**
     * Returns the free (i.e. flexible) variables in `this` Zhegalkin term.
@@ -33,10 +33,10 @@ case class ZhegalkinTerm(cst: ZhegalkinCst, vars: SortedSet[ZhegalkinVar]) {
     * }}}
     *
     */
-  def map(f: Int => ZhegalkinExpr)(implicit alg: ZhegalkinAlgebra): ZhegalkinExpr = {
+  def map(f: Int => ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinExpr[T] = {
     vars.foldLeft(ZhegalkinExpr.mkZhegalkinExpr(cst, Nil)) {
       case (acc, x) =>
-        val newX = if (x.flexible) f(x.id) else ZhegalkinExpr.mkVar(x)
+        val newX: ZhegalkinExpr[T] = if (x.flexible) f(x.id) else ZhegalkinExpr.mkVar(x)
         ZhegalkinExpr.mkInter(newX, acc)
     }
   }
