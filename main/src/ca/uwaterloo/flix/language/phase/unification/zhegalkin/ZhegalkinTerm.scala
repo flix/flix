@@ -33,7 +33,7 @@ case class ZhegalkinTerm[T](cst: ZhegalkinCst[T], vars: SortedSet[ZhegalkinVar])
     * }}}
     *
     */
-  def map(f: Int => ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T]): ZhegalkinExpr[T] = {
+  def map(f: Int => ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinExpr[T] = {
     vars.foldLeft(ZhegalkinExpr.mkZhegalkinExpr(cst, Nil)) {
       case (acc, x) =>
         val newX: ZhegalkinExpr[T] = if (x.flexible) f(x.id) else ZhegalkinExpr.mkVar(x)
