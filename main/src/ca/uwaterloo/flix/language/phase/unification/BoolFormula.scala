@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolSubstitution}
+import ca.uwaterloo.flix.language.phase.unification.shared.{FreeBoolAlg, BoolSubstitution}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.annotation.tailrec
@@ -77,9 +77,9 @@ object BoolFormula {
   case class Or(f1: BoolFormula, f2: BoolFormula) extends BoolFormula
 
   /**
-   * An implementation of the [[BoolAlg]] interface for [[BoolFormula]].
+   * An implementation of the [[FreeBoolAlg]] interface for [[BoolFormula]].
    */
-  object BoolFormulaAlg extends BoolAlg[BoolFormula] {
+  object FreeBoolFormulaAlg$ extends FreeBoolAlg[BoolFormula] {
 
     override def isEquivBot(f: BoolFormula): Boolean = !isSat(f)
 

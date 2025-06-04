@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language.phase.unification.shared
 import scala.collection.immutable.SortedSet
 
 /**
- * A type class for Boolean Formulas.
+ * A type class for free Boolean algebras.
  */
-trait BoolAlg[F] {
+trait FreeBoolAlg[F] {
 
   /**
    * Returns `true` if the given formula `f` is equivalent to the bottom element.

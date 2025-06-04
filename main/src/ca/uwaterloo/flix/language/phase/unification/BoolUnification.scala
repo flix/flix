@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
-import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolSubstitution, SveAlgorithm}
+import ca.uwaterloo.flix.language.phase.unification.shared.{FreeBoolAlg, BoolSubstitution, SveAlgorithm}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -55,7 +55,7 @@ object BoolUnification {
     * Lookup the unifier of `tpe1` and `tpe2` or solve them.
     */
   private def lookupOrSolve(tpe1: Type, tpe2: Type, renv0: RigidityEnv): Option[Substitution] = {
-    implicit val alg: BoolAlg[BoolFormula] = BoolFormula.BoolFormulaAlg
+    implicit val alg: FreeBoolAlg[BoolFormula] = BoolFormula.FreeBoolFormulaAlg$
 
     //
     // Translate the types into formulas.
@@ -117,7 +117,7 @@ object BoolUnification {
   /**
     * Converts the given type t into a formula.
     */
-  private def fromType[F](t: Type, env: Bimap[Symbol.KindedTypeVarSym, Int])(implicit alg: BoolAlg[F]): F = Type.eraseTopAliases(t) match {
+  private def fromType[F](t: Type, env: Bimap[Symbol.KindedTypeVarSym, Int])(implicit alg: FreeBoolAlg[F]): F = Type.eraseTopAliases(t) match {
     case Type.Var(sym, _) => env.getForward(sym) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => alg.mkVar(x)

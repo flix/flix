@@ -27,7 +27,7 @@ object BoolSubstitution {
   /**
    * Returns the singleton substitution mapping the type variable `x` to `tpe`.
    */
-  def singleton[F](x: Int, f: F)(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
+  def singleton[F](x: Int, f: F)(implicit alg: FreeBoolAlg[F]): BoolSubstitution[F] = {
     // Ensure that we do not add any `x -> x` mappings.
     if (f == alg.mkVar(x))
       empty
@@ -50,7 +50,7 @@ case class BoolSubstitution[F](m: Map[Int, F]) {
   /**
    * Applies `this` substitution to the given type `tpe0`.
    */
-  def apply(f: F)(implicit alg: BoolAlg[F]): F = {
+  def apply(f: F)(implicit alg: FreeBoolAlg[F]): F = {
     // Optimization: Return the type if the substitution is empty. Otherwise, visit the type.
     if (isEmpty) {
       f
@@ -64,7 +64,7 @@ case class BoolSubstitution[F](m: Map[Int, F]) {
   /**
    * Applies `this` substitution to the given types `ts`.
    */
-  def apply(ts: List[F])(implicit alg: BoolAlg[F]): List[F] = if (isEmpty) ts else ts map apply
+  def apply(ts: List[F])(implicit alg: FreeBoolAlg[F]): List[F] = if (isEmpty) ts else ts map apply
 
   /**
    * Returns the left-biased composition of `this` substitution with `that` substitution.
@@ -84,7 +84,7 @@ case class BoolSubstitution[F](m: Map[Int, F]) {
   /**
    * Returns the composition of `this` substitution with `that` substitution.
    */
-  def @@(that: BoolSubstitution[F])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
+  def @@(that: BoolSubstitution[F])(implicit alg: FreeBoolAlg[F]): BoolSubstitution[F] = {
     // Case 1: Return `that` if `this` is empty.
     if (this.isEmpty) {
       return that

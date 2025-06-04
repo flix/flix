@@ -15,11 +15,11 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
-import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolSubstitution}
+import ca.uwaterloo.flix.language.phase.unification.shared.{FreeBoolAlg, BoolSubstitution}
 
 import scala.collection.immutable.SortedSet
 
-class ZhegalkinAlgebra[T](dom: Domain[T]) extends BoolAlg[ZhegalkinExpr[T]] {
+class ZhegalkinAlgebra[T](dom: Domain[T]) extends FreeBoolAlg[ZhegalkinExpr[T]] {
 
   /** A Zhegalkin constant that represents the empty set. */
   val empty: ZhegalkinCst[T] = ZhegalkinCst[T](dom.Empty)

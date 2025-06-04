@@ -20,7 +20,7 @@ object SveAlgorithm {
   /**
     * Returns the most general unifier of the two given Boolean formulas `f1` and `f2`.
     */
-  def unify[F](f1: F, f2: F, renv: Set[Int])(implicit alg: BoolAlg[F]): Option[BoolSubstitution[F]] = {
+  def unify[F](f1: F, f2: F, renv: Set[Int])(implicit alg: FreeBoolAlg[F]): Option[BoolSubstitution[F]] = {
     // The boolean expression we want to show is 0.
     val query = alg.mkXor(f1, f2)
 
@@ -43,7 +43,7 @@ object SveAlgorithm {
     *
     * @throws `BoolUnificationException` if SVE fails.
     */
-  def sveAll[F](l: List[(F, F)])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
+  def sveAll[F](l: List[(F, F)])(implicit alg: FreeBoolAlg[F]): BoolSubstitution[F] = {
     var subst = BoolSubstitution.empty[F]
     var rest = l
     while (rest.nonEmpty) {
@@ -65,7 +65,7 @@ object SveAlgorithm {
     *
     * @throws `BoolUnificationException` if SVE fails.
     */
-  private def sveOne[F](f: F)(implicit alg: BoolAlg[F]): BoolSubstitution[F] = {
+  private def sveOne[F](f: F)(implicit alg: FreeBoolAlg[F]): BoolSubstitution[F] = {
     alg.lookupOrComputeSVE(f, _ => {
       val fvs = alg.freeVars(f).toList
       successiveVariableElimination(f, fvs)
@@ -79,7 +79,7 @@ object SveAlgorithm {
     *
     * @throws `BoolUnificationException` if SVE fails.
     */
-  private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit alg: BoolAlg[F]): BoolSubstitution[F] = flexvs match {
+  private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit alg: FreeBoolAlg[F]): BoolSubstitution[F] = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
       if (alg.isEquivBot(f))

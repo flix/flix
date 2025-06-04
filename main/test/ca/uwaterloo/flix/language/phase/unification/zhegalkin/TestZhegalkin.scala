@@ -1,12 +1,12 @@
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, SveAlgorithm}
+import ca.uwaterloo.flix.language.phase.unification.shared.{FreeBoolAlg, SveAlgorithm}
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestZhegalkin extends AnyFunSuite with TestUtils {
 
-  implicit val alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]] = new ZhegalkinAlgebra[CofiniteIntSet](Domain.CofiniteIntSetWitnesss)
+  implicit val alg: FreeBoolAlg[ZhegalkinExpr[CofiniteIntSet]] = new ZhegalkinAlgebra[CofiniteIntSet](Domain.CofiniteIntSetWitnesss)
 
   test("Test.Zhegalkin.Success.01") {
     val f1 = alg.mkBot
