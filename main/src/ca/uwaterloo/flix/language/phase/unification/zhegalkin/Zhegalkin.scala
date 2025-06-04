@@ -40,7 +40,7 @@ object Zhegalkin {
   /**
     * Returns the given set formula as a Zhegalkin polynomial.
     */
-  def toZhegalkin[T](f: SetFormula)(implicit alg: ZhegalkinAlgebra[T]): ZhegalkinExpr[T] = f match {
+  def toZhegalkin[T](f: SetFormula)(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinExpr[T] = f match {
     case SetFormula.Univ => alg.one
     case SetFormula.Empty => alg.zero
     case Cst(c) => ZhegalkinExpr(alg.empty, List(ZhegalkinTerm(alg.universe, SortedSet(ZhegalkinVar(c, flexible = false)))))
@@ -49,19 +49,19 @@ object Zhegalkin {
       ZhegalkinExpr(mkCst(CofiniteIntSet.mkSet(s)), Nil)
     case Compl(f1) => ZhegalkinExpr.mkCompl(toZhegalkin(f1))
     case Inter(l) =>
-      val polys = l.toList.map(x => toZhegalkin(x)(alg))
+      val polys = l.toList.map(x => toZhegalkin(x)(alg, dom))
       polys.reduce[ZhegalkinExpr[T]] {
-        case (x, y) =>  ZhegalkinExpr.mkInter(x, y)(alg)
+        case (x, y) =>  ZhegalkinExpr.mkInter(x, y)(alg, dom)
       }
     case Union(l) =>
-      val polys = l.toList.map(x => toZhegalkin(x)(alg))
+      val polys = l.toList.map(x => toZhegalkin(x)(alg, dom))
       polys.reduce[ZhegalkinExpr[T]] {
-        case (x, y) =>  ZhegalkinExpr.mkUnion(x, y)(alg)
+        case (x, y) =>  ZhegalkinExpr.mkUnion(x, y)(alg, dom)
       }
     case Xor(l) =>
-      val polys = l.map(x => toZhegalkin(x)(alg))
+      val polys = l.map(x => toZhegalkin(x)(alg, dom))
       polys.reduce[ZhegalkinExpr[T]] {
-        case (x, y) =>  ZhegalkinExpr.mkXor(x, y)(alg)
+        case (x, y) =>  ZhegalkinExpr.mkXor(x, y)(alg, dom)
       }
   }
 

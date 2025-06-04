@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.util.collection.CofiniteIntSet
 
 import scala.collection.immutable.SortedSet
 
-class ZhegalkinAlgebra[T] extends BoolAlg[ZhegalkinExpr[T]] {
+class ZhegalkinAlgebra[T](dom: Domain[T]) extends BoolAlg[ZhegalkinExpr[T]] {
 
   /** A Zhegalkin constant that represents the empty set. */
   val empty: ZhegalkinCst[T] = ZhegalkinCst[T](CofiniteIntSet.empty)
@@ -47,18 +47,18 @@ class ZhegalkinAlgebra[T] extends BoolAlg[ZhegalkinExpr[T]] {
 
   override def mkVar(id: Int): ZhegalkinExpr[T] = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = true))(this)
 
-  override def mkNot(f: ZhegalkinExpr[T]): ZhegalkinExpr[T] = ZhegalkinExpr.mkCompl(f)(this)
+  override def mkNot(f: ZhegalkinExpr[T]): ZhegalkinExpr[T] = ZhegalkinExpr.mkCompl(f)(this, dom)
 
-  override def mkOr(f1: ZhegalkinExpr[T], f2: ZhegalkinExpr[T]): ZhegalkinExpr[T] = ZhegalkinExpr.mkUnion(f1, f2)(this)
+  override def mkOr(f1: ZhegalkinExpr[T], f2: ZhegalkinExpr[T]): ZhegalkinExpr[T] = ZhegalkinExpr.mkUnion(f1, f2)(this, dom)
 
-  override def mkAnd(f1: ZhegalkinExpr[T], f2: ZhegalkinExpr[T]): ZhegalkinExpr[T] = ZhegalkinExpr.mkInter(f1, f2)(this)
+  override def mkAnd(f1: ZhegalkinExpr[T], f2: ZhegalkinExpr[T]): ZhegalkinExpr[T] = ZhegalkinExpr.mkInter(f1, f2)(this, dom)
 
   // Performance: We must override the default implementation of `mkXor` to increase performance.
-  override def mkXor(f1: ZhegalkinExpr[T], f2: ZhegalkinExpr[T]): ZhegalkinExpr[T] = ZhegalkinExpr.mkXor(f1, f2)(this)
+  override def mkXor(f1: ZhegalkinExpr[T], f2: ZhegalkinExpr[T]): ZhegalkinExpr[T] = ZhegalkinExpr.mkXor(f1, f2)(this, dom)
 
   override def freeVars(f: ZhegalkinExpr[T]): SortedSet[Int] = f.freeVars.map(_.id)
 
-  override def map(f: ZhegalkinExpr[T])(fn: Int => ZhegalkinExpr[T]): ZhegalkinExpr[T] = f.map(fn)(this)
+  override def map(f: ZhegalkinExpr[T])(fn: Int => ZhegalkinExpr[T]): ZhegalkinExpr[T] = f.map(fn)(this, dom)
 
   override def lookupOrComputeSVE(q: ZhegalkinExpr[T], sve: ZhegalkinExpr[T] => BoolSubstitution[ZhegalkinExpr[T]]): BoolSubstitution[ZhegalkinExpr[T]] = {
     Cache.lookupOrComputeSVE(q, sve)

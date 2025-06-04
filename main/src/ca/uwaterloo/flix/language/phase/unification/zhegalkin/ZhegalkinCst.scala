@@ -23,11 +23,11 @@ case class ZhegalkinCst[T](s: CofiniteIntSet) {
   def isEmpty: Boolean = s.isEmpty
 
   /** Returns the complement of `this` Zhegalkin constant. */
-  def compl()(implicit alg: ZhegalkinAlgebra[T]): ZhegalkinCst[T] = Zhegalkin.mkCst(CofiniteIntSet.complement(s))
+  def compl()(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinCst[T] = Zhegalkin.mkCst(CofiniteIntSet.complement(s))
 
   /** Returns the union of `this` Zhegalkin constant with `that`/ */
-  def union(that: ZhegalkinCst[T])(implicit alg: ZhegalkinAlgebra[T]): ZhegalkinCst[T] = Zhegalkin.mkCst(CofiniteIntSet.union(s, that.s))
+  def union(that: ZhegalkinCst[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinCst[T] = Zhegalkin.mkCst(CofiniteIntSet.union(s, that.s))
 
   /** Returns the intersection of `this` Zhegalkin constant with `that`. */
-  def inter(that: ZhegalkinCst[T])(implicit alg: ZhegalkinAlgebra[T]): ZhegalkinCst[T] = Zhegalkin.mkCst(CofiniteIntSet.intersection(s, that.s))
+  def inter(that: ZhegalkinCst[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinCst[T] = Zhegalkin.mkCst(CofiniteIntSet.intersection(s, that.s))
 }
