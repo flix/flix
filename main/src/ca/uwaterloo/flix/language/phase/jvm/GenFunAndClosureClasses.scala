@@ -164,8 +164,8 @@ object GenFunAndClosureClasses {
     compileConstructor(functionInterface, visitor)
     // Methods
     if (Purity.isControlPure(defn.expr.purity) && kind == Function) {
-      compileStaticApplyMethod(visitor, defn)
       compileStaticInvokeMethod(visitor, className, defn)
+      compileStaticApplyMethod(visitor, defn)
     }
     else {
       compileInvokeMethod(visitor, className)
