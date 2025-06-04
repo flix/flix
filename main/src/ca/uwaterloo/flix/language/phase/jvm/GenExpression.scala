@@ -102,7 +102,7 @@ object GenExpression {
       })
 
       case Constant.Char(c) =>
-        compileInt(c)
+        mv.visitByteIns(BytecodeInstructions.pushInt(c))
 
       case Constant.Float32(f) =>
         f match {
@@ -130,13 +130,13 @@ object GenExpression {
       })
 
       case Constant.Int8(b) =>
-        compileInt(b)
+        mv.visitByteIns(BytecodeInstructions.pushInt(b))
 
       case Constant.Int16(s) =>
-        compileInt(s)
+        mv.visitByteIns(BytecodeInstructions.pushInt(s))
 
       case Constant.Int32(i) =>
-        compileInt(i)
+        mv.visitByteIns(BytecodeInstructions.pushInt(i))
 
       case Constant.Int64(l) =>
         compileLong(l)
@@ -1180,7 +1180,7 @@ object GenExpression {
       ctx match {
         case EffectContext(_, _, _, setPc, _, _, _) =>
           mv.visitVarInsn(ALOAD, 0)
-          compileInt(0)
+          mv.visitByteIns(BytecodeInstructions.pushInt(0))
           mv.visitByteIns(setPc)
 
         case DirectContext(_, _, _) =>
@@ -1518,26 +1518,6 @@ object GenExpression {
     mv.visitInsn(opcode)
     mv.visitJumpInsn(cmpOpcode, condElse)
     visitComparisonEpilogue(mv, condElse, condEnd)
-  }
-
-  /**
-    * Generate code to load an integer constant.
-    *
-    * Uses the smallest number of bytes necessary, e.g. ICONST_0 takes 1 byte to load a 0, but BIPUSH 7 takes 2 bytes to
-    * load a 7, and SIPUSH 200 takes 3 bytes to load a 200. However, note that values on the stack normally take up 4
-    * bytes.
-    */
-  def compileInt(i: Int)(implicit mv: MethodVisitor): Unit = i match {
-    case -1 => mv.visitInsn(ICONST_M1)
-    case 0 => mv.visitInsn(ICONST_0)
-    case 1 => mv.visitInsn(ICONST_1)
-    case 2 => mv.visitInsn(ICONST_2)
-    case 3 => mv.visitInsn(ICONST_3)
-    case 4 => mv.visitInsn(ICONST_4)
-    case 5 => mv.visitInsn(ICONST_5)
-    case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => mv.visitIntInsn(BIPUSH, i)
-    case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => mv.visitIntInsn(SIPUSH, i)
-    case _ => mv.visitLdcInsn(i)
   }
 
   /**
