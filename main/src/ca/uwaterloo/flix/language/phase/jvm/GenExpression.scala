@@ -1527,7 +1527,7 @@ object GenExpression {
     * load a 7, and SIPUSH 200 takes 3 bytes to load a 200. However, note that values on the stack normally take up 4
     * bytes.
     */
-  def compileInt(i: Int)(implicit mv: MethodVisitor): Unit = i match {
+  private def compileInt(i: Int)(implicit mv: MethodVisitor): Unit = i match {
     case -1 => mv.visitInsn(ICONST_M1)
     case 0 => mv.visitInsn(ICONST_0)
     case 1 => mv.visitInsn(ICONST_1)
