@@ -23,8 +23,8 @@ import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Domain, Zhegalkin, ZhegalkinAlgebra}
-import ca.uwaterloo.flix.util.collection.{CofiniteIntSet, SortedBimap}
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{CofiniteIntSet, Domain, Zhegalkin, ZhegalkinAlgebra}
+import ca.uwaterloo.flix.util.collection.SortedBimap
 import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, Result}
 
 import scala.annotation.tailrec

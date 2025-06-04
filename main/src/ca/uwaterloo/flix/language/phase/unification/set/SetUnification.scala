@@ -19,9 +19,8 @@ package ca.uwaterloo.flix.language.phase.unification.set
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolUnificationException, SveAlgorithm}
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Domain, Zhegalkin, ZhegalkinAlgebra}
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{CofiniteIntSet, Domain, Zhegalkin, ZhegalkinAlgebra}
 import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.collection.CofiniteIntSet
 
 import scala.collection.immutable.IntMap
 import scala.collection.mutable

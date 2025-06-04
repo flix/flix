@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
-import ca.uwaterloo.flix.util.collection.CofiniteIntSet
-
 /**
   * A type class for domains of Zhegalkin polynomials.
   */
