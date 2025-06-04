@@ -1619,6 +1619,7 @@ object Parser2 {
              | TokenKind.LiteralFloat32
              | TokenKind.LiteralFloat64
              | TokenKind.LiteralBigDecimal
+             | TokenKind.LiteralInt
              | TokenKind.LiteralInt8
              | TokenKind.LiteralInt16
              | TokenKind.LiteralInt32
@@ -2984,7 +2985,20 @@ object Parser2 {
         )
       }
 
-      // TODO now parse digits
+      advance()
+
+      // TODO no copy-paste
+      if (!at(TokenKind.LiteralInt)) {
+        closeWithError(open(), UnexpectedToken(
+          expected = NamedTokenSet.FromKinds(Set(TokenKind.Slash)),
+          actual = Some(nth(0)),
+          sctx = SyntacticContext.Expr.OtherExpr,
+          hint = Some("provide a predicate arity such as: Pred/1"),
+          loc = previousSourceLocation())
+        )
+      }
+
+      advance()
 
       close(mark, TreeKind.PredicateAndArity)
     }
@@ -3043,6 +3057,7 @@ object Parser2 {
              | TokenKind.LiteralFloat32
              | TokenKind.LiteralFloat64
              | TokenKind.LiteralBigDecimal
+             | TokenKind.LiteralInt
              | TokenKind.LiteralInt8
              | TokenKind.LiteralInt16
              | TokenKind.LiteralInt32

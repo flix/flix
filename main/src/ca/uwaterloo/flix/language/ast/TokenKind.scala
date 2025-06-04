@@ -187,6 +187,7 @@ sealed trait TokenKind {
       case TokenKind.LiteralDebugStringR => "'}'"
       case TokenKind.LiteralFloat32 => "'<digits>f32'"
       case TokenKind.LiteralFloat64 => "'<digits>f64'"
+      case TokenKind.LiteralInt => "'<digits>'"
       case TokenKind.LiteralInt8 => "'<digits>i8'"
       case TokenKind.LiteralInt16 => "'<digits>i16'"
       case TokenKind.LiteralInt32 => "'<digits>i32'"
@@ -356,6 +357,7 @@ sealed trait TokenKind {
          | TokenKind.LiteralDebugStringR
          | TokenKind.LiteralFloat32
          | TokenKind.LiteralFloat64
+         | TokenKind.LiteralInt
          | TokenKind.LiteralInt16
          | TokenKind.LiteralInt32
          | TokenKind.LiteralInt64
@@ -534,6 +536,7 @@ sealed trait TokenKind {
          | TokenKind.LiteralDebugStringL
          | TokenKind.LiteralFloat32
          | TokenKind.LiteralFloat64
+         | TokenKind.LiteralInt
          | TokenKind.LiteralInt16
          | TokenKind.LiteralInt32
          | TokenKind.LiteralInt64
@@ -688,6 +691,7 @@ sealed trait TokenKind {
          | TokenKind.LiteralFloat32
          | TokenKind.LiteralFloat64
          | TokenKind.LiteralBigDecimal
+         | TokenKind.LiteralInt
          | TokenKind.LiteralInt8
          | TokenKind.LiteralInt16
          | TokenKind.LiteralInt32
@@ -722,6 +726,7 @@ sealed trait TokenKind {
          | TokenKind.LiteralDebugStringR
          | TokenKind.LiteralFloat32
          | TokenKind.LiteralFloat64
+         | TokenKind.LiteralInt
          | TokenKind.LiteralInt8
          | TokenKind.LiteralInt16
          | TokenKind.LiteralInt32
@@ -1082,6 +1087,8 @@ object TokenKind {
   case object LiteralFloat32 extends TokenKind
 
   case object LiteralFloat64 extends TokenKind
+
+  case object LiteralInt extends TokenKind
 
   case object LiteralInt8 extends TokenKind
 
