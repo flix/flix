@@ -47,10 +47,7 @@ object JvmBackend {
     val allTypes = root.types ++ requiredTypes
 
     val mainClass = root.getMain.map(
-      main => {
-        val mainType = BackendObjType.Main(main.sym)
-        Map(genClass(mainType, mainType.genByteCode()))
-      }
+      main => Map(genClass(BackendObjType.Main, BackendObjType.Main.genByteCode(main.sym)))
     ).getOrElse(Map.empty)
 
     val namespaceClasses = GenNamespaceClasses.gen(JvmOps.namespacesOf(root))
