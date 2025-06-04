@@ -1161,7 +1161,7 @@ object GenExpression {
               mv.visitLabel(afterUnboxing)
 
             case DirectContext(_, _, _) =>
-              throw InternalCompilerException(s"Unexpected direct method context in control impure function: $sym", loc)
+              mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc))
           }
         }
     }
@@ -1387,7 +1387,7 @@ object GenExpression {
 
     case Expr.Do(op, exps, tpe, _, loc) => ctx match {
       case DirectContext(_, _, _) =>
-        throw InternalCompilerException("Unexpected do-expression in direct method context", loc)
+        BackendObjType.Result.crashIfSuspension("Unexpected do-expression in direct method context", loc)
 
       case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
         val pcPoint = pcCounter(0) + 1
