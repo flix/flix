@@ -72,7 +72,7 @@ object CofiniteIntSet {
   val universe: CofiniteIntSet = Compl(SortedSet.empty)
 
   /** Returns the wrapped set of `s`. */
-  def mkSet(s: SortedSet[Int]): CofiniteIntSet = Set(s)
+  def mkSet(s: SortedSet[Int]): CofiniteIntSet = if (s.isEmpty) empty else Set(s)
 
   /** Returns the singleton set of `i`. */
   def mkSet(i: Int): CofiniteIntSet = Set(SortedSet(i))
