@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.{MonoType, Purity, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.{InstructionSet, MethodEnricher}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.StaticMethod
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes.*
@@ -165,7 +166,7 @@ object GenFunAndClosureClasses {
     // Methods
     if (Purity.isControlPure(defn.expr.purity) && kind == Function) {
       compileStaticInvokeMethod(visitor, className, defn)
-      compileStaticApplyMethod(visitor, defn)
+      compileStaticApplyMethod(visitor, className, defn)
     }
     else {
       compileInvokeMethod(visitor, className)
@@ -190,9 +191,11 @@ object GenFunAndClosureClasses {
     constructor.visitEnd()
   }
 
-  private def compileStaticApplyMethod(visitor: ClassWriter, defn: Def)(implicit root: Root, flix: Flix): Unit = {
+  private def directApplyMethod(className: JvmName, defn: Def)(implicit root: Root): StaticMethod = StaticMethod(className, JvmName.DirectApply, MethodDescriptor(defn.fparams.map(fp => BackendType.toBackendType(fp.tpe)), BackendObjType.Result.toTpe))
+
+  private def compileStaticApplyMethod(visitor: ClassWriter, className: JvmName, defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
-    val method = BackendObjType.Frame.DirectApply(defn)
+    val method = directApplyMethod(className, defn)
     val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
     val m = visitor.visitMethod(modifiers, method.name, method.d.toDescriptor, null, null)
 
@@ -231,8 +234,8 @@ object GenFunAndClosureClasses {
       m.visitByteIns(BytecodeInstructions.castIfNotPrim(erased))
     }
 
-    val applyMethod = BackendObjType.Frame.DirectApply(defn)
-    m.visitMethodInsn(INVOKESTATIC, className.toInternalName, applyMethod.name, applyMethod.d.toDescriptor, false)
+    val method = directApplyMethod(className, defn)
+    m.visitMethodInsn(INVOKESTATIC, className.toInternalName, method.name, method.d.toDescriptor, false)
 
     m.visitByteIns(BytecodeInstructions.xReturn(BackendObjType.Result.toTpe))
 

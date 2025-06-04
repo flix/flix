@@ -1748,8 +1748,6 @@ object BackendObjType {
 
     def ApplyMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "applyFrame", mkDescriptor(Value.toTpe)(Result.toTpe))
 
-    def DirectApply(defn: Def)(implicit root: ReducedAst.Root): StaticMethod = StaticMethod(this.jvmName, JvmName.DirectApply, MethodDescriptor(defn.fparams.map(fp => BackendType.toBackendType(fp.tpe)), BackendObjType.Result.toTpe))
-
     def StaticApplyMethod: StaticInterfaceMethod = StaticInterfaceMethod(
       this.jvmName,
       "applyFrameStatic",
