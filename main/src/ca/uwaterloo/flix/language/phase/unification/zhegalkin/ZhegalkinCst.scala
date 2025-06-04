@@ -15,19 +15,17 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
-import ca.uwaterloo.flix.util.collection.CofiniteIntSet
-
-/** Represents a set Zhegalkin constant (i.e. a set or co-set). A thin wrapper around [[CofiniteIntSet]]. */
-case class ZhegalkinCst[T](s: CofiniteIntSet) {
+/** Represents a set Zhegalkin constant of type T */
+case class ZhegalkinCst[T](t: T) {
   /** Returns `true` if `this` Zhegalkin constant is empty. */
-  def isEmpty: Boolean = s.isEmpty
+  def isEmpty()(implicit dom: Domain[T]): Boolean = dom.isEmpty(t)
 
   /** Returns the complement of `this` Zhegalkin constant. */
-  def compl()(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinCst[T] = Zhegalkin.mkCst(CofiniteIntSet.complement(s))
+  def compl()(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinCst[T] = Zhegalkin.mkCst(dom.complement(t))
 
   /** Returns the union of `this` Zhegalkin constant with `that`/ */
-  def union(that: ZhegalkinCst[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinCst[T] = Zhegalkin.mkCst(CofiniteIntSet.union(s, that.s))
+  def union(that: ZhegalkinCst[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinCst[T] = Zhegalkin.mkCst(dom.union(this.t, that.t))
 
   /** Returns the intersection of `this` Zhegalkin constant with `that`. */
-  def inter(that: ZhegalkinCst[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinCst[T] = Zhegalkin.mkCst(CofiniteIntSet.intersection(s, that.s))
+  def inter(that: ZhegalkinCst[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinCst[T] = Zhegalkin.mkCst(dom.intersection(this.t, that.t))
 }

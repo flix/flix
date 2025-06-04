@@ -16,17 +16,16 @@
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolSubstitution}
-import ca.uwaterloo.flix.util.collection.CofiniteIntSet
 
 import scala.collection.immutable.SortedSet
 
 class ZhegalkinAlgebra[T](dom: Domain[T]) extends BoolAlg[ZhegalkinExpr[T]] {
 
   /** A Zhegalkin constant that represents the empty set. */
-  val empty: ZhegalkinCst[T] = ZhegalkinCst[T](CofiniteIntSet.empty)
+  val empty: ZhegalkinCst[T] = ZhegalkinCst[T](dom.Empty)
 
   /** A Zhegalkin constant that represents the universe. */
-  val universe: ZhegalkinCst[T] = ZhegalkinCst[T](CofiniteIntSet.universe)
+  val universe: ZhegalkinCst[T] = ZhegalkinCst[T](dom.Universe)
 
   /** A Zhegalkin expression that represents the empty set, i.e. the zero element of the algebra. */
   val zero: ZhegalkinExpr[T] = ZhegalkinExpr(empty, Nil)

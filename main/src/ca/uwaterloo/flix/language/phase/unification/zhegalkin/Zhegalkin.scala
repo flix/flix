@@ -28,19 +28,19 @@ object Zhegalkin {
     *
     * Ensures that the empty and the universe has a unique representation.
     */
-  def mkCst[T](s: CofiniteIntSet)(implicit alg: ZhegalkinAlgebra[T]): ZhegalkinCst[T] = {
-    if (s.isEmpty)
+  def mkCst[T](t: T)(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinCst[T] = {
+    if (dom.isEmpty(t))
       alg.empty
-    else if (s.isUniverse)
+    else if (dom.isUniverse(t))
       alg.universe
     else
-      ZhegalkinCst(s)
+      ZhegalkinCst(t)
   }
 
   /**
     * Returns the given set formula as a Zhegalkin polynomial.
     */
-  def toZhegalkin[T](f: SetFormula)(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinExpr[T] = f match {
+  def toZhegalkin(f: SetFormula)(implicit alg: ZhegalkinAlgebra[CofiniteIntSet], dom: Domain[CofiniteIntSet]): ZhegalkinExpr[CofiniteIntSet] = f match {
     case SetFormula.Univ => alg.one
     case SetFormula.Empty => alg.zero
     case Cst(c) => ZhegalkinExpr(alg.empty, List(ZhegalkinTerm(alg.universe, SortedSet(ZhegalkinVar(c, flexible = false)))))
@@ -50,17 +50,17 @@ object Zhegalkin {
     case Compl(f1) => ZhegalkinExpr.mkCompl(toZhegalkin(f1))
     case Inter(l) =>
       val polys = l.toList.map(x => toZhegalkin(x)(alg, dom))
-      polys.reduce[ZhegalkinExpr[T]] {
+      polys.reduce[ZhegalkinExpr[CofiniteIntSet]] {
         case (x, y) =>  ZhegalkinExpr.mkInter(x, y)(alg, dom)
       }
     case Union(l) =>
       val polys = l.toList.map(x => toZhegalkin(x)(alg, dom))
-      polys.reduce[ZhegalkinExpr[T]] {
+      polys.reduce[ZhegalkinExpr[CofiniteIntSet]] {
         case (x, y) =>  ZhegalkinExpr.mkUnion(x, y)(alg, dom)
       }
     case Xor(l) =>
       val polys = l.map(x => toZhegalkin(x)(alg, dom))
-      polys.reduce[ZhegalkinExpr[T]] {
+      polys.reduce[ZhegalkinExpr[CofiniteIntSet]] {
         case (x, y) =>  ZhegalkinExpr.mkXor(x, y)(alg, dom)
       }
   }

@@ -27,14 +27,14 @@ object ZhegalkinExpr {
     *
     * A Zhegalkin expression is of the form: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn
     */
-  def mkZhegalkinExpr[T](cst: ZhegalkinCst[T], terms: List[ZhegalkinTerm[T]])(implicit alg: ZhegalkinAlgebra[T]): ZhegalkinExpr[T] = (cst, terms) match {
+  def mkZhegalkinExpr[T](cst: ZhegalkinCst[T], terms: List[ZhegalkinTerm[T]])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinExpr[T] = (cst, terms) match {
     case (alg.empty, Nil) => alg.zero
     case (alg.universe, Nil) => alg.one
     case _ =>
       // Construct a new polynomial.
 
       // Compute non-empty terms (i.e. terms where the coefficient is non-empty).
-      val ts = terms.filter(t => !t.cst.isEmpty)
+      val ts = terms.filter(t => !t.cst.isEmpty()(dom))
 
       // Special case: If ts is empty then this could be 0 or 1.
       if (ts.isEmpty) {
