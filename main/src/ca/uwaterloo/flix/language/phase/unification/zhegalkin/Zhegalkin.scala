@@ -17,37 +17,50 @@ package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
-import ca.uwaterloo.flix.util.collection.CofiniteIntSet
 
 import scala.collection.immutable.SortedSet
 
 object Zhegalkin {
 
   /**
+    * A smart constructor for Zhegalkin constants.
+    *
+    * Ensures that the empty and the universe has a unique representation.
+    */
+  def mkCst[T](t: T)(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinCst[T] = {
+    if (dom.isEmpty(t))
+      alg.empty
+    else if (dom.isUniverse(t))
+      alg.universe
+    else
+      ZhegalkinCst(t)
+  }
+
+  /**
     * Returns the given set formula as a Zhegalkin polynomial.
     */
-  def toZhegalkin[T](f: SetFormula)(implicit alg: ZhegalkinAlgebra[T]): ZhegalkinExpr[T] = f match {
+  def toZhegalkin(f: SetFormula)(implicit alg: ZhegalkinAlgebra[CofiniteIntSet], dom: Domain[CofiniteIntSet]): ZhegalkinExpr[CofiniteIntSet] = f match {
     case SetFormula.Univ => alg.one
     case SetFormula.Empty => alg.zero
     case Cst(c) => ZhegalkinExpr(alg.empty, List(ZhegalkinTerm(alg.universe, SortedSet(ZhegalkinVar(c, flexible = false)))))
     case Var(x) => ZhegalkinExpr(alg.empty, List(ZhegalkinTerm(alg.universe, SortedSet(ZhegalkinVar(x, flexible = true)))))
     case ElemSet(s) =>
-      ZhegalkinExpr(ZhegalkinCst.mkCst(CofiniteIntSet.mkSet(s)), Nil)
+      ZhegalkinExpr(mkCst(CofiniteIntSet.mkSet(s)), Nil)
     case Compl(f1) => ZhegalkinExpr.mkCompl(toZhegalkin(f1))
     case Inter(l) =>
-      val polys = l.toList.map(x => toZhegalkin(x)(alg))
-      polys.reduce[ZhegalkinExpr[T]] {
-        case (x, y) =>  ZhegalkinExpr.mkInter(x, y)(alg)
+      val polys = l.toList.map(x => toZhegalkin(x)(alg, dom))
+      polys.reduce[ZhegalkinExpr[CofiniteIntSet]] {
+        case (x, y) =>  ZhegalkinExpr.mkInter(x, y)(alg, dom)
       }
     case Union(l) =>
-      val polys = l.toList.map(x => toZhegalkin(x)(alg))
-      polys.reduce[ZhegalkinExpr[T]] {
-        case (x, y) =>  ZhegalkinExpr.mkUnion(x, y)(alg)
+      val polys = l.toList.map(x => toZhegalkin(x)(alg, dom))
+      polys.reduce[ZhegalkinExpr[CofiniteIntSet]] {
+        case (x, y) =>  ZhegalkinExpr.mkUnion(x, y)(alg, dom)
       }
     case Xor(l) =>
-      val polys = l.map(x => toZhegalkin(x)(alg))
-      polys.reduce[ZhegalkinExpr[T]] {
-        case (x, y) =>  ZhegalkinExpr.mkXor(x, y)(alg)
+      val polys = l.map(x => toZhegalkin(x)(alg, dom))
+      polys.reduce[ZhegalkinExpr[CofiniteIntSet]] {
+        case (x, y) =>  ZhegalkinExpr.mkXor(x, y)(alg, dom)
       }
   }
 

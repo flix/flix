@@ -60,7 +60,7 @@ sealed trait BackendObjType {
     case BackendObjType.UnhandledEffectError => JvmName(DevFlixRuntime, mkClassName("UnhandledEffectError"))
     case BackendObjType.Region => JvmName(DevFlixRuntime, mkClassName("Region"))
     case BackendObjType.UncaughtExceptionHandler => JvmName(DevFlixRuntime, mkClassName("UncaughtExceptionHandler"))
-    case BackendObjType.Main(_) => JvmName.Main
+    case BackendObjType.Main => JvmName.Main
     case BackendObjType.Namespace(ns) => JvmName(ns.dropRight(1), ns.lastOption.getOrElse(s"Root${Flix.Delimiter}"))
     // Java classes
     case BackendObjType.Native(className) => className
@@ -1316,19 +1316,19 @@ object BackendObjType {
     }
   }
 
-  case class Main(sym: Symbol.DefnSym) extends BackendObjType {
+  case object Main extends BackendObjType {
 
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+    def genByteCode(sym: Symbol.DefnSym)(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
 
-      cm.mkStaticMethod(MainMethod, IsPublic, NotFinal, mainIns)
+      cm.mkStaticMethod(MainMethod, IsPublic, NotFinal, mainIns(sym))
 
       cm.closeClassMaker()
     }
 
     private def MainMethod: StaticMethod = StaticMethod(this.jvmName, "main", mkDescriptor(BackendType.Array(String.toTpe))(VoidableType.Void))
 
-    private def mainIns: InstructionSet = {
+    private def mainIns(sym: Symbol.DefnSym): InstructionSet = {
       val defName = BackendObjType.Defn(sym).jvmName
       withName(0, BackendType.Array(String.toTpe))(args =>
         args.load() ~ INVOKESTATIC(Global.SetArgsMethod) ~
