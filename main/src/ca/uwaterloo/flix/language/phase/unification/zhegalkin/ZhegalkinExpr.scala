@@ -343,7 +343,7 @@ case class ZhegalkinExpr[T](cst: T, terms: List[ZhegalkinTerm[T]]) {
   /**
     * Returns `true` if `this` is equal to `that`.
     */
-  @annotation.nowarn
+  @annotation.nowarn // Disable warning about erasure of T. Safe because all objects have equals.
   override def equals(obj: Any): Boolean = obj match {
     case that: ZhegalkinExpr[T] => (this eq that) || (this.cst == that.cst && this.terms == that.terms)
     case _ => false
