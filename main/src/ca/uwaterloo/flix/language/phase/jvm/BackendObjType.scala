@@ -1617,7 +1617,7 @@ object BackendObjType {
       * [..., Result] -> [..., Value|Thunk]
       * side effect: if the result is a suspension, a [[UnhandledEffectError]] is thrown.
       */
-    private def crashIfSuspension(errorHint: String, loc: SourceLocation): InstructionSet = {
+    def crashIfSuspension(errorHint: String, loc: SourceLocation): InstructionSet = {
       DUP() ~ INSTANCEOF(Suspension.jvmName) ~
       ifCondition(Condition.NE)(
         CHECKCAST(Suspension.jvmName) ~
