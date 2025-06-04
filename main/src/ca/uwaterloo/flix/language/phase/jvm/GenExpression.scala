@@ -1224,17 +1224,21 @@ object GenExpression {
       // Jumping to the label
       mv.visitJumpInsn(GOTO, ctx.lenv(sym))
 
-    case Expr.Let(sym, exp1, exp2, _, _, _) =>
-      compileExpr(exp1)
+    case Expr.Let(sym, exp1, exp2, _, _, _) => mv.visitByteIns({
+      import BytecodeInstructions.*
       val bType = BackendType.toBackendType(exp1.tpe)
-      mv.visitByteIns(BytecodeInstructions.castIfNotPrim(bType))
-      mv.visitByteIns(BytecodeInstructions.xStore(bType, sym.getStackOffset(ctx.localOffset)))
-      compileExpr(exp2)
+      pushExpr(exp1) ~
+        castIfNotPrim(bType) ~
+        xStore(bType, sym.getStackOffset(ctx.localOffset)) ~
+        pushExpr(exp2)
+    })
 
-    case Expr.Stmt(exp1, exp2, _, _, _) =>
-      compileExpr(exp1)
-      mv.visitByteIns(BytecodeInstructions.xPop(BackendType.toErasedBackendType(exp1.tpe)))
-      compileExpr(exp2)
+    case Expr.Stmt(exp1, exp2, _, _, _) => mv.visitByteIns({
+      import BytecodeInstructions.*
+      pushExpr(exp1) ~
+      xPop(BackendType.toBackendType(exp1.tpe)) ~
+      pushExpr(exp2)
+    })
 
     case Expr.Scope(sym, exp, _, _, loc) =>
       // Adding source line number for debugging
