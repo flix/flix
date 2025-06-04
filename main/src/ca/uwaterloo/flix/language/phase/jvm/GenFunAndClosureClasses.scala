@@ -63,7 +63,9 @@ object GenFunAndClosureClasses {
   private case object Closure extends FunctionKind
 
   /**
-    * `(a|b)` is used to represent the function (left) or closure version (right)
+    * Generates the following code for closures and control-impure functions.
+    *
+    * `(a|b)` is used to represent the function (left) or closure version (right).
     *
     * {{{
     * public final class (Def$example|Clo$example$152) extends (Fn2$Obj$Int$Obj|Clo2$Obj$Int$Obj) implements Frame {
@@ -114,6 +116,23 @@ object GenFunAndClosureClasses {
     *     x.clo0 = this.clo0;
     *     x.clo1 = this.clo1;
     *     return x;
+    *   }
+    * }
+    * }}}
+    *
+    * For control-pure functions, the generated code deviates slightly, as the `applyFrame` method is replaced
+    * by a static method called `directApply` that accepts the concrete parameters of the Flix function.
+    * The `invoke` method then forwards its call to `directApply`, passing the values from the corresponding fields.
+    *
+    * {{{
+    * public final class Def$example extends Fn2$Obj$Int$Obj implements Frame {
+    *
+    *   public final Result invoke() { return this.applyFrame(null); }
+    *
+    *   // Assuming the concrete type of Obj is `Tagged$`
+    *   public final Result applyDirect(Tagged$ var0, int var1) {
+    *     EnterLabel:
+    *     // body code ...
     *   }
     * }
     * }}}
