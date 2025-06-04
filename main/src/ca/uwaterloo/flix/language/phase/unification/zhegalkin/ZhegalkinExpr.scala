@@ -27,21 +27,21 @@ object ZhegalkinExpr {
     *
     * A Zhegalkin expression is of the form: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn
     */
-  def mkZhegalkinExpr[T](cst: ZhegalkinCst[T], terms: List[ZhegalkinTerm[T]])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinExpr[T] = (cst, terms) match {
+  def mkZhegalkinExpr[T](cst: T, terms: List[ZhegalkinTerm[T]])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = (cst, terms) match {
     case (alg.empty, Nil) => alg.zero
     case (alg.universe, Nil) => alg.one
     case _ =>
       // Construct a new polynomial.
 
       // Compute non-empty terms (i.e. terms where the coefficient is non-empty).
-      val ts = terms.filter(t => !t.cst.isEmpty()(dom))
+      val ts = terms.filter(t => !lat.isEmpty(t.cst))
 
       // Special case: If ts is empty then this could be 0 or 1.
       if (ts.isEmpty) {
-        if (cst eq alg.empty) {
+        if (lat.isEmpty(cst)) {
           return alg.zero
         }
-        if (cst eq alg.universe) {
+        if (lat.isUniverse(cst)) {
           return alg.one
         }
       }
@@ -65,7 +65,7 @@ object ZhegalkinExpr {
     *
     * Uses identity laws to speed up the computation.
     */
-  def mkCompl[T](e: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinExpr[T] = {
+  def mkCompl[T](e: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = {
     // ¬Ø = 𝓤
     if (e eq alg.zero) {
       return alg.one
@@ -73,7 +73,7 @@ object ZhegalkinExpr {
 
     // Performance: A common case.
     // Ø ⊕ (𝓤 ∩ x1 ∩ ...) ⊕ (𝓤 ∩ x2 ∩ ...) --> 𝓤 ⊕ (𝓤 ∩ x1 ∩ ...) ⊕ (𝓤 ∩ x2 ∩ ...)
-    if ((e.cst eq alg.empty) && e.terms.forall(t => t.cst eq alg.universe)) {
+    if (lat.isEmpty(e.cst) && e.terms.forall(t => lat.isUniverse(t.cst))) {
       return e.copy(cst = alg.universe)
     }
 
@@ -84,10 +84,10 @@ object ZhegalkinExpr {
   /**
     * Returns the xor of the two given Zhegalkin constants `c1` and `c2`.
     * */
-  def mkXor[T](c1: ZhegalkinCst[T], c2: ZhegalkinCst[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinCst[T] = {
+  def mkXor[T](c1: T, c2: T)(implicit lat: BoolLattice[T]): T = {
     // Note: use of union, inter, compl ensures a canonical representation.
     // a ⊕ b = (a ∪ b) - (a ∩ b) = (a ∪ b) ∩ ¬(a ∩ b)
-    c1.union(c2).inter(c1.inter(c2).compl()(alg, dom))
+    lat.intersection(lat.union(c1, c2), lat.complement(lat.intersection(c1, c2)))
   }
 
   /**
@@ -95,7 +95,7 @@ object ZhegalkinExpr {
     *
     * Uses identity laws and caching to speed up the computation.
     */
-  def mkXor[T](z1: ZhegalkinExpr[T], z2: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinExpr[T] = {
+  def mkXor[T](z1: ZhegalkinExpr[T], z2: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = {
     // 0 ⊕ a = a
     if (z1 eq alg.zero) {
       return z2
@@ -114,7 +114,7 @@ object ZhegalkinExpr {
     *
     * Does not use any simplification rules nor any cache.
     */
-  private def computeXor[T](e1: ZhegalkinExpr[T], e2: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinExpr[T] = (e1, e2) match {
+  private def computeXor[T](e1: ZhegalkinExpr[T], e2: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = (e1, e2) match {
     case (ZhegalkinExpr(c1, ts1), ZhegalkinExpr(c2, ts2)) =>
       val c = mkXor(c1, c2)
       // Eliminate duplicates: a ⊕ a = 0
@@ -135,7 +135,7 @@ object ZhegalkinExpr {
       val termsGroupedByVarSet = allTermsNonDup.groupBy(_.vars).toList
       val mergedTerms = termsGroupedByVarSet.map {
         case (vars, l) =>
-          val mergedCst: ZhegalkinCst[T] = l.foldLeft(alg.empty) { // Neutral element for Xor.
+          val mergedCst: T = l.foldLeft(alg.empty) { // Neutral element for Xor.
             case (acc, t) => mkXor(acc, t.cst) // Distributive law: (c1 ∩ A) ⊕ (c2 ∩ A) = (c1 ⊕ c2) ∩ A.
           }
           ZhegalkinTerm(mergedCst, vars)
@@ -148,7 +148,7 @@ object ZhegalkinExpr {
     *
     * Uses identity laws to speed up the computation.
     */
-  def mkUnion[T](e1: ZhegalkinExpr[T], e2: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinExpr[T] = {
+  def mkUnion[T](e1: ZhegalkinExpr[T], e2: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = {
     // Ø ∪ a = a
     if (e1 eq alg.zero) {
       return e2
@@ -164,7 +164,7 @@ object ZhegalkinExpr {
   /**
     * Computes the union of the given two Zhegalkin expressions `e1` and `e2`.
     */
-  private def computeUnion[T](e1: ZhegalkinExpr[T], e2: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinExpr[T] = {
+  private def computeUnion[T](e1: ZhegalkinExpr[T], e2: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = {
     // a ∪ b = 1 ⊕ (1 ⊕ a)(1 ⊕ b)
     //mkXor(ZhegalkinExpr.one, mkInter(mkXor(ZhegalkinExpr.one, e1), mkXor(ZhegalkinExpr.one, e2)))
 
@@ -177,7 +177,7 @@ object ZhegalkinExpr {
     *
     * Uses identity laws to speed up the computation.
     */
-  def mkInter[T](e1: ZhegalkinExpr[T], e2: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinExpr[T] = {
+  def mkInter[T](e1: ZhegalkinExpr[T], e2: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = {
     // Ø ∩ a = Ø
     if (e1 eq alg.zero) {
       return alg.zero
@@ -210,7 +210,7 @@ object ZhegalkinExpr {
     *       ⊕ ...
     * }}}
     */
-  private def computeInter[T](e1: ZhegalkinExpr[T], e2: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinExpr[T] = e1 match {
+  private def computeInter[T](e1: ZhegalkinExpr[T], e2: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = e1 match {
     case ZhegalkinExpr(c1, ts1) =>
       val zero = mkInterConstantExpr(c1, e2)
       ts1.foldLeft(zero) {
@@ -221,7 +221,7 @@ object ZhegalkinExpr {
   /**
     * Computes the intersection of the given Zhegalkin constant `c` and the given Zhegalkin expression `e`.
     */
-  private def mkInterConstantExpr[T](c: ZhegalkinCst[T], e: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinExpr[T] = {
+  private def mkInterConstantExpr[T](c: T, e: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = {
     // Perform a cache lookup or an actual computation.
     alg.Cache.lookupOrComputeInterCst(c, e, computeInterConstantExpr)
   }
@@ -233,10 +233,10 @@ object ZhegalkinExpr {
     *   c ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m) = (c ∩ c2) ⊕ (c ∩ t21) ⊕ (c ∩ t22) ⊕ ... ⊕ (c ∩ t2m)
     * }}}
     */
-  private def computeInterConstantExpr[T](c: ZhegalkinCst[T], e: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinExpr[T] = e match {
+  private def computeInterConstantExpr[T](c: T, e: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = e match {
     case ZhegalkinExpr(c2, terms) =>
       val ts = terms.map(t => mkInterConstantTerm(c, t))
-      mkZhegalkinExpr(c.inter(c2), ts)
+      mkZhegalkinExpr(lat.intersection(c, c2), ts)
   }
 
   /**
@@ -246,13 +246,13 @@ object ZhegalkinExpr {
     *   c ∩ (c2 ∩ x1 ∩ x2 ∩ ... ∩ xn) = (c ∩ c2) ∩ x1 ∩ x2 ∩ ... ∩ xn)
     * }}}
     */
-  private def mkInterConstantTerm[T](c: ZhegalkinCst[T], t: ZhegalkinTerm[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinTerm[T] = t match {
+  private def mkInterConstantTerm[T](c: T, t: ZhegalkinTerm[T])(implicit lat: BoolLattice[T]): ZhegalkinTerm[T] = t match {
     case ZhegalkinTerm(c2, vars) =>
       if (c == c2) {
         return t
       }
 
-      ZhegalkinTerm(c.inter(c2), vars)
+      ZhegalkinTerm(lat.intersection(c, c2), vars)
   }
 
   /**
@@ -263,7 +263,7 @@ object ZhegalkinExpr {
     * }}}
     *
     */
-  private def mkInterTermExpr[T](t: ZhegalkinTerm[T], e: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinExpr[T] = e match {
+  private def mkInterTermExpr[T](t: ZhegalkinTerm[T], e: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = e match {
     case ZhegalkinExpr(c2, terms) =>
       val zero: ZhegalkinExpr[T] = mkZhegalkinExpr(alg.empty, List(mkInterConstantTerm(c2, t)))
       terms.foldLeft(zero) {
@@ -279,7 +279,7 @@ object ZhegalkinExpr {
     * }}}
     */
   //
-  private def mkInterTermTerm[T](t1: ZhegalkinTerm[T], t2: ZhegalkinTerm[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinTerm[T] = {
+  private def mkInterTermTerm[T](t1: ZhegalkinTerm[T], t2: ZhegalkinTerm[T])(implicit lat: BoolLattice[T]): ZhegalkinTerm[T] = {
     // a ∩ a = a
     if (t1 eq t2) {
       return t1
@@ -298,14 +298,14 @@ object ZhegalkinExpr {
           }
         }
         // General case:
-        ZhegalkinTerm(c1.inter(c2), vars1 ++ vars2)
+        ZhegalkinTerm(lat.intersection(c1, c2), vars1 ++ vars2)
     }
   }
 
 }
 
 /** Represents a Zhegalkin expr: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn */
-case class ZhegalkinExpr[T](cst: ZhegalkinCst[T], terms: List[ZhegalkinTerm[T]]) {
+case class ZhegalkinExpr[T](cst: T, terms: List[ZhegalkinTerm[T]]) {
 
   // Representation Invariants:
   //  if (this == ZhegalkinExpr.zero) {
@@ -330,7 +330,7 @@ case class ZhegalkinExpr[T](cst: ZhegalkinCst[T], terms: List[ZhegalkinTerm[T]])
     * }}}
     *
     */
-  def map(f: Int => ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], dom: Domain[T]): ZhegalkinExpr[T] = {
+  def map(f: Int => ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = {
     if (terms == Nil) {
       return this
     }
@@ -343,8 +343,9 @@ case class ZhegalkinExpr[T](cst: ZhegalkinCst[T], terms: List[ZhegalkinTerm[T]])
   /**
     * Returns `true` if `this` is equal to `that`.
     */
+  @annotation.nowarn
   override def equals(obj: Any): Boolean = obj match {
-    case that: ZhegalkinExpr[_] => (this eq that) || (this.cst == that.cst && this.terms == that.terms)
+    case that: ZhegalkinExpr[T] => (this eq that) || (this.cst == that.cst && this.terms == that.terms)
     case _ => false
   }
 

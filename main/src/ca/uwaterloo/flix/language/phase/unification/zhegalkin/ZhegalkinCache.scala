@@ -35,7 +35,7 @@ class ZhegalkinCache[T] {
    *
    * Note: initial size and load factor determined by profiling.
    */
-  private val cachedInterCst: ConcurrentMap[(ZhegalkinCst[T], ZhegalkinExpr[T]), ZhegalkinExpr[T]] = new ConcurrentHashMap(1024, 0.5f)
+  private val cachedInterCst: ConcurrentMap[(T, ZhegalkinExpr[T]), ZhegalkinExpr[T]] = new ConcurrentHashMap(1024, 0.5f)
 
   /**
     * A cache that represents the union of the two given Zhegalkin expressions.
@@ -68,7 +68,7 @@ class ZhegalkinCache[T] {
    *
    * Performs a lookup in the cache or computes the result.
    */
-  def lookupOrComputeInterCst(c: ZhegalkinCst[T], e: ZhegalkinExpr[T], mkInter: (ZhegalkinCst[T], ZhegalkinExpr[T]) => ZhegalkinExpr[T]): ZhegalkinExpr[T] = {
+  def lookupOrComputeInterCst(c: T, e: ZhegalkinExpr[T], mkInter: (T, ZhegalkinExpr[T]) => ZhegalkinExpr[T]): ZhegalkinExpr[T] = {
     if (!EnableInterCstCache) {
       return mkInter(c, e)
     }

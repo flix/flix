@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.unification.set
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolUnificationException, SveAlgorithm}
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{CofiniteIntSet, Domain, Zhegalkin, ZhegalkinAlgebra}
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{CofiniteIntSet, BoolLattice, Zhegalkin, ZhegalkinAlgebra}
 import ca.uwaterloo.flix.util.Result
 
 import scala.collection.immutable.IntMap
@@ -427,8 +427,8 @@ object SetUnification {
     implicit val alg: ZhegalkinAlgebra[CofiniteIntSet] = EffUnification3.Algebra
     val l = eqs.map {
       case Equation(f1, f2, _, _) =>
-        val x = Zhegalkin.toZhegalkin(f1)(alg, Domain.CofiniteIntSetWitnesss)
-        val y = Zhegalkin.toZhegalkin(f2)(alg, Domain.CofiniteIntSetWitnesss)
+        val x = Zhegalkin.toZhegalkin(f1)(alg, BoolLattice.CofiniteIntSetWitnesss)
+        val y = Zhegalkin.toZhegalkin(f2)(alg, BoolLattice.CofiniteIntSetWitnesss)
         (x, y)
     }
 
