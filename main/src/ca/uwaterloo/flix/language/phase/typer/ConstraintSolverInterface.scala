@@ -125,10 +125,20 @@ object ConstraintSolverInterface {
       List(TypeError.UnexpectedArg(sym, num, expected = subst(expected), actual = subst(actual), renv, loc))
 
     case TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(baseTpe1, baseTpe2, loc)) =>
-      List(TypeError.MismatchedTypes(subst(baseTpe1), subst(baseTpe2), tpe1, tpe2, renv, loc))
+      tpe1.kind match {
+        case Kind.Eff =>
+          List(TypeError.MismatchedEffects(subst(baseTpe1), subst(baseTpe2), tpe1, tpe2, renv, loc))
+        case _ =>
+          List(TypeError.MismatchedTypes(subst(baseTpe1), subst(baseTpe2), tpe1, tpe2, renv, loc))
+      }
 
     case TypeConstraint.Equality(tpe1, tpe2, prov) =>
-      List(TypeError.MismatchedTypes(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
+      tpe1.kind match {
+        case Kind.Eff =>
+          List(TypeError.MismatchedEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
+        case _ =>
+          List(TypeError.MismatchedTypes(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
+      }
 
     // TODO We have simply duplicated equality here.
     // TODO We should establish invariants on conflicted/equality cases.
@@ -144,13 +154,23 @@ object ConstraintSolverInterface {
       List(TypeError.UnexpectedArg(sym, num, expected = subst(expected), actual = subst(actual), renv, loc))
 
     case TypeConstraint.Conflicted(tpe1, tpe2, Provenance.Match(baseTpe1, baseTpe2, loc)) =>
-      List(TypeError.MismatchedTypes(subst(baseTpe1), subst(baseTpe2), tpe1, tpe2, renv, loc))
+      tpe1.kind match {
+        case Kind.Eff =>
+          List(TypeError.MismatchedEffects(subst(baseTpe1), subst(baseTpe2), tpe1, tpe2, renv, loc))
+        case _ =>
+          List(TypeError.MismatchedTypes(subst(baseTpe1), subst(baseTpe2), tpe1, tpe2, renv, loc))
+      }
 
     case TypeConstraint.Conflicted(_, _, Provenance.Timeout(msg, loc)) =>
       List(TypeError.TooComplex(msg, loc))
 
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
-      List(TypeError.MismatchedTypes(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
+      tpe1.kind match {
+        case Kind.Eff =>
+          List(TypeError.MismatchedEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
+        case _ =>
+          List(TypeError.MismatchedTypes(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
+      }
 
     case TypeConstraint.Trait(sym, tpe, loc) =>
      tpe.typeConstructor match {
