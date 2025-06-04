@@ -187,7 +187,7 @@ object LambdaLift {
     case SimplifiedAst.Expr.LocalDef(sym, fparams, exp1, exp2, _, _, loc) =>
       val freshDefnSym = Symbol.freshDefnSym(sym0)
       val updatedLiftedLocalDefs = liftedLocalDefs + (sym -> freshDefnSym)
-      // It is **very import** we add the mapping `sym -> freshDefnSym` to liftedLocalDefs
+      // It is **very important** we add the mapping `sym -> freshDefnSym` to liftedLocalDefs
       // before visiting the body since exp1 may contain recursive calls to `sym`
       // so they need to be substituted for `freshDefnSym` in `exp1` which
       // `visitExp` handles for us.
