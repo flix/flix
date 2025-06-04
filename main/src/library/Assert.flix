@@ -25,13 +25,11 @@ mod Assert {
             true
         else {
             use Chalk.{green, red};
-            Environment.runWithIO(() -> {
-                println("Assertion Error");
-                println("  Expected: ${green(expected)}");
-                println("  Actual:   ${red(actual)}");
-                println("");
-                ?assertEq
-            })
+            println("Assertion Error");
+            println("  Expected: ${green(expected)}");
+            println("  Actual:   ${red(actual)}");
+            println("");
+            ?assertEq
         }
     } as _ \ {})
 
