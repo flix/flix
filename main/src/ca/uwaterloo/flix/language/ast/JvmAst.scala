@@ -25,40 +25,40 @@ import java.lang.constant.ClassDesc
 
 object JvmAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Set.empty, List.empty, None, Set.empty, Map.empty)
+  val empty: Root = Root(Map.empty, /*Map.empty, Map.empty, Map.empty, Set.empty, List.empty,*/ None, Set.empty, Map.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
-                  enums: Map[Symbol.EnumSym, Enum],
-                  structs: Map[Symbol.StructSym, Struct],
-                  effects: Map[Symbol.EffectSym, Effect],
-                  types: Set[ClassDesc],
-                  anonClasses: List[AnonClass],
+//                  enums: Map[Symbol.EnumSym, Enum],
+//                  structs: Map[Symbol.StructSym, Struct],
+//                  effects: Map[Symbol.EffectSym, Effect],
+//                  types: Set[ClassDesc],
+//                  anonClasses: List[AnonClass],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation]) {
 
-    def getMain: Option[Def] = mainEntryPoint.map(defs(_))
+//    def getMain: Option[Def] = mainEntryPoint.map(defs(_))
 
   }
 
   /**
     * pcPoints is initialized by [[ca.uwaterloo.flix.language.phase.Reducer]].
     */
-  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, expr: Expr, tpe: ClassDesc, unboxedType: UnboxedType, loc: SourceLocation) {
-    var method: Method = _
-    val arrowType: ClassDesc.Arrow = ClassDesc.Arrow(fparams.map(_.tpe), tpe)
-  }
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, expr: Expr, tpe: ClassDesc, unboxedType: UnboxedType, loc: SourceLocation)// {
+//    var method: Method = _
+//    val arrowType: ClassDesc.Arrow = ClassDesc.Arrow(fparams.map(_.tpe), tpe)
+//  }
 
   /** Remember the unboxed return type for test function generation. */
   case class UnboxedType(tpe: ClassDesc)
 
-  case class Enum(ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: Map[Symbol.CaseSym, Case], loc: SourceLocation)
+//  case class Enum(ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: Map[Symbol.CaseSym, Case], loc: SourceLocation)
 
-  case class Struct(ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation)
+//  case class Struct(ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation)
 
-  case class Effect(ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
+//  case class Effect(ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
-  case class Op(sym: Symbol.OpSym, ann: Annotations, mod: Modifiers, fparams: List[FormalParam], tpe: ClassDesc, purity: Purity, loc: SourceLocation)
+//  case class Op(sym: Symbol.OpSym, ann: Annotations, mod: Modifiers, fparams: List[FormalParam], tpe: ClassDesc, purity: Purity, loc: SourceLocation)
 
   sealed trait Expr {
     def tpe: ClassDesc
@@ -70,6 +70,7 @@ object JvmAst {
 
   object Expr {
 
+    // *
     case class Cst(cst: Constant, tpe: ClassDesc, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
@@ -78,6 +79,7 @@ object JvmAst {
       def purity: Purity = Pure
     }
 
+    // *
     case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: ClassDesc, purity: Purity, loc: SourceLocation) extends Expr
 
     case class ApplyClo(exp1: Expr, exp2: Expr, ct: ExpPosition, tpe: ClassDesc, purity: Purity, loc: SourceLocation) extends Expr
@@ -128,4 +130,6 @@ object JvmAst {
 
   case class LocalParam(sym: Symbol.VarSym, tpe: ClassDesc)
 
+  // name of class, fields of class
+  case class Layout(name: ClassDesc, fields: List[ClassDesc])
 }

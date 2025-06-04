@@ -23,21 +23,33 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugJvmAst
 
 import java.lang.constant.ConstantDescs
 import java.lang.constant.ClassDesc
+import java.util.concurrent.ConcurrentHashMap
 
 object ToJvm {
 
+//  private object LocalContext {
+//    def mk(): LocalContext = LocalContext(0)
+//  }
+//
+//  private case class LocalContext(var freshIndex: Int)
+
+  private case class SharedContext(var freshIndex: Int, defLayout: ConcurrentHashMap[List[ClassDesc], JvmAst.Layout])
+
   def run(root: ReducedAst.Root)(implicit flix: Flix): JvmAst.Root = flix.phase("ToJvm") {
+    implicit val ctx: SharedContext = SharedContext(0, new ConcurrentHashMap())
     val defs = ParOps.parMapValues(root.defs)(visitDef)
+    /*
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
     val anonClasses = root.anonClasses.map(visitAnonClass)
     val jvmRootTypes = root.types.map(toJvmType)
-    JvmAst.Root(defs, enums, structs, effects, jvmRootTypes, anonClasses, root.mainEntryPoint, root.entryPoints, root.sources)
+     */
+    JvmAst.Root(defs, /*enums, structs, effects, jvmRootTypes, anonClasses,*/ root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
   /** converting [[tpe]] to unboxed Java type, lower case is primitive */
-  private def toJvmType(tpe: MonoType): ClassDesc = tpe match {
+  private def toJvmType(tpe: MonoType)(implicit ctx: SharedContext): ClassDesc = tpe match {
     case MonoType.Void => ConstantDescs.CD_Object
     case MonoType.AnyType => ConstantDescs.CD_Object
     case MonoType.Unit => ClassDesc.of("dev.flix.runtime.Unit") // flix/language/phase/jvm/BackendObjType
@@ -56,14 +68,27 @@ object ToJvm {
     case MonoType.Region => ConstantDescs.CD_Object // not sure about this one
     case MonoType.Null => ConstantDescs.CD_Object // there is 'ConstantDescs.Null' but it isn't a ClassDesc
     case MonoType.Array(t) => toJvmType(t).arrayType()
-    case MonoType.Lazy(t) =>
-      val _jvmType = toJvmType(t)
-      ???
-    case MonoType.Tuple(tpes) =>
-      val _len = tpes.size
-      val _typeString = tpes.map(toJvmType).foldLeft("")({ (acc, t) => acc + t.toString + "," }).dropRight(1)
-      ???
+    case MonoType.Lazy(_) =>
+      // val _jvmType = toJvmType(t)
+      ClassDesc.of("lazy")
 
+    case MonoType.Tuple(tpes) =>
+        val fields = tpes.map(toJvmType)
+        ctx.defLayout.get(fields) match {
+          case null =>
+            val id = ctx.freshIndex // local context for fresh number
+            ctx.freshIndex += 1
+            val className = ClassDesc.of(s"tuple$id")
+            ctx.defLayout.put(fields, JvmAst.Layout(className, fields))
+            className
+          case JvmAst.Layout(cDesc, _) => cDesc
+        }
+    // first iteration doesn't include other types
+    case _ => ClassDesc.of("not yet")
+        // put layout into a shared context, maintain a map to see if another tuple resembles this structure (field types)
+        // return classDesc of the tuple name (won't error out as long valid java name)
+
+    /*
     case MonoType.Enum(sym, targs) =>
       val _typeString = targs.map(toJvmType).foldLeft("")({ (acc, t) => acc + t.toString + ","}).dropRight(1)
       ???
@@ -85,9 +110,10 @@ object ToJvm {
       val _resType = toJvmType(rest)
       ???
     case MonoType.Native(clazz) => ???
+     */
   }
 
-  private def visitDef(defn: ReducedAst.Def): JvmAst.Def = {
+  private def visitDef(defn: ReducedAst.Def)(implicit ctx: SharedContext): JvmAst.Def = {
     val cparams = defn.cparams.map(visitFParam)
     val fparams = defn.fparams.map(visitFParam)
     val lparams = defn.lparams.map(visitLocalParam)
@@ -108,7 +134,7 @@ object ToJvm {
     )
   }
 
-  private def visitFParam(fp: ReducedAst.FormalParam): JvmAst.FormalParam = {
+  private def visitFParam(fp: ReducedAst.FormalParam)(implicit ctx: SharedContext): JvmAst.FormalParam = {
     JvmAst.FormalParam(
       fp.sym,
       fp.mod,
@@ -117,14 +143,14 @@ object ToJvm {
     )
   }
 
-  private def visitLocalParam(lp: ReducedAst.LocalParam): JvmAst.LocalParam = {
+  private def visitLocalParam(lp: ReducedAst.LocalParam)(implicit ctx: SharedContext): JvmAst.LocalParam = {
     JvmAst.LocalParam(
       lp.sym,
       toJvmType(lp.tpe)
     )
   }
 
-  private def visitExpr(expr: ReducedAst.Expr): JvmAst.Expr =
+  private def visitExpr(expr: ReducedAst.Expr)(implicit ctx: SharedContext): JvmAst.Expr =
     expr match {
       case ReducedAst.Expr.Cst(cst, tpe, loc) =>
         JvmAst.Expr.Cst(
@@ -239,6 +265,7 @@ object ToJvm {
 
     }
 
+  /*
   private def visitCase(cse: ReducedAst.Case): JvmAst.Case = {
     JvmAst.Case(cse.sym, cse.tpes, cse.loc)
   }
@@ -253,50 +280,50 @@ object ToJvm {
       enm.loc,
     )
   }
-
-  private def visitUnboxedType(unboxedType: ReducedAst.UnboxedType): JvmAst.UnboxedType = {
+  */
+  private def visitUnboxedType(unboxedType: ReducedAst.UnboxedType)(implicit ctx: SharedContext): JvmAst.UnboxedType = {
     JvmAst.UnboxedType(toJvmType(unboxedType.tpe))
   }
 
-  private def visitStruct(struct: ReducedAst.Struct): JvmAst.Struct = {
-    val tparams = struct.tparams.map(visitTParam)
-    val fields = struct.fields.map(visitField)
-    JvmAst.Struct(struct.ann, struct.mod, struct.sym, tparams, fields, struct.loc)
-  }
+//  private def visitStruct(struct: ReducedAst.Struct): JvmAst.Struct = {
+//    val tparams = struct.tparams.map(visitTParam)
+//    val fields = struct.fields.map(visitField)
+//    JvmAst.Struct(struct.ann, struct.mod, struct.sym, tparams, fields, struct.loc)
+//  }
 
-  private def visitTParam(value: ReducedAst.TypeParam): JvmAst.TypeParam = {
-    JvmAst.TypeParam(value.name, value.sym, value.loc)
-  }
+//  private def visitTParam(value: ReducedAst.TypeParam): JvmAst.TypeParam = {
+//    JvmAst.TypeParam(value.name, value.sym, value.loc)
+//  }
+//
+//  private def visitField(field: ReducedAst.StructField): JvmAst.StructField = {
+//    JvmAst.StructField(field.sym, field.tpe, field.loc)
+//  }
 
-  private def visitField(field: ReducedAst.StructField): JvmAst.StructField = {
-    JvmAst.StructField(field.sym, field.tpe, field.loc)
-  }
+//  private def visitOp(op: ReducedAst.Op): JvmAst.Op = {
+//    JvmAst.Op(op.sym, op.ann, op.mod, op.fparams.map(visitFParam), toJvmType(op.tpe), op.purity, op.loc)
+//  }
 
-  private def visitOp(op: ReducedAst.Op): JvmAst.Op = {
-    JvmAst.Op(op.sym, op.ann, op.mod, op.fparams.map(visitFParam), toJvmType(op.tpe), op.purity, op.loc)
-  }
+//  private def visitEffect(effect: ReducedAst.Effect): JvmAst.Effect = {
+//    JvmAst.Effect(effect.ann, effect.mod, effect.sym, effect.ops.map(visitOp), effect.loc)
+//  }
 
-  private def visitEffect(effect: ReducedAst.Effect): JvmAst.Effect = {
-    JvmAst.Effect(effect.ann, effect.mod, effect.sym, effect.ops.map(visitOp), effect.loc)
-  }
-
-  private def visitJvmMethod(jvmMethod: ReducedAst.JvmMethod): JvmAst.JvmMethod = {
-    JvmAst.JvmMethod(
-      jvmMethod.ident,
-      jvmMethod.fparams.map(visitFParam),
-      visitExpr(jvmMethod.exp),
-      toJvmType(jvmMethod.tpe),
-      jvmMethod.purity,
-      jvmMethod.loc,
-    )
-  }
-  private def visitAnonClass(anonClass: ReducedAst.AnonClass): JvmAst.AnonClass = {
-    JvmAst.AnonClass(
-      anonClass.name,
-      anonClass.clazz,
-      toJvmType(anonClass.tpe),
-      anonClass.methods.map(visitJvmMethod),
-      anonClass.loc
-    )
-  }
+//  private def visitJvmMethod(jvmMethod: ReducedAst.JvmMethod)(implicit ctx: SharedContext): JvmAst.JvmMethod = {
+//    JvmAst.JvmMethod(
+//      jvmMethod.ident,
+//      jvmMethod.fparams.map(visitFParam),
+//      visitExpr(jvmMethod.exp),
+//      toJvmType(jvmMethod.tpe),
+//      jvmMethod.purity,
+//      jvmMethod.loc,
+//    )
+//  }
+//  private def visitAnonClass(anonClass: ReducedAst.AnonClass)(implicit ctx: SharedContext): JvmAst.AnonClass = {
+//    JvmAst.AnonClass(
+//      anonClass.name,
+//      anonClass.clazz,
+//      toJvmType(anonClass.tpe),
+//      anonClass.methods.map(visitJvmMethod),
+//      anonClass.loc
+//    )
+//  }
 }
