@@ -146,10 +146,13 @@ object GenFunAndClosureClasses {
     // Methods
     if (Purity.isControlPure(defn.expr.purity) && kind == Function) {
       compileStaticApplyMethod(visitor, defn)
+      compileStaticInvokeMethod(visitor, className, defn)
     }
-    compileInvokeMethod(visitor, className)
-    compileFrameMethod(visitor, className, defn)
-    compileCopyMethod(visitor, className, defn)
+    else {
+      compileInvokeMethod(visitor, className)
+      compileFrameMethod(visitor, className, defn)
+      compileCopyMethod(visitor, className, defn)
+    }
     if (kind == Closure) compileGetUniqueThreadClosureMethod(visitor, className, defn)
 
     visitor.visitEnd()
@@ -170,11 +173,9 @@ object GenFunAndClosureClasses {
 
   private def compileStaticApplyMethod(visitor: ClassWriter, defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
-    val paramTpes = defn.fparams.map(fp => BackendType.toBackendType(fp.tpe))
-    val resultTpe = BackendObjType.Result.toTpe
-    val desc = MethodDescriptor(paramTpes, resultTpe)
+    val method = BackendObjType.Frame.DirectApply(defn)
     val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
-    val m = visitor.visitMethod(modifiers, JvmName.DirectApply, desc.toDescriptor, null, null)
+    val m = visitor.visitMethod(modifiers, method.name, method.d.toDescriptor, null, null)
 
     m.visitCode()
 
@@ -190,6 +191,31 @@ object GenFunAndClosureClasses {
 
     m.visitByteIns(BytecodeInstructions.xReturn(BackendObjType.Result.toTpe))
 
+
+    m.visitMaxs(999, 999)
+    m.visitEnd()
+  }
+
+  private def compileStaticInvokeMethod(visitor: ClassWriter, className: JvmName, defn: Def)(implicit root: Root): Unit = {
+    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
+      AsmOps.getMethodDescriptor(Nil, JvmType.Reference(BackendObjType.Result.jvmName)), null, null)
+    m.visitCode()
+
+    val functionInterface = JvmOps.getFunctionInterfaceType(defn.arrowType).jvmName
+    // Putting args on the Fn class
+    val paramTypes = defn.fparams.map(fp => (fp.tpe, BackendType.toBackendType(fp.tpe)))
+    for (((tpe, erased), i) <- paramTypes.zipWithIndex) {
+      // Duplicate the FunctionInterface
+      m.visitVarInsn(ALOAD, 0)
+      m.visitFieldInsn(GETFIELD, functionInterface.toInternalName,
+        s"arg$i", JvmOps.getErasedJvmType(tpe).toDescriptor)
+      m.visitByteIns(BytecodeInstructions.castIfNotPrim(erased))
+    }
+
+    val applyMethod = BackendObjType.Frame.DirectApply(defn)
+    m.visitMethodInsn(INVOKESTATIC, className.toInternalName, applyMethod.name, applyMethod.d.toDescriptor, false)
+
+    m.visitByteIns(BytecodeInstructions.xReturn(BackendObjType.Result.toTpe))
 
     m.visitMaxs(999, 999)
     m.visitEnd()
