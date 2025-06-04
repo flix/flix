@@ -19,19 +19,13 @@ import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolSubstit
 
 import scala.collection.immutable.SortedSet
 
-class ZhegalkinAlgebra[T](dom: Domain[T]) extends BoolAlg[ZhegalkinExpr[T]] {
-
-  /** A Zhegalkin constant that represents the empty set. */
-  val empty: ZhegalkinCst[T] = ZhegalkinCst[T](dom.Empty)
-
-  /** A Zhegalkin constant that represents the universe. */
-  val universe: ZhegalkinCst[T] = ZhegalkinCst[T](dom.Universe)
+class ZhegalkinAlgebra[T](lat: BoolLattice[T]) extends BoolAlg[ZhegalkinExpr[T]] {
 
   /** A Zhegalkin expression that represents the empty set, i.e. the zero element of the algebra. */
-  val zero: ZhegalkinExpr[T] = ZhegalkinExpr(empty, Nil)
+  val zero: ZhegalkinExpr[T] = ZhegalkinExpr(lat.Empty, Nil)
 
   /** A Zhegalkin expression that represents the universe, i.e. the one element of the algebra. */
-  val one: ZhegalkinExpr[T] = ZhegalkinExpr(universe, Nil)
+  val one: ZhegalkinExpr[T] = ZhegalkinExpr(lat.Universe, Nil)
 
   /** Zhegalkin Cache. */
   val Cache: ZhegalkinCache[T] = new ZhegalkinCache[T]
@@ -42,22 +36,22 @@ class ZhegalkinAlgebra[T](dom: Domain[T]) extends BoolAlg[ZhegalkinExpr[T]] {
 
   override def mkTop: ZhegalkinExpr[T] = one
 
-  override def mkCst(id: Int): ZhegalkinExpr[T] = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = false))(this)
+  override def mkCst(id: Int): ZhegalkinExpr[T] = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = false))(lat)
 
-  override def mkVar(id: Int): ZhegalkinExpr[T] = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = true))(this)
+  override def mkVar(id: Int): ZhegalkinExpr[T] = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = true))(lat)
 
-  override def mkNot(f: ZhegalkinExpr[T]): ZhegalkinExpr[T] = ZhegalkinExpr.mkCompl(f)(this, dom)
+  override def mkNot(f: ZhegalkinExpr[T]): ZhegalkinExpr[T] = ZhegalkinExpr.mkCompl(f)(this, lat)
 
-  override def mkOr(f1: ZhegalkinExpr[T], f2: ZhegalkinExpr[T]): ZhegalkinExpr[T] = ZhegalkinExpr.mkUnion(f1, f2)(this, dom)
+  override def mkOr(f1: ZhegalkinExpr[T], f2: ZhegalkinExpr[T]): ZhegalkinExpr[T] = ZhegalkinExpr.mkUnion(f1, f2)(this, lat)
 
-  override def mkAnd(f1: ZhegalkinExpr[T], f2: ZhegalkinExpr[T]): ZhegalkinExpr[T] = ZhegalkinExpr.mkInter(f1, f2)(this, dom)
+  override def mkAnd(f1: ZhegalkinExpr[T], f2: ZhegalkinExpr[T]): ZhegalkinExpr[T] = ZhegalkinExpr.mkInter(f1, f2)(this, lat)
 
   // Performance: We must override the default implementation of `mkXor` to increase performance.
-  override def mkXor(f1: ZhegalkinExpr[T], f2: ZhegalkinExpr[T]): ZhegalkinExpr[T] = ZhegalkinExpr.mkXor(f1, f2)(this, dom)
+  override def mkXor(f1: ZhegalkinExpr[T], f2: ZhegalkinExpr[T]): ZhegalkinExpr[T] = ZhegalkinExpr.mkXor(f1, f2)(this, lat)
 
   override def freeVars(f: ZhegalkinExpr[T]): SortedSet[Int] = f.freeVars.map(_.id)
 
-  override def map(f: ZhegalkinExpr[T])(fn: Int => ZhegalkinExpr[T]): ZhegalkinExpr[T] = f.map(fn)(this, dom)
+  override def map(f: ZhegalkinExpr[T])(fn: Int => ZhegalkinExpr[T]): ZhegalkinExpr[T] = f.map(fn)(this, lat)
 
   override def lookupOrComputeSVE(q: ZhegalkinExpr[T], sve: ZhegalkinExpr[T] => BoolSubstitution[ZhegalkinExpr[T]]): BoolSubstitution[ZhegalkinExpr[T]] = {
     Cache.lookupOrComputeSVE(q, sve)

@@ -50,7 +50,12 @@ object JvmBackend {
       main => Map(genClass(BackendObjType.Main, BackendObjType.Main.genByteCode(main.sym)))
     ).getOrElse(Map.empty)
 
-    val namespaceClasses = GenNamespaceClasses.gen(JvmOps.namespacesOf(root))
+    val namespaceClasses = JvmOps.namespacesOf(root).map(
+      ns => {
+        val nsClass = BackendObjType.Namespace(ns.ns)
+        val entrypointDefs = ns.defs.values.toList.filter(defn => root.entryPoints.contains(defn.sym))
+        genClass(nsClass, nsClass.genByteCode(entrypointDefs))
+      }).toMap
 
     // Generate function classes.
     val functionAndClosureClasses = GenFunAndClosureClasses.gen(root.defs)

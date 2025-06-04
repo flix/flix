@@ -16,20 +16,20 @@
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
 /**
-  * A type class for domains of Zhegalkin polynomials.
+  * A type class for Boolean lattices.
   */
-trait Domain[T] {
+trait BoolLattice[T] {
 
-  /** The empty element. */
+  /** The least element. */
   def Empty: T
 
-  /** The universe element. */
+  /** The greatest element. */
   def Universe: T
 
-  /** Returns `true` if the given element `t` is the empty element. */
+  /** Returns `true` if the given element `t` is the least element. */
   def isEmpty(t: T): Boolean
 
-  /** Returns `true` if the given element `t` is the universe element. */
+  /** Returns `true` if the given element `t` is the greatest element. */
   def isUniverse(t: T): Boolean
 
   /** Returns the complement of the given element `t`. */
@@ -43,10 +43,10 @@ trait Domain[T] {
 
 }
 
-object Domain {
+object BoolLattice {
 
   /** An instance for [[CofiniteIntSet]]. */
-  object CofiniteIntSetWitnesss extends Domain[CofiniteIntSet] {
+  object CofiniteIntSetWitnesss extends BoolLattice[CofiniteIntSet] {
     override def Empty: CofiniteIntSet = CofiniteIntSet.empty
 
     override def Universe: CofiniteIntSet = CofiniteIntSet.universe

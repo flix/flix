@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestZhegalkin extends AnyFunSuite with TestUtils {
 
-  implicit val alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]] = new ZhegalkinAlgebra[CofiniteIntSet](Domain.CofiniteIntSetWitnesss)
+  implicit val alg: BoolAlg[ZhegalkinExpr[CofiniteIntSet]] = new ZhegalkinAlgebra[CofiniteIntSet](BoolLattice.CofiniteIntSetWitnesss)
 
   test("Test.Zhegalkin.Success.01") {
     val f1 = alg.mkBot
