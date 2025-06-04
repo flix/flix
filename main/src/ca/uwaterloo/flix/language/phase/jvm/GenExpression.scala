@@ -1151,12 +1151,12 @@ object GenExpression {
           }
           val resultTpe = BackendObjType.Result.toTpe
           val desc = MethodDescriptor(paramTpes, resultTpe)
-          val className = JvmOps.getFunctionDefinitionClassName(sym)
+          val className = BackendObjType.Defn(sym).jvmName
           mv.visitMethodInsn(INVOKESTATIC, className.toInternalName, JvmName.DirectApply, desc.toDescriptor, false)
           mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc))
         } else {
           // JvmType of Def
-          val defJvmName = JvmOps.getFunctionDefinitionClassName(sym)
+          val defJvmName = BackendObjType.Defn(sym).jvmName
 
           // Put the def on the stack
           AsmOps.compileDefSymbol(sym, mv)
