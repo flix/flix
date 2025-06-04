@@ -18,7 +18,7 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.ApiSuite
 import ca.uwaterloo.flix.language.LanguageSuite
-import ca.uwaterloo.flix.library.LibrarySuite
+import ca.uwaterloo.flix.library.{LibrarySuite, TestAssert}
 import ca.uwaterloo.flix.tools.ToolsSuite
 import ca.uwaterloo.flix.util.UtilSuite
 import flix.CompilerSuite
@@ -34,6 +34,7 @@ class TestAll extends Suites(
   new ExperimentalSuite,
   new LanguageSuite,
   new LibrarySuite,
+  new TestAssert,
   new ResiliencySuite,
   new TestMain,
   new ToolsSuite,
