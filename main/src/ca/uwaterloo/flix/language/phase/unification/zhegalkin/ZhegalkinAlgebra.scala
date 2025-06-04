@@ -21,17 +21,11 @@ import scala.collection.immutable.SortedSet
 
 class ZhegalkinAlgebra[T](lat: BoolLattice[T]) extends BoolAlg[ZhegalkinExpr[T]] {
 
-  /** A constant that represents the empty set. */
-  val empty: T = lat.Empty
-
-  /** A constant that represents the universe. */
-  val universe: T = lat.Universe
-
   /** A Zhegalkin expression that represents the empty set, i.e. the zero element of the algebra. */
-  val zero: ZhegalkinExpr[T] = ZhegalkinExpr(empty, Nil)
+  val zero: ZhegalkinExpr[T] = ZhegalkinExpr(lat.Empty, Nil)
 
   /** A Zhegalkin expression that represents the universe, i.e. the one element of the algebra. */
-  val one: ZhegalkinExpr[T] = ZhegalkinExpr(universe, Nil)
+  val one: ZhegalkinExpr[T] = ZhegalkinExpr(lat.Universe, Nil)
 
   /** Zhegalkin Cache. */
   val Cache: ZhegalkinCache[T] = new ZhegalkinCache[T]
@@ -42,9 +36,9 @@ class ZhegalkinAlgebra[T](lat: BoolLattice[T]) extends BoolAlg[ZhegalkinExpr[T]]
 
   override def mkTop: ZhegalkinExpr[T] = one
 
-  override def mkCst(id: Int): ZhegalkinExpr[T] = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = false))(this)
+  override def mkCst(id: Int): ZhegalkinExpr[T] = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = false))(lat)
 
-  override def mkVar(id: Int): ZhegalkinExpr[T] = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = true))(this)
+  override def mkVar(id: Int): ZhegalkinExpr[T] = ZhegalkinExpr.mkVar(ZhegalkinVar(id, flexible = true))(lat)
 
   override def mkNot(f: ZhegalkinExpr[T]): ZhegalkinExpr[T] = ZhegalkinExpr.mkCompl(f)(this, lat)
 

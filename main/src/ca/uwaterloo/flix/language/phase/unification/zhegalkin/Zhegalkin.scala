@@ -28,8 +28,8 @@ object Zhegalkin {
   def toZhegalkin(f: SetFormula)(implicit alg: ZhegalkinAlgebra[CofiniteIntSet], lat: BoolLattice[CofiniteIntSet]): ZhegalkinExpr[CofiniteIntSet] = f match {
     case SetFormula.Univ => alg.one
     case SetFormula.Empty => alg.zero
-    case Cst(c) => ZhegalkinExpr(alg.empty, List(ZhegalkinTerm(alg.universe, SortedSet(ZhegalkinVar(c, flexible = false)))))
-    case Var(x) => ZhegalkinExpr(alg.empty, List(ZhegalkinTerm(alg.universe, SortedSet(ZhegalkinVar(x, flexible = true)))))
+    case Cst(c) => ZhegalkinExpr(lat.Empty, List(ZhegalkinTerm(lat.Universe, SortedSet(ZhegalkinVar(c, flexible = false)))))
+    case Var(x) => ZhegalkinExpr(lat.Empty, List(ZhegalkinTerm(lat.Universe, SortedSet(ZhegalkinVar(x, flexible = true)))))
     case ElemSet(s) =>
       ZhegalkinExpr(CofiniteIntSet.mkSet(s), Nil)
     case Compl(f1) => ZhegalkinExpr.mkCompl(toZhegalkin(f1))
