@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
+import ca.uwaterloo.flix.language.phase.unification.shared.BoolLattice
+
 import scala.collection.immutable.SortedSet
 
 /** Represents a Zhegalkin term: c ∩ x1 ∩ x2 ∩ ... ∩ xn */

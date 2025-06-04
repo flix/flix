@@ -15,17 +15,17 @@
  */
 package ca.uwaterloo.flix.language.phase.unification.zhegalkin
 
-import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolSubstitution}
+import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolLattice, BoolSubstitution}
 
 import scala.collection.immutable.SortedSet
 
 class ZhegalkinAlgebra[T](lat: BoolLattice[T]) extends BoolAlg[ZhegalkinExpr[T]] {
 
   /** A Zhegalkin expression that represents the empty set, i.e. the zero element of the algebra. */
-  val zero: ZhegalkinExpr[T] = ZhegalkinExpr(lat.Empty, Nil)
+  val zero: ZhegalkinExpr[T] = ZhegalkinExpr(lat.Bot, Nil)
 
   /** A Zhegalkin expression that represents the universe, i.e. the one element of the algebra. */
-  val one: ZhegalkinExpr[T] = ZhegalkinExpr(lat.Universe, Nil)
+  val one: ZhegalkinExpr[T] = ZhegalkinExpr(lat.Top, Nil)
 
   /** Zhegalkin Cache. */
   val Cache: ZhegalkinCache[T] = new ZhegalkinCache[T]

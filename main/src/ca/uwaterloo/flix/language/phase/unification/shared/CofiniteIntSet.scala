@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.phase.unification.zhegalkin
+package ca.uwaterloo.flix.language.phase.unification.shared
 
 import scala.collection.immutable.SortedSet
 
@@ -137,6 +137,23 @@ object CofiniteIntSet {
       // = !!(!x ∩ !y)   (double complement)
       // = !(x ∪ y)      (complement distribution)
       Compl(x.union(y))
+  }
+
+  /** An instance for [[CofiniteIntSet]]. */
+  object Witness extends BoolLattice[CofiniteIntSet] {
+    override def Bot: CofiniteIntSet = CofiniteIntSet.empty
+
+    override def Top: CofiniteIntSet = CofiniteIntSet.universe
+
+    override def isBot(t: CofiniteIntSet): Boolean = t.isEmpty
+
+    override def isTop(t: CofiniteIntSet): Boolean = t.isUniverse
+
+    override def comp(t: CofiniteIntSet): CofiniteIntSet = CofiniteIntSet.complement(t)
+
+    override def join(t1: CofiniteIntSet, t2: CofiniteIntSet): CofiniteIntSet = CofiniteIntSet.union(t1, t2)
+
+    override def meet(t1: CofiniteIntSet, t2: CofiniteIntSet): CofiniteIntSet = CofiniteIntSet.intersection(t1, t2)
   }
 
 }
