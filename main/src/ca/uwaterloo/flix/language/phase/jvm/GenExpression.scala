@@ -1142,12 +1142,12 @@ object GenExpression {
             s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
         }
         // Calling unwind and unboxing
-        val defn = root.defs(sym)
-        if (Purity.isControlPure(defn.expr.purity)) {
-          mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc))
-        } else {
-          ctx match {
-            case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+        ctx match {
+          case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+            val defn = root.defs(sym)
+            if (Purity.isControlPure(defn.expr.purity)) {
+              mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc))
+            } else {
               val pcPoint = pcCounter(0) + 1
               val pcPointLabel = pcLabels(pcPoint)
               val afterUnboxing = new Label()
@@ -1159,10 +1159,9 @@ object GenExpression {
               mv.visitVarInsn(ALOAD, 1)
 
               mv.visitLabel(afterUnboxing)
-
-            case DirectContext(_, _, _) =>
-              mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc))
-          }
+            }
+          case DirectContext(_, _, _) =>
+            mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc))
         }
     }
 
