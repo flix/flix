@@ -24,8 +24,8 @@ pub type alias Graph[node] = {
 /// Given the undirected graph described by `nodes` and `edges`, connected components are
 /// found and a relation with the component representative for each node is returned.
 pub def connectedComponentRep(g: Graph[node]): #{ ComponentRep(node, node) | r } with Order[node] =
-    let nodes = inject g#nodes into Node(_);
-    let edges = inject g#edges into Edge(_, _);
+    let nodes = inject g#nodes into Node/1;
+    let edges = inject g#edges into Edge/2;
     let reachability = #{
         // `Reachable(n1, n2)` describes that `n1` can reach `n2`.
         // All nodes can reach themselves.
@@ -46,7 +46,7 @@ pub def connectedComponentRep(g: Graph[node]): #{ ComponentRep(node, node) | r }
         // `rep` is the highest node of the component.
         ComponentRep(n, rep) :- Reachable(n, rep), not ReachUp(rep).
     };
-    solve nodes, edges, reachability project ComponentRep(_, _)
+    solve nodes, edges, reachability project ComponentRep/2
 
 /// Connects the undirected graph given by `nodes` and `edges`
 /// ny connecting the connected components of the graph.
@@ -61,7 +61,7 @@ pub def connectGraph(g: Graph[node]): #{ Edge(Set[node], Set[node]) | r } with O
         // full union is computed before producing Edge values.
         Edge(c1, c2) :- fix Component(_; c1), fix Component(_; c2), if (c1 < c2).
     };
-    solve connectedComponentRep(g), missingEdges project Edge(_, _)
+    solve connectedComponentRep(g), missingEdges project Edge/2
 
 def main(): Unit \ IO =
     let graph = {

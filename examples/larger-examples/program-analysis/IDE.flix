@@ -127,7 +127,7 @@ mod IDE {
         };
 
 
-        let f1 = inject ide#cfg, ide#callGraph, ide#startNodes, ide#endNodes into CFG(_, _), CallGraph(_, _), StartNode(_, _), EndNode(_, _);
+        let f1 = inject ide#cfg, ide#callGraph, ide#startNodes, ide#endNodes into CFG/2, CallGraph/2, StartNode/2, EndNode/2;
 
         query p, f1 select (n, d, l) from Results(n, d; l)
 
@@ -397,8 +397,8 @@ def main(): Unit \ IO =
           let microfn = ConstantProp.MicroFunction.NonBot(c1, c2, ConstantProp.Const.Bot);
           let gen = if (d == v2) Vector#{(v1, microfn)} else Vector#{};
           kill ++ gen
-        case IR.CallConst(_, _) if isGlobalVar(d) => Vector#{}
-        case IR.CallVar(_, _) if isGlobalVar(d) => Vector#{}
+        case IR.CallConst/2 if isGlobalVar(d) => Vector#{}
+        case IR.CallVar/2 if isGlobalVar(d) => Vector#{}
         case _ => Vector#{(d, ConstantProp.id())}
     };
 

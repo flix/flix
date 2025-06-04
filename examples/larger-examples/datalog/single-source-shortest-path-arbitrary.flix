@@ -7,7 +7,7 @@ mod ShortestPathN {
     /// in the graph `g`.
     ///
     pub def ssspn(src: t, g: m[(t, Int32, t)]): Map[t, Vector[t]] \Foldable.Aef[m] with Foldable[m], Order[t] = {
-        let edges = inject g into Edge(_, _, _);
+        let edges = inject g into Edge/3;
         let rules = #{
             Reach(x, y; init(y, l, x)) :- Edge(x, l, y).
             Reach(x, z; cons(z, l, p)) :- Reach(x, y; p), Edge(y, l, z).
