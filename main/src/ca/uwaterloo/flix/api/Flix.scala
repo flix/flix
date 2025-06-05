@@ -681,6 +681,7 @@ class Flix {
     val eraserAst = Eraser.run(tailPosAst)
     val reducerAst = Reducer.run(eraserAst)
     val varOffsetsAst = VarOffsets.run(reducerAst)
+    val _ = ToJvm.run(varOffsetsAst)
     val result = JvmBackend.run(varOffsetsAst)
 
     // Shutdown fork-join thread pool.
