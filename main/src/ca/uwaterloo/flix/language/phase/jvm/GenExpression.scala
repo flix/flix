@@ -999,28 +999,23 @@ object GenExpression {
           INVOKESPECIAL(lazyType.Constructor)
       })
 
-      case AtomicOp.Force =>
+      case AtomicOp.Force => mv.visitByteIns({
+        import BytecodeInstructions.*
         val List(exp) = exps
 
-        // Find the Lazy class type (Lazy$tpe) and the inner value type.
         val MonoType.Lazy(elmType) = exp.tpe
-        val erasedElmType = BackendType.toBackendType(elmType)
-        val lazyType = BackendObjType.Lazy(erasedElmType)
+        val lazyType = BackendObjType.Lazy(BackendType.toBackendType(elmType))
 
-        // Emit code for the lazy expression.
-        compileExpr(exp)
-
-        val ins = {
-          import BytecodeInstructions.*
+        pushExpr(exp) ~
           CHECKCAST(lazyType.jvmName) ~
-            DUP() ~ GETFIELD(lazyType.ExpField) ~
-            ifConditionElse(Condition.NONNULL)(
-              INVOKEVIRTUAL(lazyType.ForceMethod)
-            )(
-              GETFIELD(lazyType.ValueField)
-            )
-        }
-        mv.visitByteIns(ins)
+          DUP() ~ GETFIELD(lazyType.ExpField) ~
+          ifConditionElse(Condition.NONNULL)(
+            INVOKEVIRTUAL(lazyType.ForceMethod)
+          )(
+            GETFIELD(lazyType.ValueField)
+          )
+
+      })
 
       case AtomicOp.HoleError(sym) => mv.visitByteIns({
         import BytecodeInstructions.*
