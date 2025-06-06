@@ -1196,22 +1196,19 @@ object GenExpression {
     }
 
     case Expr.ApplySelfTail(sym, exps, _, _, _) => ctx match {
-      case EffectContext(_, _, _, setPc, _, _, _) =>
-        // The function abstract class name
-        val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType).jvmName
-        // Evaluate each argument and put the result on the Fn class.
-        for ((arg, i) <- exps.zipWithIndex) {
-          mv.visitVarInsn(ALOAD, 0)
-          // Evaluate the argument and push the result on the stack.
-          compileExpr(arg)
-          mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
-            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
-        }
-        mv.visitVarInsn(ALOAD, 0)
-        mv.visitByteIns(BytecodeInstructions.pushInt(0))
-        mv.visitByteIns(setPc)
-        // Jump to the entry point of the method.
-        mv.visitJumpInsn(GOTO, ctx.entryPoint)
+      case EffectContext(_, _, _, setPc, _, _, _) => mv.visitByteIns({
+        import BytecodeInstructions.*
+        val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
+        composeN(for ((arg, i) <- exps.zipWithIndex) yield {
+          DUP() ~
+            pushExpr(arg) ~
+            PUTFIELD(functionInterface.ArgField(i))
+        }) ~
+          ALOAD(0) ~
+          pushInt(0) ~
+          setPc ~
+          cheat(_.visitJumpInsn(Opcodes.GOTO, ctx.entryPoint))
+      })
 
       case DirectInstanceContext(_, _, _) =>
         // The function abstract class name

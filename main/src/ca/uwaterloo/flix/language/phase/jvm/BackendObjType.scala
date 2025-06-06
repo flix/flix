@@ -644,7 +644,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
-    private def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, s"arg$index", args(index))
+    def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, s"arg$index", args(index))
 
     private def toStringIns: InstructionSet = {
       val argString = args match {
