@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition}
 import ca.uwaterloo.flix.language.ast.{MonoType, *}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.{InstructionSet, MethodEnricher}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{ConstructorMethod, InstanceField}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -1491,19 +1492,21 @@ object GenExpression {
         mv.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe)))
     }
 
-    case Expr.NewObject(name, _, _, _, methods, _) =>
+    case Expr.NewObject(name, _, _, _, methods, _) => mv.visitByteIns({
+      import BytecodeInstructions.*
       val exps = methods.map(_.exp)
-      val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
-      mv.visitTypeInsn(NEW, className)
-      mv.visitInsn(DUP)
-      mv.visitMethodInsn(INVOKESPECIAL, className, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+      val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name)
 
-      // For each method, compile the closure which implements the body of that method and store it in a field
-      exps.zipWithIndex.foreach { case (e, i) =>
-        mv.visitInsn(DUP)
-        compileExpr(e)
-        mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(e.tpe).toDescriptor)
-      }
+      NEW(className) ~
+        DUP() ~
+        INVOKESPECIAL(ConstructorMethod(className, Nil)) ~
+        // For each method, compile the closure which implements the body of that method and store it in a field.
+        composeN(for ((e, i) <- exps.zipWithIndex) yield {
+          DUP() ~
+            pushExpr(e) ~
+            PUTFIELD(InstanceField(className, s"clo$i", JvmOps.getClosureAbstractClassType(e.tpe).toTpe))
+        })
+    })
 
   }
 
