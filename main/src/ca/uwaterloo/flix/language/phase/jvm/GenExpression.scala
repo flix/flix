@@ -1120,23 +1120,21 @@ object GenExpression {
       }
 
     case Expr.ApplyDef(sym, exps, ct, _, _, loc) => ct match {
-      case ExpPosition.Tail =>
-        // Type of the function abstract class
-        val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType).jvmName
+      case ExpPosition.Tail => mv.visitByteIns({
+        import BytecodeInstructions.*
+        val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
+        val defnT = BackendObjType.Defn(sym)
 
-        // Put the def on the stack
-        AsmOps.compileDefSymbol(sym, mv)
-        // Putting args on the Fn class
-        for ((arg, i) <- exps.zipWithIndex) {
-          // Duplicate the FunctionInterface
-          mv.visitInsn(DUP)
-          // Evaluating the expression
-          compileExpr(arg)
-          mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
-            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
-        }
-        // Return the def
-        mv.visitInsn(ARETURN)
+        NEW(defnT.jvmName) ~
+          DUP() ~
+          INVOKESPECIAL(ClassMaker.ConstructorMethod(defnT.jvmName, Nil)) ~
+          composeN(for ((arg, i) <- exps.zipWithIndex) yield {
+            DUP() ~
+              pushExpr(arg) ~
+              PUTFIELD(functionInterface.ArgField(i))
+          }) ~
+          ARETURN()
+      })
 
       case ExpPosition.NonTail =>
         val defn = root.defs(sym)
