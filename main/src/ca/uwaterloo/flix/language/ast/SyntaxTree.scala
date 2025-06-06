@@ -99,8 +99,6 @@ object SyntaxTree {
 
     case object Ident extends TreeKind
 
-    case object Integer extends TreeKind
-
     case object Kind extends TreeKind
 
     case object ModifierList extends TreeKind

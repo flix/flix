@@ -2990,7 +2990,7 @@ object Parser2 {
       // TODO no copy-paste
       if (!at(TokenKind.LiteralInt)) {
         closeWithError(open(), UnexpectedToken(
-          expected = NamedTokenSet.FromKinds(Set(TokenKind.Slash)),
+          expected = NamedTokenSet.FromKinds(Set(TokenKind.LiteralInt)),
           actual = Some(nth(0)),
           sctx = SyntacticContext.Expr.OtherExpr,
           hint = Some("provide a predicate arity such as: Pred/1"),

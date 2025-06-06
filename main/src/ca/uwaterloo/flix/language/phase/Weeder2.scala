@@ -3250,13 +3250,10 @@ object Weeder2 {
 
   private def visitPredicateAndArity(tree: Tree)(implicit sctx: SharedContext): Validation[PredicateAndArity, CompilationMessage] = {
     val identVal = pickNameIdent(tree)
-    val arityTreeVal = pick(TreeKind.Integer, tree)
-    mapN(identVal, arityTreeVal) {
-      case (ident, arityTree) =>
-        val arity = arityTree.children(0) match {
-          case t: Token => t.text.toInt
-          case _ => throw InternalCompilerException("unexpected non-token", arityTree.loc)
-        }
+    val arityTokenVal = pickToken(TokenKind.LiteralInt, tree)
+    mapN(identVal, arityTokenVal) {
+      case (ident, arityToken) =>
+        val arity = arityToken.text.toInt
         PredicateAndArity(ident, arity)
     }
   }
@@ -3376,6 +3373,20 @@ object Weeder2 {
       case Some(t) => Validation.Success(t)
       case None =>
         val error = NeedAtleastOne(NamedTokenSet.FromTreeKinds(Set(kind)), synctx, loc = tree.loc)
+        Validation.Failure(Chain(error))
+    }
+  }
+
+  /**
+    * Picks out the first token of a specific [[TokenKind]].
+    */
+  private def pickToken(kind: TokenKind, tree: Tree, synctx: SyntacticContext = SyntacticContext.Unknown): Validation[Token, CompilationMessage] = {
+    tree.children.collectFirst {
+      case token: Token if token.kind == kind => token
+    } match {
+      case Some(t) => Validation.Success(t)
+      case _ =>
+        val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(kind)), synctx, loc = tree.loc)
         Validation.Failure(Chain(error))
     }
   }
