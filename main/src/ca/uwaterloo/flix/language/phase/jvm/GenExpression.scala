@@ -1395,53 +1395,47 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       mv.visitLabel(afterTryAndCatch)
 
-    case Expr.RunWith(exp, effUse, rules, ct, _, _, loc) =>
-      // exp is a Unit -> exp.tpe closure
+    case Expr.RunWith(exp, effUse, rules, ct, _, _, loc) => mv.visitByteIns({
+      import BytecodeInstructions.*
       val effectJvmName = JvmOps.getEffectDefinitionClassName(effUse.sym)
-      val ins = {
-        import BytecodeInstructions.*
-        // eff name
-        pushString(effUse.sym.toString) ~
-          // handler
-          NEW(effectJvmName) ~ DUP() ~ cheat(_.visitMethodInsn(Opcodes.INVOKESPECIAL, effectJvmName.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)) ~
-          // bind handler closures
-          cheat(mv => rules.foreach {
-            case HandlerRule(op, _, body) =>
-              mv.visitInsn(Opcodes.DUP)
-              compileExpr(body)(mv, ctx, root, flix)
-              mv.visitFieldInsn(Opcodes.PUTFIELD, effectJvmName.toInternalName, JvmOps.getEffectOpName(op.sym), GenEffectClasses.opFieldType(op.sym).toDescriptor)
-          }) ~
-          // frames
-          NEW(BackendObjType.FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.FramesNil.Constructor) ~
-          // continuation
-          pushExpr(exp) ~
-          // exp.arg0 should be set to unit here but from lifting we know that it is unused so the
-          // implicit null is fine.
-          // call installHandler
-          INVOKESTATIC(BackendObjType.Handler.InstallHandlerMethod)
-      }
-      mv.visitByteIns(ins)
-      // handle value/suspend/thunk if in non-tail position
-      if (ct == ExpPosition.NonTail) {
-        ctx match {
-          case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
-            mv.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunk("in pure run-with call", loc))
 
-          case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
-            val pcPoint = pcCounter(0) + 1
-            val pcPointLabel = pcLabels(pcPoint)
-            val afterUnboxing = new Label()
-            pcCounter(0) += 1
-            mv.visitByteIns(BackendObjType.Result.unwindThunkToValue(pcPoint, newFrame, setPc))
-            mv.visitJumpInsn(GOTO, afterUnboxing)
+      // eff name
+      pushString(effUse.sym.toString) ~
+        // handler
+        NEW(effectJvmName) ~ DUP() ~ INVOKESPECIAL(ClassMaker.ConstructorMethod(effectJvmName, Nil)) ~
+        // bind handler closures
+        composeN(for (HandlerRule(op, _, body) <- rules) yield {
+          DUP() ~
+            pushExpr(body) ~
+            PUTFIELD(ClassMaker.InstanceField(effectJvmName, JvmOps.getEffectOpName(op.sym), GenEffectClasses.opFieldType(op.sym).toTpe))
+        }) ~
+        // frames
+        NEW(BackendObjType.FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.FramesNil.Constructor) ~
+        // continuation
+        pushExpr(exp) ~
+        // exp.arg0 should be set to unit here but from lifting we know that it is unused so the
+        // implicit null is fine.
+        INVOKESTATIC(BackendObjType.Handler.InstallHandlerMethod) ~
+        (ct match {
+          case ExpPosition.Tail =>
+            ARETURN()
+          case ExpPosition.NonTail => ctx match {
+            case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
+              BackendObjType.Result.unwindSuspensionFreeThunk("in pure run-with call", loc)
+            case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+              val pcPoint = pcCounter(0) + 1
+              val pcPointLabel = pcLabels(pcPoint)
+              val afterUnboxing = new Label()
+              pcCounter(0) += 1
 
-            mv.visitLabel(pcPointLabel)
-            mv.visitVarInsn(ALOAD, 1)
-            mv.visitLabel(afterUnboxing)
-        }
-      } else {
-        mv.visitInsn(ARETURN)
-      }
+              BackendObjType.Result.unwindThunkToValue(pcPoint, newFrame, setPc) ~
+                cheat(_.visitJumpInsn(Opcodes.GOTO, afterUnboxing)) ~
+                cheat(_.visitLabel(pcPointLabel)) ~
+                ALOAD(1) ~
+                cheat(_.visitLabel(afterUnboxing))
+          }
+        })
+    })
 
     case Expr.Do(op, exps, tpe, _, loc) => ctx match {
       case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>

@@ -148,11 +148,11 @@ object GenEffectClasses {
     MethodDescriptor(methodArgs, methodResult)
   }
 
-  def opFieldType(sym: Symbol.OpSym)(implicit root: Root): JvmName = {
+  def opFieldType(sym: Symbol.OpSym)(implicit root: Root): BackendObjType.Arrow = {
     val effect = root.effects(sym.eff)
     val op = effect.ops.find(op => op.sym == sym).getOrElse(throw InternalCompilerException(s"Could not find op '$sym' in effect '$effect'.", sym.loc))
     val writtenOpArgs = op.fparams.map(_.tpe)
-    JvmOps.getFunctionInterfaceType(MonoType.Arrow(writtenOpArgs :+ MonoType.Object, MonoType.Object)).jvmName
+    JvmOps.getFunctionInterfaceType(MonoType.Arrow(writtenOpArgs :+ MonoType.Object, MonoType.Object))
   }
 
 }
