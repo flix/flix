@@ -4,32 +4,32 @@ def readAndParseMove(): Result[String, Int32] \ {Interface.Interface} =
     ) yield n
 
 def gameLoop(board: Board[r], symbol: Symbol): Unit \ {IO + r + Interface.Interface} = {
-    Interface.Interface.display(Array.toList(Board.getArr(board)), "Enter a move (0 - 8): ");
+    Interface.Interface.display(Board.toString(board), "Enter a move (0 - 8): ");
     match readAndParseMove() {
         case Result.Ok(index) =>
             if(not(index >= 0 and index <= 8)) {
-                Interface.Interface.display(List.Nil, "Invalid move");
+                Interface.Interface.display("", "Invalid move");
                 gameLoop(board, symbol)
             } else {
                 let (newBoard, moveSuccess) = Board.makeMove(board, symbol, index);
                 if (moveSuccess) {
                     if(Board.checkWin(newBoard, symbol)) {
                         match symbol {
-                            case Symbol.X => Interface.Interface.display(Array.toList(Board.getArr(board)), "Player One wins!!!")
-                            case Symbol.O => Interface.Interface.display(Array.toList(Board.getArr(board)), "Player Two wins!!!")
+                            case Symbol.X => Interface.Interface.display(Board.toString(board), "Player One wins!!!")
+                            case Symbol.O => Interface.Interface.display(Board.toString(board), "Player Two wins!!!")
                             case _ => ()
                         }
                     } else if(Board.boardFilled(newBoard)) {
-                        Interface.Interface.display(Array.toList(Board.getArr(board)), "Draw")
+                        Interface.Interface.display(Board.toString(board), "Draw")
                     } else {
                         gameLoop(newBoard, Symbol.complement(symbol))
                     }
                 } else {
-                    Interface.Interface.display(List.Nil, "Cell already filled");
+                    Interface.Interface.display("", "Cell already filled");
                     gameLoop(board, symbol)
                 }
             }
-        case Result.Err(_) => Interface.Interface.display(List.Nil, "Invalid move")
+        case Result.Err(_) => Interface.Interface.display("", "Invalid move")
     }
 }
 

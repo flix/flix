@@ -3,6 +3,7 @@ pub struct Board[r: Region] {
     arr: Array[Symbol, r]
 }
 
+
 mod Board {
 
     pub def newBoard(rc: Region[r]): Board[r] \ r = {
@@ -75,4 +76,12 @@ mod Board {
         Array.forAll(sym -> sym != Symbol.Empty, board->arr)
     }
 
+    pub def toString(board: Board[r]): String \ r =
+                    "       |       |       "
+                    ++ "   " ++ Symbol.toString(Array.get(0, board->arr)) ++ "   |   " ++ Symbol.toString(Array.get(1, board->arr)) ++ "   |   " ++ Symbol.toString(Array.get(2, board->arr)) ++ "   "
+                    ++ " - - - | - - - | - - - "
+                    ++ "   " ++ Symbol.toString(Array.get(3, board->arr)) ++ "   |   " ++ Symbol.toString(Array.get(4, board->arr)) ++ "   |   " ++ Symbol.toString(Array.get(5, board->arr)) ++ "   "
+                    ++ " - - - | - - - | - - - "
+                    ++ "   " ++ Symbol.toString(Array.get(6, board->arr)) ++ "   |   " ++ Symbol.toString(Array.get(7, board->arr)) ++ "   |   " ++ Symbol.toString(Array.get(8, board->arr)) ++ "   "
+                    ++ "       |       |       "
 }
