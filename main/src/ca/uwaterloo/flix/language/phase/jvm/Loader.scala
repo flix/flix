@@ -26,7 +26,7 @@ object Loader {
     *
     * Loader relies on two kind of classes to load the entrypoints of `root`
     *   - for every entrypoint, there should exist a matching namespace function (see [[BackendObjType.Namespace.ShimMethod]])
-    *   -
+    *   - if the main function is defined, a main class should be defined (see [[BackendObjType.Main.MainMethod]])
     */
   def run(root: Root, classes: List[JvmClass])(implicit flix: Flix): (Root, LoaderResult) = flix.phase("Loader") {
     implicit val r: Root = root
