@@ -887,7 +887,7 @@ object Lexer {
               if (isDecimal) {
                 error.getOrElse(TokenKind.LiteralFloat64)
               } else {
-                error.getOrElse(TokenKind.LiteralInt32)
+                error.getOrElse(TokenKind.LiteralInt)
               }
           }
       }
@@ -896,7 +896,7 @@ object Lexer {
     if (isDecimal) {
       error.getOrElse(TokenKind.LiteralFloat64)
     } else {
-      error.getOrElse(TokenKind.LiteralInt32)
+      error.getOrElse(TokenKind.LiteralInt)
     }
   }
 
@@ -964,7 +964,7 @@ object Lexer {
       else wrapAndConsume(LexerError.IncorrectHexNumberSuffix(sourceLocationAtCurrent()))
     } else if (isNumberLike(c)) {
       wrapAndConsume(LexerError.MalformedHexNumber(c.toString, sourceLocationAtCurrent()))
-    } else TokenKind.LiteralInt32
+    } else TokenKind.LiteralInt
   }
 
   /** Moves current position past an annotation (e.g. "@Test"). */

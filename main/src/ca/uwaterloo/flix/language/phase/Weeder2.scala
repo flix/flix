@@ -1037,6 +1037,7 @@ object Weeder2 {
           case TokenKind.KeywordFalse => Validation.Success(Expr.Cst(Constant.Bool(false), token.mkSourceLocation()))
           case TokenKind.LiteralString => Validation.Success(Constants.toStringCst(token))
           case TokenKind.LiteralChar => Validation.Success(Constants.toChar(token))
+          case TokenKind.LiteralInt => Validation.Success(Constants.toInt32(token))
           case TokenKind.LiteralInt8 => Validation.Success(Constants.toInt8(token))
           case TokenKind.LiteralInt16 => Validation.Success(Constants.toInt16(token))
           case TokenKind.LiteralInt32 => Validation.Success(Constants.toInt32(token))
@@ -1200,7 +1201,7 @@ object Weeder2 {
     }
 
     private def tryPickNumberLiteralToken(tree: Tree): Option[Token] = {
-      val NumberLiteralKinds = List(TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
+      val NumberLiteralKinds = List(TokenKind.LiteralInt, TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
       val maybeTree = tryPick(TreeKind.Expr.Literal, tree)
       maybeTree.flatMap(_.children(0) match {
         case t@Token(_, _, _, _, _, _) if NumberLiteralKinds.contains(t.kind) => Some(t)
@@ -2086,17 +2087,19 @@ object Weeder2 {
 
     private def visitFixpointInjectExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.FixpointInject)
-      val expressions = pickAll(TreeKind.Expr.Expr, tree)
-      val idents = pickAll(TreeKind.Ident, tree).map(tokenToIdent)
-      mapN(traverse(expressions)(visitExpr)) {
-        case exprs if exprs.length != idents.length =>
+      val expTrees = pickAll(TreeKind.Expr.Expr, tree)
+      val predAndArityTrees = pickAll(TreeKind.PredicateAndArity, tree)
+      val expsVal = traverse(expTrees)(visitExpr)
+      val predAndAritiesVal = traverse(predAndArityTrees)(visitPredicateAndArity)
+      mapN(expsVal, predAndAritiesVal) {
+        case (exprs, shapes) if exprs.length != shapes.length =>
           // Check for mismatched arity
-          val error = MismatchedArity(exprs.length, idents.length, tree.loc)
+          val error = MismatchedArity(exprs.length, shapes.length, tree.loc)
           sctx.errors.add(error)
           WeededAst.Expr.Error(error)
 
-        case exprs =>
-          Expr.FixpointInjectInto(exprs, idents, tree.loc)
+        case (exprs, shapes) =>
+          Expr.FixpointInjectInto(exprs, shapes, tree.loc)
       }
     }
 
@@ -2477,7 +2480,7 @@ object Weeder2 {
 
     private def visitUnaryPat(tree: Tree)(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Unary)
-      val NumberLiteralKinds = List(TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
+      val NumberLiteralKinds = List(TokenKind.LiteralInt, TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
       val literalToken = ArrayOps.getOption(tree.children, 1) match {
         case Some(t@Token(_, _, _, _, _, _)) if NumberLiteralKinds.contains(t.kind) => Some(t)
         case _ => None
@@ -3245,6 +3248,16 @@ object Weeder2 {
     }
   }
 
+  private def visitPredicateAndArity(tree: Tree)(implicit sctx: SharedContext): Validation[PredicateAndArity, CompilationMessage] = {
+    val identVal = pickNameIdent(tree)
+    val arityTokenVal = pickToken(TokenKind.LiteralInt, tree)
+    mapN(identVal, arityTokenVal) {
+      case (ident, arityToken) =>
+        val arity = arityToken.text.toInt
+        PredicateAndArity(ident, arity)
+    }
+  }
+
   ///////////////////////////////////////////////////////////////////////////////
   /// HELPERS ////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////
@@ -3360,6 +3373,20 @@ object Weeder2 {
       case Some(t) => Validation.Success(t)
       case None =>
         val error = NeedAtleastOne(NamedTokenSet.FromTreeKinds(Set(kind)), synctx, loc = tree.loc)
+        Validation.Failure(Chain(error))
+    }
+  }
+
+  /**
+    * Picks out the first token of a specific [[TokenKind]].
+    */
+  private def pickToken(kind: TokenKind, tree: Tree, synctx: SyntacticContext = SyntacticContext.Unknown): Validation[Token, CompilationMessage] = {
+    tree.children.collectFirst {
+      case token: Token if token.kind == kind => token
+    } match {
+      case Some(t) => Validation.Success(t)
+      case _ =>
+        val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(kind)), synctx, loc = tree.loc)
         Validation.Failure(Chain(error))
     }
   }

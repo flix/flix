@@ -109,6 +109,8 @@ object SyntaxTree {
 
     case object ParameterList extends TreeKind
 
+    case object PredicateAndArity extends TreeKind
+
     case object QName extends TreeKind
 
     case object Root extends TreeKind
