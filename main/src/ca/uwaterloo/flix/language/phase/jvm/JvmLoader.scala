@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils}
 
 import java.lang.reflect.{InvocationTargetException, Method}
 
-object ClassLoader {
+object JvmLoader {
 
   case class LoaderResult(
                            main: Option[Array[String] => Unit],
