@@ -682,9 +682,10 @@ class Flix {
     val reducerAst = Reducer.run(eraserAst)
     val varOffsetsAst = VarOffsets.run(reducerAst)
     val (backendAst, classes) = JvmBackend.run(varOffsetsAst)
+    val totalTime = flix.getTotalTime
     JvmWriter.run(classes)
     val (loadedAst, loadRes) = JvmLoader.run(backendAst, classes)
-    val result = new CompilationResult(loadedAst, loadRes.main, loadRes.defs, flix.getTotalTime, loadRes.byteSize)
+    val result = new CompilationResult(loadedAst, loadRes.main, loadRes.defs, totalTime, loadRes.byteSize)
 
     // Shutdown fork-join thread pool.
     shutdownForkJoinPool()
