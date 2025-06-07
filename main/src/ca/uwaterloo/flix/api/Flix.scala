@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityC
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
-import ca.uwaterloo.flix.language.phase.jvm.{JvmBackend, Loader}
+import ca.uwaterloo.flix.language.phase.jvm.{JvmBackend, ClassLoader}
 import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -682,7 +682,7 @@ class Flix {
     val reducerAst = Reducer.run(eraserAst)
     val varOffsetsAst = VarOffsets.run(reducerAst)
     val (backendAst, classes) = JvmBackend.run(varOffsetsAst)
-    val (loadedAst, loadRes) = Loader.run(backendAst, classes)
+    val (loadedAst, loadRes) = ClassLoader.run(backendAst, classes)
     val result = new CompilationResult(loadedAst, loadRes.main, loadRes.defs, flix.getTotalTime, loadRes.byteSize)
 
     // Shutdown fork-join thread pool.
