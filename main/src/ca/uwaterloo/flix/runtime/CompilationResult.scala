@@ -22,11 +22,11 @@ import ca.uwaterloo.flix.language.ast.*
 /**
   * A class representing the result of a compilation.
   *
-  * @param root     the abstract syntax tree of the program.
-  * @param main     the reflected main function, if present.
-  * @param defs     the definitions in the program.
+  * @param root      the abstract syntax tree of the program.
+  * @param main      the reflected main function, if present.
+  * @param defs      the definitions in the program.
   * @param totalTime the total compilation time, excluding class writing/loading.
-  * @param codeSize the number of bytes the compiler generated.
+  * @param codeSize  the number of bytes the compiler generated.
   */
 class CompilationResult(root: Root,
                         main: Option[Array[String] => Unit],
