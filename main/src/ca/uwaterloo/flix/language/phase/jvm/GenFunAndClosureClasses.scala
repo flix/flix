@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.{MonoType, Purity, Symbol}
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.{InstructionSet, MethodEnricher}
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.AsmWrapper
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes.*
@@ -175,7 +175,7 @@ object GenFunAndClosureClasses {
     val desc = MethodDescriptor(paramTpes, resultTpe)
     val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
     val m = visitor.visitMethod(modifiers, JvmName.DirectApply, desc.toDescriptor, null, null)
-
+    implicit val asmWrapper: AsmWrapper = AsmWrapper(m)
     m.visitCode()
 
     // used for self-recursive tail calls
@@ -186,9 +186,9 @@ object GenFunAndClosureClasses {
     val localOffset = 0
     val labelEnv = Map.empty[Symbol.LabelSym, Label]
     val ctx = GenExpression.DirectStaticContext(enterLabel, labelEnv, localOffset)
-    GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
+    GenExpression.compileExpr(defn.expr)(m, asmWrapper, ctx, root, flix)
 
-    m.visitByteIns(BytecodeInstructions.xReturn(BackendObjType.Result.toTpe))
+    BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
 
 
     m.visitMaxs(999, 999)
@@ -198,6 +198,7 @@ object GenFunAndClosureClasses {
   private def compileInvokeMethod(visitor: ClassWriter, className: JvmName): Unit = {
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
       AsmOps.getMethodDescriptor(Nil, JvmType.Reference(BackendObjType.Result.jvmName)), null, null)
+    implicit val asmWrapper: AsmWrapper = AsmWrapper(m)
     m.visitCode()
 
     val applyMethod = BackendObjType.Frame.ApplyMethod
@@ -205,7 +206,7 @@ object GenFunAndClosureClasses {
     m.visitInsn(ACONST_NULL)
     m.visitMethodInsn(INVOKEVIRTUAL, className.toInternalName, applyMethod.name, applyMethod.d.toDescriptor, false)
 
-    m.visitByteIns(BytecodeInstructions.xReturn(BackendObjType.Result.toTpe))
+    BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
 
     m.visitMaxs(999, 999)
     m.visitEnd()
@@ -217,6 +218,7 @@ object GenFunAndClosureClasses {
     // Method header
     val applyMethod = BackendObjType.Frame.ApplyMethod
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, applyMethod.name, applyMethod.d.toDescriptor, null, null)
+    implicit val asmWrapper: AsmWrapper = AsmWrapper(m)
     val localOffset = 2 // [this: Obj, value: Obj, ...]
 
     val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.sym.getStackOffset(localOffset), lp.sym.isWild, lp.tpe) }
@@ -224,7 +226,7 @@ object GenFunAndClosureClasses {
     val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.sym.getStackOffset(localOffset), false, fp.tpe) }
 
     def loadParamsOf(params: List[(String, Int, Boolean, MonoType)]): Unit = {
-      params.foreach { case (name, offset, _, tpe) => loadFromField(m, className, name, offset, tpe) }
+      params.foreach { case (name, offset, _, tpe) => loadFromField(m, asmWrapper, className, name, offset, tpe) }
     }
 
     m.visitCode()
@@ -239,7 +241,7 @@ object GenFunAndClosureClasses {
 
     if (Purity.isControlPure(defn.expr.purity)) {
       val ctx = GenExpression.DirectInstanceContext(enterLabel, Map.empty, localOffset)
-      GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
+      GenExpression.compileExpr(defn.expr)(m, asmWrapper, ctx, root, flix)
     } else {
       val pcLabels: Vector[Label] = Vector.range(0, defn.pcPoints).map(_ => new Label())
       if (defn.pcPoints > 0) {
@@ -252,47 +254,57 @@ object GenFunAndClosureClasses {
       }
 
       // Generating the expression
-      val newFrame = BytecodeInstructions.thisLoad() ~ BytecodeInstructions.cheat(_.visitMethodInsn(INVOKEVIRTUAL, className.toInternalName, copyName, nothingToTDescriptor(className).toDescriptor, false))
-      val setPc = {
-        import BytecodeInstructions.*
-        SWAP() ~ DUP_X1() ~ SWAP() ~ // clo, pc ---> clo, clo, pc
-          BytecodeInstructions.cheat(_.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, "pc", BackendType.Int32.toDescriptor)) ~
-          lparams.foldLeft(nop()) { case (acc, (name, index, isWild, tpe)) =>
-            val erasedTpe = BackendType.toErasedBackendType(tpe)
-            if (isWild) acc else acc ~ DUP() ~ xLoad(erasedTpe, index) ~ cheat(_.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, name, erasedTpe.toDescriptor))
-          } ~
-          POP()
+      def newFrame(): Unit = {
+        BytecodeInstructions.thisLoad()
+        m.visitMethodInsn(INVOKEVIRTUAL, className.toInternalName, copyName, nothingToTDescriptor(className).toDescriptor, false)
       }
 
-      val ctx = GenExpression.EffectContext(enterLabel, Map.empty, newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
-      GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
+      def setPc(): Unit = {
+        import BytecodeInstructions.*
+        SWAP()
+        DUP_X1()
+        SWAP() // clo, pc ---> clo, clo, pc
+        m.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, "pc", BackendType.Int32.toDescriptor)
+        for ((name, index, isWild, tpe) <- lparams) {
+          val erasedTpe = BackendType.toErasedBackendType(tpe)
+          if (isWild) {
+            nop()
+          } else {
+            DUP()
+            xLoad(erasedTpe, index)
+            m.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, name, erasedTpe.toDescriptor)
+          }
+        }
+        POP()
+      }
+
+      val ctx = GenExpression.EffectContext(enterLabel, Map.empty, _ => newFrame(), _ => setPc(), localOffset, pcLabels.prepended(null), Array(0))
+      GenExpression.compileExpr(defn.expr)(m, asmWrapper, ctx, root, flix)
       assert(ctx.pcCounter(0) == pcLabels.size, s"${(className, ctx.pcCounter(0), pcLabels.size)}")
     }
 
-    val returnValue = BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
-    m.visitByteIns(returnValue)
-
+    BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
 
     m.visitMaxs(999, 999)
     m.visitEnd()
   }
 
-  private def loadFromField(m: MethodVisitor, className: JvmName, name: String, localIndex: Int, tpe: MonoType)(implicit root: Root): Unit = {
+  private def loadFromField(m: MethodVisitor, asmWrapper: AsmWrapper, className: JvmName, name: String, localIndex: Int, tpe: MonoType)(implicit root: Root): Unit = {
     // retrieve the erased field
     val erasedVarType = JvmOps.getErasedJvmType(tpe)
     m.visitVarInsn(ALOAD, 0)
     m.visitFieldInsn(GETFIELD, className.toInternalName, name, erasedVarType.toDescriptor)
     // cast the value and store it
     val bType = BackendType.toBackendType(tpe)
-    m.visitByteIns(BytecodeInstructions.castIfNotPrim(bType))
-    m.visitByteIns(BytecodeInstructions.xStore(bType, localIndex))
+    BytecodeInstructions.castIfNotPrim(bType)(asmWrapper)
+    BytecodeInstructions.xStore(bType, localIndex)(asmWrapper)
   }
 
   /**
     * Make a new `classType` with all the fields set to the same as `this`.
     * A partial copy is without local parameters and without pc
     */
-  private def mkCopy(className: JvmName, defn: Def): InstructionSet = {
+  private def mkCopy(className: JvmName, defn: Def)(implicit asmWrapper: AsmWrapper): Unit = {
     import BytecodeInstructions.*
     val pc = List(("pc", MonoType.Int32))
     val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", p._1.tpe))
@@ -300,16 +312,16 @@ object GenFunAndClosureClasses {
     val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", p._1.tpe))
     val params = pc ++ fparams ++ cparams ++ lparams
 
-    def getThenPutField(name: String, tpe: MonoType): InstructionSet = cheat(mv => {
+    NEW(className)
+    DUP()
+    INVOKESPECIAL(className, "<init>", MethodDescriptor.NothingToVoid)
+    for ((name, tpe) <- params) {
       val fieldType = JvmOps.getErasedJvmType(tpe).toDescriptor
-      mv.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, name, fieldType)
-      mv.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, name, fieldType)
-    })
-
-    NEW(className) ~ DUP() ~ INVOKESPECIAL(className, "<init>", MethodDescriptor.NothingToVoid) ~
-      params.foldLeft(nop()) {
-        case (acc, (name, tpe)) => acc ~ DUP() ~ thisLoad() ~ getThenPutField(name, tpe)
-      }
+      DUP()
+      thisLoad()
+      asmWrapper.mv.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, name, fieldType)
+      asmWrapper.mv.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, name, fieldType)
+    }
   }
 
   private val copyName: String = "copy"
@@ -322,7 +334,7 @@ object GenFunAndClosureClasses {
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, copyName, nothingToTDescriptor(className).toDescriptor, null, null)
     m.visitCode()
 
-    m.visitByteIns(mkCopy(className, defn))
+    mkCopy(className, defn)(AsmWrapper(m))
     m.visitInsn(Opcodes.ARETURN)
 
     m.visitMaxs(999, 999)
@@ -334,7 +346,7 @@ object GenFunAndClosureClasses {
     val m = visitor.visitMethod(ACC_PUBLIC, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, null, null)
     m.visitCode()
 
-    m.visitByteIns(mkCopy(className, defn))
+    mkCopy(className, defn)(AsmWrapper(m))
     m.visitInsn(Opcodes.ARETURN)
 
     m.visitMaxs(999, 999)
