@@ -1550,7 +1550,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    private def MainMethod: StaticMethod = StaticMethod(this.jvmName, "main", mkDescriptor(BackendType.Array(String.toTpe))(VoidableType.Void))
+    def MainMethod: StaticMethod = StaticMethod(this.jvmName, "main", mkDescriptor(BackendType.Array(String.toTpe))(VoidableType.Void))
 
     private def mainIns(sym: Symbol.DefnSym)(implicit asmWrapper: AsmWrapper): Unit = {
       val defName = BackendObjType.Defn(sym).jvmName
