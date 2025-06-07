@@ -54,7 +54,7 @@ object JvmLoader {
     } else {
       (root, LoaderResult(None, Map.empty, outputBytes))
     }
-  }(AstPrinter.DebugNoOp())
+  }
 
   /** Returns the non-closure, executable jvm functions of `root`. */
   private def getCompiledDefs(root: Root): Map[Symbol.DefnSym, () => AnyRef] = {

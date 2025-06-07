@@ -35,7 +35,7 @@ object JvmWriter {
         writeClass(flix.options.output.get.resolve("class/"), jvmClass)
       }
     }
-  }(AstPrinter.DebugNoOp())
+  }
 
   /**
     * Writes the given JVM class `clazz` to a sub path under the given `prefixPath`.
