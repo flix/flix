@@ -73,9 +73,9 @@ object GenEffectClasses {
 
   private def genConstructor(visitor: ClassWriter): Unit = {
     val mv = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
+    implicit val asmWrapper: AsmWrapper = AsmWrapper(mv)
     mv.visitCode()
 
-    implicit val asmWrapper: AsmWrapper = AsmWrapper(mv)
     import BytecodeInstructions.*
 
     ALOAD(0)
@@ -105,11 +105,11 @@ object GenEffectClasses {
     val writtenOpArgsOffset = writtenOpArgsOffsetRev.reverse
     val methodArgs = writtenOpArgs ++ List(BackendObjType.Handler.toTpe, BackendObjType.Resumption.toTpe)
     val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, opName, MethodDescriptor(methodArgs, BackendObjType.Result.toTpe).toDescriptor, null, null)
+    implicit val asmWrapper: AsmWrapper = AsmWrapper(mv)
     mv.visitCode()
 
     val wrapperType = BackendObjType.ResumptionWrapper(BackendType.toBackendType(op.tpe))
 
-    implicit val asmWrapper: AsmWrapper = AsmWrapper(mv)
     import BytecodeInstructions.*
 
     ALOAD(handlerOffset)
