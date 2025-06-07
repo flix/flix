@@ -68,6 +68,11 @@ object Flix {
 class Flix {
 
   /**
+    * True if a phase has been started but not yet finished.
+    */
+  private var phaseStarted: Boolean = false
+
+  /**
     * A sequence of inputs to be parsed into Flix ASTs.
     */
   private val inputs = mutable.Map.empty[String, Input]
@@ -719,6 +724,9 @@ class Flix {
     * Enters the phase with the given name.
     */
   def phaseNew[A, B](phase: String)(f: => (A, B))(implicit d: Debug[A]): (A, B) = {
+    if (phaseStarted) throw InternalCompilerException("Two phases started concurrently", SourceLocation.Unknown)
+    phaseStarted = true
+
     // Initialize the phase time object.
     currentPhase = PhaseTime(phase, 0)
 
@@ -741,6 +749,8 @@ class Flix {
       d.output(phase, root)(this)
     }
 
+    phaseStarted = false
+
     // Return the result computed by the phase.
     (root, errs)
   }
@@ -749,6 +759,9 @@ class Flix {
     * Enters the phase with the given name.
     */
   def phase[A](phase: String)(f: => A)(implicit d: Debug[A]): A = {
+    if (phaseStarted) throw InternalCompilerException("Two phases started concurrently", SourceLocation.Unknown)
+    phaseStarted = true
+
     // Initialize the phase time object.
     currentPhase = PhaseTime(phase, 0)
 
@@ -771,6 +784,8 @@ class Flix {
       d.output(phase, r)(this)
     }
 
+    phaseStarted = false
+
     // Return the result computed by the phase.
     r
   }
@@ -778,8 +793,11 @@ class Flix {
   /**
     * Returns the total compilation time in nanoseconds.
     */
-  def getTotalTime: Long = phaseTimers.foldLeft(0L) {
-    case (acc, phase) => acc + phase.time
+  def getTotalTime: Long = {
+    if (phaseStarted) throw InternalCompilerException("Trying to compute total time while a phase is running", SourceLocation.Unknown)
+    phaseTimers.foldLeft(0L) {
+      case (acc, phase) => acc + phase.time
+    }
   }
 
   /**
