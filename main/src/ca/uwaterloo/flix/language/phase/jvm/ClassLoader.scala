@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 Magnus Madsen
  * Copyright 2025 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
