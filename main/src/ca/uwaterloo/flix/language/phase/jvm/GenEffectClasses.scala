@@ -75,7 +75,7 @@ object GenEffectClasses {
     val mv = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
     mv.visitCode()
 
-    implicit val f: AsmWrapper = BytecodeInstructions.AsmWrapper(mv)
+    implicit val asmWrapper: AsmWrapper = AsmWrapper(mv)
     import BytecodeInstructions.*
 
     ALOAD(0)
@@ -109,7 +109,7 @@ object GenEffectClasses {
 
     val wrapperType = BackendObjType.ResumptionWrapper(BackendType.toBackendType(op.tpe))
 
-    implicit val f: AsmWrapper = AsmWrapper(mv)
+    implicit val asmWrapper: AsmWrapper = AsmWrapper(mv)
     import BytecodeInstructions.*
 
     ALOAD(handlerOffset)
