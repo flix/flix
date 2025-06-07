@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.{MonoType, Purity, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.{InstructionSet, MethodEnricher}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.StaticMethod
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes.*
@@ -63,7 +64,9 @@ object GenFunAndClosureClasses {
   private case object Closure extends FunctionKind
 
   /**
-    * `(a|b)` is used to represent the function (left) or closure version (right)
+    * Generates the following code for closures and control-impure functions.
+    *
+    * `(a|b)` is used to represent the function (left) or closure version (right).
     *
     * {{{
     * public final class (Def$example|Clo$example$152) extends (Fn2$Obj$Int$Obj|Clo2$Obj$Int$Obj) implements Frame {
@@ -117,6 +120,23 @@ object GenFunAndClosureClasses {
     *   }
     * }
     * }}}
+    *
+    * For control-pure functions, the generated code deviates slightly, as the `applyFrame` method is replaced
+    * by a static method called `directApply` that accepts the concrete parameters of the Flix function.
+    * The `invoke` method then forwards its call to `directApply`, passing the values from the corresponding fields.
+    *
+    * {{{
+    * public final class Def$example extends Fn2$Obj$Int$Obj implements Frame {
+    *
+    *   public final Result invoke() { return this.applyFrame(null); }
+    *
+    *   // Assuming the concrete type of Obj is `Tagged$`
+    *   public final Result applyDirect(Tagged$ var0, int var1) {
+    *     EnterLabel:
+    *     // body code ...
+    *   }
+    * }
+    * }}}
     */
   private def genCode(className: JvmName, kind: FunctionKind, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
     val visitor = AsmOps.mkClassWriter()
@@ -145,11 +165,14 @@ object GenFunAndClosureClasses {
     compileConstructor(functionInterface, visitor)
     // Methods
     if (Purity.isControlPure(defn.expr.purity) && kind == Function) {
-      compileStaticApplyMethod(visitor, defn)
+      compileStaticInvokeMethod(visitor, className, defn)
+      compileStaticApplyMethod(visitor, className, defn)
     }
-    compileInvokeMethod(visitor, className)
-    compileFrameMethod(visitor, className, defn)
-    compileCopyMethod(visitor, className, defn)
+    else {
+      compileInvokeMethod(visitor, className)
+      compileFrameMethod(visitor, className, defn)
+      compileCopyMethod(visitor, className, defn)
+    }
     if (kind == Closure) compileGetUniqueThreadClosureMethod(visitor, className, defn)
 
     visitor.visitEnd()
@@ -168,13 +191,13 @@ object GenFunAndClosureClasses {
     constructor.visitEnd()
   }
 
-  private def compileStaticApplyMethod(visitor: ClassWriter, defn: Def)(implicit root: Root, flix: Flix): Unit = {
+  private def directApplyMethod(className: JvmName, defn: Def)(implicit root: Root): StaticMethod = StaticMethod(className, JvmName.DirectApply, MethodDescriptor(defn.fparams.map(fp => BackendType.toBackendType(fp.tpe)), BackendObjType.Result.toTpe))
+
+  private def compileStaticApplyMethod(visitor: ClassWriter, className: JvmName, defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
-    val paramTpes = defn.fparams.map(fp => BackendType.toBackendType(fp.tpe))
-    val resultTpe = BackendObjType.Result.toTpe
-    val desc = MethodDescriptor(paramTpes, resultTpe)
+    val method = directApplyMethod(className, defn)
     val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
-    val m = visitor.visitMethod(modifiers, JvmName.DirectApply, desc.toDescriptor, null, null)
+    val m = visitor.visitMethod(modifiers, method.name, method.d.toDescriptor, null, null)
 
     m.visitCode()
 
@@ -190,6 +213,31 @@ object GenFunAndClosureClasses {
 
     m.visitByteIns(BytecodeInstructions.xReturn(BackendObjType.Result.toTpe))
 
+
+    m.visitMaxs(999, 999)
+    m.visitEnd()
+  }
+
+  private def compileStaticInvokeMethod(visitor: ClassWriter, className: JvmName, defn: Def)(implicit root: Root): Unit = {
+    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
+      AsmOps.getMethodDescriptor(Nil, JvmType.Reference(BackendObjType.Result.jvmName)), null, null)
+    m.visitCode()
+
+    val functionInterface = JvmOps.getFunctionInterfaceType(defn.arrowType).jvmName
+    // Putting args on the Fn class
+    val paramTypes = defn.fparams.map(fp => (fp.tpe, BackendType.toBackendType(fp.tpe)))
+    for (((tpe, erased), i) <- paramTypes.zipWithIndex) {
+      // Duplicate the FunctionInterface
+      m.visitVarInsn(ALOAD, 0)
+      m.visitFieldInsn(GETFIELD, functionInterface.toInternalName,
+        s"arg$i", JvmOps.getErasedJvmType(tpe).toDescriptor)
+      m.visitByteIns(BytecodeInstructions.castIfNotPrim(erased))
+    }
+
+    val method = directApplyMethod(className, defn)
+    m.visitMethodInsn(INVOKESTATIC, className.toInternalName, method.name, method.d.toDescriptor, false)
+
+    m.visitByteIns(BytecodeInstructions.xReturn(BackendObjType.Result.toTpe))
 
     m.visitMaxs(999, 999)
     m.visitEnd()
