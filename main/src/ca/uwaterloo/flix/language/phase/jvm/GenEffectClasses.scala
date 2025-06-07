@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Effect, Op, Root}
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.MethodEnricher
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.AsmWrapper
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import org.objectweb.asm.ClassWriter
@@ -75,12 +75,12 @@ object GenEffectClasses {
     val mv = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
     mv.visitCode()
 
-    mv.visitByteIns({
-      import BytecodeInstructions.*
-      ALOAD(0) ~
-        INVOKESPECIAL(BackendObjType.JavaObject.Constructor) ~
-        RETURN()
-    })
+    implicit val f: AsmWrapper = BytecodeInstructions.AsmWrapper(mv)
+    import BytecodeInstructions.*
+
+    ALOAD(0)
+    INVOKESPECIAL(BackendObjType.JavaObject.Constructor)
+    RETURN()
 
     mv.visitMaxs(999, 999)
     mv.visitEnd()
@@ -108,28 +108,29 @@ object GenEffectClasses {
     mv.visitCode()
 
     val wrapperType = BackendObjType.ResumptionWrapper(BackendType.toBackendType(op.tpe))
-    mv.visitByteIns({
-      import BytecodeInstructions.*
-      ALOAD(handlerOffset) ~
-        CHECKCAST(effectName) ~
-        GETFIELD(ClassMaker.InstanceField(effectName, opName, opFunction.toTpe)) ~
-        composeN(for (((t, localOffset), i) <- writtenOpArgsOffset.zipWithIndex) yield {
-          // bind all regular arguments
-          DUP() ~
-            xLoad(t, localOffset) ~
-            PUTFIELD(ClassMaker.InstanceField(opFunction.jvmName, s"arg$i", t))
-        }) ~
-        // convert the resumption to a function
-        DUP() ~
-        NEW(wrapperType.jvmName) ~
-        DUP() ~
-        ALOAD(handlerOffset + 1) ~ // the resumption is the stack offset after handler
-        INVOKESPECIAL(wrapperType.Constructor) ~
-        PUTFIELD(ClassMaker.InstanceField(opFunction.jvmName, s"arg${writtenOpArgs.size}", BackendObjType.Resumption.toTpe.toErased)) ~
-        // call invoke
-        INVOKEINTERFACE(BackendObjType.Thunk.InvokeMethod) ~
-        ARETURN()
-    })
+
+    implicit val f: AsmWrapper = AsmWrapper(mv)
+    import BytecodeInstructions.*
+
+    ALOAD(handlerOffset)
+    CHECKCAST(effectName)
+    GETFIELD(ClassMaker.InstanceField(effectName, opName, opFunction.toTpe))
+    for (((t, localOffset), i) <- writtenOpArgsOffset.zipWithIndex) {
+      // bind all regular arguments
+      DUP()
+      xLoad(t, localOffset)
+      PUTFIELD(ClassMaker.InstanceField(opFunction.jvmName, s"arg$i", t))
+    }
+    // convert the resumption to a function
+    DUP()
+    NEW(wrapperType.jvmName)
+    DUP()
+    ALOAD(handlerOffset + 1) // the resumption is the stack offset after handler
+    INVOKESPECIAL(wrapperType.Constructor)
+    PUTFIELD(ClassMaker.InstanceField(opFunction.jvmName, s"arg${writtenOpArgs.size}", BackendObjType.Resumption.toTpe.toErased))
+    // call invoke
+    INVOKEINTERFACE(BackendObjType.Thunk.InvokeMethod)
+    ARETURN()
 
     mv.visitMaxs(999, 999)
     mv.visitEnd()

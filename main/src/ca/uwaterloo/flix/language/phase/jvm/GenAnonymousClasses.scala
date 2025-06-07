@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.MonoType
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.MethodEnricher
+import ca.uwaterloo.flix.language.ast.ReducedAst.*
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.AsmWrapper
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{MethodDescriptor, RootPackage}
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm
@@ -130,6 +130,7 @@ object GenAnonymousClasses {
       // Drop the first formal parameter (which always represents `this`)
       val paramTypes = fparams.tail.map(_.tpe)
       val methodVisitor = classVisitor.visitMethod(ACC_PUBLIC, ident.name, getMethodDescriptorHacked(paramTypes, tpe), null, null)
+      implicit val asmWrapper: AsmWrapper = AsmWrapper(methodVisitor)
 
       // Retrieve the closure that implements this method
       methodVisitor.visitVarInsn(ALOAD, 0)
@@ -143,22 +144,22 @@ object GenAnonymousClasses {
       fparams.zipWithIndex.foreach { case (arg, i) =>
         methodVisitor.visitInsn(DUP)
         val argType = BackendType.toBackendType(arg.tpe)
-        methodVisitor.visitByteIns(BytecodeInstructions.xLoad(argType, offset))
+        BytecodeInstructions.xLoad(argType, offset)
         offset += argType.stackSlots
         methodVisitor.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
           s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
 
       // Invoke the closure
-      methodVisitor.visitByteIns(BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(tpe), s"in anonymous class method ${ident.name} of ${obj.clazz.getSimpleName}", loc))
+      BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(tpe), s"in anonymous class method ${ident.name} of ${obj.clazz.getSimpleName}", loc)
 
-      methodVisitor.visitByteIns(BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe)))
 
-      val returnInstruction = tpe match {
+      BytecodeInstructions.castIfNotPrim(BackendType.toBackendType(tpe))
+
+      tpe match {
         case MonoType.Unit => BytecodeInstructions.RETURN()
         case _ => BytecodeInstructions.xReturn(BackendType.toBackendType(tpe))
       }
-      methodVisitor.visitByteIns(returnInstruction)
 
       methodVisitor.visitMaxs(999, 999)
       methodVisitor.visitEnd()
