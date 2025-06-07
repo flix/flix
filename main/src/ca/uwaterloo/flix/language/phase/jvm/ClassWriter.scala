@@ -1,5 +1,6 @@
 /*
- * Copyright 2025 Jonathan Lindegaard Starup
+ * Copyright 2017 Magnus Madsen
+ * Copyright 2021 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
