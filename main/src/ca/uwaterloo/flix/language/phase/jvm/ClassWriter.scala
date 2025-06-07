@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.nio.file.{Files, LinkOption, Path}
 
-class ClassWriter {
+object ClassWriter {
 
   /** Writes `classes` into the `<build>/class/` folder if enabled by [[Flix.options.output]]. */
   def run(classes: List[JvmClass])(implicit flix: Flix): Unit = flix.phase("ClassWriter") {
