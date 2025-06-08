@@ -264,10 +264,8 @@ object JvmOps {
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
   }
 
-  /**
-    * Returns the set of erased extensible tag types in `types` without searching recursively.
-    */
-  def getErasedExtensibleTagTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.TagType] =
+  /** Returns the set of extensible tag types in `types` without searching recursively. */
+  def getExtensibleTagTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.TagType] =
     types.foldLeft(Set.empty[BackendObjType.TagType]) {
       case (acc, MonoType.ExtensibleExtend(cons, targs, _)) =>
         targs match {
