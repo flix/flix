@@ -74,7 +74,7 @@ object GenFunAndClosureClasses {
     *   public int l0;
     *   public char l1;
     *   public Object l2;
-    *   // closure params (assumed empty for functions
+    *   // closure params (assumed empty for functions)
     *   public int clo0;
     *   public byte clo1;
     *   // function arguments (present for both functions and closures)
