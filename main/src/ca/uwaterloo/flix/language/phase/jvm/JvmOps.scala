@@ -162,10 +162,8 @@ object JvmOps {
       case (acc, _) => acc
     }
 
-  /**
-    * Returns the set of erased tuple types in `types` without searching recursively.
-    */
-  def getErasedTupleTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.Tuple] =
+  /** Returns the set of tuple types in `types` without searching recursively. */
+  def getTupleTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.Tuple] =
     types.foldLeft(Set.empty[BackendObjType.Tuple]) {
       case (acc, MonoType.Tuple(elms)) =>
         acc + BackendObjType.Tuple(elms.map(BackendType.toBackendType))
