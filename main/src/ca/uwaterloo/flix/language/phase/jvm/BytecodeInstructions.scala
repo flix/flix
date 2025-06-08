@@ -449,7 +449,7 @@ object BytecodeInstructions {
     DUP()
     pushString(msg)
     INVOKESPECIAL(JvmName.UnsupportedOperationException, JvmName.ConstructorMethod,
-      mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void))
+      mkDescriptor(BackendType.String)(VoidableType.Void))
     ATHROW()
   }
 
@@ -560,15 +560,24 @@ object BytecodeInstructions {
     * `tpe` accurately represents its type.
     */
   def xToString(tpe: BackendType)(implicit mv: MethodVisitor): Unit = tpe match {
-    case BackendType.Bool => INVOKESTATIC(BackendObjType.String.BoolValueOf)
-    case BackendType.Char => INVOKESTATIC(BackendObjType.String.CharValueOf)
-    case BackendType.Int8 => INVOKESTATIC(BackendObjType.String.Int8ValueOf)
-    case BackendType.Int16 => INVOKESTATIC(BackendObjType.String.Int16ValueOf)
-    case BackendType.Int32 => INVOKESTATIC(BackendObjType.String.Int32ValueOf)
-    case BackendType.Int64 => INVOKESTATIC(BackendObjType.String.Int64ValueOf)
-    case BackendType.Float32 => INVOKESTATIC(BackendObjType.String.Float32ValueOf)
-    case BackendType.Float64 => INVOKESTATIC(BackendObjType.String.Float64ValueOf)
-    case BackendType.Reference(_) => INVOKESTATIC(BackendObjType.String.ObjectValueOf)
+    case BackendType.Bool =>
+      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Bool)(BackendType.String)))
+    case BackendType.Char =>
+      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Char)(BackendType.String)))
+    case BackendType.Int8 =>
+      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Int32)(BackendType.String)))
+    case BackendType.Int16 =>
+      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Int32)(BackendType.String)))
+    case BackendType.Int32 =>
+      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Int32)(BackendType.String)))
+    case BackendType.Int64 =>
+      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Int64)(BackendType.String)))
+    case BackendType.Float32 =>
+      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Float32)(BackendType.String)))
+    case BackendType.Float64 =>
+      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Float64)(BackendType.String)))
+    case BackendType.Reference(_) =>
+      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendObjType.JavaObject.toTpe)(BackendType.String)))
 
     case BackendType.Array(BackendType.Bool) => INVOKESTATIC(BackendObjType.Arrays.BoolArrToString)
     case BackendType.Array(BackendType.Char) => INVOKESTATIC(BackendObjType.Arrays.CharArrToString)
@@ -630,9 +639,10 @@ object BytecodeInstructions {
       * @param getNthString `[] -> [si: String]`
       */
     def mkString(prefix: Option[Unit => Unit], suffix: Option[Unit => Unit], length: Int, getNthString: Int => Unit)(implicit mv: MethodVisitor): Unit = {
+      val joinMethod = StaticMethod(JvmName.String, "join", mkDescriptor(BackendObjType.CharSequence.toTpe, BackendType.Array(BackendObjType.CharSequence.toTpe))(BackendType.String))
       // [] --> [new String[length]] // Referred to as `elms`.
       pushInt(length)
-      ANEWARRAY(BackendObjType.String.jvmName)
+      ANEWARRAY(JvmName.String)
       // [elms] --> [elms, -1] // Running index referred to as `i`.
       ICONST_M1()
       // [elms, -1] --> [elms, length]
@@ -653,7 +663,7 @@ object BytecodeInstructions {
       pushString(", ")
       SWAP()
       // [", ", elms] --> ["s1, s2, .."]
-      INVOKESTATIC(BackendObjType.String.JoinMethod)
+      INVOKESTATIC(joinMethod)
       // ["s1, s2, .."] --> [prefix + "s1, s2, .."]
       prefix match {
         case Some(ins) =>

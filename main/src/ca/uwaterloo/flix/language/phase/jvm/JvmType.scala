@@ -98,7 +98,7 @@ object JvmType {
   val AtomicLong: JvmType.Reference = Reference(JvmName.AtomicLong)
   val Regex: JvmType.Reference = Reference(BackendObjType.Regex.jvmName)
   val Object: JvmType.Reference = Reference(BackendObjType.JavaObject.jvmName)
-  val String: JvmType.Reference = Reference(BackendObjType.String.jvmName)
+  val String: JvmType.Reference = Reference(JvmName.String)
 
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Flix Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

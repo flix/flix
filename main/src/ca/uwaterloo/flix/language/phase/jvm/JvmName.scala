@@ -175,6 +175,7 @@ object JvmName {
   val Regex: JvmName = JvmName(JavaUtilRegex, "Pattern")
   val Runnable: JvmName = JvmName(JavaLang, "Runnable")
   val Short: JvmName = JvmName(JavaLang, "Short")
+  val String: JvmName = JvmName(JavaLang, "String")
   val System: JvmName = JvmName(JavaLang, "System")
   val Thread: JvmName = JvmName(JavaLang, "Thread")
   val Throwable: JvmName = JvmName(JavaLang, "Throwable")

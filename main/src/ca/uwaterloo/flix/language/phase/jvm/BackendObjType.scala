@@ -66,7 +66,6 @@ sealed trait BackendObjType {
     case BackendObjType.Native(className) => className
     case BackendObjType.Regex => JvmName(List("java", "util", "regex"), "Pattern")
     case BackendObjType.JavaObject => JvmName(JavaLang, "Object")
-    case BackendObjType.String => JvmName(JavaLang, "String")
     case BackendObjType.CharSequence => JvmName(JavaLang, "CharSequence")
     case BackendObjType.Arrays => JvmName(JavaUtil, "Arrays")
     case BackendObjType.StringBuilder => JvmName(JavaLang, "StringBuilder")
@@ -281,7 +280,7 @@ object BackendObjType {
     /** `[] --> return String` */
     private def toStringIns(implicit mv: MethodVisitor): Unit = {
       Util.mkString(Some(_ => pushString("(")), Some(_ => pushString(")")), elms.length, getIndexField)
-      xReturn(String.toTpe)
+      ARETURN()
     }
 
     /** `[] --> [this.index(i).xString()]` */
@@ -331,7 +330,7 @@ object BackendObjType {
     /** `[] --> return String` */
     private def toStringIns(implicit mv: MethodVisitor): Unit = {
       Util.mkString(Some(_ => pushString("Struct(")), Some(_ => pushString(")")), elms.length, getIndexString)
-      xReturn(String.toTpe)
+      ARETURN()
     }
 
     /** `[] --> [this.index(i).xString()]` */
@@ -355,7 +354,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def NameField: InstanceField = InstanceField(this.jvmName, "tag", String.toTpe)
+    def NameField: InstanceField = InstanceField(this.jvmName, "tag", BackendType.String)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
@@ -402,7 +401,7 @@ object BackendObjType {
     /** `[] --> return String` */
     private def toStringIns(implicit mv: MethodVisitor): Unit = {
       Tagged.mkTagName(name)
-      xReturn(String.toTpe)
+      ARETURN()
     }
   }
 
@@ -433,7 +432,7 @@ object BackendObjType {
         pushString("(")
         INVOKEVIRTUAL(String.Concat)
       }), Some(_ => pushString(")")), elms.length, getIndexString)
-      xReturn(String.toTpe)
+      ARETURN()
     }
 
     /** `[] --> [this.index(i).xString()]` */
@@ -807,7 +806,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
-    def LabelField: InstanceField = InstanceField(this.jvmName, "label", String.toTpe)
+    def LabelField: InstanceField = InstanceField(this.jvmName, "label", BackendType.String)
 
     def ValueField: InstanceField = InstanceField(this.jvmName, "value", value)
 
@@ -929,13 +928,13 @@ object BackendObjType {
     }
 
     def LookupFieldMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "lookupField",
-      mkDescriptor(String.toTpe)(this.toTpe))
+      mkDescriptor(BackendType.String)(this.toTpe))
 
     def RestrictFieldMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "restrictField",
-      mkDescriptor(String.toTpe)(this.toTpe))
+      mkDescriptor(BackendType.String)(this.toTpe))
 
     def ToTailStringMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "toTailString",
-      mkDescriptor(StringBuilder.toTpe)(String.toTpe))
+      mkDescriptor(StringBuilder.toTpe)(BackendType.String))
   }
 
   /**
@@ -963,7 +962,7 @@ object BackendObjType {
     }
 
     def Constructor: ConstructorMethod = ConstructorMethod(
-      this.jvmName, List(String.toTpe, BackendType.Int32, BackendType.Int32, BackendType.Int32, BackendType.Int32)
+      this.jvmName, List(BackendType.String, BackendType.Int32, BackendType.Int32, BackendType.Int32, BackendType.Int32)
     )
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
@@ -988,7 +987,7 @@ object BackendObjType {
     }
 
     private def SourceField: InstanceField =
-      InstanceField(this.jvmName, "source", String.toTpe)
+      InstanceField(this.jvmName, "source", BackendType.String)
 
     private def BeginLineField: InstanceField =
       InstanceField(this.jvmName, "beginLine", BackendType.Int32)
@@ -1054,7 +1053,7 @@ object BackendObjType {
       invokeConstructor(JvmName.AtomicLong, MethodDescriptor.NothingToVoid)
       PUTSTATIC(CounterField)
       ICONST_0()
-      ANEWARRAY(String.jvmName)
+      ANEWARRAY(JvmName.String)
       PUTSTATIC(ArgsField)
       RETURN()
     }
@@ -1068,12 +1067,12 @@ object BackendObjType {
       LRETURN()
     }
 
-    private def GetArgsMethod: StaticMethod = StaticMethod(this.jvmName, "getArgs", mkDescriptor()(BackendType.Array(String.toTpe)))
+    private def GetArgsMethod: StaticMethod = StaticMethod(this.jvmName, "getArgs", mkDescriptor()(BackendType.Array(BackendType.String)))
 
     private def getArgsIns(implicit mv: MethodVisitor): Unit = {
       GETSTATIC(ArgsField)
       ARRAYLENGTH()
-      ANEWARRAY(String.jvmName)
+      ANEWARRAY(JvmName.String)
       ASTORE(0)
       // the new array is now created, now to copy the args
       GETSTATIC(ArgsField)
@@ -1088,12 +1087,12 @@ object BackendObjType {
     }
 
     def SetArgsMethod: StaticMethod =
-      StaticMethod(this.jvmName, "setArgs", mkDescriptor(BackendType.Array(String.toTpe))(VoidableType.Void))
+      StaticMethod(this.jvmName, "setArgs", mkDescriptor(BackendType.Array(BackendType.String))(VoidableType.Void))
 
     private def setArgsIns(implicit mv: MethodVisitor): Unit = {
       ALOAD(0)
       ARRAYLENGTH()
-      ANEWARRAY(String.jvmName)
+      ANEWARRAY(JvmName.String)
       ASTORE(1)
       ALOAD(0)
       ICONST_0()
@@ -1109,7 +1108,7 @@ object BackendObjType {
 
     private def CounterField: StaticField = StaticField(this.jvmName, "counter", JvmName.AtomicLong.toTpe)
 
-    private def ArgsField: StaticField = StaticField(this.jvmName, "args", BackendType.Array(String.toTpe))
+    private def ArgsField: StaticField = StaticField(this.jvmName, "args", BackendType.Array(BackendType.String))
 
     private def arrayCopy()(implicit mv: MethodVisitor): Unit = {
       mv.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
@@ -1119,7 +1118,7 @@ object BackendObjType {
   }
 
   case object Regex extends BackendObjType {
-    def CompileMethod: StaticMethod = StaticMethod(this.jvmName, "compile", mkDescriptor(String.toTpe)(Regex.toTpe))
+    def CompileMethod: StaticMethod = StaticMethod(this.jvmName, "compile", mkDescriptor(BackendType.String)(Regex.toTpe))
   }
 
   case object FlixError extends BackendObjType {
@@ -1131,12 +1130,12 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(String.toTpe))
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(BackendType.String))
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
       ALOAD(1)
-      invokeConstructor(JvmName.Error, mkDescriptor(String.toTpe)(VoidableType.Void))
+      invokeConstructor(JvmName.Error, mkDescriptor(BackendType.String)(VoidableType.Void))
       RETURN()
     }
   }
@@ -1153,14 +1152,14 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    private def HoleField: InstanceField = InstanceField(this.jvmName, "hole", String.toTpe)
+    private def HoleField: InstanceField = InstanceField(this.jvmName, "hole", BackendType.String)
 
     private def LocationField: InstanceField = InstanceField(this.jvmName, "location", ReifiedSourceLocation.toTpe)
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(String.toTpe, ReifiedSourceLocation.toTpe))
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(BackendType.String, ReifiedSourceLocation.toTpe))
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, String.toTpe) { hole =>
+      withName(1, BackendType.String) { hole =>
         withName(2, ReifiedSourceLocation.toTpe) { loc =>
           thisLoad()
           // create an error msg
@@ -1237,10 +1236,10 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(ReifiedSourceLocation.toTpe, String.toTpe))
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(ReifiedSourceLocation.toTpe, BackendType.String))
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, ReifiedSourceLocation.toTpe)(loc => withName(2, String.toTpe)(msg => {
+      withName(1, ReifiedSourceLocation.toTpe)(loc => withName(2, BackendType.String)(msg => {
         thisLoad()
         NEW(StringBuilder.jvmName)
         DUP()
@@ -1272,14 +1271,14 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    private def EffectNameField: InstanceField = InstanceField(this.jvmName, "effectName", String.toTpe)
+    private def EffectNameField: InstanceField = InstanceField(this.jvmName, "effectName", BackendType.String)
 
     private def LocationField: InstanceField = InstanceField(this.jvmName, "location", ReifiedSourceLocation.toTpe)
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(Suspension.toTpe, String.toTpe, ReifiedSourceLocation.toTpe))
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(Suspension.toTpe, BackendType.String, ReifiedSourceLocation.toTpe))
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, Suspension.toTpe)(suspension => withName(2, String.toTpe)(info => withName(3, ReifiedSourceLocation.toTpe)(loc => {
+      withName(1, Suspension.toTpe)(suspension => withName(2, BackendType.String)(info => withName(3, ReifiedSourceLocation.toTpe)(loc => {
         def appendString(): Unit = INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
 
         thisLoad()
@@ -1540,11 +1539,11 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def MainMethod: StaticMethod = StaticMethod(this.jvmName, "main", mkDescriptor(BackendType.Array(String.toTpe))(VoidableType.Void))
+    def MainMethod: StaticMethod = StaticMethod(this.jvmName, "main", mkDescriptor(BackendType.Array(BackendType.String))(VoidableType.Void))
 
     private def mainIns(sym: Symbol.DefnSym)(implicit mv: MethodVisitor): Unit = {
       val defName = BackendObjType.Defn(sym).jvmName
-      withName(0, BackendType.Array(String.toTpe))(args => {
+      withName(0, BackendType.Array(BackendType.String))(args => {
         args.load()
         INVOKESTATIC(Global.SetArgsMethod)
         NEW(defName)
@@ -1608,73 +1607,41 @@ object BackendObjType {
   // Java Types
   //
 
-  case object String extends BackendObjType {
+  object String {
 
-    def JoinMethod: StaticMethod = StaticMethod(this.jvmName,
-      "join", mkDescriptor(CharSequence.toTpe, BackendType.Array(CharSequence.toTpe))(String.toTpe))
-
-    def BoolValueOf: StaticMethod = StaticMethod(this.jvmName,
-      "valueOf", mkDescriptor(BackendType.Bool)(this.toTpe))
-
-    def CharValueOf: StaticMethod = StaticMethod(this.jvmName,
-      "valueOf", mkDescriptor(BackendType.Char)(this.toTpe))
-
-    // implicit use of Int8 as Int32
-    def Int8ValueOf: StaticMethod = StaticMethod(this.jvmName,
-      "valueOf", mkDescriptor(BackendType.Int32)(this.toTpe))
-
-    // implicit use of Int16 as Int32
-    def Int16ValueOf: StaticMethod = StaticMethod(this.jvmName,
-      "valueOf", mkDescriptor(BackendType.Int32)(this.toTpe))
-
-    def Int32ValueOf: StaticMethod = StaticMethod(this.jvmName,
-      "valueOf", mkDescriptor(BackendType.Int32)(this.toTpe))
-
-    def Int64ValueOf: StaticMethod = StaticMethod(this.jvmName,
-      "valueOf", mkDescriptor(BackendType.Int64)(this.toTpe))
-
-    def Float32ValueOf: StaticMethod = StaticMethod(this.jvmName,
-      "valueOf", mkDescriptor(BackendType.Float32)(this.toTpe))
-
-    def Float64ValueOf: StaticMethod = StaticMethod(this.jvmName,
-      "valueOf", mkDescriptor(BackendType.Float64)(this.toTpe))
-
-    def ObjectValueOf: StaticMethod = StaticMethod(this.jvmName,
-      "valueOf", mkDescriptor(BackendObjType.JavaObject.toTpe)(this.toTpe))
-
-    def Concat: InstanceMethod = InstanceMethod(this.jvmName,
-      "concat", mkDescriptor(this.toTpe)(this.toTpe))
+    def Concat: InstanceMethod =
+      InstanceMethod(JvmName.String, "concat", mkDescriptor(BackendType.String)(BackendType.String))
   }
 
   case object CharSequence extends BackendObjType
 
   case object Arrays extends BackendObjType {
     def BoolArrToString: StaticMethod = StaticMethod(this.jvmName,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Bool))(BackendObjType.String.toTpe))
+      "toString", mkDescriptor(BackendType.Array(BackendType.Bool))(BackendType.String))
 
     def CharArrToString: StaticMethod = StaticMethod(this.jvmName,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Char))(BackendObjType.String.toTpe))
+      "toString", mkDescriptor(BackendType.Array(BackendType.Char))(BackendType.String))
 
     def Int8ArrToString: StaticMethod = StaticMethod(this.jvmName,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Int8))(BackendObjType.String.toTpe))
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int8))(BackendType.String))
 
     def Int16ArrToString: StaticMethod = StaticMethod(this.jvmName,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Int16))(BackendObjType.String.toTpe))
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int16))(BackendType.String))
 
     def Int32ArrToString: StaticMethod = StaticMethod(this.jvmName,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Int32))(BackendObjType.String.toTpe))
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int32))(BackendType.String))
 
     def Int64ArrToString: StaticMethod = StaticMethod(this.jvmName,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Int64))(BackendObjType.String.toTpe))
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int64))(BackendType.String))
 
     def Float32ArrToString: StaticMethod = StaticMethod(this.jvmName,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Float32))(BackendObjType.String.toTpe))
+      "toString", mkDescriptor(BackendType.Array(BackendType.Float32))(BackendType.String))
 
     def Float64ArrToString: StaticMethod = StaticMethod(this.jvmName,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Float64))(BackendObjType.String.toTpe))
+      "toString", mkDescriptor(BackendType.Array(BackendType.Float64))(BackendType.String))
 
     def DeepToString: StaticMethod = StaticMethod(this.jvmName,
-      "deepToString", mkDescriptor(BackendType.Array(BackendObjType.JavaObject.toTpe))(BackendObjType.String.toTpe))
+      "deepToString", mkDescriptor(BackendType.Array(BackendObjType.JavaObject.toTpe))(BackendType.String))
   }
 
   case object JavaObject extends BackendObjType {
@@ -1685,7 +1652,7 @@ object BackendObjType {
       mkDescriptor(JavaObject.toTpe)(BackendType.Bool))
 
     def ToStringMethod: InstanceMethod = InstanceMethod(this.jvmName, "toString",
-      mkDescriptor()(String.toTpe))
+      mkDescriptor()(BackendType.String))
 
   }
 
@@ -1694,7 +1661,7 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
     def AppendStringMethod: InstanceMethod = InstanceMethod(this.jvmName, "append",
-      mkDescriptor(String.toTpe)(StringBuilder.toTpe))
+      mkDescriptor(BackendType.String)(StringBuilder.toTpe))
 
     def AppendInt32Method: InstanceMethod = InstanceMethod(this.jvmName, "append",
       mkDescriptor(BackendType.Int32)(StringBuilder.toTpe))
@@ -1712,7 +1679,7 @@ object BackendObjType {
 
     def MetaFactoryMethod: StaticMethod = StaticMethod(
       this.jvmName, "metafactory",
-      mkDescriptor(methodHandlesLookup, String.toTpe, methodType, methodType, methodHandle, methodType)(callSite)
+      mkDescriptor(methodHandlesLookup, BackendType.String, methodType, methodType, methodHandle, methodType)(callSite)
     )
   }
 
@@ -2044,7 +2011,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
-    def EffSymField: InstanceField = InstanceField(this.jvmName, "effSym", String.toTpe)
+    def EffSymField: InstanceField = InstanceField(this.jvmName, "effSym", BackendType.String)
 
     def EffOpField: InstanceField = InstanceField(this.jvmName, "effOp", EffectCall.toTpe)
 
@@ -2194,7 +2161,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
-    def SymField: InstanceField = InstanceField(this.jvmName, "sym", String.toTpe)
+    def SymField: InstanceField = InstanceField(this.jvmName, "sym", BackendType.String)
 
     def HandlerField: InstanceField = InstanceField(this.jvmName, "handler", Handler.toTpe)
 
@@ -2253,11 +2220,11 @@ object BackendObjType {
     def InstallHandlerMethod: StaticInterfaceMethod = StaticInterfaceMethod(
       this.jvmName,
       "installHandler",
-      mkDescriptor(String.toTpe, Handler.toTpe, Frames.toTpe, Thunk.toTpe)(Result.toTpe)
+      mkDescriptor(BackendType.String, Handler.toTpe, Frames.toTpe, Thunk.toTpe)(Result.toTpe)
     )
 
     private def installHandlerIns(implicit mv: MethodVisitor): Unit = {
-      withName(0, String.toTpe) { effSym =>
+      withName(0, BackendType.String) { effSym =>
         withName(1, Handler.toTpe) { handler =>
           withName(2, Frames.toTpe) { frames =>
             withName(3, Thunk.toTpe) { thunk =>
