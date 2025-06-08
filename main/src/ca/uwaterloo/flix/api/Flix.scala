@@ -810,11 +810,11 @@ class Flix {
     * Returns a list of inputs constructed from the strings and paths passed to Flix.
     */
   private def getInputs: List[Input] = {
-    val lib = (options.lib match {
+    val lib = options.lib match {
       case LibLevel.Nix => Nil
       case LibLevel.Min => getLibraryInputs(coreLibrary)
       case LibLevel.All => getLibraryInputs(coreLibrary ++ standardLibrary)
-    }).map(x => x.makeBasic)
+    }
     inputs.values.toList ::: lib
   }
 

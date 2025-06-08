@@ -175,7 +175,7 @@ object Namer {
   private def tryAddToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration)(implicit sctx: SharedContext): SymbolTable = {
     lookupName(name, ns, table) match {
       case LookupResult.NotDefined =>
-          if (builtinSymbol(name) && (!(getSymLocation(decl).source.input.isBasic))) {
+          if (builtinSymbol(name) && (getSymLocation(decl).source.name != "Fixpoint3/BoxingType.flix")) {
             mkBuiltinNameRedefine(name, getSymLocation(decl))
 
             table
@@ -190,19 +190,28 @@ object Namer {
     }
   }
 
+  /**
+    * Returns if the current symbol is builtin
+    * The builtin symbols are defined as the `MonoType`s in `ca/uwaterloo/flix/language/ast/MonoType.scala`
+    */
   private def builtinSymbol(name: String): Boolean =
     name match {
-      case "Unit" |
-       "Int8" |
-       "Int16" |
-       "Int32" |
-       "Int64" |
-       "Float32" |
-       "Float64" |
-       "BigDecimal" |
-       "Char" |
-       "String" |
-       "Bool" => true
+      case
+        "Void"
+        | "AnyType"
+        | "Unit"
+        | "Bool"
+        | "Char"
+        | "Float32"
+        | "Float64"
+        | "BigDecimal"
+        | "Int8"
+        | "Int16"
+        | "Int32"
+        | "Int64"
+        | "BigInt"
+        | "String"
+        | "Regex" => true
       case _ => false
     }
   /**
