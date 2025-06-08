@@ -38,7 +38,6 @@ sealed trait JvmType {
     case JvmType.PrimDouble => "D"
     case JvmType.Reference(name) => name.toDescriptor
   }
-
 }
 
 object JvmType {
