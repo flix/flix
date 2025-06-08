@@ -232,13 +232,15 @@ object GenFunAndClosureClasses {
 
     val functionInterface = JvmOps.getFunctionInterfaceType(defn.arrowType).jvmName
     // Putting args on the Fn class
-    val paramTypes = defn.fparams.map(fp => (fp.tpe, BackendType.toBackendType(fp.tpe)))
-    for (((tpe, erased), i) <- paramTypes.zipWithIndex) {
-      // Duplicate the FunctionInterface
+    for ((fp, i) <- defn.fparams.zipWithIndex) {
+      // Load the `this` pointer
       m.visitVarInsn(ALOAD, 0)
+      // Load arg i
       m.visitFieldInsn(GETFIELD, functionInterface.toInternalName,
-        s"arg$i", JvmOps.getErasedJvmType(tpe).toDescriptor)
-      m.visitByteIns(BytecodeInstructions.castIfNotPrim(erased))
+        s"arg$i", JvmOps.getErasedJvmType(fp.tpe).toDescriptor)
+      // Insert cast to concrete type
+      val bTpe = BackendType.toBackendType(fp.tpe)
+      m.visitByteIns(BytecodeInstructions.castIfNotPrim(bTpe))
     }
 
     val method = directApplyMethod(className, defn)
