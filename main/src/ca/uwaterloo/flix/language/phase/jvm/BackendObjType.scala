@@ -950,81 +950,53 @@ object BackendObjType {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
 
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-
-      cm.mkField(SourceField, IsPublic, IsFinal, NotVolatile)
-      cm.mkField(BeginLineField, IsPublic, IsFinal, NotVolatile)
-      cm.mkField(BeginColField, IsPublic, IsFinal, NotVolatile)
-      cm.mkField(EndLineField, IsPublic, IsFinal, NotVolatile)
-      cm.mkField(EndColField, IsPublic, IsFinal, NotVolatile)
-
-      cm.mkMethod(ToStringMethod, IsPublic, NotFinal, toStringIns(_))
+      cm.mkField(RepField, IsPrivate, IsFinal, NotVolatile)
+      cm.mkMethod(JavaObject.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
 
       cm.closeClassMaker()
     }
 
     def Constructor: ConstructorMethod = ConstructorMethod(
-      this.jvmName, List(String.toTpe, BackendType.Int32, BackendType.Int32, BackendType.Int32, BackendType.Int32)
+      this.jvmName, List(String.toTpe, BackendType.Int32, BackendType.Int32)
     )
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
+      DUP()
       INVOKESPECIAL(JavaObject.Constructor)
-      thisLoad()
-      ALOAD(1)
-      PUTFIELD(SourceField)
-      thisLoad()
-      ILOAD(2)
-      PUTFIELD(BeginLineField)
-      thisLoad()
-      ILOAD(3)
-      PUTFIELD(BeginColField)
-      thisLoad()
-      ILOAD(4)
-      PUTFIELD(EndLineField)
-      thisLoad()
-      ILOAD(5)
-      PUTFIELD(EndColField)
-      RETURN()
+      withName(1, String.toTpe) { src =>
+        withName(2, BackendType.Int32) { beginLine =>
+          withName(3, BackendType.Int32) { beginCol =>
+            NEW(StringBuilder.jvmName)
+            DUP()
+            INVOKESPECIAL(StringBuilder.Constructor)
+
+            src.load()
+            INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+            pushString(":")
+            INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+
+            beginLine.load()
+            INVOKEVIRTUAL(StringBuilder.AppendInt32Method)
+            pushString(":")
+            INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+
+            beginCol.load()
+            INVOKEVIRTUAL(StringBuilder.AppendInt32Method)
+
+            INVOKEVIRTUAL(JavaObject.ToStringMethod)
+            PUTFIELD(RepField)
+            RETURN()
+          }
+        }
+      }
     }
 
-    private def SourceField: InstanceField =
-      InstanceField(this.jvmName, "source", String.toTpe)
-
-    private def BeginLineField: InstanceField =
-      InstanceField(this.jvmName, "beginLine", BackendType.Int32)
-
-    private def BeginColField: InstanceField =
-      InstanceField(this.jvmName, "beginCol", BackendType.Int32)
-
-    private def EndLineField: InstanceField =
-      InstanceField(this.jvmName, "endLine", BackendType.Int32)
-
-    private def EndColField: InstanceField =
-      InstanceField(this.jvmName, "endCol", BackendType.Int32)
-
-    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName)
+    private def RepField: InstanceField = InstanceField(this.jvmName, "rep", String.toTpe)
 
     private def toStringIns(implicit mv: MethodVisitor): Unit = {
-      // create string builder
-      NEW(StringBuilder.jvmName)
-      DUP()
-      INVOKESPECIAL(StringBuilder.Constructor)
-      // build string
       thisLoad()
-      GETFIELD(SourceField)
-      INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
-      pushString(":")
-      INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
-      thisLoad()
-      GETFIELD(BeginLineField)
-      INVOKEVIRTUAL(StringBuilder.AppendInt32Method)
-      pushString(":")
-      INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
-      thisLoad()
-      GETFIELD(BeginColField)
-      INVOKEVIRTUAL(StringBuilder.AppendInt32Method)
-      // create the string
-      INVOKEVIRTUAL(JavaObject.ToStringMethod)
+      GETFIELD(RepField)
       ARETURN()
     }
   }

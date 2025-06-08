@@ -432,8 +432,6 @@ object BytecodeInstructions {
     pushString(loc.source.name)
     pushInt(loc.beginLine)
     pushInt(loc.beginCol)
-    pushInt(loc.endLine)
-    pushInt(loc.endCol)
     INVOKESPECIAL(BackendObjType.ReifiedSourceLocation.Constructor)
   }
 
