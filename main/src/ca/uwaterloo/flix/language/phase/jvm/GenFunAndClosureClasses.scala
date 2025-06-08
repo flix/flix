@@ -127,8 +127,15 @@ object GenFunAndClosureClasses {
     *
     * {{{
     * public final class Def$example extends Fn2$Obj$Int$Obj implements Frame {
+    *   // locals variables
+    *   public int l0;
+    *   public char l1;
+    *   public Object l2;
+    *   // function arguments
+    *   public Object arg0;
+    *   public int arg1
     *
-    *   public final Result invoke() { return this.applyFrame(null); }
+    *   public final Result invoke() { return this.applyDirect((Tagged$) this.arg0, this.arg1); }
     *
     *   // Assuming the concrete type of Obj is `Tagged$`
     *   public final Result applyDirect(Tagged$ var0, int var1) {
