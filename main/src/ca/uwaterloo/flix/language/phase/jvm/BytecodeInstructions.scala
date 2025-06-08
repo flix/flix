@@ -41,6 +41,7 @@ object BytecodeInstructions {
     def visitMethodInstruction(opcode: Int, owner: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean): Unit =
       visitor.visitMethodInsn(opcode, owner.toInternalName, methodName, descriptor.toDescriptor, isInterface)
 
+    // TODO: sanitize varags
     def visitInvokeDynamicInstruction(methodName: String, descriptor: MethodDescriptor, bootstrapMethodHandle: Handle, bootstrapMethodArguments: Any*): Unit =
       visitor.visitInvokeDynamicInsn(methodName, descriptor.toDescriptor, bootstrapMethodHandle.handle, bootstrapMethodArguments *)
 
