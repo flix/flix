@@ -44,7 +44,7 @@ object JvmOps {
            Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_, _) |
            Struct(_, _) | Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) |
            ExtensibleExtend(_, _, _) | ExtensibleEmpty | Native(_) | Null =>
-        JvmType.Reference(BackendObjType.JavaObject.jvmName)
+        JvmType.Reference(JvmName.Object)
     }
   }
 
@@ -241,7 +241,7 @@ object JvmOps {
       case TypeConstructor.Int16 => BackendType.Int16
       case TypeConstructor.Int32 => BackendType.Int32
       case TypeConstructor.Int64 => BackendType.Int64
-      case TypeConstructor.Native(clazz) if clazz == classOf[Object] => BackendObjType.JavaObject.toTpe
+      case TypeConstructor.Native(clazz) if clazz == classOf[Object] => BackendType.Object
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
     }
     case Type.Apply(_, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)

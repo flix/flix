@@ -54,7 +54,7 @@ object GenAnonymousClasses {
     val visitor = AsmOps.mkClassWriter()
 
     val superClass = if (obj.clazz.isInterface)
-      BackendObjType.JavaObject.jvmName.toInternalName
+      JvmName.Object.toInternalName
     else
       asm.Type.getInternalName(obj.clazz)
 
@@ -121,7 +121,7 @@ object GenAnonymousClasses {
       val args = fparams.map(_.tpe)
       val boxedResult = MonoType.Object
       val arrowType = MonoType.Arrow(args, boxedResult)
-      val closureAbstractClass = BackendObjType.AbstractArrow(args.map(BackendType.toErasedBackendType), BackendObjType.JavaObject.toTpe)
+      val closureAbstractClass = BackendObjType.AbstractArrow(args.map(BackendType.toErasedBackendType), BackendType.Object)
       val functionInterface = JvmOps.getErasedFunctionInterfaceType(arrowType).jvmName
 
       // Create the field that will store the closure implementing the body of the method

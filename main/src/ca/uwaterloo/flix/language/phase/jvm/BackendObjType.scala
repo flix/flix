@@ -65,7 +65,6 @@ sealed trait BackendObjType {
     // Java classes
     case BackendObjType.Native(className) => className
     case BackendObjType.Regex => JvmName(List("java", "util", "regex"), "Pattern")
-    case BackendObjType.JavaObject => JvmName(JavaLang, "Object")
     case BackendObjType.String => JvmName(JavaLang, "String")
     case BackendObjType.CharSequence => JvmName(JavaLang, "CharSequence")
     case BackendObjType.Arrays => JvmName(JavaUtil, "Arrays")
@@ -175,17 +174,17 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def ExpField: InstanceField = InstanceField(this.jvmName, "expression", JavaObject.toTpe)
+    def ExpField: InstanceField = InstanceField(this.jvmName, "expression", BackendType.Object)
 
     def ValueField: InstanceField = InstanceField(this.jvmName, "value", tpe)
 
     private def LockField: InstanceField = InstanceField(this.jvmName, "lock", ReentrantLock.toTpe)
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(JavaObject.toTpe))
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(BackendType.Object))
 
     /** `[] --> return` */
     private def constructorIns(implicit mv: MethodVisitor): Unit =
-      withName(1, JavaObject.toTpe)(exp => {
+      withName(1, BackendType.Object)(exp => {
         // super()
         thisLoad()
         INVOKESPECIAL(JavaObject.Constructor)
@@ -504,13 +503,13 @@ object BackendObjType {
         */
       def functionMethod: InstanceMethod = this match {
         case ObjFunction => InstanceMethod(this.jvmName, "apply",
-          mkDescriptor(JavaObject.toTpe)(JavaObject.toTpe))
+          mkDescriptor(BackendType.Object)(BackendType.Object))
         case ObjConsumer => InstanceMethod(this.jvmName, "accept",
-          mkDescriptor(JavaObject.toTpe)(VoidableType.Void))
+          mkDescriptor(BackendType.Object)(VoidableType.Void))
         case ObjPredicate => InstanceMethod(this.jvmName, "test",
-          mkDescriptor(JavaObject.toTpe)(BackendType.Bool))
+          mkDescriptor(BackendType.Object)(BackendType.Bool))
         case IntFunction => InstanceMethod(this.jvmName, "apply",
-          mkDescriptor(BackendType.Int32)(JavaObject.toTpe))
+          mkDescriptor(BackendType.Int32)(BackendType.Object))
         case IntConsumer => InstanceMethod(this.jvmName, "accept",
           mkDescriptor(BackendType.Int32)(VoidableType.Void))
         case IntPredicate => InstanceMethod(this.jvmName, "test",
@@ -518,7 +517,7 @@ object BackendObjType {
         case IntUnaryOperator => InstanceMethod(this.jvmName, "applyAsInt",
           mkDescriptor(BackendType.Int32)(BackendType.Int32))
         case LongFunction => InstanceMethod(this.jvmName, "apply",
-          mkDescriptor(BackendType.Int64)(JavaObject.toTpe))
+          mkDescriptor(BackendType.Int64)(BackendType.Object))
         case LongConsumer => InstanceMethod(this.jvmName, "accept",
           mkDescriptor(BackendType.Int64)(VoidableType.Void))
         case LongPredicate => InstanceMethod(this.jvmName, "test",
@@ -526,7 +525,7 @@ object BackendObjType {
         case LongUnaryOperator => InstanceMethod(this.jvmName, "applyAsLong",
           mkDescriptor(BackendType.Int64)(BackendType.Int64))
         case DoubleFunction => InstanceMethod(this.jvmName, "apply",
-          mkDescriptor(BackendType.Float64)(JavaObject.toTpe))
+          mkDescriptor(BackendType.Float64)(BackendType.Object))
         case DoubleConsumer => InstanceMethod(this.jvmName, "accept",
           mkDescriptor(BackendType.Float64)(VoidableType.Void))
         case DoublePredicate => InstanceMethod(this.jvmName, "test",
@@ -545,14 +544,14 @@ object BackendObjType {
           DUP()
           ALOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
           ARETURN()
         case ObjConsumer =>
           thisLoad()
           DUP()
           ALOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
           RETURN()
         case ObjPredicate =>
           thisLoad()
@@ -566,14 +565,14 @@ object BackendObjType {
           DUP()
           ILOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
           ARETURN()
         case IntConsumer =>
           thisLoad()
           DUP()
           ILOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
           RETURN()
         case IntPredicate =>
           thisLoad()
@@ -594,14 +593,14 @@ object BackendObjType {
           DUP()
           LLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
           ARETURN()
         case LongConsumer =>
           thisLoad()
           DUP()
           LLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
           RETURN()
         case LongPredicate =>
           thisLoad()
@@ -622,14 +621,14 @@ object BackendObjType {
           DUP()
           DLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
           ARETURN()
         case DoubleConsumer =>
           thisLoad()
           DUP()
           DLOAD(1)
           PUTFIELD(ArgField(0))
-          Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
+          Result.unwindSuspensionFreeThunkToType(BackendType.Object, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown)
           RETURN()
         case DoublePredicate =>
           thisLoad()
@@ -698,7 +697,7 @@ object BackendObjType {
       */
     private def specialization(): List[FunctionInterface] = {
       (args, result) match {
-        case (BackendType.Reference(BackendObjType.JavaObject) :: Nil, _) =>
+        case (BackendType.Reference(BackendObjType.Native(JvmName.Object)) :: Nil, _) =>
           ObjFunction :: ObjConsumer :: ObjPredicate :: Nil
         case (BackendType.Int32 :: Nil, _) =>
           IntFunction :: IntConsumer :: IntPredicate :: IntUnaryOperator :: Nil
@@ -714,7 +713,7 @@ object BackendObjType {
       val specializedInterface = specialization()
       val interfaces = Thunk.jvmName :: specializedInterface.map(_.jvmName)
 
-      val cm = ClassMaker.mkAbstractClass(this.jvmName, superClass = JavaObject.jvmName, interfaces)
+      val cm = ClassMaker.mkAbstractClass(this.jvmName, superClass = JvmName.Object, interfaces)
 
       cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(JavaObject.Constructor)(_))
       args.indices.foreach(argIndex => cm.mkField(ArgField(argIndex), IsPublic, NotFinal, NotVolatile))
@@ -1113,7 +1112,7 @@ object BackendObjType {
 
     private def arrayCopy()(implicit mv: MethodVisitor): Unit = {
       mv.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
-        MethodDescriptor(List(JavaObject.toTpe, BackendType.Int32, JavaObject.toTpe, BackendType.Int32,
+        MethodDescriptor(List(BackendType.Object, BackendType.Int32, BackendType.Object, BackendType.Int32,
           BackendType.Int32), VoidableType.Void), isInterface = false)
     }
   }
@@ -1552,7 +1551,7 @@ object BackendObjType {
         INVOKESPECIAL(defName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid)
         DUP()
         GETSTATIC(Unit.SingletonField)
-        PUTFIELD(InstanceField(defName, "arg0", JavaObject.toTpe))
+        PUTFIELD(InstanceField(defName, "arg0", BackendType.Object))
         Result.unwindSuspensionFreeThunk(s"in ${this.jvmName.toBinaryName}", SourceLocation.Unknown)
         POP()
         RETURN()
@@ -1640,7 +1639,7 @@ object BackendObjType {
       "valueOf", mkDescriptor(BackendType.Float64)(this.toTpe))
 
     def ObjectValueOf: StaticMethod = StaticMethod(this.jvmName,
-      "valueOf", mkDescriptor(BackendObjType.JavaObject.toTpe)(this.toTpe))
+      "valueOf", mkDescriptor(BackendType.Object)(this.toTpe))
 
     def Concat: InstanceMethod = InstanceMethod(this.jvmName,
       "concat", mkDescriptor(this.toTpe)(this.toTpe))
@@ -1674,18 +1673,18 @@ object BackendObjType {
       "toString", mkDescriptor(BackendType.Array(BackendType.Float64))(BackendObjType.String.toTpe))
 
     def DeepToString: StaticMethod = StaticMethod(this.jvmName,
-      "deepToString", mkDescriptor(BackendType.Array(BackendObjType.JavaObject.toTpe))(BackendObjType.String.toTpe))
+      "deepToString", mkDescriptor(BackendType.Array(BackendType.Object))(BackendObjType.String.toTpe))
   }
 
-  case object JavaObject extends BackendObjType {
+  object JavaObject {
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
+    def Constructor: ConstructorMethod = ConstructorMethod(JvmName.Object, Nil)
 
-    def EqualsMethod: InstanceMethod = InstanceMethod(this.jvmName, "equals",
-      mkDescriptor(JavaObject.toTpe)(BackendType.Bool))
+    def EqualsMethod: InstanceMethod =
+      InstanceMethod(JvmName.Object, "equals", mkDescriptor(BackendType.Object)(BackendType.Bool))
 
-    def ToStringMethod: InstanceMethod = InstanceMethod(this.jvmName, "toString",
-      mkDescriptor()(String.toTpe))
+    def ToStringMethod: InstanceMethod =
+      InstanceMethod(JvmName.Object, "toString", mkDescriptor()(String.toTpe))
 
   }
 
@@ -1719,7 +1718,7 @@ object BackendObjType {
   case object LinkedList extends BackendObjType {
 
     def AddFirstMethod: InstanceMethod = InstanceMethod(this.jvmName, "addFirst",
-      mkDescriptor(JavaObject.toTpe)(VoidableType.Void))
+      mkDescriptor(BackendType.Object)(VoidableType.Void))
 
     def IteratorMethod: InstanceMethod = InstanceMethod(this.jvmName, "iterator",
       mkDescriptor()(BackendObjType.Iterator.toTpe))
@@ -1731,7 +1730,7 @@ object BackendObjType {
       mkDescriptor()(BackendType.Bool))
 
     def NextMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "next",
-      mkDescriptor()(JavaObject.toTpe))
+      mkDescriptor()(BackendType.Object))
   }
 
   case object Runnable extends BackendObjType {
@@ -1743,10 +1742,10 @@ object BackendObjType {
   case object ConcurrentLinkedQueue extends BackendObjType {
 
     def AddMethod: InstanceMethod = InstanceMethod(this.jvmName, "add",
-      mkDescriptor(JavaObject.toTpe)(BackendType.Bool))
+      mkDescriptor(BackendType.Object)(BackendType.Bool))
 
     def PollMethod: InstanceMethod = InstanceMethod(this.jvmName, "poll",
-      mkDescriptor()(JavaObject.toTpe))
+      mkDescriptor()(BackendType.Object))
   }
 
   case object Thread extends BackendObjType {
@@ -1952,7 +1951,7 @@ object BackendObjType {
 
     private def Float64Field: InstanceField = InstanceField(this.jvmName, "f64", BackendType.Float64)
 
-    private def ObjectField: InstanceField = InstanceField(this.jvmName, "o", BackendObjType.JavaObject.toTpe)
+    private def ObjectField: InstanceField = InstanceField(this.jvmName, "o", BackendType.Object)
 
     /**
       * Returns the field of Value corresponding to the given type
@@ -2380,7 +2379,7 @@ object BackendObjType {
   case class ResumptionWrapper(tpe: BackendType) extends BackendObjType {
 
     // tpe -> Result
-    private val superClass: AbstractArrow = AbstractArrow(List(tpe.toErased), JavaObject.toTpe)
+    private val superClass: AbstractArrow = AbstractArrow(List(tpe.toErased), BackendType.Object)
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, superClass.jvmName)
