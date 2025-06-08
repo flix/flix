@@ -59,8 +59,8 @@ object Namer {
       val uses = uses0.map {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
-
-      (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), sctx.errors.asScala.toList)
+      var errors = sctx.errors.asScala.toList
+      (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
     }
 
   /**
@@ -174,13 +174,37 @@ object Namer {
     */
   private def tryAddToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration)(implicit sctx: SharedContext): SymbolTable = {
     lookupName(name, ns, table) match {
-      case LookupResult.NotDefined => addDeclToTable(table, ns, name, decl)
+      case LookupResult.NotDefined =>
+          if (builtinSymbol(name) && (!(getSymLocation(decl).source.input.isBasic))) {
+            mkBuiltinNameRedefine(name, getSymLocation(decl))
+
+            table
+          }
+          else
+            { addDeclToTable(table, ns, name, decl) }
+
+
       case LookupResult.AlreadyDefined(loc) =>
         mkDuplicateNamePair(name, getSymLocation(decl), loc)
          table
     }
   }
 
+  private def builtinSymbol(name: String): Boolean =
+    name match {
+      case "Unit" |
+       "Int8" |
+       "Int16" |
+       "Int32" |
+       "Int64" |
+       "Float32" |
+       "Float64" |
+       "BigDecimal" |
+       "Char" |
+       "String" |
+       "Bool" => true
+      case _ => false
+    }
   /**
     * Adds the given declaration to the table.
     */
@@ -233,7 +257,14 @@ object Namer {
       sctx.errors.add(NameError.DuplicateLowerName(name, loc2, loc1))
     }
   }
+  /**
+   * Creates an error reporting that the given `name` is a redefinition of a built-in name.
+   */
+  private def mkBuiltinNameRedefine(name: String, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
 
+    sctx.errors.add(NameError.RedefineBuiltinName(name, loc))
+
+  }
   /**
     * The result of looking up a type or trait name in an ast root.
     */

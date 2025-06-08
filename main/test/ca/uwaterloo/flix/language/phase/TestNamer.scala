@@ -658,7 +658,15 @@ class TestNamer extends AnyFunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-
+  test("RedefineBuiltinName.01") {
+    val input =
+      """pub enum Unit {
+        |  case Value,
+        |}
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.RedefineBuiltinName](result)
+  }
   test("SuspiciousTypeVarName.01") {
     val input =
       s"""

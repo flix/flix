@@ -26,11 +26,26 @@ sealed trait Input {
     * Returns the security context associated with the input.
     */
   def security: SecurityContext = this match {
-    case Input.Text(_, _, sctx) => sctx
+    case Input.Text(_, _, sctx, _) => sctx
     case Input.TxtFile(_, sctx) => sctx
     case Input.PkgFile(_, sctx) => sctx
     case Input.FileInPackage(_, _, _, sctx) => sctx
     case Input.Unknown => SecurityContext.AllPermissions
+  }
+  /**
+   * Treat an input as if it comes from the standard library.
+   *  */
+  def makeBasic: Input = this match {
+    case Input.Text(name, text, sctx, _) => Input.Text(name, text, sctx, true)
+    case v => v
+  }
+
+  /**
+   * Determines if the input is part of the standard library.
+   */
+  def isBasic: Boolean = this match {
+    case Input.Text(_, _, _, isBase) => isBase
+    case _ => false
   }
 
 }
@@ -39,8 +54,9 @@ object Input {
 
   /**
     * Represents an input that originates from a virtual path.
+   * @param isBase whether the input is part of the standard library (and thus should not err when it defines a standard name)
     */
-  case class Text(name: String, text: String, sctx: SecurityContext) extends Input {
+  case class Text(name: String, text: String, sctx: SecurityContext, isBase: Boolean = false) extends Input {
     override def hashCode(): Int = name.hashCode
 
     override def equals(obj: Any): Boolean = obj match {

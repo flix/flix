@@ -83,6 +83,29 @@ object NameError {
   }
 
   /**
+   * An error raised to indicate that the given `name` is a builtin name
+   * @param name The name of the builtin.
+   * @param loc The location of the redefinition.
+   */
+  case class RedefineBuiltinName(name: String, loc : SourceLocation) extends NameError {
+    def summary: String = s"'$name' is a builtin name and should not be overridden."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Redinition of builtin name '${red(name)}'.
+         |
+         |${code(loc, "Redefined here.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      """Flix has a number of built-in names.
+        | These names should never be used by the user
+        |""".stripMargin
+    })
+  }
+
+  /**
     * An error raised to indicate that the given `name` is defined multiple time.
     *
     * @param name the name.
