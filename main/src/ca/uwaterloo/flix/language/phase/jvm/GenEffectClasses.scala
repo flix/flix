@@ -78,7 +78,7 @@ object GenEffectClasses {
     import BytecodeInstructions.*
 
     ALOAD(0)
-    INVOKESPECIAL(BackendObjType.JavaObject.Constructor)
+    INVOKESPECIAL(ClassMaker.Object.Constructor)
     RETURN()
 
     mv.visitMaxs(999, 999)

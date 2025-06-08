@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Static.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import org.objectweb.asm.{ClassWriter, MethodVisitor, Opcodes}
 
 
@@ -280,4 +281,19 @@ object ClassMaker {
   sealed case class StaticMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method
 
   sealed case class StaticInterfaceMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method
+
+  // Constants
+
+  object Object {
+
+    def Constructor: ConstructorMethod = ConstructorMethod(JvmName.Object, Nil)
+
+    def EqualsMethod: InstanceMethod =
+      InstanceMethod(JvmName.Object, "equals", mkDescriptor(BackendType.Object)(BackendType.Bool))
+
+    def ToStringMethod: InstanceMethod =
+      InstanceMethod(JvmName.Object, "toString", mkDescriptor()(BackendObjType.String.toTpe))
+
+  }
+
 }
