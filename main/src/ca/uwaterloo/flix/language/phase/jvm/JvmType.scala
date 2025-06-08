@@ -91,18 +91,4 @@ object JvmType {
     */
   case class Reference(name: JvmName) extends JvmType
 
-  //
-  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Java Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  //
-
-  val AtomicLong: JvmType.Reference = Reference(JvmName.AtomicLong)
-  val Regex: JvmType.Reference = Reference(BackendObjType.Regex.jvmName)
-  val Object: JvmType.Reference = Reference(BackendObjType.JavaObject.jvmName)
-  val String: JvmType.Reference = Reference(BackendObjType.String.jvmName)
-
-  //
-  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Flix Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  //
-
-  val Unit: JvmType.Reference = Reference(BackendObjType.Unit.jvmName)
 }
