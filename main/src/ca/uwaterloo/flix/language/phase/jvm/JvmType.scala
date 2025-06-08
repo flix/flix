@@ -49,7 +49,7 @@ sealed trait JvmType {
     case JvmType.PrimLong => JvmType.PrimLong
     case JvmType.PrimFloat => JvmType.PrimFloat
     case JvmType.PrimDouble => JvmType.PrimDouble
-    case JvmType.Reference(_) => JvmType.Object
+    case JvmType.Reference(_) => JvmType.Reference(BackendObjType.JavaObject.jvmName)
   }
 }
 
@@ -104,20 +104,4 @@ object JvmType {
     */
   case class Reference(name: JvmName) extends JvmType
 
-  //
-  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Java Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  //
-
-  val AtomicLong: JvmType.Reference = Reference(JvmName.AtomicLong)
-  val BigDecimal: JvmType.Reference = Reference(BackendObjType.BigDecimal.jvmName)
-  val BigInteger: JvmType.Reference = Reference(BackendObjType.BigInt.jvmName)
-  val Regex: JvmType.Reference = Reference(BackendObjType.Regex.jvmName)
-  val Object: JvmType.Reference = Reference(BackendObjType.JavaObject.jvmName)
-  val String: JvmType.Reference = Reference(BackendObjType.String.jvmName)
-
-  //
-  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Flix Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  //
-
-  val Unit: JvmType.Reference = Reference(BackendObjType.Unit.jvmName)
 }
