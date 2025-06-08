@@ -280,7 +280,7 @@ object BackendObjType {
     /** `[] --> return String` */
     private def toStringIns(implicit mv: MethodVisitor): Unit = {
       Util.mkString(Some(_ => pushString("(")), Some(_ => pushString(")")), elms.length, getIndexField)
-      ARETURN()
+      xReturn(BackendType.String)
     }
 
     /** `[] --> [this.index(i).xString()]` */
@@ -330,7 +330,7 @@ object BackendObjType {
     /** `[] --> return String` */
     private def toStringIns(implicit mv: MethodVisitor): Unit = {
       Util.mkString(Some(_ => pushString("Struct(")), Some(_ => pushString(")")), elms.length, getIndexString)
-      ARETURN()
+      xReturn(BackendType.String)
     }
 
     /** `[] --> [this.index(i).xString()]` */
@@ -401,7 +401,7 @@ object BackendObjType {
     /** `[] --> return String` */
     private def toStringIns(implicit mv: MethodVisitor): Unit = {
       Tagged.mkTagName(name)
-      ARETURN()
+      xReturn(BackendType.String)
     }
   }
 
@@ -432,7 +432,7 @@ object BackendObjType {
         pushString("(")
         INVOKEVIRTUAL(String.Concat)
       }), Some(_ => pushString(")")), elms.length, getIndexString)
-      ARETURN()
+      xReturn(BackendType.String)
     }
 
     /** `[] --> [this.index(i).xString()]` */
