@@ -175,7 +175,7 @@ object Namer {
   private def tryAddToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration)(implicit sctx: SharedContext): SymbolTable = {
     lookupName(name, ns, table) match {
       case LookupResult.NotDefined =>
-          if (builtinSymbol(name) && (getSymLocation(decl).source.name != "Fixpoint3/BoxingType.flix")) {
+          if (builtinSymbol(name)) {
             mkBuiltinNameRedefine(name, getSymLocation(decl))
 
             table
