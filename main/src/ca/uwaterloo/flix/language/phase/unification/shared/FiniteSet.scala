@@ -31,7 +31,7 @@ object FiniteSet {
 
     override def isTop(t: FiniteSet[T]): Boolean = t.s == univ
 
-    override def comp(t: FiniteSet[T]): FiniteSet[T] = FiniteSet(univ - t.s)
+    override def comp(t: FiniteSet[T]): FiniteSet[T] = FiniteSet(univ -- t.s)
 
     override def join(t1: FiniteSet[T], t2: FiniteSet[T]): FiniteSet[T] = FiniteSet(t1.s.union(t2.s))
 
