@@ -130,17 +130,20 @@ object JvmName {
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Java Names ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
+  val JavaIO: List[String] = List("java", "io")
   val JavaLang: List[String] = List("java", "lang")
   val JavaLangInvoke: List[String] = List("java", "lang", "invoke")
+  val JavaMath: List[String] = List("java", "math")
   val JavaUtil: List[String] = List("java", "util")
-  val JavaUtilFunction: List[String] = JavaUtil ::: List("function")
   val JavaUtilConcurrent: List[String] = JavaUtil ::: List("concurrent")
   val JavaUtilConcurrentLocks: List[String] = JavaUtilConcurrent ::: List("locks")
+  val JavaUtilFunction: List[String] = JavaUtil ::: List("function")
   val JavaUtilRegex: List[String] = JavaUtil ::: List("regex")
-  val JavaIO: List[String] = List("java", "io")
 
-  val AtomicLong: JvmName = JvmName(JavaUtil ::: List("concurrent", "atomic"), "AtomicLong")
   val Arrays: JvmName = JvmName(JavaUtil, "Arrays")
+  val AtomicLong: JvmName = JvmName(JavaUtil ::: List("concurrent", "atomic"), "AtomicLong")
+  val BigDecimal: JvmName = JvmName(JavaMath, "BigDecimal")
+  val BigInteger: JvmName = JvmName(JavaMath, "BigInteger")
   val Boolean: JvmName = JvmName(JavaLang, "Boolean")
   val Byte: JvmName = JvmName(JavaLang, "Byte")
   val Character: JvmName = JvmName(JavaLang, "Character")
@@ -153,19 +156,19 @@ object JvmName {
   val Error: JvmName = JvmName(JavaLang, "Error")
   val Exception: JvmName = JvmName(JavaLang, "Exception")
   val Float: JvmName = JvmName(JavaLang, "Float")
-  val Integer: JvmName = JvmName(JavaLang, "Integer")
   val IntConsumer: JvmName = JvmName(JavaUtilFunction, "IntConsumer")
   val IntFunction: JvmName = JvmName(JavaUtilFunction, "IntFunction")
   val IntPredicate: JvmName = JvmName(JavaUtilFunction, "IntPredicate")
   val IntUnaryOperator: JvmName = JvmName(JavaUtilFunction, "IntUnaryOperator")
+  val Integer: JvmName = JvmName(JavaLang, "Integer")
   val Long: JvmName = JvmName(JavaLang, "Long")
   val LongConsumer: JvmName = JvmName(JavaUtilFunction, "LongConsumer")
   val LongFunction: JvmName = JvmName(JavaUtilFunction, "LongFunction")
   val LongPredicate: JvmName = JvmName(JavaUtilFunction, "LongPredicate")
   val LongUnaryOperator: JvmName = JvmName(JavaUtilFunction, "LongUnaryOperator")
   val Math: JvmName = JvmName(JavaLang, "Math")
-  val ObjFunction: JvmName = JvmName(JavaUtilFunction, "Function")
   val ObjConsumer: JvmName = JvmName(JavaUtilFunction, "Consumer")
+  val ObjFunction: JvmName = JvmName(JavaUtilFunction, "Function")
   val ObjPredicate: JvmName = JvmName(JavaUtilFunction, "Predicate")
   val PrintStream: JvmName = JvmName(JavaIO, "PrintStream")
   val ReentrantLock: JvmName = JvmName(JavaUtilConcurrentLocks, "ReentrantLock")
@@ -182,7 +185,6 @@ object JvmName {
   //
 
   val DevFlixRuntime: List[String] = List("dev", "flix", "runtime")
-  val Main: JvmName = JvmName(RootPackage, "Main")
 
 }
 
