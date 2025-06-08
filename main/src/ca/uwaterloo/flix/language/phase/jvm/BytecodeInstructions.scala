@@ -29,44 +29,44 @@ import scala.annotation.tailrec
 object BytecodeInstructions {
 
   /** A wrapper of [[MethodVisitor]] to improve its interface. */
-  implicit class RichMethodVisitor(mv: MethodVisitor) {
+  implicit class RichMethodVisitor(visitor: MethodVisitor) {
     def visitTypeInstruction(opcode: Int, tpe: JvmName): Unit =
-      mv.visitTypeInsn(opcode, tpe.toInternalName)
+      visitor.visitTypeInsn(opcode, tpe.toInternalName)
 
     def visitTypeInstructionDirect(opcode: Int, tpe: String): Unit =
-      mv.visitTypeInsn(opcode, tpe)
+      visitor.visitTypeInsn(opcode, tpe)
 
-    def visitInstruction(opcode: Int): Unit = mv.visitInsn(opcode)
+    def visitInstruction(opcode: Int): Unit = visitor.visitInsn(opcode)
 
     def visitMethodInstruction(opcode: Int, owner: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean): Unit =
-      mv.visitMethodInsn(opcode, owner.toInternalName, methodName, descriptor.toDescriptor, isInterface)
+      visitor.visitMethodInsn(opcode, owner.toInternalName, methodName, descriptor.toDescriptor, isInterface)
 
     def visitInvokeDynamicInstruction(methodName: String, descriptor: MethodDescriptor, bootstrapMethodHandle: Handle, bootstrapMethodArguments: Any*): Unit =
-      mv.visitInvokeDynamicInsn(methodName, descriptor.toDescriptor, bootstrapMethodHandle.handle, bootstrapMethodArguments *)
+      visitor.visitInvokeDynamicInsn(methodName, descriptor.toDescriptor, bootstrapMethodHandle.handle, bootstrapMethodArguments *)
 
     def visitFieldInstruction(opcode: Int, owner: JvmName, fieldName: String, fieldType: BackendType): Unit =
-      mv.visitFieldInsn(opcode, owner.toInternalName, fieldName, fieldType.toDescriptor)
+      visitor.visitFieldInsn(opcode, owner.toInternalName, fieldName, fieldType.toDescriptor)
 
     def visitVarInstruction(opcode: Int, v: Int): Unit =
-      mv.visitVarInsn(opcode, v)
+      visitor.visitVarInsn(opcode, v)
 
     def visitJumpInstruction(opcode: Int, label: Label): Unit =
-      mv.visitJumpInsn(opcode, label)
+      visitor.visitJumpInsn(opcode, label)
 
     def visitLabel(label: Label): Unit =
-      mv.visitLabel(label)
+      visitor.visitLabel(label)
 
     def visitLineNumber(line: Int, label: Label): Unit =
-      mv.visitLineNumber(line, label)
+      visitor.visitLineNumber(line, label)
 
     def visitLoadConstantInstruction(v: Any): Unit =
-      mv.visitLdcInsn(v)
+      visitor.visitLdcInsn(v)
 
     def visitIntInstruction(opcode: Int, v: Int): Unit =
-      mv.visitIntInsn(opcode, v)
+      visitor.visitIntInsn(opcode, v)
 
     def visitTryCatchBlock(beforeTry: Label, afterTry: Label, handlerStart: Label): Unit =
-      mv.visitTryCatchBlock(beforeTry, afterTry, handlerStart, null)
+      visitor.visitTryCatchBlock(beforeTry, afterTry, handlerStart, null)
   }
 
   sealed case class Handle(handle: asm.Handle)
