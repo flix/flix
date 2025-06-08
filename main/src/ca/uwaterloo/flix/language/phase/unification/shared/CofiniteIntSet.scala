@@ -50,7 +50,6 @@ object CofiniteIntSet {
     if (s.isEmpty) Empty else Set(s)
   }
 
-  /** An instance for [[CofiniteIntSet]]. */
   object LatticeOps extends BoolLattice[CofiniteIntSet] {
     override def Bot: CofiniteIntSet = CofiniteIntSet.Empty
 
