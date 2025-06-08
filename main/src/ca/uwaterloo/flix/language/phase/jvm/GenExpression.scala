@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition}
 import ca.uwaterloo.flix.language.ast.{MonoType, *}
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.RichMethodVisitor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -66,8 +65,8 @@ object GenExpression {
     */
   case class EffectContext(entryPoint: Label,
                            lenv: Map[Symbol.LabelSym, Label],
-                           newFrame: Unit => Unit, // [...] -> [..., frame]
-                           setPc: Unit => Unit, // [..., frame, pc] -> [...]
+                           newFrame: MethodVisitor => Unit, // [...] -> [..., frame]
+                           setPc: MethodVisitor => Unit, // [..., frame, pc] -> [...]
                            localOffset: Int,
                            pcLabels: Vector[Label],
                            pcCounter: Ref[Int]
@@ -1167,7 +1166,7 @@ object GenExpression {
         }
         mv.visitVarInsn(ALOAD, 0)
         BytecodeInstructions.pushInt(0)
-        setPc(())
+        setPc(mv)
         // Jump to the entry point of the method.
         mv.visitJumpInsn(GOTO, ctx.entryPoint)
 
@@ -1435,10 +1434,10 @@ object GenExpression {
         NEW(BackendObjType.FramesNil.jvmName)
         DUP()
         INVOKESPECIAL(BackendObjType.FramesNil.Constructor)
-        newFrame(())
+        newFrame(mv)
         DUP()
         pushInt(pcPoint)
-        setPc(())
+        setPc(mv)
         INVOKEVIRTUAL(BackendObjType.FramesNil.PushMethod)
         // store continuation
         PUTFIELD(Suspension.PrefixField)

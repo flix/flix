@@ -251,31 +251,31 @@ object GenFunAndClosureClasses {
       }
 
       // Generating the expression
-      def newFrame(): Unit = {
-        BytecodeInstructions.thisLoad()
-        m.visitMethodInsn(INVOKEVIRTUAL, className.toInternalName, copyName, nothingToTDescriptor(className).toDescriptor, false)
+      def newFrame(mv: MethodVisitor): Unit = {
+        BytecodeInstructions.thisLoad()(mv)
+        mv.visitMethodInsn(INVOKEVIRTUAL, className.toInternalName, copyName, nothingToTDescriptor(className).toDescriptor, false)
       }
 
-      def setPc(): Unit = {
+      def setPc(mv: MethodVisitor): Unit = {
         import BytecodeInstructions.*
-        SWAP()
-        DUP_X1()
-        SWAP() // clo, pc ---> clo, clo, pc
-        m.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, "pc", BackendType.Int32.toDescriptor)
+        SWAP()(mv)
+        DUP_X1()(mv)
+        SWAP()(mv) // clo, pc ---> clo, clo, pc
+        mv.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, "pc", BackendType.Int32.toDescriptor)
         for ((name, index, isWild, tpe) <- lparams) {
           val erasedTpe = BackendType.toErasedBackendType(tpe)
           if (isWild) {
             nop()
           } else {
-            DUP()
-            xLoad(erasedTpe, index)
-            m.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, name, erasedTpe.toDescriptor)
+            DUP()(mv)
+            xLoad(erasedTpe, index)(mv)
+            mv.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, name, erasedTpe.toDescriptor)
           }
         }
-        POP()
+        POP()(mv)
       }
 
-      val ctx = GenExpression.EffectContext(enterLabel, Map.empty, _ => newFrame(), _ => setPc(), localOffset, pcLabels.prepended(null), Array(0))
+      val ctx = GenExpression.EffectContext(enterLabel, Map.empty, newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
       GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
       assert(ctx.pcCounter(0) == pcLabels.size, s"${(className, ctx.pcCounter(0), pcLabels.size)}")
     }

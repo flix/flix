@@ -1830,7 +1830,7 @@ object BackendObjType {
       * [..., Result] --> [..., Thunk|Value]
       * side effect: Will return a modified suspension if a suspension occurs
       */
-    private def handleSuspension(pc: Int, newFrame: Unit => Unit, setPc: Unit => Unit)(implicit mv: MethodVisitor): Unit = {
+    private def handleSuspension(pc: Int, newFrame: MethodVisitor => Unit, setPc: MethodVisitor => Unit)(implicit mv: MethodVisitor): Unit = {
       DUP()
       INSTANCEOF(Suspension.jvmName)
       ifCondition(Condition.NE) {
@@ -1853,10 +1853,10 @@ object BackendObjType {
         DUP2()
         GETFIELD(Suspension.PrefixField) // [..., s', s, s', s.prefix]
         // Make the new frame and push it
-        newFrame(())
+        newFrame(mv)
         DUP()
         pushInt(pc)
-        setPc(())
+        setPc(mv)
         INVOKEINTERFACE(Frames.PushMethod) // [..., s', s, s', prefix']
         PUTFIELD(Suspension.PrefixField) // [..., s', s]
         POP() // [..., s']
@@ -1871,7 +1871,7 @@ object BackendObjType {
       * [..., Result] --> [..., Value.value: tpe]
       * side effect: Will return any Suspension found
       */
-    def unwindThunkToValue(pc: Int, newFrame: Unit => Unit, setPc: Unit => Unit)(implicit mv: MethodVisitor): Unit = {
+    def unwindThunkToValue(pc: Int, newFrame: MethodVisitor => Unit, setPc: MethodVisitor => Unit)(implicit mv: MethodVisitor): Unit = {
       unwindThunk()
       handleSuspension(pc, newFrame, setPc)
       CHECKCAST(Value.jvmName) // Cannot fail
