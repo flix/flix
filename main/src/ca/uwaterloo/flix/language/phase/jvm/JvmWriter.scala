@@ -27,7 +27,7 @@ import java.nio.file.{Files, LinkOption, Path}
 object JvmWriter {
 
   /** Writes `classes` into the `<build>/class/` folder if enabled by [[Flix.options.output]]. */
-  def run(classes: List[JvmClass])(implicit flix: Flix): Unit = flix.phase("JvmWriter") {
+  def run(classes: List[JvmClass])(implicit flix: Flix): Unit = {
     // Write each class (and interface) to disk if enabled.
     if (flix.options.output.nonEmpty) {
       for (jvmClass <- classes) {
@@ -35,7 +35,7 @@ object JvmWriter {
         writeClass(flix.options.output.get.resolve("class/"), jvmClass)
       }
     }
-  }(AstPrinter.DebugNoOp())
+  }
 
   /**
     * Writes the given JVM class `clazz` to a sub path under the given `prefixPath`.
