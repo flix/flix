@@ -132,10 +132,10 @@ object GenExpression {
         import BytecodeInstructions.*
         // Can fail with NumberFormatException
         addLoc(loc)
-        NEW(BackendObjType.BigDecimal.jvmName)
+        NEW(JvmName.BigDecimal)
         DUP()
         pushString(dd.toString)
-        INVOKESPECIAL(BackendObjType.BigDecimal.Constructor)
+        INVOKESPECIAL(ClassMaker.ConstructorMethod(JvmName.BigDecimal, List(BackendObjType.String.toTpe)))
 
       case Constant.Int8(b) =>
         BytecodeInstructions.pushInt(b)
@@ -153,10 +153,10 @@ object GenExpression {
         import BytecodeInstructions.*
         // Add source line number for debugging (can fail with NumberFormatException)
         addLoc(loc)
-        NEW(BackendObjType.BigInt.jvmName)
+        NEW(JvmName.BigInteger)
         DUP()
         pushString(ii.toString)
-        INVOKESPECIAL(BackendObjType.BigInt.Constructor)
+        INVOKESPECIAL(ClassMaker.ConstructorMethod(JvmName.BigInteger, List(BackendObjType.String.toTpe)))
 
       case Constant.Str(s) =>
         BytecodeInstructions.pushString(s)
@@ -1017,8 +1017,8 @@ object GenExpression {
 
     case Expr.ApplyClo(exp1, exp2, ct, _, purity, loc) =>
       // Type of the function abstract class
-      val functionInterface = JvmOps.getFunctionInterfaceType(exp1.tpe).jvmName
-      val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp1.tpe)
+      val functionInterface = JvmOps.getErasedFunctionInterfaceType(exp1.tpe).jvmName
+      val closureAbstractClass = JvmOps.getErasedClosureAbstractClassType(exp1.tpe)
       ct match {
         case ExpPosition.Tail =>
           // Evaluating the closure
@@ -1079,7 +1079,7 @@ object GenExpression {
     case Expr.ApplyDef(sym, exps, ct, _, _, loc) => ct match {
       case ExpPosition.Tail =>
         // Type of the function abstract class
-        val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType).jvmName
+        val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType).jvmName
 
         // Put the def on the stack
         AsmOps.compileDefSymbol(sym, mv)
@@ -1155,7 +1155,7 @@ object GenExpression {
     case Expr.ApplySelfTail(sym, exps, _, _, _) => ctx match {
       case EffectContext(_, _, _, setPc, _, _, _) =>
         // The function abstract class name
-        val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType).jvmName
+        val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType).jvmName
         // Evaluate each argument and put the result on the Fn class.
         for ((arg, i) <- exps.zipWithIndex) {
           mv.visitVarInsn(ALOAD, 0)
@@ -1172,7 +1172,7 @@ object GenExpression {
 
       case DirectInstanceContext(_, _, _) =>
         // The function abstract class name
-        val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType).jvmName
+        val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType).jvmName
         // Evaluate each argument and put the result on the Fn class.
         for ((arg, i) <- exps.zipWithIndex) {
           mv.visitVarInsn(ALOAD, 0)
@@ -1467,7 +1467,7 @@ object GenExpression {
       exps.zipWithIndex.foreach { case (e, i) =>
         mv.visitInsn(DUP)
         compileExpr(e)
-        mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(e.tpe).toDescriptor)
+        mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getErasedClosureAbstractClassType(e.tpe).toDescriptor)
       }
 
   }

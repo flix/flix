@@ -92,7 +92,7 @@ object GenEffectClasses {
 
     val writtenOpArgs = writtenOpArgsMono.map(BackendType.toErasedBackendType)
     val opName = JvmOps.getEffectOpName(op.sym)
-    val opFunction = JvmOps.getFunctionInterfaceType(arrowType)
+    val opFunction = JvmOps.getErasedFunctionInterfaceType(arrowType)
     visitor.visitField(ACC_PUBLIC, opName, opFunction.jvmName.toDescriptor, null, null)
     // Method
     // 1. Cast the given generic handler to the current effect
@@ -151,7 +151,7 @@ object GenEffectClasses {
     val effect = root.effects(sym.eff)
     val op = effect.ops.find(op => op.sym == sym).getOrElse(throw InternalCompilerException(s"Could not find op '$sym' in effect '$effect'.", sym.loc))
     val writtenOpArgs = op.fparams.map(_.tpe)
-    JvmOps.getFunctionInterfaceType(MonoType.Arrow(writtenOpArgs :+ MonoType.Object, MonoType.Object)).jvmName
+    JvmOps.getErasedFunctionInterfaceType(MonoType.Arrow(writtenOpArgs :+ MonoType.Object, MonoType.Object)).jvmName
   }
 
 }

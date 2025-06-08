@@ -58,7 +58,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getFunctionInterfaceType(tpe: MonoType)(implicit root: Root): BackendObjType.Arrow = tpe match {
+  def getErasedFunctionInterfaceType(tpe: MonoType)(implicit root: Root): BackendObjType.Arrow = tpe match {
     case MonoType.Arrow(targs, tresult) =>
       BackendObjType.Arrow(targs.map(BackendType.toErasedBackendType), BackendType.toBackendType(tresult))
     case _ =>
@@ -66,7 +66,7 @@ object JvmOps {
   }
 
   /**
-    * Returns the closure abstract class type `CloX$Y$Z` for the given [[MonoType]].
+    * Returns the erased closure abstract class type `CloX$Y$Z` for the given [[MonoType]].
     *
     * For example:
     *
@@ -75,7 +75,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getClosureAbstractClassType(tpe: MonoType): BackendObjType.AbstractArrow = tpe match {
+  def getErasedClosureAbstractClassType(tpe: MonoType): BackendObjType.AbstractArrow = tpe match {
     case MonoType.Arrow(targs, tresult) =>
      BackendObjType.AbstractArrow(targs.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(tresult))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
@@ -116,15 +116,13 @@ object JvmOps {
   /**
     * Returns the op name of the given symbol.
     */
-  def getEffectOpName(op: Symbol.OpSym): String = {
+  def getEffectOpName(op: Symbol.OpSym): String =
     mangle(op.name)
-  }
 
-  def getTagName(name: String): String = mangle(name)
+  def getTagName(name: String): String =
+    mangle(name)
 
-  /**
-    * Returns the set of namespaces in the given AST `root`.
-    */
+  /** Returns the set of namespaces in the given AST `root`. */
   def namespacesOf(root: Root): Set[NamespaceInfo] = {
     // Group every symbol by namespace.
     root.defs.groupBy(_._1.namespace).map {
@@ -133,28 +131,22 @@ object JvmOps {
     }.toSet
   }
 
-  /**
-    * Returns the set of erased lazy types in `types` without searching recursively.
-    */
-  def getErasedLazyTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.Lazy] =
+  /** Returns the set of lazy types in `types` without searching recursively. */
+  def getLazyTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.Lazy] =
     types.foldLeft(Set.empty[BackendObjType.Lazy]) {
       case (acc, MonoType.Lazy(tpe)) => acc + BackendObjType.Lazy(BackendType.toBackendType(tpe))
       case (acc, _) => acc
     }
 
-  /**
-    * Returns the set of erased record extend types in `types` without searching recursively.
-    */
-  def getErasedRecordExtendsOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.RecordExtend] =
+  /** Returns the set of record extend types in `types` without searching recursively. */
+  def getRecordExtendsOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.RecordExtend] =
     types.foldLeft(Set.empty[BackendObjType.RecordExtend]) {
       case (acc, MonoType.RecordExtend(_, value, _)) =>
         acc + BackendObjType.RecordExtend(BackendType.toBackendType(value))
       case (acc, _) => acc
     }
 
-  /**
-    * Returns the set of erased function types in `types` without searching recursively.
-    */
+  /** Returns the set of erased function types in `types` without searching recursively. */
   def getErasedArrowsOf(types: Iterable[MonoType]): Set[BackendObjType.Arrow] =
     types.foldLeft(Set.empty[BackendObjType.Arrow]) {
       case (acc, MonoType.Arrow(args, result)) =>
@@ -162,19 +154,15 @@ object JvmOps {
       case (acc, _) => acc
     }
 
-  /**
-    * Returns the set of erased tuple types in `types` without searching recursively.
-    */
-  def getErasedTupleTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.Tuple] =
+  /** Returns the set of tuple types in `types` without searching recursively. */
+  def getTupleTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.Tuple] =
     types.foldLeft(Set.empty[BackendObjType.Tuple]) {
       case (acc, MonoType.Tuple(elms)) =>
         acc + BackendObjType.Tuple(elms.map(BackendType.toBackendType))
       case (acc, _) => acc
     }
 
-  /**
-    * Returns the set of erased struct types in `types` without searching recursively.
-    */
+  /** Returns the set of erased struct types in `types` without searching recursively. */
   def getErasedStructTypesOf(root: Root, types: Iterable[MonoType]): Set[BackendObjType.Struct] =
     types.foldLeft(Set.empty[BackendObjType.Struct]) {
       case (acc, MonoType.Struct(sym, targs)) =>
@@ -264,10 +252,8 @@ object JvmOps {
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
   }
 
-  /**
-    * Returns the set of erased extensible tag types in `types` without searching recursively.
-    */
-  def getErasedExtensibleTagTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.TagType] =
+  /** Returns the set of extensible tag types in `types` without searching recursively. */
+  def getExtensibleTagTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.TagType] =
     types.foldLeft(Set.empty[BackendObjType.TagType]) {
       case (acc, MonoType.ExtensibleExtend(cons, targs, _)) =>
         targs match {

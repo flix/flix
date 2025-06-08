@@ -60,13 +60,11 @@ sealed trait BackendObjType {
     case BackendObjType.UnhandledEffectError => JvmName(DevFlixRuntime, mkClassName("UnhandledEffectError"))
     case BackendObjType.Region => JvmName(DevFlixRuntime, mkClassName("Region"))
     case BackendObjType.UncaughtExceptionHandler => JvmName(DevFlixRuntime, mkClassName("UncaughtExceptionHandler"))
-    case BackendObjType.Main => JvmName.Main
+    case BackendObjType.Main => JvmName(RootPackage, "Main")
     case BackendObjType.Namespace(ns) => JvmName(ns.dropRight(1), ns.lastOption.getOrElse(s"Root${Flix.Delimiter}"))
     // Java classes
     case BackendObjType.Native(className) => className
     case BackendObjType.Regex => JvmName(List("java", "util", "regex"), "Pattern")
-    case BackendObjType.BigDecimal => JvmName(List("java", "math"), "BigDecimal")
-    case BackendObjType.BigInt => JvmName(List("java", "math"), "BigInteger")
     case BackendObjType.JavaObject => JvmName(JavaLang, "Object")
     case BackendObjType.String => JvmName(JavaLang, "String")
     case BackendObjType.CharSequence => JvmName(JavaLang, "CharSequence")
@@ -161,14 +159,6 @@ object BackendObjType {
       ARETURN()
     }
 
-  }
-
-  case object BigDecimal extends BackendObjType {
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(String.toTpe))
-  }
-
-  case object BigInt extends BackendObjType {
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(String.toTpe))
   }
 
   case class Lazy(tpe: BackendType) extends BackendObjType {
