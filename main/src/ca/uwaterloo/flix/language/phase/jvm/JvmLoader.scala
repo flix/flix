@@ -20,7 +20,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.Root
 import ca.uwaterloo.flix.language.ast.{ReducedAst, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils}
 
 import java.lang.reflect.{InvocationTargetException, Method}
@@ -49,40 +49,36 @@ object JvmLoader {
     val outputBytes = classes.map(_.bytecode.length).sum
 
     if (flix.options.loadClassFiles) {
-      val main = load(classes)
-      (root, LoaderResult(main, getCompiledDefs(root), outputBytes))
+      val (main, methods) = load(classes)
+      (root, LoaderResult(main, getCompiledDefs(root, methods), outputBytes))
     } else {
       (root, LoaderResult(None, Map.empty, outputBytes))
     }
   }
 
   /** Returns the non-closure, executable jvm functions of `root`. */
-  private def getCompiledDefs(root: Root): Map[Symbol.DefnSym, () => AnyRef] = {
+  private def getCompiledDefs(root: Root, methods: Map[Symbol.DefnSym, Method]): Map[Symbol.DefnSym, () => AnyRef] = {
     root.defs.filter(_._2.cparams.isEmpty).map {
       case (sym, _) =>
         val args: Array[AnyRef] = Array(null)
-        (sym, () => link(sym, root)(args))
+        (sym, () => link(methods(sym))(args))
     }
   }
 
-  /** Returns a function object for `sym`. */
-  private def link(sym: Symbol.DefnSym, root: Root): java.util.function.Function[Array[AnyRef], AnyRef] = {
-    val defn = root.defs(sym)
-    // Check that the method has been initialized.
-    if (defn.method == null) throw InternalCompilerException(s"Linking error: '$sym' has an uninitialized method.", SourceLocation.Unknown)
-
+  /** Returns a function object for `method`. */
+  private def link(method: Method): java.util.function.Function[Array[AnyRef], AnyRef] = {
     (args: Array[AnyRef]) => {
       // Convert and verify `args`.
       val argsArray = if (args.isEmpty) Array(null: AnyRef) else args
-      val parameterCount = defn.method.getParameterCount
+      val parameterCount = method.getParameterCount
       val argumentCount = argsArray.length
       if (argumentCount != parameterCount) {
-        throw new RuntimeException(s"Expected $parameterCount arguments, but got: $argumentCount for method ${defn.method.getName}.")
+        throw new RuntimeException(s"Expected $parameterCount arguments, but got: $argumentCount for method ${method.getName}.")
       }
 
       // Perform the method call using reflection.
       try {
-        val result = defn.method.invoke(null, argsArray *)
+        val result = method.invoke(null, argsArray *)
         result
       } catch {
         case e: InvocationTargetException =>
@@ -96,7 +92,7 @@ object JvmLoader {
     * Loads all the generated classes into the JVM and decorates the AST.
     * The main functions of `Main.class` is returned if it exists.
     */
-  private def load(classes: List[JvmClass])(implicit flix: Flix, root: Root): Option[Array[String] => Unit] = {
+  private def load(classes: List[JvmClass])(implicit flix: Flix, root: Root): (Option[Array[String] => Unit], Map[Symbol.DefnSym, Method]) = {
     // Load each class into the JVM in a fresh class loader.
     implicit val loadedClasses: Map[JvmName, Class[?]] = loadAll(classes)
 
@@ -106,13 +102,10 @@ object JvmLoader {
       case (macc, (_, clazz)) => macc + (clazz -> methodsOf(clazz))
     }
 
-    // Decorate each entrypoint def in the AST.
-    for ((sym, defn) <- root.defs if root.entryPoints.contains(sym)) {
-      // Assign the method object to the definition.
-      defn.method = loadDef(defn)
-    }
+    val entrypoints = root.defs.filter { case (sym, _) => root.entryPoints.contains(sym) }
+    val methods = MapOps.mapValues(entrypoints)(loadDef)
 
-    loadMain(root)
+    (loadMain(root), methods)
   }
 
   /** Returns the [[Method]] object of `defn`. */
@@ -129,7 +122,7 @@ object JvmLoader {
 
     val mainMethod = loadMethod(BackendObjType.Main.jvmName, BackendObjType.Main.MainMethod.name)
 
-    // This is a specialized version of the link function in BytecodeHandler.
+    // This is a specialized version of the link function.
     def mainFunction(args: Array[String]): Unit = {
       try {
         // Call the method, passing the argument array.
