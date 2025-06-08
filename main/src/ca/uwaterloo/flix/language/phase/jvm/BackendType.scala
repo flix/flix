@@ -139,12 +139,12 @@ object BackendType {
       case MonoType.Char => BackendType.Char
       case MonoType.Float32 => BackendType.Float32
       case MonoType.Float64 => BackendType.Float64
-      case MonoType.BigDecimal => BackendObjType.BigDecimal.toTpe
+      case MonoType.BigDecimal => JvmName.BigDecimal.toTpe
       case MonoType.Int8 => BackendType.Int8
       case MonoType.Int16 => BackendType.Int16
       case MonoType.Int32 => BackendType.Int32
       case MonoType.Int64 => BackendType.Int64
-      case MonoType.BigInt => BackendObjType.BigInt.toTpe
+      case MonoType.BigInt => JvmName.BigInteger.toTpe
       case MonoType.String => BackendObjType.String.toTpe
       case MonoType.Regex => BackendObjType.Regex.toTpe
       case MonoType.Region => BackendObjType.Region.toTpe

@@ -132,10 +132,10 @@ object GenExpression {
         import BytecodeInstructions.*
         // Can fail with NumberFormatException
         addLoc(loc)
-        NEW(BackendObjType.BigDecimal.jvmName)
+        NEW(JvmName.BigDecimal)
         DUP()
         pushString(dd.toString)
-        INVOKESPECIAL(BackendObjType.BigDecimal.Constructor)
+        INVOKESPECIAL(ClassMaker.ConstructorMethod(JvmName.BigDecimal, List(BackendObjType.String.toTpe)))
 
       case Constant.Int8(b) =>
         BytecodeInstructions.pushInt(b)
@@ -153,10 +153,10 @@ object GenExpression {
         import BytecodeInstructions.*
         // Add source line number for debugging (can fail with NumberFormatException)
         addLoc(loc)
-        NEW(BackendObjType.BigInt.jvmName)
+        NEW(JvmName.BigInteger)
         DUP()
         pushString(ii.toString)
-        INVOKESPECIAL(BackendObjType.BigInt.Constructor)
+        INVOKESPECIAL(ClassMaker.ConstructorMethod(JvmName.BigInteger, List(BackendObjType.String.toTpe)))
 
       case Constant.Str(s) =>
         BytecodeInstructions.pushString(s)
