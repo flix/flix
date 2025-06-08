@@ -44,7 +44,7 @@ object JvmOps {
            Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_, _) |
            Struct(_, _) | Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) |
            ExtensibleExtend(_, _, _) | ExtensibleEmpty | Native(_) | Null =>
-        JvmType.Object
+        JvmType.Reference(BackendObjType.JavaObject.jvmName)
     }
   }
 
