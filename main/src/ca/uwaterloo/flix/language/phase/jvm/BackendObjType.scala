@@ -1607,12 +1607,6 @@ object BackendObjType {
   // Java Types
   //
 
-  object String {
-
-    def Concat: InstanceMethod =
-      InstanceMethod(JvmName.String, "concat", mkDescriptor(BackendType.String)(BackendType.String))
-  }
-
   case object CharSequence extends BackendObjType
 
   case object Arrays extends BackendObjType {

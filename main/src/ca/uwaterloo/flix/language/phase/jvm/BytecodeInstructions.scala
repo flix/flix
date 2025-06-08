@@ -669,7 +669,7 @@ object BytecodeInstructions {
         case Some(ins) =>
           ins(())
           SWAP()
-          INVOKEVIRTUAL(BackendObjType.String.Concat)
+          INVOKEVIRTUAL(ClassMaker.String.Concat)
         case None =>
           nop()
       }
@@ -677,7 +677,7 @@ object BytecodeInstructions {
       suffix match {
         case Some(ins) =>
           ins(())
-          INVOKEVIRTUAL(BackendObjType.String.Concat)
+          INVOKEVIRTUAL(ClassMaker.String.Concat)
         case None =>
           nop()
       }
