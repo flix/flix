@@ -19,11 +19,11 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.AsmWrapper
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.RichMethodVisitor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{MethodDescriptor, RootPackage}
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm
-import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.{ClassWriter, MethodVisitor}
 import org.objectweb.asm.Opcodes.*
 
 /**
@@ -129,8 +129,7 @@ object GenAnonymousClasses {
 
       // Drop the first formal parameter (which always represents `this`)
       val paramTypes = fparams.tail.map(_.tpe)
-      val methodVisitor = classVisitor.visitMethod(ACC_PUBLIC, ident.name, getMethodDescriptorHacked(paramTypes, tpe), null, null)
-      implicit val asmWrapper: AsmWrapper = AsmWrapper(methodVisitor)
+      implicit val methodVisitor: MethodVisitor = classVisitor.visitMethod(ACC_PUBLIC, ident.name, getMethodDescriptorHacked(paramTypes, tpe), null, null)
 
       // Retrieve the closure that implements this method
       methodVisitor.visitVarInsn(ALOAD, 0)

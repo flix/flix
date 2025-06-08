@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition}
 import ca.uwaterloo.flix.language.ast.{MonoType, *}
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.AsmWrapper
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.RichMethodVisitor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -98,7 +98,7 @@ object GenExpression {
   /**
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
-  def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, asmWrapper: AsmWrapper, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
+  def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
     case Expr.Cst(cst, tpe, loc) => cst match {
       case Constant.Unit =>
         BytecodeInstructions.GETSTATIC(BackendObjType.Unit.SingletonField)
@@ -1214,7 +1214,7 @@ object GenExpression {
       val updatedJumpLabels = branches.map(branch => branch._1 -> new Label())
       val ctx1 = ctx.addLabels(updatedJumpLabels)
       // Compiling the exp
-      compileExpr(exp)(mv, asmWrapper, ctx1, root, flix)
+      compileExpr(exp)(mv, ctx1, root, flix)
       // Label for the end of all branches
       val endLabel = new Label()
       // Skip branches if `exp` does not jump
@@ -1224,7 +1224,7 @@ object GenExpression {
         // Label for the start of the branch
         mv.visitLabel(updatedJumpLabels(sym))
         // evaluating the expression for the branch
-        compileExpr(branchExp)(mv, asmWrapper, ctx1, root, flix)
+        compileExpr(branchExp)(mv, ctx1, root, flix)
         // Skip the rest of the branches
         mv.visitJumpInsn(GOTO, endLabel)
       }
@@ -1473,7 +1473,7 @@ object GenExpression {
 
   }
 
-  private def compileIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, asmWrapper: AsmWrapper, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def compileIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     import BytecodeInstructions.*
     compileExpr(exp)
     tpes match {
@@ -1487,7 +1487,7 @@ object GenExpression {
     }
   }
 
-  private def compileTag(name: String, exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, asmWrapper: AsmWrapper, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def compileTag(name: String, exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     import BytecodeInstructions.*
     tpes match {
       case Nil =>
@@ -1508,7 +1508,7 @@ object GenExpression {
     }
   }
 
-  private def compileUntag(exp: Expr, idx: Int, tpes: List[BackendType])(implicit mv: MethodVisitor, asmWrapper: AsmWrapper, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def compileUntag(exp: Expr, idx: Int, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     import BytecodeInstructions.*
     // BackendObjType.NullaryTag cannot happen here since terms must be non-empty.
     if (tpes.isEmpty) throw InternalCompilerException(s"Unexpected empty tag types", exp.loc)
@@ -1518,7 +1518,7 @@ object GenExpression {
     GETFIELD(tagType.IndexField(idx))
   }
 
-  private def visitComparisonPrologue(exp1: Expr, exp2: Expr)(implicit mv: MethodVisitor, asmWrapper: AsmWrapper, ctx: MethodContext, root: Root, flix: Flix): (Label, Label) = {
+  private def visitComparisonPrologue(exp1: Expr, exp2: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): (Label, Label) = {
     compileExpr(exp1)
     compileExpr(exp2)
     val condElse = new Label()
@@ -1534,13 +1534,13 @@ object GenExpression {
     visitor.visitLabel(condEnd)
   }
 
-  private def visitComparison1(exp1: Expr, exp2: Expr, opcode: Int)(implicit mv: MethodVisitor, asmWrapper: AsmWrapper, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def visitComparison1(exp1: Expr, exp2: Expr, opcode: Int)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
     mv.visitJumpInsn(opcode, condElse)
     visitComparisonEpilogue(mv, condElse, condEnd)
   }
 
-  private def visitComparison2(exp1: Expr, exp2: Expr, opcode: Int, cmpOpcode: Int)(implicit mv: MethodVisitor, asmWrapper: AsmWrapper, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def visitComparison2(exp1: Expr, exp2: Expr, opcode: Int, cmpOpcode: Int)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
     mv.visitInsn(opcode)
     mv.visitJumpInsn(cmpOpcode, condElse)
@@ -1608,7 +1608,7 @@ object GenExpression {
   /**
     * Pushes arguments onto the stack ready to invoke a method
     */
-  private def pushArgs(args: List[Expr], signature: Array[Class[? <: Object]])(implicit mv: MethodVisitor, asmWrapper: AsmWrapper, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def pushArgs(args: List[Expr], signature: Array[Class[? <: Object]])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     // Evaluate arguments left-to-right and push them onto the stack.
     for ((arg, argType) <- args.zip(signature)) {
       compileExpr(arg)

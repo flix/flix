@@ -3,10 +3,10 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Effect, Op, Root}
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.AsmWrapper
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.RichMethodVisitor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
-import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.{ClassWriter, MethodVisitor}
 import org.objectweb.asm.Opcodes.*
 
 /** An effect class like this:
@@ -72,8 +72,7 @@ object GenEffectClasses {
   }
 
   private def genConstructor(visitor: ClassWriter): Unit = {
-    val mv = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
-    implicit val asmWrapper: AsmWrapper = AsmWrapper(mv)
+    implicit val mv: MethodVisitor = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
     mv.visitCode()
 
     import BytecodeInstructions.*
@@ -104,8 +103,7 @@ object GenEffectClasses {
     }
     val writtenOpArgsOffset = writtenOpArgsOffsetRev.reverse
     val methodArgs = writtenOpArgs ++ List(BackendObjType.Handler.toTpe, BackendObjType.Resumption.toTpe)
-    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, opName, MethodDescriptor(methodArgs, BackendObjType.Result.toTpe).toDescriptor, null, null)
-    implicit val asmWrapper: AsmWrapper = AsmWrapper(mv)
+    implicit val mv: MethodVisitor = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, opName, MethodDescriptor(methodArgs, BackendObjType.Result.toTpe).toDescriptor, null, null)
     mv.visitCode()
 
     val wrapperType = BackendObjType.ResumptionWrapper(BackendType.toBackendType(op.tpe))

@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.{IsVolatile, N
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, JavaLangInvoke, JavaUtil, JavaUtilConcurrent, MethodDescriptor, RootPackage}
 import ca.uwaterloo.flix.util.InternalCompilerException
-import org.objectweb.asm.Opcodes
+import org.objectweb.asm.{MethodVisitor, Opcodes}
 
 /**
   * Represents all Flix types that are objects on the JVM (array is an exception).
@@ -109,14 +109,14 @@ sealed trait BackendObjType {
   def toTpe: BackendType.Reference = BackendType.Reference(this)
 
   /** `[] --> return` */
-  protected def nullarySuperConstructor(superClass: ConstructorMethod)(implicit asmWrapper: AsmWrapper): Unit = {
+  protected def nullarySuperConstructor(superClass: ConstructorMethod)(implicit mv: MethodVisitor): Unit = {
     thisLoad()
     INVOKESPECIAL(superClass)
     RETURN()
   }
 
   /** `[] --> return` */
-  protected def singletonStaticConstructor(thisConstructor: ConstructorMethod, singleton: StaticField)(implicit asmWrapper: AsmWrapper): Unit = {
+  protected def singletonStaticConstructor(thisConstructor: ConstructorMethod, singleton: StaticField)(implicit mv: MethodVisitor): Unit = {
     NEW(this.jvmName)
     DUP()
     INVOKESPECIAL(thisConstructor)
@@ -156,7 +156,7 @@ object BackendObjType {
     def SingletonField: StaticField = StaticField(this.jvmName, "INSTANCE", this.toTpe)
 
     /** `[] --> return String` */
-    private def toStringIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def toStringIns(implicit mv: MethodVisitor): Unit = {
       pushString("()")
       ARETURN()
     }
@@ -194,7 +194,7 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(JavaObject.toTpe))
 
     /** `[] --> return` */
-    private def constructorIns(implicit asmWrapper: AsmWrapper): Unit =
+    private def constructorIns(implicit mv: MethodVisitor): Unit =
       withName(1, JavaObject.toTpe)(exp => {
         // super()
         thisLoad()
@@ -216,7 +216,7 @@ object BackendObjType {
     def ForceMethod: InstanceMethod = InstanceMethod(this.jvmName, "force", mkDescriptor()(tpe))
 
     /** `[] --> return tpe` */
-    private def forceIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def forceIns(implicit mv: MethodVisitor): Unit = {
       def unlockLock(): Unit = {
         thisLoad()
         GETFIELD(LockField)
@@ -273,7 +273,7 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, elms)
 
     /** `[] --> return` */
-    private def constructorIns(implicit asmWrapper: AsmWrapper): Unit =
+    private def constructorIns(implicit mv: MethodVisitor): Unit =
       withNames(1, elms) { case (_, variables) =>
         thisLoad()
         // super()
@@ -289,13 +289,13 @@ object BackendObjType {
       }
 
     /** `[] --> return String` */
-    private def toStringIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def toStringIns(implicit mv: MethodVisitor): Unit = {
       Util.mkString(Some(_ => pushString("(")), Some(_ => pushString(")")), elms.length, getIndexField)
       xReturn(String.toTpe)
     }
 
     /** `[] --> [this.index(i).xString()]` */
-    private def getIndexField(i: Int)(implicit asmWrapper: AsmWrapper): Unit = {
+    private def getIndexField(i: Int)(implicit mv: MethodVisitor): Unit = {
       val field = IndexField(i)
       thisLoad()
       GETFIELD(field)
@@ -320,7 +320,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, elms)
 
-    private def constructorIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def constructorIns(implicit mv: MethodVisitor): Unit = {
       withNames(1, elms) { case (_, variables) =>
         thisLoad()
         // super()
@@ -339,13 +339,13 @@ object BackendObjType {
     }
 
     /** `[] --> return String` */
-    private def toStringIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def toStringIns(implicit mv: MethodVisitor): Unit = {
       Util.mkString(Some(_ => pushString("Struct(")), Some(_ => pushString(")")), elms.length, getIndexString)
       xReturn(String.toTpe)
     }
 
     /** `[] --> [this.index(i).xString()]` */
-    private def getIndexString(i: Int)(implicit asmWrapper: AsmWrapper): Unit = {
+    private def getIndexString(i: Int)(implicit mv: MethodVisitor): Unit = {
       val field = IndexField(i)
       thisLoad()
       GETFIELD(field)
@@ -370,10 +370,10 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
     /** [...] -> [..., tagName] */
-    def mkTagName(name: String)(implicit asmWrapper: AsmWrapper): Unit = pushString(JvmOps.getTagName(name))
+    def mkTagName(name: String)(implicit mv: MethodVisitor): Unit = pushString(JvmOps.getTagName(name))
 
     /** [..., tagName1, tagName2] --> [..., tagName1 == tagName2] */
-    def eqTagName()(implicit asmWrapper: AsmWrapper): Unit = {
+    def eqTagName()(implicit mv: MethodVisitor): Unit = {
       // ACMP is okay since tag strings are loaded through ldc instructions
       ifConditionElse(Condition.ACMPEQ)(pushBool(true))(pushBool(false))
     }
@@ -400,7 +400,7 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
     /** `[] --> return` */
-    private def constructorIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def constructorIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
       INVOKESPECIAL(Tagged.Constructor)
       thisLoad()
@@ -410,7 +410,7 @@ object BackendObjType {
     }
 
     /** `[] --> return String` */
-    private def toStringIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def toStringIns(implicit mv: MethodVisitor): Unit = {
       Tagged.mkTagName(name)
       xReturn(String.toTpe)
     }
@@ -436,7 +436,7 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
     /** `[] --> return String` */
-    private def toStringIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def toStringIns(implicit mv: MethodVisitor): Unit = {
       Util.mkString(Some({ _ =>
         thisLoad()
         GETFIELD(NameField)
@@ -447,7 +447,7 @@ object BackendObjType {
     }
 
     /** `[] --> [this.index(i).xString()]` */
-    private def getIndexString(i: Int)(implicit asmWrapper: AsmWrapper): Unit = {
+    private def getIndexString(i: Int)(implicit mv: MethodVisitor): Unit = {
       val field = IndexField(i)
       thisLoad()
       GETFIELD(field)
@@ -549,7 +549,7 @@ object BackendObjType {
         * The required method of the interface.
         * These methods should do the same as a non-tail call in genExpression.
         */
-      def functionIns(implicit asmWrapper: AsmWrapper): Unit = this match {
+      def functionIns(implicit mv: MethodVisitor): Unit = this match {
         case ObjFunction =>
           thisLoad()
           DUP()
@@ -738,7 +738,7 @@ object BackendObjType {
 
     private def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, s"arg$index", args(index))
 
-    private def toStringIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def toStringIns(implicit mv: MethodVisitor): Unit = {
       val argString = args match {
         case Nil => "()"
         case arg :: Nil => arg.toErasedString
@@ -776,14 +776,14 @@ object BackendObjType {
 
     private def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName)
 
-    private def toStringIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def toStringIns(implicit mv: MethodVisitor): Unit = {
       pushString("{}")
       ARETURN()
     }
 
     private def ToTailStringMethod: InstanceMethod = interface.ToTailStringMethod.implementation(this.jvmName)
 
-    private def toTailStringIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def toTailStringIns(implicit mv: MethodVisitor): Unit = {
       withName(1, StringBuilder.toTpe) { sb =>
         sb.load()
         pushString("}")
@@ -793,7 +793,7 @@ object BackendObjType {
       }
     }
 
-    private def throwUnsupportedExc(implicit asmWrapper: AsmWrapper): Unit = {
+    private def throwUnsupportedExc(implicit mv: MethodVisitor): Unit = {
       throwUnsupportedOperationException(
         s"${Record.LookupFieldMethod.name} method shouldn't be called")
     }
@@ -823,7 +823,7 @@ object BackendObjType {
 
     def RestField: InstanceField = InstanceField(this.jvmName, "rest", Record.toTpe)
 
-    private def lookupFieldIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def lookupFieldIns(implicit mv: MethodVisitor): Unit = {
       caseOnLabelEquality {
         case TrueBranch =>
           thisLoad()
@@ -839,7 +839,7 @@ object BackendObjType {
 
     def RestrictFieldMethod: InstanceMethod = Record.RestrictFieldMethod.implementation(this.jvmName)
 
-    private def restrictFieldIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def restrictFieldIns(implicit mv: MethodVisitor): Unit = {
       caseOnLabelEquality {
         case TrueBranch =>
           thisLoad()
@@ -867,7 +867,7 @@ object BackendObjType {
       }
     }
 
-    private def toStringIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def toStringIns(implicit mv: MethodVisitor): Unit = {
       // save the `rest` for the last recursive call
       thisLoad()
       GETFIELD(this.RestField)
@@ -890,7 +890,7 @@ object BackendObjType {
       ARETURN()
     }
 
-    private def toTailStringIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def toTailStringIns(implicit mv: MethodVisitor): Unit = {
       withName(1, StringBuilder.toTpe) { sb =>
         // save the `rest` for the last recursive call
         thisLoad()
@@ -918,7 +918,7 @@ object BackendObjType {
     /**
       * Compares the label of `this`and `ALOAD(1)` and executes the designated branch.
       */
-    private def caseOnLabelEquality(cases: Branch => Unit)(implicit asmWrapper: AsmWrapper): Unit = {
+    private def caseOnLabelEquality(cases: Branch => Unit)(implicit mv: MethodVisitor): Unit = {
       thisLoad()
       GETFIELD(LabelField)
       ALOAD(1)
@@ -976,7 +976,7 @@ object BackendObjType {
       this.jvmName, List(String.toTpe, BackendType.Int32, BackendType.Int32, BackendType.Int32, BackendType.Int32)
     )
 
-    private def constructorIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def constructorIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
       INVOKESPECIAL(JavaObject.Constructor)
       thisLoad()
@@ -1014,7 +1014,7 @@ object BackendObjType {
 
     private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName)
 
-    private def toStringIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def toStringIns(implicit mv: MethodVisitor): Unit = {
       // create string builder
       NEW(StringBuilder.jvmName)
       DUP()
@@ -1058,7 +1058,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
-    private def staticConstructorIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def staticConstructorIns(implicit mv: MethodVisitor): Unit = {
       NEW(JvmName.AtomicLong)
       DUP()
       invokeConstructor(JvmName.AtomicLong, MethodDescriptor.NothingToVoid)
@@ -1071,7 +1071,7 @@ object BackendObjType {
 
     private def NewIdMethod: StaticMethod = StaticMethod(this.jvmName, "newId", mkDescriptor()(BackendType.Int64))
 
-    private def newIdIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def newIdIns(implicit mv: MethodVisitor): Unit = {
       GETSTATIC(CounterField)
       INVOKEVIRTUAL(JvmName.AtomicLong, "getAndIncrement",
         MethodDescriptor(Nil, BackendType.Int64))
@@ -1080,7 +1080,7 @@ object BackendObjType {
 
     private def GetArgsMethod: StaticMethod = StaticMethod(this.jvmName, "getArgs", mkDescriptor()(BackendType.Array(String.toTpe)))
 
-    private def getArgsIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def getArgsIns(implicit mv: MethodVisitor): Unit = {
       GETSTATIC(ArgsField)
       ARRAYLENGTH()
       ANEWARRAY(String.jvmName)
@@ -1100,7 +1100,7 @@ object BackendObjType {
     def SetArgsMethod: StaticMethod =
       StaticMethod(this.jvmName, "setArgs", mkDescriptor(BackendType.Array(String.toTpe))(VoidableType.Void))
 
-    private def setArgsIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def setArgsIns(implicit mv: MethodVisitor): Unit = {
       ALOAD(0)
       ARRAYLENGTH()
       ANEWARRAY(String.jvmName)
@@ -1121,8 +1121,8 @@ object BackendObjType {
 
     private def ArgsField: StaticField = StaticField(this.jvmName, "args", BackendType.Array(String.toTpe))
 
-    private def arrayCopy()(implicit asmWrapper: AsmWrapper): Unit = {
-      asmWrapper.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
+    private def arrayCopy()(implicit mv: MethodVisitor): Unit = {
+      mv.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
         MethodDescriptor(List(JavaObject.toTpe, BackendType.Int32, JavaObject.toTpe, BackendType.Int32,
           BackendType.Int32), VoidableType.Void), isInterface = false)
     }
@@ -1143,7 +1143,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(String.toTpe))
 
-    private def constructorIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def constructorIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
       ALOAD(1)
       invokeConstructor(JvmName.Error, mkDescriptor(String.toTpe)(VoidableType.Void))
@@ -1169,7 +1169,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(String.toTpe, ReifiedSourceLocation.toTpe))
 
-    private def constructorIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def constructorIns(implicit mv: MethodVisitor): Unit = {
       withName(1, String.toTpe) { hole =>
         withName(2, ReifiedSourceLocation.toTpe) { loc =>
           thisLoad()
@@ -1217,7 +1217,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(MatchError.jvmName, List(ReifiedSourceLocation.toTpe))
 
-    private def constructorIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def constructorIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
       NEW(StringBuilder.jvmName)
       DUP()
@@ -1249,7 +1249,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(ReifiedSourceLocation.toTpe, String.toTpe))
 
-    private def constructorIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def constructorIns(implicit mv: MethodVisitor): Unit = {
       withName(1, ReifiedSourceLocation.toTpe)(loc => withName(2, String.toTpe)(msg => {
         thisLoad()
         NEW(StringBuilder.jvmName)
@@ -1288,7 +1288,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(Suspension.toTpe, String.toTpe, ReifiedSourceLocation.toTpe))
 
-    private def constructorIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def constructorIns(implicit mv: MethodVisitor): Unit = {
       withName(1, Suspension.toTpe)(suspension => withName(2, String.toTpe)(info => withName(3, ReifiedSourceLocation.toTpe)(loc => {
         def appendString(): Unit = INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
 
@@ -1361,7 +1361,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
-    private def constructorIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def constructorIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
       INVOKESPECIAL(JavaObject.Constructor)
       thisLoad()
@@ -1391,7 +1391,7 @@ object BackendObjType {
     // }
     def SpawnMethod: InstanceMethod = InstanceMethod(this.jvmName, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void))
 
-    private def spawnIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def spawnIns(implicit mv: MethodVisitor): Unit = {
       INVOKESTATIC(Thread.OfVirtualMethod)
       ALOAD(1)
       INVOKEINTERFACE(ThreadBuilderOfVirtual.UnstartedMethod)
@@ -1422,7 +1422,7 @@ object BackendObjType {
     // }
     def ExitMethod: InstanceMethod = InstanceMethod(this.jvmName, "exit", MethodDescriptor.NothingToVoid)
 
-    private def exitIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def exitIns(implicit mv: MethodVisitor): Unit = {
       withName(1, BackendObjType.Thread.toTpe) { t =>
         whileLoop(Condition.NONNULL) {
           thisLoad()
@@ -1460,7 +1460,7 @@ object BackendObjType {
     // }
     def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, "reportChildException", mkDescriptor(JvmName.Throwable.toTpe)(VoidableType.Void))
 
-    private def reportChildExceptionIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def reportChildExceptionIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
       ALOAD(1)
       PUTFIELD(ChildExceptionField)
@@ -1476,7 +1476,7 @@ object BackendObjType {
     // }
     def ReThrowChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, "reThrowChildException", MethodDescriptor.NothingToVoid)
 
-    private def reThrowChildExceptionIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def reThrowChildExceptionIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
       GETFIELD(ChildExceptionField)
       ifCondition(Condition.NONNULL) {
@@ -1492,7 +1492,7 @@ object BackendObjType {
     // }
     private def RunOnExitMethod: InstanceMethod = InstanceMethod(this.jvmName, "runOnExit", mkDescriptor(BackendObjType.Runnable.toTpe)(VoidableType.Void))
 
-    private def runOnExitIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def runOnExitIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
       GETFIELD(OnExitField)
       ALOAD(1)
@@ -1519,7 +1519,7 @@ object BackendObjType {
     // UncaughtExceptionHandler(Region r) { this.r = r; }
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, BackendObjType.Region.toTpe :: Nil)
 
-    private def constructorIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def constructorIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
       INVOKESPECIAL(JavaObject.Constructor)
       thisLoad()
@@ -1531,7 +1531,7 @@ object BackendObjType {
     // public void uncaughtException(Thread t, Throwable e) { r.reportChildException(e); }
     private def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, "uncaughtException", ThreadUncaughtExceptionHandler.UncaughtExceptionMethod.d)
 
-    private def uncaughtExceptionsIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def uncaughtExceptionsIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
       GETFIELD(RegionField)
       ALOAD(2)
@@ -1552,7 +1552,7 @@ object BackendObjType {
 
     def MainMethod: StaticMethod = StaticMethod(this.jvmName, "main", mkDescriptor(BackendType.Array(String.toTpe))(VoidableType.Void))
 
-    private def mainIns(sym: Symbol.DefnSym)(implicit asmWrapper: AsmWrapper): Unit = {
+    private def mainIns(sym: Symbol.DefnSym)(implicit mv: MethodVisitor): Unit = {
       val defName = BackendObjType.Defn(sym).jvmName
       withName(0, BackendType.Array(String.toTpe))(args => {
         args.load()
@@ -1594,7 +1594,7 @@ object BackendObjType {
       StaticMethod(this.jvmName, name, MethodDescriptor(erasedArgs, erasedResult))
     }
 
-    private def shimIns(defn: ReducedAst.Def)(implicit asmWrapper: AsmWrapper): Unit = {
+    private def shimIns(defn: ReducedAst.Def)(implicit mv: MethodVisitor): Unit = {
       val defnT = Defn(defn.sym)
       val paramTypes = defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe))
       withNames(0, paramTypes) {
@@ -1813,7 +1813,7 @@ object BackendObjType {
       * Expects a Result on the stack and leaves a non-Thunk Result.
       * [..., Result] --> [..., Suspension|Value]
       */
-    def unwindThunk()(implicit asmWrapper: AsmWrapper): Unit = {
+    def unwindThunk()(implicit mv: MethodVisitor): Unit = {
       whileLoop(Condition.NE) {
         DUP()
         INSTANCEOF(Thunk.jvmName)
@@ -1830,7 +1830,7 @@ object BackendObjType {
       * [..., Result] --> [..., Thunk|Value]
       * side effect: Will return a modified suspension if a suspension occurs
       */
-    private def handleSuspension(pc: Int, newFrame: Unit => Unit, setPc: Unit => Unit)(implicit asmWrapper: AsmWrapper): Unit = {
+    private def handleSuspension(pc: Int, newFrame: Unit => Unit, setPc: Unit => Unit)(implicit mv: MethodVisitor): Unit = {
       DUP()
       INSTANCEOF(Suspension.jvmName)
       ifCondition(Condition.NE) {
@@ -1871,7 +1871,7 @@ object BackendObjType {
       * [..., Result] --> [..., Value.value: tpe]
       * side effect: Will return any Suspension found
       */
-    def unwindThunkToValue(pc: Int, newFrame: Unit => Unit, setPc: Unit => Unit)(implicit asmWrapper: AsmWrapper): Unit = {
+    def unwindThunkToValue(pc: Int, newFrame: Unit => Unit, setPc: Unit => Unit)(implicit mv: MethodVisitor): Unit = {
       unwindThunk()
       handleSuspension(pc, newFrame, setPc)
       CHECKCAST(Value.jvmName) // Cannot fail
@@ -1883,7 +1883,7 @@ object BackendObjType {
       * [..., Result] --> [..., Value.value: tpe]
       * side effect: crashes on suspensions
       */
-    def unwindSuspensionFreeThunkToType(tpe: BackendType, errorHint: String, loc: SourceLocation)(implicit asmWrapper: AsmWrapper): Unit = {
+    def unwindSuspensionFreeThunkToType(tpe: BackendType, errorHint: String, loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
       unwindThunk()
       crashIfSuspension(errorHint, loc)
       CHECKCAST(Value.jvmName) // Cannot fail
@@ -1896,7 +1896,7 @@ object BackendObjType {
       * [..., Result] --> [..., Value]
       * side effect: crashes on suspensions
       */
-    def unwindSuspensionFreeThunk(errorHint: String, loc: SourceLocation)(implicit asmWrapper: AsmWrapper): Unit = {
+    def unwindSuspensionFreeThunk(errorHint: String, loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
       unwindThunk()
       crashIfSuspension(errorHint, loc)
       CHECKCAST(Value.jvmName)
@@ -1906,7 +1906,7 @@ object BackendObjType {
       * [..., Result] -> [..., Value|Thunk]
       * side effect: if the result is a suspension, a [[UnhandledEffectError]] is thrown.
       */
-    def crashIfSuspension(errorHint: String, loc: SourceLocation)(implicit asmWrapper: AsmWrapper): Unit = {
+    def crashIfSuspension(errorHint: String, loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
       DUP()
       INSTANCEOF(Suspension.jvmName)
       ifCondition(Condition.NE) {
@@ -2003,7 +2003,7 @@ object BackendObjType {
       mkDescriptor(Frame.toTpe, Value.toTpe)(Result.toTpe)
     )
 
-    private def staticApplyIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def staticApplyIns(implicit mv: MethodVisitor): Unit = {
       withName(0, Frame.toTpe) { fun =>
         withName(1, Value.toTpe) { resumeArg =>
           fun.load()
@@ -2030,7 +2030,7 @@ object BackendObjType {
 
     private def RunMethod: DefaultMethod = DefaultMethod(this.jvmName, "run", mkDescriptor()(VoidableType.Void))
 
-    private def runIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def runIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
       Result.unwindSuspensionFreeThunk(s"in ${JvmName.Runnable.toBinaryName}", SourceLocation.Unknown)
       POP()
@@ -2079,7 +2079,7 @@ object BackendObjType {
 
     def ReverseOntoMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "reverseOnto", mkDescriptor(Frames.toTpe)(Frames.toTpe))
 
-    def pushImplementation(implicit asmWrapper: AsmWrapper): Unit = {
+    def pushImplementation(implicit mv: MethodVisitor): Unit = {
       withName(1, Frame.toTpe) { frame =>
         NEW(FramesCons.jvmName)
         DUP()
@@ -2117,7 +2117,7 @@ object BackendObjType {
 
     def PushMethod: InstanceMethod = Frames.PushMethod.implementation(this.jvmName)
 
-    private def reverseOntoIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def reverseOntoIns(implicit mv: MethodVisitor): Unit = {
       withName(1, Frames.toTpe) { rest =>
         thisLoad()
         GETFIELD(TailField)
@@ -2153,7 +2153,7 @@ object BackendObjType {
 
     def PushMethod: InstanceMethod = Frames.PushMethod.implementation(this.jvmName)
 
-    private def reverseOntoIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def reverseOntoIns(implicit mv: MethodVisitor): Unit = {
       withName(1, Frames.toTpe) { rest =>
         rest.load()
         xReturn(rest.tpe)
@@ -2173,7 +2173,7 @@ object BackendObjType {
 
     def StaticRewindMethod: StaticInterfaceMethod = StaticInterfaceMethod(this.jvmName, "staticRewind", mkDescriptor(Resumption.toTpe, Value.toTpe)(Result.toTpe))
 
-    private def staticRewindIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def staticRewindIns(implicit mv: MethodVisitor): Unit = {
       withName(0, Resumption.toTpe) { resumption =>
         withName(1, Value.toTpe) { v =>
           resumption.load()
@@ -2212,7 +2212,7 @@ object BackendObjType {
 
     def TailField: InstanceField = InstanceField(this.jvmName, "tail", Resumption.toTpe)
 
-    private def rewindIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def rewindIns(implicit mv: MethodVisitor): Unit = {
       withName(1, Value.toTpe) { v =>
         thisLoad()
         GETFIELD(SymField)
@@ -2244,7 +2244,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
-    private def rewindIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def rewindIns(implicit mv: MethodVisitor): Unit = {
       withName(1, Value.toTpe) { v =>
         v.load()
         xReturn(v.tpe)
@@ -2266,7 +2266,7 @@ object BackendObjType {
       mkDescriptor(String.toTpe, Handler.toTpe, Frames.toTpe, Thunk.toTpe)(Result.toTpe)
     )
 
-    private def installHandlerIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def installHandlerIns(implicit mv: MethodVisitor): Unit = {
       withName(0, String.toTpe) { effSym =>
         withName(1, Handler.toTpe) { handler =>
           withName(2, Frames.toTpe) { frames =>
@@ -2403,7 +2403,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(Resumption.toTpe))
 
-    private def constructorIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def constructorIns(implicit mv: MethodVisitor): Unit = {
       withName(1, Resumption.toTpe) { resumption =>
         thisLoad()
         INVOKESPECIAL(superClass.jvmName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid)
@@ -2418,7 +2418,7 @@ object BackendObjType {
 
     def InvokeMethod: InstanceMethod = Thunk.InvokeMethod.implementation(this.jvmName)
 
-    private def invokeIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def invokeIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
       GETFIELD(ResumptionField)
       NEW(Value.jvmName)
@@ -2426,7 +2426,7 @@ object BackendObjType {
       INVOKESPECIAL(Value.Constructor)
       DUP()
       thisLoad()
-      asmWrapper.mv.visitFieldInsn(Opcodes.GETFIELD, this.jvmName.toInternalName, "arg0", tpe.toErased.toDescriptor)
+      mv.visitFieldInsn(Opcodes.GETFIELD, this.jvmName.toInternalName, "arg0", tpe.toErased.toDescriptor)
       PUTFIELD(Value.fieldFromType(tpe.toErased))
       INVOKEINTERFACE(Resumption.RewindMethod)
       xReturn(Result.toTpe)
@@ -2434,7 +2434,7 @@ object BackendObjType {
 
     private def UniqueMethod: InstanceMethod = InstanceMethod(this.jvmName, "getUniqueThreadClosure", mkDescriptor()(this.superClass.toTpe))
 
-    private def uniqueIns(implicit asmWrapper: AsmWrapper): Unit = {
+    private def uniqueIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
       ARETURN()
     }

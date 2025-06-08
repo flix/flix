@@ -26,12 +26,12 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Static.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
-import org.objectweb.asm.{ClassWriter, Opcodes}
+import org.objectweb.asm.{ClassWriter, MethodVisitor, Opcodes}
 
 
 // TODO: There are further things you can constrain and assert, e.g. final classes have implicitly final methods.
 sealed trait ClassMaker {
-  def mkStaticConstructor(c: StaticConstructorMethod, ins: AsmWrapper => Unit): Unit = {
+  def mkStaticConstructor(c: StaticConstructorMethod, ins: MethodVisitor => Unit): Unit = {
     makeMethod(Some(ins), c.name, c.d, IsDefault, NotFinal, IsStatic, NotAbstract)
   }
 
@@ -57,14 +57,14 @@ sealed trait ClassMaker {
     case StaticField(_, name, tpe) => makeField(name, tpe, v, f, vol, IsStatic)
   }
 
-  protected def makeMethod(i: Option[AsmWrapper => Unit], methodName: String, d: MethodDescriptor, v: Visibility, f: Final, s: Static, a: Abstract): Unit = {
+  protected def makeMethod(i: Option[MethodVisitor => Unit], methodName: String, d: MethodDescriptor, v: Visibility, f: Final, s: Static, a: Abstract): Unit = {
     val m = v.toInt + f.toInt + s.toInt + a.toInt
     val mv = visitor.visitMethod(m, methodName, d.toDescriptor, null, null)
     i match {
       case None => ()
       case Some(ins) =>
         mv.visitCode()
-        ins(AsmWrapper(mv))
+        ins(mv)
         mv.visitMaxs(999, 999)
     }
     mv.visitEnd()
@@ -80,15 +80,15 @@ object ClassMaker {
   class InstanceClassMaker(cw: ClassWriter) extends ClassMaker {
     protected val visitor: ClassWriter = cw
 
-    def mkStaticMethod(m: StaticMethod, v: Visibility, f: Final, ins: AsmWrapper => Unit): Unit = {
+    def mkStaticMethod(m: StaticMethod, v: Visibility, f: Final, ins: MethodVisitor => Unit): Unit = {
       makeMethod(Some(ins), m.name, m.d, v, f, IsStatic, NotAbstract)
     }
 
-    def mkConstructor(c: ConstructorMethod, v: Visibility, ins: AsmWrapper => Unit): Unit = {
+    def mkConstructor(c: ConstructorMethod, v: Visibility, ins: MethodVisitor => Unit): Unit = {
       makeMethod(Some(ins), JvmName.ConstructorMethod, c.d, v, NotFinal, NotStatic, NotAbstract)
     }
 
-    def mkMethod(m: InstanceMethod, v: Visibility, f: Final, ins: AsmWrapper => Unit): Unit = {
+    def mkMethod(m: InstanceMethod, v: Visibility, f: Final, ins: MethodVisitor => Unit): Unit = {
       makeMethod(Some(ins), m.name, m.d, v, f, NotStatic, NotAbstract)
     }
   }
@@ -96,15 +96,15 @@ object ClassMaker {
   class AbstractClassMaker(cw: ClassWriter) extends ClassMaker {
     protected val visitor: ClassWriter = cw
 
-    def mkConstructor(c: ConstructorMethod, v: Visibility, ins: AsmWrapper => Unit): Unit = {
+    def mkConstructor(c: ConstructorMethod, v: Visibility, ins: MethodVisitor => Unit): Unit = {
       makeMethod(Some(ins), c.name, c.d, v, NotFinal, NotStatic, NotAbstract)
     }
 
-    def mkStaticMethod(m: StaticMethod, v: Visibility, f: Final, ins: AsmWrapper => Unit): Unit = {
+    def mkStaticMethod(m: StaticMethod, v: Visibility, f: Final, ins: MethodVisitor => Unit): Unit = {
       makeMethod(Some(ins), m.name, m.d, v, f, IsStatic, NotAbstract)
     }
 
-    def mkMethod(m: InstanceMethod, v: Visibility, f: Final, ins: AsmWrapper => Unit): Unit = {
+    def mkMethod(m: InstanceMethod, v: Visibility, f: Final, ins: MethodVisitor => Unit): Unit = {
       makeMethod(Some(ins), m.name, m.d, v, f, NotStatic, NotAbstract)
     }
 
@@ -120,11 +120,11 @@ object ClassMaker {
       makeAbstractMethod(m.name, m.d)
     }
 
-    def mkStaticInterfaceMethod(m: StaticInterfaceMethod, v: Visibility, f: Final, ins: AsmWrapper => Unit): Unit = {
+    def mkStaticInterfaceMethod(m: StaticInterfaceMethod, v: Visibility, f: Final, ins: MethodVisitor => Unit): Unit = {
       makeMethod(Some(ins), m.name, m.d, v, f, IsStatic, NotAbstract)
     }
 
-    def mkDefaultMethod(m: DefaultMethod, v: Visibility, f: Final, ins: AsmWrapper => Unit): Unit = {
+    def mkDefaultMethod(m: DefaultMethod, v: Visibility, f: Final, ins: MethodVisitor => Unit): Unit = {
       makeMethod(Some(ins), m.name, m.d, v, f, NotStatic, NotAbstract)
     }
   }

@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.{MonoType, Purity, Symbol}
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.AsmWrapper
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.RichMethodVisitor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes.*
@@ -174,8 +174,7 @@ object GenFunAndClosureClasses {
     val resultTpe = BackendObjType.Result.toTpe
     val desc = MethodDescriptor(paramTpes, resultTpe)
     val modifiers = ACC_PUBLIC + ACC_FINAL + ACC_STATIC
-    val m = visitor.visitMethod(modifiers, JvmName.DirectApply, desc.toDescriptor, null, null)
-    implicit val asmWrapper: AsmWrapper = AsmWrapper(m)
+    implicit val m: MethodVisitor = visitor.visitMethod(modifiers, JvmName.DirectApply, desc.toDescriptor, null, null)
     m.visitCode()
 
     // used for self-recursive tail calls
@@ -186,7 +185,7 @@ object GenFunAndClosureClasses {
     val localOffset = 0
     val labelEnv = Map.empty[Symbol.LabelSym, Label]
     val ctx = GenExpression.DirectStaticContext(enterLabel, labelEnv, localOffset)
-    GenExpression.compileExpr(defn.expr)(m, asmWrapper, ctx, root, flix)
+    GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
 
     BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
 
@@ -196,9 +195,8 @@ object GenFunAndClosureClasses {
   }
 
   private def compileInvokeMethod(visitor: ClassWriter, className: JvmName): Unit = {
-    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
+    implicit val m: MethodVisitor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
       AsmOps.getMethodDescriptor(Nil, JvmType.Reference(BackendObjType.Result.jvmName)), null, null)
-    implicit val asmWrapper: AsmWrapper = AsmWrapper(m)
     m.visitCode()
 
     val applyMethod = BackendObjType.Frame.ApplyMethod
@@ -217,8 +215,7 @@ object GenFunAndClosureClasses {
                                  defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
     val applyMethod = BackendObjType.Frame.ApplyMethod
-    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, applyMethod.name, applyMethod.d.toDescriptor, null, null)
-    implicit val asmWrapper: AsmWrapper = AsmWrapper(m)
+    implicit val m: MethodVisitor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, applyMethod.name, applyMethod.d.toDescriptor, null, null)
     val localOffset = 2 // [this: Obj, value: Obj, ...]
 
     val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.sym.getStackOffset(localOffset), lp.sym.isWild, lp.tpe) }
@@ -226,7 +223,7 @@ object GenFunAndClosureClasses {
     val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.sym.getStackOffset(localOffset), false, fp.tpe) }
 
     def loadParamsOf(params: List[(String, Int, Boolean, MonoType)]): Unit = {
-      params.foreach { case (name, offset, _, tpe) => loadFromField(m, asmWrapper, className, name, offset, tpe) }
+      params.foreach { case (name, offset, _, tpe) => loadFromField(m, className, name, offset, tpe) }
     }
 
     m.visitCode()
@@ -241,7 +238,7 @@ object GenFunAndClosureClasses {
 
     if (Purity.isControlPure(defn.expr.purity)) {
       val ctx = GenExpression.DirectInstanceContext(enterLabel, Map.empty, localOffset)
-      GenExpression.compileExpr(defn.expr)(m, asmWrapper, ctx, root, flix)
+      GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
     } else {
       val pcLabels: Vector[Label] = Vector.range(0, defn.pcPoints).map(_ => new Label())
       if (defn.pcPoints > 0) {
@@ -279,7 +276,7 @@ object GenFunAndClosureClasses {
       }
 
       val ctx = GenExpression.EffectContext(enterLabel, Map.empty, _ => newFrame(), _ => setPc(), localOffset, pcLabels.prepended(null), Array(0))
-      GenExpression.compileExpr(defn.expr)(m, asmWrapper, ctx, root, flix)
+      GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
       assert(ctx.pcCounter(0) == pcLabels.size, s"${(className, ctx.pcCounter(0), pcLabels.size)}")
     }
 
@@ -289,22 +286,23 @@ object GenFunAndClosureClasses {
     m.visitEnd()
   }
 
-  private def loadFromField(m: MethodVisitor, asmWrapper: AsmWrapper, className: JvmName, name: String, localIndex: Int, tpe: MonoType)(implicit root: Root): Unit = {
+  private def loadFromField(m: MethodVisitor, className: JvmName, name: String, localIndex: Int, tpe: MonoType)(implicit root: Root): Unit = {
+    implicit val mm: MethodVisitor = m
     // retrieve the erased field
     val erasedVarType = JvmOps.getErasedJvmType(tpe)
     m.visitVarInsn(ALOAD, 0)
     m.visitFieldInsn(GETFIELD, className.toInternalName, name, erasedVarType.toDescriptor)
     // cast the value and store it
     val bType = BackendType.toBackendType(tpe)
-    BytecodeInstructions.castIfNotPrim(bType)(asmWrapper)
-    BytecodeInstructions.xStore(bType, localIndex)(asmWrapper)
+    BytecodeInstructions.castIfNotPrim(bType)
+    BytecodeInstructions.xStore(bType, localIndex)
   }
 
   /**
     * Make a new `classType` with all the fields set to the same as `this`.
     * A partial copy is without local parameters and without pc
     */
-  private def mkCopy(className: JvmName, defn: Def)(implicit asmWrapper: AsmWrapper): Unit = {
+  private def mkCopy(className: JvmName, defn: Def)(implicit mv: MethodVisitor): Unit = {
     import BytecodeInstructions.*
     val pc = List(("pc", MonoType.Int32))
     val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", p._1.tpe))
@@ -319,8 +317,8 @@ object GenFunAndClosureClasses {
       val fieldType = JvmOps.getErasedJvmType(tpe).toDescriptor
       DUP()
       thisLoad()
-      asmWrapper.mv.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, name, fieldType)
-      asmWrapper.mv.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, name, fieldType)
+      mv.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, name, fieldType)
+      mv.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, name, fieldType)
     }
   }
 
@@ -331,10 +329,10 @@ object GenFunAndClosureClasses {
   }
 
   private def compileCopyMethod(visitor: ClassWriter, className: JvmName, defn: Def): Unit = {
-    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, copyName, nothingToTDescriptor(className).toDescriptor, null, null)
+    implicit val m: MethodVisitor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, copyName, nothingToTDescriptor(className).toDescriptor, null, null)
     m.visitCode()
 
-    mkCopy(className, defn)(AsmWrapper(m))
+    mkCopy(className, defn)
     m.visitInsn(Opcodes.ARETURN)
 
     m.visitMaxs(999, 999)
@@ -343,10 +341,10 @@ object GenFunAndClosureClasses {
 
   private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, className: JvmName, defn: Def): Unit = {
     val closureAbstractClass = JvmOps.getClosureAbstractClassType(defn.arrowType)
-    val m = visitor.visitMethod(ACC_PUBLIC, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, null, null)
+    implicit val m: MethodVisitor = visitor.visitMethod(ACC_PUBLIC, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, null, null)
     m.visitCode()
 
-    mkCopy(className, defn)(AsmWrapper(m))
+    mkCopy(className, defn)
     m.visitInsn(Opcodes.ARETURN)
 
     m.visitMaxs(999, 999)

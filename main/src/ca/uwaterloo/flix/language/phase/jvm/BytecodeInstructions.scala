@@ -29,7 +29,7 @@ import scala.annotation.tailrec
 object BytecodeInstructions {
 
   /** A wrapper of [[MethodVisitor]] to improve its interface. */
-  final case class AsmWrapper(mv: MethodVisitor) {
+  implicit class RichMethodVisitor(mv: MethodVisitor) {
     def visitTypeInstruction(opcode: Int, tpe: JvmName): Unit =
       mv.visitTypeInsn(opcode, tpe.toInternalName)
 
@@ -123,90 +123,90 @@ object BytecodeInstructions {
 
   // TODO: do this for methods
   class Variable(val tpe: BackendType, index: Int) {
-    def load()(implicit asmWrapper: AsmWrapper): Unit = xLoad(tpe, index)
+    def load()(implicit mv: MethodVisitor): Unit = xLoad(tpe, index)
 
-    def store()(implicit asmWrapper: AsmWrapper): Unit = xStore(tpe, index)
+    def store()(implicit mv: MethodVisitor): Unit = xStore(tpe, index)
   }
 
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~ Direct JVM Instructions ~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
-  def ACONST_NULL()(implicit asmWrapper: AsmWrapper): Unit = asmWrapper.visitInstruction(Opcodes.ACONST_NULL)
+  def ACONST_NULL()(implicit mv: MethodVisitor): Unit = mv.visitInstruction(Opcodes.ACONST_NULL)
 
-  def ALOAD(index: Int)(implicit asmWrapper: AsmWrapper): Unit = asmWrapper.visitVarInstruction(Opcodes.ALOAD, index)
+  def ALOAD(index: Int)(implicit mv: MethodVisitor): Unit = mv.visitVarInstruction(Opcodes.ALOAD, index)
 
-  def ANEWARRAY(className: JvmName)(implicit asmWrapper: AsmWrapper): Unit = asmWrapper.visitTypeInstruction(Opcodes.ANEWARRAY, className)
+  def ANEWARRAY(className: JvmName)(implicit mv: MethodVisitor): Unit = mv.visitTypeInstruction(Opcodes.ANEWARRAY, className)
 
-  def ARETURN()(implicit asmWrapper: AsmWrapper): Unit = asmWrapper.visitInstruction(Opcodes.ARETURN)
+  def ARETURN()(implicit mv: MethodVisitor): Unit = mv.visitInstruction(Opcodes.ARETURN)
 
-  def ARRAYLENGTH()(implicit asmWrapper: AsmWrapper): Unit = asmWrapper.visitInstruction(Opcodes.ARRAYLENGTH)
+  def ARRAYLENGTH()(implicit mv: MethodVisitor): Unit = mv.visitInstruction(Opcodes.ARRAYLENGTH)
 
-  def ASTORE(index: Int)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitVarInstruction(Opcodes.ASTORE, index)
+  def ASTORE(index: Int)(implicit mv: MethodVisitor): Unit =
+    mv.visitVarInstruction(Opcodes.ASTORE, index)
 
-  def ATHROW()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.ATHROW)
+  def ATHROW()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.ATHROW)
 
-  def BIPUSH(i: Byte)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitIntInstruction(Opcodes.BIPUSH, i)
+  def BIPUSH(i: Byte)(implicit mv: MethodVisitor): Unit =
+    mv.visitIntInstruction(Opcodes.BIPUSH, i)
 
-  def CHECKCAST(className: JvmName)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitTypeInstruction(Opcodes.CHECKCAST, className)
+  def CHECKCAST(className: JvmName)(implicit mv: MethodVisitor): Unit =
+    mv.visitTypeInstruction(Opcodes.CHECKCAST, className)
 
-  def DLOAD(index: Int)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitVarInstruction(Opcodes.DLOAD, index)
+  def DLOAD(index: Int)(implicit mv: MethodVisitor): Unit =
+    mv.visitVarInstruction(Opcodes.DLOAD, index)
 
-  def DRETURN()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.DRETURN)
+  def DRETURN()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.DRETURN)
 
-  def DUP()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.DUP)
+  def DUP()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.DUP)
 
-  def DUP2()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.DUP2)
+  def DUP2()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.DUP2)
 
-  def DUP_X1()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.DUP_X1)
+  def DUP_X1()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.DUP_X1)
 
-  def DUP_X2()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.DUP_X2)
+  def DUP_X2()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.DUP_X2)
 
-  def GETFIELD(field: InstanceField)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitFieldInstruction(Opcodes.GETFIELD, field.clazz, field.name, field.tpe)
+  def GETFIELD(field: InstanceField)(implicit mv: MethodVisitor): Unit =
+    mv.visitFieldInstruction(Opcodes.GETFIELD, field.clazz, field.name, field.tpe)
 
-  def GETSTATIC(field: StaticField)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitFieldInstruction(Opcodes.GETSTATIC, field.clazz, field.name, field.tpe)
+  def GETSTATIC(field: StaticField)(implicit mv: MethodVisitor): Unit =
+    mv.visitFieldInstruction(Opcodes.GETSTATIC, field.clazz, field.name, field.tpe)
 
-  def IADD()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.IADD)
+  def IADD()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.IADD)
 
-  def ICONST_0()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.ICONST_0)
+  def ICONST_0()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.ICONST_0)
 
-  def ICONST_1()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.ICONST_1)
+  def ICONST_1()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.ICONST_1)
 
-  def ICONST_2()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.ICONST_2)
+  def ICONST_2()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.ICONST_2)
 
-  def ICONST_3()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.ICONST_3)
+  def ICONST_3()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.ICONST_3)
 
-  def ICONST_4()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.ICONST_4)
+  def ICONST_4()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.ICONST_4)
 
-  def ICONST_5()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.ICONST_5)
+  def ICONST_5()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.ICONST_5)
 
-  def ICONST_M1()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.ICONST_M1)
+  def ICONST_M1()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.ICONST_M1)
 
-  def ILOAD(index: Int)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitVarInstruction(Opcodes.ILOAD, index)
+  def ILOAD(index: Int)(implicit mv: MethodVisitor): Unit =
+    mv.visitVarInstruction(Opcodes.ILOAD, index)
 
-  def INSTANCEOF(tpe: JvmName)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitTypeInstruction(Opcodes.INSTANCEOF, tpe)
+  def INSTANCEOF(tpe: JvmName)(implicit mv: MethodVisitor): Unit =
+    mv.visitTypeInstruction(Opcodes.INSTANCEOF, tpe)
 
   /**
     * Make an object which the functional interface of `lambdaMethod`. The
@@ -227,8 +227,8 @@ object BytecodeInstructions {
     * last `n` arguments to the original return type. This must of course
     * correspond to the type of `lambdaMethod`.
     */
-  def mkStaticLambda(lambdaMethod: InterfaceMethod, callD: MethodDescriptor, callHandle: Handle, drop: Int)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInvokeDynamicInstruction(
+  def mkStaticLambda(lambdaMethod: InterfaceMethod, callD: MethodDescriptor, callHandle: Handle, drop: Int)(implicit mv: MethodVisitor): Unit =
+    mv.visitInvokeDynamicInstruction(
       lambdaMethod.name,
       mkDescriptor(callD.arguments.dropRight(drop) *)(lambdaMethod.clazz.toTpe),
       mkStaticHandle(BackendObjType.LambdaMetaFactory.MetaFactoryMethod),
@@ -237,182 +237,182 @@ object BytecodeInstructions {
       lambdaMethod.d.toAsmType
     )
 
-  def mkStaticLambda(lambdaMethod: InterfaceMethod, call: StaticMethod, drop: Int)(implicit asmWrapper: AsmWrapper): Unit =
+  def mkStaticLambda(lambdaMethod: InterfaceMethod, call: StaticMethod, drop: Int)(implicit mv: MethodVisitor): Unit =
     mkStaticLambda(lambdaMethod, call.d, mkStaticHandle(call), drop)
 
-  def mkStaticLambda(lambdaMethod: InterfaceMethod, call: StaticInterfaceMethod, drop: Int)(implicit asmWrapper: AsmWrapper): Unit =
+  def mkStaticLambda(lambdaMethod: InterfaceMethod, call: StaticInterfaceMethod, drop: Int)(implicit mv: MethodVisitor): Unit =
     mkStaticLambda(lambdaMethod, call.d, mkStaticHandle(call), drop)
 
-  def INVOKEINTERFACE(interfaceName: JvmName, methodName: String, descriptor: MethodDescriptor)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitMethodInstruction(Opcodes.INVOKEINTERFACE, interfaceName, methodName, descriptor, isInterface = true)
+  def INVOKEINTERFACE(interfaceName: JvmName, methodName: String, descriptor: MethodDescriptor)(implicit mv: MethodVisitor): Unit =
+    mv.visitMethodInstruction(Opcodes.INVOKEINTERFACE, interfaceName, methodName, descriptor, isInterface = true)
 
-  def INVOKEINTERFACE(m: InterfaceMethod)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitMethodInstruction(Opcodes.INVOKEINTERFACE, m.clazz, m.name, m.d, isInterface = true)
+  def INVOKEINTERFACE(m: InterfaceMethod)(implicit mv: MethodVisitor): Unit =
+    mv.visitMethodInstruction(Opcodes.INVOKEINTERFACE, m.clazz, m.name, m.d, isInterface = true)
 
-  def INVOKESPECIAL(className: JvmName, methodName: String, descriptor: MethodDescriptor)(implicit asmWrapper: AsmWrapper): Unit = {
+  def INVOKESPECIAL(className: JvmName, methodName: String, descriptor: MethodDescriptor)(implicit mv: MethodVisitor): Unit = {
     val isInterface = false // OBS this is not technically true if you use it to call private interface methods(?)
-    asmWrapper.visitMethodInstruction(Opcodes.INVOKESPECIAL, className, methodName, descriptor, isInterface = isInterface)
+    mv.visitMethodInstruction(Opcodes.INVOKESPECIAL, className, methodName, descriptor, isInterface = isInterface)
   }
 
-  def INVOKESPECIAL(c: ConstructorMethod)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitMethodInstruction(Opcodes.INVOKESPECIAL, c.clazz, c.name, c.d, isInterface = false)
+  def INVOKESPECIAL(c: ConstructorMethod)(implicit mv: MethodVisitor): Unit =
+    mv.visitMethodInstruction(Opcodes.INVOKESPECIAL, c.clazz, c.name, c.d, isInterface = false)
 
-  def INVOKESTATIC(className: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean = false)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitMethodInstruction(Opcodes.INVOKESTATIC, className, methodName, descriptor, isInterface)
+  def INVOKESTATIC(className: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean = false)(implicit mv: MethodVisitor): Unit =
+    mv.visitMethodInstruction(Opcodes.INVOKESTATIC, className, methodName, descriptor, isInterface)
 
-  def INVOKESTATIC(m: StaticMethod)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitMethodInstruction(Opcodes.INVOKESTATIC, m.clazz, m.name, m.d, isInterface = false)
+  def INVOKESTATIC(m: StaticMethod)(implicit mv: MethodVisitor): Unit =
+    mv.visitMethodInstruction(Opcodes.INVOKESTATIC, m.clazz, m.name, m.d, isInterface = false)
 
-  def INVOKESTATIC(m: StaticInterfaceMethod)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitMethodInstruction(Opcodes.INVOKESTATIC, m.clazz, m.name, m.d, isInterface = true)
+  def INVOKESTATIC(m: StaticInterfaceMethod)(implicit mv: MethodVisitor): Unit =
+    mv.visitMethodInstruction(Opcodes.INVOKESTATIC, m.clazz, m.name, m.d, isInterface = true)
 
-  def INVOKEVIRTUAL(className: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean = false)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, className, methodName, descriptor, isInterface)
+  def INVOKEVIRTUAL(className: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean = false)(implicit mv: MethodVisitor): Unit =
+    mv.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, className, methodName, descriptor, isInterface)
 
-  def INVOKEVIRTUAL(m: AbstractMethod)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, m.clazz, m.name, m.d, isInterface = false)
+  def INVOKEVIRTUAL(m: AbstractMethod)(implicit mv: MethodVisitor): Unit =
+    mv.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, m.clazz, m.name, m.d, isInterface = false)
 
-  def INVOKEVIRTUAL(m: InstanceMethod)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, m.clazz, m.name, m.d, isInterface = false)
+  def INVOKEVIRTUAL(m: InstanceMethod)(implicit mv: MethodVisitor): Unit =
+    mv.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, m.clazz, m.name, m.d, isInterface = false)
 
-  def IRETURN()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.IRETURN)
+  def IRETURN()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.IRETURN)
 
-  def LCMP()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.LCMP)
+  def LCMP()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.LCMP)
 
-  def LCONST_0()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.LCONST_0)
+  def LCONST_0()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.LCONST_0)
 
-  def LCONST_1()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.LCONST_1)
+  def LCONST_1()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.LCONST_1)
 
-  def LLOAD(index: Int)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitVarInstruction(Opcodes.LLOAD, index)
+  def LLOAD(index: Int)(implicit mv: MethodVisitor): Unit =
+    mv.visitVarInstruction(Opcodes.LLOAD, index)
 
-  def LRETURN()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.LRETURN)
+  def LRETURN()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.LRETURN)
 
-  def NEW(className: JvmName)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitTypeInstruction(Opcodes.NEW, className)
+  def NEW(className: JvmName)(implicit mv: MethodVisitor): Unit =
+    mv.visitTypeInstruction(Opcodes.NEW, className)
 
-  def POP()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.POP)
+  def POP()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.POP)
 
-  def POP2()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.POP2)
+  def POP2()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.POP2)
 
-  def PUTFIELD(field: InstanceField)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitFieldInstruction(Opcodes.PUTFIELD, field.clazz, field.name, field.tpe)
+  def PUTFIELD(field: InstanceField)(implicit mv: MethodVisitor): Unit =
+    mv.visitFieldInstruction(Opcodes.PUTFIELD, field.clazz, field.name, field.tpe)
 
-  def PUTSTATIC(field: StaticField)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitFieldInstruction(Opcodes.PUTSTATIC, field.clazz, field.name, field.tpe)
+  def PUTSTATIC(field: StaticField)(implicit mv: MethodVisitor): Unit =
+    mv.visitFieldInstruction(Opcodes.PUTSTATIC, field.clazz, field.name, field.tpe)
 
-  def RETURN()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.RETURN)
+  def RETURN()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.RETURN)
 
-  def SIPUSH(i: Short)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitIntInstruction(Opcodes.SIPUSH, i)
+  def SIPUSH(i: Short)(implicit mv: MethodVisitor): Unit =
+    mv.visitIntInstruction(Opcodes.SIPUSH, i)
 
-  def SWAP()(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitInstruction(Opcodes.SWAP)
+  def SWAP()(implicit mv: MethodVisitor): Unit =
+    mv.visitInstruction(Opcodes.SWAP)
 
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~~ Meta JVM Instructions ~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
-  def addLoc(loc: SourceLocation)(implicit asmWrapper: AsmWrapper): Unit = {
+  def addLoc(loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
     val label = new Label()
-    asmWrapper.visitLabel(label)
-    asmWrapper.visitLineNumber(loc.beginLine, label)
+    mv.visitLabel(label)
+    mv.visitLineNumber(loc.beginLine, label)
   }
 
-  def branch(c: Condition)(cases: Branch => Unit)(implicit asmWrapper: AsmWrapper): Unit = {
+  def branch(c: Condition)(cases: Branch => Unit)(implicit mv: MethodVisitor): Unit = {
     val jumpLabel = new Label()
     val skipLabel = new Label()
-    asmWrapper.visitJumpInstruction(opcodeOf(c), jumpLabel)
+    mv.visitJumpInstruction(opcodeOf(c), jumpLabel)
 
     cases(FalseBranch)
-    asmWrapper.visitJumpInstruction(Opcodes.GOTO, skipLabel)
+    mv.visitJumpInstruction(Opcodes.GOTO, skipLabel)
 
-    asmWrapper.visitLabel(jumpLabel)
+    mv.visitLabel(jumpLabel)
     cases(TrueBranch)
-    asmWrapper.visitLabel(skipLabel)
+    mv.visitLabel(skipLabel)
   }
 
-  def castIfNotPrim(tpe: BackendType)(implicit asmWrapper: AsmWrapper): Unit = {
+  def castIfNotPrim(tpe: BackendType)(implicit mv: MethodVisitor): Unit = {
     tpe match {
-      case arr: BackendType.Array => asmWrapper.visitTypeInstructionDirect(Opcodes.CHECKCAST, arr.toDescriptor)
+      case arr: BackendType.Array => mv.visitTypeInstructionDirect(Opcodes.CHECKCAST, arr.toDescriptor)
       case BackendType.Reference(ref) => CHECKCAST(ref.jvmName)
       case _: BackendType.PrimitiveType => nop()
     }
   }
 
   /// while(c(t)) { i }
-  def whileLoop(c: Condition)(t: => Unit)(i: => Unit)(implicit asmWrapper: AsmWrapper): Unit = {
+  def whileLoop(c: Condition)(t: => Unit)(i: => Unit)(implicit mv: MethodVisitor): Unit = {
     val startLabel = new Label()
     val doneLabel = new Label()
-    asmWrapper.visitLabel(startLabel)
+    mv.visitLabel(startLabel)
     t
-    asmWrapper.visitJumpInstruction(opcodeOf(negated(c)), doneLabel)
+    mv.visitJumpInstruction(opcodeOf(negated(c)), doneLabel)
     i
-    asmWrapper.visitJumpInstruction(Opcodes.GOTO, startLabel)
-    asmWrapper.visitLabel(doneLabel)
+    mv.visitJumpInstruction(Opcodes.GOTO, startLabel)
+    mv.visitLabel(doneLabel)
   }
 
-  def ifCondition(c: Condition)(i: => Unit)(implicit asmWrapper: AsmWrapper): Unit = {
+  def ifCondition(c: Condition)(i: => Unit)(implicit mv: MethodVisitor): Unit = {
     val jumpLabel = new Label()
-    asmWrapper.visitJumpInstruction(opcodeOf(negated(c)), jumpLabel)
+    mv.visitJumpInstruction(opcodeOf(negated(c)), jumpLabel)
     i
-    asmWrapper.visitLabel(jumpLabel)
+    mv.visitLabel(jumpLabel)
   }
 
   /**
     * Using [[ifCondition]] uses less jumps, so use that if the conditional code
     * is returns or throws
     */
-  def ifConditionElse(c: Condition)(i: => Unit)(otherwise: => Unit)(implicit asmWrapper: AsmWrapper): Unit = {
+  def ifConditionElse(c: Condition)(i: => Unit)(otherwise: => Unit)(implicit mv: MethodVisitor): Unit = {
     val conditionLabel = new Label()
     val endLabel = new Label()
-    asmWrapper.visitJumpInstruction(opcodeOf(c), conditionLabel)
+    mv.visitJumpInstruction(opcodeOf(c), conditionLabel)
     otherwise
-    asmWrapper.visitJumpInstruction(Opcodes.GOTO, endLabel)
-    asmWrapper.visitLabel(conditionLabel)
+    mv.visitJumpInstruction(Opcodes.GOTO, endLabel)
+    mv.visitLabel(conditionLabel)
     i
-    asmWrapper.visitLabel(endLabel)
+    mv.visitLabel(endLabel)
   }
 
-  def tryCatch(body: => Unit)(catchI: => Unit)(implicit asmWrapper: AsmWrapper): Unit = {
+  def tryCatch(body: => Unit)(catchI: => Unit)(implicit mv: MethodVisitor): Unit = {
     val beforeTry = new Label()
     val afterTry = new Label()
     val handlerStart = new Label()
     val afterEverything = new Label()
-    asmWrapper.visitTryCatchBlock(beforeTry, afterTry, handlerStart)
-    asmWrapper.visitLabel(beforeTry)
+    mv.visitTryCatchBlock(beforeTry, afterTry, handlerStart)
+    mv.visitLabel(beforeTry)
     body
-    asmWrapper.visitLabel(afterTry)
-    asmWrapper.visitJumpInstruction(Opcodes.GOTO, afterEverything)
-    asmWrapper.visitLabel(handlerStart)
+    mv.visitLabel(afterTry)
+    mv.visitJumpInstruction(Opcodes.GOTO, afterEverything)
+    mv.visitLabel(handlerStart)
     catchI
-    asmWrapper.visitLabel(afterEverything)
+    mv.visitLabel(afterEverything)
   }
 
-  def invokeConstructor(className: JvmName, descriptor: MethodDescriptor)(implicit asmWrapper: AsmWrapper): Unit =
+  def invokeConstructor(className: JvmName, descriptor: MethodDescriptor)(implicit mv: MethodVisitor): Unit =
     INVOKESPECIAL(className, JvmName.ConstructorMethod, descriptor)
 
   def nop(): Unit =
     ()
 
-  def pushBool(b: Boolean)(implicit asmWrapper: AsmWrapper): Unit =
+  def pushBool(b: Boolean)(implicit mv: MethodVisitor): Unit =
     if (b) ICONST_1() else ICONST_0()
 
-  def pushNull()(implicit asmWrapper: AsmWrapper): Unit =
+  def pushNull()(implicit mv: MethodVisitor): Unit =
     ACONST_NULL()
 
-  def pushString(s: String)(implicit asmWrapper: AsmWrapper): Unit =
-    asmWrapper.visitLoadConstantInstruction(s)
+  def pushString(s: String)(implicit mv: MethodVisitor): Unit =
+    mv.visitLoadConstantInstruction(s)
 
-  def pushInt(i: Int)(implicit asmWrapper: AsmWrapper): Unit = i match {
+  def pushInt(i: Int)(implicit mv: MethodVisitor): Unit = i match {
     case -1 => ICONST_M1()
     case 0 => ICONST_0()
     case 1 => ICONST_1()
@@ -422,10 +422,10 @@ object BytecodeInstructions {
     case 5 => ICONST_5()
     case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => BIPUSH(i.toByte)
     case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => SIPUSH(i.toShort)
-    case _ => asmWrapper.visitLoadConstantInstruction(i)
+    case _ => mv.visitLoadConstantInstruction(i)
   }
 
-  def pushLoc(loc: SourceLocation)(implicit asmWrapper: AsmWrapper): Unit = {
+  def pushLoc(loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
     NEW(BackendObjType.ReifiedSourceLocation.jvmName)
     DUP()
     pushString(loc.source.name)
@@ -436,14 +436,14 @@ object BytecodeInstructions {
     INVOKESPECIAL(BackendObjType.ReifiedSourceLocation.Constructor)
   }
 
-  def storeWithName(index: Int, tpe: BackendType)(body: Variable => Unit)(implicit asmWrapper: AsmWrapper): Unit = {
+  def storeWithName(index: Int, tpe: BackendType)(body: Variable => Unit)(implicit mv: MethodVisitor): Unit = {
     xStore(tpe, index)
     body(new Variable(tpe, index))
   }
 
-  def thisLoad()(implicit asmWrapper: AsmWrapper): Unit = ALOAD(0)
+  def thisLoad()(implicit mv: MethodVisitor): Unit = ALOAD(0)
 
-  def throwUnsupportedOperationException(msg: String)(implicit asmWrapper: AsmWrapper): Unit = {
+  def throwUnsupportedOperationException(msg: String)(implicit mv: MethodVisitor): Unit = {
     NEW(JvmName.UnsupportedOperationException)
     DUP()
     pushString(msg)
@@ -465,90 +465,90 @@ object BytecodeInstructions {
     body(runningIndex, variables)
   }
 
-  def xArrayLoad(elmTpe: BackendType)(implicit asmWrapper: AsmWrapper): Unit = elmTpe match {
-    case BackendType.Array(_) => asmWrapper.visitInstruction(Opcodes.AALOAD)
-    case BackendType.Reference(_) => asmWrapper.visitInstruction(Opcodes.AALOAD)
-    case BackendType.Bool => asmWrapper.visitInstruction(Opcodes.BALOAD)
-    case BackendType.Char => asmWrapper.visitInstruction(Opcodes.CALOAD)
-    case BackendType.Int8 => asmWrapper.visitInstruction(Opcodes.BALOAD)
-    case BackendType.Int16 => asmWrapper.visitInstruction(Opcodes.SALOAD)
-    case BackendType.Int32 => asmWrapper.visitInstruction(Opcodes.IALOAD)
-    case BackendType.Int64 => asmWrapper.visitInstruction(Opcodes.LALOAD)
-    case BackendType.Float32 => asmWrapper.visitInstruction(Opcodes.FALOAD)
-    case BackendType.Float64 => asmWrapper.visitInstruction(Opcodes.DALOAD)
+  def xArrayLoad(elmTpe: BackendType)(implicit mv: MethodVisitor): Unit = elmTpe match {
+    case BackendType.Array(_) => mv.visitInstruction(Opcodes.AALOAD)
+    case BackendType.Reference(_) => mv.visitInstruction(Opcodes.AALOAD)
+    case BackendType.Bool => mv.visitInstruction(Opcodes.BALOAD)
+    case BackendType.Char => mv.visitInstruction(Opcodes.CALOAD)
+    case BackendType.Int8 => mv.visitInstruction(Opcodes.BALOAD)
+    case BackendType.Int16 => mv.visitInstruction(Opcodes.SALOAD)
+    case BackendType.Int32 => mv.visitInstruction(Opcodes.IALOAD)
+    case BackendType.Int64 => mv.visitInstruction(Opcodes.LALOAD)
+    case BackendType.Float32 => mv.visitInstruction(Opcodes.FALOAD)
+    case BackendType.Float64 => mv.visitInstruction(Opcodes.DALOAD)
   }
 
-  def xArrayStore(elmTpe: BackendType)(implicit asmWrapper: AsmWrapper): Unit = elmTpe match {
-    case BackendType.Array(_) => asmWrapper.visitInstruction(Opcodes.AASTORE)
-    case BackendType.Reference(_) => asmWrapper.visitInstruction(Opcodes.AASTORE)
-    case BackendType.Bool => asmWrapper.visitInstruction(Opcodes.BASTORE)
-    case BackendType.Char => asmWrapper.visitInstruction(Opcodes.CASTORE)
-    case BackendType.Int8 => asmWrapper.visitInstruction(Opcodes.BASTORE)
-    case BackendType.Int16 => asmWrapper.visitInstruction(Opcodes.SASTORE)
-    case BackendType.Int32 => asmWrapper.visitInstruction(Opcodes.IASTORE)
-    case BackendType.Int64 => asmWrapper.visitInstruction(Opcodes.LASTORE)
-    case BackendType.Float32 => asmWrapper.visitInstruction(Opcodes.FASTORE)
-    case BackendType.Float64 => asmWrapper.visitInstruction(Opcodes.DASTORE)
+  def xArrayStore(elmTpe: BackendType)(implicit mv: MethodVisitor): Unit = elmTpe match {
+    case BackendType.Array(_) => mv.visitInstruction(Opcodes.AASTORE)
+    case BackendType.Reference(_) => mv.visitInstruction(Opcodes.AASTORE)
+    case BackendType.Bool => mv.visitInstruction(Opcodes.BASTORE)
+    case BackendType.Char => mv.visitInstruction(Opcodes.CASTORE)
+    case BackendType.Int8 => mv.visitInstruction(Opcodes.BASTORE)
+    case BackendType.Int16 => mv.visitInstruction(Opcodes.SASTORE)
+    case BackendType.Int32 => mv.visitInstruction(Opcodes.IASTORE)
+    case BackendType.Int64 => mv.visitInstruction(Opcodes.LASTORE)
+    case BackendType.Float32 => mv.visitInstruction(Opcodes.FASTORE)
+    case BackendType.Float64 => mv.visitInstruction(Opcodes.DASTORE)
   }
 
-  def xLoad(tpe: BackendType, index: Int)(implicit asmWrapper: AsmWrapper): Unit = tpe match {
+  def xLoad(tpe: BackendType, index: Int)(implicit mv: MethodVisitor): Unit = tpe match {
     case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 => ILOAD(index)
     case BackendType.Int64 => LLOAD(index)
-    case BackendType.Float32 => asmWrapper.visitVarInstruction(Opcodes.FLOAD, index)
+    case BackendType.Float32 => mv.visitVarInstruction(Opcodes.FLOAD, index)
     case BackendType.Float64 => DLOAD(index)
     case BackendType.Array(_) | BackendType.Reference(_) => ALOAD(index)
   }
 
-  def xNewArray(elmTpe: BackendType)(implicit asmWrapper: AsmWrapper): Unit = elmTpe match {
-    case BackendType.Array(_) => asmWrapper.mv.visitTypeInsn(Opcodes.ANEWARRAY, elmTpe.toDescriptor)
+  def xNewArray(elmTpe: BackendType)(implicit mv: MethodVisitor): Unit = elmTpe match {
+    case BackendType.Array(_) => mv.visitTypeInsn(Opcodes.ANEWARRAY, elmTpe.toDescriptor)
     case BackendType.Reference(ref) => ANEWARRAY(ref.jvmName)
     case tpe: BackendType.PrimitiveType => tpe match {
-      case BackendType.Bool => asmWrapper.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_BOOLEAN)
-      case BackendType.Char => asmWrapper.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_CHAR)
-      case BackendType.Int8 => asmWrapper.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_BYTE)
-      case BackendType.Int16 => asmWrapper.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_SHORT)
-      case BackendType.Int32 => asmWrapper.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_INT)
-      case BackendType.Int64 => asmWrapper.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_LONG)
-      case BackendType.Float32 => asmWrapper.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_FLOAT)
-      case BackendType.Float64 => asmWrapper.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_DOUBLE)
+      case BackendType.Bool => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_BOOLEAN)
+      case BackendType.Char => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_CHAR)
+      case BackendType.Int8 => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_BYTE)
+      case BackendType.Int16 => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_SHORT)
+      case BackendType.Int32 => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_INT)
+      case BackendType.Int64 => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_LONG)
+      case BackendType.Float32 => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_FLOAT)
+      case BackendType.Float64 => mv.visitIntInstruction(Opcodes.NEWARRAY, Opcodes.T_DOUBLE)
     }
   }
 
   /**
     * Pops the top of the stack using `POP` or `POP2` depending on the value size.
     */
-  def xPop(tpe: BackendType)(implicit asmWrapper: AsmWrapper): Unit = tpe match {
+  def xPop(tpe: BackendType)(implicit mv: MethodVisitor): Unit = tpe match {
     case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 |
          BackendType.Float32 | BackendType.Array(_) | BackendType.Reference(_) => POP()
     case BackendType.Int64 | BackendType.Float64 => POP2()
   }
 
-  def xReturn(tpe: BackendType)(implicit asmWrapper: AsmWrapper): Unit = tpe match {
+  def xReturn(tpe: BackendType)(implicit mv: MethodVisitor): Unit = tpe match {
     case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 => IRETURN()
     case BackendType.Int64 => LRETURN()
-    case BackendType.Float32 => asmWrapper.visitInstruction(Opcodes.FRETURN)
+    case BackendType.Float32 => mv.visitInstruction(Opcodes.FRETURN)
     case BackendType.Float64 => DRETURN()
     case BackendType.Array(_) | BackendType.Reference(_) => ARETURN()
   }
 
-  def xStore(tpe: BackendType, index: Int)(implicit asmWrapper: AsmWrapper): Unit = tpe match {
+  def xStore(tpe: BackendType, index: Int)(implicit mv: MethodVisitor): Unit = tpe match {
     case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 =>
-      asmWrapper.visitVarInstruction(Opcodes.ISTORE, index)
-    case BackendType.Int64 => asmWrapper.visitVarInstruction(Opcodes.LSTORE, index)
-    case BackendType.Float32 => asmWrapper.visitVarInstruction(Opcodes.FSTORE, index)
-    case BackendType.Float64 => asmWrapper.visitVarInstruction(Opcodes.DSTORE, index)
+      mv.visitVarInstruction(Opcodes.ISTORE, index)
+    case BackendType.Int64 => mv.visitVarInstruction(Opcodes.LSTORE, index)
+    case BackendType.Float32 => mv.visitVarInstruction(Opcodes.FSTORE, index)
+    case BackendType.Float64 => mv.visitVarInstruction(Opcodes.DSTORE, index)
     case BackendType.Array(_) | BackendType.Reference(_) => ASTORE(index)
   }
 
-  def xSwap(lowerLarge: Boolean, higherLarge: Boolean)(implicit asmWrapper: AsmWrapper): Unit = (lowerLarge, higherLarge) match {
+  def xSwap(lowerLarge: Boolean, higherLarge: Boolean)(implicit mv: MethodVisitor): Unit = (lowerLarge, higherLarge) match {
     case (true, true) =>
-      asmWrapper.visitInstruction(Opcodes.DUP2_X2)
+      mv.visitInstruction(Opcodes.DUP2_X2)
       POP2()
     case (true, false) =>
       DUP_X2()
       POP()
     case (false, true) =>
-      asmWrapper.visitInstruction(Opcodes.DUP2_X1)
+      mv.visitInstruction(Opcodes.DUP2_X1)
       POP2()
     case (false, false) =>
       SWAP()
@@ -558,7 +558,7 @@ object BytecodeInstructions {
     * Converts the top of the stack to a string (including null), assuming that
     * `tpe` accurately represents its type.
     */
-  def xToString(tpe: BackendType)(implicit asmWrapper: AsmWrapper): Unit = tpe match {
+  def xToString(tpe: BackendType)(implicit mv: MethodVisitor): Unit = tpe match {
     case BackendType.Bool => INVOKESTATIC(BackendObjType.String.BoolValueOf)
     case BackendType.Char => INVOKESTATIC(BackendObjType.String.CharValueOf)
     case BackendType.Int8 => INVOKESTATIC(BackendObjType.String.Int8ValueOf)
@@ -628,7 +628,7 @@ object BytecodeInstructions {
       * @param length       `getNthString` will be called with the range `[0, length[`
       * @param getNthString `[] -> [si: String]`
       */
-    def mkString(prefix: Option[Unit => Unit], suffix: Option[Unit => Unit], length: Int, getNthString: Int => Unit)(implicit asmWrapper: AsmWrapper): Unit = {
+    def mkString(prefix: Option[Unit => Unit], suffix: Option[Unit => Unit], length: Int, getNthString: Int => Unit)(implicit mv: MethodVisitor): Unit = {
       // [] --> [new String[length]] // Referred to as `elms`.
       pushInt(length)
       ANEWARRAY(BackendObjType.String.jvmName)
@@ -644,7 +644,7 @@ object BytecodeInstructions {
         // [elms, i, elms, i] -> [elms, i, elms, i, nth(i)]
         getNthString(i)
         // [elms, i, elms, i, nth(i)] -> [elms, i]
-        asmWrapper.visitInstruction(Opcodes.AASTORE)
+        mv.visitInstruction(Opcodes.AASTORE)
       }
       // [elms, length] --> [elms]
       POP()
