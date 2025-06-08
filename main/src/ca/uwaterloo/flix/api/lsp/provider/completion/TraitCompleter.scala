@@ -64,7 +64,7 @@ object TraitCompleter {
       case TraitUsageKind.Derivation =>
         Nil
       case TraitUsageKind.Implementation =>
-        InstanceCompletion(trt, range, ap, qualified = qualified, inScope = inScope) :: Nil
+        InstanceCompletion(trt, range, priority, ap, qualified = qualified, inScope = inScope) :: Nil
     }
   }
 
