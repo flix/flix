@@ -660,7 +660,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
 
   test("RedefineBuiltinName.01") {
     val input =
-      """pub enum Unit {
+      """pub enum Int32 {
         |  case Value,
         |}
     """.stripMargin
