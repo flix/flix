@@ -66,11 +66,8 @@ sealed trait BackendObjType {
     case BackendObjType.Native(className) => className
     case BackendObjType.Arrays => JvmName(JavaUtil, "Arrays")
     case BackendObjType.LambdaMetaFactory => JvmName(JavaLangInvoke, "LambdaMetafactory")
-    case BackendObjType.LinkedList => JvmName(JavaUtil, "LinkedList")
     case BackendObjType.Iterator => JvmName(JavaUtil, "Iterator")
-    case BackendObjType.Runnable => JvmName(JavaLang, "Runnable")
     case BackendObjType.ConcurrentLinkedQueue => JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
-    case BackendObjType.ThreadBuilderOfVirtual => JvmName(JavaLang, "Thread$Builder$OfVirtual")
     // Effects Runtime
     case BackendObjType.Result => JvmName(DevFlixRuntime, mkClassName("Result"))
     case BackendObjType.Value => JvmName(DevFlixRuntime, mkClassName("Value"))
@@ -1329,7 +1326,7 @@ object BackendObjType {
     private def ThreadsField: InstanceField = InstanceField(this.jvmName, "threads", BackendObjType.ConcurrentLinkedQueue.toTpe)
 
     // private final LinkedList<Runnable> onExit = new LinkedList<Runnable>();
-    private def OnExitField: InstanceField = InstanceField(this.jvmName, "onExit", BackendObjType.LinkedList.toTpe)
+    private def OnExitField: InstanceField = InstanceField(this.jvmName, "onExit", JvmName.LinkedList.toTpe)
 
     // private final Thread regionThread = Thread.currentThread();
     private def RegionThreadField: InstanceField = InstanceField(this.jvmName, "regionThread", JvmName.Thread.toTpe)
@@ -1354,9 +1351,9 @@ object BackendObjType {
       ACONST_NULL()
       PUTFIELD(ChildExceptionField)
       thisLoad()
-      NEW(BackendObjType.LinkedList.jvmName)
+      NEW(JvmName.LinkedList)
       DUP()
-      invokeConstructor(BackendObjType.LinkedList.jvmName, MethodDescriptor.NothingToVoid)
+      invokeConstructor(JvmName.LinkedList, MethodDescriptor.NothingToVoid)
       PUTFIELD(OnExitField)
       RETURN()
     }
@@ -1424,7 +1421,7 @@ object BackendObjType {
           } {
             i.load()
             INVOKEINTERFACE(Iterator.NextMethod)
-            CHECKCAST(Runnable.jvmName)
+            CHECKCAST(JvmName.Runnable)
             INVOKEINTERFACE(Runnable.RunMethod)
           }
         }
@@ -1468,7 +1465,7 @@ object BackendObjType {
     // final public void runOnExit(Runnable r) {
     //   onExit.addFirst(r);
     // }
-    private def RunOnExitMethod: InstanceMethod = InstanceMethod(this.jvmName, "runOnExit", mkDescriptor(BackendObjType.Runnable.toTpe)(VoidableType.Void))
+    private def RunOnExitMethod: InstanceMethod = InstanceMethod(this.jvmName, "runOnExit", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void))
 
     private def runOnExitIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
@@ -1640,15 +1637,6 @@ object BackendObjType {
     )
   }
 
-  case object LinkedList extends BackendObjType {
-
-    def AddFirstMethod: InstanceMethod = InstanceMethod(this.jvmName, "addFirst",
-      mkDescriptor(BackendType.Object)(VoidableType.Void))
-
-    def IteratorMethod: InstanceMethod = InstanceMethod(this.jvmName, "iterator",
-      mkDescriptor()(BackendObjType.Iterator.toTpe))
-  }
-
   case object Iterator extends BackendObjType {
 
     def HasNextMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "hasNext",
@@ -1658,12 +1646,6 @@ object BackendObjType {
       mkDescriptor()(BackendType.Object))
   }
 
-  case object Runnable extends BackendObjType {
-
-    def RunMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "run",
-      MethodDescriptor.NothingToVoid)
-  }
-
   case object ConcurrentLinkedQueue extends BackendObjType {
 
     def AddMethod: InstanceMethod = InstanceMethod(this.jvmName, "add",
@@ -1671,12 +1653,6 @@ object BackendObjType {
 
     def PollMethod: InstanceMethod = InstanceMethod(this.jvmName, "poll",
       mkDescriptor()(BackendType.Object))
-  }
-
-  case object ThreadBuilderOfVirtual extends BackendObjType {
-
-    def UnstartedMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "unstarted",
-      mkDescriptor(JvmName.Runnable.toTpe)(JvmName.Thread.toTpe))
   }
 
   case object Result extends BackendObjType {
@@ -1896,7 +1872,7 @@ object BackendObjType {
   case object Thunk extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkInterface(this.jvmName, interfaces = List(Result.jvmName, Runnable.jvmName))
+      val cm = mkInterface(this.jvmName, interfaces = List(Result.jvmName, JvmName.Runnable))
 
       cm.mkInterfaceMethod(InvokeMethod)
       cm.mkDefaultMethod(RunMethod, IsPublic, NotFinal, runIns(_))
