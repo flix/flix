@@ -284,13 +284,22 @@ object ClassMaker {
 
   // Constants.
 
+  object Iterator {
+
+    def HasNextMethod: InterfaceMethod =
+      InterfaceMethod(JvmName.Iterator, "hasNext", mkDescriptor()(BackendType.Bool))
+
+    def NextMethod: InterfaceMethod =
+      InterfaceMethod(JvmName.Iterator, "next", mkDescriptor()(BackendType.Object))
+  }
+
   object LinkedList {
 
     def AddFirstMethod: InstanceMethod =
       InstanceMethod(JvmName.LinkedList, "addFirst", mkDescriptor(BackendType.Object)(VoidableType.Void))
 
     def IteratorMethod: InstanceMethod =
-      InstanceMethod(JvmName.LinkedList, "iterator", mkDescriptor()(BackendObjType.Iterator.toTpe))
+      InstanceMethod(JvmName.LinkedList, "iterator", mkDescriptor()(JvmName.Iterator.toTpe))
 
   }
 
