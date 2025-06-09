@@ -814,7 +814,7 @@ object GenExpression {
 
       case AtomicOp.InvokeConstructor(constructor) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
-        addSourceLine(mv, loc)
+        BytecodeInstructions.addLoc(loc)
         val descriptor = asm.Type.getConstructorDescriptor(constructor)
         val declaration = asm.Type.getInternalName(constructor.getDeclaringClass)
         // Create a new object of the declaration type
@@ -833,7 +833,7 @@ object GenExpression {
         val exp :: args = exps
 
         // Add source line number for debugging (can fail when calling unsafe java methods)
-        addSourceLine(mv, loc)
+        BytecodeInstructions.addLoc(loc)
 
         // Evaluate the receiver object.
         compileExpr(exp)
@@ -863,7 +863,7 @@ object GenExpression {
 
       case AtomicOp.InvokeStaticMethod(method) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
-        addSourceLine(mv, loc)
+        BytecodeInstructions.addLoc(loc)
         val signature = method.getParameterTypes
         pushArgs(exps, signature)
         val declaration = asm.Type.getInternalName(method.getDeclaringClass)
@@ -882,7 +882,7 @@ object GenExpression {
       case AtomicOp.GetField(field) =>
         val List(exp) = exps
         // Add source line number for debugging (can fail when calling java)
-        addSourceLine(mv, loc)
+        BytecodeInstructions.addLoc(loc)
         compileExpr(exp)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
         mv.visitFieldInsn(GETFIELD, declaration, field.getName, BackendType.toBackendType(tpe).toDescriptor)
@@ -890,7 +890,7 @@ object GenExpression {
       case AtomicOp.PutField(field) =>
         val List(exp1, exp2) = exps
         // Add source line number for debugging (can fail when calling java)
-        addSourceLine(mv, loc)
+        BytecodeInstructions.addLoc(loc)
         compileExpr(exp1)
         compileExpr(exp2)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
@@ -901,14 +901,14 @@ object GenExpression {
 
       case AtomicOp.GetStaticField(field) =>
         // Add source line number for debugging (can fail when calling java)
-        addSourceLine(mv, loc)
+        BytecodeInstructions.addLoc(loc)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
         mv.visitFieldInsn(GETSTATIC, declaration, field.getName, BackendType.toBackendType(tpe).toDescriptor)
 
       case AtomicOp.PutStaticField(field) =>
         val List(exp) = exps
         // Add source line number for debugging (can fail when calling java)
-        addSourceLine(mv, loc)
+        BytecodeInstructions.addLoc(loc)
         compileExpr(exp)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
         mv.visitFieldInsn(PUTSTATIC, declaration, field.getName, BackendType.toBackendType(exp.tpe).toDescriptor)
@@ -1251,7 +1251,7 @@ object GenExpression {
 
     case Expr.Scope(sym, exp, _, _, loc) =>
       // Adding source line number for debugging
-      addSourceLine(mv, loc)
+      BytecodeInstructions.addLoc(loc)
 
       // Introduce a label for before the try block.
       val beforeTryBlock = new Label()
@@ -1306,7 +1306,7 @@ object GenExpression {
 
     case Expr.TryCatch(exp, rules, _, _, loc) =>
       // Add source line number for debugging.
-      addSourceLine(mv, loc)
+      BytecodeInstructions.addLoc(loc)
 
       // Introduce a label for before the try block.
       val beforeTryBlock = new Label()
@@ -1594,15 +1594,6 @@ object GenExpression {
       mv.visitInsn(I2L) // Sign extend to long
 
     case _ => mv.visitLdcInsn(i)
-  }
-
-  /**
-    * Adds the source of the line for debugging
-    */
-  private def addSourceLine(visitor: MethodVisitor, loc: SourceLocation): Unit = {
-    val label = new Label()
-    visitor.visitLabel(label)
-    visitor.visitLineNumber(loc.beginLine, label)
   }
 
   /**
