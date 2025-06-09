@@ -65,7 +65,6 @@ sealed trait BackendObjType {
     // Java classes
     case BackendObjType.Native(className) => className
     case BackendObjType.Regex => JvmName(List("java", "util", "regex"), "Pattern")
-    case BackendObjType.CharSequence => JvmName(JavaLang, "CharSequence")
     case BackendObjType.Arrays => JvmName(JavaUtil, "Arrays")
     case BackendObjType.StringBuilder => JvmName(JavaLang, "StringBuilder")
     case BackendObjType.LambdaMetaFactory => JvmName(JavaLangInvoke, "LambdaMetafactory")
@@ -1604,8 +1603,6 @@ object BackendObjType {
   //
   // Java Types
   //
-
-  case object CharSequence extends BackendObjType
 
   case object Arrays extends BackendObjType {
     def BoolArrToString: StaticMethod = StaticMethod(this.jvmName,
