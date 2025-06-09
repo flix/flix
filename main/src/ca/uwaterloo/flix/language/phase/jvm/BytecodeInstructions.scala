@@ -639,7 +639,7 @@ object BytecodeInstructions {
       * @param getNthString `[] -> [si: String]`
       */
     def mkString(prefix: Option[Unit => Unit], suffix: Option[Unit => Unit], length: Int, getNthString: Int => Unit)(implicit mv: MethodVisitor): Unit = {
-      val joinMethod = StaticMethod(JvmName.String, "join", mkDescriptor(BackendObjType.CharSequence.toTpe, BackendType.Array(BackendObjType.CharSequence.toTpe))(BackendType.String))
+      val joinMethod = StaticMethod(JvmName.String, "join", mkDescriptor(JvmName.CharSequence.toTpe, BackendType.Array(JvmName.CharSequence.toTpe))(BackendType.String))
       // [] --> [new String[length]] // Referred to as `elms`.
       pushInt(length)
       ANEWARRAY(JvmName.String)
