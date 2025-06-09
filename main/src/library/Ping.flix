@@ -15,7 +15,7 @@
  */
 
 ///
-/// The effect used to connect to an address
+/// The effect used to determine if an address is reachable.
 ///
 eff Ping {
     def isReachable(host: String, timeout: Int32): Bool
