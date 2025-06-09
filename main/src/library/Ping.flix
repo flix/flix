@@ -35,12 +35,8 @@ mod Ping {
         } with handler Ping {
             def isReachable(host, timeout, k) = {
                 try {
-                    let addr: InetAddress = InetAddress.getByName(host);
-                    if (addr.isReachable(timeout)) {
-                        k(true)
-                    } else {
-                        k(false)
-                    }
+                    let addr = InetAddress.getByName(host);
+                    k(addr.isReachable(timeout))
                 } catch {
                     case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                     case ex: UnknownHostException => Err(IoError(ErrorKind.UnknownHost, ex.getMessage()))
