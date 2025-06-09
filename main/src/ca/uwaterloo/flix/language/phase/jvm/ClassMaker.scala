@@ -311,4 +311,25 @@ object ClassMaker {
       InstanceMethod(JvmName.String, "concat", mkDescriptor(BackendType.String)(BackendType.String))
   }
 
+  object Thread {
+
+    def StartMethod: InstanceMethod =
+      InstanceMethod(JvmName.Thread, "start", MethodDescriptor.NothingToVoid)
+
+    def JoinMethod: InstanceMethod =
+      InstanceMethod(JvmName.Thread, "join", MethodDescriptor.NothingToVoid)
+
+    def CurrentThreadMethod: StaticMethod =
+      StaticMethod(JvmName.Thread, "currentThread", mkDescriptor()(JvmName.Thread.toTpe))
+
+    def InterruptMethod: InstanceMethod =
+      InstanceMethod(JvmName.Thread, "interrupt", MethodDescriptor.NothingToVoid)
+
+    def SetUncaughtExceptionHandlerMethod: InstanceMethod =
+      InstanceMethod(JvmName.Thread, "setUncaughtExceptionHandler", mkDescriptor(BackendObjType.ThreadUncaughtExceptionHandler.toTpe)(VoidableType.Void))
+
+    def OfVirtualMethod: StaticMethod =
+      StaticMethod(JvmName.Thread, "ofVirtual", mkDescriptor()(BackendObjType.ThreadBuilderOfVirtual.toTpe))
+  }
+
 }
