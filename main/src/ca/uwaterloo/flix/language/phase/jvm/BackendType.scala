@@ -125,6 +125,7 @@ object BackendType {
   }
 
   val Object: BackendType = Reference(BackendObjType.Native(JvmName.Object))
+  val String: BackendType = Reference(BackendObjType.Native(JvmName.String))
 
   /**
     * Converts the given [[MonoType]] into its [[BackendType]] representation.
@@ -147,7 +148,7 @@ object BackendType {
       case MonoType.Int32 => BackendType.Int32
       case MonoType.Int64 => BackendType.Int64
       case MonoType.BigInt => JvmName.BigInteger.toTpe
-      case MonoType.String => BackendObjType.String.toTpe
+      case MonoType.String => BackendType.String
       case MonoType.Regex => BackendObjType.Regex.toTpe
       case MonoType.Region => BackendObjType.Region.toTpe
       case MonoType.Null => BackendType.Object

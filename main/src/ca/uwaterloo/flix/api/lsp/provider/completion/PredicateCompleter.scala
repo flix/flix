@@ -47,7 +47,7 @@ object PredicateCompleter {
 
     predsWithTypeAndLoc.map {
       case (predName, tpe) =>
-      Completion.PredicateCompletion(predName.name, range, Priority.Lower, arityOf(tpe), FormatType.formatType(tpe))
+      Completion.PredicateCompletion(predName.name, range, Priority.Lower(0), arityOf(tpe), FormatType.formatType(tpe))
     }
   }
 
