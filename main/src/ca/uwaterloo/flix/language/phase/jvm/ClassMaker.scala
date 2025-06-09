@@ -253,13 +253,13 @@ object ClassMaker {
   }
 
   sealed case class ConstructorMethod(clazz: JvmName, args: List[BackendType]) extends Method {
-    override def name: String = "<init>"
+    override def name: String = JvmName.ConstructorMethod
 
     override def d: MethodDescriptor = MethodDescriptor(args, VoidableType.Void)
   }
 
   case class StaticConstructorMethod(clazz: JvmName) extends Method {
-    override def name: String = "<clinit>"
+    override def name: String = JvmName.StaticConstructorMethod
 
     override def d: MethodDescriptor = MethodDescriptor.NothingToVoid
   }

@@ -826,7 +826,7 @@ object GenExpression {
         pushArgs(exps, signature)
 
         // Call the constructor
-        mv.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
+        mv.visitMethodInsn(INVOKESPECIAL, declaration, JvmName.ConstructorMethod, descriptor, false)
 
       case AtomicOp.InvokeMethod(method) =>
         val exp :: args = exps
@@ -1267,7 +1267,7 @@ object GenExpression {
       // Create an instance of Region
       mv.visitTypeInsn(NEW, BackendObjType.Region.jvmName.toInternalName)
       mv.visitInsn(DUP)
-      mv.visitMethodInsn(INVOKESPECIAL, BackendObjType.Region.jvmName.toInternalName, "<init>",
+      mv.visitMethodInsn(INVOKESPECIAL, BackendObjType.Region.jvmName.toInternalName, JvmName.ConstructorMethod,
         AsmOps.getMethodDescriptor(List(), JvmType.Void), false)
 
       BytecodeInstructions.xStore(BackendObjType.Region.toTpe, sym.getStackOffset(ctx.localOffset))
@@ -1358,7 +1358,7 @@ object GenExpression {
       // handler
       NEW(effectJvmName)
       DUP()
-      mv.visitMethodInsn(Opcodes.INVOKESPECIAL, effectJvmName.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
+      mv.visitMethodInsn(Opcodes.INVOKESPECIAL, effectJvmName.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
       // bind handler closures
       for (HandlerRule(op, _, body) <- rules) {
         mv.visitInsn(Opcodes.DUP)
@@ -1461,7 +1461,7 @@ object GenExpression {
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       mv.visitTypeInsn(NEW, className)
       mv.visitInsn(DUP)
-      mv.visitMethodInsn(INVOKESPECIAL, className, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+      mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
 
       // For each method, compile the closure which implements the body of that method and store it in a field
       exps.zipWithIndex.foreach { case (e, i) =>
