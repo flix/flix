@@ -66,10 +66,9 @@ object GenAnonymousClasses {
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       superClass, interfaces)
 
-    val currentClass = JvmType.Reference(className)
     compileConstructor(superClass, visitor)
 
-    obj.methods.zipWithIndex.foreach { case (m, i) => compileMethod(currentClass, m, s"clo$i", visitor, obj) }
+    obj.methods.zipWithIndex.foreach { case (m, i) => compileMethod(className, m, s"clo$i", visitor, obj) }
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -116,7 +115,7 @@ object GenAnonymousClasses {
   /**
     * Method
     */
-  private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, cloName: String, classVisitor: ClassWriter, obj: AnonClass)(implicit root: Root): Unit = method match {
+  private def compileMethod(currentClass: JvmName, method: JvmMethod, cloName: String, classVisitor: ClassWriter, obj: AnonClass)(implicit root: Root): Unit = method match {
     case JvmMethod(ident, fparams, _, tpe, _, loc) =>
       val args = fparams.map(_.tpe)
       val boxedResult = MonoType.Object
@@ -133,7 +132,7 @@ object GenAnonymousClasses {
 
       // Retrieve the closure that implements this method
       methodVisitor.visitVarInsn(ALOAD, 0)
-      methodVisitor.visitFieldInsn(GETFIELD, currentClass.name.toInternalName, cloName, closureAbstractClass.toDescriptor)
+      methodVisitor.visitFieldInsn(GETFIELD, currentClass.toInternalName, cloName, closureAbstractClass.toDescriptor)
 
       methodVisitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.jvmName.toInternalName, closureAbstractClass.GetUniqueThreadClosureMethod.name,
         MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, false)
@@ -146,7 +145,7 @@ object GenAnonymousClasses {
         BytecodeInstructions.xLoad(argType, offset)
         offset += argType.stackSlots
         methodVisitor.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
-          s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+          s"arg$i", BackendType.toErasedBackendType(arg.tpe).toDescriptor)
       }
 
       // Invoke the closure
