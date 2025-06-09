@@ -29,6 +29,11 @@ mod Ping {
     import java.io.IOException
     import java.net.UnknownHostException
 
+    ///
+    /// Handles the `Ping` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `Ping` effect using the `Net` and `IO` effects.
+    ///
     pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Ping) + {Net, IO} = x ->
         run {
             Ok(f(x))
@@ -38,12 +43,18 @@ mod Ping {
                     let addr = InetAddress.getByName(host);
                     k(addr.isReachable(timeout))
                 } catch {
-                    case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                     case ex: UnknownHostException => Err(IoError(ErrorKind.UnknownHost, ex.getMessage()))
+                    case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
         }
 
+    ///
+    /// Runs the `Ping` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `Ping` effect using the `IO` effect.
+    ///
     pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - Ping + {Net, IO} =
         handle(f)()
+
 }
