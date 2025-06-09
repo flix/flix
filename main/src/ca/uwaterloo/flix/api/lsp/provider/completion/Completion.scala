@@ -809,7 +809,7 @@ object Completion {
     * @param ectx      the expression context.
     */
   case class SigCompletion(decl: TypedAst.Sig, namespace: String, range: Range, priority: Priority, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion {
-    override def toString: String = s"SigCompletion(${decl.sym}, $range)"
+    override def toString: String = s"SigCompletion(${decl.sym}, $priority, $range)"
   }
 
   /**
