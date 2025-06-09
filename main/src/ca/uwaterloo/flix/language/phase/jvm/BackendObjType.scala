@@ -71,7 +71,6 @@ sealed trait BackendObjType {
     case BackendObjType.Runnable => JvmName(JavaLang, "Runnable")
     case BackendObjType.ConcurrentLinkedQueue => JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
     case BackendObjType.ThreadBuilderOfVirtual => JvmName(JavaLang, "Thread$Builder$OfVirtual")
-    case BackendObjType.ThreadUncaughtExceptionHandler => JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
     // Effects Runtime
     case BackendObjType.Result => JvmName(DevFlixRuntime, mkClassName("Result"))
     case BackendObjType.Value => JvmName(DevFlixRuntime, mkClassName("Value"))
@@ -1483,7 +1482,7 @@ object BackendObjType {
   case object UncaughtExceptionHandler extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkClass(this.jvmName, IsFinal, interfaces = List(ThreadUncaughtExceptionHandler.jvmName))
+      val cm = mkClass(this.jvmName, IsFinal, interfaces = List(JvmName.ThreadUncaughtExceptionHandler))
 
       cm.mkField(RegionField, IsPrivate, IsFinal, NotVolatile)
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
@@ -1678,12 +1677,6 @@ object BackendObjType {
 
     def UnstartedMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "unstarted",
       mkDescriptor(JvmName.Runnable.toTpe)(JvmName.Thread.toTpe))
-  }
-
-  case object ThreadUncaughtExceptionHandler extends BackendObjType {
-
-    def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, "uncaughtException",
-      mkDescriptor(JvmName.Thread.toTpe, JvmName.Throwable.toTpe)(VoidableType.Void))
   }
 
   case object Result extends BackendObjType {

@@ -181,6 +181,7 @@ object JvmName {
   val StringBuilder: JvmName = JvmName(JavaLang, "StringBuilder")
   val System: JvmName = JvmName(JavaLang, "System")
   val Thread: JvmName = JvmName(JavaLang, "Thread")
+  val ThreadUncaughtExceptionHandler: JvmName = JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
   val Throwable: JvmName = JvmName(JavaLang, "Throwable")
   val UnsupportedOperationException: JvmName = JvmName(JavaLang, "UnsupportedOperationException")
 
