@@ -1634,7 +1634,7 @@ object BackendObjType {
       "toString", mkDescriptor(BackendType.Array(BackendType.Float64))(BackendType.String))
 
     def DeepToString: StaticMethod = StaticMethod(this.jvmName,
-      "deepToString", mkDescriptor(BackendType.Array(BackendType.Object))(BackendObjType.String.toTpe))
+      "deepToString", mkDescriptor(BackendType.Array(BackendType.Object))(BackendType.String))
   }
 
   case object StringBuilder extends BackendObjType {

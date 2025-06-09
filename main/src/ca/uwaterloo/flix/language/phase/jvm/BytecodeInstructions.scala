@@ -577,7 +577,7 @@ object BytecodeInstructions {
     case BackendType.Float64 =>
       INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Float64)(BackendType.String)))
     case BackendType.Reference(_) =>
-      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendObjType.JavaObject.toTpe)(BackendType.String)))
+      INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Object)(BackendType.String)))
 
     case BackendType.Array(BackendType.Bool) => INVOKESTATIC(BackendObjType.Arrays.BoolArrToString)
     case BackendType.Array(BackendType.Char) => INVOKESTATIC(BackendObjType.Arrays.CharArrToString)
