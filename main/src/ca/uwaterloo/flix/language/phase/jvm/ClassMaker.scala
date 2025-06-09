@@ -302,7 +302,8 @@ object ClassMaker {
 
     def UnlockMethod: InstanceMethod = InstanceMethod(JvmName.ReentrantLock, "unlock", MethodDescriptor.NothingToVoid)
 
-    def LockInterruptiblyMethod: InstanceMethod = InstanceMethod(JvmName.ReentrantLock, "lockInterruptibly", MethodDescriptor.NothingToVoid)
+    def LockInterruptiblyMethod: InstanceMethod =
+      InstanceMethod(JvmName.ReentrantLock, "lockInterruptibly", MethodDescriptor.NothingToVoid)
 
   }
 
@@ -331,10 +332,15 @@ object ClassMaker {
       InstanceMethod(JvmName.Thread, "interrupt", MethodDescriptor.NothingToVoid)
 
     def SetUncaughtExceptionHandlerMethod: InstanceMethod =
-      InstanceMethod(JvmName.Thread, "setUncaughtExceptionHandler", mkDescriptor(BackendObjType.ThreadUncaughtExceptionHandler.toTpe)(VoidableType.Void))
+      InstanceMethod(JvmName.Thread, "setUncaughtExceptionHandler", mkDescriptor(JvmName.ThreadUncaughtExceptionHandler.toTpe)(VoidableType.Void))
 
     def OfVirtualMethod: StaticMethod =
       StaticMethod(JvmName.Thread, "ofVirtual", mkDescriptor()(BackendObjType.ThreadBuilderOfVirtual.toTpe))
+  }
+
+  object ThreadUncaughtExceptionHandler {
+    def UncaughtExceptionMethod: InstanceMethod =
+      InstanceMethod(JvmName.ThreadUncaughtExceptionHandler, "uncaughtException", mkDescriptor(JvmName.Thread.toTpe, JvmName.Throwable.toTpe)(VoidableType.Void))
   }
 
 }
