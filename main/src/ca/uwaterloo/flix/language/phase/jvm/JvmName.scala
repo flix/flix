@@ -162,6 +162,7 @@ object JvmName {
   val IntPredicate: JvmName = JvmName(JavaUtilFunction, "IntPredicate")
   val IntUnaryOperator: JvmName = JvmName(JavaUtilFunction, "IntUnaryOperator")
   val Integer: JvmName = JvmName(JavaLang, "Integer")
+  val LinkedList: JvmName = JvmName(JavaUtil, "LinkedList")
   val Long: JvmName = JvmName(JavaLang, "Long")
   val LongConsumer: JvmName = JvmName(JavaUtilFunction, "LongConsumer")
   val LongFunction: JvmName = JvmName(JavaUtilFunction, "LongFunction")

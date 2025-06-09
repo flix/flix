@@ -66,7 +66,6 @@ sealed trait BackendObjType {
     case BackendObjType.Native(className) => className
     case BackendObjType.Arrays => JvmName(JavaUtil, "Arrays")
     case BackendObjType.LambdaMetaFactory => JvmName(JavaLangInvoke, "LambdaMetafactory")
-    case BackendObjType.LinkedList => JvmName(JavaUtil, "LinkedList")
     case BackendObjType.Iterator => JvmName(JavaUtil, "Iterator")
     case BackendObjType.Runnable => JvmName(JavaLang, "Runnable")
     case BackendObjType.ConcurrentLinkedQueue => JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
@@ -1329,7 +1328,7 @@ object BackendObjType {
     private def ThreadsField: InstanceField = InstanceField(this.jvmName, "threads", BackendObjType.ConcurrentLinkedQueue.toTpe)
 
     // private final LinkedList<Runnable> onExit = new LinkedList<Runnable>();
-    private def OnExitField: InstanceField = InstanceField(this.jvmName, "onExit", BackendObjType.LinkedList.toTpe)
+    private def OnExitField: InstanceField = InstanceField(this.jvmName, "onExit", JvmName.LinkedList.toTpe)
 
     // private final Thread regionThread = Thread.currentThread();
     private def RegionThreadField: InstanceField = InstanceField(this.jvmName, "regionThread", JvmName.Thread.toTpe)
@@ -1354,9 +1353,9 @@ object BackendObjType {
       ACONST_NULL()
       PUTFIELD(ChildExceptionField)
       thisLoad()
-      NEW(BackendObjType.LinkedList.jvmName)
+      NEW(JvmName.LinkedList)
       DUP()
-      invokeConstructor(BackendObjType.LinkedList.jvmName, MethodDescriptor.NothingToVoid)
+      invokeConstructor(JvmName.LinkedList, MethodDescriptor.NothingToVoid)
       PUTFIELD(OnExitField)
       RETURN()
     }
@@ -1638,15 +1637,6 @@ object BackendObjType {
       this.jvmName, "metafactory",
       mkDescriptor(methodHandlesLookup, BackendType.String, methodType, methodType, methodHandle, methodType)(callSite)
     )
-  }
-
-  case object LinkedList extends BackendObjType {
-
-    def AddFirstMethod: InstanceMethod = InstanceMethod(this.jvmName, "addFirst",
-      mkDescriptor(BackendType.Object)(VoidableType.Void))
-
-    def IteratorMethod: InstanceMethod = InstanceMethod(this.jvmName, "iterator",
-      mkDescriptor()(BackendObjType.Iterator.toTpe))
   }
 
   case object Iterator extends BackendObjType {
