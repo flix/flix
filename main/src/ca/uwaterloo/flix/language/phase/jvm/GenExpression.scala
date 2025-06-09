@@ -839,7 +839,7 @@ object GenExpression {
         val thisType = asm.Type.getInternalName(method.getDeclaringClass)
         mv.visitTypeInsn(CHECKCAST, thisType)
 
-        for ((arg, argType) <- exps.zip(method.getParameterTypes)) {
+        for ((arg, argType) <- args.zip(method.getParameterTypes)) {
           compileExpr(arg)
           if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
         }
