@@ -12,7 +12,15 @@ import org.objectweb.asm.{MethodVisitor, Opcodes}
   */
 object ClassFileMigration {
 
-  implicit class ClassFileMethodVisitor(mv: MethodVisitor) {
+  /**
+    * Every public function here should match those in
+    * [[https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/classfile/CodeBuilder.html]]
+    * as close as possible without the new Java additions.
+    *
+    * One exception is the return type, which for `implicit class` purposes is [[MethodVisitor]] instead of
+    * `CodeBuilder`.
+    */
+  implicit class CodeBuilder(mv: MethodVisitor) {
 
     def aconst_null(): MethodVisitor =
       builder(_.visitInsn(Opcodes.ACONST_NULL))
