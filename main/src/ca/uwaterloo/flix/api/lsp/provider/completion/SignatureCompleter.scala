@@ -37,7 +37,7 @@ object SignatureCompleter {
         trt.sigs.collect {
           case sig if CompletionUtils.isAvailable(trt) && CompletionUtils.matchesName(sig.sym, qn, qualified = false) =>
             val s = inScope(sig, scp)
-            val priority = if (s) Priority.High else Priority.Lower
+            val priority = if (s) Priority.High(0) else Priority.Lower(0)
             SigCompletion(sig, "", range, priority, ap, qualified = false, inScope = s, ectx)
         }
       )
@@ -52,7 +52,7 @@ object SignatureCompleter {
     root.traits.values.flatMap(trt =>
       trt.sigs.collect {
         case sig if CompletionUtils.isAvailable(trt) && CompletionUtils.matchesName(sig.sym, qn, qualified = true) =>
-          SigCompletion(sig, "", range, Priority.High, ap, qualified = true, inScope = true, ectx)
+          SigCompletion(sig, "", range, Priority.High(0), ap, qualified = true, inScope = true, ectx)
       }
     )
   }
@@ -77,7 +77,7 @@ object SignatureCompleter {
       trt <- root.traits.get(Symbol.mkTraitSym(fullyQualifiedTrait)).toList
       sig <- trt.sigs
       if CompletionUtils.isAvailable(trt) && CompletionUtils.matchesName(sig.sym, qn, qualified = false)
-    } yield SigCompletion(sig, qn.namespace.toString, range, Priority.High, ap, qualified = true, inScope = true, ectx)
+    } yield SigCompletion(sig, qn.namespace.toString, range, Priority.High(0), ap, qualified = true, inScope = true, ectx)
   }
 
   private def inScope(sig: TypedAst.Sig, scope: LocalScope): Boolean = {

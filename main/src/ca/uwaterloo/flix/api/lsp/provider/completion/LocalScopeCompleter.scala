@@ -49,7 +49,7 @@ object LocalScopeCompleter {
     */
   private def mkJavaClassCompletion(name: String, resolutions: List[Resolution], range: Range): Iterable[Completion] = {
     resolutions.collect {
-      case Resolution.JavaClass(clazz) => Completion.LocalJavaClassCompletion(name, clazz, range, Priority.High)
+      case Resolution.JavaClass(clazz) => Completion.LocalJavaClassCompletion(name, clazz, range, Priority.High(0))
     }
   }
 
@@ -60,7 +60,7 @@ object LocalScopeCompleter {
     if (resolutions.exists {
       case Resolution.Var(_) => true
       case _ => false
-    }) Completion.LocalVarCompletion(name, range, Priority.High) :: Nil else Nil
+    }) Completion.LocalVarCompletion(name, range, Priority.High(0)) :: Nil else Nil
   }
 
   /**
@@ -68,7 +68,7 @@ object LocalScopeCompleter {
     */
   private def mkLocalDefCompletion(resolutions: List[Resolution], range: Range): Iterable[Completion] =
     resolutions.collect {
-      case Resolution.LocalDef(sym, fparams) => Completion.LocalDefCompletion(sym, fparams, range, Priority.High)
+      case Resolution.LocalDef(sym, fparams) => Completion.LocalDefCompletion(sym, fparams, range, Priority.High(0))
     }
 
 }
