@@ -48,10 +48,11 @@ object JvmBackend {
 
     // Collect a list of bytecode generation jobs to do concurrently.
     val tasks = mutable.ArrayBuffer.empty[Unit => JvmClass]
+
     def addTask(f: => JvmClass): Unit = tasks.append(_ => f)
 
     for (main <- root.getMain) addTask(JvmClass(BackendObjType.Main.jvmName, BackendObjType.Main.genByteCode(main.sym)))
-    for (ns <- JvmOps.namespacesOf(root)) addTask{
+    for (ns <- JvmOps.namespacesOf(root)) addTask {
       val nsClass = BackendObjType.Namespace(ns.ns)
       val entrypointDefs = ns.defs.values.toList.filter(defn => root.entryPoints.contains(defn.sym))
       JvmClass(nsClass.jvmName, nsClass.genByteCode(entrypointDefs))
@@ -101,7 +102,7 @@ object JvmBackend {
     }
 
     // Generate the classes in parallel.
-    val singleClasses = ParOps.parMap(tasks){task => task(())}.toList
+    val singleClasses = ParOps.parMap(tasks) { task => task(()) }.toList
 
     // Add the remaining classes not written to be split.
     val functionAndClosureClasses = GenFunAndClosureClasses.gen(root.defs).values.toList
