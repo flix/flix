@@ -316,6 +316,18 @@ object ClassMaker {
       InstanceMethod(JvmName.String, "concat", mkDescriptor(BackendType.String)(BackendType.String))
   }
 
+  object StringBuilder {
+
+    def Constructor: ConstructorMethod = ConstructorMethod(JvmName.StringBuilder, Nil)
+
+    def AppendStringMethod: InstanceMethod =
+      InstanceMethod(JvmName.StringBuilder, "append", mkDescriptor(BackendType.String)(JvmName.StringBuilder.toTpe))
+
+    def AppendInt32Method: InstanceMethod =
+      InstanceMethod(JvmName.StringBuilder, "append", mkDescriptor(BackendType.Int32)(JvmName.StringBuilder.toTpe))
+
+  }
+
   object Thread {
 
     def StartMethod: InstanceMethod =
