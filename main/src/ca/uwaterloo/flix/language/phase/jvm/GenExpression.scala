@@ -1079,11 +1079,14 @@ object GenExpression {
 
     case Expr.ApplyDef(sym, exps, ct, _, _, loc) => ct match {
       case ExpPosition.Tail =>
+        val defJvmName = BackendObjType.Defn(sym).jvmName
         // Type of the function abstract class
         val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType).jvmName
 
         // Put the def on the stack
-        AsmOps.compileDefSymbol(sym, mv)
+        mv.visitTypeInsn(NEW, defJvmName.toInternalName)
+        mv.visitInsn(DUP)
+        mv.visitMethodInsn(INVOKESPECIAL, defJvmName.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
         // Putting args on the Fn class
         for ((arg, i) <- exps.zipWithIndex) {
           // Duplicate the FunctionInterface
@@ -1117,7 +1120,9 @@ object GenExpression {
           val defJvmName = BackendObjType.Defn(sym).jvmName
 
           // Put the def on the stack
-          AsmOps.compileDefSymbol(sym, mv)
+          mv.visitTypeInsn(NEW, defJvmName.toInternalName)
+          mv.visitInsn(DUP)
+          mv.visitMethodInsn(INVOKESPECIAL, defJvmName.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
 
           // Putting args on the Fn class
           for ((arg, i) <- exps.zipWithIndex) {
