@@ -76,7 +76,6 @@ sealed trait BackendObjType {
     case BackendObjType.Thread => JvmName(JavaLang, "Thread")
     case BackendObjType.ThreadBuilderOfVirtual => JvmName(JavaLang, "Thread$Builder$OfVirtual")
     case BackendObjType.ThreadUncaughtExceptionHandler => JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
-    case BackendObjType.ReentrantLock => JvmName.ReentrantLock
     // Effects Runtime
     case BackendObjType.Result => JvmName(DevFlixRuntime, mkClassName("Result"))
     case BackendObjType.Value => JvmName(DevFlixRuntime, mkClassName("Value"))
@@ -177,7 +176,7 @@ object BackendObjType {
 
     def ValueField: InstanceField = InstanceField(this.jvmName, "value", tpe)
 
-    private def LockField: InstanceField = InstanceField(this.jvmName, "lock", ReentrantLock.toTpe)
+    private def LockField: InstanceField = InstanceField(this.jvmName, "lock", JvmName.ReentrantLock.toTpe)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(BackendType.Object))
 
@@ -193,7 +192,7 @@ object BackendObjType {
         PUTFIELD(ExpField)
         // this.lock = new ReentrantLock()
         thisLoad()
-        NEW(ReentrantLock.jvmName)
+        NEW(JvmName.ReentrantLock)
         DUP()
         INVOKESPECIAL(ReentrantLock.Constructor)
         PUTFIELD(LockField)
@@ -1728,16 +1727,6 @@ object BackendObjType {
 
     def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, "uncaughtException",
       mkDescriptor(Thread.toTpe, JvmName.Throwable.toTpe)(VoidableType.Void))
-  }
-
-  case object ReentrantLock extends BackendObjType {
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
-
-    def UnlockMethod: InstanceMethod = InstanceMethod(this.jvmName, "unlock", MethodDescriptor.NothingToVoid)
-
-    def LockInterruptiblyMethod: InstanceMethod = InstanceMethod(this.jvmName, "lockInterruptibly", MethodDescriptor.NothingToVoid)
-
   }
 
   case object Result extends BackendObjType {

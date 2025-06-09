@@ -296,6 +296,16 @@ object ClassMaker {
 
   }
 
+  object ReentrantLock {
+
+    def Constructor: ConstructorMethod = ConstructorMethod(JvmName.ReentrantLock, Nil)
+
+    def UnlockMethod: InstanceMethod = InstanceMethod(JvmName.ReentrantLock, "unlock", MethodDescriptor.NothingToVoid)
+
+    def LockInterruptiblyMethod: InstanceMethod = InstanceMethod(JvmName.ReentrantLock, "lockInterruptibly", MethodDescriptor.NothingToVoid)
+
+  }
+
   object String {
     def Concat: InstanceMethod =
       InstanceMethod(JvmName.String, "concat", mkDescriptor(BackendType.String)(BackendType.String))
