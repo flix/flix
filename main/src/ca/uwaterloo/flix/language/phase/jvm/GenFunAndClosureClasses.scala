@@ -64,12 +64,6 @@ object GenFunAndClosureClasses {
 
   private def isControlPure(defn: Def): Boolean = Purity.isControlPure(defn.expr.purity)
 
-  private sealed trait FunctionKind
-
-  private case object Function extends FunctionKind
-
-  private case object Closure extends FunctionKind
-
   /**
     * Generates the following code for control-pure functions.
     *
