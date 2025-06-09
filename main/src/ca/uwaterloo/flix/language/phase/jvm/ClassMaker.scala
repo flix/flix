@@ -315,6 +315,14 @@ object ClassMaker {
 
   }
 
+  object BigDecimal {
+    def Constructor: ConstructorMethod = ClassMaker.ConstructorMethod(JvmName.BigDecimal, List(BackendType.String))
+  }
+
+  object BigInteger {
+    def Constructor: ConstructorMethod = ClassMaker.ConstructorMethod(JvmName.BigInteger, List(BackendType.String))
+  }
+
   object Iterator {
 
     def HasNextMethod: InterfaceMethod =
