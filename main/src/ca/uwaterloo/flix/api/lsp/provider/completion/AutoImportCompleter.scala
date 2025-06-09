@@ -77,10 +77,10 @@ object AutoImportCompleter {
     val frequentlyUsedPackages = List("java.lang", "java.io", "java.nio", "java.util")
     val rarelyUsedPackages = List("com.sun", "sun.")
     if (frequentlyUsedPackages.exists(qualifiedName.startsWith))
-      Priority.Low
+      Priority.Low(0)
     else if (rarelyUsedPackages.exists(qualifiedName.startsWith))
-      Priority.Lowest
+      Priority.Lowest(0)
     else
-      Priority.Lower
+      Priority.Lower(0)
   }
 }
