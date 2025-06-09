@@ -368,7 +368,7 @@ object GenFunAndClosureClasses {
 
     NEW(className)
     DUP()
-    INVOKESPECIAL(className, "<init>", MethodDescriptor.NothingToVoid)
+    INVOKESPECIAL(className, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid)
     for ((name, tpe) <- params) {
       val fieldType = BackendType.toErasedBackendType(tpe).toDescriptor
       DUP()

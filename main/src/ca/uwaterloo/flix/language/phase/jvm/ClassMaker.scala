@@ -253,13 +253,13 @@ object ClassMaker {
   }
 
   sealed case class ConstructorMethod(clazz: JvmName, args: List[BackendType]) extends Method {
-    override def name: String = "<init>"
+    override def name: String = JvmName.ConstructorMethod
 
     override def d: MethodDescriptor = MethodDescriptor(args, VoidableType.Void)
   }
 
   case class StaticConstructorMethod(clazz: JvmName) extends Method {
-    override def name: String = "<clinit>"
+    override def name: String = JvmName.StaticConstructorMethod
 
     override def d: MethodDescriptor = MethodDescriptor.NothingToVoid
   }
@@ -314,6 +314,18 @@ object ClassMaker {
   object String {
     def Concat: InstanceMethod =
       InstanceMethod(JvmName.String, "concat", mkDescriptor(BackendType.String)(BackendType.String))
+  }
+
+  object StringBuilder {
+
+    def Constructor: ConstructorMethod = ConstructorMethod(JvmName.StringBuilder, Nil)
+
+    def AppendStringMethod: InstanceMethod =
+      InstanceMethod(JvmName.StringBuilder, "append", mkDescriptor(BackendType.String)(JvmName.StringBuilder.toTpe))
+
+    def AppendInt32Method: InstanceMethod =
+      InstanceMethod(JvmName.StringBuilder, "append", mkDescriptor(BackendType.Int32)(JvmName.StringBuilder.toTpe))
+
   }
 
   object Thread {
