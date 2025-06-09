@@ -146,40 +146,63 @@ object GenFunAndClosureClasses {
     */
   private def genCode(className: JvmName, kind: FunctionKind, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
     val visitor = AsmOps.mkClassWriter()
+    kind match {
+      case Function if Purity.isControlPure(defn.expr.purity) =>
+        // Header
+        val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
+        visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
+          functionInterface.toInternalName, null)
 
-    // Header
-    val functionInterface = kind match {
-      case Function => JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
-      case Closure => JvmOps.getErasedClosureAbstractClassType(defn.arrowType).jvmName
-    }
-    val frameInterface = BackendObjType.Frame
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
-      functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
+        compileConstructor(functionInterface, visitor)
+        // Methods
+        compileStaticInvokeMethod(visitor, className, defn)
+        compileStaticApplyMethod(visitor, className, defn)
 
-    // Fields
-    val closureArgTypes = defn.cparams.map(_.tpe)
-    for ((argType, index) <- closureArgTypes.zipWithIndex) {
-      val erasedArgType = JvmOps.getErasedJvmType(argType)
-      val field = visitor.visitField(ACC_PUBLIC, s"clo$index", erasedArgType.toDescriptor, null, null)
-      field.visitEnd()
-    }
-    for ((x, i) <- defn.lparams.zipWithIndex) {
-      visitor.visitField(ACC_PUBLIC, s"l$i", JvmOps.getErasedJvmType(x.tpe).toDescriptor, null, null)
-    }
-    visitor.visitField(ACC_PUBLIC, "pc", JvmType.PrimInt.toDescriptor, null, null)
+      case Function =>
+        // Header
+        val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
+        val frameInterface = BackendObjType.Frame
+        visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
+          functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
 
-    compileConstructor(functionInterface, visitor)
-    // Methods
-    if (Purity.isControlPure(defn.expr.purity) && kind == Function) {
-      compileStaticInvokeMethod(visitor, className, defn)
-      compileStaticApplyMethod(visitor, className, defn)
+        // Fields
+        for ((x, i) <- defn.lparams.zipWithIndex) {
+          visitor.visitField(ACC_PUBLIC, s"l$i", JvmOps.getErasedJvmType(x.tpe).toDescriptor, null, null)
+        }
+        visitor.visitField(ACC_PUBLIC, "pc", JvmType.PrimInt.toDescriptor, null, null)
+
+        compileConstructor(functionInterface, visitor)
+        // Methods
+        compileInvokeMethod(visitor, className)
+        compileFrameMethod(visitor, className, defn)
+        compileCopyMethod(visitor, className, defn)
+
+      case Closure =>
+        // Header
+        val functionInterface = JvmOps.getErasedClosureAbstractClassType(defn.arrowType).jvmName
+        val frameInterface = BackendObjType.Frame
+        visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
+          functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
+
+        // Fields
+        val closureArgTypes = defn.cparams.map(_.tpe)
+        for ((argType, index) <- closureArgTypes.zipWithIndex) {
+          val erasedArgType = JvmOps.getErasedJvmType(argType)
+          val field = visitor.visitField(ACC_PUBLIC, s"clo$index", erasedArgType.toDescriptor, null, null)
+          field.visitEnd()
+        }
+        for ((x, i) <- defn.lparams.zipWithIndex) {
+          visitor.visitField(ACC_PUBLIC, s"l$i", JvmOps.getErasedJvmType(x.tpe).toDescriptor, null, null)
+        }
+        visitor.visitField(ACC_PUBLIC, "pc", JvmType.PrimInt.toDescriptor, null, null)
+
+        compileConstructor(functionInterface, visitor)
+        // Methods
+        compileInvokeMethod(visitor, className)
+        compileFrameMethod(visitor, className, defn)
+        compileCopyMethod(visitor, className, defn)
+        compileGetUniqueThreadClosureMethod(visitor, className, defn)
     }
-    else {
-      compileInvokeMethod(visitor, className)
-      compileFrameMethod(visitor, className, defn)
-      compileCopyMethod(visitor, className, defn)
-    }
-    if (kind == Closure) compileGetUniqueThreadClosureMethod(visitor, className, defn)
 
     visitor.visitEnd()
     visitor.toByteArray
