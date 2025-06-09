@@ -211,6 +211,93 @@ object GenFunAndClosureClasses {
     visitor.toByteArray
   }
 
+  /**
+    * Generates the following code for closures.
+    *
+    * {{{
+    * public final class Clo$example$152 extends Clo2$Obj$Int$Obj implements Frame {
+    *   // locals variables
+    *   public int l0;
+    *   public char l1;
+    *   public Object l2;
+    *   // closure params
+    *   public int clo0;
+    *   public byte clo1;
+    *   // function arguments
+    *   public Object arg0;
+    *   public int arg1
+    *
+    *   public final Result invoke() { return this.applyFrame(null); }
+    *
+    *   public final Result applyFrame(Value resumptionArg) {
+    *     // fields are put into the local frame according to symbol data
+    *     int ? = this.l0;
+    *     char ? = this.l1;
+    *     Object ? = this.l2;
+    *
+    *     EnterLabel:
+    *
+    *     int ? = this.clo0;
+    *     byte ? = this.clo1;
+    *     Object ? = this.arg0;
+    *     int ? = this.arg1;
+    *
+    *     // body code ...
+    *   }
+    *
+    *   public final Clo$example$152 copy {
+    *     Clo$example$152 x = new Clo$example$152();
+    *     x.arg0 = this.arg0;
+    *     x.arg1 = this.arg1
+    *     x.clo0 = this.clo0;
+    *     x.clo1 = this.clo1;
+    *     x.l0 = this.l0;
+    *     x.l1 = this.l1;
+    *     x.l2 = this.l2;
+    *     return x;
+    *   }
+    *
+    *   public Clo2$Obj$Int$Obj getUniqueThreadClosure() {
+    *     Clo$example$152 x = new Clo$example$152();
+    *     x.clo0 = this.clo0;
+    *     x.clo1 = this.clo1;
+    *     return x;
+    *   }
+    * }
+    * }}}
+    */
+  private def genClosure(className: JvmName, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
+    val visitor = AsmOps.mkClassWriter()
+    // Header
+    val functionInterface = JvmOps.getErasedClosureAbstractClassType(defn.arrowType).jvmName
+    val frameInterface = BackendObjType.Frame
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
+      functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
+
+    // Fields
+    val closureArgTypes = defn.cparams.map(_.tpe)
+    for ((argType, index) <- closureArgTypes.zipWithIndex) {
+      val erasedArgType = JvmOps.getErasedJvmType(argType)
+      val field = visitor.visitField(ACC_PUBLIC, s"clo$index", erasedArgType.toDescriptor, null, null)
+      field.visitEnd()
+    }
+    for ((x, i) <- defn.lparams.zipWithIndex) {
+      visitor.visitField(ACC_PUBLIC, s"l$i", JvmOps.getErasedJvmType(x.tpe).toDescriptor, null, null)
+    }
+    visitor.visitField(ACC_PUBLIC, "pc", JvmType.PrimInt.toDescriptor, null, null)
+
+    compileConstructor(functionInterface, visitor)
+
+    // Methods
+    compileInvokeMethod(visitor, className)
+    compileFrameMethod(visitor, className, defn)
+    compileCopyMethod(visitor, className, defn)
+    compileGetUniqueThreadClosureMethod(visitor, className, defn)
+
+    visitor.visitEnd()
+    visitor.toByteArray
+  }
+
   private def compileConstructor(superClass: JvmName, visitor: ClassWriter): Unit = {
     val constructor = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
 
