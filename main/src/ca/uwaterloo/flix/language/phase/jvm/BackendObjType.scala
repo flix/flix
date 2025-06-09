@@ -66,7 +66,6 @@ sealed trait BackendObjType {
     case BackendObjType.Native(className) => className
     case BackendObjType.Regex => JvmName(List("java", "util", "regex"), "Pattern")
     case BackendObjType.Arrays => JvmName(JavaUtil, "Arrays")
-    case BackendObjType.StringBuilder => JvmName(JavaLang, "StringBuilder")
     case BackendObjType.LambdaMetaFactory => JvmName(JavaLangInvoke, "LambdaMetafactory")
     case BackendObjType.LinkedList => JvmName(JavaUtil, "LinkedList")
     case BackendObjType.Iterator => JvmName(JavaUtil, "Iterator")
@@ -770,7 +769,7 @@ object BackendObjType {
     private def ToTailStringMethod: InstanceMethod = interface.ToTailStringMethod.implementation(this.jvmName)
 
     private def toTailStringIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, StringBuilder.toTpe) { sb =>
+      withName(1, JvmName.StringBuilder.toTpe) { sb =>
         sb.load()
         pushString("}")
         INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
@@ -858,7 +857,7 @@ object BackendObjType {
       thisLoad()
       GETFIELD(this.RestField)
       // build this segment of the string
-      NEW(StringBuilder.jvmName)
+      NEW(JvmName.StringBuilder)
       DUP()
       INVOKESPECIAL(StringBuilder.Constructor)
       pushString("{")
@@ -877,7 +876,7 @@ object BackendObjType {
     }
 
     private def toTailStringIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, StringBuilder.toTpe) { sb =>
+      withName(1, JvmName.StringBuilder.toTpe) { sb =>
         // save the `rest` for the last recursive call
         thisLoad()
         GETFIELD(this.RestField)
@@ -931,7 +930,7 @@ object BackendObjType {
       mkDescriptor(BackendType.String)(this.toTpe))
 
     def ToTailStringMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "toTailString",
-      mkDescriptor(StringBuilder.toTpe)(BackendType.String))
+      mkDescriptor(JvmName.StringBuilder.toTpe)(BackendType.String))
   }
 
   /**
@@ -1002,7 +1001,7 @@ object BackendObjType {
 
     private def toStringIns(implicit mv: MethodVisitor): Unit = {
       // create string builder
-      NEW(StringBuilder.jvmName)
+      NEW(JvmName.StringBuilder)
       DUP()
       INVOKESPECIAL(StringBuilder.Constructor)
       // build string
@@ -1160,7 +1159,7 @@ object BackendObjType {
         withName(2, ReifiedSourceLocation.toTpe) { loc =>
           thisLoad()
           // create an error msg
-          NEW(StringBuilder.jvmName)
+          NEW(JvmName.StringBuilder)
           DUP()
           INVOKESPECIAL(StringBuilder.Constructor)
           pushString("Hole '")
@@ -1205,7 +1204,7 @@ object BackendObjType {
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
-      NEW(StringBuilder.jvmName)
+      NEW(JvmName.StringBuilder)
       DUP()
       INVOKESPECIAL(StringBuilder.Constructor)
       pushString("Non-exhaustive match at ")
@@ -1238,7 +1237,7 @@ object BackendObjType {
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       withName(1, ReifiedSourceLocation.toTpe)(loc => withName(2, BackendType.String)(msg => {
         thisLoad()
-        NEW(StringBuilder.jvmName)
+        NEW(JvmName.StringBuilder)
         DUP()
         INVOKESPECIAL(StringBuilder.Constructor)
         msg.load()
@@ -1279,7 +1278,7 @@ object BackendObjType {
         def appendString(): Unit = INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
 
         thisLoad()
-        NEW(StringBuilder.jvmName)
+        NEW(JvmName.StringBuilder)
         DUP()
         INVOKESPECIAL(StringBuilder.Constructor)
         pushString("Unhandled effect '")
@@ -1631,18 +1630,6 @@ object BackendObjType {
 
     def DeepToString: StaticMethod = StaticMethod(this.jvmName,
       "deepToString", mkDescriptor(BackendType.Array(BackendType.Object))(BackendType.String))
-  }
-
-  case object StringBuilder extends BackendObjType {
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
-
-    def AppendStringMethod: InstanceMethod = InstanceMethod(this.jvmName, "append",
-      mkDescriptor(BackendType.String)(StringBuilder.toTpe))
-
-    def AppendInt32Method: InstanceMethod = InstanceMethod(this.jvmName, "append",
-      mkDescriptor(BackendType.Int32)(StringBuilder.toTpe))
-
   }
 
   case object LambdaMetaFactory extends BackendObjType {
