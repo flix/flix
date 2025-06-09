@@ -285,6 +285,7 @@ object ClassMaker {
   // Constants.
 
   object Arrays {
+
     def BoolArrToString: StaticMethod =
       StaticMethod(JvmName.Arrays, "toString", mkDescriptor(BackendType.Array(BackendType.Bool))(BackendType.String))
 
@@ -311,6 +312,17 @@ object ClassMaker {
 
     def DeepToString: StaticMethod =
       StaticMethod(JvmName.Arrays, "deepToString", mkDescriptor(BackendType.Array(BackendType.Object))(BackendType.String))
+
+  }
+
+  object Iterator {
+
+    def HasNextMethod: InterfaceMethod =
+      InterfaceMethod(JvmName.Iterator, "hasNext", mkDescriptor()(BackendType.Bool))
+
+    def NextMethod: InterfaceMethod =
+      InterfaceMethod(JvmName.Iterator, "next", mkDescriptor()(BackendType.Object))
+
   }
 
   object LinkedList {
@@ -319,7 +331,7 @@ object ClassMaker {
       InstanceMethod(JvmName.LinkedList, "addFirst", mkDescriptor(BackendType.Object)(VoidableType.Void))
 
     def IteratorMethod: InstanceMethod =
-      InstanceMethod(JvmName.LinkedList, "iterator", mkDescriptor()(BackendObjType.Iterator.toTpe))
+      InstanceMethod(JvmName.LinkedList, "iterator", mkDescriptor()(JvmName.Iterator.toTpe))
 
   }
 
