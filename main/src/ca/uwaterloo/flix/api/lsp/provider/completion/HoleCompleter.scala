@@ -42,7 +42,10 @@ object HoleCompleter {
           .map(root.defs(_))
           .filter(_.spec.mod.isPublic)
           .zipWithIndex
-          .map { case (decl, idx) => Completion.HoleCompletion(sym, decl, f"$idx%09d", loc) }
+          .map { case (decl, idx) =>
+            val priority = Priority.High(idx)
+            Completion.HoleCompletion(sym, decl, priority, loc)
+          }
       case _ => Nil
     }
   }
