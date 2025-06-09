@@ -2978,10 +2978,7 @@ object Parser2 {
       val hint = "provide a predicate arity such as: Pred/1"
       // check for shape "/2"
       expect(TokenKind.Slash, hint = Some(hint))
-      advance()
-
       expect(TokenKind.LiteralInt, hint = Some(hint))
-      advance()
 
       close(mark, TreeKind.PredicateAndArity)
     }
