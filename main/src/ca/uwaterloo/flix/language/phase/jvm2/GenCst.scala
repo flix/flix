@@ -47,7 +47,7 @@ object GenCst {
       cb.invokespecial(
         ClassDesc.of("java.math.BigDecimal"),
         "<init>",
-        MethodTypeDesc.of(ConstantDescs.CD_String, ConstantDescs.CD_void),
+        MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String),
         false
       )
 
@@ -70,7 +70,8 @@ object GenCst {
       cb.invokespecial(
         ClassDesc.of("java.math.BigInteger"),
         "<init>",
-        MethodTypeDesc.of(ConstantDescs.CD_String, ConstantDescs.CD_void),
+        // return type, argument types...
+        MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String),
         false
       )
 
@@ -82,7 +83,8 @@ object GenCst {
       cb.invokestatic(
         ClassDesc.of(JvmName.Regex.toInternalName), // owner
         "compile", // method name
-        MethodTypeDesc.of(ConstantDescs.CD_String, ClassDesc.of(JvmName.Regex.toInternalName)), // method type
+        // return type, argument types...
+        MethodTypeDesc.of(ClassDesc.of(JvmName.Regex.toInternalName), ConstantDescs.CD_String), // method type
       )
 
     case Constant.RecordEmpty =>

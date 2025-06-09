@@ -11,8 +11,6 @@ object GenExpr {
       // tpe : type as ClassDesc
       // loc : source location
       GenCst.gen(cst, cb)
-      cb.aconst_null()
-      cb.athrow()
 
     case JvmAst.Expr.Var(_, _, _) =>
       cb.aconst_null()
