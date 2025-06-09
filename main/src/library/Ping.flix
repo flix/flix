@@ -18,7 +18,7 @@
 /// The effect used to determine if an address is reachable.
 ///
 eff Ping {
-    def isReachable(host: String, timeout: Int32): Bool
+    def isReachable(host: String, timeout: Int32, u: TimeUnit): Bool
 }
 
 mod Ping {
@@ -28,6 +28,7 @@ mod Ping {
     import java.net.InetAddress
     import java.io.IOException
     import java.net.UnknownHostException
+    import java.lang.IllegalArgumentException
 
     ///
     /// Handles the `Ping` effect of the given function `f`.
@@ -40,10 +41,20 @@ mod Ping {
         } with handler Ping {
             def isReachable(host, timeout, k) = {
                 try {
+                    let timeoutMs = match u {
+                           case TimeUnit.Days => timeout * 86400000,
+                           case TimeUnit.Hours => timeout * 3600000,
+                           case TimeUnit.Microseconds => timeout / 1000,
+                           case TimeUnit.Milliseconds => timeout,
+                           case TimeUnit.Minutes=> timeout * 6000,
+                           case TimeUnit.Nanoseconds=> timeout / 1000000,
+                           case TimeUnit.Seconds => timeout * 1000
+                    };
                     let addr = InetAddress.getByName(host);
-                    k(addr.isReachable(timeout))
+                    k(addr.isReachable(timeoutMs))
                 } catch {
                     case ex: UnknownHostException => Err(IoError(ErrorKind.UnknownHost, ex.getMessage()))
+                    case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
                     case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
