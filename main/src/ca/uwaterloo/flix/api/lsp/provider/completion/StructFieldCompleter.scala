@@ -26,6 +26,6 @@ object StructFieldCompleter {
       case Some(sym) => completions0.filter(_.sym.structSym == sym)
       case None => completions0
     }
-    completions.map(field => Completion.StructFieldCompletion(field.sym.name, e.field.loc, field.tpe))
+    completions.map(field => Completion.StructFieldCompletion(field.sym.name, e.field.loc, field.tpe, Priority.Lowest(0)))
   }
 }
