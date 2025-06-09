@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Interface.{IsInterface, N
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Static.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.*
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.{JavaLangInvoke, MethodDescriptor}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import org.objectweb.asm.{ClassWriter, MethodVisitor, Opcodes}
 
@@ -325,6 +325,11 @@ object ClassMaker {
 
   }
 
+  object LambdaMetafactory {
+    def MetafactoryMethod: StaticMethod =
+      StaticMethod(JvmName.LambdaMetafactory, "metafactory", mkDescriptor(JvmName.MethodHandles$Lookup.toTpe, BackendType.String, JvmName.MethodType.toTpe, JvmName.MethodType.toTpe, JvmName.MethodHandle.toTpe, JvmName.MethodType.toTpe)(JvmName.CallSite.toTpe))
+  }
+
   object LinkedList {
 
     def AddFirstMethod: InstanceMethod =
@@ -399,7 +404,7 @@ object ClassMaker {
       InstanceMethod(JvmName.Thread, "interrupt", MethodDescriptor.NothingToVoid)
 
     def SetUncaughtExceptionHandlerMethod: InstanceMethod =
-      InstanceMethod(JvmName.Thread, "setUncaughtExceptionHandler", mkDescriptor(JvmName.ThreadUncaughtExceptionHandler.toTpe)(VoidableType.Void))
+      InstanceMethod(JvmName.Thread, "setUncaughtExceptionHandler", mkDescriptor(JvmName.Thread$UncaughtExceptionHandler.toTpe)(VoidableType.Void))
 
     def OfVirtualMethod: StaticMethod =
       StaticMethod(JvmName.Thread, "ofVirtual", mkDescriptor()(JvmName.Thread$Builder$OfVirtual.toTpe))
@@ -412,7 +417,7 @@ object ClassMaker {
 
   object ThreadUncaughtExceptionHandler {
     def UncaughtExceptionMethod: InstanceMethod =
-      InstanceMethod(JvmName.ThreadUncaughtExceptionHandler, "uncaughtException", mkDescriptor(JvmName.Thread.toTpe, JvmName.Throwable.toTpe)(VoidableType.Void))
+      InstanceMethod(JvmName.Thread$UncaughtExceptionHandler, "uncaughtException", mkDescriptor(JvmName.Thread.toTpe, JvmName.Throwable.toTpe)(VoidableType.Void))
   }
 
 }
