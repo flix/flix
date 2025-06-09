@@ -74,7 +74,7 @@ object JvmBackend {
 
     val lazyClasses = JvmOps.getLazyTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
 
-    val anonClasses = GenAnonymousClasses.gen(root.anonClasses).values.toList
+    val anonClasses = GenAnonymousClasses.gen(root.anonClasses)
 
     val unitClass = List(JvmClass(BackendObjType.Unit.jvmName, BackendObjType.Unit.genByteCode()))
 
