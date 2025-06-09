@@ -579,15 +579,15 @@ object BytecodeInstructions {
     case BackendType.Reference(_) =>
       INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Object)(BackendType.String)))
 
-    case BackendType.Array(BackendType.Bool) => INVOKESTATIC(BackendObjType.Arrays.BoolArrToString)
-    case BackendType.Array(BackendType.Char) => INVOKESTATIC(BackendObjType.Arrays.CharArrToString)
-    case BackendType.Array(BackendType.Int8) => INVOKESTATIC(BackendObjType.Arrays.Int8ArrToString)
-    case BackendType.Array(BackendType.Int16) => INVOKESTATIC(BackendObjType.Arrays.Int16ArrToString)
-    case BackendType.Array(BackendType.Int32) => INVOKESTATIC(BackendObjType.Arrays.Int32ArrToString)
-    case BackendType.Array(BackendType.Int64) => INVOKESTATIC(BackendObjType.Arrays.Int64ArrToString)
-    case BackendType.Array(BackendType.Float32) => INVOKESTATIC(BackendObjType.Arrays.Float32ArrToString)
-    case BackendType.Array(BackendType.Float64) => INVOKESTATIC(BackendObjType.Arrays.Float64ArrToString)
-    case BackendType.Array(BackendType.Reference(_) | BackendType.Array(_)) => INVOKESTATIC(BackendObjType.Arrays.DeepToString)
+    case BackendType.Array(BackendType.Bool) => INVOKESTATIC(ClassMaker.Arrays.BoolArrToString)
+    case BackendType.Array(BackendType.Char) => INVOKESTATIC(ClassMaker.Arrays.CharArrToString)
+    case BackendType.Array(BackendType.Int8) => INVOKESTATIC(ClassMaker.Arrays.Int8ArrToString)
+    case BackendType.Array(BackendType.Int16) => INVOKESTATIC(ClassMaker.Arrays.Int16ArrToString)
+    case BackendType.Array(BackendType.Int32) => INVOKESTATIC(ClassMaker.Arrays.Int32ArrToString)
+    case BackendType.Array(BackendType.Int64) => INVOKESTATIC(ClassMaker.Arrays.Int64ArrToString)
+    case BackendType.Array(BackendType.Float32) => INVOKESTATIC(ClassMaker.Arrays.Float32ArrToString)
+    case BackendType.Array(BackendType.Float64) => INVOKESTATIC(ClassMaker.Arrays.Float64ArrToString)
+    case BackendType.Array(BackendType.Reference(_) | BackendType.Array(_)) => INVOKESTATIC(ClassMaker.Arrays.DeepToString)
   }
 
   //
