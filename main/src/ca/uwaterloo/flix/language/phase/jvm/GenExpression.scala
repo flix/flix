@@ -820,10 +820,10 @@ object GenExpression {
         mv.visitTypeInsn(NEW, declaration)
         // Duplicate the reference since the first argument for a constructor call is the reference to the object
         mv.visitInsn(DUP)
-        // Retrieve the signature.
-        val signature = constructor.getParameterTypes
-
-        pushArgs(exps, signature)
+        for ((arg, argType) <- exps.zip(constructor.getParameterTypes)) {
+          compileExpr(arg)
+          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+        }
 
         // Call the constructor
         mv.visitMethodInsn(INVOKESPECIAL, declaration, JvmName.ConstructorMethod, descriptor, false)
@@ -839,10 +839,10 @@ object GenExpression {
         val thisType = asm.Type.getInternalName(method.getDeclaringClass)
         mv.visitTypeInsn(CHECKCAST, thisType)
 
-        // Retrieve the signature.
-        val signature = method.getParameterTypes
-
-        pushArgs(args, signature)
+        for ((arg, argType) <- exps.zip(method.getParameterTypes)) {
+          compileExpr(arg)
+          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+        }
 
         val declaration = asm.Type.getInternalName(method.getDeclaringClass)
         val name = method.getName
@@ -863,8 +863,10 @@ object GenExpression {
       case AtomicOp.InvokeStaticMethod(method) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
         BytecodeInstructions.addLoc(loc)
-        val signature = method.getParameterTypes
-        pushArgs(exps, signature)
+        for ((arg, argType) <- exps.zip(method.getParameterTypes)) {
+          compileExpr(arg)
+          if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+        }
         val declaration = asm.Type.getInternalName(method.getDeclaringClass)
         val name = method.getName
         val descriptor = asm.Type.getMethodDescriptor(method)
@@ -1600,14 +1602,4 @@ object GenExpression {
     case _ => mv.visitLdcInsn(i)
   }
 
-  /**
-    * Pushes arguments onto the stack ready to invoke a method
-    */
-  private def pushArgs(args: List[Expr], signature: Array[Class[? <: Object]])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
-    // Evaluate arguments left-to-right and push them onto the stack.
-    for ((arg, argType) <- args.zip(signature)) {
-      compileExpr(arg)
-      if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
-    }
-  }
 }
