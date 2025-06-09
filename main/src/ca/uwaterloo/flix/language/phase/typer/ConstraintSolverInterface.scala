@@ -110,18 +110,6 @@ object ConstraintSolverInterface {
   }
 
   /**
-   *  Create either the MismatchedTypes or MismatchedEffects error based on the kind of the type.
-   */
-  private def mkMismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): List[TypeError] = {
-    baseType1.kind match {
-      case Kind.Eff =>
-        List(TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, loc))
-      case _ =>
-        List(TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, loc))
-    }
-  }
-
-  /**
     * Converts the unresolved type constraint into an appropriate error.
     */
   private def toTypeErrors(constr: TypeConstraint, renv: RigidityEnv, subst: SubstitutionTree, root: KindedAst.Root)(implicit flix: Flix): List[TypeError] = constr match {
@@ -137,10 +125,10 @@ object ConstraintSolverInterface {
       List(TypeError.UnexpectedArg(sym, num, expected = subst(expected), actual = subst(actual), renv, loc))
 
     case TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(baseTpe1, baseTpe2, loc)) =>
-      mkMismatchedTypes(subst(baseTpe1), subst(baseTpe2), tpe1, tpe2, renv, loc)
+      List(mkMismatchedTypesOrEffects(subst(baseTpe1), subst(baseTpe2), tpe1, tpe2, renv, loc))
 
     case TypeConstraint.Equality(tpe1, tpe2, prov) =>
-      mkMismatchedTypes(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc)
+      List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
 
     // TODO We have simply duplicated equality here.
     // TODO We should establish invariants on conflicted/equality cases.
@@ -156,13 +144,13 @@ object ConstraintSolverInterface {
       List(TypeError.UnexpectedArg(sym, num, expected = subst(expected), actual = subst(actual), renv, loc))
 
     case TypeConstraint.Conflicted(tpe1, tpe2, Provenance.Match(baseTpe1, baseTpe2, loc)) =>
-      mkMismatchedTypes(subst(baseTpe1), subst(baseTpe2), subst(tpe1), subst(tpe2), renv, loc)
+      List(mkMismatchedTypesOrEffects(subst(baseTpe1), subst(baseTpe2), subst(tpe1), subst(tpe2), renv, loc))
 
     case TypeConstraint.Conflicted(_, _, Provenance.Timeout(msg, loc)) =>
       List(TypeError.TooComplex(msg, loc))
 
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
-      mkMismatchedTypes(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc)
+      List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
 
     case TypeConstraint.Trait(sym, tpe, loc) =>
      tpe.typeConstructor match {
@@ -180,6 +168,18 @@ object ConstraintSolverInterface {
       }
     case TypeConstraint.Purification(sym, _, _, _, nested) =>
       nested.flatMap(toTypeErrors(_, renv, subst.branches.getOrElse(sym, SubstitutionTree.empty), root))
+  }
+
+  /**
+   *  Create either the MismatchedTypes or MismatchedEffects error based on the kind of the type.
+   */
+  private def mkMismatchedTypesOrEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
+    baseType1.kind match {
+      case Kind.Eff =>
+        TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, loc)
+      case _ =>
+        TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, loc)
+    }
   }
 
   /**
