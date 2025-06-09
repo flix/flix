@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.{MonoType, Purity, Symbol}
+import ca.uwaterloo.flix.language.phase.jvm.ClassFileMigration.ClassFileMethodVisitor
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.StaticMethod
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
@@ -257,7 +258,7 @@ object GenFunAndClosureClasses {
 
     val applyMethod = BackendObjType.Frame.ApplyMethod
     m.visitVarInsn(ALOAD, 0)
-    m.visitInsn(ACONST_NULL)
+    m.aconst_null()
     m.visitMethodInsn(INVOKEVIRTUAL, className.toInternalName, applyMethod.name, applyMethod.d.toDescriptor, false)
 
     BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)

@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition}
 import ca.uwaterloo.flix.language.ast.{MonoType, *}
+import ca.uwaterloo.flix.language.phase.jvm.ClassFileMigration.ClassFileMethodVisitor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -104,7 +105,7 @@ object GenExpression {
 
       case Constant.Null =>
         import BytecodeInstructions.*
-        ACONST_NULL()
+        mv.aconst_null()
         castIfNotPrim(BackendType.toBackendType(tpe))
 
       case Constant.Bool(b) =>
@@ -582,7 +583,7 @@ object GenExpression {
       case AtomicOp.Region =>
         import BytecodeInstructions.*
         //!TODO: For now, just emit null
-        ACONST_NULL()
+        mv.aconst_null()
         CHECKCAST(BackendObjType.Region.jvmName)
 
       case AtomicOp.Is(sym) =>
