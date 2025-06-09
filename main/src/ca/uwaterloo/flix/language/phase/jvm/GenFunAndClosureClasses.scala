@@ -38,13 +38,19 @@ object GenFunAndClosureClasses {
 
       case (macc, closure) if isClosure(closure) =>
         val closureName = JvmOps.getClosureClassName(closure.sym)
-        val code = genCode(closureName, Closure, closure)
+        val code = genClosure(closureName, closure)
         macc + (closureName -> JvmClass(closureName, code))
+
+      case (macc, defn) if isFunction(defn) && isControlPure(defn) =>
+        flix.subtask(defn.sym.toString, sample = true)
+        val functionName = BackendObjType.Defn(defn.sym).jvmName
+        val code = genControlPureFunction(functionName, defn)
+        macc + (functionName -> JvmClass(functionName, code))
 
       case (macc, defn) if isFunction(defn) =>
         flix.subtask(defn.sym.toString, sample = true)
         val functionName = BackendObjType.Defn(defn.sym).jvmName
-        val code = genCode(functionName, Function, defn)
+        val code = genControlImpureFunction(functionName, defn)
         macc + (functionName -> JvmClass(functionName, code))
 
       case (macc, _) =>
@@ -56,101 +62,13 @@ object GenFunAndClosureClasses {
 
   private def isFunction(defn: Def): Boolean = defn.cparams.isEmpty
 
+  private def isControlPure(defn: Def): Boolean = Purity.isControlPure(defn.expr.purity)
+
   private sealed trait FunctionKind
 
   private case object Function extends FunctionKind
 
   private case object Closure extends FunctionKind
-
-  /**
-    * Generates the following code for closures and control-impure functions.
-    *
-    * `(a|b)` is used to represent the function (left) or closure version (right).
-    *
-    * {{{
-    * public final class (Def$example|Clo$example$152) extends (Fn2$Obj$Int$Obj|Clo2$Obj$Int$Obj) implements Frame {
-    *   // locals variables (present for both functions and closures)
-    *   public int l0;
-    *   public char l1;
-    *   public Object l2;
-    *   // closure params (assumed empty for functions)
-    *   public int clo0;
-    *   public byte clo1;
-    *   // function arguments (present for both functions and closures)
-    *   public Object arg0;
-    *   public int arg1
-    *
-    *   public final Result invoke() { return this.applyFrame(null); }
-    *
-    *   public final Result applyFrame(Value resumptionArg) {
-    *     // fields are put into the local frame according to symbol data
-    *     int ? = this.l0;
-    *     char ? = this.l1;
-    *     Object ? = this.l2;
-    *
-    *     EnterLabel:
-    *
-    *     int ? = this.clo0;
-    *     byte ? = this.clo1;
-    *     Object ? = this.arg0;
-    *     int ? = this.arg1;
-    *
-    *     // body code ...
-    *   }
-    *
-    *   public final (Def$example|Clo$example$152) copy {
-    *     (Def$example|Clo$example$152) x = new (Def$example|Clo$example$152)();
-    *     x.arg0 = this.arg0;
-    *     x.arg1 = this.arg1
-    *     x.clo0 = this.clo0;
-    *     x.clo1 = this.clo1;
-    *     x.l0 = this.l0;
-    *     x.l1 = this.l1;
-    *     x.l2 = this.l2;
-    *     return x;
-    *   }
-    *
-    *   // Only for closures
-    *   public Clo2$Obj$Int$Obj getUniqueThreadClosure() {
-    *     Clo$example$152 x = new Clo$example$152();
-    *     x.clo0 = this.clo0;
-    *     x.clo1 = this.clo1;
-    *     return x;
-    *   }
-    * }
-    * }}}
-    *
-    * For control-pure functions, the generated code deviates slightly, as the `applyFrame` method is replaced
-    * by a static method called `directApply` that accepts the concrete parameters of the Flix function.
-    * The `invoke` method then forwards its call to `directApply`, passing the values from the corresponding fields.
-    *
-    * {{{
-    * public final class Def$example extends Fn2$Obj$Int$Obj implements Frame {
-    *   // locals variables
-    *   public int l0;
-    *   public char l1;
-    *   public Object l2;
-    *   // function arguments
-    *   public Object arg0;
-    *   public int arg1
-    *
-    *   public final Result invoke() { return this.applyDirect((Tagged$) this.arg0, this.arg1); }
-    *
-    *   // Assuming the concrete type of Obj is `Tagged$`
-    *   public final Result applyDirect(Tagged$ var0, int var1) {
-    *     EnterLabel:
-    *     // body code ...
-    *   }
-    * }
-    * }}}
-    */
-  private def genCode(className: JvmName, kind: FunctionKind, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
-    kind match {
-      case Function if Purity.isControlPure(defn.expr.purity) => genControlPureFunction(className, defn)
-      case Function => genControlImpureFunction(className, defn)
-      case Closure => genClosure(className, defn)
-    }
-  }
 
   /**
     * Generates the following code for control-pure functions.
