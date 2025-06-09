@@ -188,7 +188,7 @@ object GenExpression {
         mv.visitMethodInsn(INVOKESPECIAL, jvmName.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
         // Capturing free args
         for ((arg, i) <- exps.zipWithIndex) {
-          val erasedArgType = JvmOps.getErasedJvmType(arg.tpe)
+          val erasedArgType = BackendType.toErasedBackendType(arg.tpe)
           mv.visitInsn(DUP)
           compileExpr(arg)
           mv.visitFieldInsn(PUTFIELD, jvmName.toInternalName, s"clo$i", erasedArgType.toDescriptor)
@@ -262,14 +262,14 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(F2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-              AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
             mv.visitInsn(D2F) // Convert double to float
 
           case Float64Op.Exp =>
             compileExpr(exp1)
             compileExpr(exp2)
             mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-              AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
 
           case Int8Op.Exp =>
             compileExpr(exp1)
@@ -277,7 +277,7 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-              AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
             mv.visitInsn(D2I) // Convert to int
             mv.visitInsn(I2B) // Convert int to byte
 
@@ -287,7 +287,7 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-              AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
             mv.visitInsn(D2I) // Convert to int
             mv.visitInsn(I2S) // Convert int to short
 
@@ -297,7 +297,7 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-              AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
             mv.visitInsn(D2I) // Convert to int
 
           case Int64Op.Exp =>
@@ -306,7 +306,7 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(L2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-              AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+              mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
             mv.visitInsn(D2L) // Convert to long
 
           case Int8Op.And | Int16Op.And | Int32Op.And =>
@@ -1033,7 +1033,7 @@ object GenExpression {
           // Evaluating the expression
           compileExpr(exp2)
           mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
-            "arg0", JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
+            "arg0", BackendType.toErasedBackendType(exp2.tpe).toDescriptor)
           // Return the closure
           mv.visitInsn(ARETURN)
 
@@ -1049,7 +1049,7 @@ object GenExpression {
           // Evaluating the expression
           compileExpr(exp2)
           mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
-            "arg0", JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
+            "arg0", BackendType.toErasedBackendType(exp2.tpe).toDescriptor)
 
           // Calling unwind and unboxing
           if (Purity.isControlPure(purity)) {
@@ -1090,7 +1090,7 @@ object GenExpression {
           // Evaluating the expression
           compileExpr(arg)
           mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
-            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+            s"arg$i", BackendType.toErasedBackendType(arg.tpe).toDescriptor)
         }
         // Return the def
         mv.visitInsn(ARETURN)
@@ -1125,7 +1125,7 @@ object GenExpression {
             // Evaluating the expression
             compileExpr(arg)
             mv.visitFieldInsn(PUTFIELD, defJvmName.toInternalName,
-              s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+              s"arg$i", BackendType.toErasedBackendType(arg.tpe).toDescriptor)
           }
           // Calling unwind and unboxing
           ctx match {
@@ -1162,7 +1162,7 @@ object GenExpression {
           // Evaluate the argument and push the result on the stack.
           compileExpr(arg)
           mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
-            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+            s"arg$i", BackendType.toErasedBackendType(arg.tpe).toDescriptor)
         }
         mv.visitVarInsn(ALOAD, 0)
         BytecodeInstructions.pushInt(0)
@@ -1179,7 +1179,7 @@ object GenExpression {
           // Evaluate the argument and push the result on the stack.
           compileExpr(arg)
           mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
-            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+            s"arg$i", BackendType.toErasedBackendType(arg.tpe).toDescriptor)
         }
         // Jump to the entry point of the method.
         mv.visitJumpInsn(GOTO, ctx.entryPoint)
@@ -1268,7 +1268,7 @@ object GenExpression {
       mv.visitTypeInsn(NEW, BackendObjType.Region.jvmName.toInternalName)
       mv.visitInsn(DUP)
       mv.visitMethodInsn(INVOKESPECIAL, BackendObjType.Region.jvmName.toInternalName, JvmName.ConstructorMethod,
-        AsmOps.getMethodDescriptor(List(), JvmType.Void), false)
+        MethodDescriptor.NothingToVoid.toDescriptor, false)
 
       BytecodeInstructions.xStore(BackendObjType.Region.toTpe, sym.getStackOffset(ctx.localOffset))
 
@@ -1461,7 +1461,7 @@ object GenExpression {
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       mv.visitTypeInsn(NEW, className)
       mv.visitInsn(DUP)
-      mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+      mv.visitMethodInsn(INVOKESPECIAL, className, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
 
       // For each method, compile the closure which implements the body of that method and store it in a field
       exps.zipWithIndex.foreach { case (e, i) =>

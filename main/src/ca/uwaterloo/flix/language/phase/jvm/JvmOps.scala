@@ -25,30 +25,6 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 object JvmOps {
 
   /**
-    * Returns the erased JvmType of the given Flix type `tpe`.
-    *
-    * Every primitive type is mapped to itself and every other type is mapped to Object.
-    */
-  def getErasedJvmType(tpe: MonoType): JvmType = {
-    import MonoType.*
-    tpe match {
-      case Bool => JvmType.PrimBool
-      case Char => JvmType.PrimChar
-      case Float32 => JvmType.PrimFloat
-      case Float64 => JvmType.PrimDouble
-      case Int8 => JvmType.PrimByte
-      case Int16 => JvmType.PrimShort
-      case Int32 => JvmType.PrimInt
-      case Int64 => JvmType.PrimLong
-      case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
-           Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_, _) |
-           Struct(_, _) | Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) |
-           ExtensibleExtend(_, _, _) | ExtensibleEmpty | Native(_) | Null =>
-        JvmType.Reference(JvmName.Object)
-    }
-  }
-
-  /**
     * Returns the erased arrow type of `tpe`.
     *
     * For example:

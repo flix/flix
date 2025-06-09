@@ -159,14 +159,14 @@ object GenFunAndClosureClasses {
     // Fields
     val closureArgTypes = defn.cparams.map(_.tpe)
     for ((argType, index) <- closureArgTypes.zipWithIndex) {
-      val erasedArgType = JvmOps.getErasedJvmType(argType)
+      val erasedArgType = BackendType.toErasedBackendType(argType)
       val field = visitor.visitField(ACC_PUBLIC, s"clo$index", erasedArgType.toDescriptor, null, null)
       field.visitEnd()
     }
     for ((x, i) <- defn.lparams.zipWithIndex) {
-      visitor.visitField(ACC_PUBLIC, s"l$i", JvmOps.getErasedJvmType(x.tpe).toDescriptor, null, null)
+      visitor.visitField(ACC_PUBLIC, s"l$i", BackendType.toErasedBackendType(x.tpe).toDescriptor, null, null)
     }
-    visitor.visitField(ACC_PUBLIC, "pc", JvmType.PrimInt.toDescriptor, null, null)
+    visitor.visitField(ACC_PUBLIC, "pc", BackendType.Int32.toDescriptor, null, null)
 
     compileConstructor(functionInterface, visitor)
     // Methods
@@ -225,7 +225,7 @@ object GenFunAndClosureClasses {
 
   private def compileStaticInvokeMethod(visitor: ClassWriter, className: JvmName, defn: Def)(implicit root: Root): Unit = {
     implicit val m: MethodVisitor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
-      AsmOps.getMethodDescriptor(Nil, JvmType.Reference(BackendObjType.Result.jvmName)), null, null)
+      MethodDescriptor.mkDescriptor()(BackendObjType.Result.toTpe).toDescriptor, null, null)
     m.visitCode()
 
     val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
@@ -235,7 +235,7 @@ object GenFunAndClosureClasses {
       m.visitVarInsn(ALOAD, 0)
       // Load arg i
       m.visitFieldInsn(GETFIELD, functionInterface.toInternalName,
-        s"arg$i", JvmOps.getErasedJvmType(fp.tpe).toDescriptor)
+        s"arg$i", BackendType.toErasedBackendType(fp.tpe).toDescriptor)
       // Insert cast to concrete type
       val bTpe = BackendType.toBackendType(fp.tpe)
       BytecodeInstructions.castIfNotPrim(bTpe)
@@ -252,7 +252,7 @@ object GenFunAndClosureClasses {
 
   private def compileInvokeMethod(visitor: ClassWriter, className: JvmName): Unit = {
     implicit val m: MethodVisitor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
-      AsmOps.getMethodDescriptor(Nil, JvmType.Reference(BackendObjType.Result.jvmName)), null, null)
+      MethodDescriptor.mkDescriptor()(BackendObjType.Result.toTpe).toDescriptor, null, null)
     m.visitCode()
 
     val applyMethod = BackendObjType.Frame.ApplyMethod
@@ -345,7 +345,7 @@ object GenFunAndClosureClasses {
   private def loadFromField(m: MethodVisitor, className: JvmName, name: String, localIndex: Int, tpe: MonoType)(implicit root: Root): Unit = {
     implicit val mm: MethodVisitor = m
     // retrieve the erased field
-    val erasedVarType = JvmOps.getErasedJvmType(tpe)
+    val erasedVarType = BackendType.toErasedBackendType(tpe)
     m.visitVarInsn(ALOAD, 0)
     m.visitFieldInsn(GETFIELD, className.toInternalName, name, erasedVarType.toDescriptor)
     // cast the value and store it
@@ -370,7 +370,7 @@ object GenFunAndClosureClasses {
     DUP()
     INVOKESPECIAL(className, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid)
     for ((name, tpe) <- params) {
-      val fieldType = JvmOps.getErasedJvmType(tpe).toDescriptor
+      val fieldType = BackendType.toErasedBackendType(tpe).toDescriptor
       DUP()
       thisLoad()
       mv.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, name, fieldType)
