@@ -36,11 +36,7 @@ object Priority {
 
   case class High(relative: Int) extends Priority
 
-  case class MediumHigh(relative: Int) extends Priority
-
   case class Medium(relative: Int) extends Priority
-
-  case class MediumLow(relative: Int) extends Priority
 
   case class Low(relative: Int) extends Priority
 
@@ -59,12 +55,10 @@ object Priority {
       case Highest(_) => 1
       case Higher(_) => 2
       case High(_) => 3
-      case MediumHigh(_) => 4
-      case Medium(_) => 5
-      case MediumLow(_) => 6
-      case Low(_) => 7
-      case Lower(_) => 8
-      case Lowest(_) => 9
+      case Medium(_) => 4
+      case Low(_) => 5
+      case Lower(_) => 6
+      case Lowest(_) => 7
     }
 
     val r = if (p.relative < 0) "0-" else "1-" + p.relative.abs.toString.padTo(4, '0')

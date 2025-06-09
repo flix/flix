@@ -42,19 +42,19 @@ object KeywordCompleter {
       Completion.KeywordCompletion("def"              , range, Priority.Medium(0)),
       // E
       Completion.KeywordCompletion("eff"              , range, Priority.Medium(0)),
-      Completion.KeywordCompletion("enum"             , range, Priority.MediumHigh(0)),
+      Completion.KeywordCompletion("enum"             , range, Priority.Medium(-1)),
       // I
       Completion.KeywordCompletion("import"           , range, Priority.Medium(0)),
-      Completion.KeywordCompletion("instance"         , range, Priority.MediumHigh(0)),
+      Completion.KeywordCompletion("instance"         , range, Priority.Medium(-1)),
       // M
       Completion.KeywordCompletion("mod"              , range, Priority.Medium(0)),
       // P
       Completion.KeywordCompletion("pub"              , range, Priority.Medium(0)),
       // S
       Completion.KeywordCompletion("sealed"           , range, Priority.Medium(0)),
-      Completion.KeywordCompletion("struct"           , range, Priority.MediumHigh(0)),
+      Completion.KeywordCompletion("struct"           , range, Priority.Medium(-1)),
       // T
-      Completion.KeywordCompletion("trait"            , range, Priority.MediumHigh(0)),
+      Completion.KeywordCompletion("trait"            , range, Priority.Medium(-1)),
       Completion.KeywordCompletion("type"             , range, Priority.Medium(0)),
       // U
       Completion.KeywordCompletion("use"              , range, Priority.Medium(0)),
@@ -90,38 +90,38 @@ object KeywordCompleter {
       // C
       Completion.KeywordCompletion("catch"       , range, Priority.Medium(0)),
       // D
-      Completion.KeywordCompletion("def"         , range, Priority.MediumHigh(0)),
+      Completion.KeywordCompletion("def"         , range, Priority.Medium(-1)),
       Completion.KeywordCompletion("discard"     , range, Priority.Medium(0)),
       // E
       Completion.KeywordCompletion("else"        , range, Priority.Medium(0)),
       // F
-      Completion.KeywordCompletion("false"       , range, Priority.MediumHigh(0), withSpace = false),
-      Completion.KeywordCompletion("forA"        , range, Priority.MediumLow(0)),
-      Completion.KeywordCompletion("forM"        , range, Priority.MediumLow(0)),
-      Completion.KeywordCompletion("force"       , range, Priority.MediumLow(0)),
+      Completion.KeywordCompletion("false"       , range, Priority.Medium(-1), withSpace = false),
+      Completion.KeywordCompletion("forA"        , range, Priority.Medium(1)),
+      Completion.KeywordCompletion("forM"        , range, Priority.Medium(1)),
+      Completion.KeywordCompletion("force"       , range, Priority.Medium(1)),
       Completion.KeywordCompletion("foreach"     , range, Priority.Medium(0)),
       Completion.KeywordCompletion("from"        , range, Priority.Medium(0)),
       // H
       Completion.KeywordCompletion("handler"     , range, Priority.Medium(0)),
       // I
       Completion.KeywordCompletion("if"          , range, Priority.Medium(0)),
-      Completion.KeywordCompletion("inject"      , range, Priority.MediumLow(0)),
-      Completion.KeywordCompletion("instanceof"  , range, Priority.MediumLow(0)),
+      Completion.KeywordCompletion("inject"      , range, Priority.Medium(1)),
+      Completion.KeywordCompletion("instanceof"  , range, Priority.Medium(1)),
       Completion.KeywordCompletion("into"        , range, Priority.Medium(0)),
       // L
       Completion.KeywordCompletion("lazy"        , range, Priority.Medium(0)),
-      Completion.KeywordCompletion("let"         , range, Priority.MediumHigh(0)),
+      Completion.KeywordCompletion("let"         , range, Priority.Medium(-1)),
       // M
       Completion.KeywordCompletion("match"       , range, Priority.Medium(0)),
       // N
       Completion.KeywordCompletion("new"         , range, Priority.Medium(0)),
-      Completion.KeywordCompletion("not"         , range, Priority.MediumHigh(0)),
+      Completion.KeywordCompletion("not"         , range, Priority.Medium(-1)),
       Completion.KeywordCompletion("null"        , range, Priority.Medium(0), withSpace = false),
       // O
       Completion.KeywordCompletion("or"          , range, Priority.Medium(0)),
       // P
       Completion.KeywordCompletion("par"         , range, Priority.Medium(0)),
-      Completion.KeywordCompletion("project"     , range, Priority.MediumLow(0)),
+      Completion.KeywordCompletion("project"     , range, Priority.Medium(1)),
       // Q
       Completion.KeywordCompletion("query"       , range, Priority.Medium(0)),
       // R
@@ -132,16 +132,16 @@ object KeywordCompleter {
       Completion.KeywordCompletion("solve"       , range, Priority.Medium(0)),
       Completion.KeywordCompletion("spawn"       , range, Priority.Medium(0)),
       // T
-      Completion.KeywordCompletion("throw"       , range, Priority.MediumLow(0)),
-      Completion.KeywordCompletion("true"        , range, Priority.MediumHigh(0), withSpace = false),
-      Completion.KeywordCompletion("try"         , range, Priority.MediumLow(0)),
+      Completion.KeywordCompletion("throw"       , range, Priority.Medium(1)),
+      Completion.KeywordCompletion("true"        , range, Priority.Medium(-1), withSpace = false),
+      Completion.KeywordCompletion("try"         , range, Priority.Medium(1)),
       Completion.KeywordCompletion("typematch"   , range, Priority.Medium(0)),
       // U
-      Completion.KeywordCompletion("unsafe"      , range, Priority.MediumLow(0)),
+      Completion.KeywordCompletion("unsafe"      , range, Priority.Medium(1)),
       Completion.KeywordCompletion("use"         , range, Priority.Medium(0)),
       // W
       Completion.KeywordCompletion("with"        , range, Priority.Medium(0)),
-      Completion.KeywordCompletion("without"     , range, Priority.MediumLow(0)),
+      Completion.KeywordCompletion("without"     , range, Priority.Medium(1)),
       // Y
       Completion.KeywordCompletion("yield"       , range, Priority.Medium(0))
     ).filter {
