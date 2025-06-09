@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Abstract.{IsAbstract, NotAbstract}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.*
@@ -25,7 +24,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Interface.{IsInterface, N
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Static.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.*
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.{JavaLangInvoke, MethodDescriptor}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import org.objectweb.asm.{ClassWriter, MethodVisitor, Opcodes}
 
