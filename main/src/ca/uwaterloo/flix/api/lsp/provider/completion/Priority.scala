@@ -21,7 +21,11 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
   * A priority consists of an (A) absolute priority (e.g., `High` or `Low`) and (B) a relative priority (e.g., `High(5)`).
   */
 sealed trait Priority {
-  /** Returns the relative priority of `this` priority. */
+  /**
+    * Returns the relative priority of `this` priority.
+    *
+    * A relative priority may be negative.
+    */
   def relative: Int
 }
 
@@ -46,6 +50,9 @@ object Priority {
 
   /**
     * Returns the given string `l` prefixed with the absolute and relative priority.
+    *
+    * The idea is to return a string whose lexicographic ordering matches the
+    * implicit ordering of the absolute and relative priority plus the label.
     */
   def toSortText(p: Priority, l: String): String = {
     val a = p match {
@@ -60,7 +67,7 @@ object Priority {
       case Lowest(_) => 9
     }
 
-    val r = p.relative.toString.padTo(4, '0')
+    val r = if (p.relative < 0) "0-" else "1-" + p.relative.abs.toString.padTo(4, '0')
     s"$a-$r-$l"
   }
 
