@@ -135,7 +135,7 @@ object GenExpression {
         NEW(JvmName.BigDecimal)
         DUP()
         pushString(dd.toString)
-        INVOKESPECIAL(ClassMaker.ConstructorMethod(JvmName.BigDecimal, List(BackendObjType.String.toTpe)))
+        INVOKESPECIAL(ClassMaker.ConstructorMethod(JvmName.BigDecimal, List(BackendType.String)))
 
       case Constant.Int8(b) =>
         BytecodeInstructions.pushInt(b)
@@ -156,7 +156,7 @@ object GenExpression {
         NEW(JvmName.BigInteger)
         DUP()
         pushString(ii.toString)
-        INVOKESPECIAL(ClassMaker.ConstructorMethod(JvmName.BigInteger, List(BackendObjType.String.toTpe)))
+        INVOKESPECIAL(ClassMaker.ConstructorMethod(JvmName.BigInteger, List(BackendType.String)))
 
       case Constant.Str(s) =>
         BytecodeInstructions.pushString(s)
