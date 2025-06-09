@@ -18,6 +18,8 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm
 
 import java.nio.file.{Path, Paths}
@@ -69,19 +71,15 @@ object JvmName {
     */
   val DirectApply: String = "directApply"
 
-  /**
-    * Returns the JvmName of the given string `s`.
-    */
-  def mk(s: String): JvmName = {
-    val l = s.split("/")
-    JvmName(l.init.toList, l.last)
-  }
-
+  /** Returns the [[JvmName]] of `clazz`. Crashes if `clazz` is primitive, an array, or unnamed. */
   def ofClass(clazz: Class[?]): JvmName = {
-    // TODO: Ugly hack.
-    // Maybe use clazz.getPackage and clazz.getSimpleName
-    val fqn = clazz.getName.replace('.', '/')
-    JvmName.mk(fqn)
+    if (clazz.isPrimitive) throw InternalCompilerException(s"Cannot create a JvmName from the primitive type '${clazz.getName}'", SourceLocation.Unknown)
+    if (clazz.isArray) throw InternalCompilerException(s"Cannot create a JvmName from the array type '${clazz.getName}'", SourceLocation.Unknown)
+    val isUnnamed = clazz.getSimpleName == ""
+    if (isUnnamed) throw InternalCompilerException(s"Cannot create a JvmName from the anonymous class '${clazz.getName}'", SourceLocation.Unknown)
+
+    val parts = asm.Type.getInternalName(clazz).split("/")
+    JvmName(parts.init.toList, parts.last)
   }
 
   val RootPackage: List[String] = Nil
@@ -162,6 +160,7 @@ object JvmName {
   val IntPredicate: JvmName = JvmName(JavaUtilFunction, "IntPredicate")
   val IntUnaryOperator: JvmName = JvmName(JavaUtilFunction, "IntUnaryOperator")
   val Integer: JvmName = JvmName(JavaLang, "Integer")
+  val LinkedList: JvmName = JvmName(JavaUtil, "LinkedList")
   val Long: JvmName = JvmName(JavaLang, "Long")
   val LongConsumer: JvmName = JvmName(JavaUtilFunction, "LongConsumer")
   val LongFunction: JvmName = JvmName(JavaUtilFunction, "LongFunction")
@@ -181,6 +180,7 @@ object JvmName {
   val StringBuilder: JvmName = JvmName(JavaLang, "StringBuilder")
   val System: JvmName = JvmName(JavaLang, "System")
   val Thread: JvmName = JvmName(JavaLang, "Thread")
+  val Thread$Builder$OfVirtual: JvmName = JvmName(JavaLang, "Thread$Builder$OfVirtual")
   val ThreadUncaughtExceptionHandler: JvmName = JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
   val Throwable: JvmName = JvmName(JavaLang, "Throwable")
   val UnsupportedOperationException: JvmName = JvmName(JavaLang, "UnsupportedOperationException")

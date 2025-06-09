@@ -313,6 +313,16 @@ object ClassMaker {
       StaticMethod(JvmName.Arrays, "deepToString", mkDescriptor(BackendType.Array(BackendType.Object))(BackendType.String))
   }
 
+  object LinkedList {
+
+    def AddFirstMethod: InstanceMethod =
+      InstanceMethod(JvmName.LinkedList, "addFirst", mkDescriptor(BackendType.Object)(VoidableType.Void))
+
+    def IteratorMethod: InstanceMethod =
+      InstanceMethod(JvmName.LinkedList, "iterator", mkDescriptor()(BackendObjType.Iterator.toTpe))
+
+  }
+
   object Object {
 
     def Constructor: ConstructorMethod = ConstructorMethod(JvmName.Object, Nil)
@@ -339,6 +349,10 @@ object ClassMaker {
   object Regex {
     def CompileMethod: StaticMethod =
       StaticMethod(JvmName.Regex, "compile", mkDescriptor(BackendType.String)(JvmName.Regex.toTpe))
+  }
+
+  object Runnable {
+    def RunMethod: InterfaceMethod = InterfaceMethod(JvmName.Runnable, "run", MethodDescriptor.NothingToVoid)
   }
 
   object String {
@@ -376,7 +390,12 @@ object ClassMaker {
       InstanceMethod(JvmName.Thread, "setUncaughtExceptionHandler", mkDescriptor(JvmName.ThreadUncaughtExceptionHandler.toTpe)(VoidableType.Void))
 
     def OfVirtualMethod: StaticMethod =
-      StaticMethod(JvmName.Thread, "ofVirtual", mkDescriptor()(BackendObjType.ThreadBuilderOfVirtual.toTpe))
+      StaticMethod(JvmName.Thread, "ofVirtual", mkDescriptor()(JvmName.Thread$Builder$OfVirtual.toTpe))
+  }
+
+  object ThreadBuilderOfVirtual {
+    def UnstartedMethod: InterfaceMethod =
+      InterfaceMethod(JvmName.Thread$Builder$OfVirtual, "unstarted", mkDescriptor(JvmName.Runnable.toTpe)(JvmName.Thread.toTpe))
   }
 
   object ThreadUncaughtExceptionHandler {
