@@ -43,4 +43,7 @@ mod Ping {
                 }
             }
         }
+
+    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - Ping + {Net, IO} =
+        handle(f)()
 }
