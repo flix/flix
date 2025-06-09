@@ -347,7 +347,12 @@ object ClassMaker {
       InstanceMethod(JvmName.Thread, "setUncaughtExceptionHandler", mkDescriptor(JvmName.ThreadUncaughtExceptionHandler.toTpe)(VoidableType.Void))
 
     def OfVirtualMethod: StaticMethod =
-      StaticMethod(JvmName.Thread, "ofVirtual", mkDescriptor()(BackendObjType.ThreadBuilderOfVirtual.toTpe))
+      StaticMethod(JvmName.Thread, "ofVirtual", mkDescriptor()(JvmName.Thread$Builder$OfVirtual.toTpe))
+  }
+
+  object ThreadBuilderOfVirtual {
+    def UnstartedMethod: InterfaceMethod =
+      InterfaceMethod(JvmName.Thread$Builder$OfVirtual, "unstarted", mkDescriptor(JvmName.Runnable.toTpe)(JvmName.Thread.toTpe))
   }
 
   object ThreadUncaughtExceptionHandler {

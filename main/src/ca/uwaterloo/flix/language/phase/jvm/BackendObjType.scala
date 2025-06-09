@@ -70,7 +70,6 @@ sealed trait BackendObjType {
     case BackendObjType.Iterator => JvmName(JavaUtil, "Iterator")
     case BackendObjType.Runnable => JvmName(JavaLang, "Runnable")
     case BackendObjType.ConcurrentLinkedQueue => JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
-    case BackendObjType.ThreadBuilderOfVirtual => JvmName(JavaLang, "Thread$Builder$OfVirtual")
     // Effects Runtime
     case BackendObjType.Result => JvmName(DevFlixRuntime, mkClassName("Result"))
     case BackendObjType.Value => JvmName(DevFlixRuntime, mkClassName("Value"))
@@ -1671,12 +1670,6 @@ object BackendObjType {
 
     def PollMethod: InstanceMethod = InstanceMethod(this.jvmName, "poll",
       mkDescriptor()(BackendType.Object))
-  }
-
-  case object ThreadBuilderOfVirtual extends BackendObjType {
-
-    def UnstartedMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "unstarted",
-      mkDescriptor(JvmName.Runnable.toTpe)(JvmName.Thread.toTpe))
   }
 
   case object Result extends BackendObjType {
