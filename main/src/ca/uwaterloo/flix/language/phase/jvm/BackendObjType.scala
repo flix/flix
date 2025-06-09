@@ -64,7 +64,6 @@ sealed trait BackendObjType {
     case BackendObjType.Namespace(ns) => JvmName(ns.dropRight(1), ns.lastOption.getOrElse(s"Root${Flix.Delimiter}"))
     // Java classes
     case BackendObjType.Native(className) => className
-    case BackendObjType.Arrays => JvmName(JavaUtil, "Arrays")
     case BackendObjType.LambdaMetaFactory => JvmName(JavaLangInvoke, "LambdaMetafactory")
     case BackendObjType.LinkedList => JvmName(JavaUtil, "LinkedList")
     case BackendObjType.Iterator => JvmName(JavaUtil, "Iterator")
@@ -1595,35 +1594,6 @@ object BackendObjType {
   //
   // Java Types
   //
-
-  case object Arrays extends BackendObjType {
-    def BoolArrToString: StaticMethod = StaticMethod(this.jvmName,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Bool))(BackendType.String))
-
-    def CharArrToString: StaticMethod = StaticMethod(this.jvmName,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Char))(BackendType.String))
-
-    def Int8ArrToString: StaticMethod = StaticMethod(this.jvmName,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Int8))(BackendType.String))
-
-    def Int16ArrToString: StaticMethod = StaticMethod(this.jvmName,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Int16))(BackendType.String))
-
-    def Int32ArrToString: StaticMethod = StaticMethod(this.jvmName,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Int32))(BackendType.String))
-
-    def Int64ArrToString: StaticMethod = StaticMethod(this.jvmName,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Int64))(BackendType.String))
-
-    def Float32ArrToString: StaticMethod = StaticMethod(this.jvmName,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Float32))(BackendType.String))
-
-    def Float64ArrToString: StaticMethod = StaticMethod(this.jvmName,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Float64))(BackendType.String))
-
-    def DeepToString: StaticMethod = StaticMethod(this.jvmName,
-      "deepToString", mkDescriptor(BackendType.Array(BackendType.Object))(BackendType.String))
-  }
 
   case object LambdaMetaFactory extends BackendObjType {
     private def methodHandlesLookup: BackendType = JvmName(List("java", "lang", "invoke"), "MethodHandles$Lookup").toTpe
