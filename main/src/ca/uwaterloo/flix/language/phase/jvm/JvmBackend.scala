@@ -100,7 +100,6 @@ object JvmBackend {
       JvmClass(wrapper.jvmName, wrapper.genByteCode())
     }
 
-    println(tasks.length)
     // Generate the classes in parallel.
     val singleClasses = ParOps.parMap(tasks){task => task(())}.toList
 
