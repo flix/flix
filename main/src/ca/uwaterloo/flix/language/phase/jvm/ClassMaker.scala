@@ -253,13 +253,13 @@ object ClassMaker {
   }
 
   sealed case class ConstructorMethod(clazz: JvmName, args: List[BackendType]) extends Method {
-    override def name: String = "<init>"
+    override def name: String = JvmName.ConstructorMethod
 
     override def d: MethodDescriptor = MethodDescriptor(args, VoidableType.Void)
   }
 
   case class StaticConstructorMethod(clazz: JvmName) extends Method {
-    override def name: String = "<clinit>"
+    override def name: String = JvmName.StaticConstructorMethod
 
     override def d: MethodDescriptor = MethodDescriptor.NothingToVoid
   }
@@ -296,9 +296,63 @@ object ClassMaker {
 
   }
 
+  object ReentrantLock {
+
+    def Constructor: ConstructorMethod = ConstructorMethod(JvmName.ReentrantLock, Nil)
+
+    def UnlockMethod: InstanceMethod = InstanceMethod(JvmName.ReentrantLock, "unlock", MethodDescriptor.NothingToVoid)
+
+    def LockInterruptiblyMethod: InstanceMethod =
+      InstanceMethod(JvmName.ReentrantLock, "lockInterruptibly", MethodDescriptor.NothingToVoid)
+
+  }
+
+  object Regex {
+    def CompileMethod: StaticMethod =
+      StaticMethod(JvmName.Regex, "compile", mkDescriptor(BackendType.String)(JvmName.Regex.toTpe))
+  }
+
   object String {
     def Concat: InstanceMethod =
       InstanceMethod(JvmName.String, "concat", mkDescriptor(BackendType.String)(BackendType.String))
+  }
+
+  object StringBuilder {
+
+    def Constructor: ConstructorMethod = ConstructorMethod(JvmName.StringBuilder, Nil)
+
+    def AppendStringMethod: InstanceMethod =
+      InstanceMethod(JvmName.StringBuilder, "append", mkDescriptor(BackendType.String)(JvmName.StringBuilder.toTpe))
+
+    def AppendInt32Method: InstanceMethod =
+      InstanceMethod(JvmName.StringBuilder, "append", mkDescriptor(BackendType.Int32)(JvmName.StringBuilder.toTpe))
+
+  }
+
+  object Thread {
+
+    def StartMethod: InstanceMethod =
+      InstanceMethod(JvmName.Thread, "start", MethodDescriptor.NothingToVoid)
+
+    def JoinMethod: InstanceMethod =
+      InstanceMethod(JvmName.Thread, "join", MethodDescriptor.NothingToVoid)
+
+    def CurrentThreadMethod: StaticMethod =
+      StaticMethod(JvmName.Thread, "currentThread", mkDescriptor()(JvmName.Thread.toTpe))
+
+    def InterruptMethod: InstanceMethod =
+      InstanceMethod(JvmName.Thread, "interrupt", MethodDescriptor.NothingToVoid)
+
+    def SetUncaughtExceptionHandlerMethod: InstanceMethod =
+      InstanceMethod(JvmName.Thread, "setUncaughtExceptionHandler", mkDescriptor(JvmName.ThreadUncaughtExceptionHandler.toTpe)(VoidableType.Void))
+
+    def OfVirtualMethod: StaticMethod =
+      StaticMethod(JvmName.Thread, "ofVirtual", mkDescriptor()(BackendObjType.ThreadBuilderOfVirtual.toTpe))
+  }
+
+  object ThreadUncaughtExceptionHandler {
+    def UncaughtExceptionMethod: InstanceMethod =
+      InstanceMethod(JvmName.ThreadUncaughtExceptionHandler, "uncaughtException", mkDescriptor(JvmName.Thread.toTpe, JvmName.Throwable.toTpe)(VoidableType.Void))
   }
 
 }

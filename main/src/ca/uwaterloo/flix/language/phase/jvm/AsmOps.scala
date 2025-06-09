@@ -44,20 +44,6 @@ object AsmOps {
   }
 
   /**
-    * Returns the descriptor of a method take takes the given `argumentTypes` and returns the given `resultType`.
-    */
-  def getMethodDescriptor(argumentTypes: List[JvmType], resultType: JvmType): String = {
-    // Descriptor of result
-    val resultDescriptor = resultType.toDescriptor
-
-    // Descriptor of arguments
-    val argumentDescriptor = argumentTypes.map(_.toDescriptor).mkString
-
-    // Descriptor of the method
-    s"($argumentDescriptor)$resultDescriptor"
-  }
-
-  /**
     * Emits code that puts the function object of the def symbol `def` on top of the stack.
     */
   def compileDefSymbol(sym: Symbol.DefnSym, mv: MethodVisitor): Unit = {

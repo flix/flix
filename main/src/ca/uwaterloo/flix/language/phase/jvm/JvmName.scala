@@ -146,6 +146,7 @@ object JvmName {
   val BigInteger: JvmName = JvmName(JavaMath, "BigInteger")
   val Boolean: JvmName = JvmName(JavaLang, "Boolean")
   val Byte: JvmName = JvmName(JavaLang, "Byte")
+  val CharSequence: JvmName = JvmName(JavaLang, "CharSequence")
   val Character: JvmName = JvmName(JavaLang, "Character")
   val Class: JvmName = JvmName(JavaLang, "Class")
   val Double: JvmName = JvmName(JavaLang, "Double")
@@ -177,8 +178,10 @@ object JvmName {
   val Runnable: JvmName = JvmName(JavaLang, "Runnable")
   val Short: JvmName = JvmName(JavaLang, "Short")
   val String: JvmName = JvmName(JavaLang, "String")
+  val StringBuilder: JvmName = JvmName(JavaLang, "StringBuilder")
   val System: JvmName = JvmName(JavaLang, "System")
   val Thread: JvmName = JvmName(JavaLang, "Thread")
+  val ThreadUncaughtExceptionHandler: JvmName = JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
   val Throwable: JvmName = JvmName(JavaLang, "Throwable")
   val UnsupportedOperationException: JvmName = JvmName(JavaLang, "UnsupportedOperationException")
 
