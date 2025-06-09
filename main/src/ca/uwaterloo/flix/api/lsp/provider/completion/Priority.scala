@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 /**
   * Represents the priority of a completion.
   *
-  * A completion consists of an (A) absolute priority (e.g., High or Low) and (B) a relative priority (e.g., High(5)).
+  * A priority consists of an (A) absolute priority (e.g., `High` or `Low`) and (B) a relative priority (e.g., `High(5)`).
   */
 sealed trait Priority {
   /** Returns the relative priority of `this` priority. */
