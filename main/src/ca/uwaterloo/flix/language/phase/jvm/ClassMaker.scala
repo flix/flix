@@ -322,6 +322,10 @@ object ClassMaker {
       StaticMethod(JvmName.Regex, "compile", mkDescriptor(BackendType.String)(JvmName.Regex.toTpe))
   }
 
+  object Runnable {
+    def RunMethod: InterfaceMethod = InterfaceMethod(JvmName.Runnable, "run", MethodDescriptor.NothingToVoid)
+  }
+
   object String {
     def Concat: InstanceMethod =
       InstanceMethod(JvmName.String, "concat", mkDescriptor(BackendType.String)(BackendType.String))
