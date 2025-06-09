@@ -62,7 +62,7 @@ sealed trait BackendType extends VoidableType {
   def toErased: BackendType = this match {
     case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 |
          BackendType.Int32 | BackendType.Int64 | BackendType.Float32 | BackendType.Float64 => this
-    case BackendType.Array(_) | BackendType.Reference(_) => BackendObjType.JavaObject.toTpe
+    case BackendType.Array(_) | BackendType.Reference(_) => BackendType.Object
   }
 
   /**
@@ -124,6 +124,7 @@ object BackendType {
     def name: JvmName = ref.jvmName
   }
 
+  val Object: BackendType = Reference(BackendObjType.Native(JvmName.Object))
   val String: BackendType = Reference(BackendObjType.Native(JvmName.String))
 
   /**
@@ -134,8 +135,8 @@ object BackendType {
     */
   def toBackendType(tpe0: MonoType)(implicit root: ReducedAst.Root): BackendType = {
     tpe0 match {
-      case MonoType.Void => BackendObjType.JavaObject.toTpe
-      case MonoType.AnyType => BackendObjType.JavaObject.toTpe
+      case MonoType.Void => BackendType.Object
+      case MonoType.AnyType => BackendType.Object
       case MonoType.Unit => BackendObjType.Unit.toTpe
       case MonoType.Bool => BackendType.Bool
       case MonoType.Char => BackendType.Char
@@ -150,7 +151,7 @@ object BackendType {
       case MonoType.String => BackendType.String
       case MonoType.Regex => BackendObjType.Regex.toTpe
       case MonoType.Region => BackendObjType.Region.toTpe
-      case MonoType.Null => BackendObjType.JavaObject.toTpe
+      case MonoType.Null => BackendType.Object
       case MonoType.Array(tpe) => Array(toBackendType(tpe))
       case MonoType.Lazy(tpe) => BackendObjType.Lazy(toBackendType(tpe)).toTpe
       case MonoType.Tuple(elms) => BackendObjType.Tuple(elms.map(toBackendType)).toTpe
@@ -177,7 +178,7 @@ object BackendType {
     BackendType.Int16,
     BackendType.Int32,
     BackendType.Int64,
-    BackendObjType.JavaObject.toTpe,
+    BackendType.Object,
   )
 
   /**
@@ -198,7 +199,7 @@ object BackendType {
          MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
          MonoType.ExtensibleExtend(_, _, _) | MonoType.ExtensibleEmpty | MonoType.Native(_) |
          MonoType.Region | MonoType.Null =>
-      BackendObjType.JavaObject.toTpe
+      BackendType.Object
   }
 
   sealed trait PrimitiveType extends BackendType

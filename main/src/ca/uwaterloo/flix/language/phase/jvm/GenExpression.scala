@@ -1333,7 +1333,7 @@ object GenExpression {
         mv.visitLabel(handlerLabel)
 
         // Store the exception in a local variable.
-        BytecodeInstructions.xStore(BackendObjType.JavaObject.toTpe, sym.getStackOffset(ctx.localOffset))
+        BytecodeInstructions.xStore(BackendType.Object, sym.getStackOffset(ctx.localOffset))
 
         // Emit code for the handler body expression.
         compileExpr(body)
