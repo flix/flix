@@ -678,7 +678,7 @@ object Completion {
     * @param ectx      the expression context.
     */
   case class DefCompletion(decl: TypedAst.Def, range: Range, priority: Priority, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion {
-    override def toString: String = s"DefCompletion(${decl.sym}, $range)"
+    override def toString: String = s"DefCompletion(${decl.sym}, $priority, $range)"
   }
 
   /**
@@ -717,7 +717,9 @@ object Completion {
     * @param inScope           indicate whether to the trait is inScope.
     * @param withTypeParameter indicate whether to include the type parameter in the completion.
     */
-  case class TraitCompletion(trt: TypedAst.Trait, range: Range, priority: Priority, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, withTypeParameter: Boolean) extends Completion
+  case class TraitCompletion(trt: TypedAst.Trait, range: Range, priority: Priority, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, withTypeParameter: Boolean) extends Completion {
+    override def toString: String = s"TraitCompletion(${trt.sym}, $priority, $range)"
+  }
 
   /**
     * Represents a trait completion
@@ -741,7 +743,9 @@ object Completion {
     * @param qualified indicate whether to use a qualified label.
     * @param inScope   indicate whether to the effect is inScope.
     */
-  case class EffectCompletion(effect: TypedAst.Effect, range: Range, priority: Priority, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion
+  case class EffectCompletion(effect: TypedAst.Effect, range: Range, priority: Priority, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion {
+    override def toString: String = s"EffectCompletion(${effect.sym}, $priority, $range)"
+  }
 
   /**
     * Represents a handler completion
@@ -820,7 +824,9 @@ object Completion {
     * @param inScope   indicate whether to the signature is inScope.
     * @param ectx      the expression context.
     */
-  case class EnumTagCompletion(tag: TypedAst.Case, namespace: String, range: Range, priority: Priority, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion
+  case class EnumTagCompletion(tag: TypedAst.Case, namespace: String, range: Range, priority: Priority, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion {
+    override def toString: String = s"EnumTagCompletion(${tag.sym}, $priority, $range)"
+  }
 
   /**
     * Represents a Module completion
@@ -833,7 +839,7 @@ object Completion {
     * @param inScope   indicate whether to the signature is inScope.
     */
   case class ModuleCompletion(module: Symbol.ModuleSym, range: Range, priority: Priority, ap: AnchorPosition, qualified: Boolean, inScope: Boolean) extends Completion {
-    override def toString: String = s"ModuleCompletion($module, $range)"
+    override def toString: String = s"ModuleCompletion($module, $priority, $range)"
   }
 
   /**
