@@ -65,7 +65,6 @@ sealed trait BackendObjType {
     // Java classes
     case BackendObjType.Native(className) => className
     case BackendObjType.LambdaMetaFactory => JvmName(JavaLangInvoke, "LambdaMetafactory")
-    case BackendObjType.Iterator => JvmName(JavaUtil, "Iterator")
     case BackendObjType.ConcurrentLinkedQueue => JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
     // Effects Runtime
     case BackendObjType.Result => JvmName(DevFlixRuntime, mkClassName("Result"))
@@ -1409,7 +1408,7 @@ object BackendObjType {
           t.load()
           INVOKEVIRTUAL(Thread.JoinMethod)
         }
-        withName(2, BackendObjType.Iterator.toTpe) { i =>
+        withName(2, JvmName.Iterator.toTpe) { i =>
           thisLoad()
           GETFIELD(OnExitField)
           INVOKEVIRTUAL(LinkedList.IteratorMethod)
@@ -1605,15 +1604,6 @@ object BackendObjType {
       this.jvmName, "metafactory",
       mkDescriptor(methodHandlesLookup, BackendType.String, methodType, methodType, methodHandle, methodType)(callSite)
     )
-  }
-
-  case object Iterator extends BackendObjType {
-
-    def HasNextMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "hasNext",
-      mkDescriptor()(BackendType.Bool))
-
-    def NextMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "next",
-      mkDescriptor()(BackendType.Object))
   }
 
   case object ConcurrentLinkedQueue extends BackendObjType {
