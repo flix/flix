@@ -307,7 +307,8 @@ object ClassMaker {
   }
 
   object Regex {
-    def CompileMethod: StaticMethod = StaticMethod(JvmName.Regex, "compile", mkDescriptor(BackendType.String)(JvmName.Regex.toTpe))
+    def CompileMethod: StaticMethod =
+      StaticMethod(JvmName.Regex, "compile", mkDescriptor(BackendType.String)(JvmName.Regex.toTpe))
   }
 
   object String {
