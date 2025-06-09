@@ -166,7 +166,7 @@ object GenExpression {
         // Add source line number for debugging (can fail with PatternSyntaxException)
         addLoc(loc)
         pushString(patt.pattern)
-        INVOKESTATIC(BackendObjType.Regex.CompileMethod)
+        INVOKESTATIC(ClassMaker.Regex.CompileMethod)
 
       case Constant.RecordEmpty =>
         BytecodeInstructions.GETSTATIC(BackendObjType.RecordEmpty.SingletonField)

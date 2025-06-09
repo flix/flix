@@ -149,7 +149,7 @@ object BackendType {
       case MonoType.Int64 => BackendType.Int64
       case MonoType.BigInt => JvmName.BigInteger.toTpe
       case MonoType.String => BackendType.String
-      case MonoType.Regex => BackendObjType.Regex.toTpe
+      case MonoType.Regex => JvmName.Regex.toTpe
       case MonoType.Region => BackendObjType.Region.toTpe
       case MonoType.Null => BackendType.Object
       case MonoType.Array(tpe) => Array(toBackendType(tpe))
