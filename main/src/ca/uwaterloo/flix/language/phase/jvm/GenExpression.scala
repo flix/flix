@@ -935,7 +935,7 @@ object GenExpression {
             INVOKESTATIC(ClassMaker.StaticMethod(
               JvmName.Thread,
               "startVirtualThread",
-              MethodDescriptor.mkDescriptor(BackendObjType.Runnable.toTpe)(BackendObjType.Thread.toTpe)
+              MethodDescriptor.mkDescriptor(BackendObjType.Runnable.toTpe)(JvmName.Thread.toTpe)
             ))
             POP()
             GETSTATIC(BackendObjType.Unit.SingletonField)

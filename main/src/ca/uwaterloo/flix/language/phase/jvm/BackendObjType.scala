@@ -72,7 +72,6 @@ sealed trait BackendObjType {
     case BackendObjType.Iterator => JvmName(JavaUtil, "Iterator")
     case BackendObjType.Runnable => JvmName(JavaLang, "Runnable")
     case BackendObjType.ConcurrentLinkedQueue => JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
-    case BackendObjType.Thread => JvmName(JavaLang, "Thread")
     case BackendObjType.ThreadBuilderOfVirtual => JvmName(JavaLang, "Thread$Builder$OfVirtual")
     case BackendObjType.ThreadUncaughtExceptionHandler => JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
     // Effects Runtime
@@ -1381,7 +1380,7 @@ object BackendObjType {
       INVOKESTATIC(Thread.OfVirtualMethod)
       ALOAD(1)
       INVOKEINTERFACE(ThreadBuilderOfVirtual.UnstartedMethod)
-      storeWithName(2, BackendObjType.Thread.toTpe) { thread =>
+      storeWithName(2, JvmName.Thread.toTpe) { thread =>
         thread.load()
         NEW(BackendObjType.UncaughtExceptionHandler.jvmName)
         DUP()
@@ -1409,12 +1408,12 @@ object BackendObjType {
     def ExitMethod: InstanceMethod = InstanceMethod(this.jvmName, "exit", MethodDescriptor.NothingToVoid)
 
     private def exitIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, BackendObjType.Thread.toTpe) { t =>
+      withName(1, JvmName.Thread.toTpe) { t =>
         whileLoop(Condition.NONNULL) {
           thisLoad()
           GETFIELD(ThreadsField)
           INVOKEVIRTUAL(ConcurrentLinkedQueue.PollMethod)
-          CHECKCAST(BackendObjType.Thread.jvmName)
+          CHECKCAST(JvmName.Thread)
           DUP()
           t.store()
         } {
@@ -1693,37 +1692,16 @@ object BackendObjType {
       mkDescriptor()(BackendType.Object))
   }
 
-  case object Thread extends BackendObjType {
-
-    def StartMethod: InstanceMethod = InstanceMethod(this.jvmName, "start",
-      MethodDescriptor.NothingToVoid)
-
-    def JoinMethod: InstanceMethod = InstanceMethod(this.jvmName, "join",
-      MethodDescriptor.NothingToVoid)
-
-    def CurrentThreadMethod: StaticMethod = StaticMethod(this.jvmName, "currentThread",
-      mkDescriptor()(this.toTpe))
-
-    def InterruptMethod: InstanceMethod = InstanceMethod(this.jvmName, "interrupt",
-      MethodDescriptor.NothingToVoid)
-
-    def SetUncaughtExceptionHandlerMethod: InstanceMethod = InstanceMethod(this.jvmName, "setUncaughtExceptionHandler",
-      mkDescriptor(ThreadUncaughtExceptionHandler.toTpe)(VoidableType.Void))
-
-    def OfVirtualMethod: StaticMethod = StaticMethod(this.jvmName, "ofVirtual",
-      mkDescriptor()(ThreadBuilderOfVirtual.toTpe))
-  }
-
   case object ThreadBuilderOfVirtual extends BackendObjType {
 
     def UnstartedMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "unstarted",
-      mkDescriptor(JvmName.Runnable.toTpe)(BackendObjType.Thread.toTpe))
+      mkDescriptor(JvmName.Runnable.toTpe)(JvmName.Thread.toTpe))
   }
 
   case object ThreadUncaughtExceptionHandler extends BackendObjType {
 
     def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, "uncaughtException",
-      mkDescriptor(Thread.toTpe, JvmName.Throwable.toTpe)(VoidableType.Void))
+      mkDescriptor(JvmName.Thread.toTpe, JvmName.Throwable.toTpe)(VoidableType.Void))
   }
 
   case object Result extends BackendObjType {
