@@ -154,6 +154,7 @@ object GenFunAndClosureClasses {
           functionInterface.toInternalName, null)
 
         compileConstructor(functionInterface, visitor)
+
         // Methods
         compileStaticInvokeMethod(visitor, className, defn)
         compileStaticApplyMethod(visitor, className, defn)
@@ -172,6 +173,7 @@ object GenFunAndClosureClasses {
         visitor.visitField(ACC_PUBLIC, "pc", JvmType.PrimInt.toDescriptor, null, null)
 
         compileConstructor(functionInterface, visitor)
+
         // Methods
         compileInvokeMethod(visitor, className)
         compileFrameMethod(visitor, className, defn)
@@ -197,6 +199,7 @@ object GenFunAndClosureClasses {
         visitor.visitField(ACC_PUBLIC, "pc", JvmType.PrimInt.toDescriptor, null, null)
 
         compileConstructor(functionInterface, visitor)
+
         // Methods
         compileInvokeMethod(visitor, className)
         compileFrameMethod(visitor, className, defn)
