@@ -446,7 +446,7 @@ object BackendObjType {
     */
   case class AbstractArrow(args: List[BackendType], result: BackendType) extends BackendObjType {
 
-    private def superClass: BackendObjType.Arrow = Arrow(args, result)
+    def superClass: BackendObjType.Arrow = Arrow(args, result)
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkAbstractClass(this.jvmName, superClass.jvmName)
@@ -718,7 +718,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
-    private def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, s"arg$index", args(index))
+    def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, s"arg$index", args(index))
 
     private def toStringIns(implicit mv: MethodVisitor): Unit = {
       val argString = args match {
@@ -1765,6 +1765,7 @@ object BackendObjType {
       crashIfSuspension(errorHint, loc)
       CHECKCAST(Value.jvmName) // Cannot fail
       GETFIELD(Value.fieldFromType(tpe))
+      castIfNotPrim(tpe)
     }
 
     /**
