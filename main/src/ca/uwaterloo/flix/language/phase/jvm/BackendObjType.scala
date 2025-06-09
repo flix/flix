@@ -64,19 +64,13 @@ sealed trait BackendObjType {
     case BackendObjType.Namespace(ns) => JvmName(ns.dropRight(1), ns.lastOption.getOrElse(s"Root${Flix.Delimiter}"))
     // Java classes
     case BackendObjType.Native(className) => className
-    case BackendObjType.Regex => JvmName(List("java", "util", "regex"), "Pattern")
-    case BackendObjType.CharSequence => JvmName(JavaLang, "CharSequence")
     case BackendObjType.Arrays => JvmName(JavaUtil, "Arrays")
-    case BackendObjType.StringBuilder => JvmName(JavaLang, "StringBuilder")
     case BackendObjType.LambdaMetaFactory => JvmName(JavaLangInvoke, "LambdaMetafactory")
     case BackendObjType.LinkedList => JvmName(JavaUtil, "LinkedList")
     case BackendObjType.Iterator => JvmName(JavaUtil, "Iterator")
     case BackendObjType.Runnable => JvmName(JavaLang, "Runnable")
     case BackendObjType.ConcurrentLinkedQueue => JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
-    case BackendObjType.Thread => JvmName(JavaLang, "Thread")
     case BackendObjType.ThreadBuilderOfVirtual => JvmName(JavaLang, "Thread$Builder$OfVirtual")
-    case BackendObjType.ThreadUncaughtExceptionHandler => JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
-    case BackendObjType.ReentrantLock => JvmName.ReentrantLock
     // Effects Runtime
     case BackendObjType.Result => JvmName(DevFlixRuntime, mkClassName("Result"))
     case BackendObjType.Value => JvmName(DevFlixRuntime, mkClassName("Value"))
@@ -177,7 +171,7 @@ object BackendObjType {
 
     def ValueField: InstanceField = InstanceField(this.jvmName, "value", tpe)
 
-    private def LockField: InstanceField = InstanceField(this.jvmName, "lock", ReentrantLock.toTpe)
+    private def LockField: InstanceField = InstanceField(this.jvmName, "lock", JvmName.ReentrantLock.toTpe)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(BackendType.Object))
 
@@ -193,7 +187,7 @@ object BackendObjType {
         PUTFIELD(ExpField)
         // this.lock = new ReentrantLock()
         thisLoad()
-        NEW(ReentrantLock.jvmName)
+        NEW(JvmName.ReentrantLock)
         DUP()
         INVOKESPECIAL(ReentrantLock.Constructor)
         PUTFIELD(LockField)
@@ -772,7 +766,7 @@ object BackendObjType {
     private def ToTailStringMethod: InstanceMethod = interface.ToTailStringMethod.implementation(this.jvmName)
 
     private def toTailStringIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, StringBuilder.toTpe) { sb =>
+      withName(1, JvmName.StringBuilder.toTpe) { sb =>
         sb.load()
         pushString("}")
         INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
@@ -860,7 +854,7 @@ object BackendObjType {
       thisLoad()
       GETFIELD(this.RestField)
       // build this segment of the string
-      NEW(StringBuilder.jvmName)
+      NEW(JvmName.StringBuilder)
       DUP()
       INVOKESPECIAL(StringBuilder.Constructor)
       pushString("{")
@@ -879,7 +873,7 @@ object BackendObjType {
     }
 
     private def toTailStringIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, StringBuilder.toTpe) { sb =>
+      withName(1, JvmName.StringBuilder.toTpe) { sb =>
         // save the `rest` for the last recursive call
         thisLoad()
         GETFIELD(this.RestField)
@@ -933,7 +927,7 @@ object BackendObjType {
       mkDescriptor(BackendType.String)(this.toTpe))
 
     def ToTailStringMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "toTailString",
-      mkDescriptor(StringBuilder.toTpe)(BackendType.String))
+      mkDescriptor(JvmName.StringBuilder.toTpe)(BackendType.String))
   }
 
   /**
@@ -1004,7 +998,7 @@ object BackendObjType {
 
     private def toStringIns(implicit mv: MethodVisitor): Unit = {
       // create string builder
-      NEW(StringBuilder.jvmName)
+      NEW(JvmName.StringBuilder)
       DUP()
       INVOKESPECIAL(StringBuilder.Constructor)
       // build string
@@ -1116,10 +1110,6 @@ object BackendObjType {
     }
   }
 
-  case object Regex extends BackendObjType {
-    def CompileMethod: StaticMethod = StaticMethod(this.jvmName, "compile", mkDescriptor(BackendType.String)(Regex.toTpe))
-  }
-
   case object FlixError extends BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkAbstractClass(this.jvmName, JvmName.Error)
@@ -1162,7 +1152,7 @@ object BackendObjType {
         withName(2, ReifiedSourceLocation.toTpe) { loc =>
           thisLoad()
           // create an error msg
-          NEW(StringBuilder.jvmName)
+          NEW(JvmName.StringBuilder)
           DUP()
           INVOKESPECIAL(StringBuilder.Constructor)
           pushString("Hole '")
@@ -1207,7 +1197,7 @@ object BackendObjType {
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
-      NEW(StringBuilder.jvmName)
+      NEW(JvmName.StringBuilder)
       DUP()
       INVOKESPECIAL(StringBuilder.Constructor)
       pushString("Non-exhaustive match at ")
@@ -1240,7 +1230,7 @@ object BackendObjType {
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       withName(1, ReifiedSourceLocation.toTpe)(loc => withName(2, BackendType.String)(msg => {
         thisLoad()
-        NEW(StringBuilder.jvmName)
+        NEW(JvmName.StringBuilder)
         DUP()
         INVOKESPECIAL(StringBuilder.Constructor)
         msg.load()
@@ -1281,7 +1271,7 @@ object BackendObjType {
         def appendString(): Unit = INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
 
         thisLoad()
-        NEW(StringBuilder.jvmName)
+        NEW(JvmName.StringBuilder)
         DUP()
         INVOKESPECIAL(StringBuilder.Constructor)
         pushString("Unhandled effect '")
@@ -1383,7 +1373,7 @@ object BackendObjType {
       INVOKESTATIC(Thread.OfVirtualMethod)
       ALOAD(1)
       INVOKEINTERFACE(ThreadBuilderOfVirtual.UnstartedMethod)
-      storeWithName(2, BackendObjType.Thread.toTpe) { thread =>
+      storeWithName(2, JvmName.Thread.toTpe) { thread =>
         thread.load()
         NEW(BackendObjType.UncaughtExceptionHandler.jvmName)
         DUP()
@@ -1411,12 +1401,12 @@ object BackendObjType {
     def ExitMethod: InstanceMethod = InstanceMethod(this.jvmName, "exit", MethodDescriptor.NothingToVoid)
 
     private def exitIns(implicit mv: MethodVisitor): Unit = {
-      withName(1, BackendObjType.Thread.toTpe) { t =>
+      withName(1, JvmName.Thread.toTpe) { t =>
         whileLoop(Condition.NONNULL) {
           thisLoad()
           GETFIELD(ThreadsField)
           INVOKEVIRTUAL(ConcurrentLinkedQueue.PollMethod)
-          CHECKCAST(BackendObjType.Thread.jvmName)
+          CHECKCAST(JvmName.Thread)
           DUP()
           t.store()
         } {
@@ -1492,7 +1482,7 @@ object BackendObjType {
   case object UncaughtExceptionHandler extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkClass(this.jvmName, IsFinal, interfaces = List(ThreadUncaughtExceptionHandler.jvmName))
+      val cm = mkClass(this.jvmName, IsFinal, interfaces = List(JvmName.ThreadUncaughtExceptionHandler))
 
       cm.mkField(RegionField, IsPrivate, IsFinal, NotVolatile)
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
@@ -1606,8 +1596,6 @@ object BackendObjType {
   // Java Types
   //
 
-  case object CharSequence extends BackendObjType
-
   case object Arrays extends BackendObjType {
     def BoolArrToString: StaticMethod = StaticMethod(this.jvmName,
       "toString", mkDescriptor(BackendType.Array(BackendType.Bool))(BackendType.String))
@@ -1635,18 +1623,6 @@ object BackendObjType {
 
     def DeepToString: StaticMethod = StaticMethod(this.jvmName,
       "deepToString", mkDescriptor(BackendType.Array(BackendType.Object))(BackendType.String))
-  }
-
-  case object StringBuilder extends BackendObjType {
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
-
-    def AppendStringMethod: InstanceMethod = InstanceMethod(this.jvmName, "append",
-      mkDescriptor(BackendType.String)(StringBuilder.toTpe))
-
-    def AppendInt32Method: InstanceMethod = InstanceMethod(this.jvmName, "append",
-      mkDescriptor(BackendType.Int32)(StringBuilder.toTpe))
-
   }
 
   case object LambdaMetaFactory extends BackendObjType {
@@ -1697,47 +1673,10 @@ object BackendObjType {
       mkDescriptor()(BackendType.Object))
   }
 
-  case object Thread extends BackendObjType {
-
-    def StartMethod: InstanceMethod = InstanceMethod(this.jvmName, "start",
-      MethodDescriptor.NothingToVoid)
-
-    def JoinMethod: InstanceMethod = InstanceMethod(this.jvmName, "join",
-      MethodDescriptor.NothingToVoid)
-
-    def CurrentThreadMethod: StaticMethod = StaticMethod(this.jvmName, "currentThread",
-      mkDescriptor()(this.toTpe))
-
-    def InterruptMethod: InstanceMethod = InstanceMethod(this.jvmName, "interrupt",
-      MethodDescriptor.NothingToVoid)
-
-    def SetUncaughtExceptionHandlerMethod: InstanceMethod = InstanceMethod(this.jvmName, "setUncaughtExceptionHandler",
-      mkDescriptor(ThreadUncaughtExceptionHandler.toTpe)(VoidableType.Void))
-
-    def OfVirtualMethod: StaticMethod = StaticMethod(this.jvmName, "ofVirtual",
-      mkDescriptor()(ThreadBuilderOfVirtual.toTpe))
-  }
-
   case object ThreadBuilderOfVirtual extends BackendObjType {
 
     def UnstartedMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "unstarted",
-      mkDescriptor(JvmName.Runnable.toTpe)(BackendObjType.Thread.toTpe))
-  }
-
-  case object ThreadUncaughtExceptionHandler extends BackendObjType {
-
-    def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, "uncaughtException",
-      mkDescriptor(Thread.toTpe, JvmName.Throwable.toTpe)(VoidableType.Void))
-  }
-
-  case object ReentrantLock extends BackendObjType {
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
-
-    def UnlockMethod: InstanceMethod = InstanceMethod(this.jvmName, "unlock", MethodDescriptor.NothingToVoid)
-
-    def LockInterruptiblyMethod: InstanceMethod = InstanceMethod(this.jvmName, "lockInterruptibly", MethodDescriptor.NothingToVoid)
-
+      mkDescriptor(JvmName.Runnable.toTpe)(JvmName.Thread.toTpe))
   }
 
   case object Result extends BackendObjType {
