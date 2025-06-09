@@ -212,6 +212,43 @@ object GenFunAndClosureClasses {
   }
 
   /**
+    * Generates the following code for control-pure functions.
+    *
+    * {{{
+    * public final class Def$example extends Fn2$Obj$Int$Obj implements Frame {
+    *   // function arguments
+    *   public Object arg0;
+    *   public int arg1
+    *
+    *   public final Result invoke() { return this.applyDirect((Tagged$) this.arg0, this.arg1); }
+    *
+    *   // Assuming the concrete type of Obj is `Tagged$`
+    *   public final Result applyDirect(Tagged$ var0, int var1) {
+    *     EnterLabel:
+    *     // body code ...
+    *   }
+    * }
+    * }}}
+    */
+  private def genControlPureFunction(className: JvmName, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
+    val visitor = AsmOps.mkClassWriter()
+
+    // Header
+    val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
+      functionInterface.toInternalName, null)
+
+    compileConstructor(functionInterface, visitor)
+
+    // Methods
+    compileStaticInvokeMethod(visitor, className, defn)
+    compileStaticApplyMethod(visitor, className, defn)
+
+    visitor.visitEnd()
+    visitor.toByteArray
+  }
+
+  /**
     * Generates the following code for control-impure functions.
     *
     * {{{
