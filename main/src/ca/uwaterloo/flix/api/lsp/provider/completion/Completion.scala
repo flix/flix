@@ -417,7 +417,7 @@ sealed trait Completion {
       } else None
       val labelDetails = CompletionItemLabelDetails(None, description)
       val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
-      val priority: Priority = if (inScope) Priority.High else Priority.Lower
+      val priority: Priority = if (inScope) Priority.High(0) else Priority.Lower(0)
       CompletionItem(
         label = label,
         labelDetails = Some(labelDetails),
@@ -436,7 +436,7 @@ sealed trait Completion {
       } else None
       val labelDetails = CompletionItemLabelDetails(None, description)
       val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
-      val priority: Priority = if (inScope) Priority.High else Priority.Lower
+      val priority: Priority = if (inScope) Priority.High(0) else Priority.Lower(0)
       CompletionItem(
         label = name,
         labelDetails = Some(labelDetails),
@@ -471,7 +471,7 @@ sealed trait Completion {
     case Completion.StructFieldCompletion(field, loc, tpe) =>
       CompletionItem(
         label = field,
-        sortText = Priority.toSortText(Priority.Lowest, field),
+        sortText = Priority.toSortText(Priority.Lowest(0), field),
         textEdit = TextEdit(Range.from(loc), field),
         detail = Some(FormatType.formatType(tpe)(flix)),
         kind = CompletionItemKind.Property,

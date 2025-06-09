@@ -282,7 +282,7 @@ object ClassMaker {
 
   sealed case class StaticInterfaceMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method
 
-  // Constants
+  // Constants.
 
   object Object {
 
@@ -292,8 +292,13 @@ object ClassMaker {
       InstanceMethod(JvmName.Object, "equals", mkDescriptor(BackendType.Object)(BackendType.Bool))
 
     def ToStringMethod: InstanceMethod =
-      InstanceMethod(JvmName.Object, "toString", mkDescriptor()(BackendObjType.String.toTpe))
+      InstanceMethod(JvmName.Object, "toString", mkDescriptor()(BackendType.String))
 
+  }
+
+  object String {
+    def Concat: InstanceMethod =
+      InstanceMethod(JvmName.String, "concat", mkDescriptor(BackendType.String)(BackendType.String))
   }
 
 }
