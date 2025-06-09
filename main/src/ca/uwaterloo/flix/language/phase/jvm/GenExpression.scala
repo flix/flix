@@ -932,11 +932,7 @@ object GenExpression {
             addLoc(loc)
             compileExpr(exp1)
             CHECKCAST(JvmName.Runnable)
-            INVOKESTATIC(ClassMaker.StaticMethod(
-              JvmName.Thread,
-              "startVirtualThread",
-              MethodDescriptor.mkDescriptor(JvmName.Runnable.toTpe)(JvmName.Thread.toTpe)
-            ))
+            INVOKESTATIC(ClassMaker.Thread.StartVirtualThreadMethod)
             POP()
             GETSTATIC(BackendObjType.Unit.SingletonField)
           case _ =>
