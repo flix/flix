@@ -64,7 +64,6 @@ sealed trait BackendObjType {
     case BackendObjType.Namespace(ns) => JvmName(ns.dropRight(1), ns.lastOption.getOrElse(s"Root${Flix.Delimiter}"))
     // Java classes
     case BackendObjType.Native(className) => className
-    case BackendObjType.Regex => JvmName(List("java", "util", "regex"), "Pattern")
     case BackendObjType.Arrays => JvmName(JavaUtil, "Arrays")
     case BackendObjType.StringBuilder => JvmName(JavaLang, "StringBuilder")
     case BackendObjType.LambdaMetaFactory => JvmName(JavaLangInvoke, "LambdaMetafactory")
@@ -1111,10 +1110,6 @@ object BackendObjType {
         MethodDescriptor(List(BackendType.Object, BackendType.Int32, BackendType.Object, BackendType.Int32,
           BackendType.Int32), VoidableType.Void), isInterface = false)
     }
-  }
-
-  case object Regex extends BackendObjType {
-    def CompileMethod: StaticMethod = StaticMethod(this.jvmName, "compile", mkDescriptor(BackendType.String)(Regex.toTpe))
   }
 
   case object FlixError extends BackendObjType {

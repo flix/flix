@@ -306,6 +306,11 @@ object ClassMaker {
 
   }
 
+  object Regex {
+    def CompileMethod: StaticMethod =
+      StaticMethod(JvmName.Regex, "compile", mkDescriptor(BackendType.String)(JvmName.Regex.toTpe))
+  }
+
   object String {
     def Concat: InstanceMethod =
       InstanceMethod(JvmName.String, "concat", mkDescriptor(BackendType.String)(BackendType.String))
