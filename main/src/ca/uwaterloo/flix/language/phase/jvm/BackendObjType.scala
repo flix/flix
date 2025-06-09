@@ -441,7 +441,7 @@ object BackendObjType {
     */
   case class AbstractArrow(args: List[BackendType], result: BackendType) extends BackendObjType {
 
-    private def superClass: BackendObjType.Arrow = Arrow(args, result)
+    def superClass: BackendObjType.Arrow = Arrow(args, result)
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkAbstractClass(this.jvmName, superClass.jvmName)
@@ -1701,6 +1701,7 @@ object BackendObjType {
       crashIfSuspension(errorHint, loc)
       CHECKCAST(Value.jvmName) // Cannot fail
       GETFIELD(Value.fieldFromType(tpe))
+      castIfNotPrim(tpe)
     }
 
     /**
