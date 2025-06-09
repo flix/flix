@@ -322,6 +322,7 @@ object ClassMaker {
 
     def NextMethod: InterfaceMethod =
       InterfaceMethod(JvmName.Iterator, "next", mkDescriptor()(BackendType.Object))
+
   }
 
   object LinkedList {
