@@ -561,8 +561,7 @@ class TestCompletionProvider extends AnyFunSuite {
               println(s"Keyword completion with higher priority than non-keyword completion at $pos:")
               println(s"  $c1")
               println(s"  $c2")
-              // TODO
-              //fail(s"Keyword completion '$c1' with higher priority than non-keyword completion '$c2'.")
+              fail(s"Keyword completion '$c1' with higher priority than non-keyword completion '$c2'.")
             }
           case (_, _) => // OK
         }
