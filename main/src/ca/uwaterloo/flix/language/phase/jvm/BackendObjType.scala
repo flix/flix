@@ -66,7 +66,6 @@ sealed trait BackendObjType {
     case BackendObjType.Native(className) => className
     case BackendObjType.Regex => JvmName(List("java", "util", "regex"), "Pattern")
     case BackendObjType.String => JvmName(JavaLang, "String")
-    case BackendObjType.CharSequence => JvmName(JavaLang, "CharSequence")
     case BackendObjType.Arrays => JvmName(JavaUtil, "Arrays")
     case BackendObjType.StringBuilder => JvmName(JavaLang, "StringBuilder")
     case BackendObjType.LambdaMetaFactory => JvmName(JavaLangInvoke, "LambdaMetafactory")
@@ -1610,7 +1609,7 @@ object BackendObjType {
   case object String extends BackendObjType {
 
     def JoinMethod: StaticMethod = StaticMethod(this.jvmName,
-      "join", mkDescriptor(CharSequence.toTpe, BackendType.Array(CharSequence.toTpe))(String.toTpe))
+      "join", mkDescriptor(JvmName.CharSequence.toTpe, BackendType.Array(JvmName.CharSequence.toTpe))(String.toTpe))
 
     def BoolValueOf: StaticMethod = StaticMethod(this.jvmName,
       "valueOf", mkDescriptor(BackendType.Bool)(this.toTpe))
@@ -1644,8 +1643,6 @@ object BackendObjType {
     def Concat: InstanceMethod = InstanceMethod(this.jvmName,
       "concat", mkDescriptor(this.toTpe)(this.toTpe))
   }
-
-  case object CharSequence extends BackendObjType
 
   case object Arrays extends BackendObjType {
     def BoolArrToString: StaticMethod = StaticMethod(this.jvmName,

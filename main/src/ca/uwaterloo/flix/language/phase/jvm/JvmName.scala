@@ -146,6 +146,7 @@ object JvmName {
   val BigInteger: JvmName = JvmName(JavaMath, "BigInteger")
   val Boolean: JvmName = JvmName(JavaLang, "Boolean")
   val Byte: JvmName = JvmName(JavaLang, "Byte")
+  val CharSequence: JvmName = JvmName(JavaLang, "CharSequence")
   val Character: JvmName = JvmName(JavaLang, "Character")
   val Class: JvmName = JvmName(JavaLang, "Class")
   val Double: JvmName = JvmName(JavaLang, "Double")
