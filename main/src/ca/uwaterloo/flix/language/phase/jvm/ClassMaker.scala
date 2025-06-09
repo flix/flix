@@ -284,6 +284,16 @@ object ClassMaker {
 
   // Constants.
 
+  object LinkedList {
+
+    def AddFirstMethod: InstanceMethod =
+      InstanceMethod(JvmName.LinkedList, "addFirst", mkDescriptor(BackendType.Object)(VoidableType.Void))
+
+    def IteratorMethod: InstanceMethod =
+      InstanceMethod(JvmName.LinkedList, "iterator", mkDescriptor()(BackendObjType.Iterator.toTpe))
+
+  }
+
   object Object {
 
     def Constructor: ConstructorMethod = ConstructorMethod(JvmName.Object, Nil)
