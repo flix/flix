@@ -931,11 +931,11 @@ object GenExpression {
           case Expr.ApplyAtomic(AtomicOp.Region, _, _, _, _) =>
             addLoc(loc)
             compileExpr(exp1)
-            CHECKCAST(BackendObjType.Runnable.jvmName)
+            CHECKCAST(JvmName.Runnable)
             INVOKESTATIC(ClassMaker.StaticMethod(
               JvmName.Thread,
               "startVirtualThread",
-              MethodDescriptor.mkDescriptor(BackendObjType.Runnable.toTpe)(JvmName.Thread.toTpe)
+              MethodDescriptor.mkDescriptor(JvmName.Runnable.toTpe)(JvmName.Thread.toTpe)
             ))
             POP()
             GETSTATIC(BackendObjType.Unit.SingletonField)
@@ -944,7 +944,7 @@ object GenExpression {
             compileExpr(exp2)
             CHECKCAST(BackendObjType.Region.jvmName)
             compileExpr(exp1)
-            CHECKCAST(BackendObjType.Runnable.jvmName)
+            CHECKCAST(JvmName.Runnable)
             INVOKEVIRTUAL(BackendObjType.Region.SpawnMethod)
             GETSTATIC(BackendObjType.Unit.SingletonField)
         }

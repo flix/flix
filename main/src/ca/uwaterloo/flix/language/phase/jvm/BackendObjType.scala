@@ -68,7 +68,6 @@ sealed trait BackendObjType {
     case BackendObjType.LambdaMetaFactory => JvmName(JavaLangInvoke, "LambdaMetafactory")
     case BackendObjType.LinkedList => JvmName(JavaUtil, "LinkedList")
     case BackendObjType.Iterator => JvmName(JavaUtil, "Iterator")
-    case BackendObjType.Runnable => JvmName(JavaLang, "Runnable")
     case BackendObjType.ConcurrentLinkedQueue => JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
     case BackendObjType.ThreadBuilderOfVirtual => JvmName(JavaLang, "Thread$Builder$OfVirtual")
     // Effects Runtime
@@ -1424,7 +1423,7 @@ object BackendObjType {
           } {
             i.load()
             INVOKEINTERFACE(Iterator.NextMethod)
-            CHECKCAST(Runnable.jvmName)
+            CHECKCAST(JvmName.Runnable)
             INVOKEINTERFACE(Runnable.RunMethod)
           }
         }
@@ -1468,7 +1467,7 @@ object BackendObjType {
     // final public void runOnExit(Runnable r) {
     //   onExit.addFirst(r);
     // }
-    private def RunOnExitMethod: InstanceMethod = InstanceMethod(this.jvmName, "runOnExit", mkDescriptor(BackendObjType.Runnable.toTpe)(VoidableType.Void))
+    private def RunOnExitMethod: InstanceMethod = InstanceMethod(this.jvmName, "runOnExit", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void))
 
     private def runOnExitIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
@@ -1656,12 +1655,6 @@ object BackendObjType {
 
     def NextMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "next",
       mkDescriptor()(BackendType.Object))
-  }
-
-  case object Runnable extends BackendObjType {
-
-    def RunMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "run",
-      MethodDescriptor.NothingToVoid)
   }
 
   case object ConcurrentLinkedQueue extends BackendObjType {
@@ -1895,7 +1888,7 @@ object BackendObjType {
   case object Thunk extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkInterface(this.jvmName, interfaces = List(Result.jvmName, Runnable.jvmName))
+      val cm = mkInterface(this.jvmName, interfaces = List(Result.jvmName, JvmName.Runnable))
 
       cm.mkInterfaceMethod(InvokeMethod)
       cm.mkDefaultMethod(RunMethod, IsPublic, NotFinal, runIns(_))
