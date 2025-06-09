@@ -284,6 +284,35 @@ object ClassMaker {
 
   // Constants.
 
+  object Arrays {
+    def BoolArrToString: StaticMethod =
+      StaticMethod(JvmName.Arrays, "toString", mkDescriptor(BackendType.Array(BackendType.Bool))(BackendType.String))
+
+    def CharArrToString: StaticMethod =
+      StaticMethod(JvmName.Arrays, "toString", mkDescriptor(BackendType.Array(BackendType.Char))(BackendType.String))
+
+    def Int8ArrToString: StaticMethod =
+      StaticMethod(JvmName.Arrays, "toString", mkDescriptor(BackendType.Array(BackendType.Int8))(BackendType.String))
+
+    def Int16ArrToString: StaticMethod =
+      StaticMethod(JvmName.Arrays, "toString", mkDescriptor(BackendType.Array(BackendType.Int16))(BackendType.String))
+
+    def Int32ArrToString: StaticMethod =
+      StaticMethod(JvmName.Arrays, "toString", mkDescriptor(BackendType.Array(BackendType.Int32))(BackendType.String))
+
+    def Int64ArrToString: StaticMethod =
+      StaticMethod(JvmName.Arrays, "toString", mkDescriptor(BackendType.Array(BackendType.Int64))(BackendType.String))
+
+    def Float32ArrToString: StaticMethod =
+      StaticMethod(JvmName.Arrays, "toString", mkDescriptor(BackendType.Array(BackendType.Float32))(BackendType.String))
+
+    def Float64ArrToString: StaticMethod =
+      StaticMethod(JvmName.Arrays, "toString", mkDescriptor(BackendType.Array(BackendType.Float64))(BackendType.String))
+
+    def DeepToString: StaticMethod =
+      StaticMethod(JvmName.Arrays, "deepToString", mkDescriptor(BackendType.Array(BackendType.Object))(BackendType.String))
+  }
+
   object LinkedList {
 
     def AddFirstMethod: InstanceMethod =
