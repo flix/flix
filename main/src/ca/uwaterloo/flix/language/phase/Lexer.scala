@@ -885,18 +885,18 @@ object Lexer {
             case _ if isMatchCurrent("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
             case _ =>
               if (isDecimal) {
-                error.getOrElse(TokenKind.LiteralFloat64)
+                error.getOrElse(TokenKind.LiteralFloat)
               } else {
-                error.getOrElse(TokenKind.LiteralInt32)
+                error.getOrElse(TokenKind.LiteralInt)
               }
           }
       }
     }
     // The very last char of the file was a digit so return the appropriate token.
     if (isDecimal) {
-      error.getOrElse(TokenKind.LiteralFloat64)
+      error.getOrElse(TokenKind.LiteralFloat)
     } else {
-      error.getOrElse(TokenKind.LiteralInt32)
+      error.getOrElse(TokenKind.LiteralInt)
     }
   }
 
@@ -964,7 +964,7 @@ object Lexer {
       else wrapAndConsume(LexerError.IncorrectHexNumberSuffix(sourceLocationAtCurrent()))
     } else if (isNumberLike(c)) {
       wrapAndConsume(LexerError.MalformedHexNumber(c.toString, sourceLocationAtCurrent()))
-    } else TokenKind.LiteralInt32
+    } else TokenKind.LiteralInt
   }
 
   /** Moves current position past an annotation (e.g. "@Test"). */

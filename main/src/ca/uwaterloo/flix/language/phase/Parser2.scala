@@ -1616,9 +1616,11 @@ object Parser2 {
         case TokenKind.KeywordUse => useExpr()
         case TokenKind.LiteralString
              | TokenKind.LiteralChar
+             | TokenKind.LiteralFloat
              | TokenKind.LiteralFloat32
              | TokenKind.LiteralFloat64
              | TokenKind.LiteralBigDecimal
+             | TokenKind.LiteralInt
              | TokenKind.LiteralInt8
              | TokenKind.LiteralInt16
              | TokenKind.LiteralInt32
@@ -3019,9 +3021,11 @@ object Parser2 {
              | TokenKind.KeywordQuery => variablePat()
         case TokenKind.LiteralString
              | TokenKind.LiteralChar
+             | TokenKind.LiteralFloat
              | TokenKind.LiteralFloat32
              | TokenKind.LiteralFloat64
              | TokenKind.LiteralBigDecimal
+             | TokenKind.LiteralInt
              | TokenKind.LiteralInt8
              | TokenKind.LiteralInt16
              | TokenKind.LiteralInt32
