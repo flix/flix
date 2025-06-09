@@ -61,7 +61,7 @@ object GenEffectClasses {
 
     val interfaces = Array(BackendObjType.Handler.jvmName.toInternalName)
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, effectName.toInternalName,
-      null, BackendObjType.JavaObject.jvmName.toInternalName, interfaces)
+      null, JvmName.Object.toInternalName, interfaces)
 
     for (op <- effect.ops) genFieldAndMethod(visitor, effectName, op)
 
@@ -78,7 +78,7 @@ object GenEffectClasses {
     import BytecodeInstructions.*
 
     ALOAD(0)
-    INVOKESPECIAL(BackendObjType.JavaObject.Constructor)
+    INVOKESPECIAL(ClassMaker.Object.Constructor)
     RETURN()
 
     mv.visitMaxs(999, 999)

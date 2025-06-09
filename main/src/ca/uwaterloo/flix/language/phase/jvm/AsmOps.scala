@@ -39,7 +39,7 @@ object AsmOps {
     */
   def mkClassWriter(): ClassWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES) {
     override def getCommonSuperClass(tpe1: String, tpe2: String): String = {
-      BackendObjType.JavaObject.jvmName.toInternalName
+      JvmName.Object.toInternalName
     }
   }
 
