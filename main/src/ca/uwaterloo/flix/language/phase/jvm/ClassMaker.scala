@@ -314,6 +314,14 @@ object ClassMaker {
 
   }
 
+  object BigDecimal {
+    def Constructor: ConstructorMethod = ClassMaker.ConstructorMethod(JvmName.BigDecimal, List(BackendType.String))
+  }
+
+  object BigInteger {
+    def Constructor: ConstructorMethod = ClassMaker.ConstructorMethod(JvmName.BigInteger, List(BackendType.String))
+  }
+
   object Iterator {
 
     def HasNextMethod: InterfaceMethod =
@@ -390,23 +398,27 @@ object ClassMaker {
 
   object Thread {
 
-    def StartMethod: InstanceMethod =
-      InstanceMethod(JvmName.Thread, "start", MethodDescriptor.NothingToVoid)
-
-    def JoinMethod: InstanceMethod =
-      InstanceMethod(JvmName.Thread, "join", MethodDescriptor.NothingToVoid)
-
     def CurrentThreadMethod: StaticMethod =
       StaticMethod(JvmName.Thread, "currentThread", mkDescriptor()(JvmName.Thread.toTpe))
 
     def InterruptMethod: InstanceMethod =
       InstanceMethod(JvmName.Thread, "interrupt", MethodDescriptor.NothingToVoid)
 
-    def SetUncaughtExceptionHandlerMethod: InstanceMethod =
-      InstanceMethod(JvmName.Thread, "setUncaughtExceptionHandler", mkDescriptor(JvmName.Thread$UncaughtExceptionHandler.toTpe)(VoidableType.Void))
+    def JoinMethod: InstanceMethod =
+      InstanceMethod(JvmName.Thread, "join", MethodDescriptor.NothingToVoid)
 
     def OfVirtualMethod: StaticMethod =
       StaticMethod(JvmName.Thread, "ofVirtual", mkDescriptor()(JvmName.Thread$Builder$OfVirtual.toTpe))
+
+    def SetUncaughtExceptionHandlerMethod: InstanceMethod =
+      InstanceMethod(JvmName.Thread, "setUncaughtExceptionHandler", mkDescriptor(JvmName.ThreadUncaughtExceptionHandler.toTpe)(VoidableType.Void))
+
+    def StartMethod: InstanceMethod =
+      InstanceMethod(JvmName.Thread, "start", MethodDescriptor.NothingToVoid)
+
+    def StartVirtualThreadMethod: StaticMethod =
+      ClassMaker.StaticMethod(JvmName.Thread, "startVirtualThread", MethodDescriptor.mkDescriptor(JvmName.Runnable.toTpe)(JvmName.Thread.toTpe))
+
   }
 
   object ThreadBuilderOfVirtual {
