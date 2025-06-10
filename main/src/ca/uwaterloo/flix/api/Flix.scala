@@ -292,6 +292,7 @@ class Flix {
     "FileReadWithResult.flix" -> LocalResource.get("/src/library/FileReadWithResult.flix"),
     "FileWrite.flix" -> LocalResource.get("/src/library/FileWrite.flix"),
     "FileWriteWithResult.flix" -> LocalResource.get("/src/library/FileWriteWithResult.flix"),
+    "Ping.flix" -> LocalResource.get("/src/library/Ping.flix"),
     "ProcessHandle.flix" -> LocalResource.get("/src/library/ProcessHandle.flix"),
     "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
     "ProcessWithResult.flix" -> LocalResource.get("/src/library/ProcessWithResult.flix"),
