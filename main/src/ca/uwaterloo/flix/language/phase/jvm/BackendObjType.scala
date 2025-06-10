@@ -66,7 +66,6 @@ sealed trait BackendObjType {
     // Java classes
     case BackendObjType.Native(className) => className
     case BackendObjType.LambdaMetaFactory => JvmName(JavaLangInvoke, "LambdaMetafactory")
-    case BackendObjType.Iterator => JvmName(JavaUtil, "Iterator")
     case BackendObjType.ConcurrentLinkedQueue => JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
     // Effects Runtime
     case BackendObjType.Result => JvmName(DevFlixRuntime, mkClassName("Result"))
@@ -443,7 +442,7 @@ object BackendObjType {
     */
   case class AbstractArrow(args: List[BackendType], result: BackendType) extends BackendObjType {
 
-    private def superClass: BackendObjType.Arrow = Arrow(args, result)
+    def superClass: BackendObjType.Arrow = Arrow(args, result)
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkAbstractClass(this.jvmName, superClass.jvmName)
@@ -715,7 +714,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
-    private def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, s"arg$index", args(index))
+    def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, s"arg$index", args(index))
 
     private def toStringIns(implicit mv: MethodVisitor): Unit = {
       val argString = args match {
@@ -1410,7 +1409,7 @@ object BackendObjType {
           t.load()
           INVOKEVIRTUAL(Thread.JoinMethod)
         }
-        withName(2, BackendObjType.Iterator.toTpe) { i =>
+        withName(2, JvmName.Iterator.toTpe) { i =>
           thisLoad()
           GETFIELD(OnExitField)
           INVOKEVIRTUAL(LinkedList.IteratorMethod)
@@ -1608,15 +1607,6 @@ object BackendObjType {
     )
   }
 
-  case object Iterator extends BackendObjType {
-
-    def HasNextMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "hasNext",
-      mkDescriptor()(BackendType.Bool))
-
-    def NextMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "next",
-      mkDescriptor()(BackendType.Object))
-  }
-
   case object ConcurrentLinkedQueue extends BackendObjType {
 
     def AddMethod: InstanceMethod = InstanceMethod(this.jvmName, "add",
@@ -1712,6 +1702,7 @@ object BackendObjType {
       crashIfSuspension(errorHint, loc)
       CHECKCAST(Value.jvmName) // Cannot fail
       GETFIELD(Value.fieldFromType(tpe))
+      castIfNotPrim(tpe)
     }
 
     /**
