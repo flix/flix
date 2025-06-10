@@ -105,7 +105,7 @@ object JvmBackend {
     val resumptionNilClass = List(JvmClass(BackendObjType.ResumptionNil.jvmName, BackendObjType.ResumptionNil.genByteCode()))
     val handlerInterface = List(JvmClass(BackendObjType.Handler.jvmName, BackendObjType.Handler.genByteCode()))
     val effectCallClass = List(JvmClass(BackendObjType.EffectCall.jvmName, BackendObjType.EffectCall.genByteCode()))
-    val effectClasses = GenEffectClasses.gen(root.effects.values).values.toList
+    val effectClasses = GenEffectClasses.gen(root.effects.values)
     val resumptionWrappers = BackendType.erasedTypes.map(BackendObjType.ResumptionWrapper.apply).map(bt => JvmClass(bt.jvmName, bt.genByteCode()))
 
     val allClasses = List(
