@@ -39,6 +39,7 @@ mod IoError {
         case PermissionDenied,
         case UnexpectedEof,
         case Unsupported,
+        case UnknownHost,
         case Other
     }
 

@@ -39,13 +39,19 @@ object GenFunAndClosureClasses {
 
       case (macc, closure) if isClosure(closure) =>
         val closureName = JvmOps.getClosureClassName(closure.sym)
-        val code = genCode(closureName, Closure, closure)
+        val code = genClosure(closureName, closure)
         macc + (closureName -> JvmClass(closureName, code))
+
+      case (macc, defn) if isFunction(defn) && isControlPure(defn) =>
+        flix.subtask(defn.sym.toString, sample = true)
+        val functionName = BackendObjType.Defn(defn.sym).jvmName
+        val code = genControlPureFunction(functionName, defn)
+        macc + (functionName -> JvmClass(functionName, code))
 
       case (macc, defn) if isFunction(defn) =>
         flix.subtask(defn.sym.toString, sample = true)
         val functionName = BackendObjType.Defn(defn.sym).jvmName
-        val code = genCode(functionName, Function, defn)
+        val code = genControlImpureFunction(functionName, defn)
         macc + (functionName -> JvmClass(functionName, code))
 
       case (macc, _) =>
@@ -57,27 +63,125 @@ object GenFunAndClosureClasses {
 
   private def isFunction(defn: Def): Boolean = defn.cparams.isEmpty
 
-  private sealed trait FunctionKind
-
-  private case object Function extends FunctionKind
-
-  private case object Closure extends FunctionKind
+  private def isControlPure(defn: Def): Boolean = Purity.isControlPure(defn.expr.purity)
 
   /**
-    * Generates the following code for closures and control-impure functions.
-    *
-    * `(a|b)` is used to represent the function (left) or closure version (right).
+    * Generates the following code for control-pure functions.
     *
     * {{{
-    * public final class (Def$example|Clo$example$152) extends (Fn2$Obj$Int$Obj|Clo2$Obj$Int$Obj) implements Frame {
-    *   // locals variables (present for both functions and closures)
+    * public final class Def$example extends Fn2$Obj$Int$Obj implements Frame {
+    *   // function arguments
+    *   public Object arg0;
+    *   public int arg1
+    *
+    *   public final Result invoke() { return this.directApply((Tagged$) this.arg0, this.arg1); }
+    *
+    *   // Assuming the concrete type of Obj is `Tagged$`
+    *   public final Result directApply(Tagged$ var0, int var1) {
+    *     EnterLabel:
+    *     // body code ...
+    *   }
+    * }
+    * }}}
+    */
+  private def genControlPureFunction(className: JvmName, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
+    val visitor = AsmOps.mkClassWriter()
+
+    // Header
+    val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
+      functionInterface.toInternalName, null)
+
+    compileConstructor(functionInterface, visitor)
+
+    // Methods
+    compileStaticInvokeMethod(visitor, className, defn)
+    compileStaticApplyMethod(visitor, className, defn)
+
+    visitor.visitEnd()
+    visitor.toByteArray
+  }
+
+  /**
+    * Generates the following code for control-impure functions.
+    *
+    * {{{
+    * public final class Def$example extends Fn2$Obj$Int$Obj implements Frame {
+    *   // locals variables
     *   public int l0;
     *   public char l1;
     *   public Object l2;
-    *   // closure params (assumed empty for functions)
+    *   // function arguments
+    *   public Object arg0;
+    *   public int arg1
+    *
+    *   public final Result invoke() { return this.applyFrame(null); }
+    *
+    *   public final Result applyFrame(Value resumptionArg) {
+    *     // fields are put into the local frame according to symbol data
+    *     int ? = this.l0;
+    *     char ? = this.l1;
+    *     Object ? = this.l2;
+    *
+    *     EnterLabel:
+    *
+    *     Object ? = this.arg0;
+    *     int ? = this.arg1;
+    *
+    *     // body code ...
+    *   }
+    *
+    *   public final Def$example copy {
+    *     Def$example x = new Def$example();
+    *     x.arg0 = this.arg0;
+    *     x.arg1 = this.arg1
+    *     x.l0 = this.l0;
+    *     x.l1 = this.l1;
+    *     x.l2 = this.l2;
+    *     return x;
+    *   }
+    * }
+    * }}}
+    */
+  private def genControlImpureFunction(className: JvmName, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
+    val visitor = AsmOps.mkClassWriter()
+
+    // Header
+    val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
+    val frameInterface = BackendObjType.Frame
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
+      functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
+
+    // Fields
+    for ((x, i) <- defn.lparams.zipWithIndex) {
+      visitor.visitField(ACC_PUBLIC, s"l$i", BackendType.toErasedBackendType(x.tpe).toDescriptor, null, null)
+    }
+    visitor.visitField(ACC_PUBLIC, "pc", BackendType.Int32.toDescriptor, null, null)
+
+    compileConstructor(functionInterface, visitor)
+
+    // Methods
+    compileInvokeMethod(visitor, className)
+    compileFrameMethod(visitor, className, defn)
+    compileCopyMethod(visitor, className, defn)
+
+    visitor.visitEnd()
+    visitor.toByteArray
+  }
+
+  /**
+    * Generates the following code for closures.
+    *
+    * {{{
+    * public final class Clo$example$152 extends Clo2$Obj$Int$Obj implements Frame {
+    *   // locals variables
+    *   public int l0;
+    *   public char l1;
+    *   public Object l2;
+    *   // closure params
     *   public int clo0;
     *   public byte clo1;
-    *   // function arguments (present for both functions and closures)
+    *   // function arguments
     *   public Object arg0;
     *   public int arg1
     *
@@ -99,8 +203,8 @@ object GenFunAndClosureClasses {
     *     // body code ...
     *   }
     *
-    *   public final (Def$example|Clo$example$152) copy {
-    *     (Def$example|Clo$example$152) x = new (Def$example|Clo$example$152)();
+    *   public final Clo$example$152 copy {
+    *     Clo$example$152 x = new Clo$example$152();
     *     x.arg0 = this.arg0;
     *     x.arg1 = this.arg1
     *     x.clo0 = this.clo0;
@@ -111,7 +215,6 @@ object GenFunAndClosureClasses {
     *     return x;
     *   }
     *
-    *   // Only for closures
     *   public Clo2$Obj$Int$Obj getUniqueThreadClosure() {
     *     Clo$example$152 x = new Clo$example$152();
     *     x.clo0 = this.clo0;
@@ -120,39 +223,12 @@ object GenFunAndClosureClasses {
     *   }
     * }
     * }}}
-    *
-    * For control-pure functions, the generated code deviates slightly, as the `applyFrame` method is replaced
-    * by a static method called `directApply` that accepts the concrete parameters of the Flix function.
-    * The `invoke` method then forwards its call to `directApply`, passing the values from the corresponding fields.
-    *
-    * {{{
-    * public final class Def$example extends Fn2$Obj$Int$Obj implements Frame {
-    *   // locals variables
-    *   public int l0;
-    *   public char l1;
-    *   public Object l2;
-    *   // function arguments
-    *   public Object arg0;
-    *   public int arg1
-    *
-    *   public final Result invoke() { return this.applyDirect((Tagged$) this.arg0, this.arg1); }
-    *
-    *   // Assuming the concrete type of Obj is `Tagged$`
-    *   public final Result applyDirect(Tagged$ var0, int var1) {
-    *     EnterLabel:
-    *     // body code ...
-    *   }
-    * }
-    * }}}
     */
-  private def genCode(className: JvmName, kind: FunctionKind, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genClosure(className: JvmName, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
     val visitor = AsmOps.mkClassWriter()
 
     // Header
-    val functionInterface = kind match {
-      case Function => JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
-      case Closure => JvmOps.getErasedClosureAbstractClassType(defn.arrowType).jvmName
-    }
+    val functionInterface = JvmOps.getErasedClosureAbstractClassType(defn.arrowType).jvmName
     val frameInterface = BackendObjType.Frame
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
@@ -170,17 +246,12 @@ object GenFunAndClosureClasses {
     visitor.visitField(ACC_PUBLIC, "pc", BackendType.Int32.toDescriptor, null, null)
 
     compileConstructor(functionInterface, visitor)
+
     // Methods
-    if (Purity.isControlPure(defn.expr.purity) && kind == Function) {
-      compileStaticInvokeMethod(visitor, className, defn)
-      compileStaticApplyMethod(visitor, className, defn)
-    }
-    else {
-      compileInvokeMethod(visitor, className)
-      compileFrameMethod(visitor, className, defn)
-      compileCopyMethod(visitor, className, defn)
-    }
-    if (kind == Closure) compileGetUniqueThreadClosureMethod(visitor, className, defn)
+    compileInvokeMethod(visitor, className)
+    compileFrameMethod(visitor, className, defn)
+    compileCopyMethod(visitor, className, defn)
+    compileGetUniqueThreadClosureMethod(visitor, className, defn)
 
     visitor.visitEnd()
     visitor.toByteArray
