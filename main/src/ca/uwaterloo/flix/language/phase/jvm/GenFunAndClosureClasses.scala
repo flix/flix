@@ -73,10 +73,10 @@ object GenFunAndClosureClasses {
     *   public Object arg0;
     *   public int arg1
     *
-    *   public final Result invoke() { return this.applyDirect((Tagged$) this.arg0, this.arg1); }
+    *   public final Result invoke() { return this.directApply((Tagged$) this.arg0, this.arg1); }
     *
     *   // Assuming the concrete type of Obj is `Tagged$`
-    *   public final Result applyDirect(Tagged$ var0, int var1) {
+    *   public final Result directApply(Tagged$ var0, int var1) {
     *     EnterLabel:
     *     // body code ...
     *   }
