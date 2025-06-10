@@ -1015,7 +1015,7 @@ object GenExpression {
 
     case Expr.ApplyClo(exp1, exp2, ct, _, purity, loc) =>
       // Type of the function abstract class
-      val functionInterface = JvmOps.getErasedFunctionInterfaceType(exp1.tpe).jvmName
+      val functionInterface = JvmOps.getErasedFunctionInterfaceType(exp1.tpe)
       val closureAbstractClass = JvmOps.getErasedClosureAbstractClassType(exp1.tpe)
       ct match {
         case ExpPosition.Tail =>
@@ -1030,8 +1030,7 @@ object GenExpression {
           mv.visitInsn(DUP)
           // Evaluating the expression
           compileExpr(exp2)
-          mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
-            "arg0", BackendType.toErasedBackendType(exp2.tpe).toDescriptor)
+          BytecodeInstructions.PUTFIELD(functionInterface.ArgField(0))
           // Return the closure
           mv.visitInsn(ARETURN)
 
@@ -1046,8 +1045,7 @@ object GenExpression {
           mv.visitInsn(DUP)
           // Evaluating the expression
           compileExpr(exp2)
-          mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
-            "arg0", BackendType.toErasedBackendType(exp2.tpe).toDescriptor)
+          BytecodeInstructions.PUTFIELD(functionInterface.ArgField(0))
 
           // Calling unwind and unboxing
           if (Purity.isControlPure(purity)) {
@@ -1078,7 +1076,7 @@ object GenExpression {
       case ExpPosition.Tail =>
         val defJvmName = BackendObjType.Defn(sym).jvmName
         // Type of the function abstract class
-        val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType).jvmName
+        val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType)
 
         // Put the def on the stack
         mv.visitTypeInsn(NEW, defJvmName.toInternalName)
@@ -1090,8 +1088,7 @@ object GenExpression {
           mv.visitInsn(DUP)
           // Evaluating the expression
           compileExpr(arg)
-          mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
-            s"arg$i", BackendType.toErasedBackendType(arg.tpe).toDescriptor)
+          BytecodeInstructions.PUTFIELD(functionInterface.ArgField(i))
         }
         // Return the def
         mv.visitInsn(ARETURN)
@@ -1158,14 +1155,13 @@ object GenExpression {
     case Expr.ApplySelfTail(sym, exps, _, _, _) => ctx match {
       case EffectContext(_, _, _, setPc, _, _, _) =>
         // The function abstract class name
-        val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType).jvmName
+        val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType)
         // Evaluate each argument and put the result on the Fn class.
         for ((arg, i) <- exps.zipWithIndex) {
           mv.visitVarInsn(ALOAD, 0)
           // Evaluate the argument and push the result on the stack.
           compileExpr(arg)
-          mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
-            s"arg$i", BackendType.toErasedBackendType(arg.tpe).toDescriptor)
+          BytecodeInstructions.PUTFIELD(functionInterface.ArgField(i))
         }
         mv.visitVarInsn(ALOAD, 0)
         BytecodeInstructions.pushInt(0)
@@ -1175,14 +1171,13 @@ object GenExpression {
 
       case DirectInstanceContext(_, _, _) =>
         // The function abstract class name
-        val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType).jvmName
+        val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType)
         // Evaluate each argument and put the result on the Fn class.
         for ((arg, i) <- exps.zipWithIndex) {
           mv.visitVarInsn(ALOAD, 0)
           // Evaluate the argument and push the result on the stack.
           compileExpr(arg)
-          mv.visitFieldInsn(PUTFIELD, functionInterface.toInternalName,
-            s"arg$i", BackendType.toErasedBackendType(arg.tpe).toDescriptor)
+          BytecodeInstructions.PUTFIELD(functionInterface.ArgField(i))
         }
         // Jump to the entry point of the method.
         mv.visitJumpInsn(GOTO, ctx.entryPoint)
