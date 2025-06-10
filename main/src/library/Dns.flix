@@ -19,6 +19,7 @@
 ///
 eff Dns {
     def lookup(host: String): IpAddr
+    def lookupAll(host: String): List[IpAddr]
 }
 
 mod Dns {
@@ -29,6 +30,21 @@ mod Dns {
     import java.lang.IllegalArgumentException
     import java.net.InetAddress
     import java.net.UnknownHostException
+
+    ///
+    /// Converts a `List[Int8]` into `IpAddr`
+    ///
+    /// an Ipv4 is 32 bytes and Ipv6 is 128 bytes
+    ///
+    def bytesToIpAddr(l: List[Int8]): IpAddr = match l {
+        case b1 :: b2 :: b3 :: b4 :: Nil => {
+            IpAddr.IPv4(b1, b2, b3, b4)
+        }
+        case b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: Nil => {
+            IpAddr.IPv6(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16)
+        }
+        case _ => unreachable!()
+    }
 
     ///
     /// Handles the `Dns` effect of the given function `f`.
@@ -43,15 +59,7 @@ mod Dns {
                 try {
                     let address = InetAddress.getByName(host);
                     let addrBytes = Array.toList(address.getAddress());
-                    let ipAddr = match addrBytes {
-                        case b1 :: b2 :: b3 :: b4 :: Nil => {
-                            IpAddr.IPv4(b1, b2, b3, b4)
-                        }
-                        case b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: Nil => {
-                            IpAddr.IPv6(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16)
-                        }
-                        case _ => unreachable!()
-                    };
+                    let ipAddr = bytesToIpAddr(addrBytes);
                     k(ipAddr)
                 } catch {
                     case ex: UnknownHostException     => Err(IoError(ErrorKind.UnknownHost, ex.getMessage()))
@@ -59,6 +67,22 @@ mod Dns {
                     case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
+
+            def lookupAll(host, k) = {
+                try {
+                    let addrsArr = InetAddress.getAllByName(host);
+                    let addresses = addrsArr
+                        |> Array.toList
+                        |> List.map(a -> a.getAddress() |> Array.toList)
+                        |> List.map(bytesToIpAddr);
+                    k(addresses)
+                } catch {
+                    case ex: UnknownHostException     => Err(IoError(ErrorKind.UnknownHost, ex.getMessage()))
+                    case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+                    case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+            }
+
         }
 
     ///
