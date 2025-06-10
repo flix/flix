@@ -363,7 +363,7 @@ mod BPlusTree {
         let threadNum = if(Node.computeHeight(t->root) >= 2) {
             threads()
         } else {
-            Int32.max(threads(), Node.size(t->root))
+            Int32.min(threads(), Node.size(t->root))
         };
         if (threadNum <= 1) {
             forEach(f, t)
