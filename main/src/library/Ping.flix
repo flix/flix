@@ -25,10 +25,10 @@ mod Ping {
     use IoError.ErrorKind
     use IoError.IoError
 
-    import java.net.InetAddress
     import java.io.IOException
-    import java.net.UnknownHostException
     import java.lang.IllegalArgumentException
+    import java.net.InetAddress
+    import java.net.UnknownHostException
 
     ///
     /// Handles the `Ping` effect of the given function `f`.
