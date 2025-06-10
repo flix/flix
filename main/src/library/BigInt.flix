@@ -275,91 +275,91 @@ mod BigInt {
     ///
     /// Helper function for the `clamp` conversion functions.
     ///
-    def clamp(x: BigInt, minimum: BigInt, maximum: BigInt): BigInt =
-        if (x < minimum)
-             minimum
+    def clamp(min: {min = BigInt}, max: {max = BigInt}, x: BigInt): BigInt =
+        if (x < min#min)
+             min#min
         else
-            if (x > maximum)
-                maximum
+            if (x > max#max)
+                max#max
             else
                 x
 
     ///
     /// Convert `x` to an `Int8`.
     ///
-    /// Returns `x` clamped within the Int8 range `minimum` to `maximum`.
+    /// Returns `x` clamped within the Int8 range `min` to `max`.
     ///
-    pub def clampToInt8(x: BigInt, minimum: Int8, maximum: Int8): Int8 =
-        let minii = Int8.toBigInt(minimum);
-        let maxii = Int8.toBigInt(maximum);
+    pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, x: BigInt): Int8 =
+        let minii = Int8.toBigInt(min#min);
+        let maxii = Int8.toBigInt(max#max);
         try {
-            let y = clamp(x, minii, maxii);
+            let y = clamp(min = minii, max = maxii, x);
             unsafe y.byteValueExact()
         } catch {
             // This should be impossible!
-            case _ : ArithmeticException => minimum
+            case _ : ArithmeticException => min#min
         }
 
     ///
     /// Convert `x` to an `Int16`.
     ///
-    /// Returns `x` clamped within the Int16 range `minimum` to `maximum`.
+    /// Returns `x` clamped within the Int16 range `min` to `max`.
     ///
-    pub def clampToInt16(x: BigInt, minimum: Int16, maximum: Int16): Int16 =
-        let minii = Int16.toBigInt(minimum);
-        let maxii = Int16.toBigInt(maximum);
+    pub def clampToInt16(min: {min = Int16}, max: {max = Int16}, x: BigInt): Int16 =
+        let minii = Int16.toBigInt(min#min);
+        let maxii = Int16.toBigInt(max#max);
         try {
-            let y = clamp(x, minii, maxii);
+            let y = clamp(min = minii, max = maxii, x);
             unsafe y.shortValueExact()
         } catch {
             // This should be impossible!
-            case _ : ArithmeticException => minimum
+            case _ : ArithmeticException => min#min
         }
 
     ///
     /// Convert `x` to an `Int32`.
     ///
-    /// Returns `x` clamped within the Int32 range `minimum` to `maximum`.
+    /// Returns `x` clamped within the Int32 range `min` to `max`.
     ///
-    pub def clampToInt32(x: BigInt, minimum: Int32, maximum: Int32): Int32 =
-        let minii = Int32.toBigInt(minimum);
-        let maxii = Int32.toBigInt(maximum);
+    pub def clampToInt32(min: {min = Int32}, max: {max = Int32}, x: BigInt): Int32 =
+        let minii = Int32.toBigInt(min#min);
+        let maxii = Int32.toBigInt(max#max);
         try {
-            let y = clamp(x, minii, maxii);
+            let y = clamp(min = minii, max = maxii, x);
             unsafe y.intValueExact()
         } catch {
             // This should be impossible!
-            case _ : ArithmeticException => minimum
+            case _ : ArithmeticException => min#min
         }
 
     ///
     /// Convert `x` to an `Int64`.
     ///
-    /// Returns `x` clamped within the Int64 range `minimum` to `maximum`.
+    /// Returns `x` clamped within the Int64 range `min` to `max`.
     ///
-    pub def clampToInt64(x: BigInt, minimum: Int64, maximum: Int64): Int64 =
-        let minii = Int64.toBigInt(minimum);
-        let maxii = Int64.toBigInt(maximum);
+    pub def clampToInt64(min: {min = Int64}, max: {max = Int64}, x: BigInt): Int64 =
+        let minii = Int64.toBigInt(min#min);
+        let maxii = Int64.toBigInt(max#max);
         try {
-            let y = clamp(x, minii, maxii);
+            let y = clamp(min = minii, max = maxii, x);
             unsafe y.longValueExact()
         } catch {
             // This should be impossible!
-            case _ : ArithmeticException => minimum
+            case _ : ArithmeticException => min#min
         }
 
     ///
     /// Convert `x` to a `Float32`.
     ///
-    /// Returns `x` clamped within the Float32 range `minimum` to `maximum`.
+    /// Returns `x` clamped within the Float32 range `min` to `max`.
     ///
-    pub def clampToFloat32(x: BigInt, minimum: Float32, maximum: Float32): Float32 =
+    pub def clampToFloat32(min: {min = Float32}, max: {max = Float32}, x: BigInt): Float32 =
         let step = () -> {
             forM (
-                f32min <- Float32.tryToBigInt(minimum);
-                f32max <- Float32.tryToBigInt(maximum)
+                f32min <- Float32.tryToBigInt(min#min);
+                f32max <- Float32.tryToBigInt(max#max)
             ) yield {
-                let x1 = clamp(x, f32min, f32max);
+                let x1 = clamp(min = f32min, max = f32max, x);
                 let xd = unsafe new BigDecimal(x1);
                 unsafe xd.floatValue()
             }
@@ -372,15 +372,15 @@ mod BigInt {
     ///
     /// Convert `x` to a `Float64`.
     ///
-    /// Returns `x` clamped within the Float64 range `minimum` to `maximum`.
+    /// Returns `x` clamped within the Float64 range `min` to `max`.
     ///
-    pub def clampToFloat64(x: BigInt, minimum: Float64, maximum: Float64): Float64 =
+    pub def clampToFloat64(min: {min = Float64}, max: {max = Float64}, x: BigInt): Float64 =
         let step = () -> {
             forM (
-                f64min <- Float64.tryToBigInt(minimum);
-                f64max <- Float64.tryToBigInt(maximum)
+                f64min <- Float64.tryToBigInt(min#min);
+                f64max <- Float64.tryToBigInt(max#max)
             ) yield {
-                let x1 = clamp(x, f64min, f64max);
+                let x1 = clamp(min = f64min, max = f64max, x);
                 let xd = unsafe new BigDecimal(x1);
                 unsafe xd.doubleValue()
             }
