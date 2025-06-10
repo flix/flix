@@ -3252,10 +3252,19 @@ object Weeder2 {
   private def visitPredicateAndArity(tree: Tree)(implicit sctx: SharedContext): Validation[PredicateAndArity, CompilationMessage] = {
     val identVal = pickNameIdent(tree)
     val arityTokenVal = pickToken(TokenKind.LiteralInt, tree)
-    mapN(identVal, arityTokenVal) {
+    flatMapN(identVal, arityTokenVal) {
       case (ident, arityToken) =>
-        val arity = arityToken.text.toInt
-        PredicateAndArity(ident, arity)
+        mapN(tryParsePredicateArity(arityToken)) {
+          case arity =>
+            PredicateAndArity(ident, arity)
+        }
+    }
+  }
+
+  private def tryParsePredicateArity(token: Token)(implicit sctx: SharedContext): Validation[Int, CompilationMessage] = {
+    token.text.toIntOption match {
+      case Some(i) => Success(i)
+      case None => Failure(WeederError.InvalidPredicateArity(token.mkSourceLocation(isReal = true)))
     }
   }
 
