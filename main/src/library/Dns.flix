@@ -28,6 +28,7 @@ mod Dns {
     import java.io.IOException
     import java.lang.IllegalArgumentException
     import java.net.InetAddress
+    import java.net.UnknownHostException
 
     ///
     /// Handles the `Dns` effect of the given function `f`.
@@ -53,6 +54,7 @@ mod Dns {
                     };
                     k(ipAddr)
                 } catch {
+                    case ex: UnknownHostException     => Err(IoError(ErrorKind.UnknownHost, ex.getMessage()))
                     case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
                     case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
@@ -67,3 +69,4 @@ mod Dns {
     pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - Dns + {Net, IO} = handle(f)()
 
 }
+
