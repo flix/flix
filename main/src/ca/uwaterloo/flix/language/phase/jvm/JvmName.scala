@@ -18,6 +18,8 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm
 
 import java.nio.file.{Path, Paths}
@@ -69,19 +71,15 @@ object JvmName {
     */
   val DirectApply: String = "directApply"
 
-  /**
-    * Returns the JvmName of the given string `s`.
-    */
-  def mk(s: String): JvmName = {
-    val l = s.split("/")
-    JvmName(l.init.toList, l.last)
-  }
-
+  /** Returns the [[JvmName]] of `clazz`. Crashes if `clazz` is primitive, an array, or unnamed. */
   def ofClass(clazz: Class[?]): JvmName = {
-    // TODO: Ugly hack.
-    // Maybe use clazz.getPackage and clazz.getSimpleName
-    val fqn = clazz.getName.replace('.', '/')
-    JvmName.mk(fqn)
+    if (clazz.isPrimitive) throw InternalCompilerException(s"Cannot create a JvmName from the primitive type '${clazz.getName}'", SourceLocation.Unknown)
+    if (clazz.isArray) throw InternalCompilerException(s"Cannot create a JvmName from the array type '${clazz.getName}'", SourceLocation.Unknown)
+    val isUnnamed = clazz.getSimpleName == ""
+    if (isUnnamed) throw InternalCompilerException(s"Cannot create a JvmName from the anonymous class '${clazz.getName}'", SourceLocation.Unknown)
+
+    val parts = asm.Type.getInternalName(clazz).split("/")
+    JvmName(parts.init.toList, parts.last)
   }
 
   val RootPackage: List[String] = Nil
@@ -146,6 +144,7 @@ object JvmName {
   val BigInteger: JvmName = JvmName(JavaMath, "BigInteger")
   val Boolean: JvmName = JvmName(JavaLang, "Boolean")
   val Byte: JvmName = JvmName(JavaLang, "Byte")
+  val CallSite: JvmName = JvmName(JavaLangInvoke, "CallSite")
   val CharSequence: JvmName = JvmName(JavaLang, "CharSequence")
   val Character: JvmName = JvmName(JavaLang, "Character")
   val Class: JvmName = JvmName(JavaLang, "Class")
@@ -162,12 +161,18 @@ object JvmName {
   val IntPredicate: JvmName = JvmName(JavaUtilFunction, "IntPredicate")
   val IntUnaryOperator: JvmName = JvmName(JavaUtilFunction, "IntUnaryOperator")
   val Integer: JvmName = JvmName(JavaLang, "Integer")
+  val Iterator: JvmName = JvmName(JavaUtil, "Iterator")
+  val LambdaMetafactory: JvmName = JvmName(JavaLangInvoke, "LambdaMetafactory")
+  val LinkedList: JvmName = JvmName(JavaUtil, "LinkedList")
   val Long: JvmName = JvmName(JavaLang, "Long")
   val LongConsumer: JvmName = JvmName(JavaUtilFunction, "LongConsumer")
   val LongFunction: JvmName = JvmName(JavaUtilFunction, "LongFunction")
   val LongPredicate: JvmName = JvmName(JavaUtilFunction, "LongPredicate")
   val LongUnaryOperator: JvmName = JvmName(JavaUtilFunction, "LongUnaryOperator")
   val Math: JvmName = JvmName(JavaLang, "Math")
+  val MethodHandle: JvmName = JvmName(JavaLangInvoke, "MethodHandle")
+  val MethodHandles$Lookup: JvmName = JvmName(JavaLangInvoke, "MethodHandles$Lookup")
+  val MethodType: JvmName = JvmName(JavaLangInvoke, "MethodType")
   val ObjConsumer: JvmName = JvmName(JavaUtilFunction, "Consumer")
   val ObjFunction: JvmName = JvmName(JavaUtilFunction, "Function")
   val ObjPredicate: JvmName = JvmName(JavaUtilFunction, "Predicate")
@@ -180,8 +185,9 @@ object JvmName {
   val String: JvmName = JvmName(JavaLang, "String")
   val StringBuilder: JvmName = JvmName(JavaLang, "StringBuilder")
   val System: JvmName = JvmName(JavaLang, "System")
+  val Thread$Builder$OfVirtual: JvmName = JvmName(JavaLang, "Thread$Builder$OfVirtual")
+  val Thread$UncaughtExceptionHandler: JvmName = JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
   val Thread: JvmName = JvmName(JavaLang, "Thread")
-  val ThreadUncaughtExceptionHandler: JvmName = JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
   val Throwable: JvmName = JvmName(JavaLang, "Throwable")
   val UnsupportedOperationException: JvmName = JvmName(JavaLang, "UnsupportedOperationException")
 
