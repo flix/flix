@@ -39,17 +39,10 @@ mod Ping {
         run {
             Ok(f(x))
         } with handler Ping {
-            def isReachable(host, timeout, k) = {
+            def isReachable(host, timeout, u, k) = {
                 try {
-                    let timeoutMs = match u {
-                           case TimeUnit.Days => timeout * 86400000,
-                           case TimeUnit.Hours => timeout * 3600000,
-                           case TimeUnit.Microseconds => timeout / 1000,
-                           case TimeUnit.Milliseconds => timeout,
-                           case TimeUnit.Minutes=> timeout * 6000,
-                           case TimeUnit.Nanoseconds=> timeout / 1000000,
-                           case TimeUnit.Seconds => timeout * 1000
-                    };
+                    let ms = TimeUnit.toMilliseconds(u);
+                    let timeoutMs = ms * timeout;
                     let addr = InetAddress.getByName(host);
                     k(addr.isReachable(timeoutMs))
                 } catch {
@@ -65,7 +58,6 @@ mod Ping {
     ///
     /// In other words, re-interprets the `Ping` effect using the `IO` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - Ping + {Net, IO} =
-        handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - Ping + {Net, IO} = handle(f)()
 
 }
