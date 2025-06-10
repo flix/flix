@@ -15,7 +15,7 @@
  */
 
 ///
-/// an effect used to create an IpAddr
+/// an effect for resolving a domain name to an ip address
 ///
 eff Dns {
     def lookup(host: String): IpAddr
@@ -46,8 +46,8 @@ mod Dns {
                         case b1 :: b2 :: b3 :: b4 :: Nil => {
                             IpAddr.IPv4(b1, b2, b3, b4)
                         }
-                        case b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: Nil => {
-                            IpAddr.IPv6(b1, b2, b3, b4, b5, b6, b7, b8)
+                        case b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: Nil => {
+                            IpAddr.IPv6(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16)
                         }
                         case _ => unreachable!()
                     };

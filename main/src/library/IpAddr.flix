@@ -19,5 +19,5 @@
 ///
 enum IpAddr with Eq, ToString {
     case IPv4(Int8, Int8, Int8, Int8), // 32 bits
-    case IPv6(Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8) // 128 bits
+    case IPv6(Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8) // 128 bits
 }
