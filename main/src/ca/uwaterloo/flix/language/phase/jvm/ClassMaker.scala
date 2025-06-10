@@ -322,6 +322,16 @@ object ClassMaker {
     def Constructor: ConstructorMethod = ClassMaker.ConstructorMethod(JvmName.BigInteger, List(BackendType.String))
   }
 
+  object ConcurrentLinkedQueue {
+
+    def AddMethod: InstanceMethod =
+      InstanceMethod(JvmName.ConcurrentLinkedQueue, "add", mkDescriptor(BackendType.Object)(BackendType.Bool))
+
+    def PollMethod: InstanceMethod =
+      InstanceMethod(JvmName.ConcurrentLinkedQueue, "poll", mkDescriptor()(BackendType.Object))
+
+  }
+
   object Iterator {
 
     def HasNextMethod: InterfaceMethod =

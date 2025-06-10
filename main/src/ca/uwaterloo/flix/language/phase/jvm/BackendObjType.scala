@@ -64,7 +64,6 @@ sealed trait BackendObjType {
     case BackendObjType.Namespace(ns) => JvmName(ns.dropRight(1), ns.lastOption.getOrElse(s"Root${Flix.Delimiter}"))
     // Java classes
     case BackendObjType.Native(className) => className
-    case BackendObjType.ConcurrentLinkedQueue => JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
     // Effects Runtime
     case BackendObjType.Result => JvmName(DevFlixRuntime, mkClassName("Result"))
     case BackendObjType.Value => JvmName(DevFlixRuntime, mkClassName("Value"))
@@ -1320,7 +1319,7 @@ object BackendObjType {
     }
 
     // private final ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
-    private def ThreadsField: InstanceField = InstanceField(this.jvmName, "threads", BackendObjType.ConcurrentLinkedQueue.toTpe)
+    private def ThreadsField: InstanceField = InstanceField(this.jvmName, "threads", JvmName.ConcurrentLinkedQueue.toTpe)
 
     // private final LinkedList<Runnable> onExit = new LinkedList<Runnable>();
     private def OnExitField: InstanceField = InstanceField(this.jvmName, "onExit", JvmName.LinkedList.toTpe)
@@ -1337,9 +1336,9 @@ object BackendObjType {
       thisLoad()
       INVOKESPECIAL(ClassMaker.Object.Constructor)
       thisLoad()
-      NEW(BackendObjType.ConcurrentLinkedQueue.jvmName)
+      NEW(JvmName.ConcurrentLinkedQueue)
       DUP()
-      invokeConstructor(BackendObjType.ConcurrentLinkedQueue.jvmName, MethodDescriptor.NothingToVoid)
+      invokeConstructor(JvmName.ConcurrentLinkedQueue, MethodDescriptor.NothingToVoid)
       PUTFIELD(ThreadsField)
       thisLoad()
       INVOKESTATIC(Thread.CurrentThreadMethod)
@@ -1589,15 +1588,6 @@ object BackendObjType {
   //
   // Java Types
   //
-
-  case object ConcurrentLinkedQueue extends BackendObjType {
-
-    def AddMethod: InstanceMethod = InstanceMethod(this.jvmName, "add",
-      mkDescriptor(BackendType.Object)(BackendType.Bool))
-
-    def PollMethod: InstanceMethod = InstanceMethod(this.jvmName, "poll",
-      mkDescriptor()(BackendType.Object))
-  }
 
   case object Result extends BackendObjType {
 
