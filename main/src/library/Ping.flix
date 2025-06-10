@@ -46,9 +46,9 @@ mod Ping {
                     let addr = InetAddress.getByName(host);
                     k(addr.isReachable(timeoutMs))
                 } catch {
-                    case ex: UnknownHostException => Err(IoError(ErrorKind.UnknownHost, ex.getMessage()))
-                    case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: UnknownHostException     => Err(IoError(ErrorKind.UnknownHost, ex.getMessage()))
+                    case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+                    case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
         }

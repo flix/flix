@@ -283,6 +283,7 @@ class Flix {
 
     "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
     "Clock.flix" -> LocalResource.get("/src/library/Clock.flix"),
+    "Dns.flix" -> LocalResource.get("/src/library/Dns.flix"),
     "Http.flix" -> LocalResource.get("/src/library/Http.flix"),
     "HttpWithResult.flix" -> LocalResource.get("/src/library/HttpWithResult.flix"),
     "Exit.flix" -> LocalResource.get("/src/library/Exit.flix"),
@@ -293,6 +294,7 @@ class Flix {
     "FileReadWithResult.flix" -> LocalResource.get("/src/library/FileReadWithResult.flix"),
     "FileWrite.flix" -> LocalResource.get("/src/library/FileWrite.flix"),
     "FileWriteWithResult.flix" -> LocalResource.get("/src/library/FileWriteWithResult.flix"),
+    "IpAddr.flix" -> LocalResource.get("/src/library/IpAddr.flix"),
     "Ping.flix" -> LocalResource.get("/src/library/Ping.flix"),
     "PingWithResult.flix" -> LocalResource.get("/src/library/PingWithResult.flix"),
     "ProcessHandle.flix" -> LocalResource.get("/src/library/ProcessHandle.flix"),
