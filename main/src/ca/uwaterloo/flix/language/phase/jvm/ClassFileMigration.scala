@@ -26,7 +26,7 @@ object ClassFileMigration {
 
     private def builder(f: MethodVisitor => Unit): CodeBuilder = {
       f(mv)
-      CodeBuilder(mv)
+      this
     }
 
   }
