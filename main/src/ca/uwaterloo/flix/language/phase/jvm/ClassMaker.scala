@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Abstract.{IsAbstract, NotAbstract}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.*
@@ -333,6 +332,11 @@ object ClassMaker {
 
   }
 
+  object LambdaMetafactory {
+    def MetafactoryMethod: StaticMethod =
+      StaticMethod(JvmName.LambdaMetafactory, "metafactory", mkDescriptor(JvmName.MethodHandles$Lookup.toTpe, BackendType.String, JvmName.MethodType.toTpe, JvmName.MethodType.toTpe, JvmName.MethodHandle.toTpe, JvmName.MethodType.toTpe)(JvmName.CallSite.toTpe))
+  }
+
   object LinkedList {
 
     def AddFirstMethod: InstanceMethod =
@@ -407,7 +411,7 @@ object ClassMaker {
       StaticMethod(JvmName.Thread, "ofVirtual", mkDescriptor()(JvmName.Thread$Builder$OfVirtual.toTpe))
 
     def SetUncaughtExceptionHandlerMethod: InstanceMethod =
-      InstanceMethod(JvmName.Thread, "setUncaughtExceptionHandler", mkDescriptor(JvmName.ThreadUncaughtExceptionHandler.toTpe)(VoidableType.Void))
+      InstanceMethod(JvmName.Thread, "setUncaughtExceptionHandler", mkDescriptor(JvmName.Thread$UncaughtExceptionHandler.toTpe)(VoidableType.Void))
 
     def StartMethod: InstanceMethod =
       InstanceMethod(JvmName.Thread, "start", MethodDescriptor.NothingToVoid)
@@ -424,7 +428,7 @@ object ClassMaker {
 
   object ThreadUncaughtExceptionHandler {
     def UncaughtExceptionMethod: InstanceMethod =
-      InstanceMethod(JvmName.ThreadUncaughtExceptionHandler, "uncaughtException", mkDescriptor(JvmName.Thread.toTpe, JvmName.Throwable.toTpe)(VoidableType.Void))
+      InstanceMethod(JvmName.Thread$UncaughtExceptionHandler, "uncaughtException", mkDescriptor(JvmName.Thread.toTpe, JvmName.Throwable.toTpe)(VoidableType.Void))
   }
 
 }

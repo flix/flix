@@ -65,7 +65,6 @@ sealed trait BackendObjType {
     case BackendObjType.Namespace(ns) => JvmName(ns.dropRight(1), ns.lastOption.getOrElse(s"Root${Flix.Delimiter}"))
     // Java classes
     case BackendObjType.Native(className) => className
-    case BackendObjType.LambdaMetaFactory => JvmName(JavaLangInvoke, "LambdaMetafactory")
     case BackendObjType.ConcurrentLinkedQueue => JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
     // Effects Runtime
     case BackendObjType.Result => JvmName(DevFlixRuntime, mkClassName("Result"))
@@ -1478,7 +1477,7 @@ object BackendObjType {
   case object UncaughtExceptionHandler extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkClass(this.jvmName, IsFinal, interfaces = List(JvmName.ThreadUncaughtExceptionHandler))
+      val cm = mkClass(this.jvmName, IsFinal, interfaces = List(JvmName.Thread$UncaughtExceptionHandler))
 
       cm.mkField(RegionField, IsPrivate, IsFinal, NotVolatile)
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
@@ -1591,21 +1590,6 @@ object BackendObjType {
   //
   // Java Types
   //
-
-  case object LambdaMetaFactory extends BackendObjType {
-    private def methodHandlesLookup: BackendType = JvmName(List("java", "lang", "invoke"), "MethodHandles$Lookup").toTpe
-
-    private def methodType: BackendType = JvmName(List("java", "lang", "invoke"), "MethodType").toTpe
-
-    private def methodHandle: BackendType = JvmName(List("java", "lang", "invoke"), "MethodHandle").toTpe
-
-    private def callSite: BackendType = JvmName(List("java", "lang", "invoke"), "CallSite").toTpe
-
-    def MetaFactoryMethod: StaticMethod = StaticMethod(
-      this.jvmName, "metafactory",
-      mkDescriptor(methodHandlesLookup, BackendType.String, methodType, methodType, methodHandle, methodType)(callSite)
-    )
-  }
 
   case object ConcurrentLinkedQueue extends BackendObjType {
 
