@@ -232,7 +232,7 @@ object BytecodeInstructions {
     mv.visitInvokeDynamicInstruction(
       lambdaMethod.name,
       mkDescriptor(callD.arguments.dropRight(drop) *)(lambdaMethod.clazz.toTpe),
-      mkStaticHandle(BackendObjType.LambdaMetaFactory.MetaFactoryMethod),
+      mkStaticHandle(ClassMaker.LambdaMetafactory.MetafactoryMethod),
       lambdaMethod.d.toAsmType,
       callHandle.handle,
       lambdaMethod.d.toAsmType
