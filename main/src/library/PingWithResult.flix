@@ -17,11 +17,11 @@
 ///
 /// The effect used to determine if an address is reachable.
 ///
-eff Ping {
-    def isReachable(host: String, timeout: Int32, u: TimeUnit): Bool
+eff PingWithResult {
+    def isReachable(host: String, timeout: Int32, u: TimeUnit): Result[IoError, Bool]
 }
 
-mod Ping {
+mod PingWithResult {
     use IoError.ErrorKind
     use IoError.IoError
 
@@ -31,33 +31,33 @@ mod Ping {
     import java.net.UnknownHostException
 
     ///
-    /// Handles the `Ping` effect of the given function `f`.
+    /// Handles the `PingWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Ping` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `PingWithResult` effect using the `Net` and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Ping) + {Net, IO} = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - PingWithResult) + {Net, IO} = x ->
         run {
-            Ok(f(x))
-        } with handler Ping {
+            f(x)
+        } with handler PingWithResult {
             def isReachable(host, timeout, u, k) = {
                 try {
                     let ms = TimeUnit.toMilliseconds(u);
                     let timeoutMs = ms * timeout;
                     let addr = InetAddress.getByName(host);
-                    k(addr.isReachable(timeoutMs))
+                    k(Ok(addr.isReachable(timeoutMs)))
                 } catch {
-                    case ex: UnknownHostException => Err(IoError(ErrorKind.UnknownHost, ex.getMessage()))
-                    case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: UnknownHostException     => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
+                    case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
+                    case ex: IOException              => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
             }
         }
 
     ///
-    /// Runs the `Ping` effect of the given function `f`.
+    /// Runs the `PingWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Ping` effect using the `IO` effect.
+    /// In other words, re-interprets the `PingWithResult` effect using the `IO` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - Ping + {Net, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef):  a \ ef - PingWithResult + {Net, IO} = handle(f)()
 
 }
