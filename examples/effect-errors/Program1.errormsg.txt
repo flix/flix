@@ -1,0 +1,8 @@
+>> Unable to unify the effect formulas: 'IO + Net' and 'Console + IO + Net'.
+
+22 |       with Logger.runWithIO
+                ^^^^^^^^^^^^^^^^
+                mismatched effect formulas.
+
+Type One: Net + IO
+Type Two: Console + IO + Net

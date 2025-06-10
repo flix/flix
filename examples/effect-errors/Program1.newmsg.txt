@@ -1,0 +1,11 @@
+>> Unable to unify the effect formulas: 'IO + Net' and 'Console + IO + Net'.
+
+>> Expected effect formula IO + Net declared at line 1. 
+
+1 | def main(): Unit \ {Net, IO} =
+                       ^^^^^^^^^
+
+>> Unexpected effect Console occurs in the body at line 12 
+
+12 |                         Console.println("");
+                             ^^^^^^^^^^^^^^^^^^^
