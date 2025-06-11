@@ -22,3 +22,22 @@ enum IpAddr with Eq, ToString {
     case IPv6(Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8) // 128 bits
 }
 
+mod IpAddr {
+    ///
+    /// Converts a `List[Int8]` into `IpAddr`
+    ///
+    /// an Ipv4 is 32 bytes and Ipv6 is 128 bytes
+    ///
+    def fromBytes(l: List[Int8]): IpAddr = match l {
+        case b1 :: b2 :: b3 :: b4 :: Nil => {
+            IpAddr.IPv4(b1, b2, b3, b4)
+        }
+        case b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: Nil => {
+            IpAddr.IPv6(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16)
+        }
+        case _ => unreachable!()
+    }
+
+}
+
+

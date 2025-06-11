@@ -32,21 +32,6 @@ mod Dns {
     import java.net.UnknownHostException
 
     ///
-    /// Converts a `List[Int8]` into `IpAddr`
-    ///
-    /// an Ipv4 is 32 bytes and Ipv6 is 128 bytes
-    ///
-    def bytesToIpAddr(l: List[Int8]): IpAddr = match l {
-        case b1 :: b2 :: b3 :: b4 :: Nil => {
-            IpAddr.IPv4(b1, b2, b3, b4)
-        }
-        case b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: Nil => {
-            IpAddr.IPv6(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16)
-        }
-        case _ => unreachable!()
-    }
-
-    ///
     /// Handles the `Dns` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Dns` effect using the `Net` and `IO` effects.
@@ -59,7 +44,7 @@ mod Dns {
                 try {
                     let address = InetAddress.getByName(host);
                     let addrBytes = Array.toList(address.getAddress());
-                    let ipAddr = bytesToIpAddr(addrBytes);
+                    let ipAddr = IpAddr.fromBytes(addrBytes);
                     k(ipAddr)
                 } catch {
                     case ex: UnknownHostException     => Err(IoError(ErrorKind.UnknownHost, ex.getMessage()))
