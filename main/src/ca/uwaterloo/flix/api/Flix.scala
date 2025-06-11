@@ -284,6 +284,7 @@ class Flix {
     "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
     "Clock.flix" -> LocalResource.get("/src/library/Clock.flix"),
     "Dns.flix" -> LocalResource.get("/src/library/Dns.flix"),
+    "DnsWithResult.flix" -> LocalResource.get("/src/library/DnsWithResult.flix"),
     "Http.flix" -> LocalResource.get("/src/library/Http.flix"),
     "HttpWithResult.flix" -> LocalResource.get("/src/library/HttpWithResult.flix"),
     "Exit.flix" -> LocalResource.get("/src/library/Exit.flix"),

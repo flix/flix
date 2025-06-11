@@ -17,12 +17,12 @@
 ///
 /// an effect for resolving a domain name to an ip address
 ///
-eff Dns {
-    def lookup(host: String): IpAddr
-    def lookupAll(host: String): List[IpAddr]
+eff DnsWithResult {
+    def lookup(host: String): Result[IoError, IpAddr]
+    def lookupAll(host: String): Result[IoError, List[IpAddr]]
 }
 
-mod Dns {
+mod DnsWithResult {
     use IoError.ErrorKind
     use IoError.IoError
 
@@ -32,24 +32,24 @@ mod Dns {
     import java.net.UnknownHostException
 
     ///
-    /// Handles the `Dns` effect of the given function `f`.
+    /// Handles the `DnsWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Dns` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `DnsWithResult` effect using the `Net` and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Dns) + {Net, IO} = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - DnsWithResult) + {Net, IO} = x ->
         run {
-            Ok(f(x))
-        } with handler Dns {
+            f(x)
+        } with handler DnsWithResult {
             def lookup(host, k) = {
                 try {
                     let address = InetAddress.getByName(host);
                     let addrBytes = Array.toList(address.getAddress());
                     let ipAddr = IpAddr.fromBytes(addrBytes);
-                    k(ipAddr)
+                    k(Ok(ipAddr))
                 } catch {
-                    case ex: UnknownHostException     => Err(IoError(ErrorKind.UnknownHost, ex.getMessage()))
-                    case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: UnknownHostException     => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
+                    case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
+                    case ex: IOException              => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
             }
 
@@ -60,22 +60,22 @@ mod Dns {
                         |> Array.toList
                         |> List.map(a -> a.getAddress() |> Array.toList)
                         |> List.map(IpAddr.fromBytes);
-                    k(addresses)
+                    k(Ok(addresses))
                 } catch {
-                    case ex: UnknownHostException     => Err(IoError(ErrorKind.UnknownHost, ex.getMessage()))
-                    case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: UnknownHostException     => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
+                    case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
+                    case ex: IOException              => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
             }
 
         }
 
     ///
-    /// Handles the `Dns` effect of the given function `f`.
+    /// Handles the `DnsWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Dns` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `DnsWithResult` effect using the `Net` and `IO` effects.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - Dns + {Net, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ ef - DnsWithResult + {Net, IO} = handle(f)()
 
 }
 
