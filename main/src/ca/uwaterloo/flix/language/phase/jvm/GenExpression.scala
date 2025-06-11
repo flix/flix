@@ -135,7 +135,7 @@ object GenExpression {
         NEW(JvmName.BigDecimal)
         DUP()
         pushString(dd.toString)
-        INVOKESPECIAL(ClassMaker.BigDecimal.Constructor)
+        INVOKESPECIAL(ClassConstants.BigDecimal.Constructor)
 
       case Constant.Int8(b) =>
         BytecodeInstructions.pushInt(b)
@@ -156,7 +156,7 @@ object GenExpression {
         NEW(JvmName.BigInteger)
         DUP()
         pushString(ii.toString)
-        INVOKESPECIAL(ClassMaker.BigInteger.Constructor)
+        INVOKESPECIAL(ClassConstants.BigInteger.Constructor)
 
       case Constant.Str(s) =>
         BytecodeInstructions.pushString(s)
@@ -166,7 +166,7 @@ object GenExpression {
         // Add source line number for debugging (can fail with PatternSyntaxException)
         addLoc(loc)
         pushString(patt.pattern)
-        INVOKESTATIC(ClassMaker.Regex.CompileMethod)
+        INVOKESTATIC(ClassConstants.Regex.CompileMethod)
 
       case Constant.RecordEmpty =>
         BytecodeInstructions.GETSTATIC(BackendObjType.RecordEmpty.SingletonField)
@@ -934,7 +934,7 @@ object GenExpression {
             addLoc(loc)
             compileExpr(exp1)
             CHECKCAST(JvmName.Runnable)
-            INVOKESTATIC(ClassMaker.Thread.StartVirtualThreadMethod)
+            INVOKESTATIC(ClassConstants.Thread.StartVirtualThreadMethod)
             POP()
             GETSTATIC(BackendObjType.Unit.SingletonField)
           case _ =>
