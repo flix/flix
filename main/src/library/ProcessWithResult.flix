@@ -78,13 +78,7 @@ mod ProcessWithResult {
                         case None => ()
                     };
                     let process = pb.start();
-                    Ok(
-                        ProcessHandle.ProcessHandle(
-                            {stop = () -> process.destroy(),exitValue = () -> process.exitValue(),
-                                isAlive = () -> process.isAlive()}
-                            )
-                        )
-
+                    Ok(ProcessHandle.ProcessHandle(process))
                 } catch {
                     case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
                     case ex: NullPointerException      => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
@@ -103,3 +97,4 @@ mod ProcessWithResult {
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - ProcessWithResult) + {Exec, IO} = handle(f)()
 
 }
+
