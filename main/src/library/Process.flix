@@ -81,12 +81,7 @@ mod Process {
                         case None => ()
                     };
                     let process = pb.start();
-                    k(
-                        ProcessHandle.ProcessHandle(
-                            {stop = () -> process.destroy(), exitValue = () -> process.exitValue(),
-                                isAlive = () -> process.isAlive()}
-                             )
-                        )
+                    k(ProcessHandle.ProcessHandle(process))
                 } catch {
                     case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
                     case ex: NullPointerException      => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
