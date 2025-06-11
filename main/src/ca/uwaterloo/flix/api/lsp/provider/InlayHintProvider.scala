@@ -13,35 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.acceptors.{FileAcceptor}
+package ca.uwaterloo.flix.api.lsp.provider
+import ca.uwaterloo.flix.api.lsp.acceptors.{FileAcceptor, AllAcceptor}
 import ca.uwaterloo.flix.language.ast.shared.SymUse
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
+import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Op, Root}
 import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range}
 import ca.uwaterloo.flix.api.lsp.Visitor
 
+
 object InlayHintProvider {
+  private val EnableEffectHints: Boolean = true
+
   def getInlayHints(uri: String, range: Range)(implicit root: Root): List[InlayHint] = {
     var inlayHints: List[InlayHint] = Nil
+    if(EnableEffectHints) {
+      var opSymUses: Set[(SymUse.OpSymUse, SourceLocation)] = getOpSymUses(uri)
+      opSymUses.foreach { case (opSymUse, loc) => mkHintFromOpSymUse(opSymUse, loc) :: inlayHints }
+    }
+    inlayHints
+  }
+
+  def getOpSymUses(uri: String)(implicit root: Root): Set[(SymUse.OpSymUse, SourceLocation)] = {
+    var opSymUses: Set[(SymUse.OpSymUse, SourceLocation)] = Set.empty
     object opSymUseConsumer extends Consumer {
-      override def consumeOpSymUse(opSymUse: SymUse.OpSymUse): Unit = {
-        val line = opSymUse.loc.beginLine
-        var hint = InlayHint(
-          position = Position(line, 100),
-          label = opSymUse.sym.eff.name,
-          kind = Some(InlayHintKind.Type),
-          textEdits = List.empty,
-          tooltip = s"Effect: ${opSymUse.sym.eff.name}",
-          paddingLeft = true,
-          paddingRight = true
-        )
-      inlayHints = hint :: inlayHints
+      override def consumeExpr(expr: Expr): Unit = {
+        expr match {
+          case Expr.Do(opSymUse, _, _, _, loc) =>
+            opSymUses += ((opSymUse, loc))
+          case _ => ()
+        }
       }
     }
-
     Visitor.visitRoot(root, opSymUseConsumer, FileAcceptor(uri))
+    opSymUses
+  }
 
-    inlayHints
+  def mkHintFromOpSymUse(opSymUse: SymUse.OpSymUse, loc: SourceLocation): InlayHint = {
+    InlayHint(
+      position = Position(loc.endLine, loc.endCol + 1),
+      label = opSymUse.sym.eff.name,
+      kind = Some(InlayHintKind.Type),
+      textEdits = List.empty,
+      tooltip = s"{ ${opSymUse.sym.eff.name} }",
+      paddingLeft = true,
+      paddingRight = true
+    )
   }
 }
