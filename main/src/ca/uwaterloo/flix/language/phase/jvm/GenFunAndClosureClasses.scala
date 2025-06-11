@@ -149,8 +149,8 @@ object GenFunAndClosureClasses {
 
     // Header
     val functionInterface = kind match {
-      case Function => JvmOps.getFunctionInterfaceType(defn.arrowType).jvmName
-      case Closure => JvmOps.getClosureAbstractClassType(defn.arrowType).jvmName
+      case Function => JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
+      case Closure => JvmOps.getErasedClosureAbstractClassType(defn.arrowType).jvmName
     }
     val frameInterface = BackendObjType.Frame
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
@@ -228,7 +228,7 @@ object GenFunAndClosureClasses {
       AsmOps.getMethodDescriptor(Nil, JvmType.Reference(BackendObjType.Result.jvmName)), null, null)
     m.visitCode()
 
-    val functionInterface = JvmOps.getFunctionInterfaceType(defn.arrowType).jvmName
+    val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
     // Putting args on the Fn class
     for ((fp, i) <- defn.fparams.zipWithIndex) {
       // Load the `this` pointer
@@ -396,7 +396,7 @@ object GenFunAndClosureClasses {
   }
 
   private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, className: JvmName, defn: Def): Unit = {
-    val closureAbstractClass = JvmOps.getClosureAbstractClassType(defn.arrowType)
+    val closureAbstractClass = JvmOps.getErasedClosureAbstractClassType(defn.arrowType)
     implicit val m: MethodVisitor = visitor.visitMethod(ACC_PUBLIC, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, null, null)
     m.visitCode()
 

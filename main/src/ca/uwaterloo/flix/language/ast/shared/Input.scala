@@ -33,14 +33,12 @@ sealed trait Input {
     case Input.Unknown => SecurityContext.AllPermissions
   }
 
-
 }
 
 object Input {
 
   /**
     * Represents an input that originates from a virtual path.
-   * @param isBase whether the input is part of the standard library (and thus should not err when it defines a standard name)
     */
   case class Text(name: String, text: String, sctx: SecurityContext) extends Input {
     override def hashCode(): Int = name.hashCode
