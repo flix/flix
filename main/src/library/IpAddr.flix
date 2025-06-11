@@ -28,7 +28,7 @@ mod IpAddr {
     ///
     /// an Ipv4 is 32 bytes and Ipv6 is 128 bytes
     ///
-    def fromBytes(l: List[Int8]): IpAddr = match l {
+    pub def fromBytes(l: List[Int8]): IpAddr = match l {
         case b1 :: b2 :: b3 :: b4 :: Nil => {
             IpAddr.IPv4(b1, b2, b3, b4)
         }
