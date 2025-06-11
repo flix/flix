@@ -1,38 +1,33 @@
-def readAndParseMove(): Result[String, Int32] \ {Interface.Interface} =
-    forM(m <- Interface.Interface.getMove();
-         n <- Int32.parse(10, m)
-    ) yield n
-
-def gameLoop(board: Board[r], symbol: Symbol): Unit \ {IO + r + Interface.Interface} = {
-    Interface.Interface.display(Board.toString(board), "Enter a move (0 - 8): ");
-    match readAndParseMove() {
-        case Result.Ok(index) =>
-            if(not(index >= 0 and index <= 8)) {
-                Interface.Interface.display("", "Invalid move");
-                gameLoop(board, symbol)
-            } else {
-                let (newBoard, moveSuccess) = Board.makeMove(board, symbol, index);
-                if (moveSuccess) {
-                    if(Board.checkWin(newBoard, symbol)) {
-                        match symbol {
-                            case Symbol.X => Interface.Interface.display(Board.toString(board), "Player One wins!!!")
-                            case Symbol.O => Interface.Interface.display(Board.toString(board), "Player Two wins!!!")
-                            case _ => ()
-                        }
-                    } else if(Board.boardFilled(newBoard)) {
-                        Interface.Interface.display(Board.toString(board), "Draw")
-                    } else {
-                        gameLoop(newBoard, Symbol.complement(symbol))
-                    }
-                } else {
-                    Interface.Interface.display("", "Cell already filled");
-                    gameLoop(board, symbol)
-                }
+///
+/// The core gameplay loop called repeatedly until the game ends.
+///
+def gameLoop(board: Board[r], symbol: Symbol): Unit \ {r + Interface} = {
+    Interface.display(Board.toString(board), "Enter a move (0 - 8): ");
+    let move = Interface.getMove();
+    let (newBoard, moveSuccess) = Board.makeMove(board, symbol, move);
+    if (moveSuccess) {
+        if(Board.checkWin(newBoard, symbol)) {
+            match symbol {
+                case Symbol.X => Interface.display(Board.toString(board), "Player One wins!!!")
+                case Symbol.O => Interface.display(Board.toString(board), "Player Two wins!!!")
+                case _ => ()
             }
-        case Result.Err(_) => Interface.Interface.display("", "Invalid move")
+        } else if(Board.boardFilled(newBoard)) {
+            Interface.display(Board.toString(board), "Draw")
+        } else {
+            gameLoop(newBoard, Symbol.complement(symbol))
+        }
+    } else {
+        Interface.display("", "Cell already filled");
+        gameLoop(board, symbol)
     }
 }
 
+///
+/// The main entry point of the application.
+///
+/// Creates a new game board and starts the game loop.
+///
 def main(): Unit \ IO = region rc1 {
     run {
         println("");
