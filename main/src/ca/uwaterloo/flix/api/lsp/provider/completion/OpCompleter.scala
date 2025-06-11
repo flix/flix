@@ -36,7 +36,7 @@ object OpCompleter {
         eff.ops.collect {
           case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false) =>
             val s = inScope(op, scp)
-            val priority = if (s) Priority.High else Priority.Lower
+            val priority = if (s) Priority.High(0) else Priority.Lower(0)
             OpCompletion(op, "", range, priority, ap, qualified = false, s, ectx)
         }
       )
@@ -53,7 +53,7 @@ object OpCompleter {
     root.effects.get(effSym).toList.flatMap(eff =>
       eff.ops.collect {
         case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false) =>
-          OpCompletion(op, "", range, Priority.High, ap, qualified = true, inScope = true, ectx)
+          OpCompletion(op, "", range, Priority.High(0), ap, qualified = true, inScope = true, ectx)
       }
     )
   }
@@ -78,7 +78,7 @@ object OpCompleter {
       eff <- root.effects.get(Symbol.mkEffectSym(fullyQualifiedEffect)).toList
       op <- eff.ops
       if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false)
-    } yield OpCompletion(op, qn.namespace.toString, range, Priority.High, ap, qualified = true, inScope = true, ectx)
+    } yield OpCompletion(op, qn.namespace.toString, range, Priority.High(0), ap, qualified = true, inScope = true, ectx)
   }
 
   private def inScope(op: TypedAst.Op, scope: LocalScope): Boolean = {

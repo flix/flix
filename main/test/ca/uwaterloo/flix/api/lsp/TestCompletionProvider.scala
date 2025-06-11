@@ -297,7 +297,7 @@ class TestCompletionProvider extends AnyFunSuite {
     }
   }
 
-  test("NoDuplicateCompletions.Vars") {
+  test("NoDuplicateCompletions.Vars") { // TODO: Merge with above
     forAll(sample(mkProgramsWithVarHoles())) {
       case ProgramWithHole(prg, _, pos) =>
         val (root, errors) = compile(prg)
@@ -310,6 +310,17 @@ class TestCompletionProvider extends AnyFunSuite {
     }
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Ranking: Keyword Completions Should Come After Other Completions
+  /////////////////////////////////////////////////////////////////////////////
+  test("Ranking.KeywordsLast") {
+    forAll(sample(mkProgramsWithHoles())) {
+      case ProgramWithHole(prg, _, pos) =>
+        val (root, errors) = compile(prg)
+        val l = autoComplete(pos, root, errors)
+        Assert.keywordsLast(l, pos)
+    }
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Infrastructure
@@ -324,6 +335,13 @@ class TestCompletionProvider extends AnyFunSuite {
       }
     }
     Assert.Ok
+  }
+
+  /**
+    * Returns a list of programs with holes in them.
+    */
+  def mkProgramsWithHoles(): List[ProgramWithHole] = {
+    mkProgramsWithDefUseHoles() ++ mkProgramsWithVarHoles()
   }
 
   /**
@@ -526,9 +544,31 @@ class TestCompletionProvider extends AnyFunSuite {
           fail(s"Duplicate completions: ${c1.getClass.getName} and ${c2.getClass.getName}.")
         }
       }
-
       Assert.Ok
     }
+
+    /**
+      * Asserts that in the given list of completions `l` at position `pos` there
+      * is no keyword completion ranked higher than a non-keyword completion.
+      */
+    def keywordsLast(l: List[Completion], pos: Position): Assert = {
+      val withIndex = l.zipWithIndex
+      for ((c1, i1) <- withIndex; (c2, i2) <- withIndex; if i1 != i2) {
+        (c1, c2) match {
+          case (_: Completion.KeywordCompletion, _: Completion.KeywordCompletion) => // OK
+          case (_: Completion.KeywordCompletion, _) =>
+            if (c1.priority > c2.priority) {
+              println(s"Keyword completion with higher priority than non-keyword completion at $pos:")
+              println(s"  $c1")
+              println(s"  $c2")
+              fail(s"Keyword completion '$c1' with higher priority than non-keyword completion '$c2'.")
+            }
+          case (_, _) => // OK
+        }
+      }
+      Assert.Ok
+    }
+
   }
 
   /**

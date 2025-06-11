@@ -32,13 +32,13 @@ object TypeAliasCompleter {
     if (qn.namespace.nonEmpty)
       root.typeAliases.values.collect {
         case typeAlias if isStarKind(typeAlias) && CompletionUtils.isAvailable(typeAlias) && CompletionUtils.matchesName(typeAlias.sym, qn, qualified = true) =>
-          TypeAliasCompletion(typeAlias, range, Priority.High, ap, qualified = true, inScope = true)
+          TypeAliasCompletion(typeAlias, range, Priority.High(0), ap, qualified = true, inScope = true)
       }
     else
       root.typeAliases.values.collect({
         case typeAlias if isStarKind(typeAlias) && CompletionUtils.isAvailable(typeAlias) && CompletionUtils.matchesName(typeAlias.sym, qn, qualified = false) =>
           val s = inScope(typeAlias, scp)
-          val priority: Priority = if (s) Priority.High else Priority.Lower
+          val priority: Priority = if (s) Priority.High(0) else Priority.Lower(0)
           TypeAliasCompletion(typeAlias, range, priority, ap, qualified = false, inScope = s)
       })
   }

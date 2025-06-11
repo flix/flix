@@ -38,13 +38,19 @@ object GenFunAndClosureClasses {
 
       case (macc, closure) if isClosure(closure) =>
         val closureName = JvmOps.getClosureClassName(closure.sym)
-        val code = genCode(closureName, Closure, closure)
+        val code = genClosure(closureName, closure)
         macc + (closureName -> JvmClass(closureName, code))
+
+      case (macc, defn) if isFunction(defn) && isControlPure(defn) =>
+        flix.subtask(defn.sym.toString, sample = true)
+        val functionName = BackendObjType.Defn(defn.sym).jvmName
+        val code = genControlPureFunction(functionName, defn)
+        macc + (functionName -> JvmClass(functionName, code))
 
       case (macc, defn) if isFunction(defn) =>
         flix.subtask(defn.sym.toString, sample = true)
         val functionName = BackendObjType.Defn(defn.sym).jvmName
-        val code = genCode(functionName, Function, defn)
+        val code = genControlImpureFunction(functionName, defn)
         macc + (functionName -> JvmClass(functionName, code))
 
       case (macc, _) =>
@@ -56,27 +62,55 @@ object GenFunAndClosureClasses {
 
   private def isFunction(defn: Def): Boolean = defn.cparams.isEmpty
 
-  private sealed trait FunctionKind
-
-  private case object Function extends FunctionKind
-
-  private case object Closure extends FunctionKind
+  private def isControlPure(defn: Def): Boolean = Purity.isControlPure(defn.expr.purity)
 
   /**
-    * Generates the following code for closures and control-impure functions.
-    *
-    * `(a|b)` is used to represent the function (left) or closure version (right).
+    * Generates the following code for control-pure functions.
     *
     * {{{
-    * public final class (Def$example|Clo$example$152) extends (Fn2$Obj$Int$Obj|Clo2$Obj$Int$Obj) implements Frame {
-    *   // locals variables (present for both functions and closures)
+    * public final class Def$example extends Fn2$Obj$Int$Obj implements Frame {
+    *   // function arguments
+    *   public Object arg0;
+    *   public int arg1
+    *
+    *   public final Result invoke() { return this.directApply((Tagged$) this.arg0, this.arg1); }
+    *
+    *   // Assuming the concrete type of Obj is `Tagged$`
+    *   public final Result directApply(Tagged$ var0, int var1) {
+    *     EnterLabel:
+    *     // body code ...
+    *   }
+    * }
+    * }}}
+    */
+  private def genControlPureFunction(className: JvmName, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
+    val visitor = AsmOps.mkClassWriter()
+
+    // Header
+    val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
+      functionInterface.toInternalName, null)
+
+    compileConstructor(functionInterface, visitor)
+
+    // Methods
+    compileStaticInvokeMethod(visitor, className, defn)
+    compileStaticApplyMethod(visitor, className, defn)
+
+    visitor.visitEnd()
+    visitor.toByteArray
+  }
+
+  /**
+    * Generates the following code for control-impure functions.
+    *
+    * {{{
+    * public final class Def$example extends Fn2$Obj$Int$Obj implements Frame {
+    *   // locals variables
     *   public int l0;
     *   public char l1;
-    *   public Object l2;
-    *   // closure params (assumed empty for functions)
-    *   public int clo0;
-    *   public byte clo1;
-    *   // function arguments (present for both functions and closures)
+    *   public String l2;
+    *   // function arguments
     *   public Object arg0;
     *   public int arg1
     *
@@ -86,7 +120,77 @@ object GenFunAndClosureClasses {
     *     // fields are put into the local frame according to symbol data
     *     int ? = this.l0;
     *     char ? = this.l1;
-    *     Object ? = this.l2;
+    *     String ? = this.l2;
+    *
+    *     EnterLabel:
+    *
+    *     Object ? = this.arg0;
+    *     int ? = this.arg1;
+    *
+    *     // body code ...
+    *   }
+    *
+    *   public final Def$example copy {
+    *     Def$example x = new Def$example();
+    *     x.arg0 = this.arg0;
+    *     x.arg1 = this.arg1
+    *     x.l0 = this.l0;
+    *     x.l1 = this.l1;
+    *     x.l2 = this.l2;
+    *     return x;
+    *   }
+    * }
+    * }}}
+    */
+  private def genControlImpureFunction(className: JvmName, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
+    val visitor = AsmOps.mkClassWriter()
+
+    // Header
+    val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
+    val frameInterface = BackendObjType.Frame
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
+      functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
+
+    // Fields
+    for ((x, i) <- defn.lparams.zipWithIndex) {
+      visitor.visitField(ACC_PUBLIC, s"l$i", BackendType.toBackendType(x.tpe).toDescriptor, null, null)
+    }
+    visitor.visitField(ACC_PUBLIC, "pc", BackendType.Int32.toDescriptor, null, null)
+
+    compileConstructor(functionInterface, visitor)
+
+    // Methods
+    compileInvokeMethod(visitor, className)
+    compileFrameMethod(visitor, className, defn)
+    compileCopyMethod(visitor, className, defn)
+
+    visitor.visitEnd()
+    visitor.toByteArray
+  }
+
+  /**
+    * Generates the following code for closures.
+    *
+    * {{{
+    * public final class Clo$example$152 extends Clo2$Obj$Int$Obj implements Frame {
+    *   // locals variables
+    *   public int l0;
+    *   public char l1;
+    *   public String l2;
+    *   // closure params
+    *   public int clo0;
+    *   public byte clo1;
+    *   // function arguments
+    *   public Object arg0;
+    *   public int arg1
+    *
+    *   public final Result invoke() { return this.applyFrame(null); }
+    *
+    *   public final Result applyFrame(Value resumptionArg) {
+    *     // fields are put into the local frame according to symbol data
+    *     int ? = this.l0;
+    *     char ? = this.l1;
+    *     String ? = this.l2;
     *
     *     EnterLabel:
     *
@@ -98,8 +202,8 @@ object GenFunAndClosureClasses {
     *     // body code ...
     *   }
     *
-    *   public final (Def$example|Clo$example$152) copy {
-    *     (Def$example|Clo$example$152) x = new (Def$example|Clo$example$152)();
+    *   public final Clo$example$152 copy {
+    *     Clo$example$152 x = new Clo$example$152();
     *     x.arg0 = this.arg0;
     *     x.arg1 = this.arg1
     *     x.clo0 = this.clo0;
@@ -110,7 +214,6 @@ object GenFunAndClosureClasses {
     *     return x;
     *   }
     *
-    *   // Only for closures
     *   public Clo2$Obj$Int$Obj getUniqueThreadClosure() {
     *     Clo$example$152 x = new Clo$example$152();
     *     x.clo0 = this.clo0;
@@ -119,39 +222,12 @@ object GenFunAndClosureClasses {
     *   }
     * }
     * }}}
-    *
-    * For control-pure functions, the generated code deviates slightly, as the `applyFrame` method is replaced
-    * by a static method called `directApply` that accepts the concrete parameters of the Flix function.
-    * The `invoke` method then forwards its call to `directApply`, passing the values from the corresponding fields.
-    *
-    * {{{
-    * public final class Def$example extends Fn2$Obj$Int$Obj implements Frame {
-    *   // locals variables
-    *   public int l0;
-    *   public char l1;
-    *   public Object l2;
-    *   // function arguments
-    *   public Object arg0;
-    *   public int arg1
-    *
-    *   public final Result invoke() { return this.applyDirect((Tagged$) this.arg0, this.arg1); }
-    *
-    *   // Assuming the concrete type of Obj is `Tagged$`
-    *   public final Result applyDirect(Tagged$ var0, int var1) {
-    *     EnterLabel:
-    *     // body code ...
-    *   }
-    * }
-    * }}}
     */
-  private def genCode(className: JvmName, kind: FunctionKind, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genClosure(className: JvmName, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
     val visitor = AsmOps.mkClassWriter()
 
     // Header
-    val functionInterface = kind match {
-      case Function => JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
-      case Closure => JvmOps.getErasedClosureAbstractClassType(defn.arrowType).jvmName
-    }
+    val functionInterface = JvmOps.getErasedClosureAbstractClassType(defn.arrowType).jvmName
     val frameInterface = BackendObjType.Frame
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
@@ -159,27 +235,22 @@ object GenFunAndClosureClasses {
     // Fields
     val closureArgTypes = defn.cparams.map(_.tpe)
     for ((argType, index) <- closureArgTypes.zipWithIndex) {
-      val erasedArgType = JvmOps.getErasedJvmType(argType)
+      val erasedArgType = BackendType.toErasedBackendType(argType)
       val field = visitor.visitField(ACC_PUBLIC, s"clo$index", erasedArgType.toDescriptor, null, null)
       field.visitEnd()
     }
     for ((x, i) <- defn.lparams.zipWithIndex) {
-      visitor.visitField(ACC_PUBLIC, s"l$i", JvmOps.getErasedJvmType(x.tpe).toDescriptor, null, null)
+      visitor.visitField(ACC_PUBLIC, s"l$i", BackendType.toBackendType(x.tpe).toDescriptor, null, null)
     }
-    visitor.visitField(ACC_PUBLIC, "pc", JvmType.PrimInt.toDescriptor, null, null)
+    visitor.visitField(ACC_PUBLIC, "pc", BackendType.Int32.toDescriptor, null, null)
 
     compileConstructor(functionInterface, visitor)
+
     // Methods
-    if (Purity.isControlPure(defn.expr.purity) && kind == Function) {
-      compileStaticInvokeMethod(visitor, className, defn)
-      compileStaticApplyMethod(visitor, className, defn)
-    }
-    else {
-      compileInvokeMethod(visitor, className)
-      compileFrameMethod(visitor, className, defn)
-      compileCopyMethod(visitor, className, defn)
-    }
-    if (kind == Closure) compileGetUniqueThreadClosureMethod(visitor, className, defn)
+    compileInvokeMethod(visitor, className)
+    compileFrameMethod(visitor, className, defn)
+    compileCopyMethod(visitor, className, defn)
+    compileGetUniqueThreadClosureMethod(visitor, className, defn)
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -197,7 +268,8 @@ object GenFunAndClosureClasses {
     constructor.visitEnd()
   }
 
-  private def directApplyMethod(className: JvmName, defn: Def)(implicit root: Root): StaticMethod = StaticMethod(className, JvmName.DirectApply, MethodDescriptor(defn.fparams.map(fp => BackendType.toBackendType(fp.tpe)), BackendObjType.Result.toTpe))
+  private def directApplyMethod(className: JvmName, defn: Def)(implicit root: Root): StaticMethod =
+    StaticMethod(className, JvmName.DirectApply, MethodDescriptor(defn.fparams.map(fp => BackendType.toBackendType(fp.tpe)), BackendObjType.Result.toTpe))
 
   private def compileStaticApplyMethod(visitor: ClassWriter, className: JvmName, defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Method header
@@ -225,7 +297,7 @@ object GenFunAndClosureClasses {
 
   private def compileStaticInvokeMethod(visitor: ClassWriter, className: JvmName, defn: Def)(implicit root: Root): Unit = {
     implicit val m: MethodVisitor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
-      AsmOps.getMethodDescriptor(Nil, JvmType.Reference(BackendObjType.Result.jvmName)), null, null)
+      MethodDescriptor.mkDescriptor()(BackendObjType.Result.toTpe).toDescriptor, null, null)
     m.visitCode()
 
     val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
@@ -235,7 +307,7 @@ object GenFunAndClosureClasses {
       m.visitVarInsn(ALOAD, 0)
       // Load arg i
       m.visitFieldInsn(GETFIELD, functionInterface.toInternalName,
-        s"arg$i", JvmOps.getErasedJvmType(fp.tpe).toDescriptor)
+        s"arg$i", BackendType.toErasedBackendType(fp.tpe).toDescriptor)
       // Insert cast to concrete type
       val bTpe = BackendType.toBackendType(fp.tpe)
       BytecodeInstructions.castIfNotPrim(bTpe)
@@ -252,7 +324,7 @@ object GenFunAndClosureClasses {
 
   private def compileInvokeMethod(visitor: ClassWriter, className: JvmName): Unit = {
     implicit val m: MethodVisitor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
-      AsmOps.getMethodDescriptor(Nil, JvmType.Reference(BackendObjType.Result.jvmName)), null, null)
+      MethodDescriptor.mkDescriptor()(BackendObjType.Result.toTpe).toDescriptor, null, null)
     m.visitCode()
 
     val applyMethod = BackendObjType.Frame.ApplyMethod
@@ -274,12 +346,12 @@ object GenFunAndClosureClasses {
     implicit val m: MethodVisitor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, applyMethod.name, applyMethod.d.toDescriptor, null, null)
     val localOffset = 2 // [this: Obj, value: Obj, ...]
 
-    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.sym.getStackOffset(localOffset), lp.sym.isWild, lp.tpe) }
-    val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.sym.getStackOffset(localOffset), false, cp.tpe) }
-    val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.sym.getStackOffset(localOffset), false, fp.tpe) }
+    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.sym.getStackOffset(localOffset), lp.sym.isWild, BackendType.toBackendType(lp.tpe), None) }
+    val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.sym.getStackOffset(localOffset), false, BackendType.toErasedBackendType(cp.tpe), Some(BackendType.toBackendType(cp.tpe))) }
+    val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.sym.getStackOffset(localOffset), false, BackendType.toErasedBackendType(fp.tpe), Some(BackendType.toBackendType(fp.tpe))) }
 
-    def loadParamsOf(params: List[(String, Int, Boolean, MonoType)]): Unit = {
-      params.foreach { case (name, offset, _, tpe) => loadFromField(m, className, name, offset, tpe) }
+    def loadParamsOf(params: List[(String, Int, Boolean, BackendType, Option[BackendType])]): Unit = {
+      params.foreach { case (name, offset, _, fieldType, castTo) => loadFromField(m, className, name, offset, fieldType, castTo) }
     }
 
     m.visitCode()
@@ -318,14 +390,13 @@ object GenFunAndClosureClasses {
         DUP_X1()(mv)
         SWAP()(mv) // clo, pc ---> clo, clo, pc
         mv.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, "pc", BackendType.Int32.toDescriptor)
-        for ((name, index, isWild, tpe) <- lparams) {
-          val erasedTpe = BackendType.toErasedBackendType(tpe)
+        for ((name, index, isWild, fieldType, _: None.type) <- lparams) {
           if (isWild) {
             nop()
           } else {
             DUP()(mv)
-            xLoad(erasedTpe, index)(mv)
-            mv.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, name, erasedTpe.toDescriptor)
+            xLoad(fieldType, index)(mv)
+            mv.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, name, fieldType.toDescriptor)
           }
         }
         POP()(mv)
@@ -342,39 +413,41 @@ object GenFunAndClosureClasses {
     m.visitEnd()
   }
 
-  private def loadFromField(m: MethodVisitor, className: JvmName, name: String, localIndex: Int, tpe: MonoType)(implicit root: Root): Unit = {
+  private def loadFromField(m: MethodVisitor, className: JvmName, name: String, localIndex: Int, fieldType: BackendType, castTo: Option[BackendType]): Unit = {
     implicit val mm: MethodVisitor = m
     // retrieve the erased field
-    val erasedVarType = JvmOps.getErasedJvmType(tpe)
     m.visitVarInsn(ALOAD, 0)
-    m.visitFieldInsn(GETFIELD, className.toInternalName, name, erasedVarType.toDescriptor)
+    m.visitFieldInsn(GETFIELD, className.toInternalName, name, fieldType.toDescriptor)
     // cast the value and store it
-    val bType = BackendType.toBackendType(tpe)
-    BytecodeInstructions.castIfNotPrim(bType)
-    BytecodeInstructions.xStore(bType, localIndex)
+    castTo match {
+      case Some(targetType) =>
+        BytecodeInstructions.castIfNotPrim(targetType)
+        BytecodeInstructions.xStore(targetType, localIndex)
+      case None =>
+        BytecodeInstructions.xStore(fieldType, localIndex)
+    }
   }
 
   /**
     * Make a new `classType` with all the fields set to the same as `this`.
     * A partial copy is without local parameters and without pc
     */
-  private def mkCopy(className: JvmName, defn: Def)(implicit mv: MethodVisitor): Unit = {
+  private def mkCopy(className: JvmName, defn: Def)(implicit mv: MethodVisitor, root: Root): Unit = {
     import BytecodeInstructions.*
-    val pc = List(("pc", MonoType.Int32))
-    val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", p._1.tpe))
-    val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", p._1.tpe))
-    val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", p._1.tpe))
+    val pc = List(("pc", BackendType.Int32))
+    val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", BackendType.toErasedBackendType(p._1.tpe)))
+    val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", BackendType.toErasedBackendType(p._1.tpe)))
+    val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", BackendType.toBackendType(p._1.tpe)))
     val params = pc ++ fparams ++ cparams ++ lparams
 
     NEW(className)
     DUP()
-    INVOKESPECIAL(className, "<init>", MethodDescriptor.NothingToVoid)
-    for ((name, tpe) <- params) {
-      val fieldType = JvmOps.getErasedJvmType(tpe).toDescriptor
+    INVOKESPECIAL(className, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid)
+    for ((name, fieldType) <- params) {
       DUP()
       thisLoad()
-      mv.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, name, fieldType)
-      mv.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, name, fieldType)
+      mv.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, name, fieldType.toDescriptor)
+      mv.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, name, fieldType.toDescriptor)
     }
   }
 
@@ -384,7 +457,7 @@ object GenFunAndClosureClasses {
     MethodDescriptor.mkDescriptor()(t.toTpe)
   }
 
-  private def compileCopyMethod(visitor: ClassWriter, className: JvmName, defn: Def): Unit = {
+  private def compileCopyMethod(visitor: ClassWriter, className: JvmName, defn: Def)(implicit root: Root): Unit = {
     implicit val m: MethodVisitor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, copyName, nothingToTDescriptor(className).toDescriptor, null, null)
     m.visitCode()
 
@@ -395,7 +468,7 @@ object GenFunAndClosureClasses {
     m.visitEnd()
   }
 
-  private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, className: JvmName, defn: Def): Unit = {
+  private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, className: JvmName, defn: Def)(implicit root: Root): Unit = {
     val closureAbstractClass = JvmOps.getErasedClosureAbstractClassType(defn.arrowType)
     implicit val m: MethodVisitor = visitor.visitMethod(ACC_PUBLIC, closureAbstractClass.GetUniqueThreadClosureMethod.name, MethodDescriptor.mkDescriptor()(closureAbstractClass.toTpe).toDescriptor, null, null)
     m.visitCode()

@@ -125,12 +125,12 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unable to unify the effect formulas: '${red(formatType(baseType1, Some(renv)))}' and '${red(formatType(baseType2, Some(renv)))}'.
+      s""">> Unable to unify the effect formulas: '${red(formatType(baseType1, Some(renv), minimizeEffs = true))}' and '${red(formatType(baseType2, Some(renv), minimizeEffs = true))}'.
          |
          |${code(loc, "mismatched effect formulas.")}
          |
          |Type One: ${cyan(formatType(fullType1, Some(renv)))}
-         |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
+         |Type Two: ${magenta(formatType(fullType2, Some(renv), minimizeEffs = true))}
          |""".stripMargin
     }
   }

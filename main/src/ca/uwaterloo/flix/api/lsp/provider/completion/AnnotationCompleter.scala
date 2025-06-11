@@ -27,12 +27,12 @@ object AnnotationCompleter {
     */
   def getAnnotations(prefix: String, range: Range): List[Completion] =
     List(
-      Completion.AnnotationCompletion("Deprecated",       range, Priority.Medium),
-      Completion.AnnotationCompletion("Lazy",             range, Priority.Medium),
-      Completion.AnnotationCompletion("LazyWhenPure",     range, Priority.Medium),
-      Completion.AnnotationCompletion("Parallel",         range, Priority.Medium),
-      Completion.AnnotationCompletion("ParallelWhenPure", range, Priority.Medium),
-      Completion.AnnotationCompletion("Test",             range, Priority.Medium)
+      Completion.AnnotationCompletion("Deprecated",       range, Priority.Medium(0)),
+      Completion.AnnotationCompletion("Lazy",             range, Priority.Medium(0)),
+      Completion.AnnotationCompletion("LazyWhenPure",     range, Priority.Medium(0)),
+      Completion.AnnotationCompletion("Parallel",         range, Priority.Medium(0)),
+      Completion.AnnotationCompletion("ParallelWhenPure", range, Priority.Medium(0)),
+      Completion.AnnotationCompletion("Test",             range, Priority.Medium(0))
     ).filter {
       case c => c.name.startsWith(prefix)
     }
