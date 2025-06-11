@@ -59,7 +59,7 @@ mod Dns {
                     let addresses = addrsArr
                         |> Array.toList
                         |> List.map(a -> a.getAddress() |> Array.toList)
-                        |> List.map(bytesToIpAddr);
+                        |> List.map(IpAddr.fromBytes);
                     k(addresses)
                 } catch {
                     case ex: UnknownHostException     => Err(IoError(ErrorKind.UnknownHost, ex.getMessage()))
