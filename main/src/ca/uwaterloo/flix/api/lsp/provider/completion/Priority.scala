@@ -16,79 +16,71 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 /**
-  * Priority for completions.
+  * Represents the priority of a completion.
   *
-  * Using a priority, we can make certain suggestions occur earlier in
-  * the list of suggestions by generating a SortText using `Priority.toSortText`
-  * on the relevant priority and label. This SortText can then be used in the `CompletionItem`
-  * for the suggestion.
-  *
-  * In practice, we leverage the alphabetical sorting of completions by
-  * associating each priority with a number. The higher the priority,
-  * the lower the number. Then `Priority.toSortText`
-  * prepends that number to the label. This results in completions which
-  * are firstly sorted by the priority and then by name.
-  *
+  * A priority consists of an (A) absolute priority (e.g., `High` or `Low`) and (B) a relative priority (e.g., `High(5)`).
   */
-sealed trait Priority {
-
+sealed trait Priority extends Ordered[Priority] {
   /**
-    * Returns a priority that is one lower than `this`.
+    * Returns the absolute priority of `this`.
     */
-  def downgrade: Priority = this match {
-    case Priority.Highest => Priority.Higher
-    case Priority.Higher => Priority.High
-    case Priority.High => Priority.MediumHigh
-    case Priority.MediumHigh => Priority.Medium
-    case Priority.Medium => Priority.MediumLow
-    case Priority.MediumLow => Priority.Low
-    case Priority.Low => Priority.Lower
-    case Priority.Lower => Priority.Lowest
-    case Priority.Lowest => Priority.Lowest
+  def absolute: Int = this match {
+    case Priority.Highest(_) => 0
+    case Priority.Higher(_) => 1
+    case Priority.High(_) => 2
+    case Priority.Medium(_) => 3
+    case Priority.Low(_) => 4
+    case Priority.Lower(_) => 5
+    case Priority.Lowest(_) => 6
   }
 
+  /**
+    * Returns the relative priority of `this`.
+    *
+    * A relative priority may be negative.
+    */
+  def relative: Int
+
+  /** Compares `this` to `that` */
+  override def compare(that: Priority): Int = {
+    (this, that) match {
+      case (Priority.Highest(r1), Priority.Highest(r2)) => r2 - r1
+      case (Priority.Higher(r1), Priority.Higher(r2)) => r2 - r1
+      case (Priority.High(r1), Priority.High(r2)) => r2 - r1
+      case (Priority.Medium(r1), Priority.Medium(r2)) => r2 - r1
+      case (Priority.Low(r1), Priority.Low(r2)) => r2 - r1
+      case (Priority.Lower(r1), Priority.Lower(r2)) => r2 - r1
+      case (Priority.Lowest(r1), Priority.Lowest(r2)) => r2 - r1
+      case _ => that.absolute - this.absolute
+    }
+  }
 }
 
 object Priority {
-  case object Highest extends Priority
+  case class Highest(relative: Int) extends Priority
 
-  case object Higher extends Priority
+  case class Higher(relative: Int) extends Priority
 
-  case object High extends Priority
+  case class High(relative: Int) extends Priority
 
-  case object MediumHigh extends Priority
+  case class Medium(relative: Int) extends Priority
 
-  case object Medium extends Priority
+  case class Low(relative: Int) extends Priority
 
-  case object MediumLow extends Priority
+  case class Lower(relative: Int) extends Priority
 
-  case object Low extends Priority
-
-  case object Lower extends Priority
-
-  case object Lowest extends Priority
+  case class Lowest(relative: Int) extends Priority
 
   /**
-    * Returns a sortText string which comes earlier alphabetically the higher the priority.
+    * Returns the given string `l` prefixed with the absolute and relative priority.
     *
-    * The outputs of this, when sorted alphabetically, prefers inputs with
-    * higher priorities. The higher the priority, the earlier in an alphabetical
-    * sorting it will occur.
-    *
-    * @param p     the priority to be used in the sortText.
-    * @param label the label to be used in the sortText.
-    * @return a string which is listed earlier alphabetically the higher the priority.
+    * The idea is to return a string whose lexicographic ordering matches the
+    * implicit ordering of the absolute and relative priority plus the label.
     */
-  def toSortText(p: Priority, label: String): String = p match {
-    case Priority.Highest => s"1$label"
-    case Priority.Higher => s"2$label"
-    case Priority.High => s"3$label"
-    case Priority.MediumHigh => s"4$label"
-    case Priority.Medium => s"5$label"
-    case Priority.MediumLow => s"6$label"
-    case Priority.Low => s"7$label"
-    case Priority.Lower => s"8$label"
-    case Priority.Lowest => s"9$label"
+  def toSortText(p: Priority, l: String): String = {
+    val a = p.absolute
+    val r = if (p.relative < 0) "0-" else "1-" + p.relative.abs.toString.padTo(4, '0')
+    s"$a-$r-$l"
   }
 
 }

@@ -23,8 +23,6 @@ import ca.uwaterloo.flix.language.ast.Symbol.VarSym
 import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
-import java.util.concurrent.atomic.AtomicInteger
-
 /**
   * The occurrence analyzer collects occurrence information on binders according to the definition of [[Occur]].
   * Additionally, it also counts the number of subexpressions in a function to compute its size.
@@ -44,8 +42,7 @@ object OccurrenceAnalyzer {
     * Performs occurrence analysis on `defn`.
     */
   private def visitDef(defn: MonoAst.Def): MonoAst.Def = {
-    val lctx: LocalContext = LocalContext.mk()
-    val (exp, ctx) = visitExp(defn.exp)(defn.sym, lctx)
+    val (exp, ctx) = visitExp(defn.exp)(defn.sym)
     val defContext = DefContext(isSelfRef(ctx.selfOccur))
     val fparams = defn.spec.fparams.map(visitFormalParam(_, ctx))
     val spec = defn.spec.copy(fparams = fparams, defContext = defContext)
@@ -55,7 +52,7 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on `exp0`
     */
-  private def visitExp(exp0: Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (Expr, ExprContext) = {
+  private def visitExp(exp0: Expr)(implicit sym0: Symbol.DefnSym): (Expr, ExprContext) = {
     exp0 match {
       case Expr.Cst(_, _, _) =>
         (exp0, ExprContext.Empty)
@@ -277,7 +274,7 @@ object OccurrenceAnalyzer {
     }
   }
 
-  private def visitMatchRule(rule: MonoAst.MatchRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (MonoAst.MatchRule, ExprContext) = rule match {
+  private def visitMatchRule(rule: MonoAst.MatchRule)(implicit sym0: Symbol.DefnSym): (MonoAst.MatchRule, ExprContext) = rule match {
     case MonoAst.MatchRule(pat, guard, exp) =>
       val (g, ctx1) = guard.map(visitExp).unzip
       val (e, ctx2) = visitExp(exp)
@@ -291,7 +288,7 @@ object OccurrenceAnalyzer {
       }
   }
 
-  private def visitCatchRule(rule: MonoAst.CatchRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (MonoAst.CatchRule, ExprContext) = rule match {
+  private def visitCatchRule(rule: MonoAst.CatchRule)(implicit sym0: Symbol.DefnSym): (MonoAst.CatchRule, ExprContext) = rule match {
     case MonoAst.CatchRule(sym, clazz, exp) =>
       val (e, ctx1) = visitExp(exp)
       val ctx2 = ctx1.removeVar(sym)
@@ -302,7 +299,7 @@ object OccurrenceAnalyzer {
       }
   }
 
-  private def visitHandlerRule(rule: MonoAst.HandlerRule)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (MonoAst.HandlerRule, ExprContext) = rule match {
+  private def visitHandlerRule(rule: MonoAst.HandlerRule)(implicit sym0: Symbol.DefnSym): (MonoAst.HandlerRule, ExprContext) = rule match {
     case MonoAst.HandlerRule(op, fparams, exp) =>
       val (e, ctx1) = visitExp(exp)
       val fps = fparams.map(visitFormalParam(_, ctx1))
@@ -314,7 +311,7 @@ object OccurrenceAnalyzer {
       }
   }
 
-  private def visitJvmMethod(method: MonoAst.JvmMethod)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): (MonoAst.JvmMethod, ExprContext) = method match {
+  private def visitJvmMethod(method: MonoAst.JvmMethod)(implicit sym0: Symbol.DefnSym): (MonoAst.JvmMethod, ExprContext) = method match {
     case MonoAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
       val (e, ctx1) = visitExp(exp)
       val fps = fparams.map(visitFormalParam(_, ctx1))
@@ -534,19 +531,5 @@ object OccurrenceAnalyzer {
     case Occur.Many => true
     case Occur.ManyBranch => true
   }
-
-  /**
-    * Companion object for [[LocalContext]].
-    */
-  private object LocalContext {
-
-    /**
-      * Returns a fresh [[LocalContext]].
-      */
-    def mk(): LocalContext = new LocalContext()
-
-  }
-
-  private case class LocalContext()
 
 }

@@ -74,11 +74,11 @@ object JvmBackend {
 
     val lazyClasses = JvmOps.getLazyTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
 
-    val anonClasses = GenAnonymousClasses.gen(root.anonClasses).values.toList
+    val anonClasses = GenAnonymousClasses.gen(root.anonClasses)
 
     val unitClass = List(JvmClass(BackendObjType.Unit.jvmName, BackendObjType.Unit.genByteCode()))
 
-    val flixErrorClass = List(JvmClass(BackendObjType.FlixError.jvmName, BackendObjType.FlixError.genByteCode()))
+    val flixErrorClass = List(JvmClass(JvmName.FlixError, ClassMaker.FlixError.genByteCode()))
     val rslClass = List(JvmClass(BackendObjType.ReifiedSourceLocation.jvmName, BackendObjType.ReifiedSourceLocation.genByteCode()))
     val holeErrorClass = List(JvmClass(BackendObjType.HoleError.jvmName, BackendObjType.HoleError.genByteCode()))
     val matchErrorClass = List(JvmClass(BackendObjType.MatchError.jvmName, BackendObjType.MatchError.genByteCode()))
@@ -105,7 +105,7 @@ object JvmBackend {
     val resumptionNilClass = List(JvmClass(BackendObjType.ResumptionNil.jvmName, BackendObjType.ResumptionNil.genByteCode()))
     val handlerInterface = List(JvmClass(BackendObjType.Handler.jvmName, BackendObjType.Handler.genByteCode()))
     val effectCallClass = List(JvmClass(BackendObjType.EffectCall.jvmName, BackendObjType.EffectCall.genByteCode()))
-    val effectClasses = GenEffectClasses.gen(root.effects.values).values.toList
+    val effectClasses = GenEffectClasses.gen(root.effects.values)
     val resumptionWrappers = BackendType.erasedTypes.map(BackendObjType.ResumptionWrapper.apply).map(bt => JvmClass(bt.jvmName, bt.genByteCode()))
 
     val allClasses = List(

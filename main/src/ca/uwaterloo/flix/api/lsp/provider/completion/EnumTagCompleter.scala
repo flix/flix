@@ -35,7 +35,9 @@ object EnumTagCompleter {
       root.enums.values.flatMap(enm =>
         enm.cases.values.collect {
           case tag if CompletionUtils.isAvailable(enm) && CompletionUtils.matchesName(tag.sym, qn, qualified = false) =>
-            EnumTagCompletion(tag, "", range, ap, qualified = false, inScope = inScope(tag, scp), ectx)
+            val s = inScope(tag, scp)
+            val priority = if (s) Priority.High(0) else Priority.Lower(0)
+            EnumTagCompletion(tag, "", range, priority, ap, qualified = false, inScope = s, ectx)
         }
       )
   }
@@ -49,7 +51,7 @@ object EnumTagCompleter {
     root.enums.values.flatMap(enm =>
       enm.cases.values.collect {
         case tag if CompletionUtils.isAvailable(enm) && CompletionUtils.matchesName(tag.sym, qn, qualified = true) =>
-          EnumTagCompletion(tag, "", range, ap, qualified = true, inScope = true, ectx)
+          EnumTagCompletion(tag, "", range, Priority.High(0), ap, qualified = true, inScope = true, ectx)
       }
     )
   }
@@ -74,7 +76,7 @@ object EnumTagCompleter {
       enm <- root.enums.get(Symbol.mkEnumSym(fullyQualifiedEnum)).toList
       tag <- enm.cases.values
       if CompletionUtils.isAvailable(enm) && CompletionUtils.matchesName(tag.sym, qn, qualified = false)
-    } yield EnumTagCompletion(tag, qn.namespace.toString, range, ap, qualified = true, inScope = true, ectx)
+    } yield EnumTagCompletion(tag, qn.namespace.toString, range, Priority.High(0), ap, qualified = true, inScope = true, ectx)
   }
 
   private def inScope(tag: TypedAst.Case, scope: LocalScope): Boolean = {
