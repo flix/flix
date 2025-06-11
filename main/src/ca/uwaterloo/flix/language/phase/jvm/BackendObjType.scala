@@ -53,7 +53,6 @@ sealed trait BackendObjType {
     case BackendObjType.Record => JvmName(RootPackage, mkClassName("Record"))
     case BackendObjType.ReifiedSourceLocation => JvmName(DevFlixRuntime, mkClassName("ReifiedSourceLocation"))
     case BackendObjType.Global => JvmName(DevFlixRuntime, "Global") // "Global" is fixed in source code, so should not be mangled and $ suffixed
-    case BackendObjType.FlixError => JvmName(DevFlixRuntime, mkClassName("FlixError"))
     case BackendObjType.HoleError => JvmName(DevFlixRuntime, mkClassName("HoleError"))
     case BackendObjType.MatchError => JvmName(DevFlixRuntime, mkClassName("MatchError"))
     case BackendObjType.CastError => JvmName(DevFlixRuntime, mkClassName("CastError"))
@@ -1103,28 +1102,9 @@ object BackendObjType {
     }
   }
 
-  case object FlixError extends BackendObjType {
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkAbstractClass(this.jvmName, JvmName.Error)
-
-      cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-
-      cm.closeClassMaker()
-    }
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(BackendType.String))
-
-    private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      thisLoad()
-      ALOAD(1)
-      invokeConstructor(JvmName.Error, mkDescriptor(BackendType.String)(VoidableType.Void))
-      RETURN()
-    }
-  }
-
   case object HoleError extends BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, FlixError.jvmName)
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, JvmName.FlixError)
 
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
       // These fields allow external equality checking.
@@ -1175,7 +1155,7 @@ object BackendObjType {
   case object MatchError extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(MatchError.jvmName, IsFinal, superClass = FlixError.jvmName)
+      val cm = ClassMaker.mkClass(MatchError.jvmName, IsFinal, superClass = JvmName.FlixError)
 
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
       // This field allows external equality checking.
@@ -1211,7 +1191,7 @@ object BackendObjType {
   case object CastError extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = FlixError.jvmName)
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = JvmName.FlixError)
 
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
 
@@ -1243,7 +1223,7 @@ object BackendObjType {
   case object UnhandledEffectError extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = FlixError.jvmName)
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = JvmName.FlixError)
 
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
       // This field allows external equality checking.

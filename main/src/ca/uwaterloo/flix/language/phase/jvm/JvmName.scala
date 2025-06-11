@@ -198,6 +198,8 @@ object JvmName {
 
   val DevFlixRuntime: List[String] = List("dev", "flix", "runtime")
 
+  val FlixError: JvmName = JvmName(DevFlixRuntime, mkClassName("FlixError"))
+
 }
 
 /**
