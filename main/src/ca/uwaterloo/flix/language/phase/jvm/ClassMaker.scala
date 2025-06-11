@@ -281,7 +281,29 @@ object ClassMaker {
 
   sealed case class StaticInterfaceMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method
 
-  // Constants.
+  // Flix Constants.
+
+  object FlixError {
+
+    def Constructor: ConstructorMethod = ConstructorMethod(JvmName.FlixError, List(BackendType.String))
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkAbstractClass(JvmName.FlixError, JvmName.Error)
+      cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
+      cm.closeClassMaker()
+    }
+
+    private def constructorIns(implicit mv: MethodVisitor): Unit = {
+      import BytecodeInstructions.*
+      thisLoad()
+      ALOAD(1)
+      invokeConstructor(JvmName.Error, mkDescriptor(BackendType.String)(VoidableType.Void))
+      RETURN()
+    }
+
+  }
+
+  // Java Constants.
 
   object Arrays {
 
