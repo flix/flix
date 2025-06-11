@@ -7,7 +7,7 @@ mod ShortestDistance {
     /// weighted directed graph `g`.
     ///
     pub def sssd(src: t, g: m[(t, Int32, t)]): Map[t, Int32] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
-        let edges = inject g into Edge;
+        let edges = inject g into Edge/3;
         let dists = #{
             Dist(src; Down(0)).
             Dist(y; d + Down(w)) :- Dist(x; d), Edge(x, w, y).

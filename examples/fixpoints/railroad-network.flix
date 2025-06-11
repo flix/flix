@@ -5,7 +5,7 @@
 /// then they are unsafely connected. Because if c fails there is no way to get from a to b.
 ///
 def safeConnects(src: n, links: f[(n, n)]): {safe = Vector[n], unsafe1 = Vector[n]} \ Foldable.Aef[f] with Foldable[f], Order[n] =
-    let db = inject links into Link;
+    let db = inject links into Link/2;
     let pr = #{
         // Directly linked stations.
         Linked(a, b) :- Link(a, b).
