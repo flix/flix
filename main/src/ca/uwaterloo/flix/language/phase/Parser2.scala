@@ -3748,14 +3748,4 @@ object Parser2 {
       close(mark, kind)
     }
   }
-
-  /** Returns a textual representation of a [[SyntaxTree.Tree]] meant for debugging. */
-  private def syntaxTreeToDebugString(tree: SyntaxTree.Tree, nesting: Int = 1): String = {
-    s"${tree.kind}${
-      tree.children.map {
-        case token@Token(_, _, _, _, _, _) => s"\n${"  " * nesting}'${token.text}'"
-        case tree@SyntaxTree.Tree(_, _, _) => s"\n${"  " * nesting}${syntaxTreeToDebugString(tree, nesting + 1)}"
-      }.mkString("")
-    }"
-  }
 }
