@@ -15,14 +15,13 @@
  * limitations under the License.
  */
 
-//
-/// For the rest of the compiler we expect a PredSym, `PredSym(name, id)`, to have unique `id`.
-/// This phase passes over the Datalog-Ast and replaces the id and after everything is done
+///
+/// Purpose of phase: For `PredSym(name, id)` we want `id` to be unique, for the whole program.
+/// This phase passes over the Datalog-Ast and replaces the `id` and after everything is done
 /// recreates the old `PredSym`s for the resulting model.
-/// 
-/// It also contains method for recreating the original PredSyms such that the model given to Flix
-/// is correct.
-//
+///
+/// This is necessary as Flix uses the id-part for generating local predicates, not as unique identifiers.
+///
 mod Fixpoint3.Phase.RenamePredSyms {
     use Fixpoint.Ast.Datalog.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Polarity, VarSym}
     use Fixpoint.Ast.Datalog.Datalog.{Datalog, Model, Join}
@@ -40,18 +39,18 @@ mod Fixpoint3.Phase.RenamePredSyms {
 
     ///
     /// Maps all `PredSym`s in `d` to have unique ids. Returns the resulting
-    /// program and information which `renamePredSymToFlixStyle` can use to recreate the original program.
+    /// program and information which `renamePredSyms` can use to recreate the original program.
     ///
     @Internal
-    pub def renamePredSyms(rc: Region[r], d: Datalog): (Datalog, FixInformation) \ r =
+    pub def assignUniqueIdentifiersToPredSyms(rc: Region[r], d: Datalog): (Datalog, FixInformation) \ r =
         let mapping = UniqueInts.empty(rc);
-        let fixed = renamePredSymsInternal(d, mapping);
+        let fixed = fixPredSymsInternal(d, mapping);
         (fixed, UniqueInts.reverse(mapping))
 
     ///
     /// Recursively applies `mapping` to the different Datalog enums to make `PredSym`s unique.
     ///
-    def renamePredSymsInternal(d: Datalog, mapping: UniqueInts[PredSym, r]): Datalog \ r = match d {
+    def fixPredSymsInternal(d: Datalog, mapping: UniqueInts[PredSym, r]): Datalog \ r = match d {
         case Datalog(facts, rules) =>
             let transformer = mapForward(mapping);
             Datalog(remapConstraints(facts, transformer), remapConstraints(rules, transformer))
@@ -62,15 +61,15 @@ mod Fixpoint3.Phase.RenamePredSyms {
                     Map.insert(newSym, v, acc)
             }, Map#{}, facts))
         case Join(d1, d2) =>
-            Join(renamePredSymsInternal(d1, mapping), renamePredSymsInternal(d2, mapping))
+            Join(fixPredSymsInternal(d1, mapping), fixPredSymsInternal(d2, mapping))
         case _ => bug!("PredSym error")
     }
 
     ///
-    /// Applies `fixing` to the `d` to restore the `PredSym`s to the original values.
+    /// Replaces `PredSym(name, id)` in `d` with `Map.get(id, fixing)`.
     ///
     @Internal
-    pub def renamePredSymToFlixStyle(d: Datalog, fixing: FixInformation): Datalog = match d {
+    pub def renamePredSyms(d: Datalog, fixing: FixInformation): Datalog = match d {
         case Datalog(facts, rules) => 
             let transformer = mapBack(fixing);
             Datalog(remapConstraints(facts, transformer), remapConstraints(rules, transformer))
