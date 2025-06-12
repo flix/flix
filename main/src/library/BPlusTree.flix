@@ -351,7 +351,8 @@ mod BPlusTree {
         Node.getWithDefault(k, stamp, d, leaf, t)
 
     ///
-    /// Applies `f` to all mappings `k => v` in `t` in parallel.
+    /// Applies `f` to all mappings `k => v` in `t` in parallel. 
+    /// `f` must not modify `t`.
     ///
     /// This method unsafely removes the `r` effect when spawning threads.
     ///
