@@ -40,36 +40,34 @@ object JvmLoader {
     * Additionally computes the total byte size of `classes`
     */
   def run(root: Root)(implicit flix: Flix): LoaderResult = {
-    implicit val r: Root = root
-
     if (flix.options.loadClassFiles) {
-      val (main, tests) = load(r)
-      LoaderResult(main, tests, r.sources)
+      val (main, tests) = load(root)
+      LoaderResult(main, tests, root.sources)
     } else {
-      LoaderResult(None, Map.empty, r.sources)
+      LoaderResult(None, Map.empty, root.sources)
     }
   }
 
   /** Returns the tests of `root`. */
   private def wrapTest(method: Method): () => AnyRef = {
     () => {
-        val argsArray = Array(null: AnyRef)
-        val parameterCount = method.getParameterCount
-        val argumentCount = argsArray.length
-        if (argumentCount != parameterCount) {
-          throw new RuntimeException(s"Expected $parameterCount arguments, but got: $argumentCount for method ${method.getName}.")
-        }
-
-        // Perform the method call using reflection.
-        try {
-          val result = method.invoke(null, argsArray *)
-          result
-        } catch {
-          case e: InvocationTargetException =>
-            // Rethrow the underlying exception.
-            throw e.getTargetException
-        }
+      val argsArray = Array(null: AnyRef)
+      val parameterCount = method.getParameterCount
+      val argumentCount = argsArray.length
+      if (argumentCount != parameterCount) {
+        throw new RuntimeException(s"Expected $parameterCount arguments, but got: $argumentCount for method ${method.getName}.")
       }
+
+      // Perform the method call using reflection.
+      try {
+        val result = method.invoke(null, argsArray *)
+        result
+      } catch {
+        case e: InvocationTargetException =>
+          // Rethrow the underlying exception.
+          throw e.getTargetException
+      }
+    }
   }
 
   /**
