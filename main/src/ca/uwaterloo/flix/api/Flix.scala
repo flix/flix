@@ -304,6 +304,7 @@ class Flix {
     "Severity.flix" -> LocalResource.get("/src/library/Severity.flix"),
     "Tcp.flix" -> LocalResource.get("/src/library/Tcp.flix"),
     "TcpServer.flix" -> LocalResource.get("/src/library/TcpServer.flix"),
+    "TcpWithResult.flix" -> LocalResource.get("/src/library/TcpWithResult.flix"),
     "TimeUnit.flix" -> LocalResource.get("/src/library/TimeUnit.flix"),
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
