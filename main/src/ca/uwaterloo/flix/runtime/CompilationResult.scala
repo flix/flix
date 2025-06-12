@@ -33,7 +33,8 @@ class CompilationResult(main: Option[Array[String] => Unit],
                         tests: Map[Symbol.DefnSym, (() => AnyRef, Boolean)],
                         sources: Map[Source, SourceLocation],
                         classes: Map[JvmName, JvmClass],
-                        val totalTime: Long) {
+                        val totalTime: Long
+                       ) {
 
   /** Optionally returns the main function. */
   def getMain: Option[Array[String] => Unit] =
