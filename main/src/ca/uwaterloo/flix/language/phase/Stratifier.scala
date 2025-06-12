@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{ParOps, Result}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -559,6 +560,7 @@ object Stratifier {
     val isEqPredicate = l1.pred == l2.pred
     val isEqDenotation = l1.den == l2.den
     val isEqArity = l1.arity == l2.arity
+//    val isEqTermTypes = ListOps.zip(l1.terms, l2.terms).forall {
     val isEqTermTypes = l1.terms.zip(l2.terms).forall {
       case (t1, t2) => ConstraintSolver2.fullyUnify(t1, t2, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix).isDefined // TODO ASSOC-TYPES empty right? // TODO LEVELS top OK?
     }

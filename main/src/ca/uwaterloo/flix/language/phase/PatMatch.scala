@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.language.fmt.FormatConstant
 import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.collection.ListOps
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -754,9 +755,7 @@ object PatMatch {
       TyCon.Enum(sym, rebuiltArgs) :: lst.drop(args.length)
     case TyCon.Record(labels, _) =>
       val all = lst.take(labels.length + 1)
-      val ls = labels.map {
-        case (l, _) => l
-      }.zip(all.take(labels.length))
+      val ls = ListOps.zip(labels.map(_._1), all.take(labels.length))
       val t = all.takeRight(1).head
       TyCon.Record(ls, t) :: lst.drop(labels.length + 1)
     case TyCon.Cst(Constant.RecordEmpty) => lst

@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.ast.{MonoType, *}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.ListOps
 import org.objectweb.asm
 import org.objectweb.asm.*
 import org.objectweb.asm.Opcodes.*
@@ -1100,7 +1101,7 @@ object GenExpression {
         if (canCallStaticMethod) {
           val paramTpes = defn.fparams.map(fp => BackendType.toBackendType(fp.tpe))
           // Call the static method, using exact types
-          for ((arg, tpe) <- exps.zip(paramTpes)) {
+          for ((arg, tpe) <- ListOps.zip(exps, paramTpes)) {
             compileExpr(arg)
             BytecodeInstructions.castIfNotPrim(tpe)
           }
@@ -1188,7 +1189,7 @@ object GenExpression {
           // Evaluate the argument and push the result on the stack.
           compileExpr(arg)
         }
-        for ((arg, fp) <- exps.zip(defn.fparams).reverse) {
+        for ((arg, fp) <- ListOps.zip(exps, defn.fparams).reverse) {
           // Store it in the ith parameter.
           val tpe = BackendType.toBackendType(arg.tpe)
           val offset = fp.sym.getStackOffset(ctx.localOffset)

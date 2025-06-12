@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
 import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.collection.ListOps
 
 import scala.annotation.tailrec
 
@@ -1432,7 +1433,7 @@ object Desugar {
   private def desugarFixpointInjectInto(exps0: List[WeededAst.Expr], idents0: List[Name.Ident], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val es = visitExps(exps0)
     val init = DesugaredAst.Expr.FixpointConstraintSet(Nil, loc0)
-    es.zip(idents0).foldRight(init: Expr) {
+    ListOps.zip(es, idents0).foldRight(init: Expr) {
       case ((exp, ident), acc) =>
         val pred = Name.mkPred(ident)
         val innerExp = DesugaredAst.Expr.FixpointInject(exp, pred, loc0)

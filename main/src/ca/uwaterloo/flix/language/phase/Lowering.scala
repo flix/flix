@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
-import ca.uwaterloo.flix.util.collection.Nel
+import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -1466,7 +1466,7 @@ object Lowering {
     * Make the list of MpmcAdmin objects which will be passed to `selectFrom`
     */
   private def mkChannelAdminList(rs: List[LoweredAst.SelectChannelRule], channels: List[(Symbol.VarSym, LoweredAst.Expr)], loc: SourceLocation): LoweredAst.Expr = {
-    val admins = rs.zip(channels) map {
+    val admins = ListOps.zip(rs, channels) map {
       case (LoweredAst.SelectChannelRule(_, c, _), (chanSym, _)) =>
         val itpe = Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc)
         LoweredAst.Expr.ApplyDef(Defs.ChannelMpmcAdmin, List(LoweredAst.Expr.Var(chanSym, c.tpe, loc)), itpe, Types.ChannelMpmcAdmin, Type.Pure, loc)
@@ -1495,7 +1495,7 @@ object Lowering {
   private def mkChannelCases(rs: List[LoweredAst.SelectChannelRule], channels: List[(Symbol.VarSym, LoweredAst.Expr)], eff: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): List[LoweredAst.MatchRule] = {
     val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
 
-    rs.zip(channels).zipWithIndex map {
+    ListOps.zip(rs, channels).zipWithIndex map {
       case ((LoweredAst.SelectChannelRule(sym, chan, exp), (chSym, _)), i) =>
         val locksSym = mkLetSym("locks", loc)
         val pat = mkTuplePattern(Nel(LoweredAst.Pattern.Cst(Constant.Int32(i), Type.Int32, loc), List(LoweredAst.Pattern.Var(locksSym, locksType, loc))), loc)

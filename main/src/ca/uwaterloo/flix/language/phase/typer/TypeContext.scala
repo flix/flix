@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Scope, TraitCo
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.ListOps
 
 import scala.collection.mutable
 
@@ -184,7 +185,7 @@ class TypeContext {
     * }}}
     */
   def expectTypeArguments(sym: Symbol, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation]): Unit = {
-    expectedTypes.zip(actualTypes).zip(actualLocs).zipWithIndex.foreach {
+    ListOps.zip(ListOps.zip(expectedTypes, actualTypes), actualLocs).zipWithIndex.foreach {
       case (((expectedType, actualType), loc), index) =>
         val argNum = index + 1
         val prov = Provenance.ExpectArgument(expectedType, actualType, sym, argNum, loc)

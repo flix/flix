@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, FormalParam, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
@@ -482,7 +483,7 @@ object Inliner {
     *
     */
   private def bindArgs(exp: Expr, fparams: List[FormalParam], exps: List[Expr], loc: SourceLocation): Expr = {
-    fparams.zip(exps).foldRight(exp) {
+    ListOps.zip(fparams, exps).foldRight(exp) {
       case ((fparam, arg), acc) =>
         val eff = Type.mkUnion(arg.eff, acc.eff, loc)
         Expr.Let(fparam.sym, arg, acc, acc.tpe, eff, fparam.occur, loc)

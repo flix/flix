@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, SemanticOp, SourceLocation, Symbol}
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
@@ -375,7 +376,7 @@ object TypeVerifier {
         case AtomicOp.ExtensibleTag(label) =>
           getExtensibleTagType(tpe, label.name, loc) match {
             case Some(ts2) if ts.length == ts2.length =>
-              ts.zip(ts2).map { case (t1, t2) => checkEq(t1, t2, loc) }
+              ListOps.zip(ts, ts2).map { case (t1, t2) => checkEq(t1, t2, loc) }
               tpe
             case _ =>
               failMismatchedShape(tpe, label.name, loc)
@@ -607,7 +608,7 @@ object TypeVerifier {
   private def checkJavaParameters(ts: List[MonoType], cs: List[Class[?]], loc: SourceLocation): Unit = {
     if (ts.length != cs.length)
       throw InternalCompilerException("Number of types in constructor call mismatch with parameter list", loc)
-    ts.zip(cs).foreach { case (tp, klazz) => checkJavaSubtype(tp, klazz, loc) }
+    ListOps.zip(ts, cs).foreach { case (tp, klazz) => checkJavaSubtype(tp, klazz, loc) }
   }
 
   /**
