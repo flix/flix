@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.BytecodeAst.*
 import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.runtime.TestFn
 import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils}
 
@@ -30,7 +31,7 @@ object JvmLoader {
 
   case class LoaderResult(
                            main: Option[Array[String] => Unit],
-                           tests: Map[Symbol.DefnSym, (() => AnyRef, Boolean)],
+                           tests: Map[Symbol.DefnSym, TestFn],
                            sources: Map[Source, SourceLocation]
                          )
 
@@ -50,14 +51,14 @@ object JvmLoader {
 
   /** Returns the tests of `root`. */
   private def wrapTest(method: Method): () => AnyRef = {
-    () => {
-      val argsArray = Array(null: AnyRef)
-      val parameterCount = method.getParameterCount
-      val argumentCount = argsArray.length
-      if (argumentCount != parameterCount) {
-        throw new RuntimeException(s"Expected $parameterCount arguments, but got: $argumentCount for method ${method.getName}.")
-      }
+    val parameterCount = method.getParameterCount
+    val argsArray = Array(null: AnyRef)
+    val argumentCount = argsArray.length
+    if (argumentCount != parameterCount) {
+      throw InternalCompilerException(s"Expected a method of $argumentCount parameters, but ${method.getName} has $parameterCount.", SourceLocation.Unknown)
+    }
 
+    () => {
       // Perform the method call using reflection.
       try {
         val result = method.invoke(null, argsArray *)
@@ -70,16 +71,13 @@ object JvmLoader {
     }
   }
 
-  /**
-    * Loads all the generated classes into the JVM and decorates the AST.
-    * The main functions of `Main.class` is returned if it exists.
-    */
-  private def load(root: Root)(implicit flix: Flix): (Option[Array[String] => Unit], Map[Symbol.DefnSym, (() => AnyRef, Boolean)]) = {
+  /** Loads the classes of `root` into the JVM. Returns `(main, tests)` reflected methods, based on `root`. */
+  private def load(root: Root)(implicit flix: Flix): (Option[Array[String] => Unit], Map[Symbol.DefnSym, TestFn]) = {
     // Load each class into the JVM in a fresh class loader.
     implicit val loadedClasses: Map[JvmName, Class[?]] = loadAll(root.classes.values)
 
-    val tests = MapOps.mapValues(root.tests) {
-      case defn => (wrapTest(loadMethod(defn.className, defn.methodName)), defn.isSkip)
+    val tests = MapOps.mapValuesWithKey(root.tests) {
+      case (sym, defn) => TestFn(sym, defn.isSkip, wrapTest(loadMethod(defn.className, defn.methodName)))
     }
     val main = root.main.map {
       case defn => wrapMain(loadMethod(defn.className, defn.methodName))
@@ -89,22 +87,29 @@ object JvmLoader {
   }
 
   /** Returns the [[Method]] object of the main function of `root` if it is defined. */
-  private def wrapMain(mainMethod: Method)(args: Array[String]): Unit = {
-    try {
-      // Call the method, passing the argument array.
-      mainMethod.invoke(null, args)
-      ()
-    } catch {
-      case e: InvocationTargetException =>
-        // Rethrow the underlying exception.
-        throw e.getTargetException
+  private def wrapMain(method: Method): Array[String] => Unit = {
+    val parameterCount = method.getParameterCount
+    val argumentCount = 1 // A single Array[String] argument.
+    if (argumentCount != parameterCount) {
+      throw InternalCompilerException(s"Expected a main method of $argumentCount parameters, but ${method.getName} has $parameterCount.", SourceLocation.Unknown)
     }
+
+    (args: Array[String]) =>
+      try {
+        // Call the method, passing the argument array.
+        method.invoke(null, args)
+        ()
+      } catch {
+        case e: InvocationTargetException =>
+          // Rethrow the underlying exception.
+          throw e.getTargetException
+      }
   }
 
   /** Returns the [[Method]] object for `className.methodName`. */
   private def loadMethod(className: JvmName, methodName: String)(implicit loadedClasses: Map[JvmName, Class[?]]): Method = {
-    val mainClass = loadedClasses.getOrElse(className, throw InternalCompilerException(s"Class not found: '${className.toBinaryName}'.", SourceLocation.Unknown))
-    findMethod(mainClass, methodName).getOrElse(throw InternalCompilerException(s"Cannot find '$methodName' method of '${className.toBinaryName}'", SourceLocation.Unknown))
+    val mainClass = loadedClasses.getOrElse(className, throw InternalCompilerException(s"Cannot find class '${className.toBinaryName}'.", SourceLocation.Unknown))
+    findMethod(mainClass, methodName).getOrElse(throw InternalCompilerException(s"Cannot find '$methodName' method of '${className.toBinaryName}'.", SourceLocation.Unknown))
   }
 
   /** Returns a Method for `clazz.methodName` if possible. */

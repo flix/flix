@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
   * @param totalTime the total compilation time, excluding class writing/loading.
   */
 class CompilationResult(main: Option[Array[String] => Unit],
-                        tests: Map[Symbol.DefnSym, (() => AnyRef, Boolean)],
+                        tests: Map[Symbol.DefnSym, TestFn],
                         sources: Map[Source, SourceLocation],
                         classes: Map[JvmName, JvmClass],
                         val totalTime: Long
@@ -41,12 +41,8 @@ class CompilationResult(main: Option[Array[String] => Unit],
     main
 
   /** Returns all the test functions in the program. */
-  def getTests: Map[Symbol.DefnSym, TestFn] = {
-    tests.map {
-      case (sym, (run, isSkip)) =>
-        sym -> TestFn(sym, isSkip, run)
-    }
-  }
+  def getTests: Map[Symbol.DefnSym, TestFn] =
+    tests
 
   /** Returns the total number of lines of compiled code. */
   def getTotalLines: Int = sources.foldLeft(0) {
