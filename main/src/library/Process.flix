@@ -50,6 +50,7 @@ mod Process {
     use IoError.IoError
 
     import java.lang.IllegalArgumentException
+    import java.lang.IllegalThreadStateException
     import java.lang.SecurityException
     import java.io.IOException
     import java.lang.ProcessBuilder
@@ -110,8 +111,9 @@ mod Process {
                         case ProcessHandle.ProcessHandle(jProc) => k(jProc.exitValue())
                     }
                 } catch {
-                    case ex: SecurityException         => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
-                    case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: IllegalThreadStateException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+                    case ex: SecurityException            => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
+                    case ex: IOException                  => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
             def isAlive(ph, k) =
@@ -120,8 +122,8 @@ mod Process {
                         case ProcessHandle.ProcessHandle(jProc) => k(jProc.isAlive())
                     }
                 } catch {
-                    case ex: SecurityException         => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
-                    case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: SecurityException  => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
+                    case ex: IOException        => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
             def stop(ph, k) =
@@ -130,8 +132,8 @@ mod Process {
                         case ProcessHandle.ProcessHandle(jProc) => k(jProc.destroy())
                     }
                 } catch {
-                    case ex: SecurityException         => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
-                    case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: SecurityException  => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
+                    case ex: IOException        => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
         }
