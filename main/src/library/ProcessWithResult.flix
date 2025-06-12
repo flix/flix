@@ -47,7 +47,6 @@ mod ProcessWithResult {
     use IoError.IoError
 
     import java.lang.IllegalArgumentException
-    import java.lang.NullPointerException
     import java.lang.SecurityException
     import java.io.IOException
     import java.lang.ProcessBuilder
@@ -97,7 +96,6 @@ mod ProcessWithResult {
                     Ok(ProcessHandle.ProcessHandle(process))
                 } catch {
                     case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: NullPointerException      => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
                     case ex: SecurityException         => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
                     case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 };
@@ -110,8 +108,6 @@ mod ProcessWithResult {
                         case ProcessHandle.ProcessHandle(jProc) => k(Ok(jProc.exitValue()))
                     }
                 } catch {
-                    case ex: IllegalArgumentException  => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
-                    case ex: NullPointerException      => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
                     case ex: SecurityException         => k(Err(IoError(ErrorKind.PermissionDenied, ex.getMessage())))
                     case ex: IOException               => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
@@ -122,8 +118,6 @@ mod ProcessWithResult {
                         case ProcessHandle.ProcessHandle(jProc) => k(Ok(jProc.isAlive()))
                     }
                 } catch {
-                    case ex: IllegalArgumentException  => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
-                    case ex: NullPointerException      => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
                     case ex: SecurityException         => k(Err(IoError(ErrorKind.PermissionDenied, ex.getMessage())))
                     case ex: IOException               => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
@@ -134,8 +128,6 @@ mod ProcessWithResult {
                         case ProcessHandle.ProcessHandle(jProc) => k(Ok(jProc.destroy()))
                     }
                 } catch {
-                    case ex: IllegalArgumentException  => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
-                    case ex: NullPointerException      => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
                     case ex: SecurityException         => k(Err(IoError(ErrorKind.PermissionDenied, ex.getMessage())))
                     case ex: IOException               => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
