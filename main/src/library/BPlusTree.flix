@@ -1046,15 +1046,15 @@ mod BPlusTree {
         /// Thread-safe.
         ///
         pub def putWith(f: v -> v -> v \ ef, key: k, val: v, tree: BPlusTree[k, v, r], node: Node[k, v, r], stamp: Int64): Option[(Node[k, v, r], Int64)] \ r + ef with Order[k], Eq[v] =
-            let index = binarySearch(key, BPlusTree.search(tree), node);
-            if (index < 0) {
-                insertIntoLeafPropagate(key, val, index, node, stamp, tree)
+            let writeStamp = Lock.tryConvertToWrite(stamp, node->lock);
+            if(not Lock.valid(writeStamp, node->lock)) {
+                // Restart
+                Lock.yieldBasedOn(node->lock);
+                BPlusTree.putWithInternal(f, key, val, tree)
             } else {
-                let writeStamp = Lock.tryConvertToWrite(stamp, node->lock);
-                if(not Lock.valid(writeStamp, node->lock)) {
-                    // Restart
-                    Lock.yieldBasedOn(node->lock);
-                    BPlusTree.putWithInternal(f, key, val, tree)
+                let index = binarySearch(key, BPlusTree.search(tree), node);
+                if (index < 0) {
+                    insertIntoLeafPropagate(key, val, index, node, writeStamp, tree)
                 } else {
                     let v1 = Array.get(index, node->values);
                     Array.put(f(val, v1), index, node->values);
