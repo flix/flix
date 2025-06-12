@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.{BytecodeAst, SourceLocation}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -27,10 +27,10 @@ import java.nio.file.{Files, LinkOption, Path}
 object JvmWriter {
 
   /** Writes `classes` into the `<build>/class/` folder if enabled by [[Flix.options.output]]. */
-  def run(classes: List[JvmClass])(implicit flix: Flix): Unit = {
+  def run(root: BytecodeAst.Root)(implicit flix: Flix): Unit = {
     // Write each class (and interface) to disk if enabled.
     if (flix.options.output.nonEmpty) {
-      for (jvmClass <- classes) {
+      for ((_, jvmClass) <- root.classes) {
         flix.subtask(jvmClass.name.toBinaryName, sample = true)
         writeClass(flix.options.output.get.resolve("class/"), jvmClass)
       }
