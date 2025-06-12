@@ -78,7 +78,8 @@ object PredDeps {
     val den = erased.baseType match {
       case Type.Cst(TypeConstructor.Relation(_), _) => Denotation.Relational
       case Type.Cst(TypeConstructor.Lattice(_), _) => Denotation.Latticenal
-      case t => throw InternalCompilerException(s"Unexpected non-denotation type constructor: '$t'", tpe.loc)
+      // Resiliency: if the constructor is invalid or unknown, just arbitrarily assume relational
+      case _ => Denotation.Relational
     }
 
     val tpes = erased.typeArguments
