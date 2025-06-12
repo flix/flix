@@ -360,6 +360,7 @@ mod BPlusTree {
     @Internal
     @Parallel
     pub def parForEach(f: k -> v -> Unit \ r, t: BPlusTree[k, v, r]): Unit \ r with Order[k] = region rc {
+        // `threadNum` is the number of spawned threads.
         let threadNum = if(Node.computeHeight(t->root) >= 2) {
             threads()
         } else {
@@ -370,13 +371,13 @@ mod BPlusTree {
         } else {
             let minLeaf = Node.leftMostChild(t->root);
             unchecked_cast(Vector.range(0, threadNum) |>
-            Vector.forEach(i -> {
+            (Vector.forEach(i -> {
                 let _: Unit = spawn unchecked_cast(
                     // Flix does not allow region effect in spawns. Remove the effect. 
                     (Node.traverseRightUnconditionalInc(f, i, threadNum, minLeaf): _ \ r) as _ \ IO
                 ) @ rc;
                 ()
-            }) as _ \ r)
+            }): _ \ {}) as _ \ r)
         }
     }
 
@@ -784,14 +785,16 @@ mod BPlusTree {
         ///
         @Internal
         pub def computeHeight(node: Node[k, v, r]): Int32 \ r with Order[k] =
+            // Every leaf is at the same height, so just use the left most path.
             def loop(count, n) = {
                 match n->isLeaf {
                     case true => count
-                    case false => if(n->size == 0) {
-                        count
-                    }  else {
-                        loop(count + 1, Array.get(0, n->children))
-                    }
+                    case false => 
+                        if(n->size == 0) {
+                            count
+                        }  else {
+                            loop(count + 1, Array.get(0, n->children))
+                        }
                 }
             };
             loop(1, node)
