@@ -72,23 +72,18 @@ object PredDeps {
   /**
     * Returns the term types of the given relational or latticenal type.
     */
-  def termTypesAndDenotation(tpe: Type): (List[Type], Denotation) = eraseAliases(tpe) match {
-    case Type.Apply(Type.Cst(tc, _), t, _) =>
-      // MATT THIS IS THE BAD SPOT!!!!!
-      val den = tc match {
-        case TypeConstructor.Relation(_) => Denotation.Relational
-        case TypeConstructor.Lattice(_) => Denotation.Latticenal
-        case _ => throw InternalCompilerException(s"Unexpected non-denotation type constructor: '$tc'", tpe.loc)
-      }
-      t.baseType match {
-        case Type.Cst(TypeConstructor.Tuple(_), _) => (t.typeArguments, den) // Multi-ary
-        case Type.Cst(TypeConstructor.Unit, _) => (Nil, den)
-        case _ => (List(t), den) // Unary
-      }
-    case _ =>
-      // Resilience: We would want a relation or lattice, but type inference may have failed.
-      // If so, we simply return the empty list of term types with a relational denotation.
-      (Nil, Denotation.Relational)
+  def termTypesAndDenotation(tpe: Type): (List[Type], Denotation) = {
+    val erased = eraseAliases(tpe)
+
+    val den = erased.baseType match {
+      case Type.Cst(TypeConstructor.Relation(_), _) => Denotation.Relational
+      case Type.Cst(TypeConstructor.Lattice(_), _) => Denotation.Latticenal
+      case t => throw InternalCompilerException(s"Unexpected non-denotation type constructor: '$t'", tpe.loc)
+    }
+
+    val tpes = erased.typeArguments
+
+    (tpes, den)
   }
 
   /**
