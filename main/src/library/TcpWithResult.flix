@@ -17,28 +17,28 @@
 ///
 /// The effect used to bind a TCP server.
 ///
-eff Tcp {
-    def bind(ip: IpAddr, port: Int16): TcpServer
+eff TcpWithResult {
+    def bind(ip: IpAddr, port: Int16): Result[IoError, TcpServer]
 }
 
-mod Tcp {
+mod TcpWithResult {
+    import java.net.InetAddress
+    import java.net.ServerSocket
     use IoError.ErrorKind
     use IoError.IoError
 
     import java.io.IOException
     import java.lang.IllegalArgumentException
-    import java.net.InetAddress
-    import java.net.ServerSocket
 
     ///
     /// Handles the `Tcp` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Tcp` effect using the `Net` and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ {ef, IO, Net} - Tcp = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - TcpWithResult) + {IO, Net} = x ->
         run {
-            Ok(f(x))
-        } with handler Tcp {
+            f(x)
+        } with handler TcpWithResult {
             def bind(ip, port, resume) = {
                 try {
                     let inet: InetAddress = region r {
@@ -48,19 +48,19 @@ mod Tcp {
                     let maxQueueLength = 50;
                     let socket = new ServerSocket(Int16.toInt32(port), maxQueueLength, inet);
                     let server = TcpServer.TcpServer(socket);
-                    resume(server)
+                    resume(Ok(server))
                 } catch {
-                    case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: IllegalArgumentException => resume(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
+                    case ex: IOException              => resume(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
             }
         }
-
+    
     ///
     /// Runs the `Tcp` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Tcp` effect using the `Net` and `IO` effects.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ {ef, IO, Net} - Tcp = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef):  a \ ef - TcpWithResult + {Net, IO} = handle(f)()
 
 }
