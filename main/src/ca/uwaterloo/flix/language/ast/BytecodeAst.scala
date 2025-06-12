@@ -24,10 +24,8 @@ object BytecodeAst {
   /**
     * An AST after JVM bytecode generation.
     *
-    * @param classes all classes representing the program.
-    * @param tests a mapping from
-    * @param main
-    * @param sources
+    * @param tests all tests refer to functions of type `Unit -> t`
+    * @param main main (if present) refers to a function of type `Array[String] -> Unit`
     */
   case class Root(
                    classes: Map[JvmName, JvmClass],
