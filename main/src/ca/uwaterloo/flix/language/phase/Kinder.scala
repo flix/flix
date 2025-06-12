@@ -1440,14 +1440,16 @@ object Kinder {
     case UnkindedType.Struct(sym, _) =>
       val tyconKind = getStructKind(root.structs(sym))
       val args = Kind.kindArgs(tyconKind)
-      ListOps.zip(tpe.typeArguments, args).foldLeft(KindEnv.empty) {
+//      ListOps.zip(tpe.typeArguments, args).foldLeft(KindEnv.empty) {
+      tpe.typeArguments.zip(args).foldLeft(KindEnv.empty) {
         case (acc, (targ, kind)) => acc ++ inferType(targ, kind, kenv0, taenv, root)
       }
 
     case UnkindedType.RestrictableEnum(sym, _) =>
       val tyconKind = getRestrictableEnumKind(root.restrictableEnums(sym))
       val args = Kind.kindArgs(tyconKind)
-      ListOps.zip(tpe.typeArguments, args).foldLeft(KindEnv.empty) {
+//      ListOps.zip(tpe.typeArguments, args).foldLeft(KindEnv.empty) {
+      tpe.typeArguments.zip(args).foldLeft(KindEnv.empty) {
         case (acc, (targ, kind)) => acc ++ inferType(targ, kind, kenv0, taenv, root)
       }
 

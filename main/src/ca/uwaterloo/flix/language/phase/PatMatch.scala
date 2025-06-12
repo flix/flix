@@ -755,7 +755,8 @@ object PatMatch {
       TyCon.Enum(sym, rebuiltArgs) :: lst.drop(args.length)
     case TyCon.Record(labels, _) =>
       val all = lst.take(labels.length + 1)
-      val ls = ListOps.zip(labels.map(_._1), all.take(labels.length))
+//      val ls = ListOps.zip(labels.map(_._1), all.take(labels.length))
+      val ls = labels.map(_._1).zip(all.take(labels.length))
       val t = all.takeRight(1).head
       TyCon.Record(ls, t) :: lst.drop(labels.length + 1)
     case TyCon.Cst(Constant.RecordEmpty) => lst

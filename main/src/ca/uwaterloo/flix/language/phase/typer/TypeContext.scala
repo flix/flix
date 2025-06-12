@@ -185,7 +185,8 @@ class TypeContext {
     * }}}
     */
   def expectTypeArguments(sym: Symbol, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation]): Unit = {
-    ListOps.zip(ListOps.zip(expectedTypes, actualTypes), actualLocs).zipWithIndex.foreach {
+//    ListOps.zip(ListOps.zip(expectedTypes, actualTypes), actualLocs).zipWithIndex.foreach {
+      expectedTypes.zip(actualTypes).zip(actualLocs).zipWithIndex.foreach {
       case (((expectedType, actualType), loc), index) =>
         val argNum = index + 1
         val prov = Provenance.ExpectArgument(expectedType, actualType, sym, argNum, loc)
