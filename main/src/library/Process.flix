@@ -26,6 +26,22 @@ eff Process {
     /// Immediately executes the command `cmd` with the arguments `args`, by the path `cwd` and with the environmental `env`.
     ///
     def execWithCwdAndEnv(cmd: String, args: List[String], cwd: Option[String], env: Map[String, String]): ProcessHandle
+
+    ///
+    /// Returns the exit value of the process.
+    ///
+    def exitValue(ph: ProcessHandle): Int32
+
+    ///
+    ///  Returns status of the process, if it alive or not.
+    ///
+    def isAlive(ph: ProcessHandle): Bool
+
+    ///
+    /// Stops the process.
+    ///
+    def stop(ph: ProcessHandle): Unit
+
 }
 
 mod Process {
@@ -89,6 +105,43 @@ mod Process {
                     case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
+
+            def exitValue(ph, k) =
+                try {
+                    match ph {
+                        case ProcessHandle.ProcessHandle(jProc) => k(jProc.exitValue())
+                    }
+                } catch {
+                    case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+                    case ex: NullPointerException      => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+                    case ex: SecurityException         => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
+                    case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+            def isAlive(ph, k) =
+                try {
+                    match ph {
+                        case ProcessHandle.ProcessHandle(jProc) => k(jProc.isAlive())
+                    }
+                } catch {
+                    case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+                    case ex: NullPointerException      => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+                    case ex: SecurityException         => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
+                    case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+            def stop(ph, k) =
+                try {
+                    match ph {
+                        case ProcessHandle.ProcessHandle(jProc) => k(jProc.destroy())
+                    }
+                } catch {
+                    case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+                    case ex: NullPointerException      => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
+                    case ex: SecurityException         => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
+                    case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
         }
 
     ///
