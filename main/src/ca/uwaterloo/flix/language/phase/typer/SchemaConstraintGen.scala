@@ -123,20 +123,21 @@ object SchemaConstraintGen {
   def visitFixpointInject(e: KindedAst.Expr.FixpointInject)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     e match {
-      case KindedAst.Expr.FixpointInject(exp, pred, tvar, evar, loc) =>
+      case KindedAst.Expr.FixpointInject(exp, pred, arity, tvar, evar, loc) =>
         //
-        //  exp : F[freshElmType] where F is Foldable
+        //  exp : F[(α₁, α₂, ...)] where F is Foldable
         //  -------------------------------------------
-        //  project exp into A: #{A(freshElmType) | freshRestSchemaType}
+        //  project exp into A(_, _, ...): #{A(α₁, α₂, ...) | freshRestSchemaType}
         //
         val freshTypeConstructorVar = Type.freshVar(Kind.Star ->: Kind.Star, loc)
-        val freshElmTypeVar = Type.freshVar(Kind.Star, loc)
+        val freshElmTypeVars = List.range(0, arity).map(_ => Type.freshVar(Kind.Star, loc))
+        val tuple = Type.mkTuplish(freshElmTypeVars, loc)
         val freshRestSchemaTypeVar = Type.freshVar(Kind.SchemaRow, loc)
 
         // Require Order and Foldable instances.
         val orderSym = PredefinedTraits.lookupTraitSym("Order", root)
         val foldableSym = PredefinedTraits.lookupTraitSym("Foldable", root)
-        val order = TraitConstraint(TraitSymUse(orderSym, loc), freshElmTypeVar, loc)
+        val order = TraitConstraint(TraitSymUse(orderSym, loc), tuple, loc)
         val foldable = TraitConstraint(TraitSymUse(foldableSym, loc), freshTypeConstructorVar, loc)
 
         c.addClassConstraints(List(order, foldable), loc)
@@ -145,8 +146,8 @@ object SchemaConstraintGen {
         val aefTpe = Type.AssocType(AssocTypeSymUse(aefSym, loc), freshTypeConstructorVar, Kind.Eff, loc)
 
         val (tpe, eff) = visitExp(exp)
-        c.unifyType(tpe, Type.mkApply(freshTypeConstructorVar, List(freshElmTypeVar), loc), loc)
-        c.unifyType(tvar, Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.mkRelation(List(freshElmTypeVar), loc), freshRestSchemaTypeVar, loc), loc), loc)
+        c.unifyType(tpe, Type.mkApply(freshTypeConstructorVar, List(tuple), loc), loc)
+        c.unifyType(tvar, Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.mkRelation(freshElmTypeVars, loc), freshRestSchemaTypeVar, loc), loc), loc)
         c.unifyType(evar, Type.mkUnion(eff, aefTpe, loc), loc)
         val resTpe = tvar
         val resEff = evar
@@ -157,22 +158,23 @@ object SchemaConstraintGen {
   def visitFixpointProject(e: KindedAst.Expr.FixpointProject)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     e match {
-      case KindedAst.Expr.FixpointProject(pred, exp1, exp2, tvar, loc) =>
+      case KindedAst.Expr.FixpointProject(pred, arity, exp1, exp2, tvar, loc) =>
         //
-        //  exp1: {$Result(freshRelOrLat, freshTupleVar) | freshRestSchemaVar }
+        //  exp1: #{$freshRelOrLat(α₁, α₂, ...) | freshRestSchemaVar }
         //  exp2: freshRestSchemaVar
         //  --------------------------------------------------------------------
-        //  FixpointQuery pred, exp1, exp2 : Array[freshTupleVar]
+        //  FixpointQuery pred, exp1, exp2 : Array[(α₁, α₂, ...)]
         //
-        val freshRelOrLat = Type.freshVar(Kind.Star ->: Kind.Predicate, loc)
-        val freshTupleVar = Type.freshVar(Kind.Star, loc)
+        val freshRelOrLat = Type.freshVar(Kind.mkArrowTo(arity, Kind.Predicate), loc)
+        val freshElemVars = List.range(0, arity).map(_ => Type.freshVar(Kind.Star, loc))
+        val tuple = Type.mkTuplish(freshElemVars, loc)
         val freshRestSchemaVar = Type.freshVar(Kind.SchemaRow, loc)
-        val expectedSchemaType = Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.Apply(freshRelOrLat, freshTupleVar, loc), freshRestSchemaVar, loc), loc)
+        val expectedSchemaType = Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.mkApply(freshRelOrLat, freshElemVars, loc), freshRestSchemaVar, loc), loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.unifyType(tpe1, expectedSchemaType, loc)
         c.unifyType(tpe2, Type.mkSchema(freshRestSchemaVar, loc), loc)
-        c.unifyType(tvar, Type.mkVector(freshTupleVar, loc), loc)
+        c.unifyType(tvar, Type.mkVector(tuple, loc), loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)

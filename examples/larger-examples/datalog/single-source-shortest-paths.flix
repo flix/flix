@@ -7,7 +7,7 @@ mod ShortestPath {
     /// in the graph `g`.
     ///
     pub def sssp(src: t, g: m[(t, t)]): Map[t, Vector[t]] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
-        let edges = inject g into Edge;
+        let edges = inject g into Edge/2;
         let rules = #{
             Reach(x, y; init(y, x)) :- Edge(x, y).
             Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(y, z).

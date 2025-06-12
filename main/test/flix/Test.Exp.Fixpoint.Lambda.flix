@@ -130,14 +130,14 @@ mod Test.Exp.Fixpoint.Lambda {
         let p = #(A(Int32, String)) -> #{
             A(123, "Hello World").
         };
-        not (query p select x from A(x) |> Vector.isEmpty)
+        not (query p select (x, y) from A(x, y) |> Vector.isEmpty)
 
     pub def testTypedLambda03(): Bool =
         let p = #(A(Int32, Int32), B(String, String)) -> #{
             A(123, 456).
             B("hello", "World").
         };
-        not (query p select x from A(x) |> Vector.isEmpty)
+        not (query p select (x, y) from A(x, y) |> Vector.isEmpty)
 
     pub def testTypedLambda04(): Bool =
         let p = #(L(String; Int32)) -> #{

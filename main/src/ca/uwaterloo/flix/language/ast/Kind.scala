@@ -110,15 +110,18 @@ object Kind {
   case object Error extends Kind
 
   /**
-    * Returns the kind: * -> (* ... -> *)
+    * Returns the kind: * -> (* ... -> *).
     */
-  def mkArrow(length: Int): Kind = {
-    if (length == 0) {
-      return Star
-    }
+  def mkArrow(numArgs: Int): Kind = mkArrowTo(numArgs, Kind.Star)
 
-    (0 until length).foldRight(Star: Kind) {
-      case (_, acc) => Arrow(Star, acc)
+  /**
+    * Returns the kind * -> (* -> ... ret).
+    */
+  def mkArrowTo(numArgs: Int, ret: Kind): Kind = {
+    if (numArgs == 0) {
+      ret
+    } else {
+      mkArrowTo(numArgs - 1, Star ->: ret)
     }
   }
 
