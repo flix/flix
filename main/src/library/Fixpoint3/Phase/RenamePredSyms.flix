@@ -22,6 +22,10 @@
 ///
 /// This is necessary as Flix uses the id-part for generating local predicates, not as unique identifiers.
 ///
+///
+/// This purpose of this module is to transform `PredSym`s defined by `(name, id)`, to `PredSym`s
+/// uniquely defined by their `id`.
+///
 mod Fixpoint3.Phase.RenamePredSyms {
     use Fixpoint.Ast.Datalog.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Polarity, VarSym}
     use Fixpoint.Ast.Datalog.Datalog.{Datalog, Model, Join}
@@ -40,6 +44,9 @@ mod Fixpoint3.Phase.RenamePredSyms {
     ///
     /// Maps all `PredSym`s in `d` to have unique ids. Returns the resulting
     /// program and information which `renamePredSyms` can use to recreate the original program.
+    ///
+    /// This function expects `PredSym`s to be defined by their `(name, id)`, while afterwards they
+    /// will be uniquely defined by their `id`.
     ///
     @Internal
     pub def assignUniqueIdentifiersToPredSyms(rc: Region[r], d: Datalog): (Datalog, FixInformation) \ r =
@@ -86,6 +93,9 @@ mod Fixpoint3.Phase.RenamePredSyms {
     /// Maps `pred` back to its original `PredSym` according to `reversing`.
     ///
     def mapBack(reversing: FixInformation, pred: PredSym): PredSym = 
+        // The `id`s are assigned 0 to n for `n` `PredSym`s. They should
+        // be well within the range for `Int32`. Also no new `PredSym`s should
+        // have been created. There is no recovery for either.
         let PredSym(_, id) = pred;
         getOrCrash(Map.get(getOrCrash(Int64.tryToInt32(id)), reversing))
 
