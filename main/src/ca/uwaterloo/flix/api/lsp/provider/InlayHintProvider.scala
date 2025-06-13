@@ -15,33 +15,41 @@
  */
 
 package ca.uwaterloo.flix.api.lsp.provider
-import ca.uwaterloo.flix.api.lsp.acceptors.{FileAcceptor, AllAcceptor}
+import ca.uwaterloo.flix.api.lsp.acceptors.{FileAcceptor}
 import ca.uwaterloo.flix.language.ast.shared.SymUse
-import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Op, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
 import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range}
 import ca.uwaterloo.flix.api.lsp.Visitor
 
-
 object InlayHintProvider {
-  private val EnableEffectHints: Boolean = true
+  private val EnableEffectHints: Boolean = false
 
   def getInlayHints(uri: String, range: Range)(implicit root: Root): List[InlayHint] = {
     var inlayHints: List[InlayHint] = Nil
     if(EnableEffectHints) {
-      var opSymUses: Set[(SymUse.OpSymUse, SourceLocation)] = getOpSymUses(uri)
-      opSymUses.foreach { case (opSymUse, loc) => mkHintFromOpSymUse(opSymUse, loc) :: inlayHints }
+      var effects: Set[(String, Int, Int)] = (getOpSymUses(uri) ++ getDefSymUses(uri)).filter {
+        case (eff, _, _) =>
+          eff != "Pure"
+      }
+      var maxColWidth: Int = effects.map { case (_, _, col) => col }.maxOption.getOrElse(0)
+      var lineToEffectsMap: Map[Int, Set[String]] = Map.empty
+      effects.foreach { case (eff, line, col) =>
+        lineToEffectsMap = lineToEffectsMap.updated(line, lineToEffectsMap.getOrElse(line, Set.empty) + eff)
+      }
+      lineToEffectsMap.foreach { case (line, effects) =>
+        inlayHints ::= mkHintFromEffects(line, effects, maxColWidth + 1)
+      }
     }
     inlayHints
   }
 
-  def getOpSymUses(uri: String)(implicit root: Root): Set[(SymUse.OpSymUse, SourceLocation)] = {
-    var opSymUses: Set[(SymUse.OpSymUse, SourceLocation)] = Set.empty
+  def getOpSymUses(uri: String)(implicit root: Root): Set[(String, Int, Int)] = {
+    var opSymUses: Set[(String, Int, Int)] = Set.empty
     object opSymUseConsumer extends Consumer {
       override def consumeExpr(expr: Expr): Unit = {
         expr match {
           case Expr.Do(opSymUse, _, _, _, loc) =>
-            opSymUses += ((opSymUse, loc))
+            opSymUses += ((opSymUse.sym.eff.name, loc.endLine, loc.endCol))
           case _ => ()
         }
       }
@@ -50,13 +58,29 @@ object InlayHintProvider {
     opSymUses
   }
 
-  def mkHintFromOpSymUse(opSymUse: SymUse.OpSymUse, loc: SourceLocation): InlayHint = {
+  def getDefSymUses(uri: String)(implicit root: Root): Set[(String, Int, Int)] = {
+    var defSymUses: Set[(String, Int, Int)] = Set.empty
+    object defSymUseConsumer extends Consumer {
+      override def consumeExpr(expr: Expr): Unit = {
+        expr match {
+          case Expr.ApplyDef(_, _, _, _, eff, loc) =>
+            defSymUses += ((eff.toString, loc.endLine, loc.endCol))
+          case _ => ()
+        }
+      }
+    }
+    Visitor.visitRoot(root, defSymUseConsumer, FileAcceptor(uri))
+    defSymUses
+  }
+
+  def mkHintFromEffects(line: Int, effects: Set[String], col: Int): InlayHint = {
+    var effectString: String = effects.mkString(" + ")
     InlayHint(
-      position = Position(loc.endLine, loc.endCol + 1),
-      label = opSymUse.sym.eff.name,
+      position = Position(line, col),
+      label = s"{ $effectString }",
       kind = Some(InlayHintKind.Type),
       textEdits = List.empty,
-      tooltip = s"{ ${opSymUse.sym.eff.name} }",
+      tooltip = s"{ $effectString }",
       paddingLeft = true,
       paddingRight = true
     )
