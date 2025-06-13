@@ -21,28 +21,3 @@ import java.lang.{Process=> JProcess}
 ///
 enum ProcessHandle (JProcess)
 
-mod ProcessHandle {
-
-    ///
-    /// Returns the exit value of the process.
-    ///
-    pub def exitValue(ph: ProcessHandle): Int32 \ {Exec, IO} = match ph {
-        case ProcessHandle.ProcessHandle(jProc) => jProc.exitValue()
-    }
-
-    ///
-    ///  Returns status of the process, if it alive or not.
-    ///
-    pub def isAlive(ph: ProcessHandle): Bool \ {Exec, IO} = match ph {
-        case ProcessHandle.ProcessHandle(jProc) => jProc.isAlive()
-    }
-
-    ///
-    /// Stops the process.
-    ///
-    pub def stop(ph: ProcessHandle): Unit \ {Exec, IO} = match ph {
-        case ProcessHandle.ProcessHandle(jProc) => jProc.destroy()
-    }
-
-}
-
