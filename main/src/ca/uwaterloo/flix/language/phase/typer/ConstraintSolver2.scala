@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
+import ca.uwaterloo.flix.language.phase.typer.EffectProvenance
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.util.Result
@@ -31,6 +32,12 @@ import scala.annotation.tailrec
   * The result of constraint solving is a substitution and a list of constraints that could not be resolved.
   */
 object ConstraintSolver2 {
+
+  /**
+    * Whether to enable effect provenance debugging.
+    *
+    */
+  private val enableEffectProvenance: Boolean = false
 
   /**
     * A container for a constraint set and a substitution tree.
@@ -446,6 +453,11 @@ object ConstraintSolver2 {
     val (eqConstrs, rest0) = constrs0.partitionMap {
       case eq@TypeConstraint.Equality(tpe1, _, _) if tpe1.kind == Kind.Eff => Left(eq)
       case other => Right(other)
+    }
+
+    // Effect Provenance prototype
+    if (enableEffectProvenance) {
+      EffectProvenance.debug(eqConstrs)
     }
 
     // First solve all the top-level constraints together
