@@ -15,10 +15,39 @@
  */
 package ca.uwaterloo.flix.util.collection
 
+import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.util.InternalCompilerException
+
+import scala.annotation.tailrec
+
 /**
   * Operations on lists.
   */
 object ListOps {
+
+  /** An alternative to [[List.zip]] that crashed for different length lists. */
+  def zip[T1, T2](list1: List[T1], list2: List[T2]): List[(T1, T2)] = {
+    @tailrec
+    def loop(l1: List[T1], l2: List[T2], acc: List[(T1, T2)]): List[(T1, T2)] = (l1, l2) match {
+      case (x :: xs, y :: ys) => loop(xs, ys, (x, y) :: acc)
+      case (Nil, Nil) => acc.reverse
+      case _ => throw InternalCompilerException(s"Zipped lists of length ${list1.length} and ${list2.length}.", SourceLocation.Unknown)
+    }
+
+    loop(list1, list2, Nil)
+  }
+
+  /** An alternative to [[List.zip]] that crashed for different length lists. */
+  def zipOption[T1, T2](list1: List[T1], list2: List[T2]): Option[List[(T1, T2)]] = {
+    @tailrec
+    def loop(l1: List[T1], l2: List[T2], acc: List[(T1, T2)]): Option[List[(T1, T2)]] = (l1, l2) match {
+      case (x :: xs, y :: ys) => loop(xs, ys, (x, y) :: acc)
+      case (Nil, Nil) => Some(acc.reverse)
+      case _ => None
+    }
+
+    loop(list1, list2, Nil)
+  }
 
   /**
     * Unzips the given list of 4-tuples into 4 lists.

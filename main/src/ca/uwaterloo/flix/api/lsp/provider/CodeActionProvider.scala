@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol}
 import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.util.collection.ListOps
 
 /**
   * The CodeActionProvider offers quickfix suggestions.
