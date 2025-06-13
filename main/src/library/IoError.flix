@@ -37,6 +37,7 @@ mod IoError {
         case NotFile,
         case NotDirectory,
         case PermissionDenied,
+        case Timeout,
         case UnexpectedEof,
         case Unsupported,
         case UnknownHost,
