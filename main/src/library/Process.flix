@@ -51,7 +51,6 @@ mod Process {
 
     import java.lang.IllegalArgumentException
     import java.lang.IllegalThreadStateException
-    import java.lang.SecurityException
     import java.io.IOException
     import java.lang.ProcessBuilder
     import java.lang.Runtime
@@ -100,7 +99,6 @@ mod Process {
                     k(ProcessHandle.ProcessHandle(process))
                 } catch {
                     case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: SecurityException         => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
                     case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
@@ -112,7 +110,6 @@ mod Process {
                     }
                 } catch {
                     case ex: IllegalThreadStateException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: SecurityException            => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
                     case ex: IOException                  => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
@@ -122,7 +119,6 @@ mod Process {
                         case ProcessHandle.ProcessHandle(jProc) => k(jProc.isAlive())
                     }
                 } catch {
-                    case ex: SecurityException  => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
                     case ex: IOException        => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
@@ -132,7 +128,6 @@ mod Process {
                         case ProcessHandle.ProcessHandle(jProc) => k(jProc.destroy())
                     }
                 } catch {
-                    case ex: SecurityException  => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
                     case ex: IOException        => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
