@@ -556,14 +556,21 @@ object Stratifier {
     * Returns `true` if the two given labels `l1` and `l2` are considered equal.
     */
   private def labelEq(l1: Label, l2: Label)(implicit root: Root, flix: Flix): Boolean = {
-    val isEqPredicate = l1.pred == l2.pred
-    val isEqDenotation = l1.den == l2.den
-    val isEqArity = l1.arity == l2.arity
-    val isEqTermTypes = l1.terms.zip(l2.terms).forall {
+    l1.pred == l2.pred &&
+      l1.den == l2.den &&
+      l1.arity == l2.arity &&
+      unifiableTermTypes(l1, l2)
+  }
+
+  /**
+    * Returns `true` if `l1` and `l2` have unifiable term types.
+    *
+    * N.B.: The two must have the same number of terms.
+    */
+  private def unifiableTermTypes(l1: Label, l2: Label)(implicit root: Root, flix: Flix): Boolean = {
+    l1.terms.zip(l2.terms).forall {
       case (t1, t2) => ConstraintSolver2.fullyUnify(t1, t2, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix).isDefined // TODO ASSOC-TYPES empty right? // TODO LEVELS top OK?
     }
-
-    isEqPredicate && isEqDenotation && isEqArity && isEqTermTypes
   }
 
   /**
