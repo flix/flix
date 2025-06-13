@@ -200,6 +200,7 @@ class Flix {
 
     "IoError.flix" -> LocalResource.get("/src/library/IoError.flix"),
     "Reader.flix" -> LocalResource.get("/src/library/Reader.flix"),
+    "Writer.flix" -> LocalResource.get("/src/library/Writer.flix"),
 
     "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
 
