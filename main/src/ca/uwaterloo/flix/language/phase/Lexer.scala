@@ -420,6 +420,7 @@ object Lexer {
       case _ if isKeyword("unsafely") => TokenKind.KeywordUnsafely
       case _ if isKeyword("use") => TokenKind.KeywordUse
       case _ if isKeyword("where") => TokenKind.KeywordWhere
+      case _ if isKeyword("while") => TokenKind.KeywordWhile
       case _ if isKeyword("with") => TokenKind.KeywordWith
       case _ if isKeyword("without") => TokenKind.KeywordWithout
       case _ if isKeyword("yield") => TokenKind.KeywordYield

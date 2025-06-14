@@ -106,6 +106,13 @@ object DocAstFormatter {
           text("if") +: parens(condf) +:
             curlyOpen(thnf) +: text("else") +: curlyOpen(elsf)
         )
+      case While(cond, body) =>
+        val condf = aux(cond, paren = false, inBlock = true)
+        val bodyf = aux(body, paren = false, inBlock = true)
+        group(
+          text("while") +: parens(condf) +:
+            curlyOpen(bodyf)
+        )
       case Branch(d, branches) =>
         val branchHead = aux(d, paren = false, inBlock = true)
         val delimitedBranches = branches.toList.map { case (sym, dd) =>

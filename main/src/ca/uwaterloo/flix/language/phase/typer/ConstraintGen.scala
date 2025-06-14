@@ -354,6 +354,14 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff1, eff2, eff3, loc)
         (resTpe, resEff)
 
+      case Expr.While(exp1, exp2, loc) =>
+        val (tpe1, eff1) = visitExp(exp1)
+        val (_, eff2) = visitExp(exp2)
+        c.expectType(expected = Type.Bool, actual = tpe1, exp1.loc)
+        val resTpe = Type.mkUnit(loc)
+        val resEff = Type.mkUnion(eff1, eff2, loc)
+        (resTpe, resEff)
+
       case Expr.Stm(exp1, exp2, loc) =>
         val (_, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)

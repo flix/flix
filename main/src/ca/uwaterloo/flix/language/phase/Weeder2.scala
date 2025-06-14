@@ -863,6 +863,7 @@ object Weeder2 {
         case TreeKind.Expr.Unary => visitUnaryExpr(tree)
         case TreeKind.Expr.Binary => visitBinaryExpr(tree)
         case TreeKind.Expr.IfThenElse => visitIfThenElseExpr(tree)
+        case TreeKind.Expr.While => visitWhileExpr(tree)
         case TreeKind.Expr.Statement => visitStatementExpr(tree)
         case TreeKind.Expr.LocalDef => visitLocalDefExpr(tree)
         case TreeKind.Expr.Scope => visitScopeExpr(tree)
@@ -1295,6 +1296,14 @@ object Weeder2 {
           val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.KeywordElse)), actual = None, SyntacticContext.Expr.OtherExpr, hint = Some("the else-branch is required in Flix."), tree.loc)
           sctx.errors.add(error)
           Validation.Success(Expr.Error(error))
+      }
+    }
+
+    private def visitWhileExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.While)
+      mapN(traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)) {
+        case ex1 :: ex2 :: Nil => Expr.While(ex1, ex2, tree.loc)
+        case exprs => throw InternalCompilerException(s"Parser error. Expected 2 expressions in while but found '${exprs.length}'.", tree.loc)
       }
     }
 

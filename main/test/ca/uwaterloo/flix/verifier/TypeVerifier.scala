@@ -493,6 +493,12 @@ object TypeVerifier {
       checkEq(tpe, thenType, exp2.loc)
       checkEq(tpe, elseType, exp3.loc)
 
+    case Expr.While(exp1, exp2, tpe, _, loc) =>
+      val condType = visitExpr(exp1)
+      val _ = visitExpr(exp2)
+      check(expected = MonoType.Bool)(actual = condType, exp1.loc)
+      check(expected = MonoType.Unit)(actual = tpe, loc)
+
     case Expr.Branch(_, branches, tpe, _, loc) =>
       val lenv1 = branches.foldLeft(lenv) {
         case (acc, (label, _)) => acc + (label -> tpe)

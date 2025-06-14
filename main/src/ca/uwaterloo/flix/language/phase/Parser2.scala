@@ -1645,6 +1645,7 @@ object Parser2 {
              | TokenKind.KeywordForce
              | TokenKind.KeywordDiscard => unaryExpr()
         case TokenKind.KeywordIf => ifThenElseExpr()
+        case TokenKind.KeywordWhile => whileExpr()
         case TokenKind.KeywordLet => letMatchExpr()
         case TokenKind.Annotation | TokenKind.KeywordDef => localDefExpr()
         case TokenKind.KeywordRegion => scopeExpr()
@@ -1934,6 +1935,18 @@ object Parser2 {
         expression()
       }
       close(mark, TreeKind.Expr.IfThenElse)
+    }
+
+    private def whileExpr()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      assert(at(TokenKind.KeywordWhile))
+      val mark = open()
+      expect(TokenKind.KeywordWhile)
+      expect(TokenKind.ParenL)
+      expression()
+      expect(TokenKind.ParenR)
+      expression()
+      close(mark, TreeKind.Expr.While)
     }
 
     private def letMatchExpr()(implicit s: State): Mark.Closed = {

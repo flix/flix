@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, DefSymUse, LocalDefSymUse, SigSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.RedundancyError
@@ -440,6 +440,19 @@ object Redundancy {
       val us2 = visitExp(exp2, env0, rc)
       val us3 = visitExp(exp3, env0, rc)
       us1 ++ us2 ++ us3
+
+    case Expr.While(exp1, exp2, _, _, _) =>
+      val us1 = visitExp(exp1, env0, rc)
+      val us2 = visitExp(exp2, env0, rc)
+      val pureCondition = exp1 match {
+        case Expr.Cst(Constant.Bool(true), _, _) => Nil
+        case _ if exp1.eff == Type.Pure => List(PureWhileCondition(exp1.loc))
+        case _ => Nil
+      }
+      val uselessBody = if (isUselessExpression(exp2)) List(UselessExpression(exp2.tpe, exp2.loc))
+                        else if (isMustUse(exp2)(root) && !isHole(exp2)) List(UnusedMustUseValue(exp2.tpe, exp2.loc))
+                        else Nil
+      us1 ++ us2 ++ pureCondition ++ uselessBody
 
     case Expr.Stm(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)

@@ -171,6 +171,8 @@ object Eraser {
       ApplySelfTail(sym, actuals.map(visitExp), visitType(tpe), purity, loc)
     case IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), visitType(tpe), purity, loc)
+    case While(exp1, exp2, tpe, purity, loc) =>
+      While(visitExp(exp1), visitExp(exp2), visitType(tpe), purity, loc)
     case Branch(exp, branches, tpe, purity, loc) =>
       Branch(visitExp(exp), branches.map(visitBranch), visitType(tpe), purity, loc)
     case JumpTo(sym, tpe, purity, loc) =>

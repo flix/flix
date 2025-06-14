@@ -515,6 +515,11 @@ object Monomorpher {
       val e3 = specializeExp(exp3, env0, subst)
       MonoAst.Expr.IfThenElse(e1, e2, e3, subst(tpe), subst(eff), loc)
 
+    case LoweredAst.Expr.While(exp1, exp2, tpe, eff, loc) =>
+      val e1 = specializeExp(exp1, env0, subst)
+      val e2 = specializeExp(exp2, env0, subst)
+      MonoAst.Expr.While(e1, e2, subst(tpe), subst(eff), loc)
+
     case LoweredAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)

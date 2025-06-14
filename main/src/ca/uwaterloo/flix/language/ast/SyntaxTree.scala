@@ -372,6 +372,8 @@ object SyntaxTree {
 
       case object Use extends Expr
 
+      case object While extends Expr
+
       case object Without extends Expr
 
     }

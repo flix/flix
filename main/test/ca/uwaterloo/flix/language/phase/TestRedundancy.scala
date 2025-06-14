@@ -1551,6 +1551,41 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UselessExpression](result)
   }
 
+  test("UselessExpression.04") {
+    val input =
+      s"""
+         |def f(): Unit =
+         |    while (true) { 42 }
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UselessExpression](result)
+  }
+
+  test("PureWhileCondition.01") {
+    val input =
+      s"""
+         |import java.lang.Boolean
+         |def f(): Unit \\ IO = region rc {
+         |    while (0 < 1) { Boolean.valueOf("true") }
+         |}
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UselessExpression](result)
+  }
+
+  test("PureWhileCondition.02") {
+    val input =
+      s"""
+         |import java.lang.Boolean
+         |def f(): Unit \\ IO = region rc {
+         |    let c = Boolean.valueOf("true");
+         |    while (c) { Boolean.valueOf("true") }
+         |}
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UselessExpression](result)
+  }
+
   test("UnderAppliedFunction.01") {
     val input =
       s"""
@@ -1902,6 +1937,22 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
       """
         |def f(): Int32 \ IO =
         |    unchecked_cast((x -> x + 123) as _ \ IO);
+        |    123
+        |
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.UnusedMustUseValue](result)
+  }
+
+  test("MustUse.03") {
+    val input =
+      """
+        |import java.lang.Boolean
+        |def f(): Int32 \ IO =
+        |    while (true) {
+        |        if (Boolean.valueOf("true")) x -> x else x -> x + 1
+        |    };
         |    123
         |
         |""".stripMargin
