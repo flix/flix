@@ -1115,6 +1115,15 @@ object Kinder {
           Type.freshError(Kind.Error, loc)
       }
 
+    case UnkindedType.Effect(sym, loc) =>
+      val kind = getEffectKind(root.effects(sym))
+      unify(kind, expectedKind) match {
+        case Some(k) => Type.Cst(TypeConstructor.Effect(sym, k), loc)
+        case None =>
+          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          Type.freshError(Kind.Error, loc)
+      }
+
     case UnkindedType.Struct(sym, loc) =>
       val kind = getStructKind(root.structs(sym))
       unify(kind, expectedKind) match {
@@ -1429,6 +1438,13 @@ object Kinder {
 
     case UnkindedType.Enum(sym, _) =>
       val tyconKind = getEnumKind(root.enums(sym))
+      val args = Kind.kindArgs(tyconKind)
+      tpe.typeArguments.zip(args).foldLeft(KindEnv.empty) {
+        case (acc, (targ, kind)) => acc ++ inferType(targ, kind, kenv0, taenv, root)
+      }
+
+    case UnkindedType.Effect(sym, _) =>
+      val tyconKind = getEffectKind(root.effects(sym))
       val args = Kind.kindArgs(tyconKind)
       tpe.typeArguments.zip(args).foldLeft(KindEnv.empty) {
         case (acc, (targ, kind)) => acc ++ inferType(targ, kind, kenv0, taenv, root)

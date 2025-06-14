@@ -264,6 +264,7 @@ object Resolver {
     case UnkindedType.CaseUnion(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case UnkindedType.CaseIntersection(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case _: UnkindedType.Enum => Nil
+    case _: UnkindedType.Effect => Nil
     case _: UnkindedType.Struct => Nil
     case _: UnkindedType.RestrictableEnum => Nil
     case _: UnkindedType.Error => Nil
@@ -2729,6 +2730,11 @@ object Resolver {
         }
 
       case _: UnkindedType.Enum =>
+        mapN(traverse(targs)(finishResolveType(_, taenv))) {
+          resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
+        }
+
+      case _: UnkindedType.Effect=>
         mapN(traverse(targs)(finishResolveType(_, taenv))) {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
         }
