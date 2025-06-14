@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.{SourceLocation,Name}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -82,8 +82,6 @@ object NameError {
     def loc: SourceLocation = loc1
   }
 
-
-
   /**
     * An error raised to indicate that the given `name` is defined multiple time.
     *
@@ -111,19 +109,20 @@ object NameError {
   /**
     * An error raised to indicate that the given `name` is a reserved name
     *
-    * @param name The name of the builtin.
-    * @param loc The location of the redefinition.
+    * @param name The reserved name with location
     */
-  case class IllegalReservedName(name: String, loc : SourceLocation) extends NameError {
-    def summary: String = s"'$name' is a reserved name and should not be overriden."
+  case class IllegalReservedName(name: Name.Ident) extends NameError {
+    def summary: String = s"Redefinition of a reserved name: ${name.name}"
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Overriding of reserved name '${red(name)}'.
+      s""">> Redefinition of a reserved name: ${name.name}
          |
-         |${code(loc, "Redefined here.")}
+         |${code(name.loc, "illegal name")}
          |""".stripMargin
     }
+
+    def loc: SourceLocation = name.loc
   }
 
   /**
