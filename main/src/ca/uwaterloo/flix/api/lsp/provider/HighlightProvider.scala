@@ -271,7 +271,7 @@ object HighlightProvider {
       case SymUse.DefSymUse(sym, _) => Some(getDefnSymOccurs(sym))
       // Effects
       case TypedAst.Effect(_, _, _, sym, _, _) => Some(getEffectSymOccurs(sym))
-      case Type.Cst(TypeConstructor.Effect(sym), _) => Some(getEffectSymOccurs(sym))
+      case Type.Cst(TypeConstructor.Effect(sym, _), _) => Some(getEffectSymOccurs(sym))
       case SymUse.EffectSymUse(sym, _) => Some(getEffectSymOccurs(sym))
       // Enums & Cases
       case TypedAst.Enum(_, _, _, sym, _, _, _, _) => Some(getEnumSymOccurs(sym))
