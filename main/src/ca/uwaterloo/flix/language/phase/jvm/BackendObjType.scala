@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.{ReducedAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkClassName
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.*
+import ca.uwaterloo.flix.language.phase.jvm.ClassFileMigration.CodeBuilder
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
@@ -215,7 +216,7 @@ object BackendObjType {
           PUTFIELD(ValueField)
           // this.exp = null
           thisLoad()
-          pushNull()
+          mv.aconst_null()
           PUTFIELD(ExpField)
         }
         thisLoad()
@@ -1324,7 +1325,7 @@ object BackendObjType {
       INVOKESTATIC(Thread.CurrentThreadMethod)
       PUTFIELD(RegionThreadField)
       thisLoad()
-      ACONST_NULL()
+      mv.aconst_null()
       PUTFIELD(ChildExceptionField)
       thisLoad()
       NEW(JvmName.LinkedList)

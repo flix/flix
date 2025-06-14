@@ -133,8 +133,6 @@ object BytecodeInstructions {
   // ~~~~~~~~~~~~~~~~~~~~~~~~ Direct JVM Instructions ~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
-  def ACONST_NULL()(implicit mv: MethodVisitor): Unit = mv.visitInstruction(Opcodes.ACONST_NULL)
-
   def ALOAD(index: Int)(implicit mv: MethodVisitor): Unit = mv.visitVarInstruction(Opcodes.ALOAD, index)
 
   def ANEWARRAY(className: JvmName)(implicit mv: MethodVisitor): Unit = mv.visitTypeInstruction(Opcodes.ANEWARRAY, className)
@@ -406,9 +404,6 @@ object BytecodeInstructions {
 
   def pushBool(b: Boolean)(implicit mv: MethodVisitor): Unit =
     if (b) ICONST_1() else ICONST_0()
-
-  def pushNull()(implicit mv: MethodVisitor): Unit =
-    ACONST_NULL()
 
   def pushString(s: String)(implicit mv: MethodVisitor): Unit =
     mv.visitLoadConstantInstruction(s)
