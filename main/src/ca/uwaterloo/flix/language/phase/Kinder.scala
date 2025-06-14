@@ -1551,6 +1551,17 @@ object Kinder {
   }
 
   /**
+    * Gets the kind of the effect.
+    */
+  private def getEffectKind(eff0: ResolvedAst.Declaration.Effect): Kind = eff0 match {
+    case ResolvedAst.Declaration.Effect(_, _, _, _, tparams, _ ,_) =>
+      val kenv = getKindEnvFromTypeParams(tparams)
+      tparams.foldRight(Kind.Eff: Kind) {
+        case (tparam, acc) => kenv.map(tparam.sym) ->: acc
+      }
+  }
+
+  /**
     * Gets the kind of the struct.
     */
   private def getStructKind(struct0: ResolvedAst.Declaration.Struct): Kind = struct0 match {
