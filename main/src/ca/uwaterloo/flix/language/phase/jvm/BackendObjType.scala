@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.{IsVolatile, NotVolatile}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, JavaLangInvoke, JavaUtil, JavaUtilConcurrent, MethodDescriptor, RootPackage}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, MethodDescriptor, RootPackage}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.{MethodVisitor, Opcodes}
 
@@ -126,9 +126,9 @@ object BackendObjType {
       val cm = mkClass(this.jvmName, IsFinal)
 
       cm.mkStaticConstructor(StaticConstructorMethod(this.jvmName), singletonStaticConstructor(Constructor, SingletonField)(_))
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassMaker.Object.Constructor)(_))
+      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
       cm.mkField(SingletonField, IsPublic, IsFinal, NotVolatile)
-      cm.mkMethod(ClassMaker.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
+      cm.mkMethod(ClassConstants.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
 
       cm.closeClassMaker()
     }
@@ -172,7 +172,7 @@ object BackendObjType {
       withName(1, BackendType.Object)(exp => {
         // super()
         thisLoad()
-        INVOKESPECIAL(ClassMaker.Object.Constructor)
+        INVOKESPECIAL(ClassConstants.Object.Constructor)
         // this.exp = exp
         thisLoad()
         exp.load()
@@ -181,7 +181,7 @@ object BackendObjType {
         thisLoad()
         NEW(JvmName.ReentrantLock)
         DUP()
-        INVOKESPECIAL(ReentrantLock.Constructor)
+        INVOKESPECIAL(ClassConstants.ReentrantLock.Constructor)
         PUTFIELD(LockField)
         // return
         RETURN()
@@ -194,12 +194,12 @@ object BackendObjType {
       def unlockLock(): Unit = {
         thisLoad()
         GETFIELD(LockField)
-        INVOKEVIRTUAL(ReentrantLock.UnlockMethod)
+        INVOKEVIRTUAL(ClassConstants.ReentrantLock.UnlockMethod)
       }
 
       thisLoad()
       GETFIELD(LockField)
-      INVOKEVIRTUAL(ReentrantLock.LockInterruptiblyMethod)
+      INVOKEVIRTUAL(ClassConstants.ReentrantLock.LockInterruptiblyMethod)
       tryCatch {
         thisLoad()
         GETFIELD(ExpField)
@@ -237,7 +237,7 @@ object BackendObjType {
 
       elms.indices.foreach(i => cm.mkField(IndexField(i), IsPublic, NotFinal, NotVolatile))
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-      cm.mkMethod(ClassMaker.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
+      cm.mkMethod(ClassConstants.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
 
       cm.closeClassMaker()
     }
@@ -252,7 +252,7 @@ object BackendObjType {
         thisLoad()
         // super()
         DUP()
-        INVOKESPECIAL(ClassMaker.Object.Constructor)
+        INVOKESPECIAL(ClassConstants.Object.Constructor)
         // this.field$i = var$j
         for ((elm, i) <- variables.zipWithIndex) {
           DUP()
@@ -285,7 +285,7 @@ object BackendObjType {
 
       elms.indices.foreach(i => cm.mkField(IndexField(i), IsPublic, NotFinal, NotVolatile))
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-      cm.mkMethod(ClassMaker.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
+      cm.mkMethod(ClassConstants.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
 
       cm.closeClassMaker()
     }
@@ -299,7 +299,7 @@ object BackendObjType {
         thisLoad()
         // super()
         DUP()
-        INVOKESPECIAL(ClassMaker.Object.Constructor)
+        INVOKESPECIAL(ClassConstants.Object.Constructor)
         // this.field$i = var$j
         // fields are numbered consecutively while variables skip indices based
         // on their stack size
@@ -332,7 +332,7 @@ object BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkAbstractClass(this.jvmName)
 
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassMaker.Object.Constructor)(_))
+      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
 
       cm.mkField(NameField, IsPublic, NotFinal, NotVolatile)
 
@@ -364,7 +364,7 @@ object BackendObjType {
       cm.mkStaticConstructor(StaticConstructorMethod(this.jvmName), singletonStaticConstructor(Constructor, SingletonField)(_))
       cm.mkField(SingletonField, IsPublic, IsFinal, NotVolatile)
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-      cm.mkMethod(ClassMaker.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
+      cm.mkMethod(ClassConstants.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
 
       cm.closeClassMaker()
     }
@@ -398,7 +398,7 @@ object BackendObjType {
 
       cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(Tagged.Constructor)(_))
       elms.indices.foreach(i => cm.mkField(IndexField(i), IsPublic, NotFinal, NotVolatile))
-      cm.mkMethod(ClassMaker.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
+      cm.mkMethod(ClassConstants.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
 
       cm.closeClassMaker()
     }
@@ -415,7 +415,7 @@ object BackendObjType {
         thisLoad()
         GETFIELD(NameField)
         pushString("(")
-        INVOKEVIRTUAL(String.Concat)
+        INVOKEVIRTUAL(ClassConstants.String.Concat)
       }), Some(_ => pushString(")")), elms.length, getIndexString)
       xReturn(BackendType.String)
     }
@@ -700,10 +700,10 @@ object BackendObjType {
 
       val cm = ClassMaker.mkAbstractClass(this.jvmName, superClass = JvmName.Object, interfaces)
 
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassMaker.Object.Constructor)(_))
+      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
       args.indices.foreach(argIndex => cm.mkField(ArgField(argIndex), IsPublic, NotFinal, NotVolatile))
       specializedInterface.foreach(i => cm.mkMethod(i.functionMethod, IsPublic, NotFinal, i.functionIns(_)))
-      cm.mkMethod(ClassMaker.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
+      cm.mkMethod(ClassConstants.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
 
       cm.closeClassMaker()
     }
@@ -730,11 +730,11 @@ object BackendObjType {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, interfaces = List(this.interface.jvmName))
 
       cm.mkStaticConstructor(StaticConstructorMethod(this.jvmName), singletonStaticConstructor(Constructor, SingletonField)(_))
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassMaker.Object.Constructor)(_))
+      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
       cm.mkField(SingletonField, IsPublic, IsFinal, NotVolatile)
       cm.mkMethod(LookupFieldMethod, IsPublic, IsFinal, throwUnsupportedExc(_))
       cm.mkMethod(RestrictFieldMethod, IsPublic, IsFinal, throwUnsupportedExc(_))
-      cm.mkMethod(ClassMaker.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
+      cm.mkMethod(ClassConstants.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
       cm.mkMethod(ToTailStringMethod, IsPublic, IsFinal, toTailStringIns(_))
 
       cm.closeClassMaker()
@@ -761,8 +761,8 @@ object BackendObjType {
       withName(1, JvmName.StringBuilder.toTpe) { sb =>
         sb.load()
         pushString("}")
-        INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
-        INVOKEVIRTUAL(ClassMaker.Object.ToStringMethod)
+        INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
+        INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
         ARETURN()
       }
     }
@@ -777,13 +777,13 @@ object BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, interfaces = List(Record.jvmName))
 
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassMaker.Object.Constructor)(_))
+      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
       cm.mkField(LabelField, IsPublic, NotFinal, NotVolatile)
       cm.mkField(ValueField, IsPublic, NotFinal, NotVolatile)
       cm.mkField(RestField, IsPublic, NotFinal, NotVolatile)
       cm.mkMethod(Record.LookupFieldMethod.implementation(this.jvmName), IsPublic, IsFinal, lookupFieldIns(_))
       cm.mkMethod(RestrictFieldMethod, IsPublic, IsFinal, restrictFieldIns(_))
-      cm.mkMethod(ClassMaker.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
+      cm.mkMethod(ClassConstants.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
       cm.mkMethod(Record.ToTailStringMethod.implementation(this.jvmName), IsPublic, IsFinal, toTailStringIns(_))
 
       cm.closeClassMaker()
@@ -848,18 +848,18 @@ object BackendObjType {
       // build this segment of the string
       NEW(JvmName.StringBuilder)
       DUP()
-      INVOKESPECIAL(StringBuilder.Constructor)
+      INVOKESPECIAL(ClassConstants.StringBuilder.Constructor)
       pushString("{")
-      INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
       thisLoad()
       GETFIELD(this.LabelField)
-      INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
       pushString(" = ")
-      INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
       thisLoad()
       GETFIELD(this.ValueField)
       xToString(this.ValueField.tpe)
-      INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
       INVOKEINTERFACE(Record.ToTailStringMethod)
       ARETURN()
     }
@@ -872,16 +872,16 @@ object BackendObjType {
         // build this segment of the string
         sb.load()
         pushString(", ")
-        INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+        INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
         thisLoad()
         GETFIELD(this.LabelField)
-        INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+        INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
         pushString(" = ")
-        INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+        INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
         thisLoad()
         GETFIELD(this.ValueField)
         xToString(this.ValueField.tpe)
-        INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+        INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
         // call the tailString of `rest`
         INVOKEINTERFACE(Record.ToTailStringMethod)
         ARETURN()
@@ -896,7 +896,7 @@ object BackendObjType {
       thisLoad()
       GETFIELD(LabelField)
       ALOAD(1)
-      INVOKEVIRTUAL(ClassMaker.Object.EqualsMethod)
+      INVOKEVIRTUAL(ClassConstants.Object.EqualsMethod)
       branch(Condition.Bool)(cases)
     }
   }
@@ -952,7 +952,7 @@ object BackendObjType {
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
-      INVOKESPECIAL(ClassMaker.Object.Constructor)
+      INVOKESPECIAL(ClassConstants.Object.Constructor)
       thisLoad()
       ALOAD(1)
       PUTFIELD(SourceField)
@@ -986,29 +986,29 @@ object BackendObjType {
     private def EndColField: InstanceField =
       InstanceField(this.jvmName, "endCol", BackendType.Int32)
 
-    private def ToStringMethod: InstanceMethod = ClassMaker.Object.ToStringMethod.implementation(this.jvmName)
+    private def ToStringMethod: InstanceMethod = ClassConstants.Object.ToStringMethod.implementation(this.jvmName)
 
     private def toStringIns(implicit mv: MethodVisitor): Unit = {
       // create string builder
       NEW(JvmName.StringBuilder)
       DUP()
-      INVOKESPECIAL(StringBuilder.Constructor)
+      INVOKESPECIAL(ClassConstants.StringBuilder.Constructor)
       // build string
       thisLoad()
       GETFIELD(SourceField)
-      INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
       pushString(":")
-      INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
       thisLoad()
       GETFIELD(BeginLineField)
-      INVOKEVIRTUAL(StringBuilder.AppendInt32Method)
+      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendInt32Method)
       pushString(":")
-      INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
       thisLoad()
       GETFIELD(BeginColField)
-      INVOKEVIRTUAL(StringBuilder.AppendInt32Method)
+      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendInt32Method)
       // create the string
-      INVOKEVIRTUAL(ClassMaker.Object.ToStringMethod)
+      INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
       ARETURN()
     }
   }
@@ -1017,7 +1017,7 @@ object BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
 
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassMaker.Object.Constructor)(_))
+      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
       cm.mkStaticConstructor(StaticConstructorMethod(this.jvmName), staticConstructorIns(_))
 
       cm.mkField(CounterField, IsPrivate, IsFinal, NotVolatile)
@@ -1127,18 +1127,18 @@ object BackendObjType {
           // create an error msg
           NEW(JvmName.StringBuilder)
           DUP()
-          INVOKESPECIAL(StringBuilder.Constructor)
+          INVOKESPECIAL(ClassConstants.StringBuilder.Constructor)
           pushString("Hole '")
-          INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+          INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
           hole.load()
-          INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+          INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
           pushString("' at ")
-          INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+          INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
           loc.load()
-          INVOKEVIRTUAL(ClassMaker.Object.ToStringMethod)
-          INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
-          INVOKEVIRTUAL(ClassMaker.Object.ToStringMethod)
-          INVOKESPECIAL(FlixError.Constructor)
+          INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
+          INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
+          INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
+          INVOKESPECIAL(ClassConstants.FlixError.Constructor)
           // save the arguments locally
           thisLoad()
           hole.load()
@@ -1172,14 +1172,14 @@ object BackendObjType {
       thisLoad()
       NEW(JvmName.StringBuilder)
       DUP()
-      INVOKESPECIAL(StringBuilder.Constructor)
+      INVOKESPECIAL(ClassConstants.StringBuilder.Constructor)
       pushString("Non-exhaustive match at ")
-      INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
       ALOAD(1)
-      INVOKEVIRTUAL(ClassMaker.Object.ToStringMethod)
-      INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
-      INVOKEVIRTUAL(ClassMaker.Object.ToStringMethod)
-      INVOKESPECIAL(FlixError.Constructor)
+      INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
+      INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
+      INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
+      INVOKESPECIAL(ClassConstants.FlixError.Constructor)
       // save argument locally
       thisLoad()
       ALOAD(1)
@@ -1205,16 +1205,16 @@ object BackendObjType {
         thisLoad()
         NEW(JvmName.StringBuilder)
         DUP()
-        INVOKESPECIAL(StringBuilder.Constructor)
+        INVOKESPECIAL(ClassConstants.StringBuilder.Constructor)
         msg.load()
-        INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+        INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
         pushString(" at ")
-        INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+        INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
         loc.load()
-        INVOKEVIRTUAL(ClassMaker.Object.ToStringMethod)
-        INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
-        INVOKEVIRTUAL(ClassMaker.Object.ToStringMethod)
-        INVOKESPECIAL(FlixError.Constructor)
+        INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
+        INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
+        INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
+        INVOKESPECIAL(ClassConstants.FlixError.Constructor)
         RETURN()
       }))
     }
@@ -1241,12 +1241,12 @@ object BackendObjType {
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       withName(1, Suspension.toTpe)(suspension => withName(2, BackendType.String)(info => withName(3, ReifiedSourceLocation.toTpe)(loc => {
-        def appendString(): Unit = INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+        def appendString(): Unit = INVOKEVIRTUAL(ClassConstants.StringBuilder.AppendStringMethod)
 
         thisLoad()
         NEW(JvmName.StringBuilder)
         DUP()
-        INVOKESPECIAL(StringBuilder.Constructor)
+        INVOKESPECIAL(ClassConstants.StringBuilder.Constructor)
         pushString("Unhandled effect '")
         appendString()
         suspension.load()
@@ -1259,10 +1259,10 @@ object BackendObjType {
         pushString(") at ")
         appendString()
         loc.load()
-        INVOKEVIRTUAL(ClassMaker.Object.ToStringMethod)
+        INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
         appendString()
-        INVOKEVIRTUAL(ClassMaker.Object.ToStringMethod)
-        INVOKESPECIAL(FlixError.Constructor)
+        INVOKEVIRTUAL(ClassConstants.Object.ToStringMethod)
+        INVOKESPECIAL(ClassConstants.FlixError.Constructor)
         // save arguments locally
         thisLoad()
         suspension.load()
@@ -1314,14 +1314,14 @@ object BackendObjType {
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
-      INVOKESPECIAL(ClassMaker.Object.Constructor)
+      INVOKESPECIAL(ClassConstants.Object.Constructor)
       thisLoad()
       NEW(JvmName.ConcurrentLinkedQueue)
       DUP()
       invokeConstructor(JvmName.ConcurrentLinkedQueue, MethodDescriptor.NothingToVoid)
       PUTFIELD(ThreadsField)
       thisLoad()
-      INVOKESTATIC(Thread.CurrentThreadMethod)
+      INVOKESTATIC(ClassConstants.Thread.CurrentThreadMethod)
       PUTFIELD(RegionThreadField)
       thisLoad()
       ACONST_NULL()
@@ -1343,22 +1343,22 @@ object BackendObjType {
     def SpawnMethod: InstanceMethod = InstanceMethod(this.jvmName, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void))
 
     private def spawnIns(implicit mv: MethodVisitor): Unit = {
-      INVOKESTATIC(Thread.OfVirtualMethod)
+      INVOKESTATIC(ClassConstants.Thread.OfVirtualMethod)
       ALOAD(1)
-      INVOKEINTERFACE(ThreadBuilderOfVirtual.UnstartedMethod)
+      INVOKEINTERFACE(ClassConstants.ThreadBuilderOfVirtual.UnstartedMethod)
       storeWithName(2, JvmName.Thread.toTpe) { thread =>
         thread.load()
         NEW(BackendObjType.UncaughtExceptionHandler.jvmName)
         DUP()
         thisLoad()
         invokeConstructor(BackendObjType.UncaughtExceptionHandler.jvmName, mkDescriptor(BackendObjType.Region.toTpe)(VoidableType.Void))
-        INVOKEVIRTUAL(Thread.SetUncaughtExceptionHandlerMethod)
+        INVOKEVIRTUAL(ClassConstants.Thread.SetUncaughtExceptionHandlerMethod)
         thread.load()
-        INVOKEVIRTUAL(Thread.StartMethod)
+        INVOKEVIRTUAL(ClassConstants.Thread.StartMethod)
         thisLoad()
         GETFIELD(ThreadsField)
         thread.load()
-        INVOKEVIRTUAL(ConcurrentLinkedQueue.AddMethod)
+        INVOKEVIRTUAL(ClassConstants.ConcurrentLinkedQueue.AddMethod)
         POP()
         RETURN()
       }
@@ -1378,27 +1378,27 @@ object BackendObjType {
         whileLoop(Condition.NONNULL) {
           thisLoad()
           GETFIELD(ThreadsField)
-          INVOKEVIRTUAL(ConcurrentLinkedQueue.PollMethod)
+          INVOKEVIRTUAL(ClassConstants.ConcurrentLinkedQueue.PollMethod)
           CHECKCAST(JvmName.Thread)
           DUP()
           t.store()
         } {
           t.load()
-          INVOKEVIRTUAL(Thread.JoinMethod)
+          INVOKEVIRTUAL(ClassConstants.Thread.JoinMethod)
         }
         withName(2, JvmName.Iterator.toTpe) { i =>
           thisLoad()
           GETFIELD(OnExitField)
-          INVOKEVIRTUAL(LinkedList.IteratorMethod)
+          INVOKEVIRTUAL(ClassConstants.LinkedList.IteratorMethod)
           i.store()
           whileLoop(Condition.NE) {
             i.load()
-            INVOKEINTERFACE(Iterator.HasNextMethod)
+            INVOKEINTERFACE(ClassConstants.Iterator.HasNextMethod)
           } {
             i.load()
-            INVOKEINTERFACE(Iterator.NextMethod)
+            INVOKEINTERFACE(ClassConstants.Iterator.NextMethod)
             CHECKCAST(JvmName.Runnable)
-            INVOKEINTERFACE(Runnable.RunMethod)
+            INVOKEINTERFACE(ClassConstants.Runnable.RunMethod)
           }
         }
         RETURN()
@@ -1417,7 +1417,7 @@ object BackendObjType {
       PUTFIELD(ChildExceptionField)
       thisLoad()
       GETFIELD(RegionThreadField)
-      INVOKEVIRTUAL(Thread.InterruptMethod)
+      INVOKEVIRTUAL(ClassConstants.Thread.InterruptMethod)
       RETURN()
     }
 
@@ -1447,7 +1447,7 @@ object BackendObjType {
       thisLoad()
       GETFIELD(OnExitField)
       ALOAD(1)
-      INVOKEVIRTUAL(LinkedList.AddFirstMethod)
+      INVOKEVIRTUAL(ClassConstants.LinkedList.AddFirstMethod)
       RETURN()
     }
   }
@@ -1472,7 +1472,7 @@ object BackendObjType {
 
     private def constructorIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
-      INVOKESPECIAL(ClassMaker.Object.Constructor)
+      INVOKESPECIAL(ClassConstants.Object.Constructor)
       thisLoad()
       ALOAD(1)
       PUTFIELD(RegionField)
@@ -1480,7 +1480,8 @@ object BackendObjType {
     }
 
     // public void uncaughtException(Thread t, Throwable e) { r.reportChildException(e); }
-    private def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, "uncaughtException", ThreadUncaughtExceptionHandler.UncaughtExceptionMethod.d)
+    private def UncaughtExceptionMethod: InstanceMethod =
+      InstanceMethod(this.jvmName, "uncaughtException", ClassConstants.ThreadUncaughtExceptionHandler.UncaughtExceptionMethod.d)
 
     private def uncaughtExceptionsIns(implicit mv: MethodVisitor): Unit = {
       thisLoad()
@@ -1526,7 +1527,7 @@ object BackendObjType {
     def genByteCode(defs: List[ReducedAst.Def])(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
 
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassMaker.Object.Constructor)(_))
+      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
 
       for (defn <- defs) {
         cm.mkStaticMethod(ShimMethod(defn), IsPublic, IsFinal, shimIns(defn)(_))
@@ -1698,7 +1699,7 @@ object BackendObjType {
       val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Result.jvmName))
 
       // The fields of all erased types, only one will be relevant
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassMaker.Object.Constructor)(_))
+      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
       cm.mkField(BoolField, IsPublic, NotFinal, NotVolatile)
       cm.mkField(CharField, IsPublic, NotFinal, NotVolatile)
       cm.mkField(Int8Field, IsPublic, NotFinal, NotVolatile)
@@ -1811,7 +1812,7 @@ object BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Result.jvmName))
 
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassMaker.Object.Constructor)(_))
+      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
       cm.mkField(EffSymField, IsPublic, NotFinal, NotVolatile)
       cm.mkField(EffOpField, IsPublic, NotFinal, NotVolatile)
       cm.mkField(PrefixField, IsPublic, NotFinal, NotVolatile)
@@ -1870,7 +1871,7 @@ object BackendObjType {
 
       cm.mkField(HeadField, IsPublic, NotFinal, NotVolatile)
       cm.mkField(TailField, IsPublic, NotFinal, NotVolatile)
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassMaker.Object.Constructor)(_))
+      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
       cm.mkMethod(PushMethod, IsPublic, IsFinal, Frames.pushImplementation(_))
       cm.mkMethod(Frames.ReverseOntoMethod.implementation(this.jvmName), IsPublic, IsFinal, reverseOntoIns(_))
 
@@ -1910,7 +1911,7 @@ object BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Frames.jvmName))
 
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassMaker.Object.Constructor)(_))
+      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
       cm.mkMethod(PushMethod, IsPublic, IsFinal, Frames.pushImplementation(_))
       cm.mkMethod(Frames.ReverseOntoMethod.implementation(this.jvmName), IsPublic, IsFinal, reverseOntoIns(_))
 
@@ -1958,7 +1959,7 @@ object BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Resumption.jvmName))
 
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassMaker.Object.Constructor)(_))
+      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
 
       cm.mkField(SymField, IsPublic, NotFinal, NotVolatile)
       cm.mkField(HandlerField, IsPublic, NotFinal, NotVolatile)
@@ -2004,7 +2005,7 @@ object BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Resumption.jvmName))
 
-      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassMaker.Object.Constructor)(_))
+      cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
       cm.mkMethod(Resumption.RewindMethod.implementation(this.jvmName), IsPublic, IsFinal, rewindIns(_))
 
       cm.closeClassMaker()
@@ -2073,7 +2074,7 @@ object BackendObjType {
                     s.load()
                     GETFIELD(Suspension.EffSymField)
                     effSym.load()
-                    INVOKEVIRTUAL(ClassMaker.Object.EqualsMethod)
+                    INVOKEVIRTUAL(ClassConstants.Object.EqualsMethod)
                     ifCondition(Condition.NE) {
                       s.load()
                       GETFIELD(Suspension.EffOpField)
