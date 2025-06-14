@@ -85,6 +85,7 @@ sealed trait UnkindedType {
     case UnkindedType.Var(sym, _) => SortedSet(sym)
     case UnkindedType.Cst(_, _) => SortedSet.empty
     case UnkindedType.Enum(_, _) => SortedSet.empty
+    case UnkindedType.Effect(_, _) => SortedSet.empty
     case UnkindedType.Struct(_, _) => SortedSet.empty
     case UnkindedType.RestrictableEnum(_, _) => SortedSet.empty
     case UnkindedType.UnappliedAlias(_, _) => SortedSet.empty
