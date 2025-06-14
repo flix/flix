@@ -30,6 +30,7 @@ mod Fixpoint.Solver {
     use Fixpoint.Boxable.{box, unbox}
     use Fixpoint.Boxed
     use Fixpoint.Interpreter.Database
+    use Fixpoint3.Ast.Ram.RelSym
 
     ///
     /// Returns the minimal model of the given Datalog program `d`.
@@ -59,7 +60,8 @@ mod Fixpoint.Solver {
                 compiler(d) |> Fixpoint.Interpreter.interpret(rc) |> toModel
             }
             case Model(_) => d
-            case Join(Model(m), cs) => region rc {
+            case Join(Model(m_), cs) => region rc {
+                let m = Map.foldRightWithKey(match RelSym.Symbol(pred, arr, den) -> v -> Map.insert(RamSym.Full(pred, arr, den), v), Map#{}, m_);
                 let db = Map.map(Map.toMutMap(rc), m) |> Map.toMutMap(rc);
                 compiler(cs) |> Fixpoint.Interpreter.interpretWithDatabase(rc, db) |> toModel
             }
@@ -79,7 +81,7 @@ mod Fixpoint.Solver {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
             Datalog(Vector.append(edb1, edb2), Vector.append(idb1, idb2))
         case (Model(db1), Model(db2)) =>
-            use Fixpoint.Ast.Ram.toDenotation;
+            use Fixpoint3.Ast.Ram.toDenotation;
             let union = ramSym -> match toDenotation(ramSym) {
                 case Relational => Map.union
                 case Latticenal(_, _, lub, _) => Map.unionWith(lub)
@@ -104,7 +106,7 @@ mod Fixpoint.Solver {
             Datalog(pFacts, Vector.empty())
         case Model(db) =>
             Map.rangeQuery(ramSym -> match ramSym {
-                case RamSym.Full(predSym, _, _) => match predSym <=> p {
+                case RelSym.Symbol(predSym, _, _) => match predSym <=> p {
                     case Comparison.EqualTo => Comparison.EqualTo
                     case cmp => cmp
                 }
@@ -710,10 +712,10 @@ mod Fixpoint.Solver {
             pFacts |> MutList.toVector
         }
         case Model(db) => region rc {
-            use Fixpoint.Ast.Ram.toDenotation;
+            use Fixpoint3.Ast.Ram.toDenotation;
             let pFacts = MutList.empty(rc);
             let qquery = ramSym -> match ramSym {
-                case RamSym.Full(predSym, _, _) => match predSym <=> p {
+                case RelSym.Symbol(predSym, _, _) => match predSym <=> p {
                     case Comparison.EqualTo => Comparison.EqualTo
                     case cmp => cmp
                 }
@@ -753,7 +755,11 @@ mod Fixpoint.Solver {
     /// Returns the given database `db` as a Datalog value.
     ///
     def toModel(db: Database[r]): Datalog \ r =
-        MutMap.toMap(db) |>
+        db |> 
+        MutMap.foldRightWithKey(k -> v -> match k {
+            case RamSym.Full(pred, arr, den) => Map.insert(RelSym.Symbol(pred, arr, den), v)
+            case _ => identity
+        }, Map#{}) |>
         Map.map(MutMap.toMap) |>
         Model
 }
