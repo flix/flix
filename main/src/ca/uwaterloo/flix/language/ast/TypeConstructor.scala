@@ -436,7 +436,7 @@ object TypeConstructor {
     * A type constructor that represents a single effect.
     */
   @IntroducedBy(Kinder.getClass)
-  case class Effect(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
+  case class Effect(sym: Symbol.EffectSym, kind: Kind) extends TypeConstructor
 
   /**
     * A type constructor that represents the complement of a case set.

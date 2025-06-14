@@ -390,7 +390,7 @@ object UnkindedType {
     * Constructs the type a -> b \ IO
     */
   def mkIoArrow(a: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
-    val eff = Some(UnkindedType.Cst(TypeConstructor.Effect(Symbol.IO), loc))
+    val eff = Some(UnkindedType.Effect(Symbol.IO, loc))
     mkApply(UnkindedType.Arrow(eff, 2, loc), List(a, b), loc)
   }
 

@@ -388,7 +388,7 @@ object HighlightProvider {
       override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = considerRead(effUse.sym, effUse.qname.loc)
 
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Effect(sym), loc) => considerRead(sym, loc)
+        case Type.Cst(TypeConstructor.Effect(sym, _), loc) => considerRead(sym, loc)
         case _ => ()
       }
 
