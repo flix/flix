@@ -35,7 +35,7 @@ mod TcpWithResult {
     ///
     /// In other words, re-interprets the `Tcp` effect using the `Net` and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - TcpWithResult) + {IO, Net} = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ ef - TcpWithResult + {IO, Net} = x ->
         run {
             f(x)
         } with handler TcpWithResult {
@@ -55,7 +55,7 @@ mod TcpWithResult {
                 }
             }
         }
-    
+
     ///
     /// Runs the `Tcp` effect of the given function `f`.
     ///
