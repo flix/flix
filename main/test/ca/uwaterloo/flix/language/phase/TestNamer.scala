@@ -658,6 +658,39 @@ class TestNamer extends AnyFunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
+  test("IllegalReservedName.Enum.01") {
+    val input =
+      """pub enum Int32 {
+        |  case Value,
+        |}
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalReservedName](result)
+  }
+  
+  test("IllegalReservedName.Alias.01") {
+    val input =
+      """type alias Float32[k] = (k,k)
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalReservedName](result)
+  }
+
+  test("IllegalReservedName.Struct.01") {
+    val input =
+      """struct Float64 {}
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalReservedName](result)
+  }
+
+  test("IllegalReservedName.Trait.01") {
+    val input =
+      """trait String[s] { def f(x: s): s }
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.IllegalReservedName](result)
+  }
 
   test("SuspiciousTypeVarName.01") {
     val input =
