@@ -383,9 +383,9 @@ object Typer {
     */
   private def visitEff(eff: KindedAst.Effect, root: KindedAst.Root)(implicit flix: Flix): TypedAst.Effect = eff match {
     case KindedAst.Effect(doc, ann, mod, sym, tparams0, ops0, loc) =>
-      val tparams = tparams0.map(visitTypeParam(_, root))
+      val _tparams = tparams0.map(visitTypeParam(_, root))
       val ops = ops0.map(TypeReconstruction.visitOp)
-      TypedAst.Effect(doc, ann, mod, sym, tparams, ops, loc)
+      TypedAst.Effect(doc, ann, mod, sym, ops, loc)
   }
 
   /**
