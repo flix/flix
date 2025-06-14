@@ -17,11 +17,11 @@
 ///
 /// The effect used to accept a TCP server connection.
 ///
-eff TcpAccept {
-    def accept(server: TcpServer): TcpSocket
+eff TcpAcceptWithResult {
+    def accept(server: TcpServer): Result[IoError, TcpSocket]
 }
 
-mod TcpAccept {
+mod TcpAcceptWithResult {
     use IoError.ErrorKind
     use IoError.IoError
 
@@ -30,31 +30,31 @@ mod TcpAccept {
     import java.nio.channels.IllegalBlockingModeException
 
     ///
-    /// Handles the `TcpAccept` effect of the given function `f`.
+    /// Handles the `TcpAcceptWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `TcpAccept` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `TcpAcceptWithResult` effect using the `Net` and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ ef - TcpAccept + {IO, Net} = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ ef - TcpAcceptWithResult + {IO, Net} = x ->
         run {
-            Ok(f(x))
-        } with handler TcpAccept {
+            f(x)
+        } with handler TcpAcceptWithResult {
             def accept(server, resume) = {
                 try {
                     let TcpServer.TcpServer(serverSocket) = server;
                     let socket = serverSocket.accept();
-                    resume(TcpSocket.TcpSocket(socket))
+                    resume(Ok(TcpSocket.TcpSocket(socket)))
                 } catch {
-                    case ex: SocketTimeoutException => Err(IoError(ErrorKind.Timeout, ex.getMessage()))
-                    case ex: IOException            => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: SocketTimeoutException => resume(Err(IoError(???, ex.getMessage())))
+                    case ex: IOException            => resume(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
             }
         }
 
     ///
-    /// Runs the `TcpAccept` effect of the given function `f`.
+    /// Runs the `TcpAcceptWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `TcpAccept` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `TcpAcceptWithResult` effect using the `Net` and `IO` effects.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - TcpAccept + {IO, Net} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ ef - TcpAcceptWithResult + {IO, Net} = handle(f)()
 
 }
