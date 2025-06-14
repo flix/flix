@@ -54,7 +54,6 @@ sealed trait BackendObjType {
     case BackendObjType.Record => JvmName(RootPackage, mkClassName("Record"))
     case BackendObjType.ReifiedSourceLocation => JvmName(DevFlixRuntime, mkClassName("ReifiedSourceLocation"))
     case BackendObjType.Global => JvmName(DevFlixRuntime, "Global") // "Global" is fixed in source code, so should not be mangled and $ suffixed
-    case BackendObjType.FlixError => JvmName(DevFlixRuntime, mkClassName("FlixError"))
     case BackendObjType.HoleError => JvmName(DevFlixRuntime, mkClassName("HoleError"))
     case BackendObjType.MatchError => JvmName(DevFlixRuntime, mkClassName("MatchError"))
     case BackendObjType.CastError => JvmName(DevFlixRuntime, mkClassName("CastError"))
@@ -65,7 +64,6 @@ sealed trait BackendObjType {
     case BackendObjType.Namespace(ns) => JvmName(ns.dropRight(1), ns.lastOption.getOrElse(s"Root${Flix.Delimiter}"))
     // Java classes
     case BackendObjType.Native(className) => className
-    case BackendObjType.ConcurrentLinkedQueue => JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
     // Effects Runtime
     case BackendObjType.Result => JvmName(DevFlixRuntime, mkClassName("Result"))
     case BackendObjType.Value => JvmName(DevFlixRuntime, mkClassName("Value"))
@@ -1105,28 +1103,9 @@ object BackendObjType {
     }
   }
 
-  case object FlixError extends BackendObjType {
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkAbstractClass(this.jvmName, JvmName.Error)
-
-      cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-
-      cm.closeClassMaker()
-    }
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, List(BackendType.String))
-
-    private def constructorIns(implicit mv: MethodVisitor): Unit = {
-      thisLoad()
-      ALOAD(1)
-      invokeConstructor(JvmName.Error, mkDescriptor(BackendType.String)(VoidableType.Void))
-      RETURN()
-    }
-  }
-
   case object HoleError extends BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, FlixError.jvmName)
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, JvmName.FlixError)
 
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
       // These fields allow external equality checking.
@@ -1177,7 +1156,7 @@ object BackendObjType {
   case object MatchError extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(MatchError.jvmName, IsFinal, superClass = FlixError.jvmName)
+      val cm = ClassMaker.mkClass(MatchError.jvmName, IsFinal, superClass = JvmName.FlixError)
 
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
       // This field allows external equality checking.
@@ -1213,7 +1192,7 @@ object BackendObjType {
   case object CastError extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = FlixError.jvmName)
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = JvmName.FlixError)
 
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
 
@@ -1245,7 +1224,7 @@ object BackendObjType {
   case object UnhandledEffectError extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = FlixError.jvmName)
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = JvmName.FlixError)
 
       cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
       // This field allows external equality checking.
@@ -1321,7 +1300,7 @@ object BackendObjType {
     }
 
     // private final ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
-    private def ThreadsField: InstanceField = InstanceField(this.jvmName, "threads", BackendObjType.ConcurrentLinkedQueue.toTpe)
+    private def ThreadsField: InstanceField = InstanceField(this.jvmName, "threads", JvmName.ConcurrentLinkedQueue.toTpe)
 
     // private final LinkedList<Runnable> onExit = new LinkedList<Runnable>();
     private def OnExitField: InstanceField = InstanceField(this.jvmName, "onExit", JvmName.LinkedList.toTpe)
@@ -1338,9 +1317,9 @@ object BackendObjType {
       thisLoad()
       INVOKESPECIAL(ClassMaker.Object.Constructor)
       thisLoad()
-      NEW(BackendObjType.ConcurrentLinkedQueue.jvmName)
+      NEW(JvmName.ConcurrentLinkedQueue)
       DUP()
-      invokeConstructor(BackendObjType.ConcurrentLinkedQueue.jvmName, MethodDescriptor.NothingToVoid)
+      invokeConstructor(JvmName.ConcurrentLinkedQueue, MethodDescriptor.NothingToVoid)
       PUTFIELD(ThreadsField)
       thisLoad()
       INVOKESTATIC(Thread.CurrentThreadMethod)
@@ -1590,15 +1569,6 @@ object BackendObjType {
   //
   // Java Types
   //
-
-  case object ConcurrentLinkedQueue extends BackendObjType {
-
-    def AddMethod: InstanceMethod = InstanceMethod(this.jvmName, "add",
-      mkDescriptor(BackendType.Object)(BackendType.Bool))
-
-    def PollMethod: InstanceMethod = InstanceMethod(this.jvmName, "poll",
-      mkDescriptor()(BackendType.Object))
-  }
 
   case object Result extends BackendObjType {
 

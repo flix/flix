@@ -148,6 +148,7 @@ object JvmName {
   val CharSequence: JvmName = JvmName(JavaLang, "CharSequence")
   val Character: JvmName = JvmName(JavaLang, "Character")
   val Class: JvmName = JvmName(JavaLang, "Class")
+  val ConcurrentLinkedQueue: JvmName = JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
   val Double: JvmName = JvmName(JavaLang, "Double")
   val DoubleConsumer: JvmName = JvmName(JavaUtilFunction, "DoubleConsumer")
   val DoubleFunction: JvmName = JvmName(JavaUtilFunction, "DoubleFunction")
@@ -196,6 +197,8 @@ object JvmName {
   //
 
   val DevFlixRuntime: List[String] = List("dev", "flix", "runtime")
+
+  val FlixError: JvmName = JvmName(DevFlixRuntime, mkClassName("FlixError"))
 
 }
 
