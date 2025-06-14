@@ -442,7 +442,7 @@ object TypeReconstruction {
     case KindedAst.Expr.Do(symUse, exps, tvar, loc) =>
       val es = exps.map(visitExp(_))
       val tpe = subst(tvar)
-      val eff1 = Type.Cst(TypeConstructor.Effect(symUse.sym.eff), symUse.loc.asSynthetic)
+      val eff1 = Type.Cst(TypeConstructor.Effect(symUse.sym.eff, Kind.Eff), symUse.loc.asSynthetic) // TODO EFF-TPARAMS need kind
       val eff = Type.mkUnion(eff1 :: es.map(_.eff), loc)
       TypedAst.Expr.Do(symUse, es, tpe, eff, loc)
 
