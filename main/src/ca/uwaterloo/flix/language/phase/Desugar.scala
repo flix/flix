@@ -200,9 +200,10 @@ object Desugar {
     * Desugars the given [[WeededAst.Declaration.Effect]] `eff0`.
     */
   private def visitEffect(eff0: WeededAst.Declaration.Effect): DesugaredAst.Declaration.Effect = eff0 match {
-    case WeededAst.Declaration.Effect(doc, ann, mod, ident, ops0, loc) =>
+    case WeededAst.Declaration.Effect(doc, ann, mod, ident, tparams0, ops0, loc) =>
+      val tparams = tparams0.map(visitTypeParam)
       val ops = ops0.map(visitOp)
-      DesugaredAst.Declaration.Effect(doc, ann, mod, ident, ops, loc)
+      DesugaredAst.Declaration.Effect(doc, ann, mod, ident, tparams, ops, loc)
   }
 
   /**
