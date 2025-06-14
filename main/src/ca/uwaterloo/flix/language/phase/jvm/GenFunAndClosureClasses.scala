@@ -235,8 +235,7 @@ object GenFunAndClosureClasses {
     // Fields
     val closureArgTypes = defn.cparams.map(_.tpe)
     for ((argType, index) <- closureArgTypes.zipWithIndex) {
-      val erasedArgType = BackendType.toErasedBackendType(argType)
-      val field = visitor.visitField(ACC_PUBLIC, s"clo$index", erasedArgType.toDescriptor, null, null)
+      val field = visitor.visitField(ACC_PUBLIC, s"clo$index", BackendType.toBackendType(argType).toDescriptor, null, null)
       field.visitEnd()
     }
     for ((x, i) <- defn.lparams.zipWithIndex) {
@@ -347,7 +346,7 @@ object GenFunAndClosureClasses {
     val localOffset = 2 // [this: Obj, value: Obj, ...]
 
     val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.sym.getStackOffset(localOffset), lp.sym.isWild, BackendType.toBackendType(lp.tpe), None) }
-    val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.sym.getStackOffset(localOffset), false, BackendType.toErasedBackendType(cp.tpe), Some(BackendType.toBackendType(cp.tpe))) }
+    val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.sym.getStackOffset(localOffset), false, BackendType.toBackendType(cp.tpe), None) }
     val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.sym.getStackOffset(localOffset), false, BackendType.toErasedBackendType(fp.tpe), Some(BackendType.toBackendType(fp.tpe))) }
 
     def loadParamsOf(params: List[(String, Int, Boolean, BackendType, Option[BackendType])]): Unit = {
@@ -436,7 +435,7 @@ object GenFunAndClosureClasses {
     import BytecodeInstructions.*
     val pc = List(("pc", BackendType.Int32))
     val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", BackendType.toErasedBackendType(p._1.tpe)))
-    val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", BackendType.toErasedBackendType(p._1.tpe)))
+    val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", BackendType.toBackendType(p._1.tpe)))
     val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", BackendType.toBackendType(p._1.tpe)))
     val params = pc ++ fparams ++ cparams ++ lparams
 

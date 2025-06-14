@@ -302,6 +302,12 @@ class Flix {
     "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
     "ProcessWithResult.flix" -> LocalResource.get("/src/library/ProcessWithResult.flix"),
     "Severity.flix" -> LocalResource.get("/src/library/Severity.flix"),
+    "Tcp.flix" -> LocalResource.get("/src/library/Tcp.flix"),
+    "TcpAccept.flix" -> LocalResource.get("/src/library/TcpAccept.flix"),
+    "TcpAcceptWithResult.flix" -> LocalResource.get("/src/library/TcpAcceptWithResult.flix"),
+    "TcpServer.flix" -> LocalResource.get("/src/library/TcpServer.flix"),
+    "TcpSocket.flix" -> LocalResource.get("/src/library/TcpSocket.flix"),
+    "TcpWithResult.flix" -> LocalResource.get("/src/library/TcpWithResult.flix"),
     "TimeUnit.flix" -> LocalResource.get("/src/library/TimeUnit.flix"),
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
