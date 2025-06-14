@@ -35,7 +35,7 @@ mod Tcp {
     ///
     /// In other words, re-interprets the `Tcp` effect using the `Net` and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ {ef, IO, Net} - Tcp = x ->
+    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ ef - Tcp + {IO, Net} = x ->
         run {
             Ok(f(x))
         } with handler Tcp {
@@ -61,6 +61,6 @@ mod Tcp {
     ///
     /// In other words, re-interprets the `Tcp` effect using the `Net` and `IO` effects.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ {ef, IO, Net} - Tcp = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - Tcp + {IO, Net} = handle(f)()
 
 }
