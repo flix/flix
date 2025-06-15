@@ -60,6 +60,7 @@ pub struct BPlusTree[k, v, r] {
 }
 
 mod BPlusTree {
+    import java.lang.Runtime
     import java.util.concurrent.locks.{StampedLock => JStampedLock}
 
     @Internal
@@ -350,6 +351,38 @@ mod BPlusTree {
         Node.getWithDefault(k, stamp, d, leaf, t)
 
     ///
+    /// Applies `f` to all mappings `k => v` in `t` in parallel. 
+    /// `f` must not modify `t`.
+    ///
+    /// This method unsafely removes the `r` effect when spawning threads.
+    ///
+    /// Not thread-safe.
+    ///
+    @Internal
+    @Parallel
+    pub def parForEach(f: k -> v -> Unit \ r, t: BPlusTree[k, v, r]): Unit \ r with Order[k] = region rc {
+        // `threadNum` is the number of spawned threads.
+        let threadNum = if(Node.computeHeight(t->root) >= 2) {
+            threads()
+        } else {
+            Int32.min(threads(), Node.size(t->root))
+        };
+        if (threadNum <= 1) {
+            forEach(f, t)
+        } else {
+            let minLeaf = Node.leftMostChild(t->root);
+            unchecked_cast(Vector.range(0, threadNum) |>
+            (Vector.forEach(i -> {
+                let _: Unit = spawn unchecked_cast(
+                    // Flix does not allow region effect in spawns. Remove the effect. 
+                    (Node.traverseRightUnconditionalInc(f, i, threadNum, minLeaf): _ \ r) as _ \ IO
+                ) @ rc;
+                ()
+            }): _ \ {}) as _ \ r)
+        }
+    }
+
+    ///
     /// Updates the tree `t` with the mapping `k => v`. Replaces any
     /// existing mapping.
     ///
@@ -467,6 +500,20 @@ mod BPlusTree {
     ///
     @Internal
     pub def search(t: BPlusTree[k, v, r]): Search = t->search
+
+    ///
+    /// Returns the number of threads to use for parallel evaluation.
+    ///
+    /// # SAFETY:
+    /// This accesses the runtime environment, which is an effect.
+    /// It is assumed that this function is only used in contexts
+    /// where this effect is not observable outside of the RedBlackTree module.
+    ///
+    def threads(): Int32 = unsafe {
+        // Note: We use a multiple of the number of physical cores for better performance.
+        let multiplier = 4;
+        multiplier * Runtime.getRuntime().availableProcessors()
+    }
 
     ///
     /// Returns a list of the key-value pairs in `t`. Elements are ordered from smallest
@@ -731,6 +778,27 @@ mod BPlusTree {
                     }
                 }
             }
+
+        ///
+        /// Compute the height of the tree rooted in `node`.
+        ///
+        /// Not thread-safe.
+        ///
+        @Internal
+        pub def computeHeight(node: Node[k, v, r]): Int32 \ r with Order[k] =
+            // Every leaf is at the same height, so just use the left most path.
+            def loop(count, n) = {
+                match n->isLeaf {
+                    case true => count
+                    case false => 
+                        if(n->size == 0) {
+                            count
+                        }  else {
+                            loop(count + 1, Array.get(0, n->children))
+                        }
+                }
+            };
+            loop(1, node)
 
         ///
         /// Returns `true` if the pointer of `o1` is equal to the pointer of `o2`.
@@ -1089,6 +1157,12 @@ mod BPlusTree {
                 traverseRight(f, index, max, search, minLeaf)
 
         ///
+        /// Returns the size of `node`.
+        ///
+        @Internal
+        pub def size(node: Node[k, v, r]): Int32 \ r with Order[k] = node->size
+
+        ///
         /// Split `leftLeaf` into two leaves and push the middle key into the parent,
         /// potentially causing the parent to split and return a new root. Should only
         /// be called when `leftLeaf->size == arity` and
@@ -1365,6 +1439,25 @@ mod BPlusTree {
                 traverseRightUnconditional(f, index + 1, node)
             } else match node->next {
                 case Some(next) => traverseRightUnconditional(f, 0, next)
+                case None => ()
+            }
+        ///
+        /// Apply `f` to every `stepSize` mapping in `node` and continues in right of `node`.
+        ///
+        /// Not thread-safe.
+        ///
+        pub def traverseRightUnconditionalInc(
+            f: k -> v -> Unit \ ef,
+            index: Int32,
+            stepSize: Int32,
+            node: Node[k, v, r]
+        ): Unit \ ef + r with Order[k] =
+            if(index < node->size) {
+                let k = Array.get(index, node->keys);
+                f(k, Array.get(index, node->values));
+                traverseRightUnconditionalInc(f, index + stepSize, stepSize, node)
+            } else match node->next {
+                case Some(next) => traverseRightUnconditionalInc(f, index - node->size, stepSize, next)
                 case None => ()
             }
     }
