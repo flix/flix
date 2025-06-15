@@ -16,9 +16,8 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -1063,5 +1062,27 @@ object WeederError {
          |${code(loc, "Unsupported pattern.")}
          |""".stripMargin
     }
+  }
+
+  /**
+    * An error raised to indicate a malformed predicate arity.
+    *
+    * @param loc the location where the error occurs.
+    */
+  case class InvalidPredicateArity(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Invalid predicate arity."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> $summary
+         |
+         |${code(loc, "Invalid predicate arity.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter.*
+      s"${underline("Tip:")} A predicate arity must be a decimal integer."
+    })
   }
 }
