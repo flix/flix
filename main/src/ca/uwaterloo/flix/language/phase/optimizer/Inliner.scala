@@ -310,6 +310,16 @@ object Inliner {
           Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
       }
 
+    case Expr.While(exp1, exp2, tpe, eff, loc) =>
+      visitExp(exp1, ctx0) match {
+        case Expr.Cst(Constant.Bool(false), _, _) =>
+          sctx.changed.putIfAbsent(sym0, ())
+          Expr.Cst(Constant.Unit, tpe, loc)
+        case e1 =>
+          val e2 = visitExp(exp2, ctx0)
+          Expr.While(e1, e2, tpe, eff, loc)
+      }
+
     case Expr.Stm(exp1, exp2, tpe, eff, loc) => exp1.eff match {
       case Type.Pure =>
         // Exp1 has no side effect and is unused

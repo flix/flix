@@ -17,10 +17,10 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt.{FormatTraitConstraint, FormatType}
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -76,6 +76,24 @@ object RedundancyError {
          |
          |""".stripMargin
     })
+  }
+
+  /**
+    * An error raised to indicate that a while-condition is pure, making the loop run 0 or infinite times.
+    *
+    * @param loc the location of the condition expression.
+    */
+  case class PureWhileCondition(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Pure while condition, the loop will run 0 or infinite times."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Pure while condition: It has no side-effect(s) so it will either continously be true or false.
+         |
+         |${code(loc, "pure while condition.")}
+         |
+         |""".stripMargin
+    }
   }
 
   /**

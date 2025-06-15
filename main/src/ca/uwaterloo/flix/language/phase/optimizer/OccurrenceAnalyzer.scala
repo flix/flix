@@ -161,6 +161,18 @@ object OccurrenceAnalyzer {
           (Expr.IfThenElse(e1, e2, e3, tpe, eff, loc), ctx4)
         }
 
+      case Expr.While(exp1, exp2, tpe, eff, loc) =>
+        val (e1, ctx1) = visitExp(exp1)
+        val (e2, ctx2) = visitExp(exp2)
+        // TODO: No clue what to do here
+        //       Maybe OnceInLambda is kind of the right thing?
+        val ctx3 = combineSeq(ctx1, ctx2)
+        if ((e1 eq exp1) && (e2 eq exp2)) {
+          (exp0, ctx3) // Reuse exp0.
+        } else {
+          (Expr.While(e1, e2, tpe, eff, loc), ctx3)
+        }
+
       case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)

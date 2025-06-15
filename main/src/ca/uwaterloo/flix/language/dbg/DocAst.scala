@@ -89,6 +89,8 @@ object DocAst {
 
     case class IfThenElse(cond: Expr, thn: Expr, els: Expr) extends Composite
 
+    case class While(cond: Expr, body: Expr) extends Composite
+
     case class Branch(d: Expr, branches: Map[Symbol.LabelSym, Expr]) extends Atom
 
     case class Match(d: Expr, branches: List[(Expr, Option[Expr], Expr)]) extends Atom

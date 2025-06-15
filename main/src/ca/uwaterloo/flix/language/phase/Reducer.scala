@@ -109,6 +109,11 @@ object Reducer {
         val e3 = visitExpr(exp3)
         Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
+      case Expr.While(exp1, exp2, tpe, purity, loc) =>
+        val e1 = visitExpr(exp1)
+        val e2 = visitExpr(exp2)
+        Expr.While(e1, e2, tpe, purity, loc)
+
       case Expr.Branch(exp, branches, tpe, purity, loc) =>
         val e = visitExpr(exp)
         val bs = branches map {

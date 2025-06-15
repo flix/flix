@@ -1207,6 +1207,16 @@ object GenExpression {
         case Branch.FalseBranch => compileExpr(exp3)
       }
 
+    case Expr.While(exp1, exp2, _, _, _) =>
+      import BytecodeInstructions.*
+      whileLoop(Condition.Bool)(
+        compileExpr(exp1)
+      ) {
+        compileExpr(exp2)
+        xPop(BackendType.toBackendType(exp2.tpe))
+      }
+      GETSTATIC(BackendObjType.Unit.SingletonField)
+
     case Expr.Branch(exp, branches, _, _, _) =>
       // Calculating the updated jumpLabels map
       val updatedJumpLabels = branches.map(branch => branch._1 -> new Label())
