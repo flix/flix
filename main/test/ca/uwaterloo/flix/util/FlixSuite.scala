@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.util
 import ca.uwaterloo.flix.api.{Flix, FlixEvent, FlixListener}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
-import ca.uwaterloo.flix.verifier.{EffectVerifier, TypeVerifier}
+import ca.uwaterloo.flix.verifier.{EffectVerifier, LocationVerifier, TypeVerifier}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Path, Paths}
@@ -96,6 +96,13 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
       }
     })
 
+    flix.addListener(new FlixListener {
+      override def notify(e: FlixEvent): Unit = e match {
+        case FlixEvent.AfterTyper(root) =>
+          LocationVerifier.verify(root)(flix)
+        case _ => // nop
+      }
+    })
 
     // Default security context.
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
