@@ -911,14 +911,14 @@ object Namer {
       val e = visitExp(exp)
       NamedAst.Expr.FixpointFilter(ident, e, loc)
 
-    case DesugaredAst.Expr.FixpointInject(exp, pred, loc) =>
+    case DesugaredAst.Expr.FixpointInject(exp, pred, arity, loc) =>
       val e = visitExp(exp)
-      NamedAst.Expr.FixpointInject(e, pred, loc)
+      NamedAst.Expr.FixpointInject(e, pred, arity, loc)
 
-    case DesugaredAst.Expr.FixpointProject(pred, exp1, exp2, loc) =>
+    case DesugaredAst.Expr.FixpointProject(pred, arity, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      NamedAst.Expr.FixpointProject(pred, e1, e2, loc)
+      NamedAst.Expr.FixpointProject(pred, arity, e1, e2, loc)
 
     case DesugaredAst.Expr.Error(m) =>
       NamedAst.Expr.Error(m)
