@@ -34,7 +34,7 @@ trait Reader[t] {
     ///
     /// Returns `Ok(k)` to signify that `k` bytes was successfully read and written to `b`.
     ///
-    /// Guarantees that `0 <= k < length(b)`.
+    /// Guarantees that `0 <= k <= length(b)`.
     ///
     /// Returns `Err(e)` if some underlying I/O error occurs.
     ///
@@ -48,7 +48,9 @@ instance Reader[InputStream] {
 
     pub def read(b: Array[Int8, r], r: InputStream): Result[IoError, Int32] \ r + IO =
         try {
-            checked_ecast(Ok(r.read(b)))
+            let result = r.read(b);
+            let numRead = if (result == -1) 0 else result;
+            checked_ecast(Ok(numRead))
         } catch {
             case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
         }
