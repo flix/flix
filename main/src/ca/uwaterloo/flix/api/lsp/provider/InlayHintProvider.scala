@@ -18,8 +18,11 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.acceptors.{FileAcceptor}
 import ca.uwaterloo.flix.language.ast.shared.SymUse
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
+import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range}
 import ca.uwaterloo.flix.api.lsp.Visitor
+import scala.collection.immutable.Map
 
 object InlayHintProvider {
   private val EnableEffectHints: Boolean = false
@@ -27,29 +30,29 @@ object InlayHintProvider {
   def getInlayHints(uri: String, range: Range)(implicit root: Root): List[InlayHint] = {
     var inlayHints: List[InlayHint] = Nil
     if(EnableEffectHints) {
-      var effects: Set[(String, Int, Int)] = (getOpSymUses(uri) ++ getDefSymUses(uri)).filter {
-        case (eff, _, _) =>
-          eff != "Pure"
+      var effects: Set[(Type, SourceLocation)] = (getOpSymUses(uri) ++ getDefSymUses(uri)).filter {
+        case (eff, loc) => eff match {
+          case Type.Pure => false
+          case _ => true
+        }
       }
-      var maxColWidth: Int = effects.map { case (_, _, col) => col }.maxOption.getOrElse(0)
-      var lineToEffectsMap: Map[Int, Set[String]] = Map.empty
-      effects.foreach { case (eff, line, col) =>
-        lineToEffectsMap = lineToEffectsMap.updated(line, lineToEffectsMap.getOrElse(line, Set.empty) + eff)
+      var maxColWidth: Int = Math.min(120, effects.map { case (_, loc) => loc.endCol }.maxOption.getOrElse(120))
+      var lineToEffectsMap: Map[Int, Set[Type]] = Map.empty
+      effects.foreach { case (eff, loc) =>
+        lineToEffectsMap = lineToEffectsMap.updated(loc.endLine, lineToEffectsMap.getOrElse(loc.endLine, Set.empty) + eff)
       }
-      lineToEffectsMap.foreach { case (line, effects) =>
-        inlayHints ::= mkHintFromEffects(line, effects, maxColWidth + 1)
-      }
+      inlayHints = mkHintsFromEffects(lineToEffectsMap, maxColWidth)
     }
     inlayHints
   }
 
-  def getOpSymUses(uri: String)(implicit root: Root): Set[(String, Int, Int)] = {
-    var opSymUses: Set[(String, Int, Int)] = Set.empty
+  def getOpSymUses(uri: String)(implicit root: Root): Set[(Type, SourceLocation)] = {
+    var opSymUses: Set[(Type, SourceLocation)] = Set.empty
     object opSymUseConsumer extends Consumer {
       override def consumeExpr(expr: Expr): Unit = {
         expr match {
-          case Expr.Do(opSymUse, _, _, _, loc) =>
-            opSymUses += ((opSymUse.sym.eff.name, loc.endLine, loc.endCol))
+          case Expr.Do(_, _, _, eff, loc) =>
+            opSymUses += ((eff, loc))
           case _ => ()
         }
       }
@@ -58,13 +61,13 @@ object InlayHintProvider {
     opSymUses
   }
 
-  def getDefSymUses(uri: String)(implicit root: Root): Set[(String, Int, Int)] = {
-    var defSymUses: Set[(String, Int, Int)] = Set.empty
+  def getDefSymUses(uri: String)(implicit root: Root): Set[(Type, SourceLocation)] = {
+    var defSymUses: Set[(Type, SourceLocation)] = Set.empty
     object defSymUseConsumer extends Consumer {
       override def consumeExpr(expr: Expr): Unit = {
         expr match {
           case Expr.ApplyDef(_, _, _, _, eff, loc) =>
-            defSymUses += ((eff.toString, loc.endLine, loc.endCol))
+            defSymUses += ((eff, loc))
           case _ => ()
         }
       }
@@ -73,8 +76,15 @@ object InlayHintProvider {
     defSymUses
   }
 
-  def mkHintFromEffects(line: Int, effects: Set[String], col: Int): InlayHint = {
-    var effectString: String = effects.mkString(" + ")
+  def mkHintsFromEffects(lineToEffectsMap: Map[Int, Set[Type]], maxColWidth: Int): List[InlayHint] = {
+    lineToEffectsMap.map({
+      case (line, effs) =>
+        mkHint(effs, line, maxColWidth)
+      }).toList
+  }
+
+  def mkHint(effs: Set[Type], line: Int, col: Int): InlayHint = {
+    var effectString: String = effs.mkString(" + ")
     InlayHint(
       position = Position(line, col),
       label = s"{ $effectString }",
