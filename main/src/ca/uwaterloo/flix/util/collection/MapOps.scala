@@ -29,6 +29,15 @@ object MapOps {
   }
 
   /**
+    * Applies `f` to each of the keys and values in the given map.
+    */
+  def mapValuesWithKey[K, V1, V2](m: Map[K, V1])(f: (K, V1) => V2): Map[K, V2] = {
+    m.map {
+      case (k, v) => (k, f(k, v))
+    }
+  }
+
+  /**
     * Combines the two maps with the given function.
     *
     * If a key is present in only one of the maps, then that map's value is used.
