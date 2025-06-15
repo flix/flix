@@ -591,10 +591,11 @@ object Weeder2 {
       mapN(
         pickDocumentation(tree),
         pickNameIdent(tree),
+        Types.pickParameters(tree),
         traverse(ops)(visitOperationDecl)
       ) {
-        (doc, ident, ops) =>
-          Declaration.Effect(doc, ann, mod, ident, ops, tree.loc)
+        (doc, ident, tparams, ops) =>
+          Declaration.Effect(doc, ann, mod, ident, tparams, ops, tree.loc)
       }
     }
 

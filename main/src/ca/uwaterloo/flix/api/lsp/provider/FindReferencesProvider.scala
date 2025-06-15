@@ -206,7 +206,7 @@ object FindReferencesProvider {
     // Effects
     case TypedAst.Effect(_, _, _, sym, _, _) => Some(getEffectSymOccurs(sym))
     case SymUse.EffectSymUse(sym, _) => Some(getEffectSymOccurs(sym))
-    case Type.Cst(TypeConstructor.Effect(sym), _) => Some(getEffectSymOccurs(sym))
+    case Type.Cst(TypeConstructor.Effect(sym, _), _) => Some(getEffectSymOccurs(sym))
     // Enums
     case TypedAst.Enum(_, _, _, sym, _, _, _, _) => Some(getEnumSymOccurs(sym))
     case Type.Cst(TypeConstructor.Enum(sym, _), _) => Some(getEnumSymOccurs(sym))
@@ -305,7 +305,7 @@ object FindReferencesProvider {
       override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = consider(effUse.sym, effUse.qname.loc)
 
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Effect(sym), loc) => consider(sym, loc)
+        case Type.Cst(TypeConstructor.Effect(sym, _), loc) => consider(sym, loc)
         case _ => ()
       }
     }

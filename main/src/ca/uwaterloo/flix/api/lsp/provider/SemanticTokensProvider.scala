@@ -843,7 +843,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Univ => true
     case TypeConstructor.True => true
     case TypeConstructor.False => true
-    case TypeConstructor.Effect(_) => true
+    case TypeConstructor.Effect(_, _) => true
     case TypeConstructor.Region(_) => true
     case TypeConstructor.RegionToStar => true
 

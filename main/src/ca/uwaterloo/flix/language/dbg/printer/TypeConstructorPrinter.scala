@@ -81,7 +81,7 @@ object TypeConstructorPrinter {
     case TypeConstructor.Intersection => DocAst.Type.AsIs("Intersection")
     case TypeConstructor.Difference => DocAst.Type.AsIs("Difference")
     case TypeConstructor.SymmetricDiff => DocAst.Type.AsIs("SymmetricDiff")
-    case TypeConstructor.Effect(sym) => DocAst.Type.AsIs(sym.toString)
+    case TypeConstructor.Effect(sym, _) => DocAst.Type.AsIs(sym.toString)
     case TypeConstructor.CaseComplement(_) => DocAst.Type.AsIs("CaseComplement")
     case TypeConstructor.CaseUnion(_) => DocAst.Type.AsIs("CaseUnion")
     case TypeConstructor.CaseIntersection(_) => DocAst.Type.AsIs("CaseIntersection")
