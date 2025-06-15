@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.RestrictableEnumSymUse
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintGen.visitExp
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.ListOps
 
 import scala.collection.immutable.SortedSet
 
@@ -158,12 +159,12 @@ object RestrictableChooseConstraintGen {
 
               // Γ, x_i: τ^in_i ⊢ e_i: τ^out_i
               val (tpes, effs) = rules0.map(rule => visitExp(rule.exp)).unzip
-              tpes.zip(bodyTypes).foreach { case (t1, t2) => c.unifyType(t1, t2, loc) }
+              ListOps.zip(tpes, bodyTypes).foreach { case (t1, t2) => c.unifyType(t1, t2, loc) }
 
               // τ_out = (... + l^out_i(τ^out_i) + ...)[_]
               (targsOut :: bodyTargs).transpose.foreach(c.unifyAllTypes(_, loc))
 
-              val indicesAndTags = bodyIndexVars.zip(patternTagTypes)
+              val indicesAndTags = ListOps.zip(bodyIndexVars, patternTagTypes)
               val intros = mkUnion(indicesAndTags.map { case (i, tag) => Type.mkCaseDifference(i, tag, enumSym, loc.asSynthetic) })
               val potentiallyStable = mkUnion(indicesAndTags.map { case (i, tag) => Type.mkCaseIntersection(i, tag, enumSym, loc.asSynthetic) })
 
@@ -247,7 +248,7 @@ object RestrictableChooseConstraintGen {
         val (tpes, effs) = exps.map(visitExp).unzip
         val constructorBase = Type.mkPureUncurriedArrow(tpes, enumType, loc)
         c.unifyType(tagType, constructorBase, loc)
-        targs.zip(targsOut).foreach { case (targ, targOut) => c.unifyType(targ, targOut, loc) }
+        ListOps.zip(targs, targsOut).foreach { case (targ, targOut) => c.unifyType(targ, targOut, loc) }
         //        _ <- indexUnification // TODO ASSOC-TYPES here is where we did the index unification before
         c.unifyType(enumTypeOut, tvar, loc)
         c.unifyType(Type.mkUnion(effs, loc), evar, loc)

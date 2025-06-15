@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options, StatUtils}
 import org.json4s.JValue
 import org.json4s.JsonDSL.*
@@ -272,9 +273,9 @@ object CompilerPerf {
         ("maxThreads" -> MaxThreads) ~
         ("incremental" -> false) ~
         ("lines" -> lines) ~
-        ("results" -> baseline.phases.zip(baselineWithPar.phases).map {
+        ("results" -> ListOps.zip(baseline.phases, baselineWithPar.phases).map {
           case ((phase, times1), (_, times2)) =>
-            ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
+            ("phase" -> phase) ~ ("speedup" -> combine(ListOps.zip(times1, times2).map(p => p._1.toDouble / p._2.toDouble)))
         })
     writeFile("speedupWithPar.json", speedupPar)
 
@@ -286,9 +287,9 @@ object CompilerPerf {
         ("threads" -> MaxThreads) ~
         ("incremental" -> true) ~
         ("lines" -> lines) ~
-        ("results" -> baselineWithPar.phases.zip(baselineWithParInc.phases).map {
+        ("results" -> ListOps.zip(baselineWithPar.phases, baselineWithParInc.phases).map {
           case ((phase, times1), (_, times2)) =>
-            ("phase" -> phase) ~ ("ratio" -> combine(times1.zip(times2).map(p => Math.max(0.0, 1.toDouble - (p._2.toDouble / p._1.toDouble)))))
+            ("phase" -> phase) ~ ("ratio" -> combine(ListOps.zip(times1, times2).map(p => Math.max(0.0, 1.toDouble - (p._2.toDouble / p._1.toDouble)))))
         })
     writeFile("incrementalism.json", incrementalism)
 
@@ -479,7 +480,7 @@ object CompilerPerf {
 
     val phaseMatrix = l.map(_.phases.map(_._2))
     val transposedMatrix = phaseMatrix.transpose.map(_.toList).toList
-    val transposedWithPhases = phases.zip(transposedMatrix)
+    val transposedWithPhases = ListOps.zip(phases, transposedMatrix)
 
     Runs(lines, times, transposedWithPhases)
   }
