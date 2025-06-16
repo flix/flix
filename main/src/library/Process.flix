@@ -30,7 +30,7 @@ eff Process {
     ///
     /// Returns the exit value of the process.
     ///
-    def exitValue(ph: ProcessHandle): Int32
+    def exitValue(ph: ProcessHandle): Option[Int32]
 
     ///
     ///  Returns status of the process, if it alive or not.
@@ -113,9 +113,9 @@ mod Process {
             def exitValue(ph, k) =
                 try {
                     let ProcessHandle(jProc) = ph;
-                    k(jProc.exitValue())
+                    k(Some(jProc.exitValue()))
                 } catch {
-                    case ex: IllegalThreadStateException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: IllegalThreadStateException => k(None)
                     case ex: IOException                 => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
