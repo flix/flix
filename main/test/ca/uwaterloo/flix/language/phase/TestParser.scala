@@ -902,7 +902,9 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
   test("IllegalEffectTypeParams.01") {
     val input =
       """
-        |eff MyEffect[a]
+        |eff MyEffect {
+        |    def op[a](x: a): Unit
+        |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalEffectTypeParams](result)
