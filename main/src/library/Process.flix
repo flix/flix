@@ -115,7 +115,7 @@ mod Process {
                     let ProcessHandle(jProc) = ph;
                     k(Some(jProc.exitValue()))
                 } catch {
-                    case ex: IllegalThreadStateException => k(None)
+                    case _: IllegalThreadStateException => k(None)
                     case ex: IOException                 => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
