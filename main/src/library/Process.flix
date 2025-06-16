@@ -116,7 +116,7 @@ mod Process {
                     k(Some(jProc.exitValue()))
                 } catch {
                     case _: IllegalThreadStateException => k(None)
-                    case ex: IOException                 => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                    case ex: IOException                => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
             def isAlive(ph, k) =
