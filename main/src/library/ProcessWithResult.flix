@@ -39,15 +39,22 @@ eff ProcessWithResult {
     ///
     def stop(ph: ProcessHandle): Result[IoError, Unit]
 
+    ///
+    /// Waits for process to finish.
+    ///
+    def waitFor(ph: ProcessHandle): Result[IoError, Int32]
+
 }
 
 mod ProcessWithResult {
 
     use IoError.ErrorKind
     use IoError.IoError
+    use ProcessHandle.ProcessHandle
 
     import java.lang.IllegalArgumentException
     import java.lang.IllegalThreadStateException
+    import java.lang.InterruptedException
     import java.io.IOException
     import java.lang.ProcessBuilder
     import java.lang.Runtime
@@ -103,30 +110,37 @@ mod ProcessWithResult {
 
             def exitValue(ph, k) =
                 try {
-                    match ph {
-                        case ProcessHandle.ProcessHandle(jProc) => k(Ok(jProc.exitValue()))
-                    }
+                    let ProcessHandle(jProc) = ph;
+                    k(Ok(jProc.exitValue()))
                 } catch {
-                    case ex: IllegalThreadStateException  => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
+                    case ex: IllegalThreadStateException  => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                     case ex: IOException                  => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
             def isAlive(ph, k) =
                 try {
-                    match ph {
-                        case ProcessHandle.ProcessHandle(jProc) => k(Ok(jProc.isAlive()))
-                    }
+                    let ProcessHandle(jProc) = ph;
+                    k(Ok(jProc.isAlive()))
                 } catch {
                     case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
             def stop(ph, k) =
                 try {
-                    match ph {
-                        case ProcessHandle.ProcessHandle(jProc) => k(Ok(jProc.destroy()))
-                    }
+                    let ProcessHandle(jProc) = ph;
+                    k(Ok(jProc.destroy()))
                 } catch {
                     case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                }
+
+            def waitFor(ph, k) =
+                try {
+                    let ProcessHandle(jProc) = ph;
+                    let exitVal = jProc.waitFor();
+                    k(Ok(exitVal))
+                } catch {
+                    case ex: InterruptedException => k(Err(IoError(ErrorKind.Interrupted, ex.getMessage())))
+                    case ex: IOException          => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
         }
