@@ -63,6 +63,7 @@ object UnkindedTypePrinter {
         DocAst.Type.SymmetricDiff(print(arg0), print(arg1))
       case (UnkindedType.Cst(tc, _), _) => mkApp(TypeConstructorPrinter.print(tc), args.map(print))
       case (UnkindedType.Enum(sym, _), _) => Type.AsIs(sym.toString)
+      case (UnkindedType.Effect(sym, _), _) => Type.AsIs(sym.toString)
       case (UnkindedType.Struct(sym, _), _) => Type.AsIs(sym.toString)
       case (UnkindedType.RestrictableEnum(sym, _), _) => Type.AsIs(sym.toString)
       case (UnkindedType.UnappliedAlias(sym, _), _) => Type.AsIs(sym.toString)
