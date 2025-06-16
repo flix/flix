@@ -35,6 +35,11 @@ eff ProcessWithResult {
     def isAlive(ph: ProcessHandle): Result[IoError, Bool]
 
     ///
+    /// Returns the PID of the process.
+    ///
+    def pid(ph: ProcessHandle): Result[IoError, Int64]
+
+    ///
     /// Stops the process.
     ///
     def stop(ph: ProcessHandle): Result[IoError, Unit]
@@ -43,6 +48,11 @@ eff ProcessWithResult {
     /// Waits for process to finish.
     ///
     def waitFor(ph: ProcessHandle): Result[IoError, Int32]
+
+    ///
+    /// Waits a specified amount of time for the process to finish
+    ///
+    def waitForTimeout(ph: ProcessHandle, time: Int64, tUnit: TimeUnit): Result[IoError, Bool]
 
 }
 
@@ -55,10 +65,12 @@ mod ProcessWithResult {
     import java.lang.IllegalArgumentException
     import java.lang.IllegalThreadStateException
     import java.lang.InterruptedException
+    import java.lang.UnsupportedOperationException
     import java.io.IOException
     import java.lang.ProcessBuilder
     import java.lang.Runtime
     import java.io.{File => JFile}
+    import java.util.concurrent.{TimeUnit => JTimeUnit}
 
     ///
     /// Executes the command `cmd` with the arguments `args`.
@@ -125,6 +137,16 @@ mod ProcessWithResult {
                     case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
 
+            def pid(ph, k) =
+                try {
+                    let ProcessHandle(jProc) = ph;
+                    let pid = jProc.pid();
+                    k(Ok(pid))
+                } catch {
+                    case ex: UnsupportedOperationException => k(Err(IoError(ErrorKind.Unsupported, ex.getMessage())))
+                    case ex: IOException                   => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                }
+
             def stop(ph, k) =
                 try {
                     let ProcessHandle(jProc) = ph;
@@ -137,6 +159,17 @@ mod ProcessWithResult {
                 try {
                     let ProcessHandle(jProc) = ph;
                     let exitVal = jProc.waitFor();
+                    k(Ok(exitVal))
+                } catch {
+                    case ex: InterruptedException => k(Err(IoError(ErrorKind.Interrupted, ex.getMessage())))
+                    case ex: IOException          => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                }
+
+            def waitForTimeout(ph, time, unit, k) =
+                try {
+                    let timeMS = time * Int32.toInt64(TimeUnit.toMilliseconds(unit));
+                    let ProcessHandle(jProc) = ph;
+                    let exitVal = jProc.waitFor(timeMS, JTimeUnit.MILLISECONDS);
                     k(Ok(exitVal))
                 } catch {
                     case ex: InterruptedException => k(Err(IoError(ErrorKind.Interrupted, ex.getMessage())))
