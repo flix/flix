@@ -23,16 +23,38 @@ eff ProcessWithResult {
     /// Immediately executes the command `cmd` with the arguments `args`, by the path `cwd` and with the environmental `env`.
     ///
     def execWithCwdAndEnv(cmd: String, args: List[String], cwd: Option[String], env: Map[String, String]): Result[IoError, ProcessHandle]
+
+    ///
+    /// Returns the exit value of the process.
+    ///
+    def exitValue(ph: ProcessHandle): Result[IoError, Int32]
+
+    ///
+    ///  Returns status of the process, if it alive or not.
+    ///
+    def isAlive(ph: ProcessHandle): Result[IoError, Bool]
+
+    ///
+    /// Stops the process.
+    ///
+    def stop(ph: ProcessHandle): Result[IoError, Unit]
+
+    ///
+    /// Waits for process to finish.
+    ///
+    def waitFor(ph: ProcessHandle): Result[IoError, Int32]
+
 }
 
 mod ProcessWithResult {
 
     use IoError.ErrorKind
     use IoError.IoError
+    use ProcessHandle.ProcessHandle
 
     import java.lang.IllegalArgumentException
-    import java.lang.NullPointerException
-    import java.lang.SecurityException
+    import java.lang.IllegalThreadStateException
+    import java.lang.InterruptedException
     import java.io.IOException
     import java.lang.ProcessBuilder
     import java.lang.Runtime
@@ -81,12 +103,46 @@ mod ProcessWithResult {
                     Ok(ProcessHandle.ProcessHandle(process))
                 } catch {
                     case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: NullPointerException      => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: SecurityException         => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
                     case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 };
                 k(res)
             }
+
+            def exitValue(ph, k) =
+                try {
+                    let ProcessHandle(jProc) = ph;
+                    k(Ok(jProc.exitValue()))
+                } catch {
+                    case ex: IllegalThreadStateException  => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                    case ex: IOException                  => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                }
+
+            def isAlive(ph, k) =
+                try {
+                    let ProcessHandle(jProc) = ph;
+                    k(Ok(jProc.isAlive()))
+                } catch {
+                    case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                }
+
+            def stop(ph, k) =
+                try {
+                    let ProcessHandle(jProc) = ph;
+                    k(Ok(jProc.destroy()))
+                } catch {
+                    case ex: IOException => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                }
+
+            def waitFor(ph, k) =
+                try {
+                    let ProcessHandle(jProc) = ph;
+                    let exitVal = jProc.waitFor();
+                    k(Ok(exitVal))
+                } catch {
+                    case ex: InterruptedException => k(Err(IoError(ErrorKind.Interrupted, ex.getMessage())))
+                    case ex: IOException          => k(Err(IoError(ErrorKind.Other, ex.getMessage())))
+                }
+
         }
 
     ///
