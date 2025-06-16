@@ -20,76 +20,88 @@
 /// All operations on this effect are infallible.
 /// If an operation fails the handler must deal with it.
 ///
-eff Process {
+eff ProcessDev {
 
     ///
     /// Immediately executes the command `cmd` with the arguments `args`, by the path `cwd` and with the environmental `env`.
     ///
-    def execWithCwdAndEnv(cmd: String, args: List[String], cwd: Option[String], env: Map[String, String]): ProcessHandle
+    def execWithCwdAndEnv(cmd: String, args: List[String], cwd: Option[String], env: Map[String, String]): ProcessHandleDev
 
     ///
     /// Returns the exit value of the process.
     ///
-    def exitValue(ph: ProcessHandle): Option[Int32]
+    def exitValue(ph: ProcessHandleDev): Option[Int32]
 
     ///
     ///  Returns status of the process, if it alive or not.
     ///
-    def isAlive(ph: ProcessHandle): Bool
+    def isAlive(ph: ProcessHandleDev): Bool
+
+    ///
+    /// Returns the PID of the process.
+    ///
+    def pid(ph: ProcessHandleDev): Int64
 
     ///
     /// Stops the process.
     ///
-    def stop(ph: ProcessHandle): Unit
+    def stop(ph: ProcessHandleDev): Unit
 
     ///
     /// Waits for process to finish.
     ///
-    def waitFor(ph: ProcessHandle): Int32
+    def waitFor(ph: ProcessHandleDev): Int32
+
+    ///
+    /// Waits a specified amount of time for the process to finish
+    ///
+    def waitForTimeout(ph: ProcessHandleDev, time: Int64, tUnit: TimeUnit): Bool
 
 }
 
-mod Process {
+mod ProcessDev {
 
     use IoError.ErrorKind
     use IoError.IoError
-    use ProcessHandle.ProcessHandle
+    use ProcessHandleDev.ProcessHandleDev
 
     import java.lang.IllegalArgumentException
     import java.lang.IllegalThreadStateException
     import java.lang.InterruptedException
+    import java.lang.UnsupportedOperationException
     import java.io.IOException
     import java.lang.ProcessBuilder
     import java.lang.Runtime
     import java.io.{File => JFile}
+    import java.util.concurrent.{TimeUnit => JTimeUnit}
 
     ///
     /// Executes the command `cmd` with the arguments `args`.
     ///
-    pub def exec(cmd: String, args: List[String]): ProcessHandle \ Process =
-        Process.execWithCwdAndEnv(cmd, args, None, Map.empty())
+    pub def exec(cmd: String, args: List[String]): ProcessHandleDev \ ProcessDev =
+        ProcessDev.execWithCwdAndEnv(cmd, args, None, Map.empty())
 
     ///
     /// Executes the command `cmd` with the arguments `args`, by the path `cwd`.
     ///
-    pub def execWithCwd(cmd: String, args: List[String], cwd: Option[String]): ProcessHandle \ Process =
-        Process.execWithCwdAndEnv(cmd, args, cwd, Map.empty())
+    pub def execWithCwd(cmd: String, args: List[String], cwd: Option[String]): ProcessHandleDev \ ProcessDev =
+        ProcessDev.execWithCwdAndEnv(cmd, args, cwd, Map.empty())
 
     ///
     /// Executes the command `cmd` with the arguments `args` and with the environmental `env`.
     ///
-    pub def execWithEnv(cmd: String, args: List[String], env: Map[String, String]): ProcessHandle \ Process =
-        Process.execWithCwdAndEnv(cmd, args, None, env)
+    pub def execWithEnv(cmd: String, args: List[String], env: Map[String, String]): ProcessHandleDev \ ProcessDev =
+        ProcessDev.execWithCwdAndEnv(cmd, args, None, env)
 
     ///
     /// Handles the `Process` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Process` effect using the `Exec` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Process) + {Exec, IO} = x ->
+    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - ProcessDev) + {Exec, IO} = x ->
         run {
             Ok(f(x))
-        } with handler Process {
+        } with handler ProcessDev {
             def execWithCwdAndEnv(cmd, args, cwdPath, env, k) = region rc {
                 try {
                     let arr = List.toArray(rc, cmd :: args);
@@ -103,7 +115,7 @@ mod Process {
                         case None => ()
                     };
                     let process = pb.start();
-                    k(ProcessHandle(process))
+                    k(ProcessHandleDev(process))
                 } catch {
                     case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
                     case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -112,7 +124,7 @@ mod Process {
 
             def exitValue(ph, k) =
                 try {
-                    let ProcessHandle(jProc) = ph;
+                    let ProcessHandleDev(jProc) = ph;
                     k(Some(jProc.exitValue()))
                 } catch {
                     case _: IllegalThreadStateException => k(None)
@@ -121,15 +133,25 @@ mod Process {
 
             def isAlive(ph, k) =
                 try {
-                    let ProcessHandle(jProc) = ph;
+                    let ProcessHandleDev(jProc) = ph;
                     k(jProc.isAlive())
                 } catch {
                     case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
+            def pid(ph, k) =
+                try {
+                    let ProcessHandleDev(jProc) = ph;
+                    let pid = jProc.pid();
+                    k(pid)
+                } catch {
+                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
             def stop(ph, k) =
                 try {
-                    let ProcessHandle(jProc) = ph;
+                    let ProcessHandleDev(jProc) = ph;
                     k(jProc.destroy())
                 } catch {
                     case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
@@ -137,8 +159,19 @@ mod Process {
 
             def waitFor(ph, k) =
                 try {
-                    let ProcessHandle(jProc) = ph;
+                    let ProcessHandleDev(jProc) = ph;
                     let exitVal = jProc.waitFor();
+                    k(exitVal)
+                } catch {
+                    case ex: InterruptedException => Err(IoError(ErrorKind.Interrupted, ex.getMessage()))
+                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+            def waitForTimeout(ph, time, unit, k) =
+                try {
+                    let timeMS = time * Int32.toInt64(TimeUnit.toMilliseconds(unit));
+                    let ProcessHandleDev(jProc) = ph;
+                    let exitVal = jProc.waitFor(timeMS, JTimeUnit.MILLISECONDS);
                     k(exitVal)
                 } catch {
                     case ex: InterruptedException => Err(IoError(ErrorKind.Interrupted, ex.getMessage()))
@@ -152,7 +185,7 @@ mod Process {
     ///
     /// In other words, re-interprets the `Process` effect using the `Exec` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ (ef - Process) + {Exec, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ (ef - ProcessDev) + {Exec, IO} = handle(f)()
 
 }
 
