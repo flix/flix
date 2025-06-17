@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, 
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Scope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, Subeffecting}
 
 /**
@@ -612,7 +613,7 @@ object ConstraintGen {
         val (fieldTpes, fieldEffs) = visitedFields.unzip
         c.unifyType(tvar, structTpe, loc)
         for {
-          ((fieldSym, expr), fieldTpe1) <- fields.zip(fieldTpes)
+          ((fieldSym, expr), fieldTpe1) <- ListOps.zip(fields, fieldTpes)
         } {
           instantiatedFieldTpes.get(fieldSym.sym) match {
             case None => () // if not an actual field, there is nothing to unify
@@ -1209,7 +1210,7 @@ object ConstraintGen {
     * The number of arguments must match the number of parameters (this check is done in Resolver).
     */
   private def visitOpArgs(op: KindedAst.Op, args: List[KindedAst.Expr])(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): List[Type] = {
-    (args zip op.spec.fparams) map {
+    ListOps.zip(args, op.spec.fparams) map {
       case (arg, fparam) => visitOpArg(arg, fparam)
     }
   }

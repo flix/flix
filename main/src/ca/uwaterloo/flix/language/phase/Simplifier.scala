@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Modifiers, Scope}
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.util.collection.MapOps
+import ca.uwaterloo.flix.util.collection.{ListOps, MapOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
@@ -174,7 +174,7 @@ object Simplifier {
           val regExp :: fieldExps = es
           val synthLoc = loc.asSynthetic
           val fieldsDeclaredOrder = root.structs(sym).fields
-          val fieldInitializations = givenFields.zip(fieldExps)
+          val fieldInitializations = ListOps.zip(givenFields, fieldExps)
 
           // Find types and new names.
           val freshFieldNames = givenFields.map(
@@ -792,7 +792,7 @@ object Simplifier {
 
     // Construct a map from each label to the label of the next case.
     // The default label is the next label of the last case.
-    val nextLabel = (ruleLabels zip (ruleLabels.drop(1) ::: defaultLab :: Nil)).toMap
+    val nextLabel = ListOps.zip(ruleLabels, ruleLabels.drop(1) ::: defaultLab :: Nil).toMap
 
     val t = visitType(tpe)
 
@@ -800,7 +800,7 @@ object Simplifier {
     val jumpPurity = Purity.combineAll(rules.map(r => simplifyEffect(r.exp.eff)))
 
     // Create a branch for each rule.
-    val branches = (ruleLabels zip rules) map {
+    val branches = ListOps.zip(ruleLabels, rules) map {
       // Process each (label, rule) pair.
       case (label, MonoAst.MatchRule(pat, guard, body)) =>
         // Retrieve the label of the next rule.
@@ -933,7 +933,7 @@ object Simplifier {
         val cond = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Is(sym), List(varExp), MonoType.Bool, Purity.Pure, loc)
         val freshVars = pats.map(_ => Symbol.freshVarSym("innerTag" + Flix.Delimiter, BoundBy.Let, loc))
         val zero = patternMatchList(pats ::: ps, freshVars ::: vs, guard, succ, fail)
-        val consequent = pats.zip(freshVars).zipWithIndex.foldRight(zero) {
+        val consequent = ListOps.zip(pats, freshVars).zipWithIndex.foldRight(zero) {
           case (((pat, name), idx), exp) =>
             val varExp = SimplifiedAst.Expr.Var(v, visitType(tpe), loc)
             val indexExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Untag(sym, idx), List(varExp), visitType(pat.tpe), Purity.Pure, loc)
@@ -972,7 +972,7 @@ object Simplifier {
         val varExp = SimplifiedAst.Expr.Var(v, visitType(tpe), loc)
         val zero = patternMatchList(labelPats ::: ps, freshVars ::: vs, guard, succ, fail)
         // Let-binders are built in reverse, but it does not matter since binders are independent and pure
-        val (one, restrictedMatchVar) = pats.zip(freshVars).foldLeft((zero, varExp): (SimplifiedAst.Expr, SimplifiedAst.Expr)) {
+        val (one, restrictedMatchVar) = ListOps.zip(pats, freshVars).foldLeft((zero, varExp): (SimplifiedAst.Expr, SimplifiedAst.Expr)) {
           case ((exp, matchVarExp), (MonoAst.Pattern.Record.RecordLabelPattern(label, subpat, _, loc1), name)) =>
             val recordSelectExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(label), List(matchVarExp), visitType(subpat.tpe), Purity.Pure, loc1)
             val restrictedMatchVarExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(label), List(matchVarExp), mkRecordRestrict(label, matchVarExp.tpe), matchVarExp.purity, loc1)
