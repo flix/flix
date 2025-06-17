@@ -337,15 +337,15 @@ object TypeConstructor {
   /**
     * A type constructor for relations.
     */
-  case object Relation extends TypeConstructor {
-    def kind: Kind = Kind.Star ->: Kind.Predicate
+  case class Relation(l: Int) extends TypeConstructor {
+    def kind: Kind = Kind.mkArrowTo(l, Kind.Predicate)
   }
 
   /**
     * A type constructor for lattices.
     */
-  case object Lattice extends TypeConstructor {
-    def kind: Kind = Kind.Star ->: Kind.Predicate
+  case class Lattice(l: Int) extends TypeConstructor {
+    def kind: Kind = Kind.mkArrowTo(l, Kind.Predicate)
   }
 
   /**
