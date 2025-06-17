@@ -17,136 +17,179 @@
 mod Test.Exp.Fixpoint.Inject {
 
     @test
-    def inject01(): #{ A(Bool) } = {
-        let l = (Vector.empty(): List[Bool]);
-        inject l into A/1
-        let r = query select x from A(x);
+    def inject01(): Bool = {
+        let l = (Vector.empty(): Vector[Bool]);
+        let pr = inject l into A/1;
+        let r = query pr select x from A(x);
         l == r
     }
 
     @test
-    def inject02(): #{ A(Char) } = {
-        let l = (Vector.empty(): List[Char]);
-        inject l into A/1
-        let r = query select x from A(x);
+    def inject02(): Bool = {
+        let l = (Vector.empty(): Vector[Char]);
+        let pr = inject l into A/1;
+        let r = query pr select x from A(x);
         l == r
     }
 
     @test
-    def inject03(): #{ A(Float32) } = {
-        let l = (Vector.empty(): List[Float32]);
-        inject l into A/1
-        let r = query select x from A(x);
+    def inject03(): Bool = {
+        let l = (Vector.empty(): Vector[Float32]);
+        let pr = inject l into A/1;
+        let r = query pr select x from A(x);
         l == r
     }
 
     @test
-    def inject04(): #{ A(Float64) } = {
-        let l = (Vector.empty(): List[Float64]);
-        inject l into A/1
-        let r = query select x from A(x);
+    def inject04(): Bool = {
+        let l = (Vector.empty(): Vector[Float64]);
+        let pr = inject l into A/1;
+        let r = query pr select x from A(x);
         l == r
     }
 
     @test
-    def inject05(): #{ A(BigDecimal) } = {
-        let l = (Vector.empty(): List[BigDecimal]);
-        inject l into A/1
-        let r = query select x from A(x);
+    def inject05(): Bool = {
+        let l = (Vector.empty(): Vector[BigDecimal]);
+        let pr = inject l into A/1;
+        let r = query pr select x from A(x);
         l == r
     }
 
     @test
-    def inject06(): #{ A(Int8) } = {
-        let l = (Vector.empty(): List[Int8]);
-        inject l into A/1
-        let r = query select x from A(x);
+    def inject06(): Bool = {
+        let l = (Vector.empty(): Vector[Int8]);
+        let pr = inject l into A/1;
+        let r = query pr select x from A(x);
         l == r
     }
 
     @test
-    def inject07(): #{ A(Int16) } = {
-        let l = (Vector.empty(): List[Int16]);
-        inject l into A/1
-        let r = query select x from A(x);
+    def inject07(): Bool = {
+        let l = (Vector.empty(): Vector[Int16]);
+        let pr = inject l into A/1;
+        let r = query pr select x from A(x);
         l == r
     }
 
     @test
-    def inject08(): #{ A(Int32) } = {
-        let l = (Vector.empty(): List[Int32]);
-        inject l into A/1
-        let r = query select x from A(x);
+    def inject08(): Bool = {
+        let l = (Vector.empty(): Vector[Int32]);
+        let pr = inject l into A/1;
+        let r = query pr select x from A(x);
         l == r
     }
 
     @test
-    def inject09(): #{ A(Int64) } = {
-        let l = (Vector.empty(): List[Int64]);
-        inject l into A/1
-        let r = query select x from A(x);
+    def inject09(): Bool = {
+        let l = (Vector.empty(): Vector[Int64]);
+        let pr = inject l into A/1;
+        let r = query pr select x from A(x);
         l == r
     }
 
     @test
-    def inject10(): #{ A(BigInt) } = {
-        let l = (Vector.empty(): List[BigInt]);
-        inject l into A/1
-        let r = query select x from A(x);
+    def inject10(): Bool = {
+        let l = (Vector.empty(): Vector[BigInt]);
+        let pr = inject l into A/1;
+        let r = query pr select x from A(x);
         l == r
     }
 
     @test
-    def inject11(): #{ A(String) } = {
-        let l = (Vector.empty(): List[String]);
-        inject l into A/1
-        let r = query select x from A(x);
+    def inject11(): Bool = {
+        let l = (Vector.empty(): Vector[String]);
+        let pr = inject l into A/1;
+        let r = query pr select x from A(x);
         l == r
     }
 
     @test
-    def inject12(): #{ A(Int32) } = {
-        inject Vector# {1, 2, 3} into A/1
+    def inject12(): Bool = {
+        let l = Vector#{1, 2, 3};
+        let pr = inject l into A/1;
+        let r = query pr select x from A(x);
+        l == r
     }
 
     @test
-    def inject13(): #{ A(Int32), B(Int32) } = {
-        inject Vector# {1, 2, 3}, Vector# {4, 5, 6} into A/1, B/1
+    def inject13(): Bool = {
+        let l1 = Vector#{1, 2, 3};
+        let l2 = Vector#{4, 5, 6};
+        let pr = inject l1, l2 into A/1, B/1;
+        let r1 = query pr select x from A(x);
+        let r2 = query pr select x from B(x);
+        l1 == r1 and l2 == r2
     }
 
     @test
-    def inject14(): #{ A(Int32), B(Char) } = {
-        inject Vector# {1, 2, 3}, Vector# {'a', 'b', 'c'} into A/1, B/1
+    def inject14(): Bool = {
+        let l1 = Vector#{1, 2, 3};
+        let l2 = Vector#{'a', 'b', 'c'};
+        let pr = inject l1, l2 into A/1, B/1;
+        let r1 = query pr select x from A(x);
+        let r2 = query pr select x from B(x);
+        l1 == r1 and l2 == r2
     }
 
     @test
-    def inject15(): #{ A(Int32, Int32) } = {
-        inject Vector# {(1, 2), (2, 3), (3, 4)} into A/2
+    def inject15(): Bool = {
+        let l = Vector#{(1, 2), (2, 3), (3, 4)};
+        let pr = inject l into A/2;
+        let r = query pr select (x, y) from A(x, y);
+        l == r
     }
 
     @test
-    def inject16(): #{ A(Int32, Int32), B(Int32) } = {
-        inject Vector# {(1, 2), (2, 3), (3, 4)}, Vector# {4, 5, 6} into A/2, B/1
+    def inject16(): Bool = {
+        let l1 = Vector#{(1, 2), (2, 3), (3, 4)};
+        let l2 = Vector#{4, 5, 6};
+        let pr = inject l1, l2 into A/2, B/1;
+        let r1 = query pr select (x, y) from A(x, y);
+        let r2 = query pr select x from B(x);
+        l1 == r1 and l2 == r2
     }
 
     @test
-    def inject17(): #{ A(Int32, Int32), B(Char) } = {
-        inject Vector# {(1, 2), (2, 3), (3, 4)}, Vector# {'a', 'b', 'c'} into A/2, B/1
+    def inject17(): Bool = {
+        let l1 = Vector#{(1, 2), (2, 3), (3, 4)};
+        let l2 = Vector#{'a', 'b', 'c'};
+        let pr = inject l1, l2 into A/2, B/1;
+        let r1 = query pr select (x, y) from A(x, y);
+        let r2 = query pr select x from B(x);
+        l1 == r1 and l2 == r2
     }
 
     @test
-    def inject18(): #{ A(Int32, Int32), B(Char, Int32) } = {
-        inject Vector# {(1, 2), (2, 3), (3, 4)}, Vector# {('a', 4), ('b', 5), ('c', 6)} into A/2, B/2
+    def inject18(): Bool = {
+        let l1 = Vector#{(1, 2), (2, 3), (3, 4)};
+        let l2 = Vector#{('a', 4), ('b', 5), ('c', 6)};
+        let pr = inject l1, l2 into A/2, B/2;
+        let r1 = query pr select (x, y) from A(x, y);
+        let r2 = query pr select (x, y) from B(x, y);
+        l1 == r1 and l2 == r2
     }
 
     @test
-    def inject19(): #{ A(Int32, Int32), B(Int32, Int32, Int32) } = {
-        inject Vector# {(1, 2), (2, 3), (3, 4)}, Vector# {(4, 5, 6), (5, 6, 7), (6, 7, 8)} into A/2, B/3
+    def inject19(): Bool = {
+        let l1 = Vector#{(1, 2), (2, 3), (3, 4)};
+        let l2 = Vector#{(4, 5, 6), (5, 6, 7), (6, 7, 8)};
+        let pr = inject l1, l2 into A/2, B/3;
+        let r1 = query pr select (x, y) from A(x, y);
+        let r2 = query pr select (x, y, z) from B(x, y, z);
+        l1 == r1 and l2 == r2
     }
 
     @test
-    def inject20(): #{ A(Int32, Int32), B(Int32, Int32, Int32), C(Float32) } = {
-        inject Vector# {(1, 2), (2, 3), (3, 4)}, Vector# {(4, 5, 6), (5, 6, 7), (6, 7, 8)}, Set#{1.0f32, 2.0f32, 3.0f32} into A/2, B/3, C/1
+    def inject20(): Bool = {
+        let l1 = Vector#{(1, 2), (2, 3), (3, 4)};
+        let l2 = Vector#{(4, 5, 6), (5, 6, 7), (6, 7, 8)};
+        let l3 = Set#{1.0f32, 2.0f32, 3.0f32};
+        let pr = inject l1, l2, l3 into A/2, B/3, C/1;
+        let r1 = query pr select (x, y) from A(x, y);
+        let r2 = query pr select (x, y, z) from B(x, y, z);
+        let r3 = query pr select x from C(x) |> Vector.toSet;
+        l1 == r1 and l2 == r2 and l3 == r3
     }
 
 }
