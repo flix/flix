@@ -608,6 +608,11 @@ object Inliner {
     case exp => isTrivial(exp)
   }
 
+  /**
+    * Returns `true` if `exp0` is a simple call expression.
+    *
+    * An expression is a simple call if it is a call with simple arguments.
+    */
   private def isSimpleCall(exp0: Expr): Boolean = exp0 match {
     case Expr.ApplyClo(exp1, exp2, _, _, _) => isSimple(exp1) && isSimple(exp2)
     case Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isSimple)
