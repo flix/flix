@@ -16,6 +16,11 @@
 
 mod Test.Exp.Fixpoint.Inject {
 
+    enum E[a] with Eq, Order, ToString {
+        case E1(a)
+        case E2(a, a)
+    }
+
     @test
     def inject01(): Bool = {
         let l = (Vector.empty(): Vector[Bool]);
@@ -114,6 +119,22 @@ mod Test.Exp.Fixpoint.Inject {
 
     @test
     def inject13(): Bool = {
+        let l = Vector#{"1", "2", "3"};
+        let pr = inject l into A/1;
+        let r = query pr select x from A(x);
+        l == r
+    }
+
+    @test
+    def inject14(): Bool = {
+        let l = Vector#{E.E1("1"), E.E1("2"), E.E1("3"), E.E2("1", "2")};
+        let pr = inject l into A/1;
+        let r = query pr select x from A(x);
+        l == r
+    }
+
+    @test
+    def inject15(): Bool = {
         let l1 = Vector#{1, 2, 3};
         let l2 = Vector#{4, 5, 6};
         let pr = inject l1, l2 into A/1, B/1;
@@ -123,7 +144,7 @@ mod Test.Exp.Fixpoint.Inject {
     }
 
     @test
-    def inject14(): Bool = {
+    def inject16(): Bool = {
         let l1 = Vector#{1, 2, 3};
         let l2 = Vector#{'a', 'b', 'c'};
         let pr = inject l1, l2 into A/1, B/1;
@@ -133,7 +154,7 @@ mod Test.Exp.Fixpoint.Inject {
     }
 
     @test
-    def inject15(): Bool = {
+    def inject17(): Bool = {
         let l = Vector#{(1, 2), (2, 3), (3, 4)};
         let pr = inject l into A/2;
         let r = query pr select (x, y) from A(x, y);
@@ -141,7 +162,7 @@ mod Test.Exp.Fixpoint.Inject {
     }
 
     @test
-    def inject16(): Bool = {
+    def inject18(): Bool = {
         let l1 = Vector#{(1, 2), (2, 3), (3, 4)};
         let l2 = Vector#{4, 5, 6};
         let pr = inject l1, l2 into A/2, B/1;
@@ -151,7 +172,7 @@ mod Test.Exp.Fixpoint.Inject {
     }
 
     @test
-    def inject17(): Bool = {
+    def inject19(): Bool = {
         let l1 = Vector#{(1, 2), (2, 3), (3, 4)};
         let l2 = Vector#{'a', 'b', 'c'};
         let pr = inject l1, l2 into A/2, B/1;
@@ -161,7 +182,7 @@ mod Test.Exp.Fixpoint.Inject {
     }
 
     @test
-    def inject18(): Bool = {
+    def inject20(): Bool = {
         let l1 = Vector#{(1, 2), (2, 3), (3, 4)};
         let l2 = Vector#{('a', 4), ('b', 5), ('c', 6)};
         let pr = inject l1, l2 into A/2, B/2;
@@ -171,7 +192,7 @@ mod Test.Exp.Fixpoint.Inject {
     }
 
     @test
-    def inject19(): Bool = {
+    def inject21(): Bool = {
         let l1 = Vector#{(1, 2), (2, 3), (3, 4)};
         let l2 = Vector#{(4, 5, 6), (5, 6, 7), (6, 7, 8)};
         let pr = inject l1, l2 into A/2, B/3;
@@ -181,7 +202,7 @@ mod Test.Exp.Fixpoint.Inject {
     }
 
     @test
-    def inject20(): Bool = {
+    def inject22(): Bool = {
         let l1 = Vector#{(1, 2), (2, 3), (3, 4)};
         let l2 = Vector#{(4, 5, 6), (5, 6, 7), (6, 7, 8)};
         let l3 = Set#{1.0f32, 2.0f32, 3.0f32};
