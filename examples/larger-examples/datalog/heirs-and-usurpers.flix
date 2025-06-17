@@ -1,6 +1,6 @@
 pub def heirsAndUsurpers(parents: List[(person, person)], emperors: List[person]): {heirs = Vector[person], usurpers = Vector[person]} with Order[person] =
-    let p = inject parents into Parent;
-    let e = inject emperors into Emperor;
+    let p = inject parents into Parent/2;
+    let e = inject emperors into Emperor/1;
     let lp = #{
         Ancestor(x, y) :- Parent(x, y), not Emperor(y).
         Ancestor(x, z) :- Ancestor(x, y), Parent(y, z), not Emperor(z).

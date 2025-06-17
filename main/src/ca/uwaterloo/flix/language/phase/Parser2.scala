@@ -2916,9 +2916,9 @@ object Parser2 {
         expression()
       }
       expect(TokenKind.KeywordInto)
-      nameUnqualified(NAME_PREDICATE)
+      predicateAndArity()
       while (eat(TokenKind.Comma) && !eof()) {
-        nameUnqualified(NAME_PREDICATE)
+        predicateAndArity()
       }
       close(mark, TreeKind.Expr.FixpointInject)
     }
@@ -2981,6 +2981,19 @@ object Parser2 {
       expect(TokenKind.KeywordWhere)
       expression()
       close(mark, TreeKind.Expr.FixpointWhere)
+    }
+
+    private def predicateAndArity()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      val mark = open()
+      nameUnqualified(NAME_PREDICATE)
+
+      val hint = "provide a predicate arity such as: Pred/1"
+      // check for shape "/2"
+      expect(TokenKind.Slash, hint = Some(hint))
+      expect(TokenKind.LiteralInt, hint = Some(hint))
+
+      close(mark, TreeKind.PredicateAndArity)
     }
 
     private def intrinsicExpr()(implicit s: State): Mark.Closed = {

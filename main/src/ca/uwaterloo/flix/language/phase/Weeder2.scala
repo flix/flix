@@ -2097,17 +2097,19 @@ object Weeder2 {
 
     private def visitFixpointInjectExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.FixpointInject)
-      val expressions = pickAll(TreeKind.Expr.Expr, tree)
-      val idents = pickAll(TreeKind.Ident, tree).map(tokenToIdent)
-      mapN(traverse(expressions)(visitExpr)) {
-        case exprs if exprs.length != idents.length =>
+      val expTrees = pickAll(TreeKind.Expr.Expr, tree)
+      val predAndArityTrees = pickAll(TreeKind.PredicateAndArity, tree)
+      val expsVal = traverse(expTrees)(visitExpr)
+      val predsAndAritiesVal = traverse(predAndArityTrees)(visitPredicateAndArity)
+      mapN(expsVal, predsAndAritiesVal) {
+        case (exprs, predsAndArities) if exprs.length != predsAndArities.length =>
           // Check for mismatched arity
-          val error = MismatchedArity(exprs.length, idents.length, tree.loc)
+          val error = MismatchedArity(exprs.length, predsAndArities.length, tree.loc)
           sctx.errors.add(error)
           WeededAst.Expr.Error(error)
 
-        case exprs =>
-          Expr.FixpointInjectInto(exprs, idents, tree.loc)
+        case (exprs, predsAndArities) =>
+          Expr.FixpointInjectInto(exprs, predsAndArities, tree.loc)
       }
     }
 
@@ -3256,6 +3258,25 @@ object Weeder2 {
     }
   }
 
+  private def visitPredicateAndArity(tree: Tree)(implicit sctx: SharedContext): Validation[PredicateAndArity, CompilationMessage] = {
+    val identVal = pickNameIdent(tree)
+    val arityTokenVal = pickToken(TokenKind.LiteralInt, tree)
+    flatMapN(identVal, arityTokenVal) {
+      case (ident, arityToken) =>
+        mapN(tryParsePredicateArity(arityToken)) {
+          case arity =>
+            PredicateAndArity(ident, arity)
+        }
+    }
+  }
+
+  private def tryParsePredicateArity(token: Token)(implicit sctx: SharedContext): Validation[Int, CompilationMessage] = {
+    token.text.toIntOption match {
+      case Some(i) => Success(i)
+      case None => Failure(WeederError.InvalidPredicateArity(token.mkSourceLocation(isReal = true)))
+    }
+  }
+
   ///////////////////////////////////////////////////////////////////////////////
   /// HELPERS ////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////
@@ -3371,6 +3392,20 @@ object Weeder2 {
       case Some(t) => Validation.Success(t)
       case None =>
         val error = NeedAtleastOne(NamedTokenSet.FromTreeKinds(Set(kind)), synctx, loc = tree.loc)
+        Validation.Failure(Chain(error))
+    }
+  }
+
+  /**
+    * Picks out the first token of a specific [[TokenKind]].
+    */
+  private def pickToken(kind: TokenKind, tree: Tree, synctx: SyntacticContext = SyntacticContext.Unknown): Validation[Token, CompilationMessage] = {
+    tree.children.collectFirst {
+      case token: Token if token.kind == kind => token
+    } match {
+      case Some(t) => Validation.Success(t)
+      case _ =>
+        val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(kind)), synctx, loc = tree.loc)
         Validation.Failure(Chain(error))
     }
   }
