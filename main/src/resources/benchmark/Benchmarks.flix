@@ -20,8 +20,8 @@
 /// A benchmark has a name and a function to evaluate.
 ///
 def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
-    "Iterator.filter"    => () -> region rc { Iterator.range(rc, 0, 10_000) |> Iterator.filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None) |> blackhole },
-    "Iterator.filterMap" => () -> region rc { Iterator.range(rc, 0, 10_000) |> Iterator.reverse |> blackhole },
+    "Iterator.filter"    => () -> region rc { Iterator.range(rc, 0, 10_000) |> Iterator.filter(x -> Int32.modulo(x, 2) == 0) |> blackhole },
+    "Iterator.filterMap" => () -> region rc { Iterator.range(rc, 0, 10_000) |> Iterator.filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None) |> blackhole },
     "Iterator.foldLeft"  => () -> region rc { Iterator.range(rc, 0, 10_000) |> Iterator.foldLeft(Add.add, 0) |> blackhole },
     "Iterator.foldRight" => () -> region rc { Iterator.range(rc, 0, 10_000) |> Iterator.foldRight(Add.add, 0) |> blackhole },
     "Iterator.map"       => () -> region rc { Iterator.range(rc, 0, 10_000) |> Iterator.map(x -> x + 1) |> blackhole },
