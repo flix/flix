@@ -196,7 +196,7 @@ def main(): Unit \ IO =
         //
         ArithmeticError(r) :- DivStm(r, _n, d),
                               LocalVar(d; y),
-                              if isMaybeZero(y).
+                              if (isMaybeZero(y)).
 
         //
         // Let us now try to analyse the following small program:

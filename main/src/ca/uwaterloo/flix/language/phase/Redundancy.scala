@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeC
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError.*
-import ca.uwaterloo.flix.language.phase.unification.{TraitEnv, TraitEnvironment}
+import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
 import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.ConcurrentHashMap
@@ -185,7 +185,7 @@ object Redundancy {
   private def checkRedundantTraitConstraints()(implicit root: Root, flix: Flix): List[RedundancyError] = {
     val defErrors = ParOps.parMap(root.defs.values)(defn => redundantTraitConstraints(defn.spec.declaredScheme.tconstrs))
     val classErrors = ParOps.parMap(root.traits.values)(trt => redundantTraitConstraints(trt.superTraits))
-    val instErrors = ParOps.parMap(root.instances.values.flatten)(inst => redundantTraitConstraints(inst.tconstrs))
+    val instErrors = ParOps.parMap(root.instances.values)(inst => redundantTraitConstraints(inst.tconstrs))
     val sigErrors = ParOps.parMap(root.sigs.values)(sig => redundantTraitConstraints(sig.spec.declaredScheme.tconstrs))
 
     (defErrors.flatten ++ classErrors.flatten ++ instErrors.flatten ++ sigErrors.flatten).toList
@@ -199,7 +199,7 @@ object Redundancy {
       (tconstr1, i1) <- tconstrs.zipWithIndex
       (tconstr2, i2) <- tconstrs.zipWithIndex
       // don't compare a constraint against itself
-      if i1 != i2 && TraitEnvironment.entails(tconstr1, tconstr2, TraitEnv(root.traitEnv))
+      if i1 != i2 && TraitEnvironment.entails(tconstr1, tconstr2, root.traitEnv)
     } yield RedundancyError.RedundantTraitConstraint(tconstr1, tconstr2, tconstr2.loc)
   }
 
@@ -298,11 +298,11 @@ object Redundancy {
       case (true, true) => Used.empty + HiddenVarSym(sym, loc)
     }
 
-    case Expr.Hole(sym, _, _, _) =>
+    case Expr.Hole(sym, _, _, _, _) =>
       lctx.holeSyms += sym
       Used.empty
 
-    case Expr.HoleWithExp(exp, _, _, _) =>
+    case Expr.HoleWithExp(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expr.OpenAs(_, exp, _, _) =>
@@ -473,7 +473,7 @@ object Redundancy {
 
       // Visit each match rule.
       val usedRules = rules map {
-        case MatchRule(pat, guard, body) =>
+        case MatchRule(pat, guard, body, _) =>
           // Compute the free variables in the pattern.
           val fvs = freeVars(pat)
 
@@ -504,7 +504,7 @@ object Redundancy {
 
       // Visit each match rule.
       val usedRules = rules map {
-        case TypeMatchRule(bnd, _, body) =>
+        case TypeMatchRule(bnd, _, body, _) =>
           // Get the free var from the sym
           val fvs = Set(bnd.sym)
 
@@ -556,6 +556,9 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
+    case Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, _, _, _) =>
+      // TODO: Ext-Variants
+      visitExp(exp1, env0, rc) ++ visitExp(exp2, env0 + bnd1.sym, rc) ++ visitExp(exp3, env0 + bnd2.sym, rc)
 
     case Expr.Tag(CaseSymUse(sym, _), exps, _, _, _) =>
       val us = visitExps(exps, env0, rc)
@@ -566,11 +569,11 @@ object Redundancy {
     case Expr.RestrictableTag(_, exps, _, _, _) =>
       visitExps(exps, env0, rc)
 
+    case Expr.ExtensibleTag(_, exps, _, _, _) =>
+      visitExps(exps, env0, rc)
+
     case Expr.Tuple(elms, _, _, _) =>
       visitExps(elms, env0, rc)
-
-    case Expr.RecordEmpty(_, _) =>
-      Used.empty
 
     case Expr.RecordSelect(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
@@ -629,7 +632,7 @@ object Redundancy {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.Ascribe(exp, _, _, _) =>
+    case Expr.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expr.InstanceOf(exp, _, _) =>
@@ -671,14 +674,14 @@ object Redundancy {
         case _ => visitExp(exp, env0, rc)
       }
 
-    case Expr.Without(exp, effUse, _, _, _) =>
-      sctx.effSyms.put(effUse.sym, ())
+    case Expr.Without(exp, sym, _, _, _) =>
+      sctx.effSyms.put(sym.sym, ())
       visitExp(exp, env0, rc)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       val usedExp = visitExp(exp, env0, rc)
       val usedRules = rules.foldLeft(Used.empty) {
-        case (acc, CatchRule(bnd, _, body)) =>
+        case (acc, CatchRule(bnd, _, body, _)) =>
           val usedBody = visitExp(body, env0, rc)
           if (deadVarSym(bnd.sym, usedBody))
             acc ++ usedBody + UnusedVarSym(bnd.sym)
@@ -690,17 +693,26 @@ object Redundancy {
     case Expr.Throw(exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.TryWith(exp, effUse, rules, _, _, _) =>
-      sctx.effSyms.put(effUse.sym, ())
-      val usedExp = visitExp(exp, env0, rc)
-      val usedRules = rules.foldLeft(Used.empty) {
-        case (acc, HandlerRule(_, fparams, body)) =>
-          val usedBody = visitExp(body, env0, rc)
+    case Expr.Handler(sym, rules, _, _, _, _, _) =>
+      sctx.effSyms.put(sym.sym, ())
+      rules.foldLeft(Used.empty) {
+        case (acc, HandlerRule(_, fparams, body, _)) =>
           val syms = fparams.map(_.bnd.sym)
-          val dead = syms.filter(deadVarSym(_, usedBody))
-          acc ++ usedBody ++ dead.map(UnusedVarSym.apply)
+          val shadowedFparamVars = syms.map(s => shadowing(s.text, s.loc, env0))
+          val env1 = env0 ++ syms
+          val usedBody = visitExp(body, env1, rc)
+          syms.zip(shadowedFparamVars).foldLeft(acc ++ usedBody) {
+            case (acc, (s, shadow)) =>
+              if (deadVarSym(s, usedBody)) {
+                acc ++ shadow + UnusedVarSym(s)
+              } else {
+                acc ++ shadow
+              }
+          }
       }
-      usedExp ++ usedRules
+
+    case Expr.RunWith(exp1, exp2, _, _, _) =>
+      visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc)
 
     case Expr.Do(opUse, exps, _, _, _) =>
       sctx.effSyms.put(opUse.sym.eff, ())
@@ -755,7 +767,7 @@ object Redundancy {
       }
 
       val rulesUsed = rules map {
-        case SelectChannelRule(Binder(sym, _), chan, body) =>
+        case SelectChannelRule(Binder(sym, _), chan, body, _) =>
           // Extend the environment with the symbol.
           val env1 = env0 + sym
 
@@ -895,14 +907,13 @@ object Redundancy {
     case Pattern.Tuple(elms, _, _) => visitPats(elms)
     case Pattern.Record(pats, pat, _, _) =>
       visitPats(pats.map(_.pat)) ++ visitPat(pat)
-    case Pattern.RecordEmpty(_, _) => Used.empty
     case Pattern.Error(_, _) => Used.empty
   }
 
   /**
     * Returns the symbols used in the given list of pattern `ps`.
     */
-  private def visitPats(ps: List[Pattern])(implicit sctx: SharedContext): Used = ps.foldLeft(Used.empty) {
+  private def visitPats(ps: Iterable[Pattern])(implicit sctx: SharedContext): Used = ps.foldLeft(Used.empty) {
     case (acc, pat) => acc ++ visitPat(pat)
   }
 
@@ -1012,8 +1023,8 @@ object Redundancy {
     * Returns true if the expression is a hole.
     */
   private def isHole(exp: Expr): Boolean = exp match {
-    case Expr.Hole(_, _, _, _) => true
-    case Expr.HoleWithExp(_, _, _, _) => true
+    case Expr.Hole(_, _, _, _, _) => true
+    case Expr.HoleWithExp(_, _, _, _, _) => true
     case _ => false
   }
 
@@ -1036,7 +1047,6 @@ object Redundancy {
       }
       val patVal = freeVars(pat)
       patsVal ++ patVal
-    case Pattern.RecordEmpty(_, _) => Set.empty
     case Pattern.Error(_, _) => Set.empty
   }
 
@@ -1146,13 +1156,6 @@ object Redundancy {
       * Represents the empty environment.
       */
     val empty: Env = Env(Map.empty)
-
-    /**
-      * Returns an environment with the given variable symbols `varSyms` in it.
-      */
-    def of(varSyms: Iterable[Symbol.VarSym]): Env = varSyms.foldLeft(Env.empty) {
-      case (acc, sym) => acc + sym
-    }
   }
 
   /**

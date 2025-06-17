@@ -15,9 +15,10 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
+import ca.uwaterloo.flix.language.ast.Symbol.KindedTypeVarSym
 import ca.uwaterloo.flix.language.ast.Type
 
 /**
   * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
   */
-case class Instance(tpe: Type, tconstrs: List[TraitConstraint])
+case class Instance(tparams: List[KindedTypeVarSym], tpe: Type, tconstrs: List[TraitConstraint])

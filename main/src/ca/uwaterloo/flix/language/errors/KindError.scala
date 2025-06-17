@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation}
 import ca.uwaterloo.flix.language.fmt.FormatKind.formatKind
 import ca.uwaterloo.flix.util.Formatter
@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.Formatter
   * A common super-type for kind errors.
   */
 sealed trait KindError extends CompilationMessage {
-  val kind: String = "Kind Error"
+  val kind: CompilationMessageKind = CompilationMessageKind.KindError
 }
 
 object KindError {

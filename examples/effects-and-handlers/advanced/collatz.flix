@@ -23,7 +23,7 @@ pub def main(): Unit \ IO = region rc {
         loop(number);
         let steps = State.get();
         println("${number} took ${steps} steps to go to 1")
-    } with State {
+    } with handler State {
         def get(k) = k(Ref.get(n))
         def put(v, k) = {
             Ref.put(v, n);

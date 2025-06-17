@@ -19,9 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.phase.unification.SetFormula.*
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.Bimap
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.collection.immutable.SortedSet
 
@@ -30,12 +28,12 @@ object CaseSetUnification {
   /**
     * Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv, cases: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym)(implicit scope: Scope, flix: Flix): Result[Substitution, UnificationError] = {
+  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv, cases: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym)(implicit scope: Scope, flix: Flix): Option[Substitution] = {
     ///
     /// Perform aggressive matching to optimize for common cases.
     ///
     if (tpe1 eq tpe2) {
-      return Ok(Substitution.empty)
+      return Some(Substitution.empty)
     }
 
     ///
@@ -43,10 +41,10 @@ object CaseSetUnification {
     ///
     (tpe1, tpe2) match {
       case (t1@Type.Var(x, _), t2) if renv0.isFlexible(x) && !t2.typeVars.contains(t1) =>
-        return Ok(Substitution.singleton(x, t2))
+        return Some(Substitution.singleton(x, t2))
 
       case (t1, t2@Type.Var(x, _)) if renv0.isFlexible(x) && !t1.typeVars.contains(t2) =>
-        return Ok(Substitution.singleton(x, t1))
+        return Some(Substitution.singleton(x, t1))
 
       case _ => // nop
     }
@@ -67,7 +65,7 @@ object CaseSetUnification {
   /**
     * Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`.
     */
-  private def booleanUnification(tpe1: SetFormula, tpe2: SetFormula, renv: Set[Int], univ: Set[Int], sym: Symbol.RestrictableEnumSym, env: Bimap[VarOrCase, Int])(implicit flix: Flix): Result[CaseSetSubstitution, UnificationError] = {
+  private def booleanUnification(tpe1: SetFormula, tpe2: SetFormula, renv: Set[Int], univ: Set[Int], sym: Symbol.RestrictableEnumSym, env: Bimap[VarOrCase, Int])(implicit flix: Flix): Option[CaseSetSubstitution] = {
     // The boolean expression we want to show is 0.
     val query = minimize(mkEq(tpe1, tpe2)(univ))(univ)
 
@@ -94,12 +92,10 @@ object CaseSetUnification {
       //      }
       //    }
 
-      Ok(subst)
+      Some(subst)
     } catch {
       case SetUnificationException =>
-        val t1 = toCaseType(tpe1, sym, env, SourceLocation.Unknown)
-        val t2 = toCaseType(tpe2, sym, env, SourceLocation.Unknown)
-        Err(UnificationError.MismatchedCaseSets(t1, t2))
+        None
     }
   }
 

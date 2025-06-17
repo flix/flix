@@ -15,9 +15,9 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Symbol, TypeHead}
 
 /**
   * Represents the super traits and instances available for a particular traits.
   */
-case class TraitContext(superTraits: List[Symbol.TraitSym], instances: List[Instance])
+case class TraitContext(superTraits: List[Symbol.TraitSym], instances: Map[TypeHead, Instance])

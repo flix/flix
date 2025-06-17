@@ -4,14 +4,14 @@ mod Test.Exp.Effect {
     // just making it public for redundancy purposes
     // @test
     pub def handleEff01(): Bool = {
-        run true with Fail {
+        run true with handler Fail {
             def fail(_, _cont) = false
         }
     }
 
     // @test
     pub def handleEff02(): Unit = {
-        run () with Fail {
+        run () with handler Fail {
             def fail(_, cont) = cont()
         }
     }
@@ -27,14 +27,14 @@ mod Test.Exp.Effect {
             Test.Exp.Effect.Console.println("hi");
             Test.Exp.Effect.Console.println("bye");
             true
-        } with Console {
+        } with handler Console {
             def println(_, cont) = cont()
         }
     }
 
     // @test
     pub def handlePerform01(): Unit = {
-        run Test.Exp.Effect.Fail.fail("rats") with Fail {
+        run Test.Exp.Effect.Fail.fail("rats") with handler Fail {
             def fail(_, _cont) = ()
         }
     }
@@ -44,7 +44,7 @@ mod Test.Exp.Effect {
         run {
             let _ = Test.Exp.Effect.Console.println("It was the best of times");
             true
-        } with Console {
+        } with handler Console {
             def println(_, cont) = cont()
         }
     }
@@ -117,6 +117,5 @@ mod Test.Exp.Effect {
     pub eff C
     def f(): Unit \ {A, B, C} - {B} + {C} = ???
     pub def g(): Unit \ ({A, B, C} - {B}) + {C} = f()
-    // TODO: enable with set effects
-    // pub def h(): Unit \ {A, C} = f()
+    pub def h(): Unit \ {A, C} = f()
 }

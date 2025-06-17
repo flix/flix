@@ -46,18 +46,18 @@ mod Clock {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - Clock) + IO = x ->
         run {
             f(x)
-        } with Clock {
+        } with handler Clock {
             def currentTime(u, k) = {
                 let time = System.currentTimeMillis();
-                let ns = JTimeUnit.MILLISECONDS;
+                let ms = JTimeUnit.MILLISECONDS;
                 match u {
-                    case TimeUnit.Days          => k(ns.toDays(time))
-                    case TimeUnit.Hours         => k(ns.toHours(time))
-                    case TimeUnit.Microseconds  => k(ns.toMicros(time))
-                    case TimeUnit.Milliseconds  => k(ns.toMillis(time))
-                    case TimeUnit.Minutes       => k(ns.toMinutes(time))
-                    case TimeUnit.Nanoseconds   => k(ns.toNanos(time))
-                    case TimeUnit.Seconds       => k(ns.toSeconds(time))
+                    case TimeUnit.Days          => k(ms.toDays(time))
+                    case TimeUnit.Hours         => k(ms.toHours(time))
+                    case TimeUnit.Microseconds  => k(ms.toMicros(time))
+                    case TimeUnit.Milliseconds  => k(ms.toMillis(time))
+                    case TimeUnit.Minutes       => k(ms.toMinutes(time))
+                    case TimeUnit.Nanoseconds   => k(ms.toNanos(time))
+                    case TimeUnit.Seconds       => k(ms.toSeconds(time))
                 }
             }
         }

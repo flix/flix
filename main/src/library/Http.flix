@@ -113,7 +113,7 @@ mod Http {
     pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Http) + {Net, IO} = x ->
         run {
             Ok(f(x))
-        } with Http {
+        } with handler Http {
             def request(method, url, headers, body, k) =
                 try {
                     let bodyPublisher = match body {
@@ -123,7 +123,7 @@ mod Http {
                     let builder =
                        HttpRequest.newBuilder(URI.create(url)).method(method, bodyPublisher)
                            |> builder -> Map.foldLeftWithKey(
-                               (mb, k, l) -> List.foldLeft((lb, v) -> lb.header(k, v), mb, l),
+                               (mb, key, l) -> List.foldLeft((lb, v) -> lb.header(key, v), mb, l),
                                builder,
                                headers
                            );

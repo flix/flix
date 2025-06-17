@@ -17,31 +17,31 @@ mod Test.Exp.Jvm.InvokeConstructor {
         new Boolean(true)
 
     @test
-    def testInvokeConstructor_02(): Character \ IO =
+    def testInvokeConstructor_02(): Character =
         new Character('a')
 
     @test
-    def testInvokeConstructor_03(): Float \ IO =
+    def testInvokeConstructor_03(): Float =
         new Float(123.456f32)
 
     @test
-    def testInvokeConstructor_04(): Double \ IO =
+    def testInvokeConstructor_04(): Double =
         new Double(123.456f64)
 
     @test
-    def testInvokeConstructor_05(): Byte \ IO =
+    def testInvokeConstructor_05(): Byte =
         new Byte(123i8)
 
     @test
-    def testInvokeConstructor_06(): Short \ IO =
+    def testInvokeConstructor_06(): Short =
         new Short(123i16)
 
     @test
-    def testInvokeConstructor_07(): Integer \ IO =
+    def testInvokeConstructor_07(): Integer =
         new Integer(123i32)
 
     @test
-    def testInvokeConstructor_08(): Long \ IO =
+    def testInvokeConstructor_08(): Long =
         new Long(123i64)
 
     @test

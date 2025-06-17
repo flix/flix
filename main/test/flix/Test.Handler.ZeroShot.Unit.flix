@@ -9,7 +9,7 @@ mod Test.Handler.ZeroShot.Unit {
         def f1() = Exc.raise();
         let result = run {
             f1()
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = ()
         };
         Assert.eq((), result)
@@ -20,7 +20,7 @@ mod Test.Handler.ZeroShot.Unit {
         def f2() = { f1(); unreachable!() };
         let result = run {
             f2()
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = ()
         };
         Assert.eq((), result)
@@ -32,7 +32,7 @@ mod Test.Handler.ZeroShot.Unit {
         def f3() = { f2(); unreachable!() };
         let result = run {
             f3()
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = ()
         };
         Assert.eq((), result)
@@ -43,7 +43,7 @@ mod Test.Handler.ZeroShot.Unit {
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = run {
             r(0)
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = ()
         };
         Assert.eq((), result)
@@ -54,7 +54,7 @@ mod Test.Handler.ZeroShot.Unit {
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = run {
             r(1)
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = ()
         };
         Assert.eq((), result)
@@ -65,7 +65,7 @@ mod Test.Handler.ZeroShot.Unit {
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = run {
             r(10)
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = ()
         };
         Assert.eq((), result)
@@ -74,7 +74,7 @@ mod Test.Handler.ZeroShot.Unit {
     def testMutualRecursive01(): Bool =
         let result = run {
             mutual1(0)
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = ()
         };
         Assert.eq((), result)
@@ -83,7 +83,7 @@ mod Test.Handler.ZeroShot.Unit {
     def testMutualRecursive02(): Bool =
         let result = run {
             mutual1(1)
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = ()
         };
         Assert.eq((), result)
@@ -92,7 +92,7 @@ mod Test.Handler.ZeroShot.Unit {
     def testMutualRecursive03(): Bool =
         let result = run {
             mutual1(2)
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = ()
         };
         Assert.eq((), result)
@@ -101,7 +101,7 @@ mod Test.Handler.ZeroShot.Unit {
     def testMutualRecursive04(): Bool =
         let result = run {
             mutual1(3)
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = ()
         };
         Assert.eq((), result)
@@ -110,7 +110,7 @@ mod Test.Handler.ZeroShot.Unit {
     def testMutualRecursive05(): Bool =
         let result = run {
             mutual1(10)
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = ()
         };
         Assert.eq((), result)

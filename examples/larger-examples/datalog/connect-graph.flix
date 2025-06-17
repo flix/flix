@@ -41,7 +41,7 @@ pub def connectedComponentRep(g: Graph[node]): #{ ComponentRep(node, node) | r }
         // `ReachUp` contains nodes that can reach at least one other
         // node with a higher value. This contains all nodes
         // that are not the maximum node of their component.
-        ReachUp(n1) :- Reachable(n1, n2), if n1 < n2.
+        ReachUp(n1) :- Reachable(n1, n2), if (n1 < n2).
         // `n` is in a component that is represented by `rep`.
         // `rep` is the highest node of the component.
         ComponentRep(n, rep) :- Reachable(n, rep), not ReachUp(rep).
@@ -59,7 +59,7 @@ pub def connectGraph(g: Graph[node]): #{ Edge(Set[node], Set[node]) | r } with O
         // every pair of components `(c1, c2)` where `c1` is lexicographically
         // smaller than `c2`. The fix keyword is used here to ensure that the
         // full union is computed before producing Edge values.
-        Edge(c1, c2) :- fix Component(_; c1), fix Component(_; c2), if c1 < c2.
+        Edge(c1, c2) :- fix Component(_; c1), fix Component(_; c2), if (c1 < c2).
     };
     solve connectedComponentRep(g), missingEdges project Edge
 

@@ -16,17 +16,18 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SyntacticContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SyntaxTree, TokenKind}
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for parser errors.
   */
 sealed trait ParseError extends CompilationMessage {
-  val kind = "Parse Error"
-  val sctx: SyntacticContext
+  def kind: CompilationMessageKind = CompilationMessageKind.ParseError(sctx)
+  def sctx: SyntacticContext
+  def loc: SourceLocation
 }
 
 object ParseError {
@@ -68,6 +69,14 @@ object ParseError {
 
     case object Expression extends NamedTokenSet {
       def display(fmt: Formatter): String = fmt.cyan("<expression>")
+    }
+
+    case object ExtMatchRule extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<extensible-match-rule>")
+    }
+
+    case object ExtPattern extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<ext-pattern>")
     }
 
     case object FixpointConstraint extends NamedTokenSet {
@@ -133,7 +142,7 @@ object ParseError {
     * @param loc           The source location.
     */
   case class Malformed(namedTokenSet: NamedTokenSet, sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError {
-    override val kind = s"Parse Error ($sctx)"
+    override val kind: CompilationMessageKind.ParseError = CompilationMessageKind.ParseError(sctx)
 
     def summary: String = s"Malformed ${namedTokenSet.display(Formatter.NoFormatter)}."
 
@@ -153,7 +162,7 @@ object ParseError {
     * @param loc  The source location.
     */
   case class MisplacedComments(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
-    override val kind = s"Parse Error ($sctx)"
+    override val kind: CompilationMessageKind.ParseError = CompilationMessageKind.ParseError(sctx)
 
     def summary: String = s"Misplaced comment(s)."
 
@@ -174,7 +183,7 @@ object ParseError {
     * @param loc  The source location.
     */
   case class MisplacedDocComments(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
-    override val kind = s"Parse Error ($sctx)"
+    override val kind: CompilationMessageKind.ParseError = CompilationMessageKind.ParseError(sctx)
 
     def summary: String = s"Misplaced doc-comment(s)."
 
@@ -196,7 +205,7 @@ object ParseError {
     * @param loc   The source location.
     */
   case class MissingScope(token: TokenKind, sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
-    override val kind = s"Parse Error ($sctx)"
+    override val kind: CompilationMessageKind.ParseError = CompilationMessageKind.ParseError(sctx)
 
     def summary: String = s"Expected scope on ${token.display}."
 
@@ -219,7 +228,7 @@ object ParseError {
     * @param loc      The source location.
     */
   case class NeedAtleastOne(expected: NamedTokenSet, sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError {
-    override val kind = s"Parse Error ($sctx)"
+    override val kind: CompilationMessageKind.ParseError = CompilationMessageKind.ParseError(sctx)
 
     def summary: String = s"Expected at least one ${expected.display(Formatter.NoFormatter)}."
 
@@ -240,7 +249,7 @@ object ParseError {
     * @param loc       The source location.
     */
   case class TrailingSeparator(separator: TokenKind, sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
-    override val kind = s"Parse Error ($sctx)"
+    override val kind: CompilationMessageKind.ParseError = CompilationMessageKind.ParseError(sctx)
 
     def summary: String = s"Trailing ${separator.display}."
 
@@ -262,8 +271,8 @@ object ParseError {
     * @param hint     Optional hint with more details about the error
     * @param loc      The source location.
     */
-  case class UnexpectedToken(expected: NamedTokenSet, actual: Option[TokenKind], sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError {
-    override val kind = s"Parse Error ($sctx)"
+  case class UnexpectedToken(expected: NamedTokenSet, actual: Option[TokenKind], sctx: SyntacticContext = SyntacticContext.Unknown, hint: Option[String] = None, loc: SourceLocation) extends ParseError {
+    override val kind: CompilationMessageKind.ParseError = CompilationMessageKind.ParseError(sctx)
 
     def summary: String = {
       val expectedStr = s"Expected ${expected.display(Formatter.NoFormatter)}"

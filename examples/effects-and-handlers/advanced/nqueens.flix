@@ -67,7 +67,7 @@ pub def countSolutions(size: Int32): Int32 =
     run {
         findOneSolution(size, size);
         1
-    } with Searchable {
+    } with handler Searchable {
         //
         // Returns 0 without calling the continuation,
         // so control is never transferred back to
@@ -100,5 +100,5 @@ pub def countSolutions(size: Int32): Int32 =
         }
     }
 
-def main(): Unit \ IO = 
+def main(): Unit \ IO =
     println(countSolutions(8))

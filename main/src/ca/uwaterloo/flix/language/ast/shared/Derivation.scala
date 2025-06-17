@@ -20,4 +20,4 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 /**
   * Represents a derivation on an enum (e.g. `enum E with Eq`).
   */
-case class Derivation(trt: Symbol.TraitSym, loc: SourceLocation)
+case class Derivation(sym: Symbol.TraitSym, loc: SourceLocation)

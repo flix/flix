@@ -17,7 +17,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         def f1() = Exc.raise();
         let result = run {
             f1()
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
@@ -28,7 +28,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         def f2() = { f1(); unreachable!() };
         let result = run {
             f2()
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
@@ -40,7 +40,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         def f3() = { f2(); unreachable!() };
         let result = run {
             f3()
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
@@ -51,7 +51,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = run {
             r(0)
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
@@ -62,7 +62,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = run {
             r(1)
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
@@ -73,7 +73,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = run {
             r(10)
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
@@ -82,7 +82,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
     def testMutualRecursive01(): Bool =
         let result = run {
             mutual1(0)
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
@@ -91,7 +91,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
     def testMutualRecursive02(): Bool =
         let result = run {
             mutual1(1)
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
@@ -100,7 +100,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
     def testMutualRecursive03(): Bool =
         let result = run {
             mutual1(2)
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
@@ -109,7 +109,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
     def testMutualRecursive04(): Bool =
         let result = run {
             mutual1(3)
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
@@ -118,7 +118,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
     def testMutualRecursive05(): Bool =
         let result = run {
             mutual1(10)
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
@@ -127,7 +127,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
     def testMutualRecursive06(): Bool =
         let result = run {
             mutual1(10)
-        } with Exc {
+        } with handler Exc {
             def raise(_k) = newAtomicInteger(40)
         };
         Assert.eq(toInt(newAtomicInteger(40)), toInt(result))

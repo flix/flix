@@ -6,7 +6,7 @@ mod Test.Exp.IndexableMut {
             let a = Array#{0, 1, 2, 3} @ rc;
             a[0] = 4;
             a[0] == 4
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = false
         }
     }
@@ -17,7 +17,7 @@ mod Test.Exp.IndexableMut {
             let a = Array#{0, 1, 2, 3} @ rc;
             a[1] = 42;
             a[1] == 42
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = false
         }
     }
@@ -28,7 +28,7 @@ mod Test.Exp.IndexableMut {
             let a = Array#{0, 1, 2, 3} @ rc;
             a[3] = 200;
             a[3] == 200
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = false
         }
     }
@@ -39,7 +39,7 @@ mod Test.Exp.IndexableMut {
             let a = Array#{0, 1, 2, 3} @ rc;
             a[-1] = 4;
             false
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = true
         }
     }
@@ -50,7 +50,7 @@ mod Test.Exp.IndexableMut {
             let a = Array#{0, 1, 2, 3} @ rc;
             a[5] = 4;
             false
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = true
         }
     }
@@ -61,7 +61,7 @@ mod Test.Exp.IndexableMut {
             let l = Vector#{0, 1, 2, 3} |> Vector.toMutList(rc);
             l[0] = 4;
             l[0] == 4
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = false
         }
     }
@@ -72,7 +72,7 @@ mod Test.Exp.IndexableMut {
             let l = Vector#{0, 1, 2, 3} |> Vector.toMutList(rc);
             l[1] = 42;
             l[1] == 42
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = false
         }
     }
@@ -83,7 +83,7 @@ mod Test.Exp.IndexableMut {
             let l = Vector#{0, 1, 2, 3} |> Vector.toMutList(rc);
             l[3] = 200;
             l[3] == 200
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = false
         }
     }
@@ -94,7 +94,7 @@ mod Test.Exp.IndexableMut {
             let l = Vector#{0, 1, 2, 3} |> Vector.toMutList(rc);
             l[-1] = 4;
             false
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = true
         }
     }
@@ -105,7 +105,7 @@ mod Test.Exp.IndexableMut {
             let l = Vector#{0, 1, 2, 3} |> Vector.toMutList(rc);
             l[5] = 4;
             false
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = true
         }
     }
@@ -116,7 +116,7 @@ mod Test.Exp.IndexableMut {
             let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
             m[0] = -1;
             m[0] == -1
-        } with KeyNotFound {
+        } with handler KeyNotFound {
             def keyNotFound(_, _) = false
         }
     }
@@ -127,7 +127,7 @@ mod Test.Exp.IndexableMut {
             let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
             m[1] = 42;
             m[1] == 42
-        } with KeyNotFound {
+        } with handler KeyNotFound {
             def keyNotFound(_, _) = false
         }
     }
@@ -138,7 +138,7 @@ mod Test.Exp.IndexableMut {
             let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
             m[2] = 200;
             m[2] == 200
-        } with KeyNotFound {
+        } with handler KeyNotFound {
             def keyNotFound(_, _) = false
         }
     }
@@ -149,7 +149,7 @@ mod Test.Exp.IndexableMut {
             let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
             m[3] = 1234;
             m[3] == 1234
-        } with KeyNotFound {
+        } with handler KeyNotFound {
             def keyNotFound(_, _) = false
         }
     }
@@ -160,7 +160,7 @@ mod Test.Exp.IndexableMut {
             let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
             m[4] = -1;
             m[4] == -1
-        } with KeyNotFound {
+        } with handler KeyNotFound {
             def keyNotFound(_, _) = false
         }
     }
@@ -171,7 +171,7 @@ mod Test.Exp.IndexableMut {
             let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
             m[-1] = -1;
             m[-1] == -1
-        } with KeyNotFound {
+        } with handler KeyNotFound {
             def keyNotFound(_, _) = false
         }
     }
@@ -182,7 +182,7 @@ mod Test.Exp.IndexableMut {
             let r = { a = Array#{0, 1, 2, 3} @ rc };
             r#a[1] = 2;
             r#a[1] == 2
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = false
         }
     }
@@ -193,7 +193,7 @@ mod Test.Exp.IndexableMut {
             let r = { r = { a = Array#{0, 1, 2, 3} @ rc } };
             r#r#a[3] = 2;
             r#r#a[3] == 2
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = false
         }
     }
@@ -204,7 +204,7 @@ mod Test.Exp.IndexableMut {
             let r = { r = { a = Array#{{ a = Array#{1, 2, 3, 4} @ rc } } @ rc } };
             r#r#a[0]#a[1] = 42;
             r#r#a[0]#a[1] == 42
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = false
         }
     }
@@ -215,7 +215,7 @@ mod Test.Exp.IndexableMut {
             let r = { r = { a = Array#{Array#{} @ rc, Array#{{ a = Array#{1, 2, 3, 4} @ rc }} @ rc } @ rc } };
             r#r#a[1][0]#a[1] = -1;
             r#r#a[1][0]#a[1] == -1
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = false
         }
     }
@@ -226,7 +226,7 @@ mod Test.Exp.IndexableMut {
             let r = { r = { a = Array#{Array#{} @ rc, Array#{{ a = Array#{1, 2, 3, 4} @ rc }} @ rc } @ rc } };
             r#r#a[1] = Array#{} @ rc;
             r#r#a[1][0]#a[1] == -1
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = true
         }
     }
@@ -238,7 +238,7 @@ mod Test.Exp.IndexableMut {
             let a = Array#{Array#{Array#{1, 2, 3, 4} @ rc } @ rc } @ rc;
             a[0][0][2] = 42;
             a[0][0][2] == 42
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = false
         }
     }
@@ -249,7 +249,7 @@ mod Test.Exp.IndexableMut {
             let a = Array#{Array#{Array#{1, 2, 3, 4} @ rc } @ rc } @ rc;
             a[0][0] = Array#{42} @ rc;
             a[0][0][0] == 42
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = false
         }
     }
@@ -260,7 +260,7 @@ mod Test.Exp.IndexableMut {
             let a = Array#{Array#{Array#{1, 2, 3, 4} @ rc } @ rc } @ rc;
             a[0][0] = Array#{42} @ rc;
             a[0][0][2] == 42
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = true
         }
     }
@@ -270,7 +270,7 @@ mod Test.Exp.IndexableMut {
         run {
             f()()#a[0]()[0]#r#g(rc)[2] = 42;
             true
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = false
         }
     }
@@ -280,7 +280,7 @@ mod Test.Exp.IndexableMut {
         run {
             f()()#a[0]()[0]#r#g(rc)[2] = 42;
             true
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = false
         }
     }
@@ -290,7 +290,7 @@ mod Test.Exp.IndexableMut {
         run {
             f()()#a[0]()[0]#r#g(rc)[-1] = 42;
             false
-        } with OutOfBounds {
+        } with handler OutOfBounds {
             def outOfBounds(_, _) = true
         }
     }

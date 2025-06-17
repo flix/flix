@@ -1453,7 +1453,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
            |}
            |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[RedundancyError.UnusedVarSym](result)
   }
 
@@ -1469,7 +1469,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
            |}
            |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[RedundancyError.UnusedVarSym](result)
   }
 
@@ -1580,10 +1580,10 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |def hof(f: a -> b \ e, x: a): b \ e = f(x)
         |
         |def f(): Unit =
-        |    hof(x -> (x, Ref.fresh(21, Static));
+        |    hof(x -> (x, Ref.fresh(21, Static)));
         |    ()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.UnderAppliedFunction](result)
   }
 
@@ -1950,25 +1950,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |def f(): Unit =
         |    let _ =
         |        if (true)
-        |            checked_cast(())
-        |        else
-        |            region rc {
-        |                let _ = $ARRAY_NEW$(rc, 8, 8);
-        |                ()
-        |            };
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantCheckedTypeCast](result)
-  }
-
-  test("RedundantCheckedTypeCast.04") {
-    val input =
-      """
-        |def f(): Unit =
-        |    let _ =
-        |        if (true)
         |            checked_cast((1, "a"))
         |        else
         |            (1, "a");
@@ -1979,7 +1960,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
-  test("RedundantCheckedTypeCast.06") {
+  test("RedundantCheckedTypeCast.04") {
     val input =
       """
         |pub eff A
@@ -2002,7 +1983,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
-  ignore("RedundantCheckedEffectCast.01") {
+  test("RedundantCheckedEffectCast.01") {
     val input =
       """
         |def f(): Unit =
@@ -2018,7 +1999,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedEffectCast](result)
   }
 
-  ignore("RedundantCheckedEffectCast.02") {
+  test("RedundantCheckedEffectCast.02") {
     val input =
       """
         |def f(): Unit =
@@ -2037,7 +2018,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedEffectCast](result)
   }
 
-  ignore("RedundantCheckedEffectCast.03") {
+  test("RedundantCheckedEffectCast.03") {
     val input =
       """
         |def f(): Unit =
@@ -2053,7 +2034,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedEffectCast](result)
   }
 
-  ignore("RedundantCheckedEffectCast.05") {
+  test("RedundantCheckedEffectCast.05") {
     val input =
       """
         |pub eff A
@@ -2189,6 +2170,43 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |def f(): Int32 =
         |   def g() = { def g() = 1; g() };
         |   g()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowingName](result)
+  }
+
+  test("ShadowedVariable.Handler.01") {
+    val input =
+      """
+        |eff E {
+        |    def op(x: String): String
+        |}
+        |
+        |def foo(arg: String): String = {
+        |    run ??? with handler E {
+        |        def op(arg, k) = ???
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowingName](result)
+  }
+
+  test("ShadowedVariable.Handler.02") {
+    val input =
+      """
+        |eff E {
+        |    def op(x: String): String
+        |}
+        |
+        |def foo(arg: String): String = {
+        |    run ??? with handler E {
+        |        def op(arg, k) = {
+        |            let k = "";
+        |            k
+        |        }
+        |    }
+        |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowingName](result)

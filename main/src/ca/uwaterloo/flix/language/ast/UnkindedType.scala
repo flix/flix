@@ -18,8 +18,10 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.EliminatedBy
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
 import ca.uwaterloo.flix.language.phase.Resolver
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.Nel
 
 import java.util.Objects
 import scala.collection.immutable.SortedSet
@@ -280,25 +282,25 @@ object UnkindedType {
   /**
     * A fully resolved type alias.
     */
-  case class Alias(cst: AliasConstructor, args: List[UnkindedType], tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
+  case class Alias(symUse: TypeAliasSymUse, args: List[UnkindedType], tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
-      case Alias(AliasConstructor(sym2, _), args2, tpe2, _) => cst.sym == sym2 && args == args2 && tpe == tpe2
+      case Alias(TypeAliasSymUse(sym2, _), args2, tpe2, _) => symUse.sym == sym2 && args == args2 && tpe == tpe2
       case _ => false
     }
 
-    override def hashCode(): Int = Objects.hash(cst, args, tpe)
+    override def hashCode(): Int = Objects.hash(symUse, args, tpe)
   }
 
   /**
     * A fully resolved associated type.
     */
-  case class AssocType(cst: AssocTypeConstructor, arg: UnkindedType, loc: SourceLocation) extends UnkindedType {
+  case class AssocType(assocTypeSymUse: AssocTypeSymUse, arg: UnkindedType, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
-      case AssocType(AssocTypeConstructor(sym2, _), arg2, _) => cst.sym == sym2 && arg == arg2
+      case AssocType(AssocTypeSymUse(sym2, _), arg2, _) => assocTypeSymUse.sym == sym2 && arg == arg2
       case _ => false
     }
 
-    override def hashCode(): Int = Objects.hash(cst, arg)
+    override def hashCode(): Int = Objects.hash(assocTypeSymUse, arg)
   }
 
   /**
@@ -316,8 +318,8 @@ object UnkindedType {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(loc: SourceLocation, isRegion: Boolean = false, text: VarText = VarText.Absent)(implicit scope: Scope, flix: Flix): UnkindedType.Var = {
-    val sym = Symbol.freshUnkindedTypeVarSym(text, isRegion, loc)
+  def freshVar(loc: SourceLocation, text: VarText = VarText.Absent)(implicit scope: Scope, flix: Flix): UnkindedType.Var = {
+    val sym = Symbol.freshUnkindedTypeVarSym(text, loc)
     UnkindedType.Var(sym, loc)
   }
 
@@ -357,7 +359,7 @@ object UnkindedType {
   }
 
   /**
-    * Returns the ##java.lang.Object type.
+    * Returns the java.lang.Object type.
     */
   def mkObject(loc: SourceLocation): UnkindedType = {
     val obj = Class.forName("java.lang.Object")
@@ -382,7 +384,7 @@ object UnkindedType {
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
-  def mkTuple(ts: List[UnkindedType], loc: SourceLocation): UnkindedType = {
+  def mkTuple(ts: Nel[UnkindedType], loc: SourceLocation): UnkindedType = {
     val init = UnkindedType.Cst(TypeConstructor.Tuple(ts.length), loc)
     ts.foldLeft(init: UnkindedType) {
       case (acc, x) => Apply(acc, x, loc)
@@ -425,7 +427,7 @@ object UnkindedType {
     val ts = ts0 match {
       case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
       case x :: Nil => x
-      case xs => mkTuple(xs, loc)
+      case x :: xs => mkTuple(Nel(x, xs), loc)
     }
 
     Apply(UnkindedType.Cst(TypeConstructor.Relation, loc), ts, loc)
@@ -438,7 +440,7 @@ object UnkindedType {
     val ts = ts0 match {
       case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
       case x :: Nil => x
-      case xs => mkTuple(xs, loc)
+      case x :: xs => mkTuple(Nel(x, xs), loc)
     }
 
     Apply(UnkindedType.Cst(TypeConstructor.Lattice, loc), ts, loc)
@@ -475,7 +477,7 @@ object UnkindedType {
     val ts = ts0 match {
       case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
       case x :: Nil => x
-      case xs => UnkindedType.mkTuple(xs, loc)
+      case x :: xs => UnkindedType.mkTuple(Nel(x, xs), loc)
     }
 
     UnkindedType.Apply(tycon, ts, loc)
@@ -548,66 +550,5 @@ object UnkindedType {
     case tpe: UnkindedType.Error => tpe
     case UnappliedAlias(_, loc) => throw InternalCompilerException("unexpected unapplied alias", loc)
     case UnappliedAssocType(_, loc) => throw InternalCompilerException("unexpected unapplied associated type", loc)
-  }
-
-  // TODO remove once typechecking Resolver.lookupJVMMethod is moved to Typer
-
-  /**
-    * Returns the Flix UnkindedType of a Java Class
-    */
-  def getFlixType(c: Class[?]): UnkindedType = {
-    if (c == java.lang.Boolean.TYPE) {
-      UnkindedType.Cst(TypeConstructor.Bool, SourceLocation.Unknown)
-    }
-    else if (c == java.lang.Byte.TYPE) {
-      UnkindedType.Cst(TypeConstructor.Int8, SourceLocation.Unknown)
-    }
-    else if (c == java.lang.Short.TYPE) {
-      UnkindedType.Cst(TypeConstructor.Int16, SourceLocation.Unknown)
-    }
-    else if (c == java.lang.Integer.TYPE) {
-      UnkindedType.Cst(TypeConstructor.Int32, SourceLocation.Unknown)
-    }
-    else if (c == java.lang.Long.TYPE) {
-      UnkindedType.Cst(TypeConstructor.Int64, SourceLocation.Unknown)
-    }
-    else if (c == java.lang.Character.TYPE) {
-      UnkindedType.Cst(TypeConstructor.Char, SourceLocation.Unknown)
-    }
-    else if (c == java.lang.Float.TYPE) {
-      UnkindedType.Cst(TypeConstructor.Float32, SourceLocation.Unknown)
-    }
-    else if (c == java.lang.Double.TYPE) {
-      UnkindedType.Cst(TypeConstructor.Float64, SourceLocation.Unknown)
-    }
-    else if (c == classOf[java.math.BigDecimal]) {
-      UnkindedType.Cst(TypeConstructor.BigDecimal, SourceLocation.Unknown)
-    }
-    else if (c == classOf[java.math.BigInteger]) {
-      UnkindedType.Cst(TypeConstructor.BigInt, SourceLocation.Unknown)
-    }
-    else if (c == classOf[java.lang.String]) {
-      UnkindedType.Cst(TypeConstructor.Str, SourceLocation.Unknown)
-    }
-    else if (c == classOf[java.util.regex.Pattern]) {
-      UnkindedType.Cst(TypeConstructor.Regex, SourceLocation.Unknown)
-    }
-    else if (c == java.lang.Void.TYPE) {
-      UnkindedType.Cst(TypeConstructor.Unit, SourceLocation.Unknown)
-    }
-    // handle arrays of types
-    else if (c.isArray) {
-      val comp = c.getComponentType
-      val elmType = getFlixType(comp)
-      UnkindedType.mkApply(
-        UnkindedType.Cst(TypeConstructor.Array, SourceLocation.Unknown),
-        List(elmType, UnkindedType.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)),
-        SourceLocation.Unknown
-      )
-    }
-    // otherwise native type
-    else {
-      UnkindedType.Cst(TypeConstructor.Native(c), SourceLocation.Unknown)
-    }
   }
 }

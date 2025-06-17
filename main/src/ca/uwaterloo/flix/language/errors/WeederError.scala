@@ -16,7 +16,8 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
+import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -24,7 +25,7 @@ import ca.uwaterloo.flix.util.Formatter
   * A common super-type for weeding errors.
   */
 sealed trait WeederError extends CompilationMessage {
-  val kind = "Syntax Error"
+  val kind: CompilationMessageKind = CompilationMessageKind.WeederError
 }
 
 object WeederError {
@@ -141,37 +142,6 @@ object WeederError {
       import formatter.*
       s"${underline("Tip:")} Remove one of the two fields."
     })
-  }
-
-  /**
-    * An error raised to indicate that the tag `name` was declared multiple times.
-    *
-    * @param enumName the name of the enum.
-    * @param tag      the name of the tag.
-    * @param loc1     the location of the first tag.
-    * @param loc2     the location of the second tag.
-    */
-  case class DuplicateTag(enumName: String, tag: Name.Ident, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    def summary: String = s"Duplicate tag: '$tag'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Multiple declarations of the tag '${red(tag.name)}' in the enum '${cyan(enumName)}'.
-         |
-         |${code(loc1, "the first declaration was here.")}
-         |
-         |${code(loc2, "the second declaration was here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Remove or rename one of the tags to avoid the name clash."
-    })
-
-    def loc: SourceLocation = loc1
-
   }
 
   /**
@@ -663,6 +633,31 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate a function is annotated with both `@Inline` and `@DontInline`.
+    *
+    * @param inlineLoc     the source location of the `@Inline` annotation.
+    * @param dontInlineLoc the source location of the `@DontInline` annotation.
+    */
+  case class InlineAndDontInline(inlineLoc: SourceLocation, dontInlineLoc: SourceLocation) extends WeederError {
+    override def summary: String = "A def cannot be marked both `@Inline` and `@DontInline`"
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> A def cannot be marked both `@Inline` and `@DontInline`.
+         |
+         |${code(inlineLoc, "the `@Inline` occurs here")}
+         |
+         |${code(dontInlineLoc, "the `@DontInline` occurs here")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+
+    override def loc: SourceLocation = inlineLoc.min(dontInlineLoc)
+  }
+
+  /**
     * An error raised to indicate a non-single character literal.
     *
     * @param chars the characters in the character literal.
@@ -843,6 +838,24 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that an argument list is missing a kind.
+    *
+    * @param loc the location of the argument list.
+    */
+  case class MissingArgumentList(loc: SourceLocation) extends WeederError {
+    def summary: String = "An argument list is required here"
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Missing argument list. An argument list is required here.
+         |
+         |${code(loc, "missing argument list.")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that the formal parameter lacks a type declaration.
     *
     * @param name the name of the parameter.
@@ -942,7 +955,7 @@ object WeederError {
     * @param loc  the location of the annotation.
     */
   case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Undefined annotation $name"
+    def summary: String = s"Undefined annotation '$name'.'"
 
     def message(formatter: Formatter): String = {
       import formatter.*
@@ -1012,9 +1025,10 @@ object WeederError {
   /**
     * An error raised to indicate an illegal intrinsic.
     *
+    * @param qn  the qualified name of the illegal intrinsic.
     * @param loc the location where the illegal intrinsic occurs.
     */
-  case class UnqualifiedUse(loc: SourceLocation) extends WeederError {
+  case class UnqualifiedUse(qn: Name.QName, loc: SourceLocation) extends WeederError {
     def summary: String = "Unqualified use."
 
     def message(formatter: Formatter): String = {

@@ -30,7 +30,7 @@ mod OutOfBounds {
     /// Turns the `OutOfBounds` effect into `Err(msg)`.
     @Experimental
     pub def asRes(f: a -> b \ ef): (a -> Result[String, b] \ ef - OutOfBounds) = {
-        x -> run Ok(f(x)) with OutOfBounds {
+        x -> run Ok(f(x)) with handler OutOfBounds {
             def outOfBounds(msg, _) = Err(msg)
         }
     }

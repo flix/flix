@@ -18,7 +18,7 @@ mod Test.Handler.Ask.AtomicInteger {
     def sample(limit: Int32): List[AtomicInteger] =
         run {
             generator(newAtomicInteger(0)); Nil
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = if (toInt(x) == limit) Nil else x :: k()
         }
 

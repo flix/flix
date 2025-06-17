@@ -33,19 +33,19 @@ class FuzzDeleteLines extends AnyFunSuite with TestUtils {
   test("simple-card-game") {
     val filepath = Paths.get("examples/larger-examples/simple-card-game.flix")
     val lines = Files.lines(filepath)
-    compileAllLinesExceptOne(filepath.getFileName.toString, lines)
+    compileAllLinesExceptOne(lines)
   }
 
   test("the-ast-typing-problem-with-polymorphic-records") {
     val filepath = Paths.get("examples/records/the-ast-typing-problem-with-polymorphic-records.flix")
     val lines = Files.lines(filepath)
-    compileAllLinesExceptOne(filepath.getFileName.toString, lines)
+    compileAllLinesExceptOne(lines)
   }
 
   test("ford-fulkerson") {
     val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
     val lines = Files.lines(filepath)
-    compileAllLinesExceptOne(filepath.getFileName.toString, lines)
+    compileAllLinesExceptOne(lines)
   }
 
   /**
@@ -53,7 +53,7 @@ class FuzzDeleteLines extends AnyFunSuite with TestUtils {
     * For example, in a file with 100 lines and N = 10 we make variants without line 1, 10, 20, and so on.
     * The program may not be valid: We just care that it does not crash the compiler.
     */
-  private def compileAllLinesExceptOne(name: String, stream: java.util.stream.Stream[String]): Unit = {
+  private def compileAllLinesExceptOne(stream: java.util.stream.Stream[String]): Unit = {
     val lines = stream.iterator().asScala.toList
     val numLines = lines.length
     val NFixed = N.min(numLines)
@@ -65,7 +65,8 @@ class FuzzDeleteLines extends AnyFunSuite with TestUtils {
       val iStepped = Math.min(i * step, numLines)
       val (before, after) = lines.splitAt(iStepped)
       val src = (before ::: after.drop(1)).mkString("\n")
-      flix.addSourceCode(s"$name-delete-line-$i", src)(SecurityContext.AllPermissions)
+      // We use the same name for all inputs to simulate editing a file
+      flix.addSourceCode("<input>", src)(SecurityContext.AllPermissions)
       flix.compile() // We simply care that this does not crash.
     }
   }

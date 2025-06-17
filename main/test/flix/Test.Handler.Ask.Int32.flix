@@ -10,7 +10,7 @@ mod Test.Handler.Ask.Int32 {
     def sample(limit: Int32): List[Int32] =
         run {
             generator(0); Nil
-        } with Ask {
+        } with handler Ask {
             def ask(x, k) = if (x == limit) Nil else x :: k()
         }
 

@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Consumer, Position, Range, ResponseStatus, TextEdit, Visitor, WorkspaceEdit}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, EqualityConstraint, SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
@@ -54,19 +54,18 @@ object RenameProvider {
     * both. If there are two different [[Symbol]]s under the left and right [[Position]],
     * we rename occurrences of the one on the right.
     *
-    * @param newName  The new name for the [[Symbol]] we're renaming.
-    * @param uri      The URI of the file where the cursor is, provided by the LSP request.
-    * @param pos      The [[Position]] of the cursor within the file given by `uri`, provided by the LSP request.
-    * @param root     The root AST node of the Flix project.
-    * @return         A [[JObject]] representing a Rename LSP response.
+    * @param newName The new name for the [[Symbol]] we're renaming.
+    * @param uri     The URI of the file where the cursor is, provided by the LSP request.
+    * @param pos     The [[Position]] of the cursor within the file given by `uri`, provided by the LSP request.
+    * @param root    The root AST node of the Flix project.
+    * @return A [[JObject]] representing a Rename LSP response.
     */
-  def processRename(newName: String, uri: String, pos: Position)(implicit root: Root): JObject = {
+  def processRename(newName: String, uri: String, pos: Position)(implicit root: Root): Option[WorkspaceEdit] = {
     val left = searchLeftOfCursor(uri, pos).flatMap(getOccurs)
     val right = searchRightOfCursor(uri, pos).flatMap(getOccurs)
 
     right.orElse(left)
       .map(rename(newName))
-      .getOrElse(mkNotFound(uri, pos))
   }
 
   /**
@@ -79,7 +78,7 @@ object RenameProvider {
     * @param uri  The URI of the path of the file where the cursor is.
     * @param pos  The space to the immediate right of the cursor.
     * @param root The root AST node of the Flix project.
-    * @return     Returns the most precise AST node under the space immediately left of the thin cursor.
+    * @return Returns the most precise AST node under the space immediately left of the thin cursor.
     */
   private def searchLeftOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     if (pos.character >= 2) {
@@ -99,7 +98,7 @@ object RenameProvider {
     * @param uri  The URI of the path of the file where the cursor is.
     * @param pos  The [[Position]] to the immediate right of the thin cursor.
     * @param root The root AST node of the Flix project.
-    * @return     Returns the most precise AST node under the space immediately right of the thin cursor.
+    * @return Returns the most precise AST node under the space immediately right of the thin cursor.
     */
   private def searchRightOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = search(uri, pos)
 
@@ -109,7 +108,7 @@ object RenameProvider {
     * @param uri  The URI of the path of the file where the cursor is.
     * @param pos  The [[Position]] that we are looking for the most precise AST under.
     * @param root The root AST node of the Flix project.
-    * @return     The most precise AST node udner a given [[Position]] `pos`.
+    * @return The most precise AST node udner a given [[Position]] `pos`.
     */
   private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val consumer = StackConsumer()
@@ -118,7 +117,7 @@ object RenameProvider {
   }
 
   private def isReal(x: AnyRef): Boolean = x match {
-    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) =>  loc.isReal
+    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Instance(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Sig(_, _, _, loc) => loc.isReal
     case TypedAst.Def(_, _, _, loc) => loc.isReal
@@ -146,10 +145,10 @@ object RenameProvider {
     case TypedAst.FormalParam(_, _, _, _, loc) => loc.isReal
     case TypedAst.PredicateParam(_, _, loc) => loc.isReal
     case TypedAst.JvmMethod(_, _, _, _, _, loc) => loc.isReal
-    case TypedAst.CatchRule(_, _, _) => true
-    case TypedAst.HandlerRule(_, _, _) => true
-    case TypedAst.TypeMatchRule(_, _, _) => true
-    case TypedAst.SelectChannelRule(_, _, _) => true
+    case TypedAst.CatchRule(_, _, _, _) => true
+    case TypedAst.HandlerRule(_, _, _, _) => true
+    case TypedAst.TypeMatchRule(_, _, _, _) => true
+    case TypedAst.SelectChannelRule(_, _, _, _) => true
     case TypedAst.TypeParam(_, _, loc) => loc.isReal
     case TypedAst.ParYieldFragment(_, _, loc) => loc.isReal
 
@@ -166,9 +165,7 @@ object RenameProvider {
     case SymUse.TraitSymUse(_, loc) => loc.isReal
 
     case TraitConstraint(_, _, loc) => loc.isReal
-    case TraitConstraint.Head(_, loc) => loc.isReal
 
-    case AssocTypeConstructor(_, loc) => loc.isReal
     case EqualityConstraint(_, _, _, loc) => loc.isReal
 
     case _: Symbol => true
@@ -181,7 +178,7 @@ object RenameProvider {
     *
     * @param x    The object that might be a [[Symbol]] for which we search for occurrences.
     * @param root The root AST node for the Flix project.
-    * @return     All occurrences of the [[Symbol]] we want to rename, if it's supported. Otherwise, [[None]].
+    * @return All occurrences of the [[Symbol]] we want to rename, if it's supported. Otherwise, [[None]].
     */
   private def getOccurs(x: AnyRef)(implicit root: Root): Option[Set[SourceLocation]] = x match {
     // Type Vars
@@ -196,9 +193,13 @@ object RenameProvider {
 
   private def getTypeVarSymOccurs(sym: Symbol.KindedTypeVarSym)(implicit root: Root): Set[SourceLocation] = {
     var occurs: Set[SourceLocation] = Set.empty
+
     def consider(s: Symbol.KindedTypeVarSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
+      if (s == sym) {
+        occurs += loc
+      }
     }
+
     object TypeVarSymConsumer extends Consumer {
       override def consumeType(tpe: Type): Unit = tpe match {
         case Type.Var(sym, loc) => consider(sym, loc)
@@ -213,8 +214,11 @@ object RenameProvider {
 
   private def getVarOccurs(sym: Symbol.VarSym)(implicit root: Root): Set[SourceLocation] = {
     var occurs: Set[SourceLocation] = Set.empty
+
     def consider(s: Symbol.VarSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
+      if (s == sym) {
+        occurs += loc
+      }
     }
 
     object VarSymConsumer extends Consumer {
@@ -234,7 +238,7 @@ object RenameProvider {
     *
     * NB: The occurrences must *NOT* overlap nor be repeated. Hence they are a set.
     */
-  private def rename(newName: String)(occurrences: Set[SourceLocation]): JObject = {
+  private def rename(newName: String)(occurrences: Set[SourceLocation]): WorkspaceEdit = {
     // Convert the set of occurrences to a sorted list.
     val targets = occurrences.toList.sorted
 
@@ -246,17 +250,6 @@ object RenameProvider {
       case (uri, locs) => uri -> locs.map(loc => TextEdit(Range.from(loc), newName))
     }
 
-    // Assemble the workspace edit.
-    val workspaceEdit = WorkspaceEdit(textEdits)
-
-    // Construct the JSON result.
-    ("status" -> ResponseStatus.Success) ~ ("result" -> workspaceEdit.toJSON)
+    WorkspaceEdit(textEdits)
   }
-
-  /**
-    * Returns a reply indicating that nothing was found at the `uri` and `pos`.
-    */
-  private def mkNotFound(uri: String, pos: Position): JObject =
-    ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
-
 }

@@ -16,16 +16,16 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope}
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, UnkindedType}
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, TraitUsageKind}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, UnkindedType}
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 /**
   * A common super-type for resolution errors.
   */
 sealed trait ResolutionError extends CompilationMessage {
-  val kind = "Resolution Error"
+  val kind: CompilationMessageKind = CompilationMessageKind.ResolutionError
 }
 
 object ResolutionError {
@@ -188,28 +188,6 @@ object ResolutionError {
     override def explain(formatter: Formatter): Option[String] = Some({
       "An associated type may only be applied to a variable."
     })
-  }
-
-  /**
-    * An error raised to indicate a `new` struct expression initializes its fields in the wrong order.
-    *
-    * @param providedFields the order in which fields were initialized.
-    * @param expectedFields the order in which fields were declared.
-    * @param loc            the location where the error occurred
-    */
-  case class IllegalFieldOrderInNew(sym: Symbol.StructSym, providedFields: List[Name.Label], expectedFields: List[Name.Label], loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Struct fields must be initialized in their declaration order"
-
-    def message(formatter: Formatter): String = messageWithLink {
-      import formatter.*
-      s""">> Struct fields must be initialized in their declaration order.
-         |
-         |Expected: ${expectedFields.mkString(", ")}
-         |Actual  : ${providedFields.mkString(", ")}
-         |
-         |${code(loc, "incorrect order")}
-         |""".stripMargin
-    }
   }
 
   /**
@@ -657,10 +635,12 @@ object ResolutionError {
     * Undefined Effect Error.
     *
     * @param qn  the unresolved effect.
+    * @param ap  then anchor position.
     * @param ns  the current namespace.
+    * @param scp the local scope.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedEffect(qn: Name.QName, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedEffect(qn: Name.QName, ap: AnchorPosition, scp: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined effect '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
@@ -680,19 +660,41 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate that the class name was not found.
+    * An error raised to indicate that a class name was not found.
+    *
+    * @param name  the class name.
+    * @param ap    the anchor position.
+    * @param msg   the Java error message.
+    * @param loc   the location of the class name.
+    */
+  case class UndefinedJvmClass(name: Name.Ident, ap: AnchorPosition, msg: String, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined Java class: '$name'."
+
+    def message(formatter: Formatter): String = messageWithLink {
+      import formatter.*
+      s""">> Undefined Java class '${red(name.name)}'.
+         |
+         |${code(loc, "undefined class.")}
+         |
+         |$msg
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that the class name in an importing was not found.
     *
     * @param name the class name.
     * @param ap   the anchor position.
     * @param msg  the Java error message.
     * @param loc  the location of the class name.
     */
-  case class UndefinedJvmClass(name: String, ap: AnchorPosition, msg: String, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Undefined Java class: '$name'."
+  case class UndefinedJvmImport(name: String, ap: AnchorPosition, msg: String, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined class in Java Import: '$name'."
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
-      s""">> Undefined Java class '${red(name)}'.
+      s""">> Undefined class in Java Import '${red(name)}'.
          |
          |${code(loc, "undefined class.")}
          |
@@ -759,10 +761,10 @@ object ResolutionError {
     *
     * @param qn    the unresolved name.
     * @param ap    the anchor position.
-    * @param env   the variables in the scope.
+    * @param scp   the variables in the scope.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedName(qn: Name.QName, ap: AnchorPosition, env: LocalScope, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedName(qn: Name.QName, ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
@@ -786,10 +788,10 @@ object ResolutionError {
     *
     * @param qn    the unresolved name.
     * @param ns    the current namespace.
-    * @param env   the variables in the scope.
+    * @param scp   the variables in the scope.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedNameUnrecoverable(qn: Name.QName, ns: Name.NName, env: LocalScope, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedNameUnrecoverable(qn: Name.QName, ns: Name.NName, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
@@ -809,17 +811,40 @@ object ResolutionError {
   }
 
   /**
-    * Undefined Op Error.
+    * An error raised to indicate that class/struct name was not found in a new expression.
     *
-    * @param qname the qualified name of the operation.
-    * @param loc   the location where the error occurred.
+    * @param name the jvm class/struct name
+    * @param ap   the anchor position.
+    * @param scp  the local scope.
+    * @param msg  the error message.
+    * @param loc  the location of the class/struct name.
     */
-  case class UndefinedOp(qname: Name.QName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Undefined operation '${qname.toString}'."
+  case class UndefinedNewJvmClassOrStruct(name: Name.Ident, ap: AnchorPosition, scp: LocalScope, msg: String, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined New: '$name'."
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
-      s""">> Undefined operation '${red(qname.toString)}'.
+      s""">> Undefined New '${red(name.name)}'.
+         |
+         |${code(loc, "undefined new.")}
+         |
+         |$msg
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Undefined Op Error.
+    *
+    * @param qn    the qualified name of the operation.
+    * @param loc   the location where the error occurred.
+    */
+  case class UndefinedOp(qn: Name.QName, ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined operation '${qn.toString}'."
+
+    def message(formatter: Formatter): String = messageWithLink {
+      import formatter.*
+      s""">> Undefined operation '${red(qn.toString)}'.
          |
          |${code(loc, "operation not found")}
          |
@@ -887,16 +912,16 @@ object ResolutionError {
   /**
     * Undefined Tag Error.
     *
-    * @param tag the tag.
+    * @param qn the tag.
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedTag(tag: String, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Undefined tag: '$tag'."
+  case class UndefinedTag(qn: Name.QName, ap: AnchorPosition, scp: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined tag: '$qn'."
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
-      s""">> Undefined tag '${red(tag)}'.
+      s""">> Undefined tag '${red(qn.toString)}'.
          |
          |${code(loc, "tag not found.")}
          |
@@ -911,20 +936,23 @@ object ResolutionError {
   }
 
   /**
-    * Undefined Class Error.
+    * Undefined Trait Error.
     *
-    * @param qn  the unresolved class.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
+    * @param qn           the unresolved trait.
+    * @param traitUseKind the kind of trait use.
+    * @param ap           the anchor position.
+    * @param scp          the variables in the scope.
+    * @param ns           the current namespace.
+    * @param loc          the location where the error occurred.
     */
-  case class UndefinedTrait(qn: Name.QName, ap: AnchorPosition, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Undefined class: '${qn.toString}'."
+  case class UndefinedTrait(qn: Name.QName, traitUseKind: TraitUsageKind, ap: AnchorPosition, scp: LocalScope, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined trait: '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
-      s""">> Undefined class '${red(qn.toString)}'.
+      s""">> Undefined trait '${red(qn.toString)}'.
          |
-         |${code(loc, "class not found")}
+         |${code(loc, "trait not found")}
          |
          |""".stripMargin
     }
@@ -939,11 +967,12 @@ object ResolutionError {
   /**
     * Undefined Type Error.
     *
-    * @param qn  the name.
-    * @param ap  the enclosing module.
-    * @param loc the location where the error occurred.
+    * @param qn       the name.
+    * @param kindOpt  the kind of the type.
+    * @param ap       the enclosing module.
+    * @param loc      the location where the error occurred.
     */
-  case class UndefinedType(qn: Name.QName, ap: AnchorPosition, env: LocalScope, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedType(qn: Name.QName, kindOpt: Option[Kind], ap: AnchorPosition, scp: LocalScope, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined type: '${qn.toString}'."
 
     def message(formatter: Formatter): String = messageWithLink {

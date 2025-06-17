@@ -34,30 +34,27 @@ object Options {
     json = false,
     output = None,
     progress = false,
-    test = false,
     target = JvmTarget.Version21,
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
     assumeYes = false,
-    xnoverify = false,
-    xnooptimizer = false,
     xprintphases = false,
     xnodeprecated = false,
     xsummary = false,
     xfuzzer = false,
     xprinttyper = None,
-    xverifyeffects = false,
     xsubeffecting = Set.empty,
     XPerfN = None,
     XPerfFrontend = false,
     XPerfPar = false,
-    xiterations = 5000
+    xchaosMonkey = false,
+    xiterations = 5000,
   )
 
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true, xnodeprecated = true)
+  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, xnodeprecated = true)
 
   /**
     * Default test options with the standard library.
@@ -87,7 +84,6 @@ object Options {
   * @param json                enable json output.
   * @param output              the optional output directory where to place JVM bytecode.
   * @param progress            print progress during compilation.
-  * @param test                enables test mode.
   * @param target              the target JVM.
   * @param threads             selects the number of threads to use.
   * @param loadClassFiles      loads the generated class files into the JVM.
@@ -103,22 +99,19 @@ case class Options(lib: LibLevel,
                    progress: Boolean,
                    output: Option[Path],
                    target: JvmTarget,
-                   test: Boolean,
                    threads: Int,
                    loadClassFiles: Boolean,
                    assumeYes: Boolean,
-                   xnoverify: Boolean,
-                   xnooptimizer: Boolean,
                    xprintphases: Boolean,
                    xnodeprecated: Boolean,
                    xsummary: Boolean,
                    xfuzzer: Boolean,
                    xprinttyper: Option[String],
-                   xverifyeffects: Boolean,
                    xsubeffecting: Set[Subeffecting],
                    XPerfFrontend: Boolean,
                    XPerfPar: Boolean,
                    XPerfN: Option[Int],
+                   xchaosMonkey: Boolean,
                    xiterations: Int,
                   )
 

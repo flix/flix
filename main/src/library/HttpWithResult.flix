@@ -96,7 +96,7 @@ mod HttpWithResult {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - HttpWithResult) + {Net, IO} = x ->
         run {
             f(x)
-        } with HttpWithResult {
+        } with handler HttpWithResult {
             def request(method, url, headers, body, k) =
                 try {
                     let bodyPublisher = match body {
@@ -106,7 +106,7 @@ mod HttpWithResult {
                     let builder =
                        HttpRequest.newBuilder(URI.create(url)).method(method, bodyPublisher)
                            |> builder -> Map.foldLeftWithKey(
-                               (mb, k, l) -> List.foldLeft((lb, v) -> lb.header(k, v), mb, l),
+                               (mb, key, l) -> List.foldLeft((lb, v) -> lb.header(key, v), mb, l),
                                builder,
                                headers
                            );

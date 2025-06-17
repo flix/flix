@@ -37,6 +37,7 @@ object FormatConstant {
     case Constant.BigInt(lit) => s"${lit}ii"
     case Constant.Str(lit) => "\"" + lit + "\""
     case Constant.Regex(lit) => "regex\"" + lit.pattern() + "\""
+    case Constant.RecordEmpty => "{}"
   }
 
 }

@@ -27,24 +27,44 @@ package ca.uwaterloo.flix.api.lsp
   * NB: Must be in sync with server\src\handlers.ts
   */
 sealed trait SemanticTokenType {
+
   def toInt: Int = this match {
-    case SemanticTokenType.Class => 0
-    case SemanticTokenType.Enum => 1
-    case SemanticTokenType.EnumMember => 2
-    case SemanticTokenType.Function => 3
+    case SemanticTokenType.Namespace => 0
+    case SemanticTokenType.Type => 1
+    case SemanticTokenType.Class => 2
+    case SemanticTokenType.Enum => 3
     case SemanticTokenType.Interface => 4
-    case SemanticTokenType.Operator => 5
-    case SemanticTokenType.Parameter => 6
-    case SemanticTokenType.Property => 7
-    case SemanticTokenType.Method => 8
-    case SemanticTokenType.Namespace => 9
-    case SemanticTokenType.Type => 10
-    case SemanticTokenType.TypeParameter => 11
-    case SemanticTokenType.Variable => 12
-  }
-}
+    case SemanticTokenType.Struct => 5
+    case SemanticTokenType.TypeParameter => 6
+    case SemanticTokenType.Parameter => 7
+    case SemanticTokenType.Variable => 8
+    case SemanticTokenType.Property => 9
+    case SemanticTokenType.EnumMember => 10
+    case SemanticTokenType.Event => 11
+    case SemanticTokenType.Function => 12
+    case SemanticTokenType.Method => 13
+    case SemanticTokenType.Macro => 14
+    case SemanticTokenType.Keyword => 15
+    case SemanticTokenType.Modifier => 16
+    case SemanticTokenType.Comment => 17
+    case SemanticTokenType.String => 18
+    case SemanticTokenType.Number => 19
+    case SemanticTokenType.Regexp => 20
+    case SemanticTokenType.Operator => 21
+    case SemanticTokenType.Decorator => 22
+  }}
 
 object SemanticTokenType {
+
+  /**
+    * For identifiers that declare or reference a namespace, module, or package.
+    */
+  case object Namespace extends SemanticTokenType
+
+  /**
+    * For identifiers that declare or reference a type that is not covered elsewhere.
+    */
+  case object Type extends SemanticTokenType
 
   /**
     * For identifiers that declare or reference a class type.
@@ -57,49 +77,14 @@ object SemanticTokenType {
   case object Enum extends SemanticTokenType
 
   /**
-    * For identifiers that declare an enumeration property, constant, or member.
-    */
-  case object EnumMember extends SemanticTokenType
-
-  /**
-    * For identifiers that declare a function.
-    */
-  case object Function extends SemanticTokenType
-
-  /**
     * For identifiers that declare or reference an interface type.
     */
   case object Interface extends SemanticTokenType
 
   /**
-    * For tokens that represent an operator.
+    * For identifiers that declare or reference a struct type.
     */
-  case object Operator extends SemanticTokenType
-
-  /**
-    * For identifiers that declare or reference a function or method parameters.
-    */
-  case object Parameter extends SemanticTokenType
-
-  /**
-    * For identifiers that declare or reference a member property, member field, or member variable.
-    */
-  case object Property extends SemanticTokenType
-
-  /**
-    * For identifiers that declare a member function or method.
-    */
-  case object Method extends SemanticTokenType
-
-  /**
-    * For identifiers that declare or reference a namespace, module, or package.
-    */
-  case object Namespace extends SemanticTokenType
-
-  /**
-    * For identifiers that declare or reference a type that is not covered above.
-    */
-  case object Type extends SemanticTokenType
+  case object Struct extends SemanticTokenType
 
   /**
     * For identifiers that declare or reference a type parameter.
@@ -107,8 +92,108 @@ object SemanticTokenType {
   case object TypeParameter extends SemanticTokenType
 
   /**
+    * For identifiers that declare or reference a function or method parameters.
+    */
+  case object Parameter extends SemanticTokenType
+
+  /**
     * For identifiers that declare or reference a local or global variable.
     */
   case object Variable extends SemanticTokenType
 
+  /**
+    * For identifiers that declare or reference a member property, member field, or member variable.
+    */
+  case object Property extends SemanticTokenType
+
+  /**
+    * For identifiers that declare an enumeration property, constant, or member.
+    */
+  case object EnumMember extends SemanticTokenType
+
+  /**
+    * For identifiers that declare or reference an event.
+    */
+  case object Event extends SemanticTokenType
+
+  /**
+    * For identifiers that declare a function.
+    */
+  case object Function extends SemanticTokenType
+
+  /**
+    * For identifiers that declare a member function or method.
+    */
+  case object Method extends SemanticTokenType
+
+  /**
+    * For identifiers that declare or reference a macro.
+    */
+  case object Macro extends SemanticTokenType
+
+  /**
+    * For tokens that represent a keyword.
+    */
+  case object Keyword extends SemanticTokenType
+
+  /**
+    * For tokens that represent a modifier.
+    */
+  case object Modifier extends SemanticTokenType
+
+  /**
+    * For tokens that represent a comment.
+    */
+  case object Comment extends SemanticTokenType
+
+  /**
+    * For tokens that represent a string.
+    */
+  case object String extends SemanticTokenType
+
+  /**
+    * For tokens that represent a number.
+    */
+  case object Number extends SemanticTokenType
+
+  /**
+    * For tokens that represent a regular expression.
+    */
+  case object Regexp extends SemanticTokenType
+
+  /**
+    * For tokens that represent an operator.
+    */
+  case object Operator extends SemanticTokenType
+
+  /**
+    * For tokens that represent a decorator.
+    */
+  case object Decorator extends SemanticTokenType
+
+  def getWholeList: List[String] = List(
+    "namespace",
+    "type",
+    "class",
+    "enum",
+    "interface",
+    "struct",
+    "typeParameter",
+    "parameter",
+    "variable",
+    "property",
+    "enumMember",
+    "event",
+    "function",
+    "method",
+    "macro",
+    "keyword",
+    "modifier",
+    "comment",
+    "string",
+    "number",
+    "regexp",
+    "operator",
+    "decorator"
+  )
 }

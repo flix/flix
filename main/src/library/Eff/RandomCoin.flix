@@ -34,22 +34,22 @@ mod Eff {
         ///
         /// Handles the `RandomCoin` effect of the given function `f`.
         ///
-        /// In other words, re-interprets the `RandomCoin` effect using the `IO` effect.
+        /// In other words, re-interprets the `RandomCoin` effect using the `NonDet` and `IO` effects.
         ///
-        pub def handle(f: a -> b \ ef): (a -> b \ (ef - RandomCoin) + IO) \ IO =
+        pub def handle(f: a -> b \ ef): (a -> b \ (ef - RandomCoin) + {NonDet, IO}) \ {NonDet, IO} =
             let rnd = new JRandom();
             x -> run {
                 f(x)
-            } with RandomCoin {
+            } with handler RandomCoin {
                 def flip(k) = k(rnd.nextBoolean())
             }
 
         ///
         /// Runs the `RandomCoin` effect of the given function `f`.
         ///
-        /// In other words, re-interprets the `RandomCoin` effect using the `IO` effect.
+        /// In other words, re-interprets the `RandomCoin` effect using the `NonDet` and `IO` effects.
         ///
-        pub def runWithIO(f: Unit -> a \ ef): a \ (ef - RandomCoin) + IO = handle(f)()
+        pub def runWithIO(f: Unit -> a \ ef): a \ (ef - RandomCoin) + {NonDet, IO} = handle(f)()
 
     }
 

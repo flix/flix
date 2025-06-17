@@ -42,13 +42,17 @@ object AtomicOp {
 
   case object Tuple extends AtomicOp
 
-  case object RecordEmpty extends AtomicOp
-
   case class RecordSelect(label: Name.Label) extends AtomicOp
 
   case class RecordExtend(label: Name.Label) extends AtomicOp
 
   case class RecordRestrict(label: Name.Label) extends AtomicOp
+
+  case class ExtensibleIs(label: Name.Label) extends AtomicOp
+
+  case class ExtensibleTag(label: Name.Label) extends AtomicOp
+
+  case class ExtensibleUntag(label: Name.Label, idx: Int) extends AtomicOp
 
   case object ArrayLit extends AtomicOp
 
@@ -99,5 +103,7 @@ object AtomicOp {
   case class HoleError(sym: Symbol.HoleSym) extends AtomicOp
 
   case object MatchError extends AtomicOp
+
+  case class CastError(from: String, to: String) extends AtomicOp
 
 }

@@ -40,7 +40,7 @@ mod Exit {
     pub def handle(f: a -> b \ ef): a -> b \ (ef - Exit) + {Sys, IO} = x ->
         run {
             f(x)
-        } with Exit {
+        } with handler Exit {
             def exit(ec, _k) = unchecked_cast(System.exit(ec) as b)
         }
 

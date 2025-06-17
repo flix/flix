@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.util.collection.Chain
 
-import scala.annotation.tailrec
+import scala.annotation.{tailrec, unused}
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -83,7 +83,7 @@ sealed trait Result[+T, +E] {
     * Required for pattern-matching in for-patterns.
     * Doesn't actually filter anything.
     */
-  final def withFilter(f: T => Boolean): Result[T, E] = this
+  final def withFilter(@unused f: T => Boolean): Result[T, E] = this
 }
 
 object Result {
@@ -97,6 +97,18 @@ object Result {
     * A result that holds an error.
     */
   case class Err[T, E](e: E) extends Result[T, E]
+
+  /**
+    * Applies the given function `f` to value of `res` wrapping it in [[Result.Ok]].
+    */
+  def mapN[T, U, E](res: Result[T, E])(f: T => U): Result[U, E] =
+    res.map(f)
+
+  /**
+    * Applies the given function `f` to values of the results wrapping it in [[Result.Ok]].
+    */
+  def mapN[T1, T2, U, E](res1: Result[T1, E], res2: Result[T2, E])(f: (T1, T2) => U): Result[U, E] =
+    res1.flatMap(r1 => res2.map(r2 => f(r1, r2)))
 
   /**
     * Evaluates the given results from left to right collecting the values into a list.

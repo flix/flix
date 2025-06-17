@@ -40,7 +40,7 @@ mod Abort {
     pub def handle(f: a -> b \ ef): a -> Result[String, b] \ (ef - Abort) = x ->
         run {
             Ok(f(x))
-        } with Abort {
+        } with handler Abort {
             def abort(m, _k) = Result.Err(m)
         }
 

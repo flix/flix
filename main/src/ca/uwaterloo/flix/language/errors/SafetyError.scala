@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.FormatType
@@ -9,7 +9,7 @@ import ca.uwaterloo.flix.util.Formatter
 
 /** A common super-type for safety errors. */
 sealed trait SafetyError extends CompilationMessage {
-  val kind: String = "Safety Error"
+  val kind: CompilationMessageKind = CompilationMessageKind.SafetyError
 }
 
 object SafetyError {
@@ -212,28 +212,6 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate that a try-catch expression contains another try-catch expression.
-    *
-    * @param loc the location of the inner try-catch.
-    */
-  case class IllegalNestedTryCatch(loc: SourceLocation) extends SafetyError {
-    def summary: String = s"Try-catch expressions cannot be nested."
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> $summary
-         |
-         |${code(loc, "The inner try-catch expression.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"""${underline("Tip:")} Put the inner try-catch expression in a function.""".stripMargin
-    })
-  }
-
-  /**
     * An error raised to indicate an illegal use of a wildcard in a negative atom.
     *
     * @param loc the position of the body atom containing the illegal wildcard.
@@ -390,7 +368,7 @@ object SafetyError {
     * @param sym the effect symbol.
     * @param loc the location where the error occurred.
     */
-  case class PrimitiveEffectInTryWith(sym: Symbol.EffectSym, loc: SourceLocation) extends SafetyError {
+  case class PrimitiveEffectInRunWith(sym: Symbol.EffectSym, loc: SourceLocation) extends SafetyError {
     override def summary: String = s"The ${sym.name} effect cannot be handled."
 
     override def message(formatter: Formatter): String = {
@@ -417,7 +395,7 @@ object SafetyError {
       import formatter.*
       s""">> Invalid 'this' parameter for method '${red(name)}''.
          |
-         |Expected 'this' type is ${cyan(s"##${clazz.getName}")}, but the first argument is declared as type ${cyan(illegalThisType.toString)}
+         |Expected 'this' type is ${cyan(s"${clazz.getName}")}, but the first argument is declared as type ${cyan(illegalThisType.toString)}
          |
          |${code(loc, "the method occurs here.")}
          |""".stripMargin
@@ -492,7 +470,7 @@ object SafetyError {
       import formatter.*
       s""">> Missing 'this' parameter for method '${red(name)}''.
          |
-         |The 'this' parameter should have type ${cyan(s"##${clazz.getName}")}
+         |The 'this' parameter should have type ${cyan(s"${clazz.getName}")}
          |
          |${code(loc, "the method occurs here.")}
          |""".stripMargin

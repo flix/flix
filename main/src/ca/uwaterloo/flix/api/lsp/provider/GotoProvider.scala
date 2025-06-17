@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.api.lsp.acceptors.InsideAcceptor
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeConstructor, EqualityConstraint, SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL.*
@@ -28,15 +28,15 @@ import org.json4s.JsonDSL.*
 object GotoProvider {
 
   /**
-   * Processes a goto request.
-   */
-  def processGoto(uri: String, pos: Position)(implicit root: Root): JObject = {
+    * Processes a goto request.
+    */
+  def processGoto(uri: String, pos: Position)(implicit root: Root): Option[LocationLink] = {
     val gotoRight = searchRight(uri, pos).flatMap(goto)
     val gotoLeft = searchLeft(uri, pos).flatMap(goto)
 
     gotoRight
       .orElse(gotoLeft)
-      .getOrElse(mkNotFound(uri, pos))
+      .filter(_.targetUri.startsWith("file://")) // We do not support goto for non-file URIs, which is the case for the standard library.
   }
 
   /**
@@ -49,8 +49,8 @@ object GotoProvider {
     * @param uri  the URI of the file that the cursor is in.
     * @param pos  the [[Position]] to the immediate right of the thin cursor.
     * @param root the root AST node of the Flix program.
-    * @return     the most specific AST node under the space immediately right of the thin cursor
-    *             if there is one. Otherwise, returns [[None]].
+    * @return the most specific AST node under the space immediately right of the thin cursor
+    *         if there is one. Otherwise, returns [[None]].
     */
   private def searchRight(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = search(uri, pos)
 
@@ -63,8 +63,8 @@ object GotoProvider {
     * @param uri  URI of the file that the cursor is in.
     * @param pos  [[Position]] to the immediate right of the thin cursor.
     * @param root Root AST node of the Flix Program.
-    * @return     the most specific AST node under the space immediately left of the thin cursor
-    *             if there is one. Otherwise, returns [[None]].
+    * @return the most specific AST node under the space immediately left of the thin cursor
+    *         if there is one. Otherwise, returns [[None]].
     */
   private def searchLeft(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     if (pos.character >= 2) {
@@ -82,8 +82,8 @@ object GotoProvider {
     * @param uri  URI of the file that the [[Position]] `pos` is in.
     * @param pos  [[Position]] that we're searching under.
     * @param root Root AST node of the Flix program.
-    * @return     The most specific AST node under the [[Position]] `pos`
-    *             if there is one. Otherwise, returns [[None]].
+    * @return The most specific AST node under the [[Position]] `pos`
+    *         if there is one. Otherwise, returns [[None]].
     */
   private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val consumer = StackConsumer();
@@ -100,39 +100,36 @@ object GotoProvider {
     *
     * @param x    Object that the cursor is on.
     * @param root Root AST node of the Flix program
-    * @return     LSP Goto response for when the cursor is on `x` if `x` is an occurrence of a [[Symbol]].
-    *             Otherwise, returns [[None]].
+    * @return LSP Goto response for when the cursor is on `x` if `x` is an occurrence of a [[Symbol]].
+    *         Otherwise, returns [[None]].
     */
-  private def goto(x: AnyRef)(implicit root: Root): Option[JObject] = x match {
+  private def goto(x: AnyRef)(implicit root: Root): Option[LocationLink] = x match {
     // Assoc Types
-    case SymUse.AssocTypeSymUse(sym, loc) => Some(mkGoto(LocationLink.fromAssocTypeSym(sym, loc)))
-    case AssocTypeConstructor(sym, loc) => Some(mkGoto(LocationLink.fromAssocTypeSym(sym, loc)))
-    case Type.AssocType(AssocTypeConstructor(sym, _), _, _, loc) => Some(mkGoto(LocationLink.fromAssocTypeSym(sym, loc)))
+    case SymUse.AssocTypeSymUse(sym, loc) => Some(LocationLink.fromAssocTypeSym(sym, loc))
     // Defs
-    case SymUse.DefSymUse(sym, loc) => Some(mkGoto(LocationLink.fromDefSym(sym, loc)))
+    case SymUse.DefSymUse(sym, loc) => Some(LocationLink.fromDefSym(sym, loc))
     // Effects
-    case SymUse.EffectSymUse(sym, qname) => Some(mkGoto(LocationLink.fromEffectSym(sym, qname.loc)))
-    case Type.Cst(TypeConstructor.Effect(sym), loc) => Some(mkGoto(LocationLink.fromEffectSym(sym, loc)))
-    case SymUse.OpSymUse(sym, loc) => Some(mkGoto(LocationLink.fromOpSym(sym, loc)))
+    case SymUse.EffectSymUse(sym, qname) => Some(LocationLink.fromEffectSym(sym, qname.loc))
+    case Type.Cst(TypeConstructor.Effect(sym), loc) => Some(LocationLink.fromEffectSym(sym, loc))
+    case SymUse.OpSymUse(sym, loc) => Some(LocationLink.fromOpSym(sym, loc))
     // Enums
-    case Type.Cst(TypeConstructor.Enum(sym, _), loc) => Some(mkGoto(LocationLink.fromEnumSym(sym, loc)))
-    case SymUse.CaseSymUse(sym, loc) => Some(mkGoto(LocationLink.fromCaseSym(sym, loc)))
+    case Type.Cst(TypeConstructor.Enum(sym, _), loc) => Some(LocationLink.fromEnumSym(sym, loc))
+    case SymUse.CaseSymUse(sym, loc) => Some(LocationLink.fromCaseSym(sym, loc))
     // Struct
-    case Type.Cst(TypeConstructor.Struct(sym, _), loc) => Some(mkGoto(LocationLink.fromStructSym(sym, loc)))
-    case SymUse.StructFieldSymUse(sym, loc) => Some(mkGoto(LocationLink.fromStructFieldSym(sym, loc)))
+    case Type.Cst(TypeConstructor.Struct(sym, _), loc) => Some(LocationLink.fromStructSym(sym, loc))
+    case SymUse.StructFieldSymUse(sym, loc) => Some(LocationLink.fromStructFieldSym(sym, loc))
     // Traits
-    case SymUse.TraitSymUse(sym, loc) => Some(mkGoto(LocationLink.fromTraitSym(sym, loc)))
-    case TraitConstraint.Head(sym, loc) => Some(mkGoto(LocationLink.fromTraitSym(sym, loc)))
-    case SymUse.SigSymUse(sym, loc) => Some(mkGoto(LocationLink.fromSigSym(sym, loc)))
+    case SymUse.TraitSymUse(sym, loc) => Some(LocationLink.fromTraitSym(sym, loc))
+    case SymUse.SigSymUse(sym, loc) => Some(LocationLink.fromSigSym(sym, loc))
     // Type Vars
-    case Type.Var(sym, loc) => Some(mkGoto(LocationLink.fromTypeVarSym(sym, loc)))
+    case Type.Var(sym, loc) => Some(LocationLink.fromTypeVarSym(sym, loc))
     // Vars
-    case TypedAst.Expr.Var(sym, _, loc) => Some(mkGoto(LocationLink.fromVarSym(sym, loc)))
+    case TypedAst.Expr.Var(sym, _, loc) => Some(LocationLink.fromVarSym(sym, loc))
     case _ => None
   }
 
   private def isReal(x: AnyRef): Boolean = x match {
-    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) =>  loc.isReal
+    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Instance(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Sig(_, _, _, loc) => loc.isReal
     case TypedAst.Def(_, _, _, loc) => loc.isReal
@@ -160,10 +157,10 @@ object GotoProvider {
     case TypedAst.FormalParam(_, _, _, _, loc) => loc.isReal
     case TypedAst.PredicateParam(_, _, loc) => loc.isReal
     case TypedAst.JvmMethod(_, _, _, _, _, loc) => loc.isReal
-    case TypedAst.CatchRule(_, _, _) => true
-    case TypedAst.HandlerRule(_, _, _) => true
-    case TypedAst.TypeMatchRule(_, _, _) => true
-    case TypedAst.SelectChannelRule(_, _, _) => true
+    case TypedAst.CatchRule(_, _, _, _) => true
+    case TypedAst.HandlerRule(_, _, _, _) => true
+    case TypedAst.TypeMatchRule(_, _, _, _) => true
+    case TypedAst.SelectChannelRule(_, _, _, _) => true
     case TypedAst.TypeParam(_, _, loc) => loc.isReal
     case TypedAst.ParYieldFragment(_, _, loc) => loc.isReal
 
@@ -180,30 +177,11 @@ object GotoProvider {
     case SymUse.TraitSymUse(_, loc) => loc.isReal
 
     case TraitConstraint(_, _, loc) => loc.isReal
-    case TraitConstraint.Head(_, loc) => loc.isReal
 
-    case AssocTypeConstructor(_, loc) => loc.isReal
     case EqualityConstraint(_, _, _, loc) => loc.isReal
 
     case _: Symbol => true
     case tpe: Type => tpe.loc.isReal
     case _ => false
   }
-
-  /**
-    * Returns a succesful Goto reply containing the given [[LocationLink]] `link`
-    *
-    * @param  link [[LocationLink]] that the reply should contain.
-    * @return succesful Goto reply containing `link`.
-    */
-  private def mkGoto(link: LocationLink): JObject = {
-    ("status" -> ResponseStatus.Success) ~ ("result" -> link.toJSON)
-  }
-
-  /**
-   * Returns a reply indicating that nothing was found at the `uri` and `pos`.
-   */
-  private def mkNotFound(uri: String, pos: Position): JObject =
-    ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
-
 }

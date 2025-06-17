@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification.shared
 import scala.collection.immutable.SortedSet
 
 /**
- * A type class for Boolean Formulas.
+ * A type class for Free Boolean Algebras.
  */
 trait BoolAlg[F] {
 
@@ -76,5 +76,12 @@ trait BoolAlg[F] {
    * Applies the function `fn` to every variable in `f`.
    */
   def map(f: F)(fn: Int => F): F
+
+  /**
+   * Returns the result of running the given `sve` algorithm on the given Zhegalkin expression `q`.
+   *
+   * Performs a lookup in the cache or computes the result.
+   */
+  def lookupOrComputeSVE(q: F, sve: F => BoolSubstitution[F]): BoolSubstitution[F]
 
 }

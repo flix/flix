@@ -87,7 +87,7 @@ object Summary {
   /** Returns a function summary for every function */
   private def defSummaries(root: Root): List[DefSummary] = {
     val defs = root.defs.values.map(defSummary(_, isInstance = false))
-    val instances = root.instances.values.flatten.flatMap(_.defs.map(defSummary(_, isInstance = true)))
+    val instances = root.instances.values.flatMap(_.defs.map(defSummary(_, isInstance = true)))
     val traits = root.traits.values.flatMap(_.sigs.flatMap(defSummary))
     (defs ++ instances ++ traits).toList
   }
@@ -188,8 +188,8 @@ object Summary {
   private def countCheckedEcasts(expr: TypedAst.Expr): Int = expr match {
     case Expr.Cst(_, _, _) => 0
     case Expr.Var(_, _, _) => 0
-    case Expr.Hole(_, _, _, _) => 0
-    case Expr.HoleWithExp(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.Hole(_, _, _, _, _) => 0
+    case Expr.HoleWithExp(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.OpenAs(_, exp, _, _) => countCheckedEcasts(exp)
     case Expr.Use(_, _, exp, _) => countCheckedEcasts(exp)
     case Expr.Lambda(_, exp, _, _) => countCheckedEcasts(exp)
@@ -207,18 +207,20 @@ object Summary {
     case Expr.Stm(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.Discard(exp, _, _) => countCheckedEcasts(exp)
     case Expr.Match(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
-      case TypedAst.MatchRule(_, guard, exp) => guard.map(countCheckedEcasts).sum + countCheckedEcasts(exp)
+      case TypedAst.MatchRule(_, guard, exp, loc) => guard.map(countCheckedEcasts).sum + countCheckedEcasts(exp)
     }.sum
     case Expr.TypeMatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
-      case TypedAst.TypeMatchRule(_, _, exp) => countCheckedEcasts(exp)
+      case TypedAst.TypeMatchRule(_, _, exp, _) => countCheckedEcasts(exp)
     }.sum
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.RestrictableChooseRule(_, exp) => countCheckedEcasts(exp)
     }.sum
+    case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
+      countCheckedEcasts(exp1) + countCheckedEcasts(exp2) + countCheckedEcasts(exp3)
     case Expr.Tag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.RestrictableTag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.ExtensibleTag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.Tuple(exps, _, _, _) => exps.map(countCheckedEcasts).sum
-    case Expr.RecordEmpty(_, _) => 0
     case Expr.RecordSelect(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.RecordExtend(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.RecordRestrict(_, exp, _, _, _) => countCheckedEcasts(exp)
@@ -235,7 +237,7 @@ object Summary {
     case Expr.VectorLit(exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.VectorLoad(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.VectorLength(exp, _) => countCheckedEcasts(exp)
-    case Expr.Ascribe(exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.Ascribe(exp, _, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.InstanceOf(exp, _, _) => countCheckedEcasts(exp)
     case Expr.CheckedCast(CheckedCastType.EffectCast, exp, _, _, _) => 1 + countCheckedEcasts(exp)
     case Expr.CheckedCast(CheckedCastType.TypeCast, exp, _, _, _) => countCheckedEcasts(exp)
@@ -243,12 +245,13 @@ object Summary {
     case Expr.Unsafe(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.Without(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.TryCatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
-      case TypedAst.CatchRule(_, _, exp) => countCheckedEcasts(exp)
+      case TypedAst.CatchRule(_, _, exp, _) => countCheckedEcasts(exp)
     }.sum
     case Expr.Throw(exp, _, _, _) => countCheckedEcasts(exp)
-    case Expr.TryWith(exp, _, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
-      case TypedAst.HandlerRule(_, _, exp) => countCheckedEcasts(exp)
+    case Expr.Handler(_, rules, _, _, _, _, _) => rules.map {
+      case TypedAst.HandlerRule(_, _, exp, _) => countCheckedEcasts(exp)
     }.sum
+    case Expr.RunWith(exp1, exp2, _, _, _) => countCheckedEcasts(exp1) + countCheckedEcasts(exp2)
     case Expr.Do(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.InvokeConstructor(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.InvokeMethod(_, exp, exps, _, _, _) => (exp :: exps).map(countCheckedEcasts).sum
@@ -264,7 +267,7 @@ object Summary {
     case Expr.GetChannel(exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.PutChannel(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.SelectChannel(rules, default, _, _, _) => default.map(countCheckedEcasts).sum + rules.map {
-      case TypedAst.SelectChannelRule(_, chan, exp) => countCheckedEcasts(chan) + countCheckedEcasts(exp)
+      case TypedAst.SelectChannelRule(_, chan, exp, _) => countCheckedEcasts(chan) + countCheckedEcasts(exp)
     }.sum
     case Expr.Spawn(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.ParYield(frags, exp, _, _, _) => countCheckedEcasts(exp) + frags.map {
@@ -305,7 +308,7 @@ object Summary {
     Source(Input.Text("generated", "", SecurityContext.AllPermissions), Array.emptyCharArray)
 
   private val unknownPosition =
-    SourcePosition(unknownSource, 0, 0)
+    SourcePosition.firstPosition(unknownSource)
 
   private val unknownLocation =
     SourceLocation(isReal = false, unknownPosition, unknownPosition)
@@ -329,7 +332,7 @@ object Summary {
       val src = debugSrc.getOrElse(unknownSource)
       throw InternalCompilerException(
         s"${(defs, pureDefs, groundNonPureDefs, polyDefs)} does not sum for $src",
-        SourceLocation(isReal = true, SourcePosition(src, 0, 0), SourcePosition(src, 0, 0))
+        SourceLocation(isReal = true, SourcePosition.firstPosition(src), SourcePosition.firstPosition(src))
       )
     }
 
@@ -342,7 +345,7 @@ object Summary {
       if (lines != other.lines) {
         val src = debugSrc.getOrElse(unknownSource)
         throw InternalCompilerException(s"lines '$lines' and '${other.lines}' in $debugSrc",
-          SourceLocation(isReal = true, SourcePosition(src, 0, 0), SourcePosition(src, 0, 0))
+          SourceLocation(isReal = true, SourcePosition.firstPosition(src), SourcePosition.firstPosition(src))
         )
       }
       FileData(
