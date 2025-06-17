@@ -18,6 +18,29 @@ mod TestMutList {
     use ToString.toString
     use MutList.sameElements
 
+    /////////////////////////////////////////////////////////////////////////////
+    // emptyWithCapacity                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def emptyWithCapacity01(): Bool = region rc {
+        let l: MutList[Int32, rc] = MutList.emptyWithCapacity(rc, 10);
+        MutList.toString(l) == "MutList#{}"
+    }
+
+    @test
+    def emptyWithCapacity02(): Bool = region rc {
+        let l: MutList[Int32, rc] = MutList.emptyWithCapacity(rc, -1);
+        MutList.toString(l) == "MutList#{}"
+    }
+
+    @test
+    def emptyWithCapacity03(): Bool = region rc {
+        let l: MutList[Int32, rc] = MutList.emptyWithCapacity(rc, 0);
+        MutList.push(5, l);
+        MutList.push(4, l);
+        MutList.toString(l) == "MutList#{5, 4}"
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //

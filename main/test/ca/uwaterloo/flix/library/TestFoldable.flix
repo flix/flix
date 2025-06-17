@@ -627,4 +627,48 @@ mod TestFoldable {
     def joinWith04(): Bool =
         Foldable.joinWith(x -> x + x, ",", "1" :: "2" :: "3" :: Nil) == "11,22,33"
 
+    /////////////////////////////////////////////////////////////////////////////
+    // filter                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def filter01(): Bool =
+        Foldable.filter(_ -> true, (Nil: List[Int32])) == (Nil: List[Int32])
+
+    @test
+    def filter02(): Bool =
+        Foldable.filter(_ -> false, List#{1, 2}) == Nil
+
+    @test
+    def filter03(): Bool =
+        Foldable.filter(x -> x > 2, List#{1, 8, 2, 3}) == List#{8, 3}
+
+    @test
+    def filter04(): Bool =
+        Foldable.filter(x -> x <= 2, List#{1, 8, 2, 3}) == List#{1, 2}
+
+    eff Capture {
+        def capture(x: Int32): Int32
+    }
+
+    @test
+    def filter05(): Bool = region rc {
+        let xs = Vector#{1, 2, 3, 4};
+        let effects = MutList.empty(rc);
+        def f(x) = if (x > 2) {
+            Capture.capture(x);
+            false
+        } else {
+            true
+        };
+        let filtered = run {
+            Foldable.filter(f, xs)
+        } with handler Capture {
+            def capture(x, resume) = {
+                MutList.push(x, effects);
+                resume(x)
+            }
+        };
+        Assert.eq(List#{1, 2}, filtered) and Assert.eq(List#{3, 4}, MutList.toList(effects))
+    }
 }

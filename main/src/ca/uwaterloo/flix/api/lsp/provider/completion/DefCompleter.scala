@@ -15,30 +15,36 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
-import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.{fuzzyMatch, matchesQualifiedName}
+import ca.uwaterloo.flix.api.lsp.{Position, Range}
 import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
-import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.ast.shared.{LocalScope, Resolution}
-import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
+import ca.uwaterloo.flix.language.ast.{Name, TypedAst}
 
 object DefCompleter {
   /**
     * Returns a List of Completion for definitions.
-    * Whether the returned completions are qualified is based on whether the UndefinaedName is qualified.
+    * Whether the returned completions are qualified is based on whether the UndefinedName is qualified.
     * When providing completions for unqualified defs that is not in scope, we will also automatically use the def.
     */
-  def getCompletions(err: ResolutionError.UndefinedName, namespace: List[String], ident: String)(implicit root: TypedAst.Root): Iterable[Completion] ={
-    if (namespace.nonEmpty)
-      root.defs.values.collect{
-        case decl if matchesDef(decl, namespace, ident, err.loc.source.name, qualified = true) =>
-          DefCompletion(decl, err.ap, qualified = true, inScope = true)
+  def getCompletions(uri: String, pos: Position, qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: Root, flix: Flix): Iterable[Completion] = {
+    val ectx = ExprContext.getExprContext(uri, pos)
+
+    if (qn.namespace.nonEmpty) {
+      root.defs.values.collect {
+        case decl if CompletionUtils.isAvailable(decl.spec) && CompletionUtils.matchesName(decl.sym, qn, qualified = true) =>
+          DefCompletion(decl, range, Priority.High(0), ap, qualified = true, inScope = true, ectx)
       }
-    else
-      root.defs.values.collect{
-        case decl if matchesDef(decl, namespace, ident, err.loc.source.name, qualified = false) =>
-          DefCompletion(decl, err.ap, qualified = false, inScope = inScope(decl, err.env))
+    } else {
+      root.defs.values.collect {
+        case decl if CompletionUtils.isAvailable(decl.spec) && CompletionUtils.matchesName(decl.sym, qn, qualified = false) =>
+          val s = inScope(decl, scp)
+          val priority = if (s) Priority.High(0) else Priority.Lower(0)
+          DefCompletion(decl, range, priority, ap, qualified = false, inScope = s, ectx)
       }
+    }
   }
 
   /**
@@ -54,19 +60,4 @@ object DefCompleter {
     val isRoot = decl.sym.namespace.isEmpty
     isRoot || isResolved
   }
-
-  /**
-    * Checks if the definition matches the QName.
-    * Names should match and the definition should be available.
-    */
-  private def matchesDef(decl: TypedAst.Def, namespace: List[String], ident: String, uri: String, qualified: Boolean): Boolean = {
-    val isPublic = decl.spec.mod.isPublic && !decl.spec.ann.isInternal
-    val isInFile = decl.sym.loc.source.name == uri
-    val isMatch = if (qualified)
-      matchesQualifiedName(decl.sym.namespace, decl.sym.name, namespace, ident)
-    else
-      fuzzyMatch(ident, decl.sym.name)
-    isMatch && (isPublic || isInFile)
-  }
-
 }

@@ -33,14 +33,14 @@ import scala.jdk.CollectionConverters.*
   *   1. Collect a list of the local parameters of each def
   *   1. Collect a set of all anonymous class / new object expressions
   *   1. Collect a flat set of all types of the program, i.e., if `List[String]` is
-  *   in the list, so is `String`.
+  *      in the list, so is `String`.
   */
 object Reducer {
 
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Reducer") {
     implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue, new ConcurrentHashMap())
 
-    val newDefs = ParOps.parMapValues(root.defs)(visitDef)
+    val newDefs = ParOps.parMapValues(root.defs)(visitDef(_)(root, ctx))
     val defTypes = ctx.defTypes.keys.asScala.toSet
 
     // This is an over approximation of the types in enums and structs since they are erased.
@@ -53,17 +53,17 @@ object Reducer {
     root.copy(defs = newDefs, anonClasses = ctx.anonClasses.asScala.toList, types = types)
   }
 
-  private def visitDef(d: Def)(implicit ctx: SharedContext): Def = d match {
+  private def visitDef(d: Def)(implicit root: Root, ctx: SharedContext): Def = d match {
     case Def(ann, mod, sym, cparams, fparams, lparams, _, exp, tpe, unboxedType, loc) =>
-      implicit val lctx: LocalContext = LocalContext.mk()
+      implicit val lctx: LocalContext = LocalContext.mk(exp.purity)
       assert(lparams.isEmpty, s"Unexpected def local params before Reducer: $lparams")
       val e = visitExpr(exp)
       val ls = lctx.lparams.toList
-      val pcPoints = lctx.pcPoints
+      val pcPoints = lctx.getPcPoints
 
       // Compute the types in the captured formal parameters.
       val cParamTypes = cparams.foldLeft(Set.empty[MonoType]) {
-        case (sacc, FormalParam(_, _, tpe, _)) => sacc + tpe
+        case (sacc, FormalParam(_, _, paramTpe, _)) => sacc + paramTpe
       }
 
       // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
@@ -74,7 +74,7 @@ object Reducer {
       Def(ann, mod, sym, cparams, fparams, ls, pcPoints, e, tpe, unboxedType, loc)
   }
 
-  private def visitExpr(exp0: Expr)(implicit lctx: LocalContext, ctx: SharedContext): Expr = {
+  private def visitExpr(exp0: Expr)(implicit lctx: LocalContext, root: Root, ctx: SharedContext): Expr = {
     ctx.defTypes.put(exp0.tpe, ())
     exp0 match {
       case Expr.Cst(cst, tpe, loc) =>
@@ -88,13 +88,14 @@ object Reducer {
         Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
       case Expr.ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
-        if (ct == ExpPosition.NonTail && Purity.isControlImpure(purity)) lctx.pcPoints += 1
+        if (ct == ExpPosition.NonTail && Purity.isControlImpure(purity)) lctx.addPcPoint()
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)
         Expr.ApplyClo(e1, e2, ct, tpe, purity, loc)
 
       case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
-        if (ct == ExpPosition.NonTail && Purity.isControlImpure(purity)) lctx.pcPoints += 1
+        val defn = root.defs(sym)
+        if (ct == ExpPosition.NonTail && Purity.isControlImpure(defn.expr.purity)) lctx.addPcPoint()
         val es = exps.map(visitExpr)
         Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
@@ -144,26 +145,26 @@ object Reducer {
         }
         Expr.TryCatch(e, rs, tpe, purity, loc)
 
-      case Expr.TryWith(exp, effUse, rules, ct, tpe, purity, loc) =>
-        if (ct == ExpPosition.NonTail) lctx.pcPoints += 1
+      case Expr.RunWith(exp, effUse, rules, ct, tpe, purity, loc) =>
+        if (ct == ExpPosition.NonTail) lctx.addPcPoint()
         val e = visitExpr(exp)
         val rs = rules.map {
-          case HandlerRule(op, fparams, exp) =>
-            val e = visitExpr(exp)
-            HandlerRule(op, fparams, e)
+          case HandlerRule(op, fparams, body) =>
+            val b = visitExpr(body)
+            HandlerRule(op, fparams, b)
         }
-        Expr.TryWith(e, effUse, rs, ct, tpe, purity, loc)
+        Expr.RunWith(e, effUse, rs, ct, tpe, purity, loc)
 
       case Expr.Do(op, exps, tpe, purity, loc) =>
-        lctx.pcPoints += 1
+        lctx.addPcPoint()
         val es = exps.map(visitExpr)
         Expr.Do(op, es, tpe, purity, loc)
 
       case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
         val specs = methods.map {
-          case JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
+          case JvmMethod(ident, fparams, clo, retTpe, methPurity, methLoc) =>
             val c = visitExpr(clo)
-            JvmMethod(ident, fparams, c, retTpe, purity, loc)
+            JvmMethod(ident, fparams, c, retTpe, methPurity, methLoc)
         }
         ctx.anonClasses.add(AnonClass(name, clazz, tpe, specs, loc))
 
@@ -176,7 +177,7 @@ object Reducer {
     * Companion object for [[LocalContext]].
     */
   private object LocalContext {
-    def mk(): LocalContext = LocalContext(mutable.ArrayBuffer.empty, 0)
+    def mk(purity: Purity): LocalContext = LocalContext(mutable.ArrayBuffer.empty, 0, Purity.isControlImpure(purity))
   }
 
   /**
@@ -184,7 +185,22 @@ object Reducer {
     *
     * @param lparams the bound variables in the def.
     */
-  private case class LocalContext(lparams: mutable.ArrayBuffer[LocalParam], var pcPoints: Int)
+  private case class LocalContext(lparams: mutable.ArrayBuffer[LocalParam], private var pcPoints: Int, private val isControlImpure: Boolean) {
+
+    /**
+      * Adds n to the private [[pcPoints]] field.
+      */
+    def addPcPoint(): Unit = {
+      if (isControlImpure) {
+        pcPoints += 1
+      }
+    }
+
+    /**
+      * Returns the pcPoints field.
+      */
+    def getPcPoints: Int = pcPoints
+  }
 
   /**
     * A context shared across threads.
@@ -225,7 +241,7 @@ object Reducer {
       case Some((tpe, taskList)) =>
         val taskList1 = tpe match {
           case Void | AnyType | Unit | Bool | Char | Float32 | Float64 | BigDecimal | Int8 | Int16 |
-               Int32 | Int64 | BigInt | String | Regex | Region | RecordEmpty |
+               Int32 | Int64 | BigInt | String | Regex | Region | RecordEmpty | ExtensibleEmpty |
                Native(_) | Null => taskList
           case Array(elm) => taskList.enqueue(elm)
           case Lazy(elm) => taskList.enqueue(elm)
@@ -234,6 +250,7 @@ object Reducer {
           case Struct(_, targs) => taskList.enqueueAll(targs)
           case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
           case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)
+          case ExtensibleExtend(_, targs, rest) => taskList.enqueueAll(targs).enqueue(rest)
         }
         nestedTypesOf(acc + tpe, taskList1)
       case None => acc

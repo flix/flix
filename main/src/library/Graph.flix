@@ -86,7 +86,7 @@ mod Graph {
             // After the full computation of `Connected`, duplicates are removed
             // by checking that `n` is the minimum in the strongly connected
             // component.
-            Components(s) :- fix Connected(n; s), if Some(n) == Set.minimum(s).
+            Components(s) :- fix Connected(n; s), if (Some(n) == Set.minimum(s)).
         };
         let res = query edges, nodes(), reachability(), connected, components
                   select x
@@ -118,7 +118,7 @@ mod Graph {
     pub def invert(g: m[(t, t)]): Set[(t, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let inverse = #{
-            InvEdge(x, y) :- Node(x), Node(y), not Edge(x, y), if x != y.
+            InvEdge(x, y) :- Node(x), Node(y), not Edge(x, y), if (x != y).
         };
         let res = query nodes(), edges, inverse
                   select (x, y)
@@ -172,14 +172,14 @@ mod Graph {
             Dist(x, y, 0; Down.Down(w)) :- Edge(x, w, y).
             // If there exists a path of length `w` without using node `k+1`
             // then that path is also valid using node `k+1`.
-            Dist(x, y, k+1; w) :- Dist(x, y, k; w), NodeCount(c), if k < c.
+            Dist(x, y, k+1; w) :- Dist(x, y, k; w), NodeCount(c), if (k < c).
             // Combine paths if they use intermediate nodes of the correct
             // rank (also making sure `k` doesn't increase forever).
             Dist(x, y, k+1; w1 + w2) :- Dist(x, kth, k; w1), Dist(kth, y, k; w2),
-                NodeRank(kth, k), NodeCount(c), if k < c.
+                NodeRank(kth, k), NodeCount(c), if (k < c).
             // If `x` can go to `x` with a negative distances, then it can be
             // repeated.
-            NegCycle() :- fix Dist(x, x, _; w), if destructDown(w) < 0.
+            NegCycle() :- fix Dist(x, x, _; w), if (destructDown(w) < 0).
         };
         let mapping = #{
             Mapping((x, y), destructDown(d)) :- fix Dist(x, y, c; d), NodeCount(c).
@@ -274,9 +274,9 @@ mod Graph {
     pub def withinDistanceOf(src: t, limit: Int32, g: m[(t, Int32, t)]): Set[t] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let nodes = #{
-            Dist(src; Down.Down(0)) :- if limit >= 0.
+            Dist(src; Down.Down(0)) :- if (limit >= 0).
             Dist(y; d + Down.Down(w)) :- Dist(x; d), Edge(x, w, y),
-                                    if destructDown(d) + w <= limit.
+                                    if (destructDown(d) + w <= limit).
             Node(x) :- fix Dist(x; _).
         };
         let res = query edges, nodes
@@ -292,9 +292,9 @@ mod Graph {
     pub def withinEdgesOf(src: t, limit: Int32, g: m[(t, t)]): Set[t] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let nodes = #{
-            Dist(src; Down.Down(0)) :- if limit >= 0.
+            Dist(src; Down.Down(0)) :- if (limit >= 0).
             Dist(y; d + Down.Down(1)) :- Dist(x; d), Edge(x, y),
-                                    if destructDown(d) + 1 <= limit.
+                                    if (destructDown(d) + 1 <= limit).
             Node(x) :- fix Dist(x; _).
         };
         let res = query edges, nodes
@@ -374,8 +374,8 @@ mod Graph {
             MaxFrontier(Set.maximum(s) |> Option.getWithDefault(0)) :- fix Frontiers(;s).
 
             // Initialize all frontiers (with non-bot element).
-            Frontier(0; Some(Set#{})) :- MaxFrontier(m), if m > 0.
-            Frontier(n+1; Some(Set#{})) :- Frontier(n; _), MaxFrontier(m), if n < m.
+            Frontier(0; Some(Set#{})) :- MaxFrontier(m), if (m > 0).
+            Frontier(n+1; Some(Set#{})) :- Frontier(n; _), MaxFrontier(m), if (n < m).
 
             // Collect the frontiers.
             Frontier(destructDown(n); Some(Set#{x})) :- fix Dist(x; n).
@@ -408,14 +408,14 @@ mod Graph {
         };
         let cuts = #{
             CutPoint(x, Set.maximum(cut) |> unpack, y) :-
-                fix CutPointSet(x, y; cut), if not Set.isEmpty(cut).
+                fix CutPointSet(x, y; cut), if (not Set.isEmpty(cut)).
             CutPointSet(x, y; Set#{cut}) :- Reachable(x, y), Node(cut),
                                             not Circumvent(x, cut, y),
-                                            if x != cut, if y != cut, if x != y.
+                                            if (x != cut), if (y != cut), if (x != y).
             Circumvent(x, cut, y) :- Node(cut), Edge(x, y),
-                                     if x != cut, if y != cut.
+                                     if (x != cut), if (y != cut).
             Circumvent(x, cut, y) :- Circumvent(x, cut, z), Edge(z, y),
-                                     Node(cut), if y != cut.
+                                     Node(cut), if (y != cut).
         };
         let res = query edges, nodes(), reachability(), cuts
                   select (x, cut, y)

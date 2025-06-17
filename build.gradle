@@ -25,7 +25,7 @@ dependencies {
     implementation 'org.apache.commons:commons-lang3:3.17.0'
     implementation("com.lihaoyi:sourcecode_2.13:0.4.2")
 
-    implementation('io.get-coursier:coursier_2.13:2.1.14')
+    implementation('io.get-coursier:coursier_2.13:2.1.24')
 
     // Note: The tomlj library determines the antlr library.
     // We cannot upgrade the antlr library independently.
@@ -115,6 +115,13 @@ tasks.register('testAll', JavaExec) {
 task testFuzzerSuite(dependsOn: ['testClasses'], type: JavaExec) {
     mainClass = 'org.scalatest.tools.Runner'
     args = ['-s', 'flix.fuzzers.FuzzerSuite', '-o']
+    classpath = sourceSets.test.runtimeClasspath
+    standardInput = System.in
+}
+
+task testIDECompletion(dependsOn: ['testClasses'], type: JavaExec) {
+    mainClass = 'org.scalatest.tools.Runner'
+    args = ['-s', 'ca.uwaterloo.flix.api.lsp.TestCompletionProvider', '-o']
     classpath = sourceSets.test.runtimeClasspath
     standardInput = System.in
 }

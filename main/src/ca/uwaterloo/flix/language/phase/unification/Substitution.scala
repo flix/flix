@@ -15,10 +15,8 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.shared.{BroadEqualityConstraint, EqualityConstraint, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -66,16 +64,13 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
 
         case Type.Cst(_, _) => t
 
-        case Type.Apply(t1, t2, loc) =>
+        case app@Type.Apply(t1, t2, loc) =>
           // Note: While we could perform simplifications here,
           // experimental results have shown that it is not worth it.
           val x = visit(t1)
           val y = visit(t2)
           // Performance: Reuse t, if possible.
-          if ((x eq t1) && (y eq t2))
-            t
-          else
-            Type.Apply(x, y, loc)
+          app.renew(x, y, loc)
 
         case Type.Alias(sym, args0, tpe0, loc) =>
           val args = args0.map(visit)
@@ -134,56 +129,6 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
   }
 
   /**
-    * Applies `this` substitution to the given equality constraint.
-    */
-  def apply(ec: BroadEqualityConstraint): BroadEqualityConstraint = if (isEmpty) ec else ec match {
-    case BroadEqualityConstraint(t1, t2) => BroadEqualityConstraint(apply(t1), apply(t2))
-  }
-
-  /**
-    * Applies `this` substitution to the given provenance.
-    */
-  // TODO: PERF: Do we really need to apply the subst. aggressively to provenance?
-  def apply(prov: TypeConstraint.Provenance): TypeConstraint.Provenance = prov match {
-    case Provenance.ExpectType(expected, actual, loc) =>
-      val e = apply(expected)
-      val a = apply(actual)
-      // Performance: Reuse prov, if possible.
-      if ((e eq expected) && (a eq actual))
-        prov
-      else
-        Provenance.ExpectType(e, a, loc)
-
-    case Provenance.ExpectEffect(expected, actual, loc) =>
-      val e = apply(expected)
-      val a = apply(actual)
-      // Performance: Reuse prov, if possible.
-      if ((e eq expected) && (a eq actual))
-        prov
-      else
-        Provenance.ExpectEffect(e, a, loc)
-
-    case Provenance.ExpectArgument(expected, actual, sym, num, loc) =>
-      val e = apply(expected)
-      val a = apply(actual)
-      // Performance: Reuse prov, if possible.
-      if ((e eq expected) && (a eq actual))
-        prov
-      else
-        Provenance.ExpectArgument(e, a, sym, num, loc)
-
-    case Provenance.Match(tpe1, tpe2, loc) =>
-      val t1 = apply(tpe1)
-      val t2 = apply(tpe2)
-
-      // Performance: Reuse prov, if possible.
-      if ((t1 eq tpe1) && (t2 eq tpe2))
-        prov
-      else
-        Provenance.Match(t1, t2, loc)
-  }
-
-  /**
     * Removes the binding for the given type variable `tvar` (if it exists).
     */
   def unbind(tvar: Symbol.KindedTypeVarSym): Substitution = Substitution(m - tvar)
@@ -219,26 +164,27 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
 
     // Case 3: Merge the two substitutions.
 
-    // Performance: Use of mutability improve performance.
-    import scala.collection.mutable
-    val mutMap = mutable.Map.empty[Symbol.KindedTypeVarSym, Type]
-
     // Add all bindings in `that`. (Applying the current substitution).
-    for ((x, t) <- that.m) {
-      val tpe = this.apply(t)
-      mutMap.update(x, tpe)
+    var result = that.m
+    for ((x, tpe) <- that.m) {
+      val t = this.apply(tpe)
+      if (!(t eq tpe)) {
+        result = result.updated(x, t)
+      }
     }
 
-    // Performance: We now switch back to building the immutable map in `result`.
-
     // Add all bindings in `this` that are not in `that`.
-    var result = mutMap.toMap
-    for ((x, t) <- this.m) {
+    for ((x, tpe) <- this.m) {
       if (!that.m.contains(x)) {
-        result = result.updated(x, t)
+        result = result.updated(x, tpe)
       }
     }
 
     Substitution(result)
   }
+
+  /**
+    * Returns the size of the largest type in this substitution.
+    */
+  def maxSize: Int = m.values.map(_.size).maxOption.getOrElse(0)
 }

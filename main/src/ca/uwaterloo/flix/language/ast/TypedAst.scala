@@ -19,17 +19,18 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
+import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, TraitEnv}
+import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
 
 import java.lang.reflect.{Constructor, Field, Method}
 
 object TypedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, None, Map.empty, Map.empty, ListMap.empty, AvailableClasses.empty, LabelledPrecedenceGraph.empty, DependencyGraph.empty)
+  val empty: Root = Root(ListMap.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Set.empty, Map.empty, TraitEnv.empty, EqualityEnv.empty, AvailableClasses.empty, LabelledPrecedenceGraph.empty, DependencyGraph.empty, Map.empty)
 
-  case class Root(modules: Map[Symbol.ModuleSym, List[Symbol]],
+  case class Root(modules: ListMap[Symbol.ModuleSym, Symbol],
                   traits: Map[Symbol.TraitSym, Trait],
-                  instances: Map[Symbol.TraitSym, List[Instance]],
+                  instances: ListMap[Symbol.TraitSym, Instance],
                   sigs: Map[Symbol.SigSym, Sig],
                   defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
@@ -37,19 +38,25 @@ object TypedAst {
                   restrictableEnums: Map[Symbol.RestrictableEnumSym, RestrictableEnum],
                   effects: Map[Symbol.EffectSym, Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, TypeAlias],
-                  uses: Map[Symbol.ModuleSym, List[UseOrImport]],
+                  uses: ListMap[Symbol.ModuleSym, UseOrImport],
                   mainEntryPoint: Option[Symbol.DefnSym],
-                  entryPoints: Option[Set[Symbol.DefnSym]],
+                  entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  traitEnv: Map[Symbol.TraitSym, TraitContext],
-                  eqEnv: ListMap[Symbol.AssocTypeSym, shared.AssocTypeDef],
+                  traitEnv: TraitEnv,
+                  eqEnv: EqualityEnv,
                   availableClasses: AvailableClasses,
                   precedenceGraph: LabelledPrecedenceGraph,
-                  dependencyGraph: DependencyGraph)
+                  dependencyGraph: DependencyGraph,
+                  tokens: Map[Source, Array[Token]])
 
-  case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[AssocTypeSig], sigs: List[Sig], laws: List[Def], loc: SourceLocation)
+  sealed trait Decl {
+    val ann: Annotations
+    val mod: Modifiers
+  }
 
-  case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: TraitSymUse, tpe: Type, tconstrs: List[TraitConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation) extends Sourceable {
+  case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[AssocTypeSig], sigs: List[Sig], laws: List[Def], loc: SourceLocation) extends Decl
+
+  case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: TraitSymUse, tpe: Type, tconstrs: List[TraitConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation) extends Sourceable with Decl {
     override def src: Source = loc.source
   }
 
@@ -57,15 +64,15 @@ object TypedAst {
 
   case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr, loc: SourceLocation)
 
-  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint])
+  case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint]) extends Decl
 
-  case class Enum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Derivations, cases: Map[Symbol.CaseSym, Case], loc: SourceLocation)
+  case class Enum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Derivations, cases: Map[Symbol.CaseSym, Case], loc: SourceLocation) extends Decl
 
-  case class Struct(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], sc: Scheme, fields: Map[Symbol.StructFieldSym, StructField], loc: SourceLocation)
+  case class Struct(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], sc: Scheme, fields: Map[Symbol.StructFieldSym, StructField], loc: SourceLocation) extends Decl
 
-  case class RestrictableEnum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Derivations, cases: Map[Symbol.RestrictableCaseSym, RestrictableCase], loc: SourceLocation)
+  case class RestrictableEnum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Derivations, cases: Map[Symbol.RestrictableCaseSym, RestrictableCase], loc: SourceLocation) extends Decl
 
-  case class TypeAlias(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypeParam], tpe: Type, loc: SourceLocation)
+  case class TypeAlias(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypeParam], tpe: Type, loc: SourceLocation) extends Decl
 
   // TODO ASSOC-TYPES can probably be combined with KindedAst.AssocTypeSig
   case class AssocTypeSig(doc: Doc, mod: Modifiers, sym: Symbol.AssocTypeSym, tparam: TypeParam, kind: Kind, tpe: Option[Type], loc: SourceLocation)
@@ -73,7 +80,7 @@ object TypedAst {
   // TODO ASSOC-TYPES can probably be combined with KindedAst.AssocTypeSig
   case class AssocTypeDef(doc: Doc, mod: Modifiers, sym: AssocTypeSymUse, arg: Type, tpe: Type, loc: SourceLocation)
 
-  case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
+  case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation) extends Decl
 
   case class Op(sym: Symbol.OpSym, spec: Spec, loc: SourceLocation)
 
@@ -95,9 +102,9 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    case class Hole(sym: Symbol.HoleSym, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Hole(sym: Symbol.HoleSym, scp: LocalScope, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class HoleWithExp(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class HoleWithExp(exp: Expr, scp: LocalScope, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class OpenAs(symUse: RestrictableEnumSymUse, exp: Expr, tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = exp.eff
@@ -133,7 +140,7 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    case class Scope(bnd: Binder, regionVar: Type.Var, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Scope(bnd: Binder, regSym: Symbol.RegionSym, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -149,9 +156,13 @@ object TypedAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
+    case class ExtensibleMatch(label: Name.Label, exp1: Expr, bnd1: Binder, exp2: Expr, bnd2: Binder, exp3: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
     case class Tag(sym: CaseSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class RestrictableTag(sym: RestrictableCaseSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class ExtensibleTag(label: Name.Label, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -191,7 +202,7 @@ object TypedAst {
       def tpe: Type = Type.Int32
     }
 
-    case class Ascribe(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Ascribe(exp: Expr, expectedType: Option[Type], expectedEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class InstanceOf(exp: Expr, clazz: java.lang.Class[?], loc: SourceLocation) extends Expr {
       def eff: Type = exp.eff
@@ -291,7 +302,7 @@ object TypedAst {
 
     case class Tag(sym: CaseSymUse, pats: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
-    case class Tuple(pats: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
+    case class Tuple(pats: Nel[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
 
@@ -364,17 +375,17 @@ object TypedAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
-  case class CatchRule(bnd: Binder, clazz: java.lang.Class[?], exp: Expr)
+  case class CatchRule(bnd: Binder, clazz: java.lang.Class[?], exp: Expr, loc: SourceLocation)
 
-  case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
+  case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
-  case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
+  case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr, loc: SourceLocation)
 
-  case class TypeMatchRule(bnd: Binder, tpe: Type, exp: Expr)
+  case class TypeMatchRule(bnd: Binder, tpe: Type, exp: Expr, loc: SourceLocation)
 
-  case class SelectChannelRule(bnd: Binder, chan: Expr, exp: Expr)
+  case class SelectChannelRule(bnd: Binder, chan: Expr, exp: Expr, loc: SourceLocation)
 
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 

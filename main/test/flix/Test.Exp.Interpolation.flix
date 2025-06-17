@@ -196,6 +196,14 @@ mod Test.Exp.Interpolation {
         "\"${x}\"" == "\"abc\""
 
     @test
+    def interpolation37(): Bool =
+        "\${" == String.concat("$", "{")
+
+    @test
+    def interpolation38(): Bool =
+        "\\\${" == String.concat("\\$", "{")
+
+    @test
     def interpolationDebug01(): Bool =
         "%{123}" == "123"
 
@@ -206,6 +214,15 @@ mod Test.Exp.Interpolation {
 
     @test
     def interpolationDebug03(): Bool =
+        let x = "123";
+        "\\%{x}" == "\\\"123\""
+
+    @test
+    def interpolationDebug04(): Bool =
+        "\%{x}" == String.concat("%", "{x}")
+
+    @test
+    def interpolationDebug05(): Bool =
         let x = EnumSansToString.CaseSansToString(123);
         "my object is %{x}" == "my object is CaseSansToString(123)"
 

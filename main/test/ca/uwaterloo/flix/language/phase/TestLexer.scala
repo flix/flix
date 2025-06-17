@@ -7,34 +7,6 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestLexer extends AnyFunSuite with TestUtils {
 
-  test("LexerError.BlockCommentTooDeep.01") {
-    val input = "/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* this is 32 levels deep */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.BlockCommentTooDeep](result)
-  }
-
-  test("LexerError.BlockCommentTooDeep.02") {
-    val input = "/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* // this is 33 levels deep */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.BlockCommentTooDeep](result)
-  }
-
-  test("LexerError.BlockCommentTooDeep.03") {
-    // Note: The innermost block-comment is unterminated,
-    // but the lexer should stop after bottoming out so this should still be a 'too deep' error.
-    val input = "/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* this is 32 levels deep and unclosed */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.BlockCommentTooDeep](result)
-  }
-
-  test("LexerError.BlockCommentTooDeep.04") {
-    // Note: The innermost block-comment is unterminated,
-    // but the lexer should stop after bottoming out so this should still be a 'too deep' error.
-    val input = "/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* this is unclosed and deep */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.BlockCommentTooDeep](result)
-  }
-
   test("LexerError.DoubleDottedNumber.01") {
     val input = "1.2.3"
     val result = compile(input, Options.TestWithLibNix)
@@ -317,22 +289,166 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError](result)
   }
 
-  test("LexerError.HexLiteralStartsOnUnderscore.01") {
+  test("LexerError.MalformedHexNumber.01") {
     val input =
       s"""
          |def f(): Int32 = 0x_1
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
+    expectError[LexerError.MalformedHexNumber](result)
   }
 
-  test("TrailingUnderscoreInNumber.Int.03") {
+  test("LexerError.MalformedHexNumber.02") {
+    val input =
+      s"""
+         |def f(): Int32 = 0xF__Fi32f
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.MalformedHexNumber](result)
+  }
+
+  test("LexerError.MalformedHexNumber.03") {
+    val input =
+      s"""
+         |def f(): Int8 = 0x_1i8
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.MalformedHexNumber](result)
+  }
+
+  test("LexerError.MalformedHexNumber.04") {
+    val input =
+      s"""
+         |def f(): Int8 = 0x1_i8
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.MalformedHexNumber](result)
+  }
+
+  test("LexerError.MalformedHexNumber.05") {
+    val input =
+      s"""
+         |def f(): Int16 = 0x_1i16
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.MalformedHexNumber](result)
+  }
+
+  test("LexerError.MalformedHexNumber.06") {
+    val input =
+      s"""
+         |def f(): Int16 = 0x1_i16
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.MalformedHexNumber](result)
+  }
+
+  test("LexerError.MalformedHexNumber.07") {
+    val input =
+      s"""
+         |def f(): Int32 = 0x_1i32
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.MalformedHexNumber](result)
+  }
+
+  test("LexerError.MalformedHexNumber.08") {
+    val input =
+      s"""
+         |def f(): Int32 = 0x1_i32
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.MalformedHexNumber](result)
+  }
+
+  test("LexerError.MalformedHexNumber.09") {
+    val input =
+      s"""
+         |def f(): Int64 = 0x_1i64
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.MalformedHexNumber](result)
+  }
+
+  test("LexerError.MalformedHexNumber.10") {
+    val input =
+      s"""
+         |def f(): Int64 = 0x1_i64
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.MalformedHexNumber](result)
+  }
+
+  test("LexerError.MalformedHexNumber.11") {
+    val input =
+      s"""
+         |def f(): BigInt = 0x_1ii
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.MalformedHexNumber](result)
+  }
+
+  test("LexerError.MalformedHexNumber.12") {
+    val input =
+      s"""
+         |def f(): BigInt = 0x1_ii
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.MalformedHexNumber](result)
+  }
+
+  test("LexerError.IncorrectHexNumberSuffix.01") {
+    val input =
+    s"""
+        |def f(): Int32 = 0xFFi32f
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.IncorrectHexNumberSuffix](result)
+  }
+
+  test("LexerError.IncorrectHexNumberSuffix.02") {
+    val input =
+    s"""
+        |def f(): Int32 = 0xFFi322
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.IncorrectHexNumberSuffix](result)
+  }
+
+  test("LexerError.IncorrectHexNumberSuffix.03") {
+    val input =
+      s"""
+         |def f(): Int32 = 0xFFi32FFi32
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.IncorrectHexNumberSuffix](result)
+  }
+
+  test("LexerError.UnterminatedHexNumber.01") {
+    val input =
+    s"""
+        |def f(): Int32 = 0x
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedHexNumber](result)
+  }
+
+  test("LexerError.UnterminatedHexNumber.02") {
+    val input =
+    s"""
+        |def f(): Int32 = 0xF_
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedHexNumber](result)
+  }
+
+  test("LexerError.UnterminatedHexNumber.03") {
     val input =
       s"""
          |def f(): Int32 = 0x1_
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
+    expectError[LexerError.UnterminatedHexNumber](result)
   }
 
   test("LexerError.Int8.01") {
@@ -348,24 +464,6 @@ class TestLexer extends AnyFunSuite with TestUtils {
     val input =
       s"""
          |def f(): Int8 = 1_000_i8
-           """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
-  }
-
-  test("LexerError.Int8.03") {
-    val input =
-      s"""
-         |def f(): Int8 = 0x_1i8
-           """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
-  }
-
-  test("LexerError.Int8.04") {
-    val input =
-      s"""
-         |def f(): Int8 = 0x1_i8
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError](result)
@@ -389,24 +487,6 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError](result)
   }
 
-  test("LexerError.Int16.03") {
-    val input =
-      s"""
-         |def f(): Int16 = 0x_1i16
-           """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
-  }
-
-  test("LexerError.Int16.04") {
-    val input =
-      s"""
-         |def f(): Int16 = 0x1_i16
-           """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
-  }
-
   test("LexerError.Int32.01") {
     val input =
       s"""
@@ -420,24 +500,6 @@ class TestLexer extends AnyFunSuite with TestUtils {
     val input =
       s"""
          |def f(): Int32 = 1_000_i32
-           """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
-  }
-
-  test("LexerError.Int32.03") {
-    val input =
-      s"""
-         |def f(): Int32 = 0x_1i32
-           """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
-  }
-
-  test("LexerError.Int32.04") {
-    val input =
-      s"""
-         |def f(): Int32 = 0x1_i32
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError](result)
@@ -461,24 +523,6 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError](result)
   }
 
-  test("LexerError.Int64.03") {
-    val input =
-      s"""
-         |def f(): Int64 = 0x_1i64
-           """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
-  }
-
-  test("LexerError.Int64.04") {
-    val input =
-      s"""
-         |def f(): Int64 = 0x1_i64
-           """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
-  }
-
   test("LexerError.BigInt.01") {
     val input =
       s"""
@@ -492,24 +536,6 @@ class TestLexer extends AnyFunSuite with TestUtils {
     val input =
       s"""
          |def f(): BigInt = 1_000_ii
-           """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
-  }
-
-  test("LexerError.BigInt.03") {
-    val input =
-      s"""
-         |def f(): BigInt = 0x_1ii
-           """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError](result)
-  }
-
-  test("LexerError.BigInt.04") {
-    val input =
-      s"""
-         |def f(): BigInt = 0x1_ii
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError](result)

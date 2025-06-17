@@ -176,6 +176,16 @@ object TypeConstructor {
   }
 
   /**
+   * A type constructor that represents the type of extensible variants.
+   */
+  case object Extensible extends TypeConstructor {
+    /**
+     * The shape of an extensible variant constructor is Extensible[schemaRow]
+     */
+    def kind: Kind = Kind.SchemaRow ->: Kind.Star
+  }
+
+  /**
     * A type constructor that represents the type of empty schema rows.
     */
   case object SchemaRowEmpty extends TypeConstructor {
@@ -455,6 +465,13 @@ object TypeConstructor {
     */
   case class CaseSet(syms: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym) extends TypeConstructor {
     def kind: Kind = Kind.CaseSet(enumSym)
+  }
+
+  /**
+    * A type constructor that represents a region.
+    */
+  case class Region(sym: Symbol.RegionSym) extends TypeConstructor {
+    def kind: Kind = Kind.Eff
   }
 
   /**

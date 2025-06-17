@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.IntroducedBy
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffectSymUse, OpSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Modifiers, Source}
-import ca.uwaterloo.flix.language.phase.Inliner
 
 object LiftedAst {
 
@@ -76,14 +75,13 @@ object LiftedAst {
 
     case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    @IntroducedBy(Inliner.getClass)
     case class Stm(exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class Scope(sym: Symbol.VarSym, exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class TryWith(exp: Expr, effUse: EffectSymUse, rules: List[HandlerRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class RunWith(exp: Expr, effUse: EffectSymUse, rules: List[HandlerRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class Do(op: OpSymUse, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 

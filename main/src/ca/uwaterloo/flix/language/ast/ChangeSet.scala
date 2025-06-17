@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.shared.{DependencyGraph, Input}
+import ca.uwaterloo.flix.util.collection.ListMap
 
 sealed trait ChangeSet {
 
@@ -66,19 +67,43 @@ sealed trait ChangeSet {
     * Otherwise, it is stale.
     *
     * The type of the value in the map must be the same, since when checking stale, we need to check if the value is in the fresh map.
+    *
+    * @param newMap  the new map
+    * @param oldMap  the old map
+    * @param eq      the equality function for the value
     */
-  def partitionOnValues[K, V <: Sourceable](newMap: Map[K, List[V]], oldMap: Map[K, List[V]]): (Map[K, List[V]], Map[K, List[V]]) = this match {
+  def partitionOnValues[K, V <: Sourceable](newMap: ListMap[K, V], oldMap: ListMap[K, V], eq: (V, V) => Boolean): (ListMap[K, V], ListMap[K, V]) = this match {
     case ChangeSet.Everything =>
-      (newMap, Map.empty)
+      (newMap, ListMap.empty)
 
     case ChangeSet.Dirty(dirty) =>
-      newMap.foldLeft((Map.empty[K, List[V]], Map.empty[K, List[V]])){ case ((stale, fresh), (k, vList)) =>
-        val oldList = oldMap.getOrElse(k, Nil)
-        val (freshList, staleList) = vList.partition(v => oldList.contains(v) &&  !dirty.contains(v.src.input))
-        val staleMap = if (staleList.nonEmpty) stale + (k -> staleList) else stale
-        val freshMap = if (freshList.nonEmpty) fresh + (k -> freshList) else fresh
-        (staleMap, freshMap)
+      newMap.foldLeft((ListMap.empty[K, V], ListMap.empty[K, V])){ case ((stale, fresh), (k, v)) =>
+        if (oldMap.get(k).exists(v2 => eq(v, v2)) && !dirty.contains(v.src.input))
+          (stale, fresh + (k -> v))
+        else
+          (stale + (k -> v), fresh)
       }
+  }
+
+
+  /**
+    * Updates the stale part of the map with the given function `f`.
+    */
+  def updateStaleValues[K <: Sourceable, V1, V2](newMap: Map[K, V1], oldMap: Map[K, V2])(f: Map[K, V1] => Map[K, V2]): Map[K, V2] = {
+    val (stale, fresh) = partition(newMap, oldMap)
+    fresh ++ f(stale)
+  }
+
+  /**
+    * Updates the stale part of the list map with the given function `f`.
+    *
+    * @param newMap  the new map
+    * @param oldMap  the old map
+    * @param eq      the equality function for the value
+    */
+  def updateStaleValueLists[K, V <: Sourceable](newMap: ListMap[K, V], oldMap: ListMap[K, V], eq: (V, V) => Boolean)(f: ListMap[K, V] => ListMap[K, V]): ListMap[K, V] = {
+    val (stale, fresh) = partitionOnValues(newMap, oldMap, eq)
+    fresh ++ f(stale)
   }
 }
 

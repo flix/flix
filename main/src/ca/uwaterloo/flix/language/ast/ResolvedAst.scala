@@ -19,26 +19,28 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
+import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
 
 import java.lang.reflect.Field
 
 object ResolvedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty, AvailableClasses.empty)
+  val empty: Root = Root(Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, List.empty, None, Map.empty, AvailableClasses.empty, Map.empty)
 
   case class Root(traits: Map[Symbol.TraitSym, Declaration.Trait],
-                  instances: Map[Symbol.TraitSym, List[Declaration.Instance]],
+                  instances: ListMap[Symbol.TraitSym, Declaration.Instance],
                   defs: Map[Symbol.DefnSym, Declaration.Def],
                   enums: Map[Symbol.EnumSym, Declaration.Enum],
                   structs: Map[Symbol.StructSym, Declaration.Struct],
                   restrictableEnums: Map[Symbol.RestrictableEnumSym, Declaration.RestrictableEnum],
                   effects: Map[Symbol.EffectSym, Declaration.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, Declaration.TypeAlias],
-                  uses: Map[Symbol.ModuleSym, List[UseOrImport]],
+                  uses: ListMap[Symbol.ModuleSym, UseOrImport],
                   taOrder: List[Symbol.TypeAliasSym],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  availableClasses: AvailableClasses)
+                  availableClasses: AvailableClasses,
+                  tokens: Map[Source, Array[Token]])
 
   // TODO use Law for laws
   case class CompilationUnit(usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation)
@@ -89,9 +91,9 @@ object ResolvedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends Expr
 
-    case class Hole(sym: Symbol.HoleSym, loc: SourceLocation) extends Expr
+    case class Hole(sym: Symbol.HoleSym, scp: LocalScope, loc: SourceLocation) extends Expr
 
-    case class HoleWithExp(exp: Expr, loc: SourceLocation) extends Expr
+    case class HoleWithExp(exp: Expr, scp: LocalScope, loc: SourceLocation) extends Expr
 
     case class OpenAs(symUse: RestrictableEnumSymUse, exp: Expr, loc: SourceLocation) extends Expr
 
@@ -126,7 +128,7 @@ object ResolvedAst {
     // MATT why was this a full type
     case class Region(tpe: Type, loc: SourceLocation) extends Expr
 
-    case class Scope(sym: Symbol.VarSym, regionVar: Symbol.UnkindedTypeVarSym, exp: Expr, loc: SourceLocation) extends Expr
+    case class Scope(sym: Symbol.VarSym, regSym: Symbol.RegionSym, exp: Expr, loc: SourceLocation) extends Expr
 
     case class Match(exp: Expr, rules: List[MatchRule], loc: SourceLocation) extends Expr
 
@@ -134,9 +136,13 @@ object ResolvedAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
+    case class ExtMatch(exp: Expr, rules: List[ExtMatchRule], loc: SourceLocation) extends Expr
+
     case class Tag(symUse: CaseSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class RestrictableTag(symUse: RestrictableCaseSymUse, exps: List[Expr], isOpen: Boolean, loc: SourceLocation) extends Expr
+
+    case class ExtTag(label: Name.Label, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -256,7 +262,7 @@ object ResolvedAst {
 
     case class Tag(symUse: CaseSymUse, pats: List[Pattern], loc: SourceLocation) extends Pattern
 
-    case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
+    case class Tuple(pats: Nel[Pattern], loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
 
@@ -283,6 +289,20 @@ object ResolvedAst {
     case class Error(loc: SourceLocation) extends VarOrWild with RestrictableChoosePattern
 
   }
+
+  sealed trait ExtPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtPattern {
+
+    case class Wild(loc: SourceLocation) extends ExtPattern
+
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ExtPattern
+
+    case class Error(loc: SourceLocation) extends ExtPattern
+  }
+
 
   sealed trait Predicate
 
@@ -328,17 +348,19 @@ object ResolvedAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: UnkindedType, eff: Option[UnkindedType], loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr, loc: SourceLocation)
 
-  case class HandlerRule(symUse: OpSymUse, fparams: List[FormalParam], exp: Expr)
+  case class HandlerRule(symUse: OpSymUse, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
-  case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
+  case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr, loc: SourceLocation)
 
-  case class TypeMatchRule(sym: Symbol.VarSym, tpe: UnkindedType, exp: Expr)
+  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
 
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
+  case class TypeMatchRule(sym: Symbol.VarSym, tpe: UnkindedType, exp: Expr, loc: SourceLocation)
+
+  case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr, loc: SourceLocation)
 
   sealed trait TypeParam {
     val name: Name.Ident

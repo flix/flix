@@ -42,6 +42,7 @@ jobs:
         repo:
           - "JonathanStarup/Flix-ANSI-Terminal"
           - "JonathanStarup/ListSet"
+          - "JonathanStarup/talpin1992-in-flix"
           - "flix/museum"
           - "jaschdoc/flix-parsers"
           - "mlutze/flix-json"

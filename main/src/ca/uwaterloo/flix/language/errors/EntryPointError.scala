@@ -31,7 +31,7 @@ sealed trait EntryPointError extends CompilationMessage {
 object EntryPointError {
 
   /**
-    * Error indicating an illegal effect of the entry point function.
+    * Error indicating an illegal effect of an entry point function.
     *
     * @param eff the effect.
     * @param loc the location where the error occurred.

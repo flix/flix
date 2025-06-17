@@ -18,13 +18,13 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
-import ca.uwaterloo.flix.util.collection.MultiMap
+import ca.uwaterloo.flix.util.collection.Nel
 
 object DesugaredAst {
 
-  val empty: Root = Root(Map.empty, None, AvailableClasses.empty)
+  val empty: Root = Root(Map.empty, None, AvailableClasses.empty, Map.empty)
 
-  case class Root(units: Map[Source, CompilationUnit], mainEntryPoint: Option[Symbol.DefnSym], availableClasses: AvailableClasses)
+  case class Root(units: Map[Source, CompilationUnit], mainEntryPoint: Option[Symbol.DefnSym], availableClasses: AvailableClasses, tokens: Map[Source, Array[Token]])
 
   case class CompilationUnit(usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation)
 
@@ -120,6 +120,10 @@ object DesugaredAst {
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], loc: SourceLocation) extends Expr
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
+
+    case class ExtMatch(exp: Expr, rules: List[ExtMatchRule], loc: SourceLocation) extends Expr
+
+    case class ExtensibleTag(label: Name.Label, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -229,7 +233,7 @@ object DesugaredAst {
 
     case class Tag(qname: Name.QName, pats: List[Pattern], loc: SourceLocation) extends Pattern
 
-    case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
+    case class Tuple(pats: Nel[Pattern], loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
 
@@ -259,6 +263,18 @@ object DesugaredAst {
 
   }
 
+  sealed trait ExtPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtPattern {
+
+    case class Wild(loc: SourceLocation) extends ExtPattern
+
+    case class Var(ident: Name.Ident, loc: SourceLocation) extends ExtPattern
+
+    case class Error(loc: SourceLocation) extends ExtPattern
+  }
 
   sealed trait Predicate
 
@@ -296,7 +312,7 @@ object DesugaredAst {
 
     case class Unit(loc: SourceLocation) extends Type
 
-    case class Tuple(tpes: List[Type], loc: SourceLocation) extends Type
+    case class Tuple(tpes: Nel[Type], loc: SourceLocation) extends Type
 
     case class RecordRowEmpty(loc: SourceLocation) extends Type
 
@@ -378,9 +394,9 @@ object DesugaredAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 
-  case class CatchRule(ident: Name.Ident, className: String, exp: Expr)
+  case class CatchRule(ident: Name.Ident, className: Name.Ident, exp: Expr, loc: SourceLocation)
 
-  case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr)
+  case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
@@ -390,11 +406,13 @@ object DesugaredAst {
 
   case class Constraint(head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 
-  case class MatchRule(pat: Pattern, exp1: Option[Expr], exp2: Expr)
+  case class MatchRule(pat: Pattern, exp1: Option[Expr], exp2: Expr, loc: SourceLocation)
 
-  case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr)
+  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
 
-  case class SelectChannelRule(ident: Name.Ident, exp1: Expr, exp2: Expr)
+  case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr, loc: SourceLocation)
+
+  case class SelectChannelRule(ident: Name.Ident, exp1: Expr, exp2: Expr, loc: SourceLocation)
 
   sealed trait TypeParam
 
