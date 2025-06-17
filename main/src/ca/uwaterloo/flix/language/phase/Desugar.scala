@@ -801,7 +801,7 @@ object Desugar {
       Expr.FixpointMerge(e1, e2, loc)
 
     case WeededAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
-      desugarFixpointInjectInto(exps, predsAndArities.map(_.ident), loc)
+      desugarFixpointInjectInto(exps, predsAndArities, loc)
 
     case WeededAst.Expr.FixpointSolveWithProject(exps, optIdents, loc) =>
       desugarFixpointSolveWithProject(exps, optIdents, loc)
