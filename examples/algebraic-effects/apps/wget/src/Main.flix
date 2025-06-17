@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-def main(): Unit \ { Sys, Net, IO } = {
-    let args = run { Environment.getArgs() } with Environment.runWithIO;
+def main(): Unit \ { Sys, Net, IO } = run {
+    let args = Environment.getArgs();
     match List.head(args) {
         case None =>
-            run { Logger.fatal("No URL provided") } with Logger.runWithIO
+            Logger.fatal("No URL provided")
 
         case Some(url) =>
             let opts = { targetFile = "index.html" };
-            run { WGet.download(opts, url) }
-            with alertOnHttpError
-            with alertOnFileWriteError
-            with Logger.runWithIO
+            WGet.download(opts, url)
     }
-}
+
+} with Environment.runWithIO
+with alertOnHttpError
+with alertOnFileWriteError
+with Logger.runWithIO
 
 def alertOnHttpError(f: Unit -> Unit \ ef): Unit \ (ef - Http) + { Logger, Net, IO } = match Http.runWithIO(f) {
     case Err(e) => Logger.fatal(e)
