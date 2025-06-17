@@ -79,7 +79,7 @@ object GenEffectClasses {
   private def constructorIns(implicit mv: MethodVisitor): Unit = {
     import BytecodeInstructions.*
     ALOAD(0)
-    INVOKESPECIAL(ClassMaker.Object.Constructor)
+    INVOKESPECIAL(ClassConstants.Object.Constructor)
     RETURN()
   }
 
