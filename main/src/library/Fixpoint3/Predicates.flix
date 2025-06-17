@@ -38,8 +38,12 @@ mod Fixpoint3.Predicates {
 
     ///
     /// `PredType` describes the three types of predicates that exists in a RAM program.
-    /// The `Full` relations contains all facts for the relation, the `Delta` is for fixpoint iterations
-    /// and the `New` relations are the relations that values are inserted into in project statements.
+    ///
+    /// `Full` relations contains all facts computed for a relation.
+    ///
+    /// `Delta` relations contains, in iteration `i`, all facts computed in iteration `i-1` in fixpoints computations.
+    ///
+    /// `New` relations contains, in iteration `i`, all facts computed in iteration `i` in fixpoints computations.
     ///
     @Internal
     pub enum PredType with Eq {
