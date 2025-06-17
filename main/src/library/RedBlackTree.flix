@@ -137,12 +137,10 @@ mod RedBlackTree {
     ///
     /// Returns the number of nodes in `t`.
     ///
-    pub def size(t: RedBlackTree[k, v]): Int32 =
-        def loop(tt, acc) = match tt {
-            case Node(_, a, _, _, b) => 1 + acc + loop(a, 0) + loop(b, 0)
-            case _                   => acc
-        };
-        loop(t, 0)
+    pub def size(t: RedBlackTree[k, v]): Int32 = match t {
+        case Node(_, a, _, _, b) => size(a) + 1 + size(b)
+        case _                   => 0
+    }
 
     ///
     /// Returns the empty tree.
