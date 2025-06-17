@@ -16,16 +16,27 @@
  */
  
 ///
-/// This files keeps track predicates (`PredSym`). It keeps information about which `PredSym`s exist
-/// and which predicates represent full, delta and new relations.
+/// This file provides an interface for interacting with `Fixpoint.Ast.Ram.Predicates`.
+/// Core features include providing a list of all `RelSym` in `Predicates`,
+/// provide the `PredType` of a `RelSym` and transforming `RelSym` of one
+/// `PredType` into a `RelSym` of another `PredType`.
 ///
-/// It uses the following convention: Assume that there are `k` predicates. The original predicate
-/// `PredSym(name, id)` will be the full predicate while `PredSym(name, id + k)` will be the 
-/// delta-predicate and `PredSym(name, id + 2k)` will be the new-predicate.
+/// The three `PredType`s originate from semi-naive evaluation and are `Full`, `Delta` and `New`
+/// (delta').
+/// 
+/// For a `Datalog` AST consisting of predicates `PredSym("Road", 0)` and `PredSym("Path", 1)`
+/// the RAM has 6 predicates, 3 for each predicate in the `Datalog` AST. Every predicate
+/// has a `Full` version, a `Delta` version and a `New` version.
 ///
-/// Other code should not know or rely on this convention.
+/// For `PredSym("Road", 0)` the predicates in RAM are `PredSym("Road", 0)`, `PredSym("Road", 2)`,
+/// and `PredSym("Road", 4)`. `PredSym("Road", 0)` is the full predicate, `PredSym("Road", 2)`
+/// is the delta predicate and `PredSym("Road", 4)` is the delta' predicate.
+/// For `PredSym("Path", 1)` the predicates in RAM are be `PredSym("Path", 1)`, `PredSym("Path", 3)`,
+/// and `PredSym("Path", 5)`.
 ///
-mod Fixpoint3.Predicates {
+/// In the above way `PredType` is encoded in the identifier of a `PredSym`.
+///
+mod Fixpoint3.Predicate {
     use Fixpoint.Ast.Shared.PredSym
     use Fixpoint.Ast.Shared.PredSym.PredSym
     use Fixpoint.Ast.Datalog.Datalog.Datalog
