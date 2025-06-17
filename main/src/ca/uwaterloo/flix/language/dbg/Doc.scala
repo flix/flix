@@ -69,7 +69,7 @@ object Doc {
   private case class Indentation(i: Int) extends Indent
 
   private def indentI(i: Indent): Int = i match {
-    case Indentation(i) => i
+    case Indentation(n) => n
   }
 
   def indentationLevel(i: Int): Indent = Indentation(i)

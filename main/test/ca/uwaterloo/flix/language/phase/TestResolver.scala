@@ -1921,42 +1921,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.ImmutableField](result)
   }
 
-  test("ResolutionError.StructFieldIncorrectOrder.01") {
-    val input =
-      """
-        |struct S[r] {a: Int32, b: Int32}
-        |def f(rc: Region): S[r] = {
-        |    new S @ rc {b = 3, a = 4}
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalFieldOrderInNew](result)
-  }
-
-  test("ResolutionError.StructFieldIncorrectOrder.02") {
-    val input =
-      """
-        |struct S[r] {f: Int32, l: Int32, i: Int32, x: Int32}
-        |def f(rc: Region): S[r] = {
-        |    new S @ rc {f = 3, l = 4, x = 2, i = 9}
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalFieldOrderInNew](result)
-  }
-
-  test("ResolutionError.StructFieldIncorrectOrder.03") {
-    val input =
-      """
-        |struct S[r] {s1: String, f: Int32, l: Int32, i: Int32, x: Int32, s2: String}
-        |def f(rc: Region): S[r] = {
-        |    new S @ rc {s2 = "s", f = 1, l = 1, i = 1, x = 1, s1 = "s"}
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalFieldOrderInNew](result)
-  }
-
   test("ResolutionError.MissingHandlerDef.01") {
     val input =
       """
@@ -2013,4 +1977,19 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectErrorOnCheck[ResolutionError.MissingHandlerDef](result)
   }
 
+
+  test("ResolutionError.Regression.01") {
+    // Ensures we catch errors in arguments even if the function is not resolvable.
+    // See https://github.com/flix/flix/issues/10047
+    val input =
+      """
+        |def foo(): Unit = {
+        |    bar(
+        |       baz     // ERROR
+        |    )
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedName](result)
+  }
 }

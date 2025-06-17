@@ -74,7 +74,7 @@ instance Hash[Int32] {
 }
 
 instance Hash[Int64] {
-    pub def hash(x: Int64): Int32 = unsafe Long.hashCode(x)
+    pub def hash(x: Int64): Int32 = Long.hashCode(x)
 }
 
 instance Hash[String] {

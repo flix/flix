@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
 import ca.uwaterloo.flix.language.phase.Resolver
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.Nel
 
 import java.util.Objects
 import scala.collection.immutable.SortedSet
@@ -383,7 +384,7 @@ object UnkindedType {
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
-  def mkTuple(ts: List[UnkindedType], loc: SourceLocation): UnkindedType = {
+  def mkTuple(ts: Nel[UnkindedType], loc: SourceLocation): UnkindedType = {
     val init = UnkindedType.Cst(TypeConstructor.Tuple(ts.length), loc)
     ts.foldLeft(init: UnkindedType) {
       case (acc, x) => Apply(acc, x, loc)
@@ -426,7 +427,7 @@ object UnkindedType {
     val ts = ts0 match {
       case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
       case x :: Nil => x
-      case xs => mkTuple(xs, loc)
+      case x :: xs => mkTuple(Nel(x, xs), loc)
     }
 
     Apply(UnkindedType.Cst(TypeConstructor.Relation, loc), ts, loc)
@@ -439,7 +440,7 @@ object UnkindedType {
     val ts = ts0 match {
       case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
       case x :: Nil => x
-      case xs => mkTuple(xs, loc)
+      case x :: xs => mkTuple(Nel(x, xs), loc)
     }
 
     Apply(UnkindedType.Cst(TypeConstructor.Lattice, loc), ts, loc)
@@ -476,7 +477,7 @@ object UnkindedType {
     val ts = ts0 match {
       case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
       case x :: Nil => x
-      case xs => UnkindedType.mkTuple(xs, loc)
+      case x :: xs => UnkindedType.mkTuple(Nel(x, xs), loc)
     }
 
     UnkindedType.Apply(tycon, ts, loc)

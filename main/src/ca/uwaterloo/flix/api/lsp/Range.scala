@@ -17,10 +17,9 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Result
-
-import org.json4s.JsonDSL.*
-import org.json4s.*
 import org.eclipse.lsp4j
+import org.json4s.*
+import org.json4s.JsonDSL.*
 
 /**
   * Companion object of [[Range]].
@@ -66,13 +65,18 @@ case class Range(start: Position, end: Position) {
     * Returns the range that starts earlier.
     */
   private def earlierStart(that: Range): Range =
-     if (start < that.start) this else that
+    if (start < that.start) this else that
 
   /**
     * Returns the range that ends later.
     */
   private def laterEnd(that: Range): Range =
     if (end > that.end) this else that
+
+  /**
+    * Returns the range that starts earlier and ends later.
+    */
+  def isEmpty: Boolean = start == end
 
   /**
     * Checks if this range overlaps with the other range.
@@ -82,4 +86,12 @@ case class Range(start: Position, end: Position) {
     val lst = laterEnd(that)
     fst == lst || fst.end > lst.start
   }
+
+  override def toString: String = {
+    if (start.line == end.line)
+      s"Range(L${start.line}:${start.character}-${end.character})"
+    else
+      s"Range(L${start.line}:${start.character} -- L${end.line}:${end.character})"
+  }
+
 }

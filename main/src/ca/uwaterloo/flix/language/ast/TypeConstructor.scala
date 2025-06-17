@@ -176,6 +176,16 @@ object TypeConstructor {
   }
 
   /**
+   * A type constructor that represents the type of extensible variants.
+   */
+  case object Extensible extends TypeConstructor {
+    /**
+     * The shape of an extensible variant constructor is Extensible[schemaRow]
+     */
+    def kind: Kind = Kind.SchemaRow ->: Kind.Star
+  }
+
+  /**
     * A type constructor that represents the type of empty schema rows.
     */
   case object SchemaRowEmpty extends TypeConstructor {

@@ -91,22 +91,19 @@ object Main {
       installDeps = cmdOpts.installDeps,
       output = None,
       target = Options.Default.target,
-      test = Options.Default.test,
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
-      xnoverify = cmdOpts.xnoverify,
-      xnooptimizer = cmdOpts.xnooptimizer,
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
       xsummary = cmdOpts.xsummary,
       xfuzzer = cmdOpts.xfuzzer,
       xprinttyper = cmdOpts.xprinttyper,
-      xverifyeffects = cmdOpts.xverifyeffects,
       xsubeffecting = cmdOpts.xsubeffecting,
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfPar = cmdOpts.XPerfPar,
       XPerfN = cmdOpts.XPerfN,
+      xchaosMonkey = cmdOpts.xchaosMonkey,
       xiterations = cmdOpts.xiterations,
     )
 
@@ -344,7 +341,6 @@ object Main {
                      listen: Option[Int] = None,
                      threads: Option[Int] = None,
                      assumeYes: Boolean = false,
-                     xnoverify: Boolean = false,
                      xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkIncremental: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
@@ -352,16 +348,15 @@ object Main {
                      xbenchmarkThroughput: Boolean = false,
                      xnodeprecated: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
-                     xnooptimizer: Boolean = false,
                      xprintphases: Boolean = false,
                      xsummary: Boolean = false,
                      xfuzzer: Boolean = false,
                      xprinttyper: Option[String] = None,
-                     xverifyeffects: Boolean = false,
                      xsubeffecting: Set[Subeffecting] = Set.empty,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
                      XPerfPar: Boolean = false,
+                     xchaosMonkey: Boolean = false,
                      xiterations: Int = 1000,
                      files: Seq[File] = Seq())
 
@@ -530,10 +525,6 @@ object Main {
       note("")
       note("The following options are experimental:")
 
-      // Xnoverify
-      opt[Unit]("Xnoverify").action((_, c) => c.copy(xnoverify = true)).
-        text("disables verification of the last AST.")
-
       // Xbenchmark-code-size
       opt[Unit]("Xbenchmark-code-size").action((_, c) => c.copy(xbenchmarkCodeSize = true)).
         text("[experimental] benchmarks the size of the generated JVM files.")
@@ -562,10 +553,6 @@ object Main {
       opt[Unit]("Xno-deprecated").action((_, c) => c.copy(xnodeprecated = true)).
         text("[experimental] disables deprecated features.")
 
-      // Xno-optimizer
-      opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
-        text("[experimental] disables compiler optimizations.")
-
       // Xprint-phase
       opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).
         text("[experimental] prints the ASTs after the each phase.")
@@ -582,13 +569,13 @@ object Main {
       opt[String]("Xprint-typer").action((sym, c) => c.copy(xprinttyper = Some(sym))).
         text("[experimental] writes constraints to dot files.")
 
-      // Xverify-effects
-      opt[String]("Xverify-effects").action((_, c) => c.copy(xverifyeffects = true)).
-        text("[experimental] verifies consistency of effects after typechecking")
-
       // Xsubeffecting
       opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).
         text("[experimental] enables sub-effecting in select places")
+
+      // Xchaos-monkey
+      opt[Unit]("Xchaos-monkey").action((_, c) => c.copy(xchaosMonkey = true)).
+        text("[experimental] introduces randomness.")
 
       // Xiterations
       opt[Int]("Xiterations").action((n, c) => c.copy(xiterations = n)).

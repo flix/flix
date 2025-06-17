@@ -22,7 +22,8 @@ import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, SourceLocation, Symb
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, SubstitutionTree, TypeConstraint}
-import ca.uwaterloo.flix.util.{CofiniteSet, InternalCompilerException, ParOps, Result}
+import ca.uwaterloo.flix.util.collection.CofiniteSet
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
@@ -123,7 +124,7 @@ object EntryPoints {
     case Type.Cst(TypeConstructor.Unit, _) => Result.Ok(true)
     case Type.Cst(_, _) => Result.Ok(false)
     case Type.Apply(_, _, _) => Result.Ok(false)
-    case Type.Alias(_, _, tpe, _) => isUnitType(tpe)
+    case Type.Alias(_, _, t, _) => isUnitType(t)
     case Type.Var(_, _) => Result.Err(ErrorOrMalformed)
     case Type.AssocType(_, _, _, _) => Result.Err(ErrorOrMalformed)
     case Type.JvmToType(_, _) => Result.Err(ErrorOrMalformed)
@@ -467,7 +468,7 @@ object EntryPoints {
         case Type.Cst(TypeConstructor.Native(clazz), _) if clazz == classOf[java.lang.Object] => Result.Ok(true)
         case Type.Cst(_, _) => Result.Ok(false)
         case Type.Apply(_, _, _) => Result.Ok(false)
-        case Type.Alias(_, _, tpe, _) => isExportableType(tpe)
+        case Type.Alias(_, _, t, _) => isExportableType(t)
         case Type.Var(_, _) => Result.Err(ErrorOrMalformed)
         case Type.AssocType(_, _, _, _) => Result.Err(ErrorOrMalformed)
         case Type.JvmToType(_, _) => Result.Err(ErrorOrMalformed)
@@ -597,7 +598,7 @@ object EntryPoints {
   }
 
   /** Returns a new root where [[TypedAst.Root.entryPoints]] contains all entry points (main/test/export). */
-  def findEntryPoints(root: TypedAst.Root): TypedAst.Root = {
+  private def findEntryPoints(root: TypedAst.Root): TypedAst.Root = {
     val s = mutable.Set.empty[Symbol.DefnSym]
     for ((sym, defn) <- root.defs if isEntryPoint(defn)(root)) {
       s += sym

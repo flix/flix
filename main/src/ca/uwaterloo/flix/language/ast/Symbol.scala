@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, ModuleKind, QualifiedSym, Scope, Source, VarText}
+import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
@@ -221,10 +221,10 @@ object Symbol {
   }
 
   /**
-    * Returns the struct field symbol for the given name `name` which has position `idx` in the given struct `struct`
+    * Returns the struct field symbol for `name`.
     */
-  def mkStructFieldSym(struct: Symbol.StructSym, idx: Int, name: Name.Label): StructFieldSym = {
-    new StructFieldSym(struct, name.name, idx, name.loc)
+  def mkStructFieldSym(struct: Symbol.StructSym, name: Name.Label): StructFieldSym = {
+    new StructFieldSym(struct, name.name, name.loc)
   }
 
   /**
@@ -625,20 +625,20 @@ object Symbol {
   /**
    * Struct Field Symbol.
    */
-  final class StructFieldSym(val structSym: Symbol.StructSym, val name: String, val idx: Int, val loc: SourceLocation) extends Symbol with QualifiedSym {
+  final class StructFieldSym(val structSym: Symbol.StructSym, val name: String, val loc: SourceLocation) extends Symbol with QualifiedSym {
 
     /**
      * Returns `true` if this symbol is equal to `that` symbol.
      */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: StructFieldSym => this.structSym == that.structSym && this.name == that.name && this.idx == that.idx
+      case that: StructFieldSym => this.structSym == that.structSym && this.name == that.name
       case _ => false
     }
 
     /**
      * Returns the hash code of this symbol.
      */
-    override val hashCode: Int = Objects.hash(structSym, name, idx)
+    override val hashCode: Int = Objects.hash(structSym, name)
 
     /**
      * Human readable representation.

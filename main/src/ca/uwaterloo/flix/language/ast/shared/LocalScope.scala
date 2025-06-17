@@ -35,33 +35,33 @@ object LocalScope {
 /**
   * Represents a local scope with a mapping from variable names to their resolutions.
   *
-  * @param env the environment map containing variable names and their corresponding resolutions.
+  * @param scp the environment map containing variable names and their corresponding resolutions.
   */
-case class LocalScope(env: ListMap[String, Resolution]){
+case class LocalScope(scp: ListMap[String, Resolution]){
   /**
     * Returns the map of variable names to their resolutions.
     */
-  def m: Map[String, List[Resolution]] = env.m
+  def m: Map[String, List[Resolution]] = scp.m
 
   /**
     * Returns the local scope extended with another local scope.
     */
-  def ++(that: LocalScope): LocalScope = LocalScope(this.env ++ that.env)
+  def ++(that: LocalScope): LocalScope = LocalScope(this.scp ++ that.scp)
 
   /**
     * Returns an option of the list of resolutions corresponding to the variable `name`.
     */
-  def get(name: String): List[Resolution] = env.get(name)
+  def get(name: String): List[Resolution] = scp.get(name)
 
   /**
     * Returns the list of resolutions corresponding to the variable `name`.
     */
-  def apply(name: String): List[Resolution] = env(name)
+  def apply(name: String): List[Resolution] = scp(name)
 
   /**
     * Returns the local scope extended with the additional mapping from `name` to `res`.
     */
-  def +(kv: (String, Resolution)): LocalScope = LocalScope(env + kv)
+  def +(kv: (String, Resolution)): LocalScope = LocalScope(scp + kv)
 
   /**
     * Returns the local scope extended with the additional mapping from `name` to `res`.
@@ -69,5 +69,5 @@ case class LocalScope(env: ListMap[String, Resolution]){
     * Currently, we just take the first resolution in the list of resolutions.
     */
   def resolve(name: String): Option[Resolution] =
-    env.get(name).headOption
+    scp.get(name).headOption
 }

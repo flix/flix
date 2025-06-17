@@ -10,8 +10,8 @@ import scala.collection.immutable.SortedSet
 object UnkindedTypePrinter {
 
   /** Returns the [[DocAst.Type]] representation of `tpe`. */
-  def print(tpe: UnkindedType): DocAst.Type = {
-    val (base, args) = collectApp(tpe)
+  def print(tpe0: UnkindedType): DocAst.Type = {
+    val (base, args) = collectApp(tpe0)
     // Make the well-kinded types pretty.
     (base, args) match {
       case (UnkindedType.Var(sym, _), _) => mkApp(Type.Var(sym), args.map(print))

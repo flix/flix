@@ -34,31 +34,6 @@ sealed trait TypeError extends CompilationMessage {
 object TypeError {
 
   /**
-    * Irreducible associated type error
-    *
-    * @param sym the associated type symbol.
-    * @param tpe the argument to the associated type
-    * @param loc the location where the error occurred.
-    */
-  case class IrreducibleAssocType(sym: Symbol.AssocTypeSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    private val assocType: Type = Type.AssocType(AssocTypeSymUse(sym, SourceLocation.Unknown), tpe, Kind.Wild, SourceLocation.Unknown)
-
-    def summary: String = s"Irreducible associated type: ${formatType(assocType)}"
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Irreducible associated type: ${formatType(assocType)}
-         |
-         |${code(loc, "irreducible associated type.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      "Tip: Add an equality constraint to the function."
-    })
-  }
-
-  /**
     * Java constructor not found type error.
     *
     * @param tpes the types of the arguments.
@@ -136,81 +111,6 @@ object TypeError {
   }
 
   /**
-    * Mismatched Pure and Effectful Arrows.
-    *
-    * @param baseType1 the first boolean formula.
-    * @param baseType2 the second boolean formula.
-    * @param fullType1 the first full type in which the first boolean formula occurs.
-    * @param fullType2 the second full type in which the second boolean formula occurs.
-    * @param renv      the rigidity environment.
-    * @param loc       the location where the error occurred.
-    */
-  case class MismatchedArrowEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Mismatched Pure and Effectful Functions."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Mismatched Pure and Effectful Functions.
-         |
-         |${code(loc, "mismatched pure and effectful functions.")}
-         |
-         |Type One: ${cyan(formatType(fullType1, Some(renv)))}
-         |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Mismatched Boolean Formulas.
-    *
-    * @param baseType1 the first boolean formula.
-    * @param baseType2 the second boolean formula.
-    * @param fullType1 the first full type in which the first boolean formula occurs.
-    * @param fullType2 the second full type in which the second boolean formula occurs.
-    * @param renv      the rigidity environment.
-    * @param loc       the location where the error occurred.
-    */
-  case class MismatchedBools(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unable to unify the Boolean formulas '${formatType(baseType1, Some(renv))}' and '${formatType(baseType2, Some(renv))}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unable to unify the Boolean formulas: '${red(formatType(baseType1, Some(renv)))}' and '${red(formatType(baseType2, Some(renv)))}'.
-         |
-         |${code(loc, "mismatched Boolean formulas.")}
-         |
-         |Type One: ${cyan(formatType(fullType1, Some(renv)))}
-         |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Mismatched Case Set Formulas.
-    *
-    * @param baseType1 the first case set formula.
-    * @param baseType2 the second case set formula.
-    * @param fullType1 the first full type in which the first case set formula occurs.
-    * @param fullType2 the second full type in which the second case set formula occurs.
-    * @param renv      the rigidity environment.
-    * @param loc       the location where the error occurred.
-    */
-  case class MismatchedCaseSets(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unable to unify the case set formulas '${formatType(baseType1, Some(renv))}' and '${formatType(baseType2, Some(renv))}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unable to unify the case set formulas: '${red(formatType(baseType1, Some(renv)))}' and '${red(formatType(baseType2, Some(renv)))}'.
-         |
-         |${code(loc, "mismatched case set formulas.")}
-         |
-         |Type One: ${cyan(formatType(fullType1, Some(renv)))}
-         |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
-         |""".stripMargin
-    }
-  }
-
-  /**
     * Mismatched Effect Formulas.
     *
     * @param baseType1 the first effect formula.
@@ -225,12 +125,12 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unable to unify the effect formulas: '${red(formatType(baseType1, Some(renv)))}' and '${red(formatType(baseType2, Some(renv)))}'.
+      s""">> Unable to unify the effect formulas: '${red(formatType(baseType1, Some(renv), minimizeEffs = true))}' and '${red(formatType(baseType2, Some(renv), minimizeEffs = true))}'.
          |
          |${code(loc, "mismatched effect formulas.")}
          |
          |Type One: ${cyan(formatType(fullType1, Some(renv)))}
-         |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
+         |Type Two: ${magenta(formatType(fullType2, Some(renv), minimizeEffs = true))}
          |""".stripMargin
     }
   }
@@ -405,45 +305,6 @@ object TypeError {
   }
 
   /**
-    * Unexpected non-record type error.
-    *
-    * @param tpe  the unexpected non-record type.
-    * @param renv the rigidity environment.
-    * @param loc  the location where the error occurred.
-    */
-  case class NonRecordType(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unexpected non-record type '$tpe'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unexpected non-record type: '${red(formatType(tpe, Some(renv)))}'.
-         |
-         |${code(loc, "unexpected non-record type.")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Unexpected non-schema type error.
-    *
-    * @param tpe  the unexpected non-schema type.
-    * @param renv the rigidity environment.
-    * @param loc  the location where the error occurred.
-    */
-  case class NonSchemaType(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unexpected non-schema type '$tpe'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unexpected non-schema type: '${red(formatType(tpe, Some(renv)))}'.
-         |
-         |${code(loc, "unexpected non-schema type.")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /**
     * Occurs Check.
     *
     * @param baseVar   the base type variable.
@@ -501,35 +362,6 @@ object TypeError {
          |    let o: Object = checked_cast(s);
          |""".stripMargin
     )
-  }
-
-  /**
-    * An error indicating that a region variable escapes its scope.
-    *
-    * @param rvar the region variable.
-    * @param tpe  the type wherein the region variable escapes.
-    * @param loc  the location where the error occurred.
-    */
-  case class RegionVarEscapes(rvar: Type.Var, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Region variable '${formatType(rvar)}' escapes its scope."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> The region variable '${red(formatType(rvar))}' escapes its scope.
-         |
-         |${code(loc, "region variable escapes.")}
-         |
-         |The escaping expression has type:
-         |
-         |  ${red(formatType(tpe))}
-         |
-         |which contains the region variable.
-         |
-         |The region variable was declared here:
-         |
-         |${code(rvar.loc, "region variable declared here.")}
-         |""".stripMargin
-    }
   }
 
   /**
