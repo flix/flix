@@ -29,13 +29,18 @@ mod Fixpoint3.Predicates {
     use Fixpoint.Ast.Shared.PredSym
     use Fixpoint.Ast.Shared.PredSym.PredSym
     use Fixpoint.Ast.Datalog.Datalog.Datalog
-    use Fixpoint.Ast.Datalog.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadPredicate, HeadTerm, Polarity, VarSym}
+    use Fixpoint.Ast.Datalog.{BodyPredicate, BodyTerm, Constraint, Datalog, HeadPredicate, HeadTerm, Polarity, VarSym}
     use Fixpoint.Ast.Datalog.Constraint.Constraint
     use Fixpoint.Ast.Datalog.HeadPredicate.HeadAtom
     use Fixpoint.Ast.Datalog.BodyPredicate.{BodyAtom}
-    use Fixpoint3.Ast.Ram.{RamStmt, RelOp, RelSym, RamTerm, BoolExp, RowVar, Facts, Predicates, RamProgram, toId}
+    use Fixpoint3.Ast.Ram.{BoolExp, Facts, Predicates, RamProgram, RamStmt, RamTerm, RelOp, RelSym, RowVar, toId}
     use Fixpoint3.Boxed
 
+    ///
+    /// `PredType` describes the three types of predicates that exists in a RAM program.
+    /// The `Full` relations contains all facts for the relation, the `Delta` is for fixpoint iterations
+    /// and the `New` relations are the relations that values are inserted into in project statements.
+    ///
     @Internal
     pub enum PredType with Eq {
         case Full,
@@ -154,7 +159,7 @@ mod Fixpoint3.Predicates {
         }
 
     ///
-    /// Collect all preciate information given a Datalog program `program` and EDB `db`.
+    /// Collect all preciate information given a Datalog program `program` and database `db`.
     ///
     @Internal
     pub def initialize(program: Datalog, db: Map[RelSym, Map[Vector[Boxed], Boxed]]): Predicates = 
