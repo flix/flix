@@ -1,6 +1,6 @@
 pub def travelWithLimitedBusses(trainConnections: List[(city, city)], busConnections: List[(city, city)], source: city, destination: city, maxBusTrips: Int32): Bool with Order[city] =
-    let tc = inject trainConnections into Train;
-    let bc = inject busConnections into Bus;
+    let tc = inject trainConnections into Train/2;
+    let bc = inject busConnections into Bus/2;
     let lp = #{
         Path(x, 0, y) :- Train(x, y).
         Path(x, busses, z) :- Path(x, busses, y), Train(y, z).
