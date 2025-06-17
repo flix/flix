@@ -1,5 +1,8 @@
 # Changelog
 
+Version 0.59.0:
+- LSP: Improved handler completions (thanks Chenhao!)
+
 Version 0.58.1:
 - Compiler: Fixed a crash in type and effect inference (thanks Magnus!)
 - Compiler: Fixed a crash in plain LSP provider (thanks Chenhao!)

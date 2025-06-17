@@ -21,10 +21,8 @@ import ca.uwaterloo.flix.language.dbg.DocAst.Type
 
 object MonoTypePrinter {
 
-  /**
-    * Returns the [[Type]] representation of `tpe`.
-    */
-  def print(tpe: MonoType): Type = tpe match {
+  /** Returns the [[Type]] representation of `tpe0`. */
+  def print(tpe0: MonoType): Type = tpe0 match {
     case MonoType.Void => Type.Void
     case MonoType.AnyType => Type.AnyType
     case MonoType.Unit => Type.Unit
@@ -50,6 +48,8 @@ object MonoTypePrinter {
     case MonoType.Arrow(args, result) => Type.Arrow(args.map(print), print(result))
     case MonoType.RecordEmpty => Type.RecordEmpty
     case MonoType.RecordExtend(label, value, rest) => Type.RecordExtend(label, print(value), print(rest))
+    case MonoType.ExtensibleEmpty => Type.ExtensibleEmpty
+    case MonoType.ExtensibleExtend(cons, tpes, rest) => Type.ExtensibleExtend(cons.name, tpes.map(print), print(rest))
     case MonoType.Native(clazz) => Type.Native(clazz)
   }
 

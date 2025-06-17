@@ -193,6 +193,12 @@ object Stratifier {
       val rs = rules.map(visitRestrictableChooseRule)
       Expr.RestrictableChoose(star, e, rs, tpe, eff, loc)
 
+    case Expr.ExtensibleMatch(label, exp1, bnd1, exp2, bnd2, exp3, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      Expr.ExtensibleMatch(label, e1, bnd1, e2, bnd2, e3, tpe, eff, loc)
+
     case Expr.Tag(sym, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       Expr.Tag(sym, es, tpe, eff, loc)
@@ -200,6 +206,10 @@ object Stratifier {
     case Expr.RestrictableTag(sym, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       Expr.RestrictableTag(sym, es, tpe, eff, loc)
+
+    case Expr.ExtensibleTag(label, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      Expr.ExtensibleTag(label, es, tpe, eff, loc)
 
     case Expr.Tuple(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -546,14 +556,21 @@ object Stratifier {
     * Returns `true` if the two given labels `l1` and `l2` are considered equal.
     */
   private def labelEq(l1: Label, l2: Label)(implicit root: Root, flix: Flix): Boolean = {
-    val isEqPredicate = l1.pred == l2.pred
-    val isEqDenotation = l1.den == l2.den
-    val isEqArity = l1.arity == l2.arity
-    val isEqTermTypes = l1.terms.zip(l2.terms).forall {
+    l1.pred == l2.pred &&
+      l1.den == l2.den &&
+      l1.arity == l2.arity &&
+      unifiableTermTypes(l1, l2)
+  }
+
+  /**
+    * Returns `true` if `l1` and `l2` have unifiable term types.
+    *
+    * N.B.: The two must have the same number of terms.
+    */
+  private def unifiableTermTypes(l1: Label, l2: Label)(implicit root: Root, flix: Flix): Boolean = {
+    l1.terms.zip(l2.terms).forall {
       case (t1, t2) => ConstraintSolver2.fullyUnify(t1, t2, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix).isDefined // TODO ASSOC-TYPES empty right? // TODO LEVELS top OK?
     }
-
-    isEqPredicate && isEqDenotation && isEqArity && isEqTermTypes
   }
 
   /**

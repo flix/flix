@@ -49,6 +49,7 @@ object TypeConstructorPrinter {
     case TypeConstructor.RecordRowEmpty => DocAst.Type.RecordRowEmpty
     case TypeConstructor.RecordRowExtend(label) => DocAst.Type.AsIs(s"RecordRowExtend($label)")
     case TypeConstructor.Record => DocAst.Type.AsIs("Record")
+    case TypeConstructor.Extensible => DocAst.Type.AsIs("Extensible")
     case TypeConstructor.SchemaRowEmpty => DocAst.Type.SchemaRowEmpty
     case TypeConstructor.SchemaRowExtend(pred) => DocAst.Type.AsIs(s"SchemaRowExtend($pred)")
     case TypeConstructor.Schema => DocAst.Type.Schema

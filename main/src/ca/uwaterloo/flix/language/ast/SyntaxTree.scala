@@ -194,6 +194,12 @@ object SyntaxTree {
 
       case object CheckedTypeCast extends Expr
 
+      case object ExtMatch extends Expr
+
+      case object ExtMatchRuleFragment extends Expr
+
+      case object ExtTag extends Expr
+
       case object Index extends Expr
 
       case object IndexMut extends Expr
@@ -451,6 +457,8 @@ object SyntaxTree {
       //     Pattern
       //       Ident
       case object Pattern extends Pattern
+
+      case object ExtTag extends Pattern
 
       case object FCons extends Pattern
 

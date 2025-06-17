@@ -41,6 +41,9 @@ mod Fixpoint.Ast.Shared {
         case Latticenal(v, v -> v -> Bool, v -> v -> v, v -> v -> v)
     }
 
+    @Internal
+    pub type alias BoxedDenotation = Denotation[Boxed]
+
     ///
     /// Returns `true` if the given denotation is relational.
     ///

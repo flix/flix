@@ -17,7 +17,7 @@ mod Debug {
     /// Note: For internal use only. The actual `dbg(exp)` expression is parsed and ultimately rewritten to call this function.
     ///
     @Internal
-    pub def debugWithPrefix(prefix: String, x: a): a \ IO = {
+    pub def debugWithPrefix(prefix: String, x: a): a = unsafe {
         System.out.println("${prefix}%{x}");
         x
     }
@@ -62,9 +62,9 @@ mod Debug {
             case y: Int16 =>
                 Short.toString(y) + "i16"
             case y: Int32 =>
-                unsafe Integer.toString(y)
+                Integer.toString(y)
             case y: Int64 =>
-                unsafe Long.toString(y) + "i64"
+                Long.toString(y) + "i64"
             case y: BigInt =>
                 if (unsafe Objects.isNull(y)) {
                     "null"

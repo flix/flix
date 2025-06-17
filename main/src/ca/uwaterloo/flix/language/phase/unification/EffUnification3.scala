@@ -23,9 +23,10 @@ import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin
+import ca.uwaterloo.flix.language.phase.unification.shared.CofiniteIntSet
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra}
 import ca.uwaterloo.flix.util.collection.SortedBimap
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, Result}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
@@ -33,35 +34,42 @@ import scala.collection.immutable.SortedSet
 object EffUnification3 {
 
   /**
+    * The Global Zhegalkin Algebra used for effects.
+    */
+  val Algebra: ZhegalkinAlgebra[CofiniteIntSet] = new ZhegalkinAlgebra[CofiniteIntSet](CofiniteIntSet.LatticeOps)
+
+  /**
     * Controls whether to enable solve-and-retry for subeffecting.
     */
   var EnableSmartSubeffecting: Boolean = true
 
   /**
-    * Computes an MGU for **ALL* equations in `eqns`.
+    * Computes an MGU for **ALL* equations in `eqns0`.
     *
-    * Returns `Result.Ok(s)` if *ALL* equations in `eqns` where solvable.
-    * The returned substitution `s` is an MGU for `eqns`.
+    * Returns `Result.Ok(s)` if *ALL* equations in `eqns0` where solvable.
+    * The returned substitution `s` is an MGU for `eqns0`.
     *
-    * Returns `Result.Err(l)` if *a single equation* in `eqns` is unsolvable.
+    * Returns `Result.Err(l)` if *a single equation* in `eqns0` is unsolvable.
     * The returned list `l` is a non-empty list of equations that were unsolvable (i.e. in conflict).
-    * The equations in `l` are derived from `eqns` but are not a strict subset of `eqns`.
-    * That is, an equation in `l` may not directly correspond to any equation in `eqns`. However, their source locations are valid.
+    * The equations in `l` are derived from `eqns0` but are not a strict subset of `eqns0`.
+    * That is, an equation in `l` may not directly correspond to any equation in `eqns0`. However, their source locations are valid.
     *
-    * Returns `Result.Err(eqns)` if `eqns` contains an equation that is ill-kinded. Hence, it is better to handle ill-kinded equations elsewhere.
+    * Returns `Result.Err(eqns0)` if `eqns0` contains an equation that is ill-kinded. Hence, it is better to handle ill-kinded equations elsewhere.
     *
     * Note: Treats `Type.Error` as a constant, i.e. only equal to itself. Hence, it is better to drop equations that contain `Type.Error`.
     */
-  def unifyAll(eqs: List[TypeConstraint.Equality], scope: Scope, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, List[TypeConstraint]] = {
+  def unifyAll(eqs0: List[TypeConstraint.Equality], scope: Scope, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, List[TypeConstraint]] = {
     // Performance: Nothing to do if the equation list is empty
-    if (eqs.isEmpty) {
+    if (eqs0.isEmpty) {
       return Result.Ok(Substitution.empty)
     }
+
+    // Randomly reorder the constraints using the chaos monkey.
+    val eqs = ChaosMonkey.chaos(eqs0)
 
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
-    implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.DoNothing
 
     // Choose a unique number for each atom.
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(getAtomsFromConstraints(eqs))
@@ -427,7 +435,7 @@ object EffUnification3 {
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe))
 
     val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
-    val z = Zhegalkin.toZhegalkin(f0)
+    val z = Zhegalkin.toZhegalkin(f0)(Algebra, CofiniteIntSet.LatticeOps)
     val f1 = Zhegalkin.toSetFormula(z)
 
     fromSetFormula(f1, tpe.loc)
