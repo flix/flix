@@ -1482,17 +1482,17 @@ object Resolver {
         e => ResolvedAst.Expr.FixpointFilter(pred, e, loc)
       }
 
-    case NamedAst.Expr.FixpointInject(exp, pred, loc) =>
+    case NamedAst.Expr.FixpointInject(exp, pred, arity, loc) =>
       val eVal = resolveExp(exp, scp0)
       mapN(eVal) {
-        e => ResolvedAst.Expr.FixpointInject(e, pred, loc)
+        e => ResolvedAst.Expr.FixpointInject(e, pred, arity, loc)
       }
 
-    case NamedAst.Expr.FixpointProject(pred, exp1, exp2, loc) =>
+    case NamedAst.Expr.FixpointProject(pred, arity, exp1, exp2, loc) =>
       val e1Val = resolveExp(exp1, scp0)
       val e2Val = resolveExp(exp2, scp0)
       mapN(e1Val, e2Val) {
-        case (e1, e2) => ResolvedAst.Expr.FixpointProject(pred, e1, e2, loc)
+        case (e1, e2) => ResolvedAst.Expr.FixpointProject(pred, arity, e1, e2, loc)
       }
 
     case NamedAst.Expr.Error(m) =>
