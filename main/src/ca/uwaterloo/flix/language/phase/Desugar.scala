@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
-import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
+import ca.uwaterloo.flix.language.ast.WeededAst.{Predicate, PredicateAndArity}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
 import ca.uwaterloo.flix.util.ParOps
@@ -801,7 +801,7 @@ object Desugar {
       Expr.FixpointMerge(e1, e2, loc)
 
     case WeededAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
-      desugarFixpointInjectInto(exps, predsAndArities.map(_.ident), loc)
+      desugarFixpointInjectInto(exps, predsAndArities, loc)
 
     case WeededAst.Expr.FixpointSolveWithProject(exps, optIdents, loc) =>
       desugarFixpointSolveWithProject(exps, optIdents, loc)
@@ -1429,13 +1429,13 @@ object Desugar {
   /**
     * Rewrites a [[WeededAst.Expr.FixpointInjectInto]] into a series of injects and merges.
     */
-  private def desugarFixpointInjectInto(exps0: List[WeededAst.Expr], idents0: List[Name.Ident], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarFixpointInjectInto(exps0: List[WeededAst.Expr], predsAndArities: List[PredicateAndArity], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val es = visitExps(exps0)
     val init = DesugaredAst.Expr.FixpointConstraintSet(Nil, loc0)
-    es.zip(idents0).foldRight(init: Expr) {
-      case ((exp, ident), acc) =>
+    es.zip(predsAndArities).foldRight(init: Expr) {
+      case ((exp, PredicateAndArity(ident, arity)), acc) =>
         val pred = Name.mkPred(ident)
-        val innerExp = DesugaredAst.Expr.FixpointInject(exp, pred, loc0)
+        val innerExp = DesugaredAst.Expr.FixpointInject(exp, pred, arity, loc0)
         DesugaredAst.Expr.FixpointMerge(innerExp, acc, loc0)
     }
   }
@@ -1515,6 +1515,9 @@ object Desugar {
     // The fresh predicate name where to store the result of the query.
     val pred = Name.Pred(Flix.Delimiter + "Result", loc0)
 
+    // The arity of the result is the number of selects
+    val arity = selects.length
+
     // The head of the pseudo-rule.
     val den = Denotation.Relational
     val head = DesugaredAst.Predicate.Head.Atom(pred, den, selects, loc0)
@@ -1541,7 +1544,7 @@ object Desugar {
     }
 
     // Extract the tuples of the result predicate.
-    DesugaredAst.Expr.FixpointProject(pred, queryExp, dbExp, loc0)
+    DesugaredAst.Expr.FixpointProject(pred, arity, queryExp, dbExp, loc0)
   }
 
   /**

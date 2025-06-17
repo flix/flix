@@ -609,11 +609,11 @@ object TypeReconstruction {
       val eff = e.eff
       TypedAst.Expr.FixpointFilter(pred, e, subst(tvar), eff, loc)
 
-    case KindedAst.Expr.FixpointInject(exp, pred, tvar, evar, loc) =>
+    case KindedAst.Expr.FixpointInject(exp, pred, _, tvar, evar, loc) =>
       val e = visitExp(exp)
       TypedAst.Expr.FixpointInject(e, pred, subst(tvar), subst(evar), loc)
 
-    case KindedAst.Expr.FixpointProject(pred, exp1, exp2, tvar, loc) =>
+    case KindedAst.Expr.FixpointProject(pred, _, exp1, exp2, tvar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = subst(tvar)

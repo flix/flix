@@ -430,8 +430,8 @@ object Simplifier {
           case TypeConstructor.SchemaRowExtend(pred) =>
             val List(predType, rest) = tpe.typeArguments
             val consType0 = predType match {
-              case Type.Apply(Type.Cst(TypeConstructor.Relation, _), ct, _) => ct
-              case Type.Apply(Type.Cst(TypeConstructor.Lattice, _), ct, _) => ct
+              case Type.Apply(Type.Cst(TypeConstructor.Relation(_), _), ct, _) => ct
+              case Type.Apply(Type.Cst(TypeConstructor.Lattice(_), _), ct, _) => ct
               case other => throw InternalCompilerException(s"Unexpected type: '$other'.", other.loc)
             }
             val consTypes = consType0.baseType match {
@@ -462,10 +462,10 @@ object Simplifier {
           case TypeConstructor.CaseIntersection(_) => MonoType.Unit
           case TypeConstructor.CaseUnion(_) => MonoType.Unit
 
-          case TypeConstructor.Relation =>
+          case TypeConstructor.Relation(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.Lattice =>
+          case TypeConstructor.Lattice(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.Schema =>
@@ -629,10 +629,10 @@ object Simplifier {
             val List(predType, restType) = tpe.typeArguments
             Type.mkSchemaRowExtend(pred, visitPolyType(predType), visitPolyType(restType), loc)
 
-          case TypeConstructor.Relation =>
+          case TypeConstructor.Relation(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.Lattice =>
+          case TypeConstructor.Lattice(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.Schema =>
