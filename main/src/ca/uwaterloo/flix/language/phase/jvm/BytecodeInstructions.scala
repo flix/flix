@@ -232,7 +232,7 @@ object BytecodeInstructions {
     mv.visitInvokeDynamicInstruction(
       lambdaMethod.name,
       mkDescriptor(callD.arguments.dropRight(drop) *)(lambdaMethod.clazz.toTpe),
-      mkStaticHandle(ClassMaker.LambdaMetafactory.MetafactoryMethod),
+      mkStaticHandle(ClassConstants.LambdaMetafactory.MetafactoryMethod),
       lambdaMethod.d.toAsmType,
       callHandle.handle,
       lambdaMethod.d.toAsmType
@@ -579,15 +579,15 @@ object BytecodeInstructions {
     case BackendType.Reference(_) =>
       INVOKESTATIC(StaticMethod(JvmName.String, "valueOf", mkDescriptor(BackendType.Object)(BackendType.String)))
 
-    case BackendType.Array(BackendType.Bool) => INVOKESTATIC(ClassMaker.Arrays.BoolArrToString)
-    case BackendType.Array(BackendType.Char) => INVOKESTATIC(ClassMaker.Arrays.CharArrToString)
-    case BackendType.Array(BackendType.Int8) => INVOKESTATIC(ClassMaker.Arrays.Int8ArrToString)
-    case BackendType.Array(BackendType.Int16) => INVOKESTATIC(ClassMaker.Arrays.Int16ArrToString)
-    case BackendType.Array(BackendType.Int32) => INVOKESTATIC(ClassMaker.Arrays.Int32ArrToString)
-    case BackendType.Array(BackendType.Int64) => INVOKESTATIC(ClassMaker.Arrays.Int64ArrToString)
-    case BackendType.Array(BackendType.Float32) => INVOKESTATIC(ClassMaker.Arrays.Float32ArrToString)
-    case BackendType.Array(BackendType.Float64) => INVOKESTATIC(ClassMaker.Arrays.Float64ArrToString)
-    case BackendType.Array(BackendType.Reference(_) | BackendType.Array(_)) => INVOKESTATIC(ClassMaker.Arrays.DeepToString)
+    case BackendType.Array(BackendType.Bool) => INVOKESTATIC(ClassConstants.Arrays.BoolArrToString)
+    case BackendType.Array(BackendType.Char) => INVOKESTATIC(ClassConstants.Arrays.CharArrToString)
+    case BackendType.Array(BackendType.Int8) => INVOKESTATIC(ClassConstants.Arrays.Int8ArrToString)
+    case BackendType.Array(BackendType.Int16) => INVOKESTATIC(ClassConstants.Arrays.Int16ArrToString)
+    case BackendType.Array(BackendType.Int32) => INVOKESTATIC(ClassConstants.Arrays.Int32ArrToString)
+    case BackendType.Array(BackendType.Int64) => INVOKESTATIC(ClassConstants.Arrays.Int64ArrToString)
+    case BackendType.Array(BackendType.Float32) => INVOKESTATIC(ClassConstants.Arrays.Float32ArrToString)
+    case BackendType.Array(BackendType.Float64) => INVOKESTATIC(ClassConstants.Arrays.Float64ArrToString)
+    case BackendType.Array(BackendType.Reference(_) | BackendType.Array(_)) => INVOKESTATIC(ClassConstants.Arrays.DeepToString)
   }
 
   //
@@ -669,7 +669,7 @@ object BytecodeInstructions {
         case Some(ins) =>
           ins(())
           SWAP()
-          INVOKEVIRTUAL(ClassMaker.String.Concat)
+          INVOKEVIRTUAL(ClassConstants.String.Concat)
         case None =>
           nop()
       }
@@ -677,7 +677,7 @@ object BytecodeInstructions {
       suffix match {
         case Some(ins) =>
           ins(())
-          INVOKEVIRTUAL(ClassMaker.String.Concat)
+          INVOKEVIRTUAL(ClassConstants.String.Concat)
         case None =>
           nop()
       }
