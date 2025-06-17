@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Jakob Schneider
+ * Copyright 2025 Jakob Schneider Villumsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,47 +19,51 @@ mod TestWGet {
     @Test
     def downloadWritesTheOutputReceivedFromHttp(): Bool = {
         run {
-            let opts = { targetFile = "myfile" };
+            let opts = { targetFile = "resource" };
             let url = "flix.dev";
             WGet.download(opts, url);
             false
-        } with Http {
-            def request(_, url, _, _, k) = k(Http.Response.Response({ status = 200, headers = Map.empty(), body = "this is the content" }))
-        } with FileWrite {
+        } with handler Http {
+            def request(_, _, _, _, k) = k(Http.Response.Response({ status = 200, headers = Map.empty(), body = "this is the content" }))
+        } with handler FileWrite {
             def write(data, _, _) =
                 Assert.eq("this is the content", data#str)
-            def writeLines(data, f, k) = ???
-            def writeBytes(data, f, k) = ???
-            def append(data, f, k) = ???
-            def appendLines(data, f, k) = ???
-            def appendBytes(data, f, k) = ???
-            def truncate(f, k) = ???
-            def mkDir(d, k) = ???
-            def mkDirs(d, k) = ???
+
+            def writeLines(_, _, _) = unreachable!()
+            def writeBytes(_, _, _) = unreachable!()
+            def append(_, _, _) = unreachable!()
+            def appendLines(_, _, _) = unreachable!()
+            def appendBytes(_, _, _) = unreachable!()
+            def truncate(_, _) = unreachable!()
+            def mkDir(_, _) = unreachable!()
+            def mkDirs(_, _) = unreachable!()
+            def mkTempDir(_, _) = unreachable!()
         }
     }
+
 
     @Test
     def downloadShouldWriteToGivenFile(): Bool = {
         run {
-            let opts = { targetFile = "myfile" };
+            let opts = { targetFile = "resource" };
             let url = "flix.dev";
             WGet.download(opts, url);
             false
-        } with Http {
-            def request(_, url, _, _, k) = k(Http.Response.Response({ status = 200, headers = Map.empty(), body = "this is the content" }))
-        } with FileWrite {
-            def write(_, f, _) =
-                Assert.eq("myfile", f)
-            def writeLines(data, f, k) = ???
-            def writeBytes(data, f, k) = ???
-            def append(data, f, k) = ???
-            def appendLines(data, f, k) = ???
-            def appendBytes(data, f, k) = ???
-            def truncate(f, k) = ???
-            def mkDir(d, k) = ???
-            def mkDirs(d, k) = ???
+        } with handler Http {
+            def request(_, _, _, _, k) = k(Http.Response.Response({ status = 200, headers = Map.empty(), body = "this is the content" }))
+        } with handler FileWrite {
+            def write(_, file, _) =
+                Assert.eq("resource", file)
+
+            def writeLines(_, _, _) = unreachable!()
+            def writeBytes(_, _, _) = unreachable!()
+            def append(_, _, _) = unreachable!()
+            def appendLines(_, _, _) = unreachable!()
+            def appendBytes(_, _, _) = unreachable!()
+            def truncate(_, _) = unreachable!()
+            def mkDir(_, _) = unreachable!()
+            def mkDirs(_, _) = unreachable!()
+            def mkTempDir(_, _) = unreachable!()
         }
     }
-
 }

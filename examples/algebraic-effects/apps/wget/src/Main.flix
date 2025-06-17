@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Jakob Schneider
+ * Copyright 2025 Jakob Schneider Villumsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,27 @@
  * limitations under the License.
  */
 
-def main(): Unit \ IO + Net =
-    let args = Environment.getArgs();
+def main(): Unit \ { Sys, Net, IO } = {
+    let args = run { Environment.getArgs() } with Environment.runWithIO;
     match List.head(args) {
+        case None =>
+            run { Logger.fatal("No URL provided") } with Logger.runWithIO
+
         case Some(url) =>
             let opts = { targetFile = "index.html" };
-            let prog = () -> WGet.download(opts, url);
-            match App.runAllWithResult(prog) {
-                case Ok(()) => ()
-                case Err(IoError.IoError(_, msg)) => println("An error occurred: '${msg}'")
-            }
-        case None => println("Please provide a URL")
+            run { WGet.download(opts, url) }
+            with alertOnHttpError
+            with alertOnFileWriteError
+            with Logger.runWithIO
     }
+}
+
+def alertOnHttpError(f: Unit -> Unit \ ef): Unit \ (ef - Http) + { Logger, Net, IO } = match Http.runWithIO(f) {
+    case Err(e) => Logger.fatal(e)
+    case Ok(()) => ()
+}
+
+def alertOnFileWriteError(f: Unit -> Unit \ ef): Unit \ (ef - FileWrite) + { Logger, IO } = match FileWrite.runWithIO(f) {
+    case Err(e) => Logger.fatal(e)
+    case Ok(()) => ()
+}
