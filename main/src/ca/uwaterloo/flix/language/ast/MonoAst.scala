@@ -201,6 +201,15 @@ object MonoAst {
     case object OnceInLambda extends Occur
 
     /**
+      * Represents a binder that occurs exactly once and that occurrence is inside a while loop (condition or body).
+      *
+      * If the let-binding is pure, then it is safe to move its definition to the occurrence.
+      *
+      * Doing so strictly decreases code size but may increase work.
+      */
+    case object OnceInWhile extends Occur
+
+    /**
       * Represents a binder that occurs exactly once and that occurrence is in the body of a local def.
       *
       * If the let-binding is pure, then it is safe to move its definition to the occurrence.
@@ -214,7 +223,8 @@ object MonoAst {
     case object OnceInLocalDef extends Occur
 
     /**
-      * Represents a binder that occurs at most once in distinct branches, but never inside a lambda abstraction or local def.
+      * Represents a binder that occurs at most once in distinct branches, but never inside a lambda abstraction,
+      * while loop, or local def.
       *
       * If the let-binding is pure, then it is safe to move its definition to an occurrence.
       *
@@ -224,7 +234,7 @@ object MonoAst {
     case object ManyBranch extends Occur
 
     /**
-      * Represents a binder that occurs more than once (including lambdas, local defs, branches).
+      * Represents a binder that occurs more than once (including lambdas, while loops, local defs, branches).
       *
       * If the let-binding is pure, then it is safe to move its definition to an occurrence.
       *
