@@ -20,7 +20,7 @@ package ca.uwaterloo.flix.language.phase.optimizer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, FormalParam, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SemanticOp, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
@@ -608,22 +608,28 @@ object Inliner {
     case exp => isTrivial(exp)
   }
 
+  private def isSimpleCall(exp0: Expr): Boolean = exp0 match {
+    case Expr.ApplyClo(exp1, exp2, _, _, _) => isSimple(exp1) && isSimple(exp2)
+    case Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isSimple)
+    case Expr.LocalDef(_, _, _, Expr.ApplyLocalDef(_, exps, _, _, _), _, _, _, _) => exps.forall(isSimple)
+    case _ => false
+  }
+
   /**
     * Returns `true` if `exp0` is a single action expression.
     *
     * An expression is a single action if it performs one computational step. For example:
     * - A single call with simple arguments.
+    * - A single unary operation with a single call to with simple arguments
     * - A single arithmetic operation with simple arguments.
     * - A single array operation with simple arguments.
     * - A single JVM operation with simple arguments.
     */
   @tailrec
   private def isSingleAction(exp0: Expr): Boolean = exp0 match {
-    case Expr.ApplyClo(exp1, exp2, _, _, _) => isSimple(exp1) && isSimple(exp2)
-    case Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isSimple)
-    case Expr.LocalDef(_, _, _, Expr.ApplyLocalDef(_, exps, _, _, _), _, _, _, _) => exps.forall(isSimple)
     case Expr.Cast(exp, _, _, _) => isSingleAction(exp)
     case Expr.ApplyAtomic(op, exps, _, _, _) => op match {
+      case AtomicOp.Unary(_) => isSimpleCall(exps.head)
       case AtomicOp.ArrayNew => exps.forall(isSimple)
       case AtomicOp.ArrayLoad => exps.forall(isSimple)
       case AtomicOp.ArrayStore => exps.forall(isSimple)
@@ -636,7 +642,7 @@ object Inliner {
       case AtomicOp.PutStaticField(_) => exps.forall(isSimple)
       case _ => false
     }
-    case _ => false
+    case exp => isSimpleCall(exp)
   }
 
   /** Represents the range of a substitution from variables to expressions. */
