@@ -495,6 +495,23 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an illegal predicate arity.
+    *
+    * @param loc the location where the error occurs.
+    */
+  case class IllegalPredicateArity(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Illegal predicate arity."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal predicate arity. Arity must be an integer larger than zero.
+         |
+         |${code(loc, "illegal arity.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate an illegal private declaration.
     *
     * @param ident the name of the declaration.
@@ -1064,25 +1081,4 @@ object WeederError {
     }
   }
 
-  /**
-    * An error raised to indicate a malformed predicate arity.
-    *
-    * @param loc the location where the error occurs.
-    */
-  case class InvalidPredicateArity(loc: SourceLocation) extends WeederError {
-    override def summary: String = "Invalid predicate arity."
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> $summary
-         |
-         |${code(loc, "Invalid predicate arity.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} A predicate arity must be a decimal integer."
-    })
-  }
 }
