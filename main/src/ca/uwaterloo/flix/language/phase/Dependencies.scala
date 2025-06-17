@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern, RestrictableChoosePattern, Root}
-import ca.uwaterloo.flix.language.ast.shared.{BroadEqualityConstraint, DependencyGraph, EqualityConstraint, Input, SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.MultiMap
@@ -36,20 +36,29 @@ object Dependencies {
     *   - SymUse
     *   - Instance
     */
-  def run(root: Root)(implicit flix: Flix): (Root, Unit) = flix.phaseNew("Dependencies") {
+  def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, Unit) = flix.phaseNew("Dependencies") {
     implicit val sctx: SharedContext = SharedContext(new ConcurrentHashMap[(Input, Input), Unit]())
-    ParOps.parMap(root.defs.values)(visitDef)
-    ParOps.parMap(root.effects.values)(visitEff)
-    ParOps.parMap(root.enums.values)(visitEnum)
-    ParOps.parMap(root.instances.values)(visitInstances)
-    ParOps.parMap(root.structs.values)(visitStruct)
-    ParOps.parMap(root.traits.values)(visitTrait)
-    ParOps.parMap(root.typeAliases.values)(visitTypeAlias)
+    val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
+    val effects = changeSet.updateStaleValues(root.effects, oldRoot.effects)(ParOps.parMapValues(_)(visitEff))
+    val enums = changeSet.updateStaleValues(root.enums, oldRoot.enums)(ParOps.parMapValues(_)(visitEnum))
+    val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList(_)(visitInstance))
+    val structs = changeSet.updateStaleValues(root.structs, oldRoot.structs)(ParOps.parMapValues(_)(visitStruct))
+    val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
+    val typeAliases = changeSet.updateStaleValues(root.typeAliases, oldRoot.typeAliases)(ParOps.parMapValues(_)(visitTypeAlias))
 
     var deps = MultiMap.empty[Input, Input]
-    sctx.deps.forEach((k, _) => deps = deps + k)
+    sctx.deps.forEach { case (k, _) => deps = deps + k }
     val dg = DependencyGraph(deps)
-    (root.copy(dependencyGraph = dg), ())
+    (root.copy(
+      dependencyGraph = dg,
+      defs = defs,
+      effects = effects,
+      enums = enums,
+      instances = instances,
+      structs = structs,
+      traits = traits,
+      typeAliases = typeAliases
+    ), ())
   }
 
   /**
@@ -60,33 +69,45 @@ object Dependencies {
     sctx.deps.put((src.sp1.source.input, dst.sp1.source.input), ())
   }
 
-  private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext): Unit =  {
+  private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext): TypedAst.Def =  {
     visitExp(defn.exp)
     visitSpec(defn.spec)
+    defn
   }
 
-  private def visitEff(eff: TypedAst.Effect)(implicit sctx: SharedContext): Unit = eff.ops.foreach(visitOp)
+  private def visitEff(eff: TypedAst.Effect)(implicit sctx: SharedContext): TypedAst.Effect = {
+    eff.ops.foreach(visitOp)
+    eff
+  }
 
-  private def visitEnum(enm: TypedAst.Enum)(implicit sctx: SharedContext): Unit =
+  private def visitEnum(enm: TypedAst.Enum)(implicit sctx: SharedContext): TypedAst.Enum = {
     enm.cases.values.foreach(visitCase)
+    enm
+  }
 
-  private def visitInstances(instances: List[TypedAst.Instance])(implicit sctx: SharedContext): Unit =
-    instances.foreach(instance => addDependency(instance.trt.sym.loc, instance.loc))
+  private def visitInstance(instance: TypedAst.Instance)(implicit sctx: SharedContext): TypedAst.Instance = {
+    addDependency(instance.trt.sym.loc, instance.loc)
+    instance
+  }
 
-  private def visitStruct(struct: TypedAst.Struct)(implicit sctx: SharedContext): Unit = {
+  private def visitStruct(struct: TypedAst.Struct)(implicit sctx: SharedContext): TypedAst.Struct = {
     visitScheme(struct.sc)
     struct.fields.values.foreach(visitStructField)
+    struct
   }
 
-  private def visitTrait(trt: TypedAst.Trait)(implicit sctx: SharedContext): Unit = {
+  private def visitTrait(trt: TypedAst.Trait)(implicit sctx: SharedContext): TypedAst.Trait = {
     trt.superTraits.foreach(visitTraitConstraint)
     trt.assocs.foreach(visitAssocTypeSig)
     trt.sigs.foreach(visitSig)
     trt.laws.foreach(visitDef)
+    trt
   }
 
-  private def visitTypeAlias(typeAlias: TypedAst.TypeAlias)(implicit sctx: SharedContext): Unit =
+  private def visitTypeAlias(typeAlias: TypedAst.TypeAlias)(implicit sctx: SharedContext): TypedAst.TypeAlias = {
     visitType(typeAlias.tpe)
+    typeAlias
+  }
 
   private def visitExp(exp0: Expr)(implicit sctx: SharedContext): Unit = exp0 match {
     case Expr.Cst(_, tpe, _) =>
@@ -95,11 +116,11 @@ object Dependencies {
     case Expr.Var(_, tpe, _) =>
       visitType(tpe)
 
-    case Expr.Hole(_, tpe, eff, _) =>
+    case Expr.Hole(_, _, tpe, eff, _) =>
       visitType(tpe)
       visitType(eff)
 
-    case Expr.HoleWithExp(exp, tpe, eff, _) =>
+    case Expr.HoleWithExp(exp, _, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
@@ -214,6 +235,15 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
+    case Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, tpe, eff, _) =>
+      visitExp(exp1)
+      visitBinder(bnd1)
+      visitExp(exp2)
+      visitBinder(bnd2)
+      visitExp(exp3)
+      visitType(tpe)
+      visitType(eff)
+
     case Expr.Tag(sym, exps, tpe, eff, _) =>
       visitSymUse(sym)
       exps.foreach(visitExp)
@@ -222,6 +252,11 @@ object Dependencies {
 
     case Expr.RestrictableTag(sym, exps, tpe, eff, _) =>
       visitSymUse(sym)
+      exps.foreach(visitExp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.ExtensibleTag(_, exps, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
@@ -312,7 +347,7 @@ object Dependencies {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Ascribe(exp, tpe, eff, _) =>
+    case Expr.Ascribe(exp, _, _, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
@@ -508,8 +543,8 @@ object Dependencies {
       addDependency(cst.loc, loc)
       args.foreach(visitType)
     case Type.AssocType(_, arg, _, _) => visitType(arg)
-    case Type.JvmToType(tpe, _) => visitType(tpe)
-    case Type.JvmToEff(tpe, _) => visitType(tpe)
+    case Type.JvmToType(t, _) => visitType(t)
+    case Type.JvmToEff(t, _) => visitType(t)
     case Type.UnresolvedJvmType(_, _) => ()
     case Type.Cst(TypeConstructor.Enum(sym, _), loc) => addDependency(sym.loc, loc)
     case Type.Cst(TypeConstructor.Struct(sym, _), loc) => addDependency(sym.loc, loc)
@@ -544,19 +579,13 @@ object Dependencies {
     case Scheme(_, tconstrs, econstrs, base) =>
       visitType(base)
       tconstrs.foreach(visitTraitConstraint)
-      econstrs.foreach(visitBroadEqualityConstraint)
+      econstrs.foreach(visitEqualityConstraint)
   }
 
   private def visitTraitConstraint(tc: TraitConstraint)(implicit sctx: SharedContext): Unit =
     visitType(tc.arg)
 
   private def visitEqualityConstraint(ec: EqualityConstraint)(implicit sctx: SharedContext): Unit = {
-    visitType(ec.tpe1)
-    visitType(ec.tpe2)
-  }
-
-
-  private def visitBroadEqualityConstraint(ec: BroadEqualityConstraint)(implicit sctx: SharedContext): Unit = {
     visitType(ec.tpe1)
     visitType(ec.tpe2)
   }

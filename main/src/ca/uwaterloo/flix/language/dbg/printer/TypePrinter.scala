@@ -18,9 +18,8 @@ package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.DocAst
-import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 
-import scala.annotation.tailrec
+import scala.annotation.{tailrec, unused}
 
 object TypePrinter {
 
@@ -33,7 +32,7 @@ object TypePrinter {
       case (Type.Cst(TypeConstructor.Arrow(arity), _), _) if args.lengthIs == arity + 1 && arity >= 2 =>
         // `(a1, a2, ..) -> b \ ef` is represented as `List(ef, a1, a2, .., b)`
         // safe match because of the case guard
-        val (arrowEff :: arrowArgs, List(arrowRes)) = args.splitAt(args.length-1)
+        val (arrowEff :: arrowArgs, List(arrowRes)) = args.splitAt(args.length - 1)
         DocAst.Type.ArrowEff(arrowArgs.map(print), print(arrowRes), print(arrowEff))
       case (Type.Cst(TypeConstructor.ArrowWithoutEffect(arity), _), _) if args.lengthIs == arity && arity >= 2 =>
         // `(a1, a2, ..) -> b \ ef` is represented as `List(ef, a1, a2, .., b)`
@@ -79,8 +78,8 @@ object TypePrinter {
       case (Type.Cst(tc, _), _) => mkApp(TypeConstructorPrinter.print(tc), args.map(print))
       case (Type.Alias(cst, aliasArgs, _, _), _) => mkApp(DocAst.Type.Alias(cst.sym, aliasArgs.map(print)), args.map(print))
       case (Type.AssocType(cst, arg, _, _), _) => mkApp(DocAst.Type.AssocType(cst.sym, print(arg)), args.map(print))
-      case (Type.JvmToType(tpe, _), _) => mkApp(mkApp(DocAst.Type.AsIs("JvmToType"), List(print(tpe))), args.map(print))
-      case (Type.JvmToEff(tpe, _), _) => mkApp(mkApp(DocAst.Type.AsIs("JvmToEff"), List(print(tpe))), args.map(print))
+      case (Type.JvmToType(arg, _), _) => mkApp(mkApp(DocAst.Type.AsIs("JvmToType"), List(print(arg))), args.map(print))
+      case (Type.JvmToEff(arg, _), _) => mkApp(mkApp(DocAst.Type.AsIs("JvmToEff"), List(print(arg))), args.map(print))
       case (Type.UnresolvedJvmType(member, _), _) => mkApp(mkApp(printJvmMember(member), List(print(tpe))), args.map(print))
       case (Type.Apply(_, _, _), _) =>
         // `collectApp` does not return Apply as base.
@@ -94,7 +93,7 @@ object TypePrinter {
     case other => DocAst.Type.App(base, other)
   }
 
-  private def printJvmMember(member: Type.JvmMember): DocAst.Type = DocAst.Type.Meta("JvmMember")
+  private def printJvmMember(@unused member: Type.JvmMember): DocAst.Type = DocAst.Type.Meta("JvmMember")
 
   /** Returns e.g. `App(App(Tuple, Char), Char)` as `(Tuple, List(Char, Char))`. */
   private def collectApp(tpe: Type): (Type, List[Type]) = {
@@ -103,6 +102,7 @@ object TypePrinter {
       case Type.Apply(tpe1, tpe2, _) => helper(tpe1, tpe2 :: acc)
       case _ => (tpe0, acc)
     }
+
     helper(tpe, Nil)
   }
 

@@ -17,12 +17,12 @@ package ca.uwaterloo.flix.language.ast.shared
 
 import ca.uwaterloo.flix.language.ast.Symbol
 
-case class Scope(syms: List[Symbol.KindedTypeVarSym]) {
+case class Scope(syms: List[Symbol.RegionSym]) {
 
   /**
     * Returns the scope corresponding to the given region sym, nested inside the current region.
     */
-  def enter(sym: Symbol.KindedTypeVarSym): Scope = Scope(sym :: syms)
+  def enter(sym: Symbol.RegionSym): Scope = Scope(sym :: syms)
 
   /**
     * Returns true iff `this` scope is outside of `that` scope.

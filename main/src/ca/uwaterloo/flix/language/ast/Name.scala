@@ -136,6 +136,16 @@ object Name {
     def parts: List[String] = idents.map(_.name)
 
     /**
+      * Returns if the namespace is empty.
+      */
+    def isEmpty: Boolean = idents.isEmpty
+
+    /**
+      * Returns if the namespace is non-empty.
+      */
+    def nonEmpty: Boolean = idents.nonEmpty
+
+    /**
       * Returns `true` if `this` namespace equals `that`.
       */
     override def equals(o: scala.Any): Boolean = o match {
@@ -157,9 +167,15 @@ object Name {
   /**
     * Qualified Name.
     *
-    * @param namespace the namespace
-    * @param ident     the identifier.
-    * @param loc       the source location of the qualified name.
+    * @param namespace    the namespace
+    * @param ident        the identifier.
+    * @param loc          the source location of the qualified name.
+    *
+    * Note that the ident could be empty if there is a trailing dot.
+    *
+    * Example:
+    *   - "A.B.Color" -> namespace = ["A", "B"], ident = "Color"
+    *   - "A.B." -> namespace = ["A", "B"], ident = ""
     */
   case class QName(namespace: NName, ident: Ident, loc: SourceLocation) {
     /**
@@ -167,37 +183,6 @@ object Name {
       */
     def isUnqualified: Boolean = namespace.isRoot
 
-    /**
-     * Returns `true` if `this` qualified name is incomplete, i.e. it ends with a dot.
-     *
-     * May return `false` out of an over abundance of caution.
-     *
-     * Note: In some cases this function may give false positives. For example, in:
-     *
-     * {{{
-     *   x.byteValueExact()
-     * }}}
-     *
-     * We report that the QName `x` ends with a dot.
-     */
-    def endsWithDot: Boolean = {
-      // We return false if this source location is unknown.
-      // This should not happen for code that the programmer is writing.
-      if (loc == SourceLocation.Unknown)
-        false
-      else {
-        val lineNumber = loc.sp2.line
-        val columnOffset = loc.sp2.col - 1
-        val line = loc.sp2.source.getLine(lineNumber)
-        if (!(columnOffset < line.length)) {
-          // Out of bounds; return false.
-          false
-        } else {
-          // Within bounds; check if the qname ends with a dot.
-          '.'== line.charAt(columnOffset)
-        }
-      }
-    }
 
     /**
       * Human readable representation.

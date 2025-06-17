@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.shared.LabelledPrecedenceGraph.{Label, LabelledEdge}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, LabelledPrecedenceGraph}
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -38,15 +38,16 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
   */
 object PredDeps {
 
-  def run(root: Root)(implicit flix: Flix): (Root, List[CompilationMessage]) = flix.phaseNew("PredDeps") {
+  def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, List[CompilationMessage]) = flix.phaseNew("PredDeps") {
     // Compute an over-approximation of the dependency graph for all constraints in the program.
     implicit val sctx: SharedContext = SharedContext.mk()
-    ParOps.parMapValues(root.defs)(visitDef)
-    ParOps.parMapValues(root.traits)(visitTrait)
-    ParOps.parMapValues(root.instances)(visitInstanceList)
+
+    val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
+    val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
+    val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList(_)(visitInstance))
 
     val g = LabelledPrecedenceGraph(sctx.edges.asScala.toVector)
-    (root.copy(precedenceGraph = g), List.empty)
+    (root.copy(defs = defs, traits = traits, instances = instances, precedenceGraph = g), List.empty)
   }
 
   private def visitDef(defn: Def)(implicit sctx: SharedContext): Def = {
@@ -60,13 +61,10 @@ object PredDeps {
     trt
   }
 
-  private def visitInstanceList(insts: List[Instance])(implicit sctx: SharedContext): List[Instance] = {
-    insts.foreach(visitInstance)
-    insts
-  }
-
-  private def visitInstance(inst: Instance)(implicit sctx: SharedContext): Unit =
+  private def visitInstance(inst: Instance)(implicit sctx: SharedContext): Instance = {
     inst.defs.foreach(visitDef)
+    inst
+  }
 
   private def visitSig(sig: Sig)(implicit sctx: SharedContext): Unit =
     sig.exp.foreach(visitExp)
@@ -100,9 +98,9 @@ object PredDeps {
 
     case Expr.Var(_, _, _) => ()
 
-    case Expr.Hole(_, _, _, _) => ()
+    case Expr.Hole(_, _, _, _, _) => ()
 
-    case Expr.HoleWithExp(exp, _, _, _) =>
+    case Expr.HoleWithExp(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expr.OpenAs(_, exp, _, _) =>
@@ -161,23 +159,31 @@ object PredDeps {
 
     case Expr.Match(exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach { case MatchRule(_, g, b) =>
+      rules.foreach { case MatchRule(_, g, b, _) =>
           g.foreach(visitExp)
           visitExp(b)
       }
 
     case Expr.TypeMatch(exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach { case TypeMatchRule(_, _, b) => visitExp(b) }
+      rules.foreach { case TypeMatchRule(_, _, b, _) => visitExp(b) }
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
       rules.foreach{ case RestrictableChooseRule(_, body) => visitExp(body) }
 
+    case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      visitExp(exp3)
+
     case Expr.Tag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.RestrictableTag(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.ExtensibleTag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.Tuple(elms, _, _, _) =>
@@ -195,6 +201,7 @@ object PredDeps {
 
     case Expr.ArrayLit(elms, exp, _, _, _) =>
       elms.foreach(visitExp)
+      visitExp(exp)
 
     case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1)
@@ -234,7 +241,7 @@ object PredDeps {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Ascribe(exp, _, _, _) =>
+    case Expr.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp)
 
     case Expr.InstanceOf(exp, _, _) =>
@@ -253,13 +260,14 @@ object PredDeps {
       visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
-      rules.foreach{ case CatchRule(_, _, e) => visitExp(e) }
+      visitExp(exp)
+      rules.foreach{ case CatchRule(_, _, e, _) => visitExp(e) }
 
     case Expr.Throw(exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.Handler(_, rules, _, _, _, _, _) =>
-      rules.foreach{ case HandlerRule(_, _, e) => visitExp(e) }
+      rules.foreach{ case HandlerRule(_, _, e, _) => visitExp(e) }
 
     case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1)
@@ -272,6 +280,7 @@ object PredDeps {
       args.foreach(visitExp)
 
     case Expr.InvokeMethod(_, exp, args, _, _, _) =>
+      visitExp(exp)
       args.foreach(visitExp)
 
     case Expr.InvokeStaticMethod(_, args, _, _, _) =>
@@ -304,7 +313,7 @@ object PredDeps {
     case Expr.SelectChannel(rules, default, _, _, _) =>
       default.foreach(visitExp)
       rules.foreach{
-        case SelectChannelRule(_, exp1, exp2) =>
+        case SelectChannelRule(_, exp1, exp2, _) =>
           visitExp(exp1)
           visitExp(exp2)
       }
@@ -314,6 +323,7 @@ object PredDeps {
       visitExp(exp2)
 
     case Expr.ParYield(frags, exp, _, _, _) =>
+      visitExp(exp)
       frags.foreach{
         case ParYieldFragment(_, e, _) => visitExp(e)
       }
@@ -358,9 +368,9 @@ object PredDeps {
 
       // We add all body predicates and the head to the labels of each edge
       val bodyLabels: Vector[Label] = body0.collect {
-        case Body.Atom(bodyPred, den, _, _, _, bodyTpe, _) =>
+        case Body.Atom(bodyPred, bodyDen, _, _, _, bodyTpe, _) =>
           val (terms, _) = termTypesAndDenotation(bodyTpe)
-          Label(bodyPred, den, terms.length, terms)
+          Label(bodyPred, bodyDen, terms.length, terms)
       }.toVector
 
       val labels = bodyLabels :+ Label(headPred, den, headTerms.length, headTerms)

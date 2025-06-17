@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.phase.unification.zhegalkin.TestZhegalkin
 import org.scalatest.Suites
 
 class UnificationSuite extends Suites(
-  new TestFastBoolUnification,
   new TestIncremental,
   new TestSetUnification,
   new TestZhegalkin

@@ -97,7 +97,7 @@ object SimpleType {
 
   case object True extends SimpleType
 
-  case object Region extends SimpleType
+  case object RegionToStar extends SimpleType
 
   case object RegionWithoutRegion extends SimpleType
 
@@ -294,13 +294,17 @@ object SimpleType {
   /**
     * A type variable.
     */
-  case class Var(id: Int, kind: Kind, isRegion: Boolean, text: VarText) extends SimpleType
+  case class Var(id: Int, kind: Kind, text: VarText) extends SimpleType
 
   /**
     * A tuple.
     */
   case class Tuple(tpes: List[SimpleType]) extends SimpleType
 
+  /**
+    * A region.
+    */
+  case class Region(name: String) extends SimpleType
 
   /**
     * An error type.
@@ -345,7 +349,7 @@ object SimpleType {
 
     def visit(t: Type): SimpleType = t.baseType match {
       case Type.Var(sym, _) =>
-        mkApply(Var(sym.id, sym.kind, sym.isRegion, sym.text), t.typeArguments.map(visit))
+        mkApply(Var(sym.id, sym.kind, sym.text), t.typeArguments.map(visit))
       case Type.Alias(cst, args, _, _) =>
         mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(visit))
       case Type.AssocType(cst, arg, _, _) =>
@@ -435,6 +439,21 @@ object SimpleType {
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
+        case TypeConstructor.Extensible =>
+          val args = t.typeArguments.map(visit)
+          args match {
+            // Case 1: No args. { ? }
+            case Nil => SchemaConstructor(Hole)
+            // Case 2: One row argument. Extract its values.
+            case tpe :: Nil => tpe match {
+              case SchemaRow(fields) => Schema(fields)
+              case SchemaRowExtend(fields, rest) => SchemaExtend(fields, rest)
+              case nonSchema => SchemaConstructor(nonSchema)
+            }
+            // Case 3: Too many args. Error.
+            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
+          }
+
         case TypeConstructor.SchemaRowEmpty => SchemaRow(Nil)
 
         case TypeConstructor.SchemaRowExtend(pred) =>
@@ -469,6 +488,7 @@ object SimpleType {
             // Case 3: Too many args. Error.
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
+
         case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(visit))
         case TypeConstructor.ArrayWithoutRegion => mkApply(ArrayWithoutRegion, t.typeArguments.map(visit))
         case TypeConstructor.Vector => mkApply(Vector, t.typeArguments.map(visit))
@@ -619,7 +639,8 @@ object SimpleType {
           }
 
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
-        case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))
+        case TypeConstructor.Region(sym) => mkApply(SimpleType.Region(sym.text), t.typeArguments.map(visit))
+        case TypeConstructor.RegionToStar => mkApply(RegionToStar, t.typeArguments.map(visit))
         case TypeConstructor.RegionWithoutRegion => mkApply(RegionWithoutRegion, t.typeArguments.map(visit))
 
         case TypeConstructor.Error(_, _) => SimpleType.Error

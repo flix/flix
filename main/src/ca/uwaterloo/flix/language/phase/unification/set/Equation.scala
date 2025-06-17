@@ -34,8 +34,7 @@ import scala.annotation.nowarn
   * is private in Scala 3 due to the private constructor. In Scala 2 the `copy` method is still
   * public. However, we do not use the `copy` method anywhere for [[Equation]], so this is fine.
   */
-@nowarn
-case class Equation private(f1: SetFormula, f2: SetFormula, status: Equation.Status, loc: SourceLocation) {
+case class Equation(f1: SetFormula, f2: SetFormula, status: Equation.Status, loc: SourceLocation) {
 
   /** Returns `true` if `this` equation is considered complex. */
   final def isComplex: Boolean = f1.varsOf.size >= 2 && f2.varsOf.size >= 2
@@ -45,6 +44,9 @@ case class Equation private(f1: SetFormula, f2: SetFormula, status: Equation.Sta
 
   /** Returns the variables (i.e. "flexible variables") in `this` equation. */
   final def varsOf: Set[Int] = f1.varsOf ++ f2.varsOf
+
+  /** Returns the elements (i.e. "concrete members") in `this` equation. */
+  final def elmsOf: Set[Int] = f1.elmsOf ++ f2.elmsOf
 
   /** Returns the sum of the sizes of the formulas in `this`. */
   final def size: Int = f1.size + f2.size
@@ -57,9 +59,8 @@ case class Equation private(f1: SetFormula, f2: SetFormula, status: Equation.Sta
   }
 
   /** Returns a copy of `this` with the new `status` */
-  final def copyWithStatus(status: Equation.Status): Equation = {
-    if (status == this.status) this
-    else Equation(f1, f2, status, loc)
+  private final def copyWithStatus(status: Equation.Status): Equation = {
+    if (status == this.status) this else Equation(f1, f2, status, loc)
   }
 
   /** Returns a copy of `this` with status [[Equation.Status.Unsolvable]]. */
@@ -72,6 +73,13 @@ case class Equation private(f1: SetFormula, f2: SetFormula, status: Equation.Sta
   final def isPending: Boolean = status match {
     case Status.Pending => true
     case Status.Unsolvable => false
+    case Status.Timeout(_) => false
+  }
+
+  /** Returns `true` if this equation is [[Equation.Status.Unsolvable]]. */
+  final def isUnsolvable: Boolean = status match {
+    case Status.Pending => false
+    case Status.Unsolvable => true
     case Status.Timeout(_) => false
   }
 

@@ -28,12 +28,17 @@ object FormatType {
     *
     * Performs alpha renaming if the rigidity environment is present.
     */
-  def formatType(tpe: Type, renv: Option[RigidityEnv] = None)(implicit flix: Flix): String = {
+  def formatType(tpe: Type, renv: Option[RigidityEnv] = None, minimizeEffs: Boolean = false)(implicit flix: Flix): String = {
     val renamed = renv match {
       case None => tpe
       case Some(env) => alphaRename(tpe, env)
     }
-    formatTypeWithOptions(renamed, flix.getFormatOptions)
+    val minimized = if (minimizeEffs) {
+      Type.simplifyEffects(renamed)
+    } else {
+      renamed
+    }
+    formatTypeWithOptions(minimized, flix.getFormatOptions)
   }
 
   /**
@@ -50,8 +55,8 @@ object FormatType {
 
     // Compute a substitution that maps the first flexible variable to id 1 and so forth.
     val m = flexibleVars.zipWithIndex.map {
-      case (tvar@Type.Var(sym, loc), index) =>
-        sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.isRegion, sym.isSlack, sym.scope, loc), loc): Type)
+      case (Type.Var(sym, loc), index) =>
+        sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.isSlack, sym.scope, loc), loc): Type)
     }
     val s = Substitution(m.toMap)
 
@@ -179,7 +184,8 @@ object FormatType {
       case SimpleType.False => true
       case SimpleType.Pure => true
       case SimpleType.Univ => true
-      case SimpleType.Region => true
+      case SimpleType.Region(_) => true
+      case SimpleType.RegionToStar => true
       case SimpleType.RegionWithoutRegion => true
       case SimpleType.RecordConstructor(_) => true
       case SimpleType.Record(_) => true
@@ -198,7 +204,7 @@ object FormatType {
       case SimpleType.TagConstructor(_) => true
       case SimpleType.Name(_) => true
       case SimpleType.Apply(_, _) => true
-      case SimpleType.Var(_, _, _, _) => true
+      case SimpleType.Var(_, _, _) => true
       case SimpleType.Tuple(_) => true
       case SimpleType.JvmToType(_) => true
       case SimpleType.JvmToEff(_) => true
@@ -258,7 +264,8 @@ object FormatType {
         case Mode.Purity => "{}"
       }
       case SimpleType.Univ => "Univ"
-      case SimpleType.Region => "Region"
+      case SimpleType.Region(name) => name
+      case SimpleType.RegionToStar => "Region"
       case SimpleType.RegionWithoutRegion => "RegionWithoutRegion"
       case SimpleType.Record(labels) =>
         val labelString = labels.map(visitRecordLabelType).mkString(", ")
@@ -341,8 +348,8 @@ object FormatType {
         val string = visit(tpe, Mode.Type)
         val strings = tpes.map(visit(_, Mode.Type))
         string + strings.mkString("[", ", ", "]")
-      case SimpleType.Var(id, kind, isRegion, text) =>
-        val prefix: String = kind match {
+      case SimpleType.Var(id, kind, text) =>
+        val string: String = kind match {
           case Kind.Wild => "_" + id.toString
           case Kind.WildCaseSet => "_c" + id.toString
           case Kind.Star => "t" + id
@@ -356,12 +363,6 @@ object FormatType {
           case Kind.Arrow(_, _) => "'" + id.toString
           case Kind.Error => "err" + id.toString
         }
-        val suffix = if (isRegion) {
-          "!"
-        } else {
-          ""
-        }
-        val string = prefix + suffix
         fmt.varNames match {
           case FormatOptions.VarName.IdBased => string
           case FormatOptions.VarName.NameBased => text match {

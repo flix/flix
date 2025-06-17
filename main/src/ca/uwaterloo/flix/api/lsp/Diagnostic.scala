@@ -20,6 +20,9 @@ import ca.uwaterloo.flix.language.errors.CodeHint
 import ca.uwaterloo.flix.util.Formatter
 import org.json4s.JsonDSL.*
 import org.json4s.*
+import org.eclipse.lsp4j
+
+import scala.jdk.CollectionConverters.*
 
 /**
   * Companion object for [[Diagnostic]].
@@ -70,4 +73,15 @@ case class Diagnostic(range: Range, severity: Option[DiagnosticSeverity], code: 
       ("message" -> message) ~
       ("fullMessage" -> fullMessage) ~
       ("tags" -> tags.map(_.toInt))
+
+  def toLsp4j: lsp4j.Diagnostic = {
+    val diagnostic = new lsp4j.Diagnostic()
+    diagnostic.setRange(range.toLsp4j)
+    diagnostic.setSeverity(severity.map(_.toLsp4j).orNull)
+    diagnostic.setCode(code.orNull)
+    diagnostic.setSource(source.orNull)
+    diagnostic.setMessage(message)
+    diagnostic.setTags(tags.map(_.toLsp4j).asJava)
+    diagnostic
+  }
 }

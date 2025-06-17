@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.phase.unification.shared.BoolAlg
+import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolSubstitution}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.annotation.tailrec
@@ -267,6 +267,11 @@ object BoolFormula {
       case BoolFormula.Not(f) => freeVars(f)
       case BoolFormula.And(f1, f2) => freeVars(f1) ++ freeVars(f2)
       case BoolFormula.Or(f1, f2) => freeVars(f1) ++ freeVars(f2)
+    }
+
+    override def lookupOrComputeSVE(q: BoolFormula, sve: BoolFormula => BoolSubstitution[BoolFormula]): BoolSubstitution[BoolFormula] = {
+      // No cache. Just compute the result.
+      sve(q)
     }
 
     /**
