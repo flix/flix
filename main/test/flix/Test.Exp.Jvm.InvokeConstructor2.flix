@@ -1,4 +1,4 @@
-mod Test.Exp.Jvm.InvokeConstructor {
+mod Test.Exp.Jvm.InvokeConstructor2 {
 
     import java.lang.Boolean
     import java.lang.Byte
@@ -13,47 +13,47 @@ mod Test.Exp.Jvm.InvokeConstructor {
     import java.util.{Locale$Builder => Builder}
 
     @test
-    def testInvokeConstructor_01(): Boolean =
+    def testInvokeConstructor01(): Boolean =
         new Boolean(true)
 
     @test
-    def testInvokeConstructor_02(): Character =
+    def testInvokeConstructor02(): Character =
         new Character('a')
 
     @test
-    def testInvokeConstructor_03(): Float =
+    def testInvokeConstructor03(): Float =
         new Float(123.456f32)
 
     @test
-    def testInvokeConstructor_04(): Double =
+    def testInvokeConstructor04(): Double =
         new Double(123.456f64)
 
     @test
-    def testInvokeConstructor_05(): Byte =
+    def testInvokeConstructor05(): Byte =
         new Byte(123i8)
 
     @test
-    def testInvokeConstructor_06(): Short =
+    def testInvokeConstructor06(): Short =
         new Short(123i16)
 
     @test
-    def testInvokeConstructor_07(): Integer =
+    def testInvokeConstructor07(): Integer =
         new Integer(123i32)
 
     @test
-    def testInvokeConstructor_08(): Long =
+    def testInvokeConstructor08(): Long =
         new Long(123i64)
 
     @test
-    def testInvokeConstructor_09(): JString \ IO =
+    def testInvokeConstructor09(): JString \ IO =
         new JString("Hello World")
 
     @test
-    def testInvokeObjectConstructor2_01(): Object \ IO =
+    def testInvokeObjectConstructor201(): Object \ IO =
         let obj = new JString("Hello World");
         (checked_cast(obj) : Object)
 
     @test
-    def testInvokeStaticNestedConstructor2_01(): Builder \ IO =
+    def testInvokeStaticNestedConstructor201(): Builder \ IO =
         new Builder()
 }
