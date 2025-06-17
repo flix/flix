@@ -65,4 +65,44 @@ mod Test.Exp.Fixpoint.Inject {
         inject List#{1, 2, 3} into A/1
     }
 
+    @test
+    def inject14(): #{ A(Int32), B(Int32) | r } = {
+        inject List#{1, 2, 3}, List#{4, 5, 6} into A/1, B/1
+    }
+
+    @test
+    def inject15(): #{ A(Int32), B(Char) | r } = {
+        inject List#{1, 2, 3}, List#{'a', 'b', 'c'} into A/1, B/1
+    }
+
+    @test
+    def inject16(): #{ A((Int32, Int32)) | r } = {
+        inject List#{(1, 2), (2, 3), (3, 4)} into A/2
+    }
+
+    @test
+    def inject17(): #{ A((Int32, Int32)), B(Int32) | r } = {
+        inject List#{(1, 2), (2, 3), (3, 4)}, List#{4, 5, 6} into A/2, B/1
+    }
+
+    @test
+    def inject18(): #{ A((Int32, Int32)), B(Char) | r } = {
+        inject List#{(1, 2), (2, 3), (3, 4)}, List#{'a', 'b', 'c'} into A/2, B/1
+    }
+
+    @test
+    def inject19(): #{ A((Int32, Int32)), B((Char, Int32)) | r } = {
+        inject List#{(1, 2), (2, 3), (3, 4)}, List#{('a', 4), ('b', 5), ('c', 6)} into A/2, B/2
+    }
+
+    @test
+    def inject20(): #{ A((Int32, Int32)), B((Int32, Int32, Int32)) | r } = {
+        inject List#{(1, 2), (2, 3), (3, 4)}, List#{(4, 5, 6), (5, 6, 7), (6, 7, 8)} into A/2, B/3
+    }
+
+    @test
+    def inject21(): #{ A((Int32, Int32)), B((Int32, Int32, Int32), C(Float32) | r } = {
+        inject List#{(1, 2), (2, 3), (3, 4)}, List#{(4, 5, 6), (5, 6, 7), (6, 7, 8)}, Set#{1.0, 2.0, 3.0} into A/2, B/3, C/1
+    }
+
 }
