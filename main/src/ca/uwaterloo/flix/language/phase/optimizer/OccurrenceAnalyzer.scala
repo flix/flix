@@ -546,8 +546,8 @@ object OccurrenceAnalyzer {
     case Occur.Dead => false
     case Occur.Once => true
     case Occur.OnceInLambda => true
-    case Occur.OnceInWhile => true
     case Occur.OnceInLocalDef => true
+    case Occur.OnceInWhile => true
     case Occur.Many => true
     case Occur.ManyBranch => true
   }
