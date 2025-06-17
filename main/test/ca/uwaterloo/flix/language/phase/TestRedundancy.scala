@@ -1453,7 +1453,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
            |}
            |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[RedundancyError.UnusedVarSym](result)
   }
 
@@ -1469,7 +1469,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
            |}
            |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[RedundancyError.UnusedVarSym](result)
   }
 
@@ -2170,6 +2170,43 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |def f(): Int32 =
         |   def g() = { def g() = 1; g() };
         |   g()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowingName](result)
+  }
+
+  test("ShadowedVariable.Handler.01") {
+    val input =
+      """
+        |eff E {
+        |    def op(x: String): String
+        |}
+        |
+        |def foo(arg: String): String = {
+        |    run ??? with handler E {
+        |        def op(arg, k) = ???
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowingName](result)
+  }
+
+  test("ShadowedVariable.Handler.02") {
+    val input =
+      """
+        |eff E {
+        |    def op(x: String): String
+        |}
+        |
+        |def foo(arg: String): String = {
+        |    run ??? with handler E {
+        |        def op(arg, k) = {
+        |            let k = "";
+        |            k
+        |        }
+        |    }
+        |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowingName](result)

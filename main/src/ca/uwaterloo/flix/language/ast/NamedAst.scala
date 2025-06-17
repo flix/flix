@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
+import ca.uwaterloo.flix.util.collection.Nel
 
 
 object NamedAst {
@@ -49,7 +50,7 @@ object NamedAst {
 
     case class Enum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
 
-    case class Struct(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], indicesAndLocs: Map[Name.Label, (Int, SourceLocation)], loc: SourceLocation) extends Declaration
+    case class Struct(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation) extends Declaration
 
     case class StructField(mod: Modifiers, sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation) extends Declaration
 
@@ -132,6 +133,10 @@ object NamedAst {
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], loc: SourceLocation) extends Expr
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
+
+    case class ExtMatch(exp: Expr, rules: List[ExtMatchRule], loc: SourceLocation) extends Expr
+
+    case class ExtTag(label: Name.Label, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -241,7 +246,7 @@ object NamedAst {
 
     case class Tag(qname: Name.QName, pats: List[Pattern], loc: SourceLocation) extends Pattern
 
-    case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
+    case class Tuple(pats: Nel[Pattern], loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
 
@@ -267,6 +272,19 @@ object NamedAst {
 
     case class Error(loc: SourceLocation) extends VarOrWild with RestrictableChoosePattern
 
+  }
+
+  sealed trait ExtPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtPattern {
+
+    case class Wild(loc: SourceLocation) extends ExtPattern
+
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ExtPattern
+
+    case class Error(loc: SourceLocation) extends ExtPattern
   }
 
   sealed trait Predicate
@@ -307,7 +325,7 @@ object NamedAst {
 
     case class Unit(loc: SourceLocation) extends Type
 
-    case class Tuple(tpes: List[Type], loc: SourceLocation) extends Type
+    case class Tuple(tpes: Nel[Type], loc: SourceLocation) extends Type
 
     case class RecordRowEmpty(loc: SourceLocation) extends Type
 
@@ -394,6 +412,8 @@ object NamedAst {
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr, loc: SourceLocation)
+
+  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
 
   case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr, loc: SourceLocation)
 

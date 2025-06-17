@@ -16,17 +16,18 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.SyntacticContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SyntaxTree, TokenKind}
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for parser errors.
   */
 sealed trait ParseError extends CompilationMessage {
-  val sctx: SyntacticContext
-  val kind: CompilationMessageKind = CompilationMessageKind.ParseError(sctx)
+  def kind: CompilationMessageKind = CompilationMessageKind.ParseError(sctx)
+  def sctx: SyntacticContext
+  def loc: SourceLocation
 }
 
 object ParseError {
@@ -68,6 +69,14 @@ object ParseError {
 
     case object Expression extends NamedTokenSet {
       def display(fmt: Formatter): String = fmt.cyan("<expression>")
+    }
+
+    case object ExtMatchRule extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<extensible-match-rule>")
+    }
+
+    case object ExtPattern extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<ext-pattern>")
     }
 
     case object FixpointConstraint extends NamedTokenSet {

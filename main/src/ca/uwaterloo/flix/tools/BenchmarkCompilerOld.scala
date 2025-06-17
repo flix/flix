@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinCache
+import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{LocalResource, Options, StatUtils}
 import org.json4s.JsonDSL.*
@@ -233,7 +233,7 @@ object BenchmarkCompilerOld {
     */
   private def newFlix(o: Options): Flix = {
     // Clear caches
-    ZhegalkinCache.clearCaches()
+    EffUnification3.Algebra.Cache.clearCaches()
 
     val flix = new Flix()
 

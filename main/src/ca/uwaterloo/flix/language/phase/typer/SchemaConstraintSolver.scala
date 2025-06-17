@@ -102,10 +102,10 @@ object SchemaConstraintSolver {
     // { ℓ₁ : τ₁ | ρ₁ } ~~{ℓ₂ : τ₂}~~> { ℓ₂ : τ₃, ℓ₁ : τ₁ | ρ₃ }
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label), _), tpe, _), rest, loc) =>
       pivot(rest, hdLabel, hdTpe, tvars).map {
-        case (Type.Apply(newHead, rest, _), subst) =>
+        case (Type.Apply(newHead, newRest, _), subst) =>
           // The new row from the recursive call has the selected label at the head.
           // Now we just swap the new row's head with ours, to keep the selected label on top.
-          val newRow = Type.Apply(newHead, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label), loc), tpe, loc), rest, loc), loc)
+          val newRow = Type.Apply(newHead, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label), loc), tpe, loc), newRest, loc), loc)
           (newRow, subst)
 
         case _ => throw InternalCompilerException("unexpected non-row", loc)

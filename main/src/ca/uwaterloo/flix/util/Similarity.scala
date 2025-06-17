@@ -21,7 +21,7 @@ object Similarity {
     * Returns the value of the key in `haystacks` which is closets to the given `needle`.
     */
   def closestMatch[V](needle: String, haystacks: Map[String, V]): V = {
-    val (smallestKey, smallestValue) = haystacks.minBy {
+    val (_, smallestValue) = haystacks.minBy {
       case (k, _) =>
         if (needle.headOption != k.headOption) {
           // If the needle and key do not start with the same letter then they are infinitely apart.
@@ -39,7 +39,7 @@ object Similarity {
     *
     * See https://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance#Scala
     */
-  def levenshtein(s1: String, s2: String): Int = {
+  private def levenshtein(s1: String, s2: String): Int = {
     val lenStr1 = s1.length
     val lenStr2 = s2.length
 

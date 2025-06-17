@@ -131,7 +131,7 @@ object LambdaLift {
       val closureArgs = if (freeVars.isEmpty)
         List(LiftedAst.Expr.Cst(Constant.Unit, MonoType.Unit, loc))
       else freeVars.map {
-        case SimplifiedAst.FreeVar(sym, tpe) => LiftedAst.Expr.Var(sym, tpe, sym.loc)
+        case SimplifiedAst.FreeVar(sym, fvTpe) => LiftedAst.Expr.Var(sym, fvTpe, sym.loc)
       }
 
       // Construct the closure expression.
@@ -187,7 +187,7 @@ object LambdaLift {
     case SimplifiedAst.Expr.LocalDef(sym, fparams, exp1, exp2, _, _, loc) =>
       val freshDefnSym = Symbol.freshDefnSym(sym0)
       val updatedLiftedLocalDefs = liftedLocalDefs + (sym -> freshDefnSym)
-      // It is **very import** we add the mapping `sym -> freshDefnSym` to liftedLocalDefs
+      // It is **very important** we add the mapping `sym -> freshDefnSym` to liftedLocalDefs
       // before visiting the body since exp1 may contain recursive calls to `sym`
       // so they need to be substituted for `freshDefnSym` in `exp1` which
       // `visitExp` handles for us.

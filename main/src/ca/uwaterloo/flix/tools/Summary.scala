@@ -215,8 +215,11 @@ object Summary {
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.RestrictableChooseRule(_, exp) => countCheckedEcasts(exp)
     }.sum
+    case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
+      countCheckedEcasts(exp1) + countCheckedEcasts(exp2) + countCheckedEcasts(exp3)
     case Expr.Tag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.RestrictableTag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.ExtensibleTag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.Tuple(exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.RecordSelect(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.RecordExtend(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
@@ -305,7 +308,7 @@ object Summary {
     Source(Input.Text("generated", "", SecurityContext.AllPermissions), Array.emptyCharArray)
 
   private val unknownPosition =
-    SourcePosition(unknownSource, 0, 0)
+    SourcePosition.firstPosition(unknownSource)
 
   private val unknownLocation =
     SourceLocation(isReal = false, unknownPosition, unknownPosition)
@@ -329,7 +332,7 @@ object Summary {
       val src = debugSrc.getOrElse(unknownSource)
       throw InternalCompilerException(
         s"${(defs, pureDefs, groundNonPureDefs, polyDefs)} does not sum for $src",
-        SourceLocation(isReal = true, SourcePosition(src, 0, 0), SourcePosition(src, 0, 0))
+        SourceLocation(isReal = true, SourcePosition.firstPosition(src), SourcePosition.firstPosition(src))
       )
     }
 
@@ -342,7 +345,7 @@ object Summary {
       if (lines != other.lines) {
         val src = debugSrc.getOrElse(unknownSource)
         throw InternalCompilerException(s"lines '$lines' and '${other.lines}' in $debugSrc",
-          SourceLocation(isReal = true, SourcePosition(src, 0, 0), SourcePosition(src, 0, 0))
+          SourceLocation(isReal = true, SourcePosition.firstPosition(src), SourcePosition.firstPosition(src))
         )
       }
       FileData(

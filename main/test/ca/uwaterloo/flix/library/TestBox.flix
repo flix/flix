@@ -215,16 +215,16 @@ mod TestBox {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def int64Unbox01(): Bool = unsafe unbox(Long.valueOf(1234567890123456789i64)) == 1234567890123456789i64
+    def int64Unbox01(): Bool = unbox(Long.valueOf(1234567890123456789i64)) == 1234567890123456789i64
 
     @test
-    def int64Unbox02(): Bool = unsafe unbox(Long.valueOf(-9223372036854775808i64)) == -9223372036854775808i64
+    def int64Unbox02(): Bool = unbox(Long.valueOf(-9223372036854775808i64)) == -9223372036854775808i64
 
     @test
-    def int64Box01(): Bool = unsafe box(1234567890123456789i64).equals(Long.valueOf(1234567890123456789i64))
+    def int64Box01(): Bool = box(1234567890123456789i64).equals(Long.valueOf(1234567890123456789i64))
 
     @test
-    def int64Box02(): Bool = unsafe box(-9223372036854775808i64).equals(Long.valueOf(-9223372036854775808i64))
+    def int64Box02(): Bool = box(-9223372036854775808i64).equals(Long.valueOf(-9223372036854775808i64))
 
     @test
     def int64RoundTrip01(): Bool = unbox(box(1234567890123456789i64)) == 1234567890123456789i64
