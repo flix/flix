@@ -35,12 +35,14 @@ object DefCompleter {
     if (qn.namespace.nonEmpty) {
       root.defs.values.collect {
         case decl if CompletionUtils.isAvailable(decl.spec) && CompletionUtils.matchesName(decl.sym, qn, qualified = true) =>
-          DefCompletion(decl, range, ap, qualified = true, inScope = true, ectx)
+          DefCompletion(decl, range, Priority.High(0), ap, qualified = true, inScope = true, ectx)
       }
     } else {
       root.defs.values.collect {
         case decl if CompletionUtils.isAvailable(decl.spec) && CompletionUtils.matchesName(decl.sym, qn, qualified = false) =>
-          DefCompletion(decl, range, ap, qualified = false, inScope = inScope(decl, scp), ectx)
+          val s = inScope(decl, scp)
+          val priority = if (s) Priority.High(0) else Priority.Lower(0)
+          DefCompletion(decl, range, priority, ap, qualified = false, inScope = s, ectx)
       }
     }
   }

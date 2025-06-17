@@ -18,18 +18,14 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
-import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
-import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.util.InternalCompilerException
-
-import java.lang.reflect.InvocationTargetException
 
 object JvmBackend {
 
   /** Emits JVM bytecode for `root`. */
-  def run(root: Root)(implicit flix: Flix): CompilationResult = flix.phase("JvmBackend") {
+  def run(root: Root)(implicit flix: Flix): (Root, List[JvmClass]) = flix.phase("JvmBackend") {
     implicit val r: Root = root
 
     // Types/classes required for Flix runtime.
@@ -47,70 +43,70 @@ object JvmBackend {
     val allTypes = root.types ++ requiredTypes
 
     val mainClass = root.getMain.map(
-      main => Map(genClass(BackendObjType.Main, BackendObjType.Main.genByteCode(main.sym)))
-    ).getOrElse(Map.empty)
+      main => JvmClass(BackendObjType.Main.jvmName, BackendObjType.Main.genByteCode(main.sym))
+    ).toList
 
     val namespaceClasses = JvmOps.namespacesOf(root).map(
       ns => {
         val nsClass = BackendObjType.Namespace(ns.ns)
         val entrypointDefs = ns.defs.values.toList.filter(defn => root.entryPoints.contains(defn.sym))
-        genClass(nsClass, nsClass.genByteCode(entrypointDefs))
-      }).toMap
+        JvmClass(nsClass.jvmName, nsClass.genByteCode(entrypointDefs))
+      }).toList
 
     // Generate function classes.
-    val functionAndClosureClasses = GenFunAndClosureClasses.gen(root.defs)
+    val functionAndClosureClasses = GenFunAndClosureClasses.gen(root.defs).values.toList
     val erasedFunctionTypes = JvmOps.getErasedArrowsOf(allTypes)
-    val functionInterfaces = erasedFunctionTypes.map(bt => genClass(bt, bt.genByteCode())).toMap
+    val functionInterfaces = erasedFunctionTypes.map(bt => JvmClass(bt.jvmName, bt.genByteCode()))
     val closureAbstractClasses = erasedFunctionTypes.map {
       case BackendObjType.Arrow(args, result) => BackendObjType.AbstractArrow(args, result)
-    }.map(bt => genClass(bt, bt.genByteCode())).toMap
+    }.map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
 
-    val taggedAbstractClass = Map(genClass(BackendObjType.Tagged, BackendObjType.Tagged.genByteCode()))
-    val tagClasses = JvmOps.getErasedTagTypesOf(allTypes).map(bt => genClass(bt, bt.genByteCode())).toMap
-    val extensibleTagClasses = JvmOps.getErasedExtensibleTagTypesOf(allTypes).map(bt => genClass(bt, bt.genByteCode())).toMap
+    val taggedAbstractClass = List(JvmClass(BackendObjType.Tagged.jvmName, BackendObjType.Tagged.genByteCode()))
+    val tagClasses = JvmOps.getErasedTagTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
+    val extensibleTagClasses = JvmOps.getExtensibleTagTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
 
-    val tupleClasses = JvmOps.getErasedTupleTypesOf(allTypes).map(bt => genClass(bt, bt.genByteCode())).toMap
-    val structClasses = JvmOps.getErasedStructTypesOf(root, allTypes).map(bt => genClass(bt, bt.genByteCode())).toMap
+    val tupleClasses = JvmOps.getTupleTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
+    val structClasses = JvmOps.getErasedStructTypesOf(root, allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
 
-    val recordInterfaces = Map(genClass(BackendObjType.Record, BackendObjType.Record.genByteCode()))
-    val recordEmptyClasses = Map(genClass(BackendObjType.RecordEmpty, BackendObjType.RecordEmpty.genByteCode()))
-    val recordExtendClasses = JvmOps.getErasedRecordExtendsOf(allTypes).map(bt => genClass(bt, bt.genByteCode())).toMap
+    val recordInterfaces = List(JvmClass(BackendObjType.Record.jvmName, BackendObjType.Record.genByteCode()))
+    val recordEmptyClasses = List(JvmClass(BackendObjType.RecordEmpty.jvmName, BackendObjType.RecordEmpty.genByteCode()))
+    val recordExtendClasses = JvmOps.getRecordExtendsOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
 
-    val lazyClasses = JvmOps.getErasedLazyTypesOf(allTypes).map(bt => genClass(bt, bt.genByteCode())).toMap
+    val lazyClasses = JvmOps.getLazyTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
 
     val anonClasses = GenAnonymousClasses.gen(root.anonClasses)
 
-    val unitClass = Map(genClass(BackendObjType.Unit, BackendObjType.Unit.genByteCode()))
+    val unitClass = List(JvmClass(BackendObjType.Unit.jvmName, BackendObjType.Unit.genByteCode()))
 
-    val flixErrorClass = Map(genClass(BackendObjType.FlixError, BackendObjType.FlixError.genByteCode()))
-    val rslClass = Map(genClass(BackendObjType.ReifiedSourceLocation, BackendObjType.ReifiedSourceLocation.genByteCode()))
-    val holeErrorClass = Map(genClass(BackendObjType.HoleError, BackendObjType.HoleError.genByteCode()))
-    val matchErrorClass = Map(genClass(BackendObjType.MatchError, BackendObjType.MatchError.genByteCode()))
-    val castErrorClass = Map(genClass(BackendObjType.CastError, BackendObjType.CastError.genByteCode()))
-    val unhandledEffectErrorClass = Map(genClass(BackendObjType.UnhandledEffectError, BackendObjType.UnhandledEffectError.genByteCode()))
+    val flixErrorClass = List(JvmClass(JvmName.FlixError, ClassConstants.FlixError.genByteCode()))
+    val rslClass = List(JvmClass(BackendObjType.ReifiedSourceLocation.jvmName, BackendObjType.ReifiedSourceLocation.genByteCode()))
+    val holeErrorClass = List(JvmClass(BackendObjType.HoleError.jvmName, BackendObjType.HoleError.genByteCode()))
+    val matchErrorClass = List(JvmClass(BackendObjType.MatchError.jvmName, BackendObjType.MatchError.genByteCode()))
+    val castErrorClass = List(JvmClass(BackendObjType.CastError.jvmName, BackendObjType.CastError.genByteCode()))
+    val unhandledEffectErrorClass = List(JvmClass(BackendObjType.UnhandledEffectError.jvmName, BackendObjType.UnhandledEffectError.genByteCode()))
 
-    val globalClass = Map(genClass(BackendObjType.Global, BackendObjType.Global.genByteCode()))
+    val globalClass = List(JvmClass(BackendObjType.Global.jvmName, BackendObjType.Global.genByteCode()))
 
-    val regionClass = Map(genClass(BackendObjType.Region, BackendObjType.Region.genByteCode()))
+    val regionClass = List(JvmClass(BackendObjType.Region.jvmName, BackendObjType.Region.genByteCode()))
 
-    val uncaughtExceptionHandlerClass = Map(genClass(BackendObjType.UncaughtExceptionHandler, BackendObjType.UncaughtExceptionHandler.genByteCode()))
+    val uncaughtExceptionHandlerClass = List(JvmClass(BackendObjType.UncaughtExceptionHandler.jvmName, BackendObjType.UncaughtExceptionHandler.genByteCode()))
 
     // Effect runtime classes.
-    val resultInterface = Map(genClass(BackendObjType.Result, BackendObjType.Result.genByteCode()))
-    val valueClass = Map(genClass(BackendObjType.Value, BackendObjType.Value.genByteCode()))
-    val frameInterface = Map(genClass(BackendObjType.Frame, BackendObjType.Frame.genByteCode()))
-    val thunkAbstractClass = Map(genClass(BackendObjType.Thunk, BackendObjType.Thunk.genByteCode()))
-    val suspensionClass = Map(genClass(BackendObjType.Suspension, BackendObjType.Suspension.genByteCode()))
-    val framesInterface = Map(genClass(BackendObjType.Frames, BackendObjType.Frames.genByteCode()))
-    val framesConsClass = Map(genClass(BackendObjType.FramesCons, BackendObjType.FramesCons.genByteCode()))
-    val framesNilClass = Map(genClass(BackendObjType.FramesNil, BackendObjType.FramesNil.genByteCode()))
-    val resumptionInterface = Map(genClass(BackendObjType.Resumption, BackendObjType.Resumption.genByteCode()))
-    val resumptionConsClass = Map(genClass(BackendObjType.ResumptionCons, BackendObjType.ResumptionCons.genByteCode()))
-    val resumptionNilClass = Map(genClass(BackendObjType.ResumptionNil, BackendObjType.ResumptionNil.genByteCode()))
-    val handlerInterface = Map(genClass(BackendObjType.Handler, BackendObjType.Handler.genByteCode()))
-    val effectCallClass = Map(genClass(BackendObjType.EffectCall, BackendObjType.EffectCall.genByteCode()))
+    val resultInterface = List(JvmClass(BackendObjType.Result.jvmName, BackendObjType.Result.genByteCode()))
+    val valueClass = List(JvmClass(BackendObjType.Value.jvmName, BackendObjType.Value.genByteCode()))
+    val frameInterface = List(JvmClass(BackendObjType.Frame.jvmName, BackendObjType.Frame.genByteCode()))
+    val thunkAbstractClass = List(JvmClass(BackendObjType.Thunk.jvmName, BackendObjType.Thunk.genByteCode()))
+    val suspensionClass = List(JvmClass(BackendObjType.Suspension.jvmName, BackendObjType.Suspension.genByteCode()))
+    val framesInterface = List(JvmClass(BackendObjType.Frames.jvmName, BackendObjType.Frames.genByteCode()))
+    val framesConsClass = List(JvmClass(BackendObjType.FramesCons.jvmName, BackendObjType.FramesCons.genByteCode()))
+    val framesNilClass = List(JvmClass(BackendObjType.FramesNil.jvmName, BackendObjType.FramesNil.genByteCode()))
+    val resumptionInterface = List(JvmClass(BackendObjType.Resumption.jvmName, BackendObjType.Resumption.genByteCode()))
+    val resumptionConsClass = List(JvmClass(BackendObjType.ResumptionCons.jvmName, BackendObjType.ResumptionCons.genByteCode()))
+    val resumptionNilClass = List(JvmClass(BackendObjType.ResumptionNil.jvmName, BackendObjType.ResumptionNil.genByteCode()))
+    val handlerInterface = List(JvmClass(BackendObjType.Handler.jvmName, BackendObjType.Handler.genByteCode()))
+    val effectCallClass = List(JvmClass(BackendObjType.EffectCall.jvmName, BackendObjType.EffectCall.genByteCode()))
     val effectClasses = GenEffectClasses.gen(root.effects.values)
-    val resumptionWrappers = BackendType.erasedTypes.map(BackendObjType.ResumptionWrapper.apply).map(bt => genClass(bt, bt.genByteCode())).toMap
+    val resumptionWrappers = BackendType.erasedTypes.map(BackendObjType.ResumptionWrapper.apply).map(bt => JvmClass(bt.jvmName, bt.genByteCode()))
 
     val allClasses = List(
       mainClass,
@@ -153,66 +149,9 @@ object JvmBackend {
       effectCallClass,
       effectClasses,
       resumptionWrappers
-    ).reduce(_ ++ _)
+    ).flatten
 
-    // Write each class (and interface) to disk if enabled.
-    if (flix.options.output.nonEmpty) {
-      for ((_, jvmClass) <- allClasses) {
-        flix.subtask(jvmClass.name.toBinaryName, sample = true)
-        JvmOps.writeClass(flix.options.output.get.resolve("class/"), jvmClass)
-      }
-    }
-
-    // Collect code size for performance tracking.
-    val outputBytes = allClasses.map(_._2.bytecode.length).sum
-
-    if (flix.options.loadClassFiles) {
-      val main = Loader.load(allClasses)
-      new CompilationResult(root, main, getCompiledDefs(root), flix.getTotalTime, outputBytes)
-    } else {
-      new CompilationResult(root, None, Map.empty, flix.getTotalTime, outputBytes)
-    }
-
+    (root, allClasses)
   }(DebugNoOp())
-
-  /** Unpacks `g` into a name and a class with `code`. */
-  private def genClass(g: BackendObjType, code: Array[Byte]): (JvmName, JvmClass) =
-    (g.jvmName, JvmClass(g.jvmName, code))
-
-  /** Returns the non-closure, executable jvm functions of `root`. */
-  private def getCompiledDefs(root: Root): Map[Symbol.DefnSym, () => AnyRef] = {
-    root.defs.filter(_._2.cparams.isEmpty).map {
-      case (sym, _) =>
-        val args: Array[AnyRef] = Array(null)
-        (sym, () => link(sym, root)(args))
-    }
-  }
-
-  /** Returns a function object for `sym`. */
-  private def link(sym: Symbol.DefnSym, root: Root): java.util.function.Function[Array[AnyRef], AnyRef] = {
-    val defn = root.defs(sym)
-    // Check that the method has been initialized.
-    if (defn.method == null) throw InternalCompilerException(s"Linking error: '$sym' has an uninitialized method.", SourceLocation.Unknown)
-
-    (args: Array[AnyRef]) => {
-      // Convert and verify `args`.
-      val argsArray = if (args.isEmpty) Array(null: AnyRef) else args
-      val parameterCount = defn.method.getParameterCount
-      val argumentCount = argsArray.length
-      if (argumentCount != parameterCount) {
-        throw new RuntimeException(s"Expected $parameterCount arguments, but got: $argumentCount for method ${defn.method.getName}.")
-      }
-
-      // Perform the method call using reflection.
-      try {
-        val result = defn.method.invoke(null, argsArray *)
-        result
-      } catch {
-        case e: InvocationTargetException =>
-          // Rethrow the underlying exception.
-          throw e.getTargetException
-      }
-    }
-  }
 
 }

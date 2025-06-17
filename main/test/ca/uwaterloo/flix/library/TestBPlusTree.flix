@@ -24,6 +24,11 @@ mod TestBPlusTree {
     def listToMap(l: List[(k, v)]): Map[k, v] with Order[k] =
         List.foldLeft(acc -> p -> let (x, y) = p; Map.insert(x, y, acc), Map#{}, l)
 
+    def preferSome(l: Option[Int32], r: Option[Int32]): Option[Int32] = match l {
+        case None => r
+        case Some(_) => l
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // Test concurrency                                                        //
     /////////////////////////////////////////////////////////////////////////////
@@ -42,6 +47,8 @@ mod TestBPlusTree {
         repeatNInternal(callNum, true)
 
     def totalInsertNum(): Int64 = 300_000i64
+
+    def totalInsertNumInt32(): Int32 = 300_000
 
     ///
     /// `gen` and `inserted` are the functions that generate the inserted values.
@@ -339,6 +346,27 @@ mod TestBPlusTree {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // parForEach                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def parForEach01(): Bool \ IO + NonDet = region rc {
+        Random.runWithIO(() -> {
+            let treeFrom = BPlusTree.empty(rc);
+            let treeTo = BPlusTree.empty(rc);
+            List.range(0, 100000) |> List.forEach(_ -> {
+                let x = Random.randomInt64();
+                let y = Random.randomInt64();
+                BPlusTree.put(x, y, treeFrom)
+            });
+            BPlusTree.parForEach(x -> y -> {
+                BPlusTree.put(x, y, treeTo)
+            }, treeFrom);
+            List.toVector(BPlusTree.toList(treeFrom)) `Vector.equals` List.toVector(BPlusTree.toList(treeTo))
+        })
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // put                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -542,6 +570,24 @@ mod TestBPlusTree {
         let tree = BPlusTree.empty(rc);
         BPlusTree.putWith(v1 -> v2 -> v1 - v2, 1, 2, tree);
         BPlusTree.memberOfPair(1, 2, tree)
+    }
+
+    @test
+    pub def putWith04(): Bool \ IO = region rc {
+        let tree = BPlusTree.empty(rc);
+        let _: Unit = region rc2 {
+            (spawn unchecked_cast((
+                List.range(0, totalInsertNumInt32()) |>
+                    List.forEach(i -> 
+                        BPlusTree.putWith(preferSome, i, None, tree)
+                    ): _ \ rc) as _ \ IO) @ rc2);
+            (spawn unchecked_cast((
+                List.range(0, totalInsertNumInt32()) |>
+                    List.forEach(i -> 
+                        BPlusTree.putWith(preferSome, i, Some(1), tree)
+            ): _ \ rc) as _ \ IO) @ rc2)
+        };
+        List.range(0, totalInsertNumInt32()) |> List.forAll(i -> BPlusTree.memberOfPair(i, Some(1), tree))
     }
 
     /////////////////////////////////////////////////////////////////////////////

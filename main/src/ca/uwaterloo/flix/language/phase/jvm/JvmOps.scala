@@ -17,40 +17,12 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.{MonoType, ReducedAst, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.mangle
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import java.lang.reflect.{Field, Method}
-import java.nio.file.{Files, LinkOption, Path}
-
 object JvmOps {
-
-  /**
-    * Returns the erased JvmType of the given Flix type `tpe`.
-    *
-    * Every primitive type is mapped to itself and every other type is mapped to Object.
-    */
-  def getErasedJvmType(tpe: MonoType): JvmType = {
-    import MonoType.*
-    tpe match {
-      case Bool => JvmType.PrimBool
-      case Char => JvmType.PrimChar
-      case Float32 => JvmType.PrimFloat
-      case Float64 => JvmType.PrimDouble
-      case Int8 => JvmType.PrimByte
-      case Int16 => JvmType.PrimShort
-      case Int32 => JvmType.PrimInt
-      case Int64 => JvmType.PrimLong
-      case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
-           Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_, _) |
-           Struct(_, _) | Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) |
-           ExtensibleExtend(_, _, _) | ExtensibleEmpty | Native(_) | Null =>
-        JvmType.Object
-    }
-  }
 
   /**
     * Returns the erased arrow type of `tpe`.
@@ -62,7 +34,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getFunctionInterfaceType(tpe: MonoType)(implicit root: Root): BackendObjType.Arrow = tpe match {
+  def getErasedFunctionInterfaceType(tpe: MonoType)(implicit root: Root): BackendObjType.Arrow = tpe match {
     case MonoType.Arrow(targs, tresult) =>
       BackendObjType.Arrow(targs.map(BackendType.toErasedBackendType), BackendType.toBackendType(tresult))
     case _ =>
@@ -70,7 +42,7 @@ object JvmOps {
   }
 
   /**
-    * Returns the closure abstract class type `CloX$Y$Z` for the given [[MonoType]].
+    * Returns the erased closure abstract class type `CloX$Y$Z` for the given [[MonoType]].
     *
     * For example:
     *
@@ -79,7 +51,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getClosureAbstractClassType(tpe: MonoType): BackendObjType.AbstractArrow = tpe match {
+  def getErasedClosureAbstractClassType(tpe: MonoType): BackendObjType.AbstractArrow = tpe match {
     case MonoType.Arrow(targs, tresult) =>
      BackendObjType.AbstractArrow(targs.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(tresult))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
@@ -120,15 +92,13 @@ object JvmOps {
   /**
     * Returns the op name of the given symbol.
     */
-  def getEffectOpName(op: Symbol.OpSym): String = {
+  def getEffectOpName(op: Symbol.OpSym): String =
     mangle(op.name)
-  }
 
-  def getTagName(name: String): String = mangle(name)
+  def getTagName(name: String): String =
+    mangle(name)
 
-  /**
-    * Returns the set of namespaces in the given AST `root`.
-    */
+  /** Returns the set of namespaces in the given AST `root`. */
   def namespacesOf(root: Root): Set[NamespaceInfo] = {
     // Group every symbol by namespace.
     root.defs.groupBy(_._1.namespace).map {
@@ -137,28 +107,22 @@ object JvmOps {
     }.toSet
   }
 
-  /**
-    * Returns the set of erased lazy types in `types` without searching recursively.
-    */
-  def getErasedLazyTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.Lazy] =
+  /** Returns the set of lazy types in `types` without searching recursively. */
+  def getLazyTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.Lazy] =
     types.foldLeft(Set.empty[BackendObjType.Lazy]) {
       case (acc, MonoType.Lazy(tpe)) => acc + BackendObjType.Lazy(BackendType.toBackendType(tpe))
       case (acc, _) => acc
     }
 
-  /**
-    * Returns the set of erased record extend types in `types` without searching recursively.
-    */
-  def getErasedRecordExtendsOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.RecordExtend] =
+  /** Returns the set of record extend types in `types` without searching recursively. */
+  def getRecordExtendsOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.RecordExtend] =
     types.foldLeft(Set.empty[BackendObjType.RecordExtend]) {
       case (acc, MonoType.RecordExtend(_, value, _)) =>
         acc + BackendObjType.RecordExtend(BackendType.toBackendType(value))
       case (acc, _) => acc
     }
 
-  /**
-    * Returns the set of erased function types in `types` without searching recursively.
-    */
+  /** Returns the set of erased function types in `types` without searching recursively. */
   def getErasedArrowsOf(types: Iterable[MonoType]): Set[BackendObjType.Arrow] =
     types.foldLeft(Set.empty[BackendObjType.Arrow]) {
       case (acc, MonoType.Arrow(args, result)) =>
@@ -166,19 +130,15 @@ object JvmOps {
       case (acc, _) => acc
     }
 
-  /**
-    * Returns the set of erased tuple types in `types` without searching recursively.
-    */
-  def getErasedTupleTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.Tuple] =
+  /** Returns the set of tuple types in `types` without searching recursively. */
+  def getTupleTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.Tuple] =
     types.foldLeft(Set.empty[BackendObjType.Tuple]) {
       case (acc, MonoType.Tuple(elms)) =>
         acc + BackendObjType.Tuple(elms.map(BackendType.toBackendType))
       case (acc, _) => acc
     }
 
-  /**
-    * Returns the set of erased struct types in `types` without searching recursively.
-    */
+  /** Returns the set of erased struct types in `types` without searching recursively. */
   def getErasedStructTypesOf(root: Root, types: Iterable[MonoType]): Set[BackendObjType.Struct] =
     types.foldLeft(Set.empty[BackendObjType.Struct]) {
       case (acc, MonoType.Struct(sym, targs)) =>
@@ -257,7 +217,7 @@ object JvmOps {
       case TypeConstructor.Int16 => BackendType.Int16
       case TypeConstructor.Int32 => BackendType.Int32
       case TypeConstructor.Int64 => BackendType.Int64
-      case TypeConstructor.Native(clazz) if clazz == classOf[Object] => BackendObjType.JavaObject.toTpe
+      case TypeConstructor.Native(clazz) if clazz == classOf[Object] => BackendType.Object
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
     }
     case Type.Apply(_, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
@@ -268,10 +228,8 @@ object JvmOps {
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
   }
 
-  /**
-    * Returns the set of erased extensible tag types in `types` without searching recursively.
-    */
-  def getErasedExtensibleTagTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.TagType] =
+  /** Returns the set of extensible tag types in `types` without searching recursively. */
+  def getExtensibleTagTypesOf(types: Iterable[MonoType])(implicit root: Root): Set[BackendObjType.TagType] =
     types.foldLeft(Set.empty[BackendObjType.TagType]) {
       case (acc, MonoType.ExtensibleExtend(cons, targs, _)) =>
         targs match {
@@ -280,65 +238,5 @@ object JvmOps {
         }
       case (acc, _) => acc
     }
-
-  /**
-    * Writes the given JVM class `clazz` to a sub path under the given `prefixPath`.
-    *
-    * For example, if the prefix path is `/tmp/` and the class name is Foo.Bar.Baz
-    * then the bytecode is written to the path `/tmp/Foo/Bar/Baz.class` provided
-    * that this path either does not exist or is already a JVM class file.
-    */
-  def writeClass(prefixPath: Path, clazz: JvmClass): Unit = {
-    // Compute the absolute path of the class file to write.
-    val path = prefixPath.resolve(clazz.name.toPath).toAbsolutePath
-
-    // Create all parent directories (in case they don't exist).
-    Files.createDirectories(path.getParent)
-
-    // Check if the file already exists.
-    if (Files.exists(path)) {
-      // Check that the file is a regular file.
-      if (!Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
-        throw InternalCompilerException(s"Unable to write to non-regular file: '$path'.", SourceLocation.Unknown)
-      }
-
-      // Check if the file is writable.
-      if (!Files.isWritable(path)) {
-        throw InternalCompilerException(s"Unable to write to read-only file: '$path'.", SourceLocation.Unknown)
-      }
-
-      // Check that the file is empty or a class file.
-      if (!(isEmpty(path) || isClassFile(path))) {
-        throw InternalCompilerException(s"Refusing to overwrite non-empty, non-class file: '$path'.", SourceLocation.Unknown)
-      }
-    }
-
-    // Write the bytecode.
-    Files.write(path, clazz.bytecode)
-  }
-
-  /**
-    * Returns `true` if the given `path` is non-empty (i.e. contains data).
-    */
-  private def isEmpty(path: Path): Boolean = Files.size(path) == 0L
-
-  /**
-    * Returns `true` if the given `path` exists and is a Java Virtual Machine class file.
-    */
-  private def isClassFile(path: Path): Boolean = {
-    if (Files.exists(path) && Files.isReadable(path) && Files.isRegularFile(path)) {
-      // Read the first four bytes of the file.
-      val is = Files.newInputStream(path)
-      val b1 = is.read()
-      val b2 = is.read()
-      val b3 = is.read()
-      val b4 = is.read()
-      is.close()
-
-      // Check if the four first bytes match CAFE BABE.
-      return b1 == 0xCA && b2 == 0xFE && b3 == 0xBA && b4 == 0xBE
-    }
-    false
-  }
 
 }

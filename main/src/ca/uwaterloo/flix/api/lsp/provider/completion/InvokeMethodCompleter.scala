@@ -26,7 +26,7 @@ object InvokeMethodCompleter {
       case None =>
         Nil
       case Some(clazz) =>
-        JvmUtils.getInstanceMethods(clazz).sortBy(_.getName).map(MethodCompletion(name, Priority.Lowest, _))
+        JvmUtils.getInstanceMethods(clazz).sortBy(_.getName).map(MethodCompletion(name, Priority.Lowest(0), _))
     }
   }
 

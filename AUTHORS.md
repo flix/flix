@@ -79,3 +79,5 @@ By adding your name to this document, you agree to release all your contribution
 - [Casper Dalgaard Nielsen](https://github.com/CasperDN)
 - [Gagan Chandan](https://github.com/gaganchandan)
 - [Cade Lueker](https://github.com/cademichael)
+- [Asher Frost](https://github.com/wizard7377)
+- [Ry Wiese](https://github.com/rywiese)

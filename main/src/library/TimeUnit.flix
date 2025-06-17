@@ -26,3 +26,20 @@ enum TimeUnit with Eq {
     case Nanoseconds,
     case Seconds
 }
+
+mod TimeUnit {
+
+    ///
+    /// Returns the number of miliseconds for timeunit `u`
+    ///
+    pub def toMilliseconds(u: TimeUnit): Int32 = match u {
+           case TimeUnit.Days         => 24 * 60 * 60 * 1_000,
+           case TimeUnit.Hours        => 60 * 60 * 1_000,
+           case TimeUnit.Microseconds => 1 / 1_000,
+           case TimeUnit.Milliseconds => 1,
+           case TimeUnit.Minutes      => 60 * 1_000,
+           case TimeUnit.Nanoseconds  => 1 / 1_000_000,
+           case TimeUnit.Seconds      => 1_000
+        }
+
+}

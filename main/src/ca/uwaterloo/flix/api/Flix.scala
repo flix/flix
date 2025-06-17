@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityC
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
-import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
-import ca.uwaterloo.flix.language.phase.optimizer.{Optimizer, LambdaDrop}
+import ca.uwaterloo.flix.language.phase.jvm.{JvmLoader, JvmWriter, JvmBackend}
+import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
@@ -200,6 +200,7 @@ class Flix {
 
     "IoError.flix" -> LocalResource.get("/src/library/IoError.flix"),
     "Reader.flix" -> LocalResource.get("/src/library/Reader.flix"),
+    "Writer.flix" -> LocalResource.get("/src/library/Writer.flix"),
 
     "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
 
@@ -284,6 +285,8 @@ class Flix {
 
     "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
     "Clock.flix" -> LocalResource.get("/src/library/Clock.flix"),
+    "Dns.flix" -> LocalResource.get("/src/library/Dns.flix"),
+    "DnsWithResult.flix" -> LocalResource.get("/src/library/DnsWithResult.flix"),
     "Http.flix" -> LocalResource.get("/src/library/Http.flix"),
     "HttpWithResult.flix" -> LocalResource.get("/src/library/HttpWithResult.flix"),
     "Exit.flix" -> LocalResource.get("/src/library/Exit.flix"),
@@ -294,10 +297,19 @@ class Flix {
     "FileReadWithResult.flix" -> LocalResource.get("/src/library/FileReadWithResult.flix"),
     "FileWrite.flix" -> LocalResource.get("/src/library/FileWrite.flix"),
     "FileWriteWithResult.flix" -> LocalResource.get("/src/library/FileWriteWithResult.flix"),
+    "IpAddr.flix" -> LocalResource.get("/src/library/IpAddr.flix"),
+    "Ping.flix" -> LocalResource.get("/src/library/Ping.flix"),
+    "PingWithResult.flix" -> LocalResource.get("/src/library/PingWithResult.flix"),
     "ProcessHandle.flix" -> LocalResource.get("/src/library/ProcessHandle.flix"),
     "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
     "ProcessWithResult.flix" -> LocalResource.get("/src/library/ProcessWithResult.flix"),
     "Severity.flix" -> LocalResource.get("/src/library/Severity.flix"),
+    "Tcp.flix" -> LocalResource.get("/src/library/Tcp.flix"),
+    "TcpAccept.flix" -> LocalResource.get("/src/library/TcpAccept.flix"),
+    "TcpAcceptWithResult.flix" -> LocalResource.get("/src/library/TcpAcceptWithResult.flix"),
+    "TcpServer.flix" -> LocalResource.get("/src/library/TcpServer.flix"),
+    "TcpSocket.flix" -> LocalResource.get("/src/library/TcpSocket.flix"),
+    "TcpWithResult.flix" -> LocalResource.get("/src/library/TcpWithResult.flix"),
     "TimeUnit.flix" -> LocalResource.get("/src/library/TimeUnit.flix"),
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
@@ -682,7 +694,11 @@ class Flix {
     val eraserAst = Eraser.run(tailPosAst)
     val reducerAst = Reducer.run(eraserAst)
     val varOffsetsAst = VarOffsets.run(reducerAst)
-    val result = JvmBackend.run(varOffsetsAst)
+    val (backendAst, classes) = JvmBackend.run(varOffsetsAst)
+    val totalTime = flix.getTotalTime
+    JvmWriter.run(classes)
+    val (loadedAst, loadRes) = JvmLoader.run(backendAst, classes)
+    val result = new CompilationResult(loadedAst, loadRes.main, loadRes.defs, totalTime, loadRes.byteSize)
 
     // Shutdown fork-join thread pool.
     shutdownForkJoinPool()

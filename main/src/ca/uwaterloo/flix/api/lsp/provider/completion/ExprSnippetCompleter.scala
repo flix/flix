@@ -21,7 +21,7 @@ object ExprSnippetCompleter {
 
   def getCompletions(range: Range): Iterable[Completion] = List(
     // NB: Please keep the list alphabetically sorted.
-    Completion.SnippetCompletion("main", range, Priority.High,
+    Completion.SnippetCompletion("main", range, Priority.High(0),
       "def main(): Unit \\ IO = \n    println(\"Hello World!\")",
       "snippet for Hello World Program"),
   )

@@ -1,13 +1,15 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.{Effect, Op, Root}
-import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.MethodEnricher
+import ca.uwaterloo.flix.language.ast.ReducedAst.{Effect, Root}
+import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.InstanceField
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.NotVolatile
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
-import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes.*
+import ca.uwaterloo.flix.util.InternalCompilerException
+import org.objectweb.asm.MethodVisitor
 
 /** An effect class like this:
   * {{{
@@ -48,111 +50,84 @@ import org.objectweb.asm.Opcodes.*
   */
 object GenEffectClasses {
 
-  def gen(effects: Iterable[Effect])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    ParOps.parAgg(effects, Map.empty[JvmName, JvmClass])({
-      case (macc, effect) =>
-        val className = JvmOps.getEffectDefinitionClassName(effect.sym)
-        macc + (className -> JvmClass(className, genByteCode(className, effect)))
-    }, _ ++ _)
+  def gen(effects: Iterable[Effect])(implicit root: Root, flix: Flix): List[JvmClass] = {
+    for (effect <- effects.toList) yield {
+      val className = JvmOps.getEffectDefinitionClassName(effect.sym)
+      JvmClass(className, genByteCode(className, effect))
+    }
   }
 
   private def genByteCode(effectName: JvmName, effect: Effect)(implicit root: Root, flix: Flix): Array[Byte] = {
-    val visitor = AsmOps.mkClassWriter()
+    val cm = ClassMaker.mkClass(effectName, IsFinal, interfaces = List(BackendObjType.Handler.jvmName))
 
-    val interfaces = Array(BackendObjType.Handler.jvmName.toInternalName)
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, effectName.toInternalName,
-      null, BackendObjType.JavaObject.jvmName.toInternalName, interfaces)
+    cm.mkConstructor(ClassMaker.ConstructorMethod(effectName, Nil), IsPublic, constructorIns(_))
 
-    for (op <- effect.ops) genFieldAndMethod(visitor, effectName, op)
-
-    genConstructor(visitor)
-
-    visitor.visitEnd()
-    visitor.toByteArray
-  }
-
-  private def genConstructor(visitor: ClassWriter): Unit = {
-    val mv = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
-    mv.visitCode()
-
-    mv.visitByteIns({
-      import BytecodeInstructions.*
-      ALOAD(0) ~
-        INVOKESPECIAL(BackendObjType.JavaObject.Constructor) ~
-        RETURN()
-    })
-
-    mv.visitMaxs(999, 999)
-    mv.visitEnd()
-  }
-
-  private def genFieldAndMethod(visitor: ClassWriter, effectName: JvmName, op: Op)(implicit root: Root): Unit = {
-    // Field
-    val writtenOpArgsMono = op.fparams.map(_.tpe)
-    val arrowType = MonoType.Arrow(writtenOpArgsMono :+ MonoType.Object, MonoType.Object)
-
-    val writtenOpArgs = writtenOpArgsMono.map(BackendType.toErasedBackendType)
-    val opName = JvmOps.getEffectOpName(op.sym)
-    val opFunction = JvmOps.getFunctionInterfaceType(arrowType)
-    visitor.visitField(ACC_PUBLIC, opName, opFunction.jvmName.toDescriptor, null, null)
-    // Method
-    // 1. Cast the given generic handler to the current effect
-    // 2. Convert the given resumption into a callable Fn1$Obj (Value -> Result) via ResumptionWrapper
-    // 3. call invoke on the op
-    val (writtenOpArgsOffsetRev, handlerOffset) = writtenOpArgs.foldLeft((Nil: List[(BackendType, Int)], 0)) {
-      case ((acc, prev), arg) => ((arg, prev) :: acc, prev + arg.stackSlots)
+    for (op <- effect.ops) {
+      val opName = JvmOps.getEffectOpName(op.sym)
+      val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedBackendType)
+      val opFunction = BackendObjType.Arrow(erasedParams :+ BackendType.Object, BackendType.Object)
+      val opField = ClassMaker.InstanceField(effectName, opName, opFunction.toTpe)
+      cm.mkField(opField, IsPublic, NotFinal, NotVolatile)
+      val methodArgs = erasedParams ++ List(BackendObjType.Handler.toTpe, BackendObjType.Resumption.toTpe)
+      val returnType = BackendType.toBackendType(op.tpe)
+      cm.mkStaticMethod(ClassMaker.StaticMethod(effectName, opName, MethodDescriptor(methodArgs, BackendObjType.Result.toTpe)), IsPublic, NotFinal, methodIns(effectName, opFunction, opField, erasedParams, returnType)(_))
     }
-    val writtenOpArgsOffset = writtenOpArgsOffsetRev.reverse
-    val methodArgs = writtenOpArgs ++ List(BackendObjType.Handler.toTpe, BackendObjType.Resumption.toTpe)
-    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, opName, MethodDescriptor(methodArgs, BackendObjType.Result.toTpe).toDescriptor, null, null)
-    mv.visitCode()
 
-    val wrapperType = BackendObjType.ResumptionWrapper(BackendType.toBackendType(op.tpe))
-    mv.visitByteIns({
-      import BytecodeInstructions.*
-      ALOAD(handlerOffset) ~
-        CHECKCAST(effectName) ~
-        GETFIELD(ClassMaker.InstanceField(effectName, opName, opFunction.toTpe)) ~
-        composeN(for (((t, localOffset), i) <- writtenOpArgsOffset.zipWithIndex) yield {
-          // bind all regular arguments
-          DUP() ~
-            xLoad(t, localOffset) ~
-            PUTFIELD(ClassMaker.InstanceField(opFunction.jvmName, s"arg$i", t))
-        }) ~
-        // convert the resumption to a function
-        DUP() ~
-        NEW(wrapperType.jvmName) ~
-        DUP() ~
-        ALOAD(handlerOffset + 1) ~ // the resumption is the stack offset after handler
-        INVOKESPECIAL(wrapperType.Constructor) ~
-        PUTFIELD(ClassMaker.InstanceField(opFunction.jvmName, s"arg${writtenOpArgs.size}", BackendObjType.Resumption.toTpe.toErased)) ~
-        // call invoke
-        INVOKEINTERFACE(BackendObjType.Thunk.InvokeMethod) ~
-        ARETURN()
-    })
+    cm.closeClassMaker()
+  }
 
-    mv.visitMaxs(999, 999)
-    mv.visitEnd()
+  private def constructorIns(implicit mv: MethodVisitor): Unit = {
+    import BytecodeInstructions.*
+    ALOAD(0)
+    INVOKESPECIAL(ClassConstants.Object.Constructor)
+    RETURN()
+  }
+
+  private def methodIns(effectName: JvmName, opFunction: BackendObjType.Arrow, opField: InstanceField, erasedParams: List[BackendType], returnType: BackendType)(implicit mv: MethodVisitor): Unit = {
+    import BytecodeInstructions.*
+    val wrapperType = BackendObjType.ResumptionWrapper(returnType)
+
+    withNames(0, erasedParams) { case (paramsOffset, params) =>
+      withName(paramsOffset, BackendObjType.Handler.toTpe) { handler =>
+        withName(paramsOffset + 1, BackendObjType.Resumption.toTpe) { resumption =>
+          // Cast the given generic handler to the current effect.
+          handler.load()
+          CHECKCAST(effectName)
+          // Convert the given resumption into a callable Fn1$Obj (Value -> Result) via ResumptionWrapper.
+          GETFIELD(opField)
+          for ((par, i) <- params.zipWithIndex) {
+            DUP()
+            par.load()
+            PUTFIELD(opFunction.ArgField(i))
+          }
+          // Convert the resumption to a function.
+          DUP()
+          NEW(wrapperType.jvmName)
+          DUP()
+          resumption.load()
+          INVOKESPECIAL(wrapperType.Constructor)
+          PUTFIELD(ClassMaker.InstanceField(opFunction.jvmName, s"arg${params.size}", BackendObjType.Resumption.toTpe.toErased))
+          // Call invoke.
+          INVOKEINTERFACE(BackendObjType.Thunk.InvokeMethod)
+          ARETURN()
+        }
+      }
+    }
   }
 
   def opStaticFunctionDescriptor(sym: Symbol.OpSym)(implicit root: Root): MethodDescriptor = {
     val effect = root.effects(sym.eff)
     val op = effect.ops.find(op => op.sym == sym).getOrElse(throw InternalCompilerException(s"Could not find op '$sym' in effect '$effect'.", sym.loc))
-    val writtenOpArgs = op.fparams.map(_.tpe).map(BackendType.toErasedBackendType)
-    val handlerType = BackendObjType.Handler.toTpe
-    val resumption = BackendObjType.Resumption.toTpe
-
-    val methodArgs = writtenOpArgs ++ List(handlerType, resumption)
-    val methodResult = BackendObjType.Result.toTpe
-
-    MethodDescriptor(methodArgs, methodResult)
+    val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedBackendType)
+    val methodArgs = erasedParams ++ List(BackendObjType.Handler.toTpe, BackendObjType.Resumption.toTpe)
+    MethodDescriptor(methodArgs, BackendObjType.Result.toTpe)
   }
 
-  def opFieldType(sym: Symbol.OpSym)(implicit root: Root): JvmName = {
+  def opFieldType(sym: Symbol.OpSym)(implicit root: Root): BackendObjType.Arrow = {
     val effect = root.effects(sym.eff)
     val op = effect.ops.find(op => op.sym == sym).getOrElse(throw InternalCompilerException(s"Could not find op '$sym' in effect '$effect'.", sym.loc))
-    val writtenOpArgs = op.fparams.map(_.tpe)
-    JvmOps.getFunctionInterfaceType(MonoType.Arrow(writtenOpArgs :+ MonoType.Object, MonoType.Object)).jvmName
+    val erasedParams = op.fparams.map(_.tpe).map(BackendType.toErasedBackendType)
+    BackendObjType.Arrow(erasedParams :+ BackendType.Object, BackendType.Object)
   }
 
 }
