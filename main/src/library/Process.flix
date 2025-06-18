@@ -100,7 +100,7 @@ mod Process {
     use Process.StdErr.StdErr
     use Process.StdOut.StdOut
 
-    pub enum StdIn(JOutputStream)
+    pub enum StdIn(OutputStream)
     instance Writer[StdIn] {
         type Aef = IO
         pub def write(b: Array[Int8, r], r: StdIn): Result[IoError, Int32] \ r + IO =
