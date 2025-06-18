@@ -337,9 +337,9 @@ object TypedAst {
 
     case class Wild(tpe: Type, loc: SourceLocation) extends ExtPattern
 
-    case class Var(bnd: Binder, tpe: Type.Var, loc: SourceLocation) extends ExtPattern
+    case class Var(bnd: Binder, tpe: Type, loc: SourceLocation) extends ExtPattern
 
-    case class Error(tpe: Type.Var, loc: SourceLocation) extends ExtPattern
+    case class Error(tpe: Type, loc: SourceLocation) extends ExtPattern
   }
 
   sealed trait Predicate {
