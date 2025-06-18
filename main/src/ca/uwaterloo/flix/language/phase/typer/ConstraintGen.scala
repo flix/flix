@@ -81,7 +81,7 @@ object ConstraintGen {
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(Type.mkArrowWithEffect(tpe2, lambdaBodyEff, lambdaBodyType, loc), tpe1, loc)
         c.unifyType(tvar, lambdaBodyType, loc)
-        c.unifyType(evar,  Type.mkUnion(lambdaBodyEff :: eff1 :: eff2 :: Nil, loc), loc)
+        c.unifyType(evar, Type.mkUnion(lambdaBodyEff :: eff1 :: eff2 :: Nil, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -441,37 +441,18 @@ object ConstraintGen {
 
       case Expr.ExtMatch(exp, rules, loc) =>
         val (tpe, eff) = visitExp(exp)
-        val (nestedPatTpes, tpes, effs) = rules.map(visitExtMatchRule).unzip3
-        val names = rules.map(r => Name.Pred(r.label.name, r.label.loc))
-        ???
-
-      /*
-        val pred = Name.Pred(label.name, label.loc)
-
-        val (tpe1, eff1) = visitExp(exp1)
-        val (tpe2, eff2) = visitExp(exp2)
-        val (tpe3, eff3) = visitExp(exp3)
-
-        // each variable in a pattern
-        val freshTypeVar = freshVar(Kind.Star, loc)
-
-        // type of empty row
+        val (caseTpes, tpes, effs) = rules.map(visitExtMatchRule).unzip3
         val freshRowVar = freshVar(Kind.SchemaRow, loc)
-
-        // fold over patterns
-        val expectedRowType = Type.mkSchemaRowExtend(pred, Type.mkRelation(List(freshTypeVar), loc), freshRowVar, loc)
-        // after fold
+        val expectedRowType = caseTpes.foldRight(freshRowVar: Type) {
+          case ((name, patTpes), acc) => Type.mkSchemaRowExtend(name, Type.mkRelation(patTpes, loc), acc, loc)
+        }
         val expectedSchemaType = Type.mkExtensible(expectedRowType, loc)
-
-        c.unifyType(tpe1, expectedSchemaType, loc)
-        c.unifyType(sym2.tvar, freshTypeVar, loc)
-        c.unifyType(sym3.tvar, Type.mkExtensible(freshRowVar, loc), loc)
-
-        c.unifyType(tvar, tpe2, tpe3, loc)
-        val resTpe = tvar
-        val resEff = Type.mkUnion(eff1, eff2, eff3, loc)
+        c.unifyType(tpe, expectedSchemaType, loc)
+        c.unifyAllTypes(tpes, loc)
+        val resTpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
+        val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
-*/
+
       case KindedAst.Expr.Tag(symUse, exps, tvar, loc) =>
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
@@ -1104,11 +1085,12 @@ object ConstraintGen {
       (patTpe, tpe, eff)
   }
 
-  private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (List[Type], Type, Type) = rule match {
-    case KindedAst.ExtMatchRule(_, pats, exp, _) =>
+  private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): ((Name.Pred, List[Type]), Type, Type) = rule match {
+    case KindedAst.ExtMatchRule(label, pats, exp, _) =>
+      val name = Name.Pred(label.name, label.loc)
       val patTypes = pats.map(visitExtPattern)
       val (tpe, eff) = visitExp(exp)
-      (patTypes, tpe, eff)
+      ((name, patTypes), tpe, eff)
   }
 
   /**
