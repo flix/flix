@@ -725,15 +725,13 @@ object TypeReconstruction {
     * Reconstructs types in the given ext-pattern.
     */
   private def visitExtPat(pat0: KindedAst.ExtPattern)(implicit subst: SubstitutionTree): TypedAst.ExtPattern = pat0 match {
-    case KindedAst.ExtPattern.Wild(tvar, loc) =>
-      TypedAst.ExtPattern.Wild(subst(tvar), loc)
+    case KindedAst.ExtPattern.Wild(tvar, loc) => TypedAst.ExtPattern.Wild(subst(tvar), loc)
 
     case KindedAst.ExtPattern.Var(sym, tvar, loc) =>
       val bnd = TypedAst.Binder(sym, subst(tvar))
       TypedAst.ExtPattern.Var(bnd, loc)
 
-    case KindedAst.ExtPattern.Error(tvar, loc) =>
-      TypedAst.ExtPattern.Error(subst(tvar), loc)
+    case KindedAst.ExtPattern.Error(tvar, loc) => TypedAst.ExtPattern.Error(subst(tvar), loc)
   }
 
   /**
