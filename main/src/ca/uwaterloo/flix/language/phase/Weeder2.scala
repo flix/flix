@@ -1568,13 +1568,8 @@ object Weeder2 {
           // Parser has reported an error here so do not add to sctx.
           Validation.Failure(error)
 
-        case (expr, rules) if rules.length == 2 => // Check for exactly 2 to prevent crash when desugaring in Kinder
+        case (expr, rules) =>
           Validation.Success(Expr.ExtMatch(expr, rules, tree.loc))
-
-        case (expr, _) =>
-          val error = Malformed(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
-          sctx.errors.add(error)
-          Validation.Failure(error)
       }
     }
 
