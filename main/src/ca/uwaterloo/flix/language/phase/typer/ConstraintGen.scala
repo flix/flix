@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.KindedAst.Expr
+import ca.uwaterloo.flix.language.ast.KindedAst.{Expr, ExtPattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Scope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
@@ -439,16 +439,28 @@ object ConstraintGen {
 
       case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
 
-      case Expr.ExtMatch(label, exp1, sym2, exp2, sym3, exp3, tvar, loc) =>
+      case Expr.ExtMatch(exp, rules, loc) =>
+        val (tpe, eff) = visitExp(exp)
+        val (nestedPatTpes, tpes, effs) = rules.map(visitExtMatchRule).unzip3
+        val names = rules.map(r => Name.Pred(r.label.name, r.label.loc))
+        ???
+
+      /*
         val pred = Name.Pred(label.name, label.loc)
 
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         val (tpe3, eff3) = visitExp(exp3)
 
+        // each variable in a pattern
         val freshTypeVar = freshVar(Kind.Star, loc)
+
+        // type of empty row
         val freshRowVar = freshVar(Kind.SchemaRow, loc)
+
+        // fold over patterns
         val expectedRowType = Type.mkSchemaRowExtend(pred, Type.mkRelation(List(freshTypeVar), loc), freshRowVar, loc)
+        // after fold
         val expectedSchemaType = Type.mkExtensible(expectedRowType, loc)
 
         c.unifyType(tpe1, expectedSchemaType, loc)
@@ -459,7 +471,7 @@ object ConstraintGen {
         val resTpe = tvar
         val resEff = Type.mkUnion(eff1, eff2, eff3, loc)
         (resTpe, resEff)
-
+*/
       case KindedAst.Expr.Tag(symUse, exps, tvar, loc) =>
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
@@ -1051,6 +1063,16 @@ object ConstraintGen {
     }
   }
 
+  private def visitExtPattern(pat0: KindedAst.ExtPattern)(implicit c: TypeContext): Type = pat0 match {
+    case ExtPattern.Wild(tvar, _) => tvar
+
+    case ExtPattern.Var(sym, tvar, loc) =>
+      c.unifyType(sym.tvar, tvar, loc)
+      tvar
+
+    case ExtPattern.Error(tvar, _) => tvar
+  }
+
   /**
     * Generates constraints for the patterns inside the record label pattern.
     *
@@ -1080,6 +1102,13 @@ object ConstraintGen {
       }
       val (tpe, eff) = visitExp(exp)
       (patTpe, tpe, eff)
+  }
+
+  private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (List[Type], Type, Type) = rule match {
+    case KindedAst.ExtMatchRule(_, pats, exp, _) =>
+      val patTypes = pats.map(visitExtPattern)
+      val (tpe, eff) = visitExp(exp)
+      (patTypes, tpe, eff)
   }
 
   /**
