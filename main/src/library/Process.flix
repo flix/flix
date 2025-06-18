@@ -43,11 +43,6 @@ eff Process {
     def pid(ph: ProcessHandle): Int64
 
     ///
-    /// Returns stderr OutputStream of the process.
-    ///
-    def stderr(ph: ProcessHandle): Process.StdErr
-
-    ///
     /// Returns stdin InputStream of the process.
     ///
     def stdin(ph: ProcessHandle): Process.StdIn
@@ -56,6 +51,11 @@ eff Process {
     /// Returns stdout OutputStream of the process.
     ///
     def stdout(ph: ProcessHandle): Process.StdOut
+
+    ///
+    /// Returns stderr OutputStream of the process.
+    ///
+    def stderr(ph: ProcessHandle): Process.StdErr
 
     ///
     /// Returns Process output as a string.
@@ -93,47 +93,35 @@ mod Process {
     import java.lang.ProcessBuilder
     import java.lang.Runtime
     import java.io.{File => JFile}
-    import java.io.{InputStream => JInputStream}
-    import java.io.{OutputStream => JOutputStream}
+    import java.io.InputStream
+    import java.io.OutputStream
     import java.util.concurrent.{TimeUnit => JTimeUnit}
-    use Process.StdErr.StdErr
     use Process.StdIn.StdIn
+    use Process.StdErr.StdErr
     use Process.StdOut.StdOut
 
     pub enum StdIn(JOutputStream)
-
     instance Writer[StdIn] {
-
         type Aef = IO
-
         pub def write(b: Array[Int8, r], r: StdIn): Result[IoError, Int32] \ r + IO =
             let StdIn(pr) = r;
             Writer.write(b, pr)
-
     }
 
-    pub enum StdOut(JInputStream)
-
+    pub enum StdOut(InputStream)
     instance Reader[StdOut] {
-
         type Aef = IO
-
         pub def read(b: Array[Int8, r], r: StdOut): Result[IoError, Int32] \ r + IO =
             let StdOut(pr) = r;
             Reader.read(b, pr)
-
     }
 
-    pub enum StdErr(JInputStream)
-
+    pub enum StdErr(InputStream)
     instance Reader[StdErr] {
-
         type Aef = IO
-
         pub def read(b: Array[Int8, r], r: StdErr): Result[IoError, Int32] \ r + IO =
             let StdErr(pr) = r;
             Reader.read(b, pr)
-
     }
 
     ///
@@ -210,29 +198,17 @@ mod Process {
                     case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
 
-            def stderr(ph, k) =
-                try {
-                    let ProcessHandle(jProc) = ph;
-                    k(StdErr.StdErr(jProc.getErrorStream()))
-                } catch {
-                    case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-
             def stdin(ph, k) =
-                try {
-                    let ProcessHandle(jProc) = ph;
-                    k(StdIn.StdIn(jProc.getOutputStream()))
-                } catch {
-                    case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
+                let ProcessHandle(jProc) = ph;
+                k(StdIn(jProc.getOutputStream()))
 
             def stdout(ph, k) =
-                try {
-                    let ProcessHandle(jProc) = ph;
-                    k(StdOut.StdOut(jProc.getInputStream()))
-                } catch {
-                    case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
+                let ProcessHandle(jProc) = ph;
+                k(StdOut(jProc.getInputStream()))
+
+            def stderr(ph, k) =
+                let ProcessHandle(jProc) = ph;
+                k(StdErr(jProc.getErrorStream()))
 
             def output(ph, k) = ???
 
