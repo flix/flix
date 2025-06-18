@@ -30,23 +30,22 @@ object InlayHintProvider {
   def getInlayHints(uri: String, range: Range)(implicit root: Root): List[InlayHint] = {
     var inlayHints: List[InlayHint] = Nil
     if(EnableEffectHints) {
-      var effects: Set[(Type, SourceLocation)] = (getOpSymUses(uri) ++ getDefSymUses(uri)).filter {
+      val effects: Set[(Type, SourceLocation)] = (getOpSymUses(uri) ++ getDefSymUses(uri)).filter {
         case (eff, loc) => eff match {
           case Type.Pure => false
           case _ => true
         }
       }
-      var maxColWidth: Int = Math.min(120, effects.map { case (_, loc) => loc.endCol }.maxOption.getOrElse(120))
-      var lineToEffectsMap: Map[Int, Set[Type]] = Map.empty
+      var locationToEffectsMap: Map[SourceLocation, Set[Type]] = Map.empty
       effects.foreach { case (eff, loc) =>
-        lineToEffectsMap = lineToEffectsMap.updated(loc.endLine, lineToEffectsMap.getOrElse(loc.endLine, Set.empty) + eff)
+        locationToEffectsMap = locationToEffectsMap.updated(loc, locationToEffectsMap.getOrElse(loc, Set.empty) + eff)
       }
-      inlayHints = mkHintsFromEffects(lineToEffectsMap, maxColWidth)
+      inlayHints = mkHintsFromEffects(locationToEffectsMap)
     }
     inlayHints
   }
 
-  def getOpSymUses(uri: String)(implicit root: Root): Set[(Type, SourceLocation)] = {
+  private def getOpSymUses(uri: String)(implicit root: Root): Set[(Type, SourceLocation)] = {
     var opSymUses: Set[(Type, SourceLocation)] = Set.empty
     object opSymUseConsumer extends Consumer {
       override def consumeExpr(expr: Expr): Unit = {
@@ -61,7 +60,7 @@ object InlayHintProvider {
     opSymUses
   }
 
-  def getDefSymUses(uri: String)(implicit root: Root): Set[(Type, SourceLocation)] = {
+  private def getDefSymUses(uri: String)(implicit root: Root): Set[(Type, SourceLocation)] = {
     var defSymUses: Set[(Type, SourceLocation)] = Set.empty
     object defSymUseConsumer extends Consumer {
       override def consumeExpr(expr: Expr): Unit = {
@@ -76,17 +75,19 @@ object InlayHintProvider {
     defSymUses
   }
 
-  def mkHintsFromEffects(lineToEffectsMap: Map[Int, Set[Type]], maxColWidth: Int): List[InlayHint] = {
-    lineToEffectsMap.map({
-      case (line, effs) =>
-        mkHint(effs, line, maxColWidth)
-      }).toList
+  private def mkHintsFromEffects(locationToEffectsMap: Map[SourceLocation, Set[Type]]): List[InlayHint] = {
+    locationToEffectsMap.map {
+      case (loc, effs) =>
+        mkHint(effs, loc)
+    }.toList
   }
 
-  def mkHint(effs: Set[Type], line: Int, col: Int): InlayHint = {
-    var effectString: String = effs.mkString(" + ")
+  // Creates an inlay hint combining all effects for a given line.
+  // For example, if the effects are ef1 and ef2, the hint will be { ef1 + ef2 }.
+  private def mkHint(effs: Set[Type], loc: SourceLocation): InlayHint = {
+    val effectString: String = effs.mkString(" + ")
     InlayHint(
-      position = Position(line, col),
+      position = Position(loc.endLine, loc.endCol),
       label = s"{ $effectString }",
       kind = Some(InlayHintKind.Type),
       textEdits = List.empty,
