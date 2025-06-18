@@ -58,7 +58,7 @@
     "java.lang.System::getLogger": "Sys, IO",
     "java.lang.System::getProperties": "Env, Sys, IO",
     "java.lang.System::getProperty": "Env, Sys, IO",
-    "java.lang.System::setSecurityManager": "Env, Sys, IO",
+    "java.lang.System::setSecurityManager": "Sys, IO",
     "java.lang.System::identityHashCode": "IO",
     "java.lang.System::inheritedChannel": "Sys, IO",
     "java.lang.System::lineSeparator": "Env, IO",
@@ -72,7 +72,7 @@
     "java.lang.System::setOut": "Sys, IO",
     "java.lang.System::setProperties": "Env, Sys, IO",
     "java.lang.System::setProperty": "Env, Sys, IO",
-    "java.lang.System::getSecurityManager": "Env, Sys, IO",
+    "java.lang.System::getSecurityManager": "Sys, IO",
 
     "java.math.BigInteger::probablePrime": "NonDet, IO",
 
