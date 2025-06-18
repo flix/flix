@@ -18,12 +18,11 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
-import ca.uwaterloo.flix.api.lsp.{Consumer, Position, Range, ResponseStatus, TextEdit, Visitor, WorkspaceEdit}
+import ca.uwaterloo.flix.api.lsp.{Consumer, Position, Range, TextEdit, Visitor, WorkspaceEdit}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL.*
 
 object RenameProvider {
 
@@ -113,7 +112,7 @@ object RenameProvider {
   private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val consumer = StackConsumer()
     Visitor.visitRoot(root, consumer, InsideAcceptor(uri, pos))
-    consumer.getStack.filter(isReal).headOption
+    consumer.getStack.find(isReal)
   }
 
   private def isReal(x: AnyRef): Boolean = x match {
@@ -202,7 +201,7 @@ object RenameProvider {
 
     object TypeVarSymConsumer extends Consumer {
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Var(sym, loc) => consider(sym, loc)
+        case Type.Var(s, loc) => consider(s, loc)
         case _ => ()
       }
     }
