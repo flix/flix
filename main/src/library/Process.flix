@@ -107,7 +107,7 @@ mod Process {
         type Aef = IO
 
         pub def write(b: Array[Int8, r], r: StdIn): Result[IoError, Int32] \ r + IO =
-            let StdErr(pr) = r;
+            let StdIn(pr) = r;
             Writer.write(b, pr)
 
     }
@@ -119,7 +119,7 @@ mod Process {
         type Aef = IO
 
         pub def read(b: Array[Int8, r], r: StdOut): Result[IoError, Int32] \ r + IO =
-            let StdIn(pr) = r;
+            let StdOut(pr) = r;
             Reader.read(b, pr)
 
     }
