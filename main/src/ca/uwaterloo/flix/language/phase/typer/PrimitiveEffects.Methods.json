@@ -61,7 +61,7 @@
     "java.lang.System::setSecurityManager": "Env, Sys, IO",
     "java.lang.System::identityHashCode": "IO",
     "java.lang.System::inheritedChannel": "Sys, IO",
-    "java.lang.System::lineSeparator": "IO",
+    "java.lang.System::lineSeparator": "Env, IO",
     "java.lang.System::load": "Exec, Sys, IO",
     "java.lang.System::loadLibrary": "Exec, Sys, IO",
     "java.lang.System::mapLibraryName": "Env, IO",
