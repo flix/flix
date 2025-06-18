@@ -363,7 +363,7 @@ object RedundancyError {
     *
     * @param sym the unused effect symbol.
     */
-  case class UnusedEffectSym(sym: Symbol.EffectSym) extends RedundancyError {
+  case class UnusedEffectSym(sym: Symbol.EffSym) extends RedundancyError {
     def summary: String = s"Unused effect '${sym.name}'.'"
 
     def message(formatter: Formatter): String = {

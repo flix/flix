@@ -371,7 +371,7 @@ object EntryPoints {
       * Evaluates `eff` if it is well-formed and has no type variables,
       * associated types, or error types.
       */
-    private def eval(eff: Type): Result[CofiniteSet[Symbol.EffectSym], ErrorOrMalformed.type] = eff match {
+    private def eval(eff: Type): Result[CofiniteSet[Symbol.EffSym], ErrorOrMalformed.type] = eff match {
       case Type.Cst(tc, _) => tc match {
         case TypeConstructor.Pure => Result.Ok(CofiniteSet.empty)
         case TypeConstructor.Univ => Result.Ok(CofiniteSet.universe)

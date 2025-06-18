@@ -452,7 +452,7 @@ object UnkindedType {
   /**
     * Construct the effect type for the given symbol.
     */
-  def mkEffect(sym: Symbol.EffectSym, loc: SourceLocation): UnkindedType = UnkindedType.Cst(TypeConstructor.Effect(sym), loc)
+  def mkEffect(sym: Symbol.EffSym, loc: SourceLocation): UnkindedType = UnkindedType.Cst(TypeConstructor.Effect(sym), loc)
 
   /**
     * Constructs a predicate type.

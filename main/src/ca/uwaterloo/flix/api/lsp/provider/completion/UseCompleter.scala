@@ -31,7 +31,7 @@ object UseCompleter {
     root.modules.get(moduleSym).collect {
       case mod: Symbol.ModuleSym if fuzzyMatch(ident, mod.ns.last) => UseCompletion(mod.toString, range, Priority.Medium(0), CompletionItemKind.Module)
       case enm: Symbol.EnumSym if fuzzyMatch(ident, enm.name) && CompletionUtils.isAvailable(enm) => UseCompletion(enm.toString, range, Priority.Medium(0), CompletionItemKind.Enum)
-      case eff: Symbol.EffectSym if fuzzyMatch(ident, eff.name) && CompletionUtils.isAvailable(eff) => UseCompletion(eff.toString, range, Priority.Medium(0), CompletionItemKind.Event)
+      case eff: Symbol.EffSym if fuzzyMatch(ident, eff.name) && CompletionUtils.isAvailable(eff) => UseCompletion(eff.toString, range, Priority.Medium(0), CompletionItemKind.Event)
       case defn: Symbol.DefnSym if fuzzyMatch(ident, defn.name) && CompletionUtils.isAvailable(defn) => UseCompletion(defn.toString, range, Priority.Medium(0), CompletionItemKind.Function)
       case trt: Symbol.TraitSym if fuzzyMatch(ident, trt.name) && CompletionUtils.isAvailable(trt) => UseCompletion(trt.toString, range, Priority.Medium(0), CompletionItemKind.Interface)
     } ++ getSigCompletions(qn, range) ++ getOpCompletions(qn, range) ++ getTagCompletions(qn, range)
