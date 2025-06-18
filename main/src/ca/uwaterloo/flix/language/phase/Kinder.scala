@@ -461,25 +461,9 @@ object Kinder {
       KindedAst.Expr.RestrictableChoose(star, exp, rules, tvar, loc)
 
     case ResolvedAst.Expr.ExtMatch(exp, rules, loc) =>
-      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val e = visitExp(exp, kenv0, taenv, root)
       val rs = rules.map(visitExtMatchRule(_, kenv0, taenv, root))
-      // Unsafely desugar
-      val List(r1, r2) = rs
-      val label = r1.label
-      val exp1 = r1.exp
-      val sym1 = r1.pats.head match {
-        case ExtPattern.Wild(_, loc1) => Symbol.freshVarSym("wildExtPattern", BoundBy.Pattern, loc1)
-        case ExtPattern.Var(sym, _, _) => sym
-        case ExtPattern.Error(_, _) => ??? // crash
-      }
-      val exp2 = r2.exp
-      val sym2 = r2.pats.head match {
-        case ExtPattern.Wild(_, loc1) => Symbol.freshVarSym("wildExtPattern", BoundBy.Pattern, loc1)
-        case ExtPattern.Var(sym, _, _) => sym
-        case ExtPattern.Error(_, _) => ??? // crash
-      }
-      KindedAst.Expr.ExtMatch(label, e, sym1, exp1, sym2, exp2, tvar, loc)
+      KindedAst.Expr.ExtMatch(e, rs, loc)
 
     case ResolvedAst.Expr.Tag(symUse, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, root))
