@@ -329,6 +329,19 @@ object TypedAst {
 
   }
 
+  sealed trait ExtPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtPattern {
+
+    case class Wild(tpe: Type, loc: SourceLocation) extends ExtPattern
+
+    case class Var(bnd: Binder, tpe: Type.Var, loc: SourceLocation) extends ExtPattern
+
+    case class Error(tpe: Type.Var, loc: SourceLocation) extends ExtPattern
+  }
+
   sealed trait Predicate {
     def loc: SourceLocation
   }
@@ -380,6 +393,8 @@ object TypedAst {
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
+
+  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr, loc: SourceLocation)
 
