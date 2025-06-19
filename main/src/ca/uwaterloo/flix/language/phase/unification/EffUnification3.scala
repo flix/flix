@@ -328,7 +328,7 @@ object EffUnification3 {
     case class VarRigid(sym: Symbol.KindedTypeVarSym) extends Atom
 
     /** Representing an effect constant. */
-    case class Eff(sym: Symbol.EffectSym) extends Atom
+    case class Eff(sym: Symbol.EffSym) extends Atom
 
     /** Represents an associated effect. */
     case class Assoc(sym: Symbol.AssocTypeSym, arg: Atom) extends Atom

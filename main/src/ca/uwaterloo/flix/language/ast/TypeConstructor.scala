@@ -435,7 +435,7 @@ object TypeConstructor {
   /**
     * A type constructor that represents a single effect.
     */
-  case class Effect(sym: Symbol.EffectSym) extends TypeConstructor {
+  case class Effect(sym: Symbol.EffSym) extends TypeConstructor {
     def kind: Kind = Kind.Eff
   }
 

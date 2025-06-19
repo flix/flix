@@ -31,27 +31,27 @@ object Symbol {
   /**
     * The primitive effects defined in the Prelude.
     */
-  val Chan: EffectSym = mkEffectSym(Name.RootNS, Ident("Chan", SourceLocation.Unknown))
-  val Env: EffectSym = mkEffectSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
-  val Exec: EffectSym = mkEffectSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
-  val FsRead: EffectSym = mkEffectSym(Name.RootNS, Ident("FsRead", SourceLocation.Unknown))
-  val FsWrite: EffectSym = mkEffectSym(Name.RootNS, Ident("FsWrite", SourceLocation.Unknown))
-  val IO: EffectSym = mkEffectSym(Name.RootNS, Ident("IO", SourceLocation.Unknown))
-  val Net: EffectSym = mkEffectSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
-  val NonDet: EffectSym = mkEffectSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
-  val Sys: EffectSym = mkEffectSym(Name.RootNS, Ident("Sys", SourceLocation.Unknown))
+  val Chan: EffSym = mkEffectSym(Name.RootNS, Ident("Chan", SourceLocation.Unknown))
+  val Env: EffSym = mkEffectSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
+  val Exec: EffSym = mkEffectSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
+  val FsRead: EffSym = mkEffectSym(Name.RootNS, Ident("FsRead", SourceLocation.Unknown))
+  val FsWrite: EffSym = mkEffectSym(Name.RootNS, Ident("FsWrite", SourceLocation.Unknown))
+  val IO: EffSym = mkEffectSym(Name.RootNS, Ident("IO", SourceLocation.Unknown))
+  val Net: EffSym = mkEffectSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
+  val NonDet: EffSym = mkEffectSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
+  val Sys: EffSym = mkEffectSym(Name.RootNS, Ident("Sys", SourceLocation.Unknown))
 
   /**
     * The set of all primitive effects defined in the Prelude.
     */
-  val PrimitiveEffs: SortedSet[EffectSym] = SortedSet.from(List(
+  val PrimitiveEffs: SortedSet[EffSym] = SortedSet.from(List(
     Chan, Env, Exec, FsRead, FsWrite, IO, Net, NonDet, Sys
   ))
 
   /**
     * Returns `true` if the given effect symbol is a primitive effect.
     */
-  def isPrimitiveEff(sym: EffectSym): Boolean = sym match {
+  def isPrimitiveEff(sym: EffSym): Boolean = sym match {
     case Chan => true
     case Env => true
     case Exec => true
@@ -69,7 +69,7 @@ object Symbol {
     *
     * The String must be a valid name of a primitive effect.
     */
-  def parsePrimitiveEff(s: String): Symbol.EffectSym = s match {
+  def parsePrimitiveEff(s: String): Symbol.EffSym = s match {
     case "Chan" => Chan
     case "Env" => Env
     case "Exec" => Exec
@@ -301,22 +301,22 @@ object Symbol {
   /**
     * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
     */
-  def mkEffectSym(ns: NName, ident: Ident): EffectSym = {
-    new EffectSym(ns.parts, ident.name, ident.loc)
+  def mkEffectSym(ns: NName, ident: Ident): EffSym = {
+    new EffSym(ns.parts, ident.name, ident.loc)
   }
 
   /**
    * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
    */
-  def mkEffectSym(fqn: String): EffectSym = split(fqn) match {
-      case None => new EffectSym(Nil, fqn, SourceLocation.Unknown)
-      case Some((ns, name)) => new EffectSym(ns, name, SourceLocation.Unknown)
+  def mkEffectSym(fqn: String): EffSym = split(fqn) match {
+      case None => new EffSym(Nil, fqn, SourceLocation.Unknown)
+      case Some((ns, name)) => new EffSym(ns, name, SourceLocation.Unknown)
     }
 
   /**
     * Returns the operation symbol for the given name `ident` in the effect associated with the given effect symbol `effectSym`.
     */
-  def mkOpSym(effectSym: EffectSym, ident: Name.Ident): OpSym = {
+  def mkOpSym(effectSym: EffSym, ident: Name.Ident): OpSym = {
     new OpSym(effectSym, ident.name, ident.loc)
   }
 
@@ -862,7 +862,7 @@ object Symbol {
   /**
     * Effect symbol.
     */
-  final class EffectSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Ordered[EffectSym] with Symbol with QualifiedSym {
+  final class EffSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Ordered[EffSym] with Symbol with QualifiedSym {
 
     /**
       * Returns the source of `this`.
@@ -873,7 +873,7 @@ object Symbol {
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: EffectSym => this.namespace == that.namespace && this.name == that.name
+      case that: EffSym => this.namespace == that.namespace && this.name == that.name
       case _ => false
     }
 
@@ -885,7 +885,7 @@ object Symbol {
     /**
       * Compares `this` and `that` effect sym.
       */
-    override def compare(that: EffectSym): Int = {
+    override def compare(that: EffSym): Int = {
       val s1 = this.namespace.mkString(".") + "." + this.name
       val s2 = that.namespace.mkString(".") + "." + that.name
       s1.compare(s2)
@@ -900,7 +900,7 @@ object Symbol {
   /**
     * Effect Operation Symbol.
     */
-  final class OpSym(val eff: Symbol.EffectSym, val name: String, val loc: SourceLocation) extends Symbol with QualifiedSym {
+  final class OpSym(val eff: Symbol.EffSym, val name: String, val loc: SourceLocation) extends Symbol with QualifiedSym {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */

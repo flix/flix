@@ -3432,7 +3432,7 @@ object Resolver {
     case sym: Symbol.SigSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.TypeAliasSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.AssocTypeSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
-    case sym: Symbol.EffectSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
+    case sym: Symbol.EffSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.OpSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.ModuleSym => root.symbols(Name.mkUnlocatedNName(sym.ns.init))(sym.ns.last)
     case sym: Symbol.RegionSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
@@ -3659,7 +3659,7 @@ object Resolver {
                                  structs: Map[Symbol.StructSym, ResolvedAst.Declaration.Struct],
                                  structFields: Map[Symbol.StructFieldSym, ResolvedAst.Declaration.StructField],
                                  restrictableEnums: Map[Symbol.RestrictableEnumSym, ResolvedAst.Declaration.RestrictableEnum],
-                                 effects: Map[Symbol.EffectSym, ResolvedAst.Declaration.Effect],
+                                 effects: Map[Symbol.EffSym, ResolvedAst.Declaration.Effect],
                                  typeAliases: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]) {
     def addTrait(trt: ResolvedAst.Declaration.Trait): SymbolTable = copy(traits = traits + (trt.sym -> trt))
 
