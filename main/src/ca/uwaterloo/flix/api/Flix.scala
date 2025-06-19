@@ -570,7 +570,7 @@ class Flix {
     val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
     errors ++= parserErrors
 
-    val (weederValidation, weederErrors) = Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
+    val (weederValidation, weederErrors) = Weeder.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
     errors ++= weederErrors
 
     val result = weederValidation match {

@@ -45,7 +45,7 @@ import scala.jdk.CollectionConverters.*
   *   1. tryPick* : Works like pick* but only runs the visitor if the child of kind is found. Returns an option containing the result.
   *   1. pickAll* : These will pick all subtrees of a specified kind and run a visitor on it.
   */
-object Weeder2 {
+object Weeder {
 
   import WeededAst.*
 
