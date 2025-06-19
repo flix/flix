@@ -501,12 +501,13 @@ object SemanticTokensProvider {
           acc ++ visitRestrictableChoosePat(pat) ++ visitExp(exp)
       }
 
-    case Expr.ExtensibleMatch(_, exp1, bnd2, exp2, bnd3, exp3, _, _, _) =>
-      val o1 = getSemanticTokenType(bnd2.sym, exp1.tpe)
-      val o2 = getSemanticTokenType(bnd3.sym, exp1.tpe)
-      val t1 = SemanticToken(o1, Nil, bnd2.sym.loc)
-      val t2 = SemanticToken(o2, Nil, bnd3.sym.loc)
-      Iterator(t1) ++ Iterator(t2) ++ visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+    case Expr.ExtensibleMatch(exp, rules, _, _, _) =>
+      val ts = visitExp(exp)
+      rules.foldLeft(ts) {
+        case (acc, ExtMatchRule(label, pats, exp1, _)) =>
+          val t = SemanticToken(SemanticTokenType.EnumMember, List.empty, label.loc)
+          acc ++ Iterator(t) ++ pats.flatMap(visitExtPat) ++ visitExp(exp1)
+      }
 
     case Expr.Tag(CaseSymUse(_, loc), exps, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
@@ -755,6 +756,21 @@ object SemanticTokensProvider {
       patsVal ++ patVal ++ tVal
 
     case Pattern.Error(_, _) => Iterator.empty
+  }
+
+  /**
+    * Returns all semantic tokens in the given extensible pattern `pat0`.
+    */
+  private def visitExtPat(pat0: ExtPattern): Iterator[SemanticToken] = pat0 match {
+    case ExtPattern.Wild(_, loc) =>
+      val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
+      Iterator(t)
+    case ExtPattern.Var(bnd, loc) =>
+      val o = getSemanticTokenType(bnd.sym, bnd.tpe)
+      val t = SemanticToken(o, Nil, loc)
+      Iterator(t)
+
+    case ExtPattern.Error(_, _) => Iterator.empty
   }
 
   /**
