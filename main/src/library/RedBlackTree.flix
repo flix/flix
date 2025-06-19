@@ -273,14 +273,14 @@ mod RedBlackTree {
     pub def findLeft(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef = match t {
         case Leaf                => None
         case DoubleBlackLeaf     => None
-        case Node(_, a, k, v, b) =>
-            if (f(k, v))
-                Some((k, v))
-            else
-                match findLeft(f, a) {
-                    case Some((ka, va)) => Some((ka, va))
-                    case None           => findLeft(f, b)
-                }
+        case Node(_, a, k, v, b) => match findLeft(f, a) {
+            case Some((ka, va)) => Some((ka, va))
+            case None           =>
+                if (f(k, v))
+                    Some((k, v))
+                else
+                    findLeft(f, b)
+        }
     }
 
     ///
@@ -289,14 +289,14 @@ mod RedBlackTree {
     pub def findRight(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef = match t {
         case Leaf                => None
         case DoubleBlackLeaf     => None
-        case Node(_, a, k, v, b) =>
-            if (f(k, v))
-                Some((k, v))
-            else
-                match findRight(f, b) {
-                    case Some((kb, vb)) => Some((kb, vb))
-                    case None           => findRight(f, a)
-                }
+        case Node(_, a, k, v, b) => match findRight(f, b) {
+            case Some((kb, vb)) => Some((kb, vb))
+            case None           =>
+                if (f(k, v))
+                    Some((k, v))
+                else
+                    findRight(f, a)
+        }
     }
 
     ///
