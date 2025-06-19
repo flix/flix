@@ -24,6 +24,9 @@
 /// The three `PredType`s originate from semi-naive evaluation and are `Full`, `Delta` and `New`
 /// (delta').
 /// 
+/// Instead of adding an enum type (Full/Delta/New) to the predicate, we embed the type into
+/// the identifier, which we can do since we have an upper bound on the integers used.
+/// 
 /// For a `Datalog` AST consisting of predicates `PredSym("Road", 0)` and `PredSym("Path", 1)`
 /// the RAM has 6 predicates, 3 for each predicate in the `Datalog` AST. Every predicate
 /// has a `Full` version, a `Delta` version and a `New` version.
