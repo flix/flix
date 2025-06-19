@@ -1578,7 +1578,7 @@ object Weeder2 {
               case (rule1, rule2) =>
                 WeederError.DuplicateExtPattern(rule1.label, rule1.loc, rule2.loc)
             }
-          sctx.errors.addAll(duplicateErrors)
+          duplicateErrors.foreach(sctx.errors.add)
           Validation.Success(Expr.ExtMatch(expr, rules, tree.loc))
       }
     }
