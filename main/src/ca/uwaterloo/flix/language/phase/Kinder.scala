@@ -461,25 +461,9 @@ object Kinder {
       KindedAst.Expr.RestrictableChoose(star, exp, rules, tvar, loc)
 
     case ResolvedAst.Expr.ExtMatch(exp, rules, loc) =>
-      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       val e = visitExp(exp, kenv0, taenv, root)
       val rs = rules.map(visitExtMatchRule(_, kenv0, taenv, root))
-      // Unsafely desugar
-      val List(r1, r2) = rs
-      val label = r1.label
-      val exp1 = r1.exp
-      val sym1 = r1.pats.head match {
-        case ExtPattern.Wild(_, loc1) => Symbol.freshVarSym("wildExtPattern", BoundBy.Pattern, loc1)
-        case ExtPattern.Var(sym, _, _) => sym
-        case ExtPattern.Error(_, _) => ??? // crash
-      }
-      val exp2 = r2.exp
-      val sym2 = r2.pats.head match {
-        case ExtPattern.Wild(_, loc1) => Symbol.freshVarSym("wildExtPattern", BoundBy.Pattern, loc1)
-        case ExtPattern.Var(sym, _, _) => sym
-        case ExtPattern.Error(_, _) => ??? // crash
-      }
-      KindedAst.Expr.ExtMatch(label, e, sym1, exp1, sym2, exp2, tvar, loc)
+      KindedAst.Expr.ExtMatch(e, rs, loc)
 
     case ResolvedAst.Expr.Tag(symUse, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, root))
@@ -812,10 +796,14 @@ object Kinder {
     * Performs kinding on the given ext match rule under the given kind environment.
     */
   private def visitExtMatchRule(rule0: ResolvedAst.ExtMatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.ExtMatchRule = rule0 match {
-    case ResolvedAst.ExtMatchRule(label, pats0, exp0, loc) =>
+    case ResolvedAst.ExtMatchRule.Rule(label, pats0, exp0, loc) =>
       val pats = pats0.map(visitExtPattern)
       val exp = visitExp(exp0, kenv, taenv, root)
-      KindedAst.ExtMatchRule(label, pats, exp, loc)
+      KindedAst.ExtMatchRule.Rule(label, pats, exp, loc)
+
+    case ResolvedAst.ExtMatchRule.Error(loc) =>
+      KindedAst.ExtMatchRule.Error(loc)
+
   }
 
   /**

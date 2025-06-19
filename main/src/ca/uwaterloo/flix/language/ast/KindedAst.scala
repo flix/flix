@@ -119,7 +119,7 @@ object KindedAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class ExtMatch(label: Name.Label, exp1: Expr, sym2: Symbol.VarSym, exp2: Expr, sym3: Symbol.VarSym, exp3: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class ExtMatch(exp: Expr, rules: List[ExtMatchRule], loc: SourceLocation) extends Expr
 
     case class Tag(symUse: CaseSymUse, exps: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -337,7 +337,13 @@ object KindedAst {
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr, loc: SourceLocation)
 
-  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
+  sealed trait ExtMatchRule
+
+  object ExtMatchRule {
+    case class Rule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation) extends ExtMatchRule
+
+    case class Error(loc: SourceLocation) extends ExtMatchRule
+  }
 
   case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr, loc: SourceLocation)
 

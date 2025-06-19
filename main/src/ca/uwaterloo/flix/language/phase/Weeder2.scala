@@ -1568,13 +1568,18 @@ object Weeder2 {
           // Parser has reported an error here so do not add to sctx.
           Validation.Failure(error)
 
-        case (expr, rules) if rules.length == 2 => // Check for exactly 2 to prevent crash when desugaring in Kinder
+        case (expr, rules) => // TODO: Maybe check that last rule is wild and also update parsing?
+          // Check for duplicate patterns
+          val properRules = rules.collect {
+            case rule@ExtMatchRule.Rule(_, _, _, _) => rule
+          }
+          val duplicateErrors = getDuplicates(properRules, (rule: ExtMatchRule.Rule) => rule.label)
+            .map {
+              case (rule1, rule2) =>
+                WeederError.DuplicateExtPattern(rule1.label, rule1.loc, rule2.loc)
+            }
+          duplicateErrors.foreach(sctx.errors.add)
           Validation.Success(Expr.ExtMatch(expr, rules, tree.loc))
-
-        case (expr, _) =>
-          val error = Malformed(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
-          sctx.errors.add(error)
-          Validation.Failure(error)
       }
     }
 
@@ -1582,18 +1587,12 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.ExtMatchRuleFragment)
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
       flatMapN(Patterns.pickExtPattern(tree), traverse(exprs)(visitExpr)) {
-        case ((label, List(ExtPattern.Var(ident, loc))), expr :: Nil) =>
-          // case Tag(ident) => expr
-          Validation.Success(ExtMatchRule(label, List(ExtPattern.Var(ident, loc)), expr, tree.loc))
+        case ((label, pats), expr :: Nil) =>
+          Validation.Success(ExtMatchRule.Rule(label, pats, expr, tree.loc))
 
-        case ((label, List(ExtPattern.Wild(loc))), expr :: Nil) =>
-          // case Tag(_) => expr
-          Validation.Success(ExtMatchRule(label, List(ExtPattern.Wild(loc)), expr, tree.loc))
-
-        case ((_, _), _) =>
-          val error = Malformed(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
-          sctx.errors.add(error)
-          Validation.Failure(error) // Hard failure to prevent crash when desugaring in Kinder
+        case (_, _) =>
+          // Fall back on ExtMatchRule.Error. Parser has reported an error here.
+          Validation.Success(ExtMatchRule.Error(tree.loc)) // FIXME: Include the expr here since we must do type inference on it
       }
     }
 
