@@ -771,7 +771,7 @@ object Visitor {
 
     pat match {
     	case Wild(_, _) => ()
-    	case Var(varSym, _, _) => visitBinder(varSym)
+      case Var(bnd, _, _) => visitBinder(bnd)
     	case Cst(_, _, _) => ()
     	case Tag(sym, pats, _, _) =>
     	  visitCaseSymUse(sym)
