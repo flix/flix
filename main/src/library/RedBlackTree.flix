@@ -270,18 +270,15 @@ mod RedBlackTree {
     ///
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from left to right.
     ///
-    pub def findLeft(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
-        def loop(tt, sk) = match tt {
-            case Node(_, a, k, v, b) => loop(a, kl -> match kl {
-                case None => if (f(k, v)) Some((k, v)) else loop(b, kr -> match kr {
-                    case None => sk(None)
-                    case _    => kr
-                })
-                case _ => kl
-            })
-            case _ => sk(None)
-        };
-        loop(t, x -> checked_ecast(x))
+    pub def findLeft(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef = match t {
+        case Leaf                           => None
+        case DoubleBlackLeaf                => None
+        case Node(_, a, k, v, b) if f(k, v) => Some((k, v))
+        case Node(_, a, k, v, b)            => match findLeft(f, a) {
+            case Some((k, v)) => Some((k, v))
+            case None         => findLeft(f, b)
+        }
+    }
 
     ///
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from right to left.
