@@ -47,7 +47,7 @@ import scala.collection.mutable.ArrayBuffer
   * rust-analyzer. The tutorial is also a great resource for understanding this parser (and a great
   * read to boot!) [[https://matklad.github.io/2023/05/21/resilient-ll-parsing-tutorial.html]]
   */
-object Parser2 {
+object Parser {
 
   /** An event emitted by the parser while traversing a list of [[Token]]s. */
   private sealed trait Event
