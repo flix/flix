@@ -589,7 +589,7 @@ class TestCompletionProvider extends AnyFunSuite {
   /**
     * Returns all effects symbols in the given AST `root` for the program.
     */
-  private def effectSymsOf(root: Root): List[Symbol.EffectSym] =
+  private def effectSymsOf(root: Root): List[Symbol.EffSym] =
     root.effects.keys.filter(_.src.name.startsWith(Uri)).toList
 
   /**

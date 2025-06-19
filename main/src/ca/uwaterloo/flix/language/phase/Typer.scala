@@ -78,7 +78,7 @@ object Typer {
         case sym: Symbol.RestrictableEnumSym => sym.namespace
         case sym: Symbol.TraitSym => sym.namespace
         case sym: Symbol.TypeAliasSym => sym.namespace
-        case sym: Symbol.EffectSym => sym.namespace
+        case sym: Symbol.EffSym => sym.namespace
       }.flatMap {
         fullNs =>
           fullNs.inits.collect {
@@ -95,7 +95,7 @@ object Typer {
         case sym: Symbol.RestrictableEnumSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
         case sym: Symbol.TraitSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
         case sym: Symbol.TypeAliasSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-        case sym: Symbol.EffectSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
+        case sym: Symbol.EffSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
 
         case sym: Symbol.SigSym => new Symbol.ModuleSym(sym.trt.namespace :+ sym.trt.name, ModuleKind.Standalone)
         case sym: Symbol.OpSym => new Symbol.ModuleSym(sym.eff.namespace :+ sym.eff.name, ModuleKind.Standalone)
@@ -353,7 +353,7 @@ object Typer {
   /**
     * Reconstructs types in the given effects.
     */
-  private def visitEffs(root: KindedAst.Root): Map[Symbol.EffectSym, TypedAst.Effect] = {
+  private def visitEffs(root: KindedAst.Root): Map[Symbol.EffSym, TypedAst.Effect] = {
     MapOps.mapValues(root.effects)(visitEff)
   }
 

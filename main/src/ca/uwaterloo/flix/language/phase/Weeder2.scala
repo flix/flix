@@ -3263,8 +3263,9 @@ object Weeder2 {
 
   private def tryParsePredicateArity(token: Token)(implicit sctx: SharedContext): Validation[Int, CompilationMessage] = {
     token.text.toIntOption match {
-      case Some(i) => Success(i)
-      case None => Failure(WeederError.InvalidPredicateArity(token.mkSourceLocation(isReal = true)))
+      case Some(i) if i >= 1 => Success(i)
+      case Some(i) => Failure(WeederError.IllegalPredicateArity(token.mkSourceLocation(isReal = true)))
+      case None => Failure(WeederError.IllegalPredicateArity(token.mkSourceLocation(isReal = true)))
     }
   }
 

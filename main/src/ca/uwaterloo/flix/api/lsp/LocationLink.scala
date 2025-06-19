@@ -168,7 +168,7 @@ object LocationLink {
   /**
     * Returns a reference to the effect symbol `sym`.
     */
-  def fromEffectSym(sym: Symbol.EffectSym, originLoc: SourceLocation): LocationLink = {
+  def fromEffectSym(sym: Symbol.EffSym, originLoc: SourceLocation): LocationLink = {
     val originSelectionRange = Range.from(originLoc)
     val targetUri = sym.loc.source.name
     val targetRange = Range.from(sym.loc)

@@ -33,7 +33,7 @@ object ResolvedAst {
                   enums: Map[Symbol.EnumSym, Declaration.Enum],
                   structs: Map[Symbol.StructSym, Declaration.Struct],
                   restrictableEnums: Map[Symbol.RestrictableEnumSym, Declaration.RestrictableEnum],
-                  effects: Map[Symbol.EffectSym, Declaration.Effect],
+                  effects: Map[Symbol.EffSym, Declaration.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, Declaration.TypeAlias],
                   uses: ListMap[Symbol.ModuleSym, UseOrImport],
                   taOrder: List[Symbol.TypeAliasSym],
@@ -76,7 +76,7 @@ object ResolvedAst {
 
     case class AssocTypeDef(doc: Doc, mod: Modifiers, symUse: AssocTypeSymUse, arg: UnkindedType, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
-    case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Declaration.Op], loc: SourceLocation) extends Declaration
+    case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffSym, ops: List[Declaration.Op], loc: SourceLocation) extends Declaration
 
     case class Op(sym: Symbol.OpSym, spec: Spec, loc: SourceLocation) extends Declaration
   }
