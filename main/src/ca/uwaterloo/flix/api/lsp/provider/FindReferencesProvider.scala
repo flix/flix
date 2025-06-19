@@ -292,10 +292,10 @@ object FindReferencesProvider {
     occurs + sym.loc
   }
 
-  private def getEffectSymOccurs(sym: Symbol.EffectSym)(implicit root: Root): Set[SourceLocation] = {
+  private def getEffectSymOccurs(sym: Symbol.EffSym)(implicit root: Root): Set[SourceLocation] = {
     var occurs: Set[SourceLocation] = Set.empty
 
-    def consider(s: Symbol.EffectSym, loc: SourceLocation): Unit = {
+    def consider(s: Symbol.EffSym, loc: SourceLocation): Unit = {
       if (s == sym) {
         occurs += loc
       }

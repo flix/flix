@@ -366,17 +366,17 @@ object HighlightProvider {
     Occurs(writes, reads)
   }
 
-  private def getEffectSymOccurs(sym: Symbol.EffectSym)(implicit root: Root, acceptor: Acceptor): Occurs = {
+  private def getEffectSymOccurs(sym: Symbol.EffSym)(implicit root: Root, acceptor: Acceptor): Occurs = {
     var writes: Set[SourceLocation] = Set.empty
     var reads: Set[SourceLocation] = Set.empty
 
-    def considerWrite(s: Symbol.EffectSym, loc: SourceLocation): Unit = {
+    def considerWrite(s: Symbol.EffSym, loc: SourceLocation): Unit = {
       if (s == sym) {
         writes += loc
       }
     }
 
-    def considerRead(s: Symbol.EffectSym, loc: SourceLocation): Unit = {
+    def considerRead(s: Symbol.EffSym, loc: SourceLocation): Unit = {
       if (s == sym) {
         reads += loc
       }
