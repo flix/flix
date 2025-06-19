@@ -796,10 +796,14 @@ object Kinder {
     * Performs kinding on the given ext match rule under the given kind environment.
     */
   private def visitExtMatchRule(rule0: ResolvedAst.ExtMatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.ExtMatchRule = rule0 match {
-    case ResolvedAst.ExtMatchRule(label, pats0, exp0, loc) =>
+    case ResolvedAst.ExtMatchRule.Rule(label, pats0, exp0, loc) =>
       val pats = pats0.map(visitExtPattern)
       val exp = visitExp(exp0, kenv, taenv, root)
-      KindedAst.ExtMatchRule(label, pats, exp, loc)
+      KindedAst.ExtMatchRule.Rule(label, pats, exp, loc)
+
+    case ResolvedAst.ExtMatchRule.Error(loc) =>
+      KindedAst.ExtMatchRule.Error(loc)
+
   }
 
   /**

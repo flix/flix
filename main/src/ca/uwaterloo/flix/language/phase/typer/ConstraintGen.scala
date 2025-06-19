@@ -441,7 +441,7 @@ object ConstraintGen {
 
       case Expr.ExtMatch(exp, rules, loc) =>
         val (tpe, eff) = visitExp(exp)
-        val (caseTpes, tpes, effs) = rules.map(visitExtMatchRule).unzip3
+        val (caseTpes, tpes, effs) = rules.map(visitExtMatchRule).filter(_.isDefined).map(_.get).unzip3
         val expectedRowType = caseTpes.foldRight(Type.mkSchemaRowEmpty(loc)) {
           case ((name, patTpes), acc) => Type.mkSchemaRowExtend(name, Type.mkRelation(patTpes, loc), acc, loc)
         }
@@ -1084,12 +1084,14 @@ object ConstraintGen {
       (patTpe, tpe, eff)
   }
 
-  private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): ((Name.Pred, List[Type]), Type, Type) = rule match {
-    case KindedAst.ExtMatchRule(label, pats, exp, _) =>
+  private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Option[((Name.Pred, List[Type]), Type, Type)] = rule match {
+    case KindedAst.ExtMatchRule.Rule(label, pats, exp, _) =>
       val name = Name.Pred(label.name, label.loc)
       val patTypes = pats.map(visitExtPattern)
       val (tpe, eff) = visitExp(exp)
-      ((name, patTypes), tpe, eff)
+      Some(((name, patTypes), tpe, eff))
+
+    case KindedAst.ExtMatchRule.Error(_) => None
   }
 
   /**
