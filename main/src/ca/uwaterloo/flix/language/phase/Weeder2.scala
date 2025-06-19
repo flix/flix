@@ -1588,11 +1588,11 @@ object Weeder2 {
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
       flatMapN(Patterns.pickExtPattern(tree), traverse(exprs)(visitExpr)) {
         case ((label, pats), expr :: Nil) =>
-          Validation.Success(ExtMatchRule.Rule(label, pats.map(p => ExtPattern.Error(p.loc)), expr, tree.loc))
+          Validation.Success(ExtMatchRule.Rule(label, pats, expr, tree.loc))
 
         case (_, _) =>
           // Fall back on ExtMatchRule.Error. Parser has reported an error here.
-          Validation.Success(ExtMatchRule.Error(tree.loc))
+          Validation.Success(ExtMatchRule.Error(tree.loc)) // FIXME: Include the expr here since we must do type inference on it
       }
     }
 
