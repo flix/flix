@@ -1568,7 +1568,7 @@ object Weeder2 {
           // Parser has reported an error here so do not add to sctx.
           Validation.Failure(error)
 
-        case (expr, rules) => // TODO: Maybe check that last rule is wild and allow parsing?
+        case (expr, rules) => // TODO: Maybe check that last rule is wild and also update parsing?
           // Check for duplicate patterns
           val properRules = rules.collect {
             case rule@ExtMatchRule.Rule(_, _, _, _) => rule
