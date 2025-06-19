@@ -778,9 +778,9 @@ object Visitor {
         pats.foreach(visitPattern)
     	case Tuple(pats, _, _) =>
     	  pats.foreach(visitPattern)
-    	case Record(pats, pat, _, _) =>
+      case Record(pats, pat1, _, _) =>
     	  pats.foreach(visitRecordLabelPattern)
-    	  visitPattern(pat)
+        visitPattern(pat1)
     	case Pattern.Error(_, _) =>
     }
   }
