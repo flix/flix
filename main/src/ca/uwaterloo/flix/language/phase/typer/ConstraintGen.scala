@@ -442,8 +442,7 @@ object ConstraintGen {
       case Expr.ExtMatch(exp, rules, loc) =>
         val (tpe, eff) = visitExp(exp)
         val (caseTpes, tpes, effs) = rules.map(visitExtMatchRule).unzip3
-        val freshRowVar = freshVar(Kind.SchemaRow, loc)
-        val expectedRowType = caseTpes.foldRight(freshRowVar: Type) {
+        val expectedRowType = caseTpes.foldRight(Type.mkSchemaRowEmpty(loc)) {
           case ((name, patTpes), acc) => Type.mkSchemaRowExtend(name, Type.mkRelation(patTpes, loc), acc, loc)
         }
         val expectedSchemaType = Type.mkExtensible(expectedRowType, loc)
