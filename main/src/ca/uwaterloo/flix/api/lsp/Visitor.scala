@@ -771,16 +771,16 @@ object Visitor {
 
     pat match {
     	case Wild(_, _) => ()
-    	case Var(varSym, _, _) => visitBinder(varSym)
+      case Var(bnd, _, _) => visitBinder(bnd)
     	case Cst(_, _, _) => ()
     	case Tag(sym, pats, _, _) =>
     	  visitCaseSymUse(sym)
         pats.foreach(visitPattern)
     	case Tuple(pats, _, _) =>
     	  pats.foreach(visitPattern)
-    	case Record(pats, pat, _, _) =>
+      case Record(pats, pat1, _, _) =>
     	  pats.foreach(visitRecordLabelPattern)
-    	  visitPattern(pat)
+        visitPattern(pat1)
     	case Pattern.Error(_, _) =>
     }
   }
