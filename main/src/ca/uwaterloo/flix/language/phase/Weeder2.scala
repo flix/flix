@@ -1569,6 +1569,16 @@ object Weeder2 {
           Validation.Failure(error)
 
         case (expr, rules) => // TODO: Maybe check that last rule is wild and allow parsing?
+          // Check for duplicate patterns
+          val properRules = rules.collect {
+            case rule@ExtMatchRule.Rule(_, _, _, _) => rule
+          }
+          val duplicateErrors = getDuplicates(properRules, (rule: ExtMatchRule.Rule) => rule.label)
+            .map {
+              case (rule1, rule2) =>
+                WeederError.DuplicateExtPattern(rule1.label, rule1.loc, rule2.loc)
+            }
+          sctx.errors.addAll(duplicateErrors)
           Validation.Success(Expr.ExtMatch(expr, rules, tree.loc))
       }
     }
@@ -1577,7 +1587,7 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.ExtMatchRuleFragment)
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
       flatMapN(Patterns.pickExtPattern(tree), traverse(exprs)(visitExpr)) {
-        case ((label, pats), expr :: Nil) => // TODO: Check for duplicates and emit error and replace with error
+        case ((label, pats), expr :: Nil) =>
           Validation.Success(ExtMatchRule.Rule(label, pats.map(p => ExtPattern.Error(p.loc)), expr, tree.loc))
 
         case (_, _) =>
