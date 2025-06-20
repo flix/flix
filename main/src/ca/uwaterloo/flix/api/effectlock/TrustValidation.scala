@@ -119,10 +119,16 @@ object TrustValidation {
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp) ::: rules.flatMap(r => visitExp(r.exp))
 
+    case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
+      visitExp(exp1) ::: visitExp(exp2) ::: visitExp(exp3)
+
     case Expr.Tag(_, exps, _, _, _) =>
       exps.flatMap(visitExp)
 
     case Expr.RestrictableTag(_, exps, _, _, _) =>
+      exps.flatMap(visitExp)
+
+    case Expr.ExtensibleTag(_, exps, _, _, _) =>
       exps.flatMap(visitExp)
 
     case Expr.Tuple(exps, _, _, _) =>
