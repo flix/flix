@@ -356,8 +356,8 @@ object TrustValidation {
     case SuspiciousExpr.UncheckedCastUse(expr) =>
       Some(BootstrapError.TrustError(expr.loc))
 
-    case SuspiciousExpr.UnsafeUse(_) =>
-      None
+    case SuspiciousExpr.UnsafeUse(expr) =>
+      Some(BootstrapError.TrustError(expr.loc))
 
     case SuspiciousExpr.TryCatchUse(expr) =>
       val safe = expr.rules.forall(r => trustedBase.contains(r.clazz)) // Maybe sequence options?
