@@ -23,7 +23,7 @@ class TestPermissions extends AnyFunSuite {
   }
 
   test("toString-ofString-all") {
-    val perm = Permissions.All
+    val perm = Permissions.Unrestricted
     val res = Permissions.fromString(perm.toString) match {
       case Some(r) => r
       case None => fail()

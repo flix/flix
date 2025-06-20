@@ -30,7 +30,7 @@ object Permissions {
     override def toString: String = "restricted"
   }
 
-  case object All extends Permissions {
+  case object Unrestricted extends Permissions {
     override def toString: String = "all"
   }
 
@@ -42,9 +42,9 @@ object Permissions {
     case "restricted" => Some(TrustJavaClass)
     case "r" => Some(TrustJavaClass)
     case "2" => Some(TrustJavaClass)
-    case "all" => Some(All)
-    case "a" => Some(All)
-    case "3" => Some(All)
+    case "all" => Some(Unrestricted)
+    case "a" => Some(Unrestricted)
+    case "3" => Some(Unrestricted)
     case _ => None
   }
 }

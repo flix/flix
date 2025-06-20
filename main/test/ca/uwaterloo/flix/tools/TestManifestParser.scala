@@ -387,7 +387,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = "all" }
         |""".stripMargin
     }
-    assertResult(expected = Permissions.All)(actual =
+    assertResult(expected = Permissions.Unrestricted)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) =>
           m.dependencies

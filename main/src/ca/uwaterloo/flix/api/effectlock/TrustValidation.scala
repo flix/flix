@@ -334,7 +334,7 @@ object TrustValidation {
     // TODO: Use lib name for error reporting
     case Permissions.PlainFlix => suspiciousLibExprs.map(e => BootstrapError.TrustError(e.expr.loc)) // if it is empty then no alarms were raised
     case Permissions.TrustJavaClass => suspiciousLibExprs.flatMap(validationSuspiciousExpr(TrustedJvmBase.get)) // TODO: refactor trustedjvmbase.get
-    case Permissions.All => List.empty
+    case Permissions.Unrestricted => List.empty
   }
 
   /**
