@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ResolvedAst.EqualityConstraint
 import ca.uwaterloo.flix.language.ast.Symbol.KindedTypeVarSym
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.ast.shared.Scope
@@ -27,9 +26,9 @@ import ca.uwaterloo.flix.util.{Options, Result}
 import scala.collection.immutable.SortedSet
 
 object EffectLock {
-  def println(s: Object): Unit = {
+  private def debug(s: Object): Unit = {
     if (false) {
-      Predef.println(s)
+      println(s)
     }
   }
 
@@ -40,10 +39,10 @@ object EffectLock {
     implicit val flix: Flix = new Flix().setOptions(Options.Default)
     val sc1rename = naiveAlphaRename(sc1)
     val sc2rename = naiveAlphaRename(sc2)
-    println(s"g: $sc1")
-    println(s"f: $sc2")
-    println(s"renamed sc1: $sc1rename")
-    println(s"renamed sc2: $sc2rename")
+    debug(s"g: $sc1")
+    debug(s"f: $sc2")
+    debug(s"renamed sc1: $sc1rename")
+    debug(s"renamed sc2: $sc2rename")
     isGeneralizable(sc1, sc2) || isSubset(sc1rename, sc2rename)
   }
 
@@ -60,9 +59,9 @@ object EffectLock {
     val unification = ConstraintSolver2.fullyUnify(sc1.base, sc2.base, Scope.Top, renv)(EqualityEnv.empty, flix)
     unification match {
       case Some(subst) =>
-        println(subst)
-        println(s"subst(sc1.base): ${subst(sc1.base)}")
-        println(s"sc2.base: ${sc2.base}")
+        debug(subst)
+        debug(s"subst(sc1.base): ${subst(sc1.base)}")
+        debug(s"sc2.base: ${sc2.base}")
         subst(sc1.base) == sc2.base
       case None => false
     }
@@ -85,9 +84,9 @@ object EffectLock {
       case (Some(TypeConstructor.Arrow(_)), Some(TypeConstructor.Arrow(_))) =>
 
         val isMatchingArgs = tpe1.arrowArgTypes == tpe2.arrowArgTypes
-        println(s"tpe1.arrowArgTypes: ${tpe1.arrowArgTypes}")
-        println(s"tpe2.arrowArgTypes: ${tpe2.arrowArgTypes}")
-        println(s"isMatchingArgs: $isMatchingArgs")
+        debug(s"tpe1.arrowArgTypes: ${tpe1.arrowArgTypes}")
+        debug(s"tpe2.arrowArgTypes: ${tpe2.arrowArgTypes}")
+        debug(s"isMatchingArgs: $isMatchingArgs")
         val tpe1Res = tpe1.arrowResultType
         val tpe2Res = tpe2.arrowResultType
         val isMatchingResultTypes = (tpe1.arrowResultType.typeConstructor, tpe2.arrowResultType.typeConstructor) match {
@@ -97,13 +96,13 @@ object EffectLock {
             isSubset(sc11, sc21)
 
           case (t1, t2) =>
-            println(s"t1: $t1")
-            println(s"t2: $t2")
+            debug(s"t1: $t1")
+            debug(s"t2: $t2")
             t1 == t2
         }
-        println(s"tpe1.arrowResultType: ${tpe1.arrowResultType}")
-        println(s"tpe2.arrowResultType: ${tpe2.arrowResultType}")
-        println(s"isMatchingResultTypes: $isMatchingResultTypes")
+        debug(s"tpe1.arrowResultType: ${tpe1.arrowResultType}")
+        debug(s"tpe2.arrowResultType: ${tpe2.arrowResultType}")
+        debug(s"isMatchingResultTypes: $isMatchingResultTypes")
 
 
         // 2. Boolean unification of effects phi_upgrd + phi_orig = phi_orig
@@ -115,11 +114,11 @@ object EffectLock {
         val constraint = TypeConstraint.Equality(upgradeEffs, originalEffects, provenance)
         EffUnification3.unifyAll(List(constraint), Scope.Top, renv) match {
           case Result.Ok(_) =>
-            println(s"sc1Effs: $sc1Effs")
-            println(s"sc2Effs: $originalEffects")
+            debug(s"sc1Effs: $sc1Effs")
+            debug(s"sc2Effs: $originalEffects")
             isMatchingArgs && isMatchingResultTypes
           case Result.Err(unsolvedConstraints) =>
-            println(unsolvedConstraints)
+            debug(unsolvedConstraints)
             false
         }
 
