@@ -8,7 +8,7 @@ import ca.uwaterloo.flix.language.ast.Symbol
 import org.scalatest.funsuite.AnyFunSuite
 import ca.uwaterloo.flix.tools.pkg.Manifest
 import ca.uwaterloo.flix.tools.pkg.Permissions
-import ca.uwaterloo.flix.tools.pkg.Permissions.{All, PlainFlix, Restricted}
+import ca.uwaterloo.flix.tools.pkg.Permissions.{All, PlainFlix, TrustJavaClass}
 
 import java.io.File
 import java.net.URI
@@ -361,7 +361,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = "restricted" }
         |""".stripMargin
     }
-    assertResult(expected = Permissions.Restricted)(actual =
+    assertResult(expected = Permissions.TrustJavaClass)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) =>
           m.dependencies

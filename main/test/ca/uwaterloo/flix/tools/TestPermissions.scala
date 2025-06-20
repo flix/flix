@@ -14,7 +14,7 @@ class TestPermissions extends AnyFunSuite {
   }
 
   test("toString-ofString-restricted") {
-    val perm = Permissions.Restricted
+    val perm = Permissions.TrustJavaClass
     val res = Permissions.fromString(perm.toString) match {
       case Some(r) => r
       case None => fail()

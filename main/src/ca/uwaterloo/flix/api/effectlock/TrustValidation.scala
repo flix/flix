@@ -333,12 +333,12 @@ object TrustValidation {
   private def validateTrustLevels(dependency: Dependency.FlixDependency, suspiciousLibExprs: List[SuspiciousExpr]): List[BootstrapError.TrustError] = dependency.permissions match {
     // TODO: Use lib name for error reporting
     case Permissions.PlainFlix => suspiciousLibExprs.map(e => BootstrapError.TrustError(e.expr.loc)) // if it is empty then no alarms were raised
-    case Permissions.Restricted => suspiciousLibExprs.flatMap(validationSuspiciousExpr(TrustedJvmBase.get)) // TODO: refactor trustedjvmbase.get
+    case Permissions.TrustJavaClass => suspiciousLibExprs.flatMap(validationSuspiciousExpr(TrustedJvmBase.get)) // TODO: refactor trustedjvmbase.get
     case Permissions.All => List.empty
   }
 
   /**
-    * Validates suspicious expressions according to the [[Permissions.Restricted]] level.
+    * Validates suspicious expressions according to the [[Permissions.TrustJavaClass]] level.
     */
   private def validationSuspiciousExpr(trustedBase: TrustedJvmBase)(expr0: SuspiciousExpr): Option[BootstrapError.TrustError] = expr0 match {
     // TODO: Move to TrustValidation
