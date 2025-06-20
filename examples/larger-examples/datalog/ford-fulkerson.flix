@@ -62,7 +62,7 @@ mod FordFulkerson {
     /// or if it has non-zero flow.
     ///
     def augmentingPath(src: t, dst: t, g: m[(t, Int32, Int32, t)]): Option[Path[t]] \ Foldable.Aef[m] with Foldable[m], Order[t] =
-        let edges = inject g into Edge;
+        let edges = inject g into Edge/4;
         let rules = #{
             Reach(x, y; init(y, x)) :- Edge(x, u, f, y),                 if ((u - f) > 0). // Forward edge
             Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(y, u, f, z), if ((u - f) > 0). // Forward edge
@@ -78,7 +78,7 @@ mod FordFulkerson {
     def minCapacity(p: Path[t], g: m[(t, Int32, Int32, t)]): Int32 \ Foldable.Aef[m] with Foldable[m], Order[t] =
         let onPath = (s, d) -> isForwardEdge(s, d, p) or isBackEdge(s, d, p);
         let optMin = g |> Foldable.filter(match (s, _, _, d) -> onPath(s, d))
-            |> List.map(match (_, u, f, _) -> u - f)
+            |> List.map(match (s, u, f, d) -> if (isForwardEdge(s, d, p)) u - f else f)
             |> List.minimum;
         match optMin {
             case Some(u) => u
@@ -123,20 +123,20 @@ mod FordFulkerson {
         case Bot // Infinitely long path
     }
 
-    instance Eq[Path[a]] {
+    instance Eq[Path[a]] with Order[a] {
         pub def eq(x: Path[a], y: Path[a]): Bool = match (x, y) {
             case (Bot, Bot)           => true
-            case (Path(xs), Path(ys)) => List.length(xs) == List.length(ys)
+            case (Path(xs), Path(ys)) => xs == ys
             case _                    => false
         }
     }
 
-    instance Order[Path[a]] {
+    instance Order[Path[a]] with Order[a] {
         pub def compare(x: Path[a], y: Path[a]): Comparison = match (x, y) {
-            case (Bot, Bot)           => Comparison.EqualTo
-            case (Bot, _)             => Comparison.LessThan
-            case (_, Bot)             => Comparison.GreaterThan
-            case (Path(xs), Path(ys)) => List.length(xs) <=> List.length(ys)
+            case (Bot, Bot)                 => Comparison.EqualTo
+            case (Bot, _)                   => Comparison.LessThan
+            case (_, Bot)                   => Comparison.GreaterThan
+            case (Path(list1), Path(list2)) => list1 <=> list2
         }
     }
 
@@ -339,7 +339,8 @@ mod FordFulkerson {
         let t = 5;
         let g = exampleGraph01() |> zeroFlow;
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
-        Assert.eq(Path(5 :: 4 :: 3 :: 0 :: Nil), p) // Shortest path in reverse order
+        let foundAShortestPath = Path(5 :: 4 :: 3 :: 0 :: Nil) == p or Path(5 :: 4 :: 1 :: 0 :: Nil) == p or Path(5 :: 2 :: 1 :: 0 :: Nil) == p;
+        Assert.eq(foundAShortestPath, true) // Shortest path in reverse order
 
     @Test
     def testAugmentingPath03(): Bool =
@@ -352,7 +353,8 @@ mod FordFulkerson {
             case (a, u, b)  => (a, u , 0, b)
         });
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
-        Assert.eq(Path(5 :: 4 :: 1 :: 0 :: Nil), p)
+        let foundShortestPath = p == Path(5 :: 4 :: 1 :: 0 :: Nil) or p == Path(5 :: 2 :: 1 :: 0 :: Nil);
+        Assert.eq(foundShortestPath, true)
 
     @Test
     def testAugmentingPath04(): Bool =
@@ -440,7 +442,13 @@ mod FordFulkerson {
         let t = 5;
         let g = exampleGraph01() |> zeroFlow;
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
-        Assert.eq(9, minCapacity(p, g)) // The path is picked as in testAugmentingPath02
+        if(p == Path(5 :: 4 :: 3 :: 0 :: Nil)) {
+            Assert.eq(9, minCapacity(p, g)) // The path is picked as in testAugmentingPath02
+        } else if(p == Path(5 :: 2 :: 1 :: 0 :: Nil)) {
+            Assert.eq(4, minCapacity(p, g)) // The path is picked as in testAugmentingPath02
+        } else {
+            Assert.eq(8, minCapacity(p, g)) // The path is picked as in testAugmentingPath02
+        }
 
     @Test
     def testMinCapacity04(): Bool =
@@ -453,7 +461,11 @@ mod FordFulkerson {
             case (a, u , b) => (a, u , 0, b)
         });
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
-        Assert.eq(1, minCapacity(p, g)) // The path is picked as in testAugmentingPath03
+        if(p == Path(5 :: 4 :: 1 :: 0 :: Nil)) {
+            Assert.eq(1, minCapacity(p, g)) // The path is picked as in testAugmentingPath03
+        } else {
+            Assert.eq(4, minCapacity(p, g)) // The path is picked as in testAugmentingPath03
+        }
 
     @Test
     def testMinCapacity05(): Bool =
@@ -521,7 +533,16 @@ mod FordFulkerson {
             case (4, 10, 0, 5) => (4, 10, 9, 5)
             case  _            => x
         });
-        Assert.eq(g1, increaseFlow(p, incr, g))
+        // These are what the engine produces.
+        let g2 = Vector#{(0, 10, 4, 1), (0, 10, 0, 3), (1, 2, 0, 3), (1, 4, 4, 2), (1, 8, 0, 4), (2, 10, 4, 5), (3, 9, 0, 4), (4, 6, 0, 2), (4, 10, 0, 5)};
+        let g3 = Vector#{(0, 10, 8, 1), (0, 10, 0, 3), (1, 2, 0, 3), (1, 4, 0, 2), (1, 8, 8, 4), (2, 10, 0, 5), (3, 9, 0, 4), (4, 6, 0, 2), (4, 10, 8, 5)};
+        if(p == Path(5 :: 4 :: 3 :: 0 :: Nil)) {
+            Assert.eq(g1, increaseFlow(p, incr, g))
+        } else if(p == Path(5 :: 2 :: 1 :: 0 :: Nil)) {
+            Assert.eq(g2, increaseFlow(p, incr, g))
+        } else {
+            Assert.eq(g3, increaseFlow(p, incr, g))
+        }
 
     @Test
     def testIncreaseFlow02(): Bool =
@@ -541,7 +562,12 @@ mod FordFulkerson {
             case (4, 10, 9, 5) => (4, 10, 10, 5)
             case _             => x
         }) |> Foldable.toVector;
-        Assert.eq(g1, increaseFlow(p, incr, g))
+        let g2 = Vector#{(0, 10, 4, 1), (0, 10, 9, 3), (1, 2, 0, 3), (1, 4, 4, 2), (1, 8, 0, 4), (2, 10, 4, 5), (3, 9, 9, 4), (4, 6, 0, 2), (4, 10, 9, 5)};
+        if(p == Path(5 :: 4 :: 1 :: 0 :: Nil)) {
+            Assert.eq(g1, increaseFlow(p, incr, g))
+        } else {
+            Assert.eq(g2, increaseFlow(p, incr, g))
+        }
 
     @Test
     def testIncreaseFlow03(): Bool =

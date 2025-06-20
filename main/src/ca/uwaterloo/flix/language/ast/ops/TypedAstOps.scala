@@ -15,7 +15,7 @@ object TypedAstOps {
   /**
     * Returns the set of variable symbols bound by the given pattern `pat0`.
     */
-  def binds(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
+  private def binds(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
     case Pattern.Wild(_, _) => Map.empty
     case Pattern.Var(Binder(sym, _), tpe, _) => Map(sym -> tpe)
     case Pattern.Cst(_, _, _) => Map.empty
@@ -40,8 +40,8 @@ object TypedAstOps {
   def sigSymsOf(exp0: Expr): Set[Symbol.SigSym] = exp0 match {
     case Expr.Cst(_, _, _) => Set.empty
     case Expr.Var(_, _, _) => Set.empty
-    case Expr.Hole(_, _, _, _) => Set.empty
-    case Expr.HoleWithExp(exp, _, _, _) => sigSymsOf(exp)
+    case Expr.Hole(_, _, _, _, _) => Set.empty
+    case Expr.HoleWithExp(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.OpenAs(_, exp, _, _) => sigSymsOf(exp)
     case Expr.Use(_, _, exp, _) => sigSymsOf(exp)
     case Expr.Lambda(_, exp, _, _) => sigSymsOf(exp)
@@ -61,8 +61,10 @@ object TypedAstOps {
     case Expr.Match(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ rule.guard.toList.flatMap(sigSymsOf))
     case Expr.TypeMatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
+    case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expr.Tag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.RestrictableTag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Expr.ExtensibleTag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.Tuple(elms, _, _, _) => elms.flatMap(sigSymsOf).toSet
     case Expr.RecordSelect(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.RecordExtend(_, value, rest, _, _, _) => sigSymsOf(value) ++ sigSymsOf(rest)
@@ -133,9 +135,9 @@ object TypedAstOps {
 
     case Expr.Var(sym, tpe, _) => Map(sym -> tpe)
 
-    case Expr.Hole(_, _, _, _) => Map.empty
+    case Expr.Hole(_, _, _, _, _) => Map.empty
 
-    case Expr.HoleWithExp(exp, _, _, _) =>
+    case Expr.HoleWithExp(exp, _, _, _, _) =>
       freeVars(exp)
 
     case Expr.OpenAs(_, exp, _, _) =>
@@ -195,21 +197,24 @@ object TypedAstOps {
 
     case Expr.Match(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, MatchRule(pat, guard, exp)) =>
-          acc ++ ((guard.map(freeVars).getOrElse(Map.empty) ++ freeVars(exp)) -- freeVars(pat).keys)
+        case (acc, MatchRule(pat, guard, body, _)) =>
+          acc ++ ((guard.map(freeVars).getOrElse(Map.empty) ++ freeVars(body)) -- freeVars(pat).keys)
       }
 
     case Expr.TypeMatch(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, TypeMatchRule(bnd, _, exp)) => acc ++ (freeVars(exp) - bnd.sym)
+        case (acc, TypeMatchRule(bnd, _, body, _)) => acc ++ (freeVars(body) - bnd.sym)
       }
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       val e = freeVars(exp)
       val rs = rules.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, RestrictableChooseRule(pat, exp)) => acc ++ (freeVars(exp) -- freeVars(pat).toList)
+        case (acc, RestrictableChooseRule(pat, body)) => acc ++ (freeVars(body) -- freeVars(pat).toList)
       }
       e ++ rs
+
+    case Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, _, _, _) =>
+      freeVars(exp1) ++ (freeVars(exp2) - bnd1.sym) ++ (freeVars(exp3) - bnd2.sym)
 
     case Expr.Tag(_, exps, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
@@ -217,6 +222,11 @@ object TypedAstOps {
       }
 
     case Expr.RestrictableTag(_, exps, _, _, _) =>
+      exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, exp) => freeVars(exp) ++ acc
+      }
+
+    case Expr.ExtensibleTag(_, exps, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => freeVars(exp) ++ acc
       }
@@ -292,14 +302,14 @@ object TypedAstOps {
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, CatchRule(bnd, _, exp)) => acc ++ freeVars(exp) - bnd.sym
+        case (acc, CatchRule(bnd, _, body, _)) => acc ++ freeVars(body) - bnd.sym
       }
 
     case Expr.Throw(exp, _, _, _) => freeVars(exp)
 
     case Expr.Handler(_, rules, _, _, _, _, _) =>
       rules.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, HandlerRule(_, fparams, exp)) => acc ++ freeVars(exp) -- fparams.map(_.bnd.sym)
+        case (acc, HandlerRule(_, fparams, exp, _)) => acc ++ freeVars(exp) -- fparams.map(_.bnd.sym)
       }
 
     case Expr.RunWith(exp1, exp2, _, _, _) =>
@@ -315,7 +325,7 @@ object TypedAstOps {
 
     case Expr.InvokeMethod(_, exp, args, _, _, _) =>
       args.foldLeft(freeVars(exp)) {
-        case (acc, exp) => acc ++ freeVars(exp)
+        case (acc, obj) => acc ++ freeVars(obj)
       }
 
     case Expr.InvokeStaticMethod(_, args, _, _, _) =>
@@ -352,7 +362,7 @@ object TypedAstOps {
     case Expr.SelectChannel(rules, default, _, _, _) =>
       val d = default.map(freeVars).getOrElse(Map.empty)
       rules.foldLeft(d) {
-        case (acc, SelectChannelRule(Binder(sym, _), chan, exp)) => acc ++ ((freeVars(chan) ++ freeVars(exp)) - sym)
+        case (acc, SelectChannelRule(Binder(sym, _), chan, exp, _)) => acc ++ ((freeVars(chan) ++ freeVars(exp)) - sym)
       }
 
     case Expr.Spawn(exp1, exp2, _, _, _) =>

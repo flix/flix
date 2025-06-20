@@ -59,8 +59,8 @@ object Namer {
       val uses = uses0.map {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
-
-      (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), sctx.errors.asScala.toList)
+      var errors = sctx.errors.asScala.toList
+      (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
     }
 
   /**
@@ -97,7 +97,7 @@ object Namer {
       val ns = Name.NName(ns0.idents :+ ident, ident.loc)
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val ds = decls.map(visitDecl(_, ns))
-      val sym = new Symbol.ModuleSym(ns.parts)
+      val sym = new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone)
       NamedAst.Declaration.Namespace(sym, usesAndImports, ds, loc)
   }
 
@@ -133,7 +133,7 @@ object Namer {
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       cases.foldLeft(table1)(tableDecl)
 
-    case NamedAst.Declaration.Struct(_, _, _, sym, _, fields, _, _) =>
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, fields, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       fields.foldLeft(table1)(tableDecl)
 
@@ -177,10 +177,31 @@ object Namer {
       case LookupResult.NotDefined => addDeclToTable(table, ns, name, decl)
       case LookupResult.AlreadyDefined(loc) =>
         mkDuplicateNamePair(name, getSymLocation(decl), loc)
-        SymbolTable.empty
+         table
     }
   }
 
+  /**
+    * Returns true if the given name is reserved.
+    */
+  private def isReservedName(name: String): Boolean = name match {
+    case "Void" => true
+    case "AnyType" => true
+    case "Unit" => true
+    case "Bool" => true
+    case "Char" => true
+    case "Float32" => true
+    case "Float64" => true
+    case "BigDecimal" => true
+    case "Int8" => true
+    case "Int16" => true
+    case "Int32" => true
+    case "Int64" => true
+    case "BigInt" => true
+    case "String" => true
+    case "Regex" => true
+    case _ => false
+  }
   /**
     * Adds the given declaration to the table.
     */
@@ -267,7 +288,7 @@ object Namer {
   /**
     * Performs naming on the given constraint `c0`.
     */
-  private def visitConstraint(c0: DesugaredAst.Constraint, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.Constraint = c0 match {
+  private def visitConstraint(c0: DesugaredAst.Constraint)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.Constraint = c0 match {
     case DesugaredAst.Constraint(h, bs, loc) =>
 
       // Introduce a symbol for every unique ident in the body, removing wildcards
@@ -284,8 +305,8 @@ object Namer {
       }
 
       // Perform naming on the head and body predicates.
-      val head = visitHeadPredicate(h, ns0)
-      val body = bs.map(visitBodyPredicate(_, ns0))
+      val head = visitHeadPredicate(h)
+      val body = bs.map(visitBodyPredicate)
       NamedAst.Constraint(cparams, head, body, loc)
   }
 
@@ -295,6 +316,9 @@ object Namer {
     */
   private def visitEnum(enum0: DesugaredAst.Declaration.Enum, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Enum = enum0 match {
     case DesugaredAst.Declaration.Enum(doc, ann, mod0, ident, tparams0, derives0, cases0, loc) =>
+      if (isReservedName(ident.name)) {
+        sctx.errors.add(NameError.IllegalReservedName(ident))
+      }
       val sym = Symbol.mkEnumSym(ns0, ident)
 
       // Compute the type parameters.
@@ -312,19 +336,18 @@ object Namer {
     */
   private def visitStruct(struct0: DesugaredAst.Declaration.Struct, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Struct = struct0 match {
     case DesugaredAst.Declaration.Struct(doc, ann, mod0, ident, tparams0, fields0, loc) =>
+      if (isReservedName(ident.name)) {
+        sctx.errors.add(NameError.IllegalReservedName(ident))
+      }
       val sym = Symbol.mkStructSym(ns0, ident)
 
       // Compute the type parameters.
       val tparams = tparams0.map(visitTypeParam)
 
       val mod = visitModifiers(mod0, ns0)
-      val indices0 = fields0.zipWithIndex.map {
-        case (field, idx) => (field.name, (idx, field.name.loc))
-      }
-      val indices = indices0.toMap
-      val fields = fields0.map(visitField(sym, _, indices))
+      val fields = fields0.map(visitField(sym, _))
 
-      NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, indices, loc)
+      NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
   }
 
   /**
@@ -332,6 +355,9 @@ object Namer {
     */
   private def visitRestrictableEnum(enum0: DesugaredAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.RestrictableEnum = enum0 match {
     case DesugaredAst.Declaration.RestrictableEnum(doc, ann, mod0, ident, index0, tparams0, derives0, cases, loc) =>
+      if (isReservedName(ident.name)) {
+        sctx.errors.add(NameError.IllegalReservedName(ident))
+      }
       val caseIdents = cases.map(_.ident)
       val sym = Symbol.mkRestrictableEnumSym(ns0, ident, caseIdents)
 
@@ -365,11 +391,10 @@ object Namer {
   /**
     * Performs naming on the given field.
     */
-  private def visitField(struct: Symbol.StructSym, field0: DesugaredAst.StructField, indices: Map[Name.Label, (Int, SourceLocation)])(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.StructField = field0 match {
+  private def visitField(struct: Symbol.StructSym, field0: DesugaredAst.StructField)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.StructField = field0 match {
     case DesugaredAst.StructField(mod, name, tpe, loc) =>
       val t = visitType(tpe)
-      val (idx, _) = indices(name)
-      val sym = Symbol.mkStructFieldSym(struct, idx, name)
+      val sym = Symbol.mkStructFieldSym(struct, name)
       NamedAst.Declaration.StructField(mod, sym, t, loc)
   }
 
@@ -388,6 +413,9 @@ object Namer {
     */
   private def visitTypeAlias(alias0: DesugaredAst.Declaration.TypeAlias, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.TypeAlias = alias0 match {
     case DesugaredAst.Declaration.TypeAlias(doc, ann, mod0, ident, tparams0, tpe, loc) =>
+      if (isReservedName(ident.name)) {
+        sctx.errors.add(NameError.IllegalReservedName(ident))
+      }
       val mod = visitModifiers(mod0, ns0)
       val tparams = tparams0.map(visitTypeParam)
       val t = visitType(tpe)
@@ -400,6 +428,9 @@ object Namer {
     */
   private def visitAssocTypeSig(s0: DesugaredAst.Declaration.AssocTypeSig, trt: Symbol.TraitSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.AssocTypeSig = s0 match {
     case DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparams0, kind0, tpe, loc) =>
+      if (isReservedName(ident.name)) {
+        sctx.errors.add(NameError.IllegalReservedName(ident))
+      }
       val sym = Symbol.mkAssocTypeSym(trt, ident)
       val tparam = visitTypeParam(tparams0)
       val kind = visitKind(kind0)
@@ -422,6 +453,9 @@ object Namer {
     */
   private def visitTrait(trt: DesugaredAst.Declaration.Trait, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Trait = trt match {
     case DesugaredAst.Declaration.Trait(doc, ann, mod0, ident, tparams0, superTraits, assocs, signatures, laws, loc) =>
+      if (isReservedName(ident.name)) {
+        sctx.errors.add(NameError.IllegalReservedName(ident))
+      }
       val sym = Symbol.mkTraitSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
       val tparam = visitTypeParam(tparams0)
@@ -471,6 +505,9 @@ object Namer {
     */
   private def visitSig(sig: DesugaredAst.Declaration.Sig, ns0: Name.NName, traitSym: Symbol.TraitSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Sig = sig match {
     case DesugaredAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams, exp, tpe, eff, tconstrs, econstrs, loc) =>
+      if (isReservedName(ident.name)) {
+        sctx.errors.add(NameError.IllegalReservedName(ident))
+      }
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams, tpe, eff, econstrs)
 
       // First visit all the top-level information
@@ -482,7 +519,7 @@ object Namer {
       val ecsts = econstrs.map(visitEqualityConstraint)
 
       // Then visit the parts depending on the parameters
-      val e = exp.map(visitExp(_, ns0)(Scope.Top, sctx, flix))
+      val e = exp.map(visitExp(_)(Scope.Top, sctx, flix))
 
       val sym = Symbol.mkSigSym(traitSym, ident)
       val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts)
@@ -495,7 +532,9 @@ object Namer {
   private def visitDef(decl0: DesugaredAst.Declaration.Def, ns0: Name.NName, defKind: DefKind)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Def = decl0 match {
     case DesugaredAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams, exp, tpe, eff, tconstrs, econstrs, loc) =>
       flix.subtask(ident.name, sample = true)
-
+      if (isReservedName(ident.name)) {
+        sctx.errors.add(NameError.IllegalReservedName(ident))
+      }
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams, tpe, eff, econstrs)
 
       // First visit all the top-level information
@@ -507,7 +546,7 @@ object Namer {
       val ecsts = econstrs.map(visitEqualityConstraint)
 
       // Then visit the parts depending on the parameters
-      val e = visitExp(exp, ns0)(Scope.Top, sctx, flix)
+      val e = visitExp(exp)(Scope.Top, sctx, flix)
 
       // Give the def an id only if it is an instance def.
       // This distinguishes instance defs that could share a namespace.
@@ -525,6 +564,9 @@ object Namer {
     */
   private def visitEffect(eff0: DesugaredAst.Declaration.Effect, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Effect = eff0 match {
     case DesugaredAst.Declaration.Effect(doc, ann, mod0, ident, ops0, loc) =>
+      if (isReservedName(ident.name)) {
+        sctx.errors.add(NameError.IllegalReservedName(ident))
+      }
       val sym = Symbol.mkEffectSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
       val ops = ops0.map(visitOp(_, ns0, sym))
@@ -534,8 +576,11 @@ object Namer {
   /**
     * Performs naming on the given effect operation `op0`.
     */
-  private def visitOp(op0: DesugaredAst.Declaration.Op, ns0: Name.NName, effSym: Symbol.EffectSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Op = op0 match {
+  private def visitOp(op0: DesugaredAst.Declaration.Op, ns0: Name.NName, effSym: Symbol.EffSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Op = op0 match {
     case DesugaredAst.Declaration.Op(doc, ann, mod0, ident, fparams, tpe, tconstrs, loc) =>
+      if (isReservedName(ident.name)) {
+        sctx.errors.add(NameError.IllegalReservedName(ident))
+      }
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
       val fps = fparams.map(visitFormalParam(_)(Scope.Top, sctx, flix))
@@ -554,13 +599,12 @@ object Namer {
   /**
     * Performs naming on the given expression `exp0`.
     */
-  // TODO NS-REFACTOR can remove ns0 too?
-  private def visitExp(exp0: DesugaredAst.Expr, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.Expr = exp0 match {
+  private def visitExp(exp0: DesugaredAst.Expr)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.Expr = exp0 match {
     case DesugaredAst.Expr.Ambiguous(name, loc) =>
       NamedAst.Expr.Ambiguous(name, loc)
 
     case DesugaredAst.Expr.OpenAs(name, exp, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.OpenAs(name, e, loc)
 
     case DesugaredAst.Expr.Open(name, loc) =>
@@ -570,12 +614,12 @@ object Namer {
       NamedAst.Expr.Hole(name, loc)
 
     case DesugaredAst.Expr.HoleWithExp(exp, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.HoleWithExp(e, loc)
 
     case DesugaredAst.Expr.Use(uses0, exp, loc) =>
       val uses = uses0.map(visitUseOrImport)
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       uses.foldRight(e) {
         case (use, acc) => NamedAst.Expr.Use(use, acc, loc)
       }
@@ -584,51 +628,51 @@ object Namer {
       NamedAst.Expr.Cst(cst, loc)
 
     case DesugaredAst.Expr.Apply(exp, exps, loc) =>
-      val e = visitExp(exp, ns0)
-      val es = exps.map(visitExp(_, ns0))
+      val e = visitExp(exp)
+      val es = exps.map(visitExp(_))
       NamedAst.Expr.Apply(e, es, loc)
 
     case DesugaredAst.Expr.Lambda(fparam, exp, loc) =>
       val fp = visitFormalParam(fparam)
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.Lambda(fp, e, loc)
 
     case DesugaredAst.Expr.Unary(sop, exp, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.Unary(sop, e, loc)
 
     case DesugaredAst.Expr.Binary(sop, exp1, exp2, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       NamedAst.Expr.Binary(sop, e1, e2, loc)
 
     case DesugaredAst.Expr.IfThenElse(exp1, exp2, exp3, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
-      val e3 = visitExp(exp3, ns0)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
       NamedAst.Expr.IfThenElse(e1, e2, e3, loc)
 
     case DesugaredAst.Expr.Stm(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       NamedAst.Expr.Stm(e1, e2, loc)
 
     case DesugaredAst.Expr.Discard(exp, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.Discard(e, loc)
 
     case DesugaredAst.Expr.Let(ident, exp1, exp2, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       NamedAst.Expr.Let(sym, e1, e2, loc)
 
     case DesugaredAst.Expr.LocalDef(ident, fparams, exp1, exp2, loc) =>
       val sym = Symbol.freshVarSym(ident, BoundBy.LocalDef)
       val fps = fparams.map(visitFormalParam(_))
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       NamedAst.Expr.LocalDef(sym, fps, e1, e2, loc)
 
     case DesugaredAst.Expr.Region(tpe, loc) =>
@@ -646,226 +690,235 @@ object Namer {
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)(newScope, flix)
 
       // Visit the body in the inner scope
-      val e = visitExp(exp, ns0)(newScope, sctx, flix)
+      val e = visitExp(exp)(newScope, sctx, flix)
       NamedAst.Expr.Scope(sym, regSym, e, loc)
 
     case DesugaredAst.Expr.Match(exp, rules, loc) =>
-      val e = visitExp(exp, ns0)
-      val rs = rules.map(visitMatchRule(_, ns0))
+      val e = visitExp(exp)
+      val rs = rules.map(visitMatchRule(_))
       NamedAst.Expr.Match(e, rs, loc)
 
     case DesugaredAst.Expr.TypeMatch(exp, rules, loc) =>
-      val e = visitExp(exp, ns0)
-      val rs = rules.map(visitTypeMatchRule(_, ns0))
+      val e = visitExp(exp)
+      val rs = rules.map(visitTypeMatchRule)
       NamedAst.Expr.TypeMatch(e, rs, loc)
 
     case DesugaredAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
-      val e = visitExp(exp, ns0)
-      val rs = rules.map(visitRestrictableChooseRule(_, ns0))
+      val e = visitExp(exp)
+      val rs = rules.map(visitRestrictableChooseRule)
       NamedAst.Expr.RestrictableChoose(star, e, rs, loc)
 
+    case DesugaredAst.Expr.ExtMatch(exp, rules, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitExtMatchRule)
+      NamedAst.Expr.ExtMatch(e, rs, loc)
+
+    case DesugaredAst.Expr.ExtensibleTag(label, exps, loc) =>
+      val es = exps.map(visitExp(_))
+      NamedAst.Expr.ExtTag(label, es, loc)
+
     case DesugaredAst.Expr.Tuple(exps, loc) =>
-      val es = exps.map(visitExp(_, ns0))
+      val es = exps.map(visitExp(_))
       NamedAst.Expr.Tuple(es, loc)
 
     case DesugaredAst.Expr.RecordSelect(exp, label, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.RecordSelect(e, label, loc)
 
     case DesugaredAst.Expr.RecordExtend(label, exp1, exp2, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       NamedAst.Expr.RecordExtend(label, e1, e2, loc)
 
     case DesugaredAst.Expr.RecordRestrict(label, exp, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.RecordRestrict(label, e, loc)
 
     case DesugaredAst.Expr.ArrayLit(exps, exp, loc) =>
-      val es = exps.map(visitExp(_, ns0))
-      val e = visitExp(exp, ns0)
+      val es = exps.map(visitExp(_))
+      val e = visitExp(exp)
       NamedAst.Expr.ArrayLit(es, e, loc)
 
     case DesugaredAst.Expr.ArrayNew(exp1, exp2, exp3, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
-      val e3 = visitExp(exp3, ns0)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
       NamedAst.Expr.ArrayNew(e1, e2, e3, loc)
 
     case DesugaredAst.Expr.ArrayLoad(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       NamedAst.Expr.ArrayLoad(e1, e2, loc)
 
     case DesugaredAst.Expr.ArrayStore(exp1, exp2, exp3, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
-      val e3 = visitExp(exp3, ns0)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
       NamedAst.Expr.ArrayStore(e1, e2, e3, loc)
 
     case DesugaredAst.Expr.ArrayLength(exp, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.ArrayLength(e, loc)
 
     case DesugaredAst.Expr.StructNew(qname, exps, exp, loc) =>
-      val e = visitExp(exp, ns0)
-      val es = exps.map(visitStructField(ns0))
+      val e = visitExp(exp)
+      val es = exps.map(visitStructField)
       NamedAst.Expr.StructNew(qname, es, e, loc)
 
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.StructGet(e, name, loc)
 
     case DesugaredAst.Expr.StructPut(exp1, name, exp2, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       NamedAst.Expr.StructPut(e1, name, e2, loc)
 
     case DesugaredAst.Expr.VectorLit(exps, loc) =>
-      val es = exps.map(visitExp(_, ns0))
+      val es = exps.map(visitExp(_))
       NamedAst.Expr.VectorLit(es, loc)
 
     case DesugaredAst.Expr.VectorLoad(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       NamedAst.Expr.VectorLoad(e1, e2, loc)
 
     case DesugaredAst.Expr.VectorLength(exp, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.VectorLength(e, loc)
 
     case DesugaredAst.Expr.Ascribe(exp, tpe, eff, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       val t = tpe.map(visitType)
       val ef = eff.map(visitType)
       NamedAst.Expr.Ascribe(e, t, ef, loc)
 
     case DesugaredAst.Expr.InstanceOf(exp, className, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.InstanceOf(e, className, loc)
 
     case DesugaredAst.Expr.CheckedCast(c, exp, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.CheckedCast(c, e, loc)
 
     case DesugaredAst.Expr.UncheckedCast(exp, tpe, eff, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       val t = tpe.map(visitType)
       val ef = eff.map(visitType)
       NamedAst.Expr.UncheckedCast(e, t, ef, loc)
 
     case DesugaredAst.Expr.Unsafe(exp, eff0, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       val eff = visitType(eff0)
       NamedAst.Expr.Unsafe(e, eff, loc)
 
     case DesugaredAst.Expr.Without(exp, qname, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.Without(e, qname, loc)
 
     case DesugaredAst.Expr.TryCatch(exp, rules, loc) =>
-      val e = visitExp(exp, ns0)
-      val rs = rules.map(visitTryCatchRule(_, ns0))
+      val e = visitExp(exp)
+      val rs = rules.map(visitTryCatchRule)
       NamedAst.Expr.TryCatch(e, rs, loc)
 
     case DesugaredAst.Expr.Throw(exp, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.Throw(e, loc)
 
     case DesugaredAst.Expr.Handler(qname, rules, loc) =>
-      val rs = rules.map(visitTryWithRule(_, ns0))
+      val rs = rules.map(visitRunWithRule)
       NamedAst.Expr.Handler(qname, rs, loc)
 
     case DesugaredAst.Expr.RunWith(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       NamedAst.Expr.RunWith(e1, e2, loc)
 
     case DesugaredAst.Expr.InvokeConstructor(className, exps, loc) =>
-      val es = exps.map(visitExp(_, ns0))
+      val es = exps.map(visitExp(_))
       NamedAst.Expr.InvokeConstructor(className, es, loc)
 
     case DesugaredAst.Expr.InvokeMethod(exp, name, exps, loc) =>
-      val e = visitExp(exp, ns0)
-      val es = exps.map(visitExp(_, ns0))
+      val e = visitExp(exp)
+      val es = exps.map(visitExp(_))
       NamedAst.Expr.InvokeMethod(e, name, es, loc)
 
     case DesugaredAst.Expr.GetField(exp, name, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.GetField(e, name, loc)
 
     case DesugaredAst.Expr.NewObject(tpe, methods, loc) =>
       val t = visitType(tpe)
-      val ms = methods.map(visitJvmMethod(_, ns0))
+      val ms = methods.map(visitJvmMethod)
       val name = s"Anon$$${flix.genSym.freshId()}"
       NamedAst.Expr.NewObject(name, t, ms, loc)
 
     case DesugaredAst.Expr.NewChannel(exp, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.NewChannel(e, loc)
 
     case DesugaredAst.Expr.GetChannel(exp, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.GetChannel(e, loc)
 
     case DesugaredAst.Expr.PutChannel(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       NamedAst.Expr.PutChannel(e1, e2, loc)
 
     case DesugaredAst.Expr.SelectChannel(rules, exp, loc) =>
-      val rs = rules.map(visitSelectChannelRule(_, ns0))
-      val e = exp.map(visitExp(_, ns0))
+      val rs = rules.map(visitSelectChannelRule)
+      val e = exp.map(visitExp(_))
       NamedAst.Expr.SelectChannel(rs, e, loc)
 
     case DesugaredAst.Expr.Spawn(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       NamedAst.Expr.Spawn(e1, e2, loc)
 
     case DesugaredAst.Expr.ParYield(frags, exp, loc) =>
-      val e = visitExp(exp, ns0)
-      val fs = frags.map(visitParYieldFragment(_, ns0))
+      val e = visitExp(exp)
+      val fs = frags.map(visitParYieldFragment(_))
       NamedAst.Expr.ParYield(fs, e, loc)
 
     case DesugaredAst.Expr.Lazy(exp, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.Lazy(e, loc)
 
     case DesugaredAst.Expr.Force(exp, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.Force(e, loc)
 
     case DesugaredAst.Expr.FixpointConstraintSet(cs0, loc) =>
-      val cs = cs0.map(visitConstraint(_, ns0))
+      val cs = cs0.map(visitConstraint)
       NamedAst.Expr.FixpointConstraintSet(cs, loc)
 
     case DesugaredAst.Expr.FixpointLambda(pparams, exp, loc) =>
       val ps = pparams.map(visitPredicateParam)
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.FixpointLambda(ps, e, loc)
 
     case DesugaredAst.Expr.FixpointMerge(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       NamedAst.Expr.FixpointMerge(e1, e2, loc)
 
     case DesugaredAst.Expr.FixpointSolve(exp, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.FixpointSolve(e, loc)
 
     case DesugaredAst.Expr.FixpointFilter(ident, exp, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Expr.FixpointFilter(ident, e, loc)
 
-    case DesugaredAst.Expr.FixpointInject(exp, pred, loc) =>
-      val e = visitExp(exp, ns0)
-      NamedAst.Expr.FixpointInject(e, pred, loc)
+    case DesugaredAst.Expr.FixpointInject(exp, pred, arity, loc) =>
+      val e = visitExp(exp)
+      NamedAst.Expr.FixpointInject(e, pred, arity, loc)
 
-    case DesugaredAst.Expr.FixpointProject(pred, exp1, exp2, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
-      NamedAst.Expr.FixpointProject(pred, e1, e2, loc)
+    case DesugaredAst.Expr.FixpointProject(pred, arity, exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      NamedAst.Expr.FixpointProject(pred, arity, e1, e2, loc)
 
     case DesugaredAst.Expr.Error(m) =>
       NamedAst.Expr.Error(m)
@@ -875,83 +928,93 @@ object Namer {
   /**
     * Performs naming on the given match rule `rule0`.
     */
-  private def visitMatchRule(rule0: DesugaredAst.MatchRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.MatchRule = rule0 match {
-    case DesugaredAst.MatchRule(pat, exp1, exp2) =>
+  private def visitMatchRule(rule0: DesugaredAst.MatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.MatchRule = rule0 match {
+    case DesugaredAst.MatchRule(pat, exp1, exp2, loc) =>
       val p = visitPattern(pat)
-      val e1 = exp1.map(visitExp(_, ns0))
-      val e2 = visitExp(exp2, ns0)
-      NamedAst.MatchRule(p, e1, e2)
+      val e1 = exp1.map(visitExp(_))
+      val e2 = visitExp(exp2)
+      NamedAst.MatchRule(p, e1, e2, loc)
+  }
+
+  /**
+    * Performs naming on the given ext match rule `rule0`.
+    */
+  private def visitExtMatchRule(rule0: DesugaredAst.ExtMatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.ExtMatchRule = rule0 match {
+    case DesugaredAst.ExtMatchRule(label, pats, exp, loc) =>
+      val ps = pats.map(visitExtPattern)
+      val e = visitExp(exp)
+      NamedAst.ExtMatchRule(label, ps, e, loc)
   }
 
   /**
     * Performs naming on the given typematch rule `rule0`.
     */
-  private def visitTypeMatchRule(rule0: DesugaredAst.TypeMatchRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.TypeMatchRule = rule0 match {
-    case DesugaredAst.TypeMatchRule(ident, tpe, body) =>
+  private def visitTypeMatchRule(rule0: DesugaredAst.TypeMatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.TypeMatchRule = rule0 match {
+    case DesugaredAst.TypeMatchRule(ident, tpe, body, loc) =>
       val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
       val t = visitType(tpe)
-      val b = visitExp(body, ns0)
-      NamedAst.TypeMatchRule(sym, t, b)
+      val b = visitExp(body)
+      NamedAst.TypeMatchRule(sym, t, b, loc)
   }
 
   /**
     * Performs naming on the given restrictable choose rule `rule0`.
     */
-  private def visitRestrictableChooseRule(rule0: DesugaredAst.RestrictableChooseRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.RestrictableChooseRule = rule0 match {
+  private def visitRestrictableChooseRule(rule0: DesugaredAst.RestrictableChooseRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.RestrictableChooseRule = rule0 match {
     case DesugaredAst.RestrictableChooseRule(pat, exp1) =>
       val p = visitRestrictablePattern(pat)
-      val e1 = visitExp(exp1, ns0)
+      val e1 = visitExp(exp1)
       NamedAst.RestrictableChooseRule(p, e1)
   }
 
   /**
     * Performs naming on the given struct field expression `exp0`.
     */
-  private def visitStructField(ns0: Name.NName)(exp0: (Name.Label, DesugaredAst.Expr))(implicit scope: Scope, sctx: SharedContext, flix: Flix): (Name.Label, NamedAst.Expr) = exp0 match {
+  private def visitStructField(field: (Name.Label, DesugaredAst.Expr))(implicit scope: Scope, sctx: SharedContext, flix: Flix): (Name.Label, NamedAst.Expr) = field match {
     case (n, exp0) =>
-      val e = visitExp(exp0, ns0)
+      val e = visitExp(exp0)
       (n, e)
   }
 
   /**
     * Performs naming on the given try-catch rule `rule0`.
     */
-  private def visitTryCatchRule(rule0: DesugaredAst.CatchRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.CatchRule = rule0 match {
-    case DesugaredAst.CatchRule(ident, className, body) =>
+  private def visitTryCatchRule(rule0: DesugaredAst.CatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.CatchRule = rule0 match {
+    case DesugaredAst.CatchRule(ident, className, body, loc) =>
       val sym = Symbol.freshVarSym(ident, BoundBy.CatchRule)
-      val b = visitExp(body, ns0)
-      NamedAst.CatchRule(sym, className, b)
+      val b = visitExp(body)
+      NamedAst.CatchRule(sym, className, b, loc)
   }
 
   /**
     * Performs naming on the given handler rule `rule0`.
     */
-  private def visitTryWithRule(rule0: DesugaredAst.HandlerRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.HandlerRule = rule0 match {
-    case DesugaredAst.HandlerRule(op, fparams, body0) =>
+  private def visitRunWithRule(rule0: DesugaredAst.HandlerRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.HandlerRule = rule0 match {
+    case DesugaredAst.HandlerRule(op, fparams, body0, loc) =>
       val fps = fparams.map(visitFormalParam)
-      val b = visitExp(body0, ns0)
-      NamedAst.HandlerRule(op, fps, b)
+      val b = visitExp(body0)
+      NamedAst.HandlerRule(op, fps, b, loc)
   }
 
   /**
     * Performs naming on the given select channel rule `rule0`.
     */
-  private def visitSelectChannelRule(rule0: DesugaredAst.SelectChannelRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.SelectChannelRule = rule0 match {
-    case DesugaredAst.SelectChannelRule(ident, exp1, exp2) =>
+  private def visitSelectChannelRule(rule0: DesugaredAst.SelectChannelRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.SelectChannelRule = rule0 match {
+    case DesugaredAst.SelectChannelRule(ident, exp1, exp2, loc) =>
       // make a fresh variable symbol for the local recursive variable.
       val sym = Symbol.freshVarSym(ident, BoundBy.SelectRule)
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
-      NamedAst.SelectChannelRule(sym, e1, e2)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      NamedAst.SelectChannelRule(sym, e1, e2, loc)
   }
 
   /**
     * Performs naming on the given par-yield fragment `frag0`.
     */
-  private def visitParYieldFragment(frag0: DesugaredAst.ParYieldFragment, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.ParYieldFragment = frag0 match {
+  private def visitParYieldFragment(frag0: DesugaredAst.ParYieldFragment)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.ParYieldFragment = frag0 match {
     case DesugaredAst.ParYieldFragment(pat, exp1, l) =>
       val p = visitPattern(pat)
-      val e1 = visitExp(exp1, ns0)
+      val e1 = visitExp(exp1)
       NamedAst.ParYieldFragment(p, e1, l)
   }
 
@@ -992,6 +1055,22 @@ object Namer {
   }
 
   /**
+    * Names the given ext pattern `pat0`.
+    */
+  private def visitExtPattern(pat0: DesugaredAst.ExtPattern)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.ExtPattern = pat0 match {
+    case DesugaredAst.ExtPattern.Wild(loc) =>
+      NamedAst.ExtPattern.Wild(loc)
+
+    case DesugaredAst.ExtPattern.Var(ident, loc) =>
+      // make a fresh variable symbol for the local variable.
+      val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
+      NamedAst.ExtPattern.Var(sym, loc)
+
+    case DesugaredAst.ExtPattern.Error(loc) =>
+      NamedAst.ExtPattern.Error(loc)
+  }
+
+  /**
     * Names the given pattern `pat0`
     */
   private def visitRestrictablePattern(pat0: DesugaredAst.RestrictableChoosePattern)(implicit scope: Scope, flix: Flix): NamedAst.RestrictableChoosePattern = {
@@ -1015,26 +1094,26 @@ object Namer {
   /**
     * Names the given head predicate `head`.
     */
-  private def visitHeadPredicate(head: DesugaredAst.Predicate.Head, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.Predicate.Head = head match {
+  private def visitHeadPredicate(head: DesugaredAst.Predicate.Head)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.Predicate.Head = head match {
     case DesugaredAst.Predicate.Head.Atom(pred, den, exps, loc) =>
-      val es = exps.map(visitExp(_, ns0))
+      val es = exps.map(visitExp)
       NamedAst.Predicate.Head.Atom(pred, den, es, loc)
   }
 
   /**
     * Names the given body predicate `body`.
     */
-  private def visitBodyPredicate(body: DesugaredAst.Predicate.Body, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.Predicate.Body = body match {
+  private def visitBodyPredicate(body: DesugaredAst.Predicate.Body)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.Predicate.Body = body match {
     case DesugaredAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
       val ts = terms.map(visitPattern)
       NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
 
     case DesugaredAst.Predicate.Body.Functional(idents, exp, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Predicate.Body.Functional(idents, e, loc)
 
     case DesugaredAst.Predicate.Body.Guard(exp, loc) =>
-      val e = visitExp(exp, ns0)
+      val e = visitExp(exp)
       NamedAst.Predicate.Body.Guard(e, loc)
   }
 
@@ -1213,13 +1292,13 @@ object Namer {
     case DesugaredAst.Pattern.Wild(_) => Nil
     case DesugaredAst.Pattern.Cst(_, _) => Nil
     case DesugaredAst.Pattern.Tag(_, ps, _) => ps.flatMap(freeVars)
-    case DesugaredAst.Pattern.Tuple(elms, _) => elms.flatMap(freeVars)
+    case DesugaredAst.Pattern.Tuple(elms, _) => elms.toList.flatMap(freeVars)
     case DesugaredAst.Pattern.Record(pats, pat, _) => recordPatternFreeVars(pats) ++ freeVars(pat)
     case DesugaredAst.Pattern.Error(_) => Nil
   }
 
   /**
-    * Returns the free variables in the list of [[Record.RecordLabelPattern]] `pats`.
+    * Returns the free variables in the list of [[DesugaredAst.Pattern.Record.RecordLabelPattern]] `pats`.
     */
   private def recordPatternFreeVars(pats: List[DesugaredAst.Pattern.Record.RecordLabelPattern]): List[Name.Ident] = {
     def optFreeVars(rfp: DesugaredAst.Pattern.Record.RecordLabelPattern): List[Name.Ident] = rfp.pat.map(freeVars).getOrElse(Nil)
@@ -1234,7 +1313,7 @@ object Namer {
     case DesugaredAst.Type.Var(ident, _) => ident :: Nil
     case DesugaredAst.Type.Ambiguous(_, _) => Nil
     case DesugaredAst.Type.Unit(_) => Nil
-    case DesugaredAst.Type.Tuple(elms, _) => elms.flatMap(freeTypeVars)
+    case DesugaredAst.Type.Tuple(elms, _) => elms.toList.flatMap(freeTypeVars)
     case DesugaredAst.Type.RecordRowEmpty(_) => Nil
     case DesugaredAst.Type.RecordRowExtend(_, t, r, _) => freeTypeVars(t) ::: freeTypeVars(r)
     case DesugaredAst.Type.Record(row, _) => freeTypeVars(row)
@@ -1305,12 +1384,12 @@ object Namer {
   /**
     * Translates the given weeded JvmMethod to a named JvmMethod.
     */
-  private def visitJvmMethod(method: DesugaredAst.JvmMethod, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.JvmMethod = method match {
+  private def visitJvmMethod(method: DesugaredAst.JvmMethod)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.JvmMethod = method match {
     case DesugaredAst.JvmMethod(ident, fparams, exp0, tpe, eff, loc) =>
       val fps = fparams.map(visitFormalParam)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
-      val e = visitExp(exp0, ns0)
+      val e = visitExp(exp0)
       NamedAst.JvmMethod(ident, fps, e, t, ef, loc)
   }
 
@@ -1390,7 +1469,7 @@ object Namer {
     case NamedAst.Declaration.Sig(sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Def(sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.loc
-    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _, _) => sym.loc
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _) => sym.loc
     case NamedAst.Declaration.StructField(_, sym, _, _) => sym.loc
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.loc
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) => sym.loc

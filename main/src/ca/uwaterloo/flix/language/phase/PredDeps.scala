@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.shared.LabelledPrecedenceGraph.{Label, LabelledEdge}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, LabelledPrecedenceGraph}
-import ca.uwaterloo.flix.language.ast.{ChangeSet, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -44,7 +44,7 @@ object PredDeps {
 
     val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
     val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
-    val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances)(ParOps.parMapValueList(_)(visitInstance))
+    val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList(_)(visitInstance))
 
     val g = LabelledPrecedenceGraph(sctx.edges.asScala.toVector)
     (root.copy(defs = defs, traits = traits, instances = instances, precedenceGraph = g), List.empty)
@@ -72,22 +72,19 @@ object PredDeps {
   /**
     * Returns the term types of the given relational or latticenal type.
     */
-  def termTypesAndDenotation(tpe: Type): (List[Type], Denotation) = eraseAliases(tpe) match {
-    case Type.Apply(Type.Cst(tc, _), t, _) =>
-      val den = tc match {
-        case TypeConstructor.Relation => Denotation.Relational
-        case TypeConstructor.Lattice => Denotation.Latticenal
-        case _ => throw InternalCompilerException(s"Unexpected non-denotation type constructor: '$tc'", tpe.loc)
-      }
-      t.baseType match {
-        case Type.Cst(TypeConstructor.Tuple(_), _) => (t.typeArguments, den) // Multi-ary
-        case Type.Cst(TypeConstructor.Unit, _) => (Nil, den)
-        case _ => (List(t), den) // Unary
-      }
-    case _ =>
-      // Resilience: We would want a relation or lattice, but type inference may have failed.
-      // If so, we simply return the empty list of term types with a relational denotation.
-      (Nil, Denotation.Relational)
+  def termTypesAndDenotation(tpe: Type): (List[Type], Denotation) = {
+    val erased = eraseAliases(tpe)
+
+    val den = erased.baseType match {
+      case Type.Cst(TypeConstructor.Relation(_), _) => Denotation.Relational
+      case Type.Cst(TypeConstructor.Lattice(_), _) => Denotation.Latticenal
+      // Resiliency: if the constructor is invalid or unknown, just arbitrarily assume relational
+      case _ => Denotation.Relational
+    }
+
+    val tpes = erased.typeArguments
+
+    (tpes, den)
   }
 
   /**
@@ -98,9 +95,9 @@ object PredDeps {
 
     case Expr.Var(_, _, _) => ()
 
-    case Expr.Hole(_, _, _, _) => ()
+    case Expr.Hole(_, _, _, _, _) => ()
 
-    case Expr.HoleWithExp(exp, _, _, _) =>
+    case Expr.HoleWithExp(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expr.OpenAs(_, exp, _, _) =>
@@ -159,23 +156,31 @@ object PredDeps {
 
     case Expr.Match(exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach { case MatchRule(_, g, b) =>
+      rules.foreach { case MatchRule(_, g, b, _) =>
           g.foreach(visitExp)
           visitExp(b)
       }
 
     case Expr.TypeMatch(exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach { case TypeMatchRule(_, _, b) => visitExp(b) }
+      rules.foreach { case TypeMatchRule(_, _, b, _) => visitExp(b) }
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
       rules.foreach{ case RestrictableChooseRule(_, body) => visitExp(body) }
 
+    case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      visitExp(exp3)
+
     case Expr.Tag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.RestrictableTag(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.ExtensibleTag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.Tuple(elms, _, _, _) =>
@@ -193,6 +198,7 @@ object PredDeps {
 
     case Expr.ArrayLit(elms, exp, _, _, _) =>
       elms.foreach(visitExp)
+      visitExp(exp)
 
     case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1)
@@ -251,13 +257,14 @@ object PredDeps {
       visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
-      rules.foreach{ case CatchRule(_, _, e) => visitExp(e) }
+      visitExp(exp)
+      rules.foreach{ case CatchRule(_, _, e, _) => visitExp(e) }
 
     case Expr.Throw(exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.Handler(_, rules, _, _, _, _, _) =>
-      rules.foreach{ case HandlerRule(_, _, e) => visitExp(e) }
+      rules.foreach{ case HandlerRule(_, _, e, _) => visitExp(e) }
 
     case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1)
@@ -270,6 +277,7 @@ object PredDeps {
       args.foreach(visitExp)
 
     case Expr.InvokeMethod(_, exp, args, _, _, _) =>
+      visitExp(exp)
       args.foreach(visitExp)
 
     case Expr.InvokeStaticMethod(_, args, _, _, _) =>
@@ -302,7 +310,7 @@ object PredDeps {
     case Expr.SelectChannel(rules, default, _, _, _) =>
       default.foreach(visitExp)
       rules.foreach{
-        case SelectChannelRule(_, exp1, exp2) =>
+        case SelectChannelRule(_, exp1, exp2, _) =>
           visitExp(exp1)
           visitExp(exp2)
       }
@@ -312,6 +320,7 @@ object PredDeps {
       visitExp(exp2)
 
     case Expr.ParYield(frags, exp, _, _, _) =>
+      visitExp(exp)
       frags.foreach{
         case ParYieldFragment(_, e, _) => visitExp(e)
       }
@@ -356,9 +365,9 @@ object PredDeps {
 
       // We add all body predicates and the head to the labels of each edge
       val bodyLabels: Vector[Label] = body0.collect {
-        case Body.Atom(bodyPred, den, _, _, _, bodyTpe, _) =>
+        case Body.Atom(bodyPred, bodyDen, _, _, _, bodyTpe, _) =>
           val (terms, _) = termTypesAndDenotation(bodyTpe)
-          Label(bodyPred, den, terms.length, terms)
+          Label(bodyPred, bodyDen, terms.length, terms)
       }.toVector
 
       val labels = bodyLabels :+ Label(headPred, den, headTerms.length, headTerms)

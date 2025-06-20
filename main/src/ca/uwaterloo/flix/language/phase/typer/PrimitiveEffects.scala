@@ -40,24 +40,24 @@ object PrimitiveEffects {
   /**
     * A pre-computed map from packages to effects.
     */
-  private val packageEffs: Map[Package, Set[Symbol.EffectSym]] = loadPackageEffs()
+  private val packageEffs: Map[Package, Set[Symbol.EffSym]] = loadPackageEffs()
 
   /**
     * A pre-computed map from classes to effects.
     *
     * If there is are specific effect(s) for a constructor or method then we use the effects for the entire class.
     */
-  private val classEffs: Map[Class[?], Set[Symbol.EffectSym]] = loadClassEffs()
+  private val classEffs: Map[Class[?], Set[Symbol.EffSym]] = loadClassEffs()
 
   /**
     * A pre-computed map from constructors to effects.
     */
-  private val constructorEffs: Map[Constructor[?], Set[Symbol.EffectSym]] = loadConstructorEffs()
+  private val constructorEffs: Map[Constructor[?], Set[Symbol.EffSym]] = loadConstructorEffs()
 
   /**
     * A pre-computed map from methods to effects.
     */
-  private val methodEffs: Map[Method, Set[Symbol.EffectSym]] = loadMethodEffs()
+  private val methodEffs: Map[Method, Set[Symbol.EffSym]] = loadMethodEffs()
 
   def getAnnotatedMethods: Set[Method] = methodEffs.keys.toSet
 
@@ -124,7 +124,7 @@ object PrimitiveEffects {
   /**
     * Returns the set of effects represented by `effs`.
     */
-  private def toEffSet(effs: Set[Symbol.EffectSym], loc: SourceLocation): Type = {
+  private def toEffSet(effs: Set[Symbol.EffSym], loc: SourceLocation): Type = {
     val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
     Type.mkUnion(tpes, loc)
   }
@@ -140,7 +140,7 @@ object PrimitiveEffects {
     * }
     * }}}
     */
-  private def loadPackageEffs(): Map[Package, Set[Symbol.EffectSym]] = {
+  private def loadPackageEffs(): Map[Package, Set[Symbol.EffSym]] = {
     val data = LocalResource.get(PackageEffsPath)
     val json = parse(data)
 
@@ -170,7 +170,7 @@ object PrimitiveEffects {
     * }
     * }}}
     */
-  private def loadClassEffs(): Map[Class[?], Set[Symbol.EffectSym]] = {
+  private def loadClassEffs(): Map[Class[?], Set[Symbol.EffSym]] = {
     val data = LocalResource.get(ClassEffsPath)
     val json = parse(data)
 
@@ -202,7 +202,7 @@ object PrimitiveEffects {
     *
     * Note: The effect set applies to *ALL* constructors of the class.
     */
-  private def loadConstructorEffs(): Map[Constructor[?], Set[Symbol.EffectSym]] = {
+  private def loadConstructorEffs(): Map[Constructor[?], Set[Symbol.EffSym]] = {
     val data = LocalResource.get(ConstructorEffsPath)
     val json = parse(data)
 
@@ -233,7 +233,7 @@ object PrimitiveEffects {
     *
     * Note: The effect set applies to *ALL* constructors of the class.
     */
-  private def loadMethodEffs(): Map[Method, Set[Symbol.EffectSym]] = {
+  private def loadMethodEffs(): Map[Method, Set[Symbol.EffSym]] = {
     val data = LocalResource.get(MethodEffsPath)
     val json = parse(data)
 
@@ -255,11 +255,11 @@ object PrimitiveEffects {
   }
 
   /**
-    * Returns the given comma-separated string of effect symbols as a set of [[Symbol.EffectSym]].
-    *
-    * Returns the empty set if the string is empty.
-    */
-  private def parseEffSet(s: String): Set[Symbol.EffectSym] = {
+   * Returns the given comma-separated string of effect symbols as a set of [[Symbol.EffSym]].
+   *
+   * Returns the empty set if the string is empty.
+   */
+  private def parseEffSet(s: String): Set[Symbol.EffSym] = {
     if (s.trim.isEmpty)
       Set.empty
     else

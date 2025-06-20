@@ -194,17 +194,17 @@ object HtmlDocumentor {
   /**
     * Get the shortest name of the effect symbol, e.g. 'StdOut'.
     */
-  private def effectName(sym: Symbol.EffectSym): String = sym.name
+  private def effectName(sym: Symbol.EffSym): String = sym.name
 
   /**
     * Get the fully qualified name of the effect symbol, e.g. 'System.StdOut'.
     */
-  private def effectQualifiedName(sym: Symbol.EffectSym): String = sym.toString
+  private def effectQualifiedName(sym: Symbol.EffSym): String = sym.toString
 
   /**
     * Get the file name of the effect symbol, e.g. 'System.StdOut.html'.
     */
-  private def effectFileName(sym: Symbol.EffectSym): String = s"${sym.toString}.html"
+  private def effectFileName(sym: Symbol.EffSym): String = s"${sym.toString}.html"
 
   /**
     * Get the shortest name of the enum symbol, e.g. 'StdOut'.
@@ -246,7 +246,7 @@ object HtmlDocumentor {
         case sym: Symbol.ModuleSym => submodules = sym :: submodules
         case sym: Symbol.TraitSym =>
           traits = mkTrait(sym, moduleSym, root) :: traits
-        case sym: Symbol.EffectSym =>
+        case sym: Symbol.EffSym =>
           effects = mkEffect(sym, moduleSym, root) :: effects
         case sym: Symbol.EnumSym =>
           enums = mkEnum(sym, moduleSym, root) :: enums
@@ -285,10 +285,10 @@ object HtmlDocumentor {
   }
 
   /**
-    * Extracts all relevant information about the given `EffectSym` from the root, into a `HtmlDocumentor.Effect`,
+    * Extracts all relevant information about the given `EffSym` from the root, into a `HtmlDocumentor.Effect`,
     * * leaving the companion module unpopulated.
     */
-  private def mkEffect(sym: Symbol.EffectSym, parent: Symbol.ModuleSym, root: TypedAst.Root): Effect = {
+  private def mkEffect(sym: Symbol.EffSym, parent: Symbol.ModuleSym, root: TypedAst.Root): Effect = {
     Effect(root.effects(sym), parent, None)
   }
 
@@ -407,9 +407,9 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterEffect(eff: Effect): Effect = eff match {
-    case Effect(eff, parent, _) =>
+    case Effect(e, parent, _) =>
       Effect(
-        eff,
+        e,
         parent,
         None,
       )
@@ -423,9 +423,9 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterEnum(enm: Enum): Enum = enm match {
-    case Enum(enm, instances, parent, _) =>
+    case Enum(e, instances, parent, _) =>
       Enum(
-        enm,
+        e,
         instances,
         parent,
         None,
@@ -845,7 +845,7 @@ object HtmlDocumentor {
        |<head>
        |<meta charset='utf-8'>
        |<meta name='viewport' content='width=device-width,initial-scale=1'>
-       |<meta name='description' content='API documentation for ${esc(name)} | The Flix Programming Language'>
+       |<meta name='description' content='API documentation for ${esc(name)}| The Flix Programming Language'>
        |<meta name='keywords' content='Flix, Programming, Language, API, Documentation, ${esc(name)}'>
        |<base href='${fileName}'></base>
        |<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>

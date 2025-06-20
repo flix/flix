@@ -15,10 +15,9 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.api.lsp.Range
-import ca.uwaterloo.flix.api.lsp.provider.{CodeActionProvider, CodeLensProvider, CompletionProvider, FindReferencesProvider, GotoProvider, HighlightProvider, HoverProvider, InlayHintProvider, RenameProvider, SemanticTokensProvider, SymbolProvider}
+import ca.uwaterloo.flix.api.lsp.provider.*
+import ca.uwaterloo.flix.api.lsp.{CompletionList, Position, PublishDiagnosticsParams, Range}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
-import ca.uwaterloo.flix.api.lsp.{Position, PublishDiagnosticsParams}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
@@ -30,7 +29,7 @@ import org.eclipse.lsp4j
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages
 import org.eclipse.lsp4j.launch.LSPLauncher
-import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
+import org.eclipse.lsp4j.services.*
 
 import java.nio.file.{Files, Path, Paths}
 import java.util
@@ -106,8 +105,12 @@ object LspServer {
       System.err.println(s"initialize: $initializeParams")
 
       clientCapabilities = initializeParams.getCapabilities
-
-      loadFlixProject(initializeParams.getWorkspaceFolders.asScala.toList)
+      if (initializeParams.getWorkspaceFolders != null)
+        loadFlixProject(initializeParams.getWorkspaceFolders.asScala.toList)
+      else {
+        flixLanguageClient.showMessage(new MessageParams(MessageType.Error, "Please provide WorkspaceFolders in the initialization options."))
+        System.err.println("Please provide WorkspaceFolders in the initialization options.")
+      }
 
       CompletableFuture.completedFuture(new InitializeResult(mkServerCapabilities()))
     }
@@ -154,7 +157,7 @@ object LspServer {
       *   - lib/**/*.jar
       *   - lib/**/*.fpkg
       */
-    private def loadJarsAndFkgs(path: Path) = {
+    private def loadJarsAndFkgs(path: Path): Unit = {
       FileOps.getFilesIn(path.resolve("lib"), Int.MaxValue)
         .foreach{ case p =>
           // Load all JAR files in the workspace, the pattern should be lib/**/*.jar.
@@ -180,6 +183,7 @@ object LspServer {
           true
         )
       )
+      serverCapabilities.setSignatureHelpProvider(new SignatureHelpOptions(List("(", ",").asJava))
       serverCapabilities.setCodeActionProvider(true)
       serverCapabilities.setCodeLensProvider(new CodeLensOptions(true))
       serverCapabilities.setCompletionProvider(new CompletionOptions(true, TriggerChars.asJava))
@@ -227,11 +231,11 @@ object LspServer {
       try {
         val diagnostics = flix.check() match {
           // Case 1: Compilation was successful or partially successful so that we have the root and errors.
-          case (Some(root), errors) =>
-            this.root = root
+          case (Some(root1), errors) =>
+            this.root = root1
             this.currentErrors = errors
             // We provide diagnostics for errors and code hints.
-            val codeHints = CodeHinter.run(sources.keySet.toSet)(root)
+            val codeHints = CodeHinter.run(sources.keySet.toSet)(root1)
             PublishDiagnosticsParams.fromMessages(currentErrors, flix.options.explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
 
           // Case 2: Compilation failed so that we have only errors.
@@ -253,12 +257,14 @@ object LspServer {
       * We need to publish empty diagnostics for sources that do not have any diagnostics to clear previous diagnostics.
       */
     private def publishDiagnostics(diagnostics: List[PublishDiagnosticsParams]): Unit = {
-      val sourcesWithDiagnostics = diagnostics.map(d => d.uri).toSet
+      // We do not publish diagnostics for errors from the library
+      val validDiagnostics = diagnostics.filter(_.uri.startsWith("file://"))
+      val sourcesWithDiagnostics = validDiagnostics.map(d => d.uri).toSet
       val sourcesWithoutDiagnostics = sources.keySet.diff(sourcesWithDiagnostics)
       sourcesWithoutDiagnostics.foreach { source =>
         flixLanguageClient.publishDiagnostics(PublishDiagnosticsParams(source, Nil).toLsp4j)
       }
-      diagnostics.foreach { diagnostic =>
+      validDiagnostics.foreach { diagnostic =>
         flixLanguageClient.publishDiagnostics(diagnostic.toLsp4j)
       }
     }
@@ -315,21 +321,23 @@ object LspServer {
       CompletableFuture.completedFuture(codeActions)
     }
 
-    override def codeLens(params: CodeLensParams): CompletableFuture[util.List[_ <: CodeLens]] = {
+    override def codeLens(params: CodeLensParams): CompletableFuture[util.List[? <: CodeLens]] = {
       val uri = params.getTextDocument.getUri
       val codeLens = CodeLensProvider.processCodeLens(uri)(flixLanguageServer.root).map(_.toLsp4j).asJava
       CompletableFuture.completedFuture(codeLens)
     }
 
-    override def completion(params: CompletionParams): CompletableFuture[messages.Either[util.List[CompletionItem], CompletionList]] = {
+    override def completion(params: CompletionParams): CompletableFuture[messages.Either[util.List[CompletionItem], lsp4j.CompletionList]] = {
       val uri = params.getTextDocument.getUri
-      val source = flixLanguageServer.sources(uri)
       val pos = Position.fromLsp4j(params.getPosition)
-      val completions = CompletionProvider.autoComplete(uri, pos, source, flixLanguageServer.currentErrors)(flixLanguageServer.flix, flixLanguageServer.root)
-      CompletableFuture.completedFuture(messages.Either.forRight[util.List[CompletionItem], CompletionList](completions.toLsp4j))
+      val completions = CompletionProvider
+        .getCompletions(uri, pos, flixLanguageServer.currentErrors)(flixLanguageServer.root, flixLanguageServer.flix)
+        .map(_.toCompletionItem(flixLanguageServer.flix))
+      val completionList = CompletionList(isIncomplete = true, completions).toLsp4j
+      CompletableFuture.completedFuture(messages.Either.forRight[util.List[CompletionItem], lsp4j.CompletionList](completionList))
     }
 
-    override def definition(params: DefinitionParams): CompletableFuture[messages.Either[util.List[_ <: Location], util.List[_ <: LocationLink]]] = {
+    override def definition(params: DefinitionParams): CompletableFuture[messages.Either[util.List[? <: Location], util.List[? <: LocationLink]]] = {
       val uri = params.getTextDocument.getUri
       val pos = Position.fromLsp4j(params.getPosition)
       val definition = GotoProvider.processGoto(uri, pos)(flixLanguageServer.root)
@@ -348,7 +356,7 @@ object LspServer {
       CompletableFuture.completedFuture(hover)
     }
 
-    override def documentHighlight(params: DocumentHighlightParams): CompletableFuture[java.util.List[_ <: DocumentHighlight]] = {
+    override def documentHighlight(params: DocumentHighlightParams): CompletableFuture[java.util.List[? <: DocumentHighlight]] = {
       val uri = params.getTextDocument.getUri
       val position = Position.fromLsp4j(params.getPosition)
       val highlights = HighlightProvider.processHighlight(uri, position)(flixLanguageServer.root)
@@ -366,7 +374,7 @@ object LspServer {
       CompletableFuture.completedFuture(semanticTokens)
     }
 
-    override def references(params: ReferenceParams): CompletableFuture[util.List[_ <: Location]] = {
+    override def references(params: ReferenceParams): CompletableFuture[util.List[? <: Location]] = {
       val uri = params.getTextDocument.getUri
       val pos = Position.fromLsp4j(params.getPosition)
       val references = FindReferencesProvider.findRefs(uri, pos)(flixLanguageServer.root)
@@ -385,7 +393,14 @@ object LspServer {
       }
     }
 
-    override def implementation(params: ImplementationParams): CompletableFuture[messages.Either[util.List[_ <: Location], util.List[_ <: LocationLink]]] = {
+    override def signatureHelp(params: SignatureHelpParams): CompletableFuture[SignatureHelp] = {
+      val uri = params.getTextDocument.getUri
+      val pos = Position.fromLsp4j(params.getPosition)
+      val signatureHelp = SignatureHelpProvider.provideSignatureHelp(uri, pos)(flixLanguageServer.root, flixLanguageServer.flix)
+      CompletableFuture.completedFuture(signatureHelp.map(_.toLsp4j).orNull)
+    }
+
+    override def implementation(params: ImplementationParams): CompletableFuture[messages.Either[util.List[? <: Location], util.List[_ <: LocationLink]]] = {
       val uri = params.getTextDocument.getUri
       val pos = Position.fromLsp4j(params.getPosition)
       val implementation = GotoProvider.processGoto(uri, pos)(flixLanguageServer.root)
@@ -415,7 +430,7 @@ object LspServer {
       System.err.println(s"didChangeWatchedFiles: $didChangeWatchedFilesParams")
     }
 
-    override def symbol(params: WorkspaceSymbolParams): CompletableFuture[messages.Either[util.List[_ <: SymbolInformation], util.List[_ <: WorkspaceSymbol]]] = {
+    override def symbol(params: WorkspaceSymbolParams): CompletableFuture[messages.Either[util.List[? <: SymbolInformation], util.List[? <: WorkspaceSymbol]]] = {
       val query = params.getQuery
       val symbols = SymbolProvider.processWorkspaceSymbols(query)(flixLanguageServer.root)
       CompletableFuture.completedFuture(messages.Either.forRight(symbols.map(_.toLsp4j).asJava))

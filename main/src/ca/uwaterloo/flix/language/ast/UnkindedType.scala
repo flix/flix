@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
 import ca.uwaterloo.flix.language.phase.Resolver
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.Nel
 
 import java.util.Objects
 import scala.collection.immutable.SortedSet
@@ -383,7 +384,7 @@ object UnkindedType {
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
-  def mkTuple(ts: List[UnkindedType], loc: SourceLocation): UnkindedType = {
+  def mkTuple(ts: Nel[UnkindedType], loc: SourceLocation): UnkindedType = {
     val init = UnkindedType.Cst(TypeConstructor.Tuple(ts.length), loc)
     ts.foldLeft(init: UnkindedType) {
       case (acc, x) => Apply(acc, x, loc)
@@ -423,26 +424,14 @@ object UnkindedType {
     * Construct a relation type with the given list of type arguments `ts0`.
     */
   def mkRelation(ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
-    val ts = ts0 match {
-      case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
-      case x :: Nil => x
-      case xs => mkTuple(xs, loc)
-    }
-
-    Apply(UnkindedType.Cst(TypeConstructor.Relation, loc), ts, loc)
+    mkApply(Cst(TypeConstructor.Relation(ts0.length), loc), ts0, loc)
   }
 
   /**
     * Construct a lattice type with the given list of type arguments `ts0`.
     */
   def mkLattice(ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
-    val ts = ts0 match {
-      case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
-      case x :: Nil => x
-      case xs => mkTuple(xs, loc)
-    }
-
-    Apply(UnkindedType.Cst(TypeConstructor.Lattice, loc), ts, loc)
+    mkApply(Cst(TypeConstructor.Lattice(ts0.length), loc), ts0, loc)
   }
 
   /**
@@ -463,23 +452,18 @@ object UnkindedType {
   /**
     * Construct the effect type for the given symbol.
     */
-  def mkEffect(sym: Symbol.EffectSym, loc: SourceLocation): UnkindedType = UnkindedType.Cst(TypeConstructor.Effect(sym), loc)
+  def mkEffect(sym: Symbol.EffSym, loc: SourceLocation): UnkindedType = UnkindedType.Cst(TypeConstructor.Effect(sym), loc)
 
   /**
     * Constructs a predicate type.
     */
-  def mkPredicate(den: Denotation, ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
+  def mkPredicate(den: Denotation, ts: List[UnkindedType], loc: SourceLocation): UnkindedType = {
     val tycon = den match {
-      case Denotation.Relational => UnkindedType.Cst(TypeConstructor.Relation, loc)
-      case Denotation.Latticenal => UnkindedType.Cst(TypeConstructor.Lattice, loc)
-    }
-    val ts = ts0 match {
-      case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
-      case x :: Nil => x
-      case xs => UnkindedType.mkTuple(xs, loc)
+      case Denotation.Relational => UnkindedType.Cst(TypeConstructor.Relation(ts.length), loc)
+      case Denotation.Latticenal => UnkindedType.Cst(TypeConstructor.Lattice(ts.length), loc)
     }
 
-    UnkindedType.Apply(tycon, ts, loc)
+    UnkindedType.mkApply(tycon, ts, loc)
   }
 
   /**
@@ -549,66 +533,5 @@ object UnkindedType {
     case tpe: UnkindedType.Error => tpe
     case UnappliedAlias(_, loc) => throw InternalCompilerException("unexpected unapplied alias", loc)
     case UnappliedAssocType(_, loc) => throw InternalCompilerException("unexpected unapplied associated type", loc)
-  }
-
-  // TODO remove once typechecking Resolver.lookupJVMMethod is moved to Typer
-
-  /**
-    * Returns the Flix UnkindedType of a Java Class
-    */
-  def getFlixType(c: Class[?]): UnkindedType = {
-    if (c == java.lang.Boolean.TYPE) {
-      UnkindedType.Cst(TypeConstructor.Bool, SourceLocation.Unknown)
-    }
-    else if (c == java.lang.Byte.TYPE) {
-      UnkindedType.Cst(TypeConstructor.Int8, SourceLocation.Unknown)
-    }
-    else if (c == java.lang.Short.TYPE) {
-      UnkindedType.Cst(TypeConstructor.Int16, SourceLocation.Unknown)
-    }
-    else if (c == java.lang.Integer.TYPE) {
-      UnkindedType.Cst(TypeConstructor.Int32, SourceLocation.Unknown)
-    }
-    else if (c == java.lang.Long.TYPE) {
-      UnkindedType.Cst(TypeConstructor.Int64, SourceLocation.Unknown)
-    }
-    else if (c == java.lang.Character.TYPE) {
-      UnkindedType.Cst(TypeConstructor.Char, SourceLocation.Unknown)
-    }
-    else if (c == java.lang.Float.TYPE) {
-      UnkindedType.Cst(TypeConstructor.Float32, SourceLocation.Unknown)
-    }
-    else if (c == java.lang.Double.TYPE) {
-      UnkindedType.Cst(TypeConstructor.Float64, SourceLocation.Unknown)
-    }
-    else if (c == classOf[java.math.BigDecimal]) {
-      UnkindedType.Cst(TypeConstructor.BigDecimal, SourceLocation.Unknown)
-    }
-    else if (c == classOf[java.math.BigInteger]) {
-      UnkindedType.Cst(TypeConstructor.BigInt, SourceLocation.Unknown)
-    }
-    else if (c == classOf[java.lang.String]) {
-      UnkindedType.Cst(TypeConstructor.Str, SourceLocation.Unknown)
-    }
-    else if (c == classOf[java.util.regex.Pattern]) {
-      UnkindedType.Cst(TypeConstructor.Regex, SourceLocation.Unknown)
-    }
-    else if (c == java.lang.Void.TYPE) {
-      UnkindedType.Cst(TypeConstructor.Unit, SourceLocation.Unknown)
-    }
-    // handle arrays of types
-    else if (c.isArray) {
-      val comp = c.getComponentType
-      val elmType = getFlixType(comp)
-      UnkindedType.mkApply(
-        UnkindedType.Cst(TypeConstructor.Array, SourceLocation.Unknown),
-        List(elmType, UnkindedType.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)),
-        SourceLocation.Unknown
-      )
-    }
-    // otherwise native type
-    else {
-      UnkindedType.Cst(TypeConstructor.Native(c), SourceLocation.Unknown)
-    }
   }
 }

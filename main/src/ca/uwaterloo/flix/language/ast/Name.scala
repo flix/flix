@@ -136,6 +136,16 @@ object Name {
     def parts: List[String] = idents.map(_.name)
 
     /**
+      * Returns if the namespace is empty.
+      */
+    def isEmpty: Boolean = idents.isEmpty
+
+    /**
+      * Returns if the namespace is non-empty.
+      */
+    def nonEmpty: Boolean = idents.nonEmpty
+
+    /**
       * Returns `true` if `this` namespace equals `that`.
       */
     override def equals(o: scala.Any): Boolean = o match {

@@ -17,8 +17,6 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type}
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -128,49 +126,6 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     */
   def apply(ec: EqualityConstraint): EqualityConstraint = if (isEmpty) ec else ec match {
     case EqualityConstraint(cst, t1, t2, loc) => EqualityConstraint(cst, apply(t1), apply(t2), loc)
-  }
-
-  /**
-    * Applies `this` substitution to the given provenance.
-    */
-  // TODO: PERF: Do we really need to apply the subst. aggressively to provenance?
-  def apply(prov: TypeConstraint.Provenance): TypeConstraint.Provenance = prov match {
-    case Provenance.ExpectType(expected, actual, loc) =>
-      val e = apply(expected)
-      val a = apply(actual)
-      // Performance: Reuse prov, if possible.
-      if ((e eq expected) && (a eq actual))
-        prov
-      else
-        Provenance.ExpectType(e, a, loc)
-
-    case Provenance.ExpectEffect(expected, actual, loc) =>
-      val e = apply(expected)
-      val a = apply(actual)
-      // Performance: Reuse prov, if possible.
-      if ((e eq expected) && (a eq actual))
-        prov
-      else
-        Provenance.ExpectEffect(e, a, loc)
-
-    case Provenance.ExpectArgument(expected, actual, sym, num, loc) =>
-      val e = apply(expected)
-      val a = apply(actual)
-      // Performance: Reuse prov, if possible.
-      if ((e eq expected) && (a eq actual))
-        prov
-      else
-        Provenance.ExpectArgument(e, a, sym, num, loc)
-
-    case Provenance.Match(tpe1, tpe2, loc) =>
-      val t1 = apply(tpe1)
-      val t2 = apply(tpe2)
-
-      // Performance: Reuse prov, if possible.
-      if ((t1 eq tpe1) && (t2 eq tpe2))
-        prov
-      else
-        Provenance.Match(t1, t2, loc)
   }
 
   /**

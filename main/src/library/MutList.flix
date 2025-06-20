@@ -47,6 +47,15 @@ instance IndexableMut[MutList[a, r]] {
         MutList.put(v, i, t)
 }
 
+instance MutCollectable[MutList[a, r]] {
+    type Elm = a
+    type Aef = r
+    type Reg = r
+    pub def collect(rc: Region[r], iter: Iterator[a, ef, r1]): MutList[a, r] \ (ef + r + r1) =
+        Iterator.toMutList(rc, iter)
+
+}
+
 mod MutList {
 
     ///
@@ -63,10 +72,19 @@ mod MutList {
     }
 
     ///
-    /// Returns an empty empty mutable list with a default capacity.
+    /// Returns an empty mutable list with a default capacity.
     ///
     pub def empty(rc: Region[r]): MutList[a, r] \ r =
-        new MutList @ rc {r = rc, values = Array.empty(rc, minCapacity()), length = 0}
+        emptyWithCapacity(rc, minCapacity())
+
+    ///
+    /// Returns an empty mutable list with the given capacity rounded up to the
+    /// default capacity.
+    ///
+    pub def emptyWithCapacity(rc: Region[r], capacity: Int32): MutList[a, r] \ r = {
+        let flooredCapacity = Int32.max(capacity, minCapacity());
+        new MutList @ rc {r = rc, values = Array.empty(rc, flooredCapacity), length = 0}
+    }
 
     ///
     /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).

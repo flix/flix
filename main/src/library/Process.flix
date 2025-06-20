@@ -26,20 +26,103 @@ eff Process {
     /// Immediately executes the command `cmd` with the arguments `args`, by the path `cwd` and with the environmental `env`.
     ///
     def execWithCwdAndEnv(cmd: String, args: List[String], cwd: Option[String], env: Map[String, String]): ProcessHandle
+
+    ///
+    /// Returns the exit value of the process.
+    ///
+    def exitValue(ph: ProcessHandle): Option[Int32]
+
+    ///
+    ///  Returns status of the process, if it alive or not.
+    ///
+    def isAlive(ph: ProcessHandle): Bool
+
+    ///
+    /// Returns the PID of the process.
+    ///
+    def pid(ph: ProcessHandle): Int64
+
+    ///
+    /// Returns stdin InputStream of the process.
+    ///
+    def stdin(ph: ProcessHandle): Process.StdIn
+
+    ///
+    /// Returns stdout OutputStream of the process.
+    ///
+    def stdout(ph: ProcessHandle): Process.StdOut
+
+    ///
+    /// Returns stderr OutputStream of the process.
+    ///
+    def stderr(ph: ProcessHandle): Process.StdErr
+
+    ///
+    /// Returns Process output as a string.
+    ///
+    def output(ph: ProcessHandle): Result[IoError, String]
+
+    ///
+    /// Stops the process.
+    ///
+    def stop(ph: ProcessHandle): Unit
+
+    ///
+    /// Waits for process to finish.
+    ///
+    def waitFor(ph: ProcessHandle): Int32
+
+    ///
+    /// Waits a specified amount of time for the process to finish
+    ///
+    def waitForTimeout(ph: ProcessHandle, time: Int64, tUnit: TimeUnit): Bool
+
 }
 
 mod Process {
 
     use IoError.ErrorKind
     use IoError.IoError
+    use ProcessHandle.ProcessHandle
 
     import java.lang.IllegalArgumentException
-    import java.lang.NullPointerException
-    import java.lang.SecurityException
+    import java.lang.IllegalThreadStateException
+    import java.lang.InterruptedException
+    import java.lang.UnsupportedOperationException
     import java.io.IOException
     import java.lang.ProcessBuilder
     import java.lang.Runtime
     import java.io.{File => JFile}
+    import java.io.InputStream
+    import java.io.OutputStream
+    import java.util.concurrent.{TimeUnit => JTimeUnit}
+    use Process.StdIn.StdIn
+    use Process.StdErr.StdErr
+    use Process.StdOut.StdOut
+
+    pub enum StdIn(OutputStream)
+    instance Writer[StdIn] {
+        type Aef = IO
+        pub def write(b: Array[Int8, r], r: StdIn): Result[IoError, Int32] \ r + IO =
+            let StdIn(pr) = r;
+            Writer.write(b, pr)
+    }
+
+    pub enum StdOut(InputStream)
+    instance Reader[StdOut] {
+        type Aef = IO
+        pub def read(b: Array[Int8, r], r: StdOut): Result[IoError, Int32] \ r + IO =
+            let StdOut(pr) = r;
+            Reader.read(b, pr)
+    }
+
+    pub enum StdErr(InputStream)
+    instance Reader[StdErr] {
+        type Aef = IO
+        pub def read(b: Array[Int8, r], r: StdErr): Result[IoError, Int32] \ r + IO =
+            let StdErr(pr) = r;
+            Reader.read(b, pr)
+    }
 
     ///
     /// Executes the command `cmd` with the arguments `args`.
@@ -68,7 +151,7 @@ mod Process {
         run {
             Ok(f(x))
         } with handler Process {
-            def execWithCwdAndEnv(cmd, args, cwd, env, k) = region rc {
+            def execWithCwdAndEnv(cmd, args, cwdPath, env, k) = region rc {
                 try {
                     let arr = List.toArray(rc, cmd :: args);
                     let pb = new ProcessBuilder(arr);
@@ -76,24 +159,89 @@ mod Process {
                         pb.environment().put(fst(e), snd(e));
                         ()
                     };
-                    match cwd {
+                    match cwdPath {
                         case Some(cwd) => pb.directory(new JFile(cwd)); ()
                         case None => ()
                     };
                     let process = pb.start();
-                    k(
-                        ProcessHandle.ProcessHandle(
-                            {stop = () -> process.destroy(), exitValue = () -> process.exitValue(),
-                                isAlive = () -> process.isAlive()}
-                             )
-                        )
+                    k(ProcessHandle(process))
                 } catch {
                     case ex: IllegalArgumentException  => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: NullPointerException      => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: SecurityException         => Err(IoError(ErrorKind.PermissionDenied, ex.getMessage()))
                     case ex: IOException               => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
+
+            def exitValue(ph, k) =
+                try {
+                    let ProcessHandle(jProc) = ph;
+                    k(Some(jProc.exitValue()))
+                } catch {
+                    case _: IllegalThreadStateException => k(None)
+                    case ex: IOException                => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+            def isAlive(ph, k) =
+                try {
+                    let ProcessHandle(jProc) = ph;
+                    k(jProc.isAlive())
+                } catch {
+                    case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+            def pid(ph, k) =
+                try {
+                    let ProcessHandle(jProc) = ph;
+                    let pid = jProc.pid();
+                    k(pid)
+                } catch {
+                    case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
+                    case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+            def stdin(ph, k) =
+                let ProcessHandle(jProc) = ph;
+                k(StdIn(jProc.getOutputStream()))
+
+            def stdout(ph, k) =
+                let ProcessHandle(jProc) = ph;
+                k(StdOut(jProc.getInputStream()))
+
+            def stderr(ph, k) =
+                let ProcessHandle(jProc) = ph;
+                k(StdErr(jProc.getErrorStream()))
+
+            def output(ph, k) = ???
+
+
+            def stop(ph, k) =
+                try {
+                    let ProcessHandle(jProc) = ph;
+                    k(jProc.destroy())
+                } catch {
+                    case ex: IOException => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+            def waitFor(ph, k) =
+                try {
+                    let ProcessHandle(jProc) = ph;
+                    let exitVal = jProc.waitFor();
+                    k(exitVal)
+                } catch {
+                    case ex: InterruptedException => Err(IoError(ErrorKind.Interrupted, ex.getMessage()))
+                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
+            def waitForTimeout(ph, time, unit, k) =
+                try {
+                    let timeMS = time * Int32.toInt64(TimeUnit.toMilliseconds(unit));
+                    let ProcessHandle(jProc) = ph;
+                    let exitVal = jProc.waitFor(timeMS, JTimeUnit.MILLISECONDS);
+                    k(exitVal)
+                } catch {
+                    case ex: InterruptedException => Err(IoError(ErrorKind.Interrupted, ex.getMessage()))
+                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+
         }
 
     ///

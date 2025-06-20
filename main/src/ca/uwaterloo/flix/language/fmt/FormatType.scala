@@ -28,12 +28,17 @@ object FormatType {
     *
     * Performs alpha renaming if the rigidity environment is present.
     */
-  def formatType(tpe: Type, renv: Option[RigidityEnv] = None)(implicit flix: Flix): String = {
+  def formatType(tpe: Type, renv: Option[RigidityEnv] = None, minimizeEffs: Boolean = false)(implicit flix: Flix): String = {
     val renamed = renv match {
       case None => tpe
       case Some(env) => alphaRename(tpe, env)
     }
-    formatTypeWithOptions(renamed, flix.getFormatOptions)
+    val minimized = if (minimizeEffs) {
+      Type.simplifyEffects(renamed)
+    } else {
+      renamed
+    }
+    formatTypeWithOptions(minimized, flix.getFormatOptions)
   }
 
   /**
@@ -50,7 +55,7 @@ object FormatType {
 
     // Compute a substitution that maps the first flexible variable to id 1 and so forth.
     val m = flexibleVars.zipWithIndex.map {
-      case (tvar@Type.Var(sym, loc), index) =>
+      case (Type.Var(sym, loc), index) =>
         sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.isSlack, sym.scope, loc), loc): Type)
     }
     val s = Substitution(m.toMap)

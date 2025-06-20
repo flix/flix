@@ -17,13 +17,12 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
-import ca.uwaterloo.flix.language.phase.unification.set.SetUnification
 import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.ChaosMonkey
 
 import scala.annotation.tailrec
 
@@ -90,7 +89,7 @@ object ConstraintSolver2 {
         progress.markProgress()
         res.exhaustively(progress)(f)
       } else {
-        this
+        res
       }
     }
 
@@ -130,7 +129,7 @@ object ConstraintSolver2 {
     * Solves the given constraint set as far as possible.
     */
   def solveAll(constrs0: List[TypeConstraint], initialSubst: SubstitutionTree)(implicit scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
-    val constrs = constrs0.map(initialSubst.apply)
+    val constrs = ChaosMonkey.chaos(constrs0.map(initialSubst.apply))
     val soup = new Soup(constrs, initialSubst)
     val progress = Progress()
     val res = soup.exhaustively(progress)(solveOne)
@@ -160,17 +159,20 @@ object ConstraintSolver2 {
               (s, p) => s.flatMap(breakDownConstraints(_, p))
             }
             .flatMap(eliminateIdentities(_, progress))
+            .flatMap(eliminateErrors(_, progress))
             .map(reduceTypes(_, progress))
             .flatMapSubst(makeSubstitution(_, progress))
             .exhaustively(progress) {
               (s, p) => s.flatMap(breakDownConstraints(_, p))
             }
             .flatMap(eliminateIdentities(_, progress))
+            .flatMap(eliminateErrors(_, progress))
             .map(reduceTypes(_, progress))
             .exhaustively(progress) {
               (s, p) => s.flatMap(breakDownConstraints(_, p))
             }
             .flatMap(eliminateIdentities(_, progress))
+            .flatMap(eliminateErrors(_, progress))
             .map(reduceTypes(_, progress))
             .flatMapSubst(recordUnification(_, progress))
             .flatMapSubst(schemaUnification(_, progress))
@@ -205,8 +207,7 @@ object ConstraintSolver2 {
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
       val nested = nested0.map(purifyEmptyRegion(_, progress))
       TypeConstraint.Purification(sym, eff1, eff2, prov, nested)
-    case c: TypeConstraint.Trait => c
-    case c: TypeConstraint.Equality => c
+    case c => c
   }
 
   /**
@@ -262,8 +263,62 @@ object ConstraintSolver2 {
       val nested = nested0.flatMap(eliminateIdentities(_, progress))
       List(TypeConstraint.Purification(sym, eff1, eff2, prov, nested))
 
-    case c: TypeConstraint.Trait =>
-      List(c)
+    case c => List(c)
+  }
+
+  /**
+    * Removes constraints containing errors.
+    *
+    * We don't eliminate constraints with errors that are part of syntactic types.
+    * This is to allow partial solutions. For example, if we have:
+    * {{{
+    *   a -> Error ~ String -> Bool
+    * }}}
+    * then we don't eliminate this constraint because we can later break it down to
+    * {{{
+    *       a ~ String
+    *   Error ~ Bool
+    * }}}
+    * then `a ~ String` can be solved and `Error ~ Bool` can be eliminated.
+    *
+    * If the types are non-syntactic, then we eliminate the constraint.
+    * For example, if we have:
+    * {{{
+    *   IO ∪ Error ~ IO ∩ a
+    * }}}
+    * then we eliminate the constraint because we cannot simply break it down.
+    */
+  private def eliminateErrors(constr: TypeConstraint, progress: Progress): List[TypeConstraint] = constr match {
+    case TypeConstraint.Equality(tpe1, tpe2, _) if isEliminable(tpe1) || isEliminable(tpe2) => Nil
+
+    case TypeConstraint.Conflicted(tpe1, tpe2, _) if isEliminable(tpe1) || isEliminable(tpe2) => Nil
+
+    case TypeConstraint.Trait(_, tpe, _) if isEliminable(tpe) => Nil
+
+    case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
+      val nested = nested0.flatMap(eliminateErrors(_, progress))
+      List(TypeConstraint.Purification(sym, eff1, eff2, prov, nested))
+
+    case c => List(c)
+  }
+
+  /**
+    * Returns true if type constraints containing this type can be eliminated.
+    * They can be eliminated if:
+    * - the type is syntactic and IS an error type, or
+    * - the type is non-syntactic and CONTAINS an error type
+    */
+  private def isEliminable(tpe: Type): Boolean = {
+    if (isSyntactic(tpe.kind)) {
+      // Syntactic kinds can only be eliminated after breaking them up.
+      tpe match {
+        case Type.Cst(TypeConstructor.Error(_, _), _) => true
+        case _ => false
+      }
+    } else {
+      // Non-syntactic kinds don't get broken up, so the must be eliminated eagerly.
+      Type.hasError(tpe)
+    }
   }
 
   /**
@@ -292,6 +347,7 @@ object ConstraintSolver2 {
   private def contextReduction(constr: TypeConstraint, progress: Progress)(implicit scope: Scope, renv0: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): List[TypeConstraint] = constr match {
     // Case 1: Non-trait constraint. Do nothing.
     case c: TypeConstraint.Equality => List(c)
+    case c: TypeConstraint.Conflicted => List(c)
 
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
       val nested = nested0.flatMap(contextReduction(_, progress)(scope.enter(sym), renv0, trenv, eqenv, flix))
@@ -392,12 +448,8 @@ object ConstraintSolver2 {
       case other => Right(other)
     }
 
-    val eqs = eqConstrs.map {
-      case TypeConstraint.Equality(tpe1, tpe2, prov) => (tpe1, tpe2, prov.loc)
-    }
-
     // First solve all the top-level constraints together
-    val (leftovers1, subst1) = EffUnification3.unifyAll(eqs, scope, renv) match {
+    val (leftovers1, subst1) = EffUnification3.unifyAll(eqConstrs, scope, renv) match {
       case Result.Ok(subst) =>
         // If we solved everything, then we can use the new substitution.
         // We only mark progress if there was something to solve.
@@ -407,11 +459,7 @@ object ConstraintSolver2 {
         (Nil, subst)
       case Result.Err(unsolved) =>
         // Otherwise we failed. Return the evidence of failure.
-        val newConstrs = unsolved.map {
-          // TODO need better provenance than match
-          case (tpe1, tpe2, loc) => TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(tpe1, tpe2, loc))
-        }
-        (newConstrs, Substitution.empty)
+        (unsolved, Substitution.empty)
     }
 
     val tree0 = SubstitutionTree.shallow(subst1)
@@ -490,6 +538,8 @@ object ConstraintSolver2 {
       TypeConstraint.Trait(sym, reduce(tpe, scope, renv)(progress, eqenv, flix), loc)
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested) =>
       TypeConstraint.Purification(sym, reduce(eff1, scope, renv)(progress, eqenv, flix), reduce(eff2, scope, renv)(progress, eqenv, flix), prov, nested.map(reduceTypes(_, progress)(scope.enter(sym), renv, eqenv, flix)))
+    case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
+      TypeConstraint.Conflicted(reduce(tpe1, scope, renv)(progress, eqenv, flix), reduce(tpe2, scope, renv)(progress, eqenv, flix), prov)
   }
 
   /**
@@ -515,15 +565,13 @@ object ConstraintSolver2 {
       progress.markProgress()
       (Nil, SubstitutionTree.singleton(sym, tpe1))
 
-    case c: TypeConstraint.Equality => (List(c), SubstitutionTree.empty)
-
-    case c: TypeConstraint.Trait => (List(c), SubstitutionTree.empty)
-
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
       val (nested, branch) = foldSubstitution(nested0)(makeSubstitution(_, progress)(scope.enter(sym), renv))
       val c = TypeConstraint.Purification(sym, eff1, eff2, prov, nested)
       val tree = SubstitutionTree.oneBranch(sym, branch)
       (List(c), tree)
+
+    case c => (List(c), SubstitutionTree.empty)
   }
 
   /**

@@ -793,6 +793,26 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalTraitConstraintParameter](result)
   }
 
+  test("IllegalInlineAndDontInlineAnnotation.01") {
+    val input =
+      """
+        |@Inline @DontInline
+        |def f(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InlineAndDontInline](result)
+  }
+
+  test("IllegalInlineAndDontInlineAnnotation.02") {
+    val input =
+      """
+        |@DontInline @Inline
+        |def f(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InlineAndDontInline](result)
+  }
+
   test("MalformedFloat64.01") {
     val input = "def f(): Float64 = 1.7976931348623158e+308"
     val result = compile(input, Options.TestWithLibNix)
@@ -947,6 +967,34 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MismatchedTypeParameters](result)
+  }
+
+  test("MissingArgumentList.01") {
+    val input =
+      """
+        |struct Person[r] {
+        |    name: String,
+        |    age: Int32
+        |}
+        |
+        |def f(): Person[r] = new Per
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MissingArgumentList](result)
+  }
+
+  test("MissingArgumentList.02") {
+    val input =
+      """
+        |struct Person[r] {
+        |    name: String,
+        |    age: Int32
+        |}
+        |
+        |def f(): Person[r] = new Person
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MissingArgumentList](result)
   }
 
   test("MissingFormalParamAscription.01") {

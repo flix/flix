@@ -18,12 +18,12 @@ package ca.uwaterloo.flix.tools.pkg.github
 import ca.uwaterloo.flix.tools.pkg.{PackageError, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Result, StreamOps}
-import org.json4s.JsonDSL.*
 import org.json4s.*
 import org.json4s.JsonAST.{JArray, JValue}
+import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods.{compact, parse, render}
 
-import java.io.{File, IOException, InputStream}
+import java.io.{IOException, InputStream}
 import java.net.{URI, URL}
 import java.nio.file.{Files, Path}
 import javax.net.ssl.HttpsURLConnection
@@ -271,14 +271,14 @@ object GitHub {
     * Returns the URL for updating information about this specific release.
     */
   private def releaseIdUrl(project: Project, releaseId: String): URL = {
-    new URL(s"${releasesUrl(project).toString}/$releaseId")
+    new URI(s"${releasesUrl(project).toString}/$releaseId").toURL
   }
 
   /**
     * Returns the URL for viewing basic information about this specific release.
     */
   private def releaseVersionUrl(project: Project, version: SemVer): URL = {
-    new URL(s"${releasesUrl(project).toString}/tags/v$version")
+    new URI(s"${releasesUrl(project).toString}/tags/v$version").toURL
   }
 
   /**

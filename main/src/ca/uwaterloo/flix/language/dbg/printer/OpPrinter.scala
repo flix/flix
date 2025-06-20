@@ -165,18 +165,19 @@ object OpPrinter {
   /**
     * Returns the [[DocAst.Expr]] representation of `op`.
     */
-  def print(op: AtomicOp, ds: List[Expr], tpe: DocAst.Type): Expr = (op, ds) match {
+  def print(op: AtomicOp, ds: List[Expr], tpe: DocAst.Type, eff: DocAst.Type): Expr = (op, ds) match {
     case (AtomicOp.Region, Nil) => Region
     case (AtomicOp.GetStaticField(field), Nil) => JavaGetStaticField(field)
     case (AtomicOp.HoleError(sym), Nil) => HoleError(sym)
     case (AtomicOp.MatchError, Nil) => MatchError
+    case (AtomicOp.CastError(_, _), Nil) => CastError
     case (AtomicOp.Unary(sop), List(d)) => Unary(OpPrinter.print(sop), d)
     case (AtomicOp.Binary(sop), List(d1, d2)) => Binary(d1, OpPrinter.print(sop), d2)
     case (AtomicOp.Is(sym), List(d)) => Is(sym, d)
-    case (AtomicOp.Tag(sym), List(d)) => Tag(sym, List(d))
+    case (AtomicOp.Tag(sym), _) => Tag(sym, ds)
     case (AtomicOp.Untag(sym, idx), List(d)) => Untag(sym, d, idx)
     case (AtomicOp.InstanceOf(clazz), List(d)) => InstanceOf(d, clazz)
-    case (AtomicOp.Cast, List(d)) => Cast(d, tpe)
+    case (AtomicOp.Cast, List(d)) => UncheckedCast(d, Some(tpe), Some(eff))
     case (AtomicOp.Unbox, List(d)) => Unbox(d, tpe)
     case (AtomicOp.Box, List(d)) => Box(d)
     case (AtomicOp.Index(idx), List(d)) => Index(idx, d)

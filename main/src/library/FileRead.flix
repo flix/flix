@@ -126,129 +126,129 @@ mod FileRead {
         run {
             Ok(f(x))
         } with handler FileRead {
-            def exists(f, k) = {
+            def exists(filename, k) = {
                 try {
-                    k(Files.exists(Paths.get(f), (...{}: Vector[LinkOption])))
+                    k(Files.exists(Paths.get(filename), (...{}: Vector[LinkOption])))
                 } catch {
                     case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                 }
             }
 
-            def isDirectory(f, k) = {
+            def isDirectory(filename, k) = {
                 try {
-                    k(Files.isDirectory(Paths.get(f), (...{}: Vector[LinkOption])))
+                    k(Files.isDirectory(Paths.get(filename), (...{}: Vector[LinkOption])))
                 } catch {
                     case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                 }
             }
 
-            def isRegularFile(f, k) = {
+            def isRegularFile(filename, k) = {
                 try {
-                    k(Files.isRegularFile(Paths.get(f), (...{}: Vector[LinkOption])))
+                    k(Files.isRegularFile(Paths.get(filename), (...{}: Vector[LinkOption])))
                 } catch {
                     case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                 }
             }
 
-            def isReadable(f, k) = {
+            def isReadable(filename, k) = {
                 try {
-                    k(Files.isReadable(Paths.get(f)))
+                    k(Files.isReadable(Paths.get(filename)))
                 } catch {
                     case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                 }
             }
 
-            def isSymbolicLink(f, k) = {
+            def isSymbolicLink(filename, k) = {
                 try {
-                    k(Files.isSymbolicLink(Paths.get(f)))
+                    k(Files.isSymbolicLink(Paths.get(filename)))
                 } catch {
                     case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                 }
             }
 
-            def isWritable(f, k) = {
+            def isWritable(filename, k) = {
                 try {
-                    k(Files.isWritable(Paths.get(f)))
+                    k(Files.isWritable(Paths.get(filename)))
                 } catch {
                     case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                 }
             }
 
-            def isExecutable(f, k) = {
+            def isExecutable(filename, k) = {
                 try {
-                    k(Files.isExecutable(Paths.get(f)))
+                    k(Files.isExecutable(Paths.get(filename)))
                 } catch {
                     case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                 }
             }
 
-            def accessTime(f, k) = {
+            def accessTime(filename, k) = {
                 try {
-                    k(fileAttributes(Paths.get(f)).lastAccessTime().toMillis())
-                } catch {
-                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
-                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
-                }
-            }
-
-            def creationTime(f, k) = {
-                try {
-                    k(fileAttributes(Paths.get(f)).creationTime().toMillis())
+                    k(fileAttributes(Paths.get(filename)).lastAccessTime().toMillis())
                 } catch {
                     case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
-            def modificationTime(f, k) = {
+            def creationTime(filename, k) = {
                 try {
-                    k(fileAttributes(Paths.get(f)).lastModifiedTime().toMillis())
+                    k(fileAttributes(Paths.get(filename)).creationTime().toMillis())
                 } catch {
                     case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
-            def size(f, k) = {
+            def modificationTime(filename, k) = {
                 try {
-                    k(Files.size(Paths.get(f)))
+                    k(fileAttributes(Paths.get(filename)).lastModifiedTime().toMillis())
                 } catch {
                     case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
-            def read(f, k) = {
+            def size(filename, k) = {
                 try {
-                    k(new JString(Files.readAllBytes(Paths.get(f))))
+                    k(Files.size(Paths.get(filename)))
                 } catch {
                     case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
-            def readLines(f, k) = {
+            def read(filename, k) = {
                 try {
-                    k(ToFlix.toFlix(Files.readAllLines(Paths.get(f))))
+                    k(new JString(Files.readAllBytes(Paths.get(filename))))
                 } catch {
                     case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
-            def readBytes(f, k) = {
+            def readLines(filename, k) = {
                 try {
-                    k(Array.toVector(Files.readAllBytes(Paths.get(f))))
+                    k(ToFlix.toFlix(Files.readAllLines(Paths.get(filename))))
                 } catch {
                     case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
                     case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
             }
 
-            def list(f, k) = {
+            def readBytes(filename, k) = {
+                try {
+                    k(Array.toVector(Files.readAllBytes(Paths.get(filename))))
+                } catch {
+                    case ex: InvalidPathException => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
+                    case ex: IOException          => Err(IoError(ErrorKind.Other, ex.getMessage()))
+                }
+            }
+
+            def list(filename, k) = {
                 try {
                     // TODO: Use java.nio.file.Files.list when we have support for Java generics.
-                    let file = new File(f);
+                    let file = new File(filename);
                     k(Array.toList(file.list()))
                 } catch {
                     case ex: InvalidPathException  => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
