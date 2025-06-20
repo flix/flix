@@ -313,6 +313,9 @@ class Flix {
     "TcpBindWithResult.flix" -> LocalResource.get("/src/library/TcpBindWithResult.flix"),
     "TimeUnit.flix" -> LocalResource.get("/src/library/TimeUnit.flix"),
 
+    "Data/Range.flix" -> LocalResource.get("/src/library/Data/Range.flix"),
+    "Data/Discrete.flix" -> LocalResource.get("/src/library/Data/Discrete.flix"),
+
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
     "Regex.flix" -> LocalResource.get("/src/library/Regex.flix"),
