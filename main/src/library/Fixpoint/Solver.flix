@@ -28,7 +28,7 @@ mod Fixpoint.Solver {
     use Fixpoint.Ast.Shared.PredSym
     use Fixpoint.Ast.Shared.PredSym.PredSym
     use Fixpoint.Boxable.{box, unbox}
-    use Fixpoint.Boxed
+    use Fixpoint3.Boxed
     use Fixpoint.Interpreter.Database
     use Fixpoint3.Ast.Ram.RelSym
 

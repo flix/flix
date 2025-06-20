@@ -6,7 +6,7 @@ mod Fixpoint.SolverApi {
     use Fixpoint.Ast.Shared.PredSym
     use Fixpoint.Ast.Shared.PredSym.PredSym
     use Fixpoint.Toggle.useNewSolver
-    use Fixpoint.Boxed
+    use Fixpoint3.Boxed
 
     ///
     /// Returns the minimal model of the given Datalog program `d`.

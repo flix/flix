@@ -17,7 +17,7 @@
 mod Fixpoint.Ast.Shared {
 
     use Fixpoint.Boxable
-    use Fixpoint.Boxed
+    use Fixpoint3.Boxed
 
     /////////////////////////////////////////////////////////////////////////////
     // Denotation                                                              //
