@@ -170,6 +170,7 @@ object Serialization {
     case TypeConstructor.RecordRowEmpty => STC.RecordRowEmpty
     case TypeConstructor.RecordRowExtend(_) => ??? // SerializableTypeConstructor.RecordRowExtend(label)
     case TypeConstructor.Record => STC.Record
+    case TypeConstructor.Extensible => ???
     case TypeConstructor.SchemaRowEmpty => STC.SchemaRowEmpty
     case TypeConstructor.SchemaRowExtend(_) => ??? // SerializableTypeConstructor.SchemaRowExtend(pred)
     case TypeConstructor.Schema => STC.Schema
