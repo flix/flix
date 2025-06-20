@@ -111,7 +111,8 @@ object EffectLock {
         val originalEffects = tpe2.arrowEffectType
         val upgradeEffs = Type.mkUnion(sc1Effs, originalEffects, sc1Effs.loc)
         val renv = RigidityEnv.apply(SortedSet.from(sc2.quantifiers))
-        val constraint = TypeConstraint.Equality(upgradeEffs, originalEffects, TypeConstraint.Provenance.ExpectEffect(originalEffects, upgradeEffs, originalEffects.loc))
+        val provenance = TypeConstraint.Provenance.ExpectEffect(originalEffects, upgradeEffs, originalEffects.loc)
+        val constraint = TypeConstraint.Equality(upgradeEffs, originalEffects, provenance)
         EffUnification3.unifyAll(List(constraint), Scope.Top, renv) match {
           case Result.Ok(_) =>
             println(s"sc1Effs: $sc1Effs")
