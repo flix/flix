@@ -16,11 +16,13 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.ResolvedAst.EqualityConstraint
 import ca.uwaterloo.flix.language.ast.Symbol.KindedTypeVarSym
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.phase.unification.{EffUnification3, EqualityEnv, Unification}
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, TypeConstraint}
+import ca.uwaterloo.flix.language.phase.unification.{EffUnification3, EqualityEnv}
+import ca.uwaterloo.flix.util.{Options, Result}
 
 import scala.collection.immutable.SortedSet
 
@@ -55,7 +57,7 @@ object EffectLock {
     */
   private def isGeneralizable(sc1: Scheme, sc2: Scheme)(implicit flix: Flix): Boolean = {
     val renv = RigidityEnv.apply(SortedSet.from(sc2.quantifiers))
-    val unification = Unification.fullyUnifyTypes(sc1.base, sc2.base, renv, EqualityEnv.empty)(Scope.Top, flix)
+    val unification = ConstraintSolver2.fullyUnify(sc1.base, sc2.base, Scope.Top, renv)(EqualityEnv.empty, flix)
     unification match {
       case Some(subst) =>
         println(subst)
@@ -104,16 +106,22 @@ object EffectLock {
         println(s"isMatchingResultTypes: $isMatchingResultTypes")
 
 
-        // 2. Boolean unification of effects phi + phi' = phi'
+        // 2. Boolean unification of effects phi_upgrd + phi_orig = phi_orig
         val sc1Effs = tpe1.arrowEffectType
-        val sc2Effs = tpe2.arrowEffectType
-        val left = Type.mkUnion(sc1Effs, sc2Effs, sc1Effs.loc)
+        val originalEffects = tpe2.arrowEffectType
+        val upgradeEffs = Type.mkUnion(sc1Effs, originalEffects, sc1Effs.loc)
         val renv = RigidityEnv.apply(SortedSet.from(sc2.quantifiers))
-        val (unsolvedConstraints, _) = EffUnification3.unifyAll(List((left, sc2Effs, sc2Effs.loc)), Scope.Top, renv)
-        println(s"sc1Effs: $sc1Effs")
-        println(s"sc2Effs: $sc2Effs")
-        println(unsolvedConstraints)
-        isMatchingArgs && isMatchingResultTypes & unsolvedConstraints.isEmpty
+        val constraint = TypeConstraint.Equality(upgradeEffs, originalEffects, TypeConstraint.Provenance.ExpectEffect(originalEffects, upgradeEffs, originalEffects.loc))
+        EffUnification3.unifyAll(List(constraint), Scope.Top, renv) match {
+          case Result.Ok(_) =>
+            println(s"sc1Effs: $sc1Effs")
+            println(s"sc2Effs: $originalEffects")
+            isMatchingArgs && isMatchingResultTypes
+          case Result.Err(unsolvedConstraints) =>
+            println(unsolvedConstraints)
+            false
+        }
+
 
       case _ => false
     }
