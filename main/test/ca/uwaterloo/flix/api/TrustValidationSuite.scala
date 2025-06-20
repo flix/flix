@@ -59,7 +59,7 @@ class TrustValidationSuite extends AnyFunSuite with TestUtils {
   private def toLibSp(sp1: SourcePosition, sp2: SourcePosition): (SourcePosition, SourcePosition) = {
     val input = toLibInput(sp1.source.input)
     val source = sp1.source.copy(input = input)
-    (sp1.copy(source = source), sp2.copy(source = source))
+    (sp1.copy(source), sp2.copy(source))
   }
 
   private def toLibInput(input: Input): Input = input match {
