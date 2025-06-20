@@ -35,16 +35,9 @@ object Permissions {
   }
 
   def fromString(s: String): Option[Permissions] = s.toLowerCase match {
-    case "none" => Some(PlainFlix)
-    case "nothing" => Some(PlainFlix)
-    case "n" => Some(PlainFlix)
-    case "1" => Some(PlainFlix)
-    case "restricted" => Some(TrustJavaClass)
-    case "r" => Some(TrustJavaClass)
-    case "2" => Some(TrustJavaClass)
-    case "all" => Some(Unrestricted)
-    case "a" => Some(Unrestricted)
-    case "3" => Some(Unrestricted)
+    case "plain" => Some(PlainFlix)
+    case "trust-javaclass" => Some(TrustJavaClass)
+    case "unrestricted" => Some(Unrestricted)
     case _ => None
   }
 }
