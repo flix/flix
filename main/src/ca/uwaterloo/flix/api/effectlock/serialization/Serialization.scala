@@ -117,7 +117,7 @@ object Serialization {
     new Symbol.KindedTypeVarSym(sym.id, toVarText(sym.text), toKind(sym.kind), isSlack = false, scope = Scope.Top, loc = SourceLocation.Unknown)
   }
 
-  private def fromType(tpe: Type): SType = tpe match {
+  private def fromType(tpe0: Type): SType = tpe0 match {
     case Type.Var(sym, _) =>
       val serSym = SSymbol.VarSym(sym.id, fromVarText(sym.text), fromKind(sym.kind))
       SType.Var(serSym)
@@ -144,7 +144,7 @@ object Serialization {
       val serKind = fromKind(kind)
       SType.AssocType(serSym, serT, serKind)
 
-    case Type.JvmToType(_, _) | Type.JvmToEff(_, _) | Type.UnresolvedJvmType(_, _) => throw InternalCompilerException("unexpected jvm type", tpe.loc)
+    case Type.JvmToType(_, _) | Type.JvmToEff(_, _) | Type.UnresolvedJvmType(_, _) => throw InternalCompilerException("unexpected jvm type", tpe0.loc)
 
   }
 
@@ -237,7 +237,7 @@ object Serialization {
     case Kind.SchemaRow => SKind.SchemaRow
     case Kind.Predicate => SKind.Predicate
     case Kind.Jvm => SKind.Jvm
-    case Kind.CaseSet(sym) => ???
+    case Kind.CaseSet(_) => ???
     case Kind.Arrow(k1, k2) => SKind.Arrow(fromKind(k1), fromKind(k2))
     case Kind.Error => ???
   }
@@ -255,7 +255,7 @@ object Serialization {
     case SKind.Arrow(k1, k2) => Kind.Arrow(toKind(k1), toKind(k2))
   }
 
-  private def toType(tpe: SType): Type = tpe match {
+  private def toType(tpe0: SType): Type = tpe0 match {
     case SType.Var(sym) =>
       Type.Var(toKindedTypeVarSym(sym), SourceLocation.Unknown)
 
@@ -329,7 +329,7 @@ object Serialization {
     case STC.Difference => TypeConstructor.Difference
     case STC.SymmetricDiff => TypeConstructor.SymmetricDiff
     case STC.Effect(ssym) =>
-      val s = new Symbol.EffectSym(ssym.namespace, ssym.name, SourceLocation.Unknown)
+      val s = new Symbol.EffSym(ssym.namespace, ssym.name, SourceLocation.Unknown)
       TypeConstructor.Effect(s)
     case STC.RegionToStar => TypeConstructor.RegionToStar
   }
