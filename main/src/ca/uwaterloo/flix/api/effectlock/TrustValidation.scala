@@ -317,7 +317,7 @@ object TrustValidation {
   }
 
   private def libFromLoc(loc: SourceLocation): String = loc.sp1.source.input match {
-    case Input.Text(_, _, _) => throw InternalCompilerException("expected library input", loc)
+    case Input.Text(lib, _, _) => lib // Should only happen via testing
     case Input.TxtFile(_, _) => throw InternalCompilerException("expected library input", loc)
     case Input.PkgFile(packagePath, _) => resolveLibName(packagePath) // TODO: May break
     case Input.FileInPackage(packagePath, _, _, _) => resolveLibName(packagePath)
