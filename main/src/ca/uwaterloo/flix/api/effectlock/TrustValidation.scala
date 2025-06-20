@@ -231,7 +231,6 @@ object TrustValidation {
       val err = SuspiciousExpr.GetFieldUse(Expr.GetField(field, exp, tpe, eff, loc))
       err :: visitExp(exp)
 
-
     case Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
       val err = SuspiciousExpr.PutFieldUse(Expr.PutField(field, exp1, exp2, tpe, eff, loc))
       err :: visitExp(exp1) ::: visitExp(exp2)
