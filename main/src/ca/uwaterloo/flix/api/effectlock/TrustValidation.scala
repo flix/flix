@@ -56,10 +56,10 @@ object TrustValidation {
     case Expr.Var(_, _, _) =>
       List.empty
 
-    case Expr.Hole(_, _, _, _) =>
+    case Expr.Hole(_, _, _, _, _) =>
       List.empty
 
-    case Expr.HoleWithExp(exp, _, _, _) =>
+    case Expr.HoleWithExp(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expr.OpenAs(_, exp, _, _) =>
@@ -169,7 +169,7 @@ object TrustValidation {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Ascribe(exp, _, _, _) =>
+    case Expr.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp)
 
     case Expr.InstanceOf(exp, clazz, loc) =>
@@ -305,7 +305,7 @@ object TrustValidation {
   private def isLibrary(loc0: SourceLocation): Boolean = loc0.sp1.source.input match {
     case Input.Text(_, _, _) => false
     case Input.TxtFile(_, _) => false
-    case Input.PkgFile(_, _) => false // TODO maybe consider flipping this to false?
+    case Input.PkgFile(_, _) => false
     case Input.FileInPackage(_, _, _, _) => true
     case Input.Unknown => false
   }
@@ -350,7 +350,7 @@ object TrustValidation {
     case SuspiciousExpr.UncheckedCastUse(expr) =>
       Some(BootstrapError.TrustError(expr.loc))
 
-    case SuspiciousExpr.UnsafeUse(expr) =>
+    case SuspiciousExpr.UnsafeUse(_) =>
       None
 
     case SuspiciousExpr.TryCatchUse(expr) =>
@@ -361,7 +361,7 @@ object TrustValidation {
         Some(BootstrapError.TrustError(expr.loc)) // TODO: Report error for each occurrence
       }
 
-    case SuspiciousExpr.ThrowUse(expr) =>
+    case SuspiciousExpr.ThrowUse(_) =>
       None
 
     case SuspiciousExpr.InvokeConstructorUse(expr) =>
@@ -442,7 +442,7 @@ object TrustValidation {
       classes.contains(clazz) || contains(clazz.getPackage)
     }
 
-    def contains(pkg: Package): Boolean = {
+    private def contains(pkg: Package): Boolean = {
       packages.contains(pkg)
     }
 
