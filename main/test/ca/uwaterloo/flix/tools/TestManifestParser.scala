@@ -8,7 +8,7 @@ import ca.uwaterloo.flix.language.ast.Symbol
 import org.scalatest.funsuite.AnyFunSuite
 import ca.uwaterloo.flix.tools.pkg.Manifest
 import ca.uwaterloo.flix.tools.pkg.Permissions
-import ca.uwaterloo.flix.tools.pkg.Permissions.{All, PlainFlix, TrustJavaClass}
+import ca.uwaterloo.flix.tools.pkg.Permissions.PlainFlix
 
 import java.io.File
 import java.net.URI
