@@ -133,6 +133,7 @@ object TrustValidation {
 
     case Expr.Tuple(exps, _, _, _) =>
       exps.flatMap(visitExp)
+
     case Expr.RecordSelect(exp, _, _, _, _) =>
       visitExp(exp)
 
