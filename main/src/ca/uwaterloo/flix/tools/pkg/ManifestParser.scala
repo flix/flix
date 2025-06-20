@@ -360,7 +360,7 @@ object ManifestParser {
         // If the dependency maps to a string, parse the version.
         if (deps.isString(depKey)) {
           getFlixVersion(deps, depKey, p).map {
-            Dependency.FlixDependency(repo, username, projectName, _, Permissions.FlixOnly)
+            Dependency.FlixDependency(repo, username, projectName, _, Permissions.PlainFlix)
           }
 
 
@@ -405,7 +405,7 @@ object ManifestParser {
     if (!depTbl.isString(key)) {
       val perms = depTbl.get(key)
       if (perms == null) {
-        Ok(Permissions.FlixOnly)
+        Ok(Permissions.PlainFlix)
       } else {
         Err(ManifestError.FlixDependencyPermissionTypeError(Some(p), key, perms))
       }

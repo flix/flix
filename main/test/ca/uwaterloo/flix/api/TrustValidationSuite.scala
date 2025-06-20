@@ -18,7 +18,7 @@ class TrustValidationSuite extends AnyFunSuite with TestUtils {
         |pub def noEff(): Int32 = 2
         |""".stripMargin
     val (root, flix) = checkLib(input, "noEFf", Options.TestWithLibNix)
-    val dep = mkDependency("testlib", Permissions.FlixOnly)
+    val dep = mkDependency("testlib", Permissions.PlainFlix)
     val result = flix.validateTrust(root, Set(dep))
     assert(result.isEmpty)
   }
@@ -29,7 +29,7 @@ class TrustValidationSuite extends AnyFunSuite with TestUtils {
         |pub def f(): Int32 = unchecked_cast(2 as Int32 \ {})
         |""".stripMargin
     val (root, flix) = checkLib(input, "f", Options.TestWithLibNix)
-    val dep = mkDependency("testlib", Permissions.FlixOnly)
+    val dep = mkDependency("testlib", Permissions.PlainFlix)
     val result = flix.validateTrust(root, Set(dep))
     assert(result.nonEmpty)
   }

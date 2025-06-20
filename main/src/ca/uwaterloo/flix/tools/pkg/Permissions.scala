@@ -22,7 +22,7 @@ sealed trait Permissions
   */
 object Permissions {
 
-  case object FlixOnly extends Permissions {
+  case object PlainFlix extends Permissions {
     override def toString: String = "none"
   }
 
@@ -35,10 +35,10 @@ object Permissions {
   }
 
   def fromString(s: String): Option[Permissions] = s.toLowerCase match {
-    case "none" => Some(FlixOnly)
-    case "nothing" => Some(FlixOnly)
-    case "n" => Some(FlixOnly)
-    case "1" => Some(FlixOnly)
+    case "none" => Some(PlainFlix)
+    case "nothing" => Some(PlainFlix)
+    case "n" => Some(PlainFlix)
+    case "1" => Some(PlainFlix)
     case "restricted" => Some(Restricted)
     case "r" => Some(Restricted)
     case "2" => Some(Restricted)

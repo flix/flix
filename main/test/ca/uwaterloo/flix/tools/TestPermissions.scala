@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.tools.pkg.Permissions
 
 class TestPermissions extends AnyFunSuite {
   test("toString-ofString-none") {
-    val perm = Permissions.FlixOnly
+    val perm = Permissions.PlainFlix
     val res = Permissions.fromString(perm.toString) match {
       case Some(r) => r
       case None => fail()
