@@ -90,10 +90,10 @@ object Reachability {
     case Expr.Var(_, _, _) =>
       Set.empty
 
-    case Expr.Hole(_, _, _, _) =>
+    case Expr.Hole(_, _, _, _, _) =>
       Set.empty
 
-    case Expr.HoleWithExp(exp, _, _, _) =>
+    case Expr.HoleWithExp(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expr.OpenAs(_, exp, _, _) =>
@@ -209,7 +209,7 @@ object Reachability {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Ascribe(exp, _, _, _) =>
+    case Expr.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp)
 
     case Expr.InstanceOf(exp, _, _) =>
