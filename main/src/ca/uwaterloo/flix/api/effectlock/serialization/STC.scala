@@ -88,9 +88,9 @@ object STC {
 
   case class Tuple(l: Int) extends STC
 
-  case object Relation extends STC
+  case class Relation(arity: Int) extends STC
 
-  case object Lattice extends STC
+  case class Lattice(arity: Int) extends STC
 
   case object True extends STC
 

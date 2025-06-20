@@ -168,10 +168,10 @@ object Serialization {
     case TypeConstructor.Arrow(arity) => STC.Arrow(arity)
     case TypeConstructor.ArrowWithoutEffect(arity) => STC.ArrowWithoutEffect(arity)
     case TypeConstructor.RecordRowEmpty => STC.RecordRowEmpty
-    case TypeConstructor.RecordRowExtend(label) => ??? // SerializableTypeConstructor.RecordRowExtend(label)
+    case TypeConstructor.RecordRowExtend(_) => ??? // SerializableTypeConstructor.RecordRowExtend(label)
     case TypeConstructor.Record => STC.Record
     case TypeConstructor.SchemaRowEmpty => STC.SchemaRowEmpty
-    case TypeConstructor.SchemaRowExtend(pred) => ??? // SerializableTypeConstructor.SchemaRowExtend(pred)
+    case TypeConstructor.SchemaRowExtend(_) => ??? // SerializableTypeConstructor.SchemaRowExtend(pred)
     case TypeConstructor.Schema => STC.Schema
     case TypeConstructor.Sender => STC.Sender
     case TypeConstructor.Receiver => STC.Receiver
@@ -180,18 +180,18 @@ object Serialization {
       val serSym = SSymbol.EnumSym(sym.namespace, sym.text)
       val serKind = fromKind(kind)
       STC.Enum(serSym, serKind)
-    case TypeConstructor.Struct(sym, kind) => ??? // SerializableTypeConstructor.Struct(sym, kind)
-    case TypeConstructor.RestrictableEnum(sym, kind) => ??? // SerializableTypeConstructor.RestrictableEnum(sym, kind)
-    case TypeConstructor.Native(clazz) => ??? // SerializableTypeConstructor.Native(clazz)
-    case TypeConstructor.JvmConstructor(constructor) => ??? // SerializableTypeConstructor.JvmConstructor(constructor)
-    case TypeConstructor.JvmMethod(method) => ??? // SerializableTypeConstructor.JvmMethod(method)
-    case TypeConstructor.JvmField(field) => ??? // SerializableTypeConstructor.JvmField(field)
+    case TypeConstructor.Struct(_, _) => ??? // SerializableTypeConstructor.Struct(sym, kind)
+    case TypeConstructor.RestrictableEnum(_, _) => ??? // SerializableTypeConstructor.RestrictableEnum(sym, kind)
+    case TypeConstructor.Native(_) => ??? // SerializableTypeConstructor.Native(clazz)
+    case TypeConstructor.JvmConstructor(_) => ??? // SerializableTypeConstructor.JvmConstructor(constructor)
+    case TypeConstructor.JvmMethod(_) => ??? // SerializableTypeConstructor.JvmMethod(method)
+    case TypeConstructor.JvmField(_) => ??? // SerializableTypeConstructor.JvmField(field)
     case TypeConstructor.Array => STC.Array
     case TypeConstructor.ArrayWithoutRegion => ??? // SerializableTypeConstructor.ArrayWithoutRegion
     case TypeConstructor.Vector => STC.Vector
     case TypeConstructor.Tuple(l) => STC.Tuple(l)
-    case TypeConstructor.Relation => STC.Relation
-    case TypeConstructor.Lattice => STC.Lattice
+    case TypeConstructor.Relation(arity) => STC.Relation(arity)
+    case TypeConstructor.Lattice(arity) => STC.Lattice(arity)
     case TypeConstructor.True => STC.True
     case TypeConstructor.False => STC.False
     case TypeConstructor.Not => STC.Not
@@ -207,14 +207,14 @@ object Serialization {
     case TypeConstructor.Effect(sym) =>
       val ssym = SSymbol.EffectSym(sym.namespace, sym.name)
       STC.Effect(ssym)
-    case TypeConstructor.CaseComplement(sym) => ??? // SerializableTypeConstructor.CaseComplement(sym)
-    case TypeConstructor.CaseUnion(sym) => ??? // SerializableTypeConstructor.CaseUnion(sym)
-    case TypeConstructor.CaseIntersection(sym) => ??? // SerializableTypeConstructor.CaseIntersection(sym)
-    case TypeConstructor.CaseSet(syms, enumSym) => ??? // SerializableTypeConstructor.CaseSet(syms, enumSym)
+    case TypeConstructor.CaseComplement(_) => ??? // SerializableTypeConstructor.CaseComplement(sym)
+    case TypeConstructor.CaseUnion(_) => ??? // SerializableTypeConstructor.CaseUnion(sym)
+    case TypeConstructor.CaseIntersection(_) => ??? // SerializableTypeConstructor.CaseIntersection(sym)
+    case TypeConstructor.CaseSet(_, _) => ??? // SerializableTypeConstructor.CaseSet(syms, enumSym)
     case TypeConstructor.Region(_) => ??? // STC.Region(sym)
     case TypeConstructor.RegionToStar => STC.RegionToStar
     case TypeConstructor.RegionWithoutRegion => ??? // SerializableTypeConstructor.RegionWithoutRegion
-    case TypeConstructor.Error(id, kind) => ??? // SerializableTypeConstructor.Error(id, kind)
+    case TypeConstructor.Error(_, _) => ??? // SerializableTypeConstructor.Error(id, kind)
   }
 
   private def fromVarText(text: VarText): SVT = text match {
@@ -314,8 +314,8 @@ object Serialization {
     case STC.Array => TypeConstructor.Array
     case STC.Vector => TypeConstructor.Vector
     case STC.Tuple(l) => TypeConstructor.Tuple(l)
-    case STC.Relation => TypeConstructor.Relation
-    case STC.Lattice => TypeConstructor.Lattice
+    case STC.Relation(arity) => TypeConstructor.Relation(arity)
+    case STC.Lattice(arity) => TypeConstructor.Lattice(arity)
     case STC.True => TypeConstructor.True
     case STC.False => TypeConstructor.False
     case STC.Not => TypeConstructor.Not
