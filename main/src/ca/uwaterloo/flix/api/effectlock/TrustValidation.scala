@@ -333,105 +333,105 @@ object TrustValidation {
   private def validateTrustLevels(dependency: Dependency.FlixDependency, suspiciousLibExprs: List[SuspiciousExpr]): List[BootstrapError.TrustError] = dependency.permissions match {
     // TODO: Use lib name for error reporting
     case Permissions.PlainFlix => suspiciousLibExprs.map(e => BootstrapError.TrustError(e.expr.loc)) // if it is empty then no alarms were raised
-    case Permissions.TrustJavaClass => suspiciousLibExprs.flatMap(validationSuspiciousExpr(TrustedJvmBase.get)) // TODO: refactor trustedjvmbase.get
+    case Permissions.TrustJavaClass => suspiciousLibExprs.flatMap(validateSuspiciousExpr(TrustedJvmBase.get)) // TODO: refactor trustedjvmbase.get
     case Permissions.Unrestricted => List.empty
   }
 
   /**
     * Validates suspicious expressions according to the [[Permissions.TrustJavaClass]] level.
     */
-  private def validationSuspiciousExpr(trustedBase: TrustedJvmBase)(expr0: SuspiciousExpr): Option[BootstrapError.TrustError] = expr0 match {
-    // TODO: Move to TrustValidation
+  private def validateSuspiciousExpr(trustedBase: TrustedJvmBase)(expr0: SuspiciousExpr): List[BootstrapError.TrustError] = expr0 match {
     case SuspiciousExpr.InstanceOfUse(expr) =>
       val safe = trustedBase.contains(expr.clazz)
       if (safe) {
-        None
+        List.empty
       } else {
-        Some(BootstrapError.TrustError(expr.loc))
+        List(BootstrapError.TrustError(expr.loc))
       }
 
     case SuspiciousExpr.CheckedCastUse(expr) =>
-      Some(BootstrapError.TrustError(expr.loc))
+      List(BootstrapError.TrustError(expr.loc))
 
     case SuspiciousExpr.UncheckedCastUse(expr) =>
-      Some(BootstrapError.TrustError(expr.loc))
+      List(BootstrapError.TrustError(expr.loc))
 
     case SuspiciousExpr.UnsafeUse(expr) =>
-      Some(BootstrapError.TrustError(expr.loc))
+      List(BootstrapError.TrustError(expr.loc))
 
     case SuspiciousExpr.TryCatchUse(expr) =>
-      val safe = expr.rules.forall(r => trustedBase.contains(r.clazz)) // Maybe sequence options?
+      val violations = expr.rules.filterNot(r => trustedBase.contains(r.clazz))
+      val safe = violations.isEmpty
       if (safe) {
-        None
+        List.empty
       } else {
-        Some(BootstrapError.TrustError(expr.loc)) // TODO: Report error for each occurrence
+        violations.map(r => BootstrapError.TrustError(r.loc))
       }
 
     case SuspiciousExpr.ThrowUse(_) =>
-      None
+      List.empty
 
     case SuspiciousExpr.InvokeConstructorUse(expr) =>
       val safe = trustedBase.contains(expr.constructor)
       if (safe) {
-        None
+        List.empty
       } else {
-        Some(BootstrapError.TrustError(expr.loc))
+        List(BootstrapError.TrustError(expr.loc))
       }
 
     case SuspiciousExpr.InvokeMethodUse(expr) =>
       val safe = trustedBase.contains(expr.method)
       if (safe) {
-        None
+        List.empty
       } else {
-        Some(BootstrapError.TrustError(expr.loc))
+        List(BootstrapError.TrustError(expr.loc))
       }
 
     case SuspiciousExpr.InvokeStaticMethodUse(expr) =>
       val safe = trustedBase.contains(expr.method)
       if (safe) {
-        None
+        List.empty
       } else {
-        Some(BootstrapError.TrustError(expr.loc))
+        List(BootstrapError.TrustError(expr.loc))
       }
 
     case SuspiciousExpr.GetFieldUse(expr) =>
       val safe = trustedBase.contains(expr.field.getDeclaringClass)
       if (safe) {
-        None
+        List.empty
       } else {
-        Some(BootstrapError.TrustError(expr.loc))
+        List(BootstrapError.TrustError(expr.loc))
       }
 
     case SuspiciousExpr.PutFieldUse(expr) =>
       val safe = trustedBase.contains(expr.field.getDeclaringClass)
       if (safe) {
-        None
+        List.empty
       } else {
-        Some(BootstrapError.TrustError(expr.loc))
+        List(BootstrapError.TrustError(expr.loc))
       }
 
     case SuspiciousExpr.GetStaticFieldUse(expr) =>
       val safe = trustedBase.contains(expr.field.getDeclaringClass)
       if (safe) {
-        None
+        List.empty
       } else {
-        Some(BootstrapError.TrustError(expr.loc))
+        List(BootstrapError.TrustError(expr.loc))
       }
 
     case SuspiciousExpr.PutStaticFieldUse(expr) =>
       val safe = trustedBase.contains(expr.field.getDeclaringClass)
       if (safe) {
-        None
+        List.empty
       } else {
-        Some(BootstrapError.TrustError(expr.loc))
+        List(BootstrapError.TrustError(expr.loc))
       }
 
     case SuspiciousExpr.NewObjectUse(expr) =>
       val safe = trustedBase.contains(expr.clazz)
       if (safe) {
-        None
+        List.empty
       } else {
-        Some(BootstrapError.TrustError(expr.loc))
+        List(BootstrapError.TrustError(expr.loc))
       }
   }
 
