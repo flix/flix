@@ -158,10 +158,16 @@ object Reachability {
       val exps = rules.map(_.exp)
       visitExp(exp) ++ visitExps(exps)
 
+    case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
     case Expr.Tag(_, exps, _, _, _) =>
       visitExps(exps)
 
     case Expr.RestrictableTag(_, exps, _, _, _) =>
+      visitExps(exps)
+
+    case Expr.ExtensibleTag(_, exps, _, _, _) =>
       visitExps(exps)
 
     case Expr.Tuple(exps, _, _, _) =>
