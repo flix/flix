@@ -332,7 +332,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = "none" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = "plain" }
         |""".stripMargin
     }
     assertResult(expected = Permissions.PlainFlix)(actual =
@@ -358,7 +358,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = "restricted" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = "trust-javaclass" }
         |""".stripMargin
     }
     assertResult(expected = Permissions.TrustJavaClass)(actual =
@@ -384,7 +384,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = "all" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = "unrestricted" }
         |""".stripMargin
     }
     assertResult(expected = Permissions.Unrestricted)(actual =

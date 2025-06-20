@@ -23,15 +23,15 @@ sealed trait Permissions
 object Permissions {
 
   case object PlainFlix extends Permissions {
-    override def toString: String = "none"
+    override def toString: String = "plain"
   }
 
   case object TrustJavaClass extends Permissions {
-    override def toString: String = "restricted"
+    override def toString: String = "trust-javaclass"
   }
 
   case object Unrestricted extends Permissions {
-    override def toString: String = "all"
+    override def toString: String = "unrestricted"
   }
 
   def fromString(s: String): Option[Permissions] = s.toLowerCase match {
