@@ -193,6 +193,18 @@ class TypeContext {
     }
   }
 
+  /** Generates a constraints representing the source of a concrete effect.
+   *
+   *  For an effect variable effVar and concrete effect concreteEff, generates:
+   * {{
+   *  effVar ~ concreteEff
+   * }}
+   */
+  def unifySource(effVar: Type, concreteEff: Type, loc: SourceLocation): Unit = {
+    val constr = TypeConstraint.Equality(effVar, concreteEff, Provenance.Source(effVar, concreteEff, loc))
+    currentScopeConstraints.add(constr)
+  }
+
   /**
     * Adds the given trait constraints to the context.
     */
