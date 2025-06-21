@@ -1,0 +1,72 @@
+///
+/// Effect representing the user interface for the game.
+///
+pub eff Interface {
+
+    ///
+    /// Prints the current state of the board and a message.
+    ///
+    def display(board: String, msg: String): Unit
+
+    ///
+    /// Gets a move from the user.
+    ///
+    def getMove(): Int32
+}
+
+mod Interface {
+
+    ///
+    /// Recursive helper function to read and return only valid moves.
+    ///
+    def getMoveFromConsole(): Int32 \ Console = {
+        let line = Console.readln();
+        if(Object.isNull(line)) {
+            Console.println("Invalid move. Move must be a positive integer between 0 and 8");
+            getMoveFromConsole()
+        } else {
+            match Int32.parse(10, line) {
+                case Result.Err(_) =>
+                    Console.println("Invalid move. Move must be a positive integer between 0 and 8");
+                    getMoveFromConsole()
+                case Result.Ok(move) =>
+                    if(not(move >= 0 and move <= 8)) {
+                        Console.println("Invalid move. Move must be in between 0 and 8");
+                        getMoveFromConsole()
+                    } else {
+                        move
+                    }
+            }
+        }
+    }
+
+
+    ///
+    /// Runs the Interface effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the Interface effect using the IO and Console effects.
+    ///
+    pub def interfaceWithIOAndConsole(f: Unit -> a \ ef): a \ ef - Interface + IO + Console =
+        run {
+            f()
+        }
+        with handler Interface {
+            def display(board, msg, resume) = {
+                if (not String.isEmpty(board)) {
+                    println("");
+                    println(board);
+                    println("");
+                    println(msg);
+                    resume()
+                } else {
+                    println("");
+                    println(msg);
+                    resume()
+                }
+            }
+
+            def getMove(resume) = {
+                resume(getMoveFromConsole())
+            }
+        }
+}
