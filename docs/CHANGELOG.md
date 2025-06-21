@@ -1,5 +1,10 @@
 # Changelog
 
+Version 0.60.0:
+- Compiler: Introduced brand new inliner (thanks Jakob!)
+- Compiler: Improved JVM bytecode generation (thanks Jonathan and Jakob!)
+- LSP: Improved context-aware auto-completion (thanks Chenhao!)
+
 Version 0.59.0:
 - LSP: Improved handler completions (thanks Chenhao!)
 
