@@ -155,6 +155,13 @@ object TypeReconstruction {
       val eff = Type.mkUnion(e1.eff, e2.eff, e3.eff, loc)
       TypedAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
+    case KindedAst.Expr.While(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val tpe = Type.mkUnit(loc)
+      val eff = Type.mkUnion(e1.eff, e2.eff, loc)
+      TypedAst.Expr.While(e1, e2, tpe, eff, loc)
+
     case KindedAst.Expr.Stm(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)

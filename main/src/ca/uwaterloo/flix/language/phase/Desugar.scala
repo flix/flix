@@ -530,6 +530,11 @@ object Desugar {
       val e3 = visitExp(exp3)
       Expr.IfThenElse(e1, e2, e3, loc)
 
+    case WeededAst.Expr.While(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.While(e1, e2, loc)
+
     case WeededAst.Expr.Stm(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)

@@ -430,6 +430,12 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.IfThenElse(e1, e2, e3, t, eff, loc)
 
+    case TypedAst.Expr.While(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      LoweredAst.Expr.While(e1, e2, t, eff, loc)
+
     case TypedAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -1867,6 +1873,11 @@ object Lowering {
       val e2 = substExp(exp2, subst)
       val e3 = substExp(exp3, subst)
       LoweredAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
+
+    case LoweredAst.Expr.While(exp1, exp2, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      LoweredAst.Expr.While(e1, e2, tpe, eff, loc)
 
     case LoweredAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)

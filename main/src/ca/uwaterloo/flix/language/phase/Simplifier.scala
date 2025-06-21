@@ -215,6 +215,10 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), t, simplifyEffect(eff), loc)
 
+    case MonoAst.Expr.While(e1, e2, tpe, eff, loc) =>
+      val t = visitType(tpe)
+      SimplifiedAst.Expr.While(visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
+
     case MonoAst.Expr.Stm(e1, e2, tpe, eff, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.Stm(visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)

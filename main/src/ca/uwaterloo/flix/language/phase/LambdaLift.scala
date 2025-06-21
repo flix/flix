@@ -164,6 +164,11 @@ object LambdaLift {
       val e3 = visitExp(exp3)
       LiftedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
+    case SimplifiedAst.Expr.While(exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      LiftedAst.Expr.While(e1, e2, tpe, purity, loc)
+
     case SimplifiedAst.Expr.Stm(exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)

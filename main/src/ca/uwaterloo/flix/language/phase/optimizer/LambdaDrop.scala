@@ -161,6 +161,10 @@ object LambdaDrop {
       visitExp(exp2)
       visitExp(exp3)
 
+    case Expr.While(exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
     case Expr.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
@@ -283,6 +287,11 @@ object LambdaDrop {
       val e2 = rewriteExp(exp2)
       val e3 = rewriteExp(exp3)
       Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
+
+    case Expr.While(exp1, exp2, tpe, eff, loc) =>
+      val e1 = rewriteExp(exp1)
+      val e2 = rewriteExp(exp2)
+      Expr.While(e1, e2, tpe, eff, loc)
 
     case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
       val e1 = rewriteExp(exp1)

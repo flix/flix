@@ -64,6 +64,7 @@ object LoweredAstPrinter {
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(DocAst.Expr.Var(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)), print(exp1), print(exp2))
     case Expr.Scope(sym, _, exp, _, _, _) => DocAst.Expr.Scope(DocAst.Expr.Var(sym), print(exp))
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
+    case Expr.While(exp1, exp2, _, _, _) => DocAst.Expr.While(print(exp1), print(exp2))
     case Expr.Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
     case Expr.Discard(exp, _, _) => DocAst.Expr.Discard(print(exp))
     case Expr.Match(exp, rules, _, _, _) =>
