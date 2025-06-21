@@ -59,6 +59,14 @@ object PrimitiveEffects {
     */
   private val methodEffs: Map[Method, Set[Symbol.EffSym]] = loadMethodEffs()
 
+  def getAnnotatedMethods: Set[Method] = methodEffs.keys.toSet
+
+  def getAnnotatedConstructors: Set[Constructor[?]] = constructorEffs.keys.toSet
+
+  def getAnnotatedClasses: Set[Class[?]] = classEffs.keys.toSet
+
+  def getAnnotatedPackages: Set[Package] = packageEffs.keys.toSet
+
   /**
     * Returns the primitive effects of calling the given constructor `c`.
     */

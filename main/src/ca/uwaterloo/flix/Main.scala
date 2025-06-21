@@ -16,9 +16,9 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.Main.Command.PlainLsp
+import ca.uwaterloo.flix.Main.Command.{Check, PlainLsp}
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
-import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
+import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
 import ca.uwaterloo.flix.runtime.shell.Shell
@@ -315,9 +315,61 @@ object Main {
         case Command.CompilerMemory =>
           CompilerMemory.run(options)
 
+        case Command.EffectLock =>
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
+              bootstrap.effectLock(flix)
+          }.toResult match {
+            case Result.Ok(_) =>
+              System.exit(0)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
+
+        case Command.EffectUpgrade =>
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
+              flatMapN(bootstrap.check(flix)) {
+                root =>
+                  val (_, uses) = flix.reachableLibraryFunctions(root)
+                  bootstrap.effectUpgrade(root, uses)
+              }
+          }.toResult match {
+            case Result.Ok(_) =>
+              out.println("Upgrade is safe")
+              System.exit(0)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
+
+        case Command.CheckPermissions =>
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+            bootstrap =>
+              if (bootstrap.isProjectMode) {
+                val flix = new Flix().setFormatter(formatter)
+                flix.setOptions(options)
+                flatMapN(bootstrap.check(flix)) {
+                  root => bootstrap.checkTrust(root)(out, flix)
+                }
+              } else {
+                Validation.Failure(BootstrapError.GeneralError(List("No manifest file found")))
+              }
+          }.toResult match {
+            case Result.Ok(_) =>
+              System.exit(0)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
+
         case Command.Zhegalkin =>
           ZhegalkinPerf.run(options.XPerfN)
-
       }
     }
 
@@ -401,6 +453,12 @@ object Main {
 
     case object CompilerMemory extends Command
 
+    case object EffectLock extends Command
+
+    case object EffectUpgrade extends Command
+
+    case object CheckPermissions extends Command
+
     case object Zhegalkin extends Command
 
   }
@@ -479,6 +537,12 @@ object Main {
       ).hidden()
 
       cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
+
+      cmd("effect-lock").action((_, c) => c.copy(command = Command.EffectLock)).hidden()
+
+      cmd("effect-upgrade").action((_, c) => c.copy(command = Command.EffectUpgrade)).hidden()
+
+      cmd("check-permissions").action((_, c) => c.copy(command = Command.CheckPermissions)).hidden()
 
       cmd("Xzhegalkin").action((_, c) => c.copy(command = Command.Zhegalkin)).children(
         opt[Int]("n")
