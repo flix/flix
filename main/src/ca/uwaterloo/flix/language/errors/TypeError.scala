@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
+import ca.uwaterloo.flix.language.errors.ErrorCode
 
 /**
   * A common super-type for type errors.
@@ -41,6 +42,8 @@ object TypeError {
     * @param loc  the location where the error occured.
     */
   case class ConstructorNotFound(clazz: Class[?], tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
+    def errorCode: ErrorCode = ErrorCode.ConstructorNotFound
+
     def summary: String = s"Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) not found."
 
     def message(formatter: Formatter): String = {
