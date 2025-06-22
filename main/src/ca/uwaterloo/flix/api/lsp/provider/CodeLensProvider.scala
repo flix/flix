@@ -75,8 +75,8 @@ object CodeLensProvider {
   /**
     * Returns `true` if the given `spec` is an entry point.
     */
-  private def isEntryPoint(s: Spec): Boolean = s.fparams match {
-    case fparam :: Nil => isUnitType(fparam.tpe) && isPublic(s)
+  private def isEntryPoint(spec: Spec): Boolean = spec.fparams match {
+    case fparam :: Nil => isUnitType(fparam.tpe) && isPublic(spec) && isMonomorphic(spec)
     case _ => false
   }
 
@@ -94,11 +94,16 @@ object CodeLensProvider {
   }
 
   /**
-    * Returns `true` if the given `defn` is marked as public
+    * Returns `true` if the given `spec` is public.
     */
   private def isPublic(spec: Spec): Boolean = {
     spec.mod.isPublic
   }
+
+  /**
+    * Returns `true` if the given `spec` is monomorphic.
+    */
+  private def isMonomorphic(spec: Spec): Boolean = spec.tparams.isEmpty
 
   /**
     * Returns `true` if the given source location `loc` matches the given `uri`.
