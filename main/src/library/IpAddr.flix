@@ -24,6 +24,8 @@ enum IpAddr with Eq, ToString {
 
 mod IpAddr {
 
+    import java.net.UnknownHostException
+
     use Ipv4Addr.Ipv4Addr
     use Ipv6Addr.Ipv6Addr
 
@@ -55,5 +57,26 @@ mod IpAddr {
                 Array#{b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16} @ rc
         }
 
+    ///
+    /// Parse the string `s` as an IpAddr, either V4 or V6.
+    /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
+    ///
+    pub def fromString(s: String): Option[IpAddr] =
+        try {
+            match Ipv6Addr.fromString(s) {
+              case Some(v6) => Some(IpAddr.V6(v6))
+              case None => match Ipv4Addr.fromString(s) {
+                case Some(v4) => Some(IpAddr.V4(v4))
+                case None => None
+              }
+            }
+        } catch {
+            case _ : UnknownHostException => None
+        }
+
+}
+
+instance FromString[IpAddr] {
+    pub def fromString(x: String): Option[IpAddr] = IpAddr.fromString(x)
 }
 
