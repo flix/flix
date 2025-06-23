@@ -538,11 +538,11 @@ object Main {
 
       cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
 
-      cmd("effect-lock").action((_, c) => c.copy(command = Command.EffectLock)).hidden()
+      cmd("lock-effects").action((_, c) => c.copy(command = Command.EffectLock)).hidden()
 
-      cmd("effect-upgrade").action((_, c) => c.copy(command = Command.EffectUpgrade)).hidden()
+      cmd("upgrade").action((_, c) => c.copy(command = Command.EffectUpgrade)).hidden()
 
-      cmd("check-permissions").action((_, c) => c.copy(command = Command.CheckPermissions)).hidden()
+      cmd("check-trust").action((_, c) => c.copy(command = Command.CheckPermissions)).hidden()
 
       cmd("Xzhegalkin").action((_, c) => c.copy(command = Command.Zhegalkin)).children(
         opt[Int]("n")
