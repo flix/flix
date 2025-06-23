@@ -31,11 +31,9 @@ object TypeSimplifier {
     * This function will never crash and works for any type, no matter how ill-kinded.
     */
   def simplify(tpe: Type): Type = {
-    try {
-      simplifyInternal(tpe)
-    } catch {
-      case _: InternalCompilerException => tpe
-    }
+    // This might throw [[InternalCompilerException]] since it reuses unification infrastructure
+    // but since the error is so imprecise we cannot handle it here.
+    simplifyInternal(tpe)
   }
 
   /** Simplifies types inside `tc` with [[simplify]]. */
