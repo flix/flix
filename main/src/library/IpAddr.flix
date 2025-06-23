@@ -18,11 +18,15 @@
 /// Represents an IP address
 ///
 enum IpAddr with Eq, ToString {
-    case IPv4(Int8, Int8, Int8, Int8), // 32 bits
-    case IPv6(Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8, Int8) // 128 bits
+  case V4(Ipv4Addr),
+  case V6(Ipv6Addr)
 }
 
 mod IpAddr {
+
+    use Ipv4Addr.Ipv4Addr
+    use Ipv6Addr.Ipv6Addr
+
     ///
     /// Converts a `List[Int8]` into `IpAddr`
     ///
@@ -30,10 +34,10 @@ mod IpAddr {
     ///
     pub def fromBytes(l: List[Int8]): IpAddr = match l {
         case b1 :: b2 :: b3 :: b4 :: Nil => {
-            IpAddr.IPv4(b1, b2, b3, b4)
+            IpAddr.V4(Ipv4Addr(b1, b2, b3, b4))
         }
         case b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: Nil => {
-            IpAddr.IPv6(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16)
+            IpAddr.V6(Ipv6Addr(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16))
         }
         case _ => unreachable!()
     }
@@ -45,9 +49,9 @@ mod IpAddr {
     ///
     pub def toByteArray(rc: Region[r], ip: IpAddr): Array[Int8, r] \ r =
         match ip {
-            case IpAddr.IPv4(b1, b2, b3, b4) =>
+            case IpAddr.V4(Ipv4Addr(b1, b2, b3, b4)) =>
                 Array#{b1, b2, b3, b4} @ rc
-            case IpAddr.IPv6(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16) =>
+            case IpAddr.V6(Ipv6Addr(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16)) =>
                 Array#{b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16} @ rc
         }
 
