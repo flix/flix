@@ -21,14 +21,13 @@ import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-
 /** This type simplification is purely focused on user readability. */
 object TypeSimplifier {
 
   /**
     * Simplifies types and effects - intended for user readability.
     *
-    * This function will never crash and works for any type, no matter how ill-kinded.
+    * This function should never crash and works for any type, no matter how ill-kinded.
     */
   def simplify(tpe: Type): Type = {
     // This might throw [[InternalCompilerException]] since it reuses unification infrastructure
@@ -51,8 +50,7 @@ object TypeSimplifier {
   /**
     * Simplifies all effects in `tpe0`.
     *
-    * Might throw [[InternalCompilerException]] for non-well-kinded effects
-    * because of [[EffUnification3.simplify]].
+    * Might throw [[InternalCompilerException]] for non-well-kinded effects because of [[EffUnification3.simplify]].
     */
   private def simplifyInternal(tpe0: Type): Type = tpe0 match {
     case t if t.kind == Kind.Eff => EffUnification3.simplify(t)
