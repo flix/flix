@@ -27,6 +27,8 @@ object TypeSimplifier {
   /**
     * Simplifies types and effects - intended for user readability.
     *
+    * Returns a type that is equivalent to `tpe` but is easier to read.
+    *
     * This function should never crash and works for any type, no matter how ill-kinded.
     */
   def simplify(tpe: Type): Type = {
