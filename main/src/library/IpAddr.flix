@@ -14,20 +14,26 @@
  *  limitations under the License.
  */
 
+
+
 ///
-/// Represents an IP address
+/// Represents an IP address.
 ///
 enum IpAddr with Eq, ToString {
-  case V4(Ipv4Addr),
-  case V6(Ipv6Addr)
+    case V4(Ipv4Addr),
+    case V6(Ipv6Addr)
+}
+
+instance FromString[IpAddr] {
+    pub def fromString(x: String): Option[IpAddr] = IpAddr.fromString(x)
 }
 
 mod IpAddr {
 
-    import java.net.UnknownHostException
-
     use Ipv4Addr.Ipv4Addr
     use Ipv6Addr.Ipv6Addr
+
+    import java.net.UnknownHostException
 
     ///
     /// Converts a `List[Int8]` into `IpAddr`
@@ -35,10 +41,10 @@ mod IpAddr {
     /// an Ipv4 is 4 bytes and Ipv6 is 16 bytes
     ///
     pub def fromBytes(l: List[Int8]): IpAddr = match l {
-        case b1 :: b2 :: b3 :: b4 :: Nil => {
+        case b1::b2::b3::b4::Nil => {
             IpAddr.V4(Ipv4Addr(b1, b2, b3, b4))
         }
-        case b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: b8 :: b9 :: b10 :: b11 :: b12 :: b13 :: b14 :: b15 :: b16 :: Nil => {
+        case b1::b2::b3::b4::b5::b6::b7::b8::b9::b10::b11::b12::b13::b14::b15::b16::Nil => {
             IpAddr.V6(Ipv6Addr(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16))
         }
         case _ => unreachable!()
@@ -58,25 +64,21 @@ mod IpAddr {
         }
 
     ///
-    /// Parse the string `s` as an IpAddr, either V4 or V6.
-    /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
+    /// Attempts to parse the given String `s` as an `IpAddr`.
     ///
-    pub def fromString(s: String): Option[IpAddr] =
-        try {
-            match Ipv6Addr.fromString(s) {
-              case Some(v6) => Some(IpAddr.V6(v6))
-              case None => match Ipv4Addr.fromString(s) {
-                case Some(v4) => Some(IpAddr.V4(v4))
-                case None => None
-              }
-            }
+    /// Returns `Some(addr)` if the string was successfully parsed. Otherwise returns `None`.
+    ///
+    pub def fromString(s: String): Option[IpAddr] = try {
+        match Ipv6Addr.fromString(s) {
+          case Some(v6) => Some(IpAddr.V6(v6))
+          case None => match Ipv4Addr.fromString(s) {
+            case Some(v4) => Some(IpAddr.V4(v4))
+            case None => None
+          }
+        }
         } catch {
             case _ : UnknownHostException => None
         }
 
-}
-
-instance FromString[IpAddr] {
-    pub def fromString(x: String): Option[IpAddr] = IpAddr.fromString(x)
 }
 

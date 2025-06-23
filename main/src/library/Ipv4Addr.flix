@@ -18,32 +18,33 @@
 ///Represents a V4 Ip Address.
 ///
 enum Ipv4Addr with Eq, ToString { // 32 bits
-  case Ipv4Addr(Int8, Int8, Int8, Int8)
-}
-
-mod Ipv4Addr {
-    use Ipv4Addr.Ipv4Addr
-
-    import java.net.InetAddress
-    import java.net.UnknownHostException
-
-    ///
-    /// Parse the string `s` as an Ipv4Addr.
-    /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
-    ///
-    pub def fromString(s: String): Option[Ipv4Addr] =
-        try {
-            let addr = unsafe InetAddress.getByName(s);
-            match unsafe Array.toList(addr.getAddress()) {
-              case b1::b2::b3::b4::Nil => Some(Ipv4Addr(b1, b2, b3, b4))
-              case _ => None
-            }
-        } catch {
-            case _ : UnknownHostException => None
-        }
+    case Ipv4Addr(Int8, Int8, Int8, Int8)
 }
 
 instance FromString[Ipv4Addr] {
     pub def fromString(x: String): Option[Ipv4Addr] = Ipv4Addr.fromString(x)
+}
+
+mod Ipv4Addr {
+    import java.net.InetAddress
+    import java.net.UnknownHostException
+
+    use Ipv4Addr.Ipv4Addr
+
+    ///
+    /// Attempts to parse the given String `s` as an `Ipv4Addr`.
+    ///
+    /// Returns `Some(addr)` if the string was successfully parsed. Otherwise returns `None`.
+    ///
+    pub def fromString(s: String): Option[Ipv4Addr] =
+        unsafe try {
+          let addr = InetAddress.getByName(s);
+          match Array.toList(addr.getAddress()) {
+            case b1::b2::b3::b4::Nil => Some(Ipv4Addr(b1, b2, b3, b4))
+            case _ => None
+          }
+        } catch {
+          case _ : UnknownHostException => None
+        }
 }
 
