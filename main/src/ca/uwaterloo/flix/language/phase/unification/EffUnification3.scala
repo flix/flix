@@ -424,7 +424,7 @@ object EffUnification3 {
     */
   def simplify(tpe: Type): Type = try {
     // Check if type is too complex to simplify via Zhegalkin polynomials.
-    if (tpe.typeVars.size > SetUnification.MaxVars / 2) {
+    if (tpe.typeVars.size > SetUnification.MaxVars) {
       // The type is too complex, we return it unchanged.
       return tpe
     }
