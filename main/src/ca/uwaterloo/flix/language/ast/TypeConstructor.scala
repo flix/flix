@@ -176,6 +176,16 @@ object TypeConstructor {
   }
 
   /**
+   * A type constructor that represents the type of extensible variants.
+   */
+  case object Extensible extends TypeConstructor {
+    /**
+     * The shape of an extensible variant constructor is Extensible[schemaRow]
+     */
+    def kind: Kind = Kind.SchemaRow ->: Kind.Star
+  }
+
+  /**
     * A type constructor that represents the type of empty schema rows.
     */
   case object SchemaRowEmpty extends TypeConstructor {
@@ -317,25 +327,25 @@ object TypeConstructor {
   /**
     * A type constructor that represent the type of tuples.
     */
-  case class Tuple(l: Int) extends TypeConstructor {
+  case class Tuple(arity: Int) extends TypeConstructor {
     /**
       * The shape of a tuple is (t1, ..., tn).
       */
-    def kind: Kind = Kind.mkArrow(l)
+    def kind: Kind = Kind.mkArrow(arity)
   }
 
   /**
     * A type constructor for relations.
     */
-  case object Relation extends TypeConstructor {
-    def kind: Kind = Kind.Star ->: Kind.Predicate
+  case class Relation(arity: Int) extends TypeConstructor {
+    def kind: Kind = Kind.mkArrowTo(arity, Kind.Predicate)
   }
 
   /**
     * A type constructor for lattices.
     */
-  case object Lattice extends TypeConstructor {
-    def kind: Kind = Kind.Star ->: Kind.Predicate
+  case class Lattice(arity: Int) extends TypeConstructor {
+    def kind: Kind = Kind.mkArrowTo(arity, Kind.Predicate)
   }
 
   /**
@@ -425,7 +435,7 @@ object TypeConstructor {
   /**
     * A type constructor that represents a single effect.
     */
-  case class Effect(sym: Symbol.EffectSym) extends TypeConstructor {
+  case class Effect(sym: Symbol.EffSym) extends TypeConstructor {
     def kind: Kind = Kind.Eff
   }
 

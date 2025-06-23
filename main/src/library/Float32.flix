@@ -210,78 +210,78 @@ mod Float32 {
     ///
     /// Helper function for the `clamp` conversion functions.
     ///
-    def clamp(x: Float32, minimum: Float32, maximum: Float32): Float32 =
-        if (x < minimum)
-             minimum
+    def clamp(min: {min = Float32}, max: {max = Float32}, x: Float32): Float32 =
+        if (x < min#min)
+             min#min
         else
-            if (x > maximum)
-                maximum
+            if (x > max#max)
+                max#max
             else
                 x
 
     ///
     /// Convert `x` to an `Int8`.
     ///
-    /// Returns `x` clamped within the Int8 range `minimum` to `maximum`.
+    /// Returns `x` clamped within the Int8 range `min` to `max`.
     ///
     /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
     /// function. Relying on `nanValue` to convert NaN to a permissable Int8 risks masking it.
     ///
-    pub def clampToInt8(x: Float32, minimum: Int8, maximum: Int8, nanValue: Int8): Int8 =
-        let minf32 = Int8.toFloat32(minimum);
-        let maxf32 = Int8.toFloat32(maximum);
+    pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, nanValue: {nanValue = Int8}, x: Float32): Int8 =
+        let minf32 = Int8.toFloat32(min#min);
+        let maxf32 = Int8.toFloat32(max#max);
         if (isNan(x))
-            nanValue
+            nanValue#nanValue
         else
-            Float.valueOf(clamp(x, minf32, maxf32)).byteValue()
+            Float.valueOf(clamp(min = minf32, max = maxf32, x)).byteValue()
 
     ///
     /// Convert `x` to an `Int16`.
     ///
-    /// Returns `x` clamped within the Int16 range `minimum` to `maximum`.
+    /// Returns `x` clamped within the Int16 range `min` to `max`.
     ///
     /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
     /// function. Relying on `nanValue` to convert NaN to a permissable Int16 risks masking it.
     ///
-    pub def clampToInt16(x: Float32, minimum: Int16, maximum: Int16, nanValue: Int16): Int16 =
-        let minf32 = Int16.toFloat32(minimum);
-        let maxf32 = Int16.toFloat32(maximum);
+    pub def clampToInt16(min: {min = Int16}, max: {max = Int16}, nanValue: {nanValue = Int16}, x: Float32): Int16 =
+        let minf32 = Int16.toFloat32(min#min);
+        let maxf32 = Int16.toFloat32(max#max);
         if (isNan(x))
-            nanValue
+            nanValue#nanValue
         else
-            Float.valueOf(clamp(x, minf32, maxf32)).shortValue()
+            Float.valueOf(clamp(min = minf32, max = maxf32, x)).shortValue()
 
     ///
     /// Convert `x` to an `Int32`.
     ///
-    /// Returns `x` clamped within the Int32 range `minimum` to `maximum`.
+    /// Returns `x` clamped within the Int32 range `min` to `max`.
     ///
     /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
     /// function. Relying on `nanValue` to convert NaN to a permissable Int32 risks masking it.
     ///
-    pub def clampToInt32(x: Float32, minimum: Int32, maximum: Int32, nanValue: Int32): Int32 =
-        let minf32 = Int32.toFloat32(minimum);
-        let maxf32 = Int32.toFloat32(maximum);
+    pub def clampToInt32(min: {min = Int32}, max: {max = Int32}, nanValue: {nanValue = Int32}, x: Float32): Int32 =
+        let minf32 = Int32.toFloat32(min#min);
+        let maxf32 = Int32.toFloat32(max#max);
         if (isNan(x))
-            nanValue
+            nanValue#nanValue
         else
-            Float.valueOf(clamp(x, minf32, maxf32)).intValue()
+            Float.valueOf(clamp(min = minf32, max = maxf32, x)).intValue()
 
     ///
     /// Convert `x` to an `Int64`.
     ///
-    /// Returns `x` clamped within the Int64 range `minimum` to `maximum`.
+    /// Returns `x` clamped within the Int64 range `min` to `max`.
     ///
     /// Warning: it is recommended to test `x` for NaN (not-a-number) before calling this
     /// function. Relying on `nanValue` to convert NaN to a permissable Int64 risks masking it.
     ///
-    pub def clampToInt64(x: Float32, minimum: Int64, maximum: Int64, nanValue: Int64): Int64 =
-        let minf32 = Int64.toFloat32(minimum);
-        let maxf32 = Int64.toFloat32(maximum);
+    pub def clampToInt64(min: {min = Int64}, max: {max = Int64}, nanValue: {nanValue = Int64}, x: Float32): Int64 =
+        let minf32 = Int64.toFloat32(min#min);
+        let maxf32 = Int64.toFloat32(max#max);
         if (isNan(x))
-            nanValue
+            nanValue#nanValue
         else
-            Float.valueOf(clamp(x, minf32, maxf32)).longValue()
+            Float.valueOf(clamp(min = minf32, max = maxf32, x)).longValue()
 
     ///
     /// Returns the absolute value of `x`.

@@ -78,8 +78,16 @@ mod MutDeque {
     /// Returns an empty MutDeque.
     ///
     pub def empty(rc: Region[r]): MutDeque[a, r] \ r =
-        let arr = Array.empty(rc, minCapacity());
-        new MutDeque @ rc {r = rc, values = arr, front = 0, back = 0}
+        emptyWithCapacity(rc, minCapacity())
+
+    ///
+    /// Returns an empty mutable deque with the given capacity rounded up to the
+    /// default capacity.
+    ///
+    pub def emptyWithCapacity(rc: Region[r], capacity: Int32): MutDeque[a, r] \ r = {
+        let flooredCapacity = Int32.max(capacity, minCapacity());
+        new MutDeque @ rc {r = rc, values = Array.empty(rc, flooredCapacity), front = 0, back = 0}
+    }
 
     ///
     /// Returns the number of elements in `d`.

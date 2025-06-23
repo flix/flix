@@ -17,10 +17,9 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Kind, Name, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.Def
 import ca.uwaterloo.flix.language.ast.TypedAst.Decl
-import ca.uwaterloo.flix.language.ast.shared.{LocalScope, QualifiedSym, Resolution, Scope, VarText}
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
 import scala.annotation.tailrec
@@ -52,13 +51,11 @@ object CompletionUtils {
 
   /**
     * Generate a snippet which represents calling a function.
-    * Drops the last one or two arguments in the event that the function is in a pipeline
-    * (i.e. is preceeded by `|>`, `!>`, or `||>`)
     */
-  def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): String = {
+  def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam]): String = {
     val functionIsUnit = isUnitFunction(fparams)
 
-    val args = fparams.dropRight(paramsToDrop).zipWithIndex.map {
+    val args = fparams.zipWithIndex.map {
       case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
     }
     if (functionIsUnit)
@@ -72,7 +69,7 @@ object CompletionUtils {
   /**
     * Generate a snippet which represents defining an effect operation handler, with an extra `resume` as the last argument.
     */
-  def getOpHandlerSnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): String = {
+  def getOpHandlerSnippet(name: String, fparams: List[TypedAst.FormalParam]): String = {
     val functionIsUnit = isUnitFunction(fparams)
 
     val args = fparams.zipWithIndex.map {
@@ -82,28 +79,6 @@ object CompletionUtils {
       s"$name($${1:resume}) = "
     else
       s"$name(${args.mkString(", ")}) = "
-  }
-
-  /**
-    * Helper function for deciding if a snippet can be generated.
-    * Returns false if there are too few arguments.
-    */
-  def canApplySnippet(fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): Boolean = {
-    val functionIsUnit = isUnitFunction(fparams)
-
-    if (paramsToDrop > fparams.length || (functionIsUnit && paramsToDrop > 0)) false else true
-  }
-
-  /**
-    * Calculates how many params to drops in the event that the function is in a pipeline
-    * (i.e. is preceeded by `|>`, `!>`, or `||>`)
-    */
-  private def paramsToDrop(implicit context: CompletionContext): Int = {
-    context.previousWord match {
-      case "||>" => 2
-      case "|>" | "!>" => 1
-      case _ => 0
-    }
   }
 
   /**
@@ -123,31 +98,6 @@ object CompletionUtils {
     */
   def getFilterTextForName(name: String): String = {
     s"$name("
-  }
-
-  /**
-    * When `whetherInScope` is `true`, we check if the given definition `decl` is in the scope.
-    * When `whetherInScope` is `false`, we check if the given definition `decl` is not in the scope.
-    */
-  private def checkScope(decl: TypedAst.Def, scope: LocalScope, whetherInScope: Boolean): Boolean = {
-    val thisName = decl.sym.toString
-    val inScope = scope.m.values.exists(_.exists {
-      case Resolution.Declaration(Def(thatName, _, _, _)) => thisName == thatName.toString
-      case _ => false
-    })
-    if (whetherInScope) inScope else !inScope
-  }
-
-  /**
-    * Returns `true` if the given definition `decl` should be included in the suggestions.
-    */
-  private def matchesDef(decl: TypedAst.Def, word: String): Boolean = {
-    def isInternal(decl: TypedAst.Def): Boolean = decl.spec.ann.isInternal
-
-    val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
-    val isMatch = fuzzyMatch(word, decl.sym.text)
-
-    isMatch && isPublic
   }
 
   /**
@@ -216,6 +166,16 @@ object CompletionUtils {
   }
 
   /**
+    * Format types in the right form to be displayed in the list of completions
+    * e.g. "(Int32, String)"
+    */
+  def formatTypes(tpes: List[Type])(implicit flix: Flix): String =
+    tpes match {
+      case Nil => ""
+      case _ => tpes.map(FormatType.formatType(_)).mkString("(", ", ", ")")
+    }
+
+  /**
     * Format type params in the right form to be inserted as a snippet
     * e.g. "[${1:a}, ${2:b}, ${3:c}]"
     */
@@ -227,6 +187,18 @@ object CompletionUtils {
       }.mkString("[", ", ", "]")
     }
   }
+
+  /**
+    * Format types in the right form to be inserted as a snippet
+    * e.g. "(${1:Int32}, ${2:String})"
+    */
+  def formatTypesSnippet(tpes: List[Type])(implicit flix: Flix): String =
+    tpes match {
+      case Nil => ""
+      case _ => tpes.zipWithIndex.map {
+        case (tpe, idx) => "$" + s"{${idx + 1}:?${FormatType.formatType(tpe)}}"
+      }.mkString("(", ", ", ")")
+    }
 
 
   /**
@@ -263,7 +235,7 @@ object CompletionUtils {
   /**
     * Checks if the effect of the given symbol is public.
     */
-  def isAvailable(eff: Symbol.EffectSym)(implicit root: TypedAst.Root): Boolean = root.effects.get(eff).exists(isAvailable)
+  def isAvailable(eff: Symbol.EffSym)(implicit root: TypedAst.Root): Boolean = root.effects.get(eff).exists(isAvailable)
 
   /**
     * Checks if the enum of the given symbol is public.
@@ -310,11 +282,7 @@ object CompletionUtils {
   }
 
   /**
-    * Checks if the sym and the given qualified name matches.
-    *
-    * @param sym        The symbol to check, usually from root.
-    * @param qn         The qualified name to check, usually from user input.
-    * @param qualified  Whether the qualified name is qualified.
+    * Formats the given type `tpe`.
     */
   private def fmtType(tpe: Type, holes: Map[Symbol, String])(implicit flix: Flix): String = {
     val replaced = holes.foldLeft(tpe) { case (t, (sym, hole)) => replaceText(sym, t, hole) }
@@ -366,18 +334,11 @@ object CompletionUtils {
   }
 
   /**
-    * Formats the given trait `trt`.
-    */
-  def fmtTrait(trt: TypedAst.Trait): String = {
-    s"trait ${trt.sym.name}[${trt.tparam.name.name}]"
-  }
-
-  /**
     * Checks if the sym and the given qualified name matches.
     *
-    * @param sym        The symbol to check, usually from root.
-    * @param qn         The qualified name to check, usually from user input.
-    * @param qualified  Whether the qualified name is qualified.
+    * @param sym       The symbol to check, usually from root.
+    * @param qn        The qualified name to check, usually from user input.
+    * @param qualified Whether the qualified name is qualified.
     */
   def matchesName(sym: QualifiedSym, qn: Name.QName, qualified: Boolean): Boolean = {
     if (qualified) {
@@ -390,7 +351,7 @@ object CompletionUtils {
     * Formats the given Op
     */
   def fmtOp(op: TypedAst.Op): String = {
-    val fparamsString = (op.spec.fparams.collect{ case p if p.tpe != Type.Unit => p.bnd.sym.text} :+ "k").mkString(", ")
+    val fparamsString = (op.spec.fparams.collect { case p if p.tpe != Type.Unit => p.bnd.sym.text } :+ "k").mkString(", ")
     s"    def ${op.sym.name}($fparamsString) = ???"
   }
 }

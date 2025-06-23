@@ -16,9 +16,10 @@
 
 package ca.uwaterloo.flix.language.phase.unification.set
 
+import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
-import ca.uwaterloo.flix.language.phase.unification.shared.{BoolAlg, BoolUnificationException, SveAlgorithm}
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra, ZhegalkinExpr}
+import ca.uwaterloo.flix.language.phase.unification.shared.{BoolUnificationException, CofiniteIntSet, SveAlgorithm}
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra}
 import ca.uwaterloo.flix.util.Result
 
 import scala.collection.immutable.IntMap
@@ -29,7 +30,8 @@ object SetUnification {
   /**
    * The maximum number of variables an equation may contain before it is considered too complex.
    */
-  val MaxVars: Int = 12 // Up to 2^12 = 4,096 terms per Zhegalkin polynomial.
+  // Experiments suggest that 12 is too much.
+  val MaxVars: Int = 11 // Up to 2^11 = 2,048 terms per Zhegalkin polynomial.
 
   /**
     * Enable simple rewrite rules.
@@ -45,6 +47,11 @@ object SetUnification {
     * Tracks the number of constraints eliminated by each rewrite rule.
     */
   val ElimPerRule: mutable.Map[Phase, Int] = mutable.Map.empty
+
+  /**
+   * Tracks the number of variables eliminated by each rewrite rule.
+   */
+  val VarElimPerRule: mutable.Map[Phase, Int] = mutable.Map.empty
 
   /**
     * Represents the name of phase.
@@ -73,29 +80,6 @@ object SetUnification {
     var subst: SetSubstitution = SetSubstitution.empty
   }
 
-  /** A listener that observes the operations of [[solve]]. */
-  sealed trait SolverListener {
-    /** Is called before a unification phase starts. */
-    def onEnterPhase(phaseName: String, state: State): Unit = ()
-
-    /** Is called when a unification phase completes. If it made progress, `state` is `true`. */
-    def onExitPhase(state: State, progress: Boolean): Unit = ()
-  }
-
-  final object SolverListener {
-
-    /** The [[SolverListener]] that does nothing. */
-    val DoNothing: SolverListener = new SolverListener {}
-
-    def stringListener(p: String => Unit): SolverListener = new SolverListener {
-      override def onEnterPhase(phaseName: String, state: State): Unit =
-        p(s"Phase: $phaseName")
-
-      override def onExitPhase(state: State, progress: Boolean): Unit =
-        if (progress) p(stateString(state.eqs, state.subst))
-    }
-  }
-
   /**
     * Attempts to solve the equation system `eqs` to find the most general substitution.
     *
@@ -109,7 +93,7 @@ object SetUnification {
     * [[Equation.Status.Timeout]]. The returned equations might not exist in `eqs` directly, but
     * will be derived from it.
     */
-  def solve(l: List[Equation])(implicit listener: SolverListener): (List[Equation], SetSubstitution) = {
+  def solve(l: List[Equation]): (List[Equation], SetSubstitution) = {
     val state = new State(l)
 
     if (EnableRewriteRules) {
@@ -142,26 +126,37 @@ object SetUnification {
   /**
     * Runs the given equation system solver `phase` on `state`.
     */
-  private def runWithState(state: State, f: List[Equation] => Option[(List[Equation], SetSubstitution)], phase: Phase)(implicit listener: SolverListener): Unit = {
-    listener.onEnterPhase(phase.toString, state)
+  private def runWithState(state: State, f: List[Equation] => Option[(List[Equation], SetSubstitution)], phase: Phase): Unit = {
+    var numberOfVars: Int = 0
+    if (EnableStats) {
+      numberOfVars = state.eqs.map(_.varsOf.size).sum
+    }
 
     f(state.eqs) match {
       case Some((eqs, subst)) =>
 
         if (EnableStats) {
           synchronized {
-            val count = ElimPerRule.getOrElse(phase, 0)
-            val delta = state.eqs.length - eqs.length
-            ElimPerRule.put(phase, count + delta)
+            {
+              // Eliminated Constraints
+              val count = ElimPerRule.getOrElse(phase, 0)
+              val delta = state.eqs.length - eqs.length
+              ElimPerRule.put(phase, count + delta)
+            }
+
+            {
+              // Eliminated Vars
+              val count = VarElimPerRule.getOrElse(phase, 0)
+              val delta = numberOfVars - eqs.map(_.varsOf.size).sum
+              VarElimPerRule.put(phase,  count + delta)
+            }
           }
         }
 
         state.eqs = eqs
         state.subst = subst @@ state.subst
-        listener.onExitPhase(state, progress = true)
 
       case None =>
-        listener.onExitPhase(state, progress = false)
     }
   }
 
@@ -413,6 +408,13 @@ object SetUnification {
       return Result.Err(eqs.map(_.toUnsolvable))
     }
 
+    if (EnableStats) {
+      // Eliminated Vars
+      val count = VarElimPerRule.getOrElse(Phase.SuccessiveVariableElimination, 0)
+      val delta = eqs.map(_.varsOf.size).sum
+      VarElimPerRule.put(Phase.SuccessiveVariableElimination,  count + delta)
+    }
+
     // Return immediately if there is an equation that has too many variables.
     for (eq <- eqs) {
       val allVars = eq.f1.varsOf ++ eq.f2.varsOf
@@ -422,11 +424,11 @@ object SetUnification {
     }
 
     // Convert all equations to Zhegalkin polynomials.
-    implicit val alg: BoolAlg[ZhegalkinExpr] = ZhegalkinAlgebra
+    implicit val alg: ZhegalkinAlgebra[CofiniteIntSet] = EffUnification3.Algebra
     val l = eqs.map {
       case Equation(f1, f2, _, _) =>
-        val x = Zhegalkin.toZhegalkin(f1)
-        val y = Zhegalkin.toZhegalkin(f2)
+        val x = Zhegalkin.toZhegalkin(f1)(alg, CofiniteIntSet.LatticeOps)
+        val y = Zhegalkin.toZhegalkin(f2)(alg, CofiniteIntSet.LatticeOps)
         (x, y)
     }
 
@@ -450,19 +452,5 @@ object SetUnification {
         // SVE failed. We give up. We indiscriminately mark all equations as unsolvable.
         Result.Err(eqs.map(_.toUnsolvable))
     }
-  }
-
-  //
-  // Checking and Debugging.
-  //
-
-  /** Returns a multiline string of the given [[Equation]]s and [[SetSubstitution]]. */
-  private def stateString(eqs: List[Equation], subst: SetSubstitution): String = {
-    val sb = new StringBuilder()
-    sb.append("Equations:\n")
-    for (eq <- eqs) sb.append(s"  $eq\n")
-    sb.append(subst)
-    sb.append("\n")
-    sb.toString
   }
 }

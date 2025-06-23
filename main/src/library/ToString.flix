@@ -56,19 +56,19 @@ instance ToString[Float64] {
 }
 
 instance ToString[Int8] {
-    pub def toString(x: Int8): String = unsafe Byte.toString(x)
+    pub def toString(x: Int8): String = Byte.toString(x)
 }
 
 instance ToString[Int16] {
-    pub def toString(x: Int16): String = unsafe Short.toString(x)
+    pub def toString(x: Int16): String = Short.toString(x)
 }
 
 instance ToString[Int32] {
-    pub def toString(x: Int32): String = unsafe Integer.toString(x)
+    pub def toString(x: Int32): String = Integer.toString(x)
 }
 
 instance ToString[Int64] {
-    pub def toString(x: Int64): String = unsafe Long.toString(x)
+    pub def toString(x: Int64): String = Long.toString(x)
 }
 
 instance ToString[String] {

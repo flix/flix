@@ -7,7 +7,7 @@ mod ShortestPath {
     /// in the graph `g`.
     ///
     pub def sssp(src: t, g: m[(t, t)]): Map[t, Vector[t]] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
-        let edges = inject g into Edge;
+        let edges = inject g into Edge/2;
         let rules = #{
             Reach(x, y; init(y, x)) :- Edge(x, y).
             Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(y, z).
@@ -30,12 +30,12 @@ mod ShortestPath {
         }
     }
 
-    instance Order[Path[a]] {
+    instance Order[Path[a]] with Order[a] {
         pub def compare(x: Path[a], y: Path[a]): Comparison = match (x, y) {
-            case (Bot, Bot)           => Comparison.EqualTo
-            case (Bot, _)             => Comparison.LessThan
-            case (_, Bot)             => Comparison.GreaterThan
-            case (Path(xs), Path(ys)) => List.length(xs) <=> List.length(ys)
+            case (Bot, Bot)                 => Comparison.EqualTo
+            case (Bot, _)                   => Comparison.LessThan
+            case (_, Bot)                   => Comparison.GreaterThan
+            case (Path(list1), Path(list2)) => list1 <=> list2
         }
     }
 

@@ -35,7 +35,7 @@ object SymbolProvider {
     val sigs = root.sigs.values.collect { case sig if sig.sym.name.startsWith(query) => mkSigWorkspaceSymbol(sig) }
     val effs = root.effects.values.filter(_.sym.name.startsWith(query)).flatMap(mkEffectWorkspaceSymbol)
     val structs = root.structs.values.filter(_.sym.name.startsWith(query)).flatMap(mkStructWorkspaceSymbol)
-    (traits ++ defs ++ enums ++ sigs ++ effs ++ structs).toList.filter{
+    (traits ++ defs ++ enums ++ sigs ++ effs ++ structs).toList.filter {
       case WorkspaceSymbol(_, _, _, _, loc) => loc.uri.startsWith("file://")
     }
   }
@@ -49,7 +49,7 @@ object SymbolProvider {
     val traits = root.traits.values.collect { case t if t.sym.loc.source.name == uri => mkTraitDocumentSymbol(t) }
     val effs = root.effects.values.collect { case e if e.sym.loc.source.name == uri => mkEffectDocumentSymbol(e) }
     val structs = root.structs.values.collect { case s if s.sym.loc.source.name == uri => mkStructDocumentSymbol(s) }
-    (traits ++ defs ++ enums ++ effs ++ structs).toList
+    (traits ++ defs ++ enums ++ effs ++ structs).toList.filter(_.name.nonEmpty)
   }
 
   /**
@@ -73,7 +73,7 @@ object SymbolProvider {
       Range.from(sym.loc),
       Range.from(sym.loc),
       Nil,
-      signatures.map(mkSigDocumentSymbol) :+ mkTypeParamDocumentSymbol(tparam),
+      (signatures.map(mkSigDocumentSymbol) :+ mkTypeParamDocumentSymbol(tparam)).filter(_.name.nonEmpty),
     )
   }
 
@@ -105,13 +105,13 @@ object SymbolProvider {
   }
 
   /**
-   * Returns a Method SymbolInformation from a Struct node.
-   */
+    * Returns a Method SymbolInformation from a Struct node.
+    */
   private def mkStructWorkspaceSymbol(s: TypedAst.Struct): List[WorkspaceSymbol] = s match {
     case TypedAst.Struct(_, _, _, sym, _, _, fields, _) =>
       fields.values.map(mkFieldWorkspaceSymbol).toList :+ WorkspaceSymbol(
-      sym.name, SymbolKind.Struct, Nil, None, Location(sym.loc.source.name, Range.from(sym.loc)),
-    )
+        sym.name, SymbolKind.Struct, Nil, None, Location(sym.loc.source.name, Range.from(sym.loc)),
+      )
   }
 
   private def mkFieldWorkspaceSymbol(f: TypedAst.StructField): WorkspaceSymbol = f match {
@@ -121,11 +121,17 @@ object SymbolProvider {
   }
 
   /**
-   * Returns a Function DocumentSymbol from a Struct node.
-   */
+    * Returns a Function DocumentSymbol from a Struct node.
+    */
   private def mkStructDocumentSymbol(s: TypedAst.Struct): DocumentSymbol = s match {
     case TypedAst.Struct(doc, _, _, sym, tparams, _, fields, _) => DocumentSymbol(
-      sym.name, Some(doc.text), SymbolKind.Struct, Range.from(sym.loc), Range.from(sym.loc), Nil, fields.values.map(mkFieldDocumentSymbol).toList ++  tparams.map(mkTypeParamDocumentSymbol),
+      sym.name,
+      Some(doc.text),
+      SymbolKind.Struct,
+      Range.from(sym.loc),
+      Range.from(sym.loc),
+      Nil,
+      (fields.values.map(mkFieldDocumentSymbol).toList ++ tparams.map(mkTypeParamDocumentSymbol)).filter(_.name.nonEmpty),
     )
   }
 
@@ -165,7 +171,7 @@ object SymbolProvider {
       Range.from(loc),
       Range.from(loc),
       Nil,
-      cases.values.map(mkCaseDocumentSymbol).toList ++ tparams.map(mkTypeParamDocumentSymbol),
+      (cases.values.map(mkCaseDocumentSymbol).toList ++ tparams.map(mkTypeParamDocumentSymbol)).filter(_.name.nonEmpty)
     )
   }
 
@@ -218,7 +224,7 @@ object SymbolProvider {
       Range.from(sym.loc),
       Range.from(sym.loc),
       Nil,
-      ops.map(mkOpDocumentSymbol),
+      ops.map(mkOpDocumentSymbol).filter(_.name.nonEmpty),
     )
   }
 

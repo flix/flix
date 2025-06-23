@@ -31,19 +31,19 @@ mod Test.Exp.Jvm.InvokeConstructor {
         new Double(123.456f64)
 
     @test
-    def testInvokeConstructor05(): Byte \ IO =
+    def testInvokeConstructor05(): Byte =
         new Byte(123i8)
 
     @test
-    def testInvokeConstructor06(): Short \ IO =
+    def testInvokeConstructor06(): Short =
         new Short(123i16)
 
     @test
-    def testInvokeConstructor07(): Integer \ IO =
+    def testInvokeConstructor07(): Integer =
         new Integer(123i32)
 
     @test
-    def testInvokeConstructor08(): Long \ IO =
+    def testInvokeConstructor08(): Long =
         new Long(123i64)
 
     @test
@@ -57,7 +57,8 @@ mod Test.Exp.Jvm.InvokeConstructor {
     // This test doesn't pass unless explicit cast is done
     @test
     def testInvokeObjectConstructor01(): Object \ IO =
-        (checked_cast(new JString("Hello World")) : Object)
+        let obj = new JString("Hello World");
+        (checked_cast(obj) : Object)
 
     @test
     def testInvokeStaticNestedConstructor01(): Builder \ IO =

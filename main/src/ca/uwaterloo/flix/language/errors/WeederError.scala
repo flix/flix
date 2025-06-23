@@ -16,9 +16,8 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -496,6 +495,23 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an illegal predicate arity.
+    *
+    * @param loc the location where the error occurs.
+    */
+  case class IllegalPredicateArity(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Illegal predicate arity."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal predicate arity. Arity must be an integer larger than zero.
+         |
+         |${code(loc, "illegal arity.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate an illegal private declaration.
     *
     * @param ident the name of the declaration.
@@ -630,6 +646,31 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate a function is annotated with both `@Inline` and `@DontInline`.
+    *
+    * @param inlineLoc     the source location of the `@Inline` annotation.
+    * @param dontInlineLoc the source location of the `@DontInline` annotation.
+    */
+  case class InlineAndDontInline(inlineLoc: SourceLocation, dontInlineLoc: SourceLocation) extends WeederError {
+    override def summary: String = "A def cannot be marked both `@Inline` and `@DontInline`"
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> A def cannot be marked both `@Inline` and `@DontInline`.
+         |
+         |${code(inlineLoc, "the `@Inline` occurs here")}
+         |
+         |${code(dontInlineLoc, "the `@DontInline` occurs here")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+
+    override def loc: SourceLocation = inlineLoc.min(dontInlineLoc)
   }
 
   /**
@@ -930,7 +971,7 @@ object WeederError {
     * @param loc  the location of the annotation.
     */
   case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Undefined annotation $name"
+    def summary: String = s"Undefined annotation '$name'.'"
 
     def message(formatter: Formatter): String = {
       import formatter.*
@@ -1039,4 +1080,5 @@ object WeederError {
          |""".stripMargin
     }
   }
+
 }

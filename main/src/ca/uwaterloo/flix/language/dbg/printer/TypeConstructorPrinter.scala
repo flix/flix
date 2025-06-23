@@ -49,6 +49,7 @@ object TypeConstructorPrinter {
     case TypeConstructor.RecordRowEmpty => DocAst.Type.RecordRowEmpty
     case TypeConstructor.RecordRowExtend(label) => DocAst.Type.AsIs(s"RecordRowExtend($label)")
     case TypeConstructor.Record => DocAst.Type.AsIs("Record")
+    case TypeConstructor.Extensible => DocAst.Type.AsIs("Extensible")
     case TypeConstructor.SchemaRowEmpty => DocAst.Type.SchemaRowEmpty
     case TypeConstructor.SchemaRowExtend(pred) => DocAst.Type.AsIs(s"SchemaRowExtend($pred)")
     case TypeConstructor.Schema => DocAst.Type.Schema
@@ -66,8 +67,8 @@ object TypeConstructorPrinter {
     case TypeConstructor.ArrayWithoutRegion => DocAst.Type.AsIs("ArrayWithoutRegion")
     case TypeConstructor.Vector => DocAst.Type.AsIs("Vector")
     case TypeConstructor.Tuple(l) => DocAst.Type.AsIs(s"Tuple($l)")
-    case TypeConstructor.Relation => DocAst.Type.AsIs("Relation")
-    case TypeConstructor.Lattice => DocAst.Type.AsIs("Lattice")
+    case TypeConstructor.Relation(l) => DocAst.Type.AsIs("Relation($l)")
+    case TypeConstructor.Lattice(l) => DocAst.Type.AsIs("Lattice($l)")
     case TypeConstructor.True => DocAst.Type.AsIs("True")
     case TypeConstructor.False => DocAst.Type.AsIs("False")
     case TypeConstructor.Not => DocAst.Type.AsIs("Not")

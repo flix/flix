@@ -68,7 +68,7 @@ sealed trait Type {
   /**
     * Gets all the effects in the given type.
     */
-  def effects: SortedSet[Symbol.EffectSym] = this match {
+  def effects: SortedSet[Symbol.EffSym] = this match {
     case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(sym)
 
     case _: Type.Var => SortedSet.empty
@@ -81,7 +81,7 @@ sealed trait Type {
     case Type.JvmToType(tpe, _) => tpe.effects
     case Type.JvmToEff(tpe, _) => tpe.effects
 
-    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, t) => acc ++ t.effects)
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(SortedSet.empty[Symbol.EffSym])((acc, t) => acc ++ t.effects)
   }
 
   /**
@@ -353,16 +353,6 @@ object Type {
   val Lazy: Type = Type.Cst(TypeConstructor.Lazy, SourceLocation.Unknown)
 
   /**
-    * Represents the Relation type constructor.
-    */
-  val Relation: Type = Type.Cst(TypeConstructor.Relation, SourceLocation.Unknown)
-
-  /**
-    * Represents the Lattice type constructor.
-    */
-  val Lattice: Type = Type.Cst(TypeConstructor.Lattice, SourceLocation.Unknown)
-
-  /**
     * Represents the type of an empty record.
     */
   val RecordRowEmpty: Type = Type.Cst(TypeConstructor.RecordRowEmpty, SourceLocation.Unknown)
@@ -395,8 +385,8 @@ object Type {
   val Chan: Type = Type.Cst(TypeConstructor.Effect(Symbol.Chan), SourceLocation.Unknown)
 
   /**
-   * Represents the Net effect.
-   */
+    * Represents the Net effect.
+    */
   val Net: Type = Type.Cst(TypeConstructor.Effect(Symbol.Net), SourceLocation.Unknown)
 
   /**
@@ -559,7 +549,7 @@ object Type {
       * Creates a new Type.Apply, reusing this one if they are equivalent.
       */
     def renew(newTpe1: Type, newTpe2: Type, newLoc: SourceLocation): Type.Apply = {
-      if ((tpe1 eq newTpe1) && (tpe2 eq newTpe2) && (loc eq newLoc )) {
+      if ((tpe1 eq newTpe1) && (tpe2 eq newTpe2) && (loc eq newLoc)) {
         this
       } else {
         Type.Apply(newTpe1, newTpe2, newLoc)
@@ -921,8 +911,8 @@ object Type {
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
-  def mkTuple(ts: List[Type], loc: SourceLocation): Type = {
-    val init = Type.Cst(TypeConstructor.Tuple(ts.length), loc)
+  def mkTuple(ts: Iterable[Type], loc: SourceLocation): Type = {
+    val init = Type.Cst(TypeConstructor.Tuple(ts.size), loc)
     ts.foldLeft(init: Type) {
       case (acc, x) => Apply(acc, x, loc)
     }
@@ -981,6 +971,13 @@ object Type {
   }
 
   /**
+    * Constructs an Extensible Variant type.
+    */
+  def mkExtensible(tpe: Type, loc: SourceLocation): Type = {
+    Apply(Type.Cst(TypeConstructor.Extensible, loc), tpe, loc)
+  }
+
+  /**
     * Constructs a Schema type.
     */
   def mkSchema(tpe: Type, loc: SourceLocation): Type = {
@@ -991,26 +988,14 @@ object Type {
     * Construct a relation type with the given list of type arguments `ts0`.
     */
   def mkRelation(ts0: List[Type], loc: SourceLocation): Type = {
-    val ts = ts0 match {
-      case Nil => Type.Unit
-      case x :: Nil => x
-      case xs => mkTuple(xs, loc)
-    }
-
-    Apply(Relation, ts, loc)
+    mkApply(Type.Cst(TypeConstructor.Relation(ts0.length), loc), ts0, loc)
   }
 
   /**
     * Construct a lattice type with the given list of type arguments `ts0`.
     */
   def mkLattice(ts0: List[Type], loc: SourceLocation): Type = {
-    val ts = ts0 match {
-      case Nil => Type.Unit
-      case x :: Nil => x
-      case xs => mkTuple(xs, loc)
-    }
-
-    Apply(Lattice, ts, loc)
+    mkApply(Type.Cst(TypeConstructor.Lattice(ts0.length), loc), ts0, loc)
   }
 
   /**
@@ -1253,7 +1238,7 @@ object Type {
     case Type.Var(_, _) => false
     case Type.Cst(_, _) => false
     case Type.Apply(tpe1, tpe2, _) => hasJvmType(tpe1) || hasJvmType(tpe2)
-    case Type.Alias(_, _, tpe, _) => hasJvmType(tpe)
+    case Type.Alias(_, _, t, _) => hasJvmType(t)
     case Type.AssocType(_, arg, _, _) => hasJvmType(arg)
     case Type.JvmToType(_, _) => true
     case Type.JvmToEff(_, _) => true
@@ -1270,7 +1255,7 @@ object Type {
       case _ => false
     }
     case Type.Apply(tpe1, tpe2, _) => hasError(tpe1) || hasError(tpe2)
-    case Type.Alias(_, _, tpe, _) => hasError(tpe)
+    case Type.Alias(_, _, t, _) => hasError(t)
     case Type.AssocType(_, arg, _, _) => hasError(arg)
     case Type.JvmToType(_, _) => false
     case Type.JvmToEff(_, _) => false
@@ -1287,29 +1272,29 @@ object Type {
   def getFlixType(c: Class[?]): Type = {
     if (c == java.lang.Boolean.TYPE) {
       Type.Bool
-    }  else if (c == java.lang.Byte.TYPE) {
+    } else if (c == java.lang.Byte.TYPE) {
       Type.Int8
-    }  else if (c == java.lang.Short.TYPE) {
+    } else if (c == java.lang.Short.TYPE) {
       Type.Int16
-    }  else if (c == java.lang.Integer.TYPE) {
+    } else if (c == java.lang.Integer.TYPE) {
       Type.Int32
-    }  else if (c == java.lang.Long.TYPE) {
+    } else if (c == java.lang.Long.TYPE) {
       Type.Int64
-    }  else if (c == java.lang.Character.TYPE) {
+    } else if (c == java.lang.Character.TYPE) {
       Type.Char
-    }  else if (c == java.lang.Float.TYPE) {
+    } else if (c == java.lang.Float.TYPE) {
       Type.Float32
-    }  else if (c == java.lang.Double.TYPE) {
+    } else if (c == java.lang.Double.TYPE) {
       Type.Float64
-    }  else if (c == classOf[java.math.BigDecimal]) {
+    } else if (c == classOf[java.math.BigDecimal]) {
       Type.BigDecimal
-    }  else if (c == classOf[java.math.BigInteger]) {
+    } else if (c == classOf[java.math.BigInteger]) {
       Type.BigInt
-    }  else if (c == classOf[java.lang.String]) {
+    } else if (c == classOf[java.lang.String]) {
       Type.Str
-    }  else if (c == classOf[java.util.regex.Pattern]) {
+    } else if (c == classOf[java.util.regex.Pattern]) {
       Type.Regex
-    }  else if (c == java.lang.Void.TYPE) {
+    } else if (c == java.lang.Void.TYPE) {
       Type.Unit
     } else if (c.isArray) {
       val comp = c.getComponentType

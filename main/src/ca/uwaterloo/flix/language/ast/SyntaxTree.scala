@@ -109,6 +109,8 @@ object SyntaxTree {
 
     case object ParameterList extends TreeKind
 
+    case object PredicateAndArity extends TreeKind
+
     case object QName extends TreeKind
 
     case object Root extends TreeKind
@@ -193,6 +195,12 @@ object SyntaxTree {
       case object CheckedEffectCast extends Expr
 
       case object CheckedTypeCast extends Expr
+
+      case object ExtMatch extends Expr
+
+      case object ExtMatchRuleFragment extends Expr
+
+      case object ExtTag extends Expr
 
       case object Index extends Expr
 
@@ -451,6 +459,8 @@ object SyntaxTree {
       //     Pattern
       //       Ident
       case object Pattern extends Pattern
+
+      case object ExtTag extends Pattern
 
       case object FCons extends Pattern
 

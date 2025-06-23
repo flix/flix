@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.ast.shared
 
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 
 import java.util.Objects
 

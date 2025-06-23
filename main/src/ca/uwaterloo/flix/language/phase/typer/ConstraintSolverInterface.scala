@@ -19,11 +19,12 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, EqualityConstraint, Scope, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, Kind}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, TraitEnv}
 import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
 
 import scala.annotation.tailrec
 
@@ -104,14 +105,14 @@ object ConstraintSolverInterface {
       val (leftovers, tree) = ConstraintSolver2.solveAll(constrs, initialTree)(Scope.Top, renv, tenv, eenv, flix)
       leftovers match {
         case Nil => (tree, Nil)
-        case errs@(_ :: _) => (tree, errs.flatMap(toTypeErrors(_, renv, tree)))
+        case errs@(_ :: _) => (tree, errs.flatMap(toTypeErrors(_, renv, tree, root)))
       }
   }
 
   /**
     * Converts the unresolved type constraint into an appropriate error.
     */
-  private def toTypeErrors(constr: TypeConstraint, renv: RigidityEnv, subst: SubstitutionTree)(implicit flix: Flix): List[TypeError] = constr match {
+  private def toTypeErrors(constr: TypeConstraint, renv: RigidityEnv, subst: SubstitutionTree, root: KindedAst.Root)(implicit flix: Flix): List[TypeError] = constr match {
     case TypeConstraint.Equality(Type.UnresolvedJvmType(member, _), _, prov) =>
       List(mkErrorFromUnresolvedJvmMember(member, renv, subst, prov.loc))
     case TypeConstraint.Equality(_, Type.UnresolvedJvmType(member, _), prov) =>
@@ -124,10 +125,10 @@ object ConstraintSolverInterface {
       List(TypeError.UnexpectedArg(sym, num, expected = subst(expected), actual = subst(actual), renv, loc))
 
     case TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(baseTpe1, baseTpe2, loc)) =>
-      List(TypeError.MismatchedTypes(subst(baseTpe1), subst(baseTpe2), tpe1, tpe2, renv, loc))
+      List(mkMismatchedTypesOrEffects(subst(baseTpe1), subst(baseTpe2), tpe1, tpe2, renv, loc))
 
     case TypeConstraint.Equality(tpe1, tpe2, prov) =>
-      List(TypeError.MismatchedTypes(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
+      List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
 
     // TODO We have simply duplicated equality here.
     // TODO We should establish invariants on conflicted/equality cases.
@@ -143,18 +144,42 @@ object ConstraintSolverInterface {
       List(TypeError.UnexpectedArg(sym, num, expected = subst(expected), actual = subst(actual), renv, loc))
 
     case TypeConstraint.Conflicted(tpe1, tpe2, Provenance.Match(baseTpe1, baseTpe2, loc)) =>
-      List(TypeError.MismatchedTypes(subst(baseTpe1), subst(baseTpe2), tpe1, tpe2, renv, loc))
+      List(mkMismatchedTypesOrEffects(subst(baseTpe1), subst(baseTpe2), subst(tpe1), subst(tpe2), renv, loc))
 
     case TypeConstraint.Conflicted(_, _, Provenance.Timeout(msg, loc)) =>
       List(TypeError.TooComplex(msg, loc))
 
     case TypeConstraint.Conflicted(tpe1, tpe2, prov) =>
-      List(TypeError.MismatchedTypes(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
+      List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
 
-    case TypeConstraint.Trait(sym, tpe, loc) => List(TypeError.MissingInstance(sym, subst(tpe), renv, loc))
-
+    case TypeConstraint.Trait(sym, tpe, loc) =>
+     tpe.typeConstructor match {
+        case Some(TypeConstructor.Arrow(_)) => List(TypeError.MissingInstanceArrow(sym, subst(tpe), renv, loc))
+        case _ =>
+          if (sym == PredefinedTraits.lookupTraitSym("Eq", root)) {
+            List(TypeError.MissingInstanceEq(subst(tpe), renv, loc))
+          } else if (sym == PredefinedTraits.lookupTraitSym("Order", root)) {
+            List(TypeError.MissingInstanceOrder(subst(tpe), renv, loc))
+          } else if (sym == PredefinedTraits.lookupTraitSym("ToString", root)) {
+            List(TypeError.MissingInstanceToString(subst(tpe), renv, loc))
+          } else {
+            List(TypeError.MissingInstance(sym, subst(tpe), renv, loc))
+          }
+      }
     case TypeConstraint.Purification(sym, _, _, _, nested) =>
-      nested.flatMap(toTypeErrors(_, renv, subst.branches.getOrElse(sym, SubstitutionTree.empty)))
+      nested.flatMap(toTypeErrors(_, renv, subst.branches.getOrElse(sym, SubstitutionTree.empty), root))
+  }
+
+  /**
+   *  Create either the MismatchedTypes or MismatchedEffects error based on the kind of the type.
+   */
+  private def mkMismatchedTypesOrEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
+    baseType1.kind match {
+      case Kind.Eff =>
+        TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, loc)
+      case _ =>
+        TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, loc)
+    }
   }
 
   /**

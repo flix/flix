@@ -439,6 +439,21 @@ object SimpleType {
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
+        case TypeConstructor.Extensible =>
+          val args = t.typeArguments.map(visit)
+          args match {
+            // Case 1: No args. { ? }
+            case Nil => SchemaConstructor(Hole)
+            // Case 2: One row argument. Extract its values.
+            case tpe :: Nil => tpe match {
+              case SchemaRow(fields) => Schema(fields)
+              case SchemaRowExtend(fields, rest) => SchemaExtend(fields, rest)
+              case nonSchema => SchemaConstructor(nonSchema)
+            }
+            // Case 3: Too many args. Error.
+            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
+          }
+
         case TypeConstructor.SchemaRowEmpty => SchemaRow(Nil)
 
         case TypeConstructor.SchemaRowExtend(pred) =>
@@ -473,6 +488,7 @@ object SimpleType {
             // Case 3: Too many args. Error.
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
+
         case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(visit))
         case TypeConstructor.ArrayWithoutRegion => mkApply(ArrayWithoutRegion, t.typeArguments.map(visit))
         case TypeConstructor.Vector => mkApply(Vector, t.typeArguments.map(visit))
@@ -489,26 +505,14 @@ object SimpleType {
         case TypeConstructor.Tuple(l) =>
           val tpes = t.typeArguments.map(visit).padTo(l, Hole)
           Tuple(tpes)
-        case TypeConstructor.Relation =>
-          val args = t.typeArguments.map(visit)
-          args match {
-            case Nil => RelationConstructor
-            case tpe :: Nil => Relation(destructTuple(tpe))
-            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
-          }
-        case TypeConstructor.Lattice =>
-          val args = t.typeArguments.map(visit)
-          args match {
-            case Nil => LatticeConstructor
-            case tpe :: Nil =>
-              val tpesAndLat = destructTuple(tpe)
-              // NB: safe to take init/last since every lattice has a lattice field
-              // MATT not safe in case of alias!
-              val tpes = tpesAndLat.init
-              val lat = tpesAndLat.last
-              Lattice(tpes, lat)
-            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
-          }
+        case TypeConstructor.Relation(l) =>
+          val tpes = t.typeArguments.map(visit).padTo(l, Hole)
+          Relation(tpes)
+        case TypeConstructor.Lattice(l) =>
+          val tpesAndLat = t.typeArguments.map(visit).padTo(l, Hole)
+          val tpes = tpesAndLat.init
+          val lat = tpesAndLat.last
+          Lattice(tpes, lat)
         case TypeConstructor.Pure => Pure
         case TypeConstructor.Univ => Univ
 

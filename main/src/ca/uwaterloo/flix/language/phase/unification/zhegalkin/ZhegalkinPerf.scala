@@ -36,6 +36,8 @@ object ZhegalkinPerf {
 
   private val FullSubeffecting: Set[Subeffecting] = Set(Subeffecting.ModDefs, Subeffecting.InsDefs, Subeffecting.Lambdas)
 
+  private val DefaultOpts: Options = Options.Default.copy(xsubeffecting = FullSubeffecting)
+
   private case class Config(
                              rewriteRules: Boolean = false,
                              cacheInterCst: Boolean = false,
@@ -60,13 +62,12 @@ object ZhegalkinPerf {
   private def rq1(n: Int): Unit = {
     println(RQ1)
 
-    // TODO: What options should be used when we collect the constraints?
-
     // Collect all Boolean effect equation systems.
     val buffer = mutable.ArrayBuffer.empty[List[Equation]]
 
     EffUnification3.EnableSmartSubeffecting = false
     val flix = new Flix()
+    flix.setOptions(DefaultOpts)
     flix.addListener {
       case FlixEvent.SolveEffEquations(eqns) =>
         if (eqns.nonEmpty) {
@@ -89,7 +90,7 @@ object ZhegalkinPerf {
         |df = pd.read_csv('data.txt')
         |
         |seaborn.stripplot(data=df, x="Constraints", size=4.0, jitter=0.5, alpha=0.4)
-        |plt.xlabel("Constraints")
+        |plt.xlabel("number of constraints")
         |plt.xlim(1, None)
         |plt.grid(True)
         |
@@ -98,14 +99,15 @@ object ZhegalkinPerf {
         |
         |
         |
-        |seaborn.scatterplot(data=df, x="Constraints", y="FlexVars", alpha=0.2)
-        |seaborn.scatterplot(data=df, x="Constraints", y="RigidVars", alpha=0.2)
-        |seaborn.scatterplot(data=df, x="Constraints", y="Effects", alpha=0.2)
-        |plt.ylabel("Constraints")
-        |plt.ylabel("Quantity")
+        |seaborn.scatterplot(data=df, x="Constraints", y="FlexVars", label="FlexVars", alpha=0.2)
+        |seaborn.scatterplot(data=df, x="Constraints", y="RigidVars", label="RigidVars", alpha=0.2)
+        |seaborn.scatterplot(data=df, x="Constraints", y="Effects", label="Effects", alpha=0.2)
+        |plt.xlabel("number of constraints")
+        |plt.ylabel("quantity")
         |plt.xlim(1, 60)
         |plt.ylim(1, 60)
         |plt.grid(True)
+        |plt.legend()
         |
         |plt.savefig('numberOfVarsPerSystem.png')
         |plt.show()
@@ -114,7 +116,8 @@ object ZhegalkinPerf {
         |
         |
         |seaborn.histplot(data=df[['RigidVars', 'Effects']], multiple='dodge', discrete=True, alpha=0.8, palette=seaborn.color_palette()[1:])
-        |plt.ylabel("Quantity")
+        |plt.xlabel("number of variables / effects")
+        |plt.ylabel("number of constraint systems")
         |plt.grid(True)
         |
         |plt.savefig('histogram.png')
@@ -184,22 +187,32 @@ object ZhegalkinPerf {
 
     SetUnification.EnableStats = true
     val flix = new Flix()
+    flix.setOptions(DefaultOpts)
     val (_, errors) = flix.check()
     assert(errors.isEmpty)
     SetUnification.EnableStats = false
 
-    val m = SetUnification.ElimPerRule.toMap
-    val trivial = m(Phase.Trivial)
-    val constProp = m(Phase.ConstantPropagation)
-    val varProp = m(Phase.VariablePropagation)
-    val varAssign = m(Phase.VariableAssignment)
-    val reflDupl = m(Phase.ReflexiveAndDuplicate)
-    val sve = m(Phase.SuccessiveVariableElimination)
+    val mc = SetUnification.ElimPerRule.toMap
+    val a1 = mc(Phase.Trivial)
+    val b1 = mc(Phase.ConstantPropagation)
+    val c1 = mc(Phase.VariablePropagation)
+    val d1 = mc(Phase.VariableAssignment)
+    val e1 = mc(Phase.ReflexiveAndDuplicate)
+    val f1 = mc(Phase.SuccessiveVariableElimination)
+
+    val mv = SetUnification.VarElimPerRule.toMap
+    val a2 = mv(Phase.Trivial)
+    val b2 = mv(Phase.ConstantPropagation)
+    val c2 = mv(Phase.VariablePropagation)
+    val d2 = mv(Phase.VariableAssignment)
+    val e2 = mv(Phase.ReflexiveAndDuplicate)
+    val f2 = mv(Phase.SuccessiveVariableElimination)
 
     println("-" * 80)
     println("  Trivial | ConstProp |  VarProp |  VarAssign |  ReflDupl |    SVE")
     println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    println(f"$trivial%,9d & $constProp%,9d & $varProp%,8d & $varAssign%,10d & $reflDupl%,9d & $sve%,6d \\\\")
+    println(f"$a1%,9d & $b1%,9d & $c1%,8d & $d1%,10d & $e1%,9d & $f1%,6d \\\\")
+    println(f"$a2%,9d & $b2%,9d & $c2%,8d & $d2%,10d & $e2%,9d & $f2%,6d \\\\")
     println("-" * 80)
     println()
     println()
@@ -281,11 +294,11 @@ object ZhegalkinPerf {
   private def runN(N: Int, c: Config): IndexedSeq[Run] = {
     SetUnification.EnableRewriteRules = c.rewriteRules
 
-    ZhegalkinCache.EnableInterCstCache = c.cacheInterCst
-    ZhegalkinCache.EnableUnionCache = c.cacheUnion
-    ZhegalkinCache.EnableInterCache = c.cacheInter
-    ZhegalkinCache.EnableXorCache = c.cacheXor
-    ZhegalkinAlgebra.EnableSVECache = c.cacheSVE
+    EffUnification3.Algebra.Cache.EnableInterCstCache = c.cacheInterCst
+    EffUnification3.Algebra.Cache.EnableUnionCache = c.cacheUnion
+    EffUnification3.Algebra.Cache.EnableInterCache = c.cacheInter
+    EffUnification3.Algebra.Cache.EnableXorCache = c.cacheXor
+    EffUnification3.Algebra.Cache.EnableSVECache = c.cacheSVE
 
     EffUnification3.EnableSmartSubeffecting = c.smartSubeffecting
 
@@ -301,7 +314,7 @@ object ZhegalkinPerf {
     */
   private def runSingle(flix: Flix): Run = {
     // Clear caches.
-    ZhegalkinCache.clearCaches()
+    EffUnification3.Algebra.Cache.clearCaches()
 
     // Run the Flix compiler
     val (root, errors) = flix.check()
