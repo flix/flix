@@ -48,7 +48,7 @@ tasks.withType(ScalaCompile).configureEach {
     scalaCompileOptions.additionalParameters = [
             "-Xfatal-warnings",
             "-Ypatmat-exhaust-depth", "400",
-            "-release", "11",
+            "-release", "21",
             "-opt:inline:ca.uwaterloo.**",
             "-Xmixin-force-forwarders:false",   // Required for LSP4j
             "-Xsource:3",                       // Scala 3 migration flag
