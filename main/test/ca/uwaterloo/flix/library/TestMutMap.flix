@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 mod TestMutMap {
     use MutMap.MutMap
 
@@ -20,20 +21,20 @@ mod TestMutMap {
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toString01(): Bool = region rc {
         let m: MutMap[Int32, Int32, _] = MutMap.empty(rc);
         MutMap.toString(m) == "MutMap#{}"
     }
 
-    @test
+    @Test
     def toString02(): Bool = region rc {
         let m = MutMap.empty(rc);
         MutMap.put(1, 101, m);
         MutMap.toString(m) == "MutMap#{1 => 101}"
     }
 
-    @test
+    @Test
     def toString03(): Bool = region rc {
         let m = MutMap.empty(rc);
         MutMap.put(1, 101, m);
@@ -48,14 +49,14 @@ mod TestMutMap {
     // sameElements                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def sameElements01(): Bool = region rc {
         let m1 = (MutMap.empty(rc): MutMap[Int32, Int32, _]);
         let m2 = (MutMap.empty(rc): MutMap[Int32, Int32, _]);
         MutMap.sameElements(m1, m2)
     }
 
-    @test
+    @Test
     def sameElements02(): Bool = region rc {
         let m = MutMap.empty(rc);
         MutMap.put(1, "a", m);
@@ -66,7 +67,7 @@ mod TestMutMap {
         MutMap.sameElements(m, m2)
     }
 
-    @test
+    @Test
     def sameElements03(): Bool = region rc {
         let m = MutMap.empty(rc);
         MutMap.put(1, "a", m);
@@ -78,7 +79,7 @@ mod TestMutMap {
         not MutMap.sameElements(m, m2)
     }
 
-    @test
+    @Test
     def sameElements04(): Bool = region rc {
         let m = MutMap.empty(rc);
         MutMap.put(1, "a", m);
@@ -90,7 +91,7 @@ mod TestMutMap {
         not MutMap.sameElements(m, m2)
     }
 
-    @test
+    @Test
     def sameElements05(): Bool = region rc {
         let m = MutMap.empty(rc);
         MutMap.put(1, "a", m);
@@ -102,7 +103,7 @@ mod TestMutMap {
         not MutMap.sameElements(m, m2)
     }
 
-    @test
+    @Test
     def sameElements06(): Bool = region rc {
         let m = MutMap.empty(rc);
         MutMap.put(2, "b", m);
@@ -121,7 +122,7 @@ mod TestMutMap {
     // mergeWithKey                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def merge01(): Bool = region rc {
         let m1 = (MutMap.empty(rc): MutMap[Int32, Int32, _]);
         let m2 = (MutMap.empty(rc): MutMap[Int32, Int32, _]);
@@ -129,7 +130,7 @@ mod TestMutMap {
         MutMap.isEmpty(m2)
     }
 
-    @test
+    @Test
     def merge02(): Bool = region rc {
         let m1 = MutMap.empty(rc);
         let m2 = MutMap.empty(rc);
@@ -144,36 +145,36 @@ mod TestMutMap {
     // sumValues                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def sumValues01(): Bool = region rc {
         MutMap.empty(rc) |> MutMap.sumValues == 0
     }
 
-    @test
+    @Test
     def sumValues02(): Bool = region rc {
         Map.toMutMap(rc, Map#{1 => 1}) |>
             MutMap.sumValues == 1
     }
 
-    @test
+    @Test
     def sumValues03(): Bool = region rc {
         Map.toMutMap(rc, Map#{1 => 1, 2 => 2, 3 => 3}) |>
             MutMap.sumValues == 6
     }
 
-    @test
+    @Test
     def sumValues04(): Bool = region rc {
         Map.toMutMap(rc, Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3}) |>
             MutMap.sumValues == 3
     }
 
-    @test
+    @Test
     def sumValues05(): Bool = region rc {
         Map.toMutMap(rc, Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4}) |>
             MutMap.sumValues == -10
     }
 
-    @test
+    @Test
     def sumValues06(): Bool = region rc {
         Map.toMutMap(rc, Map#{10 => 10, -10 => -10}) |>
             MutMap.sumValues == 0
@@ -184,36 +185,36 @@ mod TestMutMap {
     // sumKeys                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def sumKeys01(): Bool = region rc {
         MutMap.empty(rc) |> MutMap.sumKeys == 0
     }
 
-    @test
+    @Test
     def sumKeys02(): Bool = region rc {
         Map.toMutMap(rc, Map#{1 => 1}) |>
             MutMap.sumKeys == 1
     }
 
-    @test
+    @Test
     def sumKeys03(): Bool = region rc {
         Map.toMutMap(rc, Map#{1 => 1, 2 => 2, 3 => 3}) |>
             MutMap.sumKeys == 6
     }
 
-    @test
+    @Test
     def sumKeys04(): Bool = region rc {
         Map.toMutMap(rc, Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3}) |>
             MutMap.sumKeys == 3
     }
 
-    @test
+    @Test
     def sumKeys05(): Bool = region rc {
         Map.toMutMap(rc, Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4}) |>
             MutMap.sumKeys == -12
     }
 
-    @test
+    @Test
     def sumKeys06(): Bool = region rc {
         Map.toMutMap(rc, Map#{10 => 10, -10 => -10}) |>
             MutMap.sumKeys == 0
@@ -224,36 +225,36 @@ mod TestMutMap {
     // sumWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def sumWith01(): Bool = region rc {
         MutMap.empty(rc) |> MutMap.sumWith((k, v) -> k + v) == 0
     }
 
-    @test
+    @Test
     def sumWith02(): Bool = region rc {
         Map.toMutMap(rc, Map#{1 => 1}) |>
             MutMap.sumWith((k, v) -> k + v) == 2
     }
 
-    @test
+    @Test
     def sumWith03(): Bool = region rc {
         Map.toMutMap(rc, Map#{1 => 1, 2 => 2, 3 => 3}) |>
             MutMap.sumWith((k, v) -> k + v) == 12
     }
 
-    @test
+    @Test
     def sumWith04(): Bool = region rc {
         Map.toMutMap(rc, Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3}) |>
             MutMap.sumWith((k, v) -> k + v) == 6
     }
 
-    @test
+    @Test
     def sumWith05(): Bool = region rc {
         Map.toMutMap(rc, Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4}) |>
             MutMap.sumWith((k, v) -> k + v) == -20
     }
 
-    @test
+    @Test
     def sumWith06(): Bool = region rc {
         Map.toMutMap(rc, Map#{10 => 10, -10 => -10}) |>
             MutMap.sumWith((k, v) -> k + v) == 0
@@ -264,22 +265,22 @@ mod TestMutMap {
     // joinKeys                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def joinKeys01(): Bool = region rc {
         (MutMap.empty(rc): MutMap[Int32, Int32, _]) |> MutMap.joinKeys(",") == ""
     }
 
-    @test
+    @Test
     def joinKeys02(): Bool = region rc {
         Map.toMutMap(rc, Map#{1 => 1}) |> MutMap.joinKeys(",") == "1"
     }
 
-    @test
+    @Test
     def joinKeys03(): Bool = region rc {
         Map.toMutMap(rc, Map#{0 => 1, 1 => 2, 2 => 2}) |> MutMap.joinKeys(",") == "0,1,2"
     }
 
-    @test
+    @Test
     def joinKeys04(): Bool = region rc {
         Map.toMutMap(rc, Map#{"0" => 1, "1" => 2, "2" => 2}) |> MutMap.joinKeys(",") == "0,1,2"
     }
@@ -289,22 +290,22 @@ mod TestMutMap {
     // joinValues                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def joinValues01(): Bool = region rc {
         (MutMap.empty(rc): MutMap[Int32, Int32, _]) |> MutMap.joinValues(",") == ""
     }
 
-    @test
+    @Test
     def joinValues02(): Bool = region rc {
         Map.toMutMap(rc, Map#{1 => 1}) |> MutMap.joinValues(",") == "1"
     }
 
-    @test
+    @Test
     def joinValues03(): Bool = region rc {
         Map.toMutMap(rc, Map#{0 => 1, 1 => 2, 2 => 2}) |> MutMap.joinValues(",") == "1,2,2"
     }
 
-    @test
+    @Test
     def joinValues04(): Bool = region rc {
         Map.toMutMap(rc, Map#{0 => "1", 1 => "2", 2 => "2"}) |> MutMap.joinValues(",") == "1,2,2"
     }
@@ -314,25 +315,25 @@ mod TestMutMap {
     // joinWith                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def joinWith01(): Bool = region rc {
         (MutMap.empty(rc): MutMap[Int32, Int32, _]) |>
             MutMap.joinWith((k, v) -> "${k} => ${v}", ",") == ""
     }
 
-    @test
+    @Test
     def joinWith02(): Bool = region rc {
         Map.toMutMap(rc, Map#{1 => 1}) |>
             MutMap.joinWith((k, v) -> "${k} => ${v}", ", ") == "1 => 1"
     }
 
-    @test
+    @Test
     def joinWith03(): Bool = region rc {
         Map.toMutMap(rc, Map#{0 => 1, 1 => 2, 2 => 2}) |>
             MutMap.joinWith((k, v) -> "${k} => ${v}", ", ") == "0 => 1, 1 => 2, 2 => 2"
     }
 
-    @test
+    @Test
     def joinWith04(): Bool = region rc {
         Map.toMutMap(rc, Map#{0 => "1", 1 => "2", 2 => "2"}) |>
             MutMap.joinWith((k, v) -> "${k} => ${v}", ", ") == "0 => 1, 1 => 2, 2 => 2"
@@ -342,7 +343,7 @@ mod TestMutMap {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toMutDeque01(): Bool = region rc {
         let m: MutMap[Int32, Int32, _] = MutMap.empty(rc);
         let d1 = MutMap.toMutDeque(rc, m);
@@ -352,7 +353,7 @@ mod TestMutMap {
         d1 `MutDeque.sameElements` d2
     }
 
-    @test
+    @Test
     def toMutDeque02(): Bool = region rc {
         let m = Map.toMutMap(rc, Map#{1 => 2});
         let d1 = MutMap.toMutDeque(rc, m);
@@ -363,7 +364,7 @@ mod TestMutMap {
         d1 `MutDeque.sameElements` d2
     }
 
-    @test
+    @Test
     def toMutDeque03(): Bool = region rc {
         let m = Map.toMutMap(rc, Map#{1 => 2, 3 => 4, 5 => 6});
         let d1 = MutMap.toMutDeque(rc, m);
@@ -376,7 +377,7 @@ mod TestMutMap {
         d1 `MutDeque.sameElements` d2
     }
 
-    @test
+    @Test
     def toMutDeque04(): Bool = region rc {
         let m = Map.toMutMap(rc, Map#{1 => 'a', 2 => 'b', 3 => 'c'});
         let d1 = MutMap.toMutDeque(rc, m);
@@ -394,25 +395,25 @@ mod TestMutMap {
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toList01(): Bool = region rc {
         let m: MutMap[Int32, Int32, _] = MutMap.empty(rc);
         MutMap.toList(m) == (List#{} : List[(Int32, Int32)])
     }
 
-    @test
+    @Test
     def toList02(): Bool = region rc {
         let m = Map.toMutMap(rc, Map#{1 => 2});
         MutMap.toList(m) == List#{(1, 2)}
     }
 
-    @test
+    @Test
     def toList03(): Bool = region rc {
         let m = Map.toMutMap(rc, Map#{1 => 2, 3 => 4, 5 => 6});
         MutMap.toList(m) == List#{(1, 2), (3, 4), (5, 6)}
     }
 
-    @test
+    @Test
     def toList04(): Bool = region rc {
         let m = Map.toMutMap(rc, Map#{1 => 'a', 2 => 'b', 3 => 'c'});
         MutMap.toList(m) == List#{(1, 'a'), (2, 'b'), (3, 'c')}
@@ -422,25 +423,25 @@ mod TestMutMap {
     // toVector                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toVector01(): Bool = region rc {
         let m: MutMap[Int32, Int32, _] = MutMap.empty(rc);
         MutMap.toVector(m) == (Vector#{} : Vector[(Int32, Int32)])
     }
 
-    @test
+    @Test
     def toVector02(): Bool = region rc {
         let m = Map.toMutMap(rc, Map#{1 => 2});
         MutMap.toVector(m) == Vector#{(1, 2)}
     }
 
-    @test
+    @Test
     def toVector03(): Bool = region rc {
         let m = Map.toMutMap(rc, Map#{1 => 2, 3 => 4, 5 => 6});
         MutMap.toVector(m) == Vector#{(1, 2), (3, 4), (5, 6)}
     }
 
-    @test
+    @Test
     def toVector04(): Bool = region rc {
         let m = Map.toMutMap(rc, Map#{1 => 'a', 2 => 'b', 3 => 'c'});
         MutMap.toVector(m) == Vector#{(1, 'a'), (2, 'b'), (3, 'c')}
@@ -450,25 +451,25 @@ mod TestMutMap {
     // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toArray01(): Bool = region rc {
         let m: MutMap[Int32, Int32, _] = MutMap.empty(rc);
         Array.sameElements(MutMap.toArray(rc, m), Array#{} @ rc)
     }
 
-    @test
+    @Test
     def toArray02(): Bool = region rc {
         let m = Map.toMutMap(rc, Map#{1 => 2});
         Array.sameElements(MutMap.toArray(rc, m), Array#{(1, 2)} @ rc)
     }
 
-    @test
+    @Test
     def toArray03(): Bool = region rc {
         let m = Map.toMutMap(rc, Map#{1 => 2, 3 => 4, 5 => 6});
         Array.sameElements(MutMap.toArray(rc, m), Array#{(1, 2), (3, 4), (5, 6)} @ rc)
     }
 
-    @test
+    @Test
     def toArray04(): Bool = region rc {
         let m = Map.toMutMap(rc, Map#{1 => 'a', 2 => 'b', 3 => 'c'});
         Array.sameElements(MutMap.toArray(rc, m), Array#{(1, 'a'), (2, 'b'), (3, 'c')} @ rc)
@@ -478,25 +479,25 @@ mod TestMutMap {
     // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toSet01(): Bool = region rc {
         let m: MutMap[Int32, Int32, _] = MutMap.empty(rc);
         MutMap.toSet(m) == (Set#{} : Set[(Int32, Int32)])
     }
 
-    @test
+    @Test
     def toSet02(): Bool = region rc {
         let m = Map.toMutMap(rc, Map#{1 => 2});
         MutMap.toSet(m) == Set#{(1, 2)}
     }
 
-    @test
+    @Test
     def toSet03(): Bool = region rc {
         let m = Map.toMutMap(rc, Map#{1 => 2, 3 => 4, 5 => 6});
         MutMap.toSet(m) == Set#{(1, 2), (3, 4), (5, 6)}
     }
 
-    @test
+    @Test
     def toSet04(): Bool = region rc {
         let m = Map.toMutMap(rc, Map#{1 => 'a', 2 => 'b', 3 => 'c'});
         MutMap.toSet(m) == Set#{(1, 'a'), (2, 'b'), (3, 'c')}
@@ -506,7 +507,7 @@ mod TestMutMap {
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def forEach01(): Bool = region rc {
         let m = MutMap.empty(rc);
         let ri = Ref.fresh(rc, 21);
@@ -514,7 +515,7 @@ mod TestMutMap {
         21 == Ref.get(ri)
     }
 
-    @test
+    @Test
     def forEach02(): Bool = region rc {
         let m = MutMap.empty(rc);
         let ri = Ref.fresh(rc, 21);
@@ -523,7 +524,7 @@ mod TestMutMap {
         100 == Ref.get(ri)
     }
 
-    @test
+    @Test
     def forEach03(): Bool = region rc {
         let m = MutMap.empty(rc);
         let ri = Ref.fresh(rc, 21);
@@ -538,7 +539,7 @@ mod TestMutMap {
     // forEachWithIndex                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def forEachWithIndex01(): Bool = region rc {
         let m = MutMap.empty(rc);
         let ri = Ref.fresh(rc, 21);
@@ -546,7 +547,7 @@ mod TestMutMap {
         21 == Ref.get(ri)
     }
 
-    @test
+    @Test
     def forEachWithIndex02(): Bool = region rc {
         let m = MutMap.empty(rc);
         let ri = Ref.fresh(rc, 21);
@@ -555,7 +556,7 @@ mod TestMutMap {
         0 == Ref.get(ri)
     }
 
-    @test
+    @Test
     def forEachWithIndex03(): Bool = region rc {
         let m = MutMap.empty(rc);
         let ri = Ref.fresh(rc, 21);
@@ -567,3 +568,4 @@ mod TestMutMap {
     }
 
 }
+
