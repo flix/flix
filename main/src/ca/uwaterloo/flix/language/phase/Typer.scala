@@ -193,8 +193,6 @@ object Typer {
 
     val infResult = InfResult(infTconstrs, tpe, eff, infRenv)
 
-    flix.emitEvent(FlixEvent.NewConstraintsDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root))
-
     val (subst, constraintErrors) = ConstraintSolverInterface.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
     constraintErrors.foreach(sctx.errors.add)
     checkAssocTypes(defn.spec, tconstrs0, traitEnv)
