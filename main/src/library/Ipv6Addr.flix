@@ -15,7 +15,7 @@
  */
 
 ///
-///Represents a V6 Ip Address.
+/// Represents a V6 Ip Address.
 ///
 enum Ipv6Addr with Eq, ToString {
     case Ipv6Addr( // 128 bits
@@ -43,19 +43,19 @@ mod Ipv6Addr {
     ///
     pub def fromString(s: String): Option[Ipv6Addr] =
         unsafe try {
-          let addr = InetAddress.getByName(s);
-          match Array.toList(addr.getAddress()) {
-            case b1::b2::b3::b4::b5::b6::b7::b8::b9::b10::b11::b12::b13::b14::b15::b16::Nil =>
-            Some(Ipv6Addr(
-              b1,  b2,  b3,  b4,
-              b5,  b6,  b7,  b8,
-              b9,  b10, b11, b12,
-              b13, b14, b15, b16
-            ))
-            case _ => None
-          }
+            let addr = InetAddress.getByName(s);
+            match Array.toList(addr.getAddress()) {
+                case b1::b2::b3::b4::b5::b6::b7::b8::b9::b10::b11::b12::b13::b14::b15::b16::Nil =>
+                Some(Ipv6Addr(
+                  b1,  b2,  b3,  b4,
+                  b5,  b6,  b7,  b8,
+                  b9,  b10, b11, b12,
+                  b13, b14, b15, b16
+                ))
+                case _ => None
+            }
         } catch {
-          case _ : UnknownHostException => None
+            case _ : UnknownHostException => None
         }
 }
 

@@ -15,7 +15,7 @@
  */
 
 ///
-///Represents a V4 Ip Address.
+/// Represents a V4 Ip Address.
 ///
 enum Ipv4Addr with Eq, ToString { // 32 bits
     case Ipv4Addr(Int8, Int8, Int8, Int8)
@@ -38,13 +38,13 @@ mod Ipv4Addr {
     ///
     pub def fromString(s: String): Option[Ipv4Addr] =
         unsafe try {
-          let addr = InetAddress.getByName(s);
-          match Array.toList(addr.getAddress()) {
-            case b1::b2::b3::b4::Nil => Some(Ipv4Addr(b1, b2, b3, b4))
-            case _ => None
-          }
+            let addr = InetAddress.getByName(s);
+            match Array.toList(addr.getAddress()) {
+              case b1::b2::b3::b4::Nil => Some(Ipv4Addr(b1, b2, b3, b4))
+              case _ => None
+            }
         } catch {
-          case _ : UnknownHostException => None
+            case _ : UnknownHostException => None
         }
 }
 
