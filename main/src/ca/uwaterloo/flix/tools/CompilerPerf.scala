@@ -488,7 +488,10 @@ object CompilerPerf {
   /**
     * Returns the throughput per second.
     */
-  private def throughput(lines: Long, time: Long): Int = ((1_000_000_000L * lines).toDouble / time.toDouble).toInt
+  private def throughput(lines: Long, time: Long): Int = {
+    if (time == 0L) -1
+    else ((1_000_000_000L * lines).toDouble / time.toDouble).toInt
+  }
 
   /**
     * Returns the given time `l` in milliseconds.
