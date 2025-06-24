@@ -372,8 +372,6 @@ object TrustValidation {
 
     case SuspiciousExpr.InvokeConstructorUse(expr) =>
       val safe = trustedBase.contains(expr.constructor)
-      println(s"expr $expr")
-      println(s"trustedBase $trustedBase")
       if (safe) {
         List.empty
       } else {
