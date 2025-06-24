@@ -247,9 +247,7 @@ object CompilerPerf {
     val mdn = median(throughputs.map(_.toLong)).toInt
 
     // Best observed throughput.
-    val maxObservedThroughput = throughput(lines,
-      minimum(baseline.times ::: baselineWithPar.times ::: baselineWithParInc.times)
-    )
+    val maxObservedThroughput = throughput(lines, minimum(baseline.times ::: baselineWithPar.times ::: baselineWithParInc.times))
 
     // Timestamp (in seconds) when the experiment was run.
     val timestamp = System.currentTimeMillis() / 1000
