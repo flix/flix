@@ -271,7 +271,7 @@ object HighlightProvider {
       case SymUse.DefSymUse(sym, _) => Some(getDefnSymOccurs(sym))
       // Effects
       case TypedAst.Effect(_, _, _, sym, _, _) => Some(getEffectSymOccurs(sym))
-      case Type.Cst(TypeConstructor.Effect(sym), _) => Some(getEffectSymOccurs(sym))
+      case Type.Cst(TypeConstructor.Effect(sym, _), _) => Some(getEffectSymOccurs(sym))
       case SymUse.EffectSymUse(sym, _) => Some(getEffectSymOccurs(sym))
       // Enums & Cases
       case TypedAst.Enum(_, _, _, sym, _, _, _, _) => Some(getEnumSymOccurs(sym))
@@ -388,7 +388,7 @@ object HighlightProvider {
       override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = considerRead(effUse.sym, effUse.qname.loc)
 
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Effect(sym), loc) => considerRead(sym, loc)
+        case Type.Cst(TypeConstructor.Effect(sym, _), loc) => considerRead(sym, loc)
         case _ => ()
       }
 
