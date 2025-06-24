@@ -15,7 +15,8 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.language.ast.{ReducedAst, TypedAst}
+import ca.uwaterloo.flix.language.ast.{ReducedAst, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.unification.set.Equation
 
 /**
@@ -34,6 +35,11 @@ object FlixEvent {
     * An event that is fired after the Typer phase.
     */
   case class AfterTyper(root: TypedAst.Root) extends FlixEvent
+
+  /**
+    * An event that is fired when new type constraints are collected for the given def symbol `sym`.
+    */
+  case class NewConstraintsDef(sym: Symbol.DefnSym, tconstrs: List[TypeConstraint]) extends FlixEvent
 
   /**
    * An event that is fired when a new system of Boolean equation is about to be solved.
