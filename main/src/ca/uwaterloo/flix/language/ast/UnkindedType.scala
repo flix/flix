@@ -36,7 +36,7 @@ sealed trait UnkindedType {
     case UnkindedType.Var(sym, _) => f(sym)
     case t: UnkindedType.Cst => t
     case t: UnkindedType.Enum => t
-    case t: UnkindedType.Effect=> t
+    case t: UnkindedType.Effect => t
     case t: UnkindedType.Struct => t
     case t: UnkindedType.RestrictableEnum => t
     case t: UnkindedType.UnappliedAlias => t
@@ -148,7 +148,7 @@ object UnkindedType {
   /**
     * An unkinded effect.
     */
-  case class Effect(sym: Symbol.EffectSym, loc: SourceLocation) extends UnkindedType {
+  case class Effect(sym: Symbol.EffSym, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Effect(sym2, _) => sym == sym2
       case _ => false
