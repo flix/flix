@@ -391,8 +391,7 @@ object CompilerPerf {
     */
   private def perfBaseLine(N: Int, o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _for every iteration._
-    (0 until N).map { i =>
-      println(s"Base Iteration ${(i+1).toString.padTo(3, ' ')} / $N")
+    (0 until N).map { _ =>
       val flix = new Flix()
       flix.setOptions(o.copy(threads = MinThreads, incremental = false))
 
@@ -406,8 +405,7 @@ object CompilerPerf {
     */
   private def perfBaseLineWithPar(N: Int, o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _for every iteration._
-    (0 until N).map { i =>
-      println(s"Parallel Iteration ${(i+ 1).toString.padTo(3, ' ')} / $N")
+    (0 until N).map { _ =>
       val flix = new Flix()
       flix.setOptions(o.copy(threads = MaxThreads, incremental = false))
 
@@ -431,8 +429,7 @@ object CompilerPerf {
     runSingle(flix)
 
     // And then we perform N incremental compilations with no changes to the input.
-    (0 until N).map { i =>
-      println(s"Incremental Iteration ${(i+ 1).toString.padTo(3, ' ')} / $N")
+    (0 until N).map { _ =>
       runSingle(flix)
     }
   }
