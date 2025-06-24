@@ -299,6 +299,8 @@ class Flix {
     "FileWrite.flix" -> LocalResource.get("/src/library/FileWrite.flix"),
     "FileWriteWithResult.flix" -> LocalResource.get("/src/library/FileWriteWithResult.flix"),
     "IpAddr.flix" -> LocalResource.get("/src/library/IpAddr.flix"),
+    "Ipv4Addr.flix" -> LocalResource.get("/src/library/Ipv4Addr.flix"),
+    "Ipv6Addr.flix" -> LocalResource.get("/src/library/Ipv6Addr.flix"),
     "Ping.flix" -> LocalResource.get("/src/library/Ping.flix"),
     "PingWithResult.flix" -> LocalResource.get("/src/library/PingWithResult.flix"),
     "ProcessHandle.flix" -> LocalResource.get("/src/library/ProcessHandle.flix"),
