@@ -91,6 +91,6 @@ object BootstrapError {
   }
 
   case class TrustError(loc: SourceLocation) extends BootstrapError {
-    override def message(f: Formatter): String = s"TrustError at $loc"
+    override def message(f: Formatter): String = f.white(f.bgRed(s"TrustError at $loc"))
   }
 }
