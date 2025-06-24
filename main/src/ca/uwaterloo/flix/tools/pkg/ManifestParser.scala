@@ -407,13 +407,13 @@ object ManifestParser {
       if (perms == null) {
         Ok(Trust.PlainFlix)
       } else {
-        Err(ManifestError.FlixDependencyPermissionTypeError(Some(p), key, perms))
+        Err(ManifestError.FlixDependencyTrustTypeError(Some(p), key, perms))
       }
     } else {
       val permRaw = depTbl.getString(key)
       Trust.fromString(permRaw) match {
         case Some(p) => Ok(p)
-        case None => Err(ManifestError.FlixUnknownPermissionError(p, key, permRaw))
+        case None => Err(ManifestError.FlixUnknownTrustError(p, key, permRaw))
       }
     }
   }
