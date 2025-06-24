@@ -951,6 +951,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // TODO: 6. Update error message formatting
     if (errors.isEmpty) {
+      out.println("No trust errors")
       Validation.Success(())
     } else {
       Validation.Failure(Chain.from(errors))
