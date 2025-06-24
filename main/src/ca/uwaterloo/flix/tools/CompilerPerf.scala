@@ -470,7 +470,7 @@ object CompilerPerf {
     */
   private def aggregate(l: IndexedSeq[Run]): Runs = {
     if (l.isEmpty) {
-      return Runs(0, List(0), Nil)
+      return Runs(0, Nil, Nil)
     }
 
     val lines = l.head.lines
