@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.shared.Input
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 import ca.uwaterloo.flix.language.phase.typer.PrimitiveEffects
-import ca.uwaterloo.flix.tools.pkg.{Dependency, Permissions}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, Trust}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -330,15 +330,15 @@ object TrustValidation {
     })
   }
 
-  private def validateTrustLevels(dependency: Dependency.FlixDependency, suspiciousLibExprs: List[SuspiciousExpr]): List[BootstrapError.TrustError] = dependency.permissions match {
+  private def validateTrustLevels(dependency: Dependency.FlixDependency, suspiciousLibExprs: List[SuspiciousExpr]): List[BootstrapError.TrustError] = dependency.trust match {
     // TODO: Use lib name for error reporting
-    case Permissions.PlainFlix => suspiciousLibExprs.map(e => BootstrapError.TrustError(e.expr.loc)) // if it is empty then no alarms were raised
-    case Permissions.TrustJavaClass => suspiciousLibExprs.flatMap(validateSuspiciousExpr(TrustedJvmBase.get)) // TODO: refactor trustedjvmbase.get
-    case Permissions.Unrestricted => List.empty
+    case Trust.PlainFlix => suspiciousLibExprs.map(e => BootstrapError.TrustError(e.expr.loc)) // if it is empty then no alarms were raised
+    case Trust.TrustJavaClass => suspiciousLibExprs.flatMap(validateSuspiciousExpr(TrustedJvmBase.get)) // TODO: refactor trustedjvmbase.get
+    case Trust.Unrestricted => List.empty
   }
 
   /**
-    * Validates suspicious expressions according to the [[Permissions.TrustJavaClass]] level.
+    * Validates suspicious expressions according to the [[Trust.TrustJavaClass]] level.
     */
   private def validateSuspiciousExpr(trustedBase: TrustedJvmBase)(expr0: SuspiciousExpr): List[BootstrapError.TrustError] = expr0 match {
     case SuspiciousExpr.InstanceOfUse(expr) =>
@@ -372,6 +372,8 @@ object TrustValidation {
 
     case SuspiciousExpr.InvokeConstructorUse(expr) =>
       val safe = trustedBase.contains(expr.constructor)
+      println(s"expr $expr")
+      println(s"trustedBase $trustedBase")
       if (safe) {
         List.empty
       } else {

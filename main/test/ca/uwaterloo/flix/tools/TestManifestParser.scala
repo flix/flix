@@ -7,8 +7,8 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.language.ast.Symbol
 import org.scalatest.funsuite.AnyFunSuite
 import ca.uwaterloo.flix.tools.pkg.Manifest
-import ca.uwaterloo.flix.tools.pkg.Permissions
-import ca.uwaterloo.flix.tools.pkg.Permissions.PlainFlix
+import ca.uwaterloo.flix.tools.pkg.Trust
+import ca.uwaterloo.flix.tools.pkg.Trust.PlainFlix
 
 import java.io.File
 import java.net.URI
@@ -335,13 +335,13 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = "plain" }
         |""".stripMargin
     }
-    assertResult(expected = Permissions.PlainFlix)(actual =
+    assertResult(expected = Trust.PlainFlix)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) =>
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .permissions
+            .trust
         case Err(e) => e.message(f)
       }
     )
@@ -358,16 +358,16 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = "trust-javaclass" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = "trust-javaclass" }
         |""".stripMargin
     }
-    assertResult(expected = Permissions.TrustJavaClass)(actual =
+    assertResult(expected = Trust.TrustJavaClass)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) =>
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .permissions
+            .trust
         case Err(e) => e.message(f)
       }
     )
@@ -384,16 +384,16 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = "unrestricted" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = "unrestricted" }
         |""".stripMargin
     }
-    assertResult(expected = Permissions.Unrestricted)(actual =
+    assertResult(expected = Trust.Unrestricted)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) =>
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .permissions
+            .trust
         case Err(e) => e.message(f)
       }
     )
@@ -411,13 +411,13 @@ class TestManifestParser extends AnyFunSuite {
         |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3" }
         |""".stripMargin
-    assertResult(expected = Permissions.PlainFlix)(actual =
+    assertResult(expected = Trust.PlainFlix)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) =>
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .permissions
+            .trust
         case Err(e) => e.message(f)
       }
     )

@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.TypedAst.Expr
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, TypedAst}
-import ca.uwaterloo.flix.tools.pkg.Permissions
+import ca.uwaterloo.flix.tools.pkg.Trust
 import ca.uwaterloo.flix.tools.pkg.{Dependency, Repository, SemVer}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
@@ -21,7 +21,7 @@ class TrustValidationSuite extends AnyFunSuite with TestUtils {
         |pub def noEff(): Int32 = 2
         |""".stripMargin
     val (root, flix) = checkLib(input, "noEFf", Options.TestWithLibNix)
-    val dep = mkDependency(TestLibName, Permissions.PlainFlix)
+    val dep = mkDependency(TestLibName, Trust.PlainFlix)
     val result = flix.validateTrust(root, Set(dep))
     assert(result.isEmpty)
   }
@@ -32,12 +32,12 @@ class TrustValidationSuite extends AnyFunSuite with TestUtils {
         |pub def f(): Int32 = unchecked_cast(2 as Int32 \ {})
         |""".stripMargin
     val (root, flix) = checkLib(input, "f", Options.TestWithLibNix)
-    val dep = mkDependency(TestLibName, Permissions.PlainFlix)
+    val dep = mkDependency(TestLibName, Trust.PlainFlix)
     val result = flix.validateTrust(root, Set(dep))
     assert(result.nonEmpty)
   }
 
-  private def mkDependency(name: String, perm: Permissions): Dependency.FlixDependency = {
+  private def mkDependency(name: String, perm: Trust): Dependency.FlixDependency = {
     Dependency.FlixDependency(Repository.GitHub, "", name, SemVer(0, 1, 0), perm)
   }
 

@@ -4,7 +4,7 @@ import org.scalatest.Suites
 
 class ToolsSuite extends Suites(
   new TestBootstrap,
-  new TestPermissions,
+  new TestTrust,
   new TestManifestParser
 ) {
   /* left empty */

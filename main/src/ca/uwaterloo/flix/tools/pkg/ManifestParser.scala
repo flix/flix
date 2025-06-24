@@ -360,7 +360,7 @@ object ManifestParser {
         // If the dependency maps to a string, parse the version.
         if (deps.isString(depKey)) {
           getFlixVersion(deps, depKey, p).map {
-            Dependency.FlixDependency(repo, username, projectName, _, Permissions.PlainFlix)
+            Dependency.FlixDependency(repo, username, projectName, _, Trust.PlainFlix)
           }
 
 
@@ -368,11 +368,11 @@ object ManifestParser {
         } else if (deps.isTable(depKey)) {
           val depTbl = deps.getTable(depKey)
           val verKey = "version"
-          val permKey = "permissions"
+          val permKey = "trust"
 
           for (
             ver <- getFlixVersion(depTbl, verKey, p);
-            perm <- getPermissions(depTbl, permKey, p)
+            perm <- getTrust(depTbl, permKey, p)
           ) yield FlixDependency(repo, username, projectName, ver, perm)
         } else {
           Err(ManifestError.VersionTypeError(Option.apply(p), depKey, deps.get(depKey)))
@@ -398,20 +398,20 @@ object ManifestParser {
   }
 
   /**
-    * Retrieve a permissions from a [[TomlTable]] `depTbl` at `key`.
+    * Retrieve a trust from a [[TomlTable]] `depTbl` at `key`.
     */
-  private def getPermissions(depTbl: TomlTable, key: String, p: Path): Result[Permissions, ManifestError] = {
+  private def getTrust(depTbl: TomlTable, key: String, p: Path): Result[Trust, ManifestError] = {
     // Ensure the permissions is a string.
     if (!depTbl.isString(key)) {
       val perms = depTbl.get(key)
       if (perms == null) {
-        Ok(Permissions.PlainFlix)
+        Ok(Trust.PlainFlix)
       } else {
         Err(ManifestError.FlixDependencyPermissionTypeError(Some(p), key, perms))
       }
     } else {
       val permRaw = depTbl.getString(key)
-      Permissions.fromString(permRaw) match {
+      Trust.fromString(permRaw) match {
         case Some(p) => Ok(p)
         case None => Err(ManifestError.FlixUnknownPermissionError(p, key, permRaw))
       }

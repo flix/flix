@@ -1,12 +1,12 @@
 package ca.uwaterloo.flix.tools
 
 import org.scalatest.funsuite.AnyFunSuite
-import ca.uwaterloo.flix.tools.pkg.Permissions
+import ca.uwaterloo.flix.tools.pkg.Trust
 
-class TestPermissions extends AnyFunSuite {
+class TestTrust extends AnyFunSuite {
   test("toString-ofString-plain") {
-    val perm = Permissions.PlainFlix
-    val res = Permissions.fromString(perm.toString) match {
+    val perm = Trust.PlainFlix
+    val res = Trust.fromString(perm.toString) match {
       case Some(r) => r
       case None => fail()
     }
@@ -14,8 +14,8 @@ class TestPermissions extends AnyFunSuite {
   }
 
   test("toString-ofString-trust-javaclass") {
-    val perm = Permissions.TrustJavaClass
-    val res = Permissions.fromString(perm.toString) match {
+    val perm = Trust.TrustJavaClass
+    val res = Trust.fromString(perm.toString) match {
       case Some(r) => r
       case None => fail()
     }
@@ -23,8 +23,8 @@ class TestPermissions extends AnyFunSuite {
   }
 
   test("toString-ofString-unrestricted") {
-    val perm = Permissions.Unrestricted
-    val res = Permissions.fromString(perm.toString) match {
+    val perm = Trust.Unrestricted
+    val res = Trust.fromString(perm.toString) match {
       case Some(r) => r
       case None => fail()
     }

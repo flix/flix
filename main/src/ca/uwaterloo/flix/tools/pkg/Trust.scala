@@ -15,26 +15,26 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-sealed trait Permissions
+sealed trait Trust
 
 /**
   * Permissions for dependencies.
   */
-object Permissions {
+object Trust {
 
-  case object PlainFlix extends Permissions {
+  case object PlainFlix extends Trust {
     override def toString: String = "plain"
   }
 
-  case object TrustJavaClass extends Permissions {
+  case object TrustJavaClass extends Trust {
     override def toString: String = "trust-javaclass"
   }
 
-  case object Unrestricted extends Permissions {
+  case object Unrestricted extends Trust {
     override def toString: String = "unrestricted"
   }
 
-  def fromString(s: String): Option[Permissions] = s.toLowerCase match {
+  def fromString(s: String): Option[Trust] = s.toLowerCase match {
     case "plain" => Some(PlainFlix)
     case "trust-javaclass" => Some(TrustJavaClass)
     case "unrestricted" => Some(Unrestricted)
