@@ -139,15 +139,17 @@ mod Fixpoint3.Phase.Compiler {
     /// by using semi-naive evaluation as a code generator.
     /// The steps are:
     ///     1. For each rule Ri in `stratum` with head Pi:
-    ///     Pi = Pi ∪ Eval-Rule(Ri);
-    ///     merge Pi into ΔPi;
+    ///     ΔPi' = Pi ∪ Eval-Rule(Ri);
+    ///     merge ΔPi' into Pi;
+    ///     ΔPi = ΔPi';
+    ///     purge ΔPi';
     ///     2. Generate fixpoint loop:
     ///     until(⋃Pi == ∅) do
     ///     2.1. For each rule Ri with Pi in its head:
-    ///         purge ΔPi';
     ///         ΔPi' = ΔPi' ∪ Eval-Rule-Incr(Ri);
     ///         merge ΔPi' into Pi;
     ///         ΔPi = ΔPi';
+    ///         purge ΔPi'
     ///     end
     /// Note that Eval-Rule is the code emitted by `compileRule`
     /// and Eval-Rule-Incr is the code emitted by `compileRuleIncr`.
@@ -174,15 +176,10 @@ mod Fixpoint3.Phase.Compiler {
             case Some(par1) =>
                 MutList.push(par1, stmts);
 
-                // Construct the merges for step 1.
-                MutList.push(constructMerges(idb, predicates, true), stmts);
+                // Construct the merges, swaps and purges for step 1.
+                MutList.push(constructMerges(idb, predicates), stmts);
 
-                // Construct the purges for step 1.
                 let loopBody = MutList.empty(rc);
-                Set.forEach(relSym -> {
-                    let purge = RamStmt.Purge(Predicate.getRelSymAsType(relSym, New, predicates));
-                    MutList.push(purge, loopBody)
-                }, idb);
 
                 let loopInserts = MutList.empty(rc);
                 List.forEach(rule -> compileRuleIncr(loopInserts, rule, idbIds, predicates, counter), stratum);
@@ -196,14 +193,7 @@ mod Fixpoint3.Phase.Compiler {
                     case None => ()
                     case Some(loopPar) => 
                         MutList.push(loopPar, loopBody);
-                        MutList.push(constructMerges(idb, predicates, false), loopBody);
-                        Set.forEach(relSym -> {
-                            let delta = Predicate.getRelSymAsType(relSym, Delta, predicates);
-                            let newr = Predicate.getRelSymAsType(relSym, New, predicates);
-                            let swap = RamStmt.Swap(newr, delta);
-                            MutList.push(swap, loopBody)
-                        }, idb);
-
+                        MutList.push(constructMerges(idb, predicates), loopBody);
                         let loopTest =
                             idb |> Set.toVector |> Vector.map(relSym ->
                                 BoolExp.IsEmpty(Predicate.getRelSymAsType(relSym, Delta, predicates))
@@ -216,28 +206,44 @@ mod Fixpoint3.Phase.Compiler {
     }
 
     ///
-    /// Construct merges for the given `RelSym`s in `idb`. Specifically for each relation `Pi` in `idb`
-    /// construct Merge(ΔPi', ΔPi). If `mergeIntoDelta` is `true` also construct `Merge(ΔPi', ΔPi)`.
+    /// Construct merges for the given `RelSym`s in `idb`. See the description for `compileStratum`
     ///
-    def constructMerges(idb: Set[RelSym], predicates: Predicates, mergeIntoDelta: Bool): RamStmt = region rc {
+    def constructMerges(idb: Set[RelSym], predicates: Predicates): RamStmt = region rc {
         let merges = MutList.empty(rc);
+        let swaps = MutList.empty(rc);
+        let purges = MutList.empty(rc);
         Set.forEach(relSym -> {
             let newRel = Predicate.getRelSymAsType(relSym, New, predicates);
             let deltaRel = Predicate.getRelSymAsType(relSym, Delta, predicates);
             let fullRel = Predicate.getRelSymAsType(relSym, Full, predicates);
             let mergeFull = RamStmt.MergeInto(newRel, fullRel);
+            let swapDelta = RamStmt.Swap(newRel, deltaRel);
+            let purgeNew = RamStmt.Purge(newRel);
             MutList.push(mergeFull, merges);
-            if(mergeIntoDelta) {
-            let mergeDelta = RamStmt.MergeInto(newRel, deltaRel);
-                MutList.push(mergeDelta, merges)
-            } else ()
+            MutList.push(swapDelta, swaps);
+            MutList.push(purgeNew, purges)
         }, idb);
-        if(MutList.size(merges) > 1)
+        let swapsAsRam = if(MutList.length(swaps) > 1) {
+            RamStmt.Seq(MutList.toVector(swaps))
+        } else if(MutList.size(swaps) == 1) {
+            getOrCrash(MutList.head(swaps))
+        } else {
+            bug!("Bug in Fixpoint.Compiler: Stratum error. Stratum had no PredSyms")
+        };
+        let purgesAsRam = if(MutList.length(purges) > 1) {
+            RamStmt.Seq(MutList.toVector(purges))
+        } else if(MutList.size(purges) == 1) {
+            getOrCrash(MutList.head(purges))
+        } else {
+            bug!("Bug in Fixpoint.Compiler: Stratum error. Stratum had no PredSyms")
+        };
+        let mergesAsRam = if(MutList.size(merges) > 1)
             RamStmt.Par(MutList.toVector(merges))
         else if (MutList.size(merges) == 1)
             getOrCrash(MutList.head(merges))
         else
-            bug!("Bug in Fixpoint.Compiler: Stratum error. Stratum had no PredSyms")
+            bug!("Bug in Fixpoint.Compiler: Stratum error. Stratum had no PredSyms");
+        RamStmt.Seq(Vector#{mergesAsRam, swapsAsRam, purgesAsRam})
     }
 
     ///
