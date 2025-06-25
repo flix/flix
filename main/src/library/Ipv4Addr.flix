@@ -37,14 +37,15 @@ mod Ipv4Addr {
     /// Returns `Some(addr)` if the string was successfully parsed. Otherwise returns `None`.
     ///
     pub def fromString(s: String): Option[Ipv4Addr] =
-        unsafe try {
-            let addr = InetAddress.getByName(s);
-            match Array.toList(addr.getAddress()) {
-              case b1::b2::b3::b4::Nil => Some(Ipv4Addr(b1, b2, b3, b4))
-              case _ => None
+        let bytes = s
+            |> String.split({regex = "[.]" })
+            |> List.traverse(b -> Int8.fromString(b));
+        match bytes {
+            case Some(b1::b2::b3::b4::Nil) => {
+                Some(Ipv4Addr(b1, b2, b3, b4))
             }
-        } catch {
-            case _ : UnknownHostException => None
+            case _ => None
         }
+
 }
 
