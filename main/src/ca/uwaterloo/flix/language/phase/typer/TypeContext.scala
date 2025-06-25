@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Scope, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -167,7 +167,11 @@ class TypeContext {
     * }}}
     */
   def expectType(expected: Type, actual: Type, loc: SourceLocation): Unit = {
-    val constr = TypeConstraint.Equality(expected, actual, Provenance.ExpectType(expected, actual, loc))
+    val prov = (expected.kind, actual.kind) match {
+      case (Kind.Eff, Kind.Eff) => Provenance.ExpectEffect(expected, actual, loc)
+      case _ => Provenance.ExpectType(expected, actual, loc)
+    }
+    val constr = TypeConstraint.Equality(expected, actual, prov)
     currentScopeConstraints.add(constr)
   }
 
@@ -191,6 +195,20 @@ class TypeContext {
         val constr = TypeConstraint.Equality(expectedType, actualType, prov)
         currentScopeConstraints.add(constr)
     }
+  }
+
+  /**
+   * Generates a constraint representing a source effect.
+   *
+   * For an effect variable effVar and source effect sourceEff, generates:
+   *
+   * {{{
+   *   effVar ~ sourceEff
+   * }}}
+   */
+  def unifySource(effVar: Type.Var, sourceEff: Type, loc: SourceLocation): Unit = {
+    val constr = TypeConstraint.Equality(effVar, sourceEff, Provenance.Source(effVar, sourceEff, loc))
+    currentScopeConstraints.add(constr)
   }
 
   /**

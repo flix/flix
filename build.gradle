@@ -12,8 +12,8 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.scala-lang:scala-library:2.13.15!!'
-    implementation 'org.scala-lang:scala-reflect:2.13.15!!'
+    implementation('org.scala-lang:scala-library:2.13.15!!')
+    implementation('org.scala-lang:scala-reflect:2.13.15!!')
 
     implementation('org.java-websocket:Java-WebSocket:1.5.7')
     implementation('org.jline:jline:3.26.2')
@@ -22,8 +22,8 @@ dependencies {
     implementation('com.github.rjeschke:txtmark:0.13')
     implementation('com.github.scopt:scopt_2.13:4.1.0')
     implementation('com.google.guava:guava:33.3.1-jre')
-    implementation 'org.apache.commons:commons-lang3:3.17.0'
-    implementation("com.lihaoyi:sourcecode_2.13:0.4.2")
+    implementation('org.apache.commons:commons-lang3:3.17.0')
+    implementation('com.lihaoyi:sourcecode_2.13:0.4.2')
 
     implementation('io.get-coursier:coursier_2.13:2.1.24')
 
@@ -36,7 +36,7 @@ dependencies {
     implementation('org.slf4j:slf4j-nop:2.0.13')
 
     // Java implementation of LSP.
-    implementation 'org.eclipse.lsp4j:org.eclipse.lsp4j:0.23.1'
+    implementation('org.eclipse.lsp4j:org.eclipse.lsp4j:0.23.1')
 
     testImplementation('org.scalatest:scalatest_2.13:3.2.19')
 }
@@ -48,7 +48,7 @@ tasks.withType(ScalaCompile).configureEach {
     scalaCompileOptions.additionalParameters = [
             "-Xfatal-warnings",
             "-Ypatmat-exhaust-depth", "400",
-            "-release", "11",
+            "-release", "21",
             "-opt:inline:ca.uwaterloo.**",
             "-Xmixin-force-forwarders:false",   // Required for LSP4j
             "-Xsource:3",                       // Scala 3 migration flag

@@ -14,9 +14,40 @@
  *  limitations under the License.
  */
 
+import java.io.InputStream
+import java.io.OutputStream
 import java.net.Socket
 
 ///
 /// Represents a TCP socket
 ///
-enum TcpSocket(Socket)
+enum TcpSocket(Socket, InputStream, OutputStream)
+
+instance Reader[TcpSocket] {
+
+    type Aef = IO
+
+    pub def read(buffer: Array[Int8, r], socket: TcpSocket): Result[IoError, Int32] \ r + IO =
+        TcpSocket.read(buffer, socket)
+}
+
+instance Writer[TcpSocket] {
+
+    type Aef = IO
+
+    pub def write(buffer: Array[Int8, r], socket: TcpSocket): Result[IoError, Int32] \ r + IO =
+        TcpSocket.write(buffer, socket)
+
+}
+
+mod TcpSocket {
+
+    pub def read(buffer: Array[Int8, r], socket: TcpSocket): Result[IoError, Int32] \ r + IO =
+        let TcpSocket(_, inputStream, _) = socket;
+        Reader.read(buffer, inputStream)
+
+    pub def write(buffer: Array[Int8, r], socket: TcpSocket): Result[IoError, Int32] \ r + IO =
+        let TcpSocket(_, _, outputStream) = socket;
+        Writer.write(buffer, outputStream)
+
+}

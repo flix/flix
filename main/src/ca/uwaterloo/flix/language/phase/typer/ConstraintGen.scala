@@ -81,7 +81,7 @@ object ConstraintGen {
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(Type.mkArrowWithEffect(tpe2, lambdaBodyEff, lambdaBodyType, loc), tpe1, loc)
         c.unifyType(tvar, lambdaBodyType, loc)
-        c.unifyType(evar,  Type.mkUnion(lambdaBodyEff :: eff1 :: eff2 :: Nil, loc), loc)
+        c.unifyType(evar, Type.mkUnion(lambdaBodyEff :: eff1 :: eff2 :: Nil, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -786,7 +786,7 @@ object ConstraintGen {
         //  ..
         // }
         //
-        val (tpes, effs) = rules.map(visitHandlerRule(_, tvar, evar2, loc)).unzip
+        val (tpes, effs) = rules.map(visitHandlerRule(_, tvar, evar2)).unzip
         c.unifyAllTypes(tvar :: tpes, loc)
 
         val handledEffect = Type.Cst(TypeConstructor.Effect(symUse.sym), symUse.qname.loc)
@@ -952,7 +952,7 @@ object ConstraintGen {
         val regionVar = freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegionToStar(regionVar, loc)
         val anyEff = freshVar(Kind.Eff, loc)
-        val (tpe1, eff1) = visitExp(exp1)
+        val (_, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.unifyType(eff1, Type.mkIntersection(anyEff, Type.PrimitiveEffs, loc), exp1.loc)
         c.expectType(expected = regionType, actual = tpe2, exp2.loc)
@@ -1088,7 +1088,7 @@ object ConstraintGen {
     * Returns the the body's type and the body's effect
     */
   private def visitTypeMatchRule(rule: KindedAst.TypeMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
-    case KindedAst.TypeMatchRule(sym, declTpe, exp, loc) =>
+    case KindedAst.TypeMatchRule(sym, declTpe, exp, _) =>
       // We mark all the type vars in the declared type as rigid.
       // This ensures we get a substitution from the actual type to the declared type.
       // This marking only really affects wildcards,
@@ -1108,7 +1108,7 @@ object ConstraintGen {
     * Returns the the body's type and the body's effect
     */
   private def visitCatchRule(rule: KindedAst.CatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
-    case KindedAst.CatchRule(sym, clazz, exp, loc) =>
+    case KindedAst.CatchRule(sym, clazz, exp, _) =>
       c.expectType(expected = Type.mkNative(clazz, sym.loc), sym.tvar, sym.loc)
       visitExp(exp)
   }
@@ -1116,7 +1116,7 @@ object ConstraintGen {
   /**
     * Generates constraints unifying the given expected and actual formal parameters.
     */
-  private def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam])(implicit c: TypeContext, flix: Flix): Unit = {
+  private def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam])(implicit c: TypeContext): Unit = {
     // length check done in Resolver
     c.expectTypeArguments(op, expectedTypes = expected.map(_.tpe), actualTypes = actual.map(_.tpe), actual.map(_.loc))
   }
@@ -1129,7 +1129,7 @@ object ConstraintGen {
     * @param tryBlockTpe        the type of the try-block associated with the handler
     * @param continuationEffect the effect of the continuation
     */
-  private def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type, continuationEffect: Type, loc: SourceLocation)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
+  private def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type, continuationEffect: Type)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
     case KindedAst.HandlerRule(symUse, actualFparams0, body, opTvar, loc) =>
       val effect = root.effects(symUse.sym.eff)
       val ops = effect.ops.map(op => op.sym -> op).toMap
@@ -1180,7 +1180,7 @@ object ConstraintGen {
     */
   private def visitSelectRule(sr0: KindedAst.SelectChannelRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     sr0 match {
-      case KindedAst.SelectChannelRule(sym, chan, body, loc) =>
+      case KindedAst.SelectChannelRule(sym, chan, body, _) =>
         val (chanType, eff1) = visitExp(chan)
         val (bodyType, eff2) = visitExp(body)
         c.unifyType(chanType, Type.mkReceiver(sym.tvar, sym.loc), sym.loc)
@@ -1294,8 +1294,8 @@ object ConstraintGen {
     val (_, _, tpe, substMap) = Scheme.instantiate(struct.sc, struct.loc)
     val subst = Substitution(substMap)
     val instantiatedFields = fields.map {
-      case KindedAst.StructField(mod, fieldSym, tpe, _) =>
-        fieldSym -> (mod.isMutable, subst(tpe))
+      case KindedAst.StructField(mod, fieldSym, fieldTpe, _) =>
+        fieldSym -> (mod.isMutable, subst(fieldTpe))
     }
     (instantiatedFields.toMap, tpe, substMap(struct.tparams.last.sym))
   }

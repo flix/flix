@@ -1307,7 +1307,7 @@ object Redundancy {
     */
   private case class SharedContext(defSyms: ConcurrentHashMap[Symbol.DefnSym, Unit],
                                    sigSyms: ConcurrentHashMap[Symbol.SigSym, Unit],
-                                   effSyms: ConcurrentHashMap[Symbol.EffectSym, Unit],
+                                   effSyms: ConcurrentHashMap[Symbol.EffSym, Unit],
                                    structSyms: ConcurrentHashMap[Symbol.StructSym, Unit],
                                    structFieldSyms: ConcurrentHashMap[Symbol.StructFieldSym, Unit],
                                    enumSyms: ConcurrentHashMap[Symbol.EnumSym, Unit],

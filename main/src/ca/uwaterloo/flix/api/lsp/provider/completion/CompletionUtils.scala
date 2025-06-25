@@ -235,7 +235,7 @@ object CompletionUtils {
   /**
     * Checks if the effect of the given symbol is public.
     */
-  def isAvailable(eff: Symbol.EffectSym)(implicit root: TypedAst.Root): Boolean = root.effects.get(eff).exists(isAvailable)
+  def isAvailable(eff: Symbol.EffSym)(implicit root: TypedAst.Root): Boolean = root.effects.get(eff).exists(isAvailable)
 
   /**
     * Checks if the enum of the given symbol is public.

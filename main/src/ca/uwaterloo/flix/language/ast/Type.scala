@@ -68,7 +68,7 @@ sealed trait Type {
   /**
     * Gets all the effects in the given type.
     */
-  def effects: SortedSet[Symbol.EffectSym] = this match {
+  def effects: SortedSet[Symbol.EffSym] = this match {
     case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(sym)
 
     case _: Type.Var => SortedSet.empty
@@ -81,7 +81,7 @@ sealed trait Type {
     case Type.JvmToType(tpe, _) => tpe.effects
     case Type.JvmToEff(tpe, _) => tpe.effects
 
-    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, t) => acc ++ t.effects)
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(SortedSet.empty[Symbol.EffSym])((acc, t) => acc ++ t.effects)
   }
 
   /**

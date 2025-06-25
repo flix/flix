@@ -83,7 +83,7 @@ object JvmOps {
     * Print       =>  Eff$Print
     * List.Crash  =>  List.Eff$Crash
     */
-  def getEffectDefinitionClassName(sym: Symbol.EffectSym): JvmName = {
+  def getEffectDefinitionClassName(sym: Symbol.EffSym): JvmName = {
     val pkg = sym.namespace
     val name = JvmName.mkClassName("Eff", sym.name)
     JvmName(pkg, name)
