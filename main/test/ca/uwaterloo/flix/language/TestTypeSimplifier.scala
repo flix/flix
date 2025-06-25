@@ -40,7 +40,7 @@ class TestTypeSimplifier extends AnyFunSuite with TestUtils {
 
     implicit val eqEnv: EqualityEnv = root.eqEnv
 
-    // Collect all the types of the AST.
+    // Collect all the types of the AST. Use `consumeExpr` to have both compiler generated and user written types.
     val types = mutable.ArrayBuffer.empty[Type]
     Visitor.visitRoot(
       root,
