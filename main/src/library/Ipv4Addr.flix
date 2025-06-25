@@ -39,11 +39,9 @@ mod Ipv4Addr {
     pub def fromString(s: String): Option[Ipv4Addr] =
         let bytes = s
             |> String.split({regex = "[.]" })
-            |> List.traverse(b -> Int8.fromString(b));
+            |> List.traverse(Int8.fromString);
         match bytes {
-            case Some(b1::b2::b3::b4::Nil) => {
-                Some(Ipv4Addr(b1, b2, b3, b4))
-            }
+            case Some(b1 :: b2 :: b3 :: b4 :: Nil) => Some(Ipv4Addr(b1, b2, b3, b4))
             case _ => None
         }
 
