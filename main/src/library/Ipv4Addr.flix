@@ -28,8 +28,33 @@ instance FromString[Ipv4Addr] {
 mod Ipv4Addr {
     import java.net.InetAddress
     import java.net.UnknownHostException
+    import java.lang.NumberFormatException
 
     use Ipv4Addr.Ipv4Addr
+
+    def byteToInt8(b: Int32): Option[Int8] =
+        if (b > 255 or b < -255)
+            None
+        else
+        try {
+            if (b > 127)
+                let bs = Int32.toString(b-256);
+                Int8.fromString(bs)
+            else
+                let bs = Int32.toString(b);
+                Int8.fromString(bs)
+        } catch {
+            case _: NumberFormatException => None
+        }
+
+    def parseInt8NoLeading0(b: String): Option[Int8] =
+        if (String.length(b) > 1 and String.startsWith({prefix = "0"}, b))
+            None
+        else
+            forM(
+                b32 <- Int32.fromString(b);
+                b8 <- byteToInt8(b32)
+            ) yield b8
 
     ///
     /// Attempts to parse the given String `s` as an `Ipv4Addr`.
@@ -39,9 +64,11 @@ mod Ipv4Addr {
     pub def fromString(s: String): Option[Ipv4Addr] =
         let bytes = s
             |> String.split({regex = "[.]" })
-            |> List.traverse(Int8.fromString);
+            |> List.traverse(parseInt8NoLeading0);
         match bytes {
-            case Some(b1 :: b2 :: b3 :: b4 :: Nil) => Some(Ipv4Addr(b1, b2, b3, b4))
+            case Some(b1::b2::b3::b4::Nil) => {
+                Some(Ipv4Addr(b1, b2, b3, b4))
+            }
             case _ => None
         }
 
