@@ -17,12 +17,28 @@
 ///
 /// Represents a V4 Ip Address.
 ///
-enum Ipv4Addr with Eq, ToString { // 32 bits
+enum Ipv4Addr with Eq { // 32 bits
     case Ipv4Addr(Int8, Int8, Int8, Int8)
 }
 
 instance FromString[Ipv4Addr] {
     pub def fromString(x: String): Option[Ipv4Addr] = Ipv4Addr.fromString(x)
+}
+
+instance ToString[Ipv4Addr] {
+    pub def toString(x: Ipv4Addr): String =
+        let u8Bytes = IpAddr.V4(x)
+            |> IpAddr.toByteVec
+            |> Vector.map(b -> {
+                if (b < 0i8)
+                    Int8.toInt32(b) + 256
+                else
+                    Int8.toInt32(b)
+            });
+        match Vector.toList(u8Bytes) {
+            case b1 :: b2 :: b3 :: b4 :: Nil => "${b1}.${b2}.${b3}.${b4}"
+            case _ => ""
+        }
 }
 
 mod Ipv4Addr {

@@ -14,8 +14,6 @@
  *  limitations under the License.
  */
 
-
-
 ///
 /// Represents an IP address.
 ///
@@ -51,16 +49,16 @@ mod IpAddr {
     }
 
     ///
-    /// Converts an `IpAddr` into an `Array[Int8, r]`
+    /// Converts an `IpAddr` into an `Vector[Int8]`
     ///
     /// an Ipv4 is 4 bytes and Ipv6 is 16 bytes
     ///
-    pub def toByteArray(rc: Region[r], ip: IpAddr): Array[Int8, r] \ r =
+    pub def toByteVec(ip: IpAddr): Vector[Int8] =
         match ip {
             case IpAddr.V4(Ipv4Addr(b1, b2, b3, b4)) =>
-                Array#{b1, b2, b3, b4} @ rc
+                Vector#{b1, b2, b3, b4}
             case IpAddr.V6(Ipv6Addr(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16)) =>
-                Array#{b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16} @ rc
+                Vector#{b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16}
         }
 
     ///
@@ -68,14 +66,15 @@ mod IpAddr {
     ///
     /// Returns `Some(addr)` if the string was successfully parsed. Otherwise returns `None`.
     ///
-    pub def fromString(s: String): Option[IpAddr] = try {
-        match Ipv6Addr.fromString(s) {
-            case Some(v6) => Some(IpAddr.V6(v6))
-            case None => match Ipv4Addr.fromString(s) {
-              case Some(v4) => Some(IpAddr.V4(v4))
-              case None => None
+    pub def fromString(s: String): Option[IpAddr] =
+        try {
+            match Ipv6Addr.fromString(s) {
+              case Some(v6) => Some(IpAddr.V6(v6))
+              case None => match Ipv4Addr.fromString(s) {
+                case Some(v4) => Some(IpAddr.V4(v4))
+                case None => None
+              }
             }
-        }
         } catch {
             case _ : UnknownHostException => None
         }

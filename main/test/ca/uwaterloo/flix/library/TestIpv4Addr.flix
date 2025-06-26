@@ -17,7 +17,6 @@
 mod TestIpv4Addr {
 
     use Ipv4Addr.Ipv4Addr
-
     /////////////////////////////////////////////////////////////////////////////
     // fromString                                                              //
     /////////////////////////////////////////////////////////////////////////////
@@ -40,33 +39,29 @@ mod TestIpv4Addr {
 
     @Test
     def fromString5(): Bool =
-        let parseIp = Ipv4Addr.fromString("192.168.1.1");
-        let ip = Some(Ipv4Addr(-64i8, -88i8, 1i8, 1i8));
-        parseIp == ip
+        let s = "192.168.1.1";
+        "${Ipv4Addr.fromString(s)}" == "Some(${s})"
+
 
     @Test
     def fromString6(): Bool =
-        let parseIp = Ipv4Addr.fromString("8.8.8.8");
-        let ip = Some(Ipv4Addr(8i8, 8i8, 8i8, 8i8));
-        parseIp == ip
+        let s = "8.8.8.8";
+        "${Ipv4Addr.fromString(s)}" == "Some(${s})"
 
     @Test
     def fromString7(): Bool =
-        let parseIp = Ipv4Addr.fromString("10.0.0.255");
-        let ip = Some(Ipv4Addr(10i8, 0i8, 0i8, -1i8));
-        parseIp == ip
+        let s = "10.0.0.255";
+        "${Ipv4Addr.fromString(s)}" == "Some(${s})"
 
     @Test
     def fromString8(): Bool =
-        let parseIp = Ipv4Addr.fromString("172.16.254.3");
-        let ip = Some(Ipv4Addr(-84i8, 16i8, -2i8, 3i8));
-        parseIp == ip
+        let s = "172.16.254.3";
+        "${Ipv4Addr.fromString(s)}" == "Some(${s})"
 
     @Test
     def fromString9(): Bool =
-        let parseIp = Ipv4Addr.fromString("1.2.3.4");
-        let ip = Some(Ipv4Addr(1i8, 2i8, 3i8, 4i8));
-        parseIp == ip
+        let s = "1.2.3.4";
+        "${Ipv4Addr.fromString(s)}" == "Some(${s})"
 
 }
 
