@@ -32,29 +32,16 @@ mod Ipv4Addr {
 
     use Ipv4Addr.Ipv4Addr
 
-    def byteToInt8(b: Int32): Option[Int8] =
-        if (b > 255 or b < -255)
-            None
-        else
-        try {
-            if (b > 127)
-                let bs = Int32.toString(b-256);
-                Int8.fromString(bs)
-            else
-                let bs = Int32.toString(b);
-                Int8.fromString(bs)
-        } catch {
-            case _: NumberFormatException => None
-        }
-
     def parseInt8NoLeading0(b: String): Option[Int8] =
         if (String.length(b) > 1 and String.startsWith({prefix = "0"}, b))
             None
         else
             forM(
-                b32 <- Int32.fromString(b);
-                b8 <- byteToInt8(b32)
-            ) yield b8
+                b32 <- Int32.fromString(b); if b32 < 256 and b32 > -256;
+                b8 <- if (b32 > 127) Int32.tryToInt8(b32-256) else Int32.tryToInt8(b32)
+            ) yield {
+                b8
+            }
 
     ///
     /// Attempts to parse the given String `s` as an `Ipv4Addr`.
