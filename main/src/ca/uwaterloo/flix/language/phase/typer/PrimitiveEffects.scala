@@ -139,7 +139,7 @@ object PrimitiveEffects {
     val m = json \\ "packages" match {
       case JObject(l) => l.map {
         case (packageName, JString(s)) =>
-          val pkg = ClassLoader.getPlatformClassLoader.getDefinedPackage(packageName)
+          val pkg = Package.getPackages.filter(p => p.getName == packageName).head
           val effSet = parseEffSet(s)
           (pkg, effSet)
         case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
