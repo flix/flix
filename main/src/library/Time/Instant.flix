@@ -35,7 +35,7 @@ mod Time {
         /// Returns the current time from the system clock.
         ///
         @Experimental
-        pub def now(): Time.Instant \ IO =
+        pub def now(): Time.Instant \ { NonDet, IO } =
             Time.Instant.Instant(JInstant.now())
 
         ///
