@@ -88,18 +88,41 @@ object ConstraintGen {
 
       case Expr.ApplyDef(DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
         val defn = root.defs(sym)
+
+        // Psuedo variable for source to flow into
+        val pvar = Type.freshVar(Kind.Eff, loc1)
+
         val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
         val constrs1 = tconstrs1.map(_.copy(loc = loc2))
         val declaredEff = declaredType.arrowEffectType
         val declaredArgumentTypes = declaredType.arrowArgTypes
         val declaredResultType = declaredType.arrowResultType
         val (tpes, effs) = exps.map(visitExp).unzip
+
+        // Substitute the source effect with the psueo variable.
+        var sourceFound = false
+        val substitutedEffs =
+          (declaredEff :: effs).map {
+            case eff => {
+              if(eff == defn.spec.eff){
+                sourceFound = true
+                pvar
+              } else eff
+            }
+          }
+
         c.unifyType(itvar, declaredType, loc2)
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
         c.addClassConstraints(constrs1, loc2)
         c.addEqualityConstraints(econstrs1, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
-        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
+
+        // If source effect was found, generate a source constraint
+        if(sourceFound) {
+          c.unifySource(pvar, defn.spec.eff, loc2)
+        }
+
+        c.unifyType(evar, Type.mkUnion(substitutedEffs, loc2), loc2)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -810,6 +833,9 @@ object ConstraintGen {
         val op = lookupOp(symUse.sym, symUse.loc)
         val effTpe = Type.Cst(TypeConstructor.Effect(symUse.sym.eff), loc)
 
+        // Psuedo variable for source to flow into
+        val pvar = Type.freshVar(Kind.Eff, loc)
+
         // length check done in Resolver
         val effs = visitOpArgs(op, exps)
 
@@ -817,8 +843,9 @@ object ConstraintGen {
         val opTpe = getDoType(op)
 
         c.unifyType(opTpe, tvar, loc)
+        c.unifySource(pvar, effTpe, loc)
         val resTpe = tvar
-        val resEff = Type.mkUnion(effTpe :: op.spec.eff :: effs, loc)
+        val resEff = Type.mkUnion(pvar :: op.spec.eff :: effs, loc)
 
         (resTpe, resEff)
 
