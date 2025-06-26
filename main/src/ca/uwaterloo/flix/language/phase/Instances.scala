@@ -48,7 +48,6 @@ object Instances {
   }
 
 
-
   /**
     * Checks that all signatures in `trait0` are used in laws if `trait0` is marked `lawful`.
     */
@@ -149,7 +148,7 @@ object Instances {
   /**
     * Checks for overlap of instance types, assuming the instances are of the same trait.
     */
-  private def checkOverlap(inst1: TypedAst.Instance, heads: Map[TypeConstructor, TypedAst.Instance])(implicit sctx: SharedContext, flix: Flix): Unit = {
+  private def checkOverlap(inst1: TypedAst.Instance, heads: Map[TypeConstructor, TypedAst.Instance])(implicit sctx: SharedContext): Unit = {
     // Note: We have that Type.Error unifies with any other type, hence we filter such instances here.
     unsafeGetHead(inst1) match {
       case TypeConstructor.Error(_, _) =>
@@ -210,7 +209,7 @@ object Instances {
   /**
     * Finds an instance of the trait for a given type.
     */
-  def findInstanceForType(tpe: Type, trt: Symbol.TraitSym, root: TypedAst.Root)(implicit flix: Flix): Option[(Instance, Substitution)] = {
+  private def findInstanceForType(tpe: Type, trt: Symbol.TraitSym, root: TypedAst.Root)(implicit flix: Flix): Option[(Instance, Substitution)] = {
     val instOpt = root.traitEnv.getInstance(trt, tpe)
     // lazily find the instance whose type unifies and save the substitution
     instOpt.flatMap {
@@ -239,8 +238,8 @@ object Instances {
                   TraitEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.traitEnv, root.eqEnv) match {
                     case Result.Ok(_) => Nil
                     case Result.Err(errors) => errors.foreach {
-                      case TypeConstraint.Trait(sym, tpe, loc) =>
-                        sctx.errors.add(InstanceError.MissingTraitConstraint(TraitConstraint(TraitSymUse(sym, loc), tpe, loc), superTrait, trt.loc))
+                      case TypeConstraint.Trait(sym, traitTpe, loc) =>
+                        sctx.errors.add(InstanceError.MissingTraitConstraint(TraitConstraint(TraitSymUse(sym, loc), traitTpe, loc), superTrait, trt.loc))
                       case _ =>
                         throw InternalCompilerException("Unexpected type constraint", inst.loc)
                     }
