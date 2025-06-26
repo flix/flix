@@ -40,24 +40,40 @@ object PrimitiveEffects {
   /**
     * A pre-computed map from packages to effects.
     */
-  private val packageEffs: Map[Package, Set[Symbol.EffSym]] = loadPackageEffs()
+  private val packageEffs: Map[Package, Set[Symbol.EffSym]] = {
+    val result = loadPackageEffs()
+    println(s"loadPackageEffs(): $result")
+    result
+  }
 
   /**
     * A pre-computed map from classes to effects.
     *
     * If there is are specific effect(s) for a constructor or method then we use the effects for the entire class.
     */
-  private val classEffs: Map[Class[?], Set[Symbol.EffSym]] = loadClassEffs()
+  private val classEffs: Map[Class[?], Set[Symbol.EffSym]] = {
+    val result = loadClassEffs()
+    println(s"loadClassEffs(): $result")
+    result
+  }
 
   /**
     * A pre-computed map from constructors to effects.
     */
-  private val constructorEffs: Map[Constructor[?], Set[Symbol.EffSym]] = loadConstructorEffs()
+  private val constructorEffs: Map[Constructor[?], Set[Symbol.EffSym]] = {
+    val result = loadConstructorEffs()
+    println(s"loadConstructorEffs(): $result")
+    result
+  }
 
   /**
     * A pre-computed map from methods to effects.
     */
-  private val methodEffs: Map[Method, Set[Symbol.EffSym]] = loadMethodEffs()
+  private val methodEffs: Map[Method, Set[Symbol.EffSym]] = {
+    val result = loadMethodEffs()
+    println(s"loadMethodEffs(): $result")
+    result
+  }
 
   def getAnnotatedMethods: Set[Method] = methodEffs.keys.toSet
 
@@ -147,9 +163,9 @@ object PrimitiveEffects {
     val m = json \\ "packages" match {
       case JObject(l) => l.map {
         case (packageName, JString(s)) =>
-          val clazz = ClassLoader.getPlatformClassLoader.getDefinedPackage(packageName)
+          val pkg = Package.getPackages.filter(p => p.getName == packageName).head
           val effSet = parseEffSet(s)
-          (clazz, effSet)
+          (pkg, effSet)
         case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
       }
       case _ => throw InternalCompilerException("Unexpected JSON format.", SourceLocation.Unknown)
@@ -255,10 +271,10 @@ object PrimitiveEffects {
   }
 
   /**
-   * Returns the given comma-separated string of effect symbols as a set of [[Symbol.EffSym]].
-   *
-   * Returns the empty set if the string is empty.
-   */
+    * Returns the given comma-separated string of effect symbols as a set of [[Symbol.EffSym]].
+    *
+    * Returns the empty set if the string is empty.
+    */
   private def parseEffSet(s: String): Set[Symbol.EffSym] = {
     if (s.trim.isEmpty)
       Set.empty
