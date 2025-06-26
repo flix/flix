@@ -40,40 +40,24 @@ object PrimitiveEffects {
   /**
     * A pre-computed map from packages to effects.
     */
-  private val packageEffs: Map[Package, Set[Symbol.EffSym]] = {
-    val result = loadPackageEffs()
-    println(s"loadPackageEffs(): $result")
-    result
-  }
+  private val packageEffs: Map[Package, Set[Symbol.EffSym]] = loadPackageEffs()
 
   /**
     * A pre-computed map from classes to effects.
     *
     * If there is are specific effect(s) for a constructor or method then we use the effects for the entire class.
     */
-  private val classEffs: Map[Class[?], Set[Symbol.EffSym]] = {
-    val result = loadClassEffs()
-    println(s"loadClassEffs(): $result")
-    result
-  }
+  private val classEffs: Map[Class[?], Set[Symbol.EffSym]] = loadClassEffs()
 
   /**
     * A pre-computed map from constructors to effects.
     */
-  private val constructorEffs: Map[Constructor[?], Set[Symbol.EffSym]] = {
-    val result = loadConstructorEffs()
-    println(s"loadConstructorEffs(): $result")
-    result
-  }
+  private val constructorEffs: Map[Constructor[?], Set[Symbol.EffSym]] = loadConstructorEffs()
 
   /**
     * A pre-computed map from methods to effects.
     */
-  private val methodEffs: Map[Method, Set[Symbol.EffSym]] = {
-    val result = loadMethodEffs()
-    println(s"loadMethodEffs(): $result")
-    result
-  }
+  private val methodEffs: Map[Method, Set[Symbol.EffSym]] = loadMethodEffs()
 
   def getAnnotatedMethods: Set[Method] = methodEffs.keys.toSet
 
