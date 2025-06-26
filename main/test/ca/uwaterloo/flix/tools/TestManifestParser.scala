@@ -1583,7 +1583,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", trst = "netflix" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = "netflix" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, null)
     expectError[ManifestError.FlixUnknownTrustError](result)
@@ -1600,7 +1600,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", trst = "effect" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = "effect" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, null)
     expectError[ManifestError.FlixUnknownTrustError](result)
