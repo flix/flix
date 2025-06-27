@@ -969,6 +969,9 @@ object Parser2 {
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
+      if (at(TokenKind.KeywordWhere)) {
+        equalityConstraints()
+      }
       if (at(TokenKind.CurlyL)) {
         expect(TokenKind.CurlyL)
         var continue = true
