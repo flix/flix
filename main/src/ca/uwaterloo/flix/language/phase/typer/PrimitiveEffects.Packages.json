@@ -4,6 +4,7 @@
     "java.lang.ref": "Sys, IO",
     "java.lang.reflect": "Sys, IO",
     "java.net": "Net, IO",
+    "java.time": "NonDet, IO",
     "java.util.random": "NonDet, IO"
   }
 }

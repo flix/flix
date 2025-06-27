@@ -110,7 +110,7 @@ object GotoProvider {
     case SymUse.DefSymUse(sym, loc) => Some(LocationLink.fromDefSym(sym, loc))
     // Effects
     case SymUse.EffectSymUse(sym, qname) => Some(LocationLink.fromEffectSym(sym, qname.loc))
-    case Type.Cst(TypeConstructor.Effect(sym), loc) => Some(LocationLink.fromEffectSym(sym, loc))
+    case Type.Cst(TypeConstructor.Effect(sym, _), loc) => Some(LocationLink.fromEffectSym(sym, loc))
     case SymUse.OpSymUse(sym, loc) => Some(LocationLink.fromOpSym(sym, loc))
     // Enums
     case Type.Cst(TypeConstructor.Enum(sym, _), loc) => Some(LocationLink.fromEnumSym(sym, loc))

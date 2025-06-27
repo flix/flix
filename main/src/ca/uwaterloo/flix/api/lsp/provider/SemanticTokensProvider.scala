@@ -481,14 +481,14 @@ object SemanticTokensProvider {
     case Expr.Match(matchExp, rules, _, _, _) =>
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
-        case (acc, MatchRule(pat, guard, exp, loc)) =>
+        case (acc, MatchRule(pat, guard, exp, _)) =>
           acc ++ visitPat(pat) ++ guard.toList.flatMap(visitExp) ++ visitExp(exp)
       }
 
     case Expr.TypeMatch(matchExp, rules, _, _, _) =>
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
-        case (acc, TypeMatchRule(bnd, tpe, exp, loc)) =>
+        case (acc, TypeMatchRule(bnd, tpe, exp, _)) =>
           val o = getSemanticTokenType(bnd.sym, tpe)
           val t = SemanticToken(o, Nil, bnd.sym.loc)
           acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
@@ -612,7 +612,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Type, Nil, sym.qname.loc)
       val st1 = Iterator(t)
       val st2 = rules.foldLeft(Iterator.empty[SemanticToken]) {
-        case (acc, HandlerRule(op, fparams, exp, loc)) =>
+        case (acc, HandlerRule(op, fparams, exp, _)) =>
           val st = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
           val t1 = Iterator(st)
           val t2 = visitFormalParams(fparams)
@@ -843,7 +843,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Univ => true
     case TypeConstructor.True => true
     case TypeConstructor.False => true
-    case TypeConstructor.Effect(_) => true
+    case TypeConstructor.Effect(_, _) => true
     case TypeConstructor.Region(_) => true
     case TypeConstructor.RegionToStar => true
 

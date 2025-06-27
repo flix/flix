@@ -145,7 +145,7 @@ object Purity {
     * Univ & (!Print) == !Print
     */
   private def evaluateFormula(f: Type)(implicit universe: Set[Symbol.EffSym]): Set[Symbol.EffSym] = f match {
-    case Type.Cst(TypeConstructor.Effect(sym), _) =>
+    case Type.Cst(TypeConstructor.Effect(sym, _), _) =>
       Set(sym)
     case Type.Cst(TypeConstructor.Pure, _) =>
       Set.empty
