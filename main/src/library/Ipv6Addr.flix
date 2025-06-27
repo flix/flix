@@ -57,5 +57,6 @@ mod Ipv6Addr {
         } catch {
             case _ : UnknownHostException => None
         }
+
 }
 
