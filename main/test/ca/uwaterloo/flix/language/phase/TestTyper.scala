@@ -140,6 +140,48 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("MismatchedTypes.05") {
+    val input =
+      """
+        |trait A[a] {
+        |    type Typ
+        |    pub def foo(x: a): A.Typ[a]
+        |}
+        |
+        |enum Adapter[t, a, b](t, a -> b)
+        |
+        |instance A[Adapter[t, a, b]] with A[t] {
+        |    type Typ = b
+        |    pub def foo(adapter: Adapter[t, a, b]): b =
+        |        let Adapter.Adapter(x, f) = adapter;
+        |        f(A.foo(x))
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("MismatchedTypes.06") {
+    val input =
+      """
+        |trait A[a] {
+        |    type Typ
+        |    pub def foo(x: a): A.Typ[a]
+        |}
+        |
+        |enum Adapter[t, a, b](t, a -> b)
+        |
+        |instance A[Adapter[t, a, b]] with A[t] where A.Typ[t] ~ Int8 {
+        |    type Typ = b
+        |    pub def foo(adapter: Adapter[t, a, b]): b =
+        |        let Adapter.Adapter(x, f) = adapter;
+        |        f(A.foo(x))
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
   test("TestOverApplied.01") {
     val input =
       """
@@ -310,6 +352,26 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |def bar(x: a, y: b): (Int32, Int32) with C[a] = (C.foo(x), C.foo(y))
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("NoMatchingInstance.07") {
+    // missing constraint on A[t]
+    val input =
+      """
+        |trait A[a] {
+        |    type Typ
+        |    pub def foo(x: a): A.Typ[a]
+        |}
+        |
+        |enum Adapter[t, a, b](t, a -> b)
+        |
+        |instance A[Adapter[t, a, b]] where A.Typ[t] ~ Int8 {
+        |    type Typ = b
+        |    pub def foo(adapter: Adapter[t, a, b]): b = ???
+        |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
