@@ -99,18 +99,6 @@ object ConstraintGen {
         val declaredResultType = declaredType.arrowResultType
         val (tpes, effs) = exps.map(visitExp).unzip
 
-        // Substitute the source effect with the psueo variable.
-        var sourceFound = false
-        val substitutedEffs =
-          (declaredEff :: effs).map {
-            case eff => {
-              if(eff == defn.spec.eff){
-                sourceFound = true
-                pvar
-              } else eff
-            }
-          }
-
         c.unifyType(itvar, declaredType, loc2)
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
         c.addClassConstraints(constrs1, loc2)
@@ -118,11 +106,13 @@ object ConstraintGen {
         c.unifyType(tvar, declaredResultType, loc2)
 
         // If source effect was found, generate a source constraint
-        if(sourceFound) {
+        if(defn.spec.eff == declaredEff) {
           c.unifySource(pvar, defn.spec.eff, loc2)
+          c.unifyType(evar, Type.mkUnion(pvar :: effs, loc2), loc2)
+        } else {
+          c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
         }
 
-        c.unifyType(evar, Type.mkUnion(substitutedEffs, loc2), loc2)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -845,7 +835,7 @@ object ConstraintGen {
         c.unifyType(opTpe, tvar, loc)
         c.unifySource(pvar, effTpe, loc)
         val resTpe = tvar
-        val resEff = Type.mkUnion(pvar :: op.spec.eff :: effs, loc)
+        val resEff = Type.mkUnion(pvar :: effs, loc)
 
         (resTpe, resEff)
 
