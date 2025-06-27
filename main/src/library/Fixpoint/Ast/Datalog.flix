@@ -23,7 +23,7 @@ mod Fixpoint.Ast.Datalog {
     use Fixpoint.SubstitutePredSym.substitute
     use Fixpoint.Ast.Shared.{Denotation, PredSym}
     use Fixpoint.Ast.Shared.{BoxedDenotation => Denotation}
-    use Fixpoint.Boxed
+    use Fixpoint3.Boxed
     use Fixpoint3.Ast.Ram.RelSym
 
     /////////////////////////////////////////////////////////////////////////////
