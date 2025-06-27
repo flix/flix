@@ -144,6 +144,8 @@ object TypedAst {
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
+    case class While(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
     case class Stm(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Discard(exp: Expr, eff: Type, loc: SourceLocation) extends Expr {

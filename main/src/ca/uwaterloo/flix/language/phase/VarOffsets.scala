@@ -78,6 +78,11 @@ object VarOffsets {
       offset = visitExp(exp2, offset)
       visitExp(exp3, offset)
 
+    case Expr.While(exp1, exp2, _, _, _) =>
+      var offset = offset0
+      offset = visitExp(exp1, offset)
+      visitExp(exp2, offset)
+
     case Expr.Branch(exp, branches, _, _, _) =>
       var offset = offset0
       offset = visitExp(exp, offset)

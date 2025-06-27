@@ -56,6 +56,7 @@ object TypedAstOps {
     case Expr.Region(_, _) => Set.empty
     case Expr.Scope(_, _, exp, _, _, _) => sigSymsOf(exp)
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
+    case Expr.While(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Stm(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Discard(exp, _, _) => sigSymsOf(exp)
     case Expr.Match(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ rule.guard.toList.flatMap(sigSymsOf))
@@ -188,6 +189,9 @@ object TypedAstOps {
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+
+    case Expr.While(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
 
     case Expr.Stm(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)

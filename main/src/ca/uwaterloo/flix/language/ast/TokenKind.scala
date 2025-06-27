@@ -140,6 +140,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordUnsafely => "'unsafely'"
       case TokenKind.KeywordUse => "'use'"
       case TokenKind.KeywordWhere => "'where'"
+      case TokenKind.KeywordWhile => "'while'"
       case TokenKind.KeywordWith => "'with'"
       case TokenKind.KeywordWithout => "'without'"
       case TokenKind.KeywordYield => "'yield'"
@@ -295,6 +296,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordUnsafely => true
     case TokenKind.KeywordUse => true
     case TokenKind.KeywordWhere => true
+    case TokenKind.KeywordWhile => true
     case TokenKind.KeywordWith => true
     case TokenKind.KeywordWithout => true
     case TokenKind.KeywordYield => true
@@ -530,6 +532,7 @@ sealed trait TokenKind {
          | TokenKind.KeywordUnsafe
          | TokenKind.KeywordUnsafely
          | TokenKind.KeywordUse
+         | TokenKind.KeywordWhile
          | TokenKind.KeywordXvar
          | TokenKind.ListHash
          | TokenKind.LiteralBigDecimal
@@ -1066,6 +1069,8 @@ object TokenKind {
   case object KeywordUse extends TokenKind
 
   case object KeywordWhere extends TokenKind
+
+  case object KeywordWhile extends TokenKind
 
   case object KeywordWith extends TokenKind
 

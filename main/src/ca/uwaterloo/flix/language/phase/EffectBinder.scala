@@ -162,6 +162,11 @@ object EffectBinder {
       val e = visitExprInnerWithBinders(binders)(exp0)
       bindBinders(binders, e)
 
+    case LiftedAst.Expr.While(_, _, _, _, _) =>
+      val binders = mutable.ArrayBuffer.empty[Binder]
+      val e = visitExprInnerWithBinders(binders)(exp0)
+      bindBinders(binders, e)
+
     case LiftedAst.Expr.Branch(exp, branches0, tpe, purity, loc) =>
       val e = visitExpr(exp)
       val branches = MapOps.mapValues(branches0)(visitExpr)
@@ -259,6 +264,11 @@ object EffectBinder {
       val e3 = visitExpr(exp3)
       ReducedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
+    case LiftedAst.Expr.While(exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExpr(exp1)
+      val e2 = visitExpr(exp2)
+      ReducedAst.Expr.While(e1, e2, tpe, purity, loc)
+
     case LiftedAst.Expr.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExpr(exp)
       val bs = branches.map {
@@ -337,6 +347,7 @@ object EffectBinder {
       case ReducedAst.Expr.ApplyDef(_, _, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.ApplySelfTail(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.IfThenElse(_, _, _, _, _, _) => letBindExpr(binders)(e)
+      case ReducedAst.Expr.While(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.Branch(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.Let(sym, exp1, exp2, _, _, loc) =>
         binders.addOne(LetBinder(sym, exp1, loc))
