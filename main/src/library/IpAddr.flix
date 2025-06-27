@@ -49,19 +49,6 @@ mod IpAddr {
     }
 
     ///
-    /// Converts an `IpAddr` into an `Vector[Int8]`
-    ///
-    /// an Ipv4 is 4 bytes and Ipv6 is 16 bytes
-    ///
-    pub def toByteVec(ip: IpAddr): Vector[Int8] =
-        match ip {
-            case IpAddr.V4(Ipv4Addr(b1, b2, b3, b4)) =>
-                Vector#{b1, b2, b3, b4}
-            case IpAddr.V6(Ipv6Addr(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16)) =>
-                Vector#{b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16}
-        }
-
-    ///
     /// Converts an `IpAddr` into an `Array[Int8, r]`
     ///
     /// an Ipv4 is 4 bytes and Ipv6 is 16 bytes

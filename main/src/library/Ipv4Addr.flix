@@ -27,16 +27,10 @@ instance FromString[Ipv4Addr] {
 
 instance ToString[Ipv4Addr] {
     pub def toString(x: Ipv4Addr): String =
-        let u8Bytes = IpAddr.V4(x)
-            |> IpAddr.toByteVec
-            |> Vector.map(b -> {
-                if (b < 0i8)
-                    Int8.toInt32(b) + 256
-                else
-                    Int8.toInt32(b)
-            });
-        match Vector.toList(u8Bytes) {
-            case b1 :: b2 :: b3 :: b4 :: Nil => "${b1}.${b2}.${b3}.${b4}"
+        let u8Conv = {b -> let b32 = Int8.toInt32(b); if (b32 < 0) b32 + 256 else b32};
+        match x {
+            case Ipv4Addr.Ipv4Addr(b1, b2, b3, b4) =>
+                "${u8Conv(b1)}.${u8Conv(b2)}.${u8Conv(b3)}.${u8Conv(b4)}"
             case _ => ""
         }
 }
