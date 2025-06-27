@@ -126,6 +126,15 @@ object ConstraintSolver2 {
   }
 
   /**
+    * Returns `true` if `tpe1` and `tpe2` are equivalent types.
+    */
+  def equivalent(tpe1: Type, tpe2: Type)(implicit eqenv: EqualityEnv, flix: Flix): Boolean = {
+    // Mark everything as rigid.
+    val renv = RigidityEnv.ofRigidVars(tpe1.typeVars.map(_.sym) ++ tpe2.typeVars.map(_.sym))
+    ConstraintSolver2.fullyUnify(tpe1, tpe2, Scope.Top, renv)(eqenv, flix).isDefined
+  }
+
+  /**
     * Solves the given constraint set as far as possible.
     */
   def solveAll(constrs0: List[TypeConstraint], initialSubst: SubstitutionTree)(implicit scope: Scope, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = {
