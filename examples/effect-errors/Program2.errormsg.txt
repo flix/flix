@@ -1,0 +1,11 @@
+>> Unable to unify the effect formulas: '(~Console) & ef' and 'ef'.
+
+1 |> def foo(f: Int32 -> b \ ef): b \ ef - Console = {
+2 |>     let x = 1 + 1;
+3 |>     f(x)
+4 |> }
+
+mismatched effect formulas.
+
+Type One: ef & (~Console)
+Type Two: ef
