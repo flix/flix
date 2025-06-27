@@ -410,7 +410,7 @@ object LspServer {
     override def inlayHint(params: InlayHintParams): CompletableFuture[util.List[InlayHint]] = {
       val uri = params.getTextDocument.getUri
       val range = Range.fromLsp4j(params.getRange)
-      val hints = InlayHintProvider.getInlayHints(uri, range)
+      val hints = InlayHintProvider.getInlayHints(uri, range)(flixLanguageServer.root)
       CompletableFuture.completedFuture(hints.map(_.toLsp4j).asJava)
     }
 
