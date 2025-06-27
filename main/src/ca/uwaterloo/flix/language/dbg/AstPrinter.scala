@@ -120,8 +120,8 @@ object AstPrinter {
   }
 
   /**
-    * Writes `content` to the file `./build/asts/<phaseName>.flixir`. The build folder is taken from
-    * flix options if present. The existing file is overwritten if present.
+    * Writes `content` to the file `<build>/asts/<phaseName>.flixir`. The build folder is taken from
+    * flix options. The existing file is overwritten if present.
     */
   private def writeToDisk(phaseName: String, content: String)(implicit flix: Flix): Unit = {
     val filePath = phaseOutputPath(phaseName)
@@ -155,6 +155,6 @@ object AstPrinter {
     * OBS: this function has no checking so the path might not exist and it might not be readable etc.
     */
   def astFolderPath(implicit flix: Flix): Path = {
-    flix.options.output.getOrElse(Path.of("./build/")).resolve("asts/")
+    flix.options.outputPath.resolve("asts/")
   }
 }
