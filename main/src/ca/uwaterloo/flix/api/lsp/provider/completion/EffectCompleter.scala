@@ -42,7 +42,7 @@ object EffectCompleter {
   private def inScope(effect: TypedAst.Effect, scope: LocalScope): Boolean = {
     val thisName = effect.sym.toString
     val isResolved = scope.m.values.exists(_.exists {
-      case Resolution.Declaration(Effect(_, _, _, thatName, _, _)) => thisName == thatName.toString
+      case Resolution.Declaration(Effect(_, _, _, thatName, _, _, _)) => thisName == thatName.toString
       case _ => false
     })
     val isRoot = effect.sym.namespace.isEmpty

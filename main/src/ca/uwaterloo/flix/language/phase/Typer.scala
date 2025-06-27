@@ -361,7 +361,8 @@ object Typer {
     * Reconstructs types in the given effect.
     */
   private def visitEff(eff: KindedAst.Effect): TypedAst.Effect = eff match {
-    case KindedAst.Effect(doc, ann, mod, sym, ops0, loc) =>
+    case KindedAst.Effect(doc, ann, mod, sym, tparams0, ops0, loc) =>
+      val _ = tparams0.map(visitTypeParam) // TODO EFFECT-TPARAMS add to TypedAst
       val ops = ops0.map(TypeReconstruction.visitOp)
       TypedAst.Effect(doc, ann, mod, sym, ops, loc)
   }

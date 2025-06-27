@@ -375,7 +375,7 @@ object EntryPoints {
       case Type.Cst(tc, _) => tc match {
         case TypeConstructor.Pure => Result.Ok(CofiniteSet.empty)
         case TypeConstructor.Univ => Result.Ok(CofiniteSet.universe)
-        case TypeConstructor.Effect(sym) => Result.Ok(CofiniteSet.mkSet(sym))
+        case TypeConstructor.Effect(sym, _) => Result.Ok(CofiniteSet.mkSet(sym))
         case _ => Result.Err(ErrorOrMalformed)
       }
       case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x0, _) =>

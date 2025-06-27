@@ -745,7 +745,7 @@ object ConstraintGen {
         // e without symUse : tpe
         //
         val (tpe, eff) = visitExp(exp)
-        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(symUse.sym), symUse.qname.loc), symUse.qname.loc)
+        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(symUse.sym, Kind.Eff), symUse.qname.loc), symUse.qname.loc) // TODO EFF-TPARAMS need kind
         c.unifyType(eff, effWithoutSym, symUse.qname.loc)
         val resTpe = tpe
         val resEff = eff
@@ -789,7 +789,7 @@ object ConstraintGen {
         val (tpes, effs) = rules.map(visitHandlerRule(_, tvar, evar2)).unzip
         c.unifyAllTypes(tvar :: tpes, loc)
 
-        val handledEffect = Type.Cst(TypeConstructor.Effect(symUse.sym), symUse.qname.loc)
+        val handledEffect = Type.Cst(TypeConstructor.Effect(symUse.sym, Kind.Eff), symUse.qname.loc) // TODO EFF-TPARAMS need kind
         // Subtract the effect from the body effect and add the handler effects.
         val continuationEffect = Type.mkUnion(Type.mkDifference(evar1, handledEffect, symUse.qname.loc), Type.mkUnion(effs, loc), loc)
         c.unifyType(evar2, continuationEffect, loc)
@@ -808,7 +808,7 @@ object ConstraintGen {
 
       case Expr.Do(symUse, exps, tvar, loc) =>
         val op = lookupOp(symUse.sym, symUse.loc)
-        val effTpe = Type.Cst(TypeConstructor.Effect(symUse.sym.eff), loc)
+        val effTpe = Type.Cst(TypeConstructor.Effect(symUse.sym.eff, Kind.Eff), loc) // TODO EFF-TPARAMS need kind
 
         // length check done in Resolver
         val effs = visitOpArgs(op, exps)
