@@ -1250,8 +1250,12 @@ object Parser2 {
       expect(TokenKind.KeywordEff)
       nameUnqualified(NAME_EFFECT)
 
+      // Check for illegal type parameters.
       if (at(TokenKind.BracketL)) {
+        val mark = open()
+        val loc = currentSourceLocation()
         Type.parameters()
+        closeWithError(mark, WeederError.IllegalEffectTypeParams(loc))
       }
 
       if (eat(TokenKind.CurlyL)) {
