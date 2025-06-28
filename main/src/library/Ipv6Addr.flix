@@ -15,9 +15,9 @@
  */
 
 ///
-/// Represents a V6 Ip Address.
+///Represents a V6 Ip Address.
 ///
-enum Ipv6Addr with Eq, ToString {
+enum Ipv6Addr with Eq {
     case Ipv6Addr( // 128 bits
       Int8, Int8, Int8, Int8, // 32 bits
       Int8, Int8, Int8, Int8, // 32 bits
@@ -30,11 +30,106 @@ instance FromString[Ipv6Addr] {
     pub def fromString(x: String): Option[Ipv6Addr] = Ipv6Addr.fromString(x)
 }
 
+instance ToString[Ipv6Addr] {
+    pub def toString(x: Ipv6Addr): String = Ipv6Addr.toString(x)
+}
+
 mod Ipv6Addr {
+    import java.lang.Integer
+    import java.lang.NumberFormatException
     import java.net.InetAddress
     import java.net.UnknownHostException
 
     use Ipv6Addr.Ipv6Addr
+
+    def byteToHex(b1: Int8, b2: Int8): String = {
+        let u8Conv = b -> Int32.bitwiseAnd(Int8.toInt32(b), 0xff);
+        let combined = (u8Conv(b1) * 256) + u8Conv(b2);
+        let hexString = String.toUpperCase(Integer.toString(combined, 16));
+        match String.length(hexString) {
+            case 4 => hexString
+            case i => String.repeat(4 - i,"0") ++ hexString
+        }
+    }
+
+    ///
+    /// Returns a String representation of the given Ipv6Addr `x`.
+    ///
+    pub def toString(x: Ipv6Addr): String = match x {
+        case Ipv6Addr.Ipv6Addr(
+              b1,  b2,  b3,  b4,
+              b5,  b6,  b7,  b8,
+              b9,  b10, b11, b12,
+              b13, b14, b15, b16
+        ) => "${byteToHex(b1, b2)}:${byteToHex(b3, b4)}:${byteToHex(b5, b6)}:${byteToHex(b7, b8)}:${byteToHex(b9, b10)}:${byteToHex(b11, b12)}:${byteToHex(b13, b14)}:${byteToHex(b15, b16)}"
+        case _ => ""
+    }
+
+    ///
+    /// Attempts to convert a hex String `s` into Int8.
+    ///
+    def byteStringToInt8(s: String): Option[Int8] =
+        try {
+            let b = Integer.parseInt(s, 16);
+            if (b > 127)
+                let bs = Int32.toString(b-256);
+                Int8.fromString(bs)
+            else
+                let bs = Int32.toString(b);
+                Int8.fromString(bs)
+        } catch {
+            case _: NumberFormatException => None
+        }
+
+    ///
+    /// Parses an Ipv6 hostname String `s` into a List[String].
+    ///
+    /// Each element of the List is a group of the Ip Address.
+    ///
+    pub def cleanIpv6String(s: String): List[String] =
+        let compressed = String.countSubstring({substr = "::"}, s);
+        if (compressed > 1)
+            Nil
+        else
+            let groups = s
+                |> String.replace({src = "::"}, {dst = ":expa:"})         // mark for expansion
+                |> String.replace({src = ":0:0:"}, {dst = ":0000:0000:"}) // expand ":0:0:"
+                |> String.split(regex = "[:]")                            // split groups
+                |> List.map(g -> {                                        // add leading 0's
+                    match String.length(g) {
+                        case 4 => g
+                        case i => String.repeat(4 - i,"0") ++ g
+                    }
+                });
+            let missing = 8 - List.length(groups);
+            if (missing == 0)
+                groups
+            else
+                addGroups(groups, missing)
+
+    def addGroups(l: List[String], missing: Int32): List[String] =
+        match l {
+            case h :: t => {
+                if (h == "expa")
+                    List.repeat(missing+1, "0000") ::: t
+                else
+                    h :: addGroups(t, missing)
+            }
+            case Nil => Nil
+        }
+
+    ///
+    /// Attemps to convert groups of an Ipv6 address `l` into a List[Int8].
+    ///
+    def parseIpv6List(l: List[String]): Option[List[Int8]] =
+        l
+        |> List.map(g -> String.splitAt(2, g))
+        |> List.map(b -> {
+            let (b1, b2) = b;
+            b1 :: b2 :: Nil
+        })
+        |> List.flatten
+        |> List.traverse(byteStringToInt8)
 
     ///
     /// Attempts to parse the given String `s` as an `Ipv6Addr`.
@@ -42,20 +137,15 @@ mod Ipv6Addr {
     /// Returns `Some(addr)` if the string was successfully parsed. Otherwise returns `None`.
     ///
     pub def fromString(s: String): Option[Ipv6Addr] =
-        unsafe try {
-            let addr = InetAddress.getByName(s);
-            match Array.toList(addr.getAddress()) {
-                case b1::b2::b3::b4::b5::b6::b7::b8::b9::b10::b11::b12::b13::b14::b15::b16::Nil =>
+        match s |> cleanIpv6String |> parseIpv6List {
+            case Some(b1::b2::b3::b4::b5::b6::b7::b8::b9::b10::b11::b12::b13::b14::b15::b16::Nil) =>
                 Some(Ipv6Addr(
                   b1,  b2,  b3,  b4,
                   b5,  b6,  b7,  b8,
                   b9,  b10, b11, b12,
                   b13, b14, b15, b16
                 ))
-                case _ => None
-            }
-        } catch {
-            case _ : UnknownHostException => None
+            case _ => None
         }
 
 }
