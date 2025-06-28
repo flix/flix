@@ -146,16 +146,16 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unable to unify the types '${formatType(fullType1, Some(renv), minimizeEffs = true, wrt = List(fullType2))}' and '${formatType(fullType2, Some(renv), minimizeEffs = true, wrt = List(fullType1))}'."
+    def summary: String = s"Unable to unify the types '${formatType(fullType1, Some(renv), minimizeEffs = true)}' and '${formatType(fullType2, Some(renv), minimizeEffs = true)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unable to unify the types: '${red(formatType(baseType1, Some(renv), minimizeEffs = true, wrt = List(baseType2)))}' and '${red(formatType(baseType2, Some(renv), minimizeEffs = true, List(baseType1)))}'.
+      s""">> Unable to unify the types: '${red(formatType(baseType1, Some(renv), minimizeEffs = true))}' and '${red(formatType(baseType2, Some(renv), minimizeEffs = true))}'.
          |
          |${code(loc, "mismatched types.")}
          |
-         |Type One: ${formatType(fullType1, Some(renv), minimizeEffs = true, wrt = List(fullType2))}
-         |Type Two: ${formatType(fullType2, Some(renv), minimizeEffs = true, wrt = List(fullType1))}
+         |Type One: ${formatType(fullType1, Some(renv), minimizeEffs = true)}
+         |Type Two: ${formatType(fullType2, Some(renv), minimizeEffs = true)}
          |""".stripMargin
     }
   }
@@ -493,11 +493,11 @@ object TypeError {
     * @param loc      the location of the inferred type.
     */
   case class UnexpectedType(expected: Type, inferred: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Expected type '${formatType(expected, Some(renv), wrt = List(inferred))}' but found type: '${formatType(inferred, Some(renv))}'."
+    def summary: String = s"Expected type '${formatType(expected, Some(renv))}' but found type: '${formatType(inferred, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Expected type: '${red(formatType(expected, Some(renv), wrt = List(inferred)))}' but found type: '${red(formatType(inferred, Some(renv), wrt = List(expected)))}'.
+      s""">> Expected type: '${red(formatType(expected, Some(renv)))}' but found type: '${red(formatType(inferred, Some(renv)))}'.
          |
          |${code(loc, "expression has unexpected type.")}
          |""".stripMargin

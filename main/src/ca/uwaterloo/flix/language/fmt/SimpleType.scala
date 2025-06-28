@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
-import ca.uwaterloo.flix.language.ast.shared.{QualifiedSym, VarText}
+import ca.uwaterloo.flix.language.ast.shared.VarText
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -343,46 +343,10 @@ object SimpleType {
   case class NonPredFieldType(name: String, tpe: SimpleType) extends PredicateFieldType
 
   /**
-    * From a given `Type` return a `Symbol` if it does indeed have a symbol
-    *
-    * @param t The type
-    */
-  private def getSymbols(t : TypeConstructor): List[Symbol] = t match {
-    case TypeConstructor.Enum(sym, _) => List(sym)
-    case TypeConstructor.Struct(sym, _) => List(sym)
-    case TypeConstructor.RestrictableEnum(sym, _) => List(sym)
-    case _ => List()
-  }
-
-
-  /**
-    * Find the least amount of qualification needed to make a type unique from a list of types
-    */
-  private def leastDistinct(t0: QualifiedSym with Locatable, wrt: List[Any] = List()): QualifiedSym = {
-    import ca.uwaterloo.flix.language.ast.{Name => AName}
-    wrt flatMap { x => x match {
-      case x0 : QualifiedSym => List(x0)
-      case _ => List()
-    }} map { t1 =>
-      if (t0.qname == t1.qname && t0.qnamespace != t1.qnamespace) {
-        //If the names are the same, but the ''true'' full names are also diffent
-        t0.qnamespace zip t1.qnamespace indexWhere { case (x0, x1) => x0 != x1 } match {
-          case -1 => t0 //If the namespaces are (somehow) the same, return the original type (this should not happen)
-          case i => //Otherwise, return a new type with the namespace up to the first difference
-            val newNamespace = t0.qnamespace.take(i + 1)
-            AName.mkQName(newNamespace, t0.qname,t0.loc)
-        }
-      } else {
-        AName.mkQName(List(), t0.qname, t0.loc)
-      }
-    } maxByOption { _.depth } getOrElse { AName.mkQName(List(), t0.qname, t0.loc) }
-  }
-
-  /**
     * Creates a simple type from the well-kinded type `t`.
     */
-  def fromWellKindedType(t0: Type, wrt : List[Type] = List()): SimpleType = {
-    val wrt0 : List[_] = ((t0 :: wrt) flatMap (_.typeConstructors) flatMap getSymbols)
+  def fromWellKindedType(t0: Type): SimpleType = {
+
     def visit(t: Type): SimpleType = t.baseType match {
       case Type.Var(sym, _) =>
         mkApply(Var(sym.id, sym.kind, sym.text), t.typeArguments.map(visit))
@@ -531,9 +495,9 @@ object SimpleType {
         case TypeConstructor.Sender => mkApply(Sender, t.typeArguments.map(visit))
         case TypeConstructor.Receiver => mkApply(Receiver, t.typeArguments.map(visit))
         case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(visit))
-        case TypeConstructor.Enum(sym, _) => mkApply(Name(leastDistinct(sym, wrt0).toString), t.typeArguments.map(visit))
-        case TypeConstructor.Struct(sym, _) => mkApply(Name(leastDistinct(sym, wrt0).toString), t.typeArguments.map(visit))
-        case TypeConstructor.RestrictableEnum(sym, _) => mkApply(Name(leastDistinct(sym, wrt0).toString), t.typeArguments.map(visit))
+        case TypeConstructor.Enum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
+        case TypeConstructor.Struct(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
+        case TypeConstructor.RestrictableEnum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.Native(clazz) => mkApply(Name(clazz.getName), t.typeArguments.map(visit))
         case TypeConstructor.JvmConstructor(constructor) => mkApply(JvmConstructor(constructor), t.typeArguments.map(visit))
         case TypeConstructor.JvmMethod(method) => mkApply(JvmMethod(method), t.typeArguments.map(visit))
