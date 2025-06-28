@@ -26,13 +26,7 @@ instance FromString[Ipv4Addr] {
 }
 
 instance ToString[Ipv4Addr] {
-    pub def toString(x: Ipv4Addr): String =
-        let u8Conv = {b -> let b32 = Int8.toInt32(b); if (b32 < 0) b32 + 256 else b32};
-        match x {
-            case Ipv4Addr.Ipv4Addr(b1, b2, b3, b4) =>
-                "${u8Conv(b1)}.${u8Conv(b2)}.${u8Conv(b3)}.${u8Conv(b4)}"
-            case _ => ""
-        }
+    pub def toString(x: Ipv4Addr): String = Ipv4Addr.toString(x)
 }
 
 mod Ipv4Addr {
@@ -42,6 +36,14 @@ mod Ipv4Addr {
 
     use Ipv4Addr.Ipv4Addr
 
+    pub def toString(x: Ipv4Addr): String =
+        let u8Conv = b -> Int32.bitwiseAnd(Int8.toInt32(b), 0xff);
+        match x {
+            case Ipv4Addr.Ipv4Addr(b1, b2, b3, b4) =>
+                "${u8Conv(b1)}.${u8Conv(b2)}.${u8Conv(b3)}.${u8Conv(b4)}"
+            case _ => ""
+        }
+
     def parseInt8NoLeading0(b: String): Option[Int8] =
         if (String.length(b) > 1 and String.startsWith({prefix = "0"}, b))
             None
@@ -49,9 +51,7 @@ mod Ipv4Addr {
             forM(
                 b32 <- Int32.fromString(b); if b32 < 256 and b32 > -256;
                 b8 <- if (b32 > 127) Int32.tryToInt8(b32-256) else Int32.tryToInt8(b32)
-            ) yield {
-                b8
-            }
+            ) yield b8
 
     ///
     /// Attempts to parse the given String `s` as an `Ipv4Addr`.
