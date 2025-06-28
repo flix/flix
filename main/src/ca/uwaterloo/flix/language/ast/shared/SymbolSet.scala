@@ -29,67 +29,35 @@ object SymbolSet {
     Set.empty[Symbol.EffSym],
   )
 }
+
 case class SymbolSet(
                     enums: Set[Symbol.EnumSym],
                     structs: Set[Symbol.StructSym],
-                    // restrictableEnum: Set[Symbol.RestrictableEnumSym],
-                    /* cases: Set[Symbol.CaseSym],
-                    restrictableCases: Set[Symbol.RestrictableCaseSym],
-                    structField: Set[Symbol.StructFieldSym],
-                    */ traits: Set[Symbol.TraitSym],
-                    /* sigs: Set[Symbol.SigSym],
-                    labels: Set[Symbol.LabelSym],
-                    typeAliases: Set[Symbol.TypeAliasSym],
-                    assocTypes: Set[Symbol.AssocTypeSym], */
+                    traits: Set[Symbol.TraitSym],
                     effects: Set[Symbol.EffSym],
-                    /* ops: Set[Symbol.OpSym],
-                    regionSym: Set[Symbol.RegionSym],
-                    modules: Set[Symbol.ModuleSym], */
                     ) {
 
   /**
-    * Returns the union of the symbol sets
+    * Returns the union of `this` and `that`
     */
   def ++(that : SymbolSet): SymbolSet = {
     SymbolSet(
       enums ++ that.enums,
       structs ++ that.structs,
-      /* restrictableEnum ++ that.restrictableEnum,
-      cases ++ that.cases,
-      restrictableCases ++ that.restrictableCases,
-      structField ++ that.structField, */
       traits ++ that.traits,
-      /* sigs ++ that.sigs,
-      labels ++ that.labels,
-      typeAliases ++ that.typeAliases,
-      assocTypes ++ that.assocTypes, */
       effects ++ that.effects,
-      /* ops ++ that.ops,
-      regionSym ++ that.regionSym,
-      modules ++ that.modules */
     )
   }
 
   /**
-    * Returns the intersection of the symbol sets
+    * Returns the intersection of `this` and `that`
     */
   def &(that: SymbolSet): SymbolSet = {
     SymbolSet(
       enums & that.enums,
       structs & that.structs,
-      /* restrictableEnum & that.restrictableEnum,
-      cases & that.cases,
-      restrictableCases & that.restrictableCases,
-      structField & that.structField, */
       traits & that.traits,
-      /* sigs & that.sigs,
-      labels & that.labels,
-      typeAliases & that.typeAliases,
-      assocTypes & that.assocTypes, */
       effects & that.effects,
-      /* ops & that.ops,
-      regionSym & that.regionSym,
-      modules & that.modules */
     )
   }
 }
