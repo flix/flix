@@ -476,8 +476,6 @@ object Symbol {
       case None => text
       case Some(i) => text + Flix.Delimiter + i
     }
-    override def qname = text
-    override def qnamespace: List[String] = namespace
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
@@ -501,14 +499,13 @@ object Symbol {
   /**
     * Enum Symbol.
     */
-  final class EnumSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym with Locatable {
+  final class EnumSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
 
     /**
       * Returns the name of `this` symbol.
       */
     def name: String = text
-    override def qname: String = text
-    override def qnamespace: List[String] = namespace
+
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -536,13 +533,12 @@ object Symbol {
   /**
    * Struct Symbol.
    */
-  final class StructSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym with Locatable {
+  final class StructSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
     /**
       * Returns the name of `this` symbol.
       */
     def name: String = text
-    override def qname: String = text
-    override def qnamespace: List[String] = namespace
+
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -570,11 +566,10 @@ object Symbol {
   /**
     * Restrictable Enum Symbol.
     */
-  final class RestrictableEnumSym(val namespace: List[String], val name: String, cases: List[Name.Ident], val loc: SourceLocation) extends Symbol with QualifiedSym with Locatable {
+  final class RestrictableEnumSym(val namespace: List[String], val name: String, cases: List[Name.Ident], val loc: SourceLocation) extends Symbol with QualifiedSym {
 
     // NB: it is critical that this be either a lazy val or a def, since otherwise `this` is not fully instantiated
-    override def qname: String = name
-    override def qnamespace: List[String] = namespace
+
     /**
       * The universe of cases associated with this restrictable enum.
       */
@@ -602,7 +597,7 @@ object Symbol {
   /**
     * Case Symbol.
     */
-  final class CaseSym(val enumSym: Symbol.EnumSym, val name: String, val loc: SourceLocation) extends Symbol with QualifiedSym with Locatable {
+  final class CaseSym(val enumSym: Symbol.EnumSym, val name: String, val loc: SourceLocation) extends Symbol with QualifiedSym {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -610,8 +605,6 @@ object Symbol {
       case that: CaseSym => this.enumSym == that.enumSym && this.name == that.name
       case _ => false
     }
-    override def qname: String = name
-    override def qnamespace: List[String] = enumSym.namespace
 
     /**
       * Returns the hash code of this symbol.
@@ -632,7 +625,7 @@ object Symbol {
   /**
    * Struct Field Symbol.
    */
-  final class StructFieldSym(val structSym: Symbol.StructSym, val name: String, val loc: SourceLocation) extends Symbol with QualifiedSym with Locatable {
+  final class StructFieldSym(val structSym: Symbol.StructSym, val name: String, val loc: SourceLocation) extends Symbol with QualifiedSym {
 
     /**
      * Returns `true` if this symbol is equal to `that` symbol.
@@ -641,8 +634,6 @@ object Symbol {
       case that: StructFieldSym => this.structSym == that.structSym && this.name == that.name
       case _ => false
     }
-    override def qname: String = name
-    override def qnamespace: List[String] = structSym.namespace
 
     /**
      * Returns the hash code of this symbol.
@@ -663,7 +654,7 @@ object Symbol {
   /**
     * Restrictable Case Symbol.
     */
-  final class RestrictableCaseSym(val enumSym: Symbol.RestrictableEnumSym, val name: String, val loc: SourceLocation) extends Symbol with Ordered[RestrictableCaseSym] with QualifiedSym with Locatable {
+  final class RestrictableCaseSym(val enumSym: Symbol.RestrictableEnumSym, val name: String, val loc: SourceLocation) extends Symbol with Ordered[RestrictableCaseSym] with QualifiedSym {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -691,8 +682,7 @@ object Symbol {
       * Comparison.
       */
     override def compare(that: RestrictableCaseSym): Int = this.toString.compare(that.toString)
-    override def qname: String = name
-    override def qnamespace: List[String] = enumSym.namespace
+
   }
 
   /**
@@ -706,8 +696,6 @@ object Symbol {
       case that: TraitSym => this.namespace == that.namespace && this.name == that.name
       case _ => false
     }
-    override def qname: String = name
-    override def qnamespace: List[String] = namespace
 
     /**
       * Returns the hash code of this symbol.
@@ -736,8 +724,6 @@ object Symbol {
       case that: SigSym => this.trt == that.trt && this.name == that.name
       case _ => false
     }
-    override def qname: String = name
-    override def qnamespace: List[String] = trt.namespace
 
     /**
       * Returns the hash code of this symbol.
@@ -794,8 +780,6 @@ object Symbol {
       case that: HoleSym => this.namespace == that.namespace && this.name == that.name
       case _ => false
     }
-    override def qname: String = "?" + name
-    override def qnamespace: List[String] = namespace
 
     /**
       * Returns the hash code of this symbol.
@@ -819,8 +803,7 @@ object Symbol {
       case that: TypeAliasSym => this.namespace == that.namespace && this.name == that.name
       case _ => false
     }
-    override def qname: String = name
-    override def qnamespace: List[String] = namespace
+
     /**
       * Returns the hash code of this symbol.
       */
@@ -841,8 +824,7 @@ object Symbol {
     * Associated Type Symbol.
     */
   final class AssocTypeSym(val trt: Symbol.TraitSym, val name: String, val loc: SourceLocation) extends Symbol with Ordered[AssocTypeSym] with QualifiedSym {
-    override def qname: String = name
-    override def qnamespace: List[String] = trt.namespace
+
     /**
       * The symbol's namespace.
       */
@@ -881,8 +863,7 @@ object Symbol {
     * Effect symbol.
     */
   final class EffSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Ordered[EffSym] with Symbol with QualifiedSym {
-    override def qname: String = name
-    override def qnamespace: List[String] = namespace
+
     /**
       * Returns the source of `this`.
       */
@@ -927,8 +908,7 @@ object Symbol {
       case that: OpSym => this.eff == that.eff && this.name == that.name
       case _ => false
     }
-    override def qname: String = name
-    override def qnamespace: List[String] = eff.namespace
+
     /**
       * Returns the hash code of this symbol.
       */

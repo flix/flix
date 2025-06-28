@@ -16,9 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast.shared
 
-trait QualifiedSym {
-  def qnamespace: List[String]
-  def qname: String
-  def depth: Int = qnamespace.length
-  override def toString: String = qnamespace.mkString(".") + "." + qname
+trait QualifiedSym{
+  def namespace: List[String]
+  def name: String
 }

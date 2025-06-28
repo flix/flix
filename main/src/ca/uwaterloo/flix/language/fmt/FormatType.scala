@@ -27,10 +27,8 @@ object FormatType {
     * Minimizes the given type.
     *
     * Performs alpha renaming if the rigidity environment is present.
-    *
-    * @param wrt The type, which the type is formatted with respect to
     */
-  def formatType(tpe: Type, renv: Option[RigidityEnv] = None, minimizeEffs: Boolean = false, wrt : List[Type] = List())(implicit flix: Flix): String = {
+  def formatType(tpe: Type, renv: Option[RigidityEnv] = None, minimizeEffs: Boolean = false)(implicit flix: Flix): String = {
     val renamed = renv match {
       case None => tpe
       case Some(env) => alphaRename(tpe, env)
@@ -40,7 +38,7 @@ object FormatType {
     } else {
       renamed
     }
-    formatTypeWithOptions(minimized, flix.getFormatOptions, wrt = wrt)
+    formatTypeWithOptions(minimized, flix.getFormatOptions)
   }
 
   /**
@@ -69,9 +67,9 @@ object FormatType {
   /**
     * Transforms the given well-kinded type into a string, using the given format options.
     */
-  def formatTypeWithOptions(tpe: Type, fmt: FormatOptions, wrt : List[Type] = List()): String = {
+  def formatTypeWithOptions(tpe: Type, fmt: FormatOptions): String = {
     try {
-      format(SimpleType.fromWellKindedType(tpe, wrt = wrt))(fmt)
+      format(SimpleType.fromWellKindedType(tpe))(fmt)
     } catch {
       case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
     }

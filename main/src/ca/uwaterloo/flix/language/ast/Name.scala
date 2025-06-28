@@ -15,7 +15,6 @@
  */
 
 package ca.uwaterloo.flix.language.ast
-import ca.uwaterloo.flix.language.ast.shared.QualifiedSym
 
 object Name {
 
@@ -44,7 +43,6 @@ object Name {
     val ident = Ident(name, loc)
     QName(nname, ident, loc)
   }
-  def mkQNameUnlocated(ns: List[String], name: String): QName = mkQName(ns, name, SourceLocation.Unknown)
 
   /**
     * Converts the given identifier `ident` to a label.
@@ -179,8 +177,7 @@ object Name {
     *   - "A.B.Color" -> namespace = ["A", "B"], ident = "Color"
     *   - "A.B." -> namespace = ["A", "B"], ident = ""
     */
-  case class QName(namespace: NName, ident: Ident, loc: SourceLocation) extends QualifiedSym {
-
+  case class QName(namespace: NName, ident: Ident, loc: SourceLocation) {
     /**
       * Returns `true` if this name is unqualified (i.e. has no namespace).
       */
@@ -191,9 +188,6 @@ object Name {
       * Human readable representation.
       */
     override def toString: String = if (isUnqualified) ident.toString else namespace.toString + "." + ident
-
-    override def qname = ident.name
-    override def qnamespace: List[String] = namespace.parts
   }
 
   /**
