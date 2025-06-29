@@ -89,7 +89,7 @@ object Monomorpher {
 
   /** The effect that all [[TypeConstructor.Region]] are instantiated to. */
   private val RegionInstantiation: TypeConstructor.Effect =
-    TypeConstructor.Effect(Symbol.IO)
+    TypeConstructor.Effect(Symbol.IO, Kind.Eff)
 
   /** Companion object for [[StrictSubstitution]]. */
   private object StrictSubstitution {
@@ -946,7 +946,7 @@ object Monomorpher {
   private def eval(eff: Type): CofiniteSet[Symbol.EffSym] = eff match {
     case Type.Univ => CofiniteSet.universe
     case Type.Pure => CofiniteSet.empty
-    case Type.Cst(TypeConstructor.Effect(sym), _) =>
+    case Type.Cst(TypeConstructor.Effect(sym, _), _) =>
       CofiniteSet.mkSet(sym)
     case Type.Cst(TypeConstructor.Region(_), _) =>
       CofiniteSet.mkSet(RegionInstantiation.sym)
@@ -965,8 +965,8 @@ object Monomorpher {
 
   /** Returns the [[Type]] representation of `set` with `loc`. */
   private def coSetToType(set: CofiniteSet[Symbol.EffSym], loc: SourceLocation): Type = set match {
-    case CofiniteSet.Set(s) => Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc)
-    case CofiniteSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc), loc)
+    case CofiniteSet.Set(s) => Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc)), loc)
+    case CofiniteSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc)), loc), loc)
   }
 
   /**

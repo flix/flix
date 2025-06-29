@@ -36,6 +36,7 @@ sealed trait UnkindedType {
     case UnkindedType.Var(sym, _) => f(sym)
     case t: UnkindedType.Cst => t
     case t: UnkindedType.Enum => t
+    case t: UnkindedType.Effect => t
     case t: UnkindedType.Struct => t
     case t: UnkindedType.RestrictableEnum => t
     case t: UnkindedType.UnappliedAlias => t
@@ -84,6 +85,7 @@ sealed trait UnkindedType {
     case UnkindedType.Var(sym, _) => SortedSet(sym)
     case UnkindedType.Cst(_, _) => SortedSet.empty
     case UnkindedType.Enum(_, _) => SortedSet.empty
+    case UnkindedType.Effect(_, _) => SortedSet.empty
     case UnkindedType.Struct(_, _) => SortedSet.empty
     case UnkindedType.RestrictableEnum(_, _) => SortedSet.empty
     case UnkindedType.UnappliedAlias(_, _) => SortedSet.empty
@@ -137,6 +139,18 @@ object UnkindedType {
   case class Enum(sym: Symbol.EnumSym, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Enum(sym2, _) => sym == sym2
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(sym)
+  }
+
+  /**
+    * An unkinded effect.
+    */
+  case class Effect(sym: Symbol.EffSym, loc: SourceLocation) extends UnkindedType {
+    override def equals(that: Any): Boolean = that match {
+      case Effect(sym2, _) => sym == sym2
       case _ => false
     }
 
@@ -377,7 +391,7 @@ object UnkindedType {
     * Constructs the type a -> b \ IO
     */
   def mkIoArrow(a: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
-    val eff = Some(UnkindedType.Cst(TypeConstructor.Effect(Symbol.IO), loc))
+    val eff = Some(UnkindedType.Effect(Symbol.IO, loc))
     mkApply(UnkindedType.Arrow(eff, 2, loc), List(a, b), loc)
   }
 
@@ -450,9 +464,9 @@ object UnkindedType {
   def mkRestrictableEnum(sym: Symbol.RestrictableEnumSym, loc: SourceLocation): UnkindedType = UnkindedType.RestrictableEnum(sym, loc)
 
   /**
-    * Construct the effect type for the given symbol.
+    * Construct the effect type constructor for the given symbol.
     */
-  def mkEffect(sym: Symbol.EffSym, loc: SourceLocation): UnkindedType = UnkindedType.Cst(TypeConstructor.Effect(sym), loc)
+  def mkEffect(sym: Symbol.EffSym, loc: SourceLocation): UnkindedType = UnkindedType.Effect(sym, loc)
 
   /**
     * Constructs a predicate type.
@@ -519,6 +533,7 @@ object UnkindedType {
     case tpe: Var => tpe
     case tpe: Cst => tpe
     case tpe: Enum => tpe
+    case tpe: Effect => tpe
     case tpe: Struct => tpe
     case tpe: RestrictableEnum => tpe
     case tpe: UnkindedType.CaseSet => tpe
