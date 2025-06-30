@@ -140,7 +140,7 @@ object FindReferencesProvider {
     case TypedAst.TypeAlias(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.AssocTypeSig(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.AssocTypeDef(_, _, _, _, _, loc) => loc.isReal
-    case TypedAst.Effect(_, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Effect(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Op(_, _, loc) => loc.isReal
     case exp: TypedAst.Expr => exp.loc.isReal
     case pat: TypedAst.Pattern => pat.loc.isReal
@@ -204,7 +204,7 @@ object FindReferencesProvider {
     case TypedAst.Def(sym, _, _, _) => Some(getDefnSymOccurs(sym))
     case SymUse.DefSymUse(sym, _) => Some(getDefnSymOccurs(sym))
     // Effects
-    case TypedAst.Effect(_, _, _, sym, _, _) => Some(getEffectSymOccurs(sym))
+    case TypedAst.Effect(_, _, _, sym, _, _, _) => Some(getEffectSymOccurs(sym))
     case SymUse.EffectSymUse(sym, _) => Some(getEffectSymOccurs(sym))
     case Type.Cst(TypeConstructor.Effect(sym, _), _) => Some(getEffectSymOccurs(sym))
     // Enums

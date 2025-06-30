@@ -52,6 +52,7 @@ object ResolvedAstPrinter {
     case Expr.ApplyClo(exp1, exp2, _) => DocAst.Expr.App(print(exp1), List(print(exp2)))
     case Expr.ApplyDef(DefSymUse(sym, _), exps, _) => DocAst.Expr.ApplyDef(sym, exps.map(print))
     case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _) => DocAst.Expr.App(printVarSym(sym), exps.map(print))
+    case Expr.ApplyOp(symUse, exps, _) => DocAst.Expr.ApplyOp(symUse.sym, exps.map(print))
     case Expr.ApplySig(SigSymUse(sym, _), exps, _) => DocAst.Expr.App(DocAst.Expr.AsIs(sym.name), exps.map(print))
     case Expr.Lambda(fparam, exp, _, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
     case Expr.Unary(sop, exp, _) => DocAst.Expr.Unary(OpPrinter.print(sop), print(exp))
@@ -105,7 +106,6 @@ object ResolvedAstPrinter {
       case ResolvedAst.HandlerRule(opSymUse, fparams, exp, _) => (opSymUse.sym, fparams.map(printFormalParam), print(exp))
     })
     case Expr.RunWith(exp1, exp2, _) => DocAst.Expr.RunWith(print(exp1), print(exp2))
-    case Expr.Do(symUse, exps, _) => DocAst.Expr.Do(symUse.sym, exps.map(print))
     case Expr.InvokeConstructor(_, _, _) => DocAst.Expr.Unknown
     case Expr.InvokeMethod(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.InvokeStaticMethod(_, _, _, _) => DocAst.Expr.Unknown

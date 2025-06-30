@@ -51,6 +51,7 @@ object LiftedAstPrinter {
     case ApplyAtomic(op, exps, tpe, purity, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe), PurityPrinter.print(purity))
     case ApplyClo(exp1, exp2, _, _, _) => DocAst.Expr.ApplyClo(print(exp1), List(print(exp2)))
     case ApplyDef(sym, args, _, _, _) => DocAst.Expr.ApplyDef(sym, args.map(print))
+    case ApplyOp(sym, exps, _, _, _) => DocAst.Expr.ApplyOp(sym, exps.map(print))
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _, _) => DocAst.Expr.Branch(print(exp), MapOps.mapValues(branches)(print))
     case JumpTo(sym, _, _, _) => DocAst.Expr.JumpTo(sym)
@@ -64,7 +65,6 @@ object LiftedAstPrinter {
       case LiftedAst.HandlerRule(op, fparams, body) =>
         (op.sym, fparams.map(printFormalParam), print(body))
     })
-    case Do(op, exps, _, _, _) => DocAst.Expr.Do(op.sym, exps.map(print))
     case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map {
       case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, _, _) =>
         DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))

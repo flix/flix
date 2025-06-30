@@ -880,9 +880,11 @@ object Symbol {
   /**
     * Effect symbol.
     */
+
   final class EffSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Ordered[EffSym] with Symbol with QualifiedSym {
     override def qname: String = name
     override def qnamespace: List[String] = namespace
+
     /**
       * Returns the source of `this`.
       */

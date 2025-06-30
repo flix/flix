@@ -158,6 +158,10 @@ object LambdaLift {
         case None => throw InternalCompilerException(s"unable to find lifted def for local def $sym", loc)
       }
 
+    case SimplifiedAst.Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      LiftedAst.Expr.ApplyOp(sym, es, tpe, purity, loc)
+
     case SimplifiedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -222,10 +226,6 @@ object LambdaLift {
           LiftedAst.HandlerRule(sym, fps, b)
       }
       LiftedAst.Expr.RunWith(e, effUse, rs, tpe, purity, loc)
-
-    case SimplifiedAst.Expr.Do(op, exps, tpe, purity, loc) =>
-      val es = exps.map(visitExp)
-      LiftedAst.Expr.Do(op, es, tpe, purity, loc)
 
     case SimplifiedAst.Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map(visitJvmMethod)

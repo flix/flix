@@ -1260,6 +1260,15 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedTypeParam](result)
   }
 
+  test("UnusedTypeParam.TypeAlias.01") {
+    val input =
+      """
+        |type alias T[a] = Int32
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
   test("UnusedVarSym.Let.01") {
     val input =
       s"""

@@ -541,6 +541,24 @@ mod TestBPlusTree {
             not BPlusTree.memberOf(0, tree)
     }
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // minimumKey                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def minimumKey01(): Bool = region rc {
+        let tree = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 3, tree);
+        BPlusTree.put(2, -12, tree);
+        BPlusTree.put(0, -5, tree);
+        BPlusTree.put(-1, -4, tree);
+        BPlusTree.put(4, -3, tree);
+        BPlusTree.put(5, -6, tree);
+        BPlusTree.minimumKey(tree) == Option.Some((-1, -4))
+    }
+
+
     /////////////////////////////////////////////////////////////////////////////
     // putWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
