@@ -36,18 +36,18 @@ mod Ipv4Addr {
 
     use Ipv4Addr.Ipv4Addr
 
-    def toUnsigned8(x: Int8): Int32 = Int32.bitwiseAnd(Int8.toInt32(x), 0xff)
+    def toUnsigned8(x: Int8): Int32 = Int32.bitwiseAnd(Int8.toInt32(x), 0xFF)
 
     def toSigned8(x: Int32): Option[Int8] =
         forM(
-            b32 <- Some(x); if x < 256 and x > -256;
-            b8 <- Int32.tryToInt8(
+            bu8 <- Some(x); if 0 <= x and x < 256;
+            bi8 <- Int32.tryToInt8(
                     Int32.bitwiseXor(
-                        Int32.bitwiseAnd(b32, 0xFF),
+                        Int32.bitwiseAnd(bu8, 0xFF),
                         0x80
                     ) - 0x80
                 )
-        ) yield b8
+        ) yield bi8
 
     def parseInt8NoLeading0(b: String): Option[Int8] =
         forM(
