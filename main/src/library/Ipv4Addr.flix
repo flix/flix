@@ -26,13 +26,7 @@ instance FromString[Ipv4Addr] {
 }
 
 instance ToString[Ipv4Addr] {
-    pub def toString(x: Ipv4Addr): String =
-        let u8Conv = {b -> let b32 = Int8.toInt32(b); if (b32 < 0) b32 + 256 else b32};
-        match x {
-            case Ipv4Addr.Ipv4Addr(b1, b2, b3, b4) =>
-                "${u8Conv(b1)}.${u8Conv(b2)}.${u8Conv(b3)}.${u8Conv(b4)}"
-            case _ => ""
-        }
+    pub def toString(x: Ipv4Addr): String = Ipv4Addr.toString(x)
 }
 
 mod Ipv4Addr {
@@ -42,16 +36,25 @@ mod Ipv4Addr {
 
     use Ipv4Addr.Ipv4Addr
 
+    def toUnsigned8(x: Int8): Int32 = Int32.bitwiseAnd(Int8.toInt32(x), 0xFF)
+
+    def toSigned8(x: Int32): Option[Int8] =
+        forM(
+            bu8 <- Some(x); if 0 <= x and x < 256;
+            bi8 <- Int32.tryToInt8(
+                    Int32.bitwiseXor(
+                        Int32.bitwiseAnd(bu8, 0xFF),
+                        0x80
+                    ) - 0x80
+                )
+        ) yield bi8
+
     def parseInt8NoLeading0(b: String): Option[Int8] =
-        if (String.length(b) > 1 and String.startsWith({prefix = "0"}, b))
-            None
-        else
-            forM(
-                b32 <- Int32.fromString(b); if b32 < 256 and b32 > -256;
-                b8 <- if (b32 > 127) Int32.tryToInt8(b32-256) else Int32.tryToInt8(b32)
-            ) yield {
-                b8
-            }
+        forM(
+            s <- Some(b); if not (String.length(b) > 1 and String.startsWith({prefix = "0"}, b));
+            u8 <- Int32.fromString(s);
+            i8 <- toSigned8(u8)
+        ) yield i8
 
     ///
     /// Attempts to parse the given String `s` as an `Ipv4Addr`.
@@ -68,6 +71,10 @@ mod Ipv4Addr {
             }
             case _ => None
         }
+
+    pub def toString(x: Ipv4Addr): String =
+        let Ipv4Addr.Ipv4Addr(b1, b2, b3, b4) = x;
+        "${toUnsigned8(b1)}.${toUnsigned8(b2)}.${toUnsigned8(b3)}.${toUnsigned8(b4)}"
 
 }
 
