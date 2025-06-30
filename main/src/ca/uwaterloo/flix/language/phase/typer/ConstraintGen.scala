@@ -121,6 +121,26 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
+      case Expr.ApplyOp(symUse, exps, tvar, loc) =>
+        val op = lookupOp(symUse.sym, symUse.loc)
+        val effTpe = Type.Cst(TypeConstructor.Effect(symUse.sym.eff, Kind.Eff), loc) // TODO EFF-TPARAMS need kind
+
+        // Pseudo variable for source to flow into
+        val pvar = Type.freshVar(Kind.Eff, loc)
+
+        // length check done in Resolver
+        val effs = visitOpArgs(op, exps)
+
+        // specialize the return type of the op if needed
+        val opTpe = getDoType(op)
+
+        c.unifyType(opTpe, tvar, loc)
+        c.unifySource(pvar, effTpe, loc)
+        val resTpe = tvar
+        val resEff = Type.mkUnion(pvar :: effs, loc)
+
+        (resTpe, resEff)
+
       case Expr.ApplySig(SigSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
         val sig = root.traits(sym.trt).sigs(sym)
         val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
@@ -811,26 +831,6 @@ object ConstraintGen {
         val resultTpe = tvar
         val resultEff = Type.mkUnion(evar, handlerExpEff, loc.asSynthetic)
         (resultTpe, resultEff)
-
-      case Expr.Do(symUse, exps, tvar, loc) =>
-        val op = lookupOp(symUse.sym, symUse.loc)
-        val effTpe = Type.Cst(TypeConstructor.Effect(symUse.sym.eff, Kind.Eff), loc) // TODO EFF-TPARAMS need kind
-
-        // Pseudo variable for source to flow into
-        val pvar = Type.freshVar(Kind.Eff, loc)
-
-        // length check done in Resolver
-        val effs = visitOpArgs(op, exps)
-
-        // specialize the return type of the op if needed
-        val opTpe = getDoType(op)
-
-        c.unifyType(opTpe, tvar, loc)
-        c.unifySource(pvar, effTpe, loc)
-        val resTpe = tvar
-        val resEff = Type.mkUnion(pvar :: effs, loc)
-
-        (resTpe, resEff)
 
       case Expr.InvokeConstructor(clazz, exps, jvar, evar, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)

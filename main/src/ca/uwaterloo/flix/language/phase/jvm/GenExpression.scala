@@ -1153,6 +1153,65 @@ object GenExpression {
         }
     }
 
+    case Expr.ApplyOp(op, exps, tpe, _, loc) => ctx match {
+      case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
+        BackendObjType.Result.crashIfSuspension("Unexpected do-expression in direct method context", loc)
+
+      case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
+        import BackendObjType.Suspension
+        import BytecodeInstructions.*
+
+        val pcPoint = pcCounter(0) + 1
+        val pcPointLabel = pcLabels(pcPoint)
+        val afterUnboxing = new Label()
+        val erasedResult = BackendType.toErasedBackendType(tpe)
+        pcCounter(0) += 1
+
+        val effectName = JvmOps.getEffectDefinitionClassName(op.sym.eff)
+        val effectStaticMethod = ClassMaker.StaticMethod(
+          effectName,
+          JvmOps.getEffectOpName(op.sym),
+          GenEffectClasses.opStaticFunctionDescriptor(op.sym)
+        )
+        NEW(Suspension.jvmName)
+        DUP()
+        INVOKESPECIAL(Suspension.Constructor)
+        DUP()
+        pushString(op.sym.eff.toString)
+        PUTFIELD(Suspension.EffSymField)
+        DUP()
+        // --- eff op ---
+        exps.foreach(compileExpr)
+        mkStaticLambda(BackendObjType.EffectCall.ApplyMethod, effectStaticMethod, 2)
+        // --------------
+        PUTFIELD(Suspension.EffOpField)
+        DUP()
+        // create continuation
+        NEW(BackendObjType.FramesNil.jvmName)
+        DUP()
+        INVOKESPECIAL(BackendObjType.FramesNil.Constructor)
+        newFrame(mv)
+        DUP()
+        pushInt(pcPoint)
+        setPc(mv)
+        INVOKEVIRTUAL(BackendObjType.FramesNil.PushMethod)
+        // store continuation
+        PUTFIELD(Suspension.PrefixField)
+        DUP()
+        NEW(BackendObjType.ResumptionNil.jvmName)
+        DUP()
+        INVOKESPECIAL(BackendObjType.ResumptionNil.Constructor)
+        PUTFIELD(Suspension.ResumptionField)
+        xReturn(Suspension.toTpe)
+
+        mv.visitLabel(pcPointLabel)
+        ALOAD(1)
+        GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))
+
+        mv.visitLabel(afterUnboxing)
+        castIfNotPrim(BackendType.toBackendType(tpe))
+    }
+
     case Expr.ApplySelfTail(sym, exps, _, _, _) => ctx match {
       case EffectContext(_, _, _, setPc, _, _, _) =>
         // The function abstract class name
@@ -1395,65 +1454,6 @@ object GenExpression {
       } else {
         ARETURN()
       }
-
-    case Expr.Do(op, exps, tpe, _, loc) => ctx match {
-      case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
-        BackendObjType.Result.crashIfSuspension("Unexpected do-expression in direct method context", loc)
-
-      case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
-        import BackendObjType.Suspension
-        import BytecodeInstructions.*
-
-        val pcPoint = pcCounter(0) + 1
-        val pcPointLabel = pcLabels(pcPoint)
-        val afterUnboxing = new Label()
-        val erasedResult = BackendType.toErasedBackendType(tpe)
-        pcCounter(0) += 1
-
-        val effectName = JvmOps.getEffectDefinitionClassName(op.sym.eff)
-        val effectStaticMethod = ClassMaker.StaticMethod(
-          effectName,
-          JvmOps.getEffectOpName(op.sym),
-          GenEffectClasses.opStaticFunctionDescriptor(op.sym)
-        )
-        NEW(Suspension.jvmName)
-        DUP()
-        INVOKESPECIAL(Suspension.Constructor)
-        DUP()
-        pushString(op.sym.eff.toString)
-        PUTFIELD(Suspension.EffSymField)
-        DUP()
-        // --- eff op ---
-        exps.foreach(compileExpr)
-        mkStaticLambda(BackendObjType.EffectCall.ApplyMethod, effectStaticMethod, 2)
-        // --------------
-        PUTFIELD(Suspension.EffOpField)
-        DUP()
-        // create continuation
-        NEW(BackendObjType.FramesNil.jvmName)
-        DUP()
-        INVOKESPECIAL(BackendObjType.FramesNil.Constructor)
-        newFrame(mv)
-        DUP()
-        pushInt(pcPoint)
-        setPc(mv)
-        INVOKEVIRTUAL(BackendObjType.FramesNil.PushMethod)
-        // store continuation
-        PUTFIELD(Suspension.PrefixField)
-        DUP()
-        NEW(BackendObjType.ResumptionNil.jvmName)
-        DUP()
-        INVOKESPECIAL(BackendObjType.ResumptionNil.Constructor)
-        PUTFIELD(Suspension.ResumptionField)
-        xReturn(Suspension.toTpe)
-
-        mv.visitLabel(pcPointLabel)
-        ALOAD(1)
-        GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))
-
-        mv.visitLabel(afterUnboxing)
-        castIfNotPrim(BackendType.toBackendType(tpe))
-    }
 
     case Expr.NewObject(name, _, _, _, methods, _) =>
       val exps = methods.map(_.exp)

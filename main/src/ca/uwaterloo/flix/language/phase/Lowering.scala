@@ -386,6 +386,10 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyLocalDef(sym, es, t, eff, loc)
 
+    case TypedAst.Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      LoweredAst.Expr.ApplyOp(sym, es, tpe, eff, loc)
+
     case TypedAst.Expr.ApplySig(SigSymUse(sym, _), exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val it = visitType(itpe)
@@ -631,10 +635,6 @@ object Lowering {
       val thunkType = Type.mkArrowWithEffect(Type.Unit, exp1.eff, exp1.tpe, loc.asSynthetic)
       val thunk = LoweredAst.Expr.Lambda(unitParam, visitExp(exp1), thunkType, loc.asSynthetic)
       LoweredAst.Expr.ApplyClo(visitExp(exp2), thunk, tpe, eff, loc)
-
-    case TypedAst.Expr.Do(sym, exps, tpe, eff, loc) =>
-      val es = exps.map(visitExp)
-      LoweredAst.Expr.Do(sym, es, tpe, eff, loc)
 
     case TypedAst.Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -1838,6 +1838,10 @@ object Lowering {
       val es = exps.map(substExp(_, subst))
       LoweredAst.Expr.ApplyLocalDef(sym, es, tpe, eff, loc)
 
+    case LoweredAst.Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(substExp(_, subst))
+      LoweredAst.Expr.ApplyOp(sym, es, tpe, eff, loc)
+
     case LoweredAst.Expr.ApplySig(sym, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
       LoweredAst.Expr.ApplySig(sym, es, itpe, tpe, eff, loc)
@@ -1917,10 +1921,6 @@ object Lowering {
           LoweredAst.HandlerRule(op, fps, he)
       }
       LoweredAst.Expr.RunWith(e, sym, rs, tpe, eff, loc)
-
-    case LoweredAst.Expr.Do(sym, exps, tpe, eff, loc) =>
-      val es = exps.map(substExp(_, subst))
-      LoweredAst.Expr.Do(sym, es, tpe, eff, loc)
 
     case LoweredAst.Expr.NewObject(_, _, _, _, _, _) => exp0
 

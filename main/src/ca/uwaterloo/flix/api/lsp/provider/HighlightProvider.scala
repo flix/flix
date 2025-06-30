@@ -393,7 +393,7 @@ object HighlightProvider {
       }
 
       override def consumeExpr(exp: Expr): Unit = exp match {
-        case Expr.Do(_, _, _, eff, loc) if eff.effects.contains(sym) => reads += loc
+        case Expr.ApplyOp(_, _, _, eff, loc) if eff.effects.contains(sym) => reads += loc
         case _ => ()
       }
     }

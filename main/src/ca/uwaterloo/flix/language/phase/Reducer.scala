@@ -99,6 +99,11 @@ object Reducer {
         val es = exps.map(visitExpr)
         Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
+      case Expr.ApplyOp(op, exps, tpe, purity, loc) =>
+        lctx.addPcPoint()
+        val es = exps.map(visitExpr)
+        Expr.ApplyOp(op, es, tpe, purity, loc)
+
       case Expr.ApplySelfTail(sym, exps, tpe, purity, loc) =>
         val es = exps.map(visitExpr)
         Expr.ApplySelfTail(sym, es, tpe, purity, loc)
@@ -154,11 +159,6 @@ object Reducer {
             HandlerRule(op, fparams, b)
         }
         Expr.RunWith(e, effUse, rs, ct, tpe, purity, loc)
-
-      case Expr.Do(op, exps, tpe, purity, loc) =>
-        lctx.addPcPoint()
-        val es = exps.map(visitExpr)
-        Expr.Do(op, es, tpe, purity, loc)
 
       case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
         val specs = methods.map {
