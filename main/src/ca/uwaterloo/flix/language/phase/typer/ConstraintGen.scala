@@ -126,8 +126,8 @@ object ConstraintGen {
         val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(op.spec.sc, loc1.asSynthetic)
         val constrs1 = tconstrs1.map(_.copy(loc = loc1))
         val declaredEff = declaredType.arrowEffectType
-        val declaredArgumentTypes = declaredType.arrowArgTypes // MATT need to handle Void
-        val declaredResultType = declaredType.arrowResultType
+        val declaredArgumentTypes = declaredType.arrowArgTypes
+        val declaredResultType = generalizeVoid(declaredType.arrowResultType)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
         c.addClassConstraints(constrs1, loc2)
@@ -1244,21 +1244,21 @@ object ConstraintGen {
   }
 
   /**
-    * Returns the type inferred for `do`ing the given op.
+    * Converts the given type to a free variable if it is `Void`.
     *
-    * This is usually the annotated return type of the op.
-    * But if the op returns Void, we return a free variable instead.
+    * Otherwise, returns the given type.
+    *
+    * This is used for operation return types, which cannot be polymorphic.
     */
-  private def getDoType(op: KindedAst.Op)(implicit c: TypeContext, flix: Flix): Type = {
+  private def generalizeVoid(t: Type)(implicit c: TypeContext, flix: Flix): Type = {
     implicit val scope: Scope = c.getScope
-    // We special-case the result type of the operation.
-    op.spec.tpe.typeConstructor match {
+    t.typeConstructor match {
       case Some(TypeConstructor.Void) =>
         // The operation type is `Void`. Flix does not have subtyping, but here we want something close to it.
-        // Hence we treat `Void` as a fresh type variable.
+        // Hence, we treat `Void` as a fresh type variable.
         // An alternative would be to allow empty pattern matches, but that is cumbersome.
-        Type.freshVar(Kind.Star, op.spec.tpe.loc, VarText.Absent)
-      case _ => op.spec.tpe
+        Type.freshVar(Kind.Star, t.loc, VarText.Absent)
+      case _ => t
     }
   }
 
