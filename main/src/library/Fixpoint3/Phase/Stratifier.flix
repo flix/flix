@@ -58,8 +58,8 @@ mod Fixpoint3.Phase.Stratifier {
     }
 
     ///
-    /// Insert edges into `graph` for the dependencies in the Datalog program `d`. `A(x)
-    /// :- B(x), A(x), -C(x).` inserts the edge `B -> A` and `C -> A` in `graph`.
+    /// Insert edges into `graph` for the dependencies in the Datalog program `d`.
+    /// `A(x) :- B(x), A(x), not C(x).` inserts the edge `B -> A` and `C -> A` in `graph`.
     ///
     def mkDepGraphInternal(graph: MutGraph[r], d: Datalog): Unit \ r = match d {
         case Datalog(_, rules) => Vector.forEach(precedenceHelper(graph), rules)
