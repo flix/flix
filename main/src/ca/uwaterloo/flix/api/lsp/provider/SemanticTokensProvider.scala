@@ -342,11 +342,12 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given effect.
     */
   private def visitEffect(effect: TypedAst.Effect): Iterator[SemanticToken] = effect match {
-    case TypedAst.Effect(_, ann, _, sym, ops, _) =>
+    case TypedAst.Effect(_, ann, _, sym, tparams, ops, _) =>
       val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
       IteratorOps.all(
         visitAnnotations(ann),
         Iterator(t),
+        tparams.flatMap(visitTypeParam),
         ops.flatMap(visitOp),
       )
   }
