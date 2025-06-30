@@ -1153,7 +1153,7 @@ object GenExpression {
         }
     }
 
-    case Expr.ApplyOp(op, exps, tpe, _, loc) => ctx match {
+    case Expr.ApplyOp(sym, exps, tpe, _, loc) => ctx match {
       case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
         BackendObjType.Result.crashIfSuspension("Unexpected do-expression in direct method context", loc)
 
@@ -1167,17 +1167,17 @@ object GenExpression {
         val erasedResult = BackendType.toErasedBackendType(tpe)
         pcCounter(0) += 1
 
-        val effectName = JvmOps.getEffectDefinitionClassName(op.sym.eff)
+        val effectName = JvmOps.getEffectDefinitionClassName(sym.eff)
         val effectStaticMethod = ClassMaker.StaticMethod(
           effectName,
-          JvmOps.getEffectOpName(op.sym),
-          GenEffectClasses.opStaticFunctionDescriptor(op.sym)
+          JvmOps.getEffectOpName(sym),
+          GenEffectClasses.opStaticFunctionDescriptor(sym)
         )
         NEW(Suspension.jvmName)
         DUP()
         INVOKESPECIAL(Suspension.Constructor)
         DUP()
-        pushString(op.sym.eff.toString)
+        pushString(sym.eff.toString)
         PUTFIELD(Suspension.EffSymField)
         DUP()
         // --- eff op ---

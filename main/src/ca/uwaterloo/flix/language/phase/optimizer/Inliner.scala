@@ -221,9 +221,9 @@ object Inliner {
           Expr.ApplyLocalDef(sym1, es, tpe, eff, loc)
       }
 
-    case Expr.ApplyOp(op, exps, tpe, eff, loc) =>
+    case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, ctx0))
-      Expr.ApplyOp(op, es, tpe, eff, loc)
+      Expr.ApplyOp(sym, es, tpe, eff, loc)
 
     case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) => (occur, exp1.eff) match {
       case (Occur.Dead, Type.Pure) =>

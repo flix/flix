@@ -112,13 +112,13 @@ object OccurrenceAnalyzer {
           (Expr.ApplyLocalDef(sym, es, tpe, eff, loc), ctx)
         }
 
-      case Expr.ApplyOp(op, exps, tpe, eff, loc) =>
+      case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
         if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (Expr.ApplyOp(op, es, tpe, eff, loc), ctx)
+          (Expr.ApplyOp(sym, es, tpe, eff, loc), ctx)
         }
 
       case Expr.Let(sym, exp1, exp2, tpe, eff, occur0, loc) =>

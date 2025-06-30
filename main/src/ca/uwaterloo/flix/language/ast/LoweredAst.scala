@@ -95,7 +95,7 @@ object LoweredAst {
 
     case class ApplyLocalDef(sym: Symbol.VarSym, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class ApplyOp(symUse: OpSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ApplyOp(sym: Symbol.OpSym, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class ApplySig(sym: Symbol.SigSym, exps: List[Expr], itpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

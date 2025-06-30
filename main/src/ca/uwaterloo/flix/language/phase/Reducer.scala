@@ -99,10 +99,10 @@ object Reducer {
         val es = exps.map(visitExpr)
         Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
-      case Expr.ApplyOp(op, exps, tpe, purity, loc) =>
+      case Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
         lctx.addPcPoint()
         val es = exps.map(visitExpr)
-        Expr.ApplyOp(op, es, tpe, purity, loc)
+        Expr.ApplyOp(sym, es, tpe, purity, loc)
 
       case Expr.ApplySelfTail(sym, exps, tpe, purity, loc) =>
         val es = exps.map(visitExpr)

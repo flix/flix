@@ -31,7 +31,7 @@ object MonoAstPrinter {
     case Expr.ApplyClo(exp1, exp2, _, _, _) => DocAst.Expr.App(print(exp1), List(print(exp2)))
     case Expr.ApplyDef(sym, exps, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print))
     case Expr.ApplyLocalDef(sym, exps, _, _, _) => DocAst.Expr.ApplyLocalDef(sym, exps.map(print))
-    case Expr.ApplyOp(op, exps, _, _, _) => DocAst.Expr.Do(op.sym, exps.map(print))
+    case Expr.ApplyOp(sym, exps, _, _, _) => DocAst.Expr.ApplyOp(sym, exps.map(print))
     case Expr.Let(sym, exp1, exp2, _, _, _, _) => DocAst.Expr.Let(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _, _) => DocAst.Expr.LocalDef(printVar(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)), print(exp1), print(exp2))
     case Expr.Scope(sym, _, exp, _, _, _) => DocAst.Expr.Scope(printVar(sym), print(exp))

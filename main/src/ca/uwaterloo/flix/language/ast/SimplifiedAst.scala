@@ -80,7 +80,7 @@ object SimplifiedAst {
 
     case class ApplyLocalDef(sym: Symbol.VarSym, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplyOp(symUse: OpSymUse, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyOp(sym: Symbol.OpSym, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
