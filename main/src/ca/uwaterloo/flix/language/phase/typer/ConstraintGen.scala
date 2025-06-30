@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, OpSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Scope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -121,24 +121,21 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ApplyOp(symUse, exps, tvar, loc) =>
-        val op = lookupOp(symUse.sym, symUse.loc)
-        val effTpe = Type.Cst(TypeConstructor.Effect(symUse.sym.eff, Kind.Eff), loc) // TODO EFF-TPARAMS need kind
-
-        // Pseudo variable for source to flow into
-        val pvar = Type.freshVar(Kind.Eff, loc)
-
-        // length check done in Resolver
-        val effs = visitOpArgs(op, exps)
-
-        // specialize the return type of the op if needed
-        val opTpe = getDoType(op)
-
-        c.unifyType(opTpe, tvar, loc)
-        c.unifySource(pvar, effTpe, loc)
+      case Expr.ApplyOp(OpSymUse(sym, loc1), exps, tvar, evar, loc2) =>
+        val op = lookupOp(sym, loc1)
+        val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(op.spec.sc, loc1.asSynthetic)
+        val constrs1 = tconstrs1.map(_.copy(loc = loc1))
+        val declaredEff = declaredType.arrowEffectType
+        val declaredArgumentTypes = declaredType.arrowArgTypes // MATT need to handle Void
+        val declaredResultType = declaredType.arrowResultType
+        val (tpes, effs) = exps.map(visitExp).unzip
+        c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
+        c.addClassConstraints(constrs1, loc2)
+        c.addEqualityConstraints(econstrs1, loc2)
+        c.unifyType(tvar, declaredResultType, loc2)
+        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
         val resTpe = tvar
-        val resEff = Type.mkUnion(pvar :: effs, loc)
-
+        val resEff = evar
         (resTpe, resEff)
 
       case Expr.ApplySig(SigSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
@@ -1211,28 +1208,6 @@ object ConstraintGen {
       case None => (freshVar(Kind.Star, loc), Type.Pure)
       case Some(exp) => visitExp(exp)
     }
-  }
-
-  /**
-    * Generates constraints unifying each argument's type with the corresponding parameter of the operation.
-    *
-    * The number of arguments must match the number of parameters (this check is done in Resolver).
-    */
-  private def visitOpArgs(op: KindedAst.Op, args: List[KindedAst.Expr])(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): List[Type] = {
-    (args zip op.spec.fparams) map {
-      case (arg, fparam) => visitOpArg(arg, fparam)
-    }
-  }
-
-  /**
-    * Generates constraints unifying the given argument's type with the formal parameter's type.
-    *
-    * Returns the effect of the argument.
-    */
-  private def visitOpArg(arg: KindedAst.Expr, fparam: KindedAst.FormalParam)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
-    val (tpe, eff) = visitExp(arg)
-    c.expectType(expected = fparam.tpe, actual = tpe, arg.loc)
-    eff
   }
 
   /**

@@ -244,7 +244,7 @@ object Kinder {
     case ResolvedAst.Declaration.Effect(doc, ann, mod, sym, tparams0, ops0, loc) =>
       val kenv = getKindEnvFromTypeParams(tparams0)
       val tparams = tparams0.map(visitTypeParam(_, kenv))
-      val ops = ops0.map(visitOp(_, kenv, taenv, root))
+      val ops = ops0.map(visitOp(_, tparams, kenv, taenv, root))
       KindedAst.Effect(doc, ann, mod, sym, tparams, ops, loc)
   }
 
@@ -281,10 +281,10 @@ object Kinder {
   /**
     * Performs kinding on the given effect operation under the given kind environment.
     */
-  private def visitOp(op: ResolvedAst.Declaration.Op, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Op = op match {
+  private def visitOp(op: ResolvedAst.Declaration.Op, tparams: List[KindedAst.TypeParam], kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Op = op match {
     case ResolvedAst.Declaration.Op(sym, spec0, loc) =>
       val kenv = inferSpec(spec0, kenv0, taenv, root)
-      val spec = visitSpec(spec0, Nil, kenv, taenv, root)
+      val spec = visitSpec(spec0, tparams.map(_.sym), kenv, taenv, root)
       KindedAst.Op(sym, spec, loc)
   }
 
@@ -384,7 +384,8 @@ object Kinder {
     case ResolvedAst.Expr.ApplyOp(symUse, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, root))
       val tvar = Type.freshVar(Kind.Star, loc)
-      KindedAst.Expr.ApplyOp(symUse, exps, tvar, loc)
+      val evar = Type.freshVar(Kind.Eff, loc)
+      KindedAst.Expr.ApplyOp(symUse, exps, tvar, evar, loc)
 
     case ResolvedAst.Expr.ApplySig(SigSymUse(sym, loc1), exps0, loc2) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, root))

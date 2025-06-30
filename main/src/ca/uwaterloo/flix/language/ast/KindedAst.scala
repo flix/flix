@@ -91,7 +91,7 @@ object KindedAst {
 
     case class ApplyLocalDef(symUse: LocalDefSymUse, exps: List[Expr], arrowTvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class ApplyOp(symUse: OpSymUse, exps: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class ApplyOp(symUse: OpSymUse, exps: List[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class ApplySig(symUse: SigSymUse, exps: List[Expr], itvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
