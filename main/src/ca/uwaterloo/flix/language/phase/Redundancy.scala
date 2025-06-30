@@ -76,6 +76,7 @@ object Redundancy {
       checkUnusedTypeParamsEnums()(root) ++
       checkUnusedStructsAndFields()(sctx, root) ++
       checkUnusedTypeParamsStructs()(root) ++
+      checkUnusedTypeParamsTypeAliases()(root) ++
       checkRedundantTraitConstraints()(root, flix)
 
     (root, errors)
@@ -135,6 +136,23 @@ object Redundancy {
       val usedTypeVars = decl.cases.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
         case (sacc, (_, Case(_, tpes, _, _))) => sacc ++ tpes.flatMap(_.typeVars.map(_.sym))
       }
+      val unusedTypeParams = decl.tparams.filter {
+        tparam =>
+          !usedTypeVars.contains(tparam.sym) &&
+            !tparam.name.name.startsWith("_")
+      }
+      result ++= unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name, tparam.loc))
+    }
+    result.toList
+  }
+
+  /**
+    * Checks for unused type parameters in enums.
+    */
+  private def checkUnusedTypeParamsTypeAliases()(implicit root: Root): List[RedundancyError] = {
+    val result = new ListBuffer[RedundancyError]
+    for ((_, decl) <- root.typeAliases) {
+      val usedTypeVars = decl.tpe.typeVars.map(_.sym)
       val unusedTypeParams = decl.tparams.filter {
         tparam =>
           !usedTypeVars.contains(tparam.sym) &&
