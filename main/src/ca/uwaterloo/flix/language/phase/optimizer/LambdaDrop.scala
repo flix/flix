@@ -202,7 +202,7 @@ object LambdaDrop {
       visitExp(exp1)
       rules.foreach(rule => visitExp(rule.exp))
 
-    case Expr.Do(_, exps, _, _, _) =>
+    case Expr.ApplyOp(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.NewObject(_, _, _, _, methods, _) =>
@@ -344,9 +344,9 @@ object LambdaDrop {
       }
       Expr.RunWith(e1, effUse, rs, tpe, eff, loc)
 
-    case Expr.Do(op, exps, tpe, eff, loc) =>
+    case Expr.ApplyOp(op, exps, tpe, eff, loc) =>
       val es = exps.map(rewriteExp)
-      Expr.Do(op, es, tpe, eff, loc)
+      Expr.ApplyOp(op, es, tpe, eff, loc)
 
     case Expr.NewObject(name, clazz, tpe, eff1, methods, loc1) =>
       val ms = methods.map {

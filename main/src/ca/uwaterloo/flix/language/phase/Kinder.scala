@@ -659,10 +659,10 @@ object Kinder {
       val exp2 = visitExp(exp20, kenv0, taenv, root)
       KindedAst.Expr.RunWith(exp1, exp2, tvar, evar, loc)
 
-    case ResolvedAst.Expr.Do(symUse, exps0, loc) =>
+    case ResolvedAst.Expr.ApplyOp(symUse, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, root))
       val tvar = Type.freshVar(Kind.Star, loc)
-      KindedAst.Expr.Do(symUse, exps, tvar, loc)
+      KindedAst.Expr.ApplyOp(symUse, exps, tvar, loc)
 
     case ResolvedAst.Expr.InvokeConstructor(clazz, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, root))

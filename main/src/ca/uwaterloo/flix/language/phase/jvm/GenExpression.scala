@@ -1396,7 +1396,7 @@ object GenExpression {
         ARETURN()
       }
 
-    case Expr.Do(op, exps, tpe, _, loc) => ctx match {
+    case Expr.ApplyOp(op, exps, tpe, _, loc) => ctx match {
       case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
         BackendObjType.Result.crashIfSuspension("Unexpected do-expression in direct method context", loc)
 

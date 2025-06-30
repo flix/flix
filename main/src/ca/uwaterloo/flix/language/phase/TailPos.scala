@@ -104,7 +104,7 @@ object TailPos {
     case Expr.NewObject(_, _, _, _, _, _) => exp0
     case Expr.Scope(_, _, _, _, _) => exp0
     case Expr.TryCatch(_, _, _, _, _) => exp0
-    case Expr.Do(_, _, _, _, _) => exp0
+    case Expr.ApplyOp(_, _, _, _, _) => exp0
     case Expr.Var(_, _, _) => exp0
   }
 

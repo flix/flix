@@ -34,7 +34,7 @@ object SignatureHelpProvider {
       case TypedAst.Expr.ApplySig(sigSymUse, exps, _, _, _, _) =>
         // The lookup is guaranteed to succeed because otherwise the expression would be replaced by Expr.Error.
         mkSignatureHelp(sigSymUse.sym, root.sigs(sigSymUse.sym).spec, exps, pos)
-      case TypedAst.Expr.Do(opSymUse, exps, _, _, _) =>
+      case TypedAst.Expr.ApplyOp(opSymUse, exps, _, _, _) =>
         // The lookup is guaranteed to succeed because otherwise the expression would be replaced by Expr.Error.
         val ops = root.effects(opSymUse.sym.eff).ops
         val op = ops.find(thatOp => thatOp.sym == opSymUse.sym).get

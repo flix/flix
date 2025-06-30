@@ -519,7 +519,7 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.Do(op, exps, _, _, _) =>
+      case Expr.ApplyOp(op, exps, _, _, _) =>
         visitOpSymUse(op)
         exps.foreach(visitExpr)
 

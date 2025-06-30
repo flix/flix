@@ -138,7 +138,7 @@ object TreeShaker1 {
     case Expr.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.exp))
 
-    case Expr.Do(_, exps, _, _, _) =>
+    case Expr.ApplyOp(_, exps, _, _, _) =>
       visitExps(exps)
 
     case Expr.RunWith(exp, _, rules, _, _, _) =>

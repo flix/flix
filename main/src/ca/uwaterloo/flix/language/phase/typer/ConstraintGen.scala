@@ -812,7 +812,7 @@ object ConstraintGen {
         val resultEff = Type.mkUnion(evar, handlerExpEff, loc.asSynthetic)
         (resultTpe, resultEff)
 
-      case Expr.Do(symUse, exps, tvar, loc) =>
+      case Expr.ApplyOp(symUse, exps, tvar, loc) =>
         val op = lookupOp(symUse.sym, symUse.loc)
         val effTpe = Type.Cst(TypeConstructor.Effect(symUse.sym.eff, Kind.Eff), loc) // TODO EFF-TPARAMS need kind
 

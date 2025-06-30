@@ -732,7 +732,7 @@ object Redundancy {
     case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc)
 
-    case Expr.Do(opUse, exps, _, _, _) =>
+    case Expr.ApplyOp(opUse, exps, _, _, _) =>
       sctx.effSyms.put(opUse.sym.eff, ())
       visitExps(exps, env0, rc)
 

@@ -270,7 +270,7 @@ object PredDeps {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.Do(_, exps, _, _, _) =>
+    case Expr.ApplyOp(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.InvokeConstructor(_, args, _, _, _) =>

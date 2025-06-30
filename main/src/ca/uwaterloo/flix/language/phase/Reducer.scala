@@ -155,10 +155,10 @@ object Reducer {
         }
         Expr.RunWith(e, effUse, rs, ct, tpe, purity, loc)
 
-      case Expr.Do(op, exps, tpe, purity, loc) =>
+      case Expr.ApplyOp(op, exps, tpe, purity, loc) =>
         lctx.addPcPoint()
         val es = exps.map(visitExpr)
-        Expr.Do(op, es, tpe, purity, loc)
+        Expr.ApplyOp(op, es, tpe, purity, loc)
 
       case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
         val specs = methods.map {

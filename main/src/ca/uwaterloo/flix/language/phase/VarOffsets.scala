@@ -116,7 +116,7 @@ object VarOffsets {
       // ignored along with their expressions.
       visitExp(exp, offset0)
 
-    case Expr.Do(_, exps, _, _, _) =>
+    case Expr.ApplyOp(_, exps, _, _, _) =>
       visitExps(exps, offset0)
 
     case Expr.NewObject(_, _, _, _, _, _) =>

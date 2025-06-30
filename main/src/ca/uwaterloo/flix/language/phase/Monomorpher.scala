@@ -614,9 +614,9 @@ object Monomorpher {
       }
       MonoAst.Expr.RunWith(e, effect, rs, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.Do(op, exps, tpe, eff, loc) =>
+    case LoweredAst.Expr.ApplyOp(op, exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
-      MonoAst.Expr.Do(op, es, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.ApplyOp(op, es, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))

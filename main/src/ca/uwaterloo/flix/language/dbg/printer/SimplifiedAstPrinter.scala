@@ -69,7 +69,7 @@ object SimplifiedAstPrinter {
       case SimplifiedAst.HandlerRule(op, fparams, body) =>
         (op.sym, fparams.map(printFormalParam), print(body))
     })
-    case Do(op, exps, _, _, _) => DocAst.Expr.Do(op.sym, exps.map(print))
+    case ApplyOp(op, exps, _, _, _) => DocAst.Expr.Do(op.sym, exps.map(print))
     case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map {
       case SimplifiedAst.JvmMethod(ident, fparams, exp, retTpe, _, _) =>
         DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), MonoTypePrinter.print(retTpe))

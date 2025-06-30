@@ -105,7 +105,7 @@ object ResolvedAstPrinter {
       case ResolvedAst.HandlerRule(opSymUse, fparams, exp, _) => (opSymUse.sym, fparams.map(printFormalParam), print(exp))
     })
     case Expr.RunWith(exp1, exp2, _) => DocAst.Expr.RunWith(print(exp1), print(exp2))
-    case Expr.Do(symUse, exps, _) => DocAst.Expr.Do(symUse.sym, exps.map(print))
+    case Expr.ApplyOp(symUse, exps, _) => DocAst.Expr.Do(symUse.sym, exps.map(print))
     case Expr.InvokeConstructor(_, _, _) => DocAst.Expr.Unknown
     case Expr.InvokeMethod(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.InvokeStaticMethod(_, _, _, _) => DocAst.Expr.Unknown

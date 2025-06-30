@@ -325,9 +325,9 @@ object Stratifier {
       val e2 = visitExp(exp2)
       Expr.RunWith(e1, e2, tpe, eff, loc)
 
-    case Expr.Do(sym, exps, tpe, eff, loc) =>
+    case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.Do(sym, es, tpe, eff, loc)
+      Expr.ApplyOp(sym, es, tpe, eff, loc)
 
     case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)

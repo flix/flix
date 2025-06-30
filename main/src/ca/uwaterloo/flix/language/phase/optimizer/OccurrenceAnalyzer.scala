@@ -254,13 +254,13 @@ object OccurrenceAnalyzer {
           (Expr.RunWith(e, effUse, rs, tpe, eff, loc), ctx3)
         }
 
-      case Expr.Do(op, exps, tpe, eff, loc) =>
+      case Expr.ApplyOp(op, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
         if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (Expr.Do(op, es, tpe, eff, loc), ctx)
+          (Expr.ApplyOp(op, es, tpe, eff, loc), ctx)
         }
 
       case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>

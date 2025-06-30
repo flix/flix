@@ -439,12 +439,12 @@ object TypeReconstruction {
       val e2 = visitExp(exp2)
       TypedAst.Expr.RunWith(e1, e2, subst(tvar), Type.mkUnion(subst(evar), e2.eff, loc.asSynthetic), loc)
 
-    case KindedAst.Expr.Do(symUse, exps, tvar, loc) =>
+    case KindedAst.Expr.ApplyOp(symUse, exps, tvar, loc) =>
       val es = exps.map(visitExp(_))
       val tpe = subst(tvar)
       val eff1 = Type.Cst(TypeConstructor.Effect(symUse.sym.eff, Kind.Eff), symUse.loc.asSynthetic) // TODO EFF-TPARAMS need kind
       val eff = Type.mkUnion(eff1 :: es.map(_.eff), loc)
-      TypedAst.Expr.Do(symUse, es, tpe, eff, loc)
+      TypedAst.Expr.ApplyOp(symUse, es, tpe, eff, loc)
 
     case KindedAst.Expr.InvokeConstructor(clazz, exps, jvar, evar, loc) =>
       val es0 = exps.map(visitExp)

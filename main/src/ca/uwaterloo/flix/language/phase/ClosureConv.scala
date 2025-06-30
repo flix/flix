@@ -130,9 +130,9 @@ object ClosureConv {
       }
       Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
-    case Expr.Do(op, exps, tpe, purity, loc) =>
+    case Expr.ApplyOp(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
-      Expr.Do(op, es, tpe, purity, loc)
+      Expr.ApplyOp(op, es, tpe, purity, loc)
 
     case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0 map {
@@ -241,7 +241,7 @@ object ClosureConv {
         acc ++ filterBoundParams(freeVars(body), fparams)
     }
 
-    case Expr.Do(_, exps, _, _, _) => freeVarsExps(exps)
+    case Expr.ApplyOp(_, exps, _, _, _) => freeVarsExps(exps)
 
     case Expr.NewObject(_, _, _, _, methods, _) =>
       methods.foldLeft(SortedSet.empty[FreeVar]) {
@@ -384,9 +384,9 @@ object ClosureConv {
         }
         Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
-      case Expr.Do(op, exps, tpe, purity, loc) =>
+      case Expr.ApplyOp(op, exps, tpe, purity, loc) =>
         val es = exps.map(visitExp)
-        Expr.Do(op, es, tpe, purity, loc)
+        Expr.ApplyOp(op, es, tpe, purity, loc)
 
       case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0.map(visitJvmMethod)
@@ -605,9 +605,9 @@ object ClosureConv {
         }
         Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
-      case Expr.Do(op, exps, tpe, purity, loc) =>
+      case Expr.ApplyOp(op, exps, tpe, purity, loc) =>
         val es = exps.map(visit)
-        Expr.Do(op, es, tpe, purity, loc)
+        Expr.ApplyOp(op, es, tpe, purity, loc)
 
       case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
         val ms = methods.map {

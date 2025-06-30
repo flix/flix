@@ -404,7 +404,7 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Do(op, exps, tpe, eff, _) =>
+    case Expr.ApplyOp(op, exps, tpe, eff, _) =>
       visitSymUse(op)
       exps.foreach(visitExp)
       visitType(tpe)

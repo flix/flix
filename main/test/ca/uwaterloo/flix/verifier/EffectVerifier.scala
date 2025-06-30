@@ -297,7 +297,7 @@ object EffectVerifier {
       visitExp(exp2)
       // TODO effect stuff
       ()
-    case Expr.Do(op, exps, tpe, eff, loc) =>
+    case Expr.ApplyOp(op, exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       // TODO effect stuff
       ()

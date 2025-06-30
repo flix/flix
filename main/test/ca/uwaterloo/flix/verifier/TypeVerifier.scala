@@ -553,7 +553,7 @@ object TypeVerifier {
 
       checkEq(tpe, exptype, loc)
 
-    case Expr.Do(opUse, exps, tpe, _, loc) =>
+    case Expr.ApplyOp(opUse, exps, tpe, _, loc) =>
       val ts = exps.map(visitExpr)
       val eff = root.effects.getOrElse(opUse.sym.eff,
         throw InternalCompilerException(s"Unknown effect sym: '${opUse.sym.eff}'", opUse.loc))

@@ -624,7 +624,7 @@ object SemanticTokensProvider {
     case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Do(op, exps, _, _, _) =>
+    case Expr.ApplyOp(op, exps, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
       Iterator(t) ++ visitExps(exps)
 

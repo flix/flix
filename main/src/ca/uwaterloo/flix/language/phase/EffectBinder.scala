@@ -207,7 +207,7 @@ object EffectBinder {
       }
       ReducedAst.Expr.RunWith(e, effUse, rules1, ExpPosition.NonTail, tpe, purity, loc)
 
-    case LiftedAst.Expr.Do(_, _, _, _, _) =>
+    case LiftedAst.Expr.ApplyOp(_, _, _, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp0)
       bindBinders(binders, e)
@@ -303,9 +303,9 @@ object EffectBinder {
       }
       ReducedAst.Expr.RunWith(e, effUse, rs, ExpPosition.NonTail, tpe, purity, loc)
 
-    case LiftedAst.Expr.Do(op, exps, tpe, purity, loc) =>
+    case LiftedAst.Expr.ApplyOp(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExprWithBinders(binders))
-      ReducedAst.Expr.Do(op, es, tpe, purity, loc)
+      ReducedAst.Expr.ApplyOp(op, es, tpe, purity, loc)
 
     case LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val ms = methods.map(visitJvmMethod)
@@ -347,7 +347,7 @@ object EffectBinder {
       case ReducedAst.Expr.Scope(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.TryCatch(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.RunWith(_, _, _, _, _, _, _) => letBindExpr(binders)(e)
-      case ReducedAst.Expr.Do(_, _, _, _, _) => letBindExpr(binders)(e)
+      case ReducedAst.Expr.ApplyOp(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.NewObject(_, _, _, _, _, _) => letBindExpr(binders)(e)
     }
 
