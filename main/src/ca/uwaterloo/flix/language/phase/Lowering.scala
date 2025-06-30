@@ -43,15 +43,16 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 object Lowering {
 
   private object Defs {
-    lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.Boxable.box")
-    lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.SolverApi.runSolver")
-    lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.SolverApi.union")
-    lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.SolverApi.projectSym")
-    lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.SolverApi.rename")
+    val version: String = ""
+    lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.box")
+    lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.runSolver")
+    lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.union")
+    lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.projectSym")
+    lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.rename")
 
-    def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.SolverApi.injectInto$arity")
+    def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.injectInto$arity")
 
-    def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.SolverApi.facts$arity")
+    def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.facts$arity")
 
     lazy val ChannelNew: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannel")
     lazy val ChannelNewTuple: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannelTuple")
@@ -71,23 +72,23 @@ object Lowering {
   }
 
   private object Enums {
-    lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Datalog.Datalog")
-    lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Datalog.Constraint")
+    lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Datalog")
+    lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Constraint")
 
-    lazy val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Datalog.HeadPredicate")
-    lazy val BodyPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Datalog.BodyPredicate")
+    lazy val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.HeadPredicate")
+    lazy val BodyPredicate: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.BodyPredicate")
 
-    lazy val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Datalog.HeadTerm")
-    lazy val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Datalog.BodyTerm")
+    lazy val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.HeadTerm")
+    lazy val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.BodyTerm")
 
-    lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Shared.PredSym")
-    lazy val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Datalog.VarSym")
+    lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Shared.PredSym")
+    lazy val VarSym: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.VarSym")
 
-    lazy val Denotation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Shared.Denotation")
-    lazy val Polarity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Datalog.Polarity")
-    lazy val Fixity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Datalog.Fixity")
+    lazy val Denotation: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Shared.Denotation")
+    lazy val Polarity: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Polarity")
+    lazy val Fixity: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Fixity")
 
-    lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Boxed")
+    lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Boxed")
 
     lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
 
@@ -1225,10 +1226,10 @@ object Lowering {
           // The type `Denotation[Boxed]`.
           val boxedDenotationType = Types.Denotation
 
-          val latticeSym: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.Ast.Shared.lattice")
+          val latticeSym: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${Defs.version}.Ast.Shared.lattice")
           val latticeType: Type = Type.mkPureArrow(Type.Unit, unboxedDenotationType, loc)
 
-          val boxSym: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.Ast.Shared.box")
+          val boxSym: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${Defs.version}.Ast.Shared.box")
           val boxType: Type = Type.mkPureArrow(unboxedDenotationType, boxedDenotationType, loc)
 
           val innerApply = LoweredAst.Expr.ApplyDef(latticeSym, List(LoweredAst.Expr.Cst(Constant.Unit, Type.Unit, loc)), latticeType, unboxedDenotationType, Type.Pure, loc)
@@ -1531,7 +1532,7 @@ object Lowering {
     */
   private def liftX(exp0: LoweredAst.Expr, argTypes: List[Type], resultType: Type): LoweredAst.Expr = {
     // Compute the liftXb symbol.
-    val sym = Symbol.mkDefnSym(s"Fixpoint.Boxable.lift${argTypes.length}")
+    val sym = Symbol.mkDefnSym(s"Fixpoint${Defs.version}.Boxable.lift${argTypes.length}")
 
     //
     // The liftX family of functions are of the form: a -> b -> c -> `resultType` and
@@ -1557,7 +1558,7 @@ object Lowering {
     */
   private def liftXb(exp0: LoweredAst.Expr, argTypes: List[Type]): LoweredAst.Expr = {
     // Compute the liftXb symbol.
-    val sym = Symbol.mkDefnSym(s"Fixpoint.Boxable.lift${argTypes.length}b")
+    val sym = Symbol.mkDefnSym(s"Fixpoint${Defs.version}.Boxable.lift${argTypes.length}b")
 
     //
     // The liftX family of functions are of the form: a -> b -> c -> Bool and
@@ -1589,7 +1590,7 @@ object Lowering {
 
     // Compute the liftXY symbol.
     // For example, lift3X2 is a function from three arguments to a Vector of pairs.
-    val sym = Symbol.mkDefnSym(s"Fixpoint.Boxable.lift${numberOfInVars}X$numberOfOutVars")
+    val sym = Symbol.mkDefnSym(s"Fixpoint${Defs.version}.Boxable.lift${numberOfInVars}X$numberOfOutVars")
 
     //
     // The liftXY family of functions are of the form: i1 -> i2 -> i3 -> Vector[(o1, o2, o3, ...)] and
