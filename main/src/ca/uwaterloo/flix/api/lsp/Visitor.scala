@@ -233,7 +233,7 @@ object Visitor {
   }
 
   private def visitEffect(eff: Effect)(implicit a: Acceptor, c: Consumer): Unit = {
-    val Effect(_, ann, _, _, ops, loc) = eff
+    val Effect(_, ann, _, _, tparams, ops, loc) = eff
     if (!a.accept(loc)) {
       return
     }
@@ -241,6 +241,7 @@ object Visitor {
     c.consumeEff(eff)
 
     visitAnnotations(ann)
+    tparams.foreach(visitTypeParam)
     ops.foreach(visitOp)
   }
 

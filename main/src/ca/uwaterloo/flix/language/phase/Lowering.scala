@@ -269,7 +269,8 @@ object Lowering {
     * Lowers the given `effect`.
     */
   private def visitEffect(effect: TypedAst.Effect)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Effect = effect match {
-    case TypedAst.Effect(doc, ann, mod, sym, ops0, loc) =>
+    case TypedAst.Effect(doc, ann, mod, sym, _, ops0, loc) =>
+      // TODO EFFECT-TPARAMS use tparams
       val ops = ops0.map(visitOp)
       LoweredAst.Effect(doc, ann, mod, sym, ops, loc)
   }
