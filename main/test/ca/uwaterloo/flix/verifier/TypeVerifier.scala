@@ -478,12 +478,12 @@ object TypeVerifier {
       check(expected = declared)(actual = actual, loc)
       tpe
 
-    case Expr.ApplyOp(opUse, exps, tpe, _, loc) =>
+    case Expr.ApplyOp(sym, exps, tpe, _, loc) =>
       val ts = exps.map(visitExpr)
-      val eff = root.effects.getOrElse(opUse.sym.eff,
-        throw InternalCompilerException(s"Unknown effect sym: '${opUse.sym.eff}'", opUse.loc))
-      val op = eff.ops.find(_.sym == opUse.sym)
-        .getOrElse(throw InternalCompilerException(s"Unknown operation sym: '${opUse.sym}'", opUse.loc))
+      val eff = root.effects.getOrElse(sym.eff,
+        throw InternalCompilerException(s"Unknown effect sym: '${sym.eff}'", sym.loc))
+      val op = eff.ops.find(_.sym == sym)
+        .getOrElse(throw InternalCompilerException(s"Unknown operation sym: '${sym}'", sym.loc))
 
       val oprestype = op.tpe match {
         case MonoType.Void => tpe // should match any return type
