@@ -266,22 +266,24 @@ class Flix {
     "Fixpoint/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Ram.flix"),
 
 
-    "Fixpoint/Toggle.flix" -> LocalResource.get("/src/library/Fixpoint/Toggle.flix"),
-    "Fixpoint/SolverApi.flix" -> LocalResource.get("/src/library/Fixpoint/SolverApi.flix"),
-
-
     "Fixpoint3/AtomicCounter.flix" -> LocalResource.get("/src/library/Fixpoint3/AtomicCounter.flix"),
+    "Fixpoint3/Boxable.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxable.flix"),
     "Fixpoint3/Boxed.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxed.flix"),
     "Fixpoint3/BoxingType.flix" -> LocalResource.get("/src/library/Fixpoint3/BoxingType.flix"),
     "Fixpoint3/Counter.flix" -> LocalResource.get("/src/library/Fixpoint3/Counter.flix"),
-    "Fixpoint3/Util.flix" -> LocalResource.get("/src/library/Fixpoint3/Util.flix"),
+    "Fixpoint3/Options.flix" -> LocalResource.get("/src/library/Fixpoint3/Options.flix"),
     "Fixpoint3/Predicates.flix" -> LocalResource.get("/src/library/Fixpoint3/Predicates.flix"),
+    "Fixpoint3/PredSymsOf.flix" -> LocalResource.get("/src/library/Fixpoint3/PredSymsOf.flix"),
     "Fixpoint3/ReadWriteLock.flix" -> LocalResource.get("/src/library/Fixpoint3/ReadWriteLock.flix"),
     "Fixpoint3/Solver.flix" -> LocalResource.get("/src/library/Fixpoint3/Solver.flix"),
+    "Fixpoint3/SubstitutePredSym.flix" -> LocalResource.get("/src/library/Fixpoint3/SubstitutePredSym.flix"),
     "Fixpoint3/UniqueInts.flix" -> LocalResource.get("/src/library/Fixpoint3/UniqueInts.flix"),
+    "Fixpoint3/Util.flix" -> LocalResource.get("/src/library/Fixpoint3/Util.flix"),
 
-    "Fixpoint3/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/Ram.flix"),
+    "Fixpoint3/Ast/Datalog.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/Datalog.flix"),
     "Fixpoint3/Ast/ExecutableRam.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/ExecutableRam.flix"),
+    "Fixpoint3/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/Ram.flix"),
+    "Fixpoint3/Ast/Shared.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/Shared.flix"),
 
     "Fixpoint3/Phase/RenamePredSyms.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/RenamePredSyms.flix"),
 

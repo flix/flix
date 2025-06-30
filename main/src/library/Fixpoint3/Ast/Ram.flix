@@ -17,11 +17,11 @@
  */
 
 mod Fixpoint3.Ast.Ram {
-    use Fixpoint.Ast.Shared.{BoxedDenotation => Denotation, PredSym}
-    use Fixpoint.Ast.Shared.Denotation.{Relational}
+    use Fixpoint3.Ast.Shared.{BoxedDenotation => Denotation, PredSym}
+    use Fixpoint3.Ast.Shared.Denotation.{Relational}
     use Fixpoint3.Boxed
-    use Fixpoint.PredSymsOf
-    use Fixpoint.SubstitutePredSym
+    use Fixpoint3.PredSymsOf
+    use Fixpoint3.SubstitutePredSym
 
     /////////////////////////////////////////////////////////////////////////////
     // RamProgram                                                              //
