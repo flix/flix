@@ -58,6 +58,7 @@ object LoweredAstPrinter {
     case Expr.ApplyClo(exp1, exp2, _, _, _) => DocAst.Expr.ApplyClo(print(exp1), List(print(exp2)))
     case Expr.ApplyDef(sym, exps, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print))
     case Expr.ApplyLocalDef(sym, exps, _, _, _) => DocAst.Expr.ApplyClo(DocAst.Expr.Var(sym), exps.map(print))
+    case Expr.ApplyOp(op, exps, _, _, _) => DocAst.Expr.ApplyOp(op, exps.map(print))
     case Expr.ApplySig(sym, exps, _, _, _, _) => DocAst.Expr.ApplyClo(DocAst.Expr.Sig(sym), exps.map(print))
     case Expr.ApplyAtomic(op, exps, tpe, eff, _) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe), TypePrinter.print(eff))
     case Expr.Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(DocAst.Expr.Var(sym), None, print(exp1), print(exp2))
@@ -108,7 +109,6 @@ object LoweredAstPrinter {
         case LoweredAst.HandlerRule(op, fparams, body) => (op.sym, fparams.map(printFormalParam), print(body))
       }
       DocAst.Expr.RunWithHandler(expD, effD, rulesD)
-    case Expr.Do(op, exps, _, _, _) => DocAst.Expr.Do(op.sym, exps.map(print))
     case Expr.NewObject(name, clazz, tpe, _, methods, _) =>
       val methodsD = methods.map {
         case LoweredAst.JvmMethod(ident, fparams, exp, retTpe, _, _) => DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))

@@ -162,6 +162,7 @@ class Flix {
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Box.flix" -> LocalResource.get("/src/library/Box.flix"),
     "BPlusTree.flix" -> LocalResource.get("/src/library/BPlusTree.flix"),
+    "BufReader.flix" -> LocalResource.get("/src/library/BufReader.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "CodePoint.flix" -> LocalResource.get("/src/library/CodePoint.flix"),
@@ -265,22 +266,24 @@ class Flix {
     "Fixpoint/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Ram.flix"),
 
 
-    "Fixpoint/Toggle.flix" -> LocalResource.get("/src/library/Fixpoint/Toggle.flix"),
-    "Fixpoint/SolverApi.flix" -> LocalResource.get("/src/library/Fixpoint/SolverApi.flix"),
-
-
     "Fixpoint3/AtomicCounter.flix" -> LocalResource.get("/src/library/Fixpoint3/AtomicCounter.flix"),
+    "Fixpoint3/Boxable.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxable.flix"),
     "Fixpoint3/Boxed.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxed.flix"),
     "Fixpoint3/BoxingType.flix" -> LocalResource.get("/src/library/Fixpoint3/BoxingType.flix"),
     "Fixpoint3/Counter.flix" -> LocalResource.get("/src/library/Fixpoint3/Counter.flix"),
-    "Fixpoint3/Util.flix" -> LocalResource.get("/src/library/Fixpoint3/Util.flix"),
+    "Fixpoint3/Options.flix" -> LocalResource.get("/src/library/Fixpoint3/Options.flix"),
     "Fixpoint3/Predicates.flix" -> LocalResource.get("/src/library/Fixpoint3/Predicates.flix"),
+    "Fixpoint3/PredSymsOf.flix" -> LocalResource.get("/src/library/Fixpoint3/PredSymsOf.flix"),
     "Fixpoint3/ReadWriteLock.flix" -> LocalResource.get("/src/library/Fixpoint3/ReadWriteLock.flix"),
     "Fixpoint3/Solver.flix" -> LocalResource.get("/src/library/Fixpoint3/Solver.flix"),
+    "Fixpoint3/SubstitutePredSym.flix" -> LocalResource.get("/src/library/Fixpoint3/SubstitutePredSym.flix"),
     "Fixpoint3/UniqueInts.flix" -> LocalResource.get("/src/library/Fixpoint3/UniqueInts.flix"),
+    "Fixpoint3/Util.flix" -> LocalResource.get("/src/library/Fixpoint3/Util.flix"),
 
-    "Fixpoint3/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/Ram.flix"),
+    "Fixpoint3/Ast/Datalog.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/Datalog.flix"),
     "Fixpoint3/Ast/ExecutableRam.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/ExecutableRam.flix"),
+    "Fixpoint3/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/Ram.flix"),
+    "Fixpoint3/Ast/Shared.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/Shared.flix"),
 
     "Fixpoint3/Phase/RenamePredSyms.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/RenamePredSyms.flix"),
 
@@ -307,12 +310,14 @@ class Flix {
     "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
     "ProcessWithResult.flix" -> LocalResource.get("/src/library/ProcessWithResult.flix"),
     "Severity.flix" -> LocalResource.get("/src/library/Severity.flix"),
-    "TcpBind.flix" -> LocalResource.get("/src/library/TcpBind.flix"),
     "TcpAccept.flix" -> LocalResource.get("/src/library/TcpAccept.flix"),
     "TcpAcceptWithResult.flix" -> LocalResource.get("/src/library/TcpAcceptWithResult.flix"),
+    "TcpBind.flix" -> LocalResource.get("/src/library/TcpBind.flix"),
+    "TcpBindWithResult.flix" -> LocalResource.get("/src/library/TcpBindWithResult.flix"),
+    "TcpConnect.flix" -> LocalResource.get("/src/library/TcpConnect.flix"),
+    "TcpConnectWithResult.flix" -> LocalResource.get("/src/library/TcpConnectWithResult.flix"),
     "TcpServer.flix" -> LocalResource.get("/src/library/TcpServer.flix"),
     "TcpSocket.flix" -> LocalResource.get("/src/library/TcpSocket.flix"),
-    "TcpBindWithResult.flix" -> LocalResource.get("/src/library/TcpBindWithResult.flix"),
     "TimeUnit.flix" -> LocalResource.get("/src/library/TimeUnit.flix"),
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),

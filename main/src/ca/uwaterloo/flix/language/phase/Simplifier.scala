@@ -114,6 +114,11 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.ApplyLocalDef(sym, es, t, simplifyEffect(eff), loc)
 
+    case MonoAst.Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      val t = visitType(tpe)
+      SimplifiedAst.Expr.ApplyOp(sym, es, t, simplifyEffect(eff), loc)
+
     case MonoAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val purity = simplifyEffect(eff)
@@ -296,11 +301,6 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.RunWith(e, effUse, rs, t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.Do(op, exps, tpe, eff, loc) =>
-      val es = exps.map(visitExp)
-      val t = visitType(tpe)
-      SimplifiedAst.Expr.Do(op, es, t, simplifyEffect(eff), loc)
-
     case MonoAst.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val t = visitType(tpe)
       val methods = methods0 map visitJvmMethod
@@ -456,7 +456,7 @@ object Simplifier {
           case TypeConstructor.Intersection => MonoType.Unit
           case TypeConstructor.Difference => MonoType.Unit
           case TypeConstructor.SymmetricDiff => MonoType.Unit
-          case TypeConstructor.Effect(_) => MonoType.Unit
+          case TypeConstructor.Effect(_, _) => MonoType.Unit
           case TypeConstructor.CaseSet(_, _) => MonoType.Unit
           case TypeConstructor.CaseComplement(_) => MonoType.Unit
           case TypeConstructor.CaseIntersection(_) => MonoType.Unit
@@ -618,7 +618,7 @@ object Simplifier {
           case TypeConstructor.Intersection => Type.mkUnit(loc)
           case TypeConstructor.Difference => Type.mkUnit(loc)
           case TypeConstructor.SymmetricDiff => Type.mkUnit(loc)
-          case TypeConstructor.Effect(_) => Type.mkUnit(loc)
+          case TypeConstructor.Effect(_, _) => Type.mkUnit(loc)
           case TypeConstructor.CaseSet(_, _) => Type.mkUnit(loc)
           case TypeConstructor.CaseComplement(_) => Type.mkUnit(loc)
           case TypeConstructor.CaseIntersection(_) => Type.mkUnit(loc)
