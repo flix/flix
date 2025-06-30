@@ -51,7 +51,8 @@ mod Ipv4Addr {
 
     def parseInt8NoLeading0(b: String): Option[Int8] =
         forM(
-            u8 <- Int32.fromString(b); if not (String.length(b) > 1 and String.startsWith({prefix = "0"}, b));
+            s <- Some(b); if not (String.length(b) > 1 and String.startsWith({prefix = "0"}, b));
+            u8 <- Int32.fromString(s);
             i8 <- toSigned8(u8)
         ) yield i8
 
