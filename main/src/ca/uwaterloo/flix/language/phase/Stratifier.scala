@@ -134,6 +134,10 @@ object Stratifier {
       val es = exps.map(visitExp)
       Expr.ApplyLocalDef(symUse, es, arrowTpe, tpe, eff, loc)
 
+    case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      Expr.ApplyOp(sym, es, tpe, eff, loc)
+
     case Expr.ApplySig(symUse, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       Expr.ApplySig(symUse, es, itpe, tpe, eff, loc)
@@ -324,10 +328,6 @@ object Stratifier {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       Expr.RunWith(e1, e2, tpe, eff, loc)
-
-    case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
-      val es = exps.map(visitExp)
-      Expr.ApplyOp(sym, es, tpe, eff, loc)
 
     case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)

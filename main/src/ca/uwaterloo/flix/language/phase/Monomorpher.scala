@@ -474,18 +474,22 @@ object Monomorpher {
       val es = exps.map(specializeExp(_, env0, subst))
       MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ApplySig(sym, exps, itpe, tpe, eff, loc) =>
-      val it = subst(itpe)
-      val newSym = specializeSigSym(sym, it)
-      val es = exps.map(specializeExp(_, env0, subst))
-      MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
-
     case LoweredAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       val newSym = env0(sym)
       val es = exps.map(specializeExp(_, env0, subst))
       val t = subst(tpe)
       val ef = subst(eff)
       MonoAst.Expr.ApplyLocalDef(newSym, es, t, ef, loc)
+
+    case LoweredAst.Expr.ApplyOp(op, exps, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      MonoAst.Expr.ApplyOp(op, es, subst(tpe), subst(eff), loc)
+
+    case LoweredAst.Expr.ApplySig(sym, exps, itpe, tpe, eff, loc) =>
+      val it = subst(itpe)
+      val newSym = specializeSigSym(sym, it)
+      val es = exps.map(specializeExp(_, env0, subst))
+      MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
@@ -613,10 +617,6 @@ object Monomorpher {
           MonoAst.HandlerRule(op, fparams, body)
       }
       MonoAst.Expr.RunWith(e, effect, rs, subst(tpe), subst(eff), loc)
-
-    case LoweredAst.Expr.ApplyOp(op, exps, tpe, eff, loc) =>
-      val es = exps.map(specializeExp(_, env0, subst))
-      MonoAst.Expr.ApplyOp(op, es, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))

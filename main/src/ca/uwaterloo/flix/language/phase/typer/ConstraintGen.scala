@@ -121,6 +121,22 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
+      case Expr.ApplyOp(symUse, exps, tvar, loc) =>
+        val op = lookupOp(symUse.sym, symUse.loc)
+        val effTpe = Type.Cst(TypeConstructor.Effect(symUse.sym.eff, Kind.Eff), loc) // TODO EFF-TPARAMS need kind
+
+        // length check done in Resolver
+        val effs = visitOpArgs(op, exps)
+
+        // specialize the return type of the op if needed
+        val opTpe = getDoType(op)
+
+        c.unifyType(opTpe, tvar, loc)
+        val resTpe = tvar
+        val resEff = Type.mkUnion(effTpe :: op.spec.eff :: effs, loc)
+
+        (resTpe, resEff)
+
       case Expr.ApplySig(SigSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
         val sig = root.traits(sym.trt).sigs(sym)
         val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)

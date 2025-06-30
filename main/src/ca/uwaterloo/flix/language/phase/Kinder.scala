@@ -381,6 +381,11 @@ object Kinder {
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
       KindedAst.Expr.ApplyLocalDef(symUse, exps, arrowTvar, tvar, evar, loc)
 
+    case ResolvedAst.Expr.ApplyOp(symUse, exps0, loc) =>
+      val exps = exps0.map(visitExp(_, kenv0, taenv, root))
+      val tvar = Type.freshVar(Kind.Star, loc)
+      KindedAst.Expr.ApplyOp(symUse, exps, tvar, loc)
+
     case ResolvedAst.Expr.ApplySig(SigSymUse(sym, loc1), exps0, loc2) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, root))
       val itvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
@@ -658,11 +663,6 @@ object Kinder {
       val exp1 = visitExp(exp10, kenv0, taenv, root)
       val exp2 = visitExp(exp20, kenv0, taenv, root)
       KindedAst.Expr.RunWith(exp1, exp2, tvar, evar, loc)
-
-    case ResolvedAst.Expr.ApplyOp(symUse, exps0, loc) =>
-      val exps = exps0.map(visitExp(_, kenv0, taenv, root))
-      val tvar = Type.freshVar(Kind.Star, loc)
-      KindedAst.Expr.ApplyOp(symUse, exps, tvar, loc)
 
     case ResolvedAst.Expr.InvokeConstructor(clazz, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, root))

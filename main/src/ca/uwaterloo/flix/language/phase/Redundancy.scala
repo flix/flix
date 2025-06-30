@@ -374,6 +374,10 @@ object Redundancy {
         Used.of(sym) ++ visitExps(exps, env0, rc)
       }
 
+    case Expr.ApplyOp(opUse, exps, _, _, _) =>
+      sctx.effSyms.put(opUse.sym.eff, ())
+      visitExps(exps, env0, rc)
+
     case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _) =>
       // Recursive calls do not count as uses.
       if (!rc.defn.contains(sym)) {
@@ -731,10 +735,6 @@ object Redundancy {
 
     case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc)
-
-    case Expr.ApplyOp(opUse, exps, _, _, _) =>
-      sctx.effSyms.put(opUse.sym.eff, ())
-      visitExps(exps, env0, rc)
 
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args, env0, rc)

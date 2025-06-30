@@ -354,6 +354,10 @@ object Visitor {
         visitLocalDefSymUse(symUse)
         exps.foreach(visitExpr)
 
+      case Expr.ApplyOp(op, exps, _, _, _) =>
+        visitOpSymUse(op)
+        exps.foreach(visitExpr)
+
       case Expr.ApplySig(symUse, exps, _, _, _, _) =>
         visitSigSymUse(symUse)
         exps.foreach(visitExpr)
@@ -518,10 +522,6 @@ object Visitor {
       case Expr.RunWith(exp1, exp2, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
-
-      case Expr.ApplyOp(op, exps, _, _, _) =>
-        visitOpSymUse(op)
-        exps.foreach(visitExpr)
 
       case Expr.InvokeConstructor(_, exps, _, _, _) =>
         exps.foreach(visitExpr)
