@@ -362,7 +362,7 @@ object Typer {
     */
   private def visitEff(eff: KindedAst.Effect): TypedAst.Effect = eff match {
     case KindedAst.Effect(doc, ann, mod, sym, tparams0, ops0, loc) =>
-      val tparams = tparams0.map(visitTypeParam) // TODO EFFECT-TPARAMS add to TypedAst
+      val tparams = tparams0.map(visitTypeParam)
       val ops = ops0.map(TypeReconstruction.visitOp)
       TypedAst.Effect(doc, ann, mod, sym, tparams, ops, loc)
   }
