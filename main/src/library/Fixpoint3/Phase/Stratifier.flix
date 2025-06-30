@@ -17,12 +17,12 @@
  */
 
 mod Fixpoint3.Phase.Stratifier {
-    use Fixpoint.Ast.Datalog.BodyPredicate.BodyAtom
-    use Fixpoint.Ast.Datalog.Constraint.Constraint
-    use Fixpoint.Ast.Datalog.Datalog.{Datalog, Model, Join}
-    use Fixpoint.Ast.Datalog.{Datalog, Constraint, HeadPredicate, BodyPredicate, Polarity, Fixity}
-    use Fixpoint.Ast.Datalog.HeadPredicate.HeadAtom
-    use Fixpoint.Ast.Shared.PredSym
+    use Fixpoint3.Ast.Datalog.BodyPredicate.BodyAtom
+    use Fixpoint3.Ast.Datalog.Constraint.Constraint
+    use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Model, Join}
+    use Fixpoint3.Ast.Datalog.{Datalog, Constraint, HeadPredicate, BodyPredicate, Polarity, Fixity}
+    use Fixpoint3.Ast.Datalog.HeadPredicate.HeadAtom
+    use Fixpoint3.Ast.Shared.PredSym
     use Fixpoint3.Util.getOrCrash
     use Fixpoint3.PrecedenceGraph.{MutGraph, getPseudoStrata}
 
