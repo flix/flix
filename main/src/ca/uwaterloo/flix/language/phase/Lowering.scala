@@ -386,7 +386,7 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyLocalDef(sym, es, t, eff, loc)
 
-    case TypedAst.Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplyOp(OpSymUse(sym, _), exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       LoweredAst.Expr.ApplyOp(sym, es, tpe, eff, loc)
 

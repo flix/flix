@@ -481,9 +481,9 @@ object Monomorpher {
       val ef = subst(eff)
       MonoAst.Expr.ApplyLocalDef(newSym, es, t, ef, loc)
 
-    case LoweredAst.Expr.ApplyOp(op, exps, tpe, eff, loc) =>
+    case LoweredAst.Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
-      MonoAst.Expr.ApplyOp(op, es, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.ApplyOp(sym, es, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.ApplySig(sym, exps, itpe, tpe, eff, loc) =>
       val it = subst(itpe)

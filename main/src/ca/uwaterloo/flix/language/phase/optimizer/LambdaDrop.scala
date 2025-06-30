@@ -264,9 +264,9 @@ object LambdaDrop {
       val es = exps.map(rewriteExp)
       Expr.ApplyLocalDef(sym, es, tpe, eff, loc)
 
-    case Expr.ApplyOp(op, exps, tpe, eff, loc) =>
+    case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
       val es = exps.map(rewriteExp)
-      Expr.ApplyOp(op, es, tpe, eff, loc)
+      Expr.ApplyOp(sym, es, tpe, eff, loc)
 
     case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) =>
       val e1 = rewriteExp(exp1)

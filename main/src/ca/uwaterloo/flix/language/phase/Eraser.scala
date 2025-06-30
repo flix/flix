@@ -167,8 +167,8 @@ object Eraser {
     case ApplyDef(sym, exps, ct, tpe, purity, loc) =>
       val ad = ApplyDef(sym, exps.map(visitExp), ct, box(tpe), purity, loc)
       castExp(unboxExp(ad, erase(tpe), purity, loc), visitType(tpe), purity, loc)
-    case ApplyOp(op, exps, tpe, purity, loc) =>
-      ApplyOp(op, exps.map(visitExp), visitType(tpe), purity, loc)
+    case ApplyOp(sym, exps, tpe, purity, loc) =>
+      ApplyOp(sym, exps.map(visitExp), visitType(tpe), purity, loc)
     case ApplySelfTail(sym, actuals, tpe, purity, loc) =>
       ApplySelfTail(sym, actuals.map(visitExp), visitType(tpe), purity, loc)
     case IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>

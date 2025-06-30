@@ -74,9 +74,9 @@ object ClosureConv {
       val es = exps.map(visitExp)
       Expr.ApplyLocalDef(sym, es, tpe, purity, loc)
 
-    case Expr.ApplyOp(op, exps, tpe, purity, loc) =>
+    case Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
-      Expr.ApplyOp(op, es, tpe, purity, loc)
+      Expr.ApplyOp(sym, es, tpe, purity, loc)
 
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps map visitExp
@@ -325,9 +325,9 @@ object ClosureConv {
         val es = exps.map(visitExp)
         Expr.ApplyLocalDef(sym, es, tpe, purity, loc)
 
-      case Expr.ApplyOp(op, exps, tpe, purity, loc) =>
+      case Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
         val es = exps.map(visitExp)
-        Expr.ApplyOp(op, es, tpe, purity, loc)
+        Expr.ApplyOp(sym, es, tpe, purity, loc)
 
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
@@ -554,9 +554,9 @@ object ClosureConv {
           Expr.ApplyLocalDef(sym, es, tpe, purity, loc)
         }
 
-      case Expr.ApplyOp(op, exps, tpe, purity, loc) =>
+      case Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
         val es = exps.map(visit)
-        Expr.ApplyOp(op, es, tpe, purity, loc)
+        Expr.ApplyOp(sym, es, tpe, purity, loc)
 
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visit(exp1)
