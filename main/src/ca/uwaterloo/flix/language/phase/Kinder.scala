@@ -292,13 +292,24 @@ object Kinder {
     * Performs kinding on the given spec under the given kind environment.
     *
     * Adds `quantifiers` to the generated scheme's quantifier list.
+    * Adds `effect` to the generated scheme's effect set
     */
-  private def visitSpec(spec0: ResolvedAst.Spec, quantifiers: List[Symbol.KindedTypeVarSym], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Spec = spec0 match {
+  private def visitSpec(spec0: ResolvedAst.Spec, quantifiers: List[Symbol.KindedTypeVarSym], effect: Option[Symbol.EffSym], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Spec = spec0 match {
     case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0) =>
       val tparams = tparams0.map(visitTypeParam(_, kenv))
       val fparams = fparams0.map(visitFormalParam(_, kenv, taenv, root))
       val tpe = visitType(tpe0, Kind.Star, kenv, taenv, root)
-      val eff = visitEffectDefaultPure(eff0, kenv, taenv, root)
+      val declaredEff = visitEffectDefaultPure(eff0, kenv, taenv, root)
+      // If we're inside an effect, add that effect to the scheme.
+      val eff = effect match {
+        case None => declaredEff
+        case Some(sym) =>
+          Type.mkUnion(
+            Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), SourceLocation.Unknown),  // TODO EFFECT-TPARAMS need kind
+            declaredEff,
+            SourceLocation.Unknown
+          )
+      }
       val tconstrs = tconstrs0.map(visitTraitConstraint(_, kenv, taenv, root))
       val econstrs = econstrs0.map(visitEqualityConstraint(_, kenv, taenv, root))
       val allQuantifiers = quantifiers ::: tparams.map(_.sym)
@@ -1571,7 +1582,7 @@ object Kinder {
     * Gets the kind of the effect.
     */
   private def getEffectKind(eff0: ResolvedAst.Declaration.Effect): Kind = eff0 match {
-    case ResolvedAst.Declaration.Effect(_, _, _, _, tparams, _ ,_) =>
+    case ResolvedAst.Declaration.Effect(_, _, _, _, tparams, _, _) =>
       val kenv = getKindEnvFromTypeParams(tparams)
       tparams.foldRight(Kind.Eff: Kind) {
         case (tparam, acc) => kenv.map(tparam.sym) ->: acc
