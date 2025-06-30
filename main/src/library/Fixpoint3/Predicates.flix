@@ -40,13 +40,13 @@
 /// In the above way `PredType` is encoded in the identifier of a `PredSym`.
 ///
 mod Fixpoint3.Predicate {
-    use Fixpoint.Ast.Shared.PredSym
-    use Fixpoint.Ast.Shared.PredSym.PredSym
-    use Fixpoint.Ast.Datalog.Datalog.Datalog
-    use Fixpoint.Ast.Datalog.{BodyPredicate, BodyTerm, Constraint, Datalog, HeadPredicate, HeadTerm, Polarity, VarSym}
-    use Fixpoint.Ast.Datalog.Constraint.Constraint
-    use Fixpoint.Ast.Datalog.HeadPredicate.HeadAtom
-    use Fixpoint.Ast.Datalog.BodyPredicate.{BodyAtom}
+    use Fixpoint3.Ast.Shared.PredSym
+    use Fixpoint3.Ast.Shared.PredSym.PredSym
+    use Fixpoint3.Ast.Datalog.Datalog.Datalog
+    use Fixpoint3.Ast.Datalog.{BodyPredicate, BodyTerm, Constraint, Datalog, HeadPredicate, HeadTerm, Polarity, VarSym}
+    use Fixpoint3.Ast.Datalog.Constraint.Constraint
+    use Fixpoint3.Ast.Datalog.HeadPredicate.HeadAtom
+    use Fixpoint3.Ast.Datalog.BodyPredicate.{BodyAtom}
     use Fixpoint3.Ast.Ram.{BoolExp, Facts, Predicates, RamProgram, RamStmt, RamTerm, RelOp, RelSym, RowVar, toId}
     use Fixpoint3.Boxed
 
