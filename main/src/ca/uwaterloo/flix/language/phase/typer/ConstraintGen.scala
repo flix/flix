@@ -104,15 +104,8 @@ object ConstraintGen {
         c.addClassConstraints(constrs1, loc2)
         c.addEqualityConstraints(econstrs1, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
-
-        // If source effect was found, generate a source constraint
-        if(defn.spec.eff == declaredEff) {
-          c.unifySource(pvar, defn.spec.eff, loc2)
-          c.unifyType(evar, Type.mkUnion(pvar :: effs, loc2), loc2)
-        } else {
-          c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
-        }
-
+        c.unifySource(pvar, declaredEff, loc2)
+        c.unifyType(evar, Type.mkUnion(pvar :: effs, loc2), loc2)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
