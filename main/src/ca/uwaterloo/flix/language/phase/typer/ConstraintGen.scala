@@ -89,7 +89,7 @@ object ConstraintGen {
       case Expr.ApplyDef(DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
         val defn = root.defs(sym)
 
-        // Psuedo variable for source to flow into
+        // Pseudo variable for source to flow into
         val pvar = Type.freshVar(Kind.Eff, loc1)
 
         val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
@@ -816,7 +816,7 @@ object ConstraintGen {
         val op = lookupOp(symUse.sym, symUse.loc)
         val effTpe = Type.Cst(TypeConstructor.Effect(symUse.sym.eff), loc)
 
-        // Psuedo variable for source to flow into
+        // Pseudo variable for source to flow into
         val pvar = Type.freshVar(Kind.Eff, loc)
 
         // length check done in Resolver
