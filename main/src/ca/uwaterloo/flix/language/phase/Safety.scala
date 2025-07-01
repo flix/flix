@@ -64,7 +64,6 @@ object Safety {
     *   - [[Expr.UncheckedCast]] are not impossible.
     *   - [[Expr.Throw]] only throws exceptions.
     *   - [[Expr.NewObject]] are valid (see [[checkObjectImplementation]]).
-    *   - [[Expr.Spawn]] only performs primitive effects.
     *   - [[Expr.FixpointConstraintSet]] are valid (see [[checkConstraint]]).
     */
   private def visitExp(exp0: Expr)(implicit renv: RigidityEnv, sctx: SharedContext, flix: Flix): Unit = exp0 match {
@@ -97,6 +96,9 @@ object Safety {
       exps.foreach(visitExp)
 
     case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.ApplyOp(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.ApplySig(_, exps, _, _, _, _) =>
@@ -275,9 +277,6 @@ object Safety {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.Do(_, exps, _, _, _) =>
-      exps.foreach(visitExp)
-
     case Expr.InvokeConstructor(_, args, _, _, loc) =>
       checkAllPermissions(loc.security, loc)
       args.foreach(visitExp)
@@ -331,7 +330,6 @@ object Safety {
       default.map(visitExp).getOrElse(Nil)
 
     case Expr.Spawn(exp1, exp2, _, _, _) =>
-      if (hasControlEffects(exp1.eff)) sctx.errors.add(IllegalSpawnEffect(exp1.eff, exp1.loc))
       visitExp(exp1)
       visitExp(exp2)
 

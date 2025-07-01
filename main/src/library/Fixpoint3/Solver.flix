@@ -2,9 +2,9 @@ mod Fixpoint3.Solver {
 
     import dev.flix.runtime.Global
 
-    use Fixpoint.Ast.Datalog.Datalog
-    use Fixpoint.Ast.Shared.PredSym
-    use Fixpoint.Ast.Shared.PredSym.PredSym
+    use Fixpoint3.Ast.Datalog.Datalog
+    use Fixpoint3.Ast.Shared.PredSym
+    use Fixpoint3.Ast.Shared.PredSym.PredSym
     use Fixpoint3.Boxed
 
     ///

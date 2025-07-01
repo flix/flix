@@ -63,7 +63,7 @@ object KindedAst {
 
   case class AssocTypeDef(doc: Doc, mod: Modifiers, symUse: AssocTypeSymUse, arg: Type, tpe: Type, loc: SourceLocation)
 
-  case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffSym, ops: List[Op], loc: SourceLocation)
+  case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffSym, tparams: List[TypeParam], ops: List[Op], loc: SourceLocation)
 
   case class Op(sym: Symbol.OpSym, spec: Spec, loc: SourceLocation)
 
@@ -90,6 +90,8 @@ object KindedAst {
     case class ApplyDef(symUse: DefSymUse, exps: List[Expr], itvar: Type, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class ApplyLocalDef(symUse: LocalDefSymUse, exps: List[Expr], arrowTvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+
+    case class ApplyOp(symUse: OpSymUse, exps: List[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class ApplySig(symUse: SigSymUse, exps: List[Expr], itvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -176,8 +178,6 @@ object KindedAst {
     case class Handler(symUse: EffectSymUse, rules: List[HandlerRule], tvar: Type.Var, evar1: Type.Var, evar2: Type.Var, loc: SourceLocation) extends Expr
 
     case class RunWith(exp1: Expr, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
-
-    case class Do(symUse: OpSymUse, exps: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class InvokeConstructor(clazz: Class[?], exps: List[Expr], jvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 

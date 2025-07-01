@@ -69,7 +69,7 @@ sealed trait Type {
     * Gets all the effects in the given type.
     */
   def effects: SortedSet[Symbol.EffSym] = this match {
-    case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(sym)
+    case Type.Cst(TypeConstructor.Effect(sym, _), _) => SortedSet(sym)
 
     case _: Type.Var => SortedSet.empty
     case _: Type.Cst => SortedSet.empty
@@ -371,33 +371,33 @@ object Type {
     * The union of the primitive effects.
     */
   def PrimitiveEffs: Type = Type.mkUnion(
-    Symbol.PrimitiveEffs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)), SourceLocation.Unknown
+    Symbol.PrimitiveEffs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), SourceLocation.Unknown)), SourceLocation.Unknown
   )
 
   /**
     * Represents the IO effect.
     */
-  val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)
+  val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO, Kind.Eff), SourceLocation.Unknown)
 
   /**
     * Represents the Chan effect.
     */
-  val Chan: Type = Type.Cst(TypeConstructor.Effect(Symbol.Chan), SourceLocation.Unknown)
+  val Chan: Type = Type.Cst(TypeConstructor.Effect(Symbol.Chan, Kind.Eff), SourceLocation.Unknown)
 
   /**
     * Represents the Net effect.
     */
-  val Net: Type = Type.Cst(TypeConstructor.Effect(Symbol.Net), SourceLocation.Unknown)
+  val Net: Type = Type.Cst(TypeConstructor.Effect(Symbol.Net, Kind.Eff), SourceLocation.Unknown)
 
   /**
     * Represents the NonDet effect.
     */
-  val NonDet: Type = Type.Cst(TypeConstructor.Effect(Symbol.NonDet), SourceLocation.Unknown)
+  val NonDet: Type = Type.Cst(TypeConstructor.Effect(Symbol.NonDet, Kind.Eff), SourceLocation.Unknown)
 
   /**
     * Represents the Sys effect.
     */
-  val Sys: Type = Type.Cst(TypeConstructor.Effect(Symbol.Sys), SourceLocation.Unknown)
+  val Sys: Type = Type.Cst(TypeConstructor.Effect(Symbol.Sys, Kind.Eff), SourceLocation.Unknown)
 
   /**
     * Represents the universal effect set.

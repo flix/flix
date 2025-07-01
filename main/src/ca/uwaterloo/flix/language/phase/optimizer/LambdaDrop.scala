@@ -145,6 +145,9 @@ object LambdaDrop {
     case Expr.ApplyLocalDef(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
+    case Expr.ApplyOp(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
+
     case Expr.Let(_, exp1, exp2, _, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
@@ -201,9 +204,6 @@ object LambdaDrop {
     case Expr.RunWith(exp1, _, rules, _, _, _) =>
       visitExp(exp1)
       rules.foreach(rule => visitExp(rule.exp))
-
-    case Expr.Do(_, exps, _, _, _) =>
-      exps.foreach(visitExp)
 
     case Expr.NewObject(_, _, _, _, methods, _) =>
       methods.foreach(m => visitExp(m.exp))
@@ -263,6 +263,10 @@ object LambdaDrop {
     case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       val es = exps.map(rewriteExp)
       Expr.ApplyLocalDef(sym, es, tpe, eff, loc)
+
+    case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(rewriteExp)
+      Expr.ApplyOp(sym, es, tpe, eff, loc)
 
     case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) =>
       val e1 = rewriteExp(exp1)
@@ -343,10 +347,6 @@ object LambdaDrop {
           MonoAst.HandlerRule(op, fparams, e2)
       }
       Expr.RunWith(e1, effUse, rs, tpe, eff, loc)
-
-    case Expr.Do(op, exps, tpe, eff, loc) =>
-      val es = exps.map(rewriteExp)
-      Expr.Do(op, es, tpe, eff, loc)
 
     case Expr.NewObject(name, clazz, tpe, eff1, methods, loc1) =>
       val ms = methods.map {

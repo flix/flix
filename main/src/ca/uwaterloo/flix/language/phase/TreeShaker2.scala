@@ -70,6 +70,9 @@ object TreeShaker2 {
     case Expr.ApplyDef(sym, exps, _, _, _) =>
       Set(sym) ++ visitExps(exps)
 
+    case Expr.ApplyOp(_, exps, _, _, _) =>
+      visitExps(exps)
+
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
@@ -93,9 +96,6 @@ object TreeShaker2 {
 
     case Expr.RunWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
-
-    case Expr.Do(_, exps, _, _, _) =>
-      visitExps(exps)
 
     case Expr.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.clo))

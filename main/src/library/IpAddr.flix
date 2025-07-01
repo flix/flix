@@ -14,8 +14,6 @@
  *  limitations under the License.
  */
 
-
-
 ///
 /// Represents an IP address.
 ///
@@ -68,14 +66,15 @@ mod IpAddr {
     ///
     /// Returns `Some(addr)` if the string was successfully parsed. Otherwise returns `None`.
     ///
-    pub def fromString(s: String): Option[IpAddr] = try {
-        match Ipv6Addr.fromString(s) {
-            case Some(v6) => Some(IpAddr.V6(v6))
-            case None => match Ipv4Addr.fromString(s) {
-              case Some(v4) => Some(IpAddr.V4(v4))
-              case None => None
+    pub def fromString(s: String): Option[IpAddr] =
+        try {
+            match Ipv6Addr.fromString(s) {
+              case Some(v6) => Some(IpAddr.V6(v6))
+              case None => match Ipv4Addr.fromString(s) {
+                case Some(v4) => Some(IpAddr.V4(v4))
+                case None => None
+              }
             }
-        }
         } catch {
             case _ : UnknownHostException => None
         }
