@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor}
 
 object SymbolSet {
 
@@ -28,6 +28,24 @@ object SymbolSet {
     Set.empty[Symbol.TraitSym],
     Set.empty[Symbol.EffSym],
   )
+
+  /**
+    * Returns all the symbols in a given type constructor
+    */
+  private def getSymbolsWithin(wrt : TypeConstructor): SymbolSet = {
+    wrt match {
+      case TypeConstructor.Enum(sym,_) => SymbolSet(Set(sym), Set.empty, Set.empty, Set.empty)
+      case TypeConstructor.Struct(sym,_) => SymbolSet(Set.empty, Set(sym), Set.empty, Set.empty)
+      case TypeConstructor.Effect(sym,_) => SymbolSet(Set.empty, Set.empty, Set.empty, Set(sym))
+      case _ => SymbolSet.empty
+    }
+  }
+  /**
+    * Returns all the symbols in a given type
+    */
+  def getSymbols(wrt : Type): SymbolSet = {
+    (wrt.typeConstructors map getSymbolsWithin).foldLeft(empty) { _.++(_) }
+  }
 }
 
 case class SymbolSet(
