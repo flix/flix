@@ -90,9 +90,9 @@ object Bootstrap {
       s"""*.fpkg
          |*.jar
          |.GITHUB_TOKEN
-         |artifact/
-         |build/
-         |lib/
+         |$artifactDirectoryRaw
+         |$buildDirectoryRaw
+         |$libDirectoryRaw
          |crash_report_*.txt
          |""".stripMargin
     }
@@ -128,12 +128,26 @@ object Bootstrap {
   /**
     * Returns the path to the artifact directory relative to the given path `p`.
     */
-  private def getArtifactDirectory(p: Path): Path = p.resolve("./artifact/").normalize()
+  private def getArtifactDirectory(p: Path): Path = p.resolve(s"./$artifactDirectoryRaw").normalize()
+
+  /**
+    * The relative path to the artifact directory as a string.
+    *
+    * N.B.: Use [[getArtifactDirectory]] if possible.
+    */
+  private val artifactDirectoryRaw: String = "artifact/"
 
   /**
     * Returns the path to the library directory relative to the given path `p`.
     */
-  def getLibraryDirectory(p: Path): Path = p.resolve("./lib/").normalize()
+  def getLibraryDirectory(p: Path): Path = p.resolve(s"./$libDirectoryRaw").normalize()
+
+  /**
+    * The relative path to the library directory as a string.
+    *
+    * N.B.: Use [[getLibraryDirectory]] if possible.
+    */
+  private val libDirectoryRaw: String = "lib/"
 
   /**
     * Returns the path to the source directory relative to the given path `p`.
@@ -148,7 +162,14 @@ object Bootstrap {
   /**
     * Returns the path to the build directory relative to the given path `p`.
     */
-  private def getBuildDirectory(p: Path): Path = p.resolve("./build/").normalize()
+  private def getBuildDirectory(p: Path): Path = p.resolve(s"./$buildDirectoryRaw").normalize()
+
+  /**
+    * The relative path to the build directory as a string.
+    *
+    * N.B.: Use [[getBuildDirectory]] if possible.
+    */
+  private val buildDirectoryRaw: String = "build/"
 
   /**
     * Returns the directory of the output .class-files relative to the given path `p`.
@@ -514,7 +535,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def build(flix: Flix): Validation[CompilationResult, BootstrapError] = {
     // Configure a new Flix object.
-    val newOptions = flix.options.copy(output = Some(Bootstrap.getBuildDirectory(projectPath)))
+    val newOptions = flix.options.copy(outputJvm = true, outputPath = Bootstrap.getBuildDirectory(projectPath))
     flix.setOptions(newOptions)
 
     // Add sources and packages.

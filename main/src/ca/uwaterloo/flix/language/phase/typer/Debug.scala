@@ -48,7 +48,7 @@ object Debug {
     * Activates recording of constraint resolution.
     */
   def startRecording()(implicit flix: Flix): Unit = {
-    graphDir = flix.options.output.getOrElse(Path.of("./build/")).resolve("constraint-graphs")
+    graphDir = flix.options.outputPath.resolve("constraint-graphs")
     Files.createDirectories(graphDir)
     record = true
   }

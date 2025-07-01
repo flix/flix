@@ -26,13 +26,13 @@ import java.nio.file.{Files, LinkOption, Path}
 
 object JvmWriter {
 
-  /** Writes `classes` into the `<build>/class/` folder if enabled by [[Flix.options.output]]. */
+  /** Writes `classes` into the `<build>/class/` folder if enabled by [[Flix.options.outputJvm]]. */
   def run(classes: List[JvmClass])(implicit flix: Flix): Unit = {
     // Write each class (and interface) to disk if enabled.
-    if (flix.options.output.nonEmpty) {
+    if (flix.options.outputJvm) {
       for (jvmClass <- classes) {
         flix.subtask(jvmClass.name.toBinaryName, sample = true)
-        writeClass(flix.options.output.get.resolve("class/"), jvmClass)
+        writeClass(flix.options.outputPath.resolve("class/"), jvmClass)
       }
     }
   }

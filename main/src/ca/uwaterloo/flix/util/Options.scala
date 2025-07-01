@@ -32,7 +32,8 @@ object Options {
     installDeps = false,
     incremental = true,
     json = false,
-    output = None,
+    outputJvm = false,
+    outputPath = Path.of("./build/"),
     progress = false,
     target = JvmTarget.Version21,
     threads = Runtime.getRuntime.availableProcessors(),
@@ -82,7 +83,8 @@ object Options {
   * @param incremental         enables incremental compilation.
   * @param installDeps         enables automatic installation of dependencies.
   * @param json                enable json output.
-  * @param output              the optional output directory where to place JVM bytecode.
+  * @param outputJvm           Enable JVM bytecode output.
+  * @param outputPath          The path to the output folder.
   * @param progress            print progress during compilation.
   * @param target              the target JVM.
   * @param threads             selects the number of threads to use.
@@ -97,7 +99,8 @@ case class Options(lib: LibLevel,
                    installDeps: Boolean,
                    json: Boolean,
                    progress: Boolean,
-                   output: Option[Path],
+                   outputJvm: Boolean,
+                   outputPath: Path,
                    target: JvmTarget,
                    threads: Int,
                    loadClassFiles: Boolean,
