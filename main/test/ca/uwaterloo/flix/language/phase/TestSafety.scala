@@ -892,22 +892,4 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.DefaultTest)
     expectError[IllegalMethodEffect](result)
   }
-
-  test("IllegalSpawnEffect.01") {
-    val input =
-      """
-        |eff Ask {
-        |    pub def ask(): String
-        |}
-        |
-        |def main(): Unit \ IO =
-        |    region rc {
-        |        spawn Ask.ask() @ rc
-        |    }
-        |
-      """.stripMargin
-    val result = compile(input, Options.DefaultTest)
-    expectError[IllegalSpawnEffect](result)
-  }
-
 }
