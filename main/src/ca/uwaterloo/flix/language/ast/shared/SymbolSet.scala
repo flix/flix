@@ -50,21 +50,35 @@ object SymbolSet {
     }
   }
 
-  private def isAmbiguous(sym1: QualifiedSym, sym2: QualifiedSym): Boolean = {
-    sym1.namespace != sym2.namespace && sym1.name == sym2.name
-  }
+
 
   /**
     * Return a symbol set containing all the symbols in `s1` ambiguous w.r.t `s2`.
-    * @param s1 The primary symbol set
-    * @param s2 The set to be checked against
+    * @param s1 The first symbol set
+    * @param s2 The second symbol set
+    * @return All the symbols that are in `s1` such that a symbol in `s2` has the same base name but a different namespace
     */
-  def ambiguous(s1: SymbolSet, s2: SymbolSet): SymbolSet = SymbolSet(
-    s1.enums.filter(sym1 => s2.enums.exists(sym2 => isAmbiguous(sym1, sym2))),
-    s1.structs.filter(sym1 => s2.structs.exists(sym2 => isAmbiguous(sym1, sym2))),
-    s1.traits.filter(sym1 => s2.traits.exists(sym2 => isAmbiguous(sym1, sym2))),
-    s1.effects.filter(sym1 => s2.effects.exists(sym2 => isAmbiguous(sym1, sym2)))
-  )
+  def ambiguous(s1: SymbolSet, s2: SymbolSet): SymbolSet = {
+    val s3 = s1 ++ s2
+    SymbolSet(
+      s3.enums.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 1),
+      s3.structs.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 1),
+      s3.traits.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 1),
+      s3.effects.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 1),
+    )
+  }
+
+  /**
+    * Checks if two symbols are ambiguous with respect to each other.
+    * Two symbols are ambiguous if they have the same name but different namespaces.
+    *
+    * @param sym1 The first symbol
+    * @param sym2 The second symbol
+    * @return true if the symbols are ambiguous, false otherwise
+    */
+  private def isAmbiguous(sym1: QualifiedSym, sym2: QualifiedSym): Boolean = {
+    sym1.namespace != sym2.namespace && sym1.name == sym2.name
+  }
 }
 
 case class SymbolSet(
@@ -98,30 +112,4 @@ case class SymbolSet(
     )
   }
 
-  /**
-    * Checks to see if `this` is ambiguous with respect to the given `SymbolSet`.
-    */
-  private def isAmbiguous(sym : QualifiedSym): Boolean = {
-    enums.exists(x => x.qname == sym.qname && x.qnamespace != sym.qnamespace) ||
-      structs.exists(x => x.qname == sym.qname && x.qnamespace != sym.qnamespace) ||
-      traits.exists(x => x.qname == sym.qname && x.qnamespace != sym.qnamespace)||
-      effects.exists(x => x.qname == sym.qname && x.qnamespace != sym.qnamespace)
-  }
-
-  /**
-    * Finds all symbols that are ambiguous in `this`
-    */
-  def getAmbiguous: Set[_] = {
-    (enums ++ structs ++ traits ++ effects) filter isAmbiguous
-  }
-
-  /**
-    * Formats the qualified name of a symbol, with respect to `this`
-    *
-    * @param sym The symbol to compute
-    */
-  def formatDistinct(sym : QualifiedSym): String = {
-    if (isAmbiguous(sym)) (sym.qnamespace.mkString(".") + "." + sym.qname)
-    else sym.qname
-  }
 }
