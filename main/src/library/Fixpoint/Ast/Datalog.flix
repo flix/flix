@@ -21,10 +21,10 @@ mod Fixpoint.Ast.Datalog {
     use Fixpoint.PredSymsOf.predSymsOf
     use Fixpoint.SubstitutePredSym
     use Fixpoint.SubstitutePredSym.substitute
+    use Fixpoint.Ast.Ram.RamSym
     use Fixpoint.Ast.Shared.{Denotation, PredSym}
     use Fixpoint.Ast.Shared.{BoxedDenotation => Denotation}
-    use Fixpoint3.Boxed
-    use Fixpoint3.Ast.Ram.RelSym
+    use Fixpoint.Boxed
 
     /////////////////////////////////////////////////////////////////////////////
     // Datalog                                                                 //
@@ -33,7 +33,7 @@ mod Fixpoint.Ast.Datalog {
     @Internal
     pub enum Datalog {
         case Datalog(Vector[Constraint], Vector[Constraint])
-        case Model(Map[RelSym, Map[Vector[Boxed], Boxed]])
+        case Model(Map[RamSym, Map[Vector[Boxed], Boxed]])
         case Join(Datalog, Datalog)
     }
 
@@ -71,14 +71,14 @@ mod Fixpoint.Ast.Datalog {
                     |> Iterator.join(String.lineSeparator())
             }
             case Datalog.Model(db) => region rc {
-                use Fixpoint3.Ast.Ram.toDenotation;
+                use Fixpoint.Ast.Ram.toDenotation;
                 Map.iterator(rc, db)
-                    |> Iterator.flatMap(match (relSym, rel) -> {
+                    |> Iterator.flatMap(match (ramSym, rel) -> {
                         Map.iterator(rc, rel) |> Iterator.map(match (tuple, lat) -> {
                             let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
-                            match toDenotation(relSym) {
-                                case Denotation.Relational => "${relSym}(${tupleString})."
-                                case Denotation.Latticenal(_, _, _, _) => "${relSym}(${tupleString}; %{lat})."
+                            match toDenotation(ramSym) {
+                                case Denotation.Relational => "${ramSym}(${tupleString})."
+                                case Denotation.Latticenal(_, _, _, _) => "${ramSym}(${tupleString}; %{lat})."
                             }
                         })
                     })

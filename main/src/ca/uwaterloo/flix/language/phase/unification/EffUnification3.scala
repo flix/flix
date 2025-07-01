@@ -165,7 +165,7 @@ object EffUnification3 {
         }
       }
 
-    case tpe@Type.Cst(TypeConstructor.Effect(_), _) => m.getForward(Atom.fromType(tpe)) match {
+    case tpe@Type.Cst(TypeConstructor.Effect(_, _), _) => m.getForward(Atom.fromType(tpe)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
       case Some(x) => SetFormula.mkElemSet(x)
     }
@@ -344,7 +344,7 @@ object EffUnification3 {
     def fromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.Var(sym, _) => Atom.VarFlex(sym)
-      case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
+      case Type.Cst(TypeConstructor.Effect(sym, _), _) => Atom.Eff(sym)
       case Type.Cst(TypeConstructor.Region(sym), _) => Atom.Region(sym)
       case assoc@Type.AssocType(_, _, _, _) => assocFromType(assoc)
       case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
@@ -377,7 +377,7 @@ object EffUnification3 {
     def getAtoms(t: Type)(implicit scope: Scope, renv: RigidityEnv): SortedSet[Atom] = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => SortedSet(Atom.VarRigid(sym))
       case Type.Var(sym, _) => SortedSet(Atom.VarFlex(sym))
-      case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(Atom.Eff(sym))
+      case Type.Cst(TypeConstructor.Effect(sym, _), _) => SortedSet(Atom.Eff(sym))
       case Type.Cst(TypeConstructor.Region(sym), _) => SortedSet(Atom.Region(sym))
       case Type.Cst(TypeConstructor.Error(id, _), _) => SortedSet(Atom.Error(id))
       case Type.Apply(tpe1, tpe2, _) => getAtoms(tpe1) ++ getAtoms(tpe2)
@@ -403,7 +403,7 @@ object EffUnification3 {
       * associated types are set to be [[Kind.Eff]].
       */
     def toType(atom: Atom, loc: SourceLocation)(implicit m: SortedBimap[Atom, Int]): Type = atom match {
-      case Atom.Eff(sym) => Type.Cst(TypeConstructor.Effect(sym), loc)
+      case Atom.Eff(sym) => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc)
       case Atom.Region(sym) => Type.Cst(TypeConstructor.Region(sym), loc)
       case Atom.VarRigid(sym) => Type.Var(sym, loc)
       case Atom.VarFlex(sym) => Type.Var(sym, loc)

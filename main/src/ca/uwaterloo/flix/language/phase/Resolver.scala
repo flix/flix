@@ -264,6 +264,7 @@ object Resolver {
     case UnkindedType.CaseUnion(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case UnkindedType.CaseIntersection(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case _: UnkindedType.Enum => Nil
+    case _: UnkindedType.Effect => Nil
     case _: UnkindedType.Struct => Nil
     case _: UnkindedType.RestrictableEnum => Nil
     case _: UnkindedType.Error => Nil
@@ -363,7 +364,7 @@ object Resolver {
       resolveRestrictableEnum(enum0, scp0, taenv, ns0, root)
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) =>
       Validation.Success(taenv(sym))
-    case eff@NamedAst.Declaration.Effect(_, _, _, _, _, _) =>
+    case eff@NamedAst.Declaration.Effect(_, _, _, _, _, _, _) =>
       resolveEffect(eff, scp0, taenv, ns0, root)
     case NamedAst.Declaration.Op(sym, _, _) => throw InternalCompilerException("unexpected op", sym.loc)
     case NamedAst.Declaration.Sig(sym, _, _, _) => throw InternalCompilerException("unexpected sig", sym.loc)
@@ -614,11 +615,16 @@ object Resolver {
     * Performs name resolution on the given effect `eff0` in the given namespace `ns0`.
     */
   private def resolveEffect(eff0: NamedAst.Declaration.Effect, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Declaration.Effect, ResolutionError] = eff0 match {
-    case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops0, loc) =>
+    case NamedAst.Declaration.Effect(doc, ann, mod, sym, tparams0, ops0, loc) =>
       // TODO NS-REFACTOR maybe start a new scp
-      val opsVal = traverse(ops0)(resolveOp(_, scp0, taenv, ns0, root))
-      mapN(opsVal) {
-        case ops => ResolvedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc)
+      val tparamsVal = resolveTypeParams(tparams0, scp0, ns0, root)
+      flatMapN(tparamsVal) {
+        tparams =>
+          val scp = scp0 ++ mkTypeParamScp(tparams)
+          val opsVal = traverse(ops0)(resolveOp(_, scp0, taenv, ns0, root))
+          mapN(opsVal) {
+            case ops => ResolvedAst.Declaration.Effect(doc, ann, mod, sym, tparams, ops, loc)
+          }
       }
   }
 
@@ -1730,7 +1736,7 @@ object Resolver {
     *   - `Int32.add ===> x -> y -> Int32.add(x, y)`
     */
   private def visitOp(op: NamedAst.Declaration.Op, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    val base = es => ResolvedAst.Expr.Do(OpSymUse(op.sym, loc), es, loc.asSynthetic)
+    val base = es => ResolvedAst.Expr.ApplyOp(OpSymUse(op.sym, loc), es, loc.asSynthetic)
     visitApplyFull(base, op.spec.fparams.length, Nil, loc.asSynthetic)
   }
 
@@ -1746,7 +1752,7 @@ object Resolver {
   private def visitApplyOp(op: NamedAst.Declaration.Op, exps: List[NamedAst.Expr], scp0: LocalScope, innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, scp0))) {
       es =>
-        val base = args => ResolvedAst.Expr.Do(OpSymUse(op.sym, innerLoc), args, outerLoc)
+        val base = args => ResolvedAst.Expr.ApplyOp(OpSymUse(op.sym, innerLoc), args, outerLoc)
         visitApplyFull(base, op.spec.fparams.length, es, outerLoc)
     }
   }
@@ -2728,6 +2734,11 @@ object Resolver {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
         }
 
+      case _: UnkindedType.Effect =>
+        mapN(traverse(targs)(finishResolveType(_, taenv))) {
+          resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
+        }
+
       case _: UnkindedType.Struct =>
         mapN(traverse(targs)(finishResolveType(_, taenv))) {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
@@ -3019,7 +3030,7 @@ object Resolver {
         case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Struct(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
         case Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.Effect(_, _, _, sym, _, _) => sym.namespace :+ sym.name
+        case Declaration.Effect(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
       }
     }.orElse {
       // Then see if there's a module with this name declared in the root namespace
@@ -3029,7 +3040,7 @@ object Resolver {
         case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Struct(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
         case Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.namespace :+ sym.name
-        case Declaration.Effect(_, _, _, sym, _, _) => sym.namespace :+ sym.name
+        case Declaration.Effect(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
       }
     }
   }
@@ -3409,7 +3420,7 @@ object Resolver {
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) => sym
     case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym
-    case NamedAst.Declaration.Effect(_, _, _, sym, _, _) => sym
+    case NamedAst.Declaration.Effect(_, _, _, sym, _, _, _) => sym
     case NamedAst.Declaration.Op(sym, _, _) => sym
     case NamedAst.Declaration.Case(sym, _, _) => sym
     case NamedAst.Declaration.RestrictableCase(sym, _, _) => sym

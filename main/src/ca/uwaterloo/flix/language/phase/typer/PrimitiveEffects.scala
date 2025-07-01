@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource}
 import org.json4s.JsonAST.*
 import org.json4s.jvalue2monadic
@@ -117,7 +117,7 @@ object PrimitiveEffects {
     * Returns the set of effects represented by `effs`.
     */
   private def toEffSet(effs: Set[Symbol.EffSym], loc: SourceLocation): Type = {
-    val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
+    val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc))
     Type.mkUnion(tpes, loc)
   }
 
@@ -139,9 +139,9 @@ object PrimitiveEffects {
     val m = json \\ "packages" match {
       case JObject(l) => l.map {
         case (packageName, JString(s)) =>
-          val clazz = ClassLoader.getPlatformClassLoader.getDefinedPackage(packageName)
+          val pkg = Package.getPackages.filter(p => p.getName == packageName).head
           val effSet = parseEffSet(s)
-          (clazz, effSet)
+          (pkg, effSet)
         case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
       }
       case _ => throw InternalCompilerException("Unexpected JSON format.", SourceLocation.Unknown)
