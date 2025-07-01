@@ -88,43 +88,24 @@ object ConstraintGen {
 
       case Expr.ApplyDef(DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
         val defn = root.defs(sym)
+
+        // Pseudo variable for source to flow into
         val pvar = Type.freshVar(Kind.Eff, loc1)
+
         val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
         val constrs1 = tconstrs1.map(_.copy(loc = loc2))
         val declaredEff = declaredType.arrowEffectType
         val declaredArgumentTypes = declaredType.arrowArgTypes
         val declaredResultType = declaredType.arrowResultType
         val (tpes, effs) = exps.map(visitExp).unzip
-        // var sourceFound = false
-        // val substitutedEffs =
-        //   (declaredEff :: effs).map {
-        //     case eff => {
-        //       if(eff == defn.spec.eff){
-        //         sourceFound = true
-        //         pvar
-        //       } else eff
-        //     }
-        //   }
+
         c.unifyType(itvar, declaredType, loc2)
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
         c.addClassConstraints(constrs1, loc2)
         c.addEqualityConstraints(econstrs1, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
-        // if(defn.spec.eff == declaredEff) {
-        //   println(s"Found -> ${defn.spec.eff} == ${declaredEff} at $loc2")
-        //   c.unifySource(pvar, defn.spec.eff, loc2)
-        //   c.unifyType(evar, Type.mkUnion(pvar :: effs, loc2), loc2)
-        // } else {
-        //   println(s"Not found -> ${defn.spec.eff} != ${declaredEff} at $loc2")
-        //   c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
-        // }
         c.unifySource(pvar, declaredEff, loc2)
         c.unifyType(evar, Type.mkUnion(pvar :: effs, loc2), loc2)
-
-        // if(sourceFound) {
-        //   c.unifySource(pvar, defn.spec.eff, loc2)
-        // }
-        // c.unifyType(evar, Type.mkUnion(substitutedEffs, loc2), loc2)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -770,7 +751,7 @@ object ConstraintGen {
         // e without symUse : tpe
         //
         val (tpe, eff) = visitExp(exp)
-        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(symUse.sym), symUse.qname.loc), symUse.qname.loc)
+        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(symUse.sym, Kind.Eff), symUse.qname.loc), symUse.qname.loc) // TODO EFF-TPARAMS need kind
         c.unifyType(eff, effWithoutSym, symUse.qname.loc)
         val resTpe = tpe
         val resEff = eff
@@ -814,7 +795,7 @@ object ConstraintGen {
         val (tpes, effs) = rules.map(visitHandlerRule(_, tvar, evar2)).unzip
         c.unifyAllTypes(tvar :: tpes, loc)
 
-        val handledEffect = Type.Cst(TypeConstructor.Effect(symUse.sym), symUse.qname.loc)
+        val handledEffect = Type.Cst(TypeConstructor.Effect(symUse.sym, Kind.Eff), symUse.qname.loc) // TODO EFF-TPARAMS need kind
         // Subtract the effect from the body effect and add the handler effects.
         val continuationEffect = Type.mkUnion(Type.mkDifference(evar1, handledEffect, symUse.qname.loc), Type.mkUnion(effs, loc), loc)
         c.unifyType(evar2, continuationEffect, loc)
@@ -833,7 +814,9 @@ object ConstraintGen {
 
       case Expr.Do(symUse, exps, tvar, loc) =>
         val op = lookupOp(symUse.sym, symUse.loc)
-        val effTpe = Type.Cst(TypeConstructor.Effect(symUse.sym.eff), loc)
+        val effTpe = Type.Cst(TypeConstructor.Effect(symUse.sym.eff, Kind.Eff), loc) // TODO EFF-TPARAMS need kind
+
+        // Pseudo variable for source to flow into
         val pvar = Type.freshVar(Kind.Eff, loc)
 
         // length check done in Resolver
@@ -846,7 +829,6 @@ object ConstraintGen {
         c.unifySource(pvar, effTpe, loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(pvar :: effs, loc)
-        // val resEff = Type.mkUnion(effTpe :: op.spec.eff :: effs, loc)
 
         (resTpe, resEff)
 
