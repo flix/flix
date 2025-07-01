@@ -42,27 +42,15 @@ mod Ipv6Addr {
 
     use Ipv6Addr.Ipv6Addr
 
+    def toUnsigned8(x: Int8): Int32 = Int32.bitwiseAnd(Int8.toInt32(x), 0xFF)
+
     def byteToHex(b1: Int8, b2: Int8): String = {
-        let u8Conv = b -> Int32.bitwiseAnd(Int8.toInt32(b), 0xff);
-        let combined = (u8Conv(b1) * 256) + u8Conv(b2);
+        let combined = (toUnsigned8(b1) * 256) + toUnsigned8(b2);
         let hexString = String.toUpperCase(Integer.toString(combined, 16));
         match String.length(hexString) {
             case 4 => hexString
             case i => String.repeat(4 - i,"0") ++ hexString
         }
-    }
-
-    ///
-    /// Returns a String representation of the given Ipv6Addr `x`.
-    ///
-    pub def toString(x: Ipv6Addr): String = match x {
-        case Ipv6Addr.Ipv6Addr(
-              b1,  b2,  b3,  b4,
-              b5,  b6,  b7,  b8,
-              b9,  b10, b11, b12,
-              b13, b14, b15, b16
-        ) => "${byteToHex(b1, b2)}:${byteToHex(b3, b4)}:${byteToHex(b5, b6)}:${byteToHex(b7, b8)}:${byteToHex(b9, b10)}:${byteToHex(b11, b12)}:${byteToHex(b13, b14)}:${byteToHex(b15, b16)}"
-        case _ => ""
     }
 
     ///
@@ -147,6 +135,19 @@ mod Ipv6Addr {
                 ))
             case _ => None
         }
+
+    ///
+    /// Returns a String representation of the given Ipv6Addr `x`.
+    ///
+    pub def toString(x: Ipv6Addr): String = match x {
+        case Ipv6Addr.Ipv6Addr(
+              b1,  b2,  b3,  b4,
+              b5,  b6,  b7,  b8,
+              b9,  b10, b11, b12,
+              b13, b14, b15, b16
+        ) => "${byteToHex(b1, b2)}:${byteToHex(b3, b4)}:${byteToHex(b5, b6)}:${byteToHex(b7, b8)}:${byteToHex(b9, b10)}:${byteToHex(b11, b12)}:${byteToHex(b13, b14)}:${byteToHex(b15, b16)}"
+        case _ => ""
+    }
 
 }
 
