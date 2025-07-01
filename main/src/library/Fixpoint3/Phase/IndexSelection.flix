@@ -20,45 +20,65 @@ mod Fixpoint3.Phase.IndexSelection {
     use Fixpoint3.Predicate.{relSymFromPredType, relSymToPredType, PredType, relSymsOfProgram}
     use Fixpoint3.UniqueInts
 
-    type alias Searches[r: Eff] = MutMap[RelSym, List[Search], r]
+    /// In the following example, the set of primitive searches `S={{0, 1}, {0, 1, 2}, {0, 2}}`
+    /// is produced for relation `B`:
+    /// ```
+    /// R1(x, y, z) :- A(x, y, z), B(x, y, _, _).
+    /// R2(x, y, z) :- A(x, y, z), B(x, y, z, _).
+    /// R3(x, y, z) :- A(x, y, z), B(x, _, z, _).
+    /// ```
+    /// The meaning here is that we need to be able to search `B` on the first 2 attributes,
+    /// in some order, the first 3 attributes, in some order, and the first and third
+    /// attriubte, in some order.
+    ///
+    /// A primitive search is unordered, e.g. `0 :: 1 :: Nil` is the same as
+    /// `1 :: 0 :: Nil`. In contrast a `Search` is ordered and a `Search` of `0 :: 1 :: Nil`
+    /// means that a relation is sorted by attribute `0` and then attribute `1`.
+    ///
+    type alias PrimitiveSearch = Search
+
+    ///
+    /// `PrimitiveSearches` maps `RelSym`s to the primitive searches that must be supported
+    /// for the relation.
+    ///
+    /// In the example for `PrimitiveSearch` we would have 
+    /// `[B => (0 :: 1 :: Nil) :: (0 :: 1 :: 2 :: Nil) :: (0 :: 2 :: Nil) :: Nil]`.
+    ///
+    type alias PrimitiveSearches[r: Eff] = MutMap[RelSym, List[PrimitiveSearch], r]
 
     ///
     /// Creates indexes for each `RelSym` in `program`, places them in memory and
     /// propagates the positions to `Query` operations. To create the appropriate indexes
-    /// for a `RelSym`, it first collects the set of `Search` for each `RelSym` in
-    /// `program` and computes the minimal set of searches needed for `RelSym`.
+    /// for a `RelSym`, it first collects the set of `PrimitiveSearch` for each `RelSym` in
+    /// `program` and computes the minimal set of `Search`es needed for `RelSym`.
     ///
     /// A `Search` (not to be confused with `RamStmt.Search`) describes the order in which
     /// entries in a tuple are ordered. These are used by indexes to store tuples for
     /// efficient retrieval in range queries. A search is represented a
     /// `Vector[Int32]` where the order is left-to-right in the vector.
     ///
-    /// The below example illustrates the searches produced for relation `B` in each
-    /// corresponding rule:
-    ///
-    /// `R1(x, y, z) :- A(x, y, z), B(x, y, _).` produces `0 < 1`
-    ///
-    /// `R2(x, y, z) :- A(x, y, z), B(x, y, z).` produces `0 < 1 < 2`
-    ///
-    /// `R3(x, y, z) :- A(x, y, z), B(x, _, z).` produces `0 < 2`
-    ///
-    /// A naive algorithm would create an index for each search for occuring in the
-    /// program. A better solution, due to Subotić, Pavle, et al., is to find the minimal
-    /// set of indexes needed for a relation. This is implemented in
-    /// `AutomaticIndexSelection` is. Thus, the program consisting of the above 3 rules
-    /// would produce the minimal set of searches to query relation `B` as
+    /// In the example for `PrimitiveSearch` a naive algorithm would create an index for each
+    /// primitive search occuring in the program. A better solution, due to Subotić, Pavle, et al.,
+    /// is to find the minimal set of indexes needed for a relation. This is implemented in
+    /// `AutomaticIndexSelection` is. Thus, the program consisting of the 3 rules
+    /// could produce the minimal set of searches to query relation `B` as 
     /// `{0 < 1 < 2, 0 < 2}`.
     ///
     /// Note: for relation `A`, since it has no body atoms with bound variables, no
     /// particular search should be created for it, and the single search `0 < 1 < 2`
     /// covers all its cases.
     ///
-    /// The searches returned by `minIndex` are expanded to encompass the whole tuple size
-    /// of the relation. I.e., the search `0 < 2` gets expanded to `0 < 2 < 1`.
+    /// The searches returned by `minIndex` are expanded to encompass the whole tuple size 
+    /// of the relation. I.e., the search `0 < 2` gets expanded to `0 < 2 < 1`. 
+    ///
+    /// Returns a new `RamProgram` where `Search`, `Query` and similar statements have
+    /// been augmented with the memory position that the index they depend on will be placed.
+    ///
+    /// For details about memory positions see `lookupIndex`.
     ///
     @Internal
     pub def indexProgram(program: RamProgram): RamProgram = match program {
-        case RamProgram.Program(stmt, facts, meta, _) =>
+        case RamProgram.Program(stmt, facts, meta, _) => 
             // This type annotation is apparently needed?
             let (newIndexes, newStmt): (Map[RelSym, Vector[Search]], RamStmt) = region rc {
                 let indexes = MutMap.empty(rc);
@@ -112,7 +132,11 @@ mod Fixpoint3.Phase.IndexSelection {
     }
 
     ///
-    /// Propagates the appropriate indexes to `Query` ops.
+    /// Returns a new `RamStmt` where `Search`, `Query` and similar statements have
+    /// been augmented with the memory position that the index they depend on will be placed.
+    /// The positions are generated on the fly using `indexState`.
+    ///
+    /// For details about memory positions see `lookupIndex`.
     ///
     def indexStmt(stmt: RamStmt, constructedIndexes: Indexes, indexState: UniqueInts[(RelSym, Int32), r]): RamStmt \ r = match stmt {
         case RamStmt.Insert(op) => RamStmt.Insert(indexOp(op, constructedIndexes, indexState))
@@ -129,7 +153,12 @@ mod Fixpoint3.Phase.IndexSelection {
     }
 
     ///
-    /// Returns memory position of the index that uses `Search` for `RelSym`.
+    /// Returns the memory position of the index that uses `Search` for `RelSym`.
+    /// If the index has yet to be given a position create a new one.
+    ///
+    /// Memory positions currently correspond to positions in an array maintained
+    /// by the interpreter, though this is not strictly a requirement. The interpreter
+    /// is free to use a map or similar data structures.
     ///
     def lookupIndex(
         relSym: RelSym,
@@ -156,7 +185,11 @@ mod Fixpoint3.Phase.IndexSelection {
     }
 
     ///
-    /// Updates `Query` ops with their corresponding index location in memory.
+    /// Returns a new `RelOp` where `Search`, `Query` and similar statements have
+    /// been augmented with the memory position that the index they depend on will be placed.
+    /// The positions are generated on the fly using `indexState`.
+    ///
+    /// For details about memory positions see `lookupIndex`.
     ///
     def indexOp(op: RelOp, constructedIndexes: Indexes, indexState: UniqueInts[(RelSym, Int32), r]): RelOp \ r = match op {
         case RelOp.Search(rowVar, relSym, body) =>
@@ -183,10 +216,12 @@ mod Fixpoint3.Phase.IndexSelection {
     /// Collects the set of searches for each `RelSym` in `stmt` to `indexes` and lowers
     /// `BoolExp`'s in `Query` ops that are unusable by the index type into `If` ops.
     ///
+    /// Returns the result of the described transformation.
+    ///
     /// Note: The only index type currently available is `BPlusTree`, which only uses
     /// `Eq`, but future data-structures may make use of `NotMemberOf`, `Leq`, etc.
     ///
-    def collectSearchesStmt(indexes: Searches[r], rc: Region[r], stmt: RamStmt): RamStmt \ r = match stmt {
+    def collectSearchesStmt(indexes: PrimitiveSearches[r], rc: Region[r], stmt: RamStmt): RamStmt \ r = match stmt {
         case RamStmt.Insert(op) =>
             RamStmt.Insert(collectSearchesOp(op, indexes, MutSet.empty(rc), rc))
         case RamStmt.MergeInto(_, _) => stmt
@@ -207,12 +242,14 @@ mod Fixpoint3.Phase.IndexSelection {
     /// have seen the `RowVar`'s in `seenTuples` and lowers `BoolExp`'s in `Query` ops
     /// that are unusable by the index type into `If` ops.
     ///
+    /// Returns the result of the described transformation.
+    ///
     /// Note: The only index type currently available is `BPlusTree`, which only uses
     /// `Eq`, but future data-structures may make use of `NotMemberOf`, `Leq`, etc.
     ///
     def collectSearchesOp(
         op: RelOp,
-        indexes: Searches[r],
+        indexes: PrimitiveSearches[r],
         seenTuples: MutSet[RowVar, r],
         rc: Region[r]
     ): RelOp \ r = match op {
@@ -263,7 +300,7 @@ mod Fixpoint3.Phase.IndexSelection {
     ///
     /// Collects the search `Search` for `relSym` to `indexes`.
     ///
-    def collectSearch(relSym: RelSym, search: Search, indexes: Searches[r]): Unit \ r =
+    def collectSearch(relSym: RelSym, search: Search, indexes: PrimitiveSearches[r]): Unit \ r =
         if (not Vector.isEmpty(search)){
             let searches = MutMap.getWithDefault(relSym, List.empty(), indexes);
             if (not List.memberOf(search, searches))
@@ -296,6 +333,14 @@ mod Fixpoint3.Phase.IndexSelection {
 
         ///
         /// Find the minimum set of indexes that covers `searches`.
+        ///
+        /// Using the example from earlier `S={{0, 1}, {0, 1, 2}, {0, 2}}` can be covered
+        /// by `{0 < 1 < 2, 0 < 2}`. `{0, 1, 2}` and `{0, 2}` are trivially covered as they
+        /// are explicitly in the set. `{0, 1}` is covered as the index `{0, 1, 2}` allows
+        /// prefix searches.
+        ///
+        /// `{0 < 1 < 2}` does not cover `{0, 2}` as no permutation of `{0, 2}`
+        /// is a prefix of `{0 < 1 < 2}`.
         ///
         @Internal
         pub def minIndex(searches: List[Search]): List[Search] =
