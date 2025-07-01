@@ -18,16 +18,16 @@
 
 mod Fixpoint3.Phase.Compiler {
     use Fixpoint3.Ast.Ram.{arityOfNonLat, BoolExp, Facts, Predicates, RamId, RamProgram, RamStmt, RamTerm, RelOp, RelSym, RowVar}
-    use Fixpoint.Ast.Datalog.{BodyPredicate, BodyTerm, Constraint, Datalog, Fixity, HeadTerm, Polarity, VarSym}
-    use Fixpoint.Ast.Datalog.Datalog.{Datalog}
-    use Fixpoint.Ast.Datalog.Constraint.Constraint
-    use Fixpoint.Ast.Datalog.HeadPredicate.HeadAtom
-    use Fixpoint.Ast.Datalog.BodyPredicate.{BodyAtom, Functional, Guard0, Guard1, Guard2, Guard3, Guard4, Guard5}
-    use Fixpoint.Ast.Shared.{BoxedDenotation => Denotation}
-    use Fixpoint.Ast.Shared.Denotation.{Relational, Latticenal}
-    use Fixpoint.Ast.Shared.isRelational
-    use Fixpoint.Ast.Shared.PredSym
-    use Fixpoint.Ast.Shared.PredSym.PredSym
+    use Fixpoint3.Ast.Datalog.{BodyPredicate, BodyTerm, Constraint, Datalog, Fixity, HeadTerm, Polarity, VarSym}
+    use Fixpoint3.Ast.Datalog.Datalog.{Datalog}
+    use Fixpoint3.Ast.Datalog.Constraint.Constraint
+    use Fixpoint3.Ast.Datalog.HeadPredicate.HeadAtom
+    use Fixpoint3.Ast.Datalog.BodyPredicate.{BodyAtom, Functional, Guard0, Guard1, Guard2, Guard3, Guard4, Guard5}
+    use Fixpoint3.Ast.Shared.{BoxedDenotation => Denotation}
+    use Fixpoint3.Ast.Shared.Denotation.{Relational, Latticenal}
+    use Fixpoint3.Ast.Shared.isRelational
+    use Fixpoint3.Ast.Shared.PredSym
+    use Fixpoint3.Ast.Shared.PredSym.PredSym
     use Fixpoint3.Boxed
     use Fixpoint3.Counter
     use Fixpoint3.Util.getOrCrash
@@ -108,7 +108,7 @@ mod Fixpoint3.Phase.Compiler {
                     let x = Vector.map(getLitOrCrash, headTerms);
                     let isBot = match den {
                         case Relational => false
-                        case Latticenal(bot, leq, _, _) => 
+                        case Latticenal(bot, leq, _, _) =>
                             // Remove p(;bot) from the facts
                             if(Vector.get(Vector.length(x) - 1, x) `leq` bot) {
                                 true
@@ -158,7 +158,7 @@ mod Fixpoint3.Phase.Compiler {
         // Construct the inserts for step 1.
         let inserts = MutList.empty(rc);
         List.forEach(rule -> compileRule(inserts, rule, predicates, counter), stratum);
-        let optPar = 
+        let optPar =
             if(MutList.size(inserts) > 1) {
                 Some(RamStmt.Par(MutList.toVector(inserts)))
             } else {
@@ -176,7 +176,7 @@ mod Fixpoint3.Phase.Compiler {
 
                 let loopInserts = MutList.empty(rc);
                 List.forEach(rule -> compileRuleIncr(loopInserts, rule, idbIds, predicates, counter), stratum);
-                let loopParOpt = 
+                let loopParOpt =
                     if (MutList.size(loopInserts) > 1) {
                         Some(RamStmt.Par(MutList.toVector(loopInserts)))
                     } else {
@@ -184,7 +184,7 @@ mod Fixpoint3.Phase.Compiler {
                     };
                 match loopParOpt {
                     case None => ()
-                    case Some(loopPar) => 
+                    case Some(loopPar) =>
                         MutList.push(loopPar, loopBody);
                         MutList.push(constructMerges(idb, predicates), loopBody);
                         let loopTest =
@@ -262,7 +262,7 @@ mod Fixpoint3.Phase.Compiler {
             let projection = RelOp.Project(ramTerms, Predicate.headAtomToRelSym(headAtom, New, predicates));
             match compileBody(env, augBody, predicates, counter) {
                 case None => ()
-                case Some(join) => 
+                case Some(join) =>
                     let loopBody = RelOp.If(join, projection);
                     let insert = (loopBody, augBody) ||>
                         Vector.foldRight(match (atom, rowVar) -> acc -> match atom {
@@ -274,7 +274,7 @@ mod Fixpoint3.Phase.Compiler {
                             case _ => acc
                         }) |>
                         RamStmt.Insert;
-                    if (Fixpoint.Options.enableDebugging()) {
+                    if (Fixpoint3.Options.enableDebugging()) {
                         let comment = RamStmt.Comment(ToString.toString(rule));
                         MutList.push(comment, stmts);
                         MutList.push(insert, stmts)
@@ -323,10 +323,10 @@ mod Fixpoint3.Phase.Compiler {
                 let projection = RelOp.Project(ramTerms, Predicate.headAtomToRelSym(headAtom, New, predicates));
                 match compileBody(env, augBody, predicates, counter) {
                     case None => ()
-                    case Some(join) => 
+                    case Some(join) =>
                         let relSym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
                         let loopBody = RelOp.If(
-                            Vector.append(Vector#{BoolExp.NotMemberOf(ramTerms, relSym)}, join), 
+                            Vector.append(Vector#{BoolExp.NotMemberOf(ramTerms, relSym)}, join),
                             projection
                         );
                         let insert = (loopBody, augBody) ||>
@@ -357,10 +357,10 @@ mod Fixpoint3.Phase.Compiler {
                         -1
                     }
                 case _ => -1
-            }) |> 
+            }) |>
             Vector.filter(i -> i != -1);
 
-            if (Fixpoint.Options.enableDebugging()) {
+            if (Fixpoint3.Options.enableDebugging()) {
                 let comment = RamStmt.Comment(ToString.toString(rule));
                 MutList.push(comment, stmts);
                 Vector.forEach(match rowVar -> compileSomething(rowVar), positiveIDBAtoms)
@@ -426,7 +426,7 @@ mod Fixpoint3.Phase.Compiler {
     def unifyVars(predicates: Predicates, counter: Counter[r], body: Vector[(BodyPredicate, RowVar)]): Map[VarSym, RamTerm] \ r =
         let toFullSym = bodyAtom -> (Predicate.bodyAtomToRelSym(bodyAtom, Full, predicates));
         let innerFunc = {
-            acc -> atomVar -> 
+            acc -> atomVar ->
             let (atom, rowVar) = atomVar;
             match atom {
             case BodyAtom(_, denotation, Polarity.Positive, _, terms) =>
@@ -520,7 +520,7 @@ mod Fixpoint3.Phase.Compiler {
                     Vector.mapWithIndex(compileBodyTerm, terms) |>
                     Vector.zip(Vector.range(0, Vector.length(terms))) |>
                     Vector.map(match (i, t) -> match denotation {
-                        case Relational => 
+                        case Relational =>
                             BoolExp.Eq(RamTerm.RowLoad(rowVar, i, toFullSym(atom)), t)
                         case Latticenal(bot, leq, _, _) =>
                             if (i < Vector.length(terms) - 1)
@@ -577,5 +577,5 @@ mod Fixpoint3.Phase.Compiler {
             case HeadTerm.Lit(v) => v
             case _ => bug!("Facts should only consist of literals")
         }
-    
+
 }

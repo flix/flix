@@ -18,7 +18,7 @@ mod Fixpoint.Boxable {
     import java.lang.Object
 
     use Vector.get
-    use Fixpoint3.Boxed
+    use Fixpoint.Boxed
 
     ///
     /// Boxes the given `x`.

@@ -18,7 +18,7 @@ mod Fixpoint.Interpreter {
 
     use Fixpoint.Ast.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar, toDenotation}
     use Fixpoint.Ast.Shared.Denotation
-    use Fixpoint3.Boxed
+    use Fixpoint.Boxed
 
     pub type alias Database[r: Region] = MutMap[RamSym, MutMap[Vector[Boxed], Boxed, r], r]
 

@@ -18,7 +18,7 @@ mod Fixpoint.Ast.Ram {
 
     use Fixpoint.Ast.Shared.{BoxedDenotation => Denotation}
     use Fixpoint.Ast.Shared.PredSym
-    use Fixpoint3.Boxed
+    use Fixpoint.Boxed
     use Fixpoint.PredSymsOf
     use Fixpoint.SubstitutePredSym
 
