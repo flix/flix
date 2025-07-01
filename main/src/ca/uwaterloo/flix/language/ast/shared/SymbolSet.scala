@@ -83,10 +83,10 @@ case class SymbolSet(
     * Checks to see if `this` is ambiguous with respect to the given `SymbolSet`.
     */
   private def isAmbiguous(sym : QualifiedSym): Boolean = {
-    enums.exists(x => x.qname == sym.qname && x.qnamespace != sym.qnamespace) ||
-      structs.exists(x => x.qname == sym.qname && x.qnamespace != sym.qnamespace) ||
-      traits.exists(x => x.qname == sym.qname && x.qnamespace != sym.qnamespace)||
-      effects.exists(x => x.qname == sym.qname && x.qnamespace != sym.qnamespace)
+    enums.exists(x => x.name == sym.name && x.namespace != sym.namespace) ||
+      structs.exists(x => x.name == sym.name && x.namespace != sym.namespace) ||
+      traits.exists(x => x.name == sym.name && x.namespace != sym.namespace)||
+      effects.exists(x => x.name == sym.name && x.namespace != sym.namespace)
   }
 
   /**
@@ -102,7 +102,7 @@ case class SymbolSet(
     * @param sym The symbol to compute
     */
   def formatDistinct(sym : QualifiedSym): String = {
-    if (isAmbiguous(sym)) (sym.qnamespace.mkString(".") + "." + sym.qname)
-    else sym.qname
+    if (isAmbiguous(sym)) (sym.namespace.mkString(".") + "." + sym.name)
+    else sym.name
   }
 }
