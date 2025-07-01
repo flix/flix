@@ -16,7 +16,29 @@
 
 package ca.uwaterloo.flix.language.ast.shared
 
-trait QualifiedSym{
-  def namespace: List[String]
-  def name: String
+trait QualifiedSym {
+  def qnamespace: List[String]
+  def qname: String
+  def depth: Int = qnamespace.length
+  override def toString: String = qnamespace.mkString(".") + "." + qname
+
+  /**
+   * Checks to see if `this` is ambiguous with respect to the given `SymbolSet`.
+    */
+  private def isAmbiguous(wrt : SymbolSet): Boolean = {
+    wrt.enums.exists(x => x.qname == qname && x.qnamespace != qnamespace) ||
+    wrt.structs.exists(x => x.qname == qname && x.qnamespace != qnamespace) ||
+    wrt.traits.exists(x => x.qname == qname && x.qnamespace != qnamespace) ||
+    wrt.effects.exists(x => x.qname == qname && x.qnamespace != qnamespace)
+  }
+
+  /**
+    * Formats the qualified name of this symbol, ensuring that it is distinct
+    *
+    * @param wrt The set of symbols which it must not be ambiguous with respect to.
+    */
+  def formatDistinct(wrt : SymbolSet): String = {
+    if (isAmbiguous(wrt)) (qnamespace.mkString(".") + "." + qname)
+    else qname
+  }
 }
