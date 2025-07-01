@@ -170,6 +170,24 @@ object OccurrenceAnalyzer {
           (Expr.IfThenElse(e1, e2, e3, tpe, eff, loc), ctx4)
         }
 
+      case Expr.While(exp1, exp2, tpe, eff, loc) =>
+        val (e1, ctx1) = visitExp(exp1)
+        val ctx2 = ctx1.map {
+          case Occur.Once => Occur.OnceInWhile
+          case o => o
+        }
+        val (e2, ctx3) = visitExp(exp2)
+        val ctx4 = ctx3.map {
+          case Occur.Once => Occur.OnceInWhile
+          case o => o
+        }
+        val ctx5 = combineSeq(ctx2, ctx4)
+        if ((e1 eq exp1) && (e2 eq exp2)) {
+          (exp0, ctx5) // Reuse exp0.
+        } else {
+          (Expr.While(e1, e2, tpe, eff, loc), ctx5)
+        }
+
       case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)
@@ -522,12 +540,14 @@ object OccurrenceAnalyzer {
   /**
     * Returns true if `defn` occurs in `ctx`.
     */
-  private def isSelfRef(occur: Occur): Boolean = occur match {
+  private def isSelfRef(occur: Occur): Boolean =
+    occur match {
     case Occur.Unknown => throw InternalCompilerException("unexpected unknown occurrence information", SourceLocation.Unknown)
     case Occur.Dead => false
     case Occur.Once => true
     case Occur.OnceInLambda => true
     case Occur.OnceInLocalDef => true
+    case Occur.OnceInWhile => true
     case Occur.Many => true
     case Occur.ManyBranch => true
   }

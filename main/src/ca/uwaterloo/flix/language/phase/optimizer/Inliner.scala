@@ -313,6 +313,16 @@ object Inliner {
           Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
       }
 
+    case Expr.While(exp1, exp2, tpe, eff, loc) =>
+      visitExp(exp1, ctx0) match {
+        case Expr.Cst(Constant.Bool(false), _, _) =>
+          sctx.changed.putIfAbsent(sym0, ())
+          Expr.Cst(Constant.Unit, tpe, loc)
+        case e1 =>
+          val e2 = visitExp(exp2, ctx0)
+          Expr.While(e1, e2, tpe, eff, loc)
+      }
+
     case Expr.Stm(exp1, exp2, tpe, eff, loc) => exp1.eff match {
       case Type.Pure =>
         // Exp1 has no side effect and is unused
@@ -392,6 +402,7 @@ object Inliner {
       case Occur.Once
            | Occur.OnceInLambda
            | Occur.OnceInLocalDef
+           | Occur.OnceInWhile
            | Occur.ManyBranch
            | Occur.Many =>
         val freshVarSym = Symbol.freshVarSym(sym)
@@ -550,13 +561,14 @@ object Inliner {
   /**
     * Returns `true` if `exp` is pure and should be inlined at the occurrence of `sym`.
     *
-    * A lambda should be inlined if it has occurrence information [[Occur.OnceInLambda]] or [[Occur.OnceInLocalDef]].
+    * A lambda should be inlined if it has occurrence information [[Occur.OnceInLambda]], [[Occur.OnceInLocalDef]], or [[Occur.OnceInWhile]].
     */
   private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur): Boolean = (occur, exp.eff) match {
     case (Occur.Dead, _) => throw InternalCompilerException(s"unexpected call site inline of dead variable $sym", exp.loc)
     case (Occur.Once, Type.Pure) => throw InternalCompilerException(s"unexpected call site inline of pre-inlined variable $sym", exp.loc)
     case (Occur.OnceInLambda, Type.Pure) => isLambda(exp)
     case (Occur.OnceInLocalDef, Type.Pure) => isLambda(exp)
+    case (Occur.OnceInWhile, Type.Pure) => isLambda(exp)
     case (Occur.ManyBranch, Type.Pure) => false
     case (Occur.Many, Type.Pure) => false
     case _ => false // Impure so do not move expression
