@@ -37,28 +37,18 @@ object EffectProvenance {
   // in the concrete set is not in the expected effects.
   def debug(constrs0: List[TypeConstraint]): Unit = {
     if(enableEffectProvenance) {
-      printConstrs(constrs0)
+      // printConstrs(constrs0)
       constrs0.foreach { constr => constr match {
         case TypeConstraint.Equality(_, _, prov) => {
           prov match {
             case Provenance.Source(eff1, eff2, loc) => {
               (eff1, eff2) match {
-                // case (Type.Var(sym1, loc1), Type.Cst(TypeConstructor.Effect(sym2), _)) => {
-                //   println(s"Finding path from source constraint $constr at $loc")
-                //   findPath(Type.Var(sym1, loc1), sym2, constr :: Nil, constrs0.filterNot(_ == constr))
-                // }
-                // // Handle union of concrete and associated effect
-                // // case (Type.Var(sym1, loc1), Type.Apply(Type.Apply(Type.Union, Type.Cst(TypeConstructor.Effect(sym2), _), _), t2, _)) => {
-                // //   findPath(Type.Var(sym1, loc1), sym2, constr :: Nil, constrs0.filterNot(_ == constr))
-                // // }
-                // // case _ => throw(InternalCompilerException(s"Incorrect source constraint $constr", loc))
-                // case _ => println(s"Incorrect source constraint $constr at $loc")
                 case _ => {
                   eff2 match {
-                    // case Type.Pure => println("Finding path from pure"); findPath(eff1, Symbol.mkEffectSym("Pure"), constr :: Nil, constrs0.filterNot(_ == constr))
+                    case Type.Pure => findPath(eff1, Symbol.mkEffectSym("Pure"), constr :: Nil, constrs0.filterNot(_ == constr))
                     case _ => {
-                      val (_, sub) = findConcreteEffects(eff2)
-                      eff2.effects.filterNot(sub.contains(_)).foreach {findPath(eff1, _, constr :: Nil, constrs0.filterNot(_ == constr))}
+                      val (add, _) = findConcreteEffects(eff2)
+                      eff2.effects.filter(add.contains(_)).foreach {findPath(eff1, _, constr :: Nil, constrs0.filterNot(_ == constr))}
                     }
                   }
                 }
@@ -71,6 +61,7 @@ object EffectProvenance {
       }}
     }
   }
+
   // Finds the next constraint in the path given the effect variable `eff`,
   // the set of concrete effects `concreteEff`, the current path `path`,
   // and the list of all constraints `constrs`.
@@ -82,7 +73,7 @@ object EffectProvenance {
     constrs.foreach { constr => constr match {
         case TypeConstraint.Equality(eff1, eff2, prov) => {
           prov match {
-            case Provenance.Match(_, _, loc) => {
+            case Provenance.Match(_, _, _) | Provenance.Source(_, _, _) => {
               // Effect variable found on the left.
               if (eff1.typeVars.contains(effVar)) {
                 val (add, sub) = findConcreteEffects(eff1)
@@ -112,36 +103,7 @@ object EffectProvenance {
                 }
               }
             }
-            case Provenance.Source(_, _, loc) => {
-              // Effect variable found on the left.
-              if (eff1.typeVars.contains(effVar)) {
-                val (add, sub) = findConcreteEffects(eff1)
-                if(concreteEff == Symbol.mkEffectSym("Pure") && !add.isEmpty) {
-                  ()
-                } else if(!sub.contains(concreteEff)) {
-                  eff2.typeVars.foreach { tpeVar => tpeVar match {
-                      case Type.Var(_, _) =>
-                        findPath(tpeVar, concreteEff, constr :: path, constrs.filterNot(_ == constr))
-                      case _ => ()
-                    }
-                  }
-                }
-              }
-              // Effect variable found on the right.
-              if (eff2.typeVars.contains(effVar)) {
-                val (add, sub) = findConcreteEffects(eff2)
-                if(concreteEff == Symbol.mkEffectSym("Pure") && !add.isEmpty) {
-                  ()
-                } else if(!sub.contains(concreteEff)) {
-                  eff1.typeVars.foreach { tpeVar => tpeVar match {
-                      case Type.Var(_, _) =>
-                        findPath(tpeVar, concreteEff, constr :: path, constrs.filterNot(_ == constr))
-                      case _ => ()
-                    }
-                  }
-                }
-              }
-            }
+
             // If Provenance.ExpectEffect is found, check if the concrete effects
             // are contained in the expected effects. If not, print the path.
             case Provenance.ExpectEffect(expected, actual, loc) => {
@@ -190,12 +152,7 @@ object EffectProvenance {
         val (add2, sub2) = findConcreteEffects(t2)
         (add1.union(add2), sub1.union(sub2))
       }
-      case Type.Apply(t1, t2, _) => {
-        val (add1, sub1) = findConcreteEffects(t1)
-        val (add2, sub2) = findConcreteEffects(t2)
-        (add1.union(add2), sub1.union(sub2))
-      }
-      case Type.Cst(TypeConstructor.Effect(sym), _) => (SortedSet(sym), SortedSet.empty)
+      case Type.Cst(TypeConstructor.Effect(sym, _), _) => (SortedSet(sym), SortedSet.empty)
       case _ => (SortedSet.empty, SortedSet.empty)
     }
   }
