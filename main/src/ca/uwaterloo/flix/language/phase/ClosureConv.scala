@@ -74,6 +74,10 @@ object ClosureConv {
       val es = exps.map(visitExp)
       Expr.ApplyLocalDef(sym, es, tpe, purity, loc)
 
+    case Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      Expr.ApplyOp(sym, es, tpe, purity, loc)
+
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps map visitExp
       Expr.ApplyAtomic(op, es, tpe, purity, loc)
@@ -129,10 +133,6 @@ object ClosureConv {
           HandlerRule(opUse, fparams, clo)
       }
       Expr.RunWith(e, effUse, rs, tpe, purity, loc)
-
-    case Expr.Do(op, exps, tpe, purity, loc) =>
-      val es = exps.map(visitExp)
-      Expr.Do(op, es, tpe, purity, loc)
 
     case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0 map {
@@ -205,6 +205,9 @@ object ClosureConv {
     case Expr.ApplyLocalDef(_, exps, _, _, _) =>
       freeVarsExps(exps)
 
+    case Expr.ApplyOp(_, exps, _, _, _) =>
+      freeVarsExps(exps)
+
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
       freeVarsExps(exps)
 
@@ -240,8 +243,6 @@ object ClosureConv {
       case (acc, HandlerRule(_, fparams, body)) =>
         acc ++ filterBoundParams(freeVars(body), fparams)
     }
-
-    case Expr.Do(_, exps, _, _, _) => freeVarsExps(exps)
 
     case Expr.NewObject(_, _, _, _, methods, _) =>
       methods.foldLeft(SortedSet.empty[FreeVar]) {
@@ -324,6 +325,10 @@ object ClosureConv {
         val es = exps.map(visitExp)
         Expr.ApplyLocalDef(sym, es, tpe, purity, loc)
 
+      case Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
+        val es = exps.map(visitExp)
+        Expr.ApplyOp(sym, es, tpe, purity, loc)
+
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
@@ -383,10 +388,6 @@ object ClosureConv {
             HandlerRule(sym, fs, b)
         }
         Expr.RunWith(e, effUse, rs, tpe, purity, loc)
-
-      case Expr.Do(op, exps, tpe, purity, loc) =>
-        val es = exps.map(visitExp)
-        Expr.Do(op, es, tpe, purity, loc)
 
       case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0.map(visitJvmMethod)
@@ -553,6 +554,10 @@ object ClosureConv {
           Expr.ApplyLocalDef(sym, es, tpe, purity, loc)
         }
 
+      case Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
+        val es = exps.map(visit)
+        Expr.ApplyOp(sym, es, tpe, purity, loc)
+
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
@@ -604,10 +609,6 @@ object ClosureConv {
             HandlerRule(op, fparams, e1)
         }
         Expr.RunWith(e, effUse, rs, tpe, purity, loc)
-
-      case Expr.Do(op, exps, tpe, purity, loc) =>
-        val es = exps.map(visit)
-        Expr.Do(op, es, tpe, purity, loc)
 
       case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
         val ms = methods.map {

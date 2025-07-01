@@ -84,6 +84,9 @@ object TreeShaker1 {
     case Expr.ApplyLocalDef(_, exps, _, _, _) =>
       visitExps(exps)
 
+    case Expr.ApplyOp(_, exps, _, _, _) =>
+      visitExps(exps)
+
     case Expr.ApplySig(sym, exps, _, _, _, _) =>
       Set(ReachableSym.SigSym(sym)) ++ visitExps(exps)
 
@@ -137,9 +140,6 @@ object TreeShaker1 {
 
     case Expr.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.exp))
-
-    case Expr.Do(_, exps, _, _, _) =>
-      visitExps(exps)
 
     case Expr.RunWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))

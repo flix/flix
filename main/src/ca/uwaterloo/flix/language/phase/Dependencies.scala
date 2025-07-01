@@ -158,6 +158,12 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
+    case Expr.ApplyOp(op, exps, tpe, eff, _) =>
+      visitSymUse(op)
+      exps.foreach(visitExp)
+      visitType(tpe)
+      visitType(eff)
+
     case Expr.ApplySig(symUse, exps, itpe, tpe, eff, _) =>
       visitSymUse(symUse)
       exps.foreach(visitExp)
@@ -401,12 +407,6 @@ object Dependencies {
     case Expr.RunWith(exp1, exp2, tpe, eff, _) =>
       visitExp(exp1)
       visitExp(exp2)
-      visitType(tpe)
-      visitType(eff)
-
-    case Expr.Do(op, exps, tpe, eff, _) =>
-      visitSymUse(op)
-      exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 

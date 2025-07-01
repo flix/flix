@@ -233,7 +233,7 @@ object Visitor {
   }
 
   private def visitEffect(eff: Effect)(implicit a: Acceptor, c: Consumer): Unit = {
-    val Effect(_, ann, _, _, ops, loc) = eff
+    val Effect(_, ann, _, _, tparams, ops, loc) = eff
     if (!a.accept(loc)) {
       return
     }
@@ -241,6 +241,7 @@ object Visitor {
     c.consumeEff(eff)
 
     visitAnnotations(ann)
+    tparams.foreach(visitTypeParam)
     ops.foreach(visitOp)
   }
 
@@ -351,6 +352,10 @@ object Visitor {
 
       case Expr.ApplyLocalDef(symUse, exps, _, _, _, _) =>
         visitLocalDefSymUse(symUse)
+        exps.foreach(visitExpr)
+
+      case Expr.ApplyOp(op, exps, _, _, _) =>
+        visitOpSymUse(op)
         exps.foreach(visitExpr)
 
       case Expr.ApplySig(symUse, exps, _, _, _, _) =>
@@ -517,10 +522,6 @@ object Visitor {
       case Expr.RunWith(exp1, exp2, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
-
-      case Expr.Do(op, exps, _, _, _) =>
-        visitOpSymUse(op)
-        exps.foreach(visitExpr)
 
       case Expr.InvokeConstructor(_, exps, _, _, _) =>
         exps.foreach(visitExpr)
