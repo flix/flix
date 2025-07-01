@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.ast.shared
 
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor}
-
+import ca.uwaterloo.flix.language.ast.shared.QualifiedSym
 object SymbolSet {
 
   /**
@@ -77,5 +77,32 @@ case class SymbolSet(
       traits & that.traits,
       effects & that.effects,
     )
+  }
+
+  /**
+    * Checks to see if `this` is ambiguous with respect to the given `SymbolSet`.
+    */
+  private def isAmbiguous(sym : QualifiedSym): Boolean = {
+    enums.exists(x => x.qname == sym.qname && x.qnamespace != sym.qnamespace) ||
+      structs.exists(x => x.qname == sym.qname && x.qnamespace != sym.qnamespace) ||
+      traits.exists(x => x.qname == sym.qname && x.qnamespace != sym.qnamespace)||
+      effects.exists(x => x.qname == sym.qname && x.qnamespace != sym.qnamespace)
+  }
+
+  /**
+    * Finds all symbols that are ambiguous in `this`
+    */
+  def getAmbiguous: Set[_] = {
+    (enums ++ structs ++ traits ++ effects) filter isAmbiguous
+  }
+
+  /**
+    * Formats the qualified name of a symbol, with respect to `this`
+    *
+    * @param sym The symbol to compute
+    */
+  def formatDistinct(sym : QualifiedSym): String = {
+    if (isAmbiguous(sym)) (sym.qnamespace.mkString(".") + "." + sym.qname)
+    else sym.qname
   }
 }
