@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-mod Fixpoint.Phase.Simplifier {
-    use Fixpoint.Ast.Ram.{BoolExp, Facts, Predicates, RamProgram, RamStmt, RelOp, RelSym, RowVar}
-    use Fixpoint.Ast.Ram.RamTerm.RowLoad
-    use Fixpoint.Predicate.{getRelSymAsType, PredType}
+mod Fixpoint3.Phase.Simplifier {
+    use Fixpoint3.Ast.Ram.{BoolExp, Facts, Predicates, RamProgram, RamStmt, RelOp, RelSym, RowVar}
+    use Fixpoint3.Ast.Ram.RamTerm.RowLoad
+    use Fixpoint3.Predicate.{getRelSymAsType, PredType}
 
     ///
     /// Optimize and simplify `stmt` by deleting redundant code and reordering code.
