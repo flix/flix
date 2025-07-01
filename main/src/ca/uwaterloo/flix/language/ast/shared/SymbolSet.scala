@@ -37,7 +37,7 @@ object SymbolSet {
       * Returns all the symbols in a given type constructor
       */
     def getSymbolsWithin(t: TypeConstructor): SymbolSet = {
-      wrt match {
+      t match {
         case TypeConstructor.Enum(sym, _) => SymbolSet(Set(sym), Set.empty, Set.empty, Set.empty)
         case TypeConstructor.Struct(sym, _) => SymbolSet(Set.empty, Set(sym), Set.empty, Set.empty)
         case TypeConstructor.Effect(sym, _) => SymbolSet(Set.empty, Set.empty, Set.empty, Set(sym))
@@ -94,17 +94,4 @@ case class SymbolSet(
       effects ++ that.effects,
     )
   }
-
-  /**
-    * Returns the intersection of `this` and `that`
-    */
-  def &(that: SymbolSet): SymbolSet = {
-    SymbolSet(
-      enums & that.enums,
-      structs & that.structs,
-      traits & that.traits,
-      effects & that.effects,
-    )
-  }
-
 }
