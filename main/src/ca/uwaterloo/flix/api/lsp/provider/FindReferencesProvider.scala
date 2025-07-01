@@ -21,10 +21,8 @@ import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Root}
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.TypeAliasSymUse
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL.*
 
 object FindReferencesProvider {
 
@@ -126,7 +124,7 @@ object FindReferencesProvider {
   private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val consumer = StackConsumer()
     Visitor.visitRoot(root, consumer, InsideAcceptor(uri, pos))
-    consumer.getStack.filter(isReal).headOption
+    consumer.getStack.find(isReal)
   }
 
   private def isReal(x: AnyRef): Boolean = x match {
@@ -305,7 +303,7 @@ object FindReferencesProvider {
       override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = consider(effUse.sym, effUse.qname.loc)
 
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Effect(sym, _), loc) => consider(sym, loc)
+        case Type.Cst(TypeConstructor.Effect(effSym, _), loc) => consider(effSym, loc)
         case _ => ()
       }
     }
@@ -326,7 +324,7 @@ object FindReferencesProvider {
 
     object EnumSymConsumer extends Consumer {
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Enum(sym, _), loc) => consider(sym, loc)
+        case Type.Cst(TypeConstructor.Enum(enumSym, _), loc) => consider(enumSym, loc)
         case _ => ()
       }
     }
@@ -391,7 +389,7 @@ object FindReferencesProvider {
 
     object StructSymConsumer extends Consumer {
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Struct(sym, _), loc) => consider(sym, loc)
+        case Type.Cst(TypeConstructor.Struct(structSym, _), loc) => consider(structSym, loc)
         case _ => ()
       }
     }
@@ -448,7 +446,7 @@ object FindReferencesProvider {
 
     object TypeAliasSymConsumer extends Consumer {
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Alias(TypeAliasSymUse(sym, loc), _, _, _) => consider(sym, loc)
+        case Type.Alias(TypeAliasSymUse(aliasSym, loc), _, _, _) => consider(aliasSym, loc)
         case _ => ()
       }
     }
@@ -471,7 +469,7 @@ object FindReferencesProvider {
       override def consumeTypeParam(tparam: TypedAst.TypeParam): Unit = consider(tparam.sym, tparam.sym.loc)
 
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Var(sym, loc) => consider(sym, loc)
+        case Type.Var(varSym, loc) => consider(varSym, loc)
         case _ => ()
       }
     }
@@ -494,7 +492,7 @@ object FindReferencesProvider {
       override def consumeBinder(bnd: Binder): Unit = consider(bnd.sym, bnd.sym.loc)
 
       override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
-        case TypedAst.Expr.Var(sym, _, loc) => consider(sym, loc)
+        case TypedAst.Expr.Var(varSym, _, loc) => consider(varSym, loc)
         case _ => ()
       }
     }
