@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.language.ast.shared.QualifiedSym
 object SymbolSet {
 
   /**
-   * Returns an empty symbol set.
-   */
+    * Returns an empty symbol set.
+    */
   val empty: SymbolSet = SymbolSet(
     Set.empty[Symbol.EnumSym],
     Set.empty[Symbol.StructSym],
@@ -30,22 +30,41 @@ object SymbolSet {
   )
 
   /**
-    * Returns all the symbols in a given type constructor
-    */
-  private def getSymbolsWithin(wrt : TypeConstructor): SymbolSet = {
-    wrt match {
-      case TypeConstructor.Enum(sym,_) => SymbolSet(Set(sym), Set.empty, Set.empty, Set.empty)
-      case TypeConstructor.Struct(sym,_) => SymbolSet(Set.empty, Set(sym), Set.empty, Set.empty)
-      case TypeConstructor.Effect(sym,_) => SymbolSet(Set.empty, Set.empty, Set.empty, Set(sym))
-      case _ => SymbolSet.empty
-    }
-  }
-  /**
     * Returns all the symbols in a given type
     */
-  def getSymbols(wrt : Type): SymbolSet = {
-    (wrt.typeConstructors map getSymbolsWithin).foldLeft(empty) { _.++(_) }
+  def symbolsOf(wrt: Type): SymbolSet = {
+    /**
+      * Returns all the symbols in a given type constructor
+      */
+    def getSymbolsWithin(wrt: TypeConstructor): SymbolSet = {
+      wrt match {
+        case TypeConstructor.Enum(sym, _) => SymbolSet(Set(sym), Set.empty, Set.empty, Set.empty)
+        case TypeConstructor.Struct(sym, _) => SymbolSet(Set.empty, Set(sym), Set.empty, Set.empty)
+        case TypeConstructor.Effect(sym, _) => SymbolSet(Set.empty, Set.empty, Set.empty, Set(sym))
+        case _ => SymbolSet.empty
+      }
+    }
+
+    (wrt.typeConstructors map getSymbolsWithin).foldLeft(empty) {
+      _ ++ _
+    }
   }
+
+  private def isAmbiguous(sym1: QualifiedSym, sym2: QualifiedSym): Boolean = {
+    sym1.namespace != sym2.namespace && sym1.name == sym2.name
+  }
+
+  /**
+    * Return a symbol set containing all the symbols in `s1` ambiguous w.r.t `s2`.
+    * @param s1 The primary symbol set
+    * @param s2 The set to be checked against
+    */
+  def ambiguous(s1: SymbolSet, s2: SymbolSet): SymbolSet = SymbolSet(
+    s1.enums.filter(sym1 => s2.enums.exists(sym2 => isAmbiguous(sym1, sym2))),
+    s1.structs.filter(sym1 => s2.structs.exists(sym2 => isAmbiguous(sym1, sym2))),
+    s1.traits.filter(sym1 => s2.traits.exists(sym2 => isAmbiguous(sym1, sym2))),
+    s1.effects.filter(sym1 => s2.effects.exists(sym2 => isAmbiguous(sym1, sym2)))
+  )
 }
 
 case class SymbolSet(
@@ -83,10 +102,10 @@ case class SymbolSet(
     * Checks to see if `this` is ambiguous with respect to the given `SymbolSet`.
     */
   private def isAmbiguous(sym : QualifiedSym): Boolean = {
-    enums.exists(x => x.name == sym.name && x.namespace != sym.namespace) ||
-      structs.exists(x => x.name == sym.name && x.namespace != sym.namespace) ||
-      traits.exists(x => x.name == sym.name && x.namespace != sym.namespace)||
-      effects.exists(x => x.name == sym.name && x.namespace != sym.namespace)
+    enums.exists(x => x.qname == sym.qname && x.qnamespace != sym.qnamespace) ||
+      structs.exists(x => x.qname == sym.qname && x.qnamespace != sym.qnamespace) ||
+      traits.exists(x => x.qname == sym.qname && x.qnamespace != sym.qnamespace)||
+      effects.exists(x => x.qname == sym.qname && x.qnamespace != sym.qnamespace)
   }
 
   /**
@@ -102,7 +121,7 @@ case class SymbolSet(
     * @param sym The symbol to compute
     */
   def formatDistinct(sym : QualifiedSym): String = {
-    if (isAmbiguous(sym)) (sym.namespace.mkString(".") + "." + sym.name)
-    else sym.name
+    if (isAmbiguous(sym)) (sym.qnamespace.mkString(".") + "." + sym.qname)
+    else sym.qname
   }
 }
