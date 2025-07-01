@@ -32,11 +32,11 @@ object SymbolSet {
   /**
     * Returns all the symbols in a given type
     */
-  def symbolsOf(wrt: Type): SymbolSet = {
+  def symbolsOf(tpe: Type): SymbolSet = {
     /**
       * Returns all the symbols in a given type constructor
       */
-    def getSymbolsWithin(wrt: TypeConstructor): SymbolSet = {
+    def getSymbolsWithin(t: TypeConstructor): SymbolSet = {
       wrt match {
         case TypeConstructor.Enum(sym, _) => SymbolSet(Set(sym), Set.empty, Set.empty, Set.empty)
         case TypeConstructor.Struct(sym, _) => SymbolSet(Set.empty, Set(sym), Set.empty, Set.empty)
@@ -44,13 +44,8 @@ object SymbolSet {
         case _ => SymbolSet.empty
       }
     }
-
-    (wrt.typeConstructors map getSymbolsWithin).foldLeft(empty) {
-      _ ++ _
-    }
+    (tpe.typeConstructors map getSymbolsWithin).foldLeft(empty) { _ ++ _ }
   }
-
-
 
   /**
     * Return a symbol set containing all the symbols in `s1` ambiguous w.r.t `s2`.
@@ -77,7 +72,7 @@ object SymbolSet {
     * @return true if the symbols are ambiguous, false otherwise
     */
   private def isAmbiguous(sym1: QualifiedSym, sym2: QualifiedSym): Boolean = {
-    sym1.namespace != sym2.namespace && sym1.name == sym2.name
+    sym1.name == sym2.name && sym1.namespace != sym2.namespace
   }
 }
 
