@@ -15,7 +15,7 @@
  */
 
 ///
-///Represents a V6 Ip Address.
+/// Represents a V6 Ip Address.
 ///
 enum Ipv6Addr with Eq {
     case Ipv6Addr( // 128 bits
@@ -42,8 +42,38 @@ mod Ipv6Addr {
 
     use Ipv6Addr.Ipv6Addr
 
+    ///
+    /// Attempts to parse the given String `s` as an `Ipv6Addr`.
+    ///
+    /// Returns `Some(addr)` if the string was successfully parsed. Otherwise returns `None`.
+    ///
+    pub def fromString(s: String): Option[Ipv6Addr] =
+        match s |> cleanIpv6String |> parseIpv6List {
+            case Some(b1::b2::b3::b4::b5::b6::b7::b8::b9::b10::b11::b12::b13::b14::b15::b16::Nil) =>
+                Some(Ipv6Addr(
+                  b1,  b2,  b3,  b4,
+                  b5,  b6,  b7,  b8,
+                  b9,  b10, b11, b12,
+                  b13, b14, b15, b16
+                ))
+            case _ => None
+        }
+
+    ///
+    /// Returns a String representation of the given Ipv6Addr `x`.
+    ///
+    pub def toString(x: Ipv6Addr): String =
+        let Ipv6Addr(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16) = x;
+        "${byteToHex(b1, b2)}:${byteToHex(b3, b4)}:${byteToHex(b5, b6)}:${byteToHex(b7, b8)}:${byteToHex(b9, b10)}:${byteToHex(b11, b12)}:${byteToHex(b13, b14)}:${byteToHex(b15, b16)}"
+
+    ///
+    /// convert `x` from i8 to u8.
+    ///
     def toUnsigned8(x: Int8): Int32 = Int32.bitwiseAnd(Int8.toInt32(x), 0xFF)
 
+    ///
+    /// Convert two Int8's into a hex string.
+    ///
     def byteToHex(b1: Int8, b2: Int8): String = {
         let combined = (toUnsigned8(b1) * 256) + toUnsigned8(b2);
         let hexString = String.toUpperCase(Integer.toString(combined, 16));
@@ -95,6 +125,9 @@ mod Ipv6Addr {
             else
                 addGroups(groups, missing)
 
+    ///
+    /// Fill in expasion gaps in Ipv6 String representation with "0000".
+    ///
     def addGroups(l: List[String], missing: Int32): List[String] =
         match l {
             case h :: t => {
@@ -118,36 +151,6 @@ mod Ipv6Addr {
         })
         |> List.flatten
         |> List.traverse(byteStringToInt8)
-
-    ///
-    /// Attempts to parse the given String `s` as an `Ipv6Addr`.
-    ///
-    /// Returns `Some(addr)` if the string was successfully parsed. Otherwise returns `None`.
-    ///
-    pub def fromString(s: String): Option[Ipv6Addr] =
-        match s |> cleanIpv6String |> parseIpv6List {
-            case Some(b1::b2::b3::b4::b5::b6::b7::b8::b9::b10::b11::b12::b13::b14::b15::b16::Nil) =>
-                Some(Ipv6Addr(
-                  b1,  b2,  b3,  b4,
-                  b5,  b6,  b7,  b8,
-                  b9,  b10, b11, b12,
-                  b13, b14, b15, b16
-                ))
-            case _ => None
-        }
-
-    ///
-    /// Returns a String representation of the given Ipv6Addr `x`.
-    ///
-    pub def toString(x: Ipv6Addr): String = match x {
-        case Ipv6Addr.Ipv6Addr(
-              b1,  b2,  b3,  b4,
-              b5,  b6,  b7,  b8,
-              b9,  b10, b11, b12,
-              b13, b14, b15, b16
-        ) => "${byteToHex(b1, b2)}:${byteToHex(b3, b4)}:${byteToHex(b5, b6)}:${byteToHex(b7, b8)}:${byteToHex(b9, b10)}:${byteToHex(b11, b12)}:${byteToHex(b13, b14)}:${byteToHex(b15, b16)}"
-        case _ => ""
-    }
 
 }
 
