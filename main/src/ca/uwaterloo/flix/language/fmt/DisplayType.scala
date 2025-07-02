@@ -25,9 +25,9 @@ import java.lang.reflect.{Constructor, Field, Method}
 /**
   * A well-kinded type in an easily-printable format.
   */
-sealed trait SimpleType
+sealed trait DisplayType
 
-object SimpleType {
+object DisplayType {
 
   private class OverAppliedType(loc: SourceLocation) extends InternalCompilerException("Unexpected over-applied type.", loc)
 
@@ -39,67 +39,67 @@ object SimpleType {
     * An unfilled parameter in a partially-applied type-level function.
     * For example, `Not` (applied to nothing) is `Not(Hole)`.
     */
-  case object Hole extends SimpleType
+  case object Hole extends DisplayType
 
   /////////////
   // Primitives
   /////////////
 
-  case object Void extends SimpleType
+  case object Void extends DisplayType
 
-  case object AnyType extends SimpleType
+  case object AnyType extends DisplayType
 
-  case object Unit extends SimpleType
+  case object Unit extends DisplayType
 
-  case object Null extends SimpleType
+  case object Null extends DisplayType
 
-  case object Bool extends SimpleType
+  case object Bool extends DisplayType
 
-  case object Char extends SimpleType
+  case object Char extends DisplayType
 
-  case object Float32 extends SimpleType
+  case object Float32 extends DisplayType
 
-  case object Float64 extends SimpleType
+  case object Float64 extends DisplayType
 
-  case object BigDecimal extends SimpleType
+  case object BigDecimal extends DisplayType
 
-  case object Int8 extends SimpleType
+  case object Int8 extends DisplayType
 
-  case object Int16 extends SimpleType
+  case object Int16 extends DisplayType
 
-  case object Int32 extends SimpleType
+  case object Int32 extends DisplayType
 
-  case object Int64 extends SimpleType
+  case object Int64 extends DisplayType
 
-  case object BigInt extends SimpleType
+  case object BigInt extends DisplayType
 
-  case object Str extends SimpleType
+  case object Str extends DisplayType
 
-  case object Regex extends SimpleType
+  case object Regex extends DisplayType
 
-  case object Array extends SimpleType
+  case object Array extends DisplayType
 
-  case object ArrayWithoutRegion extends SimpleType
+  case object ArrayWithoutRegion extends DisplayType
 
-  case object Vector extends SimpleType
+  case object Vector extends DisplayType
 
-  case object Sender extends SimpleType
+  case object Sender extends DisplayType
 
-  case object Receiver extends SimpleType
+  case object Receiver extends DisplayType
 
-  case object Lazy extends SimpleType
+  case object Lazy extends DisplayType
 
-  case object Pure extends SimpleType
+  case object Pure extends DisplayType
 
-  case object Univ extends SimpleType
+  case object Univ extends DisplayType
 
-  case object False extends SimpleType
+  case object False extends DisplayType
 
-  case object True extends SimpleType
+  case object True extends DisplayType
 
-  case object RegionToStar extends SimpleType
+  case object RegionToStar extends DisplayType
 
-  case object RegionWithoutRegion extends SimpleType
+  case object RegionWithoutRegion extends DisplayType
 
   //////////
   // Records
@@ -108,27 +108,27 @@ object SimpleType {
   /**
     * A record constructor. `arg` should be a variable or a Hole.
     */
-  case class RecordConstructor(arg: SimpleType) extends SimpleType
+  case class RecordConstructor(arg: DisplayType) extends DisplayType
 
   /**
     * An unextended record.
     */
-  case class Record(labels: List[RecordLabelType]) extends SimpleType
+  case class Record(labels: List[RecordLabelType]) extends DisplayType
 
   /**
     * An extended record. `arg` should be a variable or a Hole.
     */
-  case class RecordExtend(labels: List[RecordLabelType], rest: SimpleType) extends SimpleType
+  case class RecordExtend(labels: List[RecordLabelType], rest: DisplayType) extends DisplayType
 
   /**
     * An unextended record row.
     */
-  case class RecordRow(labels: List[RecordLabelType]) extends SimpleType
+  case class RecordRow(labels: List[RecordLabelType]) extends DisplayType
 
   /**
     * An extended record row. `arg` should be a variable or a Hole.
     */
-  case class RecordRowExtend(labels: List[RecordLabelType], rest: SimpleType) extends SimpleType
+  case class RecordRowExtend(labels: List[RecordLabelType], rest: DisplayType) extends DisplayType
 
   //////////
   // Schemas
@@ -137,27 +137,27 @@ object SimpleType {
   /**
     * A schema constructor. `arg` should be a variable or a Hole.
     */
-  case class SchemaConstructor(arg: SimpleType) extends SimpleType
+  case class SchemaConstructor(arg: DisplayType) extends DisplayType
 
   /**
     * An unextended schema.
     */
-  case class Schema(fields: List[PredicateFieldType]) extends SimpleType
+  case class Schema(fields: List[PredicateFieldType]) extends DisplayType
 
   /**
     * An extended schema. `arg` should be a variable or a Hole.
     */
-  case class SchemaExtend(fields: List[PredicateFieldType], rest: SimpleType) extends SimpleType
+  case class SchemaExtend(fields: List[PredicateFieldType], rest: DisplayType) extends DisplayType
 
   /**
     * An unextended schema row.
     */
-  case class SchemaRow(fields: List[PredicateFieldType]) extends SimpleType
+  case class SchemaRow(fields: List[PredicateFieldType]) extends DisplayType
 
   /**
     * An extended schema row. `arg` should be a variable or a Hole.
     */
-  case class SchemaRowExtend(fields: List[PredicateFieldType], rest: SimpleType) extends SimpleType
+  case class SchemaRowExtend(fields: List[PredicateFieldType], rest: DisplayType) extends DisplayType
 
   ////////////////////
   // Boolean Operators
@@ -166,17 +166,17 @@ object SimpleType {
   /**
     * Boolean negation.
     */
-  case class Not(tpe: SimpleType) extends SimpleType
+  case class Not(tpe: DisplayType) extends DisplayType
 
   /**
     * A chain of types connected by `and`.
     */
-  case class And(tpes: List[SimpleType]) extends SimpleType
+  case class And(tpes: List[DisplayType]) extends DisplayType
 
   /**
     * A chain of types connected by `or`.
     */
-  case class Or(tpes: List[SimpleType]) extends SimpleType
+  case class Or(tpes: List[DisplayType]) extends DisplayType
 
   ////////////////
   // Set Operators
@@ -185,50 +185,50 @@ object SimpleType {
   /**
     * Set complement.
     */
-  case class Complement(tpe: SimpleType) extends SimpleType
+  case class Complement(tpe: DisplayType) extends DisplayType
 
   /**
     * A chain of types in a set.
     */
-  case class Union(tpes: List[SimpleType]) extends SimpleType
+  case class Union(tpes: List[DisplayType]) extends DisplayType
 
   /**
     * A chain of types connected by `&`.
     */
-  case class Plus(tpes: List[SimpleType]) extends SimpleType
+  case class Plus(tpes: List[DisplayType]) extends DisplayType
 
   /**
     * A chain of types connected by `&`.
     */
-  case class Intersection(tpes: List[SimpleType]) extends SimpleType
+  case class Intersection(tpes: List[DisplayType]) extends DisplayType
 
   /**
     * A chain of types connected by `⊕`.
     */
-  case class SymmetricDiff(tpes: List[SimpleType]) extends SimpleType
+  case class SymmetricDiff(tpes: List[DisplayType]) extends DisplayType
 
   /**
     * A chain of types connected by `-`.
     */
-  case class Difference(tpes: List[SimpleType]) extends SimpleType
+  case class Difference(tpes: List[DisplayType]) extends DisplayType
 
   /////////////
   // Predicates
   /////////////
 
-  case object RelationConstructor extends SimpleType
+  case object RelationConstructor extends DisplayType
 
   /**
     * A relation over a list of types.
     */
-  case class Relation(tpes: List[SimpleType]) extends SimpleType
+  case class Relation(tpes: List[DisplayType]) extends DisplayType
 
-  case object LatticeConstructor extends SimpleType
+  case object LatticeConstructor extends DisplayType
 
   /**
     * A lattice over a list of types.
     */
-  case class Lattice(tpes: List[SimpleType], lat: SimpleType) extends SimpleType
+  case class Lattice(tpes: List[DisplayType], lat: DisplayType) extends DisplayType
 
   ////////////
   // Functions
@@ -237,45 +237,45 @@ object SimpleType {
   /**
     * A pure function.
     */
-  case class PureArrow(arg: SimpleType, ret: SimpleType) extends SimpleType
+  case class PureArrow(arg: DisplayType, ret: DisplayType) extends DisplayType
 
   /**
     * A function with a purity.
     */
-  case class PolyArrow(arg: SimpleType, eff: SimpleType, ret: SimpleType) extends SimpleType
+  case class PolyArrow(arg: DisplayType, eff: DisplayType, ret: DisplayType) extends DisplayType
 
   /**
     * A backend function (no effect).
     */
-  case class ArrowWithoutEffect(arg: SimpleType, ret: SimpleType) extends SimpleType
+  case class ArrowWithoutEffect(arg: DisplayType, ret: DisplayType) extends DisplayType
 
   ///////
   // Tags
   ///////
 
-  case class TagConstructor(name: String) extends SimpleType
+  case class TagConstructor(name: String) extends DisplayType
 
   ////////////
   // JVM Types
   ////////////
 
-  case class JvmToType(tpe: SimpleType) extends SimpleType
+  case class JvmToType(tpe: DisplayType) extends DisplayType
 
-  case class JvmToEff(tpe: SimpleType) extends SimpleType
+  case class JvmToEff(tpe: DisplayType) extends DisplayType
 
-  case class JvmUnresolvedConstructor(name: String, tpes: List[SimpleType]) extends SimpleType
+  case class JvmUnresolvedConstructor(name: String, tpes: List[DisplayType]) extends DisplayType
 
-  case class JvmUnresolvedField(tpe: SimpleType, name: String) extends SimpleType
+  case class JvmUnresolvedField(tpe: DisplayType, name: String) extends DisplayType
 
-  case class JvmUnresolvedMethod(tpe: SimpleType, name: String, tpes: List[SimpleType]) extends SimpleType
+  case class JvmUnresolvedMethod(tpe: DisplayType, name: String, tpes: List[DisplayType]) extends DisplayType
 
-  case class JvmUnresolvedStaticMethod(clazz: String, name: String, tpes: List[SimpleType]) extends SimpleType
+  case class JvmUnresolvedStaticMethod(clazz: String, name: String, tpes: List[DisplayType]) extends DisplayType
 
-  case class JvmConstructor(constructor: Constructor[?]) extends SimpleType
+  case class JvmConstructor(constructor: Constructor[?]) extends DisplayType
 
-  case class JvmField(field: Field) extends SimpleType
+  case class JvmField(field: Field) extends DisplayType
 
-  case class JvmMethod(method: Method) extends SimpleType
+  case class JvmMethod(method: Method) extends DisplayType
 
   //////////////////////
   // Miscellaneous Types
@@ -284,32 +284,32 @@ object SimpleType {
   /**
     * A simple named type (e.g., enum or type alias).
     */
-  case class Name(name: String) extends SimpleType
+  case class Name(name: String) extends DisplayType
 
   /**
     * A type applied to one or more types.
     */
-  case class Apply(tpe: SimpleType, tpes: List[SimpleType]) extends SimpleType
+  case class Apply(tpe: DisplayType, tpes: List[DisplayType]) extends DisplayType
 
   /**
     * A type variable.
     */
-  case class Var(id: Int, kind: Kind, text: VarText) extends SimpleType
+  case class Var(id: Int, kind: Kind, text: VarText) extends DisplayType
 
   /**
     * A tuple.
     */
-  case class Tuple(tpes: List[SimpleType]) extends SimpleType
+  case class Tuple(tpes: List[DisplayType]) extends DisplayType
 
   /**
     * A region.
     */
-  case class Region(name: String) extends SimpleType
+  case class Region(name: String) extends DisplayType
 
   /**
     * An error type.
     */
-  case object Error extends SimpleType
+  case object Error extends DisplayType
 
   /////////
   // Fields
@@ -318,7 +318,7 @@ object SimpleType {
   /**
     * A record label name and its type.
     */
-  case class RecordLabelType(name: String, tpe: SimpleType)
+  case class RecordLabelType(name: String, tpe: DisplayType)
 
   /**
     * A common supertype for schema predicates.
@@ -330,24 +330,24 @@ object SimpleType {
   /**
     * A relation field name and its types.
     */
-  case class RelationFieldType(name: String, tpes: List[SimpleType]) extends PredicateFieldType
+  case class RelationFieldType(name: String, tpes: List[DisplayType]) extends PredicateFieldType
 
   /**
     * A lattice field name, its types, and its lattice.
     */
-  case class LatticeFieldType(name: String, tpes: List[SimpleType], lat: SimpleType) extends PredicateFieldType
+  case class LatticeFieldType(name: String, tpes: List[DisplayType], lat: DisplayType) extends PredicateFieldType
 
   /**
     * A predicate field type that's not actually a predicate.
     */
-  case class NonPredFieldType(name: String, tpe: SimpleType) extends PredicateFieldType
+  case class NonPredFieldType(name: String, tpe: DisplayType) extends PredicateFieldType
 
   /**
     * Creates a simple type from the well-kinded type `t`.
     */
-  def fromWellKindedType(t0: Type): SimpleType = {
+  def fromWellKindedType(t0: Type): DisplayType = {
 
-    def visit(t: Type): SimpleType = t.baseType match {
+    def visit(t: Type): DisplayType = t.baseType match {
       case Type.Var(sym, _) =>
         mkApply(Var(sym.id, sym.kind, sym.text), t.typeArguments.map(visit))
       case Type.Alias(cst, args, _, _) =>
@@ -355,14 +355,14 @@ object SimpleType {
       case Type.AssocType(cst, arg, _, _) =>
         mkApply(Name(cst.sym.name), (arg :: t.typeArguments).map(visit))
       case Type.JvmToType(tpe, _) =>
-        mkApply(SimpleType.JvmToType(visit(tpe)), t.typeArguments.map(visit))
+        mkApply(DisplayType.JvmToType(visit(tpe)), t.typeArguments.map(visit))
       case Type.JvmToEff(tpe, _) =>
-        mkApply(SimpleType.JvmToEff(visit(tpe)), t.typeArguments.map(visit))
+        mkApply(DisplayType.JvmToEff(visit(tpe)), t.typeArguments.map(visit))
       case Type.UnresolvedJvmType(member, _) => member match {
-        case JvmMember.JvmConstructor(clazz, tpes) => SimpleType.JvmUnresolvedConstructor(clazz.getSimpleName, tpes.map(visit))
-        case JvmMember.JvmMethod(tpe, name, tpes) => SimpleType.JvmUnresolvedMethod(visit(tpe), name.name, tpes.map(visit))
-        case JvmMember.JvmField(_, tpe, name) => SimpleType.JvmUnresolvedField(visit(tpe), name.name)
-        case JvmMember.JvmStaticMethod(clazz, name, tpes) => SimpleType.JvmUnresolvedStaticMethod(clazz.getSimpleName, name.name, tpes.map(visit))
+        case JvmMember.JvmConstructor(clazz, tpes) => DisplayType.JvmUnresolvedConstructor(clazz.getSimpleName, tpes.map(visit))
+        case JvmMember.JvmMethod(tpe, name, tpes) => DisplayType.JvmUnresolvedMethod(visit(tpe), name.name, tpes.map(visit))
+        case JvmMember.JvmField(_, tpe, name) => DisplayType.JvmUnresolvedField(visit(tpe), name.name)
+        case JvmMember.JvmStaticMethod(clazz, name, tpes) => DisplayType.JvmUnresolvedStaticMethod(clazz.getSimpleName, name.name, tpes.map(visit))
       }
       case Type.Cst(tc, _) => tc match {
         case TypeConstructor.Void => Void
@@ -387,7 +387,7 @@ object SimpleType {
           args match {
             // Case 1: No args. Fill everything with a hole.
             case Nil =>
-              val lastArrow: SimpleType = PolyArrow(Hole, Hole, Hole)
+              val lastArrow: DisplayType = PolyArrow(Hole, Hole, Hole)
               // NB: safe to subtract 2 since arity is always at least 2
               List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow.apply)
 
@@ -401,7 +401,7 @@ object SimpleType {
               // NB: safe to take last 2 because arity is always at least 2
               val allTpes = tpes.padTo(arity, Hole)
               val List(lastArg, ret) = allTpes.takeRight(2)
-              val lastArrow: SimpleType = PolyArrow(lastArg, eff, ret)
+              val lastArrow: DisplayType = PolyArrow(lastArg, eff, ret)
               allTpes.dropRight(2).foldRight(lastArrow)(PureArrow.apply)
           }
 
@@ -545,7 +545,7 @@ object SimpleType {
             case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
-        case TypeConstructor.Not => SimpleType.Not(visit(t.typeArguments.head))
+        case TypeConstructor.Not => DisplayType.Not(visit(t.typeArguments.head))
 
         case TypeConstructor.Complement =>
           t.typeArguments.map(visit) match {
@@ -599,8 +599,8 @@ object SimpleType {
           SymmetricDiff(args)
 
         case TypeConstructor.CaseSet(syms, _) =>
-          val names = syms.toList.map(sym => SimpleType.Name(sym.name))
-          val set = SimpleType.Union(names)
+          val names = syms.toList.map(sym => DisplayType.Name(sym.name))
+          val set = DisplayType.Union(names)
           mkApply(set, t.typeArguments.map(visit))
 
         case TypeConstructor.CaseComplement(_) =>
@@ -626,12 +626,12 @@ object SimpleType {
             case _ => throw new OverAppliedType(t.loc)
           }
 
-        case TypeConstructor.Effect(sym, _) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
-        case TypeConstructor.Region(sym) => mkApply(SimpleType.Region(sym.text), t.typeArguments.map(visit))
+        case TypeConstructor.Effect(sym, _) => mkApply(DisplayType.Name(sym.name), t.typeArguments.map(visit))
+        case TypeConstructor.Region(sym) => mkApply(DisplayType.Region(sym.text), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(RegionToStar, t.typeArguments.map(visit))
         case TypeConstructor.RegionWithoutRegion => mkApply(RegionWithoutRegion, t.typeArguments.map(visit))
 
-        case TypeConstructor.Error(_, _) => SimpleType.Error
+        case TypeConstructor.Error(_, _) => DisplayType.Error
       }
     }
 
@@ -641,7 +641,7 @@ object SimpleType {
   /**
     * Builds an Apply type.
     */
-  private def mkApply(base: SimpleType, args: List[SimpleType]): SimpleType = args match {
+  private def mkApply(base: DisplayType, args: List[DisplayType]): DisplayType = args match {
     case Nil => base
     case _ :: _ => Apply(base, args)
   }
@@ -649,7 +649,7 @@ object SimpleType {
   /**
     * Extracts the types from a tuple, treating non-tuples as singletons.
     */
-  private def destructTuple(tpe: SimpleType): List[SimpleType] = tpe match {
+  private def destructTuple(tpe: DisplayType): List[DisplayType] = tpe match {
     case Tuple(fields) => fields
     case Unit => Nil
     case t => t :: Nil
@@ -658,21 +658,21 @@ object SimpleType {
   /**
     * Transforms the given type, assuming it is a record row.
     */
-  private def fromRecordRow(row0: Type): SimpleType = {
-    def visit(row: Type): SimpleType = row match {
+  private def fromRecordRow(row0: Type): DisplayType = {
+    def visit(row: Type): DisplayType = row match {
       // Case 1: A fully applied record row.
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(name), _), tpe, _), rest, _) =>
         val labelType = RecordLabelType(name.name, fromWellKindedType(tpe))
         visit(rest) match {
           // Case 1.1: Unextended row. Put the labels together.
-          case SimpleType.RecordRow(labels) => SimpleType.RecordRow(labelType :: labels)
+          case DisplayType.RecordRow(labels) => DisplayType.RecordRow(labelType :: labels)
           // Case 1.2: Extended row. Put the labels together.
-          case SimpleType.RecordRowExtend(labels, restOfRest) => SimpleType.RecordRowExtend(labelType :: labels, restOfRest)
+          case DisplayType.RecordRowExtend(labels, restOfRest) => DisplayType.RecordRowExtend(labelType :: labels, restOfRest)
           // Case 1.3: Non-row. Put it in the "rest" position.
-          case nonRecord => SimpleType.RecordRowExtend(labelType :: Nil, nonRecord)
+          case nonRecord => DisplayType.RecordRowExtend(labelType :: Nil, nonRecord)
         }
       // Case 2: Empty record row.
-      case Type.Cst(TypeConstructor.RecordRowEmpty, _) => SimpleType.RecordRow(Nil)
+      case Type.Cst(TypeConstructor.RecordRowEmpty, _) => DisplayType.RecordRow(Nil)
       // Case 3: Non-row.
       case nonRecord => fromWellKindedType(nonRecord)
     }
@@ -688,8 +688,8 @@ object SimpleType {
   /**
     * Transforms the given type, assuming it is a schema row.
     */
-  private def fromSchemaRow(row0: Type): SimpleType = {
-    def visit(row: Type): SimpleType = row match {
+  private def fromSchemaRow(row0: Type): DisplayType = {
+    def visit(row: Type): DisplayType = row match {
       // Case 1: A fully applied record row.
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(name), _), tpe, _), rest, _) =>
         // create the right field/type for the field
@@ -701,14 +701,14 @@ object SimpleType {
         }
         visit(rest) match {
           // Case 1.1: Unextended row. Put the fields together.
-          case SimpleType.SchemaRow(fields) => SimpleType.SchemaRow(fieldType :: fields)
+          case DisplayType.SchemaRow(fields) => DisplayType.SchemaRow(fieldType :: fields)
           // Case 1.2: Extended row. Put the fields together.
-          case SimpleType.SchemaRowExtend(fields, restOfRest) => SimpleType.SchemaRowExtend(fieldType :: fields, restOfRest)
+          case DisplayType.SchemaRowExtend(fields, restOfRest) => DisplayType.SchemaRowExtend(fieldType :: fields, restOfRest)
           // Case 1.3: Non-row. Put it in the "rest" position.
-          case nonSchema => SimpleType.SchemaRowExtend(fieldType :: Nil, nonSchema)
+          case nonSchema => DisplayType.SchemaRowExtend(fieldType :: Nil, nonSchema)
         }
       // Case 2: Empty record row.
-      case Type.Cst(TypeConstructor.SchemaRowEmpty, _) => SimpleType.SchemaRow(Nil)
+      case Type.Cst(TypeConstructor.SchemaRowEmpty, _) => DisplayType.SchemaRow(Nil)
       // Case 3: Non-row.
       case nonSchema => fromWellKindedType(nonSchema)
     }
@@ -725,7 +725,7 @@ object SimpleType {
     * Splits `t1 and t2` into `t1 :: t2 :: Nil`,
     * and leaves non-and types as singletons.
     */
-  private def splitAnds(tpe: SimpleType): List[SimpleType] = tpe match {
+  private def splitAnds(tpe: DisplayType): List[DisplayType] = tpe match {
     case And(tpes) => tpes
     case t => List(t)
   }
@@ -734,7 +734,7 @@ object SimpleType {
     * Splits `t1 or t2` into `t1 :: t2 :: Nil`,
     * and leaves non-or types as singletons.
     */
-  private def splitOrs(tpe: SimpleType): List[SimpleType] = tpe match {
+  private def splitOrs(tpe: DisplayType): List[DisplayType] = tpe match {
     case Or(tpes) => tpes
     case t => List(t)
   }
@@ -743,7 +743,7 @@ object SimpleType {
     * Splits `t1 + t2` into `t1 :: t2 :: Nil`,
     * and leaves non-plus types as singletons.
     */
-  private def splitPluses(tpe: SimpleType): List[SimpleType] = tpe match {
+  private def splitPluses(tpe: DisplayType): List[DisplayType] = tpe match {
     case Plus(tpes) => tpes
     case t => List(t)
   }
@@ -752,7 +752,7 @@ object SimpleType {
     * Splits `t1 & t2` into `t1 :: t2 :: Nil`,
     * and leaves other types as singletons.
     */
-  private def splitIntersections(tpe: SimpleType): List[SimpleType] = tpe match {
+  private def splitIntersections(tpe: DisplayType): List[DisplayType] = tpe match {
     case Intersection(tpes) => tpes
     case t => List(t)
   }
@@ -761,7 +761,7 @@ object SimpleType {
     * Splits `t1 - t2` into `t1 :: t2 :: Nil`,
     * and leaves other types as singletons.
     */
-  private def splitDifference(tpe: SimpleType): List[SimpleType] = tpe match {
+  private def splitDifference(tpe: DisplayType): List[DisplayType] = tpe match {
     case Difference(tpes) => tpes
     case t => List(t)
   }
@@ -770,7 +770,7 @@ object SimpleType {
     * Splits `t1 ⊕ t2` into `t1 :: t2 :: Nil`,
     * and leaves other types as singletons.
     */
-  private def splitSymmetricDiff(tpe: SimpleType): List[SimpleType] = tpe match {
+  private def splitSymmetricDiff(tpe: DisplayType): List[DisplayType] = tpe match {
     case SymmetricDiff(tpes) => tpes
     case t => List(t)
   }
