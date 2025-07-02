@@ -1,25 +1,25 @@
 ///
 /// The core gameplay loop called repeatedly until the game ends.
 ///
-def gameLoop(board: Board[r], symbol: Symbol): Unit \ {r + Interface} = {
+def gameLoop(board: Board[r], symbol: Symbol, rc: Region[r]): Unit \ {r + Interface} = {
     Interface.display(Board.toString(board), "Enter a move (0 - 8): ");
     let move = Interface.getMove();
-    let (newBoard, moveSuccess) = Board.makeMove(board, symbol, move);
+    let (newBoard, moveSuccess) = Board.makeMove(board, symbol, move, rc);
     if (moveSuccess) {
         if(Board.checkWin(newBoard, symbol)) {
             match symbol {
-                case Symbol.X => Interface.display(Board.toString(board), "Player One wins!!!")
-                case Symbol.O => Interface.display(Board.toString(board), "Player Two wins!!!")
+                case Symbol.X => Interface.display(Board.toString(newBoard), "Player One wins!!!")
+                case Symbol.O => Interface.display(Board.toString(newBoard), "Player Two wins!!!")
                 case _ => ()
             }
         } else if(Board.boardFilled(newBoard)) {
             Interface.display(Board.toString(board), "Draw")
         } else {
-            gameLoop(newBoard, Symbol.complement(symbol))
+            gameLoop(newBoard, Symbol.complement(symbol), rc)
         }
     } else {
         Interface.display("", "Cell already filled");
-        gameLoop(board, symbol)
+        gameLoop(board, symbol, rc)
     }
 }
 
@@ -28,7 +28,7 @@ def gameLoop(board: Board[r], symbol: Symbol): Unit \ {r + Interface} = {
 ///
 /// Creates a new game board and starts the game loop.
 ///
-def main(): Unit \ IO = region rc1 {
+def main(): Unit \ IO = region rc {
     run {
         println("");
         println("_______ _          _______             _______           ");
@@ -48,8 +48,8 @@ def main(): Unit \ IO = region rc1 {
         println("       |       |       ");
         println("Enter your move as one these numbers corresponding to a cell");
         println("");
-        let board = Board.newBoard(rc1);
-        gameLoop(board, Symbol.X)
+        let board = Board.newBoard(rc);
+        gameLoop(board, Symbol.X, rc)
     } with Interface.interfaceWithIOAndConsole
     with Console.runWithIO
 }
