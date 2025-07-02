@@ -342,9 +342,9 @@ object CompletionUtils {
     */
   def matchesName(sym: QualifiedSym, qn: Name.QName, qualified: Boolean): Boolean = {
     if (qualified) {
-      matchesQualifiedName(sym.namespace, sym.name, qn)
+      matchesQualifiedName(sym.qnamespace, sym.qname, qn)
     } else
-      fuzzyMatch(qn.ident.name, sym.name)
+      fuzzyMatch(qn.ident.name, sym.qname)
   }
 
   /**

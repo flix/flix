@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
-import ca.uwaterloo.flix.language.ast.shared.VarText
+import ca.uwaterloo.flix.language.ast.shared.{QualifiedSym, SymbolSet, VarText}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -342,10 +342,15 @@ object SimpleType {
     */
   case class NonPredFieldType(name: String, tpe: SimpleType) extends PredicateFieldType
 
+
   /**
     * Creates a simple type from the well-kinded type `t`.
     */
-  def fromWellKindedType(t0: Type): SimpleType = {
+  def fromWellKindedType(t0: Type, wrt : List[Type] = List()): SimpleType = {
+
+    val symbolSet: SymbolSet = (wrt map {
+      SymbolSet.getSymbols _
+    }).foldLeft(SymbolSet.empty) { _.++(_) }
 
     def visit(t: Type): SimpleType = t.baseType match {
       case Type.Var(sym, _) =>
@@ -495,9 +500,9 @@ object SimpleType {
         case TypeConstructor.Sender => mkApply(Sender, t.typeArguments.map(visit))
         case TypeConstructor.Receiver => mkApply(Receiver, t.typeArguments.map(visit))
         case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(visit))
-        case TypeConstructor.Enum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
-        case TypeConstructor.Struct(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
-        case TypeConstructor.RestrictableEnum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
+        case TypeConstructor.Enum(sym, _) => mkApply(Name(sym.formatDistinct(symbolSet)), t.typeArguments.map(visit))
+        case TypeConstructor.Struct(sym, _) => mkApply(Name(sym.formatDistinct(symbolSet)), t.typeArguments.map(visit))
+        case TypeConstructor.RestrictableEnum(sym, _) => mkApply(Name(sym.formatDistinct(symbolSet)), t.typeArguments.map(visit))
         case TypeConstructor.Native(clazz) => mkApply(Name(clazz.getName), t.typeArguments.map(visit))
         case TypeConstructor.JvmConstructor(constructor) => mkApply(JvmConstructor(constructor), t.typeArguments.map(visit))
         case TypeConstructor.JvmMethod(method) => mkApply(JvmMethod(method), t.typeArguments.map(visit))
