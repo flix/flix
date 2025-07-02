@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, SimpleType, Purity, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -98,7 +98,7 @@ object LambdaLift {
 
     case SimplifiedAst.Expr.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
       val arrowTpe = tpe match {
-        case t: MonoType.Arrow => t
+        case t: SimpleType.Arrow => t
         case _ => throw InternalCompilerException(s"Lambda has unexpected type: $tpe", loc)
       }
 
@@ -114,7 +114,7 @@ object LambdaLift {
 
       // Construct the closure parameters
       val cs = if (cparams.isEmpty) {
-        List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), Modifiers.Empty, MonoType.Unit, loc))
+        List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), Modifiers.Empty, SimpleType.Unit, loc))
       } else cparams.map(visitFormalParam)
 
       // Construct the formal parameters.
@@ -129,7 +129,7 @@ object LambdaLift {
 
       // Construct the closure args.
       val closureArgs = if (freeVars.isEmpty)
-        List(LiftedAst.Expr.Cst(Constant.Unit, MonoType.Unit, loc))
+        List(LiftedAst.Expr.Cst(Constant.Unit, SimpleType.Unit, loc))
       else freeVars.map {
         case SimplifiedAst.FreeVar(sym, fvTpe) => LiftedAst.Expr.Var(sym, fvTpe, sym.loc)
       }

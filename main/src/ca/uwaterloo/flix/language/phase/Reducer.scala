@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{MonoType, Purity}
+import ca.uwaterloo.flix.language.ast.{SimpleType, Purity}
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.shared.ExpPosition
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -44,8 +44,8 @@ object Reducer {
     val defTypes = ctx.defTypes.keys.asScala.toSet
 
     // This is an over approximation of the types in enums and structs since they are erased.
-    val enumTypes = MonoType.ErasedTypes
-    val structTypes = MonoType.ErasedTypes
+    val enumTypes = SimpleType.ErasedTypes
+    val structTypes = SimpleType.ErasedTypes
     val effectTypes = root.effects.values.toSet.flatMap(typesOfEffect)
 
     val types = nestedTypesOf(Set.empty, Queue.from(defTypes ++ enumTypes ++ structTypes ++ effectTypes))
@@ -62,7 +62,7 @@ object Reducer {
       val pcPoints = lctx.getPcPoints
 
       // Compute the types in the captured formal parameters.
-      val cParamTypes = cparams.foldLeft(Set.empty[MonoType]) {
+      val cParamTypes = cparams.foldLeft(Set.empty[SimpleType]) {
         case (sacc, FormalParam(_, _, paramTpe, _)) => sacc + paramTpe
       }
 
@@ -136,7 +136,7 @@ object Reducer {
         Expr.Stmt(e1, e2, tpe, purity, loc)
 
       case Expr.Scope(sym, exp, tpe, purity, loc) =>
-        lctx.lparams.addOne(LocalParam(sym, MonoType.Region))
+        lctx.lparams.addOne(LocalParam(sym, SimpleType.Region))
         val e = visitExpr(exp)
         Expr.Scope(sym, e, tpe, purity, loc)
 
@@ -144,7 +144,7 @@ object Reducer {
         val e = visitExpr(exp)
         val rs = rules map {
           case CatchRule(sym, clazz, body) =>
-            lctx.lparams.addOne(LocalParam(sym, MonoType.Object))
+            lctx.lparams.addOne(LocalParam(sym, SimpleType.Object))
             val b = visitExpr(body)
             CatchRule(sym, clazz, b)
         }
@@ -207,23 +207,23 @@ object Reducer {
     *
     * We use a concurrent (non-blocking) linked queue to ensure thread-safety.
     */
-  private case class SharedContext(anonClasses: ConcurrentLinkedQueue[AnonClass], defTypes: ConcurrentHashMap[MonoType, Unit])
+  private case class SharedContext(anonClasses: ConcurrentLinkedQueue[AnonClass], defTypes: ConcurrentHashMap[SimpleType, Unit])
 
   /**
     * Returns all types contained in the given `Effect`.
     */
-  private def typesOfEffect(e: Effect): Set[MonoType] = {
+  private def typesOfEffect(e: Effect): Set[SimpleType] = {
     e.ops.toSet.map(extractFunctionType)
   }
 
   /**
     * Returns the function type based `op` represents.
     */
-  private def extractFunctionType(op: Op): MonoType = {
+  private def extractFunctionType(op: Op): SimpleType = {
     val paramTypes = op.fparams.map(_.tpe)
     val resType = op.tpe
-    val continuationType = MonoType.Object
-    val correctedFunctionType = MonoType.Arrow(paramTypes :+ continuationType, resType)
+    val continuationType = SimpleType.Object
+    val correctedFunctionType = SimpleType.Arrow(paramTypes :+ continuationType, resType)
     correctedFunctionType
   }
 
@@ -235,8 +235,8 @@ object Reducer {
     * (and the types in `acc`).
     */
   @tailrec
-  private def nestedTypesOf(acc: Set[MonoType], types: Queue[MonoType]): Set[MonoType] = {
-    import MonoType.*
+  private def nestedTypesOf(acc: Set[SimpleType], types: Queue[SimpleType]): Set[SimpleType] = {
+    import SimpleType.*
     types.dequeueOption match {
       case Some((tpe, taskList)) =>
         val taskList1 = tpe match {

@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.*
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Modifiers, Scope}
-import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{SimpleType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugSimplifiedAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -124,11 +124,11 @@ object ClosureConv {
       // Lift the body and all the rule expressions
       val expLoc = exp.loc.asSynthetic
       val freshSym = Symbol.freshVarSym("_closureConv", BoundBy.FormalParam, expLoc)
-      val fp = FormalParam(freshSym, Modifiers.Empty, MonoType.Unit, expLoc)
-      val e = mkLambdaClosure(List(fp), exp, MonoType.Arrow(List(MonoType.Unit), tpe), expLoc)
+      val fp = FormalParam(freshSym, Modifiers.Empty, SimpleType.Unit, expLoc)
+      val e = mkLambdaClosure(List(fp), exp, SimpleType.Arrow(List(SimpleType.Unit), tpe), expLoc)
       val rs = rules map {
         case HandlerRule(opUse, fparams, body) =>
-          val cloType = MonoType.Arrow(fparams.map(_.tpe), body.tpe)
+          val cloType = SimpleType.Arrow(fparams.map(_.tpe), body.tpe)
           val clo = mkLambdaClosure(fparams, body, cloType, opUse.loc)
           HandlerRule(opUse, fparams, clo)
       }
@@ -137,7 +137,7 @@ object ClosureConv {
     case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0 map {
         case JvmMethod(ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
-          val cloType = MonoType.Arrow(fparams.map(_.tpe), retTpe)
+          val cloType = SimpleType.Arrow(fparams.map(_.tpe), retTpe)
           val clo = mkLambdaClosure(fparams, exp, cloType, methodLoc)
           JvmMethod(ident, fparams, clo, retTpe, methodPurity, methodLoc)
       }
@@ -152,7 +152,7 @@ object ClosureConv {
     *
     * `exp` is visited inside this function and should not be visited before.
     */
-  private def mkLambdaClosure(fparams: List[FormalParam], exp: Expr, tpe: MonoType, loc: SourceLocation)(implicit flix: Flix): Expr.LambdaClosure = {
+  private def mkLambdaClosure(fparams: List[FormalParam], exp: Expr, tpe: SimpleType, loc: SourceLocation)(implicit flix: Flix): Expr.LambdaClosure = {
     // Step 1: Compute the free variables in the lambda expression.
     //         (Remove the variables bound by the lambda itself).
     val fvs = filterBoundParams(freeVars(exp), fparams).toList

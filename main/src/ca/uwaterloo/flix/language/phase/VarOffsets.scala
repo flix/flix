@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
-import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.language.ast.{SimpleType, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
 import ca.uwaterloo.flix.util.ParOps
 
@@ -102,14 +102,14 @@ object VarOffsets {
 
     case Expr.Scope(sym, exp, _, _, _) =>
       var offset = offset0
-      offset = setStackOffset(sym, MonoType.Region, offset)
+      offset = setStackOffset(sym, SimpleType.Region, offset)
       visitExp(exp, offset)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       var offset = offset0
       offset = visitExp(exp, offset)
       for (CatchRule(sym, _, body) <- rules) {
-        offset = setStackOffset(sym, MonoType.Object, offset)
+        offset = setStackOffset(sym, SimpleType.Object, offset)
         offset = visitExp(body, offset)
       }
       offset
@@ -136,7 +136,7 @@ object VarOffsets {
   }
 
   /** Assigns a stack offset to `sym` and returns the next available stack offset. */
-  private def setStackOffset(sym: Symbol.VarSym, tpe: MonoType, offset: Int): Int = {
+  private def setStackOffset(sym: Symbol.VarSym, tpe: SimpleType, offset: Int): Int = {
     // Set the stack offset for the symbol.
     sym.setStackOffset(offset)
 
@@ -145,8 +145,8 @@ object VarOffsets {
   }
 
   /** Returns the stack slots used by `tpe`. */
-  private def getStackSize(tpe: MonoType): Int = tpe match {
-    case MonoType.Float64 | MonoType.Int64 => 2
+  private def getStackSize(tpe: SimpleType): Int = tpe match {
+    case SimpleType.Float64 | SimpleType.Int64 => 2
     case _ => 1
   }
 
