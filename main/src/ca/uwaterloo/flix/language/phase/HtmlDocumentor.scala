@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.fmt.{FormatType, SimpleType}
+import ca.uwaterloo.flix.language.fmt.{FormatType, TypeView}
 import ca.uwaterloo.flix.tools.pkg.PackageModules
 import ca.uwaterloo.flix.util.LocalResource
 import com.github.rjeschke.txtmark
@@ -1248,12 +1248,12 @@ object HtmlDocumentor {
       sb.append("<span class='keyword'>case</span> ")
       sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>")
 
-      c.tpes.map(SimpleType.fromWellKindedType) match {
+      c.tpes.map(TypeView.fromWellKindedType) match {
         case Nil => // Nothing
         case elms =>
           sb.append("(")
           docList(elms) { t =>
-            sb.append(s"<span class='type'>${esc(FormatType.formatSimpleType(t))}</span>")
+            sb.append(s"<span class='type'>${esc(FormatType.formatTypeView(t))}</span>")
           }
           sb.append(")")
       }
@@ -1415,13 +1415,13 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docEffectType(eff: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    val simpleEff = SimpleType.fromWellKindedType(eff)
-    simpleEff match {
-      case SimpleType.Pure => // No op
+    val effView = TypeView.fromWellKindedType(eff)
+    effView match {
+      case TypeView.Pure => // No op
       case _ =>
         sb.append(" \\ ")
         sb.append("<span class='effect'>")
-        sb.append(esc(FormatType.formatSimpleType(simpleEff)))
+        sb.append(esc(FormatType.formatTypeView(effView)))
         sb.append("</span>")
     }
   }

@@ -69,7 +69,7 @@ object FormatType {
     */
   def formatTypeWithOptions(tpe: Type, fmt: FormatOptions): String = {
     try {
-      format(SimpleType.fromWellKindedType(tpe))(fmt)
+      format(TypeView.fromWellKindedType(tpe))(fmt)
     } catch {
       case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
     }
@@ -84,21 +84,21 @@ object FormatType {
   }
 
   /**
-    * Transforms the given simple type into a string.
+    * Transforms the given type view into a string.
     */
-  def formatSimpleType(tpe: SimpleType)(implicit flix: Flix): String =
-    formatSimpleTypeWithOptions(tpe, flix.getFormatOptions)
+  def formatTypeView(tpe: TypeView)(implicit flix: Flix): String =
+    formatTypeViewWithOptions(tpe, flix.getFormatOptions)
 
   /**
-    * Transforms the given simple type into a string, using the given format options.
+    * Transforms the given type view into a string, using the given format options.
     */
-  def formatSimpleTypeWithOptions(tpe: SimpleType, fmt: FormatOptions): String =
+  def formatTypeViewWithOptions(tpe: TypeView, fmt: FormatOptions): String =
     format(tpe)(fmt)
 
   /**
     * Transforms the given type into a string.
     */
-  private def format(tpe00: SimpleType)(implicit fmt: FormatOptions): String = {
+  private def format(tpe00: TypeView)(implicit fmt: FormatOptions): String = {
 
     /**
       * Wraps the given type with parentheses.
@@ -108,22 +108,22 @@ object FormatType {
     /**
       * Transforms the given record `labelType` pair into a string.
       */
-    def visitRecordLabelType(labelType: SimpleType.RecordLabelType): String = labelType match {
-      case SimpleType.RecordLabelType(label, tpe) => s"$label = ${visit(tpe, Mode.Type)}"
+    def visitRecordLabelType(labelType: TypeView.RecordLabelType): String = labelType match {
+      case TypeView.RecordLabelType(label, tpe) => s"$label = ${visit(tpe, Mode.Type)}"
     }
 
     /**
       * Transforms the given schema `fieldType` pair into a string.
       */
-    def visitSchemaFieldType(fieldType: SimpleType.PredicateFieldType): String = fieldType match {
-      case SimpleType.RelationFieldType(field, tpes) =>
+    def visitSchemaFieldType(fieldType: TypeView.PredicateFieldType): String = fieldType match {
+      case TypeView.RelationFieldType(field, tpes) =>
         val tpeString = tpes.map(visit(_, Mode.Type)).mkString(", ")
         s"$field($tpeString)"
-      case SimpleType.LatticeFieldType(field, tpes, lat) =>
+      case TypeView.LatticeFieldType(field, tpes, lat) =>
         val tpeString = tpes.map(visit(_, Mode.Type)).mkString(", ")
         val latString = visit(lat, Mode.Type)
         s"$field($tpeString; $latString)"
-      case SimpleType.NonPredFieldType(field, tpe) =>
+      case TypeView.NonPredFieldType(field, tpe) =>
         val tpeString = visit(tpe, Mode.Type)
         s"$field(<$tpeString>)"
     }
@@ -132,9 +132,9 @@ object FormatType {
       * Transforms the given type into a string,
       * delimiting it as appropriate for display as a function argument.
       */
-    def delimitFunctionArg(arg: SimpleType): String = arg match {
+    def delimitFunctionArg(arg: TypeView): String = arg match {
       // Tuples get an extra set of parentheses
-      case tuple: SimpleType.Tuple => parenthesize(visit(tuple, Mode.Type))
+      case tuple: TypeView.Tuple => parenthesize(visit(tuple, Mode.Type))
       case tpe => delimit(tpe, Mode.Type)
     }
 
@@ -142,87 +142,87 @@ object FormatType {
       * Returns `true` iff the given `tpe` is innately delimited,
       * meaning that it never needs parenthesization.
       */
-    def isDelimited(tpe: SimpleType): Boolean = tpe match {
+    def isDelimited(tpe: TypeView): Boolean = tpe match {
       // non-delimited types
-      case SimpleType.Not(_) => false
-      case SimpleType.And(_) => false
-      case SimpleType.Or(_) => false
-      case SimpleType.Complement(_) => false
-      case SimpleType.Intersection(_) => false
-      case SimpleType.SymmetricDiff(_) => false
-      case SimpleType.Difference(_) => false
-      case SimpleType.Plus(_) => false
-      case SimpleType.PureArrow(_, _) => false
-      case SimpleType.PolyArrow(_, _, _) => false
-      case SimpleType.ArrowWithoutEffect(_, _) => false
+      case TypeView.Not(_) => false
+      case TypeView.And(_) => false
+      case TypeView.Or(_) => false
+      case TypeView.Complement(_) => false
+      case TypeView.Intersection(_) => false
+      case TypeView.SymmetricDiff(_) => false
+      case TypeView.Difference(_) => false
+      case TypeView.Plus(_) => false
+      case TypeView.PureArrow(_, _) => false
+      case TypeView.PolyArrow(_, _, _) => false
+      case TypeView.ArrowWithoutEffect(_, _) => false
 
       // delimited types
-      case SimpleType.Hole => true
-      case SimpleType.Void => true
-      case SimpleType.AnyType => true
-      case SimpleType.Unit => true
-      case SimpleType.Null => true
-      case SimpleType.Bool => true
-      case SimpleType.Char => true
-      case SimpleType.Float32 => true
-      case SimpleType.Float64 => true
-      case SimpleType.BigDecimal => true
-      case SimpleType.Int8 => true
-      case SimpleType.Int16 => true
-      case SimpleType.Int32 => true
-      case SimpleType.Int64 => true
-      case SimpleType.BigInt => true
-      case SimpleType.Str => true
-      case SimpleType.Regex => true
-      case SimpleType.Array => true
-      case SimpleType.ArrayWithoutRegion => true
-      case SimpleType.Vector => true
-      case SimpleType.Sender => true
-      case SimpleType.Receiver => true
-      case SimpleType.Lazy => true
-      case SimpleType.True => true
-      case SimpleType.False => true
-      case SimpleType.Pure => true
-      case SimpleType.Univ => true
-      case SimpleType.Region(_) => true
-      case SimpleType.RegionToStar => true
-      case SimpleType.RegionWithoutRegion => true
-      case SimpleType.RecordConstructor(_) => true
-      case SimpleType.Record(_) => true
-      case SimpleType.RecordExtend(_, _) => true
-      case SimpleType.RecordRow(_) => true
-      case SimpleType.RecordRowExtend(_, _) => true
-      case SimpleType.SchemaConstructor(_) => true
-      case SimpleType.Schema(_) => true
-      case SimpleType.SchemaExtend(_, _) => true
-      case SimpleType.SchemaRow(_) => true
-      case SimpleType.SchemaRowExtend(_, _) => true
-      case SimpleType.RelationConstructor => true
-      case SimpleType.Relation(_) => true
-      case SimpleType.LatticeConstructor => true
-      case SimpleType.Lattice(_, _) => true
-      case SimpleType.TagConstructor(_) => true
-      case SimpleType.Name(_) => true
-      case SimpleType.Apply(_, _) => true
-      case SimpleType.Var(_, _, _) => true
-      case SimpleType.Tuple(_) => true
-      case SimpleType.JvmToType(_) => true
-      case SimpleType.JvmToEff(_) => true
-      case SimpleType.JvmUnresolvedConstructor(_, _) => true
-      case SimpleType.JvmUnresolvedField(_, _) => true
-      case SimpleType.JvmUnresolvedMethod(_, _, _) => true
-      case SimpleType.JvmUnresolvedStaticMethod(_, _, _) => true
-      case SimpleType.JvmConstructor(_) => true
-      case SimpleType.JvmField(_) => true
-      case SimpleType.JvmMethod(_) => true
-      case SimpleType.Union(_) => true
-      case SimpleType.Error => true
+      case TypeView.Hole => true
+      case TypeView.Void => true
+      case TypeView.AnyType => true
+      case TypeView.Unit => true
+      case TypeView.Null => true
+      case TypeView.Bool => true
+      case TypeView.Char => true
+      case TypeView.Float32 => true
+      case TypeView.Float64 => true
+      case TypeView.BigDecimal => true
+      case TypeView.Int8 => true
+      case TypeView.Int16 => true
+      case TypeView.Int32 => true
+      case TypeView.Int64 => true
+      case TypeView.BigInt => true
+      case TypeView.Str => true
+      case TypeView.Regex => true
+      case TypeView.Array => true
+      case TypeView.ArrayWithoutRegion => true
+      case TypeView.Vector => true
+      case TypeView.Sender => true
+      case TypeView.Receiver => true
+      case TypeView.Lazy => true
+      case TypeView.True => true
+      case TypeView.False => true
+      case TypeView.Pure => true
+      case TypeView.Univ => true
+      case TypeView.Region(_) => true
+      case TypeView.RegionToStar => true
+      case TypeView.RegionWithoutRegion => true
+      case TypeView.RecordConstructor(_) => true
+      case TypeView.Record(_) => true
+      case TypeView.RecordExtend(_, _) => true
+      case TypeView.RecordRow(_) => true
+      case TypeView.RecordRowExtend(_, _) => true
+      case TypeView.SchemaConstructor(_) => true
+      case TypeView.Schema(_) => true
+      case TypeView.SchemaExtend(_, _) => true
+      case TypeView.SchemaRow(_) => true
+      case TypeView.SchemaRowExtend(_, _) => true
+      case TypeView.RelationConstructor => true
+      case TypeView.Relation(_) => true
+      case TypeView.LatticeConstructor => true
+      case TypeView.Lattice(_, _) => true
+      case TypeView.TagConstructor(_) => true
+      case TypeView.Name(_) => true
+      case TypeView.Apply(_, _) => true
+      case TypeView.Var(_, _, _) => true
+      case TypeView.Tuple(_) => true
+      case TypeView.JvmToType(_) => true
+      case TypeView.JvmToEff(_) => true
+      case TypeView.JvmUnresolvedConstructor(_, _) => true
+      case TypeView.JvmUnresolvedField(_, _) => true
+      case TypeView.JvmUnresolvedMethod(_, _, _) => true
+      case TypeView.JvmUnresolvedStaticMethod(_, _, _) => true
+      case TypeView.JvmConstructor(_) => true
+      case TypeView.JvmField(_) => true
+      case TypeView.JvmMethod(_) => true
+      case TypeView.Union(_) => true
+      case TypeView.Error => true
     }
 
     /**
       * Delimits the given `tpe`, parenthesizing it if needed.
       */
-    def delimit(tpe: SimpleType, mode: Mode): String = {
+    def delimit(tpe: TypeView, mode: Mode): String = {
       if (isDelimited(tpe)) {
         visit(tpe, mode)
       } else {
@@ -233,122 +233,122 @@ object FormatType {
     /**
       * Converts the given `tpe0` to a string.
       */
-    def visit(tpe0: SimpleType, mode: Mode): String = tpe0 match {
-      case SimpleType.Hole => "?"
-      case SimpleType.Void => "Void"
-      case SimpleType.AnyType => "AnyType"
-      case SimpleType.Unit => "Unit"
-      case SimpleType.Null => "Null"
-      case SimpleType.Bool => "Bool"
-      case SimpleType.Char => "Char"
-      case SimpleType.Float32 => "Float32"
-      case SimpleType.Float64 => "Float64"
-      case SimpleType.BigDecimal => "BigDecimal"
-      case SimpleType.Int8 => "Int8"
-      case SimpleType.Int16 => "Int16"
-      case SimpleType.Int32 => "Int32"
-      case SimpleType.Int64 => "Int64"
-      case SimpleType.BigInt => "BigInt"
-      case SimpleType.Str => "String"
-      case SimpleType.Regex => "Regex"
-      case SimpleType.Array => "Array"
-      case SimpleType.ArrayWithoutRegion => "ArrayWithoutRegion"
-      case SimpleType.Vector => "Vector"
-      case SimpleType.Sender => "Sender"
-      case SimpleType.Receiver => "Receiver"
-      case SimpleType.Lazy => "Lazy"
-      case SimpleType.False => "false"
-      case SimpleType.True => "true"
-      case SimpleType.Pure => mode match {
+    def visit(tpe0: TypeView, mode: Mode): String = tpe0 match {
+      case TypeView.Hole => "?"
+      case TypeView.Void => "Void"
+      case TypeView.AnyType => "AnyType"
+      case TypeView.Unit => "Unit"
+      case TypeView.Null => "Null"
+      case TypeView.Bool => "Bool"
+      case TypeView.Char => "Char"
+      case TypeView.Float32 => "Float32"
+      case TypeView.Float64 => "Float64"
+      case TypeView.BigDecimal => "BigDecimal"
+      case TypeView.Int8 => "Int8"
+      case TypeView.Int16 => "Int16"
+      case TypeView.Int32 => "Int32"
+      case TypeView.Int64 => "Int64"
+      case TypeView.BigInt => "BigInt"
+      case TypeView.Str => "String"
+      case TypeView.Regex => "Regex"
+      case TypeView.Array => "Array"
+      case TypeView.ArrayWithoutRegion => "ArrayWithoutRegion"
+      case TypeView.Vector => "Vector"
+      case TypeView.Sender => "Sender"
+      case TypeView.Receiver => "Receiver"
+      case TypeView.Lazy => "Lazy"
+      case TypeView.False => "false"
+      case TypeView.True => "true"
+      case TypeView.Pure => mode match {
         case Mode.Type => "Pure"
         case Mode.Purity => "{}"
       }
-      case SimpleType.Univ => "Univ"
-      case SimpleType.Region(name) => name
-      case SimpleType.RegionToStar => "Region"
-      case SimpleType.RegionWithoutRegion => "RegionWithoutRegion"
-      case SimpleType.Record(labels) =>
+      case TypeView.Univ => "Univ"
+      case TypeView.Region(name) => name
+      case TypeView.RegionToStar => "Region"
+      case TypeView.RegionWithoutRegion => "RegionWithoutRegion"
+      case TypeView.Record(labels) =>
         val labelString = labels.map(visitRecordLabelType).mkString(", ")
         s"{ $labelString }"
-      case SimpleType.RecordExtend(labels, rest) =>
+      case TypeView.RecordExtend(labels, rest) =>
         val labelString = labels.map(visitRecordLabelType).mkString(", ")
         val restString = visit(rest, mode)
         s"{ $labelString | $restString }"
-      case SimpleType.RecordRow(labels) =>
+      case TypeView.RecordRow(labels) =>
         val labelString = labels.map(visitRecordLabelType).mkString(", ")
         s"( $labelString )"
-      case SimpleType.RecordRowExtend(labels, rest) =>
+      case TypeView.RecordRowExtend(labels, rest) =>
         val labelString = labels.map(visitRecordLabelType).mkString(", ")
         val restString = visit(rest, Mode.Type)
         s"( $labelString | $restString )"
-      case SimpleType.RecordConstructor(arg) => s"{ ${visit(arg, Mode.Type)} }"
-      case SimpleType.Schema(fields) =>
+      case TypeView.RecordConstructor(arg) => s"{ ${visit(arg, Mode.Type)} }"
+      case TypeView.Schema(fields) =>
         val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
         s"#{ $fieldString }"
-      case SimpleType.SchemaExtend(fields, rest) =>
+      case TypeView.SchemaExtend(fields, rest) =>
         val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
         val restString = visit(rest, Mode.Type)
         s"#{ $fieldString | $restString }"
-      case SimpleType.SchemaRow(fields) =>
+      case TypeView.SchemaRow(fields) =>
         val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
         s"#( $fieldString )"
-      case SimpleType.SchemaRowExtend(fields, rest) =>
+      case TypeView.SchemaRowExtend(fields, rest) =>
         val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
         val restString = visit(rest, Mode.Type)
         s"#( $fieldString | $restString )"
-      case SimpleType.SchemaConstructor(arg) => s"#{ ${visit(arg, Mode.Type)} }"
-      case SimpleType.Not(tpe) => s"not ${delimit(tpe, mode)}"
-      case SimpleType.And(tpes) =>
+      case TypeView.SchemaConstructor(arg) => s"#{ ${visit(arg, Mode.Type)} }"
+      case TypeView.Not(tpe) => s"not ${delimit(tpe, mode)}"
+      case TypeView.And(tpes) =>
         val strings = tpes.map(delimit(_, mode))
         strings.mkString(" and ")
-      case SimpleType.Or(tpes) =>
+      case TypeView.Or(tpes) =>
         val strings = tpes.map(delimit(_, mode))
         strings.mkString(" or ")
-      case SimpleType.Complement(tpe) => s"~${delimit(tpe, mode)}"
-      case SimpleType.Union(tpes) =>
+      case TypeView.Complement(tpe) => s"~${delimit(tpe, mode)}"
+      case TypeView.Union(tpes) =>
         val strings = tpes.map(visit(_, mode))
         strings.mkString("{", ", ", "}")
-      case SimpleType.Plus(tpes) =>
+      case TypeView.Plus(tpes) =>
         val strings = tpes.map(delimit(_, mode))
         strings.mkString(" + ")
-      case SimpleType.Intersection(tpes) =>
+      case TypeView.Intersection(tpes) =>
         val strings = tpes.map(delimit(_, mode))
         strings.mkString(" & ")
-      case SimpleType.SymmetricDiff(tpes) =>
+      case TypeView.SymmetricDiff(tpes) =>
         val strings = tpes.map(delimit(_, mode))
         strings.mkString(" ⊕ ")
-      case SimpleType.Difference(tpes) =>
+      case TypeView.Difference(tpes) =>
         val strings = tpes.map(delimit(_, mode))
         strings.mkString(" - ")
-      case SimpleType.RelationConstructor => "Relation"
-      case SimpleType.Relation(tpes) =>
+      case TypeView.RelationConstructor => "Relation"
+      case TypeView.Relation(tpes) =>
         val terms = tpes.map(visit(_, Mode.Type)).mkString(", ")
         s"Relation($terms)"
-      case SimpleType.LatticeConstructor => "Lattice"
-      case SimpleType.Lattice(tpes0, lat0) =>
+      case TypeView.LatticeConstructor => "Lattice"
+      case TypeView.Lattice(tpes0, lat0) =>
         val lat = visit(lat0, Mode.Type)
         val tpes = tpes0.map(visit(_, Mode.Type)).mkString(", ")
         s"Lattice($tpes; $lat)"
-      case SimpleType.PureArrow(arg, ret) =>
+      case TypeView.PureArrow(arg, ret) =>
         val argString = delimitFunctionArg(arg)
         val retString = delimit(ret, Mode.Type)
         s"$argString -> $retString"
-      case SimpleType.PolyArrow(arg, eff, ret) =>
+      case TypeView.PolyArrow(arg, eff, ret) =>
         val argString = delimitFunctionArg(arg)
         val effString = visit(eff, Mode.Purity)
         val retString = delimit(ret, Mode.Type)
         s"$argString -> $retString \\ $effString"
-      case SimpleType.ArrowWithoutEffect(arg, ret) =>
+      case TypeView.ArrowWithoutEffect(arg, ret) =>
         val argString = delimitFunctionArg(arg)
         val retString = delimit(ret, Mode.Type)
         s"$argString --> $retString"
-      case SimpleType.TagConstructor(name) => name
-      case SimpleType.Name(name) => name
-      case SimpleType.Apply(tpe, tpes) =>
+      case TypeView.TagConstructor(name) => name
+      case TypeView.Name(name) => name
+      case TypeView.Apply(tpe, tpes) =>
         val string = visit(tpe, Mode.Type)
         val strings = tpes.map(visit(_, Mode.Type))
         string + strings.mkString("[", ", ", "]")
-      case SimpleType.Var(id, kind, text) =>
+      case TypeView.Var(id, kind, text) =>
         val string: String = kind match {
           case Kind.Wild => "_" + id.toString
           case Kind.WildCaseSet => "_c" + id.toString
@@ -371,44 +371,44 @@ object FormatType {
           }
         }
 
-      case SimpleType.Tuple(elms) =>
+      case TypeView.Tuple(elms) =>
         elms.map(visit(_, Mode.Type)).mkString("(", ", ", ")")
 
-      case SimpleType.JvmToType(tpe) =>
+      case TypeView.JvmToType(tpe) =>
         val arg = visit(tpe, Mode.Type)
         "JvmToType(" + arg + ")"
 
-      case SimpleType.JvmToEff(tpe) =>
+      case TypeView.JvmToEff(tpe) =>
         val arg = visit(tpe, Mode.Type)
         "JvmToEff(" + arg + ")"
 
-      case SimpleType.JvmUnresolvedConstructor(name, tpes0) =>
+      case TypeView.JvmUnresolvedConstructor(name, tpes0) =>
         val tpes = tpes0.map(visit(_, Mode.Type))
         "JvmUnresolvedConstructor(" + name + ", " + tpes.mkString(", ") + ")"
 
-      case SimpleType.JvmUnresolvedField(t0, name) =>
+      case TypeView.JvmUnresolvedField(t0, name) =>
         val t = visit(t0, Mode.Type)
         "JvmUnresolvedField(" + t + ", " + name + ")"
 
-      case SimpleType.JvmUnresolvedMethod(t0, name, ts0) =>
+      case TypeView.JvmUnresolvedMethod(t0, name, ts0) =>
         val t = visit(t0, Mode.Type)
         val ts = ts0.map(visit(_, Mode.Type))
         "JvmUnresolvedMethod(" + t + ", " + name + ", " + ts.mkString(", ") + ")"
 
-      case SimpleType.JvmUnresolvedStaticMethod(clazz, name, ts0) =>
+      case TypeView.JvmUnresolvedStaticMethod(clazz, name, ts0) =>
         val ts = ts0.map(visit(_, Mode.Type))
         "JvmUnresolvedStaticMethod(" + clazz + ", " + name + ", " + ts.mkString(", ") + ")"
 
-      case SimpleType.JvmConstructor(constructor) =>
+      case TypeView.JvmConstructor(constructor) =>
         s"JvmConstructor($constructor)"
 
-      case SimpleType.JvmField(field) =>
+      case TypeView.JvmField(field) =>
         s"JvmField($field)"
 
-      case SimpleType.JvmMethod(method) =>
+      case TypeView.JvmMethod(method) =>
         s"JvmMethod($method)"
 
-      case SimpleType.Error => "Error"
+      case TypeView.Error => "Error"
 
     }
 
