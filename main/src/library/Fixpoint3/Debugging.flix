@@ -17,32 +17,16 @@
  */
 
 mod Fixpoint3.Debugging {
-    use Fixpoint3.Ast.Ram
+    use Fixpoint3.Ast.Ram.RamProgram
     use Fixpoint3.Options
-
-    ///
-    /// Write `s` to standard file. Overwrite if `overwrite` is true, otherwise append.
-    ///
-    def flush(s: String, overwrite: Bool): Unit \ IO =
-        if (Options.enableDebugToFile()) {
-            let res =
-                if (overwrite)
-                    FileWrite.runWithIO(() -> FileWrite.write(str = s, Options.debugFileName()))
-                else
-                    FileWrite.runWithIO(() -> FileWrite.append(str = s, Options.debugFileName()));
-            match res {
-                case Ok(_) => ()
-                case Err(e) => println(e)
-            }
-        } else println(s)
 
     ///
     /// Invoked after every phase during the fixpoint computation.
     ///
-    /// Note: Returns `d` to ensure it is not erased.
+    /// Note: Returns `program` to ensure it is not erased.
     ///
     @Internal
-    pub def notifyPreLowering(phase: String, program: Ram.RamProgram): Ram.RamProgram = match program {
+    pub def notifyPreLowering(phase: String, program: RamProgram): Ram.RamProgram = match program {
         case Ram.RamProgram.Program(stmt, _, _, _) => unchecked_cast({
             if (Options.enableDebugging()) region rc {
                 let strings = MutList.empty(rc);
@@ -60,5 +44,21 @@ mod Fixpoint3.Debugging {
             }
         } as _ \ {})
     }
+
+    ///
+    /// Write `s` to standard file. Overwrite if `overwrite` is true, otherwise append.
+    ///
+    def flush(s: String, overwrite: Bool): Unit \ IO =
+        if (Options.enableDebugToFile()) {
+            let res =
+                if (overwrite)
+                    FileWrite.runWithIO(() -> FileWrite.write(str = s, Options.debugFileName()))
+                else
+                    FileWrite.runWithIO(() -> FileWrite.append(str = s, Options.debugFileName()));
+            match res {
+                case Ok(_) => ()
+                case Err(e) => println(e)
+            }
+        } else println(s)
 
 }
