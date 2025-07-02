@@ -196,6 +196,7 @@ object Summary {
     case Expr.ApplyClo(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.ApplyDef(_, exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.ApplyOp(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.ApplySig(_, exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.Unary(_, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.Binary(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
@@ -252,7 +253,6 @@ object Summary {
       case TypedAst.HandlerRule(_, _, exp, _) => countCheckedEcasts(exp)
     }.sum
     case Expr.RunWith(exp1, exp2, _, _, _) => countCheckedEcasts(exp1) + countCheckedEcasts(exp2)
-    case Expr.Do(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.InvokeConstructor(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.InvokeMethod(_, exp, exps, _, _, _) => (exp :: exps).map(countCheckedEcasts).sum
     case Expr.InvokeStaticMethod(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum

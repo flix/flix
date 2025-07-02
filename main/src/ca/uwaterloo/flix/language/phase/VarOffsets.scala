@@ -69,6 +69,9 @@ object VarOffsets {
     case Expr.ApplyDef(_, args, _, _, _, _) =>
       visitExps(args, offset0)
 
+    case Expr.ApplyOp(_, exps, _, _, _) =>
+      visitExps(exps, offset0)
+
     case Expr.ApplySelfTail(_, args, _, _, _) =>
       visitExps(args, offset0)
 
@@ -115,9 +118,6 @@ object VarOffsets {
       // The formal parameters in rules are not actually bound inside this function, so those are
       // ignored along with their expressions.
       visitExp(exp, offset0)
-
-    case Expr.Do(_, exps, _, _, _) =>
-      visitExps(exps, offset0)
 
     case Expr.NewObject(_, _, _, _, _, _) =>
       // The formal parameters in methods are not actually bound inside this function, so those are

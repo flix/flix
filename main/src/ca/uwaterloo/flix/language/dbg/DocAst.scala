@@ -303,7 +303,7 @@ object DocAst {
     def ApplyDefWithTail(sym: Symbol.DefnSym, ds: List[Expr], ct: ExpPosition): Expr =
       AppWithTail(AsIs(sym.toString), ds, Some(ct))
 
-    def Do(sym: Symbol.OpSym, ds: List[Expr]): Expr =
+    def ApplyOp(sym: Symbol.OpSym, ds: List[Expr]): Expr =
       Keyword("do", App(AsIs(sym.toString), ds))
 
     def JavaInvokeMethod(d: Expr, methodName: Name.Ident, ds: List[Expr]): Expr =
