@@ -40,8 +40,9 @@ mod TcpConnectWithResult {
         } with handler TcpConnectWithResult {
             def connect(ip, port, k) = {
                 try {
+                    let ipVec = IpAddr.toBytes(ip);
                     let inet: InetAddress = region r {
-                        let bytes = IpAddr.toByteArray(r, ip);
+                        let bytes = Vector.toArray(r, ipVec);
                         InetAddress.getByAddress(bytes)
                     };
                     let socket = new Socket(inet, Int16.toInt32(port));

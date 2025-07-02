@@ -43,8 +43,9 @@ mod PingWithResult {
                 try {
                     let ms = TimeUnit.toMilliseconds(u);
                     let timeoutMs = ms * timeout;
+                    let ipVec = IpAddr.toBytes(host);
                     region rc {
-                        let ipBytes = IpAddr.toByteArray(rc, host);
+                        let ipBytes = Vector.toArray(rc, ipVec);
                         let addr = InetAddress.getByAddress(ipBytes);
                         k(Ok(addr.isReachable(timeoutMs)))
                     }

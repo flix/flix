@@ -42,8 +42,9 @@ mod TcpBindWithResult {
             def bind(ip, port, resume) = {
                 try {
                     let inet: InetAddress = region r {
-                        let bytes = IpAddr.toByteArray(r, ip);
-                        InetAddress.getByAddress(bytes)
+                        let bytes = IpAddr.toBytes(ip);
+                        let byteArr = Vector.toArray(r, bytes);
+                        InetAddress.getByAddress(byteArr)
                     };
                     let maxQueueLength = 50;
                     let socket = new ServerSocket(Int16.toInt32(port), maxQueueLength, inet);
