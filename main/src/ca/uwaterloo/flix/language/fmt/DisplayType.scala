@@ -25,9 +25,9 @@ import java.lang.reflect.{Constructor, Field, Method}
 /**
   * A well-kinded type in an easily-printable format.
   */
-sealed trait TypeView
+sealed trait DisplayType
 
-object TypeView {
+object DisplayType {
 
   private class OverAppliedType(loc: SourceLocation) extends InternalCompilerException("Unexpected over-applied type.", loc)
 
@@ -39,67 +39,67 @@ object TypeView {
     * An unfilled parameter in a partially-applied type-level function.
     * For example, `Not` (applied to nothing) is `Not(Hole)`.
     */
-  case object Hole extends TypeView
+  case object Hole extends DisplayType
 
   /////////////
   // Primitives
   /////////////
 
-  case object Void extends TypeView
+  case object Void extends DisplayType
 
-  case object AnyType extends TypeView
+  case object AnyType extends DisplayType
 
-  case object Unit extends TypeView
+  case object Unit extends DisplayType
 
-  case object Null extends TypeView
+  case object Null extends DisplayType
 
-  case object Bool extends TypeView
+  case object Bool extends DisplayType
 
-  case object Char extends TypeView
+  case object Char extends DisplayType
 
-  case object Float32 extends TypeView
+  case object Float32 extends DisplayType
 
-  case object Float64 extends TypeView
+  case object Float64 extends DisplayType
 
-  case object BigDecimal extends TypeView
+  case object BigDecimal extends DisplayType
 
-  case object Int8 extends TypeView
+  case object Int8 extends DisplayType
 
-  case object Int16 extends TypeView
+  case object Int16 extends DisplayType
 
-  case object Int32 extends TypeView
+  case object Int32 extends DisplayType
 
-  case object Int64 extends TypeView
+  case object Int64 extends DisplayType
 
-  case object BigInt extends TypeView
+  case object BigInt extends DisplayType
 
-  case object Str extends TypeView
+  case object Str extends DisplayType
 
-  case object Regex extends TypeView
+  case object Regex extends DisplayType
 
-  case object Array extends TypeView
+  case object Array extends DisplayType
 
-  case object ArrayWithoutRegion extends TypeView
+  case object ArrayWithoutRegion extends DisplayType
 
-  case object Vector extends TypeView
+  case object Vector extends DisplayType
 
-  case object Sender extends TypeView
+  case object Sender extends DisplayType
 
-  case object Receiver extends TypeView
+  case object Receiver extends DisplayType
 
-  case object Lazy extends TypeView
+  case object Lazy extends DisplayType
 
-  case object Pure extends TypeView
+  case object Pure extends DisplayType
 
-  case object Univ extends TypeView
+  case object Univ extends DisplayType
 
-  case object False extends TypeView
+  case object False extends DisplayType
 
-  case object True extends TypeView
+  case object True extends DisplayType
 
-  case object RegionToStar extends TypeView
+  case object RegionToStar extends DisplayType
 
-  case object RegionWithoutRegion extends TypeView
+  case object RegionWithoutRegion extends DisplayType
 
   //////////
   // Records
@@ -108,27 +108,27 @@ object TypeView {
   /**
     * A record constructor. `arg` should be a variable or a Hole.
     */
-  case class RecordConstructor(arg: TypeView) extends TypeView
+  case class RecordConstructor(arg: DisplayType) extends DisplayType
 
   /**
     * An unextended record.
     */
-  case class Record(labels: List[RecordLabelType]) extends TypeView
+  case class Record(labels: List[RecordLabelType]) extends DisplayType
 
   /**
     * An extended record. `arg` should be a variable or a Hole.
     */
-  case class RecordExtend(labels: List[RecordLabelType], rest: TypeView) extends TypeView
+  case class RecordExtend(labels: List[RecordLabelType], rest: DisplayType) extends DisplayType
 
   /**
     * An unextended record row.
     */
-  case class RecordRow(labels: List[RecordLabelType]) extends TypeView
+  case class RecordRow(labels: List[RecordLabelType]) extends DisplayType
 
   /**
     * An extended record row. `arg` should be a variable or a Hole.
     */
-  case class RecordRowExtend(labels: List[RecordLabelType], rest: TypeView) extends TypeView
+  case class RecordRowExtend(labels: List[RecordLabelType], rest: DisplayType) extends DisplayType
 
   //////////
   // Schemas
@@ -137,27 +137,27 @@ object TypeView {
   /**
     * A schema constructor. `arg` should be a variable or a Hole.
     */
-  case class SchemaConstructor(arg: TypeView) extends TypeView
+  case class SchemaConstructor(arg: DisplayType) extends DisplayType
 
   /**
     * An unextended schema.
     */
-  case class Schema(fields: List[PredicateFieldType]) extends TypeView
+  case class Schema(fields: List[PredicateFieldType]) extends DisplayType
 
   /**
     * An extended schema. `arg` should be a variable or a Hole.
     */
-  case class SchemaExtend(fields: List[PredicateFieldType], rest: TypeView) extends TypeView
+  case class SchemaExtend(fields: List[PredicateFieldType], rest: DisplayType) extends DisplayType
 
   /**
     * An unextended schema row.
     */
-  case class SchemaRow(fields: List[PredicateFieldType]) extends TypeView
+  case class SchemaRow(fields: List[PredicateFieldType]) extends DisplayType
 
   /**
     * An extended schema row. `arg` should be a variable or a Hole.
     */
-  case class SchemaRowExtend(fields: List[PredicateFieldType], rest: TypeView) extends TypeView
+  case class SchemaRowExtend(fields: List[PredicateFieldType], rest: DisplayType) extends DisplayType
 
   ////////////////////
   // Boolean Operators
@@ -166,17 +166,17 @@ object TypeView {
   /**
     * Boolean negation.
     */
-  case class Not(tpe: TypeView) extends TypeView
+  case class Not(tpe: DisplayType) extends DisplayType
 
   /**
     * A chain of types connected by `and`.
     */
-  case class And(tpes: List[TypeView]) extends TypeView
+  case class And(tpes: List[DisplayType]) extends DisplayType
 
   /**
     * A chain of types connected by `or`.
     */
-  case class Or(tpes: List[TypeView]) extends TypeView
+  case class Or(tpes: List[DisplayType]) extends DisplayType
 
   ////////////////
   // Set Operators
@@ -185,50 +185,50 @@ object TypeView {
   /**
     * Set complement.
     */
-  case class Complement(tpe: TypeView) extends TypeView
+  case class Complement(tpe: DisplayType) extends DisplayType
 
   /**
     * A chain of types in a set.
     */
-  case class Union(tpes: List[TypeView]) extends TypeView
+  case class Union(tpes: List[DisplayType]) extends DisplayType
 
   /**
     * A chain of types connected by `&`.
     */
-  case class Plus(tpes: List[TypeView]) extends TypeView
+  case class Plus(tpes: List[DisplayType]) extends DisplayType
 
   /**
     * A chain of types connected by `&`.
     */
-  case class Intersection(tpes: List[TypeView]) extends TypeView
+  case class Intersection(tpes: List[DisplayType]) extends DisplayType
 
   /**
     * A chain of types connected by `⊕`.
     */
-  case class SymmetricDiff(tpes: List[TypeView]) extends TypeView
+  case class SymmetricDiff(tpes: List[DisplayType]) extends DisplayType
 
   /**
     * A chain of types connected by `-`.
     */
-  case class Difference(tpes: List[TypeView]) extends TypeView
+  case class Difference(tpes: List[DisplayType]) extends DisplayType
 
   /////////////
   // Predicates
   /////////////
 
-  case object RelationConstructor extends TypeView
+  case object RelationConstructor extends DisplayType
 
   /**
     * A relation over a list of types.
     */
-  case class Relation(tpes: List[TypeView]) extends TypeView
+  case class Relation(tpes: List[DisplayType]) extends DisplayType
 
-  case object LatticeConstructor extends TypeView
+  case object LatticeConstructor extends DisplayType
 
   /**
     * A lattice over a list of types.
     */
-  case class Lattice(tpes: List[TypeView], lat: TypeView) extends TypeView
+  case class Lattice(tpes: List[DisplayType], lat: DisplayType) extends DisplayType
 
   ////////////
   // Functions
@@ -237,45 +237,45 @@ object TypeView {
   /**
     * A pure function.
     */
-  case class PureArrow(arg: TypeView, ret: TypeView) extends TypeView
+  case class PureArrow(arg: DisplayType, ret: DisplayType) extends DisplayType
 
   /**
     * A function with a purity.
     */
-  case class PolyArrow(arg: TypeView, eff: TypeView, ret: TypeView) extends TypeView
+  case class PolyArrow(arg: DisplayType, eff: DisplayType, ret: DisplayType) extends DisplayType
 
   /**
     * A backend function (no effect).
     */
-  case class ArrowWithoutEffect(arg: TypeView, ret: TypeView) extends TypeView
+  case class ArrowWithoutEffect(arg: DisplayType, ret: DisplayType) extends DisplayType
 
   ///////
   // Tags
   ///////
 
-  case class TagConstructor(name: String) extends TypeView
+  case class TagConstructor(name: String) extends DisplayType
 
   ////////////
   // JVM Types
   ////////////
 
-  case class JvmToType(tpe: TypeView) extends TypeView
+  case class JvmToType(tpe: DisplayType) extends DisplayType
 
-  case class JvmToEff(tpe: TypeView) extends TypeView
+  case class JvmToEff(tpe: DisplayType) extends DisplayType
 
-  case class JvmUnresolvedConstructor(name: String, tpes: List[TypeView]) extends TypeView
+  case class JvmUnresolvedConstructor(name: String, tpes: List[DisplayType]) extends DisplayType
 
-  case class JvmUnresolvedField(tpe: TypeView, name: String) extends TypeView
+  case class JvmUnresolvedField(tpe: DisplayType, name: String) extends DisplayType
 
-  case class JvmUnresolvedMethod(tpe: TypeView, name: String, tpes: List[TypeView]) extends TypeView
+  case class JvmUnresolvedMethod(tpe: DisplayType, name: String, tpes: List[DisplayType]) extends DisplayType
 
-  case class JvmUnresolvedStaticMethod(clazz: String, name: String, tpes: List[TypeView]) extends TypeView
+  case class JvmUnresolvedStaticMethod(clazz: String, name: String, tpes: List[DisplayType]) extends DisplayType
 
-  case class JvmConstructor(constructor: Constructor[?]) extends TypeView
+  case class JvmConstructor(constructor: Constructor[?]) extends DisplayType
 
-  case class JvmField(field: Field) extends TypeView
+  case class JvmField(field: Field) extends DisplayType
 
-  case class JvmMethod(method: Method) extends TypeView
+  case class JvmMethod(method: Method) extends DisplayType
 
   //////////////////////
   // Miscellaneous Types
@@ -284,32 +284,32 @@ object TypeView {
   /**
     * A simple named type (e.g., enum or type alias).
     */
-  case class Name(name: String) extends TypeView
+  case class Name(name: String) extends DisplayType
 
   /**
     * A type applied to one or more types.
     */
-  case class Apply(tpe: TypeView, tpes: List[TypeView]) extends TypeView
+  case class Apply(tpe: DisplayType, tpes: List[DisplayType]) extends DisplayType
 
   /**
     * A type variable.
     */
-  case class Var(id: Int, kind: Kind, text: VarText) extends TypeView
+  case class Var(id: Int, kind: Kind, text: VarText) extends DisplayType
 
   /**
     * A tuple.
     */
-  case class Tuple(tpes: List[TypeView]) extends TypeView
+  case class Tuple(tpes: List[DisplayType]) extends DisplayType
 
   /**
     * A region.
     */
-  case class Region(name: String) extends TypeView
+  case class Region(name: String) extends DisplayType
 
   /**
     * An error type.
     */
-  case object Error extends TypeView
+  case object Error extends DisplayType
 
   /////////
   // Fields
@@ -318,7 +318,7 @@ object TypeView {
   /**
     * A record label name and its type.
     */
-  case class RecordLabelType(name: String, tpe: TypeView)
+  case class RecordLabelType(name: String, tpe: DisplayType)
 
   /**
     * A common supertype for schema predicates.
@@ -330,24 +330,24 @@ object TypeView {
   /**
     * A relation field name and its types.
     */
-  case class RelationFieldType(name: String, tpes: List[TypeView]) extends PredicateFieldType
+  case class RelationFieldType(name: String, tpes: List[DisplayType]) extends PredicateFieldType
 
   /**
     * A lattice field name, its types, and its lattice.
     */
-  case class LatticeFieldType(name: String, tpes: List[TypeView], lat: TypeView) extends PredicateFieldType
+  case class LatticeFieldType(name: String, tpes: List[DisplayType], lat: DisplayType) extends PredicateFieldType
 
   /**
     * A predicate field type that's not actually a predicate.
     */
-  case class NonPredFieldType(name: String, tpe: TypeView) extends PredicateFieldType
+  case class NonPredFieldType(name: String, tpe: DisplayType) extends PredicateFieldType
 
   /**
     * Creates a simple type from the well-kinded type `t`.
     */
-  def fromWellKindedType(t0: Type): TypeView = {
+  def fromWellKindedType(t0: Type): DisplayType = {
 
-    def visit(t: Type): TypeView = t.baseType match {
+    def visit(t: Type): DisplayType = t.baseType match {
       case Type.Var(sym, _) =>
         mkApply(Var(sym.id, sym.kind, sym.text), t.typeArguments.map(visit))
       case Type.Alias(cst, args, _, _) =>
@@ -355,14 +355,14 @@ object TypeView {
       case Type.AssocType(cst, arg, _, _) =>
         mkApply(Name(cst.sym.name), (arg :: t.typeArguments).map(visit))
       case Type.JvmToType(tpe, _) =>
-        mkApply(TypeView.JvmToType(visit(tpe)), t.typeArguments.map(visit))
+        mkApply(DisplayType.JvmToType(visit(tpe)), t.typeArguments.map(visit))
       case Type.JvmToEff(tpe, _) =>
-        mkApply(TypeView.JvmToEff(visit(tpe)), t.typeArguments.map(visit))
+        mkApply(DisplayType.JvmToEff(visit(tpe)), t.typeArguments.map(visit))
       case Type.UnresolvedJvmType(member, _) => member match {
-        case JvmMember.JvmConstructor(clazz, tpes) => TypeView.JvmUnresolvedConstructor(clazz.getSimpleName, tpes.map(visit))
-        case JvmMember.JvmMethod(tpe, name, tpes) => TypeView.JvmUnresolvedMethod(visit(tpe), name.name, tpes.map(visit))
-        case JvmMember.JvmField(_, tpe, name) => TypeView.JvmUnresolvedField(visit(tpe), name.name)
-        case JvmMember.JvmStaticMethod(clazz, name, tpes) => TypeView.JvmUnresolvedStaticMethod(clazz.getSimpleName, name.name, tpes.map(visit))
+        case JvmMember.JvmConstructor(clazz, tpes) => DisplayType.JvmUnresolvedConstructor(clazz.getSimpleName, tpes.map(visit))
+        case JvmMember.JvmMethod(tpe, name, tpes) => DisplayType.JvmUnresolvedMethod(visit(tpe), name.name, tpes.map(visit))
+        case JvmMember.JvmField(_, tpe, name) => DisplayType.JvmUnresolvedField(visit(tpe), name.name)
+        case JvmMember.JvmStaticMethod(clazz, name, tpes) => DisplayType.JvmUnresolvedStaticMethod(clazz.getSimpleName, name.name, tpes.map(visit))
       }
       case Type.Cst(tc, _) => tc match {
         case TypeConstructor.Void => Void
@@ -387,7 +387,7 @@ object TypeView {
           args match {
             // Case 1: No args. Fill everything with a hole.
             case Nil =>
-              val lastArrow: TypeView = PolyArrow(Hole, Hole, Hole)
+              val lastArrow: DisplayType = PolyArrow(Hole, Hole, Hole)
               // NB: safe to subtract 2 since arity is always at least 2
               List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow.apply)
 
@@ -401,7 +401,7 @@ object TypeView {
               // NB: safe to take last 2 because arity is always at least 2
               val allTpes = tpes.padTo(arity, Hole)
               val List(lastArg, ret) = allTpes.takeRight(2)
-              val lastArrow: TypeView = PolyArrow(lastArg, eff, ret)
+              val lastArrow: DisplayType = PolyArrow(lastArg, eff, ret)
               allTpes.dropRight(2).foldRight(lastArrow)(PureArrow.apply)
           }
 
@@ -545,7 +545,7 @@ object TypeView {
             case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
-        case TypeConstructor.Not => TypeView.Not(visit(t.typeArguments.head))
+        case TypeConstructor.Not => DisplayType.Not(visit(t.typeArguments.head))
 
         case TypeConstructor.Complement =>
           t.typeArguments.map(visit) match {
@@ -599,8 +599,8 @@ object TypeView {
           SymmetricDiff(args)
 
         case TypeConstructor.CaseSet(syms, _) =>
-          val names = syms.toList.map(sym => TypeView.Name(sym.name))
-          val set = TypeView.Union(names)
+          val names = syms.toList.map(sym => DisplayType.Name(sym.name))
+          val set = DisplayType.Union(names)
           mkApply(set, t.typeArguments.map(visit))
 
         case TypeConstructor.CaseComplement(_) =>
@@ -626,12 +626,12 @@ object TypeView {
             case _ => throw new OverAppliedType(t.loc)
           }
 
-        case TypeConstructor.Effect(sym, _) => mkApply(TypeView.Name(sym.name), t.typeArguments.map(visit))
-        case TypeConstructor.Region(sym) => mkApply(TypeView.Region(sym.text), t.typeArguments.map(visit))
+        case TypeConstructor.Effect(sym, _) => mkApply(DisplayType.Name(sym.name), t.typeArguments.map(visit))
+        case TypeConstructor.Region(sym) => mkApply(DisplayType.Region(sym.text), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(RegionToStar, t.typeArguments.map(visit))
         case TypeConstructor.RegionWithoutRegion => mkApply(RegionWithoutRegion, t.typeArguments.map(visit))
 
-        case TypeConstructor.Error(_, _) => TypeView.Error
+        case TypeConstructor.Error(_, _) => DisplayType.Error
       }
     }
 
@@ -641,7 +641,7 @@ object TypeView {
   /**
     * Builds an Apply type.
     */
-  private def mkApply(base: TypeView, args: List[TypeView]): TypeView = args match {
+  private def mkApply(base: DisplayType, args: List[DisplayType]): DisplayType = args match {
     case Nil => base
     case _ :: _ => Apply(base, args)
   }
@@ -649,7 +649,7 @@ object TypeView {
   /**
     * Extracts the types from a tuple, treating non-tuples as singletons.
     */
-  private def destructTuple(tpe: TypeView): List[TypeView] = tpe match {
+  private def destructTuple(tpe: DisplayType): List[DisplayType] = tpe match {
     case Tuple(fields) => fields
     case Unit => Nil
     case t => t :: Nil
@@ -658,21 +658,21 @@ object TypeView {
   /**
     * Transforms the given type, assuming it is a record row.
     */
-  private def fromRecordRow(row0: Type): TypeView = {
-    def visit(row: Type): TypeView = row match {
+  private def fromRecordRow(row0: Type): DisplayType = {
+    def visit(row: Type): DisplayType = row match {
       // Case 1: A fully applied record row.
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(name), _), tpe, _), rest, _) =>
         val labelType = RecordLabelType(name.name, fromWellKindedType(tpe))
         visit(rest) match {
           // Case 1.1: Unextended row. Put the labels together.
-          case TypeView.RecordRow(labels) => TypeView.RecordRow(labelType :: labels)
+          case DisplayType.RecordRow(labels) => DisplayType.RecordRow(labelType :: labels)
           // Case 1.2: Extended row. Put the labels together.
-          case TypeView.RecordRowExtend(labels, restOfRest) => TypeView.RecordRowExtend(labelType :: labels, restOfRest)
+          case DisplayType.RecordRowExtend(labels, restOfRest) => DisplayType.RecordRowExtend(labelType :: labels, restOfRest)
           // Case 1.3: Non-row. Put it in the "rest" position.
-          case nonRecord => TypeView.RecordRowExtend(labelType :: Nil, nonRecord)
+          case nonRecord => DisplayType.RecordRowExtend(labelType :: Nil, nonRecord)
         }
       // Case 2: Empty record row.
-      case Type.Cst(TypeConstructor.RecordRowEmpty, _) => TypeView.RecordRow(Nil)
+      case Type.Cst(TypeConstructor.RecordRowEmpty, _) => DisplayType.RecordRow(Nil)
       // Case 3: Non-row.
       case nonRecord => fromWellKindedType(nonRecord)
     }
@@ -688,8 +688,8 @@ object TypeView {
   /**
     * Transforms the given type, assuming it is a schema row.
     */
-  private def fromSchemaRow(row0: Type): TypeView = {
-    def visit(row: Type): TypeView = row match {
+  private def fromSchemaRow(row0: Type): DisplayType = {
+    def visit(row: Type): DisplayType = row match {
       // Case 1: A fully applied record row.
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(name), _), tpe, _), rest, _) =>
         // create the right field/type for the field
@@ -701,14 +701,14 @@ object TypeView {
         }
         visit(rest) match {
           // Case 1.1: Unextended row. Put the fields together.
-          case TypeView.SchemaRow(fields) => TypeView.SchemaRow(fieldType :: fields)
+          case DisplayType.SchemaRow(fields) => DisplayType.SchemaRow(fieldType :: fields)
           // Case 1.2: Extended row. Put the fields together.
-          case TypeView.SchemaRowExtend(fields, restOfRest) => TypeView.SchemaRowExtend(fieldType :: fields, restOfRest)
+          case DisplayType.SchemaRowExtend(fields, restOfRest) => DisplayType.SchemaRowExtend(fieldType :: fields, restOfRest)
           // Case 1.3: Non-row. Put it in the "rest" position.
-          case nonSchema => TypeView.SchemaRowExtend(fieldType :: Nil, nonSchema)
+          case nonSchema => DisplayType.SchemaRowExtend(fieldType :: Nil, nonSchema)
         }
       // Case 2: Empty record row.
-      case Type.Cst(TypeConstructor.SchemaRowEmpty, _) => TypeView.SchemaRow(Nil)
+      case Type.Cst(TypeConstructor.SchemaRowEmpty, _) => DisplayType.SchemaRow(Nil)
       // Case 3: Non-row.
       case nonSchema => fromWellKindedType(nonSchema)
     }
@@ -725,7 +725,7 @@ object TypeView {
     * Splits `t1 and t2` into `t1 :: t2 :: Nil`,
     * and leaves non-and types as singletons.
     */
-  private def splitAnds(tpe: TypeView): List[TypeView] = tpe match {
+  private def splitAnds(tpe: DisplayType): List[DisplayType] = tpe match {
     case And(tpes) => tpes
     case t => List(t)
   }
@@ -734,7 +734,7 @@ object TypeView {
     * Splits `t1 or t2` into `t1 :: t2 :: Nil`,
     * and leaves non-or types as singletons.
     */
-  private def splitOrs(tpe: TypeView): List[TypeView] = tpe match {
+  private def splitOrs(tpe: DisplayType): List[DisplayType] = tpe match {
     case Or(tpes) => tpes
     case t => List(t)
   }
@@ -743,7 +743,7 @@ object TypeView {
     * Splits `t1 + t2` into `t1 :: t2 :: Nil`,
     * and leaves non-plus types as singletons.
     */
-  private def splitPluses(tpe: TypeView): List[TypeView] = tpe match {
+  private def splitPluses(tpe: DisplayType): List[DisplayType] = tpe match {
     case Plus(tpes) => tpes
     case t => List(t)
   }
@@ -752,7 +752,7 @@ object TypeView {
     * Splits `t1 & t2` into `t1 :: t2 :: Nil`,
     * and leaves other types as singletons.
     */
-  private def splitIntersections(tpe: TypeView): List[TypeView] = tpe match {
+  private def splitIntersections(tpe: DisplayType): List[DisplayType] = tpe match {
     case Intersection(tpes) => tpes
     case t => List(t)
   }
@@ -761,7 +761,7 @@ object TypeView {
     * Splits `t1 - t2` into `t1 :: t2 :: Nil`,
     * and leaves other types as singletons.
     */
-  private def splitDifference(tpe: TypeView): List[TypeView] = tpe match {
+  private def splitDifference(tpe: DisplayType): List[DisplayType] = tpe match {
     case Difference(tpes) => tpes
     case t => List(t)
   }
@@ -770,7 +770,7 @@ object TypeView {
     * Splits `t1 ⊕ t2` into `t1 :: t2 :: Nil`,
     * and leaves other types as singletons.
     */
-  private def splitSymmetricDiff(tpe: TypeView): List[TypeView] = tpe match {
+  private def splitSymmetricDiff(tpe: DisplayType): List[DisplayType] = tpe match {
     case SymmetricDiff(tpes) => tpes
     case t => List(t)
   }
