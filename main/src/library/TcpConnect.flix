@@ -40,11 +40,7 @@ mod TcpConnect {
         } with handler TcpConnect {
             def connect(ip, port, k) = {
                 try {
-                    let ipVec = IpAddr.toBytes(ip);
-                    let inet: InetAddress = region r {
-                        let bytes = Vector.toArray(r, ipVec);
-                        InetAddress.getByAddress(bytes)
-                    };
+                    let inet: InetAddress = InetAddress.getByAddress(IpAddr.toBytes(ip));
                     let socket = new Socket(inet, Int16.toInt32(port));
                     let inputStream = socket.getInputStream();
                     let outputStream = socket.getOutputStream();
