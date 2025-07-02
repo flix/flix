@@ -42,31 +42,27 @@ mod Fixpoint3.Phase.Stratifier {
     ///
     @Internal
     pub def stratify(d: Datalog): Map[PredSym, (Int32, Int32)] = region rc {
-        let graph = MutGraph.empty(rc);
-        addDepEdges(graph, d);
-        mkStratificationMap(rc, d, graph, getPseudoStrata(graph))
+        let depGraph = MutGraph.empty(rc);
+        addDepEdges(depGraph, d);
+        mkStratificationMap(rc, d, depGraph)
     }
 
     ///
-    /// Given `d` with pseudostrata `pseudoStrata`, constructs a map from `PredSym`s in `d`
+    /// Given `d` with dependency graph `graph`, constructs a map from `PredSym`s in `d`
     /// to their stratum index within their pseudostrata.
     ///
-    def mkStratificationMap(
-        rc: Region[r],
-        d: Datalog,
-        graph: MutGraph[r],
-        pseudoStrata: List[PseudoStratum]
-    ): Map[PredSym, (Int32, Int32)] \ r =
+    def mkStratificationMap(rc: Region[r], d: Datalog, graph: MutGraph[r]): Map[PredSym, (Int32, Int32)] \ r =
+        let pseudoStrata = getPseudoStrata(graph);
         let numberOfPredSyms = MutGraph.numberOfVertices(graph);
         let predSyms = Array.empty(rc, numberOfPredSyms);
         addPredSymsFrom(predSyms, d);
         let result = MutMap.empty(rc);
-        pseudoStrata |> List.forEachWithIndex(pseudoStrat -> list ->
-            list |> List.forEachWithIndex(strat -> set ->
-                set |> Set.forEach(x -> {
+        pseudoStrata |> List.forEachWithIndex(pseudoStratum -> list ->
+            list |> List.forEachWithIndex(stratum -> set ->
+                foreach (x <- set) {
                     let predSym = PredSym.PredSym(Array.get(x, predSyms), Int32.toInt64(x));
-                    MutMap.put(predSym, (pseudoStrat, strat), result)
-                })
+                    MutMap.put(predSym, (pseudoStratum, stratum), result)
+                }
             )
         );
         MutMap.toMap(result)
