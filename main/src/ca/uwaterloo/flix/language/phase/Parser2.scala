@@ -1676,9 +1676,10 @@ object Parser2 {
         case TokenKind.KeywordSelect => selectExpr()
         case TokenKind.KeywordSpawn => spawnExpr()
         case TokenKind.KeywordPar => parYieldExpr()
+        case TokenKind.KeywordPSolve => fixpointSolveExpr(isPSolve = true)
         case TokenKind.HashCurlyL => fixpointConstraintSetExpr()
         case TokenKind.HashParenL => fixpointLambdaExpr()
-        case TokenKind.KeywordSolve => fixpointSolveExpr()
+        case TokenKind.KeywordSolve => fixpointSolveExpr(isPSolve = false)
         case TokenKind.KeywordInject => fixpointInjectExpr()
         case TokenKind.KeywordQuery => fixpointQueryExpr()
         case TokenKind.BuiltIn => intrinsicExpr()
@@ -2874,11 +2875,13 @@ object Parser2 {
       close(mark, TreeKind.Expr.FixpointLambda)
     }
 
-    private def fixpointSolveExpr()(implicit s: State): Mark.Closed = {
+    private def fixpointSolveExpr(isPSolve: Boolean)(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordSolve))
+      val expectedToken = if (isPSolve) TokenKind.KeywordPSolve else TokenKind.KeywordSolve
+      val treeKind = if (isPSolve) TreeKind.Expr.FixpointSolveWithProvenance else TreeKind.Expr.FixpointSolveWithProject
+      assert(at(expectedToken))
       val mark = open()
-      expect(TokenKind.KeywordSolve)
+      expect(expectedToken)
       expression()
       while (eat(TokenKind.Comma) && !eof()) {
         expression()
@@ -2890,7 +2893,7 @@ object Parser2 {
           nameUnqualified(NAME_PREDICATE)
         }
       }
-      close(mark, TreeKind.Expr.FixpointSolveWithProject)
+      close(mark, treeKind)
     }
 
     private def fixpointInjectExpr()(implicit s: State): Mark.Closed = {

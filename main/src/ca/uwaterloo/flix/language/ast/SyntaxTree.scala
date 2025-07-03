@@ -228,6 +228,8 @@ object SyntaxTree {
 
       case object FixpointSolveWithProject extends Expr
 
+      case object FixpointSolveWithProvenance extends Expr
+
       case object FixpointWhere extends Expr
 
       case object ForApplicative extends Expr
