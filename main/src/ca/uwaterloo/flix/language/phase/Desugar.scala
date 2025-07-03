@@ -804,7 +804,7 @@ object Desugar {
     case WeededAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
       desugarFixpointInjectInto(exps, predsAndArities, loc)
 
-    case WeededAst.Expr.FixpointSolveWithProject(exps, optIdents, loc) =>
+    case WeededAst.Expr.FixpointSolveWithProject(exps, _, optIdents, loc) =>
       desugarFixpointSolveWithProject(exps, optIdents, loc)
 
     case WeededAst.Expr.FixpointQueryWithSelect(exps0, selects0, from0, where0, loc) =>
