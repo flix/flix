@@ -1375,3 +1375,8 @@ mod String {
         iterator(rc, s) |> Iterator.zipWithIndex
 
 }
+
+instance Iterable[String] {
+    type Elm = Char
+    pub def iterator(rc: Region[r], l: String): Iterator[Char, r, r] \ r = String.iterator(rc, l)
+}
