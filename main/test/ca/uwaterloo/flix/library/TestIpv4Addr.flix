@@ -17,6 +17,7 @@
 mod TestIpv4Addr {
 
     use Ipv4Addr.Ipv4Addr
+
     /////////////////////////////////////////////////////////////////////////////
     // fromString                                                              //
     /////////////////////////////////////////////////////////////////////////////
@@ -30,6 +31,10 @@ mod TestIpv4Addr {
         Ipv4Addr.fromString("192.168.1") |> Option.isEmpty
 
     @Test
+    def fromString2(): Bool =
+        Ipv4Addr.fromString("123.45.67.89.1") |> Option.isEmpty
+
+    @Test
     def fromString3(): Bool =
         Ipv4Addr.fromString("123.045.067.089") |> Option.isEmpty
 
@@ -41,7 +46,6 @@ mod TestIpv4Addr {
     def fromString5(): Bool =
         let s = "192.168.1.1";
         "${Ipv4Addr.fromString(s)}" == "Some(${s})"
-
 
     @Test
     def fromString6(): Bool =
@@ -62,6 +66,15 @@ mod TestIpv4Addr {
     def fromString9(): Bool =
         let s = "1.2.3.4";
         "${Ipv4Addr.fromString(s)}" == "Some(${s})"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // localhost                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def localhost0(): Bool =
+        let expected = "127.0.0.1";
+        "${Ipv4Addr.localhost()}" == expected
 
 }
 
