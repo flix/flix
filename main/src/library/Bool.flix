@@ -59,4 +59,9 @@ mod Bool {
     ///
     pub def <==>(x: Bool, y: Bool): Bool = x == y
 
+    ///
+    /// Guards the side effect `f` if `cond` is true.
+    ///
+    pub def runIf(f: Unit -> Unit \ ef, cond: Bool): Unit \ ef = if (cond) f() else ()
+
 }
