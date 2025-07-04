@@ -31,20 +31,20 @@ def gameLoop(board: Board[r], symbol: Symbol, rc: Region[r]): Unit \ {r + Interf
 def main(): Unit \ IO = region rc {
     run {
         println("");
-        println("_______ _          _______             _______           ");
+        println("  _______ _          _______             _______           ");
         println(" |__   __(_)        |__   __|           |__   __|        ");
-        println("    | |   _  ___ ______| | __ _  ___ ______| | ___   ___ ");
-        println("    | |  | |/ __|______| |/ _` |/ __|______| |/ _ \\ / _ \\");
+        println("    | |   _  ___       | | __ _  ___       | | ___   ___ ");
+        println("    | |  | |/ __|      | |/ _` |/ __|      | |/ _ \\ / _ \\");
         println("    | |  | | (__       | | (_| | (__       | | (_) |  __/");
         println("    |_|  |_|\\___|      |_|\\__,_|\\___|      |_|\\___/ \\___|");
         println("");
         println("Instructions:");
         println("The cells are numbered as follows:\n");
-        println("   " ++ "0" ++ "   |   " ++ "1" ++ "   |   " ++ "2" ++ "   " );
+        println("   0   |   1   |   2   " );
         println(" - - - | - - - | - - - ");
-        println("   " ++ "3" ++ "   |   " ++ "4" ++ "   |   " ++ "5" ++ "   " );
+        println("   3   |   4   |   5   " );
         println(" - - - | - - - | - - - ");
-        println("   " ++ "6" ++ "   |   " ++ "7" ++ "   |   " ++ "8" ++ "   " );
+        println("   6   |   7   |   8   " );
         println("       |       |       ");
         println("Enter your move as one these numbers corresponding to a cell");
         println("");

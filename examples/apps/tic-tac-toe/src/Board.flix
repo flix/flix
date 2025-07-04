@@ -17,13 +17,6 @@ mod Board {
     }
 
     ///
-    /// Returns the current state of the board as a vector.
-    ///
-    pub def getVec(board: Board[r]): Vector[Symbol] = {
-        board->vec
-    }
-
-    ///
     /// Makes a move on the board at the specified index with the given symbol.
     ///
     /// Returns a tuple containing the updated board and a boolean indicating whether the move was successful.
@@ -42,52 +35,17 @@ mod Board {
     /// Checks if the player with the specified symbol has won the game on the given board.
     ///
     pub def checkWin(board: Board[r], symbol: Symbol): Bool = {
-        if ((Vector.get(0, board->vec) == symbol)
-		and (Vector.get(1, board->vec) == symbol)
-		and (Vector.get(2, board->vec) == symbol)) {
-            true
+        let patterns = (0, 1, 2) :: (3, 4, 5) :: (6, 7, 8) :: (0, 3, 6) :: (1, 4, 7) :: (2, 5, 8) :: (0, 4, 8) :: (2, 4, 6) :: Nil;
+        List.foldLeft(
+            (acc: Bool, pattern: (Int32, Int32, Int32)) -> {
+                match pattern {
+                    case (a, b, c) => acc or
+                        ((Vector.get(a, board->vec) == symbol)
+                         and (Vector.get(b, board->vec) == symbol)
+                         and (Vector.get(c, board->vec) == symbol))
+                }
+            }, false, patterns)
         }
-        else if ((Vector.get(3, board->vec) == symbol)
-		and (Vector.get(4, board->vec) == symbol)
-		and (Vector.get(5, board->vec) == symbol)) {
-            true
-        }
-        else if ((Vector.get(6, board->vec) == symbol)
-		and (Vector.get(7, board->vec) == symbol)
-		and (Vector.get(8, board->vec) == symbol)) {
-            true
-        }
-        else if ((Vector.get(0, board->vec) == symbol)
-		and (Vector.get(3, board->vec) == symbol)
-		and (Vector.get(6, board->vec) == symbol)) {
-            true
-        }
-        else if ((Vector.get(1, board->vec) == symbol)
-		and (Vector.get(4, board->vec) == symbol)
-		and (Vector.get(7, board->vec) == symbol)) {
-            true
-        }
-        else if ((Vector.get(2, board->vec) == symbol)
-		and (Vector.get(5, board->vec) == symbol)
-		and (Vector.get(8, board->vec) == symbol)) {
-            true
-        }
-        else if ((Vector.get(0, board->vec) == symbol)
-		and (Vector.get(4, board->vec) == symbol)
-		and (Vector.get(8, board->vec) == symbol)) {
-            true
-        }
-        else if ((Vector.get(2, board->vec) == symbol)
-		and (Vector.get(4, board->vec) == symbol)
-		and (Vector.get(6, board->vec) == symbol)) {
-            true
-        }
-
-        else {
-            false
-        }
-
-    }
 
     ///
     /// Checks if all cells are already filled on the board.
