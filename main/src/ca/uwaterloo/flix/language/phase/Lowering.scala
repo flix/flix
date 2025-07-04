@@ -786,8 +786,8 @@ object Lowering {
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, Types.MergeType, resultType, eff, loc)
 
     case TypedAst.Expr.FixpointSolve(exp, _, eff, loc) =>
-      val solveMode: SolveMode = SolveMode.Default
-      val defn = solveMode match {
+      val mode: SolveMode = SolveMode.Default
+      val defn = mode match {
         case SolveMode.Default => Defs.lookup(Defs.Solve)
         case SolveMode.WithProvenance => Defs.lookup(Defs.SolveWithProvenance)
       }
