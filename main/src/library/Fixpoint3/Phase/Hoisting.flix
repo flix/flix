@@ -67,7 +67,12 @@
 ///     end
 /// end
 /// ```
-/// `equalitySets` could be `{a[0] => a[0], b[0] => a[0], c[0] => a[0], b[1] => 1, b[2] => c[1], c[1] => c[1]}`.
+/// `equalitySets` could be `{a[0] => a[0], b[0] => a[0], c[0] => a[0], b[1] => b[1], b[2] => c[1], c[1] => c[1]}`.
+///
+/// Since `equalitySets` is only used to get representatives for loads the exact value of the representative
+/// load is irrelevant. As long as `a[0]`, `b[0]` and `c[0]` get the same representative the actual value
+/// could be any of them. Also note that `b[1]` only points to itself, not `1`. The fact that `b[1] = 1` would
+/// be maintained by `termMap`.
 ///
 /// `termMap` will be initialized with `{b[1] => 1}`.
 ///
@@ -191,7 +196,7 @@ mod Fixpoint3.Phase.Hoisting {
     ///
     /// Only includes non-negative dependencies.
     ///
-    def collectRelSymsStmt(stmt: RamStmt): List[RelSym] \ r = match stmt {
+    def collectRelSymsStmt(stmt: RamStmt): List[RelSym] = match stmt {
         case RamStmt.Insert(op) => collectRelSymsOp(op)
         case _ => unreachable!()
     }
@@ -201,7 +206,7 @@ mod Fixpoint3.Phase.Hoisting {
     ///
     /// Only includes non-negative dependencies.
     ///
-    def collectRelSymsOp(op: RelOp): List[RelSym] \ r = match op {
+    def collectRelSymsOp(op: RelOp): List[RelSym] = match op {
         case RelOp.Search(_, relSym, body) => relSym :: collectRelSymsOp(body)
         case RelOp.Query(_, relSym, _, _, body) => relSym :: collectRelSymsOp(body)
         case RelOp.Functional(_, _, _, body, _) => collectRelSymsOp(body)
@@ -423,6 +428,7 @@ mod Fixpoint3.Phase.Hoisting {
 
     ///
     /// Returns the (set of) `RowVar` that represents `term` with respect to `termMap`.
+    ///
     /// See `collectBoolVariables`.
     ///
     def getRepRowVar(
@@ -448,7 +454,7 @@ mod Fixpoint3.Phase.Hoisting {
     /// This ensures that we all loads refer to variables as far up in the AST as possible,
     /// and therefore variables which are still bound after hoisting.
     ///
-    /// `Meet` and is excluded from this treatment.
+    /// `Meet` is excluded from this treatment.
     ///
     def replaceByRepBoolExp(
         termMap: MutMap[(RowVar, Int32), RamTerm, r],
@@ -592,12 +598,12 @@ mod Fixpoint3.Phase.Hoisting {
         op: RelOp
     ): Unit \ r = match op {
         case RelOp.Search(rowVar, RelSym.Symbol(_, arity, _), body) =>
-            collectLoads(rowVar, arity, equalitySets);
+            collectLoadsInto(rowVar, arity, equalitySets);
             unifyEqualitiesOp(equalitySets, constEqualities, body)
         case RelOp.Query(_, _, _, _, _) =>
             bug!("In Fixpoint.Phase.Hoisting.unifyEqualitiesOp: Query should not exist at this point!")
         case RelOp.Functional(rowVar, _, _, body, arity) =>
-            collectLoads(rowVar, arity, equalitySets);
+            collectLoadsInto(rowVar, arity, equalitySets);
             unifyEqualitiesOp(equalitySets, constEqualities, body)
         case RelOp.Project(_, _) => ()
         case RelOp.If(boolExps, body) =>
@@ -630,7 +636,7 @@ mod Fixpoint3.Phase.Hoisting {
     /// Add `(rowVar, i)` for all `i` between `0` (inclusive) and `arity` (exlusive)
     /// to `equalitySets`.
     ///
-    def collectLoads(rowVar: RowVar, arity: Int32, equalitySets: MutDisjointSets[(RowVar, Int32), r]): Unit \ r =
+    def collectLoadsInto(rowVar: RowVar, arity: Int32, equalitySets: MutDisjointSets[(RowVar, Int32), r]): Unit \ r =
         Vector.forEach(i -> MutDisjointSets.makeSet((rowVar, i), equalitySets), Vector.range(0, arity))
 
 }
