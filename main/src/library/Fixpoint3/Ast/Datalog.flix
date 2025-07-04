@@ -37,7 +37,7 @@ mod Fixpoint3.Ast.Datalog {
     /// `Datalog(facts, rules)` is a Datalog program where `facts` and `rules` are the
     /// facts and rules of the program, respectively.
     ///
-    /// `Model(factsMap)` is a 
+    /// `Model(factsMap)` is a model containing the facts given by `factsMap`.
     ///
     /// `Join(p1, p2)` is the combination of Datalog programs `p1` and `p2`.
     ///
@@ -79,7 +79,7 @@ mod Fixpoint3.Ast.Datalog {
         pub def toString(cs: Datalog): String = match cs {
             case Datalog.Datalog(facts, rules) => region rc {
                 if(not Fixpoint3.Options.enableDebugPrintFacts()) {
-                    "Printing facts disabled ${String.lineSeparator()}" + 
+                    "Printing facts disabled ${String.lineSeparator()}" +
                     Vector.iterator(rc, rules)
                         |> Iterator.join(String.lineSeparator())
                 } else {
@@ -112,7 +112,7 @@ mod Fixpoint3.Ast.Datalog {
             }
         }
     }
-    
+
     /////////////////////////////////////////////////////////////////////////////
     // Constraint                                                              //
     /////////////////////////////////////////////////////////////////////////////
