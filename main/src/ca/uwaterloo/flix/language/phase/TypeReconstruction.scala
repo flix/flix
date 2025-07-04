@@ -597,11 +597,11 @@ object TypeReconstruction {
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
       TypedAst.Expr.FixpointMerge(e1, e2, tpe, eff, loc)
 
-    case KindedAst.Expr.FixpointSolve(exp, solveMode, loc) =>
+    case KindedAst.Expr.FixpointSolve(exp, mode, loc) =>
       val e = visitExp(exp)
       val tpe = e.tpe
       val eff = e.eff
-      TypedAst.Expr.FixpointSolve(e, tpe, eff, solveMode, loc)
+      TypedAst.Expr.FixpointSolve(e, tpe, eff, mode, loc)
 
     case KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc) =>
       val e = visitExp(exp)
