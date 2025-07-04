@@ -329,7 +329,7 @@ object PatMatch {
         visitExp(exp1)
         visitExp(exp2)
 
-      case Expr.FixpointSolve(exp, _, _, _) => visitExp(exp)
+      case Expr.FixpointSolve(exp, _, _, _, _) => visitExp(exp)
 
       case Expr.FixpointFilter(_, exp, _, _, _) => visitExp(exp)
 

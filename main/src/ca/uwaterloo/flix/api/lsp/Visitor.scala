@@ -587,7 +587,7 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.FixpointSolve(exp, _, _, _) =>
+      case Expr.FixpointSolve(exp, _, _, _, _) =>
         visitExpr(exp)
 
       case Expr.FixpointFilter(_, exp, _, _, _) =>
