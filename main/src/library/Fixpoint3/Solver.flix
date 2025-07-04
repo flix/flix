@@ -3,6 +3,7 @@ mod Fixpoint3.Solver {
     import dev.flix.runtime.Global
 
     use Fixpoint3.Ast.Datalog.Datalog
+    use Fixpoint3.Ast.Ram.{RamProgram => ARamProgram}
     use Fixpoint3.Ast.Shared.PredSym
     use Fixpoint3.Ast.Shared.PredSym.PredSym
     use Fixpoint3.Boxed
@@ -14,6 +15,12 @@ mod Fixpoint3.Solver {
     ///
     @Internal
     pub def runSolver(d: Datalog): Datalog = ???
+
+    ///
+    /// Executes `program` and returns estimates on relation and join sizes.
+    ///
+    @Internal
+    pub def runJoinProfiler(program: ARamProgram): Vector[Vector[(Int32, Int32)]] = ???
 
     ///
     /// Returns the pairwise union of `d1` and `d2`.
