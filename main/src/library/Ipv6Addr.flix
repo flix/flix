@@ -43,6 +43,21 @@ mod Ipv6Addr {
     use Ipv6Addr.Ipv6Addr
 
     ///
+    /// Attempt to convert `x` from Ipv6 to Ipv4.
+    ///
+    pub def tryToIpv4(x: Ipv6Addr): Option[Ipv4Addr] = match x {
+        case Ipv6Addr(0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, -1i8, -1i8, b1, b2, b3, b4) => Some(Ipv4Addr.Ipv4Addr(b1, b2, b3, b4))
+        case _ => None
+    }
+
+    ///
+    /// Returns the Ipv6 localhost address.
+    ///
+    pub def localhost(): Ipv6Addr =
+        Ipv6Addr(0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 0i8, 1i8)
+
+
+    ///
     /// Attempts to parse the given String `s` as an `Ipv6Addr`.
     ///
     /// Returns `Some(addr)` if the string was successfully parsed. Otherwise returns `None`.
