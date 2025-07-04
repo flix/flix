@@ -17,10 +17,10 @@
 
 
 ///
-/// The purpose of this phase is to hoist `If` ops as much as possible and merges them with `Search`
-/// into `Query` when possible/relevant. Additionally, guards are added at the top of
-/// `Insert` statements that only perform the operations if none of the relations are
-/// empty. For example, the following
+/// The purpose of this phase is to hoist `If` ops as much as possible and merge them 
+/// with `Search` into `Query` when possible/relevant. Additionally, guards are added 
+/// at the top of `Insert` statements that only perform the operations if none of the 
+/// involved relations are empty. For example, the following
 /// ```
 /// search a ∈ A do
 ///     search b ∈ B do
@@ -45,11 +45,11 @@
 /// end
 /// ```
 ///
-/// One hard dependency of the current implementation is that for `BoolExp.Eq(x, y)` `x` and `y` must
-/// either be `Lit` or `RowLoad(_ ,_, _)`.
+/// One hard dependency of the current implementation is that for `BoolExp.Eq(x, y)`, `x` 
+/// and `y` must either be `Lit` or `RowLoad(_ ,_, _)`.
 ///
 /// The hoisting in general happens with a `MutDisjointSets`, called `equalitySets`,
-/// which is populated by `BoolExp.Eq(RowLoad, RowLoad)`. In this way all `RowLoad`'s
+/// which is populated by `BoolExp.Eq(RowLoad, RowLoad)`. In this way, all `RowLoad`'s
 /// which are equal will be treated as one.
 ///
 /// `termMap` contains a map from the representing `RowLoad`, with respect to `equalitySets`,
@@ -70,15 +70,15 @@
 /// `equalitySets` could be `{a[0] => a[0], b[0] => a[0], c[0] => a[0], b[1] => b[1], b[2] => c[1], c[1] => c[1]}`.
 ///
 /// Since `equalitySets` is only used to get representatives for loads, the exact value of the representative
-/// load is irrelevant. As long as `a[0]`, `b[0]` and `c[0]` get the same representative the actual value
+/// load is irrelevant. As long as `a[0]`, `b[0]` and `c[0]` get the same representative, the actual value
 /// could be any of them. Also note that `b[1]` only points to itself, not `1`. The fact that `b[1] = 1` would
 /// be maintained by `termMap`.
 ///
 /// `termMap` will be initialized with `{b[1] => 1}`.
 ///
-/// When arriving at `search b ∈ B` `termMap` will be `{b[1] => 1, a[0] => a[0]}`.
+/// When arriving at `search b ∈ B`, `termMap` will be `{b[1] => 1, a[0] => a[0]}`.
 ///
-/// When arriving at `search c ∈ C` `termMap` will be `{b[1] => 1, a[0] => a[0], c[1] => b[2]}`.
+/// When arriving at `search c ∈ C`, `termMap` will be `{b[1] => 1, a[0] => a[0], c[1] => b[2]}`.
 ///
 /// When arriving at `if(...)` and `project(...)` `termMap` will remain unchanged.
 ///
@@ -102,8 +102,8 @@ mod Fixpoint3.Phase.Hoisting {
             let termMap = MutMap.empty(rc);
             let impossible = MutSet.empty(rc);
             // For all `x[i] = constant`, register this requirement in `termMap`. If 2 such requirements
-            // exists for `constant1!=constant2` register `x[i]` as impossible to satisfy.
-            // Note that with the above unification we do not really care about `x[i]`, but some representative.
+            // exists for `constant1!=constant2`, register `x[i]` as impossible to satisfy.
+            // Note that with the above unification, we do not really care about `x[i]`, but some representative.
             // We might have `x[i] = x[j] = y[k]` and we view these as the same.
             constEqualities |> MutMap.forEach(load -> listOfPairs ->
                 listOfPairs |> List.forEach(match (val, id) -> {
@@ -131,9 +131,9 @@ mod Fixpoint3.Phase.Hoisting {
     /// whether they are currently considered ground. A load is considered ground if its representative
     /// is a key in `termMap`.
     ///
-    /// `equalitySets` is used to find representative terms given the seen equalities.
+    /// `equalitySets` is used to find representative terms, given the seen equalities.
     ///
-    /// `impossible` contains the set of `RowVar`'s/rules which have been determined impossible to satisfy.
+    /// `impossible` contains the set of `RowVar`'s (rules) which have been determined impossible to satisfy.
     ///
     /// `None` is returned when a statement is determined to be irrelevant, with respect to `impossible`,
     /// or if all its children are.
@@ -196,7 +196,7 @@ mod Fixpoint3.Phase.Hoisting {
     }
 
     ///
-    /// Returns a list of the `RelSym`'s appearing in the `RamStmt.Insert`, `stmt`.
+    /// Returns a list of the `RelSym`'s appearing in `stmt` (`RamStmt.Insert`).
     ///
     /// Only includes non-negative dependencies.
     ///
@@ -221,14 +221,14 @@ mod Fixpoint3.Phase.Hoisting {
     ///
     /// Hoists statements in `op` as far as possible. See `hoistStmt`.
     ///
-    /// `termMap` maps loads, e.g. `x[0]`, to a literals or other loads, bound higher in the AST.
+    /// `termMap` maps loads (e.g. `x[0]`) to a literals or other loads bound higher in the AST.
     /// More specifically the representing load for `x[0]` will be used, where representing stems from
     /// `equalitySets`.
     ///
-    /// `equalitySets` maps loads, e.g. `x[0]`, to a load that represents a transitively equivalent RowLoad
-    /// If we have x[0] = x[1] = y[4] then looking up any of these will consistently return the same value/load.
+    /// `equalitySets` maps loads (e.g. `x[0]`) to a load that represents a transitively equivalent `RowLoad`.
+    /// If we have x[0] = x[1] = y[4], then looking up any of these will consistently return the same value/load.
     ///
-    /// `impossible` is a set of `RowVar` that are involved in unsatisfying conditions. If they are encountered
+    /// `impossible` is a set of `RowVar` that are involved in unsatisfying conditions. If they are encountered,
     /// `None` will be returned immediately.
     ///
     /// `idToBool` maps `RowVar`s to a list of `BoolExp`s which the `RowVar` occurs in.
@@ -250,13 +250,13 @@ mod Fixpoint3.Phase.Hoisting {
     ): Option[RelOp] \ r =
         let hoistOpRec = hoistOp(rc, termMap, equalitySets, impossible, idToBool, independentBool);
         match op {
-            // We here move every `BoolExp` into `Query`, even though IndexSelection can only handle `Eq`.
-            // This is done in case a later IndexSelection algorithm will use these other `BoolExp` to something.
+            // We here move every `BoolExp` into `Query` even though IndexSelection can only handle `Eq`.
+            // This is done in case a newer index selection scheme makes use of those `BoolExp`.
             case RelOp.Search(rowVar, relSym, body) =>
                 if (Set.memberOf(rowVar, impossible))
                     None
                 else {
-                    // Register all values `rowVar[i]` for `0 <= i < arity` as known when hoisting `body`.
+                    // Register all values `rowVar[i]`, for `0 <= i < arity`, as known when hoisting `body`.
                     registerNewTerms(rowVar, termMap, equalitySets, relSym);
                     let optHoistedBody = hoistOpRec(body);
                     match optHoistedBody {
@@ -287,7 +287,7 @@ mod Fixpoint3.Phase.Hoisting {
                         // See `Search`.
                         let termMapCopy = MutMap.copy(rc, termMap);
                         // The 'output' variables from `Functional` may not have been bound earlier.
-                        // Forcefull removal from `termMap` is therefore safe.
+                        // Forceful removal from `termMap` is therefore safe.
                         unregisterNewTerms(rowVar, termMap, equalitySets, fakeRelSym);
                         let hoistedToHere = getBoolsHoistedToHere(rowVar, termMap, termMapCopy, equalitySets, idToBool);
 
@@ -300,12 +300,12 @@ mod Fixpoint3.Phase.Hoisting {
                 }
             case RelOp.Project(_, _) => Some(op)
             case RelOp.If(boolExps, body) =>
-                // Just note all `boolExps`. They will be placed as high as possible in the AST, by other cases.
-                // If `boolExps` contains no variables push it all the way to the top, otherwise register it for
+                // Just note all `boolExps`. They will be placed as high as possible in the AST by other cases.
+                // If `boolExps` contains no variables, push it all the way to the top, otherwise register it for
                 // all variables occuring in `boolExp`.
                 boolExps |>
                 Vector.forEach(b -> match b {
-                    // Don't collect Eq's. They are handled separately to ensure we refer to the earliest evaluated expression.
+                    // Don't collect Eq's: they are handled separately to ensure we refer to the earliest evaluated expression.
                     case BoolExp.Eq(_, _) => ()
                     case _ =>
                         let vars = collectBoolVariables(termMap, equalitySets, b);
@@ -320,17 +320,17 @@ mod Fixpoint3.Phase.Hoisting {
         }
 
     ///
-    /// Based on `termMapCopy` for each `rowVar[i]` test whether its value is known/ground.
+    /// Based on `termMapCopy`, for each `rowVar[i]`, test whether its value is known/ground.
     /// Its value is known if `termMapCopy` maps to a value which is not a
     /// `RowLoad(rowVar, _ , _)`.
     ///
-    /// If the value is known generate a constraint of
+    /// If the value is known, generate a constraint of
     /// `Eq(RowLoad(rowVar, i, relSym), termMap[rep(rowVar, i)])`.
     ///
-    /// If `termMapCopy` returns `RowLoad(rowVar, j, _)` for `i != j` then this generates a
+    /// If `termMapCopy` returns `RowLoad(rowVar, j, _)` for `i != j`, this generates a
     /// constraint of `Eq(RowLoad(rowVar, i, relSym), RowLoad(rowVar, j, relSym))`.
     ///
-    /// Returns a pair of lists, where the first list contains the first kind of constraints
+    /// Returns a pair of lists where the first list contains the first kind of constraints
     /// and the second list contains the second kind of constraints.
     ///
     def constructEqualityConstraints(
@@ -345,9 +345,9 @@ mod Fixpoint3.Phase.Hoisting {
         Vector.forEach(i -> match MutDisjointSets.find((rowVar, i), equalitySets) {
             case None => ()
             case Some(rep) => match getOrCrash(MutMap.get(rep, termMapCopy)) {
-                // If `rep => rowVar[_]` then this is the place `rep` was considered bound
-                // and we unbind it, by removing it from `termMap`.
-                // Furthermore if `rep => rowVar[i1]` where `i1 != i`, then `rowVar[i] == rowVar[i1]`.
+                // If `rep => rowVar[_]`, then this is the place `rep` was considered bound
+                // and we unbind it by removing it from `termMap`.
+                // Furthermore, if `rep => rowVar[i1]`, where `i1 != i`, then `rowVar[i] == rowVar[i1]`.
                 // We cannot currently use this for index selection, but need to keep this invariant, so it is pushed to `intraEqualities`
                 case RamTerm.RowLoad(rv, i1, _) if(rv == rowVar and i1 == i) => ()
                 case RamTerm.RowLoad(rv, i1, rel) if(rv == rowVar) =>
@@ -360,8 +360,8 @@ mod Fixpoint3.Phase.Hoisting {
     ///
     /// Registers all terms `rv[i]` in `termMap`.
     ///
-    /// If `rep(rv[i])` already exists as a key in `termMap` nothing is changed. Otherwise `termMap[rep(rv[i])] = rep(rv[i])`
-    /// afterwards.
+    /// If `rep(rv[i])` already exists as a key in `termMap`, nothing is changed. Otherwise,
+    /// `termMap[rep(rv[i])] = rep(rv[i])` afterwards.
     ///
     def registerNewTerms(
         rv: RowVar,
@@ -369,7 +369,7 @@ mod Fixpoint3.Phase.Hoisting {
         equalitySets: MutDisjointSets[(RowVar, Int32), r],
         relSym: RelSym
     ): Unit \ r =  {
-        // Register all values `rowVar[i]` for `0 <= i < arity` as known when hoisting `body`.
+        // Register all values `rowVar[i]`, for `0 <= i < arity`, as known when hoisting `body`.
         Vector.range(0, arityOf(relSym)) |>
         Vector.forEach(i -> {
             match MutDisjointSets.find((rv, i), equalitySets) {
@@ -382,7 +382,7 @@ mod Fixpoint3.Phase.Hoisting {
     ///
     /// Unregisters all terms `rv[i]` in `termMap`.
     ///
-    /// If `termMap[rep(rv[i])] == rv[i]` remove it. Otherwise do not change `termMap`.
+    /// If `termMap[rep(rv[i])] == rv[i]`, remove it. Otherwise, do not change `termMap`.
     ///
     def unregisterNewTerms(
         rv: RowVar,
@@ -390,7 +390,7 @@ mod Fixpoint3.Phase.Hoisting {
         equalitySets: MutDisjointSets[(RowVar, Int32), r],
         relSym: RelSym
     ): Unit \ r =  {
-        // Unregister all values `rowVar[i]` for `0 <= i < arity` as known when hoisting `body`.
+        // Unregister all values `rowVar[i]`, for `0 <= i < arity`, as known when hoisting `body`.
         Vector.range(0, arityOf(relSym)) |>
         Vector.forEach(i -> {
             let rep = match MutDisjointSets.find((rv, i), equalitySets) {
@@ -425,7 +425,7 @@ mod Fixpoint3.Phase.Hoisting {
     /// Returns a list of `BoolExp` that can be hoisted no higher than to after `rv` is
     /// bound.
     ///
-    /// Concretely it returns all bools which are ground with respect to `termMapCopy`,
+    /// Concretely, it returns all bools which are ground with respect to `termMapCopy`,
     /// but not with respect to `termMap`.
     ///
     def getBoolsHoistedToHere(
@@ -443,13 +443,14 @@ mod Fixpoint3.Phase.Hoisting {
     ///
     /// Returns the set of `RowVar` in `bool` which are mapped to other `RowVar` with respect to `termMap`.
     ///
-    /// Ignores `Eq`, as `Eq`'s are seen as a special case and will always be a comparison between loads and
+    /// Ignores `Eq` as `Eq`'s are seen as a special case and will always be a comparison between loads and
     /// loads/constants.
     ///
-    /// As an example `Guard2(x[0], y[3])` will return `{x}` if `termMap` is e.g. `[y[3] => 8]`.
-    /// If `termMap` contained `y[3]=> z[3]` then `{x, z}` will be returned.
+    /// As an example, `Guard2(x[0], y[3])` will return `{x}` if `termMap` is e.g. `[y[3] => 8]`.
+    /// If `termMap` contained `y[3]=> z[3]`, then `{x, z}` will be returned.
     ///
-    /// The purpose is to return the `RowVar`'s in the AST which are possible places `bool` can be hoisted to.
+    /// The purpose is to return the `RowVar`'s in the AST whose `RelOp`'s are possible 
+    /// places `bool` can be hoisted to.
     ///
     def collectBoolVariables(
         termMap: MutMap[(RowVar, Int32), RamTerm, r],
@@ -527,13 +528,13 @@ mod Fixpoint3.Phase.Hoisting {
     ///
     /// Replace terms in `bool` by their representative.
     ///
-    /// In particular `RowLoad(rv, i, _)` will be replaced by termMap[equalitySet[(rv, i)]].
+    /// In particular, `RowLoad(rv, i, _)` will be replaced by termMap[equalitySet[(rv, i)]].
     /// This ensures that we all loads refer to variables as far up in the AST as possible,
     /// and therefore variables which are still bound after hoisting.
     ///
-    /// `Meet`is excluded from this treatment. `Meet` is simply used to ensure that for
-    /// `A(;x), B(;x)` we will meet `A[0]` and `B[0]`. Even though
-    /// `A[0] = B[0]` should never exist we would not want to replace `Meet(A[0], B[0])` by `Meet(A[0], A[0])`.
+    /// `Meet` is excluded from this treatment. `Meet` is simply used to ensure that for
+    /// `A(;x), B(;x)`, we will meet `A[0]` and `B[0]`. Even though `A[0] = B[0]` should 
+    /// never exist we would not want to replace `Meet(A[0], B[0])` by `Meet(A[0], A[0])`.
     ///
     def replaceByRepBoolExp(
         termMap: MutMap[(RowVar, Int32), RamTerm, r],
@@ -615,7 +616,7 @@ mod Fixpoint3.Phase.Hoisting {
     ///
     /// Returns `true` if `term` is ground with respect to `termMap` and `equalitySets`.
     ///
-    /// A `RowLoad` is ground if its representing `(rv, index)` with respect to `equalitySets`
+    /// A `RowLoad` is ground if it represents `(rv, index)` with respect to `equalitySets`
     /// is in `termMap`.
     ///
     def isTermGround(
@@ -641,10 +642,10 @@ mod Fixpoint3.Phase.Hoisting {
     /// Equalities between 2 `RowLoad`s are added to `equalitySets` and equalities between `RowLoad`
     /// and `Lit` are added to `constEqualities`.
     ///
-    /// In `equalitySets` we unify `(rv1, i1)` with `(rv2, i2)` if they occur together
+    /// In `equalitySets`, we unify `(rv1, i1)` with `(rv2, i2)` if they occur together
     /// in an equaltiy statement.
     ///
-    /// In `constEqualities` we save a list of which literals a `(rv, i)` were equal to.
+    /// In `constEqualities`, we save a list of which literals a `(rv, i)` were equal to.
     ///
     @Internal
     pub def unifyEqualitiesStmt(
@@ -712,7 +713,7 @@ mod Fixpoint3.Phase.Hoisting {
     }
 
     ///
-    /// Add `(rowVar, i)` for all `i` between `0` (inclusive) and `arity` (exlusive)
+    /// Add `(rowVar, i)`, for all `i` between `0` (inclusive) and `arity` (exlusive),
     /// to `equalitySets`.
     ///
     def collectLoadsInto(rowVar: RowVar, arity: Int32, equalitySets: MutDisjointSets[(RowVar, Int32), r]): Unit \ r =
