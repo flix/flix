@@ -46,6 +46,7 @@ object Lowering {
     val version: String = ""
     lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.box")
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.runSolver")
+    lazy val SolveWithProvenance: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.runSolverWithProvenance")
     lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.union")
     lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.projectSym")
     lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.rename")
@@ -75,7 +76,7 @@ object Lowering {
     lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Datalog")
     lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Constraint")
 
-    lazy val SolveMode: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.SolveMode")
+    lazy val SolveMode: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint3.Ast.Datalog.SolveMode")
 
     lazy val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.HeadPredicate")
     lazy val BodyPredicate: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.BodyPredicate")
@@ -789,7 +790,11 @@ object Lowering {
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, Types.MergeType, resultType, eff, loc)
 
     case TypedAst.Expr.FixpointSolve(exp, _, eff, loc) =>
-      val defn = Defs.lookup(Defs.Solve)
+      val solveMode: SolveMode = SolveMode.Default
+      val defn = solveMode match {
+        case SolveMode.Default => Defs.lookup(Defs.Solve)
+        case SolveMode.WithProvenance => Defs.lookup(Defs.SolveWithProvenance)
+      }
       val argExps = visitExp(exp) :: Nil
       val resultType = Types.Datalog
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, Types.SolveType, resultType, eff, loc)
