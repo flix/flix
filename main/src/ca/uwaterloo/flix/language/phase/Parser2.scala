@@ -2887,7 +2887,9 @@ object Parser2 {
         expression()
       }
 
-      if (eat(TokenKind.KeywordProject)) {
+      if (isPSolve) {
+        close(mark, treeKind)
+      } else if (eat(TokenKind.KeywordProject)) {
         nameUnqualified(NAME_PREDICATE)
         while (eat(TokenKind.Comma) && !eof()) {
           nameUnqualified(NAME_PREDICATE)
