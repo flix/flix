@@ -22,6 +22,7 @@ mod Fixpoint3.Boxable {
     ///
     /// Boxes the given `x`.
     ///
+    @Internal
     pub def box(x: a): Boxed with Order[a] = typematch x {
         case v: Bool    => Boxed.BoxedBool(v)
         case v: Char    => Boxed.BoxedChar(v)
@@ -39,6 +40,7 @@ mod Fixpoint3.Boxable {
     ///
     /// Unboxes the given `x`.
     ///
+    @Internal
     pub def unbox(x: Boxed): a = typematch (Proxy.Proxy: Proxy[a]) {
         case _: Proxy[Bool] => match x {
             case Boxed.BoxedBool(v)      => unchecked_cast(v as a)
