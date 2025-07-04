@@ -326,14 +326,4 @@ mod Fixpoint3.Ast.Datalog {
         case Negative
     }
 
-    /////////////////////////////////////////////////////////////////////////////
-    // SolveMode                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Internal
-    pub enum SolveMode {
-        case Default,
-        case WithProvenance
-    }
-
 }
