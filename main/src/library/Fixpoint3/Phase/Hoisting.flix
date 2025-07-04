@@ -17,6 +17,34 @@
 
 
 ///
+/// The purpose of this phase is to hoist `If` ops as much as possible and merges them with `Search`
+/// into `Query` when possible/relevant. Additionally, guards are added at the top of
+/// `Insert` statements that only perform the operations if none of the relations are
+/// empty. For example, the following
+/// ```
+/// search a ∈ A do
+///     search b ∈ B do
+///         search c ∈ C do
+///             if(b[0] = a[0] ∧ c[0] = a[0]) then
+///                 project (a[0]) into R
+///             end
+///         end
+///     end
+/// end
+/// ```
+/// is hoisted to
+/// ```
+/// if(not (A = ∅) ∧ not (B = ∅) not (C = ∅)) then
+///     search a ∈ A do
+///         query {b ∈ B | b[0] = a[0]} do
+///             query {c ∈ C | c[0] = a[0]} do
+///                 project (a[0]) into R
+///             end
+///         end
+///     end
+/// end
+/// ```
+///
 /// One hard dependency of the current implementation is that for `BoolExp.Eq(x, y)` `x` and `y` can
 /// either be `Lit`, or `RowLoad(_ ,_, _)`.
 ///
@@ -27,7 +55,7 @@
 /// `termMap` contains a map from the representing `RowLoad`, with respect to `equalitySets`,
 /// to the `RamTerm` highest in the AST where the value of `Rep` is known.
 ///
-/// For
+/// For example, given:
 /// ```
 /// search a ∈ A do
 ///     search b ∈ B do
@@ -57,33 +85,7 @@ mod Fixpoint3.Phase.Hoisting {
     use MutDisjointSets.MutDisjointSets
 
     ///
-    /// Hoists `If` ops in `program` as much as possible and merges them with `Search`
-    /// into `Query` when possible/relevant. Additionally, guards are added at the top of
-    /// `Insert` statements that only perform the operations if none of the relations are
-    /// empty. For example, the following
-    /// ```
-    /// search a ∈ A do
-    ///     search b ∈ B do
-    ///         search c ∈ C do
-    ///             if(b[0] = a[0] ∧ c[0] = a[0]) then
-    ///                 project (a[0]) into R
-    ///             end
-    ///         end
-    ///     end
-    /// end
-    /// ```
-    /// is hoisted to
-    /// ```
-    /// if(not (A = ∅) ∧ not (B = ∅) not (C = ∅)) then
-    ///     search a ∈ A do
-    ///         query {b ∈ B | b[0] = a[0]} do
-    ///             query {c ∈ C | c[0] = a[0]} do
-    ///                 project (a[0]) into R
-    ///             end
-    ///         end
-    ///     end
-    /// end
-    /// ```
+    /// Hoists `program` as described above.
     ///
     @Internal
     pub def hoistProgram(program: RamProgram): RamProgram = match program {
@@ -162,18 +164,19 @@ mod Fixpoint3.Phase.Hoisting {
         case RamStmt.Seq(xs) =>
             let children =
                 Vector.filterMap(hoistStmt(rc, termMap, equalitySets, impossible), xs);
-            if (Vector.isEmpty(children))
-                None
-            else if (Vector.length(children) == 1)
-                Vector.head(children)
-            else Some(RamStmt.Seq(children))
+            match Vector.length(children) {
+                case 0 => None
+                case 1 => Vector.head(children)
+                case _ => Some(RamStmt.Seq(children))
+            }
         case RamStmt.Par(xs) =>
             let children =
                 Vector.filterMap(hoistStmt(rc, termMap, equalitySets, impossible), xs);
-            if (Vector.isEmpty(children)) None
-            else if (Vector.length(children) == 1)
-                Vector.head(children)
-            else Some(RamStmt.Par(children))
+            match Vector.length(children) {
+                case 0 => None
+                case 1 => Vector.head(children)
+                case _ => Some(RamStmt.Par(children))
+            }
         case RamStmt.Until(test, body) =>
             match hoistStmt(rc, termMap, equalitySets, impossible, body) {
                 case None => None
@@ -366,9 +369,13 @@ mod Fixpoint3.Phase.Hoisting {
     ///
     /// The purpose is to return the `RowVar`'s in the AST which are possible places `bool` can be hoisted to.
     ///
-    def collectBoolVariables(termMap: MutMap[(RowVar, Int32), RamTerm, r], equalitySets: MutDisjointSets[(RowVar, Int32), r], bool: BoolExp): Set[RowVar] \ r =
+    def collectBoolVariables(
+        termMap: MutMap[(RowVar, Int32), RamTerm, r],
+        equalitySets: MutDisjointSets[(RowVar, Int32), r],
+        bexp: BoolExp
+    ): Set[RowVar] \ r =
         let collectTerm = collectTermVariables(termMap, equalitySets);
-        match bool {
+        match bexp {
             case BoolExp.Not(boolExp) => collectBoolVariables(termMap, equalitySets, boolExp)
             case BoolExp.IsEmpty(_) => Set#{}
             case BoolExp.NotMemberOf(terms, _) => Vector.foldLeft(y -> x -> Set.union(collectTerm(x), y), Set#{}, terms)
@@ -388,14 +395,18 @@ mod Fixpoint3.Phase.Hoisting {
     ///
     /// Returns the set of `RowVar` in `term`. See `collectBoolVariables`.
     ///
-    def collectTermVariables(termMap: MutMap[(RowVar, Int32), RamTerm, r], equalitySets: MutDisjointSets[(RowVar, Int32), r], term: RamTerm): Set[RowVar] \ r =
+    def collectTermVariables(
+        termMap: MutMap[(RowVar, Int32), RamTerm, r],
+        equalitySets: MutDisjointSets[(RowVar, Int32), r],
+        term: RamTerm
+    ): Set[RowVar] \ r =
         let collectTerm = collectTermVariables(termMap, equalitySets);
         let getRepVar = getRepRowVar(termMap, equalitySets);
         match term {
-            case RamTerm.Lit(_, _)               => Set#{}
-            case RamTerm.RowLoad(rv, i, _)       => getRepVar(rv, i)
-            case RamTerm.Meet(_, t1, (rv, relSym), _) => Set.union(collectTerm(t1), getRepVar(rv, arityOfNonLat(relSym)))
-            case RamTerm.App1(_, t1, _)          => collectTerm(t1)
+            case RamTerm.Lit(_, _)                      => Set#{}
+            case RamTerm.RowLoad(rv, i, _)              => getRepVar(rv, i)
+            case RamTerm.Meet(_, t1, (rv, relSym), _)   => Set.union(collectTerm(t1), getRepVar(rv, arityOfNonLat(relSym)))
+            case RamTerm.App1(_, t1, _)                 => collectTerm(t1)
             case RamTerm.App2(_, t1, t2, _) =>
                 Vector#{t1, t2} |>
                 Vector.foldRight(t -> acc -> collectTerm(t) `Set.union` acc, Set#{})
@@ -414,7 +425,12 @@ mod Fixpoint3.Phase.Hoisting {
     /// Returns the (set of) `RowVar` that represents `term` with respect to `termMap`.
     /// See `collectBoolVariables`.
     ///
-    def getRepRowVar(termMap: MutMap[(RowVar, Int32), RamTerm, r], equalitySets: MutDisjointSets[(RowVar, Int32), r], rv: RowVar, index: Int32): Set[RowVar] \ r =
+    def getRepRowVar(
+        termMap: MutMap[(RowVar, Int32), RamTerm, r],
+        equalitySets: MutDisjointSets[(RowVar, Int32), r],
+        rv: RowVar,
+        index: Int32
+    ): Set[RowVar] \ r =
         let repLoad = MutDisjointSets.find((rv, index), equalitySets) |> getOrCrash;
         match MutMap.get(repLoad, termMap) {
             case None => Set#{rv}
@@ -432,21 +448,21 @@ mod Fixpoint3.Phase.Hoisting {
     /// This ensures that we all loads refer to variables as far up in the AST as possible,
     /// and therefore variables which are still bound after hoisting.
     ///
-    /// `Meet` is excluded from this treatment.
+    /// `Meet` and is excluded from this treatment.
     ///
     def replaceByRepBoolExp(
         termMap: MutMap[(RowVar, Int32), RamTerm, r],
         equalitySets: MutDisjointSets[(RowVar, Int32), r],
-        bool: BoolExp
+        bexp: BoolExp
     ): BoolExp \ r =
         let replaceRec = replaceByRepBoolExp(termMap, equalitySets);
         let replaceTerm = replaceByRepRamTerm(termMap, equalitySets);
-        match bool {
+        match bexp {
             case BoolExp.Not(boolExp) => BoolExp.Not(replaceRec(boolExp))
-            case BoolExp.IsEmpty(_) => bool
+            case BoolExp.IsEmpty(_) => bexp
             case BoolExp.NotMemberOf(terms, rel) => BoolExp.NotMemberOf(Vector.map(replaceTerm, terms), rel)
             case BoolExp.NotBot(t1, f, bot) => BoolExp.NotBot(replaceTerm(t1), f, bot)
-            case BoolExp.Leq(_, _, _) => bool
+            case BoolExp.Leq(_, _, _) => bexp
             case BoolExp.Eq(t1, t2) => BoolExp.Eq(replaceTerm(t1), replaceTerm(t2))
             case BoolExp.Guard1(f, t1) => BoolExp.Guard1(f, replaceTerm(t1))
             case BoolExp.Guard2(f, t1, t2) => BoolExp.Guard2(f, replaceTerm(t1), replaceTerm(t2))
@@ -493,10 +509,10 @@ mod Fixpoint3.Phase.Hoisting {
     def isBoolGround(
         termMap: MutMap[(RowVar, Int32), RamTerm, r],
         equalitySets: MutDisjointSets[(RowVar, Int32), r],
-        bool: BoolExp
+        bexp: BoolExp
     ): Bool \ r =
         let termGround = isTermGround(termMap, equalitySets);
-        match bool {
+        match bexp {
             case BoolExp.Not(boolExp) => isBoolGround(termMap, equalitySets, boolExp)
             case BoolExp.IsEmpty(_) => unreachable!()
             case BoolExp.NotMemberOf(terms, _) => Vector.forAll(termGround, terms)
