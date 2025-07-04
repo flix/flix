@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
-import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, SolveMode}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
 
@@ -597,11 +597,11 @@ object TypeReconstruction {
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
       TypedAst.Expr.FixpointMerge(e1, e2, tpe, eff, loc)
 
-    case KindedAst.Expr.FixpointSolve(exp, loc) =>
+    case KindedAst.Expr.FixpointSolve(exp, mode, loc) =>
       val e = visitExp(exp)
       val tpe = e.tpe
       val eff = e.eff
-      TypedAst.Expr.FixpointSolve(e, tpe, eff, loc)
+      TypedAst.Expr.FixpointSolve(e, tpe, eff, mode, loc)
 
     case KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc) =>
       val e = visitExp(exp)
@@ -622,7 +622,7 @@ object TypeReconstruction {
       // `#{#Result(..)` | _} cannot be unified with `#{A(..)}` (a closed row).
       // See Weeder for more details.
       val mergeExp = TypedAst.Expr.FixpointMerge(e1, e2, e1.tpe, eff, loc)
-      val solveExp = TypedAst.Expr.FixpointSolve(mergeExp, e1.tpe, eff, loc)
+      val solveExp = TypedAst.Expr.FixpointSolve(mergeExp, e1.tpe, eff, SolveMode.Default, loc)
       TypedAst.Expr.FixpointProject(pred, solveExp, tpe, eff, loc)
 
     case KindedAst.Expr.Error(m, tvar, evar) =>

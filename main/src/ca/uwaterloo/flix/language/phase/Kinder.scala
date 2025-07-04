@@ -784,9 +784,9 @@ object Kinder {
       val exp2 = visitExp(exp20, kenv0, taenv, root)
       KindedAst.Expr.FixpointMerge(exp1, exp2, loc)
 
-    case ResolvedAst.Expr.FixpointSolve(exp0, loc) =>
+    case ResolvedAst.Expr.FixpointSolve(exp0, mode, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, root)
-      KindedAst.Expr.FixpointSolve(exp, loc)
+      KindedAst.Expr.FixpointSolve(exp, mode, loc)
 
     case ResolvedAst.Expr.FixpointFilter(pred, exp0, loc) =>
       val exp = visitExp(exp0, kenv0, taenv, root)
