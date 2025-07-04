@@ -378,7 +378,7 @@ object EffectVerifier {
       visitExp(exp2)
       // TODO ?
       ()
-    case Expr.FixpointSolve(exp, tpe, eff, loc) =>
+    case Expr.FixpointSolve(exp, tpe, eff, _, loc) =>
       visitExp(exp)
       // TODO ?
       ()

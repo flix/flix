@@ -784,7 +784,7 @@ object Lowering {
       val resultType = Types.Datalog
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, Types.MergeType, resultType, eff, loc)
 
-    case TypedAst.Expr.FixpointSolve(exp, _, eff, loc) =>
+    case TypedAst.Expr.FixpointSolve(exp, _, eff, mode, loc) =>
       val defn = Defs.lookup(Defs.Solve)
       val argExps = visitExp(exp) :: Nil
       val resultType = Types.Datalog

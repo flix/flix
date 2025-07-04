@@ -99,7 +99,7 @@ object TypedAstPrinter {
     case Expr.FixpointConstraintSet(_, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointLambda(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointMerge(_, _, _, _, _) => DocAst.Expr.Unknown
-    case Expr.FixpointSolve(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointSolve(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointFilter(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointInject(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointProject(_, _, _, _, _) => DocAst.Expr.Unknown
