@@ -2878,7 +2878,6 @@ object Parser2 {
     private def fixpointSolveExpr(isPSolve: Boolean)(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val expectedToken = if (isPSolve) TokenKind.KeywordPSolve else TokenKind.KeywordSolve
-      val treeKind = if (isPSolve) TreeKind.Expr.FixpointSolveWithProvenance else TreeKind.Expr.FixpointSolveWithProject
       assert(at(expectedToken))
       val mark = open()
       expect(expectedToken)
@@ -2888,14 +2887,14 @@ object Parser2 {
       }
 
       if (isPSolve) {
-        close(mark, treeKind)
+        close(mark, TreeKind.Expr.FixpointSolveWithProvenance)
       } else if (eat(TokenKind.KeywordProject)) {
         nameUnqualified(NAME_PREDICATE)
         while (eat(TokenKind.Comma) && !eof()) {
           nameUnqualified(NAME_PREDICATE)
         }
       }
-      close(mark, treeKind)
+      close(mark, TreeKind.Expr.FixpointSolveWithProject)
     }
 
     private def fixpointInjectExpr()(implicit s: State): Mark.Closed = {
