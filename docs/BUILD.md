@@ -1,5 +1,12 @@
 # Building and Running the Flix compiler
 
+## Requirements
+
+Flix uses
+- Java version 21.0.2
+- Scala version 2.13.15
+- Gradle version 8.5
+
 ## Building with IntelliJ IDEA
 
 Flix can be built and run from within the IntelliJ IDEA IDE which is useful for
