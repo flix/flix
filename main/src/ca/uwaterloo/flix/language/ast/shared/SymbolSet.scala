@@ -15,19 +15,70 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.Symbol
-
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.shared.QualifiedSym
 object SymbolSet {
 
   /**
-   * Returns an empty symbol set.
-   */
+    * Returns an empty symbol set.
+    */
   val empty: SymbolSet = SymbolSet(
     Set.empty[Symbol.EnumSym],
     Set.empty[Symbol.StructSym],
     Set.empty[Symbol.TraitSym],
     Set.empty[Symbol.EffSym],
   )
+
+  /**
+    * Returns all the symbols in a given type
+    */
+  def symbolsOf(wrt: Type): SymbolSet = {
+    /**
+      * Returns all the symbols in a given type constructor
+      */
+    def getSymbolsWithin(wrt: TypeConstructor): SymbolSet = {
+      wrt match {
+        case TypeConstructor.Enum(sym, _) => SymbolSet(Set(sym), Set.empty, Set.empty, Set.empty)
+        case TypeConstructor.Struct(sym, _) => SymbolSet(Set.empty, Set(sym), Set.empty, Set.empty)
+        case TypeConstructor.Effect(sym, _) => SymbolSet(Set.empty, Set.empty, Set.empty, Set(sym))
+        case _ => SymbolSet.empty
+      }
+    }
+
+    (wrt.typeConstructors map getSymbolsWithin).foldLeft(empty) {
+      _ ++ _
+    }
+  }
+
+
+
+  /**
+    * Return a symbol set containing all the symbols in `s1` ambiguous w.r.t `s2`.
+    * @param s1 The first symbol set
+    * @param s2 The second symbol set
+    * @return All the symbols that are in `s1` such that a symbol in `s2` has the same base name but a different namespace
+    */
+  def ambiguous(s1: SymbolSet, s2: SymbolSet): SymbolSet = {
+    val s3 = s1 ++ s2
+    SymbolSet(
+      s3.enums.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 1),
+      s3.structs.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 1),
+      s3.traits.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 1),
+      s3.effects.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 1),
+    )
+  }
+
+  /**
+    * Checks if two symbols are ambiguous with respect to each other.
+    * Two symbols are ambiguous if they have the same name but different namespaces.
+    *
+    * @param sym1 The first symbol
+    * @param sym2 The second symbol
+    * @return true if the symbols are ambiguous, false otherwise
+    */
+  private def isAmbiguous(sym1: QualifiedSym, sym2: QualifiedSym): Boolean = {
+    sym1.namespace != sym2.namespace && sym1.name == sym2.name
+  }
 }
 
 case class SymbolSet(
@@ -60,4 +111,5 @@ case class SymbolSet(
       effects & that.effects,
     )
   }
+
 }
