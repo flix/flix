@@ -401,9 +401,7 @@ object EffectVerifier {
     * Throws an exception if the actual type does not match the expected type.
     */
   private def expectType(expected: Type, actual: Type, loc: SourceLocation)(implicit eqEnv: EqualityEnv, flix: Flix): Unit = {
-    // mark everything as rigid
-    val renv = RigidityEnv.ofRigidVars(expected.typeVars.map(_.sym) ++ actual.typeVars.map(_.sym))
-    if (ConstraintSolver2.fullyUnify(expected, actual, Scope.Top, renv).isEmpty) {
+    if (!ConstraintSolver2.equivalent(expected, actual)) {
       throw InternalCompilerException(s"Expected type $expected but found $actual", loc)
     }
   }
