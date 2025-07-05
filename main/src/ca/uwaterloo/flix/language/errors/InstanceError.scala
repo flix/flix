@@ -17,10 +17,11 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatTraitConstraint, FormatType}
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -269,6 +270,50 @@ object InstanceError {
       import formatter.*
       s"${underline("Tip:")} Add the missing type constraint."
     })
+  }
+
+  /**
+    * An error indicating that the equality constraint of an instance declaration conflicts with the equality constraints of a sub instance declaration due to a type mismatch.
+    *
+    * @param baseType1 the first base type.
+    * @param baseType2 the second base type.
+    * @param fullType1 the first full type.
+    * @param fullType2 the second full type.
+    * @param subTrait  the trait whose equality constraints conflict with the equality constraint on the super instance.
+    * @param loc       the location of the conflicting constraint on the super instance.
+    */
+  case class ConflictingEqualityConstraint(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, subTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+    override def summary: String = s"Constraint conflicts with constraints on instance for '${subTrait.name}'. Unable to unify the types '${formatType(fullType1, None, minimizeEffs = true)}' and '${formatType(fullType2, None, minimizeEffs = true)}'."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Constraint conflicts with constraints on instance for '${subTrait.name}'. Unable to unify the types '${formatType(fullType1, None, minimizeEffs = true)}' and '${formatType(fullType2, None, minimizeEffs = true)}'.
+         |
+         |${code(loc, s"conflicting equality constraint")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error indicating that the equality constraints of an instance declaration conflict with an equality constraint of a super instance declaration due to a type mismatch.
+    *
+    * @param baseType1 the first base type.
+    * @param baseType2 the second base type.
+    * @param fullType1 the first full type.
+    * @param fullType2 the second full type.
+    * @param supTrait  the trait whose equality constraint conflicts with the equality constraints on the sub instance.
+    * @param loc       the location of the sub trait whose equality constraints conflict with the equality constraints on the super instance.
+    */
+  case class ConflictingEqualityConstraints(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, supTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+    override def summary: String = s"Constraints conflict with constraint on instance for '${supTrait.name}'. Unable to unify the types '${formatType(fullType1, None, minimizeEffs = true)}' and '${formatType(fullType2, None, minimizeEffs = true)}'."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Constraints conflict with constraint on instance for '${supTrait.name}'. Unable to unify the types '${formatType(fullType1, None, minimizeEffs = true)}' and '${formatType(fullType2, None, minimizeEffs = true)}'.
+         |
+         |${code(loc, s"conflicting equality constraints")}
+         |""".stripMargin
+    }
   }
 
   /**

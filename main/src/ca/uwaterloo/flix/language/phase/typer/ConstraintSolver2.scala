@@ -21,8 +21,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
-import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.ChaosMonkey
+import ca.uwaterloo.flix.util.{ChaosMonkey, Result}
 
 import scala.annotation.tailrec
 
@@ -361,7 +360,7 @@ object ConstraintSolver2 {
 
       // Find the instance that matches
       val matches = insts.flatMap {
-        case Instance(instTparams, instTpe0, instConstrs0) =>
+        case Instance(instTparams, instTpe0, instTconstrs0, instEconstrs0) =>
           // We fully rigidify `tpe`, because we need the substitution to go from instance type to constraint type.
           // For example, if our constraint is ToString[Map[Int32, a]] and our instance is ToString[Map[k, v]],
           // then we want the substitution to include "v -> a" but NOT "a -> v".
@@ -374,11 +373,12 @@ object ConstraintSolver2 {
           }.toMap
           val instSubst = Substitution(instVarMap)
           val instTpe = instSubst(instTpe0)
-          val instConstrs = instConstrs0.map(instSubst.apply)
+          val instTconstrs = instTconstrs0.map(instSubst.apply)
+          val instEconstrs = instEconstrs0.map(instSubst.apply)
 
           // Instantiate all the instance constraints according to the substitution.
           fullyUnify(tpe, instTpe, scope, renv).map {
-            case subst => instConstrs.map(subst.apply)
+            case subst => (instTconstrs.map(subst.apply), instEconstrs.map(subst.apply))
           }
       }
 
@@ -387,9 +387,11 @@ object ConstraintSolver2 {
         case None => List(c)
 
         // Case 2: One match. Use the instance constraints.
-        case Some(newConstrs) =>
+        case Some((newTconstrs, newEconstrs)) =>
           progress.markProgress()
-          newConstrs.map(traitConstraintToTypeConstraint(_, loc))
+          val tTypeConstrs = newTconstrs.map(traitConstraintToTypeConstraint(_, loc))
+          val eTypeConstrs = newEconstrs.map(equalityConstraintToTypeConstraint(_, loc))
+          tTypeConstrs ++ eTypeConstrs
       }
   }
 
@@ -620,6 +622,17 @@ object ConstraintSolver2 {
     */
   def traitConstraintToTypeConstraint(constr: TraitConstraint, loc: SourceLocation): TypeConstraint = constr match {
     case TraitConstraint(head, arg, _) => TypeConstraint.Trait(head.sym, arg, loc)
+  }
+
+  /**
+    * Converts a syntactic equality constraint into a semantic type constraint.
+    *
+    * Replaces the the location with the given location.
+    */
+  def equalityConstraintToTypeConstraint(constr: EqualityConstraint, loc: SourceLocation): TypeConstraint = constr match {
+    case EqualityConstraint(cst, tpe1, tpe2, _) =>
+      val assoc = Type.AssocType(cst, tpe1, tpe2.kind, tpe1.loc)
+      TypeConstraint.Equality(assoc, tpe2, Provenance.Match(tpe1, tpe2, loc))
   }
 
   /**
