@@ -90,4 +90,18 @@ mod Bool {
     @test
     def mathXor04(): Bool = (false ⊕ false) == false
 
+    /////////////////////////////////////////////////////////////////////////////
+    // Run if                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def runIf0(): Bool \ IO = runIf (_ -> println("Hello, World!")) (true) == ()
+
+    @test
+    def runIf1(): Bool \ IO = runIf (_ -> println("Hello, World!")) (false) == ()
+
+    @test
+    def runIf2(): Bool = runIf (_ -> ()) (true)  == ()
+
+    @test
+    def runIf3(): Bool = runIf (_ -> ()) (false) == ()
 }
