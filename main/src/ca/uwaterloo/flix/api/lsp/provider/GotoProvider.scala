@@ -36,7 +36,95 @@ object GotoProvider {
 
     gotoRight
       .orElse(gotoLeft)
-      .filter(_.targetUri.startsWith("file://")) // We do not support goto for non-file URIs, which is the case for the standard library.
+      .map(convertToValidUri)
+  }
+
+  /**
+   * Converts non-file URIs to file URIs by searching for the corresponding source file.
+   * If the URI is already a file URI, returns it unchanged.
+   * If the URI points to a standard library file that cannot be found as a regular file,
+   * attempts to locate it in the standard library sources directory.
+   */
+  private def convertToValidUri(link: LocationLink): LocationLink = {
+    if (link.targetUri.startsWith("file://")) {
+      link
+    } else {
+      // Try to find corresponding source file for non-file URIs (e.g., stdlib references)
+      findSourceFile(link.targetUri) match {
+        case Some(sourceUri) => link.copy(targetUri = sourceUri)
+        case None =>
+          link
+      }
+    }
+  }
+
+  /**
+   * Attempts to find a source file for the given URI by searching in configured source directories.
+   * This is primarily used for standard library files that are not directly accessible as regular files.
+   */
+  private def findSourceFile(originalUri: String): Option[String] = {
+    val fileName = extractFileName(originalUri)
+
+    if (fileName.endsWith(".flix")) {
+      getSourceDirectories().view
+        .map(new java.io.File(_))
+        .filter(_.exists())
+        .flatMap(findFileRecursively(_, fileName))
+        .headOption
+        .map(file => s"file://${file.getAbsolutePath}")
+    } else {
+      None
+    }
+  }
+
+  /**
+   * Extracts the filename from a URI path.
+   */
+  private def extractFileName(uri: String): String = {
+    uri.split("[/\\\\]").lastOption.getOrElse("")
+  }
+
+  /**
+   * Returns a list of directories to search for source files.
+   * Directories are searched in order of priority.
+   */
+  private def getSourceDirectories(): List[String] = {
+    val customDirs = Option(System.getProperty("flix.stdlib.sources"))
+      .map(_.split("[;:]").toList)
+      .getOrElse(Nil)
+
+    val defaultDirs = List(
+      "stdlib-sources",
+      "src/library",
+      "../stdlib-sources",
+      "main/src/library"
+    )
+
+    customDirs ++ defaultDirs
+  }
+
+  /**
+   * Recursively searches for a file with the given name in the specified directory.
+   */
+  private def findFileRecursively(dir: java.io.File, fileName: String): Option[java.io.File] = {
+    if (!dir.exists() || !dir.isDirectory()) {
+      return None
+    }
+
+    // First, try to find the file directly in this directory
+    Option(dir.listFiles())
+      .getOrElse(Array.empty)
+      .find(file => file.isFile && file.getName == fileName) match {
+      case Some(file) => Some(file)
+      case None =>
+        // If not found, search subdirectories
+        Option(dir.listFiles())
+          .getOrElse(Array.empty)
+          .filter(_.isDirectory)
+          .view
+          .flatMap(findFileRecursively(_, fileName))
+          .headOption
+    }
   }
 
   /**

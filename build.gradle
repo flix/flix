@@ -128,7 +128,19 @@ task testIDECompletion(dependsOn: ['testClasses'], type: JavaExec) {
 
 test.dependsOn testAll
 
-task vscode(type: Copy, dependsOn: [clean, jar]) {
+task extractStdlibSources(type: Copy) {
+    description = 'Extracts Flix standard library source files'
+
+    from 'main'
+    include '**/*.flix'
+    into project.findProperty('flix.stdlib.output') ?: 'build/stdlib-sources'
+
+    doLast {
+        println "Flix stdlib sources extracted to: ${destinationDir}"
+    }
+}
+
+task vscode(type: Copy, dependsOn: [clean, jar, extractStdlibSources]) {
     from 'build/libs/flix.jar'
     into providers.gradleProperty('dev.flix.vscode.project')
 }
