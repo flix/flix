@@ -23,7 +23,7 @@ enum SocketAddr with Eq {
 }
 
 instance FromString[SocketAddr] {
-    pub def fromString(x: String): Option[SocketAddr] = SocketAddr.parse_ascii(x)
+    pub def fromString(x: String): Option[SocketAddr] = SocketAddr.fromString(x)
 }
 
 mod SocketAddr {
@@ -36,7 +36,7 @@ mod SocketAddr {
     ///
     /// Returns `Some(socket)` if the string was successfully parsed. Otherwise returns `None`.
     ///
-    pub def parse_ascii(x: String): Option[SocketAddr] =
+    pub def fromString(x: String): Option[SocketAddr] =
         let ip_port = String.split({regex = ":"}, x);
         match ip_port {
             case ip :: port :: Nil => {
