@@ -140,7 +140,7 @@ mod MutDisjointSets {
                 union(x, y, s)
             }
             case (None, Some(_)) => {
-                makeSet(y, s);
+                makeSet(x, s);
                 union(x, y, s)
             }
             case (None, None)     => {
