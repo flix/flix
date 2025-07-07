@@ -234,6 +234,8 @@ object SyntaxTree {
 
       case object FixpointWhere extends Expr
 
+      case object FixpointWith extends Expr
+
       case object ForApplicative extends Expr
 
       case object Foreach extends Expr
