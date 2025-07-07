@@ -2947,7 +2947,7 @@ object Parser2 {
         case TokenKind.CurlyL => zeroOrMore(
           namedTokenSet = NamedTokenSet.FromKinds(NAME_PREDICATE),
           getItem = () => nameUnqualified(NAME_PREDICATE),
-          checkForItem = _.isPredicateName,
+          checkForItem = NAME_PREDICATE.contains,
           breakWhen = _.isRecoverExpr,
           delimiterL = TokenKind.CurlyL,
           delimiterR = TokenKind.CurlyR

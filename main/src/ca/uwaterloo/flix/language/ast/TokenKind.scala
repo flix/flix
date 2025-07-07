@@ -761,8 +761,6 @@ sealed trait TokenKind {
     * and still discover `Legumes`, because isRecoverDecl return true for TokenKind.KeywordEnum.
     */
 
-  def isPredicateName: Boolean = this == TokenKind.NameUpperCase
-
   /**
     * Checks if kind is a TokenKind that warrants breaking a declaration parsing loop.
     * This is used to skip tokens until the start of a declaration is found,
