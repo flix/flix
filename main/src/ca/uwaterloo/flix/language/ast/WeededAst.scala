@@ -237,6 +237,8 @@ object WeededAst {
 
     case class FixpointSolveWithProject(exps: List[Expr], mode: SolveMode, optIdents: Option[List[Name.Ident]], loc: SourceLocation) extends Expr
 
+    case class FixpointQueryWithProvenance(exps: List[Expr], select: Predicate.Head, withh: List[Name.Pred], loc: SourceLocation) extends Expr
+
     case class FixpointQueryWithSelect(exps: List[Expr], selects: List[Expr], from: List[Predicate.Body], where: List[Expr], loc: SourceLocation) extends Expr
 
     case class Debug(exp: Expr, kind: DebugKind, loc: SourceLocation) extends Expr
