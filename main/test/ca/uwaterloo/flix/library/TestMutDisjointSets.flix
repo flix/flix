@@ -318,6 +318,22 @@ mod TestMutDisjointSets {
         Assert.eq(true, MutDisjointSets.memberOf(21, s))
     }
 
+    @Test
+    def union18(): Bool = region rc {
+        let s = MutDisjointSets.empty(rc);
+        MutDisjointSets.makeSet(0, s);
+        MutDisjointSets.union(1, 0, s);
+        Assert.eq(true, MutDisjointSets.equivalent(1, 0, s))
+    }
+
+    @Test
+    def union19(): Bool = region rc {
+        let s = MutDisjointSets.empty(rc);
+        MutDisjointSets.makeSet(0, s);
+        MutDisjointSets.union(0, 1, s);
+        Assert.eq(true, MutDisjointSets.equivalent(1, 0, s))
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // equivalent                                                              //
     /////////////////////////////////////////////////////////////////////////////
