@@ -804,8 +804,11 @@ object Desugar {
     case WeededAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
       desugarFixpointInjectInto(exps, predsAndArities, loc)
 
-    case WeededAst.Expr.FixpointSolveWithProject(exps, optIdents, loc) =>
-      desugarFixpointSolveWithProject(exps, optIdents, loc)
+    case WeededAst.Expr.FixpointQueryWithProvenance(_, _, _, _) =>
+      ???
+
+    case WeededAst.Expr.FixpointSolveWithProject(exps, mode, optIdents, loc) =>
+      desugarFixpointSolveWithProject(exps, mode, optIdents, loc)
 
     case WeededAst.Expr.FixpointQueryWithSelect(exps0, selects0, from0, where0, loc) =>
       desugarFixpointQueryWithSelect(exps0, selects0, from0, where0, loc)
@@ -1454,7 +1457,7 @@ object Desugar {
     *   merge (project P1 tmp%, project P2 tmp%, project P3 tmp%)
     * }}}
     */
-  private def desugarFixpointSolveWithProject(exps0: List[WeededAst.Expr], idents0: Option[List[Name.Ident]], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarFixpointSolveWithProject(exps0: List[WeededAst.Expr], mode: SolveMode, idents0: Option[List[Name.Ident]], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val es = visitExps(exps0)
 
     // Introduce a tmp% variable that holds the minimal model of the merge of the exps.
@@ -1465,12 +1468,12 @@ object Desugar {
     val mergeExp = es.reduceRight[DesugaredAst.Expr] {
       case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc0)
     }
-    val modelExp = DesugaredAst.Expr.FixpointSolve(mergeExp, loc0)
+    val modelExp = DesugaredAst.Expr.FixpointSolve(mergeExp, mode, loc0)
 
     // Any projections?
     val bodyExp = idents0 match {
       case None =>
-        // Case 1: No projections: Simply return the minimal model.
+        // Case 1: No projections: Simply return the minimal model or prepare provenance, depending on mode.
         DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, localVar, localVar.loc), loc0)
 
       case Some(idents) =>

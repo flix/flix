@@ -416,11 +416,11 @@ object Stratifier {
       val e2 = visitExp(exp2)
       Expr.FixpointMerge(e1, e2, tpe, eff, loc)
 
-    case Expr.FixpointSolve(exp, tpe, eff, loc) =>
+    case Expr.FixpointSolve(exp, tpe, eff, mode, loc) =>
       // Compute the stratification.
       stratify(g, tpe, loc)
       val e = visitExp(exp)
-      Expr.FixpointSolve(e, tpe, eff, loc)
+      Expr.FixpointSolve(e, tpe, eff, mode, loc)
 
     case Expr.FixpointFilter(pred, exp, tpe, eff, loc) =>
       val e = visitExp(exp)

@@ -34,7 +34,7 @@ object LiftedAstPrinter {
           mod,
           sym,
           (cparams ++ fparams).map(printFormalParam),
-          MonoTypePrinter.print(tpe),
+          SimpleTypePrinter.print(tpe),
           PurityPrinter.print(exp.purity),
           print(exp)
         )
@@ -48,14 +48,14 @@ object LiftedAstPrinter {
   def print(e: LiftedAst.Expr): DocAst.Expr = e match {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
-    case ApplyAtomic(op, exps, tpe, purity, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe), PurityPrinter.print(purity))
+    case ApplyAtomic(op, exps, tpe, purity, _) => OpPrinter.print(op, exps.map(print), SimpleTypePrinter.print(tpe), PurityPrinter.print(purity))
     case ApplyClo(exp1, exp2, _, _, _) => DocAst.Expr.ApplyClo(print(exp1), List(print(exp2)))
     case ApplyDef(sym, args, _, _, _) => DocAst.Expr.ApplyDef(sym, args.map(print))
     case ApplyOp(sym, exps, _, _, _) => DocAst.Expr.ApplyOp(sym, exps.map(print))
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _, _) => DocAst.Expr.Branch(print(exp), MapOps.mapValues(branches)(print))
     case JumpTo(sym, _, _, _) => DocAst.Expr.JumpTo(sym)
-    case Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVarSym(sym), Some(SimpleTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
     case Scope(sym, exp, _, _, _) => DocAst.Expr.Scope(printVarSym(sym), print(exp))
     case TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
@@ -65,9 +65,9 @@ object LiftedAstPrinter {
       case LiftedAst.HandlerRule(op, fparams, body) =>
         (op.sym, fparams.map(printFormalParam), print(body))
     })
-    case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map {
+    case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, SimpleTypePrinter.print(tpe), methods.map {
       case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, _, _) =>
-        DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
+        DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), SimpleTypePrinter.print(retTpe))
     })
   }
 
@@ -76,7 +76,7 @@ object LiftedAstPrinter {
     */
   private def printFormalParam(fp: LiftedAst.FormalParam): DocAst.Expr.AscriptionTpe = {
     val LiftedAst.FormalParam(sym, _, tpe, _) = fp
-    DocAst.Expr.AscriptionTpe(printVarSym(sym), MonoTypePrinter.print(tpe))
+    DocAst.Expr.AscriptionTpe(printVarSym(sym), SimpleTypePrinter.print(tpe))
   }
 
   /**

@@ -91,7 +91,7 @@ object KindedAst {
 
     case class ApplyLocalDef(symUse: LocalDefSymUse, exps: List[Expr], arrowTvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class ApplyOp(symUse: OpSymUse, exps: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class ApplyOp(symUse: OpSymUse, exps: List[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class ApplySig(symUse: SigSymUse, exps: List[Expr], itvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -217,7 +217,7 @@ object KindedAst {
 
     case class FixpointMerge(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class FixpointSolve(exp: Expr, loc: SourceLocation) extends Expr
+    case class FixpointSolve(exp: Expr, mode: SolveMode, loc: SourceLocation) extends Expr
 
     case class FixpointFilter(pred: Name.Pred, exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 

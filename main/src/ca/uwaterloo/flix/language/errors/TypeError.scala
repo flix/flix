@@ -412,6 +412,33 @@ object TypeError {
   }
 
   /**
+    * Extra label error.
+    *
+    * @param label      the name of the extra label.
+    * @param labelType  the type of the extra label.
+    * @param recordType the record type where the label is missing.
+    * @param renv       the rigidity environment.
+    * @param loc        the location where the error occurred.
+    */
+  case class ExtraLabel(label: Name.Label, labelType: Type, recordType: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Extra label '$label' of type '$labelType'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Extra label '${red(label.name)}' of type '${cyan(formatType(labelType, Some(renv)))}'.
+         |
+         |${code(loc, "extra label.")}
+         |
+         |The record type:
+         |
+         |  ${formatType(recordType, Some(renv))}
+         |
+         |contains the extra label '${red(label.name)}' of type ${cyan(formatType(labelType, Some(renv)))}.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Undefined predicate error.
     *
     * @param pred       the missing predicate.

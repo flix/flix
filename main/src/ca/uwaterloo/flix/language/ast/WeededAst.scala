@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, SolveMode, Source}
 import ca.uwaterloo.flix.util.collection.Nel
 
 object WeededAst {
@@ -235,7 +235,9 @@ object WeededAst {
 
     case class FixpointInjectInto(exps: List[Expr], predsAndArities: List[PredicateAndArity], loc: SourceLocation) extends Expr
 
-    case class FixpointSolveWithProject(exps: List[Expr], optIdents: Option[List[Name.Ident]], loc: SourceLocation) extends Expr
+    case class FixpointSolveWithProject(exps: List[Expr], mode: SolveMode, optIdents: Option[List[Name.Ident]], loc: SourceLocation) extends Expr
+
+    case class FixpointQueryWithProvenance(exps: List[Expr], select: Predicate.Head, withh: List[Name.Pred], loc: SourceLocation) extends Expr
 
     case class FixpointQueryWithSelect(exps: List[Expr], selects: List[Expr], from: List[Predicate.Body], where: List[Expr], loc: SourceLocation) extends Expr
 

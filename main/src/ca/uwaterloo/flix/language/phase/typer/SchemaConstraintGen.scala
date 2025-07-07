@@ -83,7 +83,7 @@ object SchemaConstraintGen {
   def visitFixpointSolve(e: KindedAst.Expr.FixpointSolve)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     e match {
-      case KindedAst.Expr.FixpointSolve(exp, loc) =>
+      case KindedAst.Expr.FixpointSolve(exp, _, loc) =>
         //
         //  exp : #{...}
         //  ---------------

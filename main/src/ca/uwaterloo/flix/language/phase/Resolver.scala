@@ -1476,10 +1476,10 @@ object Resolver {
         case (e1, e2) => ResolvedAst.Expr.FixpointMerge(e1, e2, loc)
       }
 
-    case NamedAst.Expr.FixpointSolve(exp, loc) =>
+    case NamedAst.Expr.FixpointSolve(exp, mode, loc) =>
       val eVal = resolveExp(exp, scp0)
       mapN(eVal) {
-        e => ResolvedAst.Expr.FixpointSolve(e, loc)
+        e => ResolvedAst.Expr.FixpointSolve(e, mode, loc)
       }
 
     case NamedAst.Expr.FixpointFilter(pred, exp, loc) =>

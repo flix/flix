@@ -43,11 +43,8 @@ mod PingWithResult {
                 try {
                     let ms = TimeUnit.toMilliseconds(u);
                     let timeoutMs = ms * timeout;
-                    region rc {
-                        let ipBytes = IpAddr.toByteArray(rc, host);
-                        let addr = InetAddress.getByAddress(ipBytes);
-                        k(Ok(addr.isReachable(timeoutMs)))
-                    }
+                    let addr = InetAddress.getByAddress(IpAddr.toBytes(host));
+                    k(Ok(addr.isReachable(timeoutMs)))
                 } catch {
                     case ex: UnknownHostException     => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
                     case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))

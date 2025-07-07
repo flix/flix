@@ -16,6 +16,13 @@ mod Fixpoint3.Solver {
     pub def runSolver(d: Datalog): Datalog = ???
 
     ///
+    /// Returns a provenance model of the given Datalog program `d`.
+    /// The provenance model can later be used for provenance queries.
+    ///
+    @Internal
+    pub def runSolverWithProvenance(d: Datalog): Datalog = ???
+
+    ///
     /// Returns the pairwise union of `d1` and `d2`.
     /// I.e. the facts of the union is the union of the facts and likewise for rules.
     /// A fact or rule may occur twice in the Datalog program. This has no effect on its semantics.

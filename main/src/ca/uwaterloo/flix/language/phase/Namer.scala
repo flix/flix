@@ -904,9 +904,9 @@ object Namer {
       val e2 = visitExp(exp2)
       NamedAst.Expr.FixpointMerge(e1, e2, loc)
 
-    case DesugaredAst.Expr.FixpointSolve(exp, loc) =>
+    case DesugaredAst.Expr.FixpointSolve(exp, mode, loc) =>
       val e = visitExp(exp)
-      NamedAst.Expr.FixpointSolve(e, loc)
+      NamedAst.Expr.FixpointSolve(e, mode, loc)
 
     case DesugaredAst.Expr.FixpointFilter(ident, exp, loc) =>
       val e = visitExp(exp)

@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition}
-import ca.uwaterloo.flix.language.ast.{MonoType, *}
+import ca.uwaterloo.flix.language.ast.{SimpleType, *}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -588,13 +588,13 @@ object GenExpression {
 
       case AtomicOp.Is(sym) =>
         val List(exp) = exps
-        val MonoType.Enum(_, targs) = exp.tpe
+        val SimpleType.Enum(_, targs) = exp.tpe
         val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
         val termTypes = cases(sym)
         compileIsTag(sym.name, exp, termTypes)
 
       case AtomicOp.Tag(sym) =>
-        val MonoType.Enum(_, targs) = tpe
+        val SimpleType.Enum(_, targs) = tpe
         val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
         val termTypes = cases(sym)
         compileTag(sym.name, exps, termTypes)
@@ -602,7 +602,7 @@ object GenExpression {
       case AtomicOp.Untag(sym, idx) =>
         import BytecodeInstructions.*
         val List(exp) = exps
-        val MonoType.Enum(_, targs) = exp.tpe
+        val SimpleType.Enum(_, targs) = exp.tpe
         val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
         val termTypes = cases(sym)
 
@@ -612,7 +612,7 @@ object GenExpression {
       case AtomicOp.Index(idx) =>
         import BytecodeInstructions.*
         val List(exp) = exps
-        val MonoType.Tuple(elmTypes) = exp.tpe
+        val SimpleType.Tuple(elmTypes) = exp.tpe
         val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toBackendType))
 
         compileExpr(exp)
@@ -620,7 +620,7 @@ object GenExpression {
 
       case AtomicOp.Tuple =>
         import BytecodeInstructions.*
-        val MonoType.Tuple(elmTypes) = tpe
+        val SimpleType.Tuple(elmTypes) = tpe
         val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toBackendType))
         NEW(tupleType.jvmName)
         DUP()
@@ -666,25 +666,25 @@ object GenExpression {
 
       case AtomicOp.ExtensibleIs(sym) =>
         val List(exp) = exps
-        val tpes = MonoType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.toBackendType)
+        val tpes = SimpleType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.toBackendType)
         compileIsTag(sym.name, exp, tpes)
 
       case AtomicOp.ExtensibleTag(sym) =>
-        val tpes = MonoType.findExtensibleTermTypes(sym, tpe).map(BackendType.toBackendType)
+        val tpes = SimpleType.findExtensibleTermTypes(sym, tpe).map(BackendType.toBackendType)
         compileTag(sym.name, exps, tpes)
 
       case AtomicOp.ExtensibleUntag(sym, idx) =>
         import BytecodeInstructions.*
 
         val List(exp) = exps
-        val tpes = MonoType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.toBackendType)
+        val tpes = SimpleType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.toBackendType)
 
         compileUntag(exp, idx, tpes)
         castIfNotPrim(BackendType.toBackendType(tpe))
 
       case AtomicOp.ArrayLit =>
         import BytecodeInstructions.*
-        val innerType = tpe.asInstanceOf[MonoType.Array].tpe
+        val innerType = tpe.asInstanceOf[SimpleType.Array].tpe
         val backendType = BackendType.toBackendType(innerType)
 
         pushInt(exps.length)
@@ -700,7 +700,7 @@ object GenExpression {
         import BytecodeInstructions.*
         val List(exp1, exp2) = exps
         // We get the inner type of the array
-        val innerType = tpe.asInstanceOf[MonoType.Array].tpe
+        val innerType = tpe.asInstanceOf[SimpleType.Array].tpe
         val backendType = BackendType.toBackendType(innerType)
         val fillMethod = ClassMaker.StaticMethod(JvmName.Arrays, "fill", mkDescriptor(BackendType.Array(backendType.toErased), backendType.toErased)(VoidableType.Void))
         compileExpr(exp1) // default
@@ -744,7 +744,7 @@ object GenExpression {
         import BytecodeInstructions.*
 
         val region :: fieldExps = exps
-        val MonoType.Struct(sym, targs) = tpe
+        val SimpleType.Struct(sym, targs) = tpe
         val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
 
         // Evaluate the region and ignore its value
@@ -760,7 +760,7 @@ object GenExpression {
 
         val List(exp) = exps
         val idx = root.structs(field.structSym).fields.indexWhere(_.sym == field)
-        val MonoType.Struct(sym, targs) = exp.tpe
+        val SimpleType.Struct(sym, targs) = exp.tpe
         val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
 
         compileExpr(exp)
@@ -771,7 +771,7 @@ object GenExpression {
 
         val List(exp1, exp2) = exps
         val idx = root.structs(field.structSym).fields.indexWhere(_.sym == field)
-        val MonoType.Struct(sym, targs) = exp1.tpe
+        val SimpleType.Struct(sym, targs) = exp1.tpe
         val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
 
         compileExpr(exp1)
@@ -953,7 +953,7 @@ object GenExpression {
         val List(exp) = exps
 
         // Find the Lazy class name (Lazy$tpe).
-        val MonoType.Lazy(elmType) = tpe
+        val SimpleType.Lazy(elmType) = tpe
         val lazyType = BackendObjType.Lazy(BackendType.toBackendType(elmType))
 
         NEW(lazyType.jvmName)
@@ -966,7 +966,7 @@ object GenExpression {
         val List(exp) = exps
 
         // Find the Lazy class type (Lazy$tpe) and the inner value type.
-        val MonoType.Lazy(elmType) = exp.tpe
+        val SimpleType.Lazy(elmType) = exp.tpe
         val erasedElmType = BackendType.toBackendType(elmType)
         val lazyType = BackendObjType.Lazy(erasedElmType)
 

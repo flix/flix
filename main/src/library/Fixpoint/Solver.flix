@@ -41,6 +41,13 @@ mod Fixpoint.Solver {
         Fixpoint.Phase.Stratifier.stratify(d) |> runWithStratification(d)
 
     ///
+    /// Returns a provenance model of the given Datalog program `d`.
+    /// The provenance model can later be used for provenance queries.
+    ///
+    @Internal
+    pub def runSolverWithProvenance(d: Datalog): Datalog = ???
+
+    ///
     /// Returns the minimal model of the given Datalog program `d`.
     /// The minimal model is given by the model semantics for Datalog programs with stratified negation.
     /// A stratification of `d` is given by `stf`.

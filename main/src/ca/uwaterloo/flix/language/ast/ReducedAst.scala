@@ -30,7 +30,7 @@ object ReducedAst {
                   enums: Map[Symbol.EnumSym, Enum],
                   structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffSym, Effect],
-                  types: Set[MonoType],
+                  types: Set[SimpleType],
                   anonClasses: List[AnonClass],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   entryPoints: Set[Symbol.DefnSym],
@@ -43,12 +43,12 @@ object ReducedAst {
   /**
     * pcPoints is initialized by [[ca.uwaterloo.flix.language.phase.Reducer]].
     */
-  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, expr: Expr, tpe: MonoType, unboxedType: UnboxedType, loc: SourceLocation) {
-    val arrowType: MonoType.Arrow = MonoType.Arrow(fparams.map(_.tpe), tpe)
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, expr: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation) {
+    val arrowType: SimpleType.Arrow = SimpleType.Arrow(fparams.map(_.tpe), tpe)
   }
 
   /** Remember the unboxed return type for test function generation. */
-  case class UnboxedType(tpe: MonoType)
+  case class UnboxedType(tpe: SimpleType)
 
   case class Enum(ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: Map[Symbol.CaseSym, Case], loc: SourceLocation)
 
@@ -56,10 +56,10 @@ object ReducedAst {
 
   case class Effect(ann: Annotations, mod: Modifiers, sym: Symbol.EffSym, ops: List[Op], loc: SourceLocation)
 
-  case class Op(sym: Symbol.OpSym, ann: Annotations, mod: Modifiers, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
+  case class Op(sym: Symbol.OpSym, ann: Annotations, mod: Modifiers, fparams: List[FormalParam], tpe: SimpleType, purity: Purity, loc: SourceLocation)
 
   sealed trait Expr {
-    def tpe: MonoType
+    def tpe: SimpleType
 
     def purity: Purity
 
@@ -68,41 +68,41 @@ object ReducedAst {
 
   object Expr {
 
-    case class Cst(cst: Constant, tpe: MonoType, loc: SourceLocation) extends Expr {
+    case class Cst(cst: Constant, tpe: SimpleType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
 
-    case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends Expr {
+    case class Var(sym: Symbol.VarSym, tpe: SimpleType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
 
-    case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplyClo(exp1: Expr, exp2: Expr, ct: ExpPosition, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyClo(exp1: Expr, exp2: Expr, ct: ExpPosition, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: ExpPosition, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: ExpPosition, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplyOp(sym: Symbol.OpSym, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyOp(sym: Symbol.OpSym, exps: List[Expr], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplySelfTail(sym: Symbol.DefnSym, actuals: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplySelfTail(sym: Symbol.DefnSym, actuals: List[Expr], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Branch(exp: Expr, branches: Map[Symbol.LabelSym, Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class Branch(exp: Expr, branches: Map[Symbol.LabelSym, Expr], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class JumpTo(sym: Symbol.LabelSym, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class JumpTo(sym: Symbol.LabelSym, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Stmt(exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class Stmt(exp1: Expr, exp2: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Scope(sym: Symbol.VarSym, exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class Scope(sym: Symbol.VarSym, exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class RunWith(exp: Expr, effUse: EffectSymUse, rules: List[HandlerRule], ct: ExpPosition, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class RunWith(exp: Expr, effUse: EffectSymUse, rules: List[HandlerRule], ct: ExpPosition, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: MonoType, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: SimpleType, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
   }
 
@@ -112,19 +112,19 @@ object ReducedAst {
   /** [[Type]] is used here because [[Struct]] declarations are not monomorphized. */
   case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
-  case class AnonClass(name: String, clazz: java.lang.Class[?], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation)
+  case class AnonClass(name: String, clazz: java.lang.Class[?], tpe: SimpleType, methods: List[JvmMethod], loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
 
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: MonoType, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: SimpleType, loc: SourceLocation)
 
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 
-  case class LocalParam(sym: Symbol.VarSym, tpe: MonoType)
+  case class LocalParam(sym: Symbol.VarSym, tpe: SimpleType)
 
 }
 
