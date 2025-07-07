@@ -217,7 +217,7 @@ object KindedAst {
 
     case class FixpointMerge(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class FixpointSolve(exp: Expr, loc: SourceLocation) extends Expr
+    case class FixpointSolve(exp: Expr, mode: SolveMode, loc: SourceLocation) extends Expr
 
     case class FixpointFilter(pred: Name.Pred, exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 

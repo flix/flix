@@ -505,7 +505,7 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.FixpointSolve(exp, tpe, eff, _) =>
+    case Expr.FixpointSolve(exp, tpe, eff, _, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)

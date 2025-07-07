@@ -836,7 +836,7 @@ object Redundancy {
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
-    case Expr.FixpointSolve(exp, _, _, _) =>
+    case Expr.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expr.FixpointFilter(_, exp, _, _, _) =>

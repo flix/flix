@@ -272,7 +272,7 @@ object TypedAst {
 
     case class FixpointMerge(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class FixpointSolve(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class FixpointSolve(exp: Expr, tpe: Type, eff: Type, mode: SolveMode, loc: SourceLocation) extends Expr
 
     case class FixpointFilter(pred: Name.Pred, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
