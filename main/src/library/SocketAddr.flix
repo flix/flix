@@ -37,18 +37,36 @@ mod SocketAddr {
     /// Returns `Some(socket)` if the string was successfully parsed. Otherwise returns `None`.
     ///
     pub def fromString(x: String): Option[SocketAddr] =
-        let ip_port = String.split({regex = ":"}, x);
-        match ip_port {
-            case ip :: port :: Nil => {
-                match IpAddr.fromString(ip) {
-                    case Some(IpAddr.V4(v4)) =>
-                        forM(p <- Int32.fromString(port); if p > 0) yield SocketAddr.V4(SocketAddrV4(v4, p))
-                    case Some(IpAddr.V6(v6)) =>
-                        forM(p <- Int32.fromString(port); if p > 0) yield SocketAddr.V6(SocketAddrV6(v6, p))
-                    case None => None
+        match String.contains({substr = "]"}, x) {
+            case true => { // Ipv6
+                if (not String.contains({substr = "["}, x))
+                    None
+                else
+                    let ip_port = x |> String.drop(1) |> String.split({regex = "]:"});
+                    match ip_port {
+                        case ip :: port :: Nil => {
+                            match IpAddr.fromString(ip) {
+                                case Some(IpAddr.V6(v4)) =>
+                                    forM(p <- Int32.fromString(port); if p > 0 and p < 65536) yield SocketAddr.V6(SocketAddrV6(v4, p))
+                                case _ => None
+                            }
+                        }
+                        case _ => None
+                    }
+            }
+            case false => { // Ipv4
+                let ip_port = String.split({regex = ":"}, x);
+                match ip_port {
+                    case ip :: port :: Nil => {
+                        match IpAddr.fromString(ip) {
+                            case Some(IpAddr.V4(v4)) =>
+                                forM(p <- Int32.fromString(port); if p > 0 and p < 65536) yield SocketAddr.V4(SocketAddrV4(v4, p))
+                            case _ => None
+                        }
+                    }
+                    case _ => None
                 }
             }
-            case _ => None
         }
 
     ///
