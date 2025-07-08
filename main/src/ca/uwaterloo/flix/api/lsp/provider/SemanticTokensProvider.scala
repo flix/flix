@@ -509,7 +509,7 @@ object SemanticTokensProvider {
     case Expr.ExtMatch(exp, rules, _, _, _) =>
       val ts = visitExp(exp)
       rules.foldLeft(ts) {
-        case (acc, ExtMatchRule(label, pats, exp1, _)) =>
+        case (acc, ExtMatchRule.Rule(label, pats, exp1, _)) =>
           val t = SemanticToken(SemanticTokenType.EnumMember, List.empty, label.loc)
           acc ++ Iterator(t) ++ pats.flatMap(visitExtPat) ++ visitExp(exp1)
       }

@@ -162,7 +162,10 @@ object Safety {
 
     case Expr.ExtMatch(exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach(rule => visitExp(rule.exp))
+      rules.foreach {
+        case ExtMatchRule.Rule(_, _, exp1, _) => visitExp(exp1)
+        case ExtMatchRule.Error(_) => ()
+      }
 
     case Expr.Tag(_, exps, _, _, _) =>
       exps.foreach(visitExp)

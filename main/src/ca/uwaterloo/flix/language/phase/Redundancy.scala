@@ -583,7 +583,7 @@ object Redundancy {
 
       // Visit each match rule.
       val usedRules = rules map {
-        case ExtMatchRule(_, pats, exp1, _) =>
+        case ExtMatchRule.Rule(_, pats, exp1, _) =>
           // Compute the free variables in the pattern.
           val fvs = pats.flatMap(freeVars).toSet
 
@@ -601,6 +601,8 @@ object Redundancy {
 
           // Combine everything together.
           (usedBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
+
+        case ExtMatchRule.Error(_) => Used.empty
       }
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 

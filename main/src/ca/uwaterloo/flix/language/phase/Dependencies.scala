@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtPattern, Pattern, RestrictableChoosePattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtMatchRule, ExtPattern, Pattern, RestrictableChoosePattern, Root}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -607,9 +607,12 @@ object Dependencies {
     r.guard.toList.foreach(visitExp)
   }
 
-  private def visitExtMatchRule(r: TypedAst.ExtMatchRule)(implicit sctx: SharedContext): Unit = {
-    r.pats.foreach(visitExtPattern)
-    visitExp(r.exp)
+  private def visitExtMatchRule(r: TypedAst.ExtMatchRule)(implicit sctx: SharedContext): Unit = r match {
+    case ExtMatchRule.Rule(_, pats, exp, _) =>
+      pats.foreach(visitExtPattern)
+      visitExp(exp)
+
+    case ExtMatchRule.Error(_) => ()
   }
 
   private def visitPattern(p: TypedAst.Pattern)(implicit sctx: SharedContext): Unit = p match {

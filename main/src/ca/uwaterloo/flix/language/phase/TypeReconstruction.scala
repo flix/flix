@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
+import ca.uwaterloo.flix.language.ast.TypedAst.ExtMatchRule
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, SolveMode}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
@@ -694,10 +695,12 @@ object TypeReconstruction {
     * Reconstructs types in the given ext-match rule.
     */
   private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit subst: SubstitutionTree): TypedAst.ExtMatchRule = rule match {
-    case KindedAst.ExtMatchRule(label, pats, exp, loc) =>
+    case KindedAst.ExtMatchRule.Rule(label, pats, exp, loc) =>
       val ps = pats.map(visitExtPat)
       val e = visitExp(exp)
-      TypedAst.ExtMatchRule(label, ps, e, loc)
+      TypedAst.ExtMatchRule.Rule(label, ps, e, loc)
+
+    case KindedAst.ExtMatchRule.Error(loc) => TypedAst.ExtMatchRule.Error(loc)
   }
 
   /**
