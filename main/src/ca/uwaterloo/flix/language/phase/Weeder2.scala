@@ -2141,10 +2141,8 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.FixpointQueryWithProvenance)
       val expressions = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
       val select = flatMapN(pick(TreeKind.Expr.FixpointSelect, tree))(Predicates.pickHead)
-      val withh = flatMapN(pick(TreeKind.Expr.FixpointWith, tree))(
-        withTree => traverse(pickAll(TreeKind.Ident, withTree))(
-          identTree => pickNameIdent(identTree)
-        )
+      val withh = mapN(pick(TreeKind.Expr.FixpointWith, tree))(
+        withTree => pickAll(TreeKind.Ident, withTree).map(tokenToIdent)
       )
       mapN(expressions, select, withh) {
         (expressions, select, withh) =>
