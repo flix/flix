@@ -506,7 +506,7 @@ object SemanticTokensProvider {
           acc ++ visitRestrictableChoosePat(pat) ++ visitExp(exp)
       }
 
-    case Expr.ExtensibleMatch(exp, rules, _, _, _) =>
+    case Expr.ExtMatch(exp, rules, _, _, _) =>
       val ts = visitExp(exp)
       rules.foldLeft(ts) {
         case (acc, ExtMatchRule(label, pats, exp1, _)) =>

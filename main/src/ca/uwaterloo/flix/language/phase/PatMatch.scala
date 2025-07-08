@@ -189,7 +189,7 @@ object PatMatch {
         visitExp(exp)
         rules.foreach(r => visitExp(r.exp))
 
-      case Expr.ExtensibleMatch(expr, rules, _, _, _) =>
+      case Expr.ExtMatch(expr, rules, _, _, _) =>
         // Exhaustiveness does not make sense for extensible variants.
         visitExp(expr)
         rules.foreach(r => visitExp(r.exp))

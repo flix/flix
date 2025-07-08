@@ -408,7 +408,7 @@ object Visitor {
 
       case Expr.RestrictableChoose(_, _, _, _, _, _) => () // Not visited, unsupported feature.
 
-      case Expr.ExtensibleMatch(exp, rules, _, _, _) =>
+      case Expr.ExtMatch(exp, rules, _, _, _) =>
         visitExpr(exp)
         rules.foreach(visitExtMatchRule)
 

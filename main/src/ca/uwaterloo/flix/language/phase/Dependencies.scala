@@ -241,7 +241,7 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ExtensibleMatch(exp, rules, tpe, eff, _) =>
+    case Expr.ExtMatch(exp, rules, tpe, eff, _) =>
       visitExp(exp)
       rules.foreach(visitExtMatchRule)
       visitType(tpe)
