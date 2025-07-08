@@ -64,7 +64,7 @@ object Diagnostic {
   * @param fullMessage The full error message (non-standard).
   * @param tags        Additional metadata about the diagnostic.
   */
-case class Diagnostic(range: Range, severity: Option[DiagnosticSeverity], code: Option[String], source: Option[String], message: String, fullMessage: String, tags: List[DiagnosticTag]) {
+case class Diagnostic(range: Range, severity: Option[DiagnosticSeverity], code: Option[String], source: Option[String], message: String, fullMessage: String, tags: List[DiagnosticTag], relatedInformation: List[DiagnosticRelatedInformation] = Nil) {
   def toJSON: JValue =
     ("range" -> range.toJSON) ~
       ("severity" -> severity.map(_.toInt)) ~
@@ -73,6 +73,7 @@ case class Diagnostic(range: Range, severity: Option[DiagnosticSeverity], code: 
       ("message" -> message) ~
       ("fullMessage" -> fullMessage) ~
       ("tags" -> tags.map(_.toInt))
+      ("relatedInformation" -> relatedInformation)
 
   def toLsp4j: lsp4j.Diagnostic = {
     val diagnostic = new lsp4j.Diagnostic()
@@ -82,6 +83,7 @@ case class Diagnostic(range: Range, severity: Option[DiagnosticSeverity], code: 
     diagnostic.setSource(source.orNull)
     diagnostic.setMessage(message)
     diagnostic.setTags(tags.map(_.toLsp4j).asJava)
+    diagnostic.setRelatedInformation(relatedInformation.map(_.toLsp4j).asJava)
     diagnostic
   }
 }
