@@ -67,8 +67,8 @@ mod Fixpoint3.Boxing {
     @Internal
     pub def initialize(rc: Region[r], withProv: Bool, program: RamProgram): (Boxing[r], EFacts, RamIdToPos) \ r =
         let mapping = Equality.computeMapping(program, withProv);
-        let boxingInfo = initializeInternal(rc, program, mapping);
-        let (facts, newBoxingInfo) = initializeFacts(rc, program, boxingInfo, mapping);
+        let boxingInfo = initializeInternal(rc, program, mapping, withProv);
+        let (facts, newBoxingInfo) = initializeFacts(rc, program, boxingInfo, mapping, withProv);
         (newBoxingInfo, facts, mapping)
 
     ///
@@ -79,13 +79,13 @@ mod Fixpoint3.Boxing {
     /// This procedure will be heavily simplified by https://github.com/flix/flix/issues/11034
     /// where most of the code is removed.
     ///
-    def initializeFacts(rc1: Region[r], program: RamProgram, boxingInfo: Boxing[r], mapping: RamIdToPos): (EFacts, Boxing[r]) \ r = region rc2 {
+    def initializeFacts(rc1: Region[r], program: RamProgram, boxingInfo: Boxing[r], mapping: RamIdToPos, withProv: Bool): (EFacts, Boxing[r]) \ r = region rc2 {
         let RamProgram.Program(_, facts, _, _) = program;
         let factsAsVec = Map.toVector(facts);
         let counters = initializeCounters(rc1, boxingInfo);
         let newFacts = Array.empty(rc2, Vector.length(factsAsVec));
         let funcsToBeRun = factsAsVec |> Vector.mapWithIndex(i -> match (relSym, factVec) -> () -> {
-            let mappedResult = mapAllFacts(rc1, relSym, factVec, boxingInfo, counters, mapping);
+            let mappedResult = mapAllFacts(rc1, relSym, factVec, boxingInfo, counters, mapping, withProv);
             Array.put((relSym, mappedResult), i, newFacts)
         });
         spawnFuncs(funcsToBeRun);
@@ -150,12 +150,14 @@ mod Fixpoint3.Boxing {
     /// Returns a vector of the `Int64` values representing the `Boxed` values
     /// in `facts`.
     ///
-    def mapAllFacts(rc1: Region[r],
+    def mapAllFacts(
+        rc1: Region[r],
         relSym: RelSym,
         facts: Vector[Vector[Boxed]],
         boxingInfo: Boxing[r],
         counters: Vector[AtomicCounter[r]],
-        mapping: RamIdToPos
+        mapping: RamIdToPos,
+        withProv: Bool
     ): Vector[(Vector[Int64], Boxed)] \ r = {
         let relSymId = Ram.toId(relSym);
         let numOfFacts = Vector.length(facts);
@@ -164,11 +166,10 @@ mod Fixpoint3.Boxing {
         // need to be extended by RamId(-1).
         let nonExtendedPositions = Vector.range(0, arityOf(relSym)) |>
             Vector.map(i -> getOrCrash(Map.get(RamId.RelPos(relSymId, i), mapping)));
-        let positions = if(numOfFacts == 0 or arityOf(relSym) == Vector.length(Vector.get(0, facts))) {
-            nonExtendedPositions
-        } else {
-            Vector.append(nonExtendedPositions, Vector#{getOrCrash(Map.get(RamId.Id(-1), mapping)), getOrCrash(Map.get(RamId.Id(-1), mapping))})
-        };
+        let positions =
+            if (not withProv) nonExtendedPositions
+            else Vector.append(nonExtendedPositions, 
+                Vector#{getOrCrash(Map.get(RamId.Id(-1), mapping)), getOrCrash(Map.get(RamId.Id(-1), mapping))});
         let threadNum = threads();
         let resultArr = Array.empty(rc1, numOfFacts);
         // Map the facts in parallel, unless there are relatively few.
@@ -244,7 +245,7 @@ mod Fixpoint3.Boxing {
     ///
     /// Construct a `Boxing` from `program` given a map from `RamId` to `UnifiedTypePos`.
     ///
-    def initializeInternal(rc: Region[r], program: RamProgram, map: RamIdToPos): Boxing[r] \ r =
+    def initializeInternal(rc: Region[r], program: RamProgram, map: RamIdToPos, withProv: Bool): Boxing[r] \ r =
         let max = 1 + snd(Option.getWithDefault((RamId.Id(-1), -1), Map.maximumValue(map)));
         let intToBox = Vector.init(_ -> MutList.empty(rc), max);
         let boxToInt = Vector.init(_ -> BPlusTree.empty(rc), max);
@@ -252,7 +253,11 @@ mod Fixpoint3.Boxing {
         let posToIndex = Array.init(rc, _ -> Types.TyUnknown, max);
         let info = (intToBox, boxToInt, posToIndex, locks);
         let relSyms = relSymsOfProgram(program);
-        setType(Types.TyInt64, getOrCrash(Map.get(RamId.Id(-1), map)), posToIndex);
+        if(withProv) {
+            setType(Types.TyInt64, getOrCrash(Map.get(RamId.Id(-1), map)), posToIndex)
+        } else {
+            ()
+        };
         // Add bot first to make sure it corresponds to 0.
         List.filter(match RelSym.Symbol(_, _, den) -> not isRelational(den), relSyms) |>
             List.forEach(x -> match x {
@@ -552,8 +557,10 @@ mod Fixpoint3.Boxing {
             unifyRelSyms(fullSymbol, newSymbol, set, withProv);
             let arity = Ram.arityOf(fullSymbol);
             let id1 = Ram.toId(fullSymbol);
-            MutDisjointSets.union(RamId.RelPos(id1, arity), RamId.Id(-1), set);
-            MutDisjointSets.union(RamId.RelPos(id1, arity + 1), RamId.Id(-1), set)
+            if(withProv) {
+                MutDisjointSets.union(RamId.RelPos(id1, arity), RamId.Id(-1), set);
+                MutDisjointSets.union(RamId.RelPos(id1, arity + 1), RamId.Id(-1), set)
+            } else ()
 
         ///
         /// Unify the `i`'th `RamTerm` in `terms` with `RamId.InId(id, i)`.
