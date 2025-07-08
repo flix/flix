@@ -1,7 +1,3 @@
-import java.lang.System
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
 ///
 /// Player Actions.
 ///
@@ -55,9 +51,9 @@ def cardValue(card: Card): Int32 = match card {
 ///
 /// Pop a card from the top of the Deck.
 ///
-def pullCard(deck: List[Card]): (Option[Card], List[Card]) \ IO = match deck {
-    case Nil => println("No more cards"); ((None, Nil)),
-    case (card :: tail) => (Some(card),tail)
+def pullCard(deck: List[Card]): Option[(Card, List[Card])] \ IO = match deck {
+    case Nil => println("No more cards"); None
+    case (card :: tail) => Some((card,tail))
 }
 
 ///
@@ -125,7 +121,7 @@ def gameLoop(deck: List[Card], player: List[Card], dealer: List[Card], actions: 
                     }
                 } else {
                     match pullCard(deck) { // dealer draws
-                        case (Some(d_card), afterDealer) => {
+                        case Some((d_card, afterDealer)) => {
                             println("Dealer => ${List.toString(d_card::dealer)}");
                             let d_val_new = handValue(d_card::dealer);
                             if (gameOver(p_value, d_val_new)) { // check winner or loser
@@ -134,7 +130,7 @@ def gameLoop(deck: List[Card], player: List[Card], dealer: List[Card], actions: 
                                 gameLoop(afterDealer, player, d_card :: dealer, actions)
                             }
                         }
-                        case (None, _) => println("No more cards")
+                        case None => println("No more cards")
                     }
                 }
             }
@@ -143,7 +139,7 @@ def gameLoop(deck: List[Card], player: List[Card], dealer: List[Card], actions: 
                 match Play.hitOrStand() {
                     case Result.Ok(Action.Hit) => // player hits
                         match pullCard(deck) {
-                            case (Some(p_card), afterPlayer)  => {
+                            case Some((p_card, afterPlayer)) =>
                                 println("Player => ${List.toString(p_card::player)}");
                                 println("play -> ${Action.Hit::actions}");
                                 let p_val_new = handValue(p_card::player);
@@ -152,8 +148,7 @@ def gameLoop(deck: List[Card], player: List[Card], dealer: List[Card], actions: 
                                 } else {
                                     gameLoop(afterPlayer, p_card::player, dealer, Action.Hit :: actions)
                                 }
-                            }
-                            case (None, _) => println("No more cards")
+                            case None => println("No more cards")
                         }
                     case Result.Ok(Action.Stand) => // player stands
                         println("play -> ${Action.Stand::actions}");
@@ -172,13 +167,12 @@ def main(): Unit \ {NonDet, IO} =
         gameLoop(deck, Nil, Nil, Nil)
     } with handler Play {
         def hitOrStand(resume) =
-            let reader = new BufferedReader(new InputStreamReader(System.in));
-            let line = reader.readLine();
+            let line = Console.readln();
             let result  = match line { // get Player action
                 case "y" => Result.Ok(Action.Hit)
                 case "n" => Result.Ok(Action.Stand)
                 case _ => Result.Err("bad input")
             };
             resume(result)
-    }
+    } with Console.runWithIO
 
