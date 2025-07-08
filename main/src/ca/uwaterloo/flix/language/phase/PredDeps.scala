@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.TypedAst.*
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.shared.LabelledPrecedenceGraph.{Label, LabelledEdge}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, LabelledPrecedenceGraph}
 import ca.uwaterloo.flix.language.ast.{ChangeSet, Type, TypeConstructor, TypedAst}
@@ -160,8 +160,8 @@ object PredDeps {
     case Expr.Match(exp, rules, _, _, _) =>
       visitExp(exp)
       rules.foreach { case MatchRule(_, g, b, _) =>
-          g.foreach(visitExp)
-          visitExp(b)
+        g.foreach(visitExp)
+        visitExp(b)
       }
 
     case Expr.TypeMatch(exp, rules, _, _, _) =>
@@ -170,7 +170,7 @@ object PredDeps {
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach{ case RestrictableChooseRule(_, body) => visitExp(body) }
+      rules.foreach { case RestrictableChooseRule(_, body) => visitExp(body) }
 
     case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
       visitExp(exp1)
@@ -222,7 +222,7 @@ object PredDeps {
 
     case Expr.StructNew(_, fields, region, _, _, _) =>
       visitExp(region)
-      fields.foreach{ case (_, e) => visitExp(e) }
+      fields.foreach { case (_, e) => visitExp(e) }
 
     case Expr.StructGet(e, _, _, _, _) =>
       visitExp(e)
@@ -261,13 +261,13 @@ object PredDeps {
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach{ case CatchRule(_, _, e, _) => visitExp(e) }
+      rules.foreach { case CatchRule(_, _, e, _) => visitExp(e) }
 
     case Expr.Throw(exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.Handler(_, rules, _, _, _, _, _) =>
-      rules.foreach{ case HandlerRule(_, _, e, _) => visitExp(e) }
+      rules.foreach { case HandlerRule(_, _, e, _) => visitExp(e) }
 
     case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1)
@@ -309,7 +309,7 @@ object PredDeps {
 
     case Expr.SelectChannel(rules, default, _, _, _) =>
       default.foreach(visitExp)
-      rules.foreach{
+      rules.foreach {
         case SelectChannelRule(_, exp1, exp2, _) =>
           visitExp(exp1)
           visitExp(exp2)
@@ -321,7 +321,7 @@ object PredDeps {
 
     case Expr.ParYield(frags, exp, _, _, _) =>
       visitExp(exp)
-      frags.foreach{
+      frags.foreach {
         case ParYieldFragment(_, e, _) => visitExp(e)
       }
 
@@ -340,6 +340,10 @@ object PredDeps {
     case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
+
+    case Expr.FixpointQueryWithProvenance(exps, Head.Atom(_, _, terms, _, _), _, _, _, _) =>
+      exps.foreach(visitExp)
+      terms.foreach(visitExp)
 
     case Expr.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp)
@@ -383,20 +387,20 @@ object PredDeps {
   }
 
   /**
-   * Companion object for [[SharedContext]]
-   */
+    * Companion object for [[SharedContext]]
+    */
   private object SharedContext {
 
     /**
-     * Returns a fresh shared context.
-     */
+      * Returns a fresh shared context.
+      */
     def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
   }
 
   /**
-   * A global shared context. Must be thread-safe.
-   *
-   * @param edges the [[LabelledEdge]]s to build the graph.
-   */
+    * A global shared context. Must be thread-safe.
+    *
+    * @param edges the [[LabelledEdge]]s to build the graph.
+    */
   private case class SharedContext(edges: ConcurrentLinkedQueue[LabelledEdge])
 }

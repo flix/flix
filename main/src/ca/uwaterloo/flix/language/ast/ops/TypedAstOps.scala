@@ -110,6 +110,7 @@ object TypedAstOps {
     case Expr.FixpointConstraintSet(_, _, _) => Set.empty
     case Expr.FixpointLambda(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointMerge(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expr.FixpointQueryWithProvenance(exps, Head.Atom(_, _, terms, _, _), _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ terms.flatMap(sigSymsOf).toSet
     case Expr.FixpointSolve(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointFilter(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointInject(exp, _, _, _, _) => sigSymsOf(exp)
@@ -390,6 +391,11 @@ object TypedAstOps {
 
     case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
+
+    case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
+      exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        (acc, exp) => acc ++ freeVars(exp)
+      } ++ freeVars(select)
 
     case Expr.FixpointSolve(exp, _, _, _, _) =>
       freeVars(exp)

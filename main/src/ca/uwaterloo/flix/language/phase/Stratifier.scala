@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head
 import ca.uwaterloo.flix.language.ast.shared.LabelledPrecedenceGraph.{Label, LabelledEdge}
 import ca.uwaterloo.flix.language.ast.shared.{Fixity, LabelledPrecedenceGraph, Polarity, Scope}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -415,6 +416,11 @@ object Stratifier {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       Expr.FixpointMerge(e1, e2, tpe, eff, loc)
+
+    case Expr.FixpointQueryWithProvenance(exps, Head.Atom(pred, den, terms, tpe2, loc2), withh, tpe1, eff1, loc1) =>
+      val es = exps.map(visitExp)
+      val ts = terms.map(visitExp)
+      Expr.FixpointQueryWithProvenance(es, Head.Atom(pred, den, ts, tpe2, loc2), withh, tpe1, eff1, loc1)
 
     case Expr.FixpointSolve(exp, tpe, eff, mode, loc) =>
       // Compute the stratification.

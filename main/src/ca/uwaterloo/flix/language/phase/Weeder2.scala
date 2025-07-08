@@ -915,6 +915,7 @@ object Weeder2 {
         case TreeKind.Expr.FixpointSolveWithProvenance => visitFixpointSolveExpr(tree, isPSolve = true)
         case TreeKind.Expr.FixpointSolveWithProject => visitFixpointSolveExpr(tree, isPSolve = false)
         case TreeKind.Expr.FixpointQuery => visitFixpointQueryExpr(tree)
+        case TreeKind.Expr.FixpointQueryWithProvenance => visitFixpointQueryWithProvenanceExpr(tree)
         case TreeKind.Expr.Debug => visitDebugExpr(tree)
         case TreeKind.Expr.ExtMatch => visitExtMatch(tree)
         case TreeKind.Expr.ExtTag => visitExtTag(tree)
@@ -2133,6 +2134,19 @@ object Weeder2 {
         (expressions, selects, froms, where) =>
           val whereList = where.map(w => List(w)).getOrElse(List.empty)
           Expr.FixpointQueryWithSelect(expressions, selects, froms, whereList, tree.loc)
+      }
+    }
+
+    private def visitFixpointQueryWithProvenanceExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.FixpointQueryWithProvenance)
+      val expressions = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
+      val select = flatMapN(pick(TreeKind.Expr.FixpointSelect, tree))(Predicates.pickHead)
+      val withh = mapN(pick(TreeKind.Expr.FixpointWith, tree))(
+        withTree => pickAll(TreeKind.Ident, withTree).map(tokenToIdent)
+      )
+      mapN(expressions, select, withh) {
+        (expressions, select, withh) =>
+          Expr.FixpointQueryWithProvenance(expressions, select, withh.map(Name.mkPred), tree.loc)
       }
     }
 

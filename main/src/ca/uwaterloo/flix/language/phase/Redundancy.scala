@@ -724,11 +724,11 @@ object Redundancy {
           val env1 = env0 ++ syms
           val usedBody = visitExp(body, env1, rc)
           syms.zip(shadowedFparamVars).foldLeft(acc ++ usedBody) {
-            case (acc, (s, shadow)) =>
+            case (acc1, (s, shadow)) =>
               if (deadVarSym(s, usedBody)) {
-                acc ++ shadow + UnusedVarSym(s)
+                acc1 ++ shadow + UnusedVarSym(s)
               } else {
-                acc ++ shadow
+                acc1 ++ shadow
               }
           }
       }
@@ -834,6 +834,11 @@ object Redundancy {
     case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)
+      us1 ++ us2
+
+    case Expr.FixpointQueryWithProvenance(exps, Head.Atom(_, _, terms, _, _), _, _, _, _) =>
+      val us1 = visitExps(exps, env0, rc)
+      val us2 = visitExps(terms, env0, rc)
       us1 ++ us2
 
     case Expr.FixpointSolve(exp, _, _, _, _) =>
