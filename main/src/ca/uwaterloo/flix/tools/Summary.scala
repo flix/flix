@@ -287,6 +287,8 @@ object Summary {
     }.sum
     case Expr.FixpointLambda(_, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.FixpointMerge(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
+    case Expr.FixpointQueryWithProvenance(exps, TypedAst.Predicate.Head.Atom(_, _, terms, _, _), _, _, _, _) =>
+      exps.map(countCheckedEcasts).sum + terms.map(countCheckedEcasts).sum
     case Expr.FixpointSolve(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.FixpointFilter(_, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.FixpointInject(exp, _, _, _, _) => countCheckedEcasts(exp)

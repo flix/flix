@@ -785,6 +785,8 @@ object Lowering {
       val resultType = Types.Datalog
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, Types.MergeType, resultType, eff, loc)
 
+    case TypedAst.Expr.FixpointQueryWithProvenance(_, _, _, _, _, _) => ???
+
     case TypedAst.Expr.FixpointSolve(exp, _, eff, mode, loc) =>
       val defn = mode match {
         case SolveMode.Default => Defs.lookup(Defs.Solve)
