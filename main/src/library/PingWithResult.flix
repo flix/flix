@@ -18,7 +18,7 @@
 /// The effect used to determine if an address is reachable.
 ///
 eff PingWithResult {
-    def isReachable(host: String, timeout: Int32, u: TimeUnit): Result[IoError, Bool]
+    def isReachable(host: IpAddr, timeout: Int32, u: TimeUnit): Result[IoError, Bool]
 }
 
 mod PingWithResult {
@@ -43,7 +43,7 @@ mod PingWithResult {
                 try {
                     let ms = TimeUnit.toMilliseconds(u);
                     let timeoutMs = ms * timeout;
-                    let addr = InetAddress.getByName(host);
+                    let addr = InetAddress.getByAddress(IpAddr.toBytes(host));
                     k(Ok(addr.isReachable(timeoutMs)))
                 } catch {
                     case ex: UnknownHostException     => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
@@ -61,3 +61,4 @@ mod PingWithResult {
     pub def runWithIO(f: Unit -> a \ ef):  a \ ef - PingWithResult + {Net, IO} = handle(f)()
 
 }
+

@@ -591,10 +591,11 @@ object Weeder2 {
       mapN(
         pickDocumentation(tree),
         pickNameIdent(tree),
+        Types.pickParameters(tree),
         traverse(ops)(visitOperationDecl)
       ) {
-        (doc, ident, ops) =>
-          Declaration.Effect(doc, ann, mod, ident, ops, tree.loc)
+        (doc, ident, tparams, ops) =>
+          Declaration.Effect(doc, ann, mod, ident, tparams, ops, tree.loc)
       }
     }
 
@@ -911,8 +912,10 @@ object Weeder2 {
         case TreeKind.Expr.FixpointConstraintSet => visitFixpointConstraintSetExpr(tree)
         case TreeKind.Expr.FixpointLambda => visitFixpointLambdaExpr(tree)
         case TreeKind.Expr.FixpointInject => visitFixpointInjectExpr(tree)
-        case TreeKind.Expr.FixpointSolveWithProject => visitFixpointSolveExpr(tree)
+        case TreeKind.Expr.FixpointSolveWithProvenance => visitFixpointSolveExpr(tree, isPSolve = true)
+        case TreeKind.Expr.FixpointSolveWithProject => visitFixpointSolveExpr(tree, isPSolve = false)
         case TreeKind.Expr.FixpointQuery => visitFixpointQueryExpr(tree)
+        case TreeKind.Expr.FixpointQueryWithProvenance => visitFixpointQueryWithProvenanceExpr(tree)
         case TreeKind.Expr.Debug => visitDebugExpr(tree)
         case TreeKind.Expr.ExtMatch => visitExtMatch(tree)
         case TreeKind.Expr.ExtTag => visitExtTag(tree)
@@ -2103,14 +2106,16 @@ object Weeder2 {
       }
     }
 
-    private def visitFixpointSolveExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.FixpointSolveWithProject)
+    private def visitFixpointSolveExpr(tree: Tree, isPSolve: Boolean)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      val expectedTree = if (isPSolve) TreeKind.Expr.FixpointSolveWithProvenance else TreeKind.Expr.FixpointSolveWithProject
+      val solveMode = if(isPSolve) SolveMode.WithProvenance else SolveMode.Default
+      expect(tree, expectedTree)
       val expressions = pickAll(TreeKind.Expr.Expr, tree)
       val idents = pickAll(TreeKind.Ident, tree).map(tokenToIdent)
       mapN(traverse(expressions)(visitExpr)) {
         exprs =>
           val optIdents = if (idents.isEmpty) None else Some(idents)
-          Expr.FixpointSolveWithProject(exprs, optIdents, tree.loc)
+          Expr.FixpointSolveWithProject(exprs, solveMode, optIdents, tree.loc)
       }
     }
 
@@ -2128,6 +2133,19 @@ object Weeder2 {
         (expressions, selects, froms, where) =>
           val whereList = where.map(w => List(w)).getOrElse(List.empty)
           Expr.FixpointQueryWithSelect(expressions, selects, froms, whereList, tree.loc)
+      }
+    }
+
+    private def visitFixpointQueryWithProvenanceExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.FixpointQueryWithProvenance)
+      val expressions = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
+      val select = flatMapN(pick(TreeKind.Expr.FixpointSelect, tree))(Predicates.pickHead)
+      val withh = mapN(pick(TreeKind.Expr.FixpointWith, tree))(
+        withTree => pickAll(TreeKind.Ident, withTree).map(tokenToIdent)
+      )
+      mapN(expressions, select, withh) {
+        (expressions, select, withh) =>
+          Expr.FixpointQueryWithProvenance(expressions, select, withh.map(Name.mkPred), tree.loc)
       }
     }
 

@@ -140,6 +140,8 @@ object PatMatch {
 
       case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.foreach(visitExp)
 
+      case Expr.ApplyOp(_, exps, _, _, _) => exps.foreach(visitExp)
+
       case Expr.ApplySig(_, exps, _, _, _, _) => exps.foreach(visitExp)
 
       case Expr.Unary(_, exp, _, _, _) => visitExp(exp)
@@ -271,8 +273,6 @@ object PatMatch {
         visitExp(exp1)
         visitExp(exp2)
 
-      case Expr.Do(_, exps, _, _, _) => exps.foreach(visitExp)
-
       case Expr.InvokeConstructor(_, args, _, _, _) => args.foreach(visitExp)
 
       case Expr.InvokeMethod(_, exp, args, _, _, _) =>
@@ -329,7 +329,7 @@ object PatMatch {
         visitExp(exp1)
         visitExp(exp2)
 
-      case Expr.FixpointSolve(exp, _, _, _) => visitExp(exp)
+      case Expr.FixpointSolve(exp, _, _, _, _) => visitExp(exp)
 
       case Expr.FixpointFilter(_, exp, _, _, _) => visitExp(exp)
 

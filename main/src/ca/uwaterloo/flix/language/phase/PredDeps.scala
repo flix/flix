@@ -119,6 +119,9 @@ object PredDeps {
     case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
       exps.foreach(visitExp)
 
+    case Expr.ApplyOp(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
+
     case Expr.ApplySig(_, exps, _, _, _, _) =>
       exps.foreach(visitExp)
 
@@ -270,9 +273,6 @@ object PredDeps {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.Do(_, exps, _, _, _) =>
-      exps.foreach(visitExp)
-
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       args.foreach(visitExp)
 
@@ -341,7 +341,7 @@ object PredDeps {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.FixpointSolve(exp, _, _, _) =>
+    case Expr.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expr.FixpointFilter(_, exp, _, _, _) =>

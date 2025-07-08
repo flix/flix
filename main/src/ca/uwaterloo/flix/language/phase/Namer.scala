@@ -151,7 +151,7 @@ object Namer {
     case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
-    case NamedAst.Declaration.Effect(_, _, _, sym, ops, _) =>
+    case NamedAst.Declaration.Effect(_, _, _, sym, _, ops, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       ops.foldLeft(table1)(tableDecl)
 
@@ -563,14 +563,15 @@ object Namer {
     * Performs naming on the given effect `eff0`.
     */
   private def visitEffect(eff0: DesugaredAst.Declaration.Effect, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Effect = eff0 match {
-    case DesugaredAst.Declaration.Effect(doc, ann, mod0, ident, ops0, loc) =>
+    case DesugaredAst.Declaration.Effect(doc, ann, mod0, ident, tparams0, ops0, loc) =>
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
       val sym = Symbol.mkEffectSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
+      val tparams = visitExplicitTypeParams(tparams0)
       val ops = ops0.map(visitOp(_, ns0, sym))
-      NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc)
+      NamedAst.Declaration.Effect(doc, ann, mod, sym, tparams, ops, loc)
   }
 
   /**
@@ -903,9 +904,9 @@ object Namer {
       val e2 = visitExp(exp2)
       NamedAst.Expr.FixpointMerge(e1, e2, loc)
 
-    case DesugaredAst.Expr.FixpointSolve(exp, loc) =>
+    case DesugaredAst.Expr.FixpointSolve(exp, mode, loc) =>
       val e = visitExp(exp)
-      NamedAst.Expr.FixpointSolve(e, loc)
+      NamedAst.Expr.FixpointSolve(e, mode, loc)
 
     case DesugaredAst.Expr.FixpointFilter(ident, exp, loc) =>
       val e = visitExp(exp)
@@ -1476,7 +1477,7 @@ object Namer {
     case NamedAst.Declaration.StructField(_, sym, _, _) => sym.loc
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.loc
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) => sym.loc
-    case NamedAst.Declaration.Effect(_, _, _, sym, _, _) => sym.loc
+    case NamedAst.Declaration.Effect(_, _, _, sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Op(sym, _, _) => sym.loc
     case NamedAst.Declaration.Case(sym, _, _) => sym.loc
     case NamedAst.Declaration.RestrictableCase(sym, _, _) => sym.loc

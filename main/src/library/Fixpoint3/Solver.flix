@@ -2,9 +2,9 @@ mod Fixpoint3.Solver {
 
     import dev.flix.runtime.Global
 
-    use Fixpoint.Ast.Datalog.Datalog
-    use Fixpoint.Ast.Shared.PredSym
-    use Fixpoint.Ast.Shared.PredSym.PredSym
+    use Fixpoint3.Ast.Datalog.Datalog
+    use Fixpoint3.Ast.Shared.PredSym
+    use Fixpoint3.Ast.Shared.PredSym.PredSym
     use Fixpoint3.Boxed
 
     ///
@@ -14,6 +14,13 @@ mod Fixpoint3.Solver {
     ///
     @Internal
     pub def runSolver(d: Datalog): Datalog = ???
+
+    ///
+    /// Returns a provenance model of the given Datalog program `d`.
+    /// The provenance model can later be used for provenance queries.
+    ///
+    @Internal
+    pub def runSolverWithProvenance(d: Datalog): Datalog = ???
 
     ///
     /// Returns the pairwise union of `d1` and `d2`.

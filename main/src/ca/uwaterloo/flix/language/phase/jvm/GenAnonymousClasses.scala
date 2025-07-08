@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.ast.SimpleType
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
@@ -60,7 +60,7 @@ object GenAnonymousClasses {
       cm.mkField(cloField, IsPublic, NotFinal, NotVolatile)
       // Drop the first formal parameter (which always represents `this`).
       val actualArgs = m.fparams.tail.map(_.tpe).map(BackendType.toBackendType)
-      val actualres = if (m.tpe == MonoType.Unit) VoidableType.Void else BackendType.toBackendType(m.tpe)
+      val actualres = if (m.tpe == SimpleType.Unit) VoidableType.Void else BackendType.toBackendType(m.tpe)
       cm.mkMethod(ClassMaker.InstanceMethod(className, m.ident.name, MethodDescriptor(actualArgs, actualres)), IsPublic, NotFinal, methodIns(abstractClass, cloField, m)(_, root))
     }
 
@@ -102,7 +102,7 @@ object GenAnonymousClasses {
     BackendObjType.Result.unwindSuspensionFreeThunkToType(returnType, s"in anonymous class method ${m.ident.name}", m.loc)
 
     m.tpe match {
-      case MonoType.Unit => RETURN()
+      case SimpleType.Unit => RETURN()
       case _ => xReturn(returnType)
     }
   }

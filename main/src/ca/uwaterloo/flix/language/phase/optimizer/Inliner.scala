@@ -221,6 +221,9 @@ object Inliner {
           Expr.ApplyLocalDef(sym1, es, tpe, eff, loc)
       }
 
+    case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, ctx0))
+      Expr.ApplyOp(sym, es, tpe, eff, loc)
 
     case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) => (occur, exp1.eff) match {
       case (Occur.Dead, Type.Pure) =>
@@ -365,10 +368,6 @@ object Inliner {
       val e = visitExp(exp, ctx0)
       val rs = rules.map(visitHandlerRule(_, ctx0))
       Expr.RunWith(e, effUse, rs, tpe, eff, loc)
-
-    case Expr.Do(op, exps, tpe, eff, loc) =>
-      val es = exps.map(visitExp(_, ctx0))
-      Expr.Do(op, es, tpe, eff, loc)
 
     case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map(visitJvmMethod(_, ctx0))

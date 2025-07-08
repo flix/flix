@@ -233,7 +233,7 @@ object Visitor {
   }
 
   private def visitEffect(eff: Effect)(implicit a: Acceptor, c: Consumer): Unit = {
-    val Effect(_, ann, _, _, ops, loc) = eff
+    val Effect(_, ann, _, _, tparams, ops, loc) = eff
     if (!a.accept(loc)) {
       return
     }
@@ -241,6 +241,7 @@ object Visitor {
     c.consumeEff(eff)
 
     visitAnnotations(ann)
+    tparams.foreach(visitTypeParam)
     ops.foreach(visitOp)
   }
 
@@ -351,6 +352,10 @@ object Visitor {
 
       case Expr.ApplyLocalDef(symUse, exps, _, _, _, _) =>
         visitLocalDefSymUse(symUse)
+        exps.foreach(visitExpr)
+
+      case Expr.ApplyOp(op, exps, _, _, _) =>
+        visitOpSymUse(op)
         exps.foreach(visitExpr)
 
       case Expr.ApplySig(symUse, exps, _, _, _, _) =>
@@ -515,10 +520,6 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.Do(op, exps, _, _, _) =>
-        visitOpSymUse(op)
-        exps.foreach(visitExpr)
-
       case Expr.InvokeConstructor(_, exps, _, _, _) =>
         exps.foreach(visitExpr)
 
@@ -583,7 +584,7 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.FixpointSolve(exp, _, _, _) =>
+      case Expr.FixpointSolve(exp, _, _, _, _) =>
         visitExpr(exp)
 
       case Expr.FixpointFilter(_, exp, _, _, _) =>
@@ -866,16 +867,16 @@ object Visitor {
 
     pat match {
       case Wild(_, _) => ()
-      case Var(varSym, _, _) => visitBinder(varSym)
+      case Var(bnd, _, _) => visitBinder(bnd)
       case Cst(_, _, _) => ()
       case Tag(sym, pats, _, _) =>
         visitCaseSymUse(sym)
         pats.foreach(visitPattern)
       case Tuple(pats, _, _) =>
         pats.foreach(visitPattern)
-      case Record(pats, pat, _, _) =>
+      case Record(pats, pat1, _, _) =>
         pats.foreach(visitRecordLabelPattern)
-        visitPattern(pat)
+        visitPattern(pat1)
       case Pattern.Error(_, _) =>
     }
   }
@@ -889,9 +890,7 @@ object Visitor {
 
     pat match {
       case ExtPattern.Wild(_, _) => ()
-
       case ExtPattern.Var(bnd, _) => visitBinder(bnd)
-
       case ExtPattern.Error(_, _) => ()
     }
   }

@@ -27,15 +27,15 @@
 /// uniquely defined by their `id`.
 ///
 mod Fixpoint3.Phase.RenamePredSyms {
-    use Fixpoint.Ast.Datalog.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Polarity, VarSym}
-    use Fixpoint.Ast.Datalog.Datalog.{Datalog, Model, Join}
-    use Fixpoint.Ast.Datalog.Constraint.Constraint
-    use Fixpoint.Ast.Datalog.HeadPredicate
-    use Fixpoint.Ast.Datalog.HeadPredicate.HeadAtom
-    use Fixpoint.Ast.Datalog.BodyPredicate.{BodyAtom, Functional, Guard1, Guard2, Guard3, Guard4, Guard5}
+    use Fixpoint3.Ast.Datalog.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Polarity, VarSym}
+    use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Model, Join}
+    use Fixpoint3.Ast.Datalog.Constraint.Constraint
+    use Fixpoint3.Ast.Datalog.HeadPredicate
+    use Fixpoint3.Ast.Datalog.HeadPredicate.HeadAtom
+    use Fixpoint3.Ast.Datalog.BodyPredicate.{BodyAtom, Functional, Guard1, Guard2, Guard3, Guard4, Guard5}
     use Fixpoint3.Ast.Ram.RelSym
-    use Fixpoint.Ast.Shared.{Denotation, isRelational, PredSym}
-    use Fixpoint.Ast.Shared.PredSym.PredSym
+    use Fixpoint3.Ast.Shared.{Denotation, isRelational, PredSym}
+    use Fixpoint3.Ast.Shared.PredSym.PredSym
     use Fixpoint3.UniqueInts
     use Fixpoint3.Util.getOrCrash
 

@@ -80,7 +80,7 @@ object TypedAst {
   // TODO ASSOC-TYPES can probably be combined with KindedAst.AssocTypeSig
   case class AssocTypeDef(doc: Doc, mod: Modifiers, sym: AssocTypeSymUse, arg: Type, tpe: Type, loc: SourceLocation)
 
-  case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffSym, ops: List[Op], loc: SourceLocation) extends Decl
+  case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffSym, tparams: List[TypeParam], ops: List[Op], loc: SourceLocation) extends Decl
 
   case class Op(sym: Symbol.OpSym, spec: Spec, loc: SourceLocation)
 
@@ -125,6 +125,8 @@ object TypedAst {
     case class ApplyDef(symUse: DefSymUse, exps: List[Expr], itpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class ApplyLocalDef(symUse: LocalDefSymUse, exps: List[Expr], arrowTpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class ApplyOp(symUse: OpSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class ApplySig(symUse: SigSymUse, exps: List[Expr], itpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -228,8 +230,6 @@ object TypedAst {
 
     case class RunWith(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Do(op: OpSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
     case class InvokeConstructor(constructor: Constructor[?], exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class InvokeMethod(method: Method, exp: Expr, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
@@ -272,7 +272,7 @@ object TypedAst {
 
     case class FixpointMerge(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class FixpointSolve(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class FixpointSolve(exp: Expr, tpe: Type, eff: Type, mode: SolveMode, loc: SourceLocation) extends Expr
 
     case class FixpointFilter(pred: Name.Pred, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
