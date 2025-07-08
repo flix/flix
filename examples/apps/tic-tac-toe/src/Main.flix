@@ -1,25 +1,27 @@
 ///
 /// The core gameplay loop called repeatedly until the game ends.
 ///
-def gameLoop(board: Board[r], symbol: Symbol, rc: Region[r]): Unit \ {r + Interface} = {
-    Interface.display(Board.toString(board), "Enter a move (0 - 8): ");
+def gameLoop(board: Board, symbol: Symbol): Unit \ Interface = {
+    Interface.display(board, "Enter a move (0 - 8): ");
     let move = Interface.getMove();
-    let (newBoard, moveSuccess) = Board.makeMove(board, symbol, move, rc);
-    if (moveSuccess) {
-        if(Board.checkWin(newBoard, symbol)) {
-            match symbol {
-                case Symbol.X => Interface.display(Board.toString(newBoard), "Player One wins!!!")
-                case Symbol.O => Interface.display(Board.toString(newBoard), "Player Two wins!!!")
-                case _ => ()
+    match Board.makeMove(board, symbol, move) {
+        case Result.Ok(newBoard) => {
+            if(Board.checkWin(newBoard, symbol)) {
+                match symbol {
+                    case Symbol.X => Interface.display(newBoard, "Player One wins!!!")
+                    case Symbol.O => Interface.display(newBoard, "Player Two wins!!!")
+                    case _ => ()
+                }
+            } else if(Board.boardFilled(newBoard)) {
+                Interface.display(board, "Draw")
+            } else {
+                gameLoop(newBoard, Symbol.complement(symbol))
             }
-        } else if(Board.boardFilled(newBoard)) {
-            Interface.display(Board.toString(board), "Draw")
-        } else {
-            gameLoop(newBoard, Symbol.complement(symbol), rc)
         }
-    } else {
-        Interface.display("", "Cell already filled");
-        gameLoop(board, symbol, rc)
+        case Result.Err(_) => {
+            Interface.display(board, "Cell already filled");
+            gameLoop(board, symbol)
+        }
     }
 }
 
@@ -28,7 +30,7 @@ def gameLoop(board: Board[r], symbol: Symbol, rc: Region[r]): Unit \ {r + Interf
 ///
 /// Creates a new game board and starts the game loop.
 ///
-def main(): Unit \ IO = region rc {
+def main(): Unit \ IO = {
     run {
         println("");
         println("  _______ _          _______             _______           ");
@@ -48,8 +50,8 @@ def main(): Unit \ IO = region rc {
         println("       |       |       ");
         println("Enter your move as one these numbers corresponding to a cell");
         println("");
-        let board = Board.newBoard(rc);
-        gameLoop(board, Symbol.X, rc)
+        let board = Board.newBoard();
+        gameLoop(board, Symbol.X)
     } with Interface.interfaceWithIOAndConsole
     with Console.runWithIO
 }

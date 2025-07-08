@@ -6,7 +6,7 @@ pub eff Interface {
     ///
     /// Prints the current state of the board and a message.
     ///
-    def display(board: String, msg: String): Unit
+    def display(board: Board, msg: String): Unit
 
     ///
     /// Gets a move from the user.
@@ -26,16 +26,18 @@ mod Interface {
             getMoveFromConsole()
         } else {
             match Int32.parse(10, line) {
-                case Result.Err(_) =>
+                case Result.Err(_) => {
                     Console.println("Invalid move. Move must be a positive integer between 0 and 8");
                     getMoveFromConsole()
-                case Result.Ok(move) =>
+                }
+                case Result.Ok(move) => {
                     if(not(move >= 0 and move <= 8)) {
                         Console.println("Invalid move. Move must be in between 0 and 8");
                         getMoveFromConsole()
                     } else {
                         move
                     }
+                }
             }
         }
     }
@@ -52,17 +54,11 @@ mod Interface {
         }
         with handler Interface {
             def display(board, msg, resume) = {
-                if (not String.isEmpty(board)) {
-                    println("");
-                    println(board);
-                    println("");
-                    println(msg);
-                    resume()
-                } else {
-                    println("");
-                    println(msg);
-                    resume()
-                }
+                println("");
+                println(Board.toString(board));
+                println("");
+                println(msg);
+                resume()
             }
 
             def getMove(resume) = {
