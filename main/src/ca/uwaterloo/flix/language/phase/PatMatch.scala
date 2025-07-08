@@ -189,9 +189,9 @@ object PatMatch {
         visitExp(exp)
         rules.foreach(r => visitExp(r.exp))
 
-      case Expr.ExtMatch(expr, rules, _, _, _) =>
+      case Expr.ExtMatch(exp, rules, _, _, _) =>
         // Exhaustiveness does not make sense for extensible variants.
-        visitExp(expr)
+        visitExp(exp)
         rules.foreach(r => visitExp(r.exp))
 
       case Expr.Tag(_, exps, _, _, _) => exps.foreach(visitExp)
