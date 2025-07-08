@@ -378,6 +378,14 @@ object EffectVerifier {
       visitExp(exp2)
       // TODO ?
       ()
+    case Expr.FixpointQueryWithProvenance(exps, select, withh, tpe1, eff1, loc1) =>
+      exps.foreach(visitExp)
+      select match {
+        case TypedAst.Predicate.Head.Atom(pred, den, terms, tpe2, loc2) =>
+          terms.foreach(visitExp)
+      }
+      // TODO ?
+      ()
     case Expr.FixpointSolve(exp, tpe, eff, _, loc) =>
       visitExp(exp)
       // TODO ?

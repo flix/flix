@@ -329,6 +329,10 @@ object PatMatch {
         visitExp(exp1)
         visitExp(exp2)
 
+      case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
+        exps.foreach(visitExp)
+        visitHeadPred(select)
+
       case Expr.FixpointSolve(exp, _, _, _, _) => visitExp(exp)
 
       case Expr.FixpointFilter(_, exp, _, _, _) => visitExp(exp)
