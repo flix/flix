@@ -158,7 +158,7 @@ object TypedAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class ExtMatch(expr: Expr, rules: List[ExtMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ExtMatch(exp: Expr, rules: List[ExtMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Tag(sym: CaseSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
