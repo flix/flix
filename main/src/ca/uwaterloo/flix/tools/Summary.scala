@@ -36,7 +36,7 @@ object Summary {
     *|            Totals | 2,986 |  311 |  291 |           4 |         16 |             3 |           -311 |              -311 |           -311 |           -311 |
     * }}}
     *
-    * @param root the root to create data for
+    * @param root    the root to create data for
     * @param nsDepth after this folder depth, files will be summarized under the
     *                folder
     * @param minLines all files with less lines than this will not be in the
@@ -216,8 +216,7 @@ object Summary {
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.RestrictableChooseRule(_, exp) => countCheckedEcasts(exp)
     }.sum
-    case Expr.ExtMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
-      countCheckedEcasts(exp1) + countCheckedEcasts(exp2) + countCheckedEcasts(exp3)
+    case Expr.ExtMatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map(r => countCheckedEcasts(r.exp)).sum
     case Expr.Tag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.RestrictableTag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.ExtensibleTag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
