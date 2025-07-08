@@ -804,11 +804,13 @@ object Desugar {
     case WeededAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
       desugarFixpointInjectInto(exps, predsAndArities, loc)
 
-    case WeededAst.Expr.FixpointQueryWithProvenance(_, _, _, _) =>
-      ???
-
     case WeededAst.Expr.FixpointSolveWithProject(exps, mode, optIdents, loc) =>
       desugarFixpointSolveWithProject(exps, mode, optIdents, loc)
+
+    case WeededAst.Expr.FixpointQueryWithProvenance(exps, select, withh, loc) =>
+      val es = visitExps(exps)
+      val s = visitHead(select)
+      DesugaredAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
 
     case WeededAst.Expr.FixpointQueryWithSelect(exps0, selects0, from0, where0, loc) =>
       desugarFixpointQueryWithSelect(exps0, selects0, from0, where0, loc)
@@ -989,15 +991,18 @@ object Desugar {
   }
 
   /**
+    * Desugars the given [[WeededAst.Predicate.Head]] `frag0`.
+    */
+  private def visitHead(head0: WeededAst.Predicate.Head)(implicit flix: Flix): DesugaredAst.Predicate.Head = head0 match {
+    case WeededAst.Predicate.Head.Atom(pred, den, exps, loc) =>
+      val e = visitExps(exps)
+      DesugaredAst.Predicate.Head.Atom(pred, den, e, loc)
+  }
+
+  /**
     * Desugars the given [[WeededAst.Constraint]] `constraint0`.
     */
   private def visitConstraint(constraint0: WeededAst.Constraint)(implicit flix: Flix): DesugaredAst.Constraint = {
-    def visitHead(head0: WeededAst.Predicate.Head): DesugaredAst.Predicate.Head = head0 match {
-      case WeededAst.Predicate.Head.Atom(pred, den, exps, loc) =>
-        val e = visitExps(exps)
-        DesugaredAst.Predicate.Head.Atom(pred, den, e, loc)
-    }
-
     constraint0 match {
       case WeededAst.Constraint(head, body, loc) =>
         val h = visitHead(head)

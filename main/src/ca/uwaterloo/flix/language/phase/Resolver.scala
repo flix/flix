@@ -1476,6 +1476,14 @@ object Resolver {
         case (e1, e2) => ResolvedAst.Expr.FixpointMerge(e1, e2, loc)
       }
 
+    case NamedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, loc) =>
+      val esVal = traverse(exps)(resolveExp(_, scp0))
+      val sVal = resolvePredicateHead(select, scp0)
+      mapN(esVal, sVal) {
+        case (es, s) =>
+          ResolvedAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
+      }
+
     case NamedAst.Expr.FixpointSolve(exp, mode, loc) =>
       val eVal = resolveExp(exp, scp0)
       mapN(eVal) {

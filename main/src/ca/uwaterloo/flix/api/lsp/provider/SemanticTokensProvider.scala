@@ -699,6 +699,9 @@ object SemanticTokensProvider {
     case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
+    case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
+      visitExps(exps) ++ visitHeadPredicate(select)
+
     case Expr.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp)
 
