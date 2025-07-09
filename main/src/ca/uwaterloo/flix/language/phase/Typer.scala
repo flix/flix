@@ -196,7 +196,7 @@ object Typer {
     val infResult = InfResult(infTconstrs, tpe, eff, infRenv)
     val (subst, constraintErrors) = ConstraintSolverInterface.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
     constraintErrors.foreach(sctx.errors.add)
-    checkAssocTypes(defn.spec, tconstrs0, traitEnv)
+    checkSpecAssocTypes(defn.spec, tconstrs0, traitEnv)
     TypeReconstruction.visitDef(defn, subst)
   }
 
@@ -394,49 +394,65 @@ object Typer {
   /**
     * Verifies that all the associated types in the spec are resolvable, according to the declared type constraints.
     */
-  private def checkAssocTypes(spec0: KindedAst.Spec, extraTconstrs: List[TraitConstraint], tenv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): Unit = {
-    def getAssocTypes(t: Type): List[Type.AssocType] = t match {
-      case Type.Var(_, _) => Nil
-      case Type.Cst(_, _) => Nil
-      case Type.Apply(tpe1, tpe2, _) => getAssocTypes(tpe1) ::: getAssocTypes(tpe2)
-      case Type.Alias(_, args, _, _) => args.flatMap(getAssocTypes) // TODO ASSOC-TYPES what to do about alias
-      case assoc: Type.AssocType => List(assoc)
-      case Type.JvmToType(tpe, _) => getAssocTypes(tpe)
-      case Type.JvmToEff(tpe, _) => getAssocTypes(tpe)
-      case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.flatMap(getAssocTypes)
-    }
+  private def checkSpecAssocTypes(spec0: KindedAst.Spec, extraTconstrs: List[TraitConstraint], tenv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): Unit = spec0 match {
+    case KindedAst.Spec(_, _, _, tparams, fparams, _, tpe, eff, tconstrs, econstrs) =>
+      // get all the associated types in the spec
+      val tpes = fparams.map(_.tpe) ::: tpe :: eff :: econstrs.flatMap(getTypes)
 
-    spec0 match {
-      case KindedAst.Spec(_, _, _, tparams, fparams, _, tpe, eff, tconstrs, econstrs) =>
-        // get all the associated types in the spec
-        val tpes = fparams.map(_.tpe) ::: tpe :: eff :: econstrs.flatMap {
-          case EqualityConstraint(cst, tpe1, tpe2, _) =>
-            // Kind is irrelevant for our purposes
-            List(Type.AssocType(cst, tpe1, Kind.Wild, tpe1.loc), tpe2) // TODO ASSOC-TYPES better location for left
-        }
+      // check that they are all covered by the type constraints
+      for {
+        t <- tpes
+        assoc <- getAssocTypes(t)
+      } {
+        checkAssocType(assoc, tparams, extraTconstrs ::: tconstrs, tenv)
+      }
+  }
 
-        // check that they are all covered by the type constraints
-        tpes.flatMap(getAssocTypes).foreach {
-          case Type.AssocType(AssocTypeSymUse(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
-            val trtSym = assocSym.trt
-            val matches = (extraTconstrs ::: tconstrs).flatMap(withSupers(_, tenv)).exists {
-              case TraitConstraint(TraitSymUse(tconstrSym, _), Type.Var(tvarSym2, _), _) =>
-                trtSym == tconstrSym && tvarSym1 == tvarSym2
-              case _ => false
-            }
-            if (matches) {
-              ()
-            } else {
-              val renv = tparams.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
-              val error = TypeError.MissingTraitConstraint(trtSym, arg, renv, loc)
-              sctx.errors.add(error)
-              ()
-            }
+  /**
+    * Collects all associated types from the type.
+    */
+  def getAssocTypes(t: Type): List[Type.AssocType] = t match {
+    case Type.Var(_, _) => Nil
+    case Type.Cst(_, _) => Nil
+    case Type.Apply(tpe1, tpe2, _) => getAssocTypes(tpe1) ::: getAssocTypes(tpe2)
+    case Type.Alias(_, args, _, _) => args.flatMap(getAssocTypes) // TODO ASSOC-TYPES what to do about alias
+    case assoc: Type.AssocType => List(assoc)
+    case Type.JvmToType(tpe, _) => getAssocTypes(tpe)
+    case Type.JvmToEff(tpe, _) => getAssocTypes(tpe)
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.flatMap(getAssocTypes)
+  }
 
-          // Resiliency: If the associated type is ill-formed, then we ignore it.
-          case _ => ()
-        }
-    }
+  /**
+    * Returns a list containing both types in the constraint.
+    */
+  private def getTypes(econstr: EqualityConstraint): List[Type] = econstr match {
+    case EqualityConstraint(cst, tpe1, tpe2, _) =>
+      // Kind is irrelevant for our purposes
+      List(Type.AssocType(cst, tpe1, Kind.Wild, tpe1.loc), tpe2) // TODO ASSOC-TYPES better location for left
+  }
+
+  /**
+    * Verifies that the associated type is resolvable, according to the declared type constraints.
+    */
+  private def checkAssocType(assocType: Type.AssocType, tparams: List[KindedAst.TypeParam], tconstrs: List[TraitConstraint], tenv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): Unit = assocType match {
+    case Type.AssocType(AssocTypeSymUse(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
+      val trtSym = assocSym.trt
+      val matches = tconstrs.flatMap(withSupers(_, tenv)).exists {
+        case TraitConstraint(TraitSymUse(tconstrSym, _), Type.Var(tvarSym2, _), _) =>
+          trtSym == tconstrSym && tvarSym1 == tvarSym2
+        case _ => false
+      }
+      if (matches) {
+        ()
+      } else {
+        val renv = tparams.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
+        val error = TypeError.MissingTraitConstraint(trtSym, arg, renv, loc)
+        sctx.errors.add(error)
+        ()
+      }
+
+    // Resiliency: If the associated type is ill-formed, then we ignore it.
+    case _ => ()
   }
 
   /**
