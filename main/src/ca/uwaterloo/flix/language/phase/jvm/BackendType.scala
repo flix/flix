@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.{MonoType, ReducedAst, SourceLocation}
+import ca.uwaterloo.flix.language.ast.{SimpleType, ReducedAst, SourceLocation}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -128,41 +128,41 @@ object BackendType {
   val String: BackendType = Reference(BackendObjType.Native(JvmName.String))
 
   /**
-    * Converts the given [[MonoType]] into its [[BackendType]] representation.
+    * Converts the given [[SimpleType]] into its [[BackendType]] representation.
     *
     * Note: Instead of using [[toBackendType]] and then [[BackendType.toErased]]
     * use [[toErasedBackendType]].
     */
-  def toBackendType(tpe0: MonoType)(implicit root: ReducedAst.Root): BackendType = {
+  def toBackendType(tpe0: SimpleType)(implicit root: ReducedAst.Root): BackendType = {
     tpe0 match {
-      case MonoType.Void => BackendType.Object
-      case MonoType.AnyType => BackendType.Object
-      case MonoType.Unit => BackendObjType.Unit.toTpe
-      case MonoType.Bool => BackendType.Bool
-      case MonoType.Char => BackendType.Char
-      case MonoType.Float32 => BackendType.Float32
-      case MonoType.Float64 => BackendType.Float64
-      case MonoType.BigDecimal => JvmName.BigDecimal.toTpe
-      case MonoType.Int8 => BackendType.Int8
-      case MonoType.Int16 => BackendType.Int16
-      case MonoType.Int32 => BackendType.Int32
-      case MonoType.Int64 => BackendType.Int64
-      case MonoType.BigInt => JvmName.BigInteger.toTpe
-      case MonoType.String => BackendType.String
-      case MonoType.Regex => JvmName.Regex.toTpe
-      case MonoType.Region => BackendObjType.Region.toTpe
-      case MonoType.Null => BackendType.Object
-      case MonoType.Array(tpe) => Array(toBackendType(tpe))
-      case MonoType.Lazy(tpe) => BackendObjType.Lazy(toBackendType(tpe)).toTpe
-      case MonoType.Tuple(elms) => BackendObjType.Tuple(elms.map(toBackendType)).toTpe
-      case MonoType.Enum(_, _) => BackendObjType.Tagged.toTpe
-      case MonoType.Struct(sym, targs) => BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs)).toTpe
-      case MonoType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
-      case MonoType.RecordEmpty => BackendObjType.Record.toTpe
-      case MonoType.RecordExtend(_, _, _) => BackendObjType.Record.toTpe
-      case MonoType.ExtensibleEmpty => BackendObjType.Tagged.toTpe
-      case MonoType.ExtensibleExtend(_, _, _) => BackendObjType.Tagged.toTpe
-      case MonoType.Native(clazz) => BackendObjType.Native(JvmName.ofClass(clazz)).toTpe
+      case SimpleType.Void => BackendType.Object
+      case SimpleType.AnyType => BackendType.Object
+      case SimpleType.Unit => BackendObjType.Unit.toTpe
+      case SimpleType.Bool => BackendType.Bool
+      case SimpleType.Char => BackendType.Char
+      case SimpleType.Float32 => BackendType.Float32
+      case SimpleType.Float64 => BackendType.Float64
+      case SimpleType.BigDecimal => JvmName.BigDecimal.toTpe
+      case SimpleType.Int8 => BackendType.Int8
+      case SimpleType.Int16 => BackendType.Int16
+      case SimpleType.Int32 => BackendType.Int32
+      case SimpleType.Int64 => BackendType.Int64
+      case SimpleType.BigInt => JvmName.BigInteger.toTpe
+      case SimpleType.String => BackendType.String
+      case SimpleType.Regex => JvmName.Regex.toTpe
+      case SimpleType.Region => BackendObjType.Region.toTpe
+      case SimpleType.Null => BackendType.Object
+      case SimpleType.Array(tpe) => Array(toBackendType(tpe))
+      case SimpleType.Lazy(tpe) => BackendObjType.Lazy(toBackendType(tpe)).toTpe
+      case SimpleType.Tuple(elms) => BackendObjType.Tuple(elms.map(toBackendType)).toTpe
+      case SimpleType.Enum(_, _) => BackendObjType.Tagged.toTpe
+      case SimpleType.Struct(sym, targs) => BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs)).toTpe
+      case SimpleType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
+      case SimpleType.RecordEmpty => BackendObjType.Record.toTpe
+      case SimpleType.RecordExtend(_, _, _) => BackendObjType.Record.toTpe
+      case SimpleType.ExtensibleEmpty => BackendObjType.Tagged.toTpe
+      case SimpleType.ExtensibleExtend(_, _, _) => BackendObjType.Tagged.toTpe
+      case SimpleType.Native(clazz) => BackendObjType.Native(JvmName.ofClass(clazz)).toTpe
     }
   }
 
@@ -182,23 +182,23 @@ object BackendType {
   )
 
   /**
-    * Computes the erased `BackendType` based on the given `MonoType`.
+    * Computes the erased [[BackendType]] based on the given [[SimpleType]].
     */
-  def toErasedBackendType(tpe: MonoType): BackendType = tpe match {
-    case MonoType.Bool => BackendType.Bool
-    case MonoType.Char => BackendType.Char
-    case MonoType.Int8 => BackendType.Int8
-    case MonoType.Int16 => BackendType.Int16
-    case MonoType.Int32 => BackendType.Int32
-    case MonoType.Int64 => BackendType.Int64
-    case MonoType.Float32 => BackendType.Float32
-    case MonoType.Float64 => BackendType.Float64
-    case MonoType.Void | MonoType.AnyType | MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt |
-         MonoType.String | MonoType.Regex | MonoType.Array(_) | MonoType.Lazy(_) |
-         MonoType.Tuple(_) | MonoType.Enum(_, _) | MonoType.Struct(_, _) | MonoType.Arrow(_, _) |
-         MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
-         MonoType.ExtensibleExtend(_, _, _) | MonoType.ExtensibleEmpty | MonoType.Native(_) |
-         MonoType.Region | MonoType.Null =>
+  def toErasedBackendType(tpe: SimpleType): BackendType = tpe match {
+    case SimpleType.Bool => BackendType.Bool
+    case SimpleType.Char => BackendType.Char
+    case SimpleType.Int8 => BackendType.Int8
+    case SimpleType.Int16 => BackendType.Int16
+    case SimpleType.Int32 => BackendType.Int32
+    case SimpleType.Int64 => BackendType.Int64
+    case SimpleType.Float32 => BackendType.Float32
+    case SimpleType.Float64 => BackendType.Float64
+    case SimpleType.Void | SimpleType.AnyType | SimpleType.Unit | SimpleType.BigDecimal | SimpleType.BigInt |
+         SimpleType.String | SimpleType.Regex | SimpleType.Array(_) | SimpleType.Lazy(_) |
+         SimpleType.Tuple(_) | SimpleType.Enum(_, _) | SimpleType.Struct(_, _) | SimpleType.Arrow(_, _) |
+         SimpleType.RecordEmpty | SimpleType.RecordExtend(_, _, _) |
+         SimpleType.ExtensibleExtend(_, _, _) | SimpleType.ExtensibleEmpty | SimpleType.Native(_) |
+         SimpleType.Region | SimpleType.Null =>
       BackendType.Object
   }
 

@@ -24,7 +24,7 @@ object BenchmarkCompilerOld {
   def benchmarkCodeSize(o: Options): Unit = {
     val flix = newFlix(o)
     val result = flix.compile().unsafeGet
-    val codeSize = result.getTotalByteSize
+    val codeSize = result.codeSize
 
     // Find the number of lines of source code.
     val lines = result.getTotalLines.toLong

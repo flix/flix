@@ -17,11 +17,11 @@
 ///
 /// The effect used to bind a TCP server.
 ///
-eff TcpWithResult {
+eff TcpBindWithResult {
     def bind(ip: IpAddr, port: Int16): Result[IoError, TcpServer]
 }
 
-mod TcpWithResult {
+mod TcpBindWithResult {
     import java.net.InetAddress
     import java.net.ServerSocket
     use IoError.ErrorKind
@@ -33,18 +33,15 @@ mod TcpWithResult {
     ///
     /// Handles the `Tcp` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Tcp` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `TcpBindWithResult` effect using the `Net` and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ ef - TcpWithResult + {IO, Net} = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ ef - TcpBindWithResult + {IO, Net} = x ->
         run {
             f(x)
-        } with handler TcpWithResult {
+        } with handler TcpBindWithResult {
             def bind(ip, port, resume) = {
                 try {
-                    let inet: InetAddress = region r {
-                        let bytes = IpAddr.toByteArray(r, ip);
-                        InetAddress.getByAddress(bytes)
-                    };
+                    let inet: InetAddress = InetAddress.getByAddress(IpAddr.toBytes(ip));
                     let maxQueueLength = 50;
                     let socket = new ServerSocket(Int16.toInt32(port), maxQueueLength, inet);
                     let server = TcpServer.TcpServer(socket);
@@ -57,10 +54,10 @@ mod TcpWithResult {
         }
 
     ///
-    /// Runs the `Tcp` effect of the given function `f`.
+    /// Runs the `TcpBindWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Tcp` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `TcpBindWithResult` effect using the `Net` and `IO` effects.
     ///
-    pub def runWithIO(f: Unit -> a \ ef):  a \ ef - TcpWithResult + {Net, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef):  a \ ef - TcpBindWithResult + {Net, IO} = handle(f)()
 
 }

@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
-import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
+import ca.uwaterloo.flix.language.ast.WeededAst.{Predicate, PredicateAndArity}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
 import ca.uwaterloo.flix.util.ParOps
@@ -96,14 +96,15 @@ object Desugar {
     * Desugars the given [[WeededAst.Declaration.Instance]] `instance0`.
     */
   private def visitInstance(instance0: WeededAst.Declaration.Instance)(implicit flix: Flix): DesugaredAst.Declaration.Instance = instance0 match {
-    case WeededAst.Declaration.Instance(doc, ann, mod, trt, tpe0, tconstrs0, assocs0, defs0, redefs0, loc) =>
+    case WeededAst.Declaration.Instance(doc, ann, mod, trt, tpe0, tconstrs0, econstrs0, assocs0, defs0, redefs0, loc) =>
       val tpe = visitType(tpe0)
       val tconstrs = tconstrs0.map(visitTraitConstraint)
+      val econstrs = econstrs0.map(visitEqualityConstraint)
       val assocs = assocs0.map(visitAssocTypeDef)
       val defs = defs0.map(visitDef)
       val redefs = redefs0.map(visitRedef)
       val defsAndRedefs = defs ++ redefs
-      DesugaredAst.Declaration.Instance(doc, ann, mod, trt, tpe, tconstrs, assocs, defsAndRedefs, loc)
+      DesugaredAst.Declaration.Instance(doc, ann, mod, trt, tpe, tconstrs, econstrs, assocs, defsAndRedefs, loc)
   }
 
   /**
@@ -200,9 +201,10 @@ object Desugar {
     * Desugars the given [[WeededAst.Declaration.Effect]] `eff0`.
     */
   private def visitEffect(eff0: WeededAst.Declaration.Effect): DesugaredAst.Declaration.Effect = eff0 match {
-    case WeededAst.Declaration.Effect(doc, ann, mod, ident, ops0, loc) =>
+    case WeededAst.Declaration.Effect(doc, ann, mod, ident, tparams0, ops0, loc) =>
+      val tparams = tparams0.map(visitTypeParam)
       val ops = ops0.map(visitOp)
-      DesugaredAst.Declaration.Effect(doc, ann, mod, ident, ops, loc)
+      DesugaredAst.Declaration.Effect(doc, ann, mod, ident, tparams, ops, loc)
   }
 
   /**
@@ -800,11 +802,16 @@ object Desugar {
       val e2 = visitExp(exp2)
       Expr.FixpointMerge(e1, e2, loc)
 
-    case WeededAst.Expr.FixpointInjectInto(exps, idents, loc) =>
-      desugarFixpointInjectInto(exps, idents, loc)
+    case WeededAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
+      desugarFixpointInjectInto(exps, predsAndArities, loc)
 
-    case WeededAst.Expr.FixpointSolveWithProject(exps, optIdents, loc) =>
-      desugarFixpointSolveWithProject(exps, optIdents, loc)
+    case WeededAst.Expr.FixpointSolveWithProject(exps, mode, optIdents, loc) =>
+      desugarFixpointSolveWithProject(exps, mode, optIdents, loc)
+
+    case WeededAst.Expr.FixpointQueryWithProvenance(exps, select, withh, loc) =>
+      val es = visitExps(exps)
+      val s = visitHead(select)
+      DesugaredAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
 
     case WeededAst.Expr.FixpointQueryWithSelect(exps0, selects0, from0, where0, loc) =>
       desugarFixpointQueryWithSelect(exps0, selects0, from0, where0, loc)
@@ -985,15 +992,18 @@ object Desugar {
   }
 
   /**
+    * Desugars the given [[WeededAst.Predicate.Head]] `frag0`.
+    */
+  private def visitHead(head0: WeededAst.Predicate.Head)(implicit flix: Flix): DesugaredAst.Predicate.Head = head0 match {
+    case WeededAst.Predicate.Head.Atom(pred, den, exps, loc) =>
+      val e = visitExps(exps)
+      DesugaredAst.Predicate.Head.Atom(pred, den, e, loc)
+  }
+
+  /**
     * Desugars the given [[WeededAst.Constraint]] `constraint0`.
     */
   private def visitConstraint(constraint0: WeededAst.Constraint)(implicit flix: Flix): DesugaredAst.Constraint = {
-    def visitHead(head0: WeededAst.Predicate.Head): DesugaredAst.Predicate.Head = head0 match {
-      case WeededAst.Predicate.Head.Atom(pred, den, exps, loc) =>
-        val e = visitExps(exps)
-        DesugaredAst.Predicate.Head.Atom(pred, den, e, loc)
-    }
-
     constraint0 match {
       case WeededAst.Constraint(head, body, loc) =>
         val h = visitHead(head)
@@ -1429,13 +1439,13 @@ object Desugar {
   /**
     * Rewrites a [[WeededAst.Expr.FixpointInjectInto]] into a series of injects and merges.
     */
-  private def desugarFixpointInjectInto(exps0: List[WeededAst.Expr], idents0: List[Name.Ident], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarFixpointInjectInto(exps0: List[WeededAst.Expr], predsAndArities: List[PredicateAndArity], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val es = visitExps(exps0)
     val init = DesugaredAst.Expr.FixpointConstraintSet(Nil, loc0)
-    es.zip(idents0).foldRight(init: Expr) {
-      case ((exp, ident), acc) =>
+    es.zip(predsAndArities).foldRight(init: Expr) {
+      case ((exp, PredicateAndArity(ident, arity)), acc) =>
         val pred = Name.mkPred(ident)
-        val innerExp = DesugaredAst.Expr.FixpointInject(exp, pred, loc0)
+        val innerExp = DesugaredAst.Expr.FixpointInject(exp, pred, arity, loc0)
         DesugaredAst.Expr.FixpointMerge(innerExp, acc, loc0)
     }
   }
@@ -1453,7 +1463,7 @@ object Desugar {
     *   merge (project P1 tmp%, project P2 tmp%, project P3 tmp%)
     * }}}
     */
-  private def desugarFixpointSolveWithProject(exps0: List[WeededAst.Expr], idents0: Option[List[Name.Ident]], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarFixpointSolveWithProject(exps0: List[WeededAst.Expr], mode: SolveMode, idents0: Option[List[Name.Ident]], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val es = visitExps(exps0)
 
     // Introduce a tmp% variable that holds the minimal model of the merge of the exps.
@@ -1464,12 +1474,12 @@ object Desugar {
     val mergeExp = es.reduceRight[DesugaredAst.Expr] {
       case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc0)
     }
-    val modelExp = DesugaredAst.Expr.FixpointSolve(mergeExp, loc0)
+    val modelExp = DesugaredAst.Expr.FixpointSolve(mergeExp, mode, loc0)
 
     // Any projections?
     val bodyExp = idents0 match {
       case None =>
-        // Case 1: No projections: Simply return the minimal model.
+        // Case 1: No projections: Simply return the minimal model or prepare provenance, depending on mode.
         DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, localVar, localVar.loc), loc0)
 
       case Some(idents) =>
@@ -1515,6 +1525,9 @@ object Desugar {
     // The fresh predicate name where to store the result of the query.
     val pred = Name.Pred(Flix.Delimiter + "Result", loc0)
 
+    // The arity of the result is the number of selects
+    val arity = selects.length
+
     // The head of the pseudo-rule.
     val den = Denotation.Relational
     val head = DesugaredAst.Predicate.Head.Atom(pred, den, selects, loc0)
@@ -1541,7 +1554,7 @@ object Desugar {
     }
 
     // Extract the tuples of the result predicate.
-    DesugaredAst.Expr.FixpointProject(pred, queryExp, dbExp, loc0)
+    DesugaredAst.Expr.FixpointProject(pred, arity, queryExp, dbExp, loc0)
   }
 
   /**

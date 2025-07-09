@@ -78,7 +78,7 @@ object Typer {
         case sym: Symbol.RestrictableEnumSym => sym.namespace
         case sym: Symbol.TraitSym => sym.namespace
         case sym: Symbol.TypeAliasSym => sym.namespace
-        case sym: Symbol.EffectSym => sym.namespace
+        case sym: Symbol.EffSym => sym.namespace
       }.flatMap {
         fullNs =>
           fullNs.inits.collect {
@@ -95,7 +95,7 @@ object Typer {
         case sym: Symbol.RestrictableEnumSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
         case sym: Symbol.TraitSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
         case sym: Symbol.TypeAliasSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
-        case sym: Symbol.EffectSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
+        case sym: Symbol.EffSym => new Symbol.ModuleSym(sym.namespace, ModuleKind.Standalone)
 
         case sym: Symbol.SigSym => new Symbol.ModuleSym(sym.trt.namespace :+ sym.trt.name, ModuleKind.Standalone)
         case sym: Symbol.OpSym => new Symbol.ModuleSym(sym.eff.namespace :+ sym.eff.name, ModuleKind.Standalone)
@@ -126,9 +126,9 @@ object Typer {
       case (traitSym, trt) =>
         val instances = instances0.get(traitSym)
         val envInsts = instances.flatMap {
-          case KindedAst.Instance(_, _, _, _, tparams, tpe, tconstrs, _, _, _, _) =>
+          case KindedAst.Instance(_, _, _, _, tparams, tpe, tconstrs, econstrs, _, _, _, _) =>
             tpe.typeConstructor.map {
-              tc => TypeHead.Cst(tc) -> Instance(tparams.map(_.sym), tpe, tconstrs)
+              tc => TypeHead.Cst(tc) -> Instance(tparams.map(_.sym), tpe, tconstrs, econstrs)
             }
         }.toMap[TypeHead, Instance]
         // ignore the super trait parameters since they should all be the same as the trait param
@@ -173,14 +173,14 @@ object Typer {
       case defn =>
         // SUB-EFFECTING: Check if sub-effecting is enabled for module-level defs.
         val enableSubeffects = shouldSubeffect(defn.spec.eff, Subeffecting.ModDefs)
-        visitDef(defn, tconstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, enableSubeffects)
+        visitDef(defn, tconstrs0 = Nil, econstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, enableSubeffects)
     })
   }
 
   /**
     * Reconstructs types in the given def.
     */
-  private def visitDef(defn: KindedAst.Def, tconstrs0: List[TraitConstraint], renv0: RigidityEnv, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: EqualityEnv, open: Boolean)(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
+  private def visitDef(defn: KindedAst.Def, tconstrs0: List[TraitConstraint], econstrs0: List[EqualityConstraint], renv0: RigidityEnv, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: EqualityEnv, open: Boolean)(implicit sctx: SharedContext, flix: Flix): TypedAst.Def = {
     implicit val scope: Scope = Scope.Top
     implicit val r: KindedAst.Root = root
     implicit val context: TypeContext = new TypeContext
@@ -194,9 +194,9 @@ object Typer {
     val eff = if (open) Type.mkUnion(eff0, Type.freshEffSlackVar(eff0.loc), eff0.loc) else eff0
 
     val infResult = InfResult(infTconstrs, tpe, eff, infRenv)
-    val (subst, constraintErrors) = ConstraintSolverInterface.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
+    val (subst, constraintErrors) = ConstraintSolverInterface.visitDef(defn, infResult, renv0, tconstrs0, econstrs0, traitEnv, eqEnv, root)
     constraintErrors.foreach(sctx.errors.add)
-    checkAssocTypes(defn.spec, tconstrs0, traitEnv)
+    checkSpecAssocTypes(defn.spec, tconstrs0, traitEnv)
     TypeReconstruction.visitDef(defn, subst)
   }
 
@@ -222,7 +222,7 @@ object Typer {
       }
       val tconstr = TraitConstraint(TraitSymUse(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
       val sigs = sigs0.values.map(visitSig(_, renv, List(tconstr), root, traitEnv, eqEnv)).toList
-      val laws = laws0.map(visitDef(_, List(tconstr), renv, root, traitEnv, eqEnv, open = false))
+      val laws = laws0.map(visitDef(_, List(tconstr), Nil, renv, root, traitEnv, eqEnv, open = false))
       TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc)
   }
 
@@ -269,9 +269,11 @@ object Typer {
     * Reassembles a single instance.
     */
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): TypedAst.Instance = inst match {
-    case KindedAst.Instance(doc, ann, mod, symUse, tparams0, tpe, tconstrs0, assocs0, defs0, ns, loc) =>
+    case KindedAst.Instance(doc, ann, mod, symUse, tparams0, tpe, tconstrs0, econstrs0, assocs0, defs0, ns, loc) =>
       val renv = tparams0.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
       val tconstrs = tconstrs0 // no subst to be done
+      val econstrs = econstrs0 // no subst to be done
+      checkInstAssocTypes(inst, traitEnv)
       val assocs = assocs0.map {
         case KindedAst.AssocTypeDef(defDoc, defMod, defSymUse, args, defTpe, defLoc) =>
           TypedAst.AssocTypeDef(defDoc, defMod, defSymUse, args, defTpe, defLoc)
@@ -281,9 +283,9 @@ object Typer {
         defn =>
           // SUB-EFFECTING: Check if sub-effecting is enabled for instance-level defs.
           val open = shouldSubeffect(defn.spec.eff, Subeffecting.InsDefs)
-          visitDef(defn, tconstrs, renv, root, traitEnv, eqEnv, open)
+          visitDef(defn, tconstrs, econstrs, renv, root, traitEnv, eqEnv, open)
       }
-      TypedAst.Instance(doc, ann, mod, symUse, tpe, tconstrs, assocs, defs, ns, loc)
+      TypedAst.Instance(doc, ann, mod, symUse, tpe, tconstrs, econstrs, assocs, defs, ns, loc)
   }
 
   /**
@@ -353,7 +355,7 @@ object Typer {
   /**
     * Reconstructs types in the given effects.
     */
-  private def visitEffs(root: KindedAst.Root): Map[Symbol.EffectSym, TypedAst.Effect] = {
+  private def visitEffs(root: KindedAst.Root): Map[Symbol.EffSym, TypedAst.Effect] = {
     MapOps.mapValues(root.effects)(visitEff)
   }
 
@@ -361,9 +363,10 @@ object Typer {
     * Reconstructs types in the given effect.
     */
   private def visitEff(eff: KindedAst.Effect): TypedAst.Effect = eff match {
-    case KindedAst.Effect(doc, ann, mod, sym, ops0, loc) =>
+    case KindedAst.Effect(doc, ann, mod, sym, tparams0, ops0, loc) =>
+      val tparams = tparams0.map(visitTypeParam)
       val ops = ops0.map(TypeReconstruction.visitOp)
-      TypedAst.Effect(doc, ann, mod, sym, ops, loc)
+      TypedAst.Effect(doc, ann, mod, sym, tparams, ops, loc)
   }
 
   /**
@@ -393,49 +396,82 @@ object Typer {
   /**
     * Verifies that all the associated types in the spec are resolvable, according to the declared type constraints.
     */
-  private def checkAssocTypes(spec0: KindedAst.Spec, extraTconstrs: List[TraitConstraint], tenv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): Unit = {
-    def getAssocTypes(t: Type): List[Type.AssocType] = t match {
-      case Type.Var(_, _) => Nil
-      case Type.Cst(_, _) => Nil
-      case Type.Apply(tpe1, tpe2, _) => getAssocTypes(tpe1) ::: getAssocTypes(tpe2)
-      case Type.Alias(_, args, _, _) => args.flatMap(getAssocTypes) // TODO ASSOC-TYPES what to do about alias
-      case assoc: Type.AssocType => List(assoc)
-      case Type.JvmToType(tpe, _) => getAssocTypes(tpe)
-      case Type.JvmToEff(tpe, _) => getAssocTypes(tpe)
-      case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.flatMap(getAssocTypes)
-    }
+  private def checkSpecAssocTypes(spec0: KindedAst.Spec, extraTconstrs: List[TraitConstraint], tenv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): Unit = spec0 match {
+    case KindedAst.Spec(_, _, _, tparams, fparams, _, tpe, eff, tconstrs, econstrs) =>
+      // get all the associated types in the spec
+      val tpes = fparams.map(_.tpe) ::: tpe :: eff :: econstrs.flatMap(getTypes)
 
-    spec0 match {
-      case KindedAst.Spec(_, _, _, tparams, fparams, _, tpe, eff, tconstrs, econstrs) =>
-        // get all the associated types in the spec
-        val tpes = fparams.map(_.tpe) ::: tpe :: eff :: econstrs.flatMap {
-          case EqualityConstraint(cst, tpe1, tpe2, _) =>
-            // Kind is irrelevant for our purposes
-            List(Type.AssocType(cst, tpe1, Kind.Wild, tpe1.loc), tpe2) // TODO ASSOC-TYPES better location for left
-        }
+      // check that they are all covered by the type constraints
+      for {
+        t <- tpes
+        assoc <- getAssocTypes(t)
+      } {
+        checkAssocType(assoc, tparams, extraTconstrs ::: tconstrs, tenv)
+      }
+  }
 
-        // check that they are all covered by the type constraints
-        tpes.flatMap(getAssocTypes).foreach {
-          case Type.AssocType(AssocTypeSymUse(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
-            val trtSym = assocSym.trt
-            val matches = (extraTconstrs ::: tconstrs).flatMap(withSupers(_, tenv)).exists {
-              case TraitConstraint(TraitSymUse(tconstrSym, _), Type.Var(tvarSym2, _), _) =>
-                trtSym == tconstrSym && tvarSym1 == tvarSym2
-              case _ => false
-            }
-            if (matches) {
-              ()
-            } else {
-              val renv = tparams.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
-              val error = TypeError.MissingTraitConstraint(trtSym, arg, renv, loc)
-              sctx.errors.add(error)
-              ()
-            }
+  /**
+    * Verifies that all the associated types in the instance are resolvable, according to the declared type constraints.
+    */
+  private def checkInstAssocTypes(inst: KindedAst.Instance, tenv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): Unit = inst match {
+    case KindedAst.Instance(_, _, _, _, tparams, tpe, tconstrs, econstrs, _, _, _, _) =>
+      // get all the associated types in the instance
+      val tpes = tpe :: econstrs.flatMap(getTypes)
 
-          // Resiliency: If the associated type is ill-formed, then we ignore it.
-          case _ => ()
-        }
-    }
+      // check that they are all covered by the type constraints
+      for {
+        t <- tpes
+        assoc <- getAssocTypes(t)
+      } {
+        checkAssocType(assoc, tparams, tconstrs, tenv)
+      }
+  }
+
+  /**
+    * Collects all associated types from the type.
+    */
+  private def getAssocTypes(t: Type): List[Type.AssocType] = t match {
+    case Type.Var(_, _) => Nil
+    case Type.Cst(_, _) => Nil
+    case Type.Apply(tpe1, tpe2, _) => getAssocTypes(tpe1) ::: getAssocTypes(tpe2)
+    case Type.Alias(_, args, _, _) => args.flatMap(getAssocTypes) // TODO ASSOC-TYPES what to do about alias
+    case assoc: Type.AssocType => List(assoc)
+    case Type.JvmToType(tpe, _) => getAssocTypes(tpe)
+    case Type.JvmToEff(tpe, _) => getAssocTypes(tpe)
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.flatMap(getAssocTypes)
+  }
+
+  /**
+    * Returns a list containing both types in the constraint.
+    */
+  private def getTypes(econstr: EqualityConstraint): List[Type] = econstr match {
+    case EqualityConstraint(cst, tpe1, tpe2, _) =>
+      // Kind is irrelevant for our purposes
+      List(Type.AssocType(cst, tpe1, Kind.Wild, tpe1.loc), tpe2) // TODO ASSOC-TYPES better location for left
+  }
+
+  /**
+    * Verifies that the associated type is resolvable, according to the declared type constraints.
+    */
+  private def checkAssocType(assocType: Type.AssocType, tparams: List[KindedAst.TypeParam], tconstrs: List[TraitConstraint], tenv: TraitEnv)(implicit sctx: SharedContext, flix: Flix): Unit = assocType match {
+    case Type.AssocType(AssocTypeSymUse(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
+      val trtSym = assocSym.trt
+      val matches = tconstrs.flatMap(withSupers(_, tenv)).exists {
+        case TraitConstraint(TraitSymUse(tconstrSym, _), Type.Var(tvarSym2, _), _) =>
+          trtSym == tconstrSym && tvarSym1 == tvarSym2
+        case _ => false
+      }
+      if (matches) {
+        ()
+      } else {
+        val renv = tparams.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
+        val error = TypeError.MissingTraitConstraint(trtSym, arg, renv, loc)
+        sctx.errors.add(error)
+        ()
+      }
+
+    // Resiliency: If the associated type is ill-formed, then we ignore it.
+    case _ => ()
   }
 
   /**

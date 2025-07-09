@@ -108,7 +108,7 @@ object DocAst {
 
     case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[?], Expr)]) extends Atom
 
-    case class Handler(eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[AscriptionTpe], Expr)]) extends Composite
+    case class Handler(eff: Symbol.EffSym, rules: List[(Symbol.OpSym, List[AscriptionTpe], Expr)]) extends Composite
 
     case class Stm(d1: Expr, d2: Expr) extends LetBinder
 
@@ -249,7 +249,7 @@ object DocAst {
     def RunWith(d1: Expr, d2: Expr): Expr =
       DoubleKeyword("run", d1, "with", Left(d2))
 
-    def RunWithHandler(d: Expr, eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[AscriptionTpe], Expr)]): Expr =
+    def RunWithHandler(d: Expr, eff: Symbol.EffSym, rules: List[(Symbol.OpSym, List[AscriptionTpe], Expr)]): Expr =
       RunWith(d, Handler(eff, rules))
 
     def Spawn(d1: Expr, d2: Expr): Expr =
@@ -276,7 +276,7 @@ object DocAst {
     def Box(d: Expr): Expr =
       Keyword("box", d)
 
-    def Without(d: Expr, sym: Symbol.EffectSym): Expr =
+    def Without(d: Expr, sym: Symbol.EffSym): Expr =
       Binary(d, "without", AsIs(sym.toString))
 
     def Cst(cst: Constant): Expr =
@@ -303,7 +303,7 @@ object DocAst {
     def ApplyDefWithTail(sym: Symbol.DefnSym, ds: List[Expr], ct: ExpPosition): Expr =
       AppWithTail(AsIs(sym.toString), ds, Some(ct))
 
-    def Do(sym: Symbol.OpSym, ds: List[Expr]): Expr =
+    def ApplyOp(sym: Symbol.OpSym, ds: List[Expr]): Expr =
       Keyword("do", App(AsIs(sym.toString), ds))
 
     def JavaInvokeMethod(d: Expr, methodName: Name.Ident, ds: List[Expr]): Expr =

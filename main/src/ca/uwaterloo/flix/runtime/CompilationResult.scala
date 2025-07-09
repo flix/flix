@@ -26,14 +26,14 @@ import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
   * @param main      the reflected main function, if present.
   * @param tests     the tests in the program.
   * @param sources   the sources of the program.
-  * @param classes   the JVM classes of the program.
   * @param totalTime the total compilation time, excluding class writing/loading.
+  * @param codeSize   the number of bytes the compiler generated.
   */
 class CompilationResult(main: Option[Array[String] => Unit],
                         tests: Map[Symbol.DefnSym, TestFn],
                         sources: Map[Source, SourceLocation],
-                        classes: Map[JvmName, JvmClass],
-                        val totalTime: Long
+                        val totalTime: Long,
+                        val codeSize: Int
                        ) {
 
   /** Optionally returns the main function. */
@@ -48,9 +48,5 @@ class CompilationResult(main: Option[Array[String] => Unit],
   def getTotalLines: Int = sources.foldLeft(0) {
     case (acc, (_, sl)) => acc + sl.endLine
   }
-
-  /** Returns the total amount of bytes in the generated classes. */
-  def getTotalByteSize: Int =
-    classes.values.map(_.bytecode.length).sum
 
 }

@@ -16,9 +16,8 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.language.ast.Name
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
+import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -491,6 +490,23 @@ object WeederError {
       s""">> Illegal null pattern.
          |
          |${code(loc, "illegal null pattern.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an illegal predicate arity.
+    *
+    * @param loc the location where the error occurs.
+    */
+  case class IllegalPredicateArity(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Illegal predicate arity."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal predicate arity. Arity must be an integer larger than zero.
+         |
+         |${code(loc, "illegal arity.")}
          |""".stripMargin
     }
   }
@@ -1064,4 +1080,5 @@ object WeederError {
          |""".stripMargin
     }
   }
+
 }

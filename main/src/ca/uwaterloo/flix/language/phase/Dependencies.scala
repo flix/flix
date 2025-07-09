@@ -158,6 +158,12 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
+    case Expr.ApplyOp(op, exps, tpe, eff, _) =>
+      visitSymUse(op)
+      exps.foreach(visitExp)
+      visitType(tpe)
+      visitType(eff)
+
     case Expr.ApplySig(symUse, exps, itpe, tpe, eff, _) =>
       visitSymUse(symUse)
       exps.foreach(visitExp)
@@ -404,12 +410,6 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Do(op, exps, tpe, eff, _) =>
-      visitSymUse(op)
-      exps.foreach(visitExp)
-      visitType(tpe)
-      visitType(eff)
-
     case Expr.InvokeConstructor(_, exps, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitType(tpe)
@@ -505,7 +505,13 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.FixpointSolve(exp, tpe, eff, _) =>
+    case Expr.FixpointQueryWithProvenance(exps, select, _, tpe, eff, _) =>
+      exps.foreach(visitExp)
+      visitHead(select)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.FixpointSolve(exp, tpe, eff, _, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)

@@ -184,7 +184,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given instance `inst0`.
     */
   private def visitInstance(inst0: TypedAst.Instance): Iterator[SemanticToken] = inst0 match {
-    case TypedAst.Instance(_, ann, _, sym, tpe, tconstrs, assocs, defs, _, _) =>
+    case TypedAst.Instance(_, ann, _, sym, tpe, tconstrs, econstrs, assocs, defs, _, _) =>
       // NB: we use SemanticTokenType.Class because the OOP "Class" most directly corresponds to the FP "Instance"
       val t = SemanticToken(SemanticTokenType.Class, Nil, sym.loc)
       IteratorOps.all(
@@ -193,6 +193,7 @@ object SemanticTokensProvider {
         visitType(tpe),
         assocs.flatMap(visitAssocTypeDef),
         tconstrs.flatMap(visitTraitConstraint),
+        econstrs.flatMap(visitEqualityConstraint),
         defs.flatMap(visitDef),
       )
   }
@@ -208,7 +209,7 @@ object SemanticTokensProvider {
       IteratorOps.all(
         visitAnnotations(ann),
         Iterator(t),
-        visitTypeParams(tparams),
+        tparams.flatMap(visitTypeParam),
         Iterator(derives.traits *).map {
           case Derivation(_, loc) => SemanticToken(SemanticTokenType.Class, Nil, loc)
         },
@@ -240,7 +241,7 @@ object SemanticTokensProvider {
       IteratorOps.all(
         visitAnnotations(ann),
         Iterator(t),
-        visitTypeParams(tparams),
+        tparams.flatMap(visitTypeParam),
         fields.foldLeft(Iterator.empty[SemanticToken]) {
           case (acc, (_, field)) => acc ++ visitField(field)
         }
@@ -289,8 +290,8 @@ object SemanticTokensProvider {
     case Spec(_, ann, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs) =>
       IteratorOps.all(
         visitAnnotations(ann),
-        visitTypeParams(tparams),
-        visitFormalParams(fparams),
+        tparams.flatMap(visitTypeParam),
+        fparams.flatMap(visitFormalParam),
         tconstrs.iterator.flatMap(visitTraitConstraint),
         econstrs.iterator.flatMap(visitEqualityConstraint),
         visitType(retTpe),
@@ -307,7 +308,7 @@ object SemanticTokensProvider {
       IteratorOps.all(
         visitAnnotations(ann),
         Iterator(t),
-        visitTypeParams(tparams),
+        tparams.flatMap(visitTypeParam),
         visitType(tpe),
       )
   }
@@ -342,11 +343,12 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given effect.
     */
   private def visitEffect(effect: TypedAst.Effect): Iterator[SemanticToken] = effect match {
-    case TypedAst.Effect(_, ann, _, sym, ops, _) =>
+    case TypedAst.Effect(_, ann, _, sym, tparams, ops, _) =>
       val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
       IteratorOps.all(
         visitAnnotations(ann),
         Iterator(t),
+        tparams.flatMap(visitTypeParam),
         ops.flatMap(visitOp),
       )
   }
@@ -436,6 +438,10 @@ object SemanticTokensProvider {
         case (acc, exp) => acc ++ visitExp(exp)
       }
 
+    case Expr.ApplyOp(op, exps, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
+      Iterator(t) ++ visitExps(exps)
+
     case Expr.ApplySig(SigSymUse(sym, loc), exps, _, _, _, _) =>
       val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
       val t = SemanticToken(o, Nil, loc)
@@ -458,7 +464,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
-        visitFormalParams(fparams),
+        fparams.flatMap(visitFormalParam),
         visitExp(exp1),
         visitExp(exp2)
       )
@@ -481,14 +487,14 @@ object SemanticTokensProvider {
     case Expr.Match(matchExp, rules, _, _, _) =>
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
-        case (acc, MatchRule(pat, guard, exp, loc)) =>
+        case (acc, MatchRule(pat, guard, exp, _)) =>
           acc ++ visitPat(pat) ++ guard.toList.flatMap(visitExp) ++ visitExp(exp)
       }
 
     case Expr.TypeMatch(matchExp, rules, _, _, _) =>
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
-        case (acc, TypeMatchRule(bnd, tpe, exp, loc)) =>
+        case (acc, TypeMatchRule(bnd, tpe, exp, _)) =>
           val o = getSemanticTokenType(bnd.sym, tpe)
           val t = SemanticToken(o, Nil, bnd.sym.loc)
           acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
@@ -612,20 +618,16 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Type, Nil, sym.qname.loc)
       val st1 = Iterator(t)
       val st2 = rules.foldLeft(Iterator.empty[SemanticToken]) {
-        case (acc, HandlerRule(op, fparams, exp, loc)) =>
+        case (acc, HandlerRule(op, fparams, exp, _)) =>
           val st = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
           val t1 = Iterator(st)
-          val t2 = visitFormalParams(fparams)
+          val t2 = fparams.flatMap(visitFormalParam)
           acc ++ t1 ++ t2 ++ visitExp(exp)
       }
       st1 ++ st2
 
     case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
-
-    case Expr.Do(op, exps, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
-      Iterator(t) ++ visitExps(exps)
 
     case Expr.InvokeConstructor(_, exps, _, _, _) =>
       exps.foldLeft(Iterator.empty[SemanticToken]) {
@@ -693,12 +695,15 @@ object SemanticTokensProvider {
       }
 
     case Expr.FixpointLambda(pparams, exp, _, _, _) =>
-      visitPredicateParams(pparams) ++ visitExp(exp)
+      pparams.iterator.flatMap(visitPredicateParam) ++ visitExp(exp)
 
     case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.FixpointSolve(exp, _, _, _) =>
+    case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
+      visitExps(exps) ++ visitHeadPredicate(select)
+
+    case Expr.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expr.FixpointFilter(_, exp, _, _, _) =>
@@ -843,7 +848,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Univ => true
     case TypeConstructor.True => true
     case TypeConstructor.False => true
-    case TypeConstructor.Effect(_) => true
+    case TypeConstructor.Effect(_, _) => true
     case TypeConstructor.Region(_) => true
     case TypeConstructor.RegionToStar => true
 
@@ -858,8 +863,8 @@ object SemanticTokensProvider {
     case TypeConstructor.SchemaRowExtend(_) => false
     case TypeConstructor.Schema => false
     case TypeConstructor.Tuple(_) => false
-    case TypeConstructor.Relation => false
-    case TypeConstructor.Lattice => false
+    case TypeConstructor.Relation(_) => false
+    case TypeConstructor.Lattice(_) => false
     case TypeConstructor.Not => false
     case TypeConstructor.And => false
     case TypeConstructor.Or => false
@@ -920,14 +925,6 @@ object SemanticTokensProvider {
   }
 
   /**
-    * Returns all semantic tokens in the given formal parameters `fparams0`.
-    */
-  private def visitFormalParams(fparams0: List[FormalParam]): Iterator[SemanticToken] =
-    fparams0.foldLeft(Iterator.empty[SemanticToken]) {
-      case (acc, fparam0) => acc ++ visitFormalParam(fparam0)
-    }
-
-  /**
     * Returns all semantic tokens in the given formal parameter `fparam0`.
     */
   private def visitFormalParam(fparam0: FormalParam): Iterator[SemanticToken] = fparam0 match {
@@ -941,14 +938,6 @@ object SemanticTokensProvider {
   }
 
   /**
-    * Returns all semantic tokens in the given predicate parameters `pparams0`.
-    */
-  private def visitPredicateParams(pparams0: List[PredicateParam]): Iterator[SemanticToken] =
-    pparams0.foldLeft(Iterator.empty[SemanticToken]) {
-      case (acc, fparam0) => acc ++ visitPredicateParam(fparam0)
-    }
-
-  /**
     * Returns all semantic tokens in the given predicate parameter `pparam0`.
     */
   private def visitPredicateParam(pparam0: PredicateParam): Iterator[SemanticToken] = pparam0 match {
@@ -956,14 +945,6 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, pred.loc)
       Iterator(t) ++ visitType(tpe)
   }
-
-  /**
-    * Returns all semantic tokens in the given type parameter `tparam0`.
-    */
-  private def visitTypeParams(tparams0: List[TypedAst.TypeParam]): Iterator[SemanticToken] =
-    tparams0.foldLeft(Iterator.empty[SemanticToken]) {
-      case (acc, tparam0) => acc ++ visitTypeParam(tparam0)
-    }
 
   /**
     * Returns all semantic tokens in the given type parameter `tparam0`.
@@ -1012,7 +993,7 @@ object SemanticTokensProvider {
     */
   private def visitJvmMethod(method: TypedAst.JvmMethod): Iterator[SemanticToken] = method match {
     case TypedAst.JvmMethod(_, fparams, exp, tpe, eff, _) =>
-      visitFormalParams(fparams) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
+      fparams.iterator.flatMap(visitFormalParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
   }
 
   /**

@@ -89,7 +89,7 @@ object Monomorpher {
 
   /** The effect that all [[TypeConstructor.Region]] are instantiated to. */
   private val RegionInstantiation: TypeConstructor.Effect =
-    TypeConstructor.Effect(Symbol.IO)
+    TypeConstructor.Effect(Symbol.IO, Kind.Eff)
 
   /** Companion object for [[StrictSubstitution]]. */
   private object StrictSubstitution {
@@ -474,18 +474,22 @@ object Monomorpher {
       val es = exps.map(specializeExp(_, env0, subst))
       MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ApplySig(sym, exps, itpe, tpe, eff, loc) =>
-      val it = subst(itpe)
-      val newSym = specializeSigSym(sym, it)
-      val es = exps.map(specializeExp(_, env0, subst))
-      MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
-
     case LoweredAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       val newSym = env0(sym)
       val es = exps.map(specializeExp(_, env0, subst))
       val t = subst(tpe)
       val ef = subst(eff)
       MonoAst.Expr.ApplyLocalDef(newSym, es, t, ef, loc)
+
+    case LoweredAst.Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(specializeExp(_, env0, subst))
+      MonoAst.Expr.ApplyOp(sym, es, subst(tpe), subst(eff), loc)
+
+    case LoweredAst.Expr.ApplySig(sym, exps, itpe, tpe, eff, loc) =>
+      val it = subst(itpe)
+      val newSym = specializeSigSym(sym, it)
+      val es = exps.map(specializeExp(_, env0, subst))
+      MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
@@ -613,10 +617,6 @@ object Monomorpher {
           MonoAst.HandlerRule(op, fparams, body)
       }
       MonoAst.Expr.RunWith(e, effect, rs, subst(tpe), subst(eff), loc)
-
-    case LoweredAst.Expr.Do(op, exps, tpe, eff, loc) =>
-      val es = exps.map(specializeExp(_, env0, subst))
-      MonoAst.Expr.Do(op, es, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
@@ -943,10 +943,10 @@ object Monomorpher {
     *
     * N.B.: `eff` must be simplified and ground.
     */
-  private def eval(eff: Type): CofiniteSet[Symbol.EffectSym] = eff match {
+  private def eval(eff: Type): CofiniteSet[Symbol.EffSym] = eff match {
     case Type.Univ => CofiniteSet.universe
     case Type.Pure => CofiniteSet.empty
-    case Type.Cst(TypeConstructor.Effect(sym), _) =>
+    case Type.Cst(TypeConstructor.Effect(sym, _), _) =>
       CofiniteSet.mkSet(sym)
     case Type.Cst(TypeConstructor.Region(_), _) =>
       CofiniteSet.mkSet(RegionInstantiation.sym)
@@ -964,9 +964,9 @@ object Monomorpher {
   }
 
   /** Returns the [[Type]] representation of `set` with `loc`. */
-  private def coSetToType(set: CofiniteSet[Symbol.EffectSym], loc: SourceLocation): Type = set match {
-    case CofiniteSet.Set(s) => Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc)
-    case CofiniteSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc)), loc), loc)
+  private def coSetToType(set: CofiniteSet[Symbol.EffSym], loc: SourceLocation): Type = set match {
+    case CofiniteSet.Set(s) => Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc)), loc)
+    case CofiniteSet.Compl(s) => Type.mkComplement(Type.mkUnion(s.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc)), loc), loc)
   }
 
   /**

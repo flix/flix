@@ -42,7 +42,9 @@ mod TcpAccept {
                 try {
                     let TcpServer.TcpServer(serverSocket) = server;
                     let socket = serverSocket.accept();
-                    resume(TcpSocket.TcpSocket(socket))
+                    let inputStream = socket.getInputStream();
+                    let outputStream = socket.getOutputStream();
+                    resume(TcpSocket.TcpSocket(socket, inputStream, outputStream))
                 } catch {
                     case ex: SocketTimeoutException => Err(IoError(ErrorKind.Timeout, ex.getMessage()))
                     case ex: IOException            => Err(IoError(ErrorKind.Other, ex.getMessage()))

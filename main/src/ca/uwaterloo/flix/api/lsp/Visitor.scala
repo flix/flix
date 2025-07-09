@@ -40,9 +40,9 @@ object Visitor {
     * accepted, none of the expressions in its `exp` will be visited eiter,
     * even if they would otherwise be accepted by the `acceptor`.
     *
-    * @param root      The AST root node.
-    * @param consumer  A [[Consumer]] that defines what to do when visiting different types of AST nodes.
-    * @param acceptor  An [[Acceptor]] that defines the criteria for whether an AST node should be visited.
+    * @param root     The AST root node.
+    * @param consumer A [[Consumer]] that defines what to do when visiting different types of AST nodes.
+    * @param acceptor An [[Acceptor]] that defines the criteria for whether an AST node should be visited.
     */
   def visitRoot(root: Root, consumer: Consumer, acceptor: Acceptor): Unit = {
 
@@ -69,7 +69,9 @@ object Visitor {
 
   private def visitEnum(enm: Enum)(implicit a: Acceptor, c: Consumer): Unit = {
     val Enum(_, ann, _, _, tparams, derives, cases, loc) = enm
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeEnum(enm)
 
@@ -81,7 +83,9 @@ object Visitor {
 
   private def visitDeriveList(derivations: Derivations)(implicit a: Acceptor, c: Consumer): Unit = {
     val Derivations(traits, loc) = derivations
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeDerivations(derivations)
 
@@ -90,42 +94,53 @@ object Visitor {
 
   private def visitDerive(derive: Derivation)(implicit a: Acceptor, c: Consumer): Unit = {
     val Derivation(_, loc) = derive
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeDerivation(derive)
   }
 
   private def visitCase(cse: Case)(implicit a: Acceptor, c: Consumer): Unit = {
     val Case(_, tpes, _, loc) = cse
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeCase(cse)
     tpes.foreach(visitType)
   }
 
   private def visitInstance(ins: Instance)(implicit a: Acceptor, c: Consumer): Unit = {
-    val Instance(_, ann, _, trt, _, tconstrs, assocs, defs, _, loc) = ins
-    if (!a.accept(loc)) { return }
+    val Instance(_, ann, _, trt, _, tconstrs, econstrs, assocs, defs, _, loc) = ins
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeInstance(ins)
 
     visitAnnotations(ann)
     visitTraitSymUse(trt)
     tconstrs.foreach(visitTraitConstraint)
+    econstrs.foreach(visitEqualityConstraint)
     assocs.foreach(visitAssocTypeDef)
     defs.foreach(visitDef)
   }
 
   private def visitTraitSymUse(symUse: TraitSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
     val TraitSymUse(_, loc) = symUse
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeTraitSymUse(symUse)
   }
 
   private def visitTraitConstraint(tc: TraitConstraint)(implicit a: Acceptor, c: Consumer): Unit = {
     val TraitConstraint(symUse, arg, loc) = tc
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeTraitConstraint(tc)
 
@@ -135,7 +150,9 @@ object Visitor {
 
   private def visitAssocTypeDef(tdefn: AssocTypeDef)(implicit a: Acceptor, c: Consumer): Unit = {
     val AssocTypeDef(_, _, symUse, arg, _, loc) = tdefn
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeAssocTypeDef(tdefn)
 
@@ -145,14 +162,18 @@ object Visitor {
 
   private def visitAssocTypeSymUse(symUse: AssocTypeSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
     val AssocTypeSymUse(_, loc) = symUse
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeAssocTypeSymUse(symUse)
   }
 
   private def visitSig(sig: Sig)(implicit a: Acceptor, c: Consumer): Unit = {
     val Sig(_, spec, exp, loc) = sig
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeSig(sig)
 
@@ -162,7 +183,9 @@ object Visitor {
 
   private def visitStruct(struct: Struct)(implicit a: Acceptor, c: Consumer): Unit = {
     val Struct(_, ann, _, _, tparams, _, fields, loc) = struct
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeStruct(struct)
 
@@ -173,7 +196,9 @@ object Visitor {
 
   private def visitStructField(field: StructField)(implicit a: Acceptor, c: Consumer): Unit = {
     val StructField(_, tpe, loc) = field
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeStructField(field)
 
@@ -182,7 +207,9 @@ object Visitor {
 
   private def visitTrait(t: Trait)(implicit a: Acceptor, c: Consumer): Unit = {
     val Trait(_, ann, _, _, tparam, superTraits, assocs, sigs, laws, loc) = t
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeTrait(t)
 
@@ -196,7 +223,9 @@ object Visitor {
 
   private def visitAssocTypeSig(assoc: AssocTypeSig)(implicit a: Acceptor, c: Consumer): Unit = {
     val AssocTypeSig(_, _, _, tparam, _, tpe, loc) = assoc
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeAssocTypeSig(assoc)
 
@@ -205,18 +234,23 @@ object Visitor {
   }
 
   private def visitEffect(eff: Effect)(implicit a: Acceptor, c: Consumer): Unit = {
-    val Effect(_, ann, _, _, ops, loc) = eff
-    if (!a.accept(loc)) { return }
+    val Effect(_, ann, _, _, tparams, ops, loc) = eff
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeEff(eff)
 
     visitAnnotations(ann)
+    tparams.foreach(visitTypeParam)
     ops.foreach(visitOp)
   }
 
   private def visitOp(op: Op)(implicit a: Acceptor, c: Consumer): Unit = {
     val Op(_, spec, loc) = op
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeOp(op)
 
@@ -225,7 +259,9 @@ object Visitor {
 
   private def visitDef(defn: Def)(implicit a: Acceptor, c: Consumer): Unit = {
     val Def(_, spec, exp, loc) = defn
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeDef(defn)
 
@@ -250,7 +286,9 @@ object Visitor {
 
   private def visitEqualityConstraint(ec: EqualityConstraint)(implicit a: Acceptor, c: Consumer): Unit = {
     val EqualityConstraint(symUse, tpe1, tpe2, loc) = ec
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeEqualityConstraint(ec)
 
@@ -261,7 +299,9 @@ object Visitor {
 
   private def visitTypeAlias(alias: TypeAlias)(implicit a: Acceptor, c: Consumer): Unit = {
     val TypeAlias(_, ann, _, _, tparams, tpe, loc) = alias
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeTypeAlias(alias)
 
@@ -272,13 +312,17 @@ object Visitor {
 
   private def visitTypeParam(tparam: TypeParam)(implicit a: Acceptor, c: Consumer): Unit = {
     val TypeParam(_, _, loc) = tparam
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeTypeParam(tparam)
   }
 
   private def visitExpr(expr: Expr)(implicit a: Acceptor, c: Consumer): Unit = {
-    if (!a.accept(expr.loc)) { return }
+    if (!a.accept(expr.loc)) {
+      return
+    }
 
     c.consumeExpr(expr)
 
@@ -309,6 +353,10 @@ object Visitor {
 
       case Expr.ApplyLocalDef(symUse, exps, _, _, _, _) =>
         visitLocalDefSymUse(symUse)
+        exps.foreach(visitExpr)
+
+      case Expr.ApplyOp(op, exps, _, _, _) =>
+        visitOpSymUse(op)
         exps.foreach(visitExpr)
 
       case Expr.ApplySig(symUse, exps, _, _, _, _) =>
@@ -412,7 +460,7 @@ object Visitor {
         visitExpr(exp3)
 
       case Expr.StructNew(_, fields, region, _, _, _) =>
-        fields.foreach{
+        fields.foreach {
           case (symUse, exp) =>
             visitStructFieldSymUse(symUse)
             visitExpr(exp)
@@ -475,10 +523,6 @@ object Visitor {
       case Expr.RunWith(exp1, exp2, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
-
-      case Expr.Do(op, exps, _, _, _) =>
-        visitOpSymUse(op)
-        exps.foreach(visitExpr)
 
       case Expr.InvokeConstructor(_, exps, _, _, _) =>
         exps.foreach(visitExpr)
@@ -544,7 +588,11 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.FixpointSolve(exp, _, _, _) =>
+      case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
+        exps.foreach(visitExpr)
+        visitPredicate(select)
+
+      case Expr.FixpointSolve(exp, _, _, _, _) =>
         visitExpr(exp)
 
       case Expr.FixpointFilter(_, exp, _, _, _) =>
@@ -561,49 +609,63 @@ object Visitor {
   }
 
   private def visitBinder(bnd: Binder)(implicit a: Acceptor, c: Consumer): Unit = {
-    if (!a.accept(bnd.sym.loc)) { return }
+    if (!a.accept(bnd.sym.loc)) {
+      return
+    }
 
     c.consumeBinder(bnd)
   }
 
   private def visitSigSymUse(symUse: SigSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
     val SigSymUse(_, loc) = symUse
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeSigSymUse(symUse)
   }
 
   private def visitLocalDefSymUse(symUse: LocalDefSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
     val LocalDefSymUse(_, loc) = symUse
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeLocalDefSym(symUse)
   }
 
   private def visitPredicateParam(pparam: PredicateParam)(implicit a: Acceptor, c: Consumer): Unit = {
     val PredicateParam(_, _, loc) = pparam
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumePredicateParam(pparam)
   }
 
   private def visitStructFieldSymUse(symUse: StructFieldSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
     val StructFieldSymUse(_, loc) = symUse
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeStructFieldSymUse(symUse)
   }
 
   private def visitEffectSymUse(effUse: EffectSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
     val EffectSymUse(_, qname) = effUse
-    if (!a.accept(qname.loc)) { return }
+    if (!a.accept(qname.loc)) {
+      return
+    }
 
     c.consumeEffectSymUse(effUse)
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit a: Acceptor, c: Consumer): Unit = {
     val JvmMethod(_, fparams, exp, retTpe, _, loc) = method
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeJvmMethod(method)
 
@@ -614,14 +676,18 @@ object Visitor {
 
   private def visitDefSymUse(symUse: DefSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
     val DefSymUse(_, loc) = symUse
-    if(!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeDefSymUse(symUse)
   }
 
   private def visitSelectChannelRule(rule: SelectChannelRule)(implicit a: Acceptor, c: Consumer): Unit = {
     val SelectChannelRule(bnd, chan, exp, loc) = rule
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeSelectChannelRule(rule)
 
@@ -632,7 +698,9 @@ object Visitor {
 
   private def visitFormalParam(fparam: FormalParam)(implicit a: Acceptor, c: Consumer): Unit = {
     val FormalParam(bnd, _, tpe, _, loc) = fparam
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeFormalParam(fparam)
 
@@ -642,7 +710,9 @@ object Visitor {
 
   private def visitHandlerRule(rule: HandlerRule)(implicit a: Acceptor, c: Consumer): Unit = {
     val HandlerRule(op, fparams, exp, loc) = rule
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeHandlerRule(rule)
 
@@ -653,14 +723,18 @@ object Visitor {
 
   private def visitOpSymUse(symUse: OpSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
     val OpSymUse(_, loc) = symUse
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeOpSymUse(symUse)
   }
 
   private def visitParYieldFrag(frag: ParYieldFragment)(implicit a: Acceptor, c: Consumer): Unit = {
     val ParYieldFragment(pat, exp, loc) = frag
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeParYieldFragment(frag)
 
@@ -670,7 +744,9 @@ object Visitor {
 
   private def visitMatchRule(rule: MatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
     val MatchRule(pat, guard, exp, loc) = rule
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeMatchRule(rule)
 
@@ -681,7 +757,9 @@ object Visitor {
 
   private def visitTypeMatchRule(rule: TypeMatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
     val TypeMatchRule(bnd, tpe, exp, loc) = rule
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeTypeMatchRule(rule)
 
@@ -691,7 +769,9 @@ object Visitor {
   }
 
   private def visitType(tpe: Type)(implicit a: Acceptor, c: Consumer): Unit = {
-    if (!a.accept(tpe.loc)) { return }
+    if (!a.accept(tpe.loc)) {
+      return
+    }
 
     c.consumeType(tpe)
 
@@ -716,14 +796,18 @@ object Visitor {
   }
 
   private def visitAnnotation(ann: Annotation)(implicit a: Acceptor, c: Consumer): Unit = {
-    if (!a.accept(ann.loc)) { return }
+    if (!a.accept(ann.loc)) {
+      return
+    }
 
     c.consumeAnnotation(ann)
   }
 
   private def visitCatchRule(rule: CatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
     val CatchRule(bnd, _, exp, loc) = rule
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeCatchRule(rule)
 
@@ -733,7 +817,9 @@ object Visitor {
 
   private def visitConstraint(cst: Constraint)(implicit a: Acceptor, c: Consumer): Unit = {
     val Constraint(cparams, head, body, loc) = cst
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeConstraint(cst)
 
@@ -744,7 +830,9 @@ object Visitor {
 
   private def visitConstraintParam(cparam: ConstraintParam)(implicit a: Acceptor, c: Consumer): Unit = {
     val ConstraintParam(bnd, _, loc) = cparam
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeConstraintParam(cparam)
 
@@ -752,43 +840,49 @@ object Visitor {
   }
 
   private def visitPredicate(p: Predicate)(implicit a: Acceptor, c: Consumer): Unit = {
-    if (!a.accept(p.loc)) { return }
+    if (!a.accept(p.loc)) {
+      return
+    }
 
     c.consumePredicate(p)
 
     p match {
-    	case Predicate.Head.Atom(_, _, terms, _, _) => terms.foreach(visitExpr)
-    	case Predicate.Body.Atom(_, _, _, _, terms, _, _) => terms.foreach(visitPattern)
-    	case Predicate.Body.Functional(_, exp, _) => visitExpr(exp)
-    	case Predicate.Body.Guard(exp, _) => visitExpr(exp)
+      case Predicate.Head.Atom(_, _, terms, _, _) => terms.foreach(visitExpr)
+      case Predicate.Body.Atom(_, _, _, _, terms, _, _) => terms.foreach(visitPattern)
+      case Predicate.Body.Functional(_, exp, _) => visitExpr(exp)
+      case Predicate.Body.Guard(exp, _) => visitExpr(exp)
     }
   }
 
   private def visitPattern(pat: Pattern)(implicit a: Acceptor, c: Consumer): Unit = {
-    if (!a.accept(pat.loc)) { return }
+    if (!a.accept(pat.loc)) {
+      return
+    }
 
     c.consumePattern(pat)
 
     pat match {
-    	case Wild(_, _) => ()
-    	case Var(varSym, _, _) => visitBinder(varSym)
-    	case Cst(_, _, _) => ()
-    	case Tag(sym, pats, _, _) =>
-    	  visitCaseSymUse(sym)
+      case Wild(_, _) => ()
+      case Var(bnd, _, _) => visitBinder(bnd)
+      case Cst(_, _, _) => ()
+      case Tag(sym, pats, _, _) =>
+        visitCaseSymUse(sym)
         pats.foreach(visitPattern)
-    	case Tuple(pats, _, _) =>
-    	  pats.foreach(visitPattern)
-    	case Record(pats, pat, _, _) =>
-    	  pats.foreach(visitRecordLabelPattern)
-    	  visitPattern(pat)
-    	case Pattern.Error(_, _) =>
+      case Tuple(pats, _, _) =>
+        pats.foreach(visitPattern)
+      case Record(pats, pat1, _, _) =>
+        pats.foreach(visitRecordLabelPattern)
+        visitPattern(pat1)
+      case Pattern.Error(_, _) =>
     }
   }
 
   private def visitRecordLabelPattern(pat: RecordLabelPattern)(implicit a: Acceptor, c: Consumer): Unit = {
     val RecordLabelPattern(_, p, _, loc) = pat
 
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
 
     c.consumeRecordLabelPattern(pat)
 
@@ -797,7 +891,9 @@ object Visitor {
 
   private def visitCaseSymUse(symUse: CaseSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
     val CaseSymUse(_, loc) = symUse
-    if (!a.accept(loc)) { return }
+    if (!a.accept(loc)) {
+      return
+    }
     c.consumeCaseSymUse(symUse)
   }
 
@@ -805,23 +901,29 @@ object Visitor {
     * Returns `true` if the position `pos` within the file given by path `uri` is contained within `loc`.
     * Returns `false` otherwise.
     *
-    * @param uri  the path of the file that `pos` is within.
-    * @param pos  the position that we want to know whether is within `loc`.
-    * @param loc  the `SourceLocation` that want to know if `pos` is within.
+    * @param uri the path of the file that `pos` is within.
+    * @param pos the position that we want to know whether is within `loc`.
+    * @param loc the `SourceLocation` that want to know if `pos` is within.
     * @return `true` if `pos` in file at path `uri` is within `loc`. `false` otherwise.
     */
   def inside(uri: String, pos: Position)(loc: SourceLocation): Boolean = {
     val sameSource = uri == loc.source.name
-    if (!sameSource) { return false }
+    if (!sameSource) {
+      return false
+    }
 
     val afterStart = loc.beginLine < pos.line ||
       (loc.beginLine == pos.line && loc.beginCol <= pos.character)
-    if (!afterStart) { return false }
+    if (!afterStart) {
+      return false
+    }
 
 
     val beforeEnd = pos.line < loc.endLine ||
       (pos.line == loc.endLine && pos.character < loc.endCol)
-    if (!beforeEnd) { return false }
+    if (!beforeEnd) {
+      return false
+    }
 
     true
   }

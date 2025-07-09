@@ -110,6 +110,8 @@ sealed trait TokenKind {
       case TokenKind.KeywordOr => "'or'"
       case TokenKind.KeywordOverride => "'override'"
       case TokenKind.KeywordPar => "'par'"
+      case TokenKind.KeywordPQuery => "'pquery'"
+      case TokenKind.KeywordPSolve => "'psolve'"
       case TokenKind.KeywordPub => "'pub'"
       case TokenKind.KeywordProject => "'project'"
       case TokenKind.KeywordQuery => "'query'"
@@ -267,6 +269,8 @@ sealed trait TokenKind {
     case TokenKind.KeywordOr => true
     case TokenKind.KeywordOverride => true
     case TokenKind.KeywordPar => true
+    case TokenKind.KeywordPQuery => true
+    case TokenKind.KeywordPSolve => true
     case TokenKind.KeywordPub => true
     case TokenKind.KeywordProject => true
     case TokenKind.KeywordQuery => true
@@ -516,6 +520,8 @@ sealed trait TokenKind {
          | TokenKind.KeywordOpenVariant
          | TokenKind.KeywordOpenVariantAs
          | TokenKind.KeywordPar
+         | TokenKind.KeywordPQuery
+         | TokenKind.KeywordPSolve
          | TokenKind.KeywordQuery
          | TokenKind.KeywordRegion
          | TokenKind.KeywordRun
@@ -1006,6 +1012,10 @@ object TokenKind {
   case object KeywordOverride extends TokenKind
 
   case object KeywordPar extends TokenKind
+
+  case object KeywordPQuery extends TokenKind
+
+  case object KeywordPSolve extends TokenKind
 
   case object KeywordPub extends TokenKind
 

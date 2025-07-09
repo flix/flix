@@ -36,6 +36,7 @@ sealed trait UnkindedType {
     case UnkindedType.Var(sym, _) => f(sym)
     case t: UnkindedType.Cst => t
     case t: UnkindedType.Enum => t
+    case t: UnkindedType.Effect => t
     case t: UnkindedType.Struct => t
     case t: UnkindedType.RestrictableEnum => t
     case t: UnkindedType.UnappliedAlias => t
@@ -84,6 +85,7 @@ sealed trait UnkindedType {
     case UnkindedType.Var(sym, _) => SortedSet(sym)
     case UnkindedType.Cst(_, _) => SortedSet.empty
     case UnkindedType.Enum(_, _) => SortedSet.empty
+    case UnkindedType.Effect(_, _) => SortedSet.empty
     case UnkindedType.Struct(_, _) => SortedSet.empty
     case UnkindedType.RestrictableEnum(_, _) => SortedSet.empty
     case UnkindedType.UnappliedAlias(_, _) => SortedSet.empty
@@ -137,6 +139,18 @@ object UnkindedType {
   case class Enum(sym: Symbol.EnumSym, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Enum(sym2, _) => sym == sym2
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(sym)
+  }
+
+  /**
+    * An unkinded effect.
+    */
+  case class Effect(sym: Symbol.EffSym, loc: SourceLocation) extends UnkindedType {
+    override def equals(that: Any): Boolean = that match {
+      case Effect(sym2, _) => sym == sym2
       case _ => false
     }
 
@@ -377,7 +391,7 @@ object UnkindedType {
     * Constructs the type a -> b \ IO
     */
   def mkIoArrow(a: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
-    val eff = Some(UnkindedType.Cst(TypeConstructor.Effect(Symbol.IO), loc))
+    val eff = Some(UnkindedType.Effect(Symbol.IO, loc))
     mkApply(UnkindedType.Arrow(eff, 2, loc), List(a, b), loc)
   }
 
@@ -424,26 +438,14 @@ object UnkindedType {
     * Construct a relation type with the given list of type arguments `ts0`.
     */
   def mkRelation(ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
-    val ts = ts0 match {
-      case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
-      case x :: Nil => x
-      case x :: xs => mkTuple(Nel(x, xs), loc)
-    }
-
-    Apply(UnkindedType.Cst(TypeConstructor.Relation, loc), ts, loc)
+    mkApply(Cst(TypeConstructor.Relation(ts0.length), loc), ts0, loc)
   }
 
   /**
     * Construct a lattice type with the given list of type arguments `ts0`.
     */
   def mkLattice(ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
-    val ts = ts0 match {
-      case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
-      case x :: Nil => x
-      case x :: xs => mkTuple(Nel(x, xs), loc)
-    }
-
-    Apply(UnkindedType.Cst(TypeConstructor.Lattice, loc), ts, loc)
+    mkApply(Cst(TypeConstructor.Lattice(ts0.length), loc), ts0, loc)
   }
 
   /**
@@ -462,25 +464,20 @@ object UnkindedType {
   def mkRestrictableEnum(sym: Symbol.RestrictableEnumSym, loc: SourceLocation): UnkindedType = UnkindedType.RestrictableEnum(sym, loc)
 
   /**
-    * Construct the effect type for the given symbol.
+    * Construct the effect type constructor for the given symbol.
     */
-  def mkEffect(sym: Symbol.EffectSym, loc: SourceLocation): UnkindedType = UnkindedType.Cst(TypeConstructor.Effect(sym), loc)
+  def mkEffect(sym: Symbol.EffSym, loc: SourceLocation): UnkindedType = UnkindedType.Effect(sym, loc)
 
   /**
     * Constructs a predicate type.
     */
-  def mkPredicate(den: Denotation, ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
+  def mkPredicate(den: Denotation, ts: List[UnkindedType], loc: SourceLocation): UnkindedType = {
     val tycon = den match {
-      case Denotation.Relational => UnkindedType.Cst(TypeConstructor.Relation, loc)
-      case Denotation.Latticenal => UnkindedType.Cst(TypeConstructor.Lattice, loc)
-    }
-    val ts = ts0 match {
-      case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
-      case x :: Nil => x
-      case x :: xs => UnkindedType.mkTuple(Nel(x, xs), loc)
+      case Denotation.Relational => UnkindedType.Cst(TypeConstructor.Relation(ts.length), loc)
+      case Denotation.Latticenal => UnkindedType.Cst(TypeConstructor.Lattice(ts.length), loc)
     }
 
-    UnkindedType.Apply(tycon, ts, loc)
+    UnkindedType.mkApply(tycon, ts, loc)
   }
 
   /**
@@ -536,6 +533,7 @@ object UnkindedType {
     case tpe: Var => tpe
     case tpe: Cst => tpe
     case tpe: Enum => tpe
+    case tpe: Effect => tpe
     case tpe: Struct => tpe
     case tpe: RestrictableEnum => tpe
     case tpe: UnkindedType.CaseSet => tpe

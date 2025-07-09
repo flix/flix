@@ -101,6 +101,10 @@ object EffectVerifier {
       val expected = Type.mkUnion(Type.eraseTopAliases(arrowTpe).arrowEffectType :: exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
+    case Expr.ApplyOp(op, exps, tpe, eff, loc) =>
+      exps.foreach(visitExp)
+      // TODO effect stuff
+      ()
     case Expr.ApplySig(_, exps, itpe, _, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(Type.eraseTopAliases(itpe).arrowEffectType :: exps.map(_.eff), loc)
@@ -297,10 +301,6 @@ object EffectVerifier {
       visitExp(exp2)
       // TODO effect stuff
       ()
-    case Expr.Do(op, exps, tpe, eff, loc) =>
-      exps.foreach(visitExp)
-      // TODO effect stuff
-      ()
     case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       // TODO Java stuff
@@ -378,7 +378,15 @@ object EffectVerifier {
       visitExp(exp2)
       // TODO ?
       ()
-    case Expr.FixpointSolve(exp, tpe, eff, loc) =>
+    case Expr.FixpointQueryWithProvenance(exps, select, withh, tpe1, eff1, loc1) =>
+      exps.foreach(visitExp)
+      select match {
+        case TypedAst.Predicate.Head.Atom(pred, den, terms, tpe2, loc2) =>
+          terms.foreach(visitExp)
+      }
+      // TODO ?
+      ()
+    case Expr.FixpointSolve(exp, tpe, eff, _, loc) =>
       visitExp(exp)
       // TODO ?
       ()

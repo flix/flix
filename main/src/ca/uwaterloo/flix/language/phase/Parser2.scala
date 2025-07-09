@@ -969,6 +969,9 @@ object Parser2 {
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
+      if (at(TokenKind.KeywordWhere)) {
+        equalityConstraints()
+      }
       if (at(TokenKind.CurlyL)) {
         expect(TokenKind.CurlyL)
         var continue = true
@@ -1676,9 +1679,11 @@ object Parser2 {
         case TokenKind.KeywordSelect => selectExpr()
         case TokenKind.KeywordSpawn => spawnExpr()
         case TokenKind.KeywordPar => parYieldExpr()
+        case TokenKind.KeywordPSolve => fixpointSolveExpr(isPSolve = true)
         case TokenKind.HashCurlyL => fixpointConstraintSetExpr()
         case TokenKind.HashParenL => fixpointLambdaExpr()
-        case TokenKind.KeywordSolve => fixpointSolveExpr()
+        case TokenKind.KeywordPQuery => fixpointPQueryExpr()
+        case TokenKind.KeywordSolve => fixpointSolveExpr(isPSolve = false)
         case TokenKind.KeywordInject => fixpointInjectExpr()
         case TokenKind.KeywordQuery => fixpointQueryExpr()
         case TokenKind.BuiltIn => intrinsicExpr()
@@ -2874,17 +2879,20 @@ object Parser2 {
       close(mark, TreeKind.Expr.FixpointLambda)
     }
 
-    private def fixpointSolveExpr()(implicit s: State): Mark.Closed = {
+    private def fixpointSolveExpr(isPSolve: Boolean)(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordSolve))
+      val expectedToken = if (isPSolve) TokenKind.KeywordPSolve else TokenKind.KeywordSolve
+      assert(at(expectedToken))
       val mark = open()
-      expect(TokenKind.KeywordSolve)
+      expect(expectedToken)
       expression()
       while (eat(TokenKind.Comma) && !eof()) {
         expression()
       }
 
-      if (eat(TokenKind.KeywordProject)) {
+      if (isPSolve) {
+        close(mark, TreeKind.Expr.FixpointSolveWithProvenance)
+      } else if (eat(TokenKind.KeywordProject)) {
         nameUnqualified(NAME_PREDICATE)
         while (eat(TokenKind.Comma) && !eof()) {
           nameUnqualified(NAME_PREDICATE)
@@ -2903,11 +2911,59 @@ object Parser2 {
         expression()
       }
       expect(TokenKind.KeywordInto)
-      nameUnqualified(NAME_PREDICATE)
+      predicateAndArity()
       while (eat(TokenKind.Comma) && !eof()) {
-        nameUnqualified(NAME_PREDICATE)
+        predicateAndArity()
       }
       close(mark, TreeKind.Expr.FixpointInject)
+    }
+
+    private def fixpointPQueryExpr()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      assert(at(TokenKind.KeywordPQuery))
+      val mark = open()
+      expect(TokenKind.KeywordPQuery)
+      expression()
+      while (eat(TokenKind.Comma) && !eof()) {
+        expression()
+      }
+      fixpointPQuerySelect()
+      fixpointPQueryWith()
+      close(mark, TreeKind.Expr.FixpointQueryWithProvenance)
+    }
+
+    private def fixpointPQuerySelect()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      assert(at(TokenKind.KeywordSelect))
+      val mark = open()
+      expect(TokenKind.KeywordSelect)
+      Predicate.head()
+      close(mark, TreeKind.Expr.FixpointSelect)
+    }
+
+    private def fixpointPQueryWith()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      assert(at(TokenKind.KeywordWith))
+      val mark = open()
+      expect(TokenKind.KeywordWith)
+      nth(0) match {
+        case TokenKind.CurlyL => zeroOrMore(
+          namedTokenSet = NamedTokenSet.FromKinds(NAME_PREDICATE),
+          getItem = () => nameUnqualified(NAME_PREDICATE),
+          checkForItem = NAME_PREDICATE.contains,
+          breakWhen = _.isRecoverExpr,
+          delimiterL = TokenKind.CurlyL,
+          delimiterR = TokenKind.CurlyR
+        )
+        case t => UnexpectedToken(
+          expected = NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)),
+          actual = Some(t),
+          sctx,
+          hint = Some("provide a list of predicates"),
+          loc = currentSourceLocation()
+        )
+      }
+      close(mark, TreeKind.Expr.FixpointWith)
     }
 
     private def fixpointQueryExpr()(implicit s: State): Mark.Closed = {
@@ -2968,6 +3024,19 @@ object Parser2 {
       expect(TokenKind.KeywordWhere)
       expression()
       close(mark, TreeKind.Expr.FixpointWhere)
+    }
+
+    private def predicateAndArity()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      val mark = open()
+      nameUnqualified(NAME_PREDICATE)
+
+      val hint = "provide a predicate arity such as: Pred/1"
+      // check for shape "/2"
+      expect(TokenKind.Slash, hint = Some(hint))
+      expect(TokenKind.LiteralInt, hint = Some(hint))
+
+      close(mark, TreeKind.PredicateAndArity)
     }
 
     private def intrinsicExpr()(implicit s: State): Mark.Closed = {

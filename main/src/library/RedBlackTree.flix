@@ -137,12 +137,10 @@ mod RedBlackTree {
     ///
     /// Returns the number of nodes in `t`.
     ///
-    pub def size(t: RedBlackTree[k, v]): Int32 =
-        def loop(tt, k) = match tt {
-            case Node(_, a, _, _, b) => loop(a, ks -> k(loop(b, ys -> ks + ys + 1)))
-            case _                   => k(0)
-        };
-        loop(t, identity)
+    pub def size(t: RedBlackTree[k, v]): Int32 = match t {
+        case Node(_, a, _, _, b) => size(a) + 1 + size(b)
+        case _                   => 0
+    }
 
     ///
     /// Returns the empty tree.
@@ -272,34 +270,34 @@ mod RedBlackTree {
     ///
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from left to right.
     ///
-    pub def findLeft(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
-        def loop(tt, sk) = match tt {
-            case Node(_, a, k, v, b) => loop(a, kl -> match kl {
-                case None => if (f(k, v)) Some((k, v)) else loop(b, kr -> match kr {
-                    case None => sk(None)
-                    case _    => kr
-                })
-                case _ => kl
-            })
-            case _ => sk(None)
-        };
-        loop(t, x -> checked_ecast(x))
+    pub def findLeft(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef = match t {
+        case Leaf                => None
+        case DoubleBlackLeaf     => None
+        case Node(_, a, k, v, b) => match findLeft(f, a) {
+            case Some((ka, va)) => Some((ka, va))
+            case None           =>
+                if (f(k, v))
+                    Some((k, v))
+                else
+                    findLeft(f, b)
+        }
+    }
 
     ///
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from right to left.
     ///
-    pub def findRight(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef =
-        def loop(tt, sk) = match tt {
-            case Node(_, a, k, v, b) => loop(b, kr -> match kr {
-                case None => if (f(k, v)) Some((k, v)) else loop(a, kl -> match kl {
-                    case None => sk(None)
-                    case _    => kl
-                })
-                case _ => kr
-            })
-            case _ => sk(None)
-        };
-        loop(t, x -> checked_ecast(x))
+    pub def findRight(f: (k, v) -> Bool \ ef, t: RedBlackTree[k, v]): Option[(k, v)] \ ef = match t {
+        case Leaf                => None
+        case DoubleBlackLeaf     => None
+        case Node(_, a, k, v, b) => match findRight(f, b) {
+            case Some((kb, vb)) => Some((kb, vb))
+            case None           =>
+                if (f(k, v))
+                    Some((k, v))
+                else
+                    findRight(f, a)
+        }
+    }
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `t` going from left to right.

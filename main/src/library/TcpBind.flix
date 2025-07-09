@@ -17,11 +17,11 @@
 ///
 /// The effect used to bind a TCP server.
 ///
-eff Tcp {
+eff TcpBind {
     def bind(ip: IpAddr, port: Int16): TcpServer
 }
 
-mod Tcp {
+mod TcpBind {
     use IoError.ErrorKind
     use IoError.IoError
 
@@ -31,20 +31,17 @@ mod Tcp {
     import java.net.ServerSocket
 
     ///
-    /// Handles the `Tcp` effect of the given function `f`.
+    /// Handles the `TcpBind` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Tcp` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `TcpBind` effect using the `Net` and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ ef - Tcp + {IO, Net} = x ->
+    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ ef - TcpBind + {IO, Net} = x ->
         run {
             Ok(f(x))
-        } with handler Tcp {
+        } with handler TcpBind {
             def bind(ip, port, resume) = {
                 try {
-                    let inet: InetAddress = region r {
-                        let bytes = IpAddr.toByteArray(r, ip);
-                        InetAddress.getByAddress(bytes)
-                    };
+                    let inet: InetAddress = InetAddress.getByAddress(IpAddr.toBytes(ip));
                     let maxQueueLength = 50;
                     let socket = new ServerSocket(Int16.toInt32(port), maxQueueLength, inet);
                     let server = TcpServer.TcpServer(socket);
@@ -57,10 +54,11 @@ mod Tcp {
         }
 
     ///
-    /// Runs the `Tcp` effect of the given function `f`.
+    /// Runs the `TcpBind` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Tcp` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `TcpBind` effect using the `Net` and `IO` effects.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - Tcp + {IO, Net} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - TcpBind + {IO, Net} = handle(f)()
 
 }
+

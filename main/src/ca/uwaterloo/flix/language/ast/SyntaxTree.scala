@@ -109,6 +109,8 @@ object SyntaxTree {
 
     case object ParameterList extends TreeKind
 
+    case object PredicateAndArity extends TreeKind
+
     case object QName extends TreeKind
 
     case object Root extends TreeKind
@@ -222,11 +224,17 @@ object SyntaxTree {
 
       case object FixpointQuery extends Expr
 
+      case object FixpointQueryWithProvenance extends Expr
+
       case object FixpointSelect extends Expr
 
       case object FixpointSolveWithProject extends Expr
 
+      case object FixpointSolveWithProvenance extends Expr
+
       case object FixpointWhere extends Expr
+
+      case object FixpointWith extends Expr
 
       case object ForApplicative extends Expr
 

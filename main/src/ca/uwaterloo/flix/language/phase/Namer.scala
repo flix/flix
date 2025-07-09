@@ -120,7 +120,7 @@ object Namer {
       val assocsAndSigs = assocs ++ sigs
       assocsAndSigs.foldLeft(table1)(tableDecl)
 
-    case inst@NamedAst.Declaration.Instance(_, _, _, clazz, _, _, _, _, _, ns, _) =>
+    case inst@NamedAst.Declaration.Instance(_, _, _, clazz, _, _, _, _, _, _, ns, _) =>
       addInstanceToTable(table0, ns, clazz.ident.name, inst)
 
     case NamedAst.Declaration.Sig(sym, _, _, _) =>
@@ -151,7 +151,7 @@ object Namer {
     case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
-    case NamedAst.Declaration.Effect(_, _, _, sym, ops, _) =>
+    case NamedAst.Declaration.Effect(_, _, _, sym, _, ops, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       ops.foldLeft(table1)(tableDecl)
 
@@ -472,13 +472,14 @@ object Namer {
     * Performs naming on the given instance `instance`.
     */
   private def visitInstance(instance: DesugaredAst.Declaration.Instance, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Instance = instance match {
-    case DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, loc) =>
+    case DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, econstrs, assocs, defs, loc) =>
       val tparams = getImplicitTypeParamsFromTypes(List(tpe))
       val t = visitType(tpe)
       val tcsts = tconstrs.map(visitTraitConstraint)
+      val ecsts = econstrs.map(visitEqualityConstraint)
       val ascs = assocs.map(visitAssocTypeDef)
       val ds = defs.map(visitDef(_, ns0, DefKind.Member))
-      NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, t, tcsts, ascs, ds, ns0.parts, loc)
+      NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, t, tcsts, ecsts, ascs, ds, ns0.parts, loc)
   }
 
   /**
@@ -563,20 +564,21 @@ object Namer {
     * Performs naming on the given effect `eff0`.
     */
   private def visitEffect(eff0: DesugaredAst.Declaration.Effect, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Effect = eff0 match {
-    case DesugaredAst.Declaration.Effect(doc, ann, mod0, ident, ops0, loc) =>
+    case DesugaredAst.Declaration.Effect(doc, ann, mod0, ident, tparams0, ops0, loc) =>
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
       val sym = Symbol.mkEffectSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
+      val tparams = visitExplicitTypeParams(tparams0)
       val ops = ops0.map(visitOp(_, ns0, sym))
-      NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc)
+      NamedAst.Declaration.Effect(doc, ann, mod, sym, tparams, ops, loc)
   }
 
   /**
     * Performs naming on the given effect operation `op0`.
     */
-  private def visitOp(op0: DesugaredAst.Declaration.Op, ns0: Name.NName, effSym: Symbol.EffectSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Op = op0 match {
+  private def visitOp(op0: DesugaredAst.Declaration.Op, ns0: Name.NName, effSym: Symbol.EffSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Op = op0 match {
     case DesugaredAst.Declaration.Op(doc, ann, mod0, ident, fparams, tpe, tconstrs, loc) =>
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
@@ -903,22 +905,27 @@ object Namer {
       val e2 = visitExp(exp2)
       NamedAst.Expr.FixpointMerge(e1, e2, loc)
 
-    case DesugaredAst.Expr.FixpointSolve(exp, loc) =>
+    case DesugaredAst.Expr.FixpointQueryWithProvenance(exps, select, withh, loc) =>
+      val es = exps.map(visitExp)
+      val s = visitHeadPredicate(select)
+      NamedAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
+
+    case DesugaredAst.Expr.FixpointSolve(exp, mode, loc) =>
       val e = visitExp(exp)
-      NamedAst.Expr.FixpointSolve(e, loc)
+      NamedAst.Expr.FixpointSolve(e, mode, loc)
 
     case DesugaredAst.Expr.FixpointFilter(ident, exp, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.FixpointFilter(ident, e, loc)
 
-    case DesugaredAst.Expr.FixpointInject(exp, pred, loc) =>
+    case DesugaredAst.Expr.FixpointInject(exp, pred, arity, loc) =>
       val e = visitExp(exp)
-      NamedAst.Expr.FixpointInject(e, pred, loc)
+      NamedAst.Expr.FixpointInject(e, pred, arity, loc)
 
-    case DesugaredAst.Expr.FixpointProject(pred, exp1, exp2, loc) =>
+    case DesugaredAst.Expr.FixpointProject(pred, arity, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      NamedAst.Expr.FixpointProject(pred, e1, e2, loc)
+      NamedAst.Expr.FixpointProject(pred, arity, e1, e2, loc)
 
     case DesugaredAst.Expr.Error(m) =>
       NamedAst.Expr.Error(m)
@@ -1473,13 +1480,13 @@ object Namer {
     case NamedAst.Declaration.StructField(_, sym, _, _) => sym.loc
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.loc
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) => sym.loc
-    case NamedAst.Declaration.Effect(_, _, _, sym, _, _) => sym.loc
+    case NamedAst.Declaration.Effect(_, _, _, sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Op(sym, _, _) => sym.loc
     case NamedAst.Declaration.Case(sym, _, _) => sym.loc
     case NamedAst.Declaration.RestrictableCase(sym, _, _) => sym.loc
     case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym.loc
     case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) => throw InternalCompilerException("Unexpected associated type definition", loc)
-    case NamedAst.Declaration.Instance(_, _, _, _, _, _, _, _, _, _, loc) => throw InternalCompilerException("Unexpected instance", loc)
+    case NamedAst.Declaration.Instance(_, _, _, _, _, _, _, _, _, _, _, loc) => throw InternalCompilerException("Unexpected instance", loc)
     case NamedAst.Declaration.Namespace(_, _, _, loc) => throw InternalCompilerException("Unexpected namespace", loc)
   }
 

@@ -119,7 +119,7 @@ object Purity {
     * Assumes that the given type is a well-formed formula without variables,
     * aliases, or associated types.
     */
-  def fromType(eff: Type)(implicit universe: Set[Symbol.EffectSym]): Purity = {
+  def fromType(eff: Type)(implicit universe: Set[Symbol.EffSym]): Purity = {
     evaluateFormula(eff) match {
       case set if set.isEmpty => Purity.Pure
       case set if set.forall(Symbol.isPrimitiveEff) => Purity.Impure
@@ -144,8 +144,8 @@ object Purity {
     * Print + IO == {Print, IO}
     * Univ & (!Print) == !Print
     */
-  private def evaluateFormula(f: Type)(implicit universe: Set[Symbol.EffectSym]): Set[Symbol.EffectSym] = f match {
-    case Type.Cst(TypeConstructor.Effect(sym), _) =>
+  private def evaluateFormula(f: Type)(implicit universe: Set[Symbol.EffSym]): Set[Symbol.EffSym] = f match {
+    case Type.Cst(TypeConstructor.Effect(sym, _), _) =>
       Set(sym)
     case Type.Cst(TypeConstructor.Pure, _) =>
       Set.empty

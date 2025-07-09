@@ -15,7 +15,7 @@ object TypedAstOps {
   /**
     * Returns the set of variable symbols bound by the given pattern `pat0`.
     */
-  def binds(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
+  private def binds(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
     case Pattern.Wild(_, _) => Map.empty
     case Pattern.Var(Binder(sym, _), tpe, _) => Map(sym -> tpe)
     case Pattern.Cst(_, _, _) => Map.empty
@@ -48,6 +48,7 @@ object TypedAstOps {
     case Expr.ApplyClo(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.ApplyDef(_, exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Expr.ApplyOp(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet + sym
     case Expr.Unary(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
@@ -90,7 +91,6 @@ object TypedAstOps {
     case Expr.Throw(exp, _, _, _) => sigSymsOf(exp)
     case Expr.Handler(_, rules, _, _, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.exp)).toSet
     case Expr.RunWith(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.Do(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.InvokeConstructor(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
     case Expr.InvokeMethod(_, exp, args, _, _, _) => sigSymsOf(exp) ++ args.flatMap(sigSymsOf)
     case Expr.InvokeStaticMethod(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
@@ -110,7 +110,8 @@ object TypedAstOps {
     case Expr.FixpointConstraintSet(_, _, _) => Set.empty
     case Expr.FixpointLambda(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointMerge(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.FixpointSolve(exp, _, _, _) => sigSymsOf(exp)
+    case Expr.FixpointQueryWithProvenance(exps, Head.Atom(_, _, terms, _, _), _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ terms.flatMap(sigSymsOf).toSet
+    case Expr.FixpointSolve(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointFilter(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointInject(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointProject(_, exp, _, _, _) => sigSymsOf(exp)
@@ -161,6 +162,9 @@ object TypedAstOps {
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => freeVars(exp) ++ acc
       }
+
+    case Expr.ApplyOp(_, exps, _, _, _) =>
+      exps.flatMap(freeVars).toMap
 
     case Expr.ApplySig(_, exps, _, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
@@ -315,9 +319,6 @@ object TypedAstOps {
     case Expr.RunWith(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expr.Do(_, exps, _, _, _) =>
-      exps.flatMap(freeVars).toMap
-
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       args.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => acc ++ freeVars(exp)
@@ -391,7 +392,12 @@ object TypedAstOps {
     case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expr.FixpointSolve(exp, _, _, _) =>
+    case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
+      exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        (acc, exp) => acc ++ freeVars(exp)
+      } ++ freeVars(select)
+
+    case Expr.FixpointSolve(exp, _, _, _, _) =>
       freeVars(exp)
 
     case Expr.FixpointFilter(_, exp, _, _, _) =>

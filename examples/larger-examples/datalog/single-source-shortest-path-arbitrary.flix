@@ -7,7 +7,7 @@ mod ShortestPathN {
     /// in the graph `g`.
     ///
     pub def ssspn(src: t, g: m[(t, Int32, t)]): Map[t, Vector[t]] \Foldable.Aef[m] with Foldable[m], Order[t] = {
-        let edges = inject g into Edge;
+        let edges = inject g into Edge/3;
         let rules = #{
             Reach(x, y; init(y, l, x)) :- Edge(x, l, y).
             Reach(x, z; cons(z, l, p)) :- Reach(x, y; p), Edge(y, l, z).
@@ -35,7 +35,7 @@ mod ShortestPathN {
             case (Bot, Bot)                 => Comparison.EqualTo
             case (Bot, _)                   => Comparison.LessThan
             case (_, Bot)                   => Comparison.GreaterThan
-            case (Path(list1, l1), Path(list2, l2)) => 
+            case (Path(list1, l1), Path(list2, l2)) =>
                 let comp1 = l1 <=> l2;
                 if(comp1 != Comparison.EqualTo) {
                     comp1

@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.errors.TypeError.MismatchedTypes
 import ca.uwaterloo.flix.util.{Options, Subeffecting}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -138,6 +139,48 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input = "def foo(): String = solve \"hello\""
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
+  }
+
+  test("MismatchedTypes.05") {
+    val input =
+      """
+        |trait A[a] {
+        |    type Typ
+        |    pub def foo(x: a): A.Typ[a]
+        |}
+        |
+        |enum Adapter[t, a, b](t, a -> b)
+        |
+        |instance A[Adapter[t, a, b]] with A[t] {
+        |    type Typ = b
+        |    pub def foo(adapter: Adapter[t, a, b]): b =
+        |        let Adapter.Adapter(x, f) = adapter;
+        |        f(A.foo(x))
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[MismatchedTypes](result)
+  }
+
+  test("MismatchedTypes.06") {
+    val input =
+      """
+        |trait A[a] {
+        |    type Typ
+        |    pub def foo(x: a): A.Typ[a]
+        |}
+        |
+        |enum Adapter[t, a, b](t, a -> b)
+        |
+        |instance A[Adapter[t, a, b]] with A[t] where A.Typ[t] ~ Int8 {
+        |    type Typ = b
+        |    pub def foo(adapter: Adapter[t, a, b]): b =
+        |        let Adapter.Adapter(x, f) = adapter;
+        |        f(A.foo(x))
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[MismatchedTypes](result)
   }
 
   test("TestOverApplied.01") {
@@ -1428,6 +1471,26 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.MissingTraitConstraint](result)
   }
 
+  test("TypeError.MissingConstraint.02") {
+    // missing constraint on A[t]
+    val input =
+      """
+        |trait A[a] {
+        |    type Typ
+        |    pub def foo(x: a): A.Typ[a]
+        |}
+        |
+        |enum Adapter[t, a, b](t, a -> b)
+        |
+        |instance A[Adapter[t, a, b]] where A.Typ[t] ~ Int8 {
+        |    type Typ = b
+        |    pub def foo(adapter: Adapter[t, a, b]): b = ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MissingTraitConstraint](result)
+  }
+
   test("TypeError.NewStruct.01") {
     val input =
       """
@@ -1648,6 +1711,23 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("TypeError.IllegalSpawn.01") {
+    val input =
+      """
+        |eff Ask {
+        |    pub def ask(): String
+        |}
+        |
+        |def foo(): Unit \ Ask =
+        |    region rc {
+        |        spawn Ask.ask() @ rc
+        |    }
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
   test("Subeffecting.Def.01") {
     val input =
       """
@@ -1731,5 +1811,254 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     rejectError[TypeError](result)
+  }
+
+  test("UndefinedLabel.01") {
+    val input =
+      """
+        |def foo(): Unit \ IO = {
+        |  let r: {x = Int32, y = Int32} = {x = 1};
+        |  println(r#x)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+  }
+
+  test("UndefinedLabel.02") {
+    val input =
+      """
+        |def foo(): Unit \ IO = {
+        |  let r: {x = Int32, y = Int32} = {y = 2};
+        |  println(r#x)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+  }
+
+  test("UndefinedLabel.03") {
+    val input =
+      """
+        |def foo(): Unit \ IO = {
+        |  let r: {x = Int32, x = String} = {x = 1};
+        |  println(r#x)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+  }
+
+  test("UndefinedLabel.04") {
+    val input =
+      """
+        |def foo(r: {x = Int32, y = Int32}): Unit \ IO = {
+        |  println(r#x)
+        |}
+        |
+        |def bar(): Unit \ IO = {
+        |  foo({x = 42})
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+  }
+
+  test("UndefinedLabel.05") {
+    val input =
+      """
+        |def foo(r: {x = Int32, y = Int32}): Unit \ IO = {
+        |  println(r#x)
+        |}
+        |
+        |def bar(): Unit \ IO = {
+        |  foo({y = 42})
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+  }
+
+  test("UndefinedLabel.06") {
+    val input =
+      """
+        |def foo(r: {x = Int32, x = String}): Unit \ IO = {
+        |  println(r#x)
+        |}
+        |
+        |def bar(): Unit \ IO = {
+        |  foo({x = 42})
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+  }
+
+  test("ExtraLabel.01") {
+    val input =
+      """
+        |def foo(): Unit \ IO = {
+        |  let r: {x = Int32, y = Int32} = {x = 1, y = 2, z = 3};
+        |  println(r#x)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("ExtraLabel.02") {
+    val input =
+      """
+        |def foo(): Unit \ IO = {
+        |  let r: {x = Int32, y = Int32} = {w = 0, x = 1, y = 2, z = 3};
+        |  println(r#x)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("ExtraLabel.03") {
+    val input =
+      """
+        |def foo(): Unit \ IO = {
+        |  let r: {x = Int32, y = Int32} = {x = 1, y = 2, z = 3, z = "foo"};
+        |  println(r#x)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("ExtraLabel.04") {
+    val input =
+      """
+        |def foo(r: {x = Int32, y = Int32}): Unit \ IO = {
+        |  println(r#x)
+        |}
+        |
+        |def bar(): Unit \ IO = {
+        |  foo({x = 1, y = 2, z = 3})
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("ExtraLabel.05") {
+    val input =
+      """
+        |def foo(r: {x = Int32, y = Int32}): Unit \ IO = {
+        |  println(r#x)
+        |}
+        |
+        |def bar(): Unit \ IO = {
+        |  foo({w = 0, x = 1, y = 2, z = 3})
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("ExtraLabel.06") {
+    val input =
+      """
+        |def foo(r: {x = Int32, y = Int32}): Unit \ IO = {
+        |  println(r#x)
+        |}
+        |
+        |def bar(): Unit \ IO = {
+        |  foo({x = 1, y = 2, z = 3, z = "foo"})
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("UndefinedAndExtraLabel.01") {
+    val input =
+      """
+        |def foo(): Unit \ IO = {
+        |  let r: {x = Int32, y = Int32} = {x = 1, z = 3};
+        |  println(r#x)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("UndefinedAndExtraLabel.02") {
+    val input =
+      """
+        |def foo(): Unit \ IO = {
+        |  let r: {x = Int32, y = Int32} = {w = 0, z = 3};
+        |  println(r#x)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("UndefinedAndExtraLabel.03") {
+    val input =
+      """
+        |def foo(): Unit \ IO = {
+        |  let r: {x = Int32, x = String} = {x = 1, z = 3, z = "foo"};
+        |  println(r#x)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("UndefinedAndExtraLabel.04") {
+    val input =
+      """
+        |def foo(r: {x = Int32, y = Int32}): Unit \ IO = {
+        |  println(r#x)
+        |}
+        |
+        |def bar(): Unit \ IO = {
+        |  foo({x = 1, z = 3})
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("UndefinedAndExtraLabel.05") {
+    val input =
+      """
+        |def foo(r: {x = Int32, y = Int32}): Unit \ IO = {
+        |  println(r#x)
+        |}
+        |
+        |def bar(): Unit \ IO = {
+        |  foo({w = 0, z = 3})
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+    expectError[TypeError.ExtraLabel](result)
+  }
+
+  test("UndefinedAndExtraLabel.06") {
+    val input =
+      """
+        |def foo(r: {x = Int32, x = String}): Unit \ IO = {
+        |  println(r#x)
+        |}
+        |
+        |def bar(): Unit \ IO = {
+        |  foo({x = 1, z = 3, z = "foo"})
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedLabel](result)
+    expectError[TypeError.ExtraLabel](result)
   }
 }
