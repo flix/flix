@@ -35,29 +35,6 @@ mod Fixpoint3.Interpreter {
     type alias Tuple = Vector[Int64]
 
     ///
-    /// The number of times the interpreter can recursively split a `RelOp.Search` into 
-    /// smaller workloads for threads running in parallel.
-    ///
-    /// Consider the program:
-    /// ```
-    /// search a ∈ A do
-    ///     search b ∈ B do
-    ///         search c ∈ C do
-    ///             ...
-    ///         end
-    ///     end
-    /// end
-    /// ```
-    /// Spawning `k` threads in every layer with a `RelOp.Search`s undesirable, since this 
-    /// leads to `k^d` threads for a nesting of depth `d`. Therefore, the interpreter is 
-    /// limited to only spawn threads for the `MaxParallelNesting` highest `search` `RelOp`s.
-    ///
-    /// For the example, if we allow a maximum of 2 parallel nestings, we would not spawn
-    /// threads when evaluating `search c ∈ C do`.
-    ///
-    type alias MaxParallelNesting = Int32
-
-    ///
     /// A mutable tuple that can be used to search a relation.
     ///
     /// Consider the program:
@@ -69,7 +46,7 @@ mod Fixpoint3.Interpreter {
     /// end
     /// ```
     /// After each `a` is met, the `SearchTuple` for `b` is updated. Assuming `B` has arity
-    /// 2, the `SearchTuple`s for `a[1]=3` would be `[Int64.MinValue, 3]` and 
+    /// 2, the `SearchTuple`s for `a[1]=3` would be `[Int64.MinValue, 3]` and
     /// `[Int64.MaxValue, 3]`, indicating that we want tuples where the second value is 3.
     ///
     type alias SearchTuple[r: Region] = Array[Int64, r]
@@ -106,7 +83,7 @@ mod Fixpoint3.Interpreter {
     )
 
     ///
-    /// A `Context` contains all knowledge the Interpreter needs/uses while executing a 
+    /// A `Context` contains all knowledge the Interpreter needs/uses while executing a
     /// RAM program.
     ///
     /// The first value is an array of the current indexes for the relations. For the second
@@ -161,16 +138,6 @@ mod Fixpoint3.Interpreter {
     ///
     @Internal
     pub def interpret(rc: Region[r], withProv: Bool, input: (RamProgram, Boxing[r])): (Database[r], Predicates) \ r =
-        interpretWithInput(rc, withProv, input)
-
-    ///
-    /// Executes the `RamProgram` in `fst(input)` using the `Boxing` in `snd(input)`.
-    ///
-    def interpretWithInput(
-        rc: Region[r],
-        withProv: Bool,
-        input: (RamProgram, Boxing[r])
-    ): (Database[r], Predicates) \ r =
         let (program, boxing) = input;
         // Create `Indexes` from `program`.
         let RamProgram.Program(_, facts, _, (indexMap, posMap), _, _) = program;
@@ -193,7 +160,7 @@ mod Fixpoint3.Interpreter {
         interpretWithDatabase(rc, indexes, boxing, withProv, program)
 
     ///
-    /// Executes `program` using `boxing` as `Boxing` information and  `db` as initial 
+    /// Executes `program` using `boxing` as `Boxing` information and  `db` as initial
     /// `Indexes`.
     ///
     def interpretWithDatabase(
@@ -221,7 +188,7 @@ mod Fixpoint3.Interpreter {
     ///
     /// Transforms `db` into `Database`.
     ///
-    /// For all `RelSym`, some `Index` for relation is selected and all values are boxed 
+    /// For all `RelSym`, some `Index` for relation is selected and all values are boxed
     /// and copied to a `MutMap`.
     ///
     def marshallDb(rc: Region[r], db: Indexes[r], boxing: Boxing[r], indexPos: Map[(RelSym, Int32), Int32], predTrack: Predicates, boxingIndexes: RamIdToPos, withProv: Bool): Database[r] \ r =
@@ -262,7 +229,7 @@ mod Fixpoint3.Interpreter {
     def evalStmt(
         rc: Region[r],
         ctx: Context[r],
-        parLevel: MaxParallelNesting,
+        parLevel: Int32,
         stmt: RamStmt
     ): Unit \ r = match stmt {
         case RamStmt.Insert(relOp) =>
@@ -324,7 +291,7 @@ mod Fixpoint3.Interpreter {
     ///
     /// Purges and swaps of indexes in `db` cannot happen.
     ///
-    def evalOp(rc: Region[r], ctx: Context[r], parLevel: MaxParallelNesting, op: RelOp): Unit \ r =
+    def evalOp(rc: Region[r], ctx: Context[r], parLevel: Int32, op: RelOp): Unit \ r =
         let (db, env, boxing) = ctx;
         match op {
             case RelOp.Search(tuplePos, searchIndex, _, Relational, writes, body) =>
@@ -459,7 +426,7 @@ mod Fixpoint3.Interpreter {
     ///
     /// Assumes exclusive access to `ctx`.
     ///
-    /// `body` is the body of the `Search` or `Query`. `writes` is a vector of writes to 
+    /// `body` is the body of the `Search` or `Query`. `writes` is a vector of writes to
     /// `SearchTuple`s to be performed. See `bindTuple`.
     ///
     def evalSearchOrQueryOp(
@@ -468,7 +435,7 @@ mod Fixpoint3.Interpreter {
         writes: Vector[WriteTuple],
         body: RelOp,
         ctx: Context[r],
-        parLevel: MaxParallelNesting,
+        parLevel: Int32,
         t: Tuple,
         _: Boxed
     ): Unit \ r =
@@ -483,7 +450,7 @@ mod Fixpoint3.Interpreter {
     ///
     /// Should only be used when new threads are being spawned.
     ///
-    /// `body` is the body of the `Search` or `Query`. `writes` is a vector of writes to 
+    /// `body` is the body of the `Search` or `Query`. `writes` is a vector of writes to
     /// `SearchTuple`s to be performed. See `bindTuple`.
     ///
     /// `ignored` is due to the `forEach` method on `BPlusTree`s, which gives key-value
@@ -495,7 +462,7 @@ mod Fixpoint3.Interpreter {
         writes: Vector[WriteTuple],
         body: RelOp,
         ctx: Context[r],
-        parLevel: MaxParallelNesting,
+        parLevel: Int32,
         t: Tuple,
         ignored: Boxed
     ): Unit \ r =
@@ -507,7 +474,7 @@ mod Fixpoint3.Interpreter {
     ///
     /// Assumes exclusive access to `ctx`.
     ///
-    /// `body` is the body of the `Search` or `Query`. `writes` is a vector of writes to 
+    /// `body` is the body of the `Search` or `Query`. `writes` is a vector of writes to
     /// `SearchTuple`s to be performed. See `bindTuple`.
     ///
     def evalSearchOrQueryOpLattice(
@@ -520,7 +487,7 @@ mod Fixpoint3.Interpreter {
         writes: Vector[WriteTuple],
         body: RelOp,
         ctx: Context[r],
-        parLevel: MaxParallelNesting,
+        parLevel: Int32,
         t: Tuple,
         l: Boxed
     ): Unit \ r =
@@ -560,7 +527,7 @@ mod Fixpoint3.Interpreter {
         writes: Vector[WriteTuple],
         body: RelOp,
         ctx: Context[r],
-        parLevel: MaxParallelNesting,
+        parLevel: Int32,
         t: Tuple,
         l: Boxed
     ): Unit \ r =
