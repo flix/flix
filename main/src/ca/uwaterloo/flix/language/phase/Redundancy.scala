@@ -724,11 +724,11 @@ object Redundancy {
           val env1 = env0 ++ syms
           val usedBody = visitExp(body, env1, rc)
           syms.zip(shadowedFparamVars).foldLeft(acc ++ usedBody) {
-            case (acc, (s, shadow)) =>
+            case (acc1, (s, shadow)) =>
               if (deadVarSym(s, usedBody)) {
-                acc ++ shadow + UnusedVarSym(s)
+                acc1 ++ shadow + UnusedVarSym(s)
               } else {
-                acc ++ shadow
+                acc1 ++ shadow
               }
           }
       }

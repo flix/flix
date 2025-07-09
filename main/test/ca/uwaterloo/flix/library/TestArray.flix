@@ -5153,6 +5153,55 @@ mod TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // copy                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def copy01(): Bool = region rc {
+        Array.copy(rc, Array#{true, false, true} @ rc) `sameElements` Array#{true, false, true} @ rc
+    }
+
+    @test
+    def copy02(): Bool = region rc {
+        Array.copy(rc, Array#{'a', 'b', 'c'} @ rc) `sameElements` Array#{'a', 'b', 'c'} @ rc
+    }
+
+    @test
+    def copy03(): Bool = region rc {
+        Array.copy(rc, Array#{1.0f32, 2.0f32, 3.0f32} @ rc) `sameElements` Array#{1.0f32, 2.0f32, 3.0f32} @ rc
+    }
+
+    @test
+    def copy04(): Bool = region rc {
+        Array.copy(rc, Array#{1.0f64, 2.0f64, 3.0f64} @ rc) `sameElements` Array#{1.0f64, 2.0f64, 3.0f64} @ rc
+    }
+
+    @test
+    def copy05(): Bool = region rc {
+        Array.copy(rc, Array#{1i8, 2i8, 3i8} @ rc) `sameElements` Array#{1i8, 2i8, 3i8} @ rc
+    }
+
+    @test
+    def copy06(): Bool = region rc {
+        Array.copy(rc, Array#{1i16, 2i16, 3i16} @ rc) `sameElements` Array#{1i16, 2i16, 3i16} @ rc
+    }
+
+    @test
+    def copy07(): Bool = region rc {
+        Array.copy(rc, Array#{1, 2, 3} @ rc) `sameElements` Array#{1, 2, 3} @ rc
+    }
+
+    @test
+    def copy08(): Bool = region rc {
+        Array.copy(rc, Array#{1i64, 2i64, 3i64} @ rc) `sameElements` Array#{1i64, 2i64, 3i64} @ rc
+    }
+
+    @test
+    def copy09(): Bool = region rc {
+        Array.copy(rc, Array#{Some(1), Some(2), None} @ rc) `sameElements` Array#{Some(1), Some(2), None} @ rc
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // copyOfRange                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
