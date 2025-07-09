@@ -35,9 +35,10 @@ mod Fixpoint3.Interpreter {
     type alias Tuple = Vector[Int64]
 
     ///
-    /// The number of times the interpreter can branch recursively on a `RelOp.Search`.
+    /// The number of times the interpreter can recursively split a `RelOp.Search` into 
+    /// smaller workloads for threads running in parallel.
     ///
-    /// For example, given:
+    /// Consider the program:
     /// ```
     /// search a ∈ A do
     ///     search b ∈ B do
@@ -47,19 +48,19 @@ mod Fixpoint3.Interpreter {
     ///     end
     /// end
     /// ```
-    /// We do not want to spawn `k` threads in every layer with a `search`, as this would
-    /// lead to `k^d` threads for a nesting of depth `d`. We therefore limit the interpreter
-    /// to only spawn threads for the `AllowedBranches` highest `search` `RelOp`s.
+    /// Spawning `k` threads in every layer with a `RelOp.Search`s undesirable, since this 
+    /// leads to `k^d` threads for a nesting of depth `d`. Therefore, the interpreter is 
+    /// limited to only spawn threads for the `MaxParallelNesting` highest `search` `RelOp`s.
     ///
-    /// For the example if we allow 2 branches we would not spawn threads for when evaluating
-    /// `search c ∈ C do`.
+    /// For the example, if we allow a maximum of 2 parallel nestings, we would not spawn
+    /// threads when evaluating `search c ∈ C do`.
     ///
-    type alias AllowedBranches = Int32
+    type alias MaxParallelNesting = Int32
 
     ///
     /// A mutable tuple that can be used to search a relation.
     ///
-    /// Consider
+    /// Consider the program:
     /// ```
     /// search a ∈ A do
     ///     search b ∈ B | b[0] = a[1] do
@@ -67,10 +68,9 @@ mod Fixpoint3.Interpreter {
     ///     end
     /// end
     /// ```
-    /// After each `a` is met the `SearchTuple` for `b` is updated. Assuming `B`
-    /// has arity `2` the `SearchTuple`s for `a[1]=3` would be `[Int64.MinValue, 3]`
-    /// and `[Int64.MaxValue, 3]`, indicating that we want tuples where the second
-    /// value is `3`.
+    /// After each `a` is met, the `SearchTuple` for `b` is updated. Assuming `B` has arity
+    /// 2, the `SearchTuple`s for `a[1]=3` would be `[Int64.MinValue, 3]` and 
+    /// `[Int64.MaxValue, 3]`, indicating that we want tuples where the second value is 3.
     ///
     type alias SearchTuple[r: Region] = Array[Int64, r]
 
@@ -80,14 +80,13 @@ mod Fixpoint3.Interpreter {
     type alias Index[r: Region] = BPlusTree[Tuple, Boxed, r]
 
     ///
-    /// The indexes to be used in the program.
+    /// The indexes used to store relations in the program.
     ///
     type alias Indexes[r: Region] = Array[Index[r], r]
 
     ///
-    /// The `IDB` or result as it is exposed to the Solver. It simply
-    /// maps `RelSym` to an `Index` which uses `MutMap` instead of a
-    /// `BPlusTree`.
+    /// The `IDB` or result as it is exposed to the Solver. It maps `RelSym` to an `Index`,
+    /// which uses `MutMap` instead of a `BPlusTree`.
     ///
     @Internal
     pub type alias Database[r: Region] = MutMap[RelSym, MutMap[Vector[Boxed], Boxed, r], r]
@@ -96,8 +95,8 @@ mod Fixpoint3.Interpreter {
     /// A `SearchEnv` contains the dynamic information about the state of the Interpreter.
     ///
     /// The first 2 values contain information about which `SearchTuple` should be used by
-    /// `Query` statements. The third value contains the current tuple of the bound `RowVar`'s
-    /// The fourth contains the current lattice values of the bound `RowVar`'s.
+    /// `Query` `RelOp`s. The third value contains the current tuple of the bound `RowVar`s.
+    /// The fourth contains the current lattice values of the bound `RowVar`s.
     ///
     type alias SearchEnv[r: Region] = (
         Vector[SearchTuple[r]],
@@ -107,11 +106,12 @@ mod Fixpoint3.Interpreter {
     )
 
     ///
-    /// A `Context` contains all knowledge the Interpreter needs/uses while executing a RAM program.
+    /// A `Context` contains all knowledge the Interpreter needs/uses while executing a 
+    /// RAM program.
     ///
-    /// The first value is an array of the current indexes for the relations. The second is described above.
-    /// The third is information relating to translating to/from the `Int64` used to represent the `Boxed`
-    /// values.
+    /// The first value is an array of the current indexes for the relations. For the second
+    /// see `SearchEnv`. The third is information relating to translating to/from the
+    /// `Int64` used to represent the `Boxed` values.
     ///
     type alias Context[r: Region] = (
         Indexes[r],
@@ -132,7 +132,7 @@ mod Fixpoint3.Interpreter {
         Array.put(index, pos, indexes)
 
     ///
-    /// Returns an `Index` in region `rc`, for `relSym`, using `search` as order and
+    /// Returns an `Index` for `relSym` in region `rc` using `search` as sorting order and
     /// initialized with `tuples`.
     ///
     def mkIndex(
@@ -173,30 +173,28 @@ mod Fixpoint3.Interpreter {
     ): (Database[r], Predicates) \ r =
         let (program, boxing) = input;
         // Create `Indexes` from `program`.
-        let indexes = match program {
-            case RamProgram.Program(_, facts, _, (indexMap, posMap), _, _) =>
-                let indexNum = match Map.maximumValue(posMap) {
-                    case None => 0
-                    case Some((_, v)) => v + 1
-                };
-                let indexes = Array.empty(rc, indexNum);
-                indexMap |>
-                Map.forEach(relSym -> searches -> {
-                    let tuples = Map.getWithDefault(relSym, Vector#{}, facts);
-                    searches |> Vector.forEachWithIndex(num -> search -> {
-                        let pos = match Map.get((relSym, num), posMap) {
-                            case Some(v) => v
-                            case None => bug!("In Fixpoint.Interpreter.interpretWithInput: ${relSym} has no index!")
-                        };
-                        storeIndex(mkIndex(rc, relSym, search, tuples), pos, indexes)
-                    })
-                });
-                indexes
+        let RamProgram.Program(_, facts, _, (indexMap, posMap), _, _) = program;
+        let indexNum = match Map.maximumValue(posMap) {
+            case None => 0
+            case Some((_, v)) => v + 1
         };
+        let indexes = Array.empty(rc, indexNum);
+        indexMap |>
+        Map.forEach(relSym -> searches -> {
+            let tuples = Map.getWithDefault(relSym, Vector#{}, facts);
+            searches |> Vector.forEachWithIndex(num -> search -> {
+                let pos = match Map.get((relSym, num), posMap) {
+                    case Some(v) => v
+                    case None => bug!("In Fixpoint.Interpreter.interpretWithInput: ${relSym} has no index!")
+                };
+                storeIndex(mkIndex(rc, relSym, search, tuples), pos, indexes)
+            })
+        });
         interpretWithDatabase(rc, indexes, boxing, withProv, program)
 
     ///
-    /// Executes `program` using `boxing` as `Boxing` information, `db` as initial `Indexes`.
+    /// Executes `program` using `boxing` as `Boxing` information and  `db` as initial 
+    /// `Indexes`.
     ///
     def interpretWithDatabase(
         rc: Region[r],
@@ -223,7 +221,8 @@ mod Fixpoint3.Interpreter {
     ///
     /// Transforms `db` into `Database`.
     ///
-    /// For all `RelSym` some `Index` for relation is selected and all values are boxed and copied to a `MutMap`.
+    /// For all `RelSym`, some `Index` for relation is selected and all values are boxed 
+    /// and copied to a `MutMap`.
     ///
     def marshallDb(rc: Region[r], db: Indexes[r], boxing: Boxing[r], indexPos: Map[(RelSym, Int32), Int32], predTrack: Predicates, boxingIndexes: RamIdToPos, withProv: Bool): Database[r] \ r =
         let res = MutMap.empty(rc);
@@ -231,7 +230,7 @@ mod Fixpoint3.Interpreter {
         List.forEach(relSym -> {
             let innerMap = MutMap.empty(rc);
             // If we are doing provenance computations we need to also rebox the annotations.
-            // Since there are `2` annotations we add `2` in this case.
+            // Since there are 2 annotations we add 2 in this case.
             let usedArity =
                 if (withProv) arityOfNonLat(relSym) + 2
                 else arityOfNonLat(relSym);
@@ -249,10 +248,10 @@ mod Fixpoint3.Interpreter {
         res
 
     ///
-    /// Evaluate `stmt`, under `ctx` with branching/spawning threads only being allowed in
-    /// the `parLevel` next `RelOp.Search`.
+    /// Evaluate `stmt` under `ctx` with thread spawning only being allowed in the next
+    /// `parLevel` `RelOp.Search`s.
     ///
-    /// For `ctx = (db, env, boxing)` the following changes can happen:
+    /// For `ctx = (db, env, boxing)`, the following changes can happen:
     ///
     ///     1. We can discover and record a previously unknown type in `boxing`.
     ///     2. We can add a new binding between a `BoxedObject` and an `Int64` in `boxing`.
@@ -263,7 +262,7 @@ mod Fixpoint3.Interpreter {
     def evalStmt(
         rc: Region[r],
         ctx: Context[r],
-        parLevel: AllowedBranches,
+        parLevel: MaxParallelNesting,
         stmt: RamStmt
     ): Unit \ r = match stmt {
         case RamStmt.Insert(relOp) =>
@@ -313,19 +312,19 @@ mod Fixpoint3.Interpreter {
     }
 
     ///
-    /// Evaluates `op`, under `ctx` with branching/spawning threads only being allowed in
-    /// the `parLevel` next `RelOp.Search`.
+    /// Evaluates `op` under `ctx` with thread spawning only being allowed in the next
+    /// `parLevel` `RelOp.Search`s.
     ///
-    /// For `ctx = (db, env, boxing)` the following changes can happen:
+    /// For `ctx = (db, env, boxing)`, the following changes can happen:
     ///
     ///     1. We can discover and record a previously unknown type in `boxing`.
     ///     2. We can add a new binding between a `BoxedObject` and an `Int64` in `boxing`.
     ///     3. We can add a tuple to one of the indexes of `db`
     ///     4. We can bind a tuple to a new value changing `env`.
     ///
-    /// What cannot happen purge or and swap of indexes in `db`.
+    /// Purges and swaps of indexes in `db` cannot happen.
     ///
-    def evalOp(rc: Region[r], ctx: Context[r], parLevel: AllowedBranches, op: RelOp): Unit \ r =
+    def evalOp(rc: Region[r], ctx: Context[r], parLevel: MaxParallelNesting, op: RelOp): Unit \ r =
         let (db, env, boxing) = ctx;
         match op {
             case RelOp.Search(tuplePos, searchIndex, _, Relational, writes, body) =>
@@ -420,10 +419,10 @@ mod Fixpoint3.Interpreter {
     ///
     /// Handle `writes` using `t` as 'from' and writing to `minEnv` and `maxEnv`.
     ///
-    /// For `t=[8, 42]`, `writes=[(1, 2, 0)]` it would do the update `minEnv[2][0] = t[1]`.
+    /// For `t=[8, 42]` and `writes=[(1, 2, 0)]`, writes `minEnv[2][0] = t[1]`.
     /// The same update is done for `maxEnv`.
     ///
-    /// Lastly `t` is saved at `tuplePos` in `tupleEnv`, i.e. `tupleEnv[tuplePos] = t`.
+    /// Lastly, `t` is saved at `tuplePos` in `tupleEnv`, i.e. `tupleEnv[tuplePos] = t`.
     ///
     def bindTuple(
         t: Tuple,
@@ -442,26 +441,26 @@ mod Fixpoint3.Interpreter {
     ///
     /// Clones `ctx` for a concurrent thread.
     ///
-    /// After copying only `db` and `boxing` are shared.
+    /// After copying, only `db` and `boxing` are shared.
     ///
     def copyCtx(rc: Region[r], ctx: Context[r]): Context[r] \ r = {
         let (db, (minEnv, maxEnv, tupleEnv, latEnv), boxing) = ctx;
-        let threadMinEnv = minEnv |> Vector.map(x -> Array.copyOfRange(rc, 0, Array.length(x), x));
-        let threadMaxEnv = maxEnv |> Vector.map(x -> Array.copyOfRange(rc, 0, Array.length(x), x));
-        let threadTupleEnv = Array.copyOfRange(rc, 0, Array.length(tupleEnv), tupleEnv);
-        let threadLatEnv = Array.copyOfRange(rc, 0, Array.length(latEnv), latEnv);
+        let threadMinEnv = minEnv |> Vector.map(Array.copy(rc));
+        let threadMaxEnv = maxEnv |> Vector.map(Array.copy(rc));
+        let threadTupleEnv = Array.copy(rc, tupleEnv);
+        let threadLatEnv = Array.copy(rc, latEnv);
         let threadEnv = (threadMinEnv, threadMaxEnv, threadTupleEnv, threadLatEnv);
         (db, threadEnv, boxing)
     }
 
     ///
-    /// Binds the `RowVar` that has been assigned to index `tuplePos`
-    /// to the value `t`. Afterwards exectues `body`.
+    /// Binds the `RowVar`, which has been assigned to the index `tuplePos`, to the value
+    /// `t` and executes `body`.
     ///
     /// Assumes exclusive access to `ctx`.
     ///
-    /// `body` is the body of the `Search` or `Query`. `writes` is a vector of writes to `SearchTuple`'s
-    /// to be performed. See `bindTuple`.
+    /// `body` is the body of the `Search` or `Query`. `writes` is a vector of writes to 
+    /// `SearchTuple`s to be performed. See `bindTuple`.
     ///
     def evalSearchOrQueryOp(
         rc: Region[r],
@@ -469,7 +468,7 @@ mod Fixpoint3.Interpreter {
         writes: Vector[WriteTuple],
         body: RelOp,
         ctx: Context[r],
-        parLevel: AllowedBranches,
+        parLevel: MaxParallelNesting,
         t: Tuple,
         _: Boxed
     ): Unit \ r =
@@ -479,16 +478,16 @@ mod Fixpoint3.Interpreter {
         evalOp(rc, ctx, parLevel, body)
 
     ///
-    /// Copies `ctx` after which the `RowVar` that has been assigned to index `tuplePos`
-    /// is bound to the value `t`. Finally `body` is executed.
+    /// Copies `ctx`, binds the `RowVar` assigned to index `tuplePos` to the value `t`,
+    /// and executes `body`.
     ///
     /// Should only be used when new threads are being spawned.
     ///
-    /// `body` is the body of the `Search` or `Query`. `writes` is a vector of writes to `SearchTuple`'s
-    /// to be performed. See `bindTuple`.
+    /// `body` is the body of the `Search` or `Query`. `writes` is a vector of writes to 
+    /// `SearchTuple`s to be performed. See `bindTuple`.
     ///
-    /// `ignored` is because the `forEach` method on B+ trees gives the key-value pair, and we do not
-    /// care about the `Boxed.NoValue` that non-lattice relations have.
+    /// `ignored` is due to the `forEach` method on `BPlusTree`s, which gives key-value
+    /// pairs, and we do not care about the `Boxed.NoValue` that non-lattice relations have.
     ///
     def parEvalSearchOrQueryOp(
         rc: Region[r],
@@ -496,20 +495,20 @@ mod Fixpoint3.Interpreter {
         writes: Vector[WriteTuple],
         body: RelOp,
         ctx: Context[r],
-        parLevel: AllowedBranches,
+        parLevel: MaxParallelNesting,
         t: Tuple,
         ignored: Boxed
     ): Unit \ r =
         evalSearchOrQueryOp(rc, tuplePos, writes, body, copyCtx(rc, ctx), parLevel, t, ignored)
 
     ///
-    /// Binds the `RowVar` that has been assigned to index `tuplePos`
-    /// to the value `t` and lattice value `l`. Afterwards exectues `body`.
+    /// Binds the `RowVar` assigned to index `tuplePos` to the tuple value `t` and lattice value
+    /// `l` and executes `body`.
     ///
     /// Assumes exclusive access to `ctx`.
     ///
-    /// `body` is the body of the `Search` or `Query`. `writes` is a vector of writes to `SearchTuple`'s
-    /// to be performed. See `bindTuple`.
+    /// `body` is the body of the `Search` or `Query`. `writes` is a vector of writes to 
+    /// `SearchTuple`s to be performed. See `bindTuple`.
     ///
     def evalSearchOrQueryOpLattice(
         rc: Region[r],
@@ -521,7 +520,7 @@ mod Fixpoint3.Interpreter {
         writes: Vector[WriteTuple],
         body: RelOp,
         ctx: Context[r],
-        parLevel: AllowedBranches,
+        parLevel: MaxParallelNesting,
         t: Tuple,
         l: Boxed
     ): Unit \ r =
@@ -530,6 +529,7 @@ mod Fixpoint3.Interpreter {
         bindTuple(t, writes, minEnv, maxEnv, tuplePos, tupleEnv);
         // Recurse only if the meet is not bottom
         if (meetWith == tuplePos) {
+            // `l` cannot be `bot`, so just recurse.
             Array.put(l, tuplePos, latEnv);
             evalOp(rc, ctx, parLevel, body)
         } else {
@@ -542,13 +542,13 @@ mod Fixpoint3.Interpreter {
         }
 
     ///
-    /// Copies `ctx` after which the `RowVar` that has been assigned to index `tuplePos`
-    /// is bound to the value `t` and lattice value `l`. Finally `body` is executed.
+    /// Copies `ctx`, binds the `RowVar` assigned to index `tuplePos` to the tuple value `t`
+    /// and lattice value `l`, and executes `body`.
     ///
     /// Should only be used when new threads are being spawned.
     ///
-    /// `body` is the body of the `Search` or `Query`. `writes` is a vector of writes to `SearchTuple`'s
-    /// to be performed. See `bindTuple`.
+    /// `body` is the body of the `Search` or `Query`. `writes` is a vector of writes to
+    /// `SearchTuple`s to be performed. See `bindTuple`.
     ///
     def parEvalSearchOrQueryOpLattice(
         rc: Region[r],
@@ -560,14 +560,14 @@ mod Fixpoint3.Interpreter {
         writes: Vector[WriteTuple],
         body: RelOp,
         ctx: Context[r],
-        parLevel: AllowedBranches,
+        parLevel: MaxParallelNesting,
         t: Tuple,
         l: Boxed
     ): Unit \ r =
         evalSearchOrQueryOpLattice(rc, tuplePos, meetWith, bot, leq, glb, writes, body, copyCtx(rc, ctx), parLevel, t, l)
 
     ///
-    /// Evaluates `terms`, where the last value of `terms` will be ignored.
+    /// Evaluates `terms` except the last term.
     ///
     def evalTermsWithLat(ctx: Context[r], terms: Vector[RamTerm]): Tuple \ r =
         let (_, env, boxing) = ctx;
@@ -577,8 +577,7 @@ mod Fixpoint3.Interpreter {
         Vector.map(i -> evalT(Vector.get(i, terms)))
 
     ///
-    /// Evaluate `boolExp` under context `ctx` and returns true iff `BoolExp` `exp`
-    /// is `true`.
+    /// Evaluate `boolExp` under context `ctx` and returns true iff `boolExp` is `true`.
     ///
     def evalBoolExp(ctx: Context[r], boolExp: BoolExp): Bool \ r =
         let (db, env, boxing) = ctx;
