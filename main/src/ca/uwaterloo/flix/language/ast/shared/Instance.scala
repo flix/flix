@@ -21,4 +21,4 @@ import ca.uwaterloo.flix.language.ast.Type
 /**
   * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
   */
-case class Instance(tparams: List[KindedTypeVarSym], tpe: Type, tconstrs: List[TraitConstraint])
+case class Instance(tparams: List[KindedTypeVarSym], tpe: Type, tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint])

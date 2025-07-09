@@ -562,6 +562,48 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.OrphanInstance](result)
   }
 
+  test("Test.MissingEqConstraint.01") {
+    val input =
+      """
+        |enum Wrapper[t](t)
+        |
+        |trait A[t] {
+        |    type Aty: Type
+        |}
+        |
+        |trait B[t] with A[t]
+        |
+        |instance A[Wrapper[t]] with A[t] where A.Aty[t] ~ Int32 {
+        |    type Aty = Int32
+        |}
+        |
+        |instance B[Wrapper[t]] with A[t]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.MissingEqConstraint](result)
+  }
+
+  test("Test.MissingEqConstraint.02") {
+    val input =
+      """
+        |enum Wrapper[t](t)
+        |
+        |trait A[t] {
+        |    type Aty: Type
+        |}
+        |
+        |trait B[t] with A[t]
+        |
+        |instance A[Wrapper[t]] with A[t] where A.Aty[t] ~ Int32 {
+        |    type Aty = Int32
+        |}
+        |
+        |instance B[Wrapper[sadf]] with A[sadf] where A.Aty[sadf] ~ Char
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.MissingEqConstraint](result)
+  }
+
   test("Test.MissingSuperTraitInstance.01") {
     val input =
       """
