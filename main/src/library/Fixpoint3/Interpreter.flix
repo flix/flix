@@ -313,7 +313,8 @@ mod Fixpoint3.Interpreter {
     }
 
     ///
-    /// Evaluates `op`, under `ctx` with at most `parLevel` allowed new branches `RelOp.Search`.
+    /// Evaluates `op`, under `ctx` with branching/spawning threads only being allowed in
+    /// the `parLevel` next `RelOp.Search`.
     ///
     /// For `ctx = (db, env, boxing)` the following changes can happen:
     ///
