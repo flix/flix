@@ -997,7 +997,7 @@ object ConstraintGen {
       case e: Expr.FixpointConstraintSet => SchemaConstraintGen.visitFixpointConstraintSet(e)
       case e: Expr.FixpointLambda => SchemaConstraintGen.visitFixpointLambda(e)
       case e: Expr.FixpointMerge => SchemaConstraintGen.visitFixpointMerge(e)
-      case _: Expr.FixpointQueryWithProvenance => ???
+      case e: Expr.FixpointQueryWithProvenance => SchemaConstraintGen.visitFixpointQueryWithProvenance(e)
       case e: Expr.FixpointSolve => SchemaConstraintGen.visitFixpointSolve(e)
       case e: Expr.FixpointFilter => SchemaConstraintGen.visitFixpointFilter(e)
       case e: Expr.FixpointInject => SchemaConstraintGen.visitFixpointInject(e)

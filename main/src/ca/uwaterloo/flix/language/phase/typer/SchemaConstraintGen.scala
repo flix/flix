@@ -80,6 +80,28 @@ object SchemaConstraintGen {
     }
   }
 
+  def visitFixpointQueryWithProvenance(e: KindedAst.Expr.FixpointQueryWithProvenance)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: Scope = c.getScope
+    e match {
+      case KindedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tvar, loc1) =>
+        val expsSchemaRows = exps.map(visitExp).map(_._1)
+        val selectSchemaRow = select match {
+          case KindedAst.Predicate.Head.Atom(name, Denotation.Relational, terms, _, loc2) =>
+            val termTypes = terms.map(visitExp).map(_._1)
+            Type.mkSchemaRowExtend(name, Type.mkRelation(termTypes, loc2), mkAnySchemaRowType(loc2), loc2)
+          case _ => ??? // We do not yet support provenance for lattice relations
+        }
+        val withSchemaRow = withh.foldRight(mkAnySchemaRowType(loc1)) {
+          case (pred, acc) => Type.mkSchemaRowExtend(pred, Type.freshVar(Kind.Predicate, loc1), acc, loc1)
+        }
+        val fresh = Type.freshVar(Kind.Star, loc1)
+        c.unifyAllTypes(fresh :: Type.mkSchema(withSchemaRow, loc1) :: Type.mkSchema(selectSchemaRow, loc1) :: expsSchemaRows, loc1)
+        val resTpe = Type.mkExtensible(fresh, loc1)
+        c.unifyType(tvar, resTpe, loc1)
+        (resTpe, Type.Pure)
+    }
+  }
+
   def visitFixpointSolve(e: KindedAst.Expr.FixpointSolve)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     e match {
