@@ -52,6 +52,6 @@ def main(): Unit \ IO = {
         println("");
         let board = Board.newBoard();
         gameLoop(board, Symbol.X)
-    } with Interface.interfaceWithIOAndConsole
+    } with Interface.interfaceWithConsole
     with Console.runWithIO
 }

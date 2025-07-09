@@ -41,16 +41,16 @@ mod Interface {
     ///
     /// In other words, re-interprets the Interface effect using the IO and Console effects.
     ///
-    pub def interfaceWithIOAndConsole(f: Unit -> a \ ef): a \ ef - Interface + IO + Console =
+    pub def interfaceWithConsole(f: Unit -> a \ ef): a \ ef - Interface + Console =
         run {
             f()
         }
         with handler Interface {
             def display(board, msg, resume) = {
-                println("");
-                println(Board.toString(board));
-                println("");
-                println(msg);
+                Console.println("");
+                Console.println(Board.toString(board));
+                Console.println("");
+                Console.println(msg);
                 resume()
             }
 
