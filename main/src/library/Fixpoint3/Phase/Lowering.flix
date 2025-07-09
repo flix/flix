@@ -16,22 +16,60 @@
  */
 
 ///
-/// This phase transforms the abstract `Ram` into a low-level `ExecutableRam` in a format
-/// the Interpreter understands.
+/// This phase lowers a high-level `Ram.RamProgram` into a low-level `ExecutableRam.RamProgram`
+/// executable by the Interpreter.
 ///
-/// Concretely it does the following
+/// Concretely:
 ///
-/// 1. Replaces `Boxed` by `Int64`, except for lattice-elements
-/// 2. For relations with multiple indexes replace `MergeInto(newRel, otherRel)` with
-/// `MergeInto(newRel, otherRelIndex1)`, `MergeInto(newRel, otherRelIndex2)`, ...
-/// 3. Does similar for `Purge` and `Swap`.
-/// 4. Augment every statement with information about where the relevant
-/// indexes are stored
-/// 5. Remove `NotBot` as it is handled explicitly by the interpreter.
-/// 6. Assign memory positions to `RowVar`'s.
-/// 7. Collect information about where `RowVar` `rv1`'s values are needed.
+/// All `Boxed` values are replaced with representative `Int64` values according to the `Boxing`.
 ///
-/// An example of (7) would be the following transformation from
+/// For relations with multiple indexes,
+/// ```
+/// MergeInto(newRel, otherRel)
+/// ```
+/// becomes:
+/// ```
+/// MergeInto(newRel, otherRelIndex1)
+/// MergeInto(newRel, otherRelIndex2)
+/// ...
+/// ```
+/// This ensures that all indexes are updated.
+///
+/// Similarly:
+/// ```
+/// Purge(rel)
+/// ```
+/// becomes:
+/// ```
+/// Purge(relIndex1)
+/// Purge(relIndex2)
+/// ...
+/// ```
+///
+/// For:
+/// ```
+/// Swap(newRel, deltaRel)
+/// ```
+/// it is transformed into:
+/// ```
+/// Purge(deltaRelIndex2), Purge(deltaRelIndex3), ...
+/// MergeInto(newRel, deltaRelIndex2), MergeInto(newRel, deltaRelIndex3), ...
+/// Swap(newRel, deltaRelIndex1)
+/// ```
+/// The above transformation relies on `newRel` having exactly one index.
+///
+/// Statements that previously referenced a `RelSym` are instead augmented with explicit
+/// index information (currently as `Int32`) indicating which index to use.
+///
+/// `NotBot`s are removed entirely from the AST. The interpreter handles this explicitly
+/// whenever it encounters a `Search` or `Query` with `Latticenal`.
+///
+/// Every `RowVar` is assigned a unique position in memory (though not strictly necessary).
+///
+/// Finally instead of a query evaluating terms the terms are written to an array which
+/// is kept up to date with the current query values.
+///
+/// As an example the program:
 /// ```
 /// search a ∈ A do
 ///     query {b ∈ B | b[0] = a[0]} do
@@ -39,19 +77,22 @@
 ///     end
 /// end
 /// ```
-/// to
+/// would be transformed to
 /// ```
-/// search a ∈ A | write a[0] lookupArrForB[0] do
+/// search a ∈ A | [lookupArrForB[0] := a[0]] do
 ///     query {b ∈ B | lookupArrForB } do
 ///         project (a[0]) into R
 ///     end
 /// end
 /// ```
+/// Whenever we bind `a` we update the query-value of `B`.
 ///
-/// The purpose is to only do this once and avoid creating new objects constantly.
-/// If the nesting was deeper we only do the write once when we bind `a`, not every
-/// time we have to query `b`. We also only create `lookupArrForB` once, if we ignore
-/// parallelism.
+/// An alternative approach would be to have `query` of the form 
+/// `query {b ∈ B | searchTerms }`. Then `searchTerms` would be evaluated to generate the
+/// restriction for the query. This would create a new object every time the `query` is 
+/// met. Furthermore it would have to be evaluated every time `query {b ∈ B | lookupArrForB }`
+/// is met. If the query is deeply nested with some values bound higher up in the nesting,
+/// we do not need to evaluate these every time.
 ///
 mod Fixpoint3.Phase.Lowering {
     use Fixpoint3.Ast.ExecutableRam.WriteTuple
@@ -71,29 +112,31 @@ mod Fixpoint3.Phase.Lowering {
     use Fixpoint3.Util.getOrCrash
 
     ///
-    /// Maps RowVars to their memory-position (position in an array the interpreter will use).
+    /// Maps `RowVar`s to their memory position (position in an array the interpreter 
+    /// will use).
     ///
     type alias IdToIndex[r: Region] = UniqueInts[RowVar, r]
 
     ///
-    /// Maps RowVars to a lsit of writes that should be performed whenever the RowVar is rebound.
+    /// Maps `RowVar`s to a list of writes that should be performed whenever the `RowVar` is 
+    /// rebound.
     ///
     type alias WriteTos[r: Region] = MutMap[RowVar, List[WriteTuple], r]
 
     ///
     /// Maps a memory position to writes.
     ///
-    /// As an example [2 => [0 => 38i64]] means that the first attribute of the RowVar placed
-    /// at position 2 should have value 38.
+    /// For example, `[2 => [0 => 38i64]]` means that the first attribute of the `RowVar`,
+    /// placed at position 2, should have value 38.
     ///
     type alias ConstWrites[r: Region] = MutMap[Int32, MutMap[Int32, Int64, r], r]
 
     ///
-    /// Contains information with relation to computing meets. For `(list, disjoint)` `list` will
-    /// contain the currently bound `RowVar`'s in reverse order. `MutDisjointSets` contains
-    /// information about which `RowVar`'s lattice-values are should be meeted.
+    /// Contains information in relation to computing meets. For `(list, disjoint)`, `list`
+    /// will contain the currently bound `RowVar`s in reverse order. `disjoint` contains
+    /// information about which `RowVar`s' lattice values should be meeted.
     ///
-    /// As an example consider
+    /// For example, consider:
     /// ```
     /// search x ∈ A do
     ///   search y ∈ B do
@@ -101,20 +144,21 @@ mod Fixpoint3.Phase.Lowering {
     ///   end
     /// end
     /// ```
+    /// Initially, `MeetWithMap` is `(Nil, {})`. When the `RelOp` `search y ∈ B do` is
+    /// lowered, `x` is registered, and `MeetWithMap` becomes `(x :: Nil, {})`. When the 
+    /// `project` is lowered, it `(y :: x :: Nil, {})`. Finally, `Meet(x, y)` is lowered, 
+    /// which updates `disjoint` to `{y = x}`.
     ///
-    /// First MeetWithMap will be `(Nil, {})`. When it starts lowering `search y ∈ B do` it will
-    /// have registered `x` and be `(x :: Nil, {})`. When it starts lowering `project` it will be
-    /// `(y :: x :: Nil, {})`. It will then lower `Meet(x, y)` which updates `disjoint` so it now
-    /// looks like `{y = x}`.
-    ///
-    /// The above code will be translated to something like
+    /// The above code snippet is lowered to:
     /// ```
     /// search x ∈ A do
-    ///   search y ∈ B do
-    ///     project (0; Meet(x, y)) into ΔC'
+    ///   search y ∈ B | x_y_meet = Meet(x, y) do
+    ///     project (0; x_y_meet) into ΔC'
     ///   end
     /// end
     /// ```
+    /// Note that the lattice value of `y` is not actually stored, only the meet.
+    ///
     type alias MeetWithMap[r: Region] = (List[RowVar], MutDisjointSets[RowVar, r])
 
     ///
@@ -142,14 +186,14 @@ mod Fixpoint3.Phase.Lowering {
     }
 
     ///
-    /// Lowers `stmt` as described above.
+    /// Lowers `stmt` from `Ram` to `ExecutableRam`.
     ///
-    /// `idToIndex` is used to assigns memory positions to `RowVar`.
+    /// `idToIndex` assigns `RowVar`s to memory positions.
     ///
-    /// `boxingInfo` is used to find the boxing information of `Boxed` values
-    /// and compute the `Int64` representative.
+    /// `boxingInfo` is used to find the boxing information of `Boxed` values and to compute
+    /// the `Int64` representative.
     ///
-    /// `writeTo` contains write information as described above.
+    /// `writeTo` contains write information. See `WriteTos` and `ConstWrites`.
     ///
     /// `indexInfo` is used to replace `RelSym` with an indexes.
     ///
@@ -166,8 +210,8 @@ mod Fixpoint3.Phase.Lowering {
             case ARamStmt.Insert(op) =>
                 let newOp = lowerOp(rc, idToIndex, boxingInfo, writeTo, indexInfo, (Nil, MutDisjointSets.empty(rc)), op);
                 ERamStmt.Insert(newOp)
-            // The operation should simply be repeated for all indexes built on `deltaRel`.
             case ARamStmt.MergeInto(newRel, otherRel) =>
+                // `MergeInto` should simply be repeated for all indexes built on `deltaRel`.
                 let (constructed, placements) = indexInfo;
                 let newRelPos = getOrCrash(Map.get((newRel, 0), placements));
                 let lowerToMerge = index -> ERamStmt.MergeInto(newRelPos, index, toDenotation(newRel));
@@ -203,8 +247,8 @@ mod Fixpoint3.Phase.Lowering {
                         ERamStmt.Seq(Vector#{ERamStmt.Seq(purges), ERamStmt.Par(merges), swapPart})
                     }
                 }
-            // The operation should simply be repeated for all indexes built on `rel`.
             case ARamStmt.Purge(rel) =>
+                // `Purge` should simply be repeated for all indexes built on `rel`.
                 let (constructed, placements) = indexInfo;
                 let indexNums = Vector.range(0, Vector.length(getOrCrash(Map.get(rel, constructed))));
                 let purges = Vector.map(i -> ERamStmt.Purge(getOrCrash(Map.get((rel, i), placements))), indexNums);
@@ -226,7 +270,7 @@ mod Fixpoint3.Phase.Lowering {
     }
 
     ///
-    /// Lower `op` as described above.
+    /// Lower `op` from `Ram` to `ExecutableRam`.
     ///
     /// See the description of the module and `lowerStmt`.
     ///
@@ -301,17 +345,17 @@ mod Fixpoint3.Phase.Lowering {
         }
 
     ///
-    /// Lower `term` as described above.
+    /// Lower `term` from `Ram` to `ExecutableRam`.
     ///
     /// Computes unification for `Meet`. See `lowerMeet`.
     ///
     /// The following transformations are the most important.
     ///
-    /// 1. `Lit(boxedVal)` is augmented with the `Int64` representative of `boxedVal`.
-    /// 2. `RowVar`s are replaced by memory positions.
-    /// 3. `RowLoad(rv, i, rel)` is replaced by `LoadFromTuple` or `LoadLatVar` depending
-    /// on whether `RowLoad(rv, i, rel)` refers to the lattice value or a 'normal' value.
-    /// 4. `AMeet(_)` is replaced by `LoadLatVar`.
+    ///     1. `Lit(boxedVal)` is augmented with the `Int64` representative of `boxedVal`.
+    ///     2. `RowVar`s are replaced by memory positions.
+    ///     3. `RowLoad(rv, i, rel)` is replaced by `LoadFromTuple` or `LoadLatVar` depending
+    ///         on whether `RowLoad(rv, i, rel)` refers to the lattice value or a 'normal' value.
+    ///     4. `AMeet(_)` is replaced by `LoadLatVar`.
     ///
     def lowerTerm(
         idToIndex: IdToIndex[r],
@@ -346,10 +390,9 @@ mod Fixpoint3.Phase.Lowering {
         }
 
     ///
-    /// Return the position the `Meet`, `term`, will be stored.
+    /// Return the position the `Meet` where `term` will be stored.
     ///
-    /// Unify every `RowVar` meet during unpacking of `Meet` in
-    /// `meetWithMap`.
+    /// Unify every `RowVar` meet during unpacking of `Meet` in `meetWithMap`.
     ///
     def lowerMeet(
         term: ARamTerm,
@@ -371,9 +414,9 @@ mod Fixpoint3.Phase.Lowering {
     }
 
     ///
-    /// Lower `bexp` as described above.
+    /// Lower `boolExp` from `Ram` to `ExecutableRam`.
     ///
-    /// Returns `Some(lowered)` for `bexp != NotBot(_)`.
+    /// Returns `Some(lowered)` for `boolExp != NotBot(_)`.
     ///
     /// Returns `None` for `NotBot` as it is handled directly by the interpreter.
     ///
@@ -384,10 +427,10 @@ mod Fixpoint3.Phase.Lowering {
         boxingInfo: (RamIdToPos, Boxing[r]),
         indexInfo: IndexInformation,
         meetWithMap: MeetWithMap[r],
-        bexp: ABoolExp
+        boolExp: ABoolExp
     ): Option[EBoolExp] \ r =
         let lowerT = lowerTerm(idToIndex, boxingInfo, meetWithMap);
-        match bexp {
+        match boolExp {
             case ANot(s) =>
                 lowerBool(idToIndex, boxingInfo, indexInfo, meetWithMap, s) |>
                 Option.map(ENot)
@@ -421,7 +464,7 @@ mod Fixpoint3.Phase.Lowering {
     ///
     /// Lower `rowVar` to a memory position.
     ///
-    /// Every `RowVar` is currently assigned a unique memory position.
+    /// Note: every `RowVar` is assigned a unique memory position.
     ///
     def lowerRowVar(rowVar: RowVar, idToIndex: IdToIndex[r]): Int32 \ r =
         UniqueInts.getIndex(rowVar, idToIndex)
@@ -429,9 +472,9 @@ mod Fixpoint3.Phase.Lowering {
     ///
     /// Add `rv` to `meetWithMap`.
     ///
-    /// Concretely, for `meetWithMap = (seenRV, equalitySet)` return
-    /// `(rv:: seen, equalitySet')` where `equalitySet` is simply
-    /// updated with `rv` as a possible value.
+    /// Concretely, for `meetWithMap = (seenRV, equalitySet)`, return
+    /// `(rv:: seen, equalitySet')` where `equalitySet` is simply updated with `rv` as a 
+    /// possible value.
     ///
     def addRowVarToMeetWithMap(rv: RowVar, meetWithMap: MeetWithMap[r]): MeetWithMap[r] \ r =
         let (prevRowVars, meetDisjointSet) = meetWithMap;
@@ -439,29 +482,29 @@ mod Fixpoint3.Phase.Lowering {
         (rv :: prevRowVars, meetDisjointSet)
 
     ///
-    /// Compute the memory position of the value the lattice value associated with
-    /// `rv` should be least upper bounded with.
+    /// Compute the memory position of the value that the lattice value associated with
+    /// `rv` should be meeted (greatest lower bound) with.
     ///
     /// Returns -1 for 'normal' relations. Returns `idToIndex[rv]` when `rv` is not
-    /// supposed to be lub'ed with anything. Otherwise returns the memory position
-    /// of the value that `rv` should be lub'ed with.
+    /// supposed to be meeted with anything. Otherwise, returns the memory position
+    /// of the value that `rv` should be meeted with.
     ///
-    /// For example, for the following program
+    /// For example, the program:
     /// ```
     /// R(;y) :- A(;x), B(;x), ... .
     /// ```
-    /// compiled to something like
+    /// is compiled to:
     /// ```
     /// search a ∈ A do
-    ///     search b ∈ B do
+    ///     search b ∈ B | meet_a_b = meet(a, b) do
     ///         ...
     ///     end
     /// end
     /// ```
-    /// where `A` and `B` are lattice-relations will for `RowVar` `a` return `idToIndex[a]`
-    /// signalling that it should not lub'ed with anything, but is a lattice-relation.
+    /// where `A` and `B`. If `A` and `B` are lattice relations then for `RowVar` `a`
+    /// it will return `idToIndex[a]` signalling that it should not meeted, but is a lattice-relation.
     ///
-    /// For `RowVar` `b` it also returns `idToIndex[a]`, but this is not the same as
+    /// For `RowVar` `b`, it also returns `idToIndex[a]`, but this is not the same as
     /// `idToIndex[b]` signalling that a meet should be performed with the value at
     /// `idToIndex[a]`.
     ///
@@ -476,8 +519,8 @@ mod Fixpoint3.Phase.Lowering {
     }
 
     ///
-    /// Returns the memory position of the first value equivalent to `rv`, with respect
-    /// to `meetWithMap`, or the memory position of `rv` if no such value exists.
+    /// Returns the memory position of the first value equivalent to `rv`, w.r.t. 
+    /// `meetWithMap`. If no such value exists, returns the memory position of `rv`.
     ///
     /// See `computeMeetWithPos`.
     ///
@@ -502,8 +545,7 @@ mod Fixpoint3.Phase.Lowering {
         List.toVector(Option.getWithDefault(Nil, MutMap.get(rowVar, varWrite)))
 
     ///
-    /// Register that when `fromRowVar` is bound it should perform a write to
-    /// `toRowVar`.
+    /// Register that when `fromRowVar` is bound it should perform a write to `toRowVar`.
     ///
     /// Concretely, we need to preserve `fromRowVar[fromIndex] == toRowVar[toIndex]`.
     ///
@@ -520,9 +562,9 @@ mod Fixpoint3.Phase.Lowering {
         MutMap.putWith(_ -> old -> written :: old, fromRowVar, written :: Nil, varWrite)
 
     ///
-    /// Register that when `toRowVar` has the value `value`.
+    /// Register that `toRowVar` has the value `value`.
     ///
-    /// Concretely, we need to preserve `toRowVar[toIndex] == value`.
+    /// Concretely, maintains that `toRowVar[toIndex] == value`.
     ///
     def addConstWriteTo(
         value: Int64,
@@ -540,7 +582,6 @@ mod Fixpoint3.Phase.Lowering {
                     bug!("Bug in Fixpoint.Lowering: Different value for position. Should have been removed by Hoisting")
                 else v1
             , toIndex, value)
-
 
     ///
     /// Returns a list `(RowVar, arity)` in `program` in the order of the nesting.
