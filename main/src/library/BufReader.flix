@@ -58,17 +58,17 @@ mod BufReader {
     ///
     /// Constructs a `BufReader` wrapping `reader` with a default capacity of 4096 items.
     ///
-    pub def withDefaultCapacity(rc: Region[r], defaultValue: a, reader: t): BufReader[a,t, r] \ r with Readable[t] =
-        withCapacity(rc, defaultBufferCapacity(), defaultValue, reader)
+    pub def withDefaultCapacity(rc: Region[r], reader: t): BufReader[a,t, r] \ r with Readable[t] =
+        withCapacity(rc, defaultBufferCapacity(), reader)
 
     ///
     /// Constructs a `BufReader` wrapping `reader` with the specified `capacity` in items.
     ///
     /// If `capacity <= 0`, the `BufReader` will delegate directly to `reader` without buffering.
     ///
-    pub def withCapacity(rc: Region[r], capacity: Int32, defaultValue: a, reader: t): BufReader[a, t, r] \ r with Readable[t] =
+    pub def withCapacity(rc: Region[r], capacity: Int32, reader: t): BufReader[a, t, r] \ r with Readable[t] =
         new BufReader @ rc {
-            buffer = Array.repeat(rc, capacity, defaultValue),
+            buffer = Array.empty(rc, capacity),
             cursor = 0,
             size = 0,
             reader = reader

@@ -1172,7 +1172,7 @@ mod TestReader {
 
     pub def mkTestBufReader(rc: Region[r], capacity: Int32, stream: Array[Int8, r]): BufReader[Int8, TestReader[r], r] \ r =
         let testReader = fromArray(rc, stream);
-        BufReader.withCapacity(rc, capacity, 0i8, testReader)
+        BufReader.withCapacity(rc, capacity, testReader)
 
     pub def fromArray(rc: Region[r], stream: Array[Int8, r]): TestReader[r] \ r =
         new TestReader @ rc {
