@@ -87,7 +87,7 @@ def gameOver(pVal: Int32, dVal: Int32): Bool \ Console = match (pVal, dVal) {
 /// Calculate the value of a hand.
 ///
 def handValue(cards: List[Card]): Int32 =
-    let value = List.foldLeft((x, y) -> x + y, 0, List.map(cardValue, cards));
+    let value = List.sum(List.map(cardValue, cards));
     if (value > 21 and List.exists(x -> x == Card.Ace, cards)) value - 10 else value
 
 ///
