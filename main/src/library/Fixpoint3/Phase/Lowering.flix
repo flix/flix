@@ -95,16 +95,10 @@
 /// we do not need to evaluate these every time.
 ///
 mod Fixpoint3.Phase.Lowering {
+    use Fixpoint3.Ast.ExecutableRam
     use Fixpoint3.Ast.ExecutableRam.WriteTuple
-    use Fixpoint3.Ast.ExecutableRam.{BoolExp => EBoolExp, ConstWrites => EConstWrites, RamProgram => EProgram, RamStmt => ERamStmt, RamTerm => ERamTerm, RelOp => ERelOp}
-    use Fixpoint3.Ast.ExecutableRam.BoolExp.{Eq => EEq, Guard1 => EGuard1, Guard2 => EGuard2, Guard3 => EGuard3, Guard4 => EGuard4, Guard5 => EGuard5, IsEmpty => EIsEmpty, Leq => ELeq, Not => ENot, NotMemberOf => ENotMemberOf}
-    use Fixpoint3.Ast.ExecutableRam.RamTerm.{App1 => EApp1, App2 => EApp2, App3 => EApp3, App4 => EApp4, App5 => EApp5, LoadFromTuple => ELoadFromTuple, LoadLatVar => ELoadLatVar, Lit => ELit, Meet => EMeet}
-    use Fixpoint3.Ast.ExecutableRam.RelOp.{Functional => EFunctional, If => EIf, Project => EProject, Query => EQuery, Search => ESearch}
+    use Fixpoint3.Ast.Ram
     use Fixpoint3.Ast.Ram.{arityOf, arityOfNonLat, getTermRamId, IndexInformation, RamId, RelSym, RowVar, Search, toDenotation}
-    use Fixpoint3.Ast.Ram.{BoolExp => ABoolExp, RamProgram => AProgram, RamStmt => ARamStmt, RamTerm => ARamTerm, RelOp => ARelOp}
-    use Fixpoint3.Ast.Ram.BoolExp.{Eq => AEq, Guard1 => AGuard1, Guard2 => AGuard2, Guard3 => AGuard3, Guard4 => AGuard4, Guard5 => AGuard5, IsEmpty => AIsEmpty, Leq => ALeq, Not => ANot, NotMemberOf => ANotMemberOf, NotBot => ANotBot}
-    use Fixpoint3.Ast.Ram.RamTerm.{App1 => AApp1, App2 => AApp2, App3 => AApp3, App4 => AApp4, App5 => AApp5, Lit => ALit, Meet => AMeet, RowLoad => ARowLoad}
-    use Fixpoint3.Ast.Ram.RelOp.{Functional => AFunctional, If => AIf, Project => AProject, Query => AQuery, Search => ASearch}
     use Fixpoint3.Ast.Shared.{Denotation, PredSym}
     use Fixpoint3.Boxing
     use Fixpoint3.BoxingType.{Boxing, RamIdToPos};
@@ -167,8 +161,8 @@ mod Fixpoint3.Phase.Lowering {
     /// Returns the result along with the `Boxing` used for the program
     ///
     @Internal
-    pub def lowerProgram(rc: Region[r], withProv: Bool, program: AProgram): (EProgram, Boxing[r]) \ r = match program { 
-        case AProgram.Program(stmt, _, meta, indexInfo) =>
+    pub def lowerProgram(rc: Region[r], withProv: Bool, program: Ram.RamProgram): (ExecutableRam.RamProgram, Boxing[r]) \ r = match program { 
+        case Ram.RamProgram.Program(stmt, _, meta, indexInfo) =>
             let idToIndex = UniqueInts.empty(rc);
             let (boxing, newFacts, idToBoxing) = Boxing.initialize(rc, withProv, program);
             let writeTo = (MutMap.empty(rc), MutMap.empty(rc));
@@ -182,7 +176,7 @@ mod Fixpoint3.Phase.Lowering {
             let numOfArities = UniqueInts.get(idToIndex);
             let arities = Array.empty(rc, numOfArities);
             arityInformation |> List.forEach(match (rv, arity) -> Array.put(arity, UniqueInts.getIndex(rv, idToIndex), arities));
-            (EProgram.Program(loweredStmt, newFacts, meta, indexInfo, (Array.toVector(arities), constWrites), idToBoxing), boxing)
+            (ExecutableRam.RamProgram.Program(loweredStmt, newFacts, meta, indexInfo, (Array.toVector(arities), constWrites), idToBoxing), boxing)
     }
 
     ///
@@ -203,31 +197,31 @@ mod Fixpoint3.Phase.Lowering {
         boxingInfo: (RamIdToPos, Boxing[r]),
         writeTo: (WriteTos[r], ConstWrites[r]),
         indexInfo: IndexInformation,
-        stmt: ARamStmt
-    ): ERamStmt \ r =
+        stmt: Ram.RamStmt
+    ): ExecutableRam.RamStmt \ r =
         let lowerStmtRec = lowerStmt(rc, idToIndex, boxingInfo, writeTo, indexInfo);
         match stmt {
-            case ARamStmt.Insert(op) =>
+            case Ram.RamStmt.Insert(op) =>
                 let newOp = lowerOp(rc, idToIndex, boxingInfo, writeTo, indexInfo, (Nil, MutDisjointSets.empty(rc)), op);
-                ERamStmt.Insert(newOp)
-            case ARamStmt.MergeInto(newRel, otherRel) =>
+                ExecutableRam.RamStmt.Insert(newOp)
+            case Ram.RamStmt.MergeInto(newRel, otherRel) =>
                 // `MergeInto` should simply be repeated for all indexes built on `deltaRel`.
                 let (constructed, placements) = indexInfo;
                 let newRelPos = getOrCrash(Map.get((newRel, 0), placements));
-                let lowerToMerge = index -> ERamStmt.MergeInto(newRelPos, index, toDenotation(newRel));
+                let lowerToMerge = index -> ExecutableRam.RamStmt.MergeInto(newRelPos, index, toDenotation(newRel));
                 let deltaRels = Vector.length(getOrCrash(Map.get(otherRel, constructed)));
                 let merges = Vector.map(index -> lowerToMerge(getOrCrash(Map.get((otherRel, index), placements))), Vector.range(0, deltaRels));
                 match Vector.length(merges) {
                     case 1 => Vector.get(0, merges)
-                    case _ => ERamStmt.Par(merges)
+                    case _ => ExecutableRam.RamStmt.Par(merges)
                 }
-            case ARamStmt.Swap(newRel, deltaRel) =>
+            case Ram.RamStmt.Swap(newRel, deltaRel) =>
                 let (constructed, placements) = indexInfo;
                 let newRelPos = getOrCrash(Map.get((newRel, 0), placements));
-                let lowerToMerge = index -> ERamStmt.MergeInto(newRelPos, index, toDenotation(newRel));
-                let lowerToPurge = index -> ERamStmt.Purge(index);
+                let lowerToMerge = index -> ExecutableRam.RamStmt.MergeInto(newRelPos, index, toDenotation(newRel));
+                let lowerToPurge = index -> ExecutableRam.RamStmt.Purge(index);
                 let deltaRels = Vector.length(getOrCrash(Map.get(deltaRel, constructed)));
-                let swapPart = ERamStmt.Swap(newRelPos, getOrCrash(Map.get((deltaRel, 0), placements)));
+                let swapPart = ExecutableRam.RamStmt.Swap(newRelPos, getOrCrash(Map.get((deltaRel, 0), placements)));
                 match Vector.length(getOrCrash(Map.get(deltaRel, constructed))) {
                     // If there is only 1 index on `deltaRel` we can simply swap.
                     case 1 => swapPart
@@ -242,31 +236,35 @@ mod Fixpoint3.Phase.Lowering {
                     let purges = Vector.range(1, deltaRels) |>
                         Vector.map(index -> lowerToPurge(getOrCrash(Map.get((deltaRel, index), placements))));
                     if(Vector.length(merges) == 1) {
-                        ERamStmt.Seq(Vector#{Vector.get(0, merges), swapPart})
+                        ExecutableRam.RamStmt.Seq(Vector#{Vector.get(0, merges), swapPart})
                     } else {
-                        ERamStmt.Seq(Vector#{ERamStmt.Seq(purges), ERamStmt.Par(merges), swapPart})
+                        ExecutableRam.RamStmt.Seq(Vector#{
+                            ExecutableRam.RamStmt.Seq(purges),
+                            ExecutableRam.RamStmt.Par(merges),
+                            swapPart
+                        })
                     }
                 }
-            case ARamStmt.Purge(rel) =>
+            case Ram.RamStmt.Purge(rel) =>
                 // `Purge` should simply be repeated for all indexes built on `rel`.
                 let (constructed, placements) = indexInfo;
                 let indexNums = Vector.range(0, Vector.length(getOrCrash(Map.get(rel, constructed))));
-                let purges = Vector.map(i -> ERamStmt.Purge(getOrCrash(Map.get((rel, i), placements))), indexNums);
+                let purges = Vector.map(i -> ExecutableRam.RamStmt.Purge(getOrCrash(Map.get((rel, i), placements))), indexNums);
                 if (Vector.length(purges) == 1) {
                     Vector.get(0, purges)
                 } else {
-                    ERamStmt.Seq(purges)
+                    ExecutableRam.RamStmt.Seq(purges)
                 }
-            case ARamStmt.Seq(xs) => Vector.map(x -> lowerStmtRec(x), xs) |> ERamStmt.Seq
-            case ARamStmt.Par(xs) => Vector.map(x -> lowerStmtRec(x), xs) |> ERamStmt.Par
-            case ARamStmt.Until(test, body) =>
+            case Ram.RamStmt.Seq(xs) => Vector.map(x -> lowerStmtRec(x), xs) |> ExecutableRam.RamStmt.Seq
+            case Ram.RamStmt.Par(xs) => Vector.map(x -> lowerStmtRec(x), xs) |> ExecutableRam.RamStmt.Par
+            case Ram.RamStmt.Until(test, body) =>
                 let newTests = test |>
                     Vector.filterMap(lowerBool(idToIndex, boxingInfo, indexInfo, (Nil, MutDisjointSets.empty(rc))));
                 let newBody = lowerStmtRec(body);
-                ERamStmt.Until(newTests, newBody)
-            case ARamStmt.EstimateJoinSize(_, relIndex, estWriteTo, attr) =>
-                ERamStmt.EstimateJoinSize(relIndex, estWriteTo, attr)
-            case ARamStmt.Comment(s) => ERamStmt.Comment(s)
+                ExecutableRam.RamStmt.Until(newTests, newBody)
+            case Ram.RamStmt.EstimateJoinSize(_, relIndex, estWriteTo, attr) =>
+                ExecutableRam.RamStmt.EstimateJoinSize(relIndex, estWriteTo, attr)
+            case Ram.RamStmt.Comment(s) => ExecutableRam.RamStmt.Comment(s)
     }
 
     ///
@@ -281,37 +279,37 @@ mod Fixpoint3.Phase.Lowering {
         writeTo: (WriteTos[r], ConstWrites[r]),
         indexInfo: IndexInformation,
         meetWithMap: MeetWithMap[r],
-        op: ARelOp
-    ): ERelOp \ r =
+        op: Ram.RelOp
+    ): ExecutableRam.RelOp \ r =
         let lowerOpRec = lowerOp(rc, idToIndex, boxingInfo, writeTo, indexInfo, meetWithMap);
         let lowerOpRecNewRowVar = rv -> lowerOp(rc, idToIndex, boxingInfo, writeTo, indexInfo, addRowVarToMeetWithMap(rv, meetWithMap));
         match op {
-            case ASearch(rv, relSym, body) =>
+            case Ram.RelOp.Search(rv, relSym, body) =>
                 let den = toDenotation(relSym);
                 let loweredBody = lowerOpRecNewRowVar(rv, body);
                 let thisWriteTo = getWriteTo(rv, writeTo);
                 let placements = snd(indexInfo);
                 let relPos = getOrCrash(Map.get((relSym, 0), placements));
                 let oldPos = computeMeetWithPos(rv, relSym, idToIndex, meetWithMap);
-                ESearch(lowerRowVar(rv, idToIndex), relPos, oldPos, den, thisWriteTo, loweredBody)
-            case AQuery(rv, relSym, tests, index, body) =>
+                ExecutableRam.RelOp.Search(lowerRowVar(rv, idToIndex), relPos, oldPos, den, thisWriteTo, loweredBody)
+            case Ram.RelOp.Query(rv, relSym, tests, index, body) =>
                 let den = toDenotation(relSym);
                 let (idToBoxing, boxing) = boxingInfo;
                 let loweredBody = lowerOpRecNewRowVar(rv, body);
                 let oldPos = computeMeetWithPos(rv, relSym, idToIndex, meetWithMap);
                 let thisWriteTo = getWriteTo(rv, writeTo);
                 let otherBools = Vector.filterMap(x -> match x {
-                    case ABoolExp.Eq(ARamTerm.RowLoad(rv1, i1, _), ARamTerm.RowLoad(rv2, i2, _)) if rv == rv1 =>
+                    case Ram.BoolExp.Eq(Ram.RamTerm.RowLoad(rv1, i1, _), Ram.RamTerm.RowLoad(rv2, i2, _)) if rv == rv1 =>
                         addWriteTo(rv2, i2, rv1, i1, idToIndex, writeTo);
                         None
-                    case ABoolExp.Eq(ARamTerm.RowLoad(rv2, i2, _), ARamTerm.RowLoad(rv1, i1, _)) if rv == rv1 =>
+                    case Ram.BoolExp.Eq(Ram.RamTerm.RowLoad(rv2, i2, _), Ram.RamTerm.RowLoad(rv1, i1, _)) if rv == rv1 =>
                         addWriteTo(rv2, i2, rv1, i1, idToIndex, writeTo);
                         None
-                    case ABoolExp.Eq(ARamTerm.RowLoad(rv1, i, _), ARamTerm.Lit(val, id)) if rv == rv1 =>
+                    case Ram.BoolExp.Eq(Ram.RamTerm.RowLoad(rv1, i, _), Ram.RamTerm.Lit(val, id)) if rv == rv1 =>
                         let unboxed = Boxing.unboxWith(val, getOrCrash(Map.get(id, idToBoxing)), boxing);
                         addConstWriteTo(unboxed, rv, i, idToIndex, writeTo, rc);
                         None
-                    case ABoolExp.Eq(ARamTerm.Lit(val, id), ARamTerm.RowLoad(rv1, i, _)) if rv == rv1 =>
+                    case Ram.BoolExp.Eq(Ram.RamTerm.Lit(val, id), Ram.RamTerm.RowLoad(rv1, i, _)) if rv == rv1 =>
                         let unboxed = Boxing.unboxWith(val, getOrCrash(Map.get(id, idToBoxing)), boxing);
                         addConstWriteTo(unboxed, rv, i, idToIndex, writeTo, rc);
                         None
@@ -320,28 +318,28 @@ mod Fixpoint3.Phase.Lowering {
                 if(Vector.length(otherBools) != 0)
                     unchecked_cast(bug!("Bug in Fixpoint.Lowering: Bools except equality in query") as _ \ r)
                 else ();
-                EQuery(lowerRowVar(rv, idToIndex), index, oldPos, den, thisWriteTo, loweredBody)
-            case AFunctional(rv, f, terms, body, arity) =>
+                ExecutableRam.RelOp.Query(lowerRowVar(rv, idToIndex), index, oldPos, den, thisWriteTo, loweredBody)
+            case Ram.RelOp.Functional(rv, f, terms, body, arity) =>
                 let (idToBoxing, _) = boxingInfo;
                 let idToMarhsalled = id -> getOrCrash(Map.get(id, idToBoxing));
                 let loweredBody = lowerOpRec(body);
                 let thisWriteTo = getWriteTo(rv, writeTo);
                 let to = Vector.map(i -> idToMarhsalled(RamId.TuplePos(rv, i)), Vector.range(0, arity));
-                EFunctional(
+                ExecutableRam.RelOp.Functional(
                     lowerRowVar(rv, idToIndex), f,
                     Vector.map(lowerTerm(idToIndex, boxingInfo, meetWithMap), terms),
                     thisWriteTo, loweredBody, to
                 )
-            case AProject(terms, s) =>
+            case Ram.RelOp.Project(terms, s) =>
                 let (_, placements) = indexInfo;
                 let newRelPos = getOrCrash(Map.get((s, 0), placements));
                 let den = toDenotation(s);
                 let loweredTerms = Vector.map(lowerTerm(idToIndex, boxingInfo, meetWithMap), terms);
-                EProject(
+                ExecutableRam.RelOp.Project(
                     loweredTerms, newRelPos, den
                 )
-            case AIf(boolExps, body) =>
-                EIf(Vector.filterMap(lowerBool(idToIndex, boxingInfo, indexInfo, meetWithMap), boolExps), lowerOpRec(body))
+            case Ram.RelOp.If(boolExps, body) =>
+                ExecutableRam.RelOp.If(Vector.filterMap(lowerBool(idToIndex, boxingInfo, indexInfo, meetWithMap), boolExps), lowerOpRec(body))
         }
 
     ///
@@ -361,32 +359,32 @@ mod Fixpoint3.Phase.Lowering {
         idToIndex: IdToIndex[r],
         boxingInfo: (RamIdToPos, Boxing[r]),
         meetWithMap: MeetWithMap[r],
-        term: ARamTerm
-    ): ERamTerm \ r =
+        term: Ram.RamTerm
+    ): ExecutableRam.RamTerm \ r =
         let lowerT = lowerTerm(idToIndex, boxingInfo, meetWithMap);
         let (idToBoxing, boxing) = boxingInfo;
         let termToBoxing = t -> getOrCrash(Map.get(getTermRamId(t), idToBoxing));
         match term {
-            case ALit(val, id) => ELit(Boxing.unboxWith(val, getOrCrash(Map.get(id, idToBoxing)), boxing), val)
-            case ARowLoad(rv, index, RelSym.Symbol(_, arity, den)) =>
+            case Ram.RamTerm.Lit(val, id) => ExecutableRam.RamTerm.Lit(Boxing.unboxWith(val, getOrCrash(Map.get(id, idToBoxing)), boxing), val)
+            case Ram.RamTerm.RowLoad(rv, index, RelSym.Symbol(_, arity, den)) =>
                 match den {
-                    case Denotation.Relational => ELoadFromTuple(UniqueInts.getIndex(rv, idToIndex), index, termToBoxing(term))
+                    case Denotation.Relational => ExecutableRam.RamTerm.LoadFromTuple(UniqueInts.getIndex(rv, idToIndex), index, termToBoxing(term))
                     case Denotation.Latticenal(_, _, _, _) =>
                         if(index < arity - 1) {
-                            ELoadFromTuple(UniqueInts.getIndex(rv, idToIndex), index, termToBoxing(term))
+                            ExecutableRam.RamTerm.LoadFromTuple(UniqueInts.getIndex(rv, idToIndex), index, termToBoxing(term))
                         } else {
-                            ELoadLatVar(UniqueInts.getIndex(rv, idToIndex), termToBoxing(term))
+                            ExecutableRam.RamTerm.LoadLatVar(UniqueInts.getIndex(rv, idToIndex), termToBoxing(term))
                         }
                 }
-            case AMeet(_, _, _, _) =>
+            case Ram.RamTerm.Meet(_, _, _, _) =>
                 let representingRowVar = lowerMeet(term, idToIndex, meetWithMap);
                 let pos = computeLatticeMeetPos(representingRowVar, idToIndex, meetWithMap);
-                ELoadLatVar(pos, termToBoxing(term))
-            case AApp1(f, t1, _)                   => EApp1(f, lowerT(t1), termToBoxing(term))
-            case AApp2(f, t1, t2, _)               => EApp2(f, lowerT(t1), lowerT(t2), termToBoxing(term))
-            case AApp3(f, t1, t2, t3, _)           => EApp3(f, lowerT(t1), lowerT(t2), lowerT(t3), termToBoxing(term))
-            case AApp4(f, t1, t2, t3, t4, _)       => EApp4(f, lowerT(t1), lowerT(t2), lowerT(t3), lowerT(t4), termToBoxing(term))
-            case AApp5(f, t1, t2, t3, t4, t5, _)   => EApp5(f, lowerT(t1), lowerT(t2), lowerT(t3), lowerT(t4), lowerT(t5), termToBoxing(term))
+                ExecutableRam.RamTerm.LoadLatVar(pos, termToBoxing(term))
+            case Ram.RamTerm.App1(f, t1, _)                   => ExecutableRam.RamTerm.App1(f, lowerT(t1), termToBoxing(term))
+            case Ram.RamTerm.App2(f, t1, t2, _)               => ExecutableRam.RamTerm.App2(f, lowerT(t1), lowerT(t2), termToBoxing(term))
+            case Ram.RamTerm.App3(f, t1, t2, t3, _)           => ExecutableRam.RamTerm.App3(f, lowerT(t1), lowerT(t2), lowerT(t3), termToBoxing(term))
+            case Ram.RamTerm.App4(f, t1, t2, t3, t4, _)       => ExecutableRam.RamTerm.App4(f, lowerT(t1), lowerT(t2), lowerT(t3), lowerT(t4), termToBoxing(term))
+            case Ram.RamTerm.App5(f, t1, t2, t3, t4, t5, _)   => ExecutableRam.RamTerm.App5(f, lowerT(t1), lowerT(t2), lowerT(t3), lowerT(t4), lowerT(t5), termToBoxing(term))
         }
 
     ///
@@ -395,15 +393,15 @@ mod Fixpoint3.Phase.Lowering {
     /// Unify every `RowVar` meet during unpacking of `Meet` in `meetWithMap`.
     ///
     def lowerMeet(
-        term: ARamTerm,
+        term: Ram.RamTerm,
         idToIndex: IdToIndex[r],
         meetWithMap: MeetWithMap[r]
     ): RowVar \ r = match term {
-        case ARowLoad(rv, _, _) =>
+        case Ram.RamTerm.RowLoad(rv, _, _) =>
             let (_, meetDisjointSet) = meetWithMap;
             MutDisjointSets.makeSet(rv, meetDisjointSet);
             rv
-        case AMeet(_, t1, (rv, _), _) =>
+        case Ram.RamTerm.Meet(_, t1, (rv, _), _) =>
             let (_, meetDisjointSet) = meetWithMap;
             let prevRv = lowerMeet(t1, idToIndex, meetWithMap);
             MutDisjointSets.makeSet(rv, meetDisjointSet);
@@ -427,38 +425,38 @@ mod Fixpoint3.Phase.Lowering {
         boxingInfo: (RamIdToPos, Boxing[r]),
         indexInfo: IndexInformation,
         meetWithMap: MeetWithMap[r],
-        boolExp: ABoolExp
-    ): Option[EBoolExp] \ r =
+        boolExp: Ram.BoolExp
+    ): Option[ExecutableRam.BoolExp] \ r =
         let lowerT = lowerTerm(idToIndex, boxingInfo, meetWithMap);
         match boolExp {
-            case ANot(s) =>
+            case Ram.BoolExp.Not(s) =>
                 lowerBool(idToIndex, boxingInfo, indexInfo, meetWithMap, s) |>
-                Option.map(ENot)
-            case AIsEmpty(s) =>
+                Option.map(ExecutableRam.BoolExp.Not)
+            case Ram.BoolExp.IsEmpty(s) =>
                 let (_, placements) = indexInfo;
                 let sPos = getOrCrash(Map.get((s, 0), placements));
-                Some(EIsEmpty(sPos))
-            case ANotMemberOf(terms, s) =>
+                Some(ExecutableRam.BoolExp.IsEmpty(sPos))
+            case Ram.BoolExp.NotMemberOf(terms, s) =>
                 let (_, placements) = indexInfo;
                 let den = toDenotation(s);
                 let sPos = getOrCrash(Map.get((s, 0), placements));
-                Some(ENotMemberOf(Vector.map(lowerT, terms), sPos, den))
-            case ANotBot(t1, _, _) =>
+                Some(ExecutableRam.BoolExp.NotMemberOf(Vector.map(lowerT, terms), sPos, den))
+            case Ram.BoolExp.NotBot(t1, _, _) =>
                 lowerMeet(t1, idToIndex, meetWithMap);
                 None
-            case ALeq(box, rv, relSym) =>
+            case Ram.BoolExp.Leq(box, rv, relSym) =>
                 let leq = match toDenotation(relSym) {
                     case Denotation.Relational => _ -> _ -> bug!("Using lattice logic on normal relation")
                     case Denotation.Latticenal(_, leq, _, _) => leq
                 };
-                Some(ELeq(box, leq, lowerRowVar(rv, idToIndex)))
-            case AEq(term1, term2) =>
-                Some(EEq(lowerT(term1), lowerT(term2)))
-            case AGuard1(f, term1) => Some(EGuard1(f, lowerT(term1)))
-            case AGuard2(f, term1, term2) => Some(EGuard2(f, lowerT(term1), lowerT(term2)))
-            case AGuard3(f, term1, term2, term3) => Some(EGuard3(f, lowerT(term1), lowerT(term2), lowerT(term3)))
-            case AGuard4(f, term1, term2, term3, term4) => Some(EGuard4(f, lowerT(term1), lowerT(term2), lowerT(term3), lowerT(term4)))
-            case AGuard5(f, term1, term2, term3, term4, term5) => Some(EGuard5(f, lowerT(term1), lowerT(term2), lowerT(term3), lowerT(term4), lowerT(term5)))
+                Some(ExecutableRam.BoolExp.Leq(box, leq, lowerRowVar(rv, idToIndex)))
+            case Ram.BoolExp.Eq(term1, term2) =>
+                Some(ExecutableRam.BoolExp.Eq(lowerT(term1), lowerT(term2)))
+            case Ram.BoolExp.Guard1(f, term1) => Some(ExecutableRam.BoolExp.Guard1(f, lowerT(term1)))
+            case Ram.BoolExp.Guard2(f, term1, term2) => Some(ExecutableRam.BoolExp.Guard2(f, lowerT(term1), lowerT(term2)))
+            case Ram.BoolExp.Guard3(f, term1, term2, term3) => Some(ExecutableRam.BoolExp.Guard3(f, lowerT(term1), lowerT(term2), lowerT(term3)))
+            case Ram.BoolExp.Guard4(f, term1, term2, term3, term4) => Some(ExecutableRam.BoolExp.Guard4(f, lowerT(term1), lowerT(term2), lowerT(term3), lowerT(term4)))
+            case Ram.BoolExp.Guard5(f, term1, term2, term3, term4, term5) => Some(ExecutableRam.BoolExp.Guard5(f, lowerT(term1), lowerT(term2), lowerT(term3), lowerT(term4), lowerT(term5)))
         }
 
     ///
@@ -586,41 +584,41 @@ mod Fixpoint3.Phase.Lowering {
     ///
     /// Returns a list `(RowVar, arity)` in `program` in the order of the nesting.
     ///
-    def collectRowVarArity(program: AProgram): List[(RowVar, Int32)] = 
+    def collectRowVarArity(program: Ram.RamProgram): List[(RowVar, Int32)] = 
         collectRowVarRelSym(program) |> List.map(match (rv, RelSym.Symbol(_, arity, _)) -> (rv, arity))
 
     ///
     /// Returns a list of pairs `(RowVar, RelSym)` in `program` in the order of the nesting.
     ///
-    def collectRowVarRelSym(program: AProgram): List[(RowVar, RelSym)] = match program {
-        case AProgram.Program(stmt, _, _, _) => 
+    def collectRowVarRelSym(program: Ram.RamProgram): List[(RowVar, RelSym)] = match program {
+        case Ram.RamProgram.Program(stmt, _, _, _) => 
             collectRowVarRelSymStmt(stmt)
     }
 
     ///
     /// Returns a list of pairs `(RowVar, RelSym)` in `stmt`.
     ///
-    def collectRowVarRelSymStmt(stmt: ARamStmt): List[(RowVar, RelSym)] \ r = match stmt {
-        case ARamStmt.Insert(op) => collectRowVarRelSymOp(op)
-        case ARamStmt.MergeInto(_, _) => Nil
-        case ARamStmt.Swap(_, _) => Nil
-        case ARamStmt.Purge(_) => Nil
-        case ARamStmt.Seq(stmts) => Vector.foldLeft(acc -> x -> List.append(collectRowVarRelSymStmt(x), acc), Nil, stmts)
-        case ARamStmt.Par(stmts) => Vector.foldLeft(acc -> x -> List.append(collectRowVarRelSymStmt(x), acc), Nil, stmts)
-        case ARamStmt.Until(_, rest) => collectRowVarRelSymStmt(rest)
-        case ARamStmt.Comment(_) => Nil
-        case ARamStmt.EstimateJoinSize(_, _, _, _) => Nil
+    def collectRowVarRelSymStmt(stmt: Ram.RamStmt): List[(RowVar, RelSym)] \ r = match stmt {
+        case Ram.RamStmt.Insert(op) => collectRowVarRelSymOp(op)
+        case Ram.RamStmt.MergeInto(_, _) => Nil
+        case Ram.RamStmt.Swap(_, _) => Nil
+        case Ram.RamStmt.Purge(_) => Nil
+        case Ram.RamStmt.Seq(stmts) => Vector.foldLeft(acc -> x -> List.append(collectRowVarRelSymStmt(x), acc), Nil, stmts)
+        case Ram.RamStmt.Par(stmts) => Vector.foldLeft(acc -> x -> List.append(collectRowVarRelSymStmt(x), acc), Nil, stmts)
+        case Ram.RamStmt.Until(_, rest) => collectRowVarRelSymStmt(rest)
+        case Ram.RamStmt.Comment(_) => Nil
+        case Ram.RamStmt.EstimateJoinSize(_, _, _, _) => Nil
     }
 
     ///
     /// Returns a list of pairs `(RowVar, RelSym)` in `op` in the order of nesting.
     ///
-    def collectRowVarRelSymOp(op: ARelOp): List[(RowVar, RelSym)] \ r = match op {
-        case ASearch(rv, relSym, rest) => (rv, relSym) :: collectRowVarRelSymOp(rest)
-        case AQuery(rv, relSym, _, _, rest) => (rv, relSym) :: collectRowVarRelSymOp(rest)
-        case AFunctional(_, _, _, rest, _) => collectRowVarRelSymOp(rest)
-        case AProject(_, _) => Nil
-        case AIf(_, rest) => collectRowVarRelSymOp(rest)
+    def collectRowVarRelSymOp(op: Ram.RelOp): List[(RowVar, RelSym)] \ r = match op {
+        case Ram.RelOp.Search(rv, relSym, rest) => (rv, relSym) :: collectRowVarRelSymOp(rest)
+        case Ram.RelOp.Query(rv, relSym, _, _, rest) => (rv, relSym) :: collectRowVarRelSymOp(rest)
+        case Ram.RelOp.Functional(_, _, _, rest, _) => collectRowVarRelSymOp(rest)
+        case Ram.RelOp.Project(_, _) => Nil
+        case Ram.RelOp.If(_, rest) => collectRowVarRelSymOp(rest)
     }
 
 }
