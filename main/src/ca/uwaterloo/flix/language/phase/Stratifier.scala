@@ -464,11 +464,9 @@ object Stratifier {
   }
 
   private def visitExtMatchRule(rule: ExtMatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): ExtMatchRule = rule match {
-    case ExtMatchRule.Rule(label, pats, exp, loc) =>
+    case ExtMatchRule(label, pats, exp, loc) =>
       val e1 = visitExp(exp)
-      ExtMatchRule.Rule(label, pats, e1, loc)
-
-    case ExtMatchRule.Error(_) => rule
+      ExtMatchRule(label, pats, e1, loc)
   }
 
   private def visitTryCatchRule(rule: CatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): CatchRule = rule match {

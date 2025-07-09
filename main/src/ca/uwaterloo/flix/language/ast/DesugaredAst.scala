@@ -410,14 +410,7 @@ object DesugaredAst {
 
   case class MatchRule(pat: Pattern, exp1: Option[Expr], exp2: Expr, loc: SourceLocation)
 
-  sealed trait ExtMatchRule
-
-  object ExtMatchRule {
-    case class Rule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation) extends ExtMatchRule
-
-    case class Error(loc: SourceLocation) extends ExtMatchRule
-  }
-
+  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
 
   case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr, loc: SourceLocation)
 

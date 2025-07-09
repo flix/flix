@@ -192,10 +192,7 @@ object PatMatch {
       case Expr.ExtMatch(exp, rules, _, _, _) =>
         // Exhaustiveness does not make sense for extensible variants.
         visitExp(exp)
-        rules.foreach {
-          case ExtMatchRule.Rule(_, _, exp1, _) => visitExp(exp1)
-          case ExtMatchRule.Error(_) => ()
-        }
+        rules.foreach(r => visitExp(r.exp))
 
       case Expr.Tag(_, exps, _, _, _) => exps.foreach(visitExp)
 

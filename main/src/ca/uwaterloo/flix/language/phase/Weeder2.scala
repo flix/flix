@@ -1574,28 +1574,28 @@ object Weeder2 {
         case (expr, rules) => // TODO: Maybe check that last rule is wild and also update parsing?
           // Check for duplicate patterns
           val properRules = rules.collect {
-            case rule@ExtMatchRule.Rule(_, _, _, _) => rule
+            case Some(rule) => rule
           }
-          val duplicateErrors = getDuplicates(properRules, (rule: ExtMatchRule.Rule) => rule.label)
+          val duplicateErrors = getDuplicates(properRules, (rule: ExtMatchRule) => rule.label)
             .map {
               case (rule1, rule2) =>
                 WeederError.DuplicateExtPattern(rule1.label, rule1.loc, rule2.loc)
             }
           duplicateErrors.foreach(sctx.errors.add)
-          Validation.Success(Expr.ExtMatch(expr, rules, tree.loc))
+          Validation.Success(Expr.ExtMatch(expr, rules.flatten, tree.loc))
       }
     }
 
-    private def visitExtMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[ExtMatchRule, CompilationMessage] = {
+    private def visitExtMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[Option[ExtMatchRule], CompilationMessage] = {
       expect(tree, TreeKind.Expr.ExtMatchRuleFragment)
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
       flatMapN(Patterns.pickExtPattern(tree), traverse(exprs)(visitExpr)) {
         case ((label, pats), expr :: Nil) =>
-          Validation.Success(ExtMatchRule.Rule(label, pats, expr, tree.loc))
+          Validation.Success(Some(ExtMatchRule(label, pats, expr, tree.loc)))
 
         case (_, _) =>
-          // Fall back on ExtMatchRule.Error. Parser has reported an error here.
-          Validation.Success(ExtMatchRule.Error(tree.loc)) // FIXME: Include the expr here since we must do type inference on it
+          // Fall back on None. Parser has reported an error here.
+          Validation.Success(None)
       }
     }
 

@@ -216,10 +216,7 @@ object Summary {
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.RestrictableChooseRule(_, exp) => countCheckedEcasts(exp)
     }.sum
-    case Expr.ExtMatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
-      case ExtMatchRule.Rule(_, _, exp1, _) => countCheckedEcasts(exp1)
-      case ExtMatchRule.Error(_) => 0
-    }
+    case Expr.ExtMatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map(r => countCheckedEcasts(r.exp)).sum
     case Expr.Tag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.RestrictableTag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.ExtensibleTag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum

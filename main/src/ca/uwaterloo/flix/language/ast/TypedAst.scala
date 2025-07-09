@@ -400,13 +400,7 @@ object TypedAst {
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
-  sealed trait ExtMatchRule
-
-  object ExtMatchRule {
-    case class Rule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation) extends ExtMatchRule
-
-    case class Error(loc: SourceLocation) extends ExtMatchRule
-  }
+  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr, loc: SourceLocation)
 

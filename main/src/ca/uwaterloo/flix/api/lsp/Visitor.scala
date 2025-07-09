@@ -752,7 +752,7 @@ object Visitor {
   }
 
   private def visitExtMatchRule(rule: ExtMatchRule)(implicit a: Acceptor, c: Consumer): Unit = rule match {
-    case ExtMatchRule.Rule(_, pats, exp, loc) =>
+    case ExtMatchRule(_, pats, exp, loc) =>
       if (!a.accept(loc)) {
         return
       }
@@ -761,8 +761,6 @@ object Visitor {
 
       pats.foreach(visitExtPattern)
       visitExpr(exp)
-
-    case ExtMatchRule.Error(_) => ()
   }
 
   private def visitTypeMatchRule(rule: TypeMatchRule)(implicit a: Acceptor, c: Consumer): Unit = {

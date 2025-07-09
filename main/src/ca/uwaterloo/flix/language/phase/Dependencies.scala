@@ -608,11 +608,9 @@ object Dependencies {
   }
 
   private def visitExtMatchRule(r: TypedAst.ExtMatchRule)(implicit sctx: SharedContext): Unit = r match {
-    case ExtMatchRule.Rule(_, pats, exp, _) =>
+    case ExtMatchRule(_, pats, exp, _) =>
       pats.foreach(visitExtPattern)
       visitExp(exp)
-
-    case ExtMatchRule.Error(_) => ()
   }
 
   private def visitPattern(p: TypedAst.Pattern)(implicit sctx: SharedContext): Unit = p match {
