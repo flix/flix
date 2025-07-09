@@ -26,17 +26,10 @@ mod Interface {
             getMoveFromConsole()
         } else {
             match Int32.parse(10, line) {
-                case Result.Err(_) => {
+                case Result.Ok(move) if (0 <= move and move <= 8) => move
+                case _ => {
                     Console.println("Invalid move. Move must be a positive integer between 0 and 8");
                     getMoveFromConsole()
-                }
-                case Result.Ok(move) => {
-                    if(not(move >= 0 and move <= 8)) {
-                        Console.println("Invalid move. Move must be in between 0 and 8");
-                        getMoveFromConsole()
-                    } else {
-                        move
-                    }
                 }
             }
         }

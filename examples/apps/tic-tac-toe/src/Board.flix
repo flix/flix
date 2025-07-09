@@ -18,14 +18,14 @@ mod Board {
     ///
     /// Returns the updated board if the move is valid, otherwise returns the original board.
     ///
-    pub def makeMove(board: Board, symbol: Symbol, index: Int32): Result[Board, Board]  = match board {
+    pub def makeMove(board: Board, symbol: Symbol, index: Int32): Option[Board]  = match board {
         case Board(vec) => {
             if (Vector.get(index, vec) == Symbol.Empty) {
                 let newBoard = Board(Vector.update(index, symbol, vec));
-                Result.Ok(newBoard)
+                Some(newBoard)
             }
             else {
-               Result.Err(board)
+               None
             }
         }
     }
@@ -36,17 +36,16 @@ mod Board {
     pub def checkWin(board: Board, symbol: Symbol): Bool = match board {
         case Board(vec) => {
             let patterns = (0, 1, 2) :: (3, 4, 5) :: (6, 7, 8) :: (0, 3, 6) :: (1, 4, 7) :: (2, 5, 8) :: (0, 4, 8) :: (2, 4, 6) :: Nil;
-            List.foldLeft(
-                (acc: Bool, pattern: (Int32, Int32, Int32)) -> {
+            List.exists((pattern: (Int32, Int32, Int32)) -> {
                     match pattern {
-                        case (a, b, c) => acc or
-                            ((Vector.get(a, vec) == symbol)
-                             and (Vector.get(b, vec) == symbol)
-                             and (Vector.get(c, vec) == symbol))
+                        case (a, b, c) =>
+                            (Vector.get(a, vec) == symbol)
+                            and (Vector.get(b, vec) == symbol)
+                            and (Vector.get(c, vec) == symbol)
                     }
-                }, false, patterns)
-            }
+            }, patterns)
         }
+    }
 
     ///
     /// Checks if all cells are already filled on the board.

@@ -5,7 +5,7 @@ def gameLoop(board: Board, symbol: Symbol): Unit \ Interface = {
     Interface.display(board, "Enter a move (0 - 8): ");
     let move = Interface.getMove();
     match Board.makeMove(board, symbol, move) {
-        case Result.Ok(newBoard) => {
+        case Some(newBoard) => {
             if(Board.checkWin(newBoard, symbol)) {
                 match symbol {
                     case Symbol.X => Interface.display(newBoard, "Player One wins!!!")
@@ -18,7 +18,7 @@ def gameLoop(board: Board, symbol: Symbol): Unit \ Interface = {
                 gameLoop(newBoard, Symbol.complement(symbol))
             }
         }
-        case Result.Err(_) => {
+        case None => {
             Interface.display(board, "Cell already filled");
             gameLoop(board, symbol)
         }
