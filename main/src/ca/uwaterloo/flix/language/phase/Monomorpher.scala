@@ -730,7 +730,7 @@ object Monomorpher {
     case LoweredAst.ExtPattern.Wild(tpe, loc) => (MonoAst.ExtPattern.Wild(subst(tpe), loc), Map.empty)
     case LoweredAst.ExtPattern.Var(sym, tpe, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
-      (MonoAst.ExtPattern.Var(freshSym, subst(tpe), loc), Map(sym -> freshSym))
+      (MonoAst.ExtPattern.Var(freshSym, subst(tpe), Occur.Unknown, loc), Map(sym -> freshSym))
   }
 
   /** Specializes `method` w.r.t. `subst`. */

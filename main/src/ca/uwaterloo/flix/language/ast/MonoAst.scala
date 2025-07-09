@@ -150,7 +150,7 @@ object MonoAst {
 
     case class Wild(tpe: Type, loc: SourceLocation) extends ExtPattern
 
-    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExtPattern
+    case class Var(sym: Symbol.VarSym, tpe: Type, occur: Occur, loc: SourceLocation) extends ExtPattern
 
   }
 

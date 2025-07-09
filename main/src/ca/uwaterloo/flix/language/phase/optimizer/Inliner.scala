@@ -422,10 +422,23 @@ object Inliner {
   }
 
   private def visitExtPattern(pat0: MonoAst.ExtPattern)(implicit flix: Flix): (MonoAst.ExtPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
-    case MonoAst.ExtPattern.Wild(tpe, loc) => (MonoAst.ExtPattern.Wild(tpe, loc), Map.empty)
-    case MonoAst.ExtPattern.Var(sym, tpe, loc) =>
-      val freshVarSym = Symbol.freshVarSym(sym)
-      (MonoAst.ExtPattern.Var(freshVarSym, tpe, loc), Map(sym -> freshVarSym))
+    case MonoAst.ExtPattern.Wild(tpe, loc) =>
+      (MonoAst.ExtPattern.Wild(tpe, loc), Map.empty)
+
+    case MonoAst.ExtPattern.Var(sym, tpe, occur, loc) => occur match {
+      case Occur.Unknown => throw InternalCompilerException("unexpected unknown occurrence information", loc)
+
+      case Occur.Dead =>
+        (MonoAst.ExtPattern.Wild(tpe, loc), Map.empty)
+
+      case Occur.Once
+           | Occur.OnceInLambda
+           | Occur.OnceInLocalDef
+           | Occur.ManyBranch
+           | Occur.Many =>
+        val freshVarSym = Symbol.freshVarSym(sym)
+        (MonoAst.ExtPattern.Var(freshVarSym, tpe, occur, loc), Map(sym -> freshVarSym))
+    }
   }
 
   /** Returns a formal param with a fresh symbol and a substitution mapping the old variable the fresh variable. */
