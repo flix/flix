@@ -15,38 +15,40 @@
  */
 
 ///
-/// A `Reader` implementation that wraps an underlying `Reader` instance
-/// and caches the bytes read from the underlying instance in an internal buffer.
+/// A `Readable` implementation that wraps an underlying `Readable` instance
+/// and stores the items read from the underlying instance in an internal buffer.
 ///
-/// A call to `read` will read directly from the buffer if bytes are available, and
+/// A call to `read` will read directly from the buffer if items are available, and
 /// will trigger a `read` from the underlying `reader` when the buffer is empty.
 ///
 /// This has the effect of reducing the overall number of `read`s to the underlying
-/// `Reader`.
+/// `Readable`.
 ///
-/// A call to `read` might read more than the requested number of bytes from the
+/// A call to `read` might read more than the requested number of items from the
 /// underlying reader, in order to fill the entire buffer.
 ///
 /// A call to `read` might not read from the underlying `reader` at all, if there are
-/// enough bytes in the buffer.
+/// enough items in the buffer.
 ///
 /// `buffer`: the underlying buffer.
 /// `cursor`: the index in `buffer` of the first element logically considered to be in the buffer.
 /// `size`: the number of elements (starting at `cursor`) logically considered to be in the buffer.
-/// `reader`: the underlying `Reader` being read from.
+/// `reader`: the underlying `Readable` being read from.
 ///
-pub struct BufReader[t: Type, r: Region] {
-    buffer: Array[Int8, r],
+pub struct BufReader[a: Type, t: Type, r: Region] {
+    buffer: Array[a, r],
     mut cursor: Int32,
     mut size: Int32,
     reader: t
 }
 
-instance Reader[BufReader[t, rr]] with Reader[t] {
+instance Readable[BufReader[a, t, rr]] with Readable[t] where Readable.Elm[t] ~ a {
 
-    type Aef = rr + Reader.Aef[t]
+    type Elm = a
 
-    pub def read(buffer: Array[Int8, rb], bufReader: BufReader[t, rr]): Result[IoError, Int32] \ rb + rr + Reader.Aef[t] =
+    type Aef = rr + Readable.Aef[t]
+
+    pub def read(buffer: Array[a, rb], bufReader: BufReader[a, t, rr]): Result[IoError, Int32] \ rb + rr + Readable.Aef[t] =
         BufReader.read(buffer, bufReader)
 
 }
@@ -54,39 +56,39 @@ instance Reader[BufReader[t, rr]] with Reader[t] {
 mod BufReader {
 
     ///
-    /// Constructs a `BufReader` wrapping `reader` with a default capacity of 4096 bytes.
+    /// Constructs a `BufReader` wrapping `reader` with a default capacity of 4096 items.
     ///
-    pub def withDefaultCapacity(rc: Region[r], reader: t): BufReader[t, r] \ r =
-        withCapacity(rc, defaultBufferCapacity(), reader)
+    pub def withDefaultCapacity(rc: Region[r], defaultValue: a, reader: t): BufReader[a,t, r] \ r with Readable[t] =
+        withCapacity(rc, defaultBufferCapacity(), defaultValue, reader)
 
     ///
-    /// Constructs a `BufReader` wrapping `reader` with the specified `capacity` in bytes.
+    /// Constructs a `BufReader` wrapping `reader` with the specified `capacity` in items.
     ///
     /// If `capacity <= 0`, the `BufReader` will delegate directly to `reader` without buffering.
     ///
-    pub def withCapacity(rc: Region[r], capacity: Int32, reader: t): BufReader[t, r] \ r =
+    pub def withCapacity(rc: Region[r], capacity: Int32, defaultValue: a, reader: t): BufReader[a, t, r] \ r with Readable[t] =
         new BufReader @ rc {
-            buffer = Array.repeat(rc, capacity, 0i8),
+            buffer = Array.repeat(rc, capacity, defaultValue),
             cursor = 0,
             size = 0,
             reader = reader
         }
 
     ///
-    /// Reads `k` bytes from the underlying `Reader` into `dest`, caching bytes read into
+    /// Reads `k` items from the underlying `Readable` into `dest`, storing items read into
     /// the internal buffer.
     ///
-    /// Returns `Ok(k)` to signify that `k` bytes were successfully read and written to `dest`.
+    /// Returns `Ok(k)` to signify that `k` items were successfully read and written to `dest`.
     ///
     /// Guarantees that `0 <= k <= length(dest)`.
     ///
     /// Returns `Err(e)` if some underlying error occurs.
     ///
-    pub def read(dest: Array[Int8, rb], bufReader: BufReader[t, rr]): Result[IoError, Int32] \ rb + rr + Reader.Aef[t] with Reader[t] =
+    pub def read(dest: Array[Readable.Elm[t], rb], bufReader: BufReader[a, t, rr]): Result[IoError, Int32] \ rb + rr + Readable.Aef[t] with Readable[t] where Readable.Elm[t] ~ a =
         if (Array.size(bufReader->buffer) > 0) {
             readFromCursor(0, dest, bufReader)
         } else {
-            Reader.read(dest, bufReader->reader)
+            Readable.read(dest, bufReader->reader)
         }
 
     ///
@@ -95,22 +97,22 @@ mod BufReader {
     /// Reads until `dest` is full or until there is nothing left to read from the underlying resource.
     ///
     /// Returns `Ok(c)` where `c` is a cursor indicating the next index in `dest` that can be written. If `dest` is full,
-    /// `c == length(dest)`. This is equivalent to the total number of bytes written since `cursor` was 0.
+    /// `c == length(dest)`. This is equivalent to the total number of items written since `cursor` was 0.
     ///
     /// Guarantees that `0 <= c <= length(dest)`.
     ///
     /// Assumes that `cursor <= length(dest)`.
     ///
-    def readFromCursor(cursor: Int32, dest: Array[Int8, rb], bufReader: BufReader[t, rr]): Result[IoError, Int32] \ rb + rr + Reader.Aef[t] with Reader[t] =
+    def readFromCursor(cursor: Int32, dest: Array[a, rb], bufReader: BufReader[a, t, rr]): Result[IoError, Int32] \ rb + rr + Readable.Aef[t] with Readable[t] where Readable.Elm[t] ~ a =
         if (cursor == Array.length(dest)) {
             Ok(cursor)
         } else if (bufReader->size != 0) {
-            let bytesCopied = copyFromBuffer(cursor, dest, bufReader);
-            readFromCursor(cursor + bytesCopied, dest, bufReader)
+            let itemsCopied = copyFromBuffer(cursor, dest, bufReader);
+            readFromCursor(cursor + itemsCopied, dest, bufReader)
         } else {
             forM(
-                bytesFilled <- fillBuffer(bufReader);
-                newCursor <- if (bytesFilled == 0) {
+                itemsFilled <- fillBuffer(bufReader);
+                newCursor <- if (itemsFilled == 0) {
                     Ok(cursor)
                 } else {
                     readFromCursor(cursor, dest, bufReader)
@@ -119,45 +121,45 @@ mod BufReader {
         }
 
     ///
-    /// Copies from the buffer into the destination, removing copied bytes from the buffer.
+    /// Copies from the buffer into the destination, removing copied items from the buffer.
     ///
     /// Does not read from the underlying reader.
     ///
-    /// Returns the number of bytes copied.
+    /// Returns the number of items copied.
     ///
     /// Assumes that `cursor < length(dest)`.
     ///
-    def copyFromBuffer(cursor: Int32, dest: Array[Int8, rb], bufReader: BufReader[t, rr]): Int32 \ rb + rr with Reader[t] =
-        let bytesToRead = Int32.min(Array.length(dest) - cursor, bufReader->size);
+    def copyFromBuffer(cursor: Int32, dest: Array[a, rb], bufReader: BufReader[a, t, rr]): Int32 \ rb + rr with Readable[t] =
+        let itemsToRead = Int32.min(Array.length(dest) - cursor, bufReader->size);
         def copy(i) = {
-            if (i >= bytesToRead) {
+            if (i >= itemsToRead) {
                 ()
             } else {
-                let byte = Array.get(bufReader->cursor + i, bufReader->buffer);
-                Array.put(byte, cursor + i, dest);
+                let item = Array.get(bufReader->cursor + i, bufReader->buffer);
+                Array.put(item, cursor + i, dest);
                 copy(i + 1)
             }
         };
         copy(0);
-        bufReader->cursor = bufReader->cursor + bytesToRead;
-        bufReader->size = bufReader->size - bytesToRead;
-        bytesToRead
+        bufReader->cursor = bufReader->cursor + itemsToRead;
+        bufReader->size = bufReader->size - itemsToRead;
+        itemsToRead
 
     ///
     /// Reads from the underlying reader into the buffer, updating the size
     /// and resetting the buffer's cursor back to 0.
     ///
-    /// Returns `Ok(k)` where `k` is the number of bytes read.
+    /// Returns `Ok(k)` where `k` is the number of items read.
     ///
     /// Assumes that `bufReader->size == 0`.
     ///
-    def fillBuffer(bufReader: BufReader[t, rr]): Result[IoError, Int32] \ rr + Reader.Aef[t] with Reader[t] =
+    def fillBuffer(bufReader: BufReader[a, t, rr]): Result[IoError, Int32] \ rr + Readable.Aef[t] with Readable[t] where Readable.Elm[t] ~ a =
         forM(
-            bytesRead <- Reader.read(bufReader->buffer, bufReader->reader)
+            itemsRead <- Readable.read(bufReader->buffer, bufReader->reader)
         ) yield {
             bufReader->cursor = 0;
-            bufReader->size = bytesRead;
-            bytesRead
+            bufReader->size = itemsRead;
+            itemsRead
         }
 
     def defaultBufferCapacity(): Int32 = 4096
