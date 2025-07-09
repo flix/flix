@@ -969,6 +969,9 @@ object Parser2 {
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
+      if (at(TokenKind.KeywordWhere)) {
+        equalityConstraints()
+      }
       if (at(TokenKind.CurlyL)) {
         expect(TokenKind.CurlyL)
         var continue = true
@@ -2931,7 +2934,6 @@ object Parser2 {
 
     private def fixpointPQuerySelect()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordSelect))
       val mark = open()
       expect(TokenKind.KeywordSelect)
       Predicate.head()
@@ -2940,7 +2942,6 @@ object Parser2 {
 
     private def fixpointPQueryWith()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordWith))
       val mark = open()
       expect(TokenKind.KeywordWith)
       nth(0) match {

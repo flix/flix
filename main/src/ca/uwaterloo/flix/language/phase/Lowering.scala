@@ -187,14 +187,15 @@ object Lowering {
     * Lowers the given instance `inst0`.
     */
   private def visitInstance(inst0: TypedAst.Instance)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Instance = inst0 match {
-    case TypedAst.Instance(doc, ann, mod, sym, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
+    case TypedAst.Instance(doc, ann, mod, sym, tpe0, tconstrs0, econstrs0, assocs0, defs0, ns, loc) =>
       val tpe = visitType(tpe0)
       val tconstrs = tconstrs0.map(visitTraitConstraint)
+      val econstrs = econstrs0.map(visitEqConstraint)
       val assocs = assocs0.map {
         case TypedAst.AssocTypeDef(defDoc, defMod, defSym, args, defTpe, defLoc) => LoweredAst.AssocTypeDef(defDoc, defMod, defSym, args, defTpe, defLoc)
       }
       val defs = defs0.map(visitDef)
-      LoweredAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs, defs, ns, loc)
+      LoweredAst.Instance(doc, ann, mod, sym, tpe, tconstrs, econstrs, assocs, defs, ns, loc)
   }
 
   /**
@@ -302,6 +303,16 @@ object Lowering {
     case TraitConstraint(head, tpe0, loc) =>
       val tpe = visitType(tpe0)
       TraitConstraint(head, tpe, loc)
+  }
+
+  /**
+    * Lowers the given equality constraint `econstr0`.
+    */
+  private def visitEqConstraint(econstr0: EqualityConstraint)(implicit root: TypedAst.Root, flix: Flix): EqualityConstraint = econstr0 match {
+    case EqualityConstraint(symUse, t1, t2, loc) =>
+      val tpe1 = visitType(t1)
+      val tpe2 = visitType(t2)
+      EqualityConstraint(symUse, tpe1, tpe2, loc)
   }
 
   /**

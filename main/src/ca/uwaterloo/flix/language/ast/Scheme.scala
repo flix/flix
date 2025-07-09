@@ -126,10 +126,12 @@ object Scheme {
 
   /**
     * Returns `true` if the given schemes are equivalent.
+    *
+    * @param localEconstrs any constraints that, unlike those in `globalEqEnv`, contain free variables that appear bound in `sc1` or `sc2`.
     */
   // TODO can optimize?
-  def equal(sc1: Scheme, sc2: Scheme, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit scope: Scope, flix: Flix): Boolean = {
-    lessThanEqual(sc1, sc2, traitEnv, eqEnv) && lessThanEqual(sc2, sc1, traitEnv, eqEnv)
+  def equal(sc1: Scheme, sc2: Scheme, traitEnv: TraitEnv, globalEqEnv: EqualityEnv, localEconstrs: List[EqualityConstraint])(implicit scope: Scope, flix: Flix): Boolean = {
+    lessThanEqual(sc1, sc2, traitEnv, globalEqEnv, localEconstrs) && lessThanEqual(sc2, sc1, traitEnv, globalEqEnv, localEconstrs)
   }
 
   /**
@@ -139,12 +141,19 @@ object Scheme {
     * T new constructors
     * ---------------------------------------
     * Θₚ ⊩ (∀α₁.π₁ ⇒ τ₁) ≤ (∀α₂.π₂ ⇒ τ₂)
+    *
+    * @param localEconstrs any constraints that, unlike those in `globalEqEnv`, contain free variables that appear bound in `sc2`.
     */
-  def lessThanEqual(sc1: Scheme, sc2: Scheme, tenv0: TraitEnv, eenv0: EqualityEnv)(implicit scope: Scope, flix: Flix): Boolean = {
+  def lessThanEqual(sc1: Scheme, sc2: Scheme, tenv0: TraitEnv, globalEqEnv0: EqualityEnv, localEconstrs: List[EqualityConstraint])(implicit scope: Scope, flix: Flix): Boolean = {
 
     // Instantiate sc2, creating [T/α₂]π₂ and [T/α₂]τ₂
     // We use the top scope because this function is only used for comparing schemes, which are at top-level.
-    val (cconstrs2_0, econstrs2_0, tpe2_0, _) = Scheme.instantiate(sc2, SourceLocation.Unknown)(Scope.Top, flix)
+    val (cconstrs2_0, econstrs2_0, tpe2_0, substMap) = Scheme.instantiate(sc2, SourceLocation.Unknown)(Scope.Top, flix)
+
+    // Since constraints in `localEconstrs` have free vars that appear in `sc2`, we must apply the same substitution
+    // before including them in the equality env.
+    val subst0 = Substitution(substMap)
+    val eenv0 = ConstraintSolverInterface.expandEqualityEnv(globalEqEnv0, localEconstrs.map(subst0.apply))
 
     // Resolve what we can from the new econstrs
     val tconstrs2_0 = econstrs2_0.map { case EqualityConstraint(symUse, t1, t2, loc) => TypeConstraint.Equality(Type.AssocType(symUse, t1, t2.kind, loc), t2, Provenance.Match(t1, t2, loc)) }

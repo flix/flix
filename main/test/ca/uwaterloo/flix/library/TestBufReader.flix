@@ -24,7 +24,7 @@
     def read01(): Bool = region rc {
         let bufReader = TestReader.mkEmptyBufReader(rc, 0);
         let actualDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -33,7 +33,7 @@
     def read02(): Bool = region rc {
         let bufReader = TestReader.mkEmptyBufReader(rc, 8);
         let dest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        let bytesRead = Reader.read(dest, bufReader);
+        let bytesRead = Readable.read(dest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(dest, expectedDest))
     }
@@ -44,7 +44,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -55,7 +55,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -66,7 +66,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -77,7 +77,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -88,7 +88,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -99,7 +99,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -110,7 +110,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -121,7 +121,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -132,7 +132,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -143,7 +143,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -154,7 +154,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -165,7 +165,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -176,7 +176,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -187,7 +187,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -198,7 +198,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -209,7 +209,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -220,7 +220,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -231,7 +231,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -242,7 +242,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -253,7 +253,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -264,7 +264,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -275,7 +275,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -286,7 +286,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -297,7 +297,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
         (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -308,7 +308,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
     }
@@ -319,8 +319,8 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -331,9 +331,9 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -344,10 +344,10 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -358,11 +358,11 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -373,7 +373,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
     }
@@ -384,8 +384,8 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -396,9 +396,9 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -409,10 +409,10 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -423,11 +423,11 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -438,7 +438,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
     }
@@ -449,8 +449,8 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -461,9 +461,9 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -474,10 +474,10 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -488,11 +488,11 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -503,7 +503,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
     }
@@ -514,8 +514,8 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -526,9 +526,9 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -539,10 +539,10 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -553,11 +553,11 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -568,7 +568,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
     }
@@ -579,8 +579,8 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -591,9 +591,9 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -604,10 +604,10 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -618,11 +618,11 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -633,7 +633,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
     }
@@ -644,8 +644,8 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -656,9 +656,9 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -669,10 +669,10 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -683,11 +683,11 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -698,7 +698,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
     }
@@ -709,8 +709,8 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -721,9 +721,9 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -734,10 +734,10 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -748,11 +748,11 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -763,7 +763,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
     }
@@ -774,8 +774,8 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -786,9 +786,9 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -799,10 +799,10 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -813,11 +813,11 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -828,7 +828,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
     }
@@ -839,8 +839,8 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -851,9 +851,9 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -864,10 +864,10 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -878,11 +878,11 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -893,7 +893,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
     }
@@ -904,8 +904,8 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -916,9 +916,9 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -929,10 +929,10 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -943,11 +943,11 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -958,7 +958,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
     }
@@ -969,8 +969,8 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -981,9 +981,9 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -994,10 +994,10 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -1008,11 +1008,11 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -1023,7 +1023,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
     }
@@ -1034,8 +1034,8 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -1046,9 +1046,9 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -1059,10 +1059,10 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -1073,11 +1073,11 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -1088,7 +1088,7 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
     }
@@ -1099,8 +1099,8 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
         (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -1111,9 +1111,9 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -1124,25 +1124,25 @@
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
 
     @test
     def read91(): Bool = region rc {
-        let capacity = 16;
-        let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        let bufReader = mkTestBufReader(rc, capacity, array);
-        let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let _ = Reader.read(actualDest, bufReader);
-        let bytesRead = Reader.read(actualDest, bufReader);
+        let capacity: Int32 = 16;
+        let array: Array[Int8, rc] = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
+        let bufReader: BufReader[Int8, TestReader[rc], rc] = mkTestBufReader(rc, capacity, array);
+        let actualDest: Array[Int8, rc] = Array.repeat(rc, 3, 0i8);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
         (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
     }
@@ -1154,7 +1154,9 @@ struct TestReader[r] {
     mut cursor: Int32
 }
 
-instance Reader[TestReader[rr]] {
+instance Readable[TestReader[rr]] {
+
+    type Elm = Int8
 
     type Aef = rr
 
@@ -1164,11 +1166,11 @@ instance Reader[TestReader[rr]] {
 
 mod TestReader {
 
-    pub def mkEmptyBufReader(rc: Region[r], capacity: Int32): BufReader[TestReader[r], r] \ r =
+    pub def mkEmptyBufReader(rc: Region[r], capacity: Int32): BufReader[Int8, TestReader[r], r] \ r =
         let stream: Array[Int8, r] = Array#{} @ rc;
         mkTestBufReader(rc, capacity, stream)
 
-    pub def mkTestBufReader(rc: Region[r], capacity: Int32, stream: Array[Int8, r]): BufReader[TestReader[r], r] \ r =
+    pub def mkTestBufReader(rc: Region[r], capacity: Int32, stream: Array[Int8, r]): BufReader[Int8, TestReader[r], r] \ r =
         let testReader = fromArray(rc, stream);
         BufReader.withCapacity(rc, capacity, testReader)
 
