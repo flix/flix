@@ -1562,6 +1562,12 @@ mod Array {
         unchecked_cast(System.arraycopy(srcObj, srcPos#srcPos, dstObj, dstPos#dstPos, len#len) as _ \ { r1, r2 })
 
     ///
+    /// Returns a shallow copy of the array `a`.
+    ///
+    pub def copy(rc: Region[r2], a: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
+        copyOfRange(rc, 0, length(a), a)
+
+    ///
     /// Copies the range between `b` (inclusive) and `e` (exclusive) of a into an empty array.
     ///
     /// A valid range has the following properties:
