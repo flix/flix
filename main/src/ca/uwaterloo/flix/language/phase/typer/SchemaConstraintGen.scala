@@ -87,18 +87,16 @@ object SchemaConstraintGen {
       case KindedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tvar, loc1) =>
         val (tpes, effs) = exps.map(visitExp).unzip
         val selectSchemaRow = select match {
-          case KindedAst.Predicate.Head.Atom(name, Denotation.Relational, terms, _, loc2) =>
-            val (termTypes, termEffs) = terms.map(visitExp).unzip
-            termEffs.foreach(c.expectType(Type.Pure, _, loc2))
-            Type.mkSchemaRowExtend(name, Type.mkRelation(termTypes, loc2), mkAnySchemaRowType(loc2), loc2)
+          case KindedAst.Predicate.Head.Atom(_, Denotation.Relational, _, _, _) =>
+            visitHeadPredicate(select)
           case _ => throw InternalCompilerException("Provenance for lattice relations is not supported", loc1)
         }
         val withSchemaRow = withh.foldRight(mkAnySchemaRowType(loc1)) {
           (pred, acc) => Type.mkSchemaRowExtend(pred, Type.freshVar(Kind.Predicate, loc1), acc, loc1)
         }
-        val fresh = Type.freshVar(Kind.Star, loc1)
-        c.unifyAllTypes(fresh :: Type.mkSchema(withSchemaRow, loc1) :: Type.mkSchema(selectSchemaRow, loc1) :: tpes, loc1)
-        val resTpe = Type.mkExtensible(fresh, loc1)
+        val fresh = Type.freshVar(Kind.SchemaRow, loc1)
+        c.unifyAllTypes(Type.mkSchema(fresh, loc1) :: Type.mkSchema(withSchemaRow, loc1) :: Type.mkSchema(selectSchemaRow, loc1) :: tpes, loc1)
+        val resTpe = Type.mkVector(Type.mkExtensible(fresh, loc1), loc1)
         val resEff = Type.mkUnion(effs, loc1)
         c.unifyType(tvar, resTpe, loc1)
         (resTpe, resEff)
