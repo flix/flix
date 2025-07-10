@@ -48,6 +48,12 @@ object SymbolSet {
   }
 
   /**
+    * Return a symbol set containing all the symbols in `s1` that are not ambiguous w.r.t `s2`.
+    * @param s1 The first symbol set
+    * @param s2 The second symbol set
+    * @return All the symbols that are in `s1` such that no symbol in `s2` has the same base name but a different namespace
+    */
+  /**
     * Return a symbol set containing all the symbols in `s1` ambiguous w.r.t `s2`.
     * @param s1 The first symbol set
     * @param s2 The second symbol set
@@ -56,10 +62,10 @@ object SymbolSet {
   def ambiguous(s1: SymbolSet, s2: SymbolSet): SymbolSet = {
     val s3 = s1 ++ s2
     SymbolSet(
-      s3.enums.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 1),
-      s3.structs.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 1),
-      s3.traits.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 1),
-      s3.effects.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 1),
+      s3.enums.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 0),
+      s3.structs.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 0),
+      s3.traits.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 0),
+      s3.effects.filter(sym1 => s3.enums.count(sym2 => isAmbiguous(sym1, sym2)) > 0),
     )
   }
 
@@ -81,7 +87,7 @@ case class SymbolSet(
                     structs: Set[Symbol.StructSym],
                     traits: Set[Symbol.TraitSym],
                     effects: Set[Symbol.EffSym],
-                    ) {
+                    ) extends Iterable[Symbol] {
 
   /**
     * Returns the union of `this` and `that`
@@ -93,5 +99,20 @@ case class SymbolSet(
       traits ++ that.traits,
       effects ++ that.effects,
     )
+  }
+
+  def iterator: Iterator[Symbol] = {
+    enums.iterator ++ structs.iterator ++ traits.iterator ++ effects.iterator
+  }
+
+  /**
+    * Returns the symbol as a string if it is in the set, otherwise returns just the head.
+    */
+  def qualify(sym : QualifiedSym): String = {
+    if (iterator.contains(sym)) {
+      sym.fullName
+    } else {
+      sym.name
+    }
   }
 }
