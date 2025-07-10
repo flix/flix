@@ -19,4 +19,9 @@ package ca.uwaterloo.flix.language.ast.shared
 trait QualifiedSym{
   def namespace: List[String]
   def name: String
+
+  def fullName: String = {
+    if (namespace.isEmpty) name
+    else namespace.mkString(".") + "." + name
+  }
 }
