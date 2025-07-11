@@ -76,17 +76,17 @@ mod Fixpoint3.Solver {
         };
         let model = match d {
             case Datalog(_, r) =>
-                compiler(d, Map.empty()) |>  
+                compiler(d, Map.empty()) |>
                 Debugging.notifyPreInterpret |>
-                Interpreter.interpret(rc, withProv) |> 
+                Interpreter.interpret(rc, withProv) |>
                 toModelOnlyFull(withProv, r)
-            case Model(_) => 
+            case Model(_) =>
                 d
-            case Join(Model(m), Datalog(f, r)) => 
+            case Join(Model(m), Datalog(f, r)) =>
                 let cs = Datalog(f, r);
-                compiler(cs, m) |> 
+                compiler(cs, m) |>
                 Debugging.notifyPreInterpret |>
-                Interpreter.interpret(rc, withProv) |> 
+                Interpreter.interpret(rc, withProv) |>
                 toModelOnlyFull(withProv, r)
             case _ => bug!("Datalog Boxing bug")
         };
@@ -138,6 +138,12 @@ mod Fixpoint3.Solver {
             Model
         case Join(d1, d2) => union(projectSym(p, d1), projectSym(p, d2))
     }
+
+    ///
+    /// Returns the provenance of fact `f` of relation `p` given Datalog program `d`.
+    ///
+    @Internal
+    pub def provenanceOf(f: Vector[Boxed], p: PredSym, d: Datalog, mapping: PredSym -> Vector[Boxed] -> t): Vector[t] = ???
 
     ///
     /// Renames every predicate symbol in `d` with a fresh name, except for those in `preds`.
@@ -742,16 +748,18 @@ mod Fixpoint3.Solver {
             Map.rangeQueryWith(qquery, ramSym -> rel -> match toDenotation(ramSym) {
                 case Relational =>
                     Map.forEach((tuple, _) -> MutList.push(f(Vector.toList(tuple)), pFacts), rel)
-                case Latticenal(_, _, _, _) =>
+                case Latticenal(bot, leq, _, _) =>
                     Map.forEach((tuple, lat) -> {
-                        let it = Iterator.range(rc, 0, Vector.length(tuple) + 1);
-                        let vs = it |> Iterator.map(i -> {
-                            if (i < Vector.length(tuple))
-                                Vector.get(i, tuple)
-                            else
-                                lat
-                        }) |> Iterator.toList;
-                        MutList.push(f(vs), pFacts)
+                        if (not leq(lat, bot)) {
+                            let arity = Vector.length(tuple);
+                            let vs = Vector.init(i -> {
+                                if (i < arity)
+                                    Vector.get(i, tuple)
+                                else
+                                    lat
+                            }, arity + 1);
+                            MutList.push(f(vs), pFacts)
+                        } else ()
                     }, rel)
             }, db);
             pFacts |> MutList.toVector
