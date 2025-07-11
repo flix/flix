@@ -47,7 +47,7 @@ Did you know that:
 - Flix supports set and map literals `Set#{1, 2, 3}` and `Map#{1 => 2, 3 => 4}`.
 
 - Flix supports four types of for-loops, impure, pure, applicative and monadic,
-  with the `foreach`, `foreach-yield`, `forA`, `forM` constructs, respectively.
+  with the `foreach`, `foreach-yield`, `forA` and `forM` constructs, respectively.
 
 - Flix supports "program holes" written as either `???` or as `?name`.
 
