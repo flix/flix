@@ -75,8 +75,8 @@ Did you know that:
 - the Flix type and effect system supports complete type inference, i.e. if a
   program is typeable then the type inference with find the typing.
 
-- The Flix "Tips and Tricks"-section https://doc.flix.dev/tipstricks/ describes
-  many useful smaller features of the language.
+- The Flix "Everyday Programming"-section https://doc.flix.dev/everyday-programming.html
+  describes many commonly used features of the language.
 
 - Flix has a unique meta-programming feature that allows a higher-order
   functions to inspect the purity of its function argument(s).
