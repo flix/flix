@@ -133,6 +133,12 @@ mod Fixpoint3.Solver {
     }
 
     ///
+    /// Returns the provenance of fact `f` of relation `p` given Datalog program `d`.
+    ///
+    @Internal
+    pub def provenanceOf(f: Vector[Boxed], p: PredSym, d: Datalog, mapping: PredSym -> Vector[Boxed] -> t): Vector[t] = ???
+
+    ///
     /// Renames every predicate symbol in `d` with a fresh name, except for those in `preds`.
     ///
     @Internal
@@ -814,13 +820,12 @@ mod Fixpoint3.Solver {
                     Map.forEach((tuple, lat) -> {
                         if (not leq(lat, bot)) {
                             let arity = Vector.length(tuple);
-                            let it = Iterator.range(rc, 0, arity + 1);
-                            let vs = it |> Iterator.map(i -> {
+                            let vs = Vector.init(i -> {
                                 if (i < arity)
                                     Vector.get(i, tuple)
                                 else
                                     lat
-                            }) |> Iterator.toVector;
+                            }, arity + 1);
                             MutList.push(f(vs), pFacts)
                         } else ()
                     }, rel)
