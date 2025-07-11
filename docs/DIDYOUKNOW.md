@@ -55,8 +55,7 @@ Did you know that:
 
 - Flix compiles to JVM bytecode and runs on the Java Virtual Machine.
 
-- Flix supports channel and process-based concurrency, including the powerful
-  `select` expression.
+- Flix supports channel and process-based concurrency.
 
 - Flix supports first-class Datalog constraints, i.e. Datalog program fragments
   are values that can be passed to and returned from functions, etc.
