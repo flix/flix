@@ -129,11 +129,11 @@ Did you know that:
   takes multiple arguments of the same type. For example, `String.contains` must
   be called as `String.contains(substr = "foo", "bar")`.
 
-- the Flix `List` module offers more than 95 functions.
+- the Flix `List` module offers more than 110 functions.
 
-- the Flix `String` module offers more than 95 functions.
+- the Flix `String` module offers more than 100 functions.
 
-- the Flix `Foldable` module offers more than 30 functions.
+- the Flix `Foldable` module offers more than 45 functions.
 
 - the Flix standard library follows the convention of "subject-last" to enable
   pipelining (`|>`).
