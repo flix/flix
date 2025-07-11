@@ -411,8 +411,8 @@ object Monomorpher {
         // Effect operations are monomorphic - they have no variables.
         // The substitution can be left empty.
         val fparams = fparams0.map {
-          case LoweredAst.FormalParam(varSym, fparamMod, tpe, src, fpLoc) =>
-            MonoAst.FormalParam(varSym, fparamMod, StrictSubstitution.empty(tpe), src, Occur.Unknown, fpLoc)
+          case LoweredAst.FormalParam(varSym, fparamMod, tpe, fpLoc) =>
+            MonoAst.FormalParam(varSym, fparamMod, StrictSubstitution.empty(tpe), Occur.Unknown, fpLoc)
         }
         val spec = MonoAst.Spec(doc, ann, mod, fparams, declaredScheme.base, StrictSubstitution.empty(retTpe), StrictSubstitution.empty(eff), DefContext.Unknown)
         MonoAst.Op(sym, spec, loc)
@@ -846,9 +846,9 @@ object Monomorpher {
     * to a fresh variable symbol.
     */
   private def specializeFormalParam(fparam0: LoweredAst.FormalParam, subst0: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
-    val LoweredAst.FormalParam(sym, mod, tpe, src, loc) = fparam0
+    val LoweredAst.FormalParam(sym, mod, tpe, loc) = fparam0
     val freshSym = Symbol.freshVarSym(sym)
-    (MonoAst.FormalParam(freshSym, mod, subst0(tpe), src, Occur.Unknown, loc), Map(sym -> freshSym))
+    (MonoAst.FormalParam(freshSym, mod, subst0(tpe), Occur.Unknown, loc), Map(sym -> freshSym))
   }
 
   /** Unifies `tpe1` and `tpe2` which must be unifiable. */
