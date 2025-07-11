@@ -63,7 +63,6 @@ mod Fixpoint3.Solver {
     @Internal
     def runWithStratification(d0: Datalog, stf: Map[PredSym, (Int32, Int32)], withProv: Bool): Datalog = region rc {
         let d = Debugging.notifyPreSolve(d0);
-        // Some of this code is duplicated in `runJoinProfiler`.
         def compiler(cs: Datalog, db: Map[RelSym, Map[Vector[Boxed], Boxed]]): (ExecutableRam.RamProgram, Boxing[rc]) \ rc = {
             Phase.Compiler.compile(cs, db, stf) |>
             Debugging.notifyPreLowering("Compiler") |>
