@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Holger Dal Mogensen
+ * Copyright 2025 Gagan Chandan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.ast.shared
+package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.Symbol.KindedTypeVarSym
-import ca.uwaterloo.flix.language.ast.Type
+import org.eclipse.lsp4j
 
 /**
-  * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
+  * Represents `DiagnosticRelatedInformation` in LSP.
   */
-case class Instance(tparams: List[KindedTypeVarSym], tpe: Type, tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint])
+case class DiagnosticRelatedInformation(location: lsp4j.Location, message: String) {
+  def toLsp4j: lsp4j.DiagnosticRelatedInformation = {
+    val relatedInfo = new lsp4j.DiagnosticRelatedInformation()
+    relatedInfo.setLocation(location)
+    relatedInfo.setMessage(message)
+    relatedInfo
+  }
+}

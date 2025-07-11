@@ -109,19 +109,21 @@ mod Process {
     }
 
     pub enum StdOut(InputStream)
-    instance Reader[StdOut] {
+    instance Readable[StdOut] {
+        type Elm = Int8
         type Aef = IO
         pub def read(b: Array[Int8, r], r: StdOut): Result[IoError, Int32] \ r + IO =
             let StdOut(pr) = r;
-            Reader.read(b, pr)
+            Readable.read(b, pr)
     }
 
     pub enum StdErr(InputStream)
-    instance Reader[StdErr] {
+    instance Readable[StdErr] {
+        type Elm
         type Aef = IO
         pub def read(b: Array[Int8, r], r: StdErr): Result[IoError, Int32] \ r + IO =
             let StdErr(pr) = r;
-            Reader.read(b, pr)
+            Readable.read(b, pr)
     }
 
     ///

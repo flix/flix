@@ -102,12 +102,6 @@ mod Fixpoint3.Ast.ExecutableRam {
     ///
     /// `Comment(string)` is a comment for debugging.
     ///
-    /// `EstimateJoinSize(indexPosition, savePosition, search)` estimates the size of the
-    /// index at `indexPosition` as described by `search` and save the result to
-    /// `savePosition`. `EstimateJoinSize` statements only exist during the
-    /// join profiling stage during join optimization. For more details see 
-    /// `JoinOptimizer.flix`. 
-    ///
     @Internal
     pub enum RamStmt {
         case Insert(RelOp)
@@ -118,7 +112,6 @@ mod Fixpoint3.Ast.ExecutableRam {
         case Par(Vector[RamStmt])
         case Until(Vector[BoolExp], RamStmt)
         case Comment(String)
-        case EstimateJoinSize(Int32, Int32, Vector[Int32])
     }
 
     instance ToString[RamStmt] {
@@ -135,8 +128,6 @@ mod Fixpoint3.Ast.ExecutableRam {
                     "Until(${tst}) do${nl}${String.indent(4, "${body}")}end"
                 case RamStmt.Comment(comment) => "/* ${comment} */"
                 case RamStmt.Par(xs) => Vector.join("|${nl}", xs)
-                case RamStmt.EstimateJoinSize(index, writeTo, attr) => 
-                    "EstimateJoinSize(<optimized out>, {${Vector.join(", ", attr)}}) @ ${index}, ${writeTo}"
             }
     }
 

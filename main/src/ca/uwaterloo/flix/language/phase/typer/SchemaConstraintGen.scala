@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintGen.{visitExp, visitPattern}
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object SchemaConstraintGen {
 
@@ -76,6 +77,28 @@ object SchemaConstraintGen {
         c.unifyType(tpe1, tpe2, Type.mkSchema(mkAnySchemaRowType(loc), loc), loc)
         val resTpe = tpe1
         val resEff = Type.mkUnion(eff1, eff2, loc)
+        (resTpe, resEff)
+    }
+  }
+
+  def visitFixpointQueryWithProvenance(e: KindedAst.Expr.FixpointQueryWithProvenance)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: Scope = c.getScope
+    e match {
+      case KindedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tvar, loc1) =>
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val selectSchemaRow = select match {
+          case KindedAst.Predicate.Head.Atom(_, Denotation.Relational, _, _, _) =>
+            visitHeadPredicate(select)
+          case _ => throw InternalCompilerException("Provenance for lattice relations is not supported", loc1)
+        }
+        val withSchemaRow = withh.foldRight(mkAnySchemaRowType(loc1)) {
+          (pred, acc) => Type.mkSchemaRowExtend(pred, Type.freshVar(Kind.Predicate, loc1), acc, loc1)
+        }
+        val fresh = Type.freshVar(Kind.SchemaRow, loc1)
+        c.unifyAllTypes(Type.mkSchema(fresh, loc1) :: Type.mkSchema(withSchemaRow, loc1) :: Type.mkSchema(selectSchemaRow, loc1) :: tpes, loc1)
+        val resTpe = Type.mkVector(Type.mkExtensible(fresh, loc1), loc1)
+        val resEff = Type.mkUnion(effs, loc1)
+        c.unifyType(tvar, resTpe, loc1)
         (resTpe, resEff)
     }
   }

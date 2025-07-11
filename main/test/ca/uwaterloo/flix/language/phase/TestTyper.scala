@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.errors.TypeError.MismatchedTypes
 import ca.uwaterloo.flix.util.{Options, Subeffecting}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -138,6 +139,48 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input = "def foo(): String = solve \"hello\""
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
+  }
+
+  test("MismatchedTypes.05") {
+    val input =
+      """
+        |trait A[a] {
+        |    type Typ
+        |    pub def foo(x: a): A.Typ[a]
+        |}
+        |
+        |enum Adapter[t, a, b](t, a -> b)
+        |
+        |instance A[Adapter[t, a, b]] with A[t] {
+        |    type Typ = b
+        |    pub def foo(adapter: Adapter[t, a, b]): b =
+        |        let Adapter.Adapter(x, f) = adapter;
+        |        f(A.foo(x))
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[MismatchedTypes](result)
+  }
+
+  test("MismatchedTypes.06") {
+    val input =
+      """
+        |trait A[a] {
+        |    type Typ
+        |    pub def foo(x: a): A.Typ[a]
+        |}
+        |
+        |enum Adapter[t, a, b](t, a -> b)
+        |
+        |instance A[Adapter[t, a, b]] with A[t] where A.Typ[t] ~ Int8 {
+        |    type Typ = b
+        |    pub def foo(adapter: Adapter[t, a, b]): b =
+        |        let Adapter.Adapter(x, f) = adapter;
+        |        f(A.foo(x))
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[MismatchedTypes](result)
   }
 
   test("TestOverApplied.01") {
@@ -1423,6 +1466,26 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |def foo(): C.T[a] = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MissingTraitConstraint](result)
+  }
+
+  test("TypeError.MissingConstraint.02") {
+    // missing constraint on A[t]
+    val input =
+      """
+        |trait A[a] {
+        |    type Typ
+        |    pub def foo(x: a): A.Typ[a]
+        |}
+        |
+        |enum Adapter[t, a, b](t, a -> b)
+        |
+        |instance A[Adapter[t, a, b]] where A.Typ[t] ~ Int8 {
+        |    type Typ = b
+        |    pub def foo(adapter: Adapter[t, a, b]): b = ???
+        |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MissingTraitConstraint](result)

@@ -112,7 +112,7 @@ case class TraitEnv(private val m: Map[Symbol.TraitSym, TraitContext]) {
           case (acc, s) =>
             // tparams are Nil because we are adding instances directly, but not schemas of instances
             val tparams = Nil
-            val inst = Instance(tparams, tpe, Nil)
+            val inst = Instance(tparams, tpe, Nil, Nil)
             val context = m.get(s) match {
               case Some(TraitContext(supers, insts0)) =>
                 val insts = insts0 + (head -> inst)
