@@ -257,7 +257,7 @@ object TypeReconstruction {
       val rs = rules.map(visitExtMatchRule)
       val tpe = rs.head.exp.tpe
       val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)
-      TypedAst.Expr.ExtMatch(e, rs, eff, tpe, loc)
+      TypedAst.Expr.ExtMatch(e, rs, tpe, eff, loc)
 
     case KindedAst.Expr.Tag(symUse, exps, tvar, loc) =>
       val es = exps.map(visitExp)
