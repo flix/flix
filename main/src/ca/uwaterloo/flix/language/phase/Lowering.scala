@@ -50,6 +50,7 @@ object Lowering {
     lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.union")
     lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.projectSym")
     lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.rename")
+    lazy val ProvenanceOf: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint3.Solver.provenanceOf")
 
     def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.injectInto$arity")
 
@@ -92,6 +93,7 @@ object Lowering {
     lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Boxed")
 
     lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
+    lazy val FVector: Symbol.EnumSym = Symbol.mkEnumSym("Vector")
 
     lazy val ChannelMpmc: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.Mpmc")
     lazy val ChannelMpmcAdmin: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.MpmcAdmin")
@@ -127,6 +129,14 @@ object Lowering {
     lazy val ConcurrentReentrantLock: Type = Type.mkEnum(Enums.ConcurrentReentrantLock, Nil, SourceLocation.Unknown)
 
     def mkList(t: Type, loc: SourceLocation): Type = Type.mkEnum(Enums.FList, List(t), loc)
+
+    def mkVector(t: Type, loc: SourceLocation): Type = Type.mkEnum(Enums.FVector, List(t), loc)
+
+    def mkProvenanceMapping(t: Type, loc: SourceLocation): Type =
+      Type.mkPureUncurriedArrow(List(PredSym, mkVector(Boxed, loc)), t, loc)
+
+    def mkProvenanceType(t: Type, loc: SourceLocation): Type =
+      Type.mkPureUncurriedArrow(List(mkVector(Boxed, loc), PredSym, Datalog, mkProvenanceMapping(t, loc)), t, loc)
 
     //
     // Function Types.
@@ -796,7 +806,23 @@ object Lowering {
       val resultType = Types.Datalog
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.MergeType, resultType, eff, loc)
 
-    case TypedAst.Expr.FixpointQueryWithProvenance(_, _, _, _, _, _) => ???
+    case TypedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe, eff, loc) =>
+      val defn = Defs.lookup(Defs.ProvenanceOf)
+      val mergeExp = exps.dropRight(1).foldRight(visitExp(exps.last)) {
+        (exp, acc) =>
+          val defn = Defs.lookup(Defs.Merge)
+          val argExps = visitExp(exp) :: acc :: Nil
+          val resultType = Types.Datalog
+          LoweredAst.Expr.ApplyDef(defn.sym, argExps, Types.MergeType, resultType, eff, loc)
+      }
+      select match {
+        case TypedAst.Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
+
+      }
+      val extType = ???
+      val argExps = mergeExp :: Nil
+      val resultType = Types.mkVector(extType, loc)
+      LoweredAst.Expr.ApplyDef(defn.sym, argExps, Types.mkProvenanceType(extType, loc), resultType, eff, loc)
 
     case TypedAst.Expr.FixpointSolve(exp, _, eff, mode, loc) =>
       val defn = mode match {
