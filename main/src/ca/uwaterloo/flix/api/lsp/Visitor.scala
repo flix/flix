@@ -588,8 +588,8 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
-        exps.foreach(visitExpr)
+      case Expr.FixpointQueryWithProvenance(exp, select, _, _, _, _) =>
+        visitExpr(exp)
         visitPredicate(select)
 
       case Expr.FixpointSolve(exp, _, _, _, _) =>

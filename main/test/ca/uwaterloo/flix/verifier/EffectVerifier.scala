@@ -378,8 +378,8 @@ object EffectVerifier {
       visitExp(exp2)
       // TODO ?
       ()
-    case Expr.FixpointQueryWithProvenance(exps, select, withh, tpe1, eff1, loc1) =>
-      exps.foreach(visitExp)
+    case Expr.FixpointQueryWithProvenance(exp, select, withh, tpe1, eff1, loc1) =>
+      visitExp(exp)
       select match {
         case TypedAst.Predicate.Head.Atom(pred, den, terms, tpe2, loc2) =>
           terms.foreach(visitExp)

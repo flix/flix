@@ -505,8 +505,8 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.FixpointQueryWithProvenance(exps, select, _, tpe, eff, _) =>
-      exps.foreach(visitExp)
+    case Expr.FixpointQueryWithProvenance(exp, select, _, tpe, eff, _) =>
+      visitExp(exp)
       visitHead(select)
       visitType(tpe)
       visitType(eff)

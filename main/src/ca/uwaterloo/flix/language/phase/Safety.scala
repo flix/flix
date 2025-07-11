@@ -353,8 +353,8 @@ object Safety {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.FixpointQueryWithProvenance(exps, Predicate.Head.Atom(_, _, terms, _, _), _, _, _, _) =>
-      exps.foreach(visitExp)
+    case Expr.FixpointQueryWithProvenance(exp, Predicate.Head.Atom(_, _, terms, _, _), _, _, _, _) =>
+      visitExp(exp)
       terms.foreach(visitExp)
 
     case Expr.FixpointSolve(exp, _, _, _, _) =>

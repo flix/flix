@@ -217,7 +217,7 @@ object KindedAst {
 
     case class FixpointMerge(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class FixpointQueryWithProvenance(exps: List[Expr], select: Predicate.Head, withh: List[Name.Pred], tvar: Type, loc: SourceLocation) extends Expr
+    case class FixpointQueryWithProvenance(exp: Expr, select: Predicate.Head, withh: List[Name.Pred], tvar: Type, loc: SourceLocation) extends Expr
 
     case class FixpointSolve(exp: Expr, mode: SolveMode, loc: SourceLocation) extends Expr
 

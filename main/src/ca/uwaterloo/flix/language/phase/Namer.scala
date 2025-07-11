@@ -905,10 +905,10 @@ object Namer {
       val e2 = visitExp(exp2)
       NamedAst.Expr.FixpointMerge(e1, e2, loc)
 
-    case DesugaredAst.Expr.FixpointQueryWithProvenance(exps, select, withh, loc) =>
-      val es = exps.map(visitExp)
+    case DesugaredAst.Expr.FixpointQueryWithProvenance(exp, select, withh, loc) =>
+      val e = visitExp(exp)
       val s = visitHeadPredicate(select)
-      NamedAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
+      NamedAst.Expr.FixpointQueryWithProvenance(e, s, withh, loc)
 
     case DesugaredAst.Expr.FixpointSolve(exp, mode, loc) =>
       val e = visitExp(exp)

@@ -809,9 +809,7 @@ object Desugar {
       desugarFixpointSolveWithProject(exps, mode, optIdents, loc)
 
     case WeededAst.Expr.FixpointQueryWithProvenance(exps, select, withh, loc) =>
-      val es = visitExps(exps)
-      val s = visitHead(select)
-      DesugaredAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
+      desugarFixpointQueryWithProvenance(exps, select, withh, loc)
 
     case WeededAst.Expr.FixpointQueryWithSelect(exps0, selects0, from0, where0, loc) =>
       desugarFixpointQueryWithSelect(exps0, selects0, from0, where0, loc)
@@ -1459,7 +1457,7 @@ object Desugar {
     * }}}
     * becomes
     * {{{
-    *   let tmp%  solve (merge e1, 2, e3);
+    *   let tmp%  solve (merge e1, e2, e3);
     *   merge (project P1 tmp%, project P2 tmp%, project P3 tmp%)
     * }}}
     */
@@ -1500,6 +1498,15 @@ object Desugar {
 
     // Bind the tmp% variable to the minimal model and combine it with the body expression.
     DesugaredAst.Expr.Let(localVar, modelExp, bodyExp, loc0.asReal)
+  }
+
+  private def desugarFixpointQueryWithProvenance(exps0: List[WeededAst.Expr], select0: Predicate.Head, withh0: List[Name.Pred], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val es = visitExps(exps0)
+    val mergeExp = es.reduceRight[DesugaredAst.Expr] {
+      case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc0)
+    }
+    val h = visitHead(select0)
+    DesugaredAst.Expr.FixpointQueryWithProvenance(mergeExp, h, withh0, loc0)
   }
 
   /**
