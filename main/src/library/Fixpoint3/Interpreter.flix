@@ -274,8 +274,6 @@ mod Fixpoint3.Interpreter {
                 ()
             } as _ \ rc2)) // The `IO` effect is undesirable, so we cast it back to an `r` effect
         }
-        case RamStmt.EstimateJoinSize(indexPos, writeTo, attr) =>
-            ???
     }
 
     ///

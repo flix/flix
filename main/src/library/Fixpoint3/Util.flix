@@ -16,7 +16,6 @@
  */
 
 mod Fixpoint3.Util {
-    use Fixpoint3.Boxed
 
     ///
     /// Unwraps an option.

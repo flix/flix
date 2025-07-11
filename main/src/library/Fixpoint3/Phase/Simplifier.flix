@@ -101,7 +101,6 @@ mod Fixpoint3.Phase.Simplifier {
                         Some(RamStmt.Until(test, simplifiedBody))
                     }
             }
-        case RamStmt.EstimateJoinSize(_, _, _, _) => Some(stmt)
         case RamStmt.Comment(_) => Some(stmt)
     }
 
@@ -187,7 +186,6 @@ mod Fixpoint3.Phase.Simplifier {
         case RamStmt.Seq(xs) => Vector.forAll(isOnlyMergeSwapPurge, xs)
         case RamStmt.Par(xs) => Vector.forAll(isOnlyMergeSwapPurge, xs)
         case RamStmt.Until(_, _) => false
-        case RamStmt.EstimateJoinSize(_, _, _, _) => false
         case RamStmt.Comment(_) => true
     }
 

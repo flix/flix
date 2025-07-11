@@ -100,6 +100,7 @@ mod Fixpoint3.Phase.Lowering {
     use Fixpoint3.Ast.Ram
     use Fixpoint3.Ast.Ram.{arityOf, arityOfNonLat, getTermRamId, IndexInformation, RamId, RelSym, RowVar, Search, toDenotation}
     use Fixpoint3.Ast.Shared.{Denotation, PredSym}
+    use Fixpoint3.Boxed
     use Fixpoint3.Boxing
     use Fixpoint3.BoxingType.{Boxing, RamIdToPos};
     use Fixpoint3.UniqueInts
@@ -262,8 +263,6 @@ mod Fixpoint3.Phase.Lowering {
                     Vector.filterMap(lowerBool(idToIndex, boxingInfo, indexInfo, (Nil, MutDisjointSets.empty(rc))));
                 let newBody = lowerStmtRec(body);
                 ExecutableRam.RamStmt.Until(newTests, newBody)
-            case Ram.RamStmt.EstimateJoinSize(_, relIndex, estWriteTo, attr) =>
-                ExecutableRam.RamStmt.EstimateJoinSize(relIndex, estWriteTo, attr)
             case Ram.RamStmt.Comment(s) => ExecutableRam.RamStmt.Comment(s)
     }
 
@@ -607,7 +606,6 @@ mod Fixpoint3.Phase.Lowering {
         case Ram.RamStmt.Par(stmts) => Vector.foldLeft(acc -> x -> List.append(collectRowVarRelSymStmt(x), acc), Nil, stmts)
         case Ram.RamStmt.Until(_, rest) => collectRowVarRelSymStmt(rest)
         case Ram.RamStmt.Comment(_) => Nil
-        case Ram.RamStmt.EstimateJoinSize(_, _, _, _) => Nil
     }
 
     ///
