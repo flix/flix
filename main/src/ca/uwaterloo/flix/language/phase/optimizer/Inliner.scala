@@ -443,13 +443,13 @@ object Inliner {
 
   /** Returns a formal param with a fresh symbol and a substitution mapping the old variable the fresh variable. */
   private def freshFormalParam(fp0: MonoAst.FormalParam)(implicit flix: Flix): (MonoAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = fp0 match {
-    case MonoAst.FormalParam(sym, mod, tpe, src, occur, loc) =>
+    case MonoAst.FormalParam(sym, mod, tpe, occur, loc) =>
       val freshVarSym = Symbol.freshVarSym(sym)
       val varSubst = Map(sym -> freshVarSym)
-      (MonoAst.FormalParam(freshVarSym, mod, tpe, src, occur, loc), varSubst)
+      (MonoAst.FormalParam(freshVarSym, mod, tpe, occur, loc), varSubst)
   }
 
-  def visitMatchRule(rule: MonoAst.MatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.MatchRule = rule match {
+  private def visitMatchRule(rule: MonoAst.MatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.MatchRule = rule match {
     case MonoAst.MatchRule(pat, guard, exp1) =>
       val (p, varSubst1) = visitPattern(pat)
       val ctx = ctx0.addVarSubsts(varSubst1).addInScopeVars(varSubst1.values.map(sym => sym -> BoundKind.ParameterOrPattern))
@@ -467,7 +467,7 @@ object Inliner {
       MonoAst.ExtMatchRule(label, ps, e, loc)
   }
 
-  def visitCatchRule(rule: MonoAst.CatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.CatchRule = rule match {
+  private def visitCatchRule(rule: MonoAst.CatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.CatchRule = rule match {
     case MonoAst.CatchRule(sym, clazz, exp1) =>
       val freshVarSym = Symbol.freshVarSym(sym)
       val ctx = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.ParameterOrPattern)
@@ -475,7 +475,7 @@ object Inliner {
       MonoAst.CatchRule(freshVarSym, clazz, e1)
   }
 
-  def visitHandlerRule(rule: MonoAst.HandlerRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.HandlerRule = rule match {
+  private def visitHandlerRule(rule: MonoAst.HandlerRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.HandlerRule = rule match {
     case MonoAst.HandlerRule(op, fparams, exp1) =>
       val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
       val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
@@ -483,7 +483,7 @@ object Inliner {
       MonoAst.HandlerRule(op, fps, e1)
   }
 
-  def visitJvmMethod(method: MonoAst.JvmMethod, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
+  private def visitJvmMethod(method: MonoAst.JvmMethod, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
     case MonoAst.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
       val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
       val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
@@ -596,7 +596,7 @@ object Inliner {
   }
 
   /** Returns `true` if `exp` is [[Expr.Lambda]]. */
-  def isLambda(exp: MonoAst.Expr): Boolean = exp match {
+  private def isLambda(exp: MonoAst.Expr): Boolean = exp match {
     case Expr.Lambda(_, _, _, _) => true
     case _ => false
   }
@@ -665,7 +665,7 @@ object Inliner {
   }
 
   /** Represents the range of a substitution from variables to expressions. */
-  sealed private trait SubstRange
+  private sealed trait SubstRange
 
   private object SubstRange {
 

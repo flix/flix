@@ -43,7 +43,7 @@ mod Fixpoint3.Ast.Ram {
     pub type alias Predicates = (Int64, Set[RelSym])
 
     ///
-    /// The EDB of a program.
+    /// The extensible database (EDB) of a program.
     ///
     @Internal
     pub type alias Facts = Map[RelSym, Vector[Vector[Boxed]]]
@@ -110,10 +110,6 @@ mod Fixpoint3.Ast.Ram {
     ///
     /// `Comment(string)` is a comment for debugging.
     ///
-    /// `EstimateJoinSize(relSym, indexUsed, savePosition, search)` estimates the size
-    /// relation `relSym` based on index `indexUsed` as described by `search` and saves
-    /// the result to `savePosition`. For details see JoinOptimizer.
-    ///
     @Internal
     pub enum RamStmt {
         case Insert(RelOp)
@@ -124,7 +120,6 @@ mod Fixpoint3.Ast.Ram {
         case Par(Vector[RamStmt])
         case Until(Vector[BoolExp], RamStmt)
         case Comment(String)
-        case EstimateJoinSize(RelSym, Int32, Int32, Search)
     }
 
     instance ToString[RamStmt] {
@@ -136,13 +131,11 @@ mod Fixpoint3.Ast.Ram {
                 case RamStmt.Swap(lhs, rhs) => "Swap ${lhs} and ${rhs}"
                 case RamStmt.Purge(relSym) => "Purge ${relSym}"
                 case RamStmt.Seq(xs) => Vector.join(";${nl}", xs)
+                case RamStmt.Par(xs) => Vector.join("|${nl}", xs)
                 case RamStmt.Until(test, body) =>
                     let tst = test |> Vector.join(" && ");
                     "until(${tst}) do${nl}${String.indent(4, "${body}")}end"
                 case RamStmt.Comment(comment) => "/* ${comment} */"
-                case RamStmt.Par(xs) => Vector.join("|${nl}", xs)
-                case RamStmt.EstimateJoinSize(relSym, _, _, attr) =>
-                    "EstimateJoinSize(${relSym}, {${Vector.join(", ", attr)}})"
             }
     }
 
@@ -258,7 +251,7 @@ mod Fixpoint3.Ast.Ram {
     /////////////////////////////////////////////////////////////////////////////
 
     ///
-    /// Represents a RAM term.
+    /// Represents a Relational Algebra Machine (RAM) term.
     ///
     /// Enums with a `RamId` can be referred to by the `RamId`.
     ///

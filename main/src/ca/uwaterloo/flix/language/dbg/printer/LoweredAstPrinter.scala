@@ -142,7 +142,7 @@ object LoweredAstPrinter {
     * Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`.
     */
   private def printFormalParam(fp: LoweredAst.FormalParam): DocAst.Expr.AscriptionTpe = {
-    val LoweredAst.FormalParam(sym, _, tpe, _, _) = fp
+    val LoweredAst.FormalParam(sym, _, tpe, _) = fp
     DocAst.Expr.AscriptionTpe(DocAst.Expr.Var(sym), TypePrinter.print(tpe))
   }
 

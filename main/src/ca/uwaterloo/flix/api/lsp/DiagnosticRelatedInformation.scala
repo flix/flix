@@ -1,6 +1,5 @@
 /*
- * Copyright 2025 Casper Dalgaard Nielsen
- *                Adam Yasser Tallouzi
+ * Copyright 2025 Gagan Chandan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.api.lsp
 
-mod Fixpoint3.Util {
+import org.eclipse.lsp4j
 
-    ///
-    /// Unwraps an option.
-    ///
-    /// Causes runtime hole error when `x` is `None`.
-    ///
-    @Internal
-    pub def getOrCrash(x: Option[a]): a = match x {
-        case Some(v) => v
-        case None => bug!("Attempted unwrapping none in getOrCrash")
-    }
-
+/**
+  * Represents `DiagnosticRelatedInformation` in LSP.
+  */
+case class DiagnosticRelatedInformation(location: lsp4j.Location, message: String) {
+  def toLsp4j: lsp4j.DiagnosticRelatedInformation = {
+    val relatedInfo = new lsp4j.DiagnosticRelatedInformation()
+    relatedInfo.setLocation(location)
+    relatedInfo.setMessage(message)
+    relatedInfo
+  }
 }
