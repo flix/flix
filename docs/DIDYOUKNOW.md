@@ -46,7 +46,8 @@ Did you know that:
 
 - Flix supports set and map literals `Set#{1, 2, 3}` and `Map#{1 => 2, 3 => 4}`.
 
-- Flix supports monadic do-notation with the `let*` construct.
+- Flix supports four types of for-loops, impure, pure, applicative and monadic,
+  with the `foreach`, `foreach-yield`, `forA` and `forM` constructs, respectively.
 
 - Flix supports "program holes" written as either `???` or as `?name`.
 
@@ -54,8 +55,7 @@ Did you know that:
 
 - Flix compiles to JVM bytecode and runs on the Java Virtual Machine.
 
-- Flix supports channel and process-based concurrency, including the powerful
-  `select` expression.
+- Flix supports channel and process-based concurrency.
 
 - Flix supports first-class Datalog constraints, i.e. Datalog program fragments
   are values that can be passed to and returned from functions, etc.
@@ -75,8 +75,8 @@ Did you know that:
 - the Flix type and effect system supports complete type inference, i.e. if a
   program is typeable then the type inference with find the typing.
 
-- The Flix "Tips and Tricks"-section https://doc.flix.dev/tipstricks/ describes
-  many useful smaller features of the language.
+- The Flix "Everyday Programming"-section https://doc.flix.dev/everyday-programming.html
+  describes many commonly used features of the language.
 
 - Flix has a unique meta-programming feature that allows a higher-order
   functions to inspect the purity of its function argument(s).
@@ -117,7 +117,7 @@ Did you know that:
   more than 30,000 lines of code.
 
 - the Flix Prelude, i.e. the functions which are imported by default, is kept
-  minimal and contains less than 20 functions.
+  minimal and contains less than 25 functions.
 
 - most higher-order functions in the Flix standard library are effect
   polymorphic, i.e. they can be called with pure or impure functions.
@@ -129,11 +129,11 @@ Did you know that:
   takes multiple arguments of the same type. For example, `String.contains` must
   be called as `String.contains(substr = "foo", "bar")`.
 
-- the Flix `List` module offers more than 95 functions.
+- the Flix `List` module offers more than 110 functions.
 
-- the Flix `String` module offers more than 95 functions.
+- the Flix `String` module offers more than 100 functions.
 
-- the Flix `Foldable` module offers more than 30 functions.
+- the Flix `Foldable` module offers more than 45 functions.
 
 - the Flix standard library follows the convention of "subject-last" to enable
   pipelining (`|>`).
@@ -150,7 +150,9 @@ Did you know that:
 
 - Flix has an online playground available at https://play.flix.dev/
 
-- Flix has online API documentation available at https://doc.flix.dev/
+- Flix has an online book available at https://doc.flix.dev/
+
+- Flix has online API documentation available at https://api.flix.dev/
 
 - the Flix VSCode extension uses the real Flix compiler.
 
@@ -210,4 +212,4 @@ Did you know that:
 
 - more than 50 people have contributed to the Flix compiler.
 
-- more than 2,000 pull requests have been merged into the Flix compiler.
+- more than 6,000 pull requests have been merged into the Flix compiler.
