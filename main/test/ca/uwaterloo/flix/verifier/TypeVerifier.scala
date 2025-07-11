@@ -365,12 +365,11 @@ object TypeVerifier {
 
         case AtomicOp.ExtensibleIs(label) =>
           val List(t1) = ts
-          t1 match {
-            case SimpleType.ExtensibleExtend(cons, _, _) if cons.name == label.name => ()
-            case _ => failMismatchedShape(t1, label.name, loc)
+          getExtensibleTagType(t1, label.name, loc) match {
+            case Some(_) => ()
+            case None => failMismatchedShape(t1, label.name, loc)
           }
           check(expected = SimpleType.Bool)(actual = tpe, loc)
-
 
         case AtomicOp.ExtensibleTag(label) =>
           getExtensibleTagType(tpe, label.name, loc) match {
