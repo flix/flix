@@ -117,7 +117,7 @@ Did you know that:
   more than 30,000 lines of code.
 
 - the Flix Prelude, i.e. the functions which are imported by default, is kept
-  minimal and contains less than 20 functions.
+  minimal and contains less than 25 functions.
 
 - most higher-order functions in the Flix standard library are effect
   polymorphic, i.e. they can be called with pure or impure functions.
