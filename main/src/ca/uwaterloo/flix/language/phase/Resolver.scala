@@ -450,7 +450,7 @@ object Resolver {
           val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, scp, taenv, ns0, root))
           flatMapN(traitVal, tpeVal, optTconstrsVal, econstrsVal) {
             case (trt, tpe, optTconstrs, econstrs) =>
-              val assocsVal = resolveAssocTypeDefs(assocs0, trt, tpe, scp, taenv, ns0, root, loc)
+              val assocsVal = resolveAssocTypeDefs(assocs0, trt, tpe, scp, taenv, ns0, root, trt0.loc)
               val tconstr = ResolvedAst.TraitConstraint(TraitSymUse(trt.sym, trt0.loc), tpe, trt0.loc)
               val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), scp)(ns0, taenv, sctx, root, flix))
               val tconstrs = optTconstrs.collect { case Some(t) => t }
