@@ -1010,7 +1010,7 @@ object Simplifier {
     //         let sym2' = untag 1 ext;
     //         exp2
     //     } else {
-    //         if (ext is Label2) {
+    //         if (ext is Label3) {
     //             let sym1'' = untag 0 ext;
     //             let sym2'' = untag 1 ext;
     //             exp3
