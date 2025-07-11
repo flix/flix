@@ -224,7 +224,7 @@ object TypedAstOps {
           acc ++ freeVars(exp1) -- pats.flatMap {
             case ExtPattern.Wild(_, _) => List.empty
             case ExtPattern.Var(bnd, _) => List(bnd.sym)
-            case ExtPattern.Wild(_, _) => List.empty
+            case ExtPattern.Error(_, _) => List.empty
           }
       }
       e ++ rs
