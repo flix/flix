@@ -1577,10 +1577,10 @@ object Weeder2 {
           val properRules = rules.collect {
             case Some(rule) => rule
           }
-          val duplicateErrors = getDuplicates(properRules, (rule: ExtMatchRule) => rule.label)
+          val duplicateErrors = getDuplicates(properRules, (rule: ExtMatchRule) => (rule.label, rule.pats))
             .map {
               case (rule1, rule2) =>
-                WeederError.DuplicateExtPattern(rule1.label, rule1.loc, rule2.loc)
+                WeederError.DuplicateExtPattern(rule1.label, rule1.pats, rule1.loc, rule2.loc)
             }
           duplicateErrors.foreach(sctx.errors.add)
           Validation.Success(Expr.ExtMatch(expr, rules.flatten, tree.loc))

@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, WeededAst}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -62,16 +62,19 @@ object WeederError {
   /**
     * An error raised to indicate that extensible constructor pattern `label` was used multiple times.
     *
-    * @param label the name of the extensible match constructor.
-    * @param loc1  the location of the first pattern.
-    * @param loc2  the location of the second pattern.
+    * @param label    the name of the extensible match constructor.
+    * @param patterns the extensible patterns.
+    * @param loc1     the location of the first pattern.
+    * @param loc2     the location of the second pattern.
     */
-  case class DuplicateExtPattern(label: Name.Label, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    def summary: String = s"Duplicate extensible match constructor'$label'."
+  case class DuplicateExtPattern(label: Name.Label, patterns: List[WeededAst.ExtPattern], loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+    private val pat = s"$label${patterns.mkString("(", ", ", ")")}"
+
+    def summary: String = s"Duplicate extensible match pattern '$pat'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Multiple occurrences of the extensible match constructor '${red(label.name)}'.
+      s""">> s"Duplicate extensible match pattern '${red(pat)}'."
          |
          |${code(loc1, "the first occurrence was here.")}
          |
