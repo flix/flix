@@ -757,7 +757,7 @@ mod Fixpoint3.Solver {
                                     Vector.get(i, tuple)
                                 else
                                     lat
-                            }, arity + 1)
+                            }, arity + 1);
                             MutList.push(f(vs), pFacts)
                         } else ()
                     }, rel)
