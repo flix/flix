@@ -150,7 +150,9 @@ Did you know that:
 
 - Flix has an online playground available at https://play.flix.dev/
 
-- Flix has online API documentation available at https://doc.flix.dev/
+- Flix has an online book available at https://doc.flix.dev/
+
+- Flix has online API documentation available at https://api.flix.dev/
 
 - the Flix VSCode extension uses the real Flix compiler.
 
@@ -210,4 +212,4 @@ Did you know that:
 
 - more than 50 people have contributed to the Flix compiler.
 
-- more than 2,000 pull requests have been merged into the Flix compiler.
+- more than 6,000 pull requests have been merged into the Flix compiler.
