@@ -20,18 +20,11 @@ import org.eclipse.lsp4j
 /**
   * Represents `DiagnosticRelatedInformation` in LSP.
   */
-
-sealed trait DiagnosticRelatedInformation {
-  def toLsp4j: lsp4j.DiagnosticRelatedInformation
-}
-
-object DiagnosticRelatedInformation {
-  case class DiagnosticRelatedInformation(location: lsp4j.Location, message: String) {
-    def toLsp4j: lsp4j.DiagnosticRelatedInformation = {
-      val relatedInfo = new lsp4j.DiagnosticRelatedInformation()
-      relatedInfo.setLocation(location)
-      relatedInfo.setMessage(message)
-      relatedInfo
-    }
+case class DiagnosticRelatedInformation(location: lsp4j.Location, message: String) {
+  def toLsp4j: lsp4j.DiagnosticRelatedInformation = {
+    val relatedInfo = new lsp4j.DiagnosticRelatedInformation()
+    relatedInfo.setLocation(location)
+    relatedInfo.setMessage(message)
+    relatedInfo
   }
 }
