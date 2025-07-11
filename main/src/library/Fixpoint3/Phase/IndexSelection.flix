@@ -146,9 +146,6 @@ mod Fixpoint3.Phase.IndexSelection {
         case RamStmt.Seq(xs) => RamStmt.Seq(Vector.map(x -> indexStmt(x, constructedIndexes, indexState), xs))
         case RamStmt.Par(xs) => RamStmt.Par(Vector.map(x -> indexStmt(x, constructedIndexes, indexState), xs))
         case RamStmt.Until(boolExps, body) => RamStmt.Until(boolExps, indexStmt(body, constructedIndexes, indexState))
-        case RamStmt.EstimateJoinSize(relSym, _, writeTo, search) =>
-            let absoluteIndex = UniqueInts.getIndex((relSym, lookupIndex(relSym, search, constructedIndexes)), indexState);
-            RamStmt.EstimateJoinSize(relSym, absoluteIndex, writeTo, search)
         case RamStmt.Comment(_) => stmt
     }
 
@@ -231,9 +228,6 @@ mod Fixpoint3.Phase.IndexSelection {
         case RamStmt.Par(xs) => RamStmt.Par(Vector.map(collectSearchesStmt(indexes, rc), xs))
         case RamStmt.Until(boolExps, body) =>
             RamStmt.Until(boolExps, collectSearchesStmt(indexes, rc, body))
-        case RamStmt.EstimateJoinSize(relSym, _, _, search) =>
-            collectSearch(relSym, search, indexes);
-            stmt
         case RamStmt.Comment(_) => stmt
     }
 
