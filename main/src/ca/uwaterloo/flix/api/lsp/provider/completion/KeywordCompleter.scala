@@ -121,6 +121,7 @@ object KeywordCompleter {
       Completion.KeywordCompletion("or"          , range, Priority.Lowest(0)),
       // P
       Completion.KeywordCompletion("par"         , range, Priority.Lowest(0)),
+      Completion.KeywordCompletion("pquery"      , range, Priority.Lowest(0)),
       Completion.KeywordCompletion("project"     , range, Priority.Lowest(1)),
       // Q
       Completion.KeywordCompletion("query"       , range, Priority.Lowest(0)),
