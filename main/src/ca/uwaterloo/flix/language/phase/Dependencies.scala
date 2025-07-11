@@ -636,9 +636,9 @@ object Dependencies {
     case ExtPattern.Wild(tpe, _) =>
       visitType(tpe)
 
-    case ExtPattern.Var(bnd, _) =>
+    case ExtPattern.Var(bnd, tpe, _) =>
       visitBinder(bnd)
-      visitType(bnd.tpe)
+      visitType(tpe)
 
     case ExtPattern.Error(tpe, _) =>
       visitType(tpe)

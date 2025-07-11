@@ -734,8 +734,9 @@ object TypeReconstruction {
     case KindedAst.ExtPattern.Wild(tvar, loc) => TypedAst.ExtPattern.Wild(subst(tvar), loc)
 
     case KindedAst.ExtPattern.Var(sym, tvar, loc) =>
-      val bnd = TypedAst.Binder(sym, subst(tvar))
-      TypedAst.ExtPattern.Var(bnd, loc)
+      val tpe = subst(tvar)
+      val bnd = TypedAst.Binder(sym, tpe)
+      TypedAst.ExtPattern.Var(bnd, tpe, loc)
 
     case KindedAst.ExtPattern.Error(tvar, loc) => TypedAst.ExtPattern.Error(subst(tvar), loc)
   }

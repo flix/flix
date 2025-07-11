@@ -895,7 +895,7 @@ object Visitor {
 
     pat match {
       case ExtPattern.Wild(_, _) => ()
-      case ExtPattern.Var(bnd, _) => visitBinder(bnd)
+      case ExtPattern.Var(bnd, _, _) => visitBinder(bnd)
       case ExtPattern.Error(_, _) => ()
     }
   }

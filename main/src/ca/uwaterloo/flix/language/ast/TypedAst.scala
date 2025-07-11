@@ -341,9 +341,7 @@ object TypedAst {
 
     case class Wild(tpe: Type, loc: SourceLocation) extends ExtPattern
 
-    case class Var(bnd: Binder, loc: SourceLocation) extends ExtPattern {
-      val tpe: Type = bnd.tpe
-    }
+    case class Var(bnd: Binder, tpe: Type, loc: SourceLocation) extends ExtPattern
 
     case class Error(tpe: Type, loc: SourceLocation) extends ExtPattern
   }
