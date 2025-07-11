@@ -748,7 +748,7 @@ mod Fixpoint3.Solver {
             Map.rangeQueryWith(qquery, ramSym -> rel -> match toDenotation(ramSym) {
                 case Relational =>
                     Map.forEach((tuple, _) -> MutList.push(f(Vector.toList(tuple)), pFacts), rel)
-                case Latticenal(_, _, _, _) =>
+                case Latticenal(bot, leq, _, _) =>
                     Map.forEach((tuple, lat) -> {
                         if (not leq(lat, bot)) {
                             let arity = Vector.length(tuple);
