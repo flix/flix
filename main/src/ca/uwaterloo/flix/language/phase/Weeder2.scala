@@ -1573,6 +1573,7 @@ object Weeder2 {
           Validation.Failure(error)
 
         case (expr, rules) => // TODO: Maybe check that last rule is wild and also update parsing?
+          // FIXME: Maybe this should not be a weeder error and maybe be exhaustiveness / unreachable check instead?
           // Check for duplicate patterns
           val properRules = rules.collect {
             case Some(rule) => rule
