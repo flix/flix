@@ -33,6 +33,7 @@ mod Test.Exp.Jvm.NewObject {
     import java.io.Serializable
     import java.lang.Object
     import java.lang.Class
+    import java.lang.Runnable
     import java.util.Comparator
 
     def implementSerializable(): Serializable \ IO =
@@ -306,4 +307,8 @@ mod Test.Exp.Jvm.NewObject {
     @test
     def testClassWithProtectedConstructor01(): TestClassWithProtectedConstructor \ IO =
         new TestClassWithProtectedConstructor {}
+
+    @test
+    def testKeywordMethod01(): Runnable \ IO =
+        new Runnable { def `run`(_this: Runnable): Unit = () }
 }
