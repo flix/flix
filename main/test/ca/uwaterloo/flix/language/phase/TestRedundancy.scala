@@ -44,6 +44,19 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.HiddenVarSym](result)
   }
 
+  test("HiddenVarSym.ExtMatch.01") {
+    val input =
+      s"""
+         |def f(): Int32 =
+         |    ematch xvar A(123) {
+         |        case A(_x) => _x
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.HiddenVarSym](result)
+  }
+
   test("HiddenVarSym.Select.01") {
     val input =
       raw"""
