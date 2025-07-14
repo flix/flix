@@ -647,15 +647,6 @@ object DisplayType {
   }
 
   /**
-    * Extracts the types from a tuple, treating non-tuples as singletons.
-    */
-  private def destructTuple(tpe: DisplayType): List[DisplayType] = tpe match {
-    case Tuple(fields) => fields
-    case Unit => Nil
-    case t => t :: Nil
-  }
-
-  /**
     * Transforms the given type, assuming it is a record row.
     */
   private def fromRecordRow(row0: Type): DisplayType = {
