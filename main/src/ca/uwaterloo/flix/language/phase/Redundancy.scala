@@ -582,7 +582,7 @@ object Redundancy {
       val usedMatch = visitExp(exp, env0, rc)
 
       // Visit each match rule.
-      val usedRules = rules map {
+      val usedRules = rules.map {
         case ExtMatchRule(_, pats, exp1, _) =>
           // Compute the free variables in the pattern.
           val fvs = pats.flatMap(freeVars).toSet
