@@ -19,15 +19,15 @@ import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, g
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
-import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
 import ca.uwaterloo.flix.util.{Formatter, Result, Validation}
 
-import java.io.{PrintStream, PrintWriter}
+import java.io.PrintStream
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.{ZipEntry, ZipInputStream, ZipOutputStream}
@@ -154,6 +154,11 @@ object Bootstrap {
     * Returns the directory of the output .class-files relative to the given path `p`.
     */
   private def getClassDirectory(p: Path): Path = getBuildDirectory(p).resolve("./class/")
+
+  /**
+    * Returns the path to the artifact directory relative to the given path `p`.
+    */
+  private def getResourcesDirectory(p: Path): Path = p.resolve("./resources/").normalize()
 
   /**
     * Returns the path to the LICENSE file relative to the given path `p`.
@@ -296,6 +301,7 @@ object Bootstrap {
 
   /**
     * Returns all files in the given path `p`.
+    * If this is used for a build, you probably want to use [[getAllFilesSorted]]
     */
   private def getAllFiles(p: Path): List[Path] = {
     if (Files.isReadable(p) && Files.isDirectory(p)) {
@@ -305,6 +311,16 @@ object Bootstrap {
     } else {
       Nil
     }
+  }
+
+  /**
+    * Returns all files in the given path `p` sorted on the relative filename
+    * to make build reproducible.
+    */
+  private def getAllFilesSorted(p: Path): List[(Path, String)] = {
+    Bootstrap.getAllFiles(p).map { path =>
+      (path, Bootstrap.convertPathToRelativeFileName(p, path))
+    }.sortBy(_._2)
   }
 
   /**
@@ -541,11 +557,17 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
       // Add all class files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
-      for ((buildFile, fileNameWithSlashes) <- Bootstrap.getAllFiles(Bootstrap.getClassDirectory(projectPath))
-        .map { path => (path, Bootstrap.convertPathToRelativeFileName(Bootstrap.getClassDirectory(projectPath), path)) }
-        .sortBy(_._2)) {
+      val classDir = Bootstrap.getClassDirectory(projectPath)
+      for ((buildFile, fileNameWithSlashes) <- Bootstrap.getAllFilesSorted(classDir)) {
         Bootstrap.addToZip(zip, fileNameWithSlashes, buildFile)
       }
+
+      // Add all resources, again sorting by relative file name
+      val resourcesDir = Bootstrap.getResourcesDirectory(projectPath)
+      for ((resource, fileNameWithSlashes) <- Bootstrap.getAllFilesSorted(resourcesDir)) {
+        Bootstrap.addToZip(zip, fileNameWithSlashes, resource)
+      }
+
     } match {
       case Success(()) => Validation.Success(())
       case Failure(e) => Validation.Failure(BootstrapError.GeneralError(List(e.getMessage)))
@@ -595,10 +617,15 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
       // Add class files of the project.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
-      for ((buildFile, fileNameWithSlashes) <- Bootstrap.getAllFiles(Bootstrap.getClassDirectory(projectPath))
-        .map { path => (path, Bootstrap.convertPathToRelativeFileName(Bootstrap.getClassDirectory(projectPath), path)) }
-        .sortBy(_._2)) {
+      val classDir = Bootstrap.getClassDirectory(projectPath)
+      for ((buildFile, fileNameWithSlashes) <- Bootstrap.getAllFilesSorted(classDir)) {
         Bootstrap.addToZip(zipOut, fileNameWithSlashes, buildFile)
+      }
+
+      // Add all resources, again sorting by relative file name
+      val resourcesDir = Bootstrap.getResourcesDirectory(projectPath)
+      for ((resource, fileNameWithSlashes) <- Bootstrap.getAllFilesSorted(resourcesDir)) {
+        Bootstrap.addToZip(zipOut, fileNameWithSlashes, resource)
       }
 
       // Add jar dependencies.

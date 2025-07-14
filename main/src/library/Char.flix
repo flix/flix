@@ -95,7 +95,7 @@ mod Char {
     ///
     /// Returns `true` if the given char `c` is a white space character.
     ///
-    pub def isWhiteSpace(c: Char): Bool =
+    pub def isWhitespace(c: Char): Bool =
         Character.isWhitespace(c)
 
     ///

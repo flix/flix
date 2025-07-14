@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ParYieldFragment, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -91,7 +90,7 @@ object PatMatch {
 
       val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
       val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
-      val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances)(ParOps.parMapValueList(_)(visitInstance))
+      val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList(_)(visitInstance))
 
       (root.copy(defs = defs, traits = traits, instances = instances), sctx.errors.asScala.toList)
     }
@@ -121,9 +120,9 @@ object PatMatch {
     tast match {
       case Expr.Var(_, _, _) => ()
 
-      case Expr.Hole(_, _, _, _) => ()
+      case Expr.Hole(_, _, _, _, _) => ()
 
-      case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
+      case Expr.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
 
       case Expr.OpenAs(_, exp, _, _) => visitExp(exp)
 
@@ -140,6 +139,8 @@ object PatMatch {
       case Expr.ApplyDef(_, exps, _, _, _, _) => exps.foreach(visitExp)
 
       case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.foreach(visitExp)
+
+      case Expr.ApplyOp(_, exps, _, _, _) => exps.foreach(visitExp)
 
       case Expr.ApplySig(_, exps, _, _, _, _) => exps.foreach(visitExp)
 
@@ -188,9 +189,16 @@ object PatMatch {
         visitExp(exp)
         rules.foreach(r => visitExp(r.exp))
 
+      case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
+        visitExp(exp1)
+        visitExp(exp2)
+        visitExp(exp3)
+
       case Expr.Tag(_, exps, _, _, _) => exps.foreach(visitExp)
 
       case Expr.RestrictableTag(_, exps, _, _, _) => exps.foreach(visitExp)
+
+      case Expr.ExtensibleTag(_, exps, _, _, _) => exps.foreach(visitExp)
 
       case Expr.Tuple(elms, _, _, _) => elms.foreach(visitExp)
 
@@ -240,7 +248,7 @@ object PatMatch {
 
       case Expr.VectorLength(exp, _) => visitExp(exp)
 
-      case Expr.Ascribe(exp, _, _, _) => visitExp(exp)
+      case Expr.Ascribe(exp, _, _, _, _, _) => visitExp(exp)
 
       case Expr.InstanceOf(exp, _, _) => visitExp(exp)
 
@@ -264,8 +272,6 @@ object PatMatch {
       case Expr.RunWith(exp1, exp2, _, _, _) =>
         visitExp(exp1)
         visitExp(exp2)
-
-      case Expr.Do(_, exps, _, _, _) => exps.foreach(visitExp)
 
       case Expr.InvokeConstructor(_, args, _, _, _) => args.foreach(visitExp)
 
@@ -323,7 +329,11 @@ object PatMatch {
         visitExp(exp1)
         visitExp(exp2)
 
-      case Expr.FixpointSolve(exp, _, _, _) => visitExp(exp)
+      case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
+        exps.foreach(visitExp)
+        visitHeadPred(select)
+
+      case Expr.FixpointSolve(exp, _, _, _, _) => visitExp(exp)
 
       case Expr.FixpointFilter(_, exp, _, _, _) => visitExp(exp)
 
@@ -505,7 +515,7 @@ object PatMatch {
         }
       case TypedAst.Pattern.Tuple(pats, _, _) =>
         if (ctor.isInstanceOf[TyCon.Tuple]) {
-          Some(pats ::: pat.tail)
+          Some(pats.toList ::: pat.tail)
         } else {
           None
         }
@@ -704,8 +714,8 @@ object PatMatch {
     // Two enums are the same constructor if they have the same case symbol
     case (TyCon.Enum(s1, _), TyCon.Enum(s2, _)) => s1 == s2
     // Everything else is the same constructor if they are the same type
-    case (a: TyCon.Tuple, b: TyCon.Tuple) => true
-    case (a: TyCon.Record, b: TyCon.Record) => true
+    case (_: TyCon.Tuple, _: TyCon.Tuple) => true
+    case (_: TyCon.Record, _: TyCon.Record) => true
     case (a, b) => a == b;
   }
 
@@ -720,7 +730,7 @@ object PatMatch {
     case Pattern.Var(_, _, _) => TyCon.Wild
     case Pattern.Cst(cst, _, _) => TyCon.Cst(cst)
     case Pattern.Tag(CaseSymUse(sym, _), pats, _, _) => TyCon.Enum(sym, pats.map(patToCtor))
-    case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
+    case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor).toList)
     case Pattern.Record(pats, pat, _, _) =>
       val patsVal = pats.map {
         case TypedAst.Pattern.Record.RecordLabelPattern(label, pat1, _, _) =>

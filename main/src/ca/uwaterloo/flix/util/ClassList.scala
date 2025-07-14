@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.util.collection.MultiMap
-
 /**
   * A list of classes available on the Java Platform.
   */

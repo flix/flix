@@ -106,7 +106,7 @@ mod CodePoint {
     ///
     /// Returns `true` if the given code point `cp` represents a white space character.
     ///
-    pub def isWhiteSpace(cp: Int32): Bool =
+    pub def isWhitespace(cp: Int32): Bool =
         Character.isWhitespace(cp)
 
     ///

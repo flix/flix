@@ -17,11 +17,11 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.*
+import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
 
-import java.lang.reflect.{Constructor, Field, Method}
+import java.lang.reflect.Field
 
 object KindedAst {
 
@@ -33,7 +33,7 @@ object KindedAst {
                   enums: Map[Symbol.EnumSym, Enum],
                   structs: Map[Symbol.StructSym, Struct],
                   restrictableEnums: Map[Symbol.RestrictableEnumSym, RestrictableEnum],
-                  effects: Map[Symbol.EffectSym, Effect],
+                  effects: Map[Symbol.EffSym, Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, TypeAlias],
                   uses: ListMap[Symbol.ModuleSym, UseOrImport],
                   mainEntryPoint: Option[Symbol.DefnSym],
@@ -43,7 +43,7 @@ object KindedAst {
 
   case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[AssocTypeSig], sigs: Map[Symbol.SigSym, Sig], laws: List[Def], loc: SourceLocation)
 
-  case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, symUse: TraitSymUse, tparams: List[TypeParam], tpe: Type, tconstrs: List[TraitConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
+  case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, symUse: TraitSymUse, tparams: List[TypeParam], tpe: Type, tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
 
   case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr], loc: SourceLocation)
 
@@ -63,7 +63,7 @@ object KindedAst {
 
   case class AssocTypeDef(doc: Doc, mod: Modifiers, symUse: AssocTypeSymUse, arg: Type, tpe: Type, loc: SourceLocation)
 
-  case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
+  case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffSym, tparams: List[TypeParam], ops: List[Op], loc: SourceLocation)
 
   case class Op(sym: Symbol.OpSym, spec: Spec, loc: SourceLocation)
 
@@ -75,9 +75,9 @@ object KindedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends Expr
 
-    case class Hole(sym: Symbol.HoleSym, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class Hole(sym: Symbol.HoleSym, scp: LocalScope, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class HoleWithExp(exp: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class HoleWithExp(exp: Expr, scp: LocalScope, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class OpenAs(symUse: RestrictableEnumSymUse, exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -90,6 +90,8 @@ object KindedAst {
     case class ApplyDef(symUse: DefSymUse, exps: List[Expr], itvar: Type, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class ApplyLocalDef(symUse: LocalDefSymUse, exps: List[Expr], arrowTvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+
+    case class ApplyOp(symUse: OpSymUse, exps: List[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class ApplySig(symUse: SigSymUse, exps: List[Expr], itvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -119,9 +121,13 @@ object KindedAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], tvar: Type.Var, loc: SourceLocation) extends Expr
 
+    case class ExtMatch(label: Name.Label, exp1: Expr, sym2: Symbol.VarSym, exp2: Expr, sym3: Symbol.VarSym, exp3: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
+
     case class Tag(symUse: CaseSymUse, exps: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class RestrictableTag(symUse: RestrictableCaseSymUse, exps: List[Expr], isOpen: Boolean, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+
+    case class ExtTag(label: Name.Label, exps: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -173,8 +179,6 @@ object KindedAst {
 
     case class RunWith(exp1: Expr, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Do(symUse: OpSymUse, exps: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
-
     case class InvokeConstructor(clazz: Class[?], exps: List[Expr], jvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
@@ -213,13 +217,15 @@ object KindedAst {
 
     case class FixpointMerge(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class FixpointSolve(exp: Expr, loc: SourceLocation) extends Expr
+    case class FixpointQueryWithProvenance(exps: List[Expr], select: Predicate.Head, withh: List[Name.Pred], tvar: Type, loc: SourceLocation) extends Expr
+
+    case class FixpointSolve(exp: Expr, mode: SolveMode, loc: SourceLocation) extends Expr
 
     case class FixpointFilter(pred: Name.Pred, exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class FixpointInject(exp: Expr, pred: Name.Pred, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class FixpointInject(exp: Expr, pred: Name.Pred, arity: Int, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class FixpointProject(pred: Name.Pred, exp1: Expr, exp2: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class FixpointProject(pred: Name.Pred, arity: Int, exp1: Expr, exp2: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class Error(m: CompilationMessage, tvar: Type.Var, evar: Type.Var) extends Expr {
       override def loc: SourceLocation = m.loc
@@ -241,7 +247,7 @@ object KindedAst {
 
     case class Tag(symUse: CaseSymUse, pats: List[Pattern], tvar: Type.Var, loc: SourceLocation) extends Pattern
 
-    case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
+    case class Tuple(pats: Nel[Pattern], loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, tvar: Type.Var, loc: SourceLocation) extends Pattern
 
@@ -268,6 +274,19 @@ object KindedAst {
 
     case class Error(tvar: Type.Var, loc: SourceLocation) extends VarOrWild with RestrictableChoosePattern
 
+  }
+
+  sealed trait ExtPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtPattern {
+
+    case class Wild(tvar: Type.Var, loc: SourceLocation) extends ExtPattern
+
+    case class Var(sym: Symbol.VarSym, tvar: Type.Var, loc: SourceLocation) extends ExtPattern
+
+    case class Error(tvar: Type.Var, loc: SourceLocation) extends ExtPattern
   }
 
   sealed trait Predicate
@@ -312,17 +331,19 @@ object KindedAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr, loc: SourceLocation)
 
-  case class HandlerRule(symUse: OpSymUse, fparams: List[FormalParam], exp: Expr, tvar: Type.Var)
+  case class HandlerRule(symUse: OpSymUse, fparams: List[FormalParam], exp: Expr, tvar: Type.Var, loc: SourceLocation)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
-  case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
+  case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr, loc: SourceLocation)
 
-  case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr)
+  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
 
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
+  case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr, loc: SourceLocation)
+
+  case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr, loc: SourceLocation)
 
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 

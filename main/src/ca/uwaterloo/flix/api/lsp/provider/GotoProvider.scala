@@ -28,14 +28,15 @@ import org.json4s.JsonDSL.*
 object GotoProvider {
 
   /**
-   * Processes a goto request.
-   */
+    * Processes a goto request.
+    */
   def processGoto(uri: String, pos: Position)(implicit root: Root): Option[LocationLink] = {
     val gotoRight = searchRight(uri, pos).flatMap(goto)
     val gotoLeft = searchLeft(uri, pos).flatMap(goto)
 
     gotoRight
       .orElse(gotoLeft)
+      .filter(_.targetUri.startsWith("file://")) // We do not support goto for non-file URIs, which is the case for the standard library.
   }
 
   /**
@@ -48,8 +49,8 @@ object GotoProvider {
     * @param uri  the URI of the file that the cursor is in.
     * @param pos  the [[Position]] to the immediate right of the thin cursor.
     * @param root the root AST node of the Flix program.
-    * @return     the most specific AST node under the space immediately right of the thin cursor
-    *             if there is one. Otherwise, returns [[None]].
+    * @return the most specific AST node under the space immediately right of the thin cursor
+    *         if there is one. Otherwise, returns [[None]].
     */
   private def searchRight(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = search(uri, pos)
 
@@ -62,8 +63,8 @@ object GotoProvider {
     * @param uri  URI of the file that the cursor is in.
     * @param pos  [[Position]] to the immediate right of the thin cursor.
     * @param root Root AST node of the Flix Program.
-    * @return     the most specific AST node under the space immediately left of the thin cursor
-    *             if there is one. Otherwise, returns [[None]].
+    * @return the most specific AST node under the space immediately left of the thin cursor
+    *         if there is one. Otherwise, returns [[None]].
     */
   private def searchLeft(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     if (pos.character >= 2) {
@@ -81,8 +82,8 @@ object GotoProvider {
     * @param uri  URI of the file that the [[Position]] `pos` is in.
     * @param pos  [[Position]] that we're searching under.
     * @param root Root AST node of the Flix program.
-    * @return     The most specific AST node under the [[Position]] `pos`
-    *             if there is one. Otherwise, returns [[None]].
+    * @return The most specific AST node under the [[Position]] `pos`
+    *         if there is one. Otherwise, returns [[None]].
     */
   private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val consumer = StackConsumer();
@@ -99,8 +100,8 @@ object GotoProvider {
     *
     * @param x    Object that the cursor is on.
     * @param root Root AST node of the Flix program
-    * @return     LSP Goto response for when the cursor is on `x` if `x` is an occurrence of a [[Symbol]].
-    *             Otherwise, returns [[None]].
+    * @return LSP Goto response for when the cursor is on `x` if `x` is an occurrence of a [[Symbol]].
+    *         Otherwise, returns [[None]].
     */
   private def goto(x: AnyRef)(implicit root: Root): Option[LocationLink] = x match {
     // Assoc Types
@@ -109,7 +110,7 @@ object GotoProvider {
     case SymUse.DefSymUse(sym, loc) => Some(LocationLink.fromDefSym(sym, loc))
     // Effects
     case SymUse.EffectSymUse(sym, qname) => Some(LocationLink.fromEffectSym(sym, qname.loc))
-    case Type.Cst(TypeConstructor.Effect(sym), loc) => Some(LocationLink.fromEffectSym(sym, loc))
+    case Type.Cst(TypeConstructor.Effect(sym, _), loc) => Some(LocationLink.fromEffectSym(sym, loc))
     case SymUse.OpSymUse(sym, loc) => Some(LocationLink.fromOpSym(sym, loc))
     // Enums
     case Type.Cst(TypeConstructor.Enum(sym, _), loc) => Some(LocationLink.fromEnumSym(sym, loc))
@@ -128,8 +129,8 @@ object GotoProvider {
   }
 
   private def isReal(x: AnyRef): Boolean = x match {
-    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) =>  loc.isReal
-    case TypedAst.Instance(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Instance(_, _, _, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Sig(_, _, _, loc) => loc.isReal
     case TypedAst.Def(_, _, _, loc) => loc.isReal
     case TypedAst.Enum(_, _, _, _, _, _, _, loc) => loc.isReal
@@ -138,7 +139,7 @@ object GotoProvider {
     case TypedAst.TypeAlias(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.AssocTypeSig(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.AssocTypeDef(_, _, _, _, _, loc) => loc.isReal
-    case TypedAst.Effect(_, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Effect(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Op(_, _, loc) => loc.isReal
     case exp: TypedAst.Expr => exp.loc.isReal
     case pat: TypedAst.Pattern => pat.loc.isReal
@@ -156,10 +157,10 @@ object GotoProvider {
     case TypedAst.FormalParam(_, _, _, _, loc) => loc.isReal
     case TypedAst.PredicateParam(_, _, loc) => loc.isReal
     case TypedAst.JvmMethod(_, _, _, _, _, loc) => loc.isReal
-    case TypedAst.CatchRule(_, _, _) => true
-    case TypedAst.HandlerRule(_, _, _) => true
-    case TypedAst.TypeMatchRule(_, _, _) => true
-    case TypedAst.SelectChannelRule(_, _, _) => true
+    case TypedAst.CatchRule(_, _, _, _) => true
+    case TypedAst.HandlerRule(_, _, _, _) => true
+    case TypedAst.TypeMatchRule(_, _, _, _) => true
+    case TypedAst.SelectChannelRule(_, _, _, _) => true
     case TypedAst.TypeParam(_, _, loc) => loc.isReal
     case TypedAst.ParYieldFragment(_, _, loc) => loc.isReal
 

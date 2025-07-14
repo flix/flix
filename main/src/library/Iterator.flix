@@ -203,6 +203,16 @@ mod Iterator {
         d
 
     ///
+    /// Returns the contents of `iter` as a MutList.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def toMutList(rc: Region[r1], iter: Iterator[a, ef, r2]): MutList[a, r1] \ { ef, r2, r1 } =
+        let l = MutList.empty(rc);
+        forEach(x -> MutList.push(x, l), iter);
+        l
+
+    ///
     /// Returns the contents of `iter` as a set. Consumes the entire iterator.
     ///
     pub def toSet(iter: Iterator[a, ef, r]): Set[a] \ { ef, r } with Order[a] =

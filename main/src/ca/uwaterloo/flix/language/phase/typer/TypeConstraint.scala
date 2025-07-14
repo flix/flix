@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 
 
 /**
@@ -24,34 +24,20 @@ import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
 sealed trait TypeConstraint {
 
   /**
-    * The index indicates the order in which constraints will be evaluated.
-    * A constraint with a lower index is reduced first if possible.
-    */
-  lazy val index: (Int, Int, Int) = this match {
-    case TypeConstraint.Equality(_: Type.Var, Type.Pure, _) => (0, 0, 0)
-    case TypeConstraint.Equality(Type.Pure, _: Type.Var, _) => (0, 0, 0)
-    case TypeConstraint.Equality(tvar1: Type.Var, tvar2: Type.Var, _) if tvar1 != tvar2 => (0, 0, 0)
-    case TypeConstraint.Purification(_, _, _, _, _) => (0, 0, 0)
-    case TypeConstraint.Equality(tpe1, tpe2, _) =>
-      val tvars = tpe1.typeVars ++ tpe2.typeVars
-      val effTvars = tvars.filter(_.kind == Kind.Eff)
-      (1, effTvars.size, tvars.size)
-    case TypeConstraint.Trait(_, _, _) => (2, 0, 0)
-  }
-
-  /**
     * Returns the sum of the sizes of all the types in this constraint.
     */
   def size: Int = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => tpe1.size + tpe2.size
     case TypeConstraint.Trait(_, tpe, _) => tpe.size
     case TypeConstraint.Purification(_, eff1, eff2, _, nested) => eff1.size + eff2.size + nested.map(_.size).sum
+    case TypeConstraint.Conflicted(tpe1, tpe2, _) => tpe1.size + tpe2.size
   }
 
   override def toString: String = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => s"$tpe1 ~ $tpe2"
     case TypeConstraint.Trait(sym, tpe, _) => s"$sym[$tpe]"
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
+    case TypeConstraint.Conflicted(tpe1, tpe2, _) => s"$tpe1 ≁ $tpe2"
   }
 
   def loc: SourceLocation
@@ -94,6 +80,13 @@ object TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 
+  /**
+    * A type constraint indicating that `tpe1` and `tpe2` cannot be unified.
+    */
+  case class Conflicted(tpe1: Type, tpe2: Type, prov: Provenance) extends TypeConstraint {
+    def loc: SourceLocation = prov.loc
+  }
+
   sealed trait Provenance {
     def loc: SourceLocation
   }
@@ -119,5 +112,16 @@ object TypeConstraint {
       * The constraint indicates that the types must match.
       */
     case class Match(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Provenance
+
+    /**
+      * The constraint indicates that the left effect is a variable representing the source effect on the right.
+      */
+    case class Source(eff1: Type.Var, eff2: Type, loc: SourceLocation) extends Provenance
+
+    /**
+      * Indicates the conflict arose from a timeout
+      */
+    // TODO this is an abuse of provenance. We should instead have a separate "conflict reason" type.
+    case class Timeout(msg: String, loc: SourceLocation) extends Provenance
   }
 }

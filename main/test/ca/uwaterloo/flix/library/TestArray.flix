@@ -5050,6 +5050,158 @@ mod TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // copyInto                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    // Test copying between arrays for primitive values
+    @test
+    def copyInto01(): Bool = region rc {
+        let src = Array#{true, false, true, false, false} @ rc;
+        let dst = Array.empty(rc, 5);
+        Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
+        src `sameElements` dst
+    }
+
+    @test
+    def copyInto02(): Bool = region rc {
+        let src = Array#{1i8, 4i8, 5i8, 42i8, 123i8} @ rc;
+        let dst = Array.empty(rc, 5);
+        Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
+        src `sameElements` dst
+    }
+
+    @test
+    def copyInto04(): Bool = region rc {
+        let src = Array#{1i16, 4i16, 5i16, 42i16, 123i16} @ rc;
+        let dst = Array.empty(rc, 5);
+        Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
+        src `sameElements` dst
+    }
+
+    @test
+    def copyInto05(): Bool = region rc {
+        let src = Array#{1i32, 4i32, 5i32, 42i32, 123i32} @ rc;
+        let dst = Array.empty(rc, 5);
+        Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
+        src `sameElements` dst
+    }
+
+
+    @test
+    def copyInto06(): Bool = region rc {
+        let src = Array#{1i64, 4i64, 5i64, 42i64, 123i64} @ rc;
+        let dst = Array.empty(rc, 5);
+        Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
+        src `sameElements` dst
+    }
+
+
+    @test
+    def copyInto07(): Bool = region rc {
+        let src = Array#{1f32, 4f32, 5f32, 42f32, 123f32} @ rc;
+        let dst = Array.empty(rc, 5);
+        Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
+        src `sameElements` dst
+    }
+
+    @test
+    def copyInto08(): Bool = region rc {
+        let src = Array#{1f64, 4f64, 5f64, 42f64, 123f64} @ rc;
+        let dst = Array.empty(rc, 5);
+        Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
+        src `sameElements` dst
+    }
+
+    @test
+    def copyInto09(): Bool = region rc {
+        let src = Array#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10} @ rc;
+        let dst = Array#{0, 0, 0, 0} @ rc;
+        Array.copyInto(srcPos = 3, dstPos = 1, len = 2, src = src, dst);
+        let copiedCorrectly = dst `sameElements` Array#{0, 4, 5, 0} @ rc;
+        let sourceUnchanged = src `sameElements` Array#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10} @ rc;
+        copiedCorrectly and sourceUnchanged
+    }
+
+    @test
+    def copyInto10(): Bool = region rc {
+        let src = Array#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10} @ rc;
+        let dst = Array#{0,0,0,0} @ rc;
+        Array.copyInto(srcPos = 3, dstPos = 1, len = 0, src = src, dst);
+        dst `sameElements` Array#{0,0,0,0} @ rc
+    }
+
+    @test
+    def copyInto11(): Bool = region rc {
+        let src = Array#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10} @ rc;
+        Array.copyInto(srcPos = 0, dstPos = 5, len = 5, src = src, src);
+        src `sameElements` Array#{1, 2, 3, 4, 5, 1, 2, 3, 4, 5} @ rc
+    }
+
+    @test
+    def copyInto12(): Bool = region rc {
+        let src = Array#{1, 2, 3, 4, 5} @ rc;
+        Array.copyInto(srcPos = 0, dstPos = 1, len = 4, src = src, src);
+        src `sameElements` Array#{1, 1, 2, 3, 4} @ rc
+    }
+
+    @test
+    def copyInto13(): Bool = region rc {
+        let src = Array#{Some(1), None, Some(2), None, Some(3), None, Some(4)} @ rc;
+        let dst = Array#{Some(-1),Some(-1),Some(-1),Some(-1),Some(-1),Some(-1)} @ rc;
+        Array.copyInto(srcPos = 1, dstPos = 2, len = 4, src = src, dst);
+        dst `sameElements` Array#{Some(-1), Some(-1), None, Some(2), None, Some(3)} @ rc
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // copy                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def copy01(): Bool = region rc {
+        Array.copy(rc, Array#{true, false, true} @ rc) `sameElements` Array#{true, false, true} @ rc
+    }
+
+    @test
+    def copy02(): Bool = region rc {
+        Array.copy(rc, Array#{'a', 'b', 'c'} @ rc) `sameElements` Array#{'a', 'b', 'c'} @ rc
+    }
+
+    @test
+    def copy03(): Bool = region rc {
+        Array.copy(rc, Array#{1.0f32, 2.0f32, 3.0f32} @ rc) `sameElements` Array#{1.0f32, 2.0f32, 3.0f32} @ rc
+    }
+
+    @test
+    def copy04(): Bool = region rc {
+        Array.copy(rc, Array#{1.0f64, 2.0f64, 3.0f64} @ rc) `sameElements` Array#{1.0f64, 2.0f64, 3.0f64} @ rc
+    }
+
+    @test
+    def copy05(): Bool = region rc {
+        Array.copy(rc, Array#{1i8, 2i8, 3i8} @ rc) `sameElements` Array#{1i8, 2i8, 3i8} @ rc
+    }
+
+    @test
+    def copy06(): Bool = region rc {
+        Array.copy(rc, Array#{1i16, 2i16, 3i16} @ rc) `sameElements` Array#{1i16, 2i16, 3i16} @ rc
+    }
+
+    @test
+    def copy07(): Bool = region rc {
+        Array.copy(rc, Array#{1, 2, 3} @ rc) `sameElements` Array#{1, 2, 3} @ rc
+    }
+
+    @test
+    def copy08(): Bool = region rc {
+        Array.copy(rc, Array#{1i64, 2i64, 3i64} @ rc) `sameElements` Array#{1i64, 2i64, 3i64} @ rc
+    }
+
+    @test
+    def copy09(): Bool = region rc {
+        Array.copy(rc, Array#{Some(1), Some(2), None} @ rc) `sameElements` Array#{Some(1), Some(2), None} @ rc
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // copyOfRange                                                             //
     /////////////////////////////////////////////////////////////////////////////
 

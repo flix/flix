@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification.shared
 import scala.collection.immutable.SortedSet
 
 /**
- * A type class for Boolean Formulas.
+ * A type class for Free Boolean Algebras.
  */
 trait BoolAlg[F] {
 

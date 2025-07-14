@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeC
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError.*
-import ca.uwaterloo.flix.language.phase.unification.{TraitEnv, TraitEnvironment}
+import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
 import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.ConcurrentHashMap
@@ -76,6 +76,7 @@ object Redundancy {
       checkUnusedTypeParamsEnums()(root) ++
       checkUnusedStructsAndFields()(sctx, root) ++
       checkUnusedTypeParamsStructs()(root) ++
+      checkUnusedTypeParamsTypeAliases()(root) ++
       checkRedundantTraitConstraints()(root, flix)
 
     (root, errors)
@@ -135,6 +136,23 @@ object Redundancy {
       val usedTypeVars = decl.cases.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
         case (sacc, (_, Case(_, tpes, _, _))) => sacc ++ tpes.flatMap(_.typeVars.map(_.sym))
       }
+      val unusedTypeParams = decl.tparams.filter {
+        tparam =>
+          !usedTypeVars.contains(tparam.sym) &&
+            !tparam.name.name.startsWith("_")
+      }
+      result ++= unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name, tparam.loc))
+    }
+    result.toList
+  }
+
+  /**
+    * Checks for unused type parameters in enums.
+    */
+  private def checkUnusedTypeParamsTypeAliases()(implicit root: Root): List[RedundancyError] = {
+    val result = new ListBuffer[RedundancyError]
+    for ((_, decl) <- root.typeAliases) {
+      val usedTypeVars = decl.tpe.typeVars.map(_.sym)
       val unusedTypeParams = decl.tparams.filter {
         tparam =>
           !usedTypeVars.contains(tparam.sym) &&
@@ -298,11 +316,11 @@ object Redundancy {
       case (true, true) => Used.empty + HiddenVarSym(sym, loc)
     }
 
-    case Expr.Hole(sym, _, _, _) =>
+    case Expr.Hole(sym, _, _, _, _) =>
       lctx.holeSyms += sym
       Used.empty
 
-    case Expr.HoleWithExp(exp, _, _, _) =>
+    case Expr.HoleWithExp(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expr.OpenAs(_, exp, _, _) =>
@@ -355,6 +373,10 @@ object Redundancy {
       } else {
         Used.of(sym) ++ visitExps(exps, env0, rc)
       }
+
+    case Expr.ApplyOp(opUse, exps, _, _, _) =>
+      sctx.effSyms.put(opUse.sym.eff, ())
+      visitExps(exps, env0, rc)
 
     case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _) =>
       // Recursive calls do not count as uses.
@@ -473,7 +495,7 @@ object Redundancy {
 
       // Visit each match rule.
       val usedRules = rules map {
-        case MatchRule(pat, guard, body) =>
+        case MatchRule(pat, guard, body, _) =>
           // Compute the free variables in the pattern.
           val fvs = freeVars(pat)
 
@@ -504,7 +526,7 @@ object Redundancy {
 
       // Visit each match rule.
       val usedRules = rules map {
-        case TypeMatchRule(bnd, _, body) =>
+        case TypeMatchRule(bnd, _, body, _) =>
           // Get the free var from the sym
           val fvs = Set(bnd.sym)
 
@@ -556,6 +578,9 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
+    case Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, _, _, _) =>
+      // TODO: Ext-Variants
+      visitExp(exp1, env0, rc) ++ visitExp(exp2, env0 + bnd1.sym, rc) ++ visitExp(exp3, env0 + bnd2.sym, rc)
 
     case Expr.Tag(CaseSymUse(sym, _), exps, _, _, _) =>
       val us = visitExps(exps, env0, rc)
@@ -564,6 +589,9 @@ object Redundancy {
       us
 
     case Expr.RestrictableTag(_, exps, _, _, _) =>
+      visitExps(exps, env0, rc)
+
+    case Expr.ExtensibleTag(_, exps, _, _, _) =>
       visitExps(exps, env0, rc)
 
     case Expr.Tuple(elms, _, _, _) =>
@@ -626,7 +654,7 @@ object Redundancy {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.Ascribe(exp, _, _, _) =>
+    case Expr.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expr.InstanceOf(exp, _, _) =>
@@ -675,7 +703,7 @@ object Redundancy {
     case Expr.TryCatch(exp, rules, _, _, _) =>
       val usedExp = visitExp(exp, env0, rc)
       val usedRules = rules.foldLeft(Used.empty) {
-        case (acc, CatchRule(bnd, _, body)) =>
+        case (acc, CatchRule(bnd, _, body, _)) =>
           val usedBody = visitExp(body, env0, rc)
           if (deadVarSym(bnd.sym, usedBody))
             acc ++ usedBody + UnusedVarSym(bnd.sym)
@@ -690,19 +718,23 @@ object Redundancy {
     case Expr.Handler(sym, rules, _, _, _, _, _) =>
       sctx.effSyms.put(sym.sym, ())
       rules.foldLeft(Used.empty) {
-        case (acc, HandlerRule(_, fparams, body)) =>
-          val usedBody = visitExp(body, env0, rc)
+        case (acc, HandlerRule(_, fparams, body, _)) =>
           val syms = fparams.map(_.bnd.sym)
-          val dead = syms.filter(deadVarSym(_, usedBody))
-          acc ++ usedBody ++ dead.map(UnusedVarSym.apply)
+          val shadowedFparamVars = syms.map(s => shadowing(s.text, s.loc, env0))
+          val env1 = env0 ++ syms
+          val usedBody = visitExp(body, env1, rc)
+          syms.zip(shadowedFparamVars).foldLeft(acc ++ usedBody) {
+            case (acc1, (s, shadow)) =>
+              if (deadVarSym(s, usedBody)) {
+                acc1 ++ shadow + UnusedVarSym(s)
+              } else {
+                acc1 ++ shadow
+              }
+          }
       }
 
-    case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+    case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc)
-
-    case Expr.Do(opUse, exps, _, _, _) =>
-      sctx.effSyms.put(opUse.sym.eff, ())
-      visitExps(exps, env0, rc)
 
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args, env0, rc)
@@ -753,7 +785,7 @@ object Redundancy {
       }
 
       val rulesUsed = rules map {
-        case SelectChannelRule(Binder(sym, _), chan, body) =>
+        case SelectChannelRule(Binder(sym, _), chan, body, _) =>
           // Extend the environment with the symbol.
           val env1 = env0 + sym
 
@@ -804,7 +836,12 @@ object Redundancy {
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
-    case Expr.FixpointSolve(exp, _, _, _) =>
+    case Expr.FixpointQueryWithProvenance(exps, Head.Atom(_, _, terms, _, _), _, _, _, _) =>
+      val us1 = visitExps(exps, env0, rc)
+      val us2 = visitExps(terms, env0, rc)
+      us1 ++ us2
+
+    case Expr.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expr.FixpointFilter(_, exp, _, _, _) =>
@@ -899,7 +936,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given list of pattern `ps`.
     */
-  private def visitPats(ps: List[Pattern])(implicit sctx: SharedContext): Used = ps.foldLeft(Used.empty) {
+  private def visitPats(ps: Iterable[Pattern])(implicit sctx: SharedContext): Used = ps.foldLeft(Used.empty) {
     case (acc, pat) => acc ++ visitPat(pat)
   }
 
@@ -1009,8 +1046,8 @@ object Redundancy {
     * Returns true if the expression is a hole.
     */
   private def isHole(exp: Expr): Boolean = exp match {
-    case Expr.Hole(_, _, _, _) => true
-    case Expr.HoleWithExp(_, _, _, _) => true
+    case Expr.Hole(_, _, _, _, _) => true
+    case Expr.HoleWithExp(_, _, _, _, _) => true
     case _ => false
   }
 
@@ -1142,13 +1179,6 @@ object Redundancy {
       * Represents the empty environment.
       */
     val empty: Env = Env(Map.empty)
-
-    /**
-      * Returns an environment with the given variable symbols `varSyms` in it.
-      */
-    def of(varSyms: Iterable[Symbol.VarSym]): Env = varSyms.foldLeft(Env.empty) {
-      case (acc, sym) => acc + sym
-    }
   }
 
   /**
@@ -1300,7 +1330,7 @@ object Redundancy {
     */
   private case class SharedContext(defSyms: ConcurrentHashMap[Symbol.DefnSym, Unit],
                                    sigSyms: ConcurrentHashMap[Symbol.SigSym, Unit],
-                                   effSyms: ConcurrentHashMap[Symbol.EffectSym, Unit],
+                                   effSyms: ConcurrentHashMap[Symbol.EffSym, Unit],
                                    structSyms: ConcurrentHashMap[Symbol.StructSym, Unit],
                                    structFieldSyms: ConcurrentHashMap[Symbol.StructFieldSym, Unit],
                                    enumSyms: ConcurrentHashMap[Symbol.EnumSym, Unit],

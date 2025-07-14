@@ -160,24 +160,6 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate an illegal effect in a spawn expression.
-    *
-    * @param eff the illegal effect.
-    * @param loc the source location of the spawn.
-    */
-  case class IllegalSpawnEffect(eff: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
-    override def summary: String = "Illegal spawn effect"
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Illegal spawn effect: '${red(FormatType.formatType(eff, None))}'. A spawn expression must be pure or have a primitive effect.
-         |
-         |${code(loc, "illegal effect.")}
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate that the Java class in a catch clause is not a Throwable.
     *
     * @param loc the location of the catch parameter.
@@ -209,28 +191,6 @@ object SafetyError {
          |${code(loc, "Type should be java.lang.Throwable or a subclass.")}
          |""".stripMargin
     }
-  }
-
-  /**
-    * An error raised to indicate that a try-catch expression contains another try-catch expression.
-    *
-    * @param loc the location of the inner try-catch.
-    */
-  case class IllegalNestedTryCatch(loc: SourceLocation) extends SafetyError {
-    def summary: String = s"Try-catch expressions cannot be nested."
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> $summary
-         |
-         |${code(loc, "The inner try-catch expression.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"""${underline("Tip:")} Put the inner try-catch expression in a function.""".stripMargin
-    })
   }
 
   /**
@@ -390,7 +350,7 @@ object SafetyError {
     * @param sym the effect symbol.
     * @param loc the location where the error occurred.
     */
-  case class PrimitiveEffectInTryWith(sym: Symbol.EffectSym, loc: SourceLocation) extends SafetyError {
+  case class PrimitiveEffectInRunWith(sym: Symbol.EffSym, loc: SourceLocation) extends SafetyError {
     override def summary: String = s"The ${sym.name} effect cannot be handled."
 
     override def message(formatter: Formatter): String = {

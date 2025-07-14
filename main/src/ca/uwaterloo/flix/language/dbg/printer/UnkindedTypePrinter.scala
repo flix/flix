@@ -10,8 +10,8 @@ import scala.collection.immutable.SortedSet
 object UnkindedTypePrinter {
 
   /** Returns the [[DocAst.Type]] representation of `tpe`. */
-  def print(tpe: UnkindedType): DocAst.Type = {
-    val (base, args) = collectApp(tpe)
+  def print(tpe0: UnkindedType): DocAst.Type = {
+    val (base, args) = collectApp(tpe0)
     // Make the well-kinded types pretty.
     (base, args) match {
       case (UnkindedType.Var(sym, _), _) => mkApp(Type.Var(sym), args.map(print))
@@ -63,6 +63,7 @@ object UnkindedTypePrinter {
         DocAst.Type.SymmetricDiff(print(arg0), print(arg1))
       case (UnkindedType.Cst(tc, _), _) => mkApp(TypeConstructorPrinter.print(tc), args.map(print))
       case (UnkindedType.Enum(sym, _), _) => Type.AsIs(sym.toString)
+      case (UnkindedType.Effect(sym, _), _) => Type.AsIs(sym.toString)
       case (UnkindedType.Struct(sym, _), _) => Type.AsIs(sym.toString)
       case (UnkindedType.RestrictableEnum(sym, _), _) => Type.AsIs(sym.toString)
       case (UnkindedType.UnappliedAlias(sym, _), _) => Type.AsIs(sym.toString)

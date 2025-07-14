@@ -15,23 +15,23 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.api.lsp.Range
-import ca.uwaterloo.flix.api.lsp.provider.{CodeActionProvider, CompletionProvider, FindReferencesProvider, GotoProvider, HighlightProvider, HoverProvider, SemanticTokensProvider}
+import ca.uwaterloo.flix.api.lsp.provider.*
+import ca.uwaterloo.flix.api.lsp.{CompletionList, Position, PublishDiagnosticsParams, Range}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
-import ca.uwaterloo.flix.api.lsp.{Position, PublishDiagnosticsParams}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{FileOps, Options}
 import org.eclipse.lsp4j
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages
 import org.eclipse.lsp4j.launch.LSPLauncher
-import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
+import org.eclipse.lsp4j.services.*
 
+import java.nio.file.{Files, Path, Paths}
 import java.util
 import java.util.concurrent.CompletableFuture
 import scala.collection.mutable
@@ -90,22 +90,84 @@ object LspServer {
       */
     private var clientCapabilities: ClientCapabilities = _
 
-    private val flixTextDocumentService = new FlixTextDocumentService(this, flixLanguageClient)
-    private val flixWorkspaceService = new FlixWorkspaceService(this, flixLanguageClient)
+    private val flixTextDocumentService = new FlixTextDocumentService(this)
+    private val flixWorkspaceService = new FlixWorkspaceService(this)
 
     /**
       * Initializes the language server.
       *
       * During the initialization, we should:
       * - Store the client capabilities.
+      * - Load all Flix resources, including source files JAR files and flix package files.
       * - Return the server capabilities.
       */
     override def initialize(initializeParams: InitializeParams): CompletableFuture[InitializeResult] = {
       System.err.println(s"initialize: $initializeParams")
 
       clientCapabilities = initializeParams.getCapabilities
+      if (initializeParams.getWorkspaceFolders != null)
+        loadFlixProject(initializeParams.getWorkspaceFolders.asScala.toList)
+      else {
+        flixLanguageClient.showMessage(new MessageParams(MessageType.Error, "Please provide WorkspaceFolders in the initialization options."))
+        System.err.println("Please provide WorkspaceFolders in the initialization options.")
+      }
 
       CompletableFuture.completedFuture(new InitializeResult(mkServerCapabilities()))
+    }
+
+    /**
+      * Loads all Flix resources in the workspace, including:
+      *   - Flix source files (*.flix, src/**/*.flix, test/**/*.flix).
+      *   - JAR files (lib/**/*.jar).
+      *   - Flix package files (lib/**/*.fpkg).
+      */
+    private def loadFlixProject(roots: List[WorkspaceFolder]): Unit = {
+      for {
+        root <- roots
+        path = Paths.get(root.getName)
+        if Files.exists(path) && Files.isDirectory(path)
+      } {
+        loadFlixSources(path)
+        loadJarsAndFkgs(path)
+      }
+    }
+
+    /**
+      * Loads all Flix source files in the workspace. including:
+      *   - *.flix
+      *   - src/**/*.flix
+      *   - test/**/*.flix
+      */
+    private def loadFlixSources(path: Path): Unit = {
+      val flixSources =
+        FileOps.getFilesIn(path, 1) ++
+        FileOps.getFilesIn(path.resolve("src"), Int.MaxValue) ++
+        FileOps.getFilesIn(path.resolve("test"), Int.MaxValue)
+
+      flixSources.foreach { case p =>
+        if (FileOps.checkExt(p, ".flix")) {
+          val source = Files.readString(p)
+          addSourceCode(p.toUri.toString, source)
+        }
+      }
+    }
+
+    /**
+      * Loads all JAR files and Flix package files in the workspace, including:
+      *   - lib/**/*.jar
+      *   - lib/**/*.fpkg
+      */
+    private def loadJarsAndFkgs(path: Path): Unit = {
+      FileOps.getFilesIn(path.resolve("lib"), Int.MaxValue)
+        .foreach{ case p =>
+          // Load all JAR files in the workspace, the pattern should be lib/**/*.jar.
+          if (FileOps.checkExt(p, ".jar"))
+            flix.addJar(p)
+          // Load all Flix package files in the workspace, the pattern should be lib/**/*.fpkg.
+          if (FileOps.checkExt(p, ".fpkg")) {
+            flix.addPkg(p)(SecurityContext.AllPermissions)
+          }
+        }
     }
 
     private def mkServerCapabilities(): ServerCapabilities = {
@@ -121,10 +183,16 @@ object LspServer {
           true
         )
       )
+      serverCapabilities.setSignatureHelpProvider(new SignatureHelpOptions(List("(", ",").asJava))
       serverCapabilities.setCodeActionProvider(true)
+      serverCapabilities.setCodeLensProvider(new CodeLensOptions(true))
       serverCapabilities.setCompletionProvider(new CompletionOptions(true, TriggerChars.asJava))
       serverCapabilities.setReferencesProvider(true)
       serverCapabilities.setDefinitionProvider(true)
+      serverCapabilities.setImplementationProvider(true)
+      serverCapabilities.setRenameProvider(new RenameOptions(false))
+      serverCapabilities.setDocumentSymbolProvider(true)
+      serverCapabilities.setWorkspaceSymbolProvider(true)
       serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)// TODO: make it incremental
 
       serverCapabilities
@@ -163,11 +231,11 @@ object LspServer {
       try {
         val diagnostics = flix.check() match {
           // Case 1: Compilation was successful or partially successful so that we have the root and errors.
-          case (Some(root), errors) =>
-            this.root = root
+          case (Some(root1), errors) =>
+            this.root = root1
             this.currentErrors = errors
             // We provide diagnostics for errors and code hints.
-            val codeHints = CodeHinter.run(sources.keySet.toSet)(root)
+            val codeHints = CodeHinter.run(sources.keySet.toSet)(root1)
             PublishDiagnosticsParams.fromMessages(currentErrors, flix.options.explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
 
           // Case 2: Compilation failed so that we have only errors.
@@ -189,12 +257,14 @@ object LspServer {
       * We need to publish empty diagnostics for sources that do not have any diagnostics to clear previous diagnostics.
       */
     private def publishDiagnostics(diagnostics: List[PublishDiagnosticsParams]): Unit = {
-      val sourcesWithDiagnostics = diagnostics.map(d => d.uri).toSet
+      // We do not publish diagnostics for errors from the library
+      val validDiagnostics = diagnostics.filter(_.uri.startsWith("file://"))
+      val sourcesWithDiagnostics = validDiagnostics.map(d => d.uri).toSet
       val sourcesWithoutDiagnostics = sources.keySet.diff(sourcesWithDiagnostics)
       sourcesWithoutDiagnostics.foreach { source =>
         flixLanguageClient.publishDiagnostics(PublishDiagnosticsParams(source, Nil).toLsp4j)
       }
-      diagnostics.foreach { diagnostic =>
+      validDiagnostics.foreach { diagnostic =>
         flixLanguageClient.publishDiagnostics(diagnostic.toLsp4j)
       }
     }
@@ -202,7 +272,7 @@ object LspServer {
 
 
 
-  private class FlixTextDocumentService(flixLanguageServer: FlixLanguageServer, flixLanguageClient: LanguageClient) extends TextDocumentService {
+  private class FlixTextDocumentService(flixLanguageServer: FlixLanguageServer) extends TextDocumentService {
     /**
       * Called when a text document is opened.
       * If the document is a Flix source file, we add the source code to the Flix instance and check it.
@@ -251,15 +321,23 @@ object LspServer {
       CompletableFuture.completedFuture(codeActions)
     }
 
-    override def completion(params: CompletionParams): CompletableFuture[messages.Either[util.List[CompletionItem], CompletionList]] = {
+    override def codeLens(params: CodeLensParams): CompletableFuture[util.List[? <: CodeLens]] = {
       val uri = params.getTextDocument.getUri
-      val source = flixLanguageServer.sources(uri)
-      val pos = Position.fromLsp4j(params.getPosition)
-      val completions = CompletionProvider.autoComplete(uri, pos, source, flixLanguageServer.currentErrors)(flixLanguageServer.flix, flixLanguageServer.root)
-      CompletableFuture.completedFuture(messages.Either.forRight[util.List[CompletionItem], CompletionList](completions.toLsp4j))
+      val codeLens = CodeLensProvider.processCodeLens(uri)(flixLanguageServer.root).map(_.toLsp4j).asJava
+      CompletableFuture.completedFuture(codeLens)
     }
 
-    override def definition(params: DefinitionParams): CompletableFuture[messages.Either[util.List[_ <: Location], util.List[_ <: LocationLink]]] = {
+    override def completion(params: CompletionParams): CompletableFuture[messages.Either[util.List[CompletionItem], lsp4j.CompletionList]] = {
+      val uri = params.getTextDocument.getUri
+      val pos = Position.fromLsp4j(params.getPosition)
+      val completions = CompletionProvider
+        .getCompletions(uri, pos, flixLanguageServer.currentErrors)(flixLanguageServer.root, flixLanguageServer.flix)
+        .map(_.toCompletionItem(flixLanguageServer.flix))
+      val completionList = CompletionList(isIncomplete = true, completions).toLsp4j
+      CompletableFuture.completedFuture(messages.Either.forRight[util.List[CompletionItem], lsp4j.CompletionList](completionList))
+    }
+
+    override def definition(params: DefinitionParams): CompletableFuture[messages.Either[util.List[? <: Location], util.List[? <: LocationLink]]] = {
       val uri = params.getTextDocument.getUri
       val pos = Position.fromLsp4j(params.getPosition)
       val definition = GotoProvider.processGoto(uri, pos)(flixLanguageServer.root)
@@ -278,7 +356,7 @@ object LspServer {
       CompletableFuture.completedFuture(hover)
     }
 
-    override def documentHighlight(params: DocumentHighlightParams): CompletableFuture[java.util.List[_ <: DocumentHighlight]] = {
+    override def documentHighlight(params: DocumentHighlightParams): CompletableFuture[java.util.List[? <: DocumentHighlight]] = {
       val uri = params.getTextDocument.getUri
       val position = Position.fromLsp4j(params.getPosition)
       val highlights = HighlightProvider.processHighlight(uri, position)(flixLanguageServer.root)
@@ -296,21 +374,66 @@ object LspServer {
       CompletableFuture.completedFuture(semanticTokens)
     }
 
-    override def references(params: ReferenceParams): CompletableFuture[util.List[_ <: Location]] = {
+    override def references(params: ReferenceParams): CompletableFuture[util.List[? <: Location]] = {
       val uri = params.getTextDocument.getUri
       val pos = Position.fromLsp4j(params.getPosition)
       val references = FindReferencesProvider.findRefs(uri, pos)(flixLanguageServer.root)
       CompletableFuture.completedFuture(references.map(_.toLsp4j).toList.asJava)
     }
+
+    override def rename(params: RenameParams): CompletableFuture[WorkspaceEdit] = {
+      val newName = params.getNewName
+      val uri = params.getTextDocument.getUri
+      val pos = Position.fromLsp4j(params.getPosition)
+      RenameProvider.processRename(newName, uri, pos)(flixLanguageServer.root) match {
+        case Some(rename) => CompletableFuture.completedFuture(rename.toLsp4j)
+
+        // If nothing is found it's OK to return the empty WorkspaceEdit.
+        case None => CompletableFuture.completedFuture(new WorkspaceEdit())
+      }
+    }
+
+    override def signatureHelp(params: SignatureHelpParams): CompletableFuture[SignatureHelp] = {
+      val uri = params.getTextDocument.getUri
+      val pos = Position.fromLsp4j(params.getPosition)
+      val signatureHelp = SignatureHelpProvider.provideSignatureHelp(uri, pos)(flixLanguageServer.root, flixLanguageServer.flix)
+      CompletableFuture.completedFuture(signatureHelp.map(_.toLsp4j).orNull)
+    }
+
+    override def implementation(params: ImplementationParams): CompletableFuture[messages.Either[util.List[? <: Location], util.List[_ <: LocationLink]]] = {
+      val uri = params.getTextDocument.getUri
+      val pos = Position.fromLsp4j(params.getPosition)
+      val implementation = GotoProvider.processGoto(uri, pos)(flixLanguageServer.root)
+      CompletableFuture.completedFuture(messages.Either.forRight(implementation.map(_.toLsp4j).toList.asJava))
+    }
+
+    override def inlayHint(params: InlayHintParams): CompletableFuture[util.List[InlayHint]] = {
+      val uri = params.getTextDocument.getUri
+      val range = Range.fromLsp4j(params.getRange)
+      val hints = InlayHintProvider.getInlayHints(uri, range)(flixLanguageServer.root)
+      CompletableFuture.completedFuture(hints.map(_.toLsp4j).asJava)
+    }
+
+    override def documentSymbol(params: DocumentSymbolParams): CompletableFuture[util.List[messages.Either[SymbolInformation, DocumentSymbol]]] = {
+      val uri = params.getTextDocument.getUri
+      val symbols = SymbolProvider.processDocumentSymbols(uri)(flixLanguageServer.root)
+      CompletableFuture.completedFuture(symbols.map(_.toLsp4j).map(messages.Either.forRight[SymbolInformation, DocumentSymbol]).asJava)
+    }
   }
 
-  private class FlixWorkspaceService(flixLanguageServer: FlixLanguageServer, flixLanguageClient: LanguageClient) extends WorkspaceService {
+  private class FlixWorkspaceService(flixLanguageServer: FlixLanguageServer) extends WorkspaceService {
     override def didChangeConfiguration(didChangeConfigurationParams: DidChangeConfigurationParams): Unit = {
       System.err.println(s"didChangeConfiguration: $didChangeConfigurationParams")
     }
 
     override def didChangeWatchedFiles(didChangeWatchedFilesParams: DidChangeWatchedFilesParams): Unit = {
       System.err.println(s"didChangeWatchedFiles: $didChangeWatchedFilesParams")
+    }
+
+    override def symbol(params: WorkspaceSymbolParams): CompletableFuture[messages.Either[util.List[? <: SymbolInformation], util.List[? <: WorkspaceSymbol]]] = {
+      val query = params.getQuery
+      val symbols = SymbolProvider.processWorkspaceSymbols(query)(flixLanguageServer.root)
+      CompletableFuture.completedFuture(messages.Either.forRight(symbols.map(_.toLsp4j).asJava))
     }
   }
 }

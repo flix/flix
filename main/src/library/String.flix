@@ -738,18 +738,18 @@ mod String {
     ///
     /// Returns `true` if `s` is empty.
     ///
-    pub def isWhiteSpace(s: String): Bool =
-        forAll(Char.isWhiteSpace, s)
+    pub def isWhitespace(s: String): Bool =
+        forAll(Char.isWhitespace, s)
 
     ///
     /// Returns string `s` with all leading space characters removed.
     ///
-    pub def trimLeft(s: String): String = dropWhileLeft(Char.isWhiteSpace, s)
+    pub def trimLeft(s: String): String = dropWhileLeft(Char.isWhitespace, s)
 
     ///
     /// Returns string `s` with all trailing space characters removed.
     ///
-    pub def trimRight(s: String): String = dropWhileRight(Char.isWhiteSpace, s)
+    pub def trimRight(s: String): String = dropWhileRight(Char.isWhitespace, s)
 
     ///
     /// Returns a string with the string `s` repeated `n` times.
@@ -909,7 +909,7 @@ mod String {
         def loop(s1, ix) = {
             if (ix >= limit)
                 sliceRight(start = ix, s1)
-            else if (not Char.isWhiteSpace(charAt(ix, s1)))
+            else if (not Char.isWhitespace(charAt(ix, s1)))
                 sliceRight(start = ix, s1)
             else
                 loop(s1, ix + 1)

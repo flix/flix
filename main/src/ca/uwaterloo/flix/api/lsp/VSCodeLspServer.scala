@@ -16,22 +16,22 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider.*
-import ca.uwaterloo.flix.api.{CrashHandler, Flix, Version}
+import ca.uwaterloo.flix.api.{CompilerLog, CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
+import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.*
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
+import org.json4s.*
 import org.json4s.JsonAST.{JArray, JString, JValue}
 import org.json4s.JsonDSL.*
 import org.json4s.ParserUtil.ParseException
-import org.json4s.*
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 
@@ -63,6 +63,11 @@ import scala.collection.mutable
   * NB: All errors must be printed to std err.
   */
 class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSocketAddress("localhost", port)) {
+
+  /**
+    * The maximum acceptable latency -- in nanoseconds -- before a request is considered slow.
+    */
+  private val MaxLatencyNS: Long = 100_000_000 // 100ms
 
   /**
     * The custom date format to use for logging.
@@ -117,10 +122,16 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   override def onMessage(ws: WebSocket, data: String): Unit = try {
     parseRequest(data) match {
       case Ok(request) =>
-        val result = processRequest(request)(ws)
+        val t = System.nanoTime()
+        val result = processRequest(request)(ws, root)
         if (ws.isOpen) {
           val jsonCompact = JsonMethods.compact(JsonMethods.render(result))
           // val jsonPretty = JsonMethods.pretty(JsonMethods.render(result))
+
+          val e = System.nanoTime() - t
+          if (e > MaxLatencyNS) {
+            CompilerLog.log(s"Slow request: '${request.getClass.getSimpleName}' took ${e / 1_000_000} ms.")
+          }
           ws.send(jsonCompact)
         }
       case Err(msg) => log(msg)(ws)
@@ -171,6 +182,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       case JString("lsp/workspaceSymbols") => Request.parseWorkspaceSymbols(json)
       case JString("lsp/uses") => Request.parseUses(json)
       case JString("lsp/semanticTokens") => Request.parseSemanticTokens(json)
+      case JString("lsp/signature") => Request.parseSignature(json)
       case JString("lsp/inlayHints") => Request.parseInlayHint(json)
       case JString("lsp/showAst") => Request.parseShowAst(json)
       case JString("lsp/codeAction") => Request.parseCodeAction(json)
@@ -200,7 +212,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   /**
     * Process the request.
     */
-  private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
+  private def processRequest(request: Request)(implicit ws: WebSocket, root: Root): JValue = request match {
 
     case Request.AddUri(id, uri, src) =>
       addSourceCode(uri, src)
@@ -257,15 +269,18 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
 
     case Request.Complete(id, uri, pos) =>
       // Find the source of the given URI (which should always exist).
-      val sourceCode = sources(uri)
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionProvider.autoComplete(uri, pos, sourceCode, currentErrors)(flix, root).toJSON)
+      val completions = CompletionProvider
+        .getCompletions(uri, pos, currentErrors)(root, flix)
+        .map(_.toCompletionItem(flix))
+      val completionList = CompletionList(isIncomplete = true, completions)
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> completionList.toJSON)
 
     case Request.Highlight(id, uri, pos) =>
       val highlights = HighlightProvider.processHighlight(uri, pos)(root)
       if (highlights.isEmpty)
         ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this highlight.")
       else
-          ("id" -> id) ~("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON).toList))
+        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON).toList))
 
     case Request.Hover(id, uri, pos) =>
       HoverProvider.processHover(uri, pos)(root, flix) match {
@@ -299,6 +314,12 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
 
     case Request.SemanticTokens(id, uri) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("data" -> SemanticTokensProvider.provideSemanticTokens(uri)(root)))
+
+    case Request.Signature(id, uri, pos) =>
+      SignatureHelpProvider.provideSignatureHelp(uri, pos)(root, flix) match {
+        case Some(signature) => ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> signature.toJSON)
+        case None => ("id" -> id) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> "Nothing found for this signature.")
+      }
 
     case Request.InlayHint(id, uri, range) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.getInlayHints(uri, range).map(_.toJSON))
