@@ -264,6 +264,68 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.ShadowingName](result)
   }
 
+  test("ShadowedName.ExtMatch.01") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    let x = 123;
+        |    ematch xvar A(456, 789) {
+        |        case A(x, _) => x
+        |    }
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
+  }
+
+  test("ShadowedName.ExtMatch.02") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    let x = 123;
+        |    ematch xvar A(456, 789) {
+        |        case A(_, x) => x
+        |    }
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
+  }
+
+  test("ShadowedName.ExtMatch.03") {
+    val input =
+      """
+        |def f(): (Int32, Int32) =
+        |    let x = 123;
+        |    ematch xvar A(456, 789) {
+        |        case A(u, v) => (u, v)
+        |        case B(x, y) => (x, y)
+        |    }
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
+  }
+
+  test("ShadowedName.ExtMatch.04") {
+    val input =
+      """
+        |def f(): (Int32, Int32) =
+        |    let x = 123;
+        |    ematch xvar A(456, 789) {
+        |        case B(u, v) => (u, v)
+        |        case A(y, x) => (x, y)
+        |    }
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
+  }
+
   test("ShadowedName.Match.05") {
     val input =
       """
