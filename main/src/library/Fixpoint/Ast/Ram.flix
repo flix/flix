@@ -16,8 +16,9 @@
 
 mod Fixpoint.Ast.Ram {
 
-    use Fixpoint.Ast.Shared.Denotation
+    use Fixpoint.Ast.Shared.{BoxedDenotation => Denotation}
     use Fixpoint.Ast.Shared.PredSym
+    use Fixpoint.Boxed
     use Fixpoint.PredSymsOf
     use Fixpoint.SubstitutePredSym
 
@@ -26,18 +27,18 @@ mod Fixpoint.Ast.Ram {
     /////////////////////////////////////////////////////////////////////////////
 
     @Internal
-    pub enum RamStmt[v] {
-        case Insert(RelOp[v])
-        case Merge(RamSym[v], RamSym[v])
-        case Assign(RamSym[v], RamSym[v])
-        case Purge(RamSym[v])
-        case Seq(Vector[RamStmt[v]])
-        case Until(Vector[BoolExp[v]], RamStmt[v])
+    pub enum RamStmt {
+        case Insert(RelOp)
+        case Merge(RamSym, RamSym)
+        case Assign(RamSym, RamSym)
+        case Purge(RamSym)
+        case Seq(Vector[RamStmt])
+        case Until(Vector[BoolExp], RamStmt)
         case Comment(String)
     }
 
-    instance ToString[RamStmt[v]] {
-        pub def toString(stmt: RamStmt[v]): String =
+    instance ToString[RamStmt] {
+        pub def toString(stmt: RamStmt): String =
             let nl = String.lineSeparator();
             match stmt {
                 case RamStmt.Insert(op) => ToString.toString(op)
@@ -57,16 +58,16 @@ mod Fixpoint.Ast.Ram {
     /////////////////////////////////////////////////////////////////////////////
 
     @Internal
-    pub enum RelOp[v] {
-        case Search(RowVar, RamSym[v], RelOp[v])
-        case Query(RowVar, RamSym[v], Vector[(Int32, RamTerm[v])], RelOp[v])
-        case Functional(RowVar, Vector[v] -> Vector[Vector[v]], Vector[RamTerm[v]], RelOp[v])
-        case Project(Vector[RamTerm[v]], RamSym[v])
-        case If(Vector[BoolExp[v]], RelOp[v])
+    pub enum RelOp {
+        case Search(RowVar, RamSym, RelOp)
+        case Query(RowVar, RamSym, Vector[(Int32, RamTerm)], RelOp)
+        case Functional(RowVar, Vector[Boxed] -> Vector[Vector[Boxed]], Vector[RamTerm], RelOp)
+        case Project(Vector[RamTerm], RamSym)
+        case If(Vector[BoolExp], RelOp)
     }
 
-    instance ToString[RelOp[v]] {
-        pub def toString(op: RelOp[v]): String =
+    instance ToString[RelOp] {
+        pub def toString(op: RelOp): String =
             let nl = String.lineSeparator();
             match op {
                 case RelOp.Search(var, ramSym, body) =>
@@ -91,21 +92,21 @@ mod Fixpoint.Ast.Ram {
     /////////////////////////////////////////////////////////////////////////////
 
     @Internal
-    pub enum BoolExp[v] {
-        case Empty(RamSym[v])
-        case NotMemberOf(Vector[RamTerm[v]], RamSym[v])
-        case Eq(RamTerm[v], RamTerm[v])
-        case Leq(v -> v -> Bool, RamTerm[v], RamTerm[v])
+    pub enum BoolExp {
+        case Empty(RamSym)
+        case NotMemberOf(Vector[RamTerm], RamSym)
+        case Eq(RamTerm, RamTerm)
+        case Leq(Boxed -> Boxed -> Bool, RamTerm, RamTerm)
         case Guard0(Unit -> Bool)
-        case Guard1(v -> Bool, RamTerm[v])
-        case Guard2(v -> v -> Bool, RamTerm[v], RamTerm[v])
-        case Guard3(v -> v -> v -> Bool, RamTerm[v], RamTerm[v], RamTerm[v])
-        case Guard4(v -> v -> v -> v -> Bool, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
-        case Guard5(v -> v -> v -> v -> v -> Bool, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
+        case Guard1(Boxed -> Bool, RamTerm)
+        case Guard2(Boxed -> Boxed -> Bool, RamTerm, RamTerm)
+        case Guard3(Boxed -> Boxed -> Boxed -> Bool, RamTerm, RamTerm, RamTerm)
+        case Guard4(Boxed -> Boxed -> Boxed -> Boxed -> Bool, RamTerm, RamTerm, RamTerm, RamTerm)
+        case Guard5(Boxed -> Boxed -> Boxed -> Boxed -> Boxed -> Bool, RamTerm, RamTerm, RamTerm, RamTerm, RamTerm)
     }
 
-    instance ToString[BoolExp[v]] {
-        pub def toString(exp: BoolExp[v]): String =
+    instance ToString[BoolExp] {
+        pub def toString(exp: BoolExp): String =
             match exp {
                 case BoolExp.Empty(ramSym) => "${ramSym} == ∅"
                 case BoolExp.NotMemberOf(terms, ramSym) => "(${terms |> Vector.join(", ")}) ∉ ${ramSym}"
@@ -134,21 +135,21 @@ mod Fixpoint.Ast.Ram {
     /// bound to the local variable `x`.
     ///
     @Internal
-    pub enum RamTerm[v] {
-        case Lit(v)
+    pub enum RamTerm {
+        case Lit(Boxed)
         case RowLoad(RowVar, Int32)
         case LoadLatVar(RowVar)
-        case Meet(v -> v -> v, RamTerm[v], RamTerm[v])
-        case App0(Unit -> v)
-        case App1(v -> v, RamTerm[v])
-        case App2(v -> v -> v, RamTerm[v], RamTerm[v])
-        case App3(v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v])
-        case App4(v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
-        case App5(v -> v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
+        case Meet(Boxed -> Boxed -> Boxed, RamTerm, RamTerm)
+        case App0(Unit -> Boxed)
+        case App1(Boxed -> Boxed, RamTerm)
+        case App2(Boxed -> Boxed -> Boxed, RamTerm, RamTerm)
+        case App3(Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm)
+        case App4(Boxed -> Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, RamTerm)
+        case App5(Boxed -> Boxed -> Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, RamTerm, RamTerm)
     }
 
-    instance ToString[RamTerm[v]] {
-        pub def toString(term: RamTerm[v]): String = match term {
+    instance ToString[RamTerm] {
+        pub def toString(term: RamTerm): String = match term {
             case RamTerm.Lit(v) => "%{v}"
             case RamTerm.RowLoad(var, index) => "${var}[${index}]"
             case RamTerm.LoadLatVar(var) => "${var}[-1]"
@@ -167,14 +168,14 @@ mod Fixpoint.Ast.Ram {
     /////////////////////////////////////////////////////////////////////////////
 
     @Internal
-    pub enum RamSym[v] {
-        case Full(PredSym, Int32, Denotation[v])
-        case Delta(PredSym, Int32, Denotation[v])
-        case New(PredSym, Int32, Denotation[v])
+    pub enum RamSym {
+        case Full(PredSym, Int32, Denotation)
+        case Delta(PredSym, Int32, Denotation)
+        case New(PredSym, Int32, Denotation)
     }
 
-    instance Eq[RamSym[v]] {
-        pub def eq(a: RamSym[v], b: RamSym[v]): Bool = match (a, b) {
+    instance Eq[RamSym] {
+        pub def eq(a: RamSym, b: RamSym): Bool = match (a, b) {
             case (RamSym.Full(s1, _, _),  RamSym.Full(s2, _, _))  => s1 == s2
             case (RamSym.Delta(s1, _, _), RamSym.Delta(s2, _, _)) => s1 == s2
             case (RamSym.New(s1, _, _),   RamSym.New(s2, _, _))   => s1 == s2
@@ -182,8 +183,8 @@ mod Fixpoint.Ast.Ram {
         }
     }
 
-    instance Order[RamSym[v]] {
-        pub def compare(a: RamSym[v], b: RamSym[v]): Comparison = match a {
+    instance Order[RamSym] {
+        pub def compare(a: RamSym, b: RamSym): Comparison = match a {
             case RamSym.Full(s1, _, _) => match b {
                 case RamSym.Full(s2, _, _) => s1 <=> s2
                 case _ => Comparison.GreaterThan
@@ -200,16 +201,16 @@ mod Fixpoint.Ast.Ram {
         }
     }
 
-    instance PredSymsOf[RamSym[v]] {
-        pub def predSymsOf(x: RamSym[v]): Set[PredSym] = match x {
+    instance PredSymsOf[RamSym] {
+        pub def predSymsOf(x: RamSym): Set[PredSym] = match x {
             case RamSym.Full(predSym, _, _)    => Set.singleton(predSym)
             case RamSym.Delta(predSym, _, _)   => Set.singleton(predSym)
             case RamSym.New(predSym, _, _)     => Set.singleton(predSym)
         }
     }
 
-    instance SubstitutePredSym[RamSym[v]] {
-        pub def substitute(x: RamSym[v], s: Map[PredSym, PredSym]): RamSym[v] = match x {
+    instance SubstitutePredSym[RamSym] {
+        pub def substitute(x: RamSym, s: Map[PredSym, PredSym]): RamSym = match x {
             case RamSym.Full(predSym, arity, den)  =>
                 let newSym = Map.getWithDefault(predSym, predSym, s);
                 RamSym.Full(newSym, arity, den)
@@ -224,8 +225,8 @@ mod Fixpoint.Ast.Ram {
         }
     }
 
-    instance ToString[RamSym[v]] {
-        pub def toString(ramSym: RamSym[v]): String = match ramSym {
+    instance ToString[RamSym] {
+        pub def toString(ramSym: RamSym): String = match ramSym {
             case RamSym.Full(sym, _, _)    => "${sym}"
             case RamSym.Delta(sym, _, _)   => "Δ${sym}"
             case RamSym.New(sym, _, _)     => "Δ${sym}'"
@@ -233,14 +234,14 @@ mod Fixpoint.Ast.Ram {
     }
 
     @Internal
-    pub def arityOf(ramSym: RamSym[v]): Int32 = match ramSym {
+    pub def arityOf(ramSym: RamSym): Int32 = match ramSym {
         case RamSym.Full(_, arity, _) => arity
         case RamSym.Delta(_, arity, _) => arity
         case RamSym.New(_, arity, _) => arity
     }
 
     @Internal
-    pub def toDenotation(ramSym: RamSym[v]): Denotation[v] = match ramSym {
+    pub def toDenotation(ramSym: RamSym): Denotation = match ramSym {
         case RamSym.Full(_, _, den) => den
         case RamSym.Delta(_, _, den) => den
         case RamSym.New(_, _, den) => den

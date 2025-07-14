@@ -19,14 +19,13 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head
 import ca.uwaterloo.flix.language.ast.shared.LabelledPrecedenceGraph.{Label, LabelledEdge}
 import ca.uwaterloo.flix.language.ast.shared.{Fixity, LabelledPrecedenceGraph, Polarity, Scope}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
-import ca.uwaterloo.flix.language.phase.unification.Unification
-import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{ParOps, Result}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -105,11 +104,11 @@ object Stratifier {
 
     case Expr.Var(_, _, _) => exp0
 
-    case Expr.Hole(_, _, _, _) => exp0
+    case Expr.Hole(_, _, _, _, _) => exp0
 
-    case Expr.HoleWithExp(exp, tpe, eff, loc) =>
+    case Expr.HoleWithExp(exp, env, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.HoleWithExp(e, tpe, eff, loc)
+      Expr.HoleWithExp(e, env, tpe, eff, loc)
 
     case Expr.OpenAs(sym, exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -135,6 +134,10 @@ object Stratifier {
     case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       Expr.ApplyLocalDef(symUse, es, arrowTpe, tpe, eff, loc)
+
+    case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      Expr.ApplyOp(sym, es, tpe, eff, loc)
 
     case Expr.ApplySig(symUse, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -195,6 +198,12 @@ object Stratifier {
       val rs = rules.map(visitRestrictableChooseRule)
       Expr.RestrictableChoose(star, e, rs, tpe, eff, loc)
 
+    case Expr.ExtensibleMatch(label, exp1, bnd1, exp2, bnd2, exp3, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      Expr.ExtensibleMatch(label, e1, bnd1, e2, bnd2, e3, tpe, eff, loc)
+
     case Expr.Tag(sym, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       Expr.Tag(sym, es, tpe, eff, loc)
@@ -202,6 +211,10 @@ object Stratifier {
     case Expr.RestrictableTag(sym, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       Expr.RestrictableTag(sym, es, tpe, eff, loc)
+
+    case Expr.ExtensibleTag(label, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      Expr.ExtensibleTag(label, es, tpe, eff, loc)
 
     case Expr.Tuple(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -275,9 +288,9 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.VectorLength(e, loc)
 
-    case Expr.Ascribe(exp, tpe, eff, loc) =>
+    case Expr.Ascribe(exp, expectedType, expectedEff, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.Ascribe(e, tpe, eff, loc)
+      Expr.Ascribe(e, expectedType, expectedEff, tpe, eff, loc)
 
     case Expr.InstanceOf(exp, clazz, loc) =>
       val e = visitExp(exp)
@@ -309,17 +322,13 @@ object Stratifier {
       Expr.Throw(e, tpe, eff, loc)
 
     case Expr.Handler(sym, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
-      val rs = rules.map(visitTryWithRule)
+      val rs = rules.map(visitRunWithRule)
       Expr.Handler(sym, rs, bodyTpe, bodyEff, handledEff, tpe, loc)
 
     case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       Expr.RunWith(e1, e2, tpe, eff, loc)
-
-    case Expr.Do(sym, exps, tpe, eff, loc) =>
-      val es = exps.map(visitExp)
-      Expr.Do(sym, es, tpe, eff, loc)
 
     case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -408,11 +417,16 @@ object Stratifier {
       val e2 = visitExp(exp2)
       Expr.FixpointMerge(e1, e2, tpe, eff, loc)
 
-    case Expr.FixpointSolve(exp, tpe, eff, loc) =>
+    case Expr.FixpointQueryWithProvenance(exps, Head.Atom(pred, den, terms, tpe2, loc2), withh, tpe1, eff1, loc1) =>
+      val es = exps.map(visitExp)
+      val ts = terms.map(visitExp)
+      Expr.FixpointQueryWithProvenance(es, Head.Atom(pred, den, ts, tpe2, loc2), withh, tpe1, eff1, loc1)
+
+    case Expr.FixpointSolve(exp, tpe, eff, mode, loc) =>
       // Compute the stratification.
       stratify(g, tpe, loc)
       val e = visitExp(exp)
-      Expr.FixpointSolve(e, tpe, eff, loc)
+      Expr.FixpointSolve(e, tpe, eff, mode, loc)
 
     case Expr.FixpointFilter(pred, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -432,16 +446,16 @@ object Stratifier {
   }
 
   private def visitMatchRule(rule: MatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): MatchRule = rule match {
-    case MatchRule(pat, exp1, exp2) =>
+    case MatchRule(pat, exp1, exp2, loc) =>
       val e1 = exp1.map(visitExp)
       val e2 = visitExp(exp2)
-      MatchRule(pat, e1, e2)
+      MatchRule(pat, e1, e2, loc)
   }
 
   private def visitTypeMatchRule(rule: TypeMatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): TypeMatchRule = rule match {
-    case TypeMatchRule(sym, t, exp1) =>
+    case TypeMatchRule(sym, t, exp1, loc) =>
       val e1 = visitExp(exp1)
-      TypeMatchRule(sym, t, e1)
+      TypeMatchRule(sym, t, e1, loc)
   }
 
   private def visitRestrictableChooseRule(rule: RestrictableChooseRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): RestrictableChooseRule = rule match {
@@ -451,15 +465,15 @@ object Stratifier {
   }
 
   private def visitTryCatchRule(rule: CatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): CatchRule = rule match {
-    case CatchRule(sym, clazz, exp1) =>
+    case CatchRule(sym, clazz, exp1, loc) =>
       val e1 = visitExp(exp1)
-      CatchRule(sym, clazz, e1)
+      CatchRule(sym, clazz, e1, loc)
   }
 
-  private def visitTryWithRule(rule: HandlerRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): HandlerRule = rule match {
-    case HandlerRule(op, fparams, exp1) =>
+  private def visitRunWithRule(rule: HandlerRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): HandlerRule = rule match {
+    case HandlerRule(op, fparams, exp1, loc) =>
       val e1 = visitExp(exp1)
-      HandlerRule(op, fparams, e1)
+      HandlerRule(op, fparams, e1, loc)
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): JvmMethod = method match {
@@ -469,10 +483,10 @@ object Stratifier {
   }
 
   private def visitSelectChannelRule(rule: SelectChannelRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): SelectChannelRule = rule match {
-    case SelectChannelRule(sym, exp1, exp2) =>
+    case SelectChannelRule(sym, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      SelectChannelRule(sym, e1, e2)
+      SelectChannelRule(sym, e1, e2, loc)
   }
 
   private def visitParYieldFragment(frag: ParYieldFragment)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): ParYieldFragment = frag match {
@@ -548,14 +562,21 @@ object Stratifier {
     * Returns `true` if the two given labels `l1` and `l2` are considered equal.
     */
   private def labelEq(l1: Label, l2: Label)(implicit root: Root, flix: Flix): Boolean = {
-    val isEqPredicate = l1.pred == l2.pred
-    val isEqDenotation = l1.den == l2.den
-    val isEqArity = l1.arity == l2.arity
-    val isEqTermTypes = l1.terms.zip(l2.terms).forall {
+    l1.pred == l2.pred &&
+      l1.den == l2.den &&
+      l1.arity == l2.arity &&
+      unifiableTermTypes(l1, l2)
+  }
+
+  /**
+    * Returns `true` if `l1` and `l2` have unifiable term types.
+    *
+    * N.B.: The two must have the same number of terms.
+    */
+  private def unifiableTermTypes(l1: Label, l2: Label)(implicit root: Root, flix: Flix): Boolean = {
+    l1.terms.zip(l2.terms).forall {
       case (t1, t2) => ConstraintSolver2.fullyUnify(t1, t2, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix).isDefined // TODO ASSOC-TYPES empty right? // TODO LEVELS top OK?
     }
-
-    isEqPredicate && isEqDenotation && isEqArity && isEqTermTypes
   }
 
   /**

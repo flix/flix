@@ -18,16 +18,10 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.api.lsp.provider.completion.*
-import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.getNamespaceAndIdentFromQName
-import ca.uwaterloo.flix.api.lsp.provider.completion.semantic.{GetStaticFieldCompleter, InvokeStaticMethodCompleter}
-import ca.uwaterloo.flix.api.lsp.provider.completion.syntactic.{ExprSnippetCompleter, KeywordCompleter}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.ast.shared.SyntacticContext
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.{SyntacticContext, TraitUsageKind}
 import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError, WeederError}
-import ca.uwaterloo.flix.language.phase.Lexer
-import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL.*
 
 /**
   * CompletionProvider
@@ -37,159 +31,108 @@ import org.json4s.JsonDSL.*
   * https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion
   *
   * This list is not displayed to the user as-is, the client always both sorts and filters the list (or at least,
-  * VSCode does). Therefore we always need to provide both filterText (currently copied from label) and sortText.
+  * VSCode does). Therefore, we always need to provide both filterText (currently copied from label) and sortText.
   *
   * Note that we use textEdit rather than insertText to avoid relying on VSCode's tokenisation, so we can ensure that
   * we're consistent with Flix's parser.
   */
 object CompletionProvider {
 
-  def autoComplete(uri: String, pos: Position, source: String, currentErrors: List[CompilationMessage])(implicit flix: Flix, root: TypedAst.Root): CompletionList = {
-    val completionItems = getCompletionContext(source, uri, pos, currentErrors).map {ctx =>
-      errorsAt(ctx.uri, ctx.pos, currentErrors).flatMap({
-        case err: WeederError.UnqualifiedUse =>
-          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
-          UseCompleter.getCompletions(ctx.uri, namespace, ident)
-        case WeederError.UndefinedAnnotation(_, _) => KeywordCompleter.getModKeywords
-        case err: ResolutionError.UndefinedUse =>
-          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
-          UseCompleter.getCompletions(ctx.uri, namespace, ident)
+  /**
+    * Returns all completions in the given `uri` at the given position `pos`.
+    */
+  def getCompletions(uri: String, pos: Position, currentErrors: List[CompilationMessage])(implicit root: Root, flix: Flix): List[Completion] = {
+    if (currentErrors.isEmpty)
+      HoleCompleter.getHoleCompletion(uri, pos).toList
+    else
+      errorsAt(uri, pos, currentErrors).flatMap {
+        case err: WeederError.UndefinedAnnotation => AnnotationCompleter.getAnnotations(err.name, Range.from(err.loc))
+
+        case err: WeederError.UnqualifiedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
+
         case err: ResolutionError.UndefinedTag =>
-          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
-          EnumCompleter.getCompletions(err, namespace, ident) ++
-            EnumTagCompleter.getCompletions(err, namespace, ident) ++
-            ModuleCompleter.getCompletions(err, namespace, ident)
+          val ap = err.ap
+          val scp = err.scp
+          val qn = err.qn
+          val range = Range.from(err.loc)
+          EnumCompleter.getCompletions(qn, range, ap, scp, withTypeParameters = false) ++
+            EnumTagCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
+            ModuleCompleter.getCompletions(qn, range, ap, scp)
+
         case err: ResolutionError.UndefinedName =>
-          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
-          AutoImportCompleter.getCompletions(err) ++
-            LocalScopeCompleter.getCompletions(err) ++
-            ExprCompleter.getCompletions(ctx) ++
-            DefCompleter.getCompletions(err, namespace, ident) ++
-            EnumCompleter.getCompletions(err, namespace, ident) ++
-            EffectCompleter.getCompletions(err, namespace, ident) ++
-            OpCompleter.getCompletions(err, namespace, ident) ++
-            SignatureCompleter.getCompletions(err, namespace, ident) ++
-            EnumTagCompleter.getCompletions(err, namespace, ident) ++
-            ModuleCompleter.getCompletions(err, namespace, ident)
+          val ap = err.ap
+          val scp = err.scp
+          val ident = err.qn.ident.name
+          val qn = err.qn
+          val range = Range.from(err.loc)
+          AutoImportCompleter.getCompletions(ident, range, ap, scp) ++
+            LocalScopeCompleter.getCompletionsExpr(range, scp) ++
+            KeywordCompleter.getExprKeywords(Some(err.qn), range) ++
+            DefCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
+            EnumCompleter.getCompletions(qn, range, ap, scp, withTypeParameters = false) ++
+            EffectCompleter.getCompletions(qn, range, ap, scp, inHandler = false) ++
+            OpCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
+            SignatureCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
+            EnumTagCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
+            TraitCompleter.getCompletions(qn, TraitUsageKind.Expr, range, ap, scp) ++
+            ModuleCompleter.getCompletions(qn, range, ap, scp)
+
         case err: ResolutionError.UndefinedType =>
-          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qn)
-          TypeBuiltinCompleter.getCompletions ++
-            AutoImportCompleter.getCompletions(err) ++
-            LocalScopeCompleter.getCompletions(err) ++
-            EnumCompleter.getCompletions(err, namespace, ident) ++
-            StructCompleter.getCompletions(err, namespace, ident) ++
-            EffectCompleter.getCompletions(err, namespace, ident) ++
-            TypeAliasCompleter.getCompletions(err, namespace, ident) ++
-            ModuleCompleter.getCompletions(err, namespace, ident)
-        case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err) ++ InvokeStaticMethodCompleter.getCompletions(err)
-        case err: ResolutionError.UndefinedJvmImport => ImportCompleter.getCompletions(err)
+          val ap = err.ap
+          val scp = err.scp
+          val ident = err.qn.ident.name
+          val qn = err.qn
+          val range = Range.from(err.loc)
+          TypeBuiltinCompleter.getCompletions(range) ++
+            AutoImportCompleter.getCompletions(ident, range, ap, scp) ++
+            LocalScopeCompleter.getCompletionsType(range, scp) ++
+            EnumCompleter.getCompletions(qn, range, ap, scp, withTypeParameters = true) ++
+            StructCompleter.getCompletions(qn, range, ap, scp) ++
+            EffectCompleter.getCompletions(qn, range, ap, scp, inHandler = false) ++
+            TypeAliasCompleter.getCompletions(qn, range, ap, scp) ++
+            ModuleCompleter.getCompletions(qn, range, ap, scp)
+
+        case err: ResolutionError.UndefinedEffect => EffectCompleter.getCompletions(err.qn, Range.from(err.loc), err.ap, err.scp, inHandler = true)
+        case err: ResolutionError.UndefinedJvmImport => ImportCompleter.getCompletions(err.name, Range.from(err.loc))
+        case err: ResolutionError.UndefinedJvmStaticField => GetStaticFieldCompleter.getCompletions(err.clazz, err.field) ++ InvokeStaticMethodCompleter.getCompletions(err.clazz, err.field)
+        case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err.qn.ident.name, Range.from(err.loc))
+        case err: ResolutionError.UndefinedOp => HandlerCompleter.getCompletions(err.qn, Range.from(err.loc))
         case err: ResolutionError.UndefinedStructField => StructFieldCompleter.getCompletions(err, root)
-        case err: ResolutionError.UndefinedKind => KindCompleter.getCompletions(err)
-        case err: ResolutionError.UndefinedOp =>
-          val (namespace, ident) = getNamespaceAndIdentFromQName(err.qname)
-          OpCompleter.getCompletions(err, namespace, ident)
-        case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err) ++ InvokeMethodCompleter.getCompletions(err.tpe, err.fieldName)
+        case err: ResolutionError.UndefinedTrait => TraitCompleter.getCompletions(err.qn, err.traitUseKind, Range.from(err.loc), err.ap, err.scp)
+        case err: ResolutionError.UndefinedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))
+
+        case err: TypeError.FieldNotFound => MagicMatchCompleter.getCompletions(err.tpe, Range.from(err.loc), err.base) ++ InvokeMethodCompleter.getCompletions(err.tpe, err.fieldName)
         case err: TypeError.MethodNotFound => InvokeMethodCompleter.getCompletions(err.tpe, err.methodName)
-        case err: ParseError => err.sctx match {
-          // Expressions.
-          case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(uri) ++ KeywordCompleter.getConstraintKeywords
-          case _: SyntacticContext.Expr => ExprCompleter.getCompletions(ctx)
 
-          // Declarations.
-          case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
-          case SyntacticContext.Decl.Effect => KeywordCompleter.getEffectKeywords
-          case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(ctx) ++ KeywordCompleter.getInstanceKeywords
-          case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
-          case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
-          case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
-          case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
+        case err: ParseError => getSyntacticCompletions(uri, err)
 
-          // Uses.
-          //case SyntacticContext.Use => UseCompleter.getCompletions(ctx)
-
-          // With.
-          case SyntacticContext.WithClause => WithCompleter.getCompletions(ctx)
-
-          // Try-with handler.
-          case SyntacticContext.WithHandler => WithHandlerCompleter.getCompletions(ctx)
-
-          // Unknown syntactic context. The program could be correct-- in which case it is hard to offer suggestions.
-          case SyntacticContext.Unknown =>
-            // Special case: A program with a hole is correct, but we should offer some completion suggestions.
-            HoleCompletion.getHoleCompletion(ctx, root)
-
-          case _ => Nil
-        }
-
-        case _ => HoleCompletion.getHoleCompletion(ctx, root)
-      }).map(comp => comp.toCompletionItem(ctx))
-    }.getOrElse(Nil)
-    CompletionList(isIncomplete = true, completionItems)
-  }
-
-  /**
-    * Find context from the source, and cursor position within it.
-    */
-  private def getCompletionContext(source: String, uri: String, pos: Position, errors: List[CompilationMessage]): Option[CompletionContext] = {
-    // Use zero-indexed lines and characters.
-    val x = pos.character - 1
-    val y = pos.line - 1
-    val lines = source.linesWithSeparators.toList
-    for (line <- lines.slice(y, y + 1).headOption) yield {
-      val (prefix, suffix) = line.splitAt(x)
-      val wordStart = prefix.reverse.takeWhile(isWordChar).reverse
-      val wordEnd = suffix.takeWhile(isWordChar)
-      val word = wordStart + wordEnd
-      val start = x - wordStart.length
-      val end = x + wordEnd.length
-      val prevWord = getSecondLastWord(prefix)
-      val previousWord = if (prevWord.nonEmpty) {
-        prevWord
-      } else lines.slice(y - 1, y).headOption match {
-        case None => ""
-        case Some(s) => getLastWord(s)
+        case _ => Nil
       }
-      // Remember positions are one-indexed.
-      val range = Range(Position(y + 1, start + 1), Position(y + 1, end + 1))
-      CompletionContext(uri, pos, range, word, previousWord, prefix)
+  }
+
+  /**
+    * Returns completions based on the syntactic context.
+    */
+  private def getSyntacticCompletions(uri: String, e: ParseError)(implicit root: Root, flix: Flix): List[Completion] = {
+    val range: Range = Range.from(e.loc)
+    if (range.isEmpty)
+      Nil
+    else e.sctx match {
+      // Expressions.
+      case SyntacticContext.Expr.Constraint => (PredicateCompleter.getCompletions(uri, range) ++ KeywordCompleter.getConstraintKeywords(range)).toList
+      case SyntacticContext.Expr.OtherExpr => KeywordCompleter.getExprKeywords(None, range)
+
+      // Declarations.
+      case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords(range)
+      case SyntacticContext.Decl.Effect => KeywordCompleter.getEffectKeywords(range)
+      case SyntacticContext.Decl.Instance => KeywordCompleter.getInstanceKeywords(range)
+      case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords(range) ++ ExprSnippetCompleter.getCompletions(range)
+      case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords(range)
+      case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords(range)
+      case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords(range)
+
+      case SyntacticContext.Unknown => Nil
     }
-  }
-
-  /**
-    * Characters that constitute a word.
-    */
-  private def isWordChar(c: Char) = isLetter(c) || Lexer.isMathNameChar(c) || Lexer.isGreekNameChar(c) || Lexer.isUserOp(c).isDefined
-
-  /**
-    * Characters that may appear in a word.
-    */
-  private def isLetter(c: Char) = c match {
-    case c if c >= 'a' && c <= 'z' => true
-    case c if c >= 'A' && c <= 'Z' => true
-    case c if c >= '0' && c <= '9' => true
-    // We also include some special symbols. This is more permissive than the lexer, but that's OK.
-    case '_' => true
-    case '!' => true
-    case '@' => true
-    case '/' => true
-    case '.' => true
-    case '#' => true
-    case _ => false
-  }
-
-  /**
-    * Returns the word at the end of a string, discarding trailing whitespace first
-    */
-  private def getLastWord(s: String): String = {
-    s.reverse.dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
-  }
-
-  /**
-    * Returns the second-to-last word at the end of a string, *not* discarding
-    * trailing whitespace first.
-    */
-  private def getSecondLastWord(s: String): String = {
-    s.reverse.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
   }
 
   /**
@@ -197,5 +140,4 @@ object CompletionProvider {
     */
   private def errorsAt(uri: String, pos: Position, errors: List[CompilationMessage]): List[CompilationMessage] =
     errors.filter(err => uri == err.loc.source.name && pos.line <= err.loc.beginLine)
-
 }

@@ -17,6 +17,30 @@
 mod TestMutDeque {
 
     /////////////////////////////////////////////////////////////////////////////
+    // emptyWithCapacity                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def emptyWithCapacity01(): Bool = region rc {
+        let l: MutDeque[Int32, rc] = MutDeque.emptyWithCapacity(rc, 10);
+        MutDeque.toString(l) == "MutDeque#{}"
+    }
+
+    @test
+    def emptyWithCapacity02(): Bool = region rc {
+        let l: MutDeque[Int32, rc] = MutDeque.emptyWithCapacity(rc, -1);
+        MutDeque.toString(l) == "MutDeque#{}"
+    }
+
+    @test
+    def emptyWithCapacity03(): Bool = region rc {
+        let l: MutDeque[Int32, rc] = MutDeque.emptyWithCapacity(rc, 0);
+        MutDeque.pushBack(5, l);
+        MutDeque.pushBack(4, l);
+        MutDeque.toString(l) == "MutDeque#{5, 4}"
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
 

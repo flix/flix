@@ -109,6 +109,8 @@ object SyntaxTree {
 
     case object ParameterList extends TreeKind
 
+    case object PredicateAndArity extends TreeKind
+
     case object QName extends TreeKind
 
     case object Root extends TreeKind
@@ -194,6 +196,12 @@ object SyntaxTree {
 
       case object CheckedTypeCast extends Expr
 
+      case object ExtMatch extends Expr
+
+      case object ExtMatchRuleFragment extends Expr
+
+      case object ExtTag extends Expr
+
       case object Index extends Expr
 
       case object IndexMut extends Expr
@@ -216,11 +224,17 @@ object SyntaxTree {
 
       case object FixpointQuery extends Expr
 
+      case object FixpointQueryWithProvenance extends Expr
+
       case object FixpointSelect extends Expr
 
       case object FixpointSolveWithProject extends Expr
 
+      case object FixpointSolveWithProvenance extends Expr
+
       case object FixpointWhere extends Expr
+
+      case object FixpointWith extends Expr
 
       case object ForApplicative extends Expr
 
@@ -348,7 +362,7 @@ object SyntaxTree {
 
       case object RunWithBodyExpr extends Expr
 
-      case object TryWithRuleFragment extends Expr
+      case object RunWithRuleFragment extends Expr
 
       case object Tuple extends Expr
 
@@ -451,6 +465,8 @@ object SyntaxTree {
       //     Pattern
       //       Ident
       case object Pattern extends Pattern
+
+      case object ExtTag extends Pattern
 
       case object FCons extends Pattern
 

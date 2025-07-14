@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, EqualityConstraint, Scope, VarText}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, OpSymUse, SigSymUse}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Scope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.{InternalCompilerException, Subeffecting}
@@ -49,16 +49,16 @@ object ConstraintGen {
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.Hole(_, tpe, eff, _) =>
+      case Expr.Hole(_, _, tpe, eff, _) =>
         val resTpe = tpe
         val resEff = eff
         (resTpe, resEff)
 
-      case Expr.HoleWithExp(exp, tvar, evar, loc) =>
+      case Expr.HoleWithExp(exp, _, tvar, evar, loc) =>
         // We ignore exp's type and allow the hole to have any type.
         // We allow the effect to be any superset of exp's effect.
         val (_, eff) = visitExp(exp)
-        val atLeastEff = Type.mkUnion(eff, Type.freshVar(Kind.Eff, loc.asSynthetic), loc.asSynthetic)
+        val atLeastEff = Type.mkUnion(eff, freshVar(Kind.Eff, loc), loc.asSynthetic)
         c.unifyType(atLeastEff, evar, loc)
         val resTpe = tvar
         val resEff = atLeastEff
@@ -75,42 +75,65 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.ApplyClo(exp1, exp2, tvar, evar, loc) =>
-        val lambdaBodyType = Type.freshVar(Kind.Star, loc)
-        val lambdaBodyEff = Type.freshVar(Kind.Eff, loc)
+        val lambdaBodyType = freshVar(Kind.Star, loc)
+        val lambdaBodyEff = freshVar(Kind.Eff, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(Type.mkArrowWithEffect(tpe2, lambdaBodyEff, lambdaBodyType, loc), tpe1, loc)
         c.unifyType(tvar, lambdaBodyType, loc)
-        c.unifyType(evar,  Type.mkUnion(lambdaBodyEff :: eff1 :: eff2 :: Nil, loc), loc)
+        c.unifyType(evar, Type.mkUnion(lambdaBodyEff :: eff1 :: eff2 :: Nil, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
       case Expr.ApplyDef(DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
         val defn = root.defs(sym)
+
+        // Pseudo variable for source to flow into
+        val pvar = Type.freshVar(Kind.Eff, loc1)
+
         val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
         val constrs1 = tconstrs1.map(_.copy(loc = loc2))
         val declaredEff = declaredType.arrowEffectType
         val declaredArgumentTypes = declaredType.arrowArgTypes
         val declaredResultType = declaredType.arrowResultType
         val (tpes, effs) = exps.map(visitExp).unzip
+
         c.unifyType(itvar, declaredType, loc2)
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
         c.addClassConstraints(constrs1, loc2)
         c.addEqualityConstraints(econstrs1, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
-        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
+        c.unifySource(pvar, declaredEff, loc2)
+        c.unifyType(evar, Type.mkUnion(pvar :: effs, loc2), loc2)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
       case Expr.ApplyLocalDef(LocalDefSymUse(sym, loc1), exps, arrowTvar, tvar, evar, loc2) =>
         val (tpes, effs) = exps.map(visitExp).unzip
-        val defEff = Type.freshVar(Kind.Eff, loc1.asSynthetic)
+        val defEff = freshVar(Kind.Eff, loc1)
         val actualDefTpe = Type.mkUncurriedArrowWithEffect(tpes, defEff, tvar, loc1)
         c.unifyType(actualDefTpe, arrowTvar, loc1)
         c.expectType(sym.tvar, actualDefTpe, loc1)
         c.unifyType(evar, Type.mkUnion(defEff :: effs, loc2), loc2)
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
+
+      case Expr.ApplyOp(OpSymUse(sym, loc1), exps, tvar, evar, loc2) =>
+        val op = lookupOp(sym, loc1)
+        val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(op.spec.sc, loc1.asSynthetic)
+        val constrs1 = tconstrs1.map(_.copy(loc = loc1))
+        val declaredEff = declaredType.arrowEffectType
+        val declaredArgumentTypes = declaredType.arrowArgTypes
+        val declaredResultType = generalizeVoid(declaredType.arrowResultType)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
+        c.addClassConstraints(constrs1, loc2)
+        c.addEqualityConstraints(econstrs1, loc2)
+        c.unifyType(tvar, declaredResultType, loc2)
+        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -404,12 +427,13 @@ object ConstraintGen {
         // We must visit exp INSIDE the region
         // (i.e. between `enter` and `exit`)
         // because we need to resolve local constraints
-        // BEFORE purifying the region as we exit
-
-        // TODO LEVELS this may change when we do purification properly (?)
+        // BEFORE purifying the region as we exit,
+        // and we need to be sure that we don't "learn" anything
+        // about the outside of the region while inside.
+        //
         // We must unify sym.tvar and the region var INSIDE the region
-        // because we need to ensure that reference to the region are
-        // resolved BEFORE purifying the region as we exit
+        // because we need to ensure that references to the region are
+        // resolved BEFORE purifying the region as we exit.
         c.enterRegion(regSym)
         c.unifyType(sym.tvar, Type.mkRegionToStar(Type.mkRegion(regSym, loc), loc), loc)
         val (tpe, eff) = visitExp(exp)
@@ -424,7 +448,7 @@ object ConstraintGen {
         val (patTpes, tpes, effs) = rules.map(visitMatchRule).unzip3
         c.unifyAllTypes(tpe :: patTpes, loc)
         c.unifyAllTypes(tpes, loc)
-        val resTpe = tpes.headOption.getOrElse(Type.freshVar(Kind.Star, loc))
+        val resTpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
@@ -432,11 +456,32 @@ object ConstraintGen {
         val (_, eff) = visitExp(exp)
         val (tpes, effs) = rules.map(visitTypeMatchRule).unzip
         c.unifyAllTypes(tpes, loc)
-        val resTpe = tpes.headOption.getOrElse(Type.freshVar(Kind.Star, loc))
+        val resTpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
       case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
+
+      case Expr.ExtMatch(label, exp1, sym2, exp2, sym3, exp3, tvar, loc) =>
+        val pred = Name.Pred(label.name, label.loc)
+
+        val (tpe1, eff1) = visitExp(exp1)
+        val (tpe2, eff2) = visitExp(exp2)
+        val (tpe3, eff3) = visitExp(exp3)
+
+        val freshTypeVar = freshVar(Kind.Star, loc)
+        val freshRowVar = freshVar(Kind.SchemaRow, loc)
+        val expectedRowType = Type.mkSchemaRowExtend(pred, Type.mkRelation(List(freshTypeVar), loc), freshRowVar, loc)
+        val expectedSchemaType = Type.mkExtensible(expectedRowType, loc)
+
+        c.unifyType(tpe1, expectedSchemaType, loc)
+        c.unifyType(sym2.tvar, freshTypeVar, loc)
+        c.unifyType(sym3.tvar, Type.mkExtensible(freshRowVar, loc), loc)
+
+        c.unifyType(tvar, tpe2, tpe3, loc)
+        val resTpe = tvar
+        val resEff = Type.mkUnion(eff1, eff2, eff3, loc)
+        (resTpe, resEff)
 
       case KindedAst.Expr.Tag(symUse, exps, tvar, loc) =>
         val decl = root.enums(symUse.sym.enumSym)
@@ -454,10 +499,22 @@ object ConstraintGen {
 
       case e: Expr.RestrictableTag => RestrictableChooseConstraintGen.visitApplyRestrictableTag(e)
 
-      case Expr.Tuple(elms, loc) =>
-        val (elmTpes, elmEffs) = elms.map(visitExp).unzip
-        val resTpe = Type.mkTuple(elmTpes, loc)
-        val resEff = Type.mkUnion(elmEffs, loc)
+      case KindedAst.Expr.ExtTag(label, exps, tvar, loc) =>
+        val pred = Name.Pred(label.name, label.loc)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val rest = Type.freshVar(Kind.SchemaRow, loc)
+        val tpe = Type.mkRelation(tpes, loc)
+        val row = Type.mkSchemaRowExtend(pred, tpe, rest, loc)
+        val tagType = Type.mkExtensible(row, loc)
+        c.unifyType(tvar, tagType, loc)
+        val resTpe = tagType
+        val resEff = Type.mkUnion(effs, loc)
+        (resTpe, resEff)
+
+      case Expr.Tuple(exps, loc) =>
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val resTpe = Type.mkTuple(tpes, loc)
+        val resEff = Type.mkUnion(effs, loc)
         (resTpe, resEff)
 
       case Expr.RecordSelect(exp, label, tvar, loc) =>
@@ -466,7 +523,7 @@ object ConstraintGen {
         // -------------------------
         //       r.label : tpe
         //
-        val freshRowVar = Type.freshVar(Kind.RecordRow, loc)
+        val freshRowVar = freshVar(Kind.RecordRow, loc)
         val expectedRowType = Type.mkRecordRowExtend(label, tvar, freshRowVar, loc)
         val expectedRecordType = Type.mkRecord(expectedRowType, loc)
         val (tpe, eff) = visitExp(exp)
@@ -481,7 +538,7 @@ object ConstraintGen {
         // ---------------------------------------------
         // { label = exp1 | exp2 } : { label  :: tpe | r }
         //
-        val freshRowVar = Type.freshVar(Kind.RecordRow, loc)
+        val freshRowVar = freshVar(Kind.RecordRow, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.unifyType(tpe2, Type.mkRecord(freshRowVar, loc), loc)
@@ -496,8 +553,8 @@ object ConstraintGen {
         // -------------------------
         // { -label | exp } : {| r }
         //
-        val freshLabelType = Type.freshVar(Kind.Star, loc)
-        val freshRowVar = Type.freshVar(Kind.RecordRow, loc)
+        val freshLabelType = freshVar(Kind.Star, loc)
+        val freshRowVar = freshVar(Kind.RecordRow, loc)
         val (tpe, eff) = visitExp(exp)
         c.unifyType(tpe, Type.mkRecord(Type.mkRecordRowExtend(label, freshLabelType, freshRowVar, loc), loc), loc)
         c.unifyType(tvar, Type.mkRecord(freshRowVar, loc), loc)
@@ -506,13 +563,13 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.ArrayLit(exps, exp, tvar, evar, loc) =>
-        val regionVar = Type.freshVar(Kind.Eff, loc)
+        val regionVar = freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegionToStar(regionVar, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         val (tpe, eff) = visitExp(exp)
         c.expectType(expected = regionType, actual = tpe, exp.loc)
         c.unifyAllTypes(tpes, loc)
-        val elmTpe = tpes.headOption.getOrElse(Type.freshVar(Kind.Star, loc))
+        val elmTpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
         c.unifyType(tvar, Type.mkArray(elmTpe, regionVar, loc), loc)
         c.unifyType(evar, Type.mkUnion(Type.mkUnion(effs, loc), eff, regionVar, loc), loc)
         val resTpe = tvar
@@ -520,7 +577,7 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
-        val regionVar = Type.freshVar(Kind.Eff, loc)
+        val regionVar = freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegionToStar(regionVar, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
@@ -534,7 +591,7 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.ArrayLoad(exp1, exp2, tvar, evar, loc) =>
-        val regionVar = Type.freshVar(Kind.Eff, loc)
+        val regionVar = freshVar(Kind.Eff, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(expected = Type.mkArray(tvar, regionVar, loc), actual = tpe1, exp1.loc)
@@ -545,8 +602,8 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.ArrayStore(exp1, exp2, exp3, evar, loc) =>
-        val elmVar = Type.freshVar(Kind.Star, loc)
-        val regionVar = Type.freshVar(Kind.Eff, loc)
+        val elmVar = freshVar(Kind.Star, loc)
+        val regionVar = freshVar(Kind.Eff, loc)
         val arrayType = Type.mkArray(elmVar, regionVar, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
@@ -560,8 +617,8 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.ArrayLength(exp, evar, loc) =>
-        val elmVar = Type.freshVar(Kind.Star, loc)
-        val regionVar = Type.freshVar(Kind.Eff, loc)
+        val elmVar = freshVar(Kind.Star, loc)
+        val regionVar = freshVar(Kind.Eff, loc)
         val (tpe, eff) = visitExp(exp)
         c.expectType(Type.mkArray(elmVar, regionVar, loc), tpe, exp.loc)
         c.unifyType(evar, eff, loc)
@@ -620,7 +677,7 @@ object ConstraintGen {
       case Expr.VectorLit(exps, tvar, evar, loc) =>
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyAllTypes(tpes, loc)
-        val tpe = tpes.headOption.getOrElse(Type.freshVar(Kind.Star, loc))
+        val tpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
         c.unifyType(tvar, Type.mkVector(tpe, loc), loc)
         c.unifyType(evar, Type.mkUnion(effs, loc), loc)
         val resTpe = tvar
@@ -638,7 +695,7 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.VectorLength(exp, loc) =>
-        val elmVar = Type.freshVar(Kind.Star, loc)
+        val elmVar = freshVar(Kind.Star, loc)
         val (tpe, eff) = visitExp(exp)
         c.expectType(Type.mkVector(elmVar, loc), tpe, exp.loc)
         val resTpe = Type.Int32
@@ -711,7 +768,7 @@ object ConstraintGen {
         // e without symUse : tpe
         //
         val (tpe, eff) = visitExp(exp)
-        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(symUse.sym), symUse.qname.loc), symUse.qname.loc)
+        val effWithoutSym = Type.mkDifference(eff, Type.Cst(TypeConstructor.Effect(symUse.sym, Kind.Eff), symUse.qname.loc), symUse.qname.loc) // TODO EFF-TPARAMS need kind
         c.unifyType(eff, effWithoutSym, symUse.qname.loc)
         val resTpe = tpe
         val resEff = eff
@@ -721,7 +778,7 @@ object ConstraintGen {
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = rules.map(visitCatchRule).unzip
         c.unifyAllTypes(tpes, loc)
-        val ruleTpe = tpes.headOption.getOrElse(Type.freshVar(Kind.Star, loc))
+        val ruleTpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
         c.unifyType(tpe, ruleTpe, loc)
         val resTpe = tpe
         val resEff = Type.mkUnion(eff :: effs, loc)
@@ -752,10 +809,10 @@ object ConstraintGen {
         //  ..
         // }
         //
-        val (tpes, effs) = rules.map(visitHandlerRule(_, tvar, evar2, loc)).unzip
+        val (tpes, effs) = rules.map(visitHandlerRule(_, tvar, evar2)).unzip
         c.unifyAllTypes(tvar :: tpes, loc)
 
-        val handledEffect = Type.Cst(TypeConstructor.Effect(symUse.sym), symUse.qname.loc)
+        val handledEffect = Type.Cst(TypeConstructor.Effect(symUse.sym, Kind.Eff), symUse.qname.loc) // TODO EFF-TPARAMS need kind
         // Subtract the effect from the body effect and add the handler effects.
         val continuationEffect = Type.mkUnion(Type.mkDifference(evar1, handledEffect, symUse.qname.loc), Type.mkUnion(effs, loc), loc)
         c.unifyType(evar2, continuationEffect, loc)
@@ -771,22 +828,6 @@ object ConstraintGen {
         val resultTpe = tvar
         val resultEff = Type.mkUnion(evar, handlerExpEff, loc.asSynthetic)
         (resultTpe, resultEff)
-
-      case Expr.Do(symUse, exps, tvar, loc) =>
-        val op = lookupOp(symUse.sym, symUse.loc)
-        val effTpe = Type.Cst(TypeConstructor.Effect(symUse.sym.eff), loc)
-
-        // length check done in Resolver
-        val effs = visitOpArgs(op, exps)
-
-        // specialize the return type of the op if needed
-        val opTpe = getDoType(op)
-
-        c.unifyType(opTpe, tvar, loc)
-        val resTpe = tvar
-        val resEff = Type.mkUnion(effTpe :: op.spec.eff :: effs, loc)
-
-        (resTpe, resEff)
 
       case Expr.InvokeConstructor(clazz, exps, jvar, evar, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)
@@ -871,7 +912,7 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.NewChannel(exp, tvar, loc) =>
-        val elmTpe = Type.freshVar(Kind.Star, loc)
+        val elmTpe = freshVar(Kind.Star, loc)
         val (tpe, eff) = visitExp(exp)
         c.expectType(expected = Type.Int32, actual = tpe, exp.loc)
         c.unifyType(tvar, Type.mkTuple(List(Type.mkSender(elmTpe, loc), Type.mkReceiver(elmTpe, loc)), loc), loc)
@@ -880,7 +921,7 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.GetChannel(exp, tvar, evar, loc) =>
-        val elmTpe = Type.freshVar(Kind.Star, loc)
+        val elmTpe = freshVar(Kind.Star, loc)
         val receiverTpe = Type.mkReceiver(elmTpe, loc)
         val (tpe, eff) = visitExp(exp)
         c.expectType(expected = receiverTpe, actual = tpe, exp.loc)
@@ -891,7 +932,7 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.PutChannel(exp1, exp2, evar, loc) =>
-        val elmTpe = Type.freshVar(Kind.Star, loc)
+        val elmTpe = freshVar(Kind.Star, loc)
         val senderTpe = Type.mkSender(elmTpe, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
@@ -915,10 +956,10 @@ object ConstraintGen {
         // Γ ⊢ e1 : τ \ ef1 ∩ prims      Γ ⊢ e2 : Region[r] \ ef2
         // --------------------------------------------------------
         // Γ ⊢ spawn e1 @ e2 : Unit \ (ef1 ∩ prims) ∪ ef2
-        val regionVar = Type.freshVar(Kind.Eff, loc)
+        val regionVar = freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegionToStar(regionVar, loc)
-        val anyEff = Type.freshVar(Kind.Eff, loc)
-        val (tpe1, eff1) = visitExp(exp1)
+        val anyEff = freshVar(Kind.Eff, loc)
+        val (_, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.unifyType(eff1, Type.mkIntersection(anyEff, Type.PrimitiveEffs, loc), exp1.loc)
         c.expectType(expected = regionType, actual = tpe2, exp2.loc)
@@ -956,6 +997,7 @@ object ConstraintGen {
       case e: Expr.FixpointConstraintSet => SchemaConstraintGen.visitFixpointConstraintSet(e)
       case e: Expr.FixpointLambda => SchemaConstraintGen.visitFixpointLambda(e)
       case e: Expr.FixpointMerge => SchemaConstraintGen.visitFixpointMerge(e)
+      case e: Expr.FixpointQueryWithProvenance => SchemaConstraintGen.visitFixpointQueryWithProvenance(e)
       case e: Expr.FixpointSolve => SchemaConstraintGen.visitFixpointSolve(e)
       case e: Expr.FixpointFilter => SchemaConstraintGen.visitFixpointFilter(e)
       case e: Expr.FixpointInject => SchemaConstraintGen.visitFixpointInject(e)
@@ -1002,7 +1044,7 @@ object ConstraintGen {
         Type.mkTuple(tpes, loc)
 
       case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
-        val freshRowVar = Type.freshVar(Kind.RecordRow, loc.asSynthetic)
+        val freshRowVar = freshVar(Kind.RecordRow, loc)
         val freshRecord = Type.mkRecord(freshRowVar, loc.asSynthetic)
 
         val tailTpe = visitPattern(pat)
@@ -1036,7 +1078,7 @@ object ConstraintGen {
     * Returns the pattern type, the body's type, and the body's effect
     */
   private def visitMatchRule(rule: KindedAst.MatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type, Type) = rule match {
-    case KindedAst.MatchRule(pat, guard, exp) =>
+    case KindedAst.MatchRule(pat, guard, exp, _) =>
       val patTpe = visitPattern(pat)
       guard.foreach {
         g =>
@@ -1054,7 +1096,7 @@ object ConstraintGen {
     * Returns the the body's type and the body's effect
     */
   private def visitTypeMatchRule(rule: KindedAst.TypeMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
-    case KindedAst.TypeMatchRule(sym, declTpe, exp) =>
+    case KindedAst.TypeMatchRule(sym, declTpe, exp, _) =>
       // We mark all the type vars in the declared type as rigid.
       // This ensures we get a substitution from the actual type to the declared type.
       // This marking only really affects wildcards,
@@ -1074,7 +1116,7 @@ object ConstraintGen {
     * Returns the the body's type and the body's effect
     */
   private def visitCatchRule(rule: KindedAst.CatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
-    case KindedAst.CatchRule(sym, clazz, exp) =>
+    case KindedAst.CatchRule(sym, clazz, exp, _) =>
       c.expectType(expected = Type.mkNative(clazz, sym.loc), sym.tvar, sym.loc)
       visitExp(exp)
   }
@@ -1082,7 +1124,7 @@ object ConstraintGen {
   /**
     * Generates constraints unifying the given expected and actual formal parameters.
     */
-  private def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam])(implicit c: TypeContext, flix: Flix): Unit = {
+  private def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam])(implicit c: TypeContext): Unit = {
     // length check done in Resolver
     c.expectTypeArguments(op, expectedTypes = expected.map(_.tpe), actualTypes = actual.map(_.tpe), actual.map(_.loc))
   }
@@ -1095,8 +1137,8 @@ object ConstraintGen {
     * @param tryBlockTpe        the type of the try-block associated with the handler
     * @param continuationEffect the effect of the continuation
     */
-  private def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type, continuationEffect: Type, loc: SourceLocation)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
-    case KindedAst.HandlerRule(symUse, actualFparams0, body, opTvar) =>
+  private def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type, continuationEffect: Type)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
+    case KindedAst.HandlerRule(symUse, actualFparams0, body, opTvar, loc) =>
       val effect = root.effects(symUse.sym.eff)
       val ops = effect.ops.map(op => op.sym -> op).toMap
       // Don't need to generalize since ops are monomorphic
@@ -1146,7 +1188,7 @@ object ConstraintGen {
     */
   private def visitSelectRule(sr0: KindedAst.SelectChannelRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     sr0 match {
-      case KindedAst.SelectChannelRule(sym, chan, body) =>
+      case KindedAst.SelectChannelRule(sym, chan, body, _) =>
         val (chanType, eff1) = visitExp(chan)
         val (bodyType, eff2) = visitExp(body)
         c.unifyType(chanType, Type.mkReceiver(sym.tvar, sym.loc), sym.loc)
@@ -1164,31 +1206,9 @@ object ConstraintGen {
   private def visitDefaultRule(exp0: Option[KindedAst.Expr], loc: SourceLocation)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     exp0 match {
-      case None => (Type.freshVar(Kind.Star, loc), Type.Pure)
+      case None => (freshVar(Kind.Star, loc), Type.Pure)
       case Some(exp) => visitExp(exp)
     }
-  }
-
-  /**
-    * Generates constraints unifying each argument's type with the corresponding parameter of the operation.
-    *
-    * The number of arguments must match the number of parameters (this check is done in Resolver).
-    */
-  private def visitOpArgs(op: KindedAst.Op, args: List[KindedAst.Expr])(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): List[Type] = {
-    (args zip op.spec.fparams) map {
-      case (arg, fparam) => visitOpArg(arg, fparam)
-    }
-  }
-
-  /**
-    * Generates constraints unifying the given argument's type with the formal parameter's type.
-    *
-    * Returns the effect of the argument.
-    */
-  private def visitOpArg(arg: KindedAst.Expr, fparam: KindedAst.FormalParam)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
-    val (tpe, eff) = visitExp(arg)
-    c.expectType(expected = fparam.tpe, actual = tpe, arg.loc)
-    eff
   }
 
   /**
@@ -1225,21 +1245,21 @@ object ConstraintGen {
   }
 
   /**
-    * Returns the type inferred for `do`ing the given op.
+    * Converts the given type to a free variable if it is `Void`.
     *
-    * This is usually the annotated return type of the op.
-    * But if the op returns Void, we return a free variable instead.
+    * Otherwise, returns the given type.
+    *
+    * This is used for operation return types, which cannot be polymorphic.
     */
-  private def getDoType(op: KindedAst.Op)(implicit c: TypeContext, flix: Flix): Type = {
+  private def generalizeVoid(t: Type)(implicit c: TypeContext, flix: Flix): Type = {
     implicit val scope: Scope = c.getScope
-    // We special-case the result type of the operation.
-    op.spec.tpe.typeConstructor match {
+    t.typeConstructor match {
       case Some(TypeConstructor.Void) =>
         // The operation type is `Void`. Flix does not have subtyping, but here we want something close to it.
-        // Hence we treat `Void` as a fresh type variable.
+        // Hence, we treat `Void` as a fresh type variable.
         // An alternative would be to allow empty pattern matches, but that is cumbersome.
-        Type.freshVar(Kind.Star, op.spec.tpe.loc, VarText.Absent)
-      case _ => op.spec.tpe
+        Type.freshVar(Kind.Star, t.loc, VarText.Absent)
+      case _ => t
     }
   }
 
@@ -1260,9 +1280,13 @@ object ConstraintGen {
     val (_, _, tpe, substMap) = Scheme.instantiate(struct.sc, struct.loc)
     val subst = Substitution(substMap)
     val instantiatedFields = fields.map {
-      case KindedAst.StructField(mod, fieldSym, tpe, _) =>
-        fieldSym -> (mod.isMutable, subst(tpe))
+      case KindedAst.StructField(mod, fieldSym, fieldTpe, _) =>
+        fieldSym -> (mod.isMutable, subst(fieldTpe))
     }
     (instantiatedFields.toMap, tpe, substMap(struct.tparams.last.sym))
   }
+
+  /** Returns a fresh variable with a synthetic location. */
+  private def freshVar(k: Kind, loc: SourceLocation)(implicit scope: Scope, flix: Flix): Type.Var =
+    Type.freshVar(k, loc.asSynthetic)
 }

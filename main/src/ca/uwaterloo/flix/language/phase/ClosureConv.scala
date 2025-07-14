@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.*
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Modifiers, Scope}
-import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{SimpleType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugSimplifiedAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -74,6 +74,10 @@ object ClosureConv {
       val es = exps.map(visitExp)
       Expr.ApplyLocalDef(sym, es, tpe, purity, loc)
 
+    case Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      Expr.ApplyOp(sym, es, tpe, purity, loc)
+
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps map visitExp
       Expr.ApplyAtomic(op, es, tpe, purity, loc)
@@ -116,30 +120,26 @@ object ClosureConv {
       }
       Expr.TryCatch(e, rs, tpe, purity, loc)
 
-    case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+    case Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
       // Lift the body and all the rule expressions
       val expLoc = exp.loc.asSynthetic
       val freshSym = Symbol.freshVarSym("_closureConv", BoundBy.FormalParam, expLoc)
-      val fp = FormalParam(freshSym, Modifiers.Empty, MonoType.Unit, expLoc)
-      val e = mkLambdaClosure(List(fp), exp, MonoType.Arrow(List(MonoType.Unit), tpe), expLoc)
+      val fp = FormalParam(freshSym, Modifiers.Empty, SimpleType.Unit, expLoc)
+      val e = mkLambdaClosure(List(fp), exp, SimpleType.Arrow(List(SimpleType.Unit), tpe), expLoc)
       val rs = rules map {
         case HandlerRule(opUse, fparams, body) =>
-          val cloType = MonoType.Arrow(fparams.map(_.tpe), body.tpe)
+          val cloType = SimpleType.Arrow(fparams.map(_.tpe), body.tpe)
           val clo = mkLambdaClosure(fparams, body, cloType, opUse.loc)
           HandlerRule(opUse, fparams, clo)
       }
-      Expr.TryWith(e, effUse, rs, tpe, purity, loc)
-
-    case Expr.Do(op, exps, tpe, purity, loc) =>
-      val es = exps.map(visitExp)
-      Expr.Do(op, es, tpe, purity, loc)
+      Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
     case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0 map {
-        case JvmMethod(ident, fparams, exp, retTpe, purity, loc) =>
-          val cloType = MonoType.Arrow(fparams.map(_.tpe), retTpe)
-          val clo = mkLambdaClosure(fparams, exp, cloType, loc)
-          JvmMethod(ident, fparams, clo, retTpe, purity, loc)
+        case JvmMethod(ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
+          val cloType = SimpleType.Arrow(fparams.map(_.tpe), retTpe)
+          val clo = mkLambdaClosure(fparams, exp, cloType, methodLoc)
+          JvmMethod(ident, fparams, clo, retTpe, methodPurity, methodLoc)
       }
       Expr.NewObject(name, clazz, tpe, purity, methods, loc)
 
@@ -152,7 +152,7 @@ object ClosureConv {
     *
     * `exp` is visited inside this function and should not be visited before.
     */
-  private def mkLambdaClosure(fparams: List[FormalParam], exp: Expr, tpe: MonoType, loc: SourceLocation)(implicit flix: Flix): Expr.LambdaClosure = {
+  private def mkLambdaClosure(fparams: List[FormalParam], exp: Expr, tpe: SimpleType, loc: SourceLocation)(implicit flix: Flix): Expr.LambdaClosure = {
     // Step 1: Compute the free variables in the lambda expression.
     //         (Remove the variables bound by the lambda itself).
     val fvs = filterBoundParams(freeVars(exp), fparams).toList
@@ -205,6 +205,9 @@ object ClosureConv {
     case Expr.ApplyLocalDef(_, exps, _, _, _) =>
       freeVarsExps(exps)
 
+    case Expr.ApplyOp(_, exps, _, _, _) =>
+      freeVarsExps(exps)
+
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
       freeVarsExps(exps)
 
@@ -232,16 +235,14 @@ object ClosureConv {
     case Expr.Scope(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
 
     case Expr.TryCatch(exp, rules, _, _, _) => rules.foldLeft(freeVars(exp)) {
-      case (acc, CatchRule(sym, _, exp)) =>
-        acc ++ filterBoundVar(freeVars(exp), sym)
+      case (acc, CatchRule(sym, _, body)) =>
+        acc ++ filterBoundVar(freeVars(body), sym)
     }
 
-    case Expr.TryWith(exp, _, rules, _, _, _) => rules.foldLeft(freeVars(exp)) {
-      case (acc, HandlerRule(_, fparams, exp)) =>
-        acc ++ filterBoundParams(freeVars(exp), fparams)
+    case Expr.RunWith(exp, _, rules, _, _, _) => rules.foldLeft(freeVars(exp)) {
+      case (acc, HandlerRule(_, fparams, body)) =>
+        acc ++ filterBoundParams(freeVars(body), fparams)
     }
-
-    case Expr.Do(_, exps, _, _, _) => freeVarsExps(exps)
 
     case Expr.NewObject(_, _, _, _, methods, _) =>
       methods.foldLeft(SortedSet.empty[FreeVar]) {
@@ -324,6 +325,10 @@ object ClosureConv {
         val es = exps.map(visitExp)
         Expr.ApplyLocalDef(sym, es, tpe, purity, loc)
 
+      case Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
+        val es = exps.map(visitExp)
+        Expr.ApplyOp(sym, es, tpe, purity, loc)
+
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
@@ -373,7 +378,7 @@ object ClosureConv {
         }
         Expr.TryCatch(e, rs, tpe, purity, loc)
 
-      case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      case Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
         // TODO AE do we need to do something here?
         val e = visitExp(exp)
         val rs = rules map {
@@ -382,11 +387,7 @@ object ClosureConv {
             val b = visitExp(body)
             HandlerRule(sym, fs, b)
         }
-        Expr.TryWith(e, effUse, rs, tpe, purity, loc)
-
-      case Expr.Do(op, exps, tpe, purity, loc) =>
-        val es = exps.map(visitExp)
-        Expr.Do(op, es, tpe, purity, loc)
+        Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
       case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0.map(visitJvmMethod)
@@ -518,9 +519,9 @@ object ClosureConv {
         val e = visit(exp)
         Expr.Lambda(fparams, e, tpe, loc)
 
-      case Expr.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
+      case Expr.LambdaClosure(cparams, fparams, cloFreeVars, exp, tpe, loc) =>
         val e = visit(exp)
-        Expr.LambdaClosure(cparams, fparams, freeVars, e, tpe, loc)
+        Expr.LambdaClosure(cparams, fparams, cloFreeVars, e, tpe, loc)
 
       case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
         val es = exps.map(visit)
@@ -552,6 +553,10 @@ object ClosureConv {
           // so just use the recursively rewritten arguments `es`.
           Expr.ApplyLocalDef(sym, es, tpe, purity, loc)
         }
+
+      case Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
+        val es = exps.map(visit)
+        Expr.ApplyOp(sym, es, tpe, purity, loc)
 
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visit(exp1)
@@ -596,24 +601,20 @@ object ClosureConv {
         }
         Expr.TryCatch(e, rs, tpe, purity, loc)
 
-      case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      case Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
         val e = visit(exp)
         val rs = rules.map {
           case HandlerRule(op, fparams, exp1) =>
             val e1 = visit(exp1)
             HandlerRule(op, fparams, e1)
         }
-        Expr.TryWith(e, effUse, rs, tpe, purity, loc)
-
-      case Expr.Do(op, exps, tpe, purity, loc) =>
-        val es = exps.map(visit)
-        Expr.Do(op, es, tpe, purity, loc)
+        Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 
       case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
         val ms = methods.map {
-          case JvmMethod(ident, fparams, exp, retTpe, purity, loc) =>
+          case JvmMethod(ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
             val e = visit(exp)
-            JvmMethod(ident, fparams, e, retTpe, purity, loc)
+            JvmMethod(ident, fparams, e, retTpe, methodPurity, methodLoc)
         }
         Expr.NewObject(name, clazz, tpe, purity, ms, loc)
     }

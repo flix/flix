@@ -111,10 +111,10 @@ mod FileWriteWithResult {
         run {
             f(x)
         } with handler FileWriteWithResult {
-            def write(data, f, k) = {
+            def write(data, file, k) = {
                 let res = try {
                     let bytes = data#str.getBytes(StandardCharsets.UTF_8);
-                    Files.write(Paths.get(f), bytes, (...{}: Vector[OpenOption]));
+                    Files.write(Paths.get(file), bytes, (...{}: Vector[OpenOption]));
                     Ok(())
                 } catch {
                     case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
@@ -124,9 +124,9 @@ mod FileWriteWithResult {
                 k(res)
             }
 
-            def writeLines(data, f, k) = {
+            def writeLines(data, file, k) = {
                 let res = try {
-                    let bf = Files.newBufferedWriter(Paths.get(f), (...{}: Vector[OpenOption]));
+                    let bf = Files.newBufferedWriter(Paths.get(file), (...{}: Vector[OpenOption]));
                     List.forEach(line -> {
                         bf.write(line, 0, String.length(line));
                         bf.newLine()
@@ -141,11 +141,11 @@ mod FileWriteWithResult {
                 k(res)
             }
 
-            def writeBytes(data, f, k) = {
+            def writeBytes(data, file, k) = {
                 let res = try {
                     region rc {
                         let bytes = Vector.toArray(rc, data);
-                        Files.write(Paths.get(f), bytes, (...{}: Vector[OpenOption]));
+                        Files.write(Paths.get(file), bytes, (...{}: Vector[OpenOption]));
                         Ok(())
                     }
                 } catch {
@@ -156,11 +156,11 @@ mod FileWriteWithResult {
                 k(res)
             }
 
-            def append(data, f, k) = {
+            def append(data, file, k) = {
                 let res = try {
                     let bytes = data#str.getBytes(StandardCharsets.UTF_8);
                     let opt: OpenOption = checked_cast(StandardOpenOption.APPEND);
-                    Files.write(Paths.get(f), bytes, ...{opt});
+                    Files.write(Paths.get(file), bytes, ...{opt});
                     Ok(())
                 } catch {
                     case ex: InvalidPathException          => Err(IoError(ErrorKind.InvalidPath, ex.getMessage()))
@@ -170,10 +170,10 @@ mod FileWriteWithResult {
                 k(res)
             }
 
-            def appendLines(data, f, k) = {
+            def appendLines(data, file, k) = {
                 let res = try {
                     let opt: OpenOption = checked_cast(StandardOpenOption.APPEND);
-                    let bf = Files.newBufferedWriter(Paths.get(f), ...{opt});
+                    let bf = Files.newBufferedWriter(Paths.get(file), ...{opt});
                     List.forEach(line -> {
                         bf.write(line, 0, String.length(line));
                         bf.newLine()
@@ -188,12 +188,12 @@ mod FileWriteWithResult {
                 k(res)
             }
 
-            def appendBytes(data, f, k) = {
+            def appendBytes(data, file, k) = {
                 let res = try {
                     region rc {
                         let bytes = Vector.toArray(rc, data);
                         let opt: OpenOption = checked_cast(StandardOpenOption.APPEND);
-                        Files.write(Paths.get(f), bytes, ...{opt});
+                        Files.write(Paths.get(file), bytes, ...{opt});
                         Ok(())
                     }
                 } catch {
@@ -204,12 +204,12 @@ mod FileWriteWithResult {
                 k(res)
             }
 
-            def truncate(f, k) = {
+            def truncate(file, k) = {
                 let res = try {
                     region rc {
                         let opt: OpenOption = checked_cast(StandardOpenOption.TRUNCATE_EXISTING);
                         let arr: Array[Int8, rc] = Array#{} @ rc;
-                        Files.write(Paths.get(f), arr, ...{opt});
+                        Files.write(Paths.get(file), arr, ...{opt});
                         Ok(())
                     }
                 } catch {

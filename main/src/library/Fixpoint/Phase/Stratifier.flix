@@ -33,7 +33,7 @@ mod Fixpoint.Phase.Stratifier {
     /// I.e. facts are ignored in the stratification.
     ///
     @Internal
-    pub def stratify(d: Datalog[v]): Map[PredSym, Int32] = {
+    pub def stratify(d: Datalog): Map[PredSym, Int32] = {
         let graph = mkDepGraph(d);
         stratifyHelper(graph, Map.empty())
     }
@@ -77,13 +77,13 @@ mod Fixpoint.Phase.Stratifier {
                 stf
     }
 
-    def mkDepGraph(d: Datalog[v]): PrecedenceGraph = match d {
+    def mkDepGraph(d: Datalog): PrecedenceGraph = match d {
         case Datalog(_, rules) => Vector.fold(Vector.map(precedenceHelper, rules))
         case Model(_) => Monoid.empty()
         case Join(d1, d2) => Monoid.combine(mkDepGraph(d1), mkDepGraph(d2))
     }
 
-    def precedenceHelper(cnst: Constraint[v]): PrecedenceGraph = match cnst {
+    def precedenceHelper(cnst: Constraint): PrecedenceGraph = match cnst {
         case Constraint(head, body) => Vector.fold(Vector.map(mkDepEdge(head), body))
     }
 
@@ -93,7 +93,7 @@ mod Fixpoint.Phase.Stratifier {
     /// lower strata than the head. Positive, loose atoms create weak edges where the body
     /// has to be in the same strata as the head or lower.
     ///
-    def mkDepEdge(dst: HeadPredicate[v], src: BodyPredicate[v]): PrecedenceGraph = match (dst, src) {
+    def mkDepEdge(dst: HeadPredicate, src: BodyPredicate): PrecedenceGraph = match (dst, src) {
         case (HeadAtom(headSym, _, _), BodyAtom(bodySym, _, Polarity.Positive, Fixity.Loose, _)) =>
             PrecedenceGraph(Set#{WeakEdge(bodySym, headSym)})
         case (HeadAtom(headSym, _, _), BodyAtom(bodySym, _, _, _, _)) =>

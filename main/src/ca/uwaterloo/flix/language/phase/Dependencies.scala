@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.{ChangeSet, Scheme, SourceLocation, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern, RestrictableChoosePattern, Root}
-import ca.uwaterloo.flix.language.ast.shared.{DependencyGraph, EqualityConstraint, Input, SymUse, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.MultiMap
@@ -41,13 +41,13 @@ object Dependencies {
     val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
     val effects = changeSet.updateStaleValues(root.effects, oldRoot.effects)(ParOps.parMapValues(_)(visitEff))
     val enums = changeSet.updateStaleValues(root.enums, oldRoot.enums)(ParOps.parMapValues(_)(visitEnum))
-    val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances)(ParOps.parMapValueList(_)(visitInstance))
+    val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList(_)(visitInstance))
     val structs = changeSet.updateStaleValues(root.structs, oldRoot.structs)(ParOps.parMapValues(_)(visitStruct))
     val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
     val typeAliases = changeSet.updateStaleValues(root.typeAliases, oldRoot.typeAliases)(ParOps.parMapValues(_)(visitTypeAlias))
 
     var deps = MultiMap.empty[Input, Input]
-    sctx.deps.forEach((k, _) => deps = deps + k)
+    sctx.deps.forEach { case (k, _) => deps = deps + k }
     val dg = DependencyGraph(deps)
     (root.copy(
       dependencyGraph = dg,
@@ -116,11 +116,11 @@ object Dependencies {
     case Expr.Var(_, tpe, _) =>
       visitType(tpe)
 
-    case Expr.Hole(_, tpe, eff, _) =>
+    case Expr.Hole(_, _, tpe, eff, _) =>
       visitType(tpe)
       visitType(eff)
 
-    case Expr.HoleWithExp(exp, tpe, eff, _) =>
+    case Expr.HoleWithExp(exp, _, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
@@ -155,6 +155,12 @@ object Dependencies {
       visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(arrowTpe)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.ApplyOp(op, exps, tpe, eff, _) =>
+      visitSymUse(op)
+      exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
@@ -235,6 +241,15 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
+    case Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, tpe, eff, _) =>
+      visitExp(exp1)
+      visitBinder(bnd1)
+      visitExp(exp2)
+      visitBinder(bnd2)
+      visitExp(exp3)
+      visitType(tpe)
+      visitType(eff)
+
     case Expr.Tag(sym, exps, tpe, eff, _) =>
       visitSymUse(sym)
       exps.foreach(visitExp)
@@ -243,6 +258,11 @@ object Dependencies {
 
     case Expr.RestrictableTag(sym, exps, tpe, eff, _) =>
       visitSymUse(sym)
+      exps.foreach(visitExp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.ExtensibleTag(_, exps, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
@@ -333,7 +353,7 @@ object Dependencies {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Ascribe(exp, tpe, eff, _) =>
+    case Expr.Ascribe(exp, _, _, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
@@ -387,12 +407,6 @@ object Dependencies {
     case Expr.RunWith(exp1, exp2, tpe, eff, _) =>
       visitExp(exp1)
       visitExp(exp2)
-      visitType(tpe)
-      visitType(eff)
-
-    case Expr.Do(op, exps, tpe, eff, _) =>
-      visitSymUse(op)
-      exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
@@ -491,7 +505,13 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.FixpointSolve(exp, tpe, eff, _) =>
+    case Expr.FixpointQueryWithProvenance(exps, select, _, tpe, eff, _) =>
+      exps.foreach(visitExp)
+      visitHead(select)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.FixpointSolve(exp, tpe, eff, _, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
@@ -529,8 +549,8 @@ object Dependencies {
       addDependency(cst.loc, loc)
       args.foreach(visitType)
     case Type.AssocType(_, arg, _, _) => visitType(arg)
-    case Type.JvmToType(tpe, _) => visitType(tpe)
-    case Type.JvmToEff(tpe, _) => visitType(tpe)
+    case Type.JvmToType(t, _) => visitType(t)
+    case Type.JvmToEff(t, _) => visitType(t)
     case Type.UnresolvedJvmType(_, _) => ()
     case Type.Cst(TypeConstructor.Enum(sym, _), loc) => addDependency(sym.loc, loc)
     case Type.Cst(TypeConstructor.Struct(sym, _), loc) => addDependency(sym.loc, loc)

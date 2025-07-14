@@ -277,32 +277,32 @@ def isTitleCase07(): Bool = CodePoint.isTitleCase(0x01F3) == false     // dz (si
 def isTitleCase08(): Bool = CodePoint.isTitleCase(0x1f3dd) == false     // Desert Island pictogram
 
 /////////////////////////////////////////////////////////////////////////////
-// isWhiteSpace                                                            //
+// isWhitespace                                                            //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def isWhiteSpace01(): Bool = CodePoint.isWhiteSpace(0x0031) == false      // '1'
+def isWhitespace01(): Bool = CodePoint.isWhitespace(0x0031) == false      // '1'
 
 @test
-def isWhiteSpace02(): Bool = CodePoint.isWhiteSpace(0x0061) == false      // 'a'
+def isWhitespace02(): Bool = CodePoint.isWhitespace(0x0061) == false      // 'a'
 
 @test
-def isWhiteSpace03(): Bool = CodePoint.isWhiteSpace(0x0041) == false      // 'A'
+def isWhitespace03(): Bool = CodePoint.isWhitespace(0x0041) == false      // 'A'
 
 @test
-def isWhiteSpace04(): Bool = CodePoint.isWhiteSpace(0x0020) == true      // ' '
+def isWhitespace04(): Bool = CodePoint.isWhitespace(0x0020) == true      // ' '
 
 @test
-def isWhiteSpace05(): Bool = CodePoint.isWhiteSpace(0x00b1) == false      // plus-minus sign
+def isWhitespace05(): Bool = CodePoint.isWhitespace(0x00b1) == false      // plus-minus sign
 
 @test
-def isWhiteSpace06(): Bool = CodePoint.isWhiteSpace(0x01F2) == false      // Dz (single char, title case)
+def isWhitespace06(): Bool = CodePoint.isWhitespace(0x01F2) == false      // Dz (single char, title case)
 
 @test
-def isWhiteSpace07(): Bool = CodePoint.isWhiteSpace(0x01F3) == false      // dz (single char)
+def isWhitespace07(): Bool = CodePoint.isWhitespace(0x01F3) == false      // dz (single char)
 
 @test
-def isWhiteSpace08(): Bool = CodePoint.isWhiteSpace(0x1f3dd) == false     // Desert Island pictogram
+def isWhitespace08(): Bool = CodePoint.isWhitespace(0x1f3dd) == false     // Desert Island pictogram
 
 /////////////////////////////////////////////////////////////////////////////
 // isAlphabetic                                                            //

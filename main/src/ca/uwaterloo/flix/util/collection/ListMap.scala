@@ -17,9 +17,6 @@
 
 package ca.uwaterloo.flix.util.collection
 
-import java.util.Locale.FilteringMode
-import scala.collection.MapOps
-
 /**
   * Companion object for the [[ListMap]] class.
   */
@@ -97,7 +94,7 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
     */
   def map[A](f: ((K, V)) => A): Iterable[A] = {
     m.flatMap {
-      case (k, vs) => vs.map(v => f(k, v))
+      case (k, vs) => vs.map(v => f((k, v)))
     }
   }
 
@@ -107,7 +104,7 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
     */
   def flatMap[A](f: ((K, V)) => Iterable[A]): Iterable[A] =
     m.flatMap {
-      case (k, vs) => vs.flatMap(v => f(k, v))
+      case (k, vs) => vs.flatMap(v => f((k, v)))
     }
 
   /**
@@ -119,7 +116,7 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
     for {
       (k, vs) <- m.toSeq
       v <- vs
-      if (p(k, v))
+      if p((k, v))
     } yield (k, v)
   }
 

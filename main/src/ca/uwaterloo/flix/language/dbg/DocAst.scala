@@ -76,7 +76,9 @@ object DocAst {
 
     case class DoubleKeyword(word1: String, d1: Expr, word2: String, d2: Either[Expr, Type]) extends Composite
 
-    case class TripleKeyword(word1: String, d1: Expr, word2: String, d2: Type, word3: String, d3: Type) extends Composite
+    case class DoubleKeywordPost(d1: Expr, word1: String, d2: Type, word3: String, d3: Type) extends Composite
+
+    case class InfixKeyword(d1: Expr, word: String, d2: Type) extends Composite
 
     case class Unary(op: String, d: Expr) extends Composite
 
@@ -106,7 +108,7 @@ object DocAst {
 
     case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[?], Expr)]) extends Atom
 
-    case class Handler(eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[AscriptionTpe], Expr)]) extends Composite
+    case class Handler(eff: Symbol.EffSym, rules: List[(Symbol.OpSym, List[AscriptionTpe], Expr)]) extends Composite
 
     case class Stm(d1: Expr, d2: Expr) extends LetBinder
 
@@ -116,7 +118,7 @@ object DocAst {
 
     case class Scope(v: Expr, d: Expr) extends Atom
 
-    case class App(f: Expr, args: List[Expr]) extends Atom
+    case class AppWithTail(f: Expr, args: List[Expr], ct: Option[ExpPosition]) extends Atom
 
     case class SquareApp(f: Expr, args: List[Expr]) extends Atom
 
@@ -160,6 +162,9 @@ object DocAst {
 
     val MatchError: Expr =
       AsIs("?matchError")
+
+    val CastError: Expr =
+      AsIs("?castError")
 
     /** represents the error ast node when compiling partial programs */
     val Error: Expr =
@@ -244,7 +249,7 @@ object DocAst {
     def RunWith(d1: Expr, d2: Expr): Expr =
       DoubleKeyword("run", d1, "with", Left(d2))
 
-    def RunWithHandler(d: Expr, eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[AscriptionTpe], Expr)]): Expr =
+    def RunWithHandler(d: Expr, eff: Symbol.EffSym, rules: List[(Symbol.OpSym, List[AscriptionTpe], Expr)]): Expr =
       RunWith(d, Handler(eff, rules))
 
     def Spawn(d1: Expr, d2: Expr): Expr =
@@ -254,9 +259,9 @@ object DocAst {
       DoubleKeyword("cast", d, "as", Right(tpe))
 
     def UncheckedCast(d: Expr, tpe0: Option[Type], eff0: Option[Type]): Expr = (tpe0, eff0) match {
-      case (Some(tpe), Some(eff)) => TripleKeyword("unchecked_cast", d, "as", tpe, "\\", eff)
-      case (Some(tpe), None) => DoubleKeyword("unchecked_cast", d, "as", Right(tpe))
-      case (None, Some(eff)) => TripleKeyword("unchecked_cast", d, "as", Type.Wild, "\\", eff)
+      case (Some(tpe), Some(eff)) => App(AsIs("unchecked_cast"), List(DoubleKeywordPost(d, "as", tpe, "\\", eff)))
+      case (Some(tpe), None) => App(AsIs("unchecked_cast"), List(InfixKeyword(d, "as", tpe)))
+      case (None, Some(eff)) => App(AsIs("unchecked_cast"), List(DoubleKeywordPost(d, "as", Type.Wild, "\\", eff)))
       case (None, None) => d
     }
 
@@ -271,22 +276,34 @@ object DocAst {
     def Box(d: Expr): Expr =
       Keyword("box", d)
 
-    def Without(d: Expr, sym: Symbol.EffectSym): Expr =
+    def Without(d: Expr, sym: Symbol.EffSym): Expr =
       Binary(d, "without", AsIs(sym.toString))
 
     def Cst(cst: Constant): Expr =
       printer.ConstantPrinter.print(cst)
 
-    def ApplyClo(d: Expr, ds: List[Expr], ct: Option[ExpPosition]): Expr =
+    def App(f: Expr, args: List[Expr]): Expr =
+      AppWithTail(f, args, None)
+
+    def ApplyClo(d: Expr, ds: List[Expr]): Expr =
       App(d, ds)
 
+    def ApplyCloWithTail(d: Expr, ds: List[Expr], ct: ExpPosition): Expr =
+      AppWithTail(d, ds, Some(ct))
+
     def ApplySelfTail(sym: Symbol.DefnSym, ds: List[Expr]): Expr =
+      AppWithTail(AsIs(sym.toString), ds, Some(ExpPosition.Tail))
+
+    def ApplyDef(sym: Symbol.DefnSym, ds: List[Expr]): Expr =
       App(AsIs(sym.toString), ds)
 
-    def ApplyDef(sym: Symbol.DefnSym, ds: List[Expr], ct: Option[ExpPosition]): Expr =
+    def ApplyLocalDef(sym: Symbol.VarSym, ds: List[Expr]): Expr =
       App(AsIs(sym.toString), ds)
 
-    def Do(sym: Symbol.OpSym, ds: List[Expr]): Expr =
+    def ApplyDefWithTail(sym: Symbol.DefnSym, ds: List[Expr], ct: ExpPosition): Expr =
+      AppWithTail(AsIs(sym.toString), ds, Some(ct))
+
+    def ApplyOp(sym: Symbol.OpSym, ds: List[Expr]): Expr =
       Keyword("do", App(AsIs(sym.toString), ds))
 
     def JavaInvokeMethod(d: Expr, methodName: Name.Ident, ds: List[Expr]): Expr =
@@ -359,6 +376,10 @@ object DocAst {
     case object RecordEmpty extends Atom
 
     case class RecordExtend(label: String, value: Type, rest: Type) extends Atom
+
+    case object ExtensibleEmpty extends Atom
+
+    case class ExtensibleExtend(cons: String, tpes: List[Type], rest: Type) extends Atom
 
     case object SchemaRowEmpty extends Atom
 

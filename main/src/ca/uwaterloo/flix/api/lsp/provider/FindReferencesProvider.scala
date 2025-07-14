@@ -21,10 +21,8 @@ import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Root}
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.TypeAliasSymUse
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL.*
 
 object FindReferencesProvider {
 
@@ -59,7 +57,7 @@ object FindReferencesProvider {
     * @param uri  The URI of the file where the cursor is, provided by the LSP request.
     * @param pos  The [[Position]] of the cursor within the file given by `uri`, provided by the LSP request.
     * @param root The root AST node of the Flix project.
-    * @return     A Set of SourceLocations.
+    * @return A Set of SourceLocations.
     */
   def findRefs(uri: String, pos: Position)(implicit root: Root): Set[Location] = {
     val left = searchLeftOfCursor(uri, pos).flatMap(getOccurs)
@@ -84,8 +82,8 @@ object FindReferencesProvider {
     * @param uri  The URI of the file where the thin cursor is.
     * @param pos  The [[Position]] to the immediate right of the thin cursor.
     * @param root The root AST node of the Flix project.
-    * @return     The most specific AST node under the [[Position]] to the immediate left of the thin cursor,
-    *             if there is one. Otherwise, [[None]].
+    * @return The most specific AST node under the [[Position]] to the immediate left of the thin cursor,
+    *         if there is one. Otherwise, [[None]].
     */
   private def searchLeftOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     if (pos.character >= 2) {
@@ -106,8 +104,8 @@ object FindReferencesProvider {
     * @param uri  The URI of the file where the thin cursor is.
     * @param pos  The [[Position]] to the immediate right of the thin cursor.
     * @param root The root AST node of the Flix Project.
-    * @return     The most specific AST node under the [[Position]] to the immediate right of the thin cursor,
-    *             if there is one. Otherwise, [[None]].
+    * @return The most specific AST node under the [[Position]] to the immediate right of the thin cursor,
+    *         if there is one. Otherwise, [[None]].
     */
   private def searchRightOfCursor(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = search(uri, pos)
 
@@ -120,18 +118,18 @@ object FindReferencesProvider {
     * @param uri  The URI of the file where we're searching.
     * @param pos  The [[Position]] where we're searching within the file given by `uri`.
     * @param root The root AST node of the Flix Project.
-    * @return     The most specific AST node under the [[Position]] `pos` in the file given by `uri`,
-    *             if there is one. Otherwise, [[None]].
+    * @return The most specific AST node under the [[Position]] `pos` in the file given by `uri`,
+    *         if there is one. Otherwise, [[None]].
     */
   private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val consumer = StackConsumer()
     Visitor.visitRoot(root, consumer, InsideAcceptor(uri, pos))
-    consumer.getStack.filter(isReal).headOption
+    consumer.getStack.find(isReal)
   }
 
   private def isReal(x: AnyRef): Boolean = x match {
-    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) =>  loc.isReal
-    case TypedAst.Instance(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Instance(_, _, _, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Sig(_, _, _, loc) => loc.isReal
     case TypedAst.Def(_, _, _, loc) => loc.isReal
     case TypedAst.Enum(_, _, _, _, _, _, _, loc) => loc.isReal
@@ -140,7 +138,7 @@ object FindReferencesProvider {
     case TypedAst.TypeAlias(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.AssocTypeSig(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.AssocTypeDef(_, _, _, _, _, loc) => loc.isReal
-    case TypedAst.Effect(_, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Effect(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Op(_, _, loc) => loc.isReal
     case exp: TypedAst.Expr => exp.loc.isReal
     case pat: TypedAst.Pattern => pat.loc.isReal
@@ -158,10 +156,10 @@ object FindReferencesProvider {
     case TypedAst.FormalParam(_, _, _, _, loc) => loc.isReal
     case TypedAst.PredicateParam(_, _, loc) => loc.isReal
     case TypedAst.JvmMethod(_, _, _, _, _, loc) => loc.isReal
-    case TypedAst.CatchRule(_, _, _) => true
-    case TypedAst.HandlerRule(_, _, _) => true
-    case TypedAst.TypeMatchRule(_, _, _) => true
-    case TypedAst.SelectChannelRule(_, _, _) => true
+    case TypedAst.CatchRule(_, _, _, _) => true
+    case TypedAst.HandlerRule(_, _, _, _) => true
+    case TypedAst.TypeMatchRule(_, _, _, _) => true
+    case TypedAst.SelectChannelRule(_, _, _, _) => true
     case TypedAst.TypeParam(_, _, loc) => loc.isReal
     case TypedAst.ParYieldFragment(_, _, loc) => loc.isReal
 
@@ -190,8 +188,8 @@ object FindReferencesProvider {
     *
     * @param x    The element that we're finding occurrences of (if it's supported)
     * @param root The root AST node of the Flix project.
-    * @return     The [[SourceLocation]]s of the occurrences of `x` if Flix supports "find references" for it.
-    *             Otherwise, [[None]].
+    * @return The [[SourceLocation]]s of the occurrences of `x` if Flix supports "find references" for it.
+    *         Otherwise, [[None]].
     */
   private def getOccurs(x: AnyRef)(implicit root: Root): Option[Set[SourceLocation]] = x match {
     // Assoc Types
@@ -204,9 +202,9 @@ object FindReferencesProvider {
     case TypedAst.Def(sym, _, _, _) => Some(getDefnSymOccurs(sym))
     case SymUse.DefSymUse(sym, _) => Some(getDefnSymOccurs(sym))
     // Effects
-    case TypedAst.Effect(_, _, _, sym, _, _) => Some(getEffectSymOccurs(sym))
+    case TypedAst.Effect(_, _, _, sym, _, _, _) => Some(getEffectSymOccurs(sym))
     case SymUse.EffectSymUse(sym, _) => Some(getEffectSymOccurs(sym))
-    case Type.Cst(TypeConstructor.Effect(sym), _) => Some(getEffectSymOccurs(sym))
+    case Type.Cst(TypeConstructor.Effect(sym, _), _) => Some(getEffectSymOccurs(sym))
     // Enums
     case TypedAst.Enum(_, _, _, sym, _, _, _, _) => Some(getEnumSymOccurs(sym))
     case Type.Cst(TypeConstructor.Enum(sym, _), _) => Some(getEnumSymOccurs(sym))
@@ -242,7 +240,9 @@ object FindReferencesProvider {
     var occurs: Set[SourceLocation] = Set.empty
 
     def consider(s: Symbol.AssocTypeSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
+      if (s == sym) {
+        occurs += loc
+      }
     }
 
     object AssocTypeSymConsumer extends Consumer {
@@ -258,7 +258,9 @@ object FindReferencesProvider {
     var occurs: Set[SourceLocation] = Set.empty
 
     def consider(s: Symbol.CaseSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
+      if (s == sym) {
+        occurs += loc
+      }
     }
 
     object CaseSymConsumer extends Consumer {
@@ -274,7 +276,9 @@ object FindReferencesProvider {
     var occurs: Set[SourceLocation] = Set.empty
 
     def consider(s: Symbol.DefnSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
+      if (s == sym) {
+        occurs += loc
+      }
     }
 
     object DefnSymConsumer extends Consumer {
@@ -286,17 +290,20 @@ object FindReferencesProvider {
     occurs + sym.loc
   }
 
-  private def getEffectSymOccurs(sym: Symbol.EffectSym)(implicit root: Root): Set[SourceLocation] = {
+  private def getEffectSymOccurs(sym: Symbol.EffSym)(implicit root: Root): Set[SourceLocation] = {
     var occurs: Set[SourceLocation] = Set.empty
 
-    def consider(s: Symbol.EffectSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
+    def consider(s: Symbol.EffSym, loc: SourceLocation): Unit = {
+      if (s == sym) {
+        occurs += loc
+      }
     }
 
     object EffectSymConsumer extends Consumer {
       override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = consider(effUse.sym, effUse.qname.loc)
+
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Effect(sym), loc) => consider(sym, loc)
+        case Type.Cst(TypeConstructor.Effect(effSym, _), loc) => consider(effSym, loc)
         case _ => ()
       }
     }
@@ -310,12 +317,14 @@ object FindReferencesProvider {
     var occurs: Set[SourceLocation] = Set.empty
 
     def consider(s: Symbol.EnumSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
+      if (s == sym) {
+        occurs += loc
+      }
     }
 
     object EnumSymConsumer extends Consumer {
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Enum(sym, _), loc) => consider(sym, loc)
+        case Type.Cst(TypeConstructor.Enum(enumSym, _), loc) => consider(enumSym, loc)
         case _ => ()
       }
     }
@@ -329,7 +338,9 @@ object FindReferencesProvider {
     var occurs: Set[SourceLocation] = Set.empty
 
     def consider(s: Symbol.OpSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
+      if (s == sym) {
+        occurs += loc
+      }
     }
 
     object OpSymConsumer extends Consumer {
@@ -345,7 +356,9 @@ object FindReferencesProvider {
     var occurs: Set[SourceLocation] = Set.empty
 
     def consider(s: Symbol.SigSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
+      if (s == sym) {
+        occurs += loc
+      }
     }
 
     object SigSymConsumer extends Consumer {
@@ -369,12 +382,14 @@ object FindReferencesProvider {
     var occurs: Set[SourceLocation] = Set.empty
 
     def consider(s: Symbol.StructSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
+      if (s == sym) {
+        occurs += loc
+      }
     }
 
     object StructSymConsumer extends Consumer {
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Struct(sym, _), loc) => consider(sym, loc)
+        case Type.Cst(TypeConstructor.Struct(structSym, _), loc) => consider(structSym, loc)
         case _ => ()
       }
     }
@@ -388,7 +403,9 @@ object FindReferencesProvider {
     var occurs: Set[SourceLocation] = Set.empty
 
     def consider(s: Symbol.StructFieldSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
+      if (s == sym) {
+        occurs += loc
+      }
     }
 
     object StructFieldSymConsumer extends Consumer {
@@ -404,7 +421,9 @@ object FindReferencesProvider {
     var occurs: Set[SourceLocation] = Set.empty
 
     def consider(s: Symbol.TraitSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
+      if (s == sym) {
+        occurs += loc
+      }
     }
 
     object TraitSymConsumer extends Consumer {
@@ -420,12 +439,14 @@ object FindReferencesProvider {
     var occurs: Set[SourceLocation] = Set.empty
 
     def consider(s: Symbol.TypeAliasSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
+      if (s == sym) {
+        occurs += loc
+      }
     }
 
     object TypeAliasSymConsumer extends Consumer {
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Alias(TypeAliasSymUse(sym, loc), _, _, _) => consider(sym, loc)
+        case Type.Alias(TypeAliasSymUse(aliasSym, loc), _, _, _) => consider(aliasSym, loc)
         case _ => ()
       }
     }
@@ -439,14 +460,16 @@ object FindReferencesProvider {
     var occurs: Set[SourceLocation] = Set.empty
 
     def consider(s: Symbol.KindedTypeVarSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
+      if (s == sym) {
+        occurs += loc
+      }
     }
 
     object TypeVarSymConsumer extends Consumer {
       override def consumeTypeParam(tparam: TypedAst.TypeParam): Unit = consider(tparam.sym, tparam.sym.loc)
 
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Var(sym, loc) => consider(sym, loc)
+        case Type.Var(varSym, loc) => consider(varSym, loc)
         case _ => ()
       }
     }
@@ -460,13 +483,16 @@ object FindReferencesProvider {
     var occurs: Set[SourceLocation] = Set.empty
 
     def consider(s: Symbol.VarSym, loc: SourceLocation): Unit = {
-      if (s == sym) { occurs += loc }
+      if (s == sym) {
+        occurs += loc
+      }
     }
 
     object VarSymConsumer extends Consumer {
       override def consumeBinder(bnd: Binder): Unit = consider(bnd.sym, bnd.sym.loc)
+
       override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
-        case TypedAst.Expr.Var(sym, _, loc) => consider(sym, loc)
+        case TypedAst.Expr.Var(varSym, _, loc) => consider(varSym, loc)
         case _ => ()
       }
     }

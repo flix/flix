@@ -1,5 +1,21 @@
 # Changelog
 
+Version 0.60.0:
+- Compiler: Introduced brand new inliner (thanks Jakob!)
+- Compiler: Improved JVM bytecode generation (thanks Jonathan and Jakob!)
+- LSP: Improved context-aware auto-completion (thanks Chenhao!)
+
+Version 0.59.0:
+- LSP: Improved handler completions (thanks Chenhao!)
+
+Version 0.58.1:
+- Compiler: Fixed a crash in type and effect inference (thanks Magnus!)
+- Compiler: Fixed a crash in plain LSP provider (thanks Chenhao!)
+
+Version 0.58.0:
+- Compiler: Added support for plain LSP (thanks Chenhao!)
+- Compiler: Significantly improved performance of type inference (thanks Magnus!)
+
 Version 0.57.1:
 - Compiler: Extend list of semantic tokens (thanks Chenhao!)
 
