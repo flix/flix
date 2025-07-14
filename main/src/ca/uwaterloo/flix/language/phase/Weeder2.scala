@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.language.errors.ParseError.*
+import ca.uwaterloo.flix.language.errors.ParseError.{NamedTokenSet, *}
 import ca.uwaterloo.flix.language.errors.WeederError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.Validation.*
@@ -1604,7 +1604,11 @@ object Weeder2 {
     private def visitExtTag(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.ExtTag)
       mapN(pickNameIdent(tree), pickExpr(tree)) {
-        (ident, e) => Expr.ExtTag(Name.mkLabel(ident), List(e), tree.loc)
+        case (ident, WeededAst.Expr.Tuple(exps, _)) => Expr.ExtTag(Name.mkLabel(ident), exps, tree.loc)
+        case (_, exp) =>
+          val error = Malformed(NamedTokenSet.ExtTag, SyntacticContext.Expr.OtherExpr, Some("Expected tuple."), loc = exp.loc)
+          sctx.errors.add(error)
+          Expr.Error(error)
       }
     }
 
