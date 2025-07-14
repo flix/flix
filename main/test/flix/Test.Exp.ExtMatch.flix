@@ -17,9 +17,8 @@ mod Test.Exp.ExtMatch {
 
     @Test
     def testExtMatch01BigInt(): Bool = {
-        ematch xvar AB(1ii) {
-            case AB(x) => x == 1ii
-            case A(_, _) => false
+        ematch xvar A(1ii) {
+            case A(x) => x == 1ii
         }
     }
 
