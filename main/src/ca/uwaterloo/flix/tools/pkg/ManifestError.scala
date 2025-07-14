@@ -75,7 +75,7 @@ object ManifestError {
     }
   }
 
-  case class FlixDependencyPermissionTypeError(path: Option[Path], lib: String, perm: AnyRef) extends ManifestError {
+  case class FlixDependencyTrustTypeError(path: Option[Path], lib: String, perm: AnyRef) extends ManifestError {
     override def message(f: Formatter): String = {
       val pStr = path.map(_.toString).getOrElse("\"unknown\"")
       val typ = perm.getClass
@@ -85,7 +85,7 @@ object ManifestError {
     }
   }
 
-  case class FlixUnknownPermissionError(path: Path, lib: String, perm: String) extends ManifestError {
+  case class FlixUnknownTrustError(path: Path, lib: String, perm: String) extends ManifestError {
     override def message(f: Formatter): String = {
       s"Unknown permission in dependency ${f.bold(lib)}: ${f.red(f.bold(perm))}."
     }
