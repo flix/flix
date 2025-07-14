@@ -429,16 +429,7 @@ object Simplifier {
 
           case TypeConstructor.SchemaRowExtend(pred) =>
             val List(predType, rest) = tpe.typeArguments
-            val consType0 = predType match {
-              case Type.Apply(Type.Cst(TypeConstructor.Relation(_), _), ct, _) => ct
-              case Type.Apply(Type.Cst(TypeConstructor.Lattice(_), _), ct, _) => ct
-              case other => throw InternalCompilerException(s"Unexpected type: '$other'.", other.loc)
-            }
-            val consTypes = consType0.baseType match {
-              case Type.Cst(TypeConstructor.Tuple(_), _) => consType0.typeArguments
-              case Type.Cst(_, _) => List(consType0)
-              case other => throw InternalCompilerException(s"Unexpected type: '$other'.", other.loc)
-            }
+            val consTypes = predType.typeArguments
             SimpleType.ExtensibleExtend(pred, consTypes.map(visitType), visitType(rest))
 
           case TypeConstructor.Region(_) => SimpleType.Unit
