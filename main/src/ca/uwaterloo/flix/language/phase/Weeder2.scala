@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.language.errors.ParseError.*
+import ca.uwaterloo.flix.language.errors.ParseError.{NamedTokenSet, *}
 import ca.uwaterloo.flix.language.errors.WeederError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.Validation.*
@@ -1572,8 +1572,13 @@ object Weeder2 {
           // Parser has reported an error here so do not add to sctx.
           Validation.Failure(error)
 
-        case (expr, rules) =>
+        case (expr@Expr.ExtTag(_, _, _), rules) =>
           Validation.Success(Expr.ExtMatch(expr, rules.flatten, tree.loc))
+
+        case (expr, _) =>
+          val error = Malformed(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, hint = Some("expected xvar expression."), loc = expr.loc)
+          sctx.errors.add(error)
+          Validation.Failure(error)
       }
     }
 
@@ -1582,6 +1587,7 @@ object Weeder2 {
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
       flatMapN(Patterns.pickExtPattern(tree), traverse(exprs)(visitExpr)) {
         case ((label, pats), expr :: Nil) =>
+        // case Tag(exp1, exp2, ..., expn)
           Validation.Success(Some(ExtMatchRule(label, pats, expr, tree.loc)))
 
         case (_, _) =>
@@ -1593,7 +1599,11 @@ object Weeder2 {
     private def visitExtTag(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.ExtTag)
       mapN(pickNameIdent(tree), pickExpr(tree)) {
-        (ident, e) => Expr.ExtTag(Name.mkLabel(ident), List(e), tree.loc)
+        case (ident, WeededAst.Expr.Tuple(exps, _)) => Expr.ExtTag(Name.mkLabel(ident), exps, tree.loc)
+        case (_, exp) =>
+          val error = Malformed(NamedTokenSet.ExtTag, SyntacticContext.Expr.OtherExpr, Some("Expected tuple."), loc = exp.loc)
+          sctx.errors.add(error)
+          Expr.Error(error)
       }
     }
 
@@ -2099,7 +2109,7 @@ object Weeder2 {
 
     private def visitFixpointSolveExpr(tree: Tree, isPSolve: Boolean)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       val expectedTree = if (isPSolve) TreeKind.Expr.FixpointSolveWithProvenance else TreeKind.Expr.FixpointSolveWithProject
-      val solveMode = if(isPSolve) SolveMode.WithProvenance else SolveMode.Default
+      val solveMode = if (isPSolve) SolveMode.WithProvenance else SolveMode.Default
       expect(tree, expectedTree)
       val expressions = pickAll(TreeKind.Expr.Expr, tree)
       val idents = pickAll(TreeKind.Ident, tree).map(tokenToIdent)

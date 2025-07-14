@@ -1883,10 +1883,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordXvar)
       nameUnqualified(NAME_TAG)
-      expect(TokenKind.ParenL)
-      // TODO: Ext-Variants: Limited to one expression.
-      expression()
-      expect(TokenKind.ParenR)
+      exprDelimited()
       close(mark, TreeKind.Expr.ExtTag)
     }
 

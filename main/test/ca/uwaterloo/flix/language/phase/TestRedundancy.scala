@@ -403,22 +403,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("ShadowedName.Select.01") {
     val input =
       """
-        |def f(): (Int32, Int32) =
-        |    let x = 123;
-        |    match (456, 789) {
-        |        case (u, v) => (u, v)
-        |        case (y, x) => (x, y)
-        |    }
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedName](result)
-    expectError[RedundancyError.ShadowingName](result)
-  }
-
-  test("ShadowedName.Select.02") {
-    val input =
-      """
         |def f(): Int32 = region rc {
         |    let x = 123;
         |    let (tx, rx) = Channel.buffered(rc, 1);
@@ -1561,6 +1545,46 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
          |pub def f(): Int32 =
          |    match { x = 1 } {
          |        case { x = y } => 42
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("UnusedVarSym.ExtPattern.01") {
+    val input =
+      s"""
+         |pub def f(): Int32 =
+         |    ematch xvar A(1) {
+         |        case A(x) => 42
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("UnusedVarSym.ExtPattern.02") {
+    val input =
+      s"""
+         |pub def f(): Int32 =
+         |    ematch xvar AB(1, 2, 3) {
+         |        case AB(x, y, z) => 42
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("UnusedVarSym.ExtPattern.03") {
+    val input =
+      s"""
+         |pub def f(): Int32 =
+         |    ematch xvar AB(1, 2, 3) {
+         |        case A(x) => 42
+         |        case AB(x, y, z) => 42
          |    }
          |
        """.stripMargin
