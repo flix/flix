@@ -717,11 +717,14 @@ class Flix {
     val eraserAst = Eraser.run(tailPosAst)
     val reducerAst = Reducer.run(eraserAst)
     val varOffsetsAst = VarOffsets.run(reducerAst)
-    val (backendAst, classes) = JvmBackend.run(varOffsetsAst)
+    val bytecodeAst = JvmBackend.run(varOffsetsAst)
+
+    JvmWriter.run(bytecodeAst)
+    val loaderResult = JvmLoader.run(bytecodeAst)
+
     val totalTime = flix.getTotalTime
-    JvmWriter.run(classes)
-    val (loadedAst, loadRes) = JvmLoader.run(backendAst, classes)
-    val result = new CompilationResult(loadedAst, loadRes.main, loadRes.defs, totalTime, loadRes.byteSize)
+    val totalSize = bytecodeAst.classes.values.map(_.bytecode.length).sum
+    val result = new CompilationResult(loaderResult.main, loaderResult.tests, loaderResult.sources, totalTime, totalSize)
 
     // Shutdown fork-join thread pool.
     shutdownForkJoinPool()
