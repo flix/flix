@@ -39,7 +39,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     val input =
       s"""
          |def f(): Int32 =
-         |    ematch xvar A(123) {
+         |    ematch xvar A(123, 456) {
          |        case A(x, _) => x
          |        case A(_, x) => x
          |    }
