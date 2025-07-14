@@ -1435,6 +1435,46 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedVarSym](result)
   }
 
+  test("UnusedVarSym.ExtPattern.01") {
+    val input =
+      s"""
+         |pub def f(): Int32 =
+         |    ematch xvar A(1) {
+         |        case A(x) => 42
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("UnusedVarSym.ExtPattern.02") {
+    val input =
+      s"""
+         |pub def f(): Int32 =
+         |    ematch xvar AB(1, 2, 3) {
+         |        case AB(x, y, z) => 42
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("UnusedVarSym.ExtPattern.03") {
+    val input =
+      s"""
+         |pub def f(): Int32 =
+         |    ematch xvar AB(1, 2, 3) {
+         |        case A(x) => 42
+         |        case AB(x, y, z) => 42
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
   test("UnusedVarSym.Select.01") {
     val input =
       raw"""
