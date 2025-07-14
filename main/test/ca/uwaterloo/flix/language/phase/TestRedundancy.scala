@@ -7,6 +7,48 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestRedundancy extends AnyFunSuite with TestUtils {
 
+  test("DuplicateExtPattern.01") {
+    val input =
+      s"""
+         |def f(): Int32 =
+         |    ematch xvar A(123) {
+         |        case A(x) => x
+         |        case A(x) => x
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.DuplicateExtPattern](result)
+  }
+
+  test("DuplicateExtPattern.02") {
+    val input =
+      s"""
+         |def f(): Int32 =
+         |    ematch xvar A(123) {
+         |        case A(x) => x
+         |        case A(_) => x
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.DuplicateExtPattern](result)
+  }
+
+  test("DuplicateExtPattern.03") {
+    val input =
+      s"""
+         |def f(): Int32 =
+         |    ematch xvar A(123) {
+         |        case A(x, _) => x
+         |        case A(_, x) => x
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.DuplicateExtPattern](result)
+  }
+
   test("HiddenVarSym.Let.01") {
     val input =
       s"""
