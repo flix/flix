@@ -1014,7 +1014,7 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Int32 = ematch xvar A() -> 123 {
-        |    case A(1) => 1
+        |    case A(x) => x
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
