@@ -59,7 +59,13 @@ object RedundancyError {
     * @param loc2     the location of the second pattern.
     */
   case class DuplicateExtPattern(label: Name.Label, patterns: List[ExtPattern], loc1: SourceLocation, loc2: SourceLocation) extends RedundancyError {
-    private val pat = s"$label${patterns.mkString("(", ", ", ")")}"
+    private def formatPattern(pat: ExtPattern): String = pat match {
+      case ExtPattern.Wild(_, _) => "_"
+      case ExtPattern.Var(bnd, _, _) => bnd.sym.text
+      case ExtPattern.Error(_, _) => "Error"
+    }
+
+    private val pat = s"$label${patterns.map(formatPattern).mkString("(", ", ", ")")}"
 
     def summary: String = s"Duplicate extensible match pattern '$pat'."
 
