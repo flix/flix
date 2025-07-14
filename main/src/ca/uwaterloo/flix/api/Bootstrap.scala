@@ -196,9 +196,9 @@ object Bootstrap {
   private def getPackageName(p: Path): String = p.toAbsolutePath.normalize().getFileName.toString
 
   /**
-   * Returns the path to the pkg file based on the given path `p` and package `name`.
+   * Returns the path to the pkg file based on the given path `p` and the manifest name.
    */
-  private def getPkgFile(p: Path, name: String): Path = getArtifactDirectory(p).resolve(name + ".fpkg").normalize()
+  private def getPkgFile(p: Path, manifest: Manifest ): Path = getArtifactDirectory(p).resolve(manifest.name + ".fpkg").normalize()
 
   /**
     * Returns `true` if the given path `p` is a jar-file.
@@ -631,16 +631,16 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Builds a flix package for the project.
     */
   def buildPkg()(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
-
-    // Create the artifact directory, if it does not exist.
-    Files.createDirectories(getArtifactDirectory(projectPath))
-
+    // Ensure that a manifest exists
     val manifest = optManifest match {
       case Some(m) => m
       case None => return Validation.Failure(BootstrapError.FileError(s"Cannot create a Flix package without a `${formatter.red("flix.toml")}` file."))
     }
 
-    val pkgFile = Bootstrap.getPkgFile(projectPath, manifest.name)
+    // Create the artifact directory, if it does not exist.
+    Files.createDirectories(getArtifactDirectory(projectPath))
+
+    val pkgFile = Bootstrap.getPkgFile(projectPath, manifest)
 
     // Check whether it is safe to write to the file.
     if (Files.exists(pkgFile) && !Bootstrap.isPkgFile(pkgFile)) {
@@ -761,7 +761,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Publish to GitHub
     out.println("Publishing a new release...")
-    val artifacts = List(getPkgFile(projectPath, manifest.name), getManifestFile(projectPath))
+    val artifacts = List(getPkgFile(projectPath, manifest), getManifestFile(projectPath))
     val publishResult = GitHub.publishRelease(githubRepo, manifest.version, artifacts, githubToken)
     publishResult match {
       case Ok(()) => // Continue
