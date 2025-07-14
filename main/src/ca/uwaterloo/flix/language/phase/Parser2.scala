@@ -1884,7 +1884,6 @@ object Parser2 {
       expect(TokenKind.KeywordXvar)
       nameUnqualified(NAME_TAG)
       exprDelimited()
-      expect(TokenKind.ParenR)
       close(mark, TreeKind.Expr.ExtTag)
     }
 

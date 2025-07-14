@@ -1572,11 +1572,11 @@ object Weeder2 {
           // Parser has reported an error here so do not add to sctx.
           Validation.Failure(error)
 
-        case (expr, rules) if rules.length == 2 => // Check for exactly 2 to prevent crash when desugaring in Kinder
+        case (expr@Expr.ExtTag(_, _, _), rules) =>
           Validation.Success(Expr.ExtMatch(expr, rules, tree.loc))
 
         case (expr, _) =>
-          val error = Malformed(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
+          val error = Malformed(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, hint = Some("expected xvar expression."), loc = expr.loc)
           sctx.errors.add(error)
           Validation.Failure(error)
       }
@@ -2114,7 +2114,7 @@ object Weeder2 {
 
     private def visitFixpointSolveExpr(tree: Tree, isPSolve: Boolean)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       val expectedTree = if (isPSolve) TreeKind.Expr.FixpointSolveWithProvenance else TreeKind.Expr.FixpointSolveWithProject
-      val solveMode = if(isPSolve) SolveMode.WithProvenance else SolveMode.Default
+      val solveMode = if (isPSolve) SolveMode.WithProvenance else SolveMode.Default
       expect(tree, expectedTree)
       val expressions = pickAll(TreeKind.Expr.Expr, tree)
       val idents = pickAll(TreeKind.Ident, tree).map(tokenToIdent)
