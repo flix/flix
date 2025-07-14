@@ -1572,13 +1572,8 @@ object Weeder2 {
           // Parser has reported an error here so do not add to sctx.
           Validation.Failure(error)
 
-        case (expr@Expr.ExtTag(_, _, _), rules) =>
+        case (expr, rules) =>
           Validation.Success(Expr.ExtMatch(expr, rules.flatten, tree.loc))
-
-        case (expr, _) =>
-          val error = Malformed(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, hint = Some("expected xvar expression."), loc = expr.loc)
-          sctx.errors.add(error)
-          Validation.Failure(error)
       }
     }
 
