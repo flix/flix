@@ -182,21 +182,23 @@ object Simplifier {
           val fieldInitializations = givenFields.zip(fieldExps)
 
           // Find types and new names.
-          val freshFieldNames = givenFields.map(
-            sym => (sym, Symbol.freshVarSym(sym.name, BoundBy.Let, synthLoc))
-          ).toMap
+          val freshFieldNames = givenFields.map {
+            fieldSym => (fieldSym, Symbol.freshVarSym(fieldSym.name, BoundBy.Let, synthLoc))
+          }.toMap
           val fieldTypes = fieldInitializations.map {
-            case (sym, e) => (sym, e.tpe)
+            case (fieldSym, e) => (fieldSym, e.tpe)
           }.toMap
           val freshRegName = Symbol.freshVarSym("r", BoundBy.Let, synthLoc)
           val regType = regExp.tpe
-          val freshFieldInitialization = fieldInitializations.map { case (sym, e) => (freshFieldNames(sym), e) }
+          val freshFieldInitialization = fieldInitializations.map {
+            case (fieldSym, e) => (freshFieldNames(fieldSym), e)
+          }
 
           // Construct var expressions.
           val regVar = SimplifiedAst.Expr.Var(freshRegName, regType, synthLoc)
-          val fieldVars = fieldsDeclaredOrder.map(
+          val fieldVars = fieldsDeclaredOrder.map {
             field => SimplifiedAst.Expr.Var(freshFieldNames(field.sym), fieldTypes(field.sym), synthLoc)
-          )
+          }
 
           // Construct the full expression.
           val newStructExp = SimplifiedAst.Expr.ApplyAtomic(
@@ -207,7 +209,7 @@ object Simplifier {
             loc
           )
           val fieldBoundExp = freshFieldInitialization.foldRight(newStructExp: SimplifiedAst.Expr) {
-            case ((sym, e), acc) => SimplifiedAst.Expr.Let(sym, e, acc, acc.tpe, Purity.combine(acc.purity, e.purity), synthLoc)
+            case ((varSym, e), acc) => SimplifiedAst.Expr.Let(varSym, e, acc, acc.tpe, Purity.combine(acc.purity, e.purity), synthLoc)
           }
           SimplifiedAst.Expr.Let(freshRegName, regExp, fieldBoundExp, fieldBoundExp.tpe, Purity.combine(fieldBoundExp.purity, regExp.purity), synthLoc)
 
