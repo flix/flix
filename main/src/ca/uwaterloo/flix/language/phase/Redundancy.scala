@@ -602,7 +602,13 @@ object Redundancy {
           // Combine everything together.
           (usedBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
       }
-      usedMatch ++ usedRules.reduceLeft(_ ++ _)
+
+      val duplicatePatterns: List[RedundancyError] = getDuplicates(rules, (rule: ExtMatchRule) => rule.label).map {
+        case (rule1, rule2) =>
+          RedundancyError.DuplicateExtPattern(rule1.label, rule1.pats, rule1.loc, rule2.loc)
+      }
+
+      Used(Set.empty, duplicatePatterns.toSet) ++ usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
     case Expr.Tag(CaseSymUse(sym, _), exps, _, _, _) =>
       val us = visitExps(exps, env0, rc)
@@ -1316,6 +1322,21 @@ object Redundancy {
       case _ => true
     })
 
+  }
+
+  /**
+    * Gets duplicate pairs from a list of items.
+    * This is used to generate a list of pairs that can be mapped into Duplicate errors.
+    * What constitutes a "duplicate" is abstracted into the groupBy argument.
+    * But for enum variants, two variants are duplicates if they share names.
+    */
+  private def getDuplicates[A, K](items: Seq[A], groupBy: A => K): List[(A, A)] = {
+    val groups = items.groupBy(groupBy)
+    for {
+      (_, group) <- groups.toList
+      // if a group has a nonempty tail, then everything in the tail is a duplicate of the head
+      duplicate <- group.tail
+    } yield (group.head, duplicate)
   }
 
   /**
