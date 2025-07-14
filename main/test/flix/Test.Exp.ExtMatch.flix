@@ -314,4 +314,20 @@ mod Test.Exp.ExtMatch {
             case B(_) => true
         }
     }
+
+    @Test
+    def textExtMatchDifferentArities01(): Bool = {
+        ematch xvar AB("a") {
+            case A(_, _) => false
+            case AB(x)   => x == "a"
+        }
+    }
+
+    @Test
+    def textExtMatchDifferentArities02(): Bool = {
+        ematch xvar AB("a", 1) {
+            case B(_, _) => false
+            case AB(x, y)   => x == "a" and y == 1
+        }
+    }
 }
