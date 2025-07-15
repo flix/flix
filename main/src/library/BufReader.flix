@@ -53,6 +53,16 @@ instance Readable[BufReader[a, t, rr]] with Readable[t] where Readable.Elm[t] ~ 
 
 }
 
+instance Peekable[BufReader[a, t, r]] with Readable[t] where Readable.Elm[t] ~ a {
+
+    pub def peek(bufReader: BufReader[a, t, r]): Result[IoError, Option[Readable.Elm[t]]] \ Readable.Aef[t] + r = BufReader.peek(bufReader)
+
+    pub def skip(n: Int32, bufReader: BufReader[a, t, r]): Result[IoError, Int32] \ Readable.Aef[t] + r = BufReader.skip(n, bufReader)
+
+    pub def readWhile(p: Readable.Elm[t] -> Bool, bufReader: BufReader[a, t, r]): Result[IoError, Vector[Readable.Elm[t]]] \ Readable.Aef[t] + r = BufReader.readWhile(p, bufReader)
+
+}
+
 mod BufReader {
 
     ///
@@ -89,6 +99,90 @@ mod BufReader {
             readFromCursor(0, dest, bufReader)
         } else {
             Readable.read(dest, bufReader->reader)
+        }
+
+    ///
+    /// Returns `Ok(Some(x))` where x is the next value to be read, or `Ok(None)` if the `reader` is empty.
+    /// Does not read `x` from the `reader`.
+    ///
+    /// Returns `Err(err)` if there is an IO error.
+    ///
+    pub def peek(bufReader: BufReader[a, t, r]): Result[IoError, Option[Readable.Elm[t]]] \ Readable.Aef[t] + r with Readable[t] where Readable.Elm[t] ~ a =
+        if (bufReader->size != 0) {
+            Ok(Some(Array.get(bufReader->cursor, bufReader->buffer)))
+        } else {
+            forM(
+                itemsFilled <- fillBuffer(bufReader)
+            ) yield if (itemsFilled != 0) {
+                Some(Array.get(bufReader->cursor, bufReader->buffer))
+            } else {
+                None
+            }
+        }
+
+    ///
+    /// Returns `Ok(k)` where `k` is the number of items skipped.
+    ///
+    /// Guarantees that `0 <= k <= n`.
+    ///
+    /// Returns `Err(err)` if there is an IO error.
+    ///
+    pub def skip(n: Int32, bufReader: BufReader[a, t, r]): Result[IoError, Int32] \ Readable.Aef[t] + r with Readable[t] where Readable.Elm[t] ~ a =
+        if (n <= 0) {
+            Ok(0)
+        } else if (bufReader->size != 0) {
+            let itemsToSkip = Int32.min(n, bufReader->size);
+            bufReader->cursor = bufReader->cursor + itemsToSkip;
+            bufReader->size = bufReader->size - itemsToSkip;
+            forM(
+                rest <- skip(n - itemsToSkip, bufReader)
+            ) yield itemsToSkip + rest
+        } else {
+            forM(
+                itemsFilled <- fillBuffer(bufReader);
+                skipped <- if (itemsFilled == 0) {
+                    Ok(0)
+                } else {
+                    skip(n, bufReader)
+                }
+            ) yield skipped
+        }
+
+    ///
+    /// Reads from `reader` until an element is reached that does not satisfy predicate `p`.
+    ///
+    /// Returns `Ok(vec)` where `vec` is a vector of the first `k` elements where `k` is the index of the first element that does not satisfy `p`.
+    /// This element is not included in the vector, and will be read on the next read.
+    ///
+    /// All elements of `vec` are guaranteed to satisfy `p`.
+    ///
+    /// Returns `Err(err)` if there is an IO error.
+    ///
+    pub def readWhile(p: a -> Bool, bufReader: BufReader[a, t, r]): Result[IoError, Vector[a]] \ Readable.Aef[t] + r with Readable[t] where Readable.Elm[t] ~ a =
+        if (bufReader->size != 0) region rc {
+            def findIndex(i) = {
+                if (i < bufReader->cursor + bufReader->size) {
+                    let x = Array.get(i, bufReader->buffer);
+                    if (p(x)) findIndex(i + 1) else i
+                } else {
+                    i
+                }
+            };
+            let i = findIndex(bufReader->cursor);
+            if (i == bufReader->cursor) {
+                Ok(Vector.empty())
+            } else {
+                let vec = Array.slice(rc, start = bufReader->cursor, end = i, bufReader->buffer) |> Array.toVector;
+                let itemsRead = Vector.length(vec);
+                bufReader->cursor = bufReader->cursor + itemsRead;
+                bufReader->size = bufReader->size - itemsRead;
+                forM(rest <- readWhile(p, bufReader)) yield Vector.append(vec, rest)
+            }
+        } else {
+            forM(
+                itemsFilled <- fillBuffer(bufReader);
+                vec <- if (itemsFilled == 0) Ok(Vector.empty()) else readWhile(p, bufReader)
+            ) yield vec
         }
 
     ///
