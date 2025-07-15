@@ -159,6 +159,35 @@ object DisplayType {
     */
   case class SchemaRowExtend(fields: List[PredicateFieldType], rest: DisplayType) extends DisplayType
 
+  //////////////////////////////
+  // Extensible Variants Schemas
+  //////////////////////////////
+
+  /**
+    * A schema constructor. `arg` should be a variable or a Hole.
+    */
+  case class ExtSchemaConstructor(arg: DisplayType) extends DisplayType
+
+  /**
+    * An unextended schema.
+    */
+  case class ExtSchema(fields: List[PredicateFieldType]) extends DisplayType
+
+  /**
+    * An extended schema. `arg` should be a variable or a Hole.
+    */
+  case class ExtSchemaExtend(fields: List[PredicateFieldType], rest: DisplayType) extends DisplayType
+
+  /**
+    * An unextended schema row.
+    */
+  case class ExtSchemaRow(fields: List[PredicateFieldType]) extends DisplayType
+
+  /**
+    * An extended schema row. `arg` should be a variable or a Hole.
+    */
+  case class ExtSchemaRowExtend(fields: List[PredicateFieldType], rest: DisplayType) extends DisplayType
+
   ////////////////////
   // Boolean Operators
   ////////////////////
@@ -443,12 +472,12 @@ object DisplayType {
           val args = t.typeArguments.map(visit)
           args match {
             // Case 1: No args. { ? }
-            case Nil => SchemaConstructor(Hole)
+            case Nil => ExtSchemaConstructor(Hole)
             // Case 2: One row argument. Extract its values.
             case tpe :: Nil => tpe match {
-              case SchemaRow(fields) => Schema(fields)
-              case SchemaRowExtend(fields, rest) => SchemaExtend(fields, rest)
-              case nonSchema => SchemaConstructor(nonSchema)
+              case SchemaRow(fields) => ExtSchema(fields)
+              case SchemaRowExtend(fields, rest) => ExtSchemaExtend(fields, rest)
+              case nonSchema => ExtSchemaConstructor(nonSchema)
             }
             // Case 3: Too many args. Error.
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
