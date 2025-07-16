@@ -218,8 +218,7 @@ object TypedAstOps {
       e ++ rs
 
     case Expr.ExtMatch(exp, rules, _, _, _) =>
-      val e = freeVars(exp)
-      val rs = rules.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+      rules.foldLeft(freeVars(exp)) {
         case (acc, ExtMatchRule(_, pats, exp1, _)) =>
           acc ++ freeVars(exp1) -- pats.flatMap {
             case ExtPattern.Wild(_, _) => List.empty
@@ -227,7 +226,6 @@ object TypedAstOps {
             case ExtPattern.Error(_, _) => List.empty
           }
       }
-      e ++ rs
 
     case Expr.Tag(_, exps, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
