@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.language.errors.ParseError.{NamedTokenSet, *}
+import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.WeederError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.Validation.*
@@ -2325,7 +2325,7 @@ object Weeder2 {
       }
     }
 
-    def visitExtPattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit sctx: SharedContext): Validation[(Name.Label, List[ExtPattern]), CompilationMessage] = {
+    private def visitExtPattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit sctx: SharedContext): Validation[(Name.Label, List[ExtPattern]), CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Pattern)
       val extTagPattern = tryPick(TreeKind.Pattern.ExtTag, tree)
       extTagPattern match {
