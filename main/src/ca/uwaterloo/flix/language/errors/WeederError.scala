@@ -60,37 +60,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that extensible constructor pattern `label` was used multiple times.
-    *
-    * @param label    the name of the extensible match constructor.
-    * @param patterns the extensible patterns.
-    * @param loc1     the location of the first pattern.
-    * @param loc2     the location of the second pattern.
-    */
-  case class DuplicateExtPattern(label: Name.Label, patterns: List[WeededAst.ExtPattern], loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    private val pat = s"$label${patterns.mkString("(", ", ", ")")}"
-
-    def summary: String = s"Duplicate extensible match pattern '$pat'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> s"Duplicate extensible match pattern '${red(pat)}'."
-         |
-         |${code(loc1, "the first occurrence was here.")}
-         |
-         |${code(loc2, "the second occurrence was here.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Remove one of the two patterns."
-    })
-
-    def loc: SourceLocation = loc1
-  }
-
-  /**
     * An error raised to indicate that the formal parameter `name` was declared multiple times.
     *
     * @param name the name of the parameter.
