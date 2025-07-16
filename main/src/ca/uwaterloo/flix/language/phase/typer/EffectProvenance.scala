@@ -65,7 +65,7 @@ object EffectProvenance {
     if (!enableEffectProvenance) {
       return Nil
     }
-    val paths = constrs0.flatMap { constr =>
+    constrs0.flatMap { constr =>
       constr match {
         // Kick off path searching from source constraints.
         case TypeConstraint.Equality(_, _, Provenance.Source(eff1, eff2, loc)) => {
@@ -84,7 +84,6 @@ object EffectProvenance {
         case _ => Nil
       }
     }
-    paths
   }
 
   /**
@@ -98,7 +97,8 @@ object EffectProvenance {
   private def findPath(effVar: Type.Var, concreteEff: SourceEffect, path: List[TypeConstraint], constrs: List[TypeConstraint]): List[EffectProvenancePath] = {
 
     /**
-      * Helper to find the next step in the path.
+      * Helper to find the next step in the path or end traversal
+      * if effect is removed.
       */
     def findNext(eff1: Type, eff2: Type, constr: TypeConstraint): List[EffectProvenancePath] = {
       val (add, sub) = findConcreteEffects(eff1)
