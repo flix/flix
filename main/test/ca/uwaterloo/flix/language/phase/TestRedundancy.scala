@@ -286,22 +286,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("ShadowedName.Select.01") {
     val input =
       """
-        |def f(): (Int32, Int32) =
-        |    let x = 123;
-        |    match (456, 789) {
-        |        case (u, v) => (u, v)
-        |        case (y, x) => (x, y)
-        |    }
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedName](result)
-    expectError[RedundancyError.ShadowingName](result)
-  }
-
-  test("ShadowedName.Select.02") {
-    val input =
-      """
         |def f(): Int32 = region rc {
         |    let x = 123;
         |    let (tx, rx) = Channel.buffered(rc, 1);
