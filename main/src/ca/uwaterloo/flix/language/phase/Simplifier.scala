@@ -1022,14 +1022,12 @@ object Simplifier {
     val iftes = rules.foldRight(errorExp: SimplifiedAst.Expr) {
       case (MonoAst.ExtMatchRule(label, pats, exp1, loc1), branch2) =>
         val e1 = visitExp(exp1)
-        val syms = pats.collect {
-          case MonoAst.ExtPattern.Var(sym, _, _, _) => sym
-        }
         val is = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ExtensibleIs(label), List(extVar), SimpleType.Bool, Purity.Pure, extVar.loc)
         val termTypes = SimpleType.findExtensibleTermTypes(label, tagType)
         // Let-bind each variable in the rule / pattern
-        val branch1 = syms.zipWithIndex.foldRight(e1) {
-          case ((sym, idx), acc1) =>
+        val branch1 = pats.zipWithIndex.foldRight(e1) {
+          case ((MonoAst.ExtPattern.Wild(_, _), _), acc1) => acc1
+          case ((MonoAst.ExtPattern.Var(sym, _, _, _), idx), acc1) =>
             val untag = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ExtensibleUntag(label, idx), List(extVar), termTypes(idx), Purity.Pure, sym.loc)
             SimplifiedAst.Expr.Let(sym, untag, acc1, acc1.tpe, Purity.combine(untag.purity, acc1.purity), sym.loc)
         }
