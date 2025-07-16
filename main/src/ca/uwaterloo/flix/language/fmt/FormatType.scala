@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.{Scope, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{Scope, SymbolSet, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 
@@ -28,7 +28,7 @@ object FormatType {
     *
     * Performs alpha renaming if the rigidity environment is present.
     */
-  def formatType(tpe: Type, renv: Option[RigidityEnv] = None, minimizeEffs: Boolean = false)(implicit flix: Flix): String = {
+  def formatType(tpe: Type, renv: Option[RigidityEnv] = None, minimizeEffs: Boolean = false, amb : SymbolSet = SymbolSet.empty)(implicit flix: Flix): String = {
     val renamed = renv match {
       case None => tpe
       case Some(env) => alphaRename(tpe, env)
@@ -38,7 +38,7 @@ object FormatType {
     } else {
       renamed
     }
-    formatTypeWithOptions(minimized, flix.getFormatOptions)
+    formatTypeWithOptions(minimized, flix.getFormatOptions, amb = amb)
   }
 
   /**
@@ -67,9 +67,9 @@ object FormatType {
   /**
     * Transforms the given well-kinded type into a string, using the given format options.
     */
-  def formatTypeWithOptions(tpe: Type, fmt: FormatOptions): String = {
+  def formatTypeWithOptions(tpe: Type, fmt: FormatOptions, amb : SymbolSet = SymbolSet.empty): String = {
     try {
-      format(DisplayType.fromWellKindedType(tpe))(fmt)
+      format(DisplayType.fromWellKindedType(tpe,amb = amb))(fmt)
     } catch {
       case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
     }
