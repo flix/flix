@@ -1593,12 +1593,8 @@ object Weeder2 {
 
     private def visitExtTag(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.ExtTag)
-      mapN(pickNameIdent(tree), pickExpr(tree)) {
-        case (ident, WeededAst.Expr.Tuple(exps, _)) => Expr.ExtTag(Name.mkLabel(ident), exps, tree.loc)
-        case (_, exp) =>
-          val error = Malformed(NamedTokenSet.ExtTag, SyntacticContext.Expr.OtherExpr, Some("Expected tuple."), loc = exp.loc)
-          sctx.errors.add(error)
-          Expr.Error(error)
+      mapN(pickNameIdent(tree), pickArguments(tree, SyntacticContext.Unknown)) {
+        case (ident, exps) => Expr.ExtTag(Name.mkLabel(ident), exps, tree.loc)
       }
     }
 
