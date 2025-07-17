@@ -2852,6 +2852,7 @@ object Weeder2 {
         case TreeKind.Type.Record => visitRecordType(inner)
         case TreeKind.Type.RecordRow => visitRecordRowType(inner)
         case TreeKind.Type.Schema => visitSchemaType(inner)
+        case TreeKind.Type.ExtensibleSchema => visitExtensibleSchemaType(inner)
         case TreeKind.Type.SchemaRow => visitSchemaRowType(inner)
         case TreeKind.Type.Apply => visitApplyType(inner)
         case TreeKind.Type.Constant => visitConstantType(inner)
@@ -2939,6 +2940,12 @@ object Weeder2 {
 
     private def visitSchemaType(tree: Tree)(implicit sctx: SharedContext): Validation[Type, CompilationMessage] = {
       expect(tree, TreeKind.Type.Schema)
+      val row = visitSchemaRowType(tree)
+      mapN(row)(Type.Schema(_, tree.loc))
+    }
+
+    private def visitExtensibleSchemaType(tree: Tree)(implicit sctx: SharedContext): Validation[Type, CompilationMessage] = {
+      expect(tree, TreeKind.Type.ExtensibleSchema)
       val row = visitSchemaRowType(tree)
       mapN(row)(Type.Schema(_, tree.loc))
     }

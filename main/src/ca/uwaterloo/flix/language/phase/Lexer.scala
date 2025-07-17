@@ -270,6 +270,7 @@ object Lexer {
       case ')' => TokenKind.ParenR
       case '{' => TokenKind.CurlyL
       case '}' => TokenKind.CurlyR
+      case _ if isMatchPrev("|}") => TokenKind.BarCurlyR
       case '[' => TokenKind.BracketL
       case ']' => TokenKind.BracketR
       case ';' => TokenKind.Semi

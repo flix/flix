@@ -3553,16 +3553,31 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       assert(at(TokenKind.HashCurlyL))
       val mark = open()
-      zeroOrMore(
-        namedTokenSet = NamedTokenSet.FromKinds(NAME_PREDICATE),
-        getItem = schemaTerm,
-        checkForItem = NAME_PREDICATE.contains,
-        delimiterL = TokenKind.HashCurlyL,
-        delimiterR = TokenKind.CurlyR,
-        breakWhen = _.isRecoverType,
-        optionallyWith = Some((TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE))),
-      )
-      close(mark, TreeKind.Type.Schema)
+      nth(1) match {
+        case TokenKind.Bar => // Handle extensible variant schema types
+          zeroOrMore(
+            namedTokenSet = NamedTokenSet.FromKinds(NAME_PREDICATE),
+            getItem = schemaTerm,
+            checkForItem = NAME_PREDICATE.contains,
+            delimiterL = TokenKind.HashCurlyL,
+            delimiterR = TokenKind.BarCurlyR,
+            breakWhen = _.isRecoverType,
+            optionallyWith = Some((TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE))),
+          )
+          close(mark, TreeKind.Type.ExtensibleSchema)
+
+        case _ => // Normal schema type
+          zeroOrMore(
+            namedTokenSet = NamedTokenSet.FromKinds(NAME_PREDICATE),
+            getItem = schemaTerm,
+            checkForItem = NAME_PREDICATE.contains,
+            delimiterL = TokenKind.HashCurlyL,
+            delimiterR = TokenKind.CurlyR,
+            breakWhen = _.isRecoverType,
+            optionallyWith = Some((TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE))),
+          )
+          close(mark, TreeKind.Type.Schema)
+      }
     }
 
     private def schemaRowType()(implicit s: State): Mark.Closed = {

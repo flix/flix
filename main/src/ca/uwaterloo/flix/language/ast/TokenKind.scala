@@ -40,6 +40,7 @@ sealed trait TokenKind {
       case TokenKind.Bang => "'!'"
       case TokenKind.BangEqual => "'!='"
       case TokenKind.Bar => "'|'"
+      case TokenKind.BarCurlyR => "'|}'"
       case TokenKind.BracketL => "'['"
       case TokenKind.BracketR => "']'"
       case TokenKind.Caret => "'^'"
@@ -321,6 +322,7 @@ sealed trait TokenKind {
          | TokenKind.Bang
          | TokenKind.BangEqual
          | TokenKind.Bar
+         | TokenKind.BarCurlyR
          | TokenKind.BracketL
          | TokenKind.BracketR
          | TokenKind.BuiltIn
@@ -580,6 +582,7 @@ sealed trait TokenKind {
          | TokenKind.Bang
          | TokenKind.BangEqual
          | TokenKind.Bar
+         | TokenKind.BarCurlyR
          | TokenKind.BracketL
          | TokenKind.BracketR
          | TokenKind.Caret
@@ -858,6 +861,8 @@ object TokenKind {
   case object BangEqual extends TokenKind
 
   case object Bar extends TokenKind
+
+  case object BarCurlyR extends TokenKind
 
   case object BracketL extends TokenKind
 
