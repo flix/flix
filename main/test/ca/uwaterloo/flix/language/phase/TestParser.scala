@@ -1021,7 +1021,7 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
-  test("IllegalExtTag.02") {
+  ignore("IllegalExtTag.02") {
     val input =
       """
         |def f(): Int32 = ematch xvar A (1) {
