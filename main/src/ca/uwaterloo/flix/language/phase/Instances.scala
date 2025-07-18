@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
-import ca.uwaterloo.flix.language.ast.shared.{Instance, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Instance, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugTypedAst
 import ca.uwaterloo.flix.language.errors.InstanceError
@@ -210,11 +210,13 @@ object Instances {
   /**
     * Finds an instance of the trait for a given type.
     */
-  private def findInstanceForType(tpe: Type, trt: Symbol.TraitSym, root: TypedAst.Root, rigidityEnv: RigidityEnv)(implicit flix: Flix): Option[(Instance, Substitution)] = {
+  private def findInstanceForType(tpe: Type, trt: Symbol.TraitSym, root: TypedAst.Root)(implicit flix: Flix): Option[(Instance, Substitution)] = {
     val instOpt = root.traitEnv.getInstance(trt, tpe)
     // lazily find the instance whose type unifies and save the substitution
     instOpt.flatMap {
       superInst =>
+        // Rigidify sub-instance constraint vars in the substitution to ensure that they appear as-written in compiler errors
+        val rigidityEnv = RigidityEnv.ofRigidVars(tpe.typeVars.map(_.sym))
         ConstraintSolver2.fullyUnify(tpe, superInst.tpe, Scope.Top, rigidityEnv)(root.eqEnv, flix).map {
           case subst => (superInst, subst)
         }
@@ -227,16 +229,11 @@ object Instances {
     */
   private def checkSuperInstances(inst: TypedAst.Instance, root: TypedAst.Root, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): Unit = inst match {
     case TypedAst.Instance(_, _, _, trt, tpe, tconstrs, econstrs, _, _, _, _) =>
-      // Rigidify sub-instance constraint vars in the substitution to ensure that they appear as-written in compiler errors
-      val evars = econstrs.flatMap(econstr => econstr.tpe1.typeVars ++ econstr.tpe2.typeVars).map(_.sym)
-      val tvars = tconstrs.flatMap(tconstr => tconstr.arg.typeVars).map(_.sym)
-      val rigidityEnv = RigidityEnv.ofRigidVars(evars ::: tvars)
-
       val superTraits = root.traitEnv.getSuperTraits(trt.sym)
       superTraits.foreach {
         superTrait =>
           // Find the instance of the super trait matching the type of this instance.
-          findInstanceForType(tpe, superTrait, root, rigidityEnv) match {
+          findInstanceForType(tpe, superTrait, root) match {
             case Some((superInst, subst)) =>
               // Case 1: An instance matches. Check that its constraints are entailed by this instance.
               val substTconstrs = tconstrs.map(subst.apply)
