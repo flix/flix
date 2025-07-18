@@ -531,7 +531,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds a jar package for the project.
     */
-  def buildJar()(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+  def buildJar(flix: Flix)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+    // Build the project before building the jar
+    val buildResult = build(flix)
+    buildResult match {
+      case Validation.Failure(error) =>
+        return Validation.Failure(error) // Return the build error directly
+      case _ => // Proceed if the build is successful
+    }
 
     // The path to the jar file.
     val jarFile = Bootstrap.getJarFile(projectPath)
@@ -582,7 +589,15 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Note: As the buildJar does the same, this build doesn't erase previous jar-file if existing.
     * It doesn't do a cleanup and as such remaining previous libraries may remain.
     */
-  def buildFatJar()(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+  def buildFatJar(flix: Flix)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+    // Build the project before building the jar
+    val buildResult = build(flix)
+    buildResult match {
+      case Validation.Failure(error) =>
+        return Validation.Failure(error) // Return the build error directly
+      case _ => // Proceed if the build is successful
+    }
+
     // The path to the jar file.
     val jarFile = Bootstrap.getJarFile(projectPath)
 
