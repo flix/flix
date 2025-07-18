@@ -19,13 +19,18 @@ import java.nio.ByteBuffer
 import java.nio.CharBuffer
 
 ///
-/// An adapter that wraps a byteReader, which is an instance of `Int8` `Readable`, and is itself
-/// an instance of `Char` `Readable`. Uses the `decoder` to convert the read bytes to chars.
+/// Adapts a `Readable` of bytes to a `Readable` of chars.
+///
+/// `byteReader`: the underlying byte reader, an instance of `Readable where Readable.Elm[t] ~ Int8`.
+/// `decoder`: used to decode bytes read from `byteReader`.
+/// `leftovers`: stores bytes that have been consumed from `byteReader` but have not yet been decoded;
+///              either because they are lead bytes whose continuation bytes have not been read, or
+///              because `DecodingReader` overestimated the number of bytes needed to fill a char buffer.
 ///
 struct DecodingReader[t, r] {
     rc: Region[r],
-    decoder: Decoder,
     byteReader: t,
+    decoder: CharsetDecoder,
     mut leftovers: Array[Int8, r]
 }
 
@@ -41,16 +46,18 @@ instance Readable[DecodingReader[t, rr]] with Readable[t] where Readable.Elm[t] 
 
 mod DecodingReader {
     import java.nio.charset.CharsetDecoder
+    import java.nio.charset.CodingErrorAction
     import java.nio.ByteBuffer
     import java.nio.CharBuffer
 
     ///
     /// Wraps `byteReader` in a `DecodingReader`.
     ///
-    pub def wrap(rc: Region[rr], decoder: Decoder, byteReader: t): DecodingReader[t, rr] \ rr =
+    pub def wrap(rc: Region[rr], charset: Charset, byteReader: t): DecodingReader[t, rr] \ rr + IO =
+        let Charset.Charset(cs) = charset;
         new DecodingReader @ rc {
             rc = rc,
-            decoder = decoder,
+            decoder = cs.newDecoder().onMalformedInput(CodingErrorAction.REPLACE),
             byteReader = byteReader,
             leftovers = Array.empty(rc, 0)
         }
@@ -81,9 +88,11 @@ mod DecodingReader {
         ) yield charsRead
 
     ///
-    /// Returns `Ok(k, bytes)` where `bytes` is the leftover bytes from the previous read prepended to `k` bytes read from the underlying reader.
+    /// Returns `Ok(bytes, endOfInput)` where `bytes` are the next bytes to be decoded.
     ///
-    /// The total number of bytes read (number of leftovers + k) is equal to
+    /// `bytes` contains `leftovers` from the last read prepended to new bytes read from the `byteReader` (if necessary).
+    ///
+    /// `length(bytes) == numBytes` if `endOfInput` is false. `length(bytes) <= numBytes` otherwise.
     ///
     def readBytes(numBytes: Int32, reader: DecodingReader[t, r]): Result[IoError, (Array[Int8, r], Bool)] \ r + Readable.Aef[t] with Readable[t] where Readable.Elm[t] ~ Int8 =
         let bytesToRead = numBytes - Array.length(reader->leftovers);
@@ -107,20 +116,8 @@ mod DecodingReader {
     def decode(src: Array[Int8, rb1], dest: Array[Char, rb2], endOfInput: Bool, reader: DecodingReader[t, rr]): Int32 \ IO + rr + rb1 + rb2 with Readable[t] where Readable.Elm[t] ~ Int8 =
         let byteBuffer = ByteBuffer.wrap(src);
         let charBuffer = CharBuffer.wrap(dest);
-        DecodingReader.decodeBuffer(byteBuffer, charBuffer, endOfInput, reader);
+        reader->decoder.decode(byteBuffer, charBuffer, endOfInput);
         reader->leftovers = Array.slice(reader->rc, start = byteBuffer.position(), end = byteBuffer.limit(), byteBuffer.array());
         checked_ecast(charBuffer.position())
-
-    ///
-    /// Decodes as far as possible from the `ByteBuffer`, skipping over any malformed/unmappable bytes and decoding them as '�'.
-    ///
-    def decodeBuffer(byteBuffer: ByteBuffer, charBuffer: CharBuffer, endOfInput: Bool, reader: DecodingReader[t, r]): Unit \ IO with Readable[t] where Readable.Elm[t] ~ Int8 =
-        let Decoder.Decoder(decoder) = reader->decoder;
-        let result = decoder.decode(byteBuffer, charBuffer, endOfInput);
-        if (result.isError()) {
-            charBuffer.put('�');
-            byteBuffer.position(byteBuffer.position() + result.length());
-            decodeBuffer(byteBuffer, charBuffer, endOfInput, reader)
-        } else ()
 
 }

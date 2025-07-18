@@ -368,20 +368,19 @@ instance Readable[TestReader[t, rr]] {
 }
 
 mod TestReader {
+    import java.nio.charset.CodingErrorAction
     import java.nio.charset.StandardCharsets
 
     pub def mkEmptyDecodingReader(rc: Region[r]): DecodingReader[TestReader[Int8, r], r] \ IO + r =
         let bytes: Array[Int8, r] = Array#{} @ rc;
         let byteReader = fromArray(rc, bytes);
-        let utf8 = StandardCharsets.UTF_8;
-        let decoder = Decoder.Decoder(utf8.newDecoder());
-        DecodingReader.wrap(rc, decoder, byteReader)
+        let utf8 = Charset.Charset(StandardCharsets.UTF_8);
+        DecodingReader.wrap(rc, utf8, byteReader)
 
     pub def mkDecodingReader(rc: Region[r], bytes: Array[Int8, r]): DecodingReader[TestReader[Int8, r], r] \ IO + r =
         let byteReader = fromArray(rc, bytes);
-        let utf8 = StandardCharsets.UTF_8;
-        let decoder = Decoder.Decoder(utf8.newDecoder());
-        DecodingReader.wrap(rc, decoder, byteReader)
+        let utf8 = Charset.Charset(StandardCharsets.UTF_8);
+        DecodingReader.wrap(rc, utf8, byteReader)
 
     pub def fromArray(rc: Region[r], stream: Array[t, r]): TestReader[t, r] \ r =
         new TestReader @ rc {

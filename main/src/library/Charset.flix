@@ -14,6 +14,6 @@
  *  limitations under the License.
  */
 
-import java.nio.charset.CharsetDecoder
+import java.nio.charset.Charset
 
-enum Decoder(CharsetDecoder)
+pub enum Charset(Charset)
