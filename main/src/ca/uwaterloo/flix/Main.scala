@@ -187,7 +187,7 @@ object Main {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(loadClassFiles = false))
-              bootstrap.buildJar(flix, includeDependencies = true)
+              bootstrap.buildFatJar(flix)
           }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)

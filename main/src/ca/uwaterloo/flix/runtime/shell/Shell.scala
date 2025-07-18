@@ -168,7 +168,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       case Command.Init => execBootstrap(Bootstrap.init(bootstrap.projectPath))
       case Command.Build => execBootstrap(bootstrap.build(flix))
       case Command.BuildJar => execBootstrap(bootstrap.buildJar(flix))
-      case Command.BuildFatJar => execBootstrap(bootstrap.buildJar(flix, includeDependencies = true))
+      case Command.BuildFatJar => execBootstrap(bootstrap.buildFatJar(flix))
       case Command.BuildPkg => execBootstrap(bootstrap.buildPkg())
       case Command.Release => execBootstrap(bootstrap.release(flix))
       case Command.Check => execBootstrap(bootstrap.check(flix))
