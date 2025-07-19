@@ -2947,7 +2947,7 @@ object Weeder2 {
     private def visitExtensibleType(tree: Tree)(implicit sctx: SharedContext): Validation[Type, CompilationMessage] = {
       expect(tree, TreeKind.Type.Extensible)
       val row = visitSchemaRowType(tree)
-      mapN(row)(Type.Schema(_, tree.loc))
+      mapN(row)(Type.Extensible(_, tree.loc))
     }
 
     private def visitSchemaRowType(parentTree: Tree)(implicit sctx: SharedContext): Validation[Type, CompilationMessage] = {
