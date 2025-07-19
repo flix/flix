@@ -304,11 +304,11 @@ object FormatType {
       case DisplayType.SchemaConstructor(arg) => s"#{ ${visit(arg, Mode.Type)} }"
       case DisplayType.ExtSchema(fields) =>
         val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
-        s"#|{ $fieldString }|"
+        s"#|| $fieldString ||"
       case DisplayType.ExtSchemaExtend(fields, rest) =>
         val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
         val restString = visit(rest, Mode.Type)
-        s"#|{ $fieldString | $restString }|"
+        s"#|| $fieldString | $restString ||"
       case DisplayType.ExtSchemaRow(fields) =>
         val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
         s"#|( $fieldString )|"
@@ -316,7 +316,7 @@ object FormatType {
         val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
         val restString = visit(rest, Mode.Type)
         s"#|( $fieldString | $restString )|"
-      case DisplayType.ExtSchemaConstructor(arg) => s"#|{ ${visit(arg, Mode.Type)} }|"
+      case DisplayType.ExtSchemaConstructor(arg) => s"#|| ${visit(arg, Mode.Type)} ||"
       case DisplayType.Not(tpe) => s"not ${delimit(tpe, mode)}"
       case DisplayType.And(tpes) =>
         val strings = tpes.map(delimit(_, mode))
