@@ -269,7 +269,6 @@ object Lexer {
       case '(' => TokenKind.ParenL
       case ')' => TokenKind.ParenR
       case '{' => TokenKind.CurlyL
-      case _ if isMatchPrev("}|") => TokenKind.CurlyRBar
       case '}' => TokenKind.CurlyR
       case '[' => TokenKind.BracketL
       case ']' => TokenKind.BracketR
@@ -301,6 +300,7 @@ object Lexer {
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
       case _ if isMatchPrev("#|{") => TokenKind.HashBarCurlyL
+      case _ if isMatchPrev("}|") => TokenKind.CurlyRBar
       case _ if isMatchPrev("#{") => TokenKind.HashCurlyL
       case _ if isMatchPrev("#(") => TokenKind.HashParenL
       case '#' => TokenKind.Hash
