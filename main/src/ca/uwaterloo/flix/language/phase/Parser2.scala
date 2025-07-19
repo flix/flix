@@ -3571,8 +3571,8 @@ object Parser2 {
             namedTokenSet = NamedTokenSet.FromKinds(NAME_PREDICATE),
             getItem = schemaTerm,
             checkForItem = NAME_PREDICATE.contains,
-            delimiterL = TokenKind.HashCurlyL,
-            delimiterR = TokenKind.CurlyR,
+            delimiterL = TokenKind.HashBarCurlyL,
+            delimiterR = TokenKind.CurlyRBar,
             breakWhen = _.isRecoverType,
             optionallyWith = Some((TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE))),
           )
