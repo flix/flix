@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ParYieldFragment, Pattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtMatchRule, ParYieldFragment, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -189,10 +189,10 @@ object PatMatch {
         visitExp(exp)
         rules.foreach(r => visitExp(r.exp))
 
-      case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
-        visitExp(exp1)
-        visitExp(exp2)
-        visitExp(exp3)
+      case Expr.ExtMatch(exp, rules, _, _, _) =>
+        // Exhaustiveness does not make sense for extensible variants.
+        visitExp(exp)
+        rules.foreach(r => visitExp(r.exp))
 
       case Expr.Tag(_, exps, _, _, _) => exps.foreach(visitExp)
 

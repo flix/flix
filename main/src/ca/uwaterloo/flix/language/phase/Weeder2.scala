@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.WeederError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.Validation.*
-import ca.uwaterloo.flix.util.collection.{ArrayOps, Chain, Nel}
+import ca.uwaterloo.flix.util.collection.{ArrayOps, Chain, Nel, SeqOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 import java.lang.{Byte as JByte, Integer as JInt, Long as JLong, Short as JShort}
@@ -489,7 +489,7 @@ object Weeder2 {
       ) {
         (doc, ident, tparams, fields) =>
           // Ensure that each name is unique
-          val errors = getDuplicates(fields, (f: StructField) => f.name.name).map {
+          val errors = SeqOps.getDuplicates(fields, (f: StructField) => f.name.name).map {
             case (field1, field2) => DuplicateStructField(ident.name, field1.name.name, field1.name.loc, field2.name.loc, ident.loc)
           }
           errors.foreach(sctx.errors.add)
@@ -640,7 +640,7 @@ object Weeder2 {
           tree => {
             val tokens = pickAllTokens(tree)
             // Check for duplicate annotations
-            val errors = getDuplicates(tokens.toSeq, (t: Token) => t.text).map(pair => {
+            val errors = SeqOps.getDuplicates(tokens.toSeq, (t: Token) => t.text).map(pair => {
               val name = pair._1.text
               val loc1 = pair._1.mkSourceLocation()
               val loc2 = pair._2.mkSourceLocation()
@@ -743,7 +743,7 @@ object Weeder2 {
             }
           }
           // Check for duplicate modifiers
-          errors = errors ++ getDuplicates(tokens.toSeq, (t: Token) => t.kind).map(pair => {
+          errors = errors ++ SeqOps.getDuplicates(tokens.toSeq, (t: Token) => t.kind).map(pair => {
             val name = pair._1.text
             val loc1 = pair._1.mkSourceLocation()
             val loc2 = pair._2.mkSourceLocation()
@@ -790,7 +790,7 @@ object Weeder2 {
               params =>
                 // Check for duplicates
                 val paramsWithoutWildcards = params.filter(!_.ident.isWild)
-                val errors = getDuplicates(paramsWithoutWildcards, (p: FormalParam) => p.ident.name)
+                val errors = SeqOps.getDuplicates(paramsWithoutWildcards, (p: FormalParam) => p.ident.name)
                   .map(pair => DuplicateFormalParam(pair._1.ident.name, pair._1.loc, pair._2.loc))
                 errors.foreach(sctx.errors.add)
 
@@ -1572,39 +1572,29 @@ object Weeder2 {
           // Parser has reported an error here so do not add to sctx.
           Validation.Failure(error)
 
-        case (expr, rules) if rules.length == 2 => // Check for exactly 2 to prevent crash when desugaring in Kinder
-          Validation.Success(Expr.ExtMatch(expr, rules, tree.loc))
-
-        case (expr, _) =>
-          val error = Malformed(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
-          sctx.errors.add(error)
-          Validation.Failure(error)
+        case (expr, rules) =>
+          Validation.Success(Expr.ExtMatch(expr, rules.flatten, tree.loc))
       }
     }
 
-    private def visitExtMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[ExtMatchRule, CompilationMessage] = {
+    private def visitExtMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[Option[ExtMatchRule], CompilationMessage] = {
       expect(tree, TreeKind.Expr.ExtMatchRuleFragment)
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
       flatMapN(Patterns.pickExtPattern(tree), traverse(exprs)(visitExpr)) {
-        case ((label, List(ExtPattern.Var(ident, loc))), expr :: Nil) =>
-          // case Tag(ident) => expr
-          Validation.Success(ExtMatchRule(label, List(ExtPattern.Var(ident, loc)), expr, tree.loc))
+        case ((label, pats), expr :: Nil) =>
+          // case Tag(exp1, exp2, ..., expn)
+          Validation.Success(Some(ExtMatchRule(label, pats, expr, tree.loc)))
 
-        case ((label, List(ExtPattern.Wild(loc))), expr :: Nil) =>
-          // case Tag(_) => expr
-          Validation.Success(ExtMatchRule(label, List(ExtPattern.Wild(loc)), expr, tree.loc))
-
-        case ((_, _), _) =>
-          val error = Malformed(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
-          sctx.errors.add(error)
-          Validation.Failure(error) // Hard failure to prevent crash when desugaring in Kinder
+        case (_, _) =>
+          // Fall back on None. Parser has reported an error here.
+          Validation.Success(None)
       }
     }
 
     private def visitExtTag(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.ExtTag)
-      mapN(pickNameIdent(tree), pickExpr(tree)) {
-        (ident, e) => Expr.ExtTag(Name.mkLabel(ident), List(e), tree.loc)
+      mapN(pickNameIdent(tree), pickArguments(tree, SyntacticContext.Unknown)) {
+        case (ident, exps) => Expr.ExtTag(Name.mkLabel(ident), exps, tree.loc)
       }
     }
 
@@ -2110,7 +2100,7 @@ object Weeder2 {
 
     private def visitFixpointSolveExpr(tree: Tree, isPSolve: Boolean)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       val expectedTree = if (isPSolve) TreeKind.Expr.FixpointSolveWithProvenance else TreeKind.Expr.FixpointSolveWithProject
-      val solveMode = if(isPSolve) SolveMode.WithProvenance else SolveMode.Default
+      val solveMode = if (isPSolve) SolveMode.WithProvenance else SolveMode.Default
       expect(tree, expectedTree)
       val expressions = pickAll(TreeKind.Expr.Expr, tree)
       val idents = pickAll(TreeKind.Ident, tree).map(tokenToIdent)
@@ -2331,7 +2321,7 @@ object Weeder2 {
       }
     }
 
-    def visitExtPattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit sctx: SharedContext): Validation[(Name.Label, List[ExtPattern]), CompilationMessage] = {
+    private def visitExtPattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit sctx: SharedContext): Validation[(Name.Label, List[ExtPattern]), CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Pattern)
       val extTagPattern = tryPick(TreeKind.Pattern.ExtTag, tree)
       extTagPattern match {
@@ -3442,22 +3432,6 @@ object Weeder2 {
       case tree: Tree if tree.kind == kind => acc.appended(tree)
       case _ => acc
     })
-  }
-
-  /**
-    * Gets duplicate pairs from a list of items.
-    * This is used to generate a list of pairs that can be mapped into Duplicate* errors.
-    * What constitutes a "duplicate" is abstracted into the groupBy argument.
-    * For instance, in the case of annotations, if the [[TokenKind]] of two annotations are equal then they form a duplicate pair.
-    * But for enum variants, two variants are duplicates if they share names.
-    */
-  private def getDuplicates[A, K](items: Seq[A], groupBy: A => K): List[(A, A)] = {
-    val groups = items.groupBy(groupBy)
-    for {
-      (_, group) <- groups.toList
-      // if a group has a nonempty tail, then everything in the tail is a duplicate of the head
-      duplicate <- group.tail
-    } yield (group.head, duplicate)
   }
 
   /**

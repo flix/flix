@@ -23,5 +23,6 @@ class UtilSuite extends Suites(
   new TestListMap,
   new TestNel,
   new TestResult,
+  new TestSeqOps,
   new TestValidation,
 )

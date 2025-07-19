@@ -179,10 +179,12 @@ object LambdaDrop {
           visitExp(exp2)
       }
 
-    case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
-      visitExp(exp1)
-      visitExp(exp2)
-      visitExp(exp3)
+    case Expr.ExtMatch(exp, rules, _, _, _) =>
+      visitExp(exp)
+      rules.foreach {
+        case MonoAst.ExtMatchRule(_, _, exp1, _) =>
+          visitExp(exp1)
+      }
 
     case Expr.VectorLit(exps, _, _, _) =>
       exps.foreach(visitExp)
@@ -307,11 +309,14 @@ object LambdaDrop {
       }
       Expr.Match(e1, rs, tpe, eff, loc)
 
-    case Expr.ExtensibleMatch(label, exp1, sym1, exp2, sym2, exp3, tpe, eff, loc) =>
-      val e1 = rewriteExp(exp1)
-      val e2 = rewriteExp(exp2)
-      val e3 = rewriteExp(exp3)
-      Expr.ExtensibleMatch(label, e1, sym1, e2, sym2, e3, tpe, eff, loc)
+    case Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+      val e = rewriteExp(exp)
+      val rs = rules.map {
+        case MonoAst.ExtMatchRule(label, pats, exp1, loc1) =>
+          val e1 = rewriteExp(exp1)
+          MonoAst.ExtMatchRule(label, pats, e1, loc1)
+      }
+      Expr.ExtMatch(e, rs, tpe, eff, loc)
 
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(rewriteExp)

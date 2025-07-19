@@ -7,6 +7,48 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestRedundancy extends AnyFunSuite with TestUtils {
 
+  test("DuplicateExtPattern.01") {
+    val input =
+      s"""
+         |def f(): Int32 =
+         |    ematch xvar A(123) {
+         |        case A(x) => x
+         |        case A(x) => x
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.DuplicateExtPattern](result)
+  }
+
+  test("DuplicateExtPattern.02") {
+    val input =
+      s"""
+         |def f(): Int32 =
+         |    ematch xvar A(123) {
+         |        case A(x) => x
+         |        case A(_) => x
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.DuplicateExtPattern](result)
+  }
+
+  test("DuplicateExtPattern.03") {
+    val input =
+      s"""
+         |def f(): Int32 =
+         |    ematch xvar A(123, 456) {
+         |        case A(x, _) => x
+         |        case A(_, x) => x
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.DuplicateExtPattern](result)
+  }
+
   test("HiddenVarSym.Let.01") {
     val input =
       s"""
@@ -37,6 +79,19 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
          |def f(): (Int32, Int32) =
          |    match (123, 456) {
          |        case (_x, _y) => (_x, _y)
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.HiddenVarSym](result)
+  }
+
+  test("HiddenVarSym.ExtMatch.01") {
+    val input =
+      s"""
+         |def f(): Int32 =
+         |    ematch xvar A(123) {
+         |        case A(_x) => _x
          |    }
          |
        """.stripMargin
@@ -243,6 +298,68 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |    match (456, 789) {
         |        case (u, v) => (u, v)
         |        case (y, x) => (x, y)
+        |    }
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
+  }
+
+  test("ShadowedName.ExtMatch.01") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    let x = 123;
+        |    ematch xvar A(456, 789) {
+        |        case A(x, _) => x
+        |    }
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
+  }
+
+  test("ShadowedName.ExtMatch.02") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    let x = 123;
+        |    ematch xvar A(456, 789) {
+        |        case A(_, x) => x
+        |    }
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
+  }
+
+  test("ShadowedName.ExtMatch.03") {
+    val input =
+      """
+        |def f(): (Int32, Int32) =
+        |    let x = 123;
+        |    ematch xvar A(456, 789) {
+        |        case A(u, v) => (u, v)
+        |        case B(x, y) => (x, y)
+        |    }
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
+  }
+
+  test("ShadowedName.ExtMatch.04") {
+    val input =
+      """
+        |def f(): (Int32, Int32) =
+        |    let x = 123;
+        |    ematch xvar A(456, 789) {
+        |        case B(u, v) => (u, v)
+        |        case A(y, x) => (x, y)
         |    }
         |
       """.stripMargin
@@ -1428,6 +1545,46 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
          |pub def f(): Int32 =
          |    match { x = 1 } {
          |        case { x = y } => 42
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("UnusedVarSym.ExtPattern.01") {
+    val input =
+      s"""
+         |pub def f(): Int32 =
+         |    ematch xvar A(1) {
+         |        case A(x) => 42
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("UnusedVarSym.ExtPattern.02") {
+    val input =
+      s"""
+         |pub def f(): Int32 =
+         |    ematch xvar AB(1, 2, 3) {
+         |        case AB(x, y, z) => 42
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("UnusedVarSym.ExtPattern.03") {
+    val input =
+      s"""
+         |pub def f(): Int32 =
+         |    ematch xvar AB(1, 2, 3) {
+         |        case A(x) => 42
+         |        case AB(x, y, z) => 42
          |    }
          |
        """.stripMargin
