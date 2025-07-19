@@ -1876,25 +1876,17 @@ object Parser2 {
       )
       close(mark, TreeKind.Expr.ExtMatch)
     }
-
     private def extTagExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordXvar))
       expect(TokenKind.KeywordXvar)
       val lhs = nameUnqualified(NAME_TAG)
+      val mark = openBefore(lhs)
       nth(0) match {
-        case TokenKind.ParenL =>
-          val mark = openBefore(lhs)
-          arguments()
-          close(mark, TreeKind.Expr.ExtTag)
-        case _ =>
-          closeWithError(open(), UnexpectedToken(
-            expected = NamedTokenSet.ExtTag,
-            actual = Some(nth(0)),
-            sctx = sctx,
-            hint = Some(s"provide arguments to the ext tag."),
-            loc = previousSourceLocation()))
+        case TokenKind.ParenL => arguments()
+        case _ => ()
       }
+      close(mark, TreeKind.Expr.ExtTag)
     }
 
     private def unaryLambdaExpr()(implicit s: State): Mark.Closed = {
