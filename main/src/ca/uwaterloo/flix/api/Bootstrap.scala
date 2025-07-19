@@ -55,7 +55,7 @@ object Bootstrap {
     //
     // Compute the name of the package based on the directory name.
     //
-    val packageName = getPackageName(p)
+    val packageName = getDefaultPackageName(p)
 
     //
     // Compute all the directories and files we intend to create.
@@ -193,17 +193,17 @@ object Bootstrap {
   /**
     * Returns the path to the jar file based on the given path `p`.
     */
-  private def getJarFile(p: Path): Path = getArtifactDirectory(p).resolve(getPackageName(p) + ".jar").normalize()
+  private def getJarFile(p: Path): Path = getArtifactDirectory(p).resolve(getDefaultPackageName(p) + ".jar").normalize()
 
   /**
     * Returns the package name based on the given path `p`.
     */
-  private def getPackageName(p: Path): String = p.toAbsolutePath.normalize().getFileName.toString
+  private def getDefaultPackageName(p: Path): String = p.toAbsolutePath.normalize().getFileName.toString
 
   /**
-    * Returns the path to the pkg file based on the given path `p`.
-    */
-  private def getPkgFile(p: Path): Path = getArtifactDirectory(p).resolve(getPackageName(p) + ".fpkg").normalize()
+   * Returns the path to the pkg file based on the given path `p` and the manifest name.
+   */
+  private def getPkgFile(p: Path, manifest: Manifest ): Path = getArtifactDirectory(p).resolve(manifest.name + ".fpkg").normalize()
 
   /**
     * Returns `true` if the given path `p` is a jar-file.
@@ -658,17 +658,16 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Builds a flix package for the project.
     */
   def buildPkg()(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
-
-    // Check that there is a `flix.toml` file.
-    if (!Files.exists(getManifestFile(projectPath))) {
-      return Validation.Failure(BootstrapError.FileError(s"Cannot create a Flix package without a `${formatter.red("flix.toml")}` file."))
+    // Ensure that a manifest exists
+    val manifest = optManifest match {
+      case Some(m) => m
+      case None => return Validation.Failure(BootstrapError.FileError(s"Cannot create a Flix package without a `${formatter.red("flix.toml")}` file."))
     }
 
     // Create the artifact directory, if it does not exist.
     Files.createDirectories(getArtifactDirectory(projectPath))
 
-    // The path to the fpkg file.
-    val pkgFile = Bootstrap.getPkgFile(projectPath)
+    val pkgFile = Bootstrap.getPkgFile(projectPath, manifest)
 
     // Check whether it is safe to write to the file.
     if (Files.exists(pkgFile) && !Bootstrap.isPkgFile(pkgFile)) {
@@ -789,7 +788,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Publish to GitHub
     out.println("Publishing a new release...")
-    val artifacts = List(getPkgFile(projectPath), getManifestFile(projectPath))
+    val artifacts = List(getPkgFile(projectPath, manifest), getManifestFile(projectPath))
     val publishResult = GitHub.publishRelease(githubRepo, manifest.version, artifacts, githubToken)
     publishResult match {
       case Ok(()) => // Continue
