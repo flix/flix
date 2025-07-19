@@ -269,8 +269,8 @@ object Lexer {
       case '(' => TokenKind.ParenL
       case ')' => TokenKind.ParenR
       case '{' => TokenKind.CurlyL
+      case _ if isMatchPrev("}|") => TokenKind.CurlyRBar
       case '}' => TokenKind.CurlyR
-      case _ if isMatchPrev("|}") => TokenKind.BarCurlyR
       case '[' => TokenKind.BracketL
       case ']' => TokenKind.BracketR
       case ';' => TokenKind.Semi
@@ -300,6 +300,7 @@ object Lexer {
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
+      case _ if isMatchPrev("#|{") => TokenKind.HashBarCurlyL
       case _ if isMatchPrev("#{") => TokenKind.HashCurlyL
       case _ if isMatchPrev("#(") => TokenKind.HashParenL
       case '#' => TokenKind.Hash
@@ -952,11 +953,13 @@ object Lexer {
     } else if (c == 'i') {
       // Construct the location now, for cases like `0xi322`.
       val loc = sourceLocationAtCurrent()
+
       def acceptOrSuffixError(token: TokenKind): TokenKind = {
         if (isNumberLike(s.sc.peek)) {
           wrapAndConsume(LexerError.IncorrectHexNumberSuffix(loc))
         } else token
       }
+
       if (s.sc.advanceIfMatch("i8")) acceptOrSuffixError(TokenKind.LiteralInt8)
       else if (s.sc.advanceIfMatch("i16")) acceptOrSuffixError(TokenKind.LiteralInt16)
       else if (s.sc.advanceIfMatch("i32")) acceptOrSuffixError(TokenKind.LiteralInt32)

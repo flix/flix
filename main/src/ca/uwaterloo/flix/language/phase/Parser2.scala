@@ -3559,12 +3559,12 @@ object Parser2 {
             namedTokenSet = NamedTokenSet.FromKinds(NAME_PREDICATE),
             getItem = schemaTerm,
             checkForItem = NAME_PREDICATE.contains,
-            delimiterL = TokenKind.HashCurlyL,
-            delimiterR = TokenKind.BarCurlyR,
+            delimiterL = TokenKind.HashBarCurlyL,
+            delimiterR = TokenKind.CurlyRBar,
             breakWhen = _.isRecoverType,
             optionallyWith = Some((TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE))),
           )
-          close(mark, TreeKind.Type.ExtensibleSchema)
+          close(mark, TreeKind.Type.Extensible)
 
         case _ => // Normal schema type
           zeroOrMore(
