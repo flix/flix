@@ -338,14 +338,4 @@ mod Test.Exp.ExtMatch {
             case ABC(x, _, _, y) => x and y
         }
     }
-
-    // TODO: Move to Test.Exp.ExtTag when type parsing is done
-    // @Test
-    // def testExtTagUnary01(): Bool = {
-    //     ematch xvar A {
-    //         case C() => false
-    //         case B   => false
-    //         case A   => true
-    //     }
-    // }
 }
