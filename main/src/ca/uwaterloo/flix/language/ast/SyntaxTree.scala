@@ -438,6 +438,8 @@ object SyntaxTree {
 
       case object Schema extends Type
 
+      case object Extensible extends Type
+
       case object SchemaRow extends Type
 
       case object Tuple extends Type

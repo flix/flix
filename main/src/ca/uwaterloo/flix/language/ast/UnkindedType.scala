@@ -433,6 +433,12 @@ object UnkindedType {
     Apply(UnkindedType.Cst(TypeConstructor.Schema, loc), tpe, loc)
   }
 
+  /**
+    * Constructs an extensible schema type.
+    */
+  def mkExtensible(tpe: UnkindedType, loc: SourceLocation): UnkindedType = {
+    Apply(UnkindedType.Cst(TypeConstructor.Extensible, loc), tpe, loc)
+  }
 
   /**
     * Construct a relation type with the given list of type arguments `ts0`.

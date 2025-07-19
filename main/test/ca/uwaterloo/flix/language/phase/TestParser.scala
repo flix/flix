@@ -833,6 +833,15 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectSuccess(result)
   }
 
+  test("ExtensibleType.01") {
+    val input =
+      """
+        |pub def foo(): #| A(Int32) |# = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
   test("ParseError.Interpolation.01") {
     val input = s"""pub def foo(): String = "$${1 + }""""
     val result = compile(input, Options.TestWithLibNix)

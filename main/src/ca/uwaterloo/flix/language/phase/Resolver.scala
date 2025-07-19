@@ -2567,6 +2567,12 @@ object Resolver {
           r => UnkindedType.mkSchema(r, loc)
         }
 
+      case NamedAst.Type.Extensible(row, loc) =>
+        val rVal = visit(row)
+        mapN(rVal) {
+          r => UnkindedType.mkExtensible(r, loc)
+        }
+
       case NamedAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
         val tparamsVal = traverse(tparams0)(visit)
         val tresultVal = visit(tresult0)

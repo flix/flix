@@ -297,6 +297,10 @@ object Desugar {
       val r = visitType(row)
       DesugaredAst.Type.Schema(r, loc)
 
+    case WeededAst.Type.Extensible(row, loc) =>
+      val r = visitType(row)
+      DesugaredAst.Type.Extensible(r, loc)
+
     case WeededAst.Type.Arrow(tparams, eff, tresult, loc) =>
       val tparams1 = tparams.map(visitType)
       val eff1 = eff.map(visitType)
