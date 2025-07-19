@@ -3413,7 +3413,7 @@ object Parser2 {
              | TokenKind.KeywordTrue => constantType()
         case TokenKind.ParenL => tupleOrRecordRowType()
         case TokenKind.CurlyL => recordOrEffectSetType()
-        case TokenKind.HashBarCurlyL => extensibleType()
+        case TokenKind.DoubleBar => extensibleType()
         case TokenKind.HashCurlyL => schemaType()
         case TokenKind.HashParenL => schemaRowType()
         case TokenKind.AngleL => caseSetType()
@@ -3552,14 +3552,14 @@ object Parser2 {
 
     private def extensibleType()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Unknown
-      assert(at(TokenKind.HashBarCurlyL))
+      assert(at(TokenKind.DoubleBar))
       val mark = open()
       zeroOrMore(
         namedTokenSet = NamedTokenSet.FromKinds(NAME_PREDICATE),
         getItem = schemaTerm,
         checkForItem = NAME_PREDICATE.contains,
-        delimiterL = TokenKind.HashBarCurlyL,
-        delimiterR = TokenKind.CurlyRBar,
+        delimiterL = TokenKind.DoubleBar,
+        delimiterR = TokenKind.DoubleBar,
         breakWhen = _.isRecoverType,
         optionallyWith = Some((TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE))),
       )

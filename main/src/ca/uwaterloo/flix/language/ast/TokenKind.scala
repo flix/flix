@@ -50,16 +50,15 @@ sealed trait TokenKind {
       case TokenKind.Comma => "','"
       case TokenKind.CurlyL => "'{'"
       case TokenKind.CurlyR => "'}'"
-      case TokenKind.CurlyRBar => "'}|'"
       case TokenKind.Dollar => "'$'"
       case TokenKind.Dot => "'.'"
       case TokenKind.DotDotDot => "'...'"
       case TokenKind.DotWhiteSpace => "'. '"
       case TokenKind.DotCurlyL => "'.{'"
+      case TokenKind.DoubleBar => "'||'"
       case TokenKind.Equal => "'='"
       case TokenKind.EqualEqual => "'=='"
       case TokenKind.Hash => "'#'"
-      case TokenKind.HashBarCurlyL => "'#|{'"
       case TokenKind.HashCurlyL => "'#{'"
       case TokenKind.HashParenL => "'#('"
       case TokenKind.HoleAnonymous => "'???'"
@@ -337,10 +336,10 @@ sealed trait TokenKind {
          | TokenKind.CommentLine
          | TokenKind.CurlyL
          | TokenKind.CurlyR
-         | TokenKind.CurlyRBar
          | TokenKind.Dollar
          | TokenKind.Dot
          | TokenKind.DotCurlyL
+         | TokenKind.DoubleBar
          | TokenKind.DotDotDot
          | TokenKind.DotWhiteSpace
          | TokenKind.Eof
@@ -348,7 +347,6 @@ sealed trait TokenKind {
          | TokenKind.EqualEqual
          | TokenKind.Err(_)
          | TokenKind.Hash
-         | TokenKind.HashBarCurlyL
          | TokenKind.HashCurlyL
          | TokenKind.HashParenL
          | TokenKind.HoleAnonymous
@@ -491,7 +489,7 @@ sealed trait TokenKind {
          | TokenKind.BuiltIn
          | TokenKind.CurlyL
          | TokenKind.DotDotDot
-         | TokenKind.HashBarCurlyL
+         | TokenKind.DoubleBar
          | TokenKind.HashCurlyL
          | TokenKind.HashParenL
          | TokenKind.HoleAnonymous
@@ -597,7 +595,6 @@ sealed trait TokenKind {
          | TokenKind.CommentDoc
          | TokenKind.CommentLine
          | TokenKind.CurlyR
-         | TokenKind.CurlyRBar
          | TokenKind.Dollar
          | TokenKind.Dot
          | TokenKind.DotCurlyL
@@ -893,8 +890,6 @@ object TokenKind {
 
   case object CurlyR extends TokenKind
 
-  case object CurlyRBar extends TokenKind
-
   case object Dollar extends TokenKind
 
   case object Dot extends TokenKind
@@ -905,13 +900,13 @@ object TokenKind {
 
   case object DotCurlyL extends TokenKind
 
+  case object DoubleBar extends TokenKind
+
   case object Equal extends TokenKind
 
   case object EqualEqual extends TokenKind
 
   case object Hash extends TokenKind
-
-  case object HashBarCurlyL extends TokenKind
 
   case object HashCurlyL extends TokenKind
 
