@@ -3413,6 +3413,7 @@ object Parser2 {
              | TokenKind.KeywordTrue => constantType()
         case TokenKind.ParenL => tupleOrRecordRowType()
         case TokenKind.CurlyL => recordOrEffectSetType()
+        case TokenKind.HashBarCurlyL => extensibleType()
         case TokenKind.HashCurlyL => schemaType()
         case TokenKind.HashParenL => schemaRowType()
         case TokenKind.AngleL => caseSetType()
@@ -3549,35 +3550,36 @@ object Parser2 {
       close(mark, TreeKind.Type.EffectSet)
     }
 
+    private def extensibleType()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
+      assert(at(TokenKind.HashBarCurlyL))
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.FromKinds(NAME_PREDICATE),
+        getItem = schemaTerm,
+        checkForItem = NAME_PREDICATE.contains,
+        delimiterL = TokenKind.HashBarCurlyL,
+        delimiterR = TokenKind.CurlyRBar,
+        breakWhen = _.isRecoverType,
+        optionallyWith = Some((TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE))),
+      )
+      close(mark, TreeKind.Type.Extensible)
+    }
+
     private def schemaType()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       assert(at(TokenKind.HashCurlyL))
       val mark = open()
-      nth(1) match {
-        case TokenKind.Bar => // Handle extensible variant schema types
-          zeroOrMore(
-            namedTokenSet = NamedTokenSet.FromKinds(NAME_PREDICATE),
-            getItem = schemaTerm,
-            checkForItem = NAME_PREDICATE.contains,
-            delimiterL = TokenKind.HashBarCurlyL,
-            delimiterR = TokenKind.CurlyRBar,
-            breakWhen = _.isRecoverType,
-            optionallyWith = Some((TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE))),
-          )
-          close(mark, TreeKind.Type.Extensible)
-
-        case _ => // Normal schema type
-          zeroOrMore(
-            namedTokenSet = NamedTokenSet.FromKinds(NAME_PREDICATE),
-            getItem = schemaTerm,
-            checkForItem = NAME_PREDICATE.contains,
-            delimiterL = TokenKind.HashBarCurlyL,
-            delimiterR = TokenKind.CurlyRBar,
-            breakWhen = _.isRecoverType,
-            optionallyWith = Some((TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE))),
-          )
-          close(mark, TreeKind.Type.Schema)
-      }
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.FromKinds(NAME_PREDICATE),
+        getItem = schemaTerm,
+        checkForItem = NAME_PREDICATE.contains,
+        delimiterL = TokenKind.HashCurlyL,
+        delimiterR = TokenKind.CurlyR,
+        breakWhen = _.isRecoverType,
+        optionallyWith = Some((TokenKind.Bar, () => nameUnqualified(NAME_VARIABLE))),
+      )
+      close(mark, TreeKind.Type.Schema)
     }
 
     private def schemaRowType()(implicit s: State): Mark.Closed = {
