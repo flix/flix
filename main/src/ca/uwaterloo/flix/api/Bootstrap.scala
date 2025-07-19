@@ -55,7 +55,7 @@ object Bootstrap {
     //
     // Compute the name of the package based on the directory name.
     //
-    val packageName = getPackageName(p)
+    val packageName = getDefaultPackageName(p)
 
     //
     // Compute all the directories and files we intend to create.
@@ -193,12 +193,12 @@ object Bootstrap {
   /**
     * Returns the path to the jar file based on the given path `p`.
     */
-  private def getJarFile(p: Path): Path = getArtifactDirectory(p).resolve(getPackageName(p) + ".jar").normalize()
+  private def getJarFile(p: Path): Path = getArtifactDirectory(p).resolve(getDefaultPackageName(p) + ".jar").normalize()
 
   /**
     * Returns the package name based on the given path `p`.
     */
-  private def getPackageName(p: Path): String = p.toAbsolutePath.normalize().getFileName.toString
+  private def getDefaultPackageName(p: Path): String = p.toAbsolutePath.normalize().getFileName.toString
 
   /**
    * Returns the path to the pkg file based on the given path `p` and the manifest name.
