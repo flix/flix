@@ -930,6 +930,15 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectTypeParams](result)
   }
 
+  test("IllegalExtMatchRule.01") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A(1) { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
   test("IllegalExtPattern.01") {
     val input =
       """
