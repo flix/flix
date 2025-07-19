@@ -654,39 +654,39 @@ mod Test.Exp.Binary.Arithmetic {
     def testBinaryExponentiate20(): Bool = Int64.pow(-2i64, 63i64) == -9223372036854775808i64
 
     @test
-    def testBinaryExponentiate21(): Bool = Float64.pow(2.0, 0.0) == 1.0
+    def testBinaryExponentiate21(): Bool = Float64.pow(base = 2.0, n = 0.0) == 1.0
 
     @test
-    def testBinaryExponentiate22(): Bool = Float64.pow(-2.0, -1.0) == -0.5
+    def testBinaryExponentiate22(): Bool = Float64.pow(base = -2.0, n = -1.0) == -0.5
 
     @test
-    def testBinaryExponentiate23(): Bool = Float64.pow(0.01, 0.5) == 0.1
+    def testBinaryExponentiate23(): Bool = Float64.pow(base = 0.01, n = 0.5) == 0.1
 
     @test
-    def testBinaryExponentiate24(): Bool = Float64.pow(-2.0, 100.0) == 1267650600228229400000000000000.0
+    def testBinaryExponentiate24(): Bool = Float64.pow(base = -2.0, n = 100.0) == 1267650600228229400000000000000.0
 
     @test
-    def testBinaryExponentiate25(): Bool = Float32.pow(2.0f32, 0.0f32) == 1.0f32
+    def testBinaryExponentiate25(): Bool = Float32.pow(base = 2.0f32, n = 0.0f32) == 1.0f32
 
     @test
-    def testBinaryExponentiate26(): Bool = Float32.pow(-2.0f32, -1.0f32) == -0.5f32
+    def testBinaryExponentiate26(): Bool = Float32.pow(base = -2.0f32, n = -1.0f32) == -0.5f32
 
     @test
-    def testBinaryExponentiate27(): Bool = Float32.pow(0.01f32, 0.5f32) == 0.1f32
+    def testBinaryExponentiate27(): Bool = Float32.pow(base = 0.01f32, n = 0.5f32) == 0.1f32
 
     @test
-    def testBinaryExponentiate28(): Bool = Float32.pow(-2.0f32, 100.0f32) == 1267650600000000000000000000000.0f32
+    def testBinaryExponentiate28(): Bool = Float32.pow(base = -2.0f32, n = 100.0f32) == 1267650600000000000000000000000.0f32
 
     @test
-    def testBinaryExponentiate29(): Bool = Float64.pow(2.0f64, 0.0f64) == 1.0f64
+    def testBinaryExponentiate29(): Bool = Float64.pow(base = 2.0f64, n = 0.0f64) == 1.0f64
 
     @test
-    def testBinaryExponentiate30(): Bool = Float64.pow(-2.0f64, -1.0f64) == -0.5f64
+    def testBinaryExponentiate30(): Bool = Float64.pow(base = -2.0f64, n = -1.0f64) == -0.5f64
 
     @test
-    def testBinaryExponentiate31(): Bool = Float64.pow(0.01f64, 0.5f64) == 0.1f64
+    def testBinaryExponentiate31(): Bool = Float64.pow(base = 0.01f64, n = 0.5f64) == 0.1f64
 
     @test
-    def testBinaryExponentiate32(): Bool = Float64.pow(-2.0f64, 100.0f64) == 1267650600228229400000000000000.0f64
+    def testBinaryExponentiate32(): Bool = Float64.pow(base = -2.0f64, n = 100.0f64) == 1267650600228229400000000000000.0f64
 
 }
