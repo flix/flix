@@ -40,6 +40,7 @@ sealed trait TokenKind {
       case TokenKind.Bang => "'!'"
       case TokenKind.BangEqual => "'!='"
       case TokenKind.Bar => "'|'"
+      case TokenKind.BarHash => "'|#'"
       case TokenKind.BracketL => "'['"
       case TokenKind.BracketR => "']'"
       case TokenKind.Caret => "'^'"
@@ -55,10 +56,10 @@ sealed trait TokenKind {
       case TokenKind.DotDotDot => "'...'"
       case TokenKind.DotWhiteSpace => "'. '"
       case TokenKind.DotCurlyL => "'.{'"
-      case TokenKind.DoubleBar => "'||'"
       case TokenKind.Equal => "'='"
       case TokenKind.EqualEqual => "'=='"
       case TokenKind.Hash => "'#'"
+      case TokenKind.HashBar => "'#|'"
       case TokenKind.HashCurlyL => "'#{'"
       case TokenKind.HashParenL => "'#('"
       case TokenKind.HoleAnonymous => "'???'"
@@ -322,6 +323,7 @@ sealed trait TokenKind {
          | TokenKind.Bang
          | TokenKind.BangEqual
          | TokenKind.Bar
+         | TokenKind.BarHash
          | TokenKind.BracketL
          | TokenKind.BracketR
          | TokenKind.BuiltIn
@@ -339,7 +341,6 @@ sealed trait TokenKind {
          | TokenKind.Dollar
          | TokenKind.Dot
          | TokenKind.DotCurlyL
-         | TokenKind.DoubleBar
          | TokenKind.DotDotDot
          | TokenKind.DotWhiteSpace
          | TokenKind.Eof
@@ -347,6 +348,7 @@ sealed trait TokenKind {
          | TokenKind.EqualEqual
          | TokenKind.Err(_)
          | TokenKind.Hash
+         | TokenKind.HashBar
          | TokenKind.HashCurlyL
          | TokenKind.HashParenL
          | TokenKind.HoleAnonymous
@@ -489,7 +491,7 @@ sealed trait TokenKind {
          | TokenKind.BuiltIn
          | TokenKind.CurlyL
          | TokenKind.DotDotDot
-         | TokenKind.DoubleBar
+         | TokenKind.HashBar
          | TokenKind.HashCurlyL
          | TokenKind.HashParenL
          | TokenKind.HoleAnonymous
@@ -583,6 +585,7 @@ sealed trait TokenKind {
          | TokenKind.Bang
          | TokenKind.BangEqual
          | TokenKind.Bar
+         | TokenKind.BarHash
          | TokenKind.BracketL
          | TokenKind.BracketR
          | TokenKind.Caret
@@ -862,6 +865,8 @@ object TokenKind {
 
   case object Bar extends TokenKind
 
+  case object BarHash extends TokenKind
+
   case object BracketL extends TokenKind
 
   case object BracketR extends TokenKind
@@ -900,13 +905,13 @@ object TokenKind {
 
   case object DotCurlyL extends TokenKind
 
-  case object DoubleBar extends TokenKind
-
   case object Equal extends TokenKind
 
   case object EqualEqual extends TokenKind
 
   case object Hash extends TokenKind
+
+  case object HashBar extends TokenKind
 
   case object HashCurlyL extends TokenKind
 

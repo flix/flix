@@ -299,7 +299,8 @@ object Lexer {
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
-      case _ if isMatchCurrent("||") => TokenKind.DoubleBar
+      case _ if isMatchPrev("#|") => TokenKind.HashBar
+      case _ if isMatchPrev("|#") => TokenKind.BarHash
       case _ if isMatchPrev("#{") => TokenKind.HashCurlyL
       case _ if isMatchPrev("#(") => TokenKind.HashParenL
       case '#' => TokenKind.Hash
