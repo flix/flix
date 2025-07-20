@@ -887,35 +887,32 @@ mod List {
     ///
     /// The function `f` must be pure.
     ///
-    pub def groupBy(f: (a, a) -> Bool, l: List[a]): List[List[a]] =
-        def loop(ll, k) = match ll {
-            case Nil     => k(Nil)
+    pub def groupBy(f: (a, a) -> Bool, l: List[a]): List[Nel[a]] =
+        (Nil, l) ||> List.foldLeft(acc -> value -> {
+            groupByHelper(value, f, acc)
+        }) |> List.map(Nel.reverse)
+
+    ///
+    /// Handles the 2 cases:
+    ///
+    /// 1. `value` can be added to a list. `value` is added as the first value to the `Nel`.
+    /// 2. `value` cannot be added to any list. Returns `List.reverse(currentNels) ::: (Nel(value, Nil) :: Nil)`.
+    ///
+    /// In either case the created `Nel`'s are reversed.
+    ///
+    def groupByHelper(value: a, f: (a, a) -> Bool, currentNels: List[Nel[a]]): List[Nel[a]] =
+        // Record seen elements in reverse order in `acc`.
+        def loop(cur, acc) = match cur {
+            case Nil => (Nel.singleton(value) :: acc) |> List.reverse
             case x :: xs =>
-                let (r1, r2) = extractHelper(f, xs, x :: Nil);
-                loop(r2, ks -> k(r1 :: ks))
+                if (Nel.forAll(v -> f(value, v) and f(v, value), x)) {
+                    let newNel = Nel.cons(value, x);
+                    List.reverse(newNel :: acc) ::: xs
+                } else {
+                    loop(xs, x :: acc)
+                }
         };
-        loop(l, identity)
-
-    ///
-    /// Helper function for `groupBy`.
-    ///
-    /// The list `l2` is needed by `agreeHelper` so it must be materialized (rather than a continuation).
-    /// We have no choice but to reverse it.
-    ///
-    def extractHelper(f: (a, a) -> Bool, l1: List[a], l2: List[a]): (List[a], List[a]) =
-        def loop(ll, ll2, k) = match ll {
-            case Nil     => (reverse(ll2), k(Nil))
-            case x :: xs => if (agreeHelper(f, x, ll2)) loop(xs, x :: ll2, k) else loop(xs, ll2, ks -> k(x :: ks))
-        };
-        loop(l1, l2, identity)
-
-    ///
-    /// Helper function for `groupBy`.
-    ///
-    def agreeHelper(f: (a, a) -> Bool, a: a, l: List[a]): Bool = match l {
-        case Nil     => true
-        case x :: xs => if (f(x, a) and f(a, x)) agreeHelper(f, a, xs) else false
-    }
+        loop(currentNels, Nil)
 
     ///
     /// Returns a list where the element at index `i` is `(a, b)` where
