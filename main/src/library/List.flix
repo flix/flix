@@ -893,6 +893,8 @@ mod List {
         }) |> List.map(Nel.reverse)
 
     ///
+    /// Helper function for `groupBy`.
+    ///
     /// Handles the 2 cases:
     ///
     /// 1. `value` can be added to a list. `value` is added as the first value to the `Nel`.
