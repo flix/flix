@@ -115,9 +115,9 @@ mod Int64 {
     pub def signum(x: Int64): Int32 = compare(x, 0i64)
 
     ///
-    /// Returns `b` raised to the power of `n`.
+    /// Returns `base` raised to the power of `n`.
     ///
-    pub def pow(b: Int64, n: Int64): Int64 = $INT64_EXP$(b, n)
+    pub def pow(base: {base = Int64}, n: Int64): Int64 = $INT64_EXP$(base#base, n)
 
     ///
     /// Returns the logical right shift of `x` by `distance`.
