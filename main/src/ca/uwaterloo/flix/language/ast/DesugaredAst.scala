@@ -330,6 +330,8 @@ object DesugaredAst {
 
     case class Schema(row: Type, loc: SourceLocation) extends Type
 
+    case class Extensible(row: Type, loc: SourceLocation) extends Type
+
     case class Arrow(tparams: List[Type], eff: Option[Type], tresult: Type, loc: SourceLocation) extends Type
 
     case class Apply(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Type

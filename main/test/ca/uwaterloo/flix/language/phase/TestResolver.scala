@@ -154,7 +154,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |mod B {
          |    def g(): A.S = ???
          |}
-         |"""
+         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleStruct](result)
   }

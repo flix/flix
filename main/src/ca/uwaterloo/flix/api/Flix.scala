@@ -202,8 +202,8 @@ class Flix {
     "MutMap.flix" -> LocalResource.get("/src/library/MutMap.flix"),
 
     "IoError.flix" -> LocalResource.get("/src/library/IoError.flix"),
-    "Reader.flix" -> LocalResource.get("/src/library/Reader.flix"),
-    "Writer.flix" -> LocalResource.get("/src/library/Writer.flix"),
+    "Readable.flix" -> LocalResource.get("/src/library/Readable.flix"),
+    "Writable.flix" -> LocalResource.get("/src/library/Writable.flix"),
 
     "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
 
