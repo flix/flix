@@ -137,7 +137,7 @@ instance ToFlix[Vector[a]] {
 mod Vector {
 
     ///
-    /// Perform a binary search for `x` on `v` and returns the position of `x`.
+    /// Perform a binary search for `x` on the sorted vector `v` and returns the position of `x`.
     ///
     /// Returns `None` if `v` does not contain `x`. Otherwise returns `Some(i)`,
     /// where `Vector.get(i, v) == x`.
