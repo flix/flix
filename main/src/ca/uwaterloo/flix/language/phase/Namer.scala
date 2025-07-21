@@ -1177,6 +1177,10 @@ object Namer {
       val t = visitType(tpe)
       NamedAst.Type.Schema(t, loc)
 
+    case DesugaredAst.Type.Extensible(tpe, loc) =>
+      val t = visitType(tpe)
+      NamedAst.Type.Extensible(t, loc)
+
     case DesugaredAst.Type.Arrow(tparams, eff, tpe, loc) =>
       val ts = tparams.map(visitType)
       val ef = eff.map(visitType)
@@ -1328,6 +1332,7 @@ object Namer {
     case DesugaredAst.Type.SchemaRowExtendByTypes(_, _, ts, r, _) => ts.flatMap(freeTypeVars) ::: freeTypeVars(r)
     case DesugaredAst.Type.SchemaRowExtendByAlias(_, ts, r, _) => ts.flatMap(freeTypeVars) ::: freeTypeVars(r)
     case DesugaredAst.Type.Schema(row, _) => freeTypeVars(row)
+    case DesugaredAst.Type.Extensible(row, _) => freeTypeVars(row)
     case DesugaredAst.Type.Arrow(tparams, eff, tresult, _) => tparams.flatMap(freeTypeVars) ::: eff.toList.flatMap(freeTypeVars) ::: freeTypeVars(tresult)
     case DesugaredAst.Type.Apply(tpe1, tpe2, _) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
     case DesugaredAst.Type.True(_) => Nil
