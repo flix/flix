@@ -820,15 +820,6 @@ class Flix {
   }
 
   /**
-    * A callback to indicate that work has started on the given subtask.
-    */
-  def subtask(subtask: String, sample: Boolean = false): Unit = {
-    if (options.progress) {
-      progressBar.observe(currentPhase.phase, subtask, sample)
-    }
-  }
-
-  /**
     * Registers the given Flix event listener `l`.
     */
   def addListener(l: FlixListener): Unit = {

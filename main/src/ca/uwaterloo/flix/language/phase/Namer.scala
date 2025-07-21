@@ -532,7 +532,6 @@ object Namer {
     */
   private def visitDef(decl0: DesugaredAst.Declaration.Def, ns0: Name.NName, defKind: DefKind)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Def = decl0 match {
     case DesugaredAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams, exp, tpe, eff, tconstrs, econstrs, loc) =>
-      flix.subtask(ident.name, sample = true)
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }

@@ -486,8 +486,6 @@ object Resolver {
     */
   private def resolveDef(d0: NamedAst.Declaration.Def, tconstr: Option[ResolvedAst.TraitConstraint], scp0: LocalScope)(implicit ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration.Def, ResolutionError] = d0 match {
     case NamedAst.Declaration.Def(sym, spec0, exp0, loc) =>
-      flix.subtask(sym.toString, sample = true)
-
       val specVal = resolveSpec(spec0, tconstr, scp0, taenv, ns0, root)
       flatMapN(specVal) {
         case spec =>
