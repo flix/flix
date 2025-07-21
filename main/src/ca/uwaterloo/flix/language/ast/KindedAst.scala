@@ -87,7 +87,7 @@ object KindedAst {
 
     case class ApplyClo(exp1: Expr, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(symUse: DefSymUse, exps: List[Expr], itvar: Type, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ApplyDef(symUse: DefSymUse, exps: List[Expr], map: Map[Symbol.KindedTypeVarSym, Type.Var], itvar: Type, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class ApplyLocalDef(symUse: LocalDefSymUse, exps: List[Expr], arrowTvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 

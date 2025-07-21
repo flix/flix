@@ -253,13 +253,36 @@ object Kinder {
     * Performs kinding on the all the definitions in the given root.
     */
   private def visitDefs(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, KindedAst.Def] = {
-    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef(_, KindEnv.empty, root)))
+//    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef(_, KindEnv.empty, root)))
+  }
+
+  private def visitDefSpecs(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, KindedAst.Spec] = {
+    ParOps.parMapValues(root.defs) {
+      case defn =>
+        visitSpec(defn.spec, Nil, None, KindEnv.empty, taenv, root)
+    }
+  }
+
+  private def inferDefSpecs(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, KindEnv] = {
+    ParOps.parMapValues(root.defs) {
+      case defn =>
+        inferSpec(defn.spec, KindEnv.empty, taenv, root)
+    }
+  }
+
+  private def visitDefs3(root: ResolvedAst.Root, kenvs: Map[Symbol.DefnSym, KindEnv], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, KindedAst.Def] = {
+    ParOps.parMapValues(root.defs) {
+      case defn =>
+        val kenv = kenvs(defn.sym)
+        visitDef(defn, kenv, taenv, root)(sctx, kenvs, flix)
+    }
+    //    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef(_, KindEnv.empty, taenv, root)))
   }
 
   /**
     * Performs kinding on the given def under the given kind environment.
     */
-  private def visitDef(def0: ResolvedAst.Declaration.Def, kenv0: KindEnv, root: ResolvedAst.Root)(implicit taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], sctx: SharedContext, flix: Flix): KindedAst.Def = def0 match {
+  private def visitDef(def0: ResolvedAst.Declaration.Def, kenv0: KindEnv, root: ResolvedAst.Root)(implicit taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], sctx: SharedContext, kenvs: Map[Symbol.DefnSym, KindEnv], flix: Flix): KindedAst.Def = def0 match {
     case ResolvedAst.Declaration.Def(sym, spec0, exp0, loc) =>
       val kenv = getKindEnvFromSpec(spec0, kenv0, root)
       val spec = visitSpec(spec0, Nil, None, kenv, root)
@@ -344,7 +367,7 @@ object Kinder {
   /**
     * Performs kinding on the given expression under the given kind environment.
     */
-  private def visitExp(exp00: ResolvedAst.Expr, kenv0: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], sctx: SharedContext, flix: Flix): KindedAst.Expr = exp00 match {
+  private def visitExp(exp00: ResolvedAst.Expr, kenv0: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], specs: Map[Symbol.DefnSym, KindedAst.Spec], sctx: SharedContext, flix: Flix): KindedAst.Expr = exp00 match {
     case ResolvedAst.Expr.Var(sym, loc) =>
       KindedAst.Expr.Var(sym, loc)
 
@@ -380,10 +403,13 @@ object Kinder {
 
     case ResolvedAst.Expr.ApplyDef(DefSymUse(sym, loc1), exps0, loc2) =>
       val exps = exps0.map(visitExp(_, kenv0, root))
+      val map = specs(sym).tparams.map {
+        tparam => (tparam.sym -> Type.freshVar(tparam.sym.kind, tparam.sym.loc))
+      }.toMap
       val itvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
       val tvar = Type.freshVar(Kind.Star, loc2.asSynthetic)
       val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
-      KindedAst.Expr.ApplyDef(DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2)
+      KindedAst.Expr.ApplyDef(DefSymUse(sym, loc1), exps, map, itvar, tvar, evar, loc2)
 
     case ResolvedAst.Expr.ApplyLocalDef(symUse, exps0, loc) =>
       val exps = exps0.map(visitExp(_, kenv0, root))
