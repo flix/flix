@@ -9,5 +9,5 @@ def isCyclic(edges: List[(Int32, Int32)]): Bool =
     let cycleNodes = query e, lp select x from Path(x, x);
     Vector.length(cycleNodes) > 0
 
-pub def pairwiseAcyclic(graphs: List[List[(Int32, Int32)]]): List[List[List[(Int32, Int32)]]] =
+pub def pairwiseAcyclic(graphs: List[List[(Int32, Int32)]]): List[Nel[List[(Int32, Int32)]]] =
     graphs |> List.groupBy((g1, g2) -> not isCyclic(g1 ::: g2))
