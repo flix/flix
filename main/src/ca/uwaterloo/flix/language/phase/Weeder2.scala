@@ -1966,14 +1966,27 @@ object Weeder2 {
 
     private def visitJvmMethod(tree: Tree)(implicit sctx: SharedContext): Validation[JvmMethod, CompilationMessage] = {
       expect(tree, TreeKind.Expr.JvmMethod)
+      val ident = tryPickNameIdent(tree) match {
+        case Some(n) => n
+        case None => tree.children.find{
+          case Token(TokenKind.InfixFunction, _, _, _, _, _) => true
+          case _ => false
+        } match {
+          case Some(token@Token(_, _, _, _, _, _)) =>
+            val n = token.text.stripPrefix("`").stripSuffix("`")
+            Name.Ident(n, token.mkSourceLocation())
+          case _ =>
+            // Parser always either gives Ident tree or infix token.
+            throw InternalCompilerException("Parser gave no Jvm Method Name", tree.loc)
+        }
+      }
       mapN(
-        pickNameIdent(tree),
         pickExpr(tree),
         Decls.pickFormalParameters(tree),
         Types.pickType(tree),
         Types.tryPickEffect(tree),
       ) {
-        (ident, expr, fparams, tpe, eff) => JvmMethod(ident, fparams, expr, tpe, eff, tree.loc)
+        (expr, fparams, tpe, eff) => JvmMethod(ident, fparams, expr, tpe, eff, tree.loc)
       }
     }
 
