@@ -20,29 +20,36 @@ import java.io.IOException
 import java.io.OutputStream
 
 ///
-/// A trait for types which are resources that can have bytes written to them.
+/// A trait for types which are resources that can be written to.
 ///
-trait Writer[t] {
+trait Writeable[t] {
 
     ///
-    /// Effect associated with writing bytes to the underlying resource.
+    /// Type of each element that can be written to the resource.
+    ///
+    type Elm: Type
+
+    ///
+    /// Effect associated with writing to the underlying resource.
     ///
     type Aef: Eff
 
     ///
-    /// Reads `k` bytes from `b` and writes them into the underlying resource.
+    /// Reads `k` items from `b` and writes them into the underlying resource.
     ///
-    /// Returns `Ok(k)` to signify that `k` bytes were successfully read and written to `r`.
+    /// Returns `Ok(k)` to signify that `k` items were successfully read and written to `r`.
     ///
     /// Guarantees that `0 <= k <= length(b)`.
     ///
     /// Returns `Err(e)` if some underlying I/O error occurs.
     ///
-    pub def write(b: Array[Int8, r], r: t): Result[IoError, Int32] \ r + Writer.Aef[t]
+    pub def write(buffer: Array[Writeable.Elm[t], r], writer: t): Result[IoError, Int32] \ r + Writeable.Aef[t]
 
 }
 
-instance Writer[OutputStream] {
+instance Writeable[OutputStream] {
+
+    type Elm = Int8
 
     type Aef = IO
 
