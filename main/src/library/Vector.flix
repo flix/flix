@@ -142,9 +142,9 @@ mod Vector {
     /// Returns `None` if `v` does not contain `x`. Otherwise returns `Some(i)`,
     /// where `Vector.get(i, v) == x`.
     ///
-    /// Assumes `v` is sorted. If this is not the result is undefined.
+    /// Assumes `v` is sorted. If this is not the case the result is undefined.
     ///
-    /// If `v` contains multiple `x`-values then one of the indexes will be returned.
+    /// If `v` contains multiple `x`-values then the index of one of them will be returned.
     ///
     pub def binarySearch(x: a, v: Vector[a]): Option[Int32]  with Order[a] =
         def f(l, r) = {
