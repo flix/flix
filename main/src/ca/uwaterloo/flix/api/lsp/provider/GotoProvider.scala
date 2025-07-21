@@ -36,7 +36,6 @@ object GotoProvider {
 
     gotoRight
       .orElse(gotoLeft)
-      .filter(_.targetUri.startsWith("file://")) // We do not support goto for non-file URIs, which is the case for the standard library.
   }
 
   /**
