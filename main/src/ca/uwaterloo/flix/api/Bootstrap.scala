@@ -531,7 +531,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds the jar or the fatjar
     */
-  private def buildJarBase(flix: Flix, includeDependencies: Boolean = false)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+  private def buildJarBase(flix: Flix, includeDependencies: Boolean)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
     // Build the project before building the jar
     val buildResult = build(flix)
     buildResult match {
@@ -615,14 +615,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Builds a jar package for the project.
     */
   def buildJar(flix: Flix)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
-    buildJarBase(flix)
+    buildJarBase(flix, includeDependencies = false)
   }
 
   /**
     * Builds a fatjar package for the project.
-    * This function relies essentially on the same pattern as used in the buildJar function.
-    * It searches dependencies in the lib folder and includes everything in the generated jar file in addition.
-    *
     */
   def buildFatJar(flix: Flix)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
     buildJarBase(flix, includeDependencies = true)
