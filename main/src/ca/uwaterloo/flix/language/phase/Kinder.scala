@@ -1768,6 +1768,15 @@ object Kinder {
     */
   private case class SharedContext(errors: ConcurrentLinkedQueue[KindError])
 
-  private case class RootEnv(aliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], specs: Map[Symbol.DefnSym, KindedAst.Spec])
+  // MATT docs
+  private case class RootEnv(aliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], specs: Map[Symbol.DefnSym, KindedAst.Spec]) extends TypeAliasEnv
+
+  // MATT docs
+  private case class SimpleTypeAliasEnv(aliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias]) extends TypeAliasEnv
+
+  // MATT docs
+  private trait TypeAliasEnv {
+    def aliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias]
+  }
 
 }
