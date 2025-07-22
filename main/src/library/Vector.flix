@@ -146,7 +146,7 @@ mod Vector {
     ///
     /// If `v` contains multiple `x`-values then the index of one of them will be returned.
     ///
-    pub def binarySearch(x: a, v: Vector[a]): Option[Int32]  with Order[a] =
+    pub def binarySearch(x: a, v: Vector[a]): Option[Int32] with Order[a] =
         def f(l, r) = {
             if (l <= r) {
                 let m = (l + r) `Int32.rightShift` 1;
@@ -157,8 +157,8 @@ mod Vector {
                 }
             } else None
         };
-        let length = length(v);
-        f(0, length - 1)
+        let len = length(v);
+        f(0, len - 1)
 
     ///
     /// Compares `a` and `b` lexicographically.
