@@ -137,6 +137,30 @@ instance ToFlix[Vector[a]] {
 mod Vector {
 
     ///
+    /// Perform a binary search for `x` on the sorted vector `v` and returns the position of `x`.
+    ///
+    /// Returns `None` if `v` does not contain `x`. Otherwise returns `Some(i)`,
+    /// where `Vector.get(i, v) == x`.
+    ///
+    /// Assumes `v` is sorted. If this is not the case the result is undefined.
+    ///
+    /// If `v` contains multiple `x`-values then the index of one of them will be returned.
+    ///
+    pub def binarySearch(x: a, v: Vector[a]): Option[Int32] with Order[a] =
+        def f(l, r) = {
+            if (l <= r) {
+                let m = (l + r) `Int32.rightShift` 1; // Shifting by 1 is slightly faster than dividing by 2.
+                match get(m, v) <=> x {
+                    case Comparison.LessThan => f(m+1, r)
+                    case Comparison.GreaterThan => f(l, m-1)
+                    case Comparison.EqualTo => Some(m)
+                }
+            } else None
+        };
+        let len = length(v);
+        f(0, len - 1)
+
+    ///
     /// Compares `a` and `b` lexicographically.
     ///
     pub def compare(a: Vector[a], b: Vector[a]): Comparison with Order[a] =
