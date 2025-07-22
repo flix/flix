@@ -91,8 +91,8 @@ mod Int32 {
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
     pub def dist(x: Int32, y: Int32): Int32 = {
-        if      (x >= 0 and y >= 0)                      abs(x - y)
-        else if (x < 0 and y < 0)                        abs(x - y)
+        if      (x >= 0 and y >= 0)                     abs(x - y)
+        else if (x < 0 and y < 0)                       abs(x - y)
         else if (x == minValue() or y == minValue())    -1
         else if (minValue() + abs(x) + abs(y) >= 0)     -1
         else                                            abs(x - y)

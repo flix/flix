@@ -91,8 +91,8 @@ mod Int8 {
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
     pub def dist(x: Int8, y: Int8): Int8 = {
-        if      (x >= 0i8 and y >= 0i8)                  abs(x - y)
-        else if (x < 0i8 and y < 0i8)                    abs(x - y)
+        if      (x >= 0i8 and y >= 0i8)                 abs(x - y)
+        else if (x < 0i8 and y < 0i8)                   abs(x - y)
         else if (x == minValue() or y == minValue())    -1i8
         else if (minValue() + abs(x) + abs(y) >= 0i8)   -1i8
         else                                            abs(x - y)

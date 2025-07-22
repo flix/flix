@@ -169,7 +169,7 @@ mod Vector {
     /// Version of `Array.updateSequence` where sub is a vector rather than an array,
     /// so a extra copy of `sub` is avoided.
     ///
-    def arrayUpdateSeqV(i: Int32, sub: Vector[a], arr: Array[a, r]): Unit \ r  =
+    def arrayUpdateSeqV(i: Int32, sub: Vector[a], arr: Array[a, r]): Unit \ r =
         let end = Array.length(arr);
         let subLen = length(sub);
         def loop(ri, wi) = {
@@ -295,7 +295,7 @@ mod Vector {
     ///
     /// Returns `v` as a MutDeque.
     ///
-    pub def toMutDeque(rc: Region[r], v: Vector[a]): MutDeque[a, r] \ r   =
+    pub def toMutDeque(rc: Region[r], v: Vector[a]): MutDeque[a, r] \ r =
         let d = MutDeque.empty(rc);
         forEach(x -> MutDeque.pushBack(x, d), v);
         d
@@ -459,7 +459,7 @@ mod Vector {
     ///
     /// Accumulates the result of applying `f` to `v` going left to right.
     ///
-    /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2),  ...]`.
+    /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2), ...]`.
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef = region rc {
         let arr = Array.empty(rc, length(v) + 1);
@@ -676,9 +676,9 @@ mod Vector {
         let len1 = length(v);
         let len2 = len1 + len1 - 1;
         let f = ix -> match ix {
-            case 0                         => get(0, v)
+            case 0                               => get(0, v)
             case n if Int32.remainder(n, 2) != 0 => sep
-            case n                         => {let i = n / 2; get(i, v)}
+            case n                               => {let i = n / 2; get(i, v)}
         };
         init(f, len2)
 
@@ -881,11 +881,11 @@ mod Vector {
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), v)
 
     ///
-    /// Applies `f` to all elements in `v` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `v` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// Returns `None` if `v` is empty.
     ///
-    pub def reduceLeft(f: (a, a) ->  a \ ef, v: Vector[a]): Option[a] \ ef =
+    pub def reduceLeft(f: (a, a) -> a \ ef, v: Vector[a]): Option[a] \ ef =
         let len = length(v);
         def loop(i, acc) = {
             if (i >= len)
@@ -899,7 +899,7 @@ mod Vector {
             Some(loop(1, get(0, v)))
 
     ///
-    /// Applies `f` to all elements in `v` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `v` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// Returns `None` if `v` is empty.
     ///
@@ -1242,7 +1242,7 @@ mod Vector {
     /// Accumulates the result of applying `f` pairwise to the elements of `a` and `b`
     /// starting with the initial value `c` and going from left to right.
     ///
-    pub def foldLeft2(f: (c, a, b) ->  c \ ef, c: c, a: Vector[a], b: Vector[b]): c \ ef =
+    pub def foldLeft2(f: (c, a, b) -> c \ ef, c: c, a: Vector[a], b: Vector[b]): c \ ef =
         let lena = length(a);
         let lenb = length(b);
         def loop(i, acc) = {

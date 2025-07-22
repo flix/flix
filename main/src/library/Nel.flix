@@ -165,7 +165,7 @@ mod Nel {
     ///
     pub def init(l: Nel[a]): List[a] = match l {
         case Nel(_, Nil) => Nil
-        case Nel(x, xs)   => match List.reverse(xs) {
+        case Nel(x, xs)  => match List.reverse(xs) {
             case Nil     => x :: Nil
             case _ :: ys => x :: List.reverse(ys)
         }

@@ -634,7 +634,7 @@ mod BPlusTree {
         ///
         def applyPredicate(v: Vector[k], f: k -> k -> Bool \ r): Bool \ r =
             let zipped = Vector.map(x -> (x, true), v);
-            let reduced =  Vector.reduceLeft(old -> cur ->
+            let reduced = Vector.reduceLeft(old -> cur ->
                 let (oldNum, oldBool) = old;
                 let (curNum, _) = cur;
                 (curNum, oldBool and f(oldNum, curNum))
@@ -802,7 +802,7 @@ mod BPlusTree {
                     case false => 
                         if(n->size == 0) {
                             count
-                        }  else {
+                        } else {
                             loop(count + 1, Array.get(0, n->children))
                         }
                 }
@@ -1401,8 +1401,8 @@ mod BPlusTree {
                     let values = Array.copyOfRange(rc, 0, node->size, node->values);
                     let keys = Array.copyOfRange(rc, 0, node->size, node->keys);
                     let keysStrings = Array.mapWithIndex(rc, i -> key -> "${key}: ${Array.get(i, values)}", keys);
-                    let keysString = Array.join(",\n${indentString}  ", keysStrings);
-                    "${indentString}Leaf(\n${indentString}  ${keysString}\n${indentString})\n"
+                    let keysString = Array.join(",\n${indentString} ", keysStrings);
+                    "${indentString}Leaf(\n${indentString} ${keysString}\n${indentString})\n"
             }
 
         ///

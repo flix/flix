@@ -58,7 +58,7 @@ mod PingWithResult {
     ///
     /// In other words, re-interprets the `PingWithResult` effect using the `IO` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef):  a \ ef - PingWithResult + {Net, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ ef - PingWithResult + {Net, IO} = handle(f)()
 
 }
 

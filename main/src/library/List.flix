@@ -320,7 +320,7 @@ mod List {
     ///
     /// Accumulates the result of applying `f` to `l` going left to right.
     ///
-    /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2)  ...`.
+    /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2) ...`.
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): List[b] \ ef =
         def loop(ll, k, acc) = match ll {
@@ -679,7 +679,7 @@ mod List {
     }
 
     ///
-    /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     ///
@@ -691,7 +691,7 @@ mod List {
     }
 
     ///
-    /// Applies `f` to all elements in `l` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `l` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     ///
@@ -1245,7 +1245,7 @@ mod List {
     ///
     pub def unfold(f: s -> Option[(a, s)] \ ef, st: s): List[a] \ ef =
         def loop(sst, k) = match f(sst) {
-            case None         => k(Nil)
+            case None           => k(Nil)
             case Some((a, st1)) => loop(st1, ks -> k(a :: ks))
         };
         loop(st, identity)
@@ -1269,7 +1269,7 @@ mod List {
     /// Build a list by applying the function `next` to `()`. `next` is expected to encapsulate
     /// a stateful resource such as a file handle that can be iterated.
     ///
-    /// `next` should return `Ok(Some(a)` to signal a new list element `Ok(a)`.
+    /// `next` should return `Ok(Some(a))` to signal a new list element `Ok(a)`.
     ///
     /// `next` should return `Ok(None)` to signal the end of building the list.
     ///
