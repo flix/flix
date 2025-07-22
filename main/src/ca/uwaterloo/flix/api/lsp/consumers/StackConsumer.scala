@@ -70,7 +70,7 @@ case class StackConsumer() extends Consumer {
 
   override def consumeEff(eff: Effect): Unit = push(eff)
 
-  override def consumeEffectSymUse(effUse: EffectSymUse): Unit = push(effUse)
+  override def consumeEffSymUse(effUse: EffSymUse): Unit = push(effUse)
 
   override def consumeEnum(enm: Enum): Unit = push(enm)
 

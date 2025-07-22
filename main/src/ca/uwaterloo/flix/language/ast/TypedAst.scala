@@ -218,13 +218,13 @@ object TypedAst {
 
     case class Unsafe(exp: Expr, runEff: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Without(exp: Expr, sym: EffectSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Without(exp: Expr, sym: EffSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Throw(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Handler(sym: EffectSymUse, rules: List[HandlerRule], bodyType: Type, bodyEff: Type, handledEff: Type, tpe: Type, loc: SourceLocation) extends Expr {
+    case class Handler(sym: EffSymUse, rules: List[HandlerRule], bodyType: Type, bodyEff: Type, handledEff: Type, tpe: Type, loc: SourceLocation) extends Expr {
       override def eff: Type = Type.Pure
     }
 
