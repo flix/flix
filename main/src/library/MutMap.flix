@@ -384,7 +384,7 @@ mod MutMap {
     ///
     /// Alias for `foldLeftWithKey`.
     ///
-    pub def foldWithKey(f: (b, k, v) -> b \ ef, i: b, m: MutMap[k, v, r]): b \ { ef, r }  =
+    pub def foldWithKey(f: (b, k, v) -> b \ ef, i: b, m: MutMap[k, v, r]): b \ { ef, r } =
         foldLeftWithKey(f, i, m)
 
     ///

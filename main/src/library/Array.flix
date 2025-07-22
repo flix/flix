@@ -220,7 +220,7 @@ mod Array {
     ///
     /// Returns `a` as a MutDeque.
     ///
-    pub def toMutDeque(rc1: Region[r1], a: Array[a, r2]): MutDeque[a, r1] \ { r2, r1 }  =
+    pub def toMutDeque(rc1: Region[r1], a: Array[a, r2]): MutDeque[a, r1] \ { r2, r1 } =
         let d = MutDeque.empty(rc1);
         forEach(x -> MutDeque.pushBack(x, d), a);
         d
@@ -403,7 +403,7 @@ mod Array {
     ///
     /// Accumulates the result of applying `f` to `arr` going left to right.
     ///
-    /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2),  ...]`.
+    /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2), ...]`.
     ///
     pub def scanLeft(rc: Region[r], f: (b, a) -> b \ ef, s: b, arr: Array[a, r]): Array[b, r] \ { ef, r } =
         let len = length(arr) + 1;
@@ -815,7 +815,7 @@ mod Array {
     /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], z))...)`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ {ef,  r}) -> b \ {ef, r}, z: b, arr: Array[a, r]): b \ { ef, r } =
+    pub def foldRightWithCont(f: (a, Unit -> b \ {ef, r}) -> b \ {ef, r}, z: b, arr: Array[a, r]): b \ { ef, r } =
         def loop(i) = {
             if (i == length(arr))
                 z
@@ -831,11 +831,11 @@ mod Array {
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), arr)
 
     ///
-    /// Applies `f` to all elements in `a` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `a` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def reduceLeft(f: (a, a) ->  a \ ef, a: Array[a, r]): Option[a] \ { ef, r } =
+    pub def reduceLeft(f: (a, a) -> a \ ef, a: Array[a, r]): Option[a] \ { ef, r } =
         let len = length(a);
         def loop(i, acc) = {
             if (i >= len)
@@ -849,7 +849,7 @@ mod Array {
             Some(loop(1, get(0, a)))
 
     ///
-    /// Applies `f` to all elements in `arr` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `arr` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// Returns `None` if `arr` is empty.
     ///
@@ -1204,7 +1204,7 @@ mod Array {
     /// Accumulates the result of applying `f` pairwise to the elements of `a` and `b`
     /// starting with the initial value `c` and going from left to right.
     ///
-    pub def foldLeft2(f: (c, a, b) ->  c \ ef, c: c, a: Array[a, r1], b: Array[b, r2]): c \ { ef, r1, r2 } =
+    pub def foldLeft2(f: (c, a, b) -> c \ ef, c: c, a: Array[a, r1], b: Array[b, r2]): c \ { ef, r1, r2 } =
         let lena = length(a);
         let lenb = length(b);
         def loop(i, acc) = {

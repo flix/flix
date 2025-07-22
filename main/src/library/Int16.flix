@@ -91,8 +91,8 @@ mod Int16 {
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
     pub def dist(x: Int16, y: Int16): Int16 = {
-        if      (x >= 0i16 and y >= 0i16)                abs(x - y)
-        else if (x < 0i16 and y < 0i16)                  abs(x - y)
+        if      (x >= 0i16 and y >= 0i16)               abs(x - y)
+        else if (x < 0i16 and y < 0i16)                 abs(x - y)
         else if (x == minValue() or y == minValue())    -1i16
         else if (minValue() + abs(x) + abs(y) >= 0i16)  -1i16
         else                                            abs(x - y)

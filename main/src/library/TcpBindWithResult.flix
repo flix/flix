@@ -58,6 +58,6 @@ mod TcpBindWithResult {
     ///
     /// In other words, re-interprets the `TcpBindWithResult` effect using the `Net` and `IO` effects.
     ///
-    pub def runWithIO(f: Unit -> a \ ef):  a \ ef - TcpBindWithResult + {Net, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ ef - TcpBindWithResult + {Net, IO} = handle(f)()
 
 }

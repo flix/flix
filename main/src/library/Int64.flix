@@ -91,8 +91,8 @@ mod Int64 {
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
     pub def dist(x: Int64, y: Int64): Int64 = {
-        if (x >= 0i64 and y >= 0i64)                     abs(x - y)
-        else if (x < 0i64 and y < 0i64)                  abs(x - y)
+        if (x >= 0i64 and y >= 0i64)                    abs(x - y)
+        else if (x < 0i64 and y < 0i64)                 abs(x - y)
         else if (x == minValue() or y == minValue())    -1i64
         else if (minValue() + abs(x) + abs(y) >= 0i64)  -1i64
         else                                            abs(x - y)

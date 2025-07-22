@@ -217,8 +217,8 @@ mod GetOpt {
     /// "--" has been parsed
     /// `xstr` is the rest of the current token
     def longOpt(xstr: String, optDescrs: List[OptionDescr[a]], tokens: List[String]): (OptionKind[a], List[String]) =
-        let (optname, arg)  = String.breakOnLeft({substr = "="}, xstr);
-        let optStr      = "--${optname}";
+        let (optname, arg) = String.breakOnLeft({substr = "="}, xstr);
+        let optStr         = "--${optname}";
         match findOptionByName(optname, optDescrs) {
             case Ok(opt) => match (opt#argDescriptor, deconsLeft(arg), tokens) {
                 case (ArgDescr.NoArg(a),     None,               rest)          => (OptionKind.Opt(a), rest)
@@ -251,9 +251,9 @@ mod GetOpt {
     /// `xstr` is the rest of the current token
     /// Never see "=" for a short arg
     def shortOpt(xc: Char, xstr: String, optDescrs: List[OptionDescr[a]], tokens: List[String]): (OptionKind[a], List[String]) =
-        let optStr  = "-${xc}";
+        let optStr = "-${xc}";
         match findOptionById(xc, optDescrs) {
-            case Ok(opt) => match (opt#argDescriptor, xstr, tokens)  {
+            case Ok(opt) => match (opt#argDescriptor, xstr, tokens) {
                 case (ArgDescr.NoArg(a), "", rest)           => (OptionKind.Opt(a), rest)
                 case (ArgDescr.NoArg(a), str, rest)          => (OptionKind.Opt(a), "-${str}" :: rest)
                 case (ArgDescr.ReqArg(_, d), "", Nil)        => (errReq(d, optStr), Nil)
@@ -408,8 +408,8 @@ mod GetOpt {
     def groupWhenQuotedHelperInner(quoteOpen: String, quoteClose: String, tokens: List[String], acc: String, k: List[String] -> List[String] \ ef): List[String] \ ef =
         match tokens {
             case Nil => k(acc :: Nil)
-            case x :: rest if String.contains({substr = quoteClose}, x) => groupWhenQuotedHelper(quoteOpen, quoteClose, rest, ks -> k((acc + " " +  x) :: ks))
-            case x :: rest => groupWhenQuotedHelperInner(quoteOpen, quoteClose, rest, (acc + " " +  x), k)
+            case x :: rest if String.contains({substr = quoteClose}, x) => groupWhenQuotedHelper(quoteOpen, quoteClose, rest, ks -> k((acc + " " + x) :: ks))
+            case x :: rest => groupWhenQuotedHelperInner(quoteOpen, quoteClose, rest, (acc + " " + x), k)
         }
 
     ///
