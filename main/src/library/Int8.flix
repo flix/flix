@@ -115,9 +115,9 @@ mod Int8 {
     pub def signum(x: Int8): Int32 = compare(x, 0i8)
 
     ///
-    /// Returns `b` raised to the power of `n`.
+    /// Returns `base` raised to the power of `n`.
     ///
-    pub def pow(b: Int8, n: Int8): Int8 = $INT8_EXP$(b, n)
+    pub def pow(base: {base = Int8}, n: Int8): Int8 = $INT8_EXP$(base#base, n)
 
 
     ///

@@ -145,7 +145,7 @@ mod Map {
     ///
     def useParallelEvaluation(m: Map[k, v]): Bool =
         let Map(t) = m;
-        let minSize = Int32.pow(2, RedBlackTree.blackHeight(t));
+        let minSize = Int32.pow(base = 2, RedBlackTree.blackHeight(t));
         minSize >= 1024
 
     ///

@@ -42,10 +42,10 @@ mod BigDecimal {
         unsafe x.abs()
 
     ///
-    /// Returns `x` raised to the power of `n`.
+    /// Returns `base` raised to the power of `n`.
     ///
-    pub def pow(x: BigDecimal, n: Int32): BigDecimal =
-        unsafe x.pow(n)
+    pub def pow(base: {base = BigDecimal}, n: Int32): BigDecimal =
+        unsafe base#base.pow(n)
 
     ///
     /// Returns the distance between `x` and `y`.

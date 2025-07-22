@@ -594,64 +594,64 @@ mod Test.Exp.Binary.Arithmetic {
     def testBinaryDivide51(): Bool = (1ii / 0ii) == 0ii
 
     @test
-    def testBinaryExponentiate01(): Bool = Int32.pow(2, 0) == 1
+    def testBinaryExponentiate01(): Bool = Int32.pow(base = 2, 0) == 1
 
     @test
-    def testBinaryExponentiate02(): Bool = Int32.pow(-2, 1) == -2
+    def testBinaryExponentiate02(): Bool = Int32.pow(base = -2, 1) == -2
 
     @test
-    def testBinaryExponentiate03(): Bool = Int32.pow(2, 2) == 4
+    def testBinaryExponentiate03(): Bool = Int32.pow(base = 2, 2) == 4
 
     @test
-    def testBinaryExponentiate04(): Bool = Int32.pow(-2, 31) == -2147483648
+    def testBinaryExponentiate04(): Bool = Int32.pow(base = -2, 31) == -2147483648
 
     @test
-    def testBinaryExponentiate05(): Bool = Int8.pow(2i8, 0i8) == 1i8
+    def testBinaryExponentiate05(): Bool = Int8.pow(base = 2i8, 0i8) == 1i8
 
     @test
-    def testBinaryExponentiate06(): Bool = Int8.pow(-2i8, 1i8) == -2i8
+    def testBinaryExponentiate06(): Bool = Int8.pow(base = -2i8, 1i8) == -2i8
 
     @test
-    def testBinaryExponentiate07(): Bool = Int8.pow(2i8, 2i8) == 4i8
+    def testBinaryExponentiate07(): Bool = Int8.pow(base = 2i8, 2i8) == 4i8
 
     @test
-    def testBinaryExponentiate08(): Bool = Int8.pow(-2i8, 7i8) == -128i8
+    def testBinaryExponentiate08(): Bool = Int8.pow(base = -2i8, 7i8) == -128i8
 
     @test
-    def testBinaryExponentiate09(): Bool = Int16.pow(2i16, 0i16) == 1i16
+    def testBinaryExponentiate09(): Bool = Int16.pow(base = 2i16, 0i16) == 1i16
 
     @test
-    def testBinaryExponentiate10(): Bool = Int16.pow(-2i16, 1i16) == -2i16
+    def testBinaryExponentiate10(): Bool = Int16.pow(base = -2i16, 1i16) == -2i16
 
     @test
-    def testBinaryExponentiate11(): Bool = Int16.pow(2i16, 2i16) == 4i16
+    def testBinaryExponentiate11(): Bool = Int16.pow(base = 2i16, 2i16) == 4i16
 
     @test
-    def testBinaryExponentiate12(): Bool = Int16.pow(-2i16, 15i16) == -32768i16
+    def testBinaryExponentiate12(): Bool = Int16.pow(base = -2i16, 15i16) == -32768i16
 
     @test
-    def testBinaryExponentiate13(): Bool = Int32.pow(2i32, 0i32) == 1i32
+    def testBinaryExponentiate13(): Bool = Int32.pow(base = 2i32, 0i32) == 1i32
 
     @test
-    def testBinaryExponentiate14(): Bool = Int32.pow(-2i32, 1i32) == -2i32
+    def testBinaryExponentiate14(): Bool = Int32.pow(base = -2i32, 1i32) == -2i32
 
     @test
-    def testBinaryExponentiate15(): Bool = Int32.pow(2i32, 2i32) == 4i32
+    def testBinaryExponentiate15(): Bool = Int32.pow(base = 2i32, 2i32) == 4i32
 
     @test
-    def testBinaryExponentiate16(): Bool = Int32.pow(-2i32, 31i32) == -2147483648
+    def testBinaryExponentiate16(): Bool = Int32.pow(base = -2i32, 31i32) == -2147483648
 
     @test
-    def testBinaryExponentiate17(): Bool = Int64.pow(2i64, 0i64) == 1i64
+    def testBinaryExponentiate17(): Bool = Int64.pow(base = 2i64, 0i64) == 1i64
 
     @test
-    def testBinaryExponentiate18(): Bool = Int64.pow(-2i64, 1i64) == -2i64
+    def testBinaryExponentiate18(): Bool = Int64.pow(base = -2i64, 1i64) == -2i64
 
     @test
-    def testBinaryExponentiate19(): Bool = Int64.pow(2i64, 2i64) == 4i64
+    def testBinaryExponentiate19(): Bool = Int64.pow(base = 2i64, 2i64) == 4i64
 
     @test
-    def testBinaryExponentiate20(): Bool = Int64.pow(-2i64, 63i64) == -9223372036854775808i64
+    def testBinaryExponentiate20(): Bool = Int64.pow(base = -2i64, 63i64) == -9223372036854775808i64
 
     @test
     def testBinaryExponentiate21(): Bool = Float64.pow(base = 2.0, 0.0) == 1.0

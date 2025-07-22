@@ -182,19 +182,19 @@ mod TestBigInt {
     // pow                                                                     //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def pow01(): Bool = BigInt.pow(0ii, 0) == 1ii
+    def pow01(): Bool = BigInt.pow(base = 0ii, 0) == 1ii
 
     @test
-    def pow02(): Bool = BigInt.pow(0ii, 1) == 0ii
+    def pow02(): Bool = BigInt.pow(base = 0ii, 1) == 0ii
 
     @test
-    def pow03(): Bool = BigInt.pow(1ii, 0) == 1ii
+    def pow03(): Bool = BigInt.pow(base = 1ii, 0) == 1ii
 
     @test
-    def pow04(): Bool = BigInt.pow(1ii, 1) == 1ii
+    def pow04(): Bool = BigInt.pow(base = 1ii, 1) == 1ii
 
     @test
-    def pow05(): Bool = BigInt.pow(5ii, 2) == 25ii
+    def pow05(): Bool = BigInt.pow(base = 5ii, 2) == 25ii
 
     /////////////////////////////////////////////////////////////////////////////
     // gcd                                                                     //

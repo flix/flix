@@ -115,9 +115,9 @@ mod Int32 {
     pub def signum(x: Int32): Int32 = compare(x, 0)
 
     ///
-    /// Returns `b` raised to the power of `n`.
+    /// Returns `base` raised to the power of `n`.
     ///
-    pub def pow(b: Int32, n: Int32): Int32 = $INT32_EXP$(b, n)
+    pub def pow(base: {base = Int32}, n: Int32): Int32 = $INT32_EXP$(base#base, n)
 
     ///
     /// Returns the logical right shift of `x` by `dist`.
