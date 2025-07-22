@@ -261,7 +261,6 @@ object Kinder {
     */
   private def visitDef(def0: ResolvedAst.Declaration.Def, kenv0: KindEnv, root: ResolvedAst.Root)(implicit taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], sctx: SharedContext, flix: Flix): KindedAst.Def = def0 match {
     case ResolvedAst.Declaration.Def(sym, spec0, exp0, loc) =>
-      flix.subtask(sym.toString, sample = true)
       val kenv = getKindEnvFromSpec(spec0, kenv0, root)
       val spec = visitSpec(spec0, Nil, None, kenv, root)
       val exp = visitExp(exp0, kenv, root)(Scope.Top, taenv, sctx, flix)

@@ -760,7 +760,7 @@ class Flix {
     currentPhase = PhaseTime(phase, 0)
 
     if (options.progress) {
-      progressBar.observe(currentPhase.phase, "", sample = false)
+      progressBar.observe(currentPhase.phase, "")
     }
 
     // Measure the execution time.
@@ -790,7 +790,7 @@ class Flix {
     currentPhase = PhaseTime(phase, 0)
 
     if (options.progress) {
-      progressBar.observe(currentPhase.phase, "", sample = false)
+      progressBar.observe(currentPhase.phase, "")
     }
 
     // Measure the execution time.
@@ -817,15 +817,6 @@ class Flix {
     */
   def getTotalTime: Long = phaseTimers.foldLeft(0L) {
     case (acc, phase) => acc + phase.time
-  }
-
-  /**
-    * A callback to indicate that work has started on the given subtask.
-    */
-  def subtask(subtask: String, sample: Boolean = false): Unit = {
-    if (options.progress) {
-      progressBar.observe(currentPhase.phase, subtask, sample)
-    }
   }
 
   /**
