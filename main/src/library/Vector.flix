@@ -149,7 +149,7 @@ mod Vector {
     pub def binarySearch(x: a, v: Vector[a]): Option[Int32] with Order[a] =
         def f(l, r) = {
             if (l <= r) {
-                let m = (l + r) `Int32.rightShift` 1;
+                let m = (l + r) `Int32.rightShift` 1; // Shifting by 1 is slightly faster than dividing by 2.
                 match get(m, v) <=> x {
                     case Comparison.LessThan => f(m+1, r)
                     case Comparison.GreaterThan => f(l, m-1)
