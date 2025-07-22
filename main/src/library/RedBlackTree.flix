@@ -131,7 +131,7 @@ mod RedBlackTree {
     /// By default we only enable parallel evaluation if the tree has a certain size.
     ///
     def useParallelEvaluation(t: RedBlackTree[k, v]): Bool =
-        let minSize = Int32.pow(2, RedBlackTree.blackHeight(t));
+        let minSize = Int32.pow(base = 2, RedBlackTree.blackHeight(t));
         minSize >= 1024
 
     ///

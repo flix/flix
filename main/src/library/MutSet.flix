@@ -270,7 +270,7 @@ mod MutSet {
         Set.reduceLeft(f, Ref.get(ms))
 
     ///
-    /// Applies `f` to all elements in the mutable set `s` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in the mutable set `s` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     ///

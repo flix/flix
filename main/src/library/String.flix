@@ -631,7 +631,7 @@ mod String {
         def loop(a) = {
             let a1 = f(a);
             match a1 {
-                case None         => StringBuilder.toString(sb)
+                case None           => StringBuilder.toString(sb)
                 case Some((c, st1)) => {
                     StringBuilder.append(c, sb);
                     loop(st1)
@@ -673,7 +673,7 @@ mod String {
         def loop(a) = {
             let a1 = f(a);
             match a1 {
-                case None         => StringBuilder.toString(sb)
+                case None             => StringBuilder.toString(sb)
                 case Some(((s, st1))) => {
                     StringBuilder.appendString(s, sb);
                     loop(st1)
@@ -1131,7 +1131,7 @@ mod String {
     /// Helper function for `levenshteinDistance`.
     ///
     def arraySwap(a: Array[Int32, r1], b : Array[Int32, r2]): Unit \ { r2, r1 } =
-        forIndex(0, Array.length(a) - 1, {i ->  Array.put(Array.get(i, b), i, a) })
+        forIndex(0, Array.length(a) - 1, {i -> Array.put(Array.get(i, b), i, a) })
 
     ///
     /// Returns an array where the element at index `i` is `(x, y)` where
@@ -1247,7 +1247,7 @@ mod String {
         let sublen = length(substr#substr);
         match indexOfRight({substr = substr#substr}, s) {
             case None    => (s, "")
-            case Some(i) => (sliceLeft(end  = i + sublen, s), sliceRight(start = i + sublen, s))
+            case Some(i) => (sliceLeft(end = i + sublen, s), sliceRight(start = i + sublen, s))
         }
 
     ///
@@ -1334,7 +1334,7 @@ mod String {
     pub def wrap(w: Int32, s: String): String =
         if (w <= 0) ""
         else {
-            let lines = List.flatMap(l -> wrapLine(w, l),  lines(s));
+            let lines = List.flatMap(l -> wrapLine(w, l), lines(s));
             intercalate(lineSeparator(), lines)
         }
 

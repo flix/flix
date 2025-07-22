@@ -30,7 +30,7 @@ eff ProcessWithResult {
     def exitValue(ph: ProcessHandle): Result[IoError, Int32]
 
     ///
-    ///  Returns status of the process, if it alive or not.
+    /// Returns status of the process, if it alive or not.
     ///
     def isAlive(ph: ProcessHandle): Result[IoError, Bool]
 

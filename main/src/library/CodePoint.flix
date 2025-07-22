@@ -38,10 +38,10 @@ mod CodePoint {
     pub def maxValue(): Int32 = unsafe Character.MAX_CODE_POINT
 
     ///
-    ///  Returns `true` if the given char `c` is an ascii character.
+    /// Returns `true` if the given char `c` is an ascii character.
     ///
     pub def isAscii(cp: Int32): Bool =
-        0x0000 <= cp  and cp <= 0x0080
+        0x0000 <= cp and cp <= 0x0080
 
     ///
     /// Returns `true` if the given code point `cp` represents a letter character.

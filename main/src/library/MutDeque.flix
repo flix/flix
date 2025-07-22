@@ -356,7 +356,7 @@ mod MutDeque {
         let j = d->back;
         if (i == j)
             Array#{} @ rc1
-        else if (i  < j)
+        else if (i < j)
             Array.copyOfRange(rc1, i, j, d->values)
         else
             Array.append(rc1, Array.copyOfRange(rc1, i, len, d->values), Array.copyOfRange(rc1, 0, j, d->values))
