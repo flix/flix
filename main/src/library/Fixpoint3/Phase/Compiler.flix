@@ -42,11 +42,11 @@ mod Fixpoint3.Phase.Compiler {
     /// A rule belongs to the same stratum as its head predicate.
     ///
     @Internal
-    pub def compile(d: Datalog, db: Map[RelSym, Map[Vector[Boxed], Boxed]], strat: Map[PredSym, (Int32, Int32)]): RamProgram = match d {
+    pub def compile(d: Datalog, db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]], strat: Map[PredSym, (Int32, Int32)]): RamProgram = match d {
         case Datalog(facts, rules) => region rc {
             let predicates = Predicate.initialize(d, db);
             let stmts = MutList.empty(rc);
-            let compiledFacts = compileFacts(facts, db, predicates);
+            let compiledFacts = unchecked_cast((compileFacts(facts, db, predicates): _ \ IO ) as _ \ {});
             // Create map of stratum to list of rules in stratum
             let counter = Counter.fresh(rc);
             let pseudoStratums = MutMap.empty(rc);
@@ -87,45 +87,33 @@ mod Fixpoint3.Phase.Compiler {
     ///
     /// Insert all facts in `facts` in `db` and return the result.
     ///
-    def compileFacts(facts: Vector[Constraint], db: Map[RelSym, Map[Vector[Boxed], Boxed]], predicates: Predicates): Facts =
-        let startingPoint = db |>
-            Map.mapWithKey(match RelSym.Symbol(_, _, den) -> values -> match den {
-            case Relational => (Nil, values) ||> Map.foldWithKey(acc -> k -> _ -> k :: acc)
-            case Latticenal(bot, leq, _, _) => (Nil, values) ||> Map.foldWithKey(acc -> k -> v ->
-                // Remove p(;bot) from the facts
-                if(v `leq` bot) {
-                    acc
-                } else {
-                    Vector.append(k, Vector#{v}) :: acc
-                }
-            )
-        });
-
-        (startingPoint, facts) ||> Vector.foldRight(constraint -> acc -> {
+    def compileFacts(facts: Vector[Constraint], db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]], predicates: Predicates): (Facts, Facts) \ IO = region rc {
+        let newFacts = MutMap.empty(rc);
+        facts |> Vector.forEach(constraint -> {
             match constraint {
                 case Constraint(headAtom, _) =>
                     let HeadAtom(_, den, headTerms) = headAtom;
                     let x = Vector.map(getLitOrCrash, headTerms);
-                    let isBot = match den {
-                        case Relational => false
-                        case Latticenal(bot, leq, _, _) =>
+                    match den {
+                        case Relational =>
+                            let sym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
+                            let newFactsTree = MutMap.getOrElsePut(sym, BPlusTree.empty(Static), newFacts);
+                            BPlusTree.put(x, Boxed.NoValue, newFactsTree)
+                        case Latticenal(bot, leq, lub, _) =>
                             // Remove p(;bot) from the facts
-                            if(Vector.get(Vector.length(x) - 1, x) `leq` bot) {
-                                true
+                            let latVal = Vector.get(Vector.length(x) - 1, x);
+                            if(latVal `leq` bot) {
+                                ()
                             } else {
-                                false
+                                let sym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
+                                let newFactsTree = MutMap.getOrElsePut(sym, BPlusTree.empty(Static), newFacts);
+                                BPlusTree.putWith(lub, Vector.dropRight(1, x), latVal, newFactsTree)
                             }
-                    };
-                    if(isBot) {
-                        acc
-                    } else {
-                        let sym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
-                        Map.insertWith(List.append, sym, x :: Nil, acc)
                     }
             }
-        }) |>
-            Map.map(List.toVector)
-
+        });
+        (db, MutMap.toMap(newFacts))
+    }
 
     ///
     /// Compile all rules to be evaluated in `stratum` to RAM

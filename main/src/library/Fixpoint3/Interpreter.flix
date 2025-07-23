@@ -66,7 +66,7 @@ mod Fixpoint3.Interpreter {
     /// which uses `MutMap` instead of a `BPlusTree`.
     ///
     @Internal
-    pub type alias Database[r: Region] = MutMap[RelSym, MutMap[Vector[Boxed], Boxed, r], r]
+    pub type alias Database[r: Region] = MutMap[RelSym, BPlusTree[Vector[Boxed], Boxed, Static], r]
 
     ///
     /// A `SearchEnv` contains the dynamic information about the state of the Interpreter.
@@ -116,13 +116,13 @@ mod Fixpoint3.Interpreter {
         rc: Region[r],
         relSym: RelSym,
         search: Vector[Int32],
-        tuples: Vector[(Tuple, Boxed)]
+        tuples: BPlusTree[Tuple, Boxed, r]
     ): Index[r] \ r =
         let index = BPlusTree.emptyWithArityAndSearch(rc, usedArity(), search);
-        if (Vector.isEmpty(tuples))
+        if (BPlusTree.isEmpty(tuples))
             index
         else {
-            Vector.forEach(match (nonLat, lat) -> {
+            BPlusTree.forEach(match nonLat -> lat -> {
                 match toDenotation(relSym) {
                     case Relational =>
                         BPlusTree.put(nonLat, lat, index)
@@ -137,7 +137,7 @@ mod Fixpoint3.Interpreter {
     /// Executes the `RamProgram` in `fst(input)` using the `Boxing` in `snd(input)`.
     ///
     @Internal
-    pub def interpret(rc: Region[r], withProv: Bool, input: (RamProgram, Boxing[r])): (Database[r], Predicates) \ r =
+    pub def interpret(rc: Region[r], withProv: Bool, input: (RamProgram[r], Boxing[r])): (Database[r], Predicates) \ r =
         let (program, boxing) = input;
         // Create `Indexes` from `program`.
         let RamProgram.Program(_, facts, _, (indexMap, posMap), _, _) = program;
@@ -148,7 +148,7 @@ mod Fixpoint3.Interpreter {
         let indexes = Array.empty(rc, indexNum);
         indexMap |>
         Map.forEach(relSym -> searches -> {
-            let tuples = Map.getWithDefault(relSym, Vector#{}, facts);
+            let tuples = Map.getWithDefault(relSym, BPlusTree.empty(rc), facts);
             searches |> Vector.forEachWithIndex(num -> search -> {
                 let pos = match Map.get((relSym, num), posMap) {
                     case Some(v) => v
@@ -168,7 +168,7 @@ mod Fixpoint3.Interpreter {
         db: Indexes[r],
         boxing: Boxing[r],
         withProv: Bool,
-        program: RamProgram
+        program: RamProgram[r]
     ): (Database[r], Predicates) \ r = match program {
         case RamProgram.Program(stmt, _, predState, (_, indexPos), (arities, constWrites), marshallIndexes) =>
             let minEnv = arities |> Vector.map(x -> Array.repeat(rc, x, Int64.minValue()));
@@ -182,7 +182,7 @@ mod Fixpoint3.Interpreter {
             let env = (minEnv, maxEnv, tupleEnv, latEnv);
             let ctx = (db, env, boxing);
             evalStmt(rc, ctx, parLevel(), stmt);
-            (marshallDb(rc, db, boxing, indexPos, predState, marshallIndexes, withProv), predState)
+            unchecked_cast((marshallDb(rc, db, boxing, indexPos, predState, marshallIndexes, withProv), predState) as _ \ r)
     }
 
     ///
@@ -191,11 +191,19 @@ mod Fixpoint3.Interpreter {
     /// For all `RelSym`, some `Index` for relation is selected and all values are boxed
     /// and copied to a `MutMap`.
     ///
-    def marshallDb(rc: Region[r], db: Indexes[r], boxing: Boxing[r], indexPos: Map[(RelSym, Int32), Int32], predTrack: Predicates, boxingIndexes: RamIdToPos, withProv: Bool): Database[r] \ r =
+    def marshallDb(
+        rc: Region[r],
+        db: Indexes[r],
+        boxing: Boxing[r],
+        indexPos: Map[(RelSym, Int32), Int32],
+        predTrack: Predicates,
+        boxingIndexes: RamIdToPos,
+        withProv: Bool
+    ): Database[r] \ r + IO =
         let res = MutMap.empty(rc);
         allFullRelSyms(predTrack) |>
         List.forEach(relSym -> {
-            let innerMap = MutMap.empty(rc);
+            let innerMap = BPlusTree.empty(Static);
             // If we are doing provenance computations we need to also rebox the annotations.
             // Since there are 2 annotations we add 2 in this case.
             let usedArity =
@@ -208,7 +216,7 @@ mod Fixpoint3.Interpreter {
             Array.get(getOrCrash(Map.get((relSym, 0), indexPos)), db) |>
             BPlusTree.forEach(vec -> latticeElem -> {
                 let boxedVec = vec |> Vector.mapWithIndex(i -> val -> boxWith(val, Vector.get(i, curBoxingInfo), boxing));
-                MutMap.put(boxedVec, latticeElem, innerMap)
+                BPlusTree.put(boxedVec, latticeElem, innerMap)
             });
             MutMap.put(relSym, innerMap, res)
         });

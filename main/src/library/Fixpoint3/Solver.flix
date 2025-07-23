@@ -19,7 +19,7 @@
 mod Fixpoint3.Solver {
     import dev.flix.runtime.Global
 
-    use Fixpoint3.{Boxed, Debugging, Interpreter, Options, Phase, Predicate, PredSymsOf, SubstitutePredSym }
+    use Fixpoint3.{Boxed, Debugging, Interpreter, Options, Phase, Predicate, PredSymsOf, SubstitutePredSym}
     use Fixpoint3.Ast.Datalog.{Datalog, Constraint, HeadTerm}
     use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Join, Model}
     use Fixpoint3.Ast.Datalog.Constraint.Constraint
@@ -55,7 +55,7 @@ mod Fixpoint3.Solver {
     @Internal
     def runWithStratification(d0: Datalog, stf: Map[PredSym, (Int32, Int32)], withProv: Bool): Datalog = region rc {
         let d = Debugging.notifyPreSolve(d0);
-        def compiler(cs: Datalog, db: Map[RelSym, Map[Vector[Boxed], Boxed]]): (ExecutableRam.RamProgram, Boxing[rc]) \ rc = {
+        def compiler(cs: Datalog, db: Ram.Facts): (ExecutableRam.RamProgram[rc], Boxing[rc]) \ rc = {
             Phase.Compiler.compile(cs, db, stf) |>
             Debugging.notifyPreLowering("Compiler") |>
             Phase.Simplifier.simplifyProgram |>
@@ -96,11 +96,22 @@ mod Fixpoint3.Solver {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
             Datalog(Vector.append(edb1, edb2), Vector.append(idb1, idb2))
         case (Model(db1), Model(db2)) =>
-            let union = ramSym -> match toDenotation(ramSym) {
-                case Relational => Map.union
-                case Latticenal(_, _, lub, _) => Map.unionWith(lub)
+            unchecked_cast((
+            let union = ramSym -> v1 -> v2 -> {
+                let newTree = BPlusTree.empty(Static);
+
+                match toDenotation(ramSym) {
+                    case Relational =>
+                        BPlusTree.merge(v1, newTree);
+                        BPlusTree.merge(v2, newTree)
+                    case Latticenal(_, _, lub, _) =>
+                        BPlusTree.merge(v1, newTree);
+                        BPlusTree.mergeWith(lub, v1, v2)
+                };
+                newTree
             };
-            Model(Map.unionWithKey(union, db1, db2))
+            // Get rid of the IO effect from `Static`.
+            Model(Map.unionWithKey(union, db1, db2)): _ \ IO) as _ \ {})
         case (Model(_), Datalog(_, _)) => Join(d1, d2)
         case (Datalog(_, _), Model(_)) => Join(d2, d1)
         case (Join(model, datalog), Datalog(_, _)) => Join(model, union(datalog, d2))
@@ -506,17 +517,18 @@ mod Fixpoint3.Solver {
         , p, ts)
 
     def injectIntoX(f: t -> Vector[Boxed] \ ef, p: PredSym, ts: f[t]): Datalog \ (ef + Foldable.Aef[f]) with Foldable[f] =
-        region rc {
+        unchecked_cast(({region rc {
             let db = MutMap.empty(rc);
             Foldable.foldLeft(() -> t -> {
                 let vs = f(t);
                 let arity = Vector.length(vs);
                 let ramSym = RelSym.Symbol(p, arity, Relational);
-                let rel = MutMap.getOrElsePut(ramSym, MutMap.empty(rc), db);
-                MutMap.put(vs, Reflect.default(), rel)
+                let rel = MutMap.getOrElsePut(ramSym, BPlusTree.empty(Static), db);
+                BPlusTree.put(vs, Boxed.NoValue, rel)
             }, (), ts);
             toModel(db)
         }
+    }: _ \ ef + Foldable.Aef[f] + IO) as _ \ ef + Foldable.Aef[f])
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -784,7 +796,10 @@ mod Fixpoint3.Solver {
     ///
     /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
     ///
-    def factsOf(f: Vector[Boxed] -> t \ ef, p: PredSym, d: Datalog): Vector[t] \ ef = match d {
+    def factsOf(f: Vector[Boxed] -> t \ ef, p: PredSym, d: Datalog): Vector[t] \ ef =
+        unchecked_cast((factsOfInternal(f, p, d): _ \ ef + IO) as _ \ ef)
+
+    def factsOfInternal(f: Vector[Boxed] -> t \ ef, p: PredSym, d: Datalog): Vector[t] \ ef + IO = match d {
         case Datalog(_, cs) => region rc {
             let pFacts = MutList.empty(rc);
             Vector.forEach(c -> match c {
@@ -806,11 +821,11 @@ mod Fixpoint3.Solver {
                 }
                 case _ => Comparison.LessThan
             };
-            Map.rangeQueryWith(qquery, ramSym -> rel -> match toDenotation(ramSym) {
+            db |> Map.rangeQueryWith(qquery, ramSym -> rel -> match toDenotation(ramSym) {
                 case Relational =>
-                    Map.forEach((tuple, _) -> MutList.push(f(tuple), pFacts), rel)
+                    BPlusTree.forEach(tuple -> _ -> MutList.push(f(tuple), pFacts), rel)
                 case Latticenal(bot, leq, _, _) =>
-                    Map.forEach((tuple, lat) -> {
+                    BPlusTree.forEach(tuple -> lat -> {
                         if (not leq(lat, bot)) {
                             let arity = Vector.length(tuple);
                             let vs = Vector.init(i -> {
@@ -822,7 +837,7 @@ mod Fixpoint3.Solver {
                             MutList.push(f(vs), pFacts)
                         } else ()
                     }, rel)
-            }, db);
+            });
             pFacts |> MutList.toVector
         }
         case Join(d1, d2) => Vector.append(factsOf(f, p, d1), factsOf(f, p, d2))
@@ -841,21 +856,20 @@ mod Fixpoint3.Solver {
     ///
     /// Returns the given database `db` as a Datalog value.
     ///
-    def toModelOnlyFull(_withProv: Bool, _rules: Vector[Constraint], dbMeta: (Database[r], Predicates)): Datalog \ r =
+    def toModelOnlyFull(_withProv: Bool, _rules: Vector[Constraint], dbMeta: (Database[r], Predicates)): Datalog \ r = unchecked_cast(({
         let (db, meta) = dbMeta;
         let dbOnlyFullRels = MutMap.toMap(db) |>
-            Map.map(MutMap.toMap) |>
             Map.filterWithKey(k -> facts -> match k {
-                case RelSym.Symbol(PredSym(_, id), _, _) => Predicate.isFullId(id, meta) and Map.nonEmpty(facts)
+                case RelSym.Symbol(PredSym(_, id), _, _) => Predicate.isFullId(id, meta) and not BPlusTree.isEmpty(facts)
             });
         Model(dbOnlyFullRels)
+    }: _ \ IO + r) as _ \ r)
 
     ///
     /// Returns the given database `db` as a Datalog value.
     ///
     def toModel(db: Database[r]): Datalog \ r =
         MutMap.toMap(db) |>
-        Map.map(MutMap.toMap) |>
         Model
 
 }
