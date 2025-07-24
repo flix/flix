@@ -49,6 +49,7 @@ mod Fixpoint3.Phase.Simplifier {
                 Set.map(rel -> getRelSymAsType(rel, PredType.Full, predicates));
             let nonEmpty = filterOutEmpty(fst(facts)) `Set.union` filterOutEmpty(snd(facts));
             RamProgram.Program(simplifyStmt(stmt, nonEmpty, predicates), facts, predicates, index)
+    // Remove the `IO` effect from dealing with `Static`.
     }: _ \ IO) as _ \ {})
 
     ///
