@@ -162,7 +162,7 @@ mod Fixpoint3.Phase.Lowering {
     /// Returns the result along with the `Boxing` used for the program
     ///
     @Internal
-    pub def lowerProgram(rc: Region[r], withProv: Bool, program: Ram.RamProgram): (ExecutableRam.RamProgram, Boxing[r]) \ r = match program { 
+    pub def lowerProgram(rc: Region[r], withProv: Bool, program: Ram.RamProgram): (ExecutableRam.RamProgram[r], Boxing[r]) \ r = match program { 
         case Ram.RamProgram.Program(stmt, _, meta, indexInfo) =>
             let idToIndex = UniqueInts.empty(rc);
             let (boxing, newFacts, idToBoxing) = Boxing.initialize(rc, withProv, program);
