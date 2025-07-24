@@ -104,6 +104,7 @@ mod Fixpoint3.Ast.Datalog {
                             })
                         );
                         StringBuilder.toString(builder)
+                    // Remove the `IO` effect from dealing with `Static`.
                     }: String \ rc + IO) as String \ rc)
                 }
             }

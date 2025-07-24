@@ -50,7 +50,6 @@
 /// requires less information.
 ///
 mod Fixpoint3.BoxingType {
-    use Fixpoint3.AtomicCounter
     use Fixpoint3.ReadWriteLock
     use Fixpoint3.Boxed
     use Fixpoint3.Ast.Ram.RamId
@@ -112,7 +111,7 @@ mod Fixpoint3.BoxingType {
 
     ///
     /// `Boxing=(values, valueToRep, typeInfo, locks)` contains the information needed to
-    /// convert between `Boxed` objects and their `Int64` representation
+    /// convert between `Boxed` objects and their `Int64` representation.
     ///
     /// The `i`'th value of each Vector belongs to a specific `UnifiedTypePos`. The
     /// description of the values will be for some `i`.

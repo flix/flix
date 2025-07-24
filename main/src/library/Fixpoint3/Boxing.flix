@@ -49,7 +49,6 @@ mod Fixpoint3.Boxing {
     use Fixpoint3.Ast.Ram
     use Fixpoint3.Ast.Ram.{arityOf, BoolExp, RamId, RamProgram, RamStmt, RelSym, RamTerm, RelOp, toDenotation}
     use Fixpoint3.Ast.Shared.{PredSym, isRelational, Denotation}
-    use Fixpoint3.AtomicCounter
     use Fixpoint3.Boxable
     use Fixpoint3.Boxed
     use Fixpoint3.Boxed.{BoxedBool, BoxedChar, BoxedFloat32, BoxedFloat64, BoxedInt8, BoxedInt16, BoxedInt32, BoxedInt64, BoxedObject}
@@ -68,6 +67,7 @@ mod Fixpoint3.Boxing {
     pub def initialize(rc: Region[r], withProv: Bool, program: RamProgram): (Boxing[r], EFacts[r], RamIdToPos) \ r =
         let mapping = Equality.computeMapping(program, withProv);
         let boxingInfo = initializeInternal(rc, program, mapping, withProv);
+        // Remove the `IO` effect from dealing with `Static`.
         let facts = unchecked_cast(((initializeFacts(rc, program, boxingInfo, mapping, withProv)): EFacts[r] \ IO + r) as _ \ r);
         (boxingInfo, facts, mapping)
 
@@ -119,6 +119,7 @@ mod Fixpoint3.Boxing {
                     );
                 BPlusTree.put(savedVec, lat, newTree)
         }: _ \ r) as _ \ IO)})
+    // This is to signal that we indeed modify the region `r`.
     } as _ \ IO + r)
 
     ///

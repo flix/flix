@@ -110,7 +110,7 @@ mod Fixpoint3.Solver {
                 };
                 newTree
             };
-            // Get rid of the IO effect from `Static`.
+            // Remove the `IO` effect from dealing with `Static`.
             Model(Map.unionWithKey(union, db1, db2)): _ \ IO) as _ \ {})
         case (Model(_), Datalog(_, _)) => Join(d1, d2)
         case (Datalog(_, _), Model(_)) => Join(d2, d1)
@@ -528,6 +528,7 @@ mod Fixpoint3.Solver {
             }, (), ts);
             toModel(db)
         }
+    // Remove the `IO` effect from dealing with `Static`.
     }: _ \ ef + Foldable.Aef[f] + IO) as _ \ ef + Foldable.Aef[f])
 
     ///
@@ -797,6 +798,7 @@ mod Fixpoint3.Solver {
     /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
     ///
     def factsOf(f: Vector[Boxed] -> t \ ef, p: PredSym, d: Datalog): Vector[t] \ ef =
+        // Remove the `IO` effect from dealing with `Static`.
         unchecked_cast((factsOfInternal(f, p, d): _ \ ef + IO) as _ \ ef)
 
     def factsOfInternal(f: Vector[Boxed] -> t \ ef, p: PredSym, d: Datalog): Vector[t] \ ef + IO = match d {
@@ -863,6 +865,7 @@ mod Fixpoint3.Solver {
                 case RelSym.Symbol(PredSym(_, id), _, _) => Predicate.isFullId(id, meta) and not BPlusTree.isEmpty(facts)
             });
         Model(dbOnlyFullRels)
+    // Remove the `IO` effect from dealing with `Static`.
     }: _ \ IO + r) as _ \ r)
 
     ///

@@ -46,6 +46,7 @@ mod Fixpoint3.Phase.Compiler {
         case Datalog(facts, rules) => region rc {
             let predicates = Predicate.initialize(d, db);
             let stmts = MutList.empty(rc);
+            // Remove the `IO` effect from dealing with `Static`.
             let compiledFacts = unchecked_cast((compileFacts(facts, db, predicates): _ \ IO ) as _ \ {});
             // Create map of stratum to list of rules in stratum
             let counter = Counter.fresh(rc);
