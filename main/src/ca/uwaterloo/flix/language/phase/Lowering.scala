@@ -1361,9 +1361,6 @@ object Lowering {
     val numberOfInVars = inVars.length
     val numberOfOutVars = outVars.length
 
-    if (numberOfInVars == 0) {
-      throw InternalCompilerException("Requires at least one in variable.", loc)
-    }
     if (numberOfInVars > 5) {
       throw InternalCompilerException("Does not support more than 5 in variables.", loc)
     }
