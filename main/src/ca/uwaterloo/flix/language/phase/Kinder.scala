@@ -63,17 +63,21 @@ object Kinder {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
-    implicit val taenv = SimpleTypeAliasEnv(visitTypeAliases(root.taOrder, root))
+    implicit val taenv: TypeAliasEnv = SimpleTypeAliasEnv(visitTypeAliases(root.taOrder, root))
 
+    // We visit other type declarations under the type alias environment
     val enums = ParOps.parMapValues(root.enums)(visitEnum(_, root))
-
     val structs = ParOps.parMapValues(root.structs)(visitStruct(_, root))
-
     val restrictableEnums = ParOps.parMapValues(root.restrictableEnums)(visitRestrictableEnum(_, root))
 
-    val traits = visitTraits(root, oldRoot, changeSet)
+    // We visit def specs to provide a `specEnv` for knowing kinds in type signatures
+    val specs = visitDefSpecs(root)
+
+    implicit val rootEnv: RootEnv = RootEnv(taenv.aliases, specs)
 
     val defs = visitDefs(root, oldRoot, changeSet)
+
+    val traits = visitTraits(root, oldRoot, changeSet)
 
     val instances = ParOps.parMapValueList(root.instances)(visitInstance(_, root))
 
@@ -250,33 +254,24 @@ object Kinder {
   }
 
   /**
+    * Performs kinding on the all the definition specifications in the given root.
+    */
+  private def visitDefSpecs(root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, KindedAst.Spec] = {
+    //    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef(_, KindEnv.empty, root)))
+    ParOps.parMapValues(root.defs) {
+      case defn =>
+        visitSpec(defn.spec, Nil, None, KindEnv.empty, root)
+    }
+  }
+
+  /**
     * Performs kinding on the all the definitions in the given root.
     */
-  private def visitDefs(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit renv: RootEnv, sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, KindedAst.Def] = {
-//    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef(_, KindEnv.empty, root)))
-  }
-
-  private def visitDefSpecs(root: ResolvedAst.Root, taenv: TypeAliasEnv, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, KindedAst.Spec] = {
+  private def visitDefs(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit rootEnv: RootEnv, sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, KindedAst.Def] = {
     ParOps.parMapValues(root.defs) {
       case defn =>
-        visitSpec(defn.spec, Nil, None, KindEnv.empty, taenv, root)
+        visitDef(defn, KindEnv.empty, root)
     }
-  }
-
-  private def inferDefSpecs(root: ResolvedAst.Root, taenv: TypeAliasEnv, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, KindEnv] = {
-    ParOps.parMapValues(root.defs) {
-      case defn =>
-        inferSpec(defn.spec, KindEnv.empty, taenv, root)
-    }
-  }
-
-  private def visitDefs3(root: ResolvedAst.Root, kenvs: Map[Symbol.DefnSym, KindEnv], taenv: TypeAliasEnv, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, KindedAst.Def] = {
-    ParOps.parMapValues(root.defs) {
-      case defn =>
-        val kenv = kenvs(defn.sym)
-        visitDef(defn, kenv, taenv, root)(sctx, kenvs, flix)
-    }
-    //    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef(_, KindEnv.empty, taenv, root)))
   }
 
   /**
@@ -284,8 +279,8 @@ object Kinder {
     */
   private def visitDef(def0: ResolvedAst.Declaration.Def, kenv0: KindEnv, root: ResolvedAst.Root)(implicit renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.Def = def0 match {
     case ResolvedAst.Declaration.Def(sym, spec0, exp0, loc) =>
-      val kenv = getKindEnvFromSpec(spec0, kenv0, root)
-      val spec = visitSpec(spec0, Nil, None, kenv, root)
+      val spec = renv.specs(sym)
+      val kenv = getKindEnvFromKindedSpec(spec, kenv0)
       val exp = visitExp(exp0, kenv, root)(Scope.Top, renv, sctx, flix)
       KindedAst.Def(sym, spec, exp, loc)
   }
@@ -1598,6 +1593,13 @@ object Kinder {
 
       // Finally do inference on the spec under the new kenv
       inferSpec(spec0, kenv2, root)
+  }
+
+  private def getKindEnvFromKindedSpec(spec: KindedAst.Spec, kenv0: KindEnv) = {
+    val map = spec.tparams.map {
+      tparam => (tparam.sym.withoutKind -> tparam.sym.kind)
+    }.toMap
+    KindEnv(map)
   }
 
   /**
