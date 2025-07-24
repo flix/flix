@@ -450,6 +450,7 @@ object Deriver {
             exp1,
             KindedAst.Expr.Lazy(exp2, loc)
           ),
+          Map.empty,
           Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Eff, loc),
@@ -736,6 +737,7 @@ object Deriver {
                 loc
               ),
             ),
+            Map.empty,
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Eff, loc),

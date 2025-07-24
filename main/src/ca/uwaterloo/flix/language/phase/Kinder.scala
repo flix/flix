@@ -73,19 +73,21 @@ object Kinder {
     // We visit def specs to provide a `specEnv` for knowing kinds in type signatures
     val specs = visitDefSpecs(root)
 
-    implicit val rootEnv: RootEnv = RootEnv(taenv.aliases, specs)
+    {
+      implicit val rootEnv: RootEnv = RootEnv(taenv.aliases, specs)
 
-    val defs = visitDefs(root, oldRoot, changeSet)
+      val defs = visitDefs(root, oldRoot, changeSet)
 
-    val traits = visitTraits(root, oldRoot, changeSet)
+      val traits = visitTraits(root, oldRoot, changeSet)
 
-    val instances = ParOps.parMapValueList(root.instances)(visitInstance(_, root))
+      val instances = ParOps.parMapValueList(root.instances)(visitInstance(_, root))
 
-    val effects = ParOps.parMapValues(root.effects)(visitEffect(_, root))
+      val effects = ParOps.parMapValues(root.effects)(visitEffect(_, root))
 
-    val newRoot = KindedAst.Root(traits, instances, defs, enums, structs, restrictableEnums, effects, taenv.aliases, root.uses, root.mainEntryPoint, root.sources, root.availableClasses, root.tokens)
+      val newRoot = KindedAst.Root(traits, instances, defs, enums, structs, restrictableEnums, effects, taenv.aliases, root.uses, root.mainEntryPoint, root.sources, root.availableClasses, root.tokens)
 
-    (newRoot, sctx.errors.asScala.toList)
+      (newRoot, sctx.errors.asScala.toList)
+    }
   }
 
   /**
@@ -279,8 +281,8 @@ object Kinder {
     */
   private def visitDef(def0: ResolvedAst.Declaration.Def, kenv0: KindEnv, root: ResolvedAst.Root)(implicit renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.Def = def0 match {
     case ResolvedAst.Declaration.Def(sym, spec0, exp0, loc) =>
-      val spec = renv.specs(sym)
-      val kenv = getKindEnvFromKindedSpec(spec, kenv0)
+      val kenv = getKindEnvFromSpec(spec0, kenv0, root)
+      val spec = visitSpec(spec0, Nil, None, kenv, root) // TODO we can look this up in the renv in some cases (not laws and instance defs)
       val exp = visitExp(exp0, kenv, root)(Scope.Top, renv, sctx, flix)
       KindedAst.Def(sym, spec, exp, loc)
   }

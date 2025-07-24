@@ -86,17 +86,23 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ApplyDef(DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
+      case Expr.ApplyDef(DefSymUse(sym, loc1), exps, map, itvar, tvar, evar, loc2) =>
         val defn = root.defs(sym)
 
         // Pseudo variable for source to flow into
         val pvar = Type.freshVar(Kind.Eff, loc1)
 
-        val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
-        val constrs1 = tconstrs1.map(_.copy(loc = loc2))
-        val declaredEff = declaredType.arrowEffectType
-        val declaredArgumentTypes = declaredType.arrowArgTypes
-        val declaredResultType = declaredType.arrowResultType
+
+        val subst = Substitution(map)
+
+        val constrs1 = defn.spec.tconstrs.map(subst.apply) // TODO update location
+        val econstrs1 = defn.spec.econstrs.map(subst.apply)
+
+        val declaredEff = subst(defn.spec.eff)
+        val declaredResultType = subst(defn.spec.tpe)
+        val declaredArgumentTypes = defn.spec.fparams.map(_.tpe).map(subst.apply)
+        val declaredType = Type.mkUncurriedArrowWithEffect(declaredArgumentTypes, declaredEff, declaredResultType, loc2)
+
         val (tpes, effs) = exps.map(visitExp).unzip
 
         c.unifyType(itvar, declaredType, loc2)
