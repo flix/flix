@@ -85,7 +85,7 @@ object CofiniteSet {
     /**
       * An instance of [[CofiniteSet.SingletonValues]] for effect symbols.
       */
-    implicit object EffectSymSingletonValues extends CofiniteSet.SingletonValues[Symbol.EffSym] {
+    implicit object EffSymSingletonValues extends CofiniteSet.SingletonValues[Symbol.EffSym] {
       override val empty: CofiniteSet[Symbol.EffSym] = CofiniteSet.Set(SortedSet.empty)
       override val universe: CofiniteSet[Symbol.EffSym] = CofiniteSet.Compl(SortedSet.empty)
     }

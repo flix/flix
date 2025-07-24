@@ -74,7 +74,7 @@ trait Consumer {
 
   def consumeEff(eff: Effect): Unit = ()
 
-  def consumeEffectSymUse(effUse: EffectSymUse): Unit = ()
+  def consumeEffSymUse(effUse: EffSymUse): Unit = ()
 
   def consumeEnum(enm: Enum): Unit = ()
 

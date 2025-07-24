@@ -225,7 +225,7 @@ class TestCompletionProvider extends AnyFunSuite {
     }
   }
 
-  test("NoCompletions.onEffectSyms") {
+  test("NoCompletions.onEffSyms") {
     forAll(Programs) { prg =>
       val root = compileWithSuccess(prg)
       forAll(effectSymsOf(root)) { sym =>

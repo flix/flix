@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.{Name, Symbol, TypedAst}
 object HandlerCompleter {
 
   def getCompletions(qn: Name.QName, range: Range)(implicit root: TypedAst.Root): Iterable[OpHandlerCompletion] = {
-    val effSym = Symbol.mkEffectSym(qn.namespace.toString)
+    val effSym = Symbol.mkEffSym(qn.namespace.toString)
     root.effects.get(effSym).toList.flatMap(eff =>
       eff.ops.collect {
         case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false) =>

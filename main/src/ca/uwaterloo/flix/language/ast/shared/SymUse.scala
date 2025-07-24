@@ -48,7 +48,7 @@ object SymUse {
     * @param sym    The [[Symbol]] being used.
     * @param qname  The qualified name ([[QName]]) of the use of `sym`:
     */
-  case class EffectSymUse(sym: Symbol.EffSym, qname: QName) extends SymUse
+  case class EffSymUse(sym: Symbol.EffSym, qname: QName) extends SymUse
 
   /**
     * Represents a use of a LocalDef sym.

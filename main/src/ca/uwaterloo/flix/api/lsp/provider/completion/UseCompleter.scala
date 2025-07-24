@@ -52,7 +52,7 @@ object UseCompleter {
     * Returns a List of Completion for ops.
     */
   private def getOpCompletions(qn: Name.QName, range: Range)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    val effectSym = Symbol.mkEffectSym(qn.namespace.toString)
+    val effectSym = Symbol.mkEffSym(qn.namespace.toString)
     root.effects.get(effectSym).filter(CompletionUtils.isAvailable).map(_.ops.collect {
       case op if fuzzyMatch(qn.ident.name, op.sym.name) =>
         UseCompletion(op.sym.toString, range, Priority.Medium(0), CompletionItemKind.Method)

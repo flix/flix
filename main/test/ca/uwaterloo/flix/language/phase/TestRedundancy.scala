@@ -1790,7 +1790,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedDefSym](result)
   }
 
-  test("UnusedEffectSym.01") {
+  test("UnusedEffSym.01") {
     val input =
       """
         |mod N {
@@ -1798,10 +1798,10 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnusedEffectSym](result)
+    expectError[RedundancyError.UnusedEffSym](result)
   }
 
-  test("UnusedEffectSym.02") {
+  test("UnusedEffSym.02") {
     val input =
       """
         |mod N {
@@ -1810,7 +1810,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnusedEffectSym](result)
+    expectError[RedundancyError.UnusedEffSym](result)
   }
 
   test("DiscardedPureValue.01") {

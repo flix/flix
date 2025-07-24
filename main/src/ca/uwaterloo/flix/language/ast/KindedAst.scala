@@ -169,13 +169,13 @@ object KindedAst {
 
     case class Unsafe(exp: Expr, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Without(exp: Expr, symUse: EffectSymUse, loc: SourceLocation) extends Expr
+    case class Without(exp: Expr, symUse: EffSymUse, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
 
     case class Throw(exp: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Handler(symUse: EffectSymUse, rules: List[HandlerRule], tvar: Type.Var, evar1: Type.Var, evar2: Type.Var, loc: SourceLocation) extends Expr
+    case class Handler(symUse: EffSymUse, rules: List[HandlerRule], tvar: Type.Var, evar1: Type.Var, evar2: Type.Var, loc: SourceLocation) extends Expr
 
     case class RunWith(exp1: Expr, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 

@@ -562,7 +562,7 @@ object Dependencies {
     case SymUse.AssocTypeSymUse(sym, loc) => addDependency(sym.loc, loc)
     case SymUse.CaseSymUse(sym, loc) => addDependency(sym.loc, loc)
     case SymUse.DefSymUse(sym, loc) => addDependency(sym.loc, loc)
-    case SymUse.EffectSymUse(sym, qname) => addDependency(sym.loc, qname.loc)
+    case SymUse.EffSymUse(sym, qname) => addDependency(sym.loc, qname.loc)
     case SymUse.OpSymUse(sym, loc) => addDependency(sym.loc, loc)
     case SymUse.SigSymUse(sym, loc) => addDependency(sym.loc, loc)
     case SymUse.StructFieldSymUse(sym, loc) => addDependency(sym.loc, loc)

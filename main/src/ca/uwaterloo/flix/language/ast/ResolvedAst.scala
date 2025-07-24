@@ -186,13 +186,13 @@ object ResolvedAst {
 
     case class Unsafe(exp: Expr, eff: UnkindedType, loc: SourceLocation) extends Expr
 
-    case class Without(exp: Expr, symUse: EffectSymUse, loc: SourceLocation) extends Expr
+    case class Without(exp: Expr, symUse: EffSymUse, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
 
     case class Throw(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Handler(symUse: EffectSymUse, rules: List[HandlerRule], loc: SourceLocation) extends Expr
+    case class Handler(symUse: EffSymUse, rules: List[HandlerRule], loc: SourceLocation) extends Expr
 
     case class RunWith(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
