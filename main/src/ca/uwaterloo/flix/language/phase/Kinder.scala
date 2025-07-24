@@ -262,7 +262,8 @@ object Kinder {
     //    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef(_, KindEnv.empty, root)))
     ParOps.parMapValues(root.defs) {
       case defn =>
-        visitSpec(defn.spec, Nil, None, KindEnv.empty, root)
+        val kenv = getKindEnvFromSpec(defn.spec, KindEnv.empty, root)
+        visitSpec(defn.spec, Nil, None, kenv, root)
     }
   }
 
