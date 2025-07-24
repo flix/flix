@@ -854,7 +854,7 @@ object HtmlDocumentor {
        |<link href='https://fonts.googleapis.com/css?family=Inter&display=swap' rel='stylesheet'>
        |<link href='styles.css' rel='stylesheet'>
        |<link href='favicon.png' rel='icon'>
-       |<script defer type='module' src='./index.js'></script>
+       |<script type='module' src='./index.js'></script>
        |<title>Flix | ${esc(name)}</title>
        |</head>
     """.stripMargin
