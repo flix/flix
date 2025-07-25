@@ -347,7 +347,7 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.ApplyDef(symUse, exps, _, _, _, _) =>
+      case Expr.ApplyDef(symUse, exps, _, _, _, _, _) =>
         visitDefSymUse(symUse)
         exps.foreach(visitExpr)
 
@@ -359,7 +359,7 @@ object Visitor {
         visitOpSymUse(op)
         exps.foreach(visitExpr)
 
-      case Expr.ApplySig(symUse, exps, _, _, _, _) =>
+      case Expr.ApplySig(symUse, exps, _, _, _, _, _, _) =>
         visitSigSymUse(symUse)
         exps.foreach(visitExpr)
 
