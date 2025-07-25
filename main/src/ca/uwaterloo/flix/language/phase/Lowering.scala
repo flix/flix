@@ -387,7 +387,7 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyClo(e1, e2, t, eff, loc)
 
-    case TypedAst.Expr.ApplyDef(DefSymUse(sym, _), exps, itpe, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplyDef(DefSymUse(sym, _), exps, _, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val it = visitType(itpe)
       val t = visitType(tpe)
@@ -402,7 +402,7 @@ object Lowering {
       val es = exps.map(visitExp)
       LoweredAst.Expr.ApplyOp(sym, es, tpe, eff, loc)
 
-    case TypedAst.Expr.ApplySig(SigSymUse(sym, _), exps, itpe, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplySig(SigSymUse(sym, _), exps, _, _, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val it = visitType(itpe)
       val t = visitType(tpe)
@@ -1299,10 +1299,11 @@ object Lowering {
   /**
     * Returns the given expression `exp` in a box.
     */
-  private def box(exp: LoweredAst.Expr): LoweredAst.Expr = {
+  private def box(exp: LoweredAst.Expr)(implicit root: LoweredAst.Root): LoweredAst.Expr = {
     val loc = exp.loc
+    val tvarSym = root.defs.get(Defs.Box)
     val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed, loc)
-    LoweredAst.Expr.ApplyDef(Defs.Box, List(exp), tpe, Types.Boxed, Type.Pure, loc)
+    LoweredAst.Expr.ApplyDef(Defs.Box, List(exp), Map(tvarSym -> exp.tpe), tpe, Types.Boxed, Type.Pure, loc)
   }
 
   /**
@@ -1548,9 +1549,12 @@ object Lowering {
     *
     * Note: liftX and liftXb are similar and should probably be maintained together.
     */
-  private def liftX(exp0: LoweredAst.Expr, argTypes: List[Type], resultType: Type): LoweredAst.Expr = {
+  private def liftX(exp0: LoweredAst.Expr, argTypes: List[Type], resultType: Type)(implicit root: LoweredAst.Root): LoweredAst.Expr = {
     // Compute the liftXb symbol.
     val sym = Symbol.mkDefnSym(s"Fixpoint${Defs.version}.Boxable.lift${argTypes.length}")
+
+    val defn = root.defs(sym)
+    val map = defn.spec.tparams.map(_.sym).zip(argTypes :+ resultType).toMap
 
     //
     // The liftX family of functions are of the form: a -> b -> c -> `resultType` and
@@ -1568,16 +1572,18 @@ object Lowering {
     val liftType = Type.mkPureArrow(argType, returnType, exp0.loc)
 
     // Construct a call to the liftX function.
-    LoweredAst.Expr.ApplyDef(sym, List(exp0), liftType, returnType, Type.Pure, exp0.loc)
+    LoweredAst.Expr.ApplyDef(sym, List(exp0), map, liftType, returnType, Type.Pure, exp0.loc)
   }
 
   /**
     * Lifts the given Boolean-valued lambda expression `exp0` with the given argument types `argTypes`.
     */
-  private def liftXb(exp0: LoweredAst.Expr, argTypes: List[Type]): LoweredAst.Expr = {
+  private def liftXb(exp0: LoweredAst.Expr, argTypes: List[Type])(implicit root: LoweredAst.Root): LoweredAst.Expr = {
     // Compute the liftXb symbol.
     val sym = Symbol.mkDefnSym(s"Fixpoint${Defs.version}.Boxable.lift${argTypes.length}b")
 
+    val defn = root.defs(sym)
+    val map = defn.spec.tparams.map(_.sym).zip(argTypes).toMap
     //
     // The liftX family of functions are of the form: a -> b -> c -> Bool and
     // returns a function of the form Boxed -> Boxed -> Boxed -> Boxed -> Bool.
@@ -1594,14 +1600,14 @@ object Lowering {
     val liftType = Type.mkPureArrow(argType, returnType, exp0.loc)
 
     // Construct a call to the liftXb function.
-    LoweredAst.Expr.ApplyDef(sym, List(exp0), liftType, returnType, Type.Pure, exp0.loc)
+    LoweredAst.Expr.ApplyDef(sym, List(exp0), map, liftType, returnType, Type.Pure, exp0.loc)
   }
 
 
   /**
     * Lifts the given lambda expression `exp0` with the given argument types `argTypes` and `resultType`.
     */
-  private def liftXY(outVars: List[Symbol.VarSym], exp0: LoweredAst.Expr, argTypes: List[Type], resultType: Type, loc: SourceLocation): LoweredAst.Expr = {
+  private def liftXY(outVars: List[Symbol.VarSym], exp0: LoweredAst.Expr, argTypes: List[Type], resultType: Type, loc: SourceLocation)(implicit root: LoweredAst.Root): LoweredAst.Expr = {
     // Compute the number of bound ("output") and free ("input") variables.
     val numberOfInVars = argTypes.length
     val numberOfOutVars = outVars.length
@@ -1609,6 +1615,11 @@ object Lowering {
     // Compute the liftXY symbol.
     // For example, lift3X2 is a function from three arguments to a Vector of pairs.
     val sym = Symbol.mkDefnSym(s"Fixpoint${Defs.version}.Boxable.lift${numberOfInVars}X$numberOfOutVars")
+
+    val defn = root.defs(sym)
+    val map = defn.spec.tparams.map(_.sym).zip(argTypes).toMap
+
+    // MATT missing variables from result type in map above
 
     //
     // The liftXY family of functions are of the form: i1 -> i2 -> i3 -> Vector[(o1, o2, o3, ...)] and
@@ -1847,7 +1858,7 @@ object Lowering {
       val e2 = substExp(exp2, subst)
       LoweredAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
-    case LoweredAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+    case LoweredAst.Expr.ApplyDef(sym, exps, _, itpe, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
       LoweredAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
 
@@ -1859,7 +1870,7 @@ object Lowering {
       val es = exps.map(substExp(_, subst))
       LoweredAst.Expr.ApplyOp(sym, es, tpe, eff, loc)
 
-    case LoweredAst.Expr.ApplySig(sym, exps, itpe, tpe, eff, loc) =>
+    case LoweredAst.Expr.ApplySig(sym, exps, _, _, itpe, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
       LoweredAst.Expr.ApplySig(sym, es, itpe, tpe, eff, loc)
 

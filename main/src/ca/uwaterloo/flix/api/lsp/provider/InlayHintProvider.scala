@@ -99,7 +99,7 @@ object InlayHintProvider {
     object defSymUseConsumer extends Consumer {
       override def consumeExpr(expr: Expr): Unit = {
         expr match {
-          case Expr.ApplyDef(defSymUse, _, _, _, _, loc) =>
+          case Expr.ApplyDef(defSymUse, _, _, _, _, _, loc) =>
             defSymUses = ((defSymUse, loc)) :: defSymUses
           case _ => ()
         }

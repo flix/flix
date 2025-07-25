@@ -113,7 +113,7 @@ object PredDeps {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.ApplyDef(_, exps, _, _, _, _) =>
+    case Expr.ApplyDef(_, exps, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
@@ -122,7 +122,7 @@ object PredDeps {
     case Expr.ApplyOp(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplySig(_, exps, _, _, _, _) =>
+    case Expr.ApplySig(_, exps, _, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.Unary(_, exp, _, _, _) =>
