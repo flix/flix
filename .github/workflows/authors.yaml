@@ -11,4 +11,4 @@ jobs:
       - name: Check out master
         uses: actions/checkout@v4
       - name: Check for name
-        run: grep -q "https://github.com/${{ github.actor }}" AUTHORS.md
+        run: grep -q "(https://github.com/${{ github.actor }})" AUTHORS.md
