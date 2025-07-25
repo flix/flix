@@ -3320,17 +3320,15 @@ object Parser2 {
     def parameters()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
-      oneOrMore(
+      zeroOrMore(
         namedTokenSet = NamedTokenSet.Parameter,
         getItem = parameter,
         checkForItem = kind => NAME_VARIABLE.contains(kind),
         delimiterL = TokenKind.BracketL,
         delimiterR = TokenKind.BracketR,
         breakWhen = _.isRecoverType,
-      ) match {
-        case Some(error) => closeWithError(mark, error)
-        case None => close(mark, TreeKind.TypeParameterList)
-      }
+      )
+      close(mark, TreeKind.TypeParameterList)
     }
 
     private def parameter()(implicit s: State): Mark.Closed = {

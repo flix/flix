@@ -3126,8 +3126,11 @@ object Weeder2 {
                   val error = MismatchedTypeParameters(tparamsTree.loc)
                   sctx.errors.add(error)
                   tparams
+                // No type parameters. Issue an error and return an empty list.
                 case (Nil, Nil) =>
-                  throw InternalCompilerException("Parser produced empty type parameter tree", tparamsTree.loc)
+                  val error = NeedAtleastOne(NamedTokenSet.Parameter, SyntacticContext.Decl.Type, None, tparamsTree.loc)
+                  sctx.errors.add(error)
+                  Nil
               }
           }
       }
