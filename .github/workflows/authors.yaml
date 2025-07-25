@@ -1,0 +1,14 @@
+name: AUTHORS.md Check
+on: pull_request
+
+jobs:
+  check-authors:
+    runs-on: ubuntu-latest
+    env:
+      GRADLE_OPTS: "-Xms128m -Xmx4g"
+
+    steps:
+      - name: Check out master
+        uses: actions/checkout@v4
+      - name: Check for name
+        run: grep -q "https://github.com/${{ github.actor }}" AUTHORS.md
