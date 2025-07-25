@@ -134,8 +134,10 @@ object TypeReconstruction {
       val eff = subst(evar)
       TypedAst.Expr.ApplyOp(symUse, es, tpe, eff, loc)
 
-    case KindedAst.Expr.ApplySig(symUse, exps, itvar, tvar, evar, loc) =>
+    case KindedAst.Expr.ApplySig(symUse, exps, svar, map, itvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
+      val sel = subst(svar)
+      val m = MapOps.mapValues(map)(subst.apply)
       TypedAst.Expr.ApplySig(symUse, es, subst(itvar), subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.Lambda(fparam, exp, _, loc) =>

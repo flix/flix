@@ -71,10 +71,11 @@ object Kinder {
     val restrictableEnums = ParOps.parMapValues(root.restrictableEnums)(visitRestrictableEnum(_, root))
 
     // We visit def specs to provide a `specEnv` for knowing kinds in type signatures
-    val specs = visitDefSpecs(root)
+    val defSpecs = visitDefSpecs(root)
+    val sigSpecs = visitSigSpecs(root)
 
     {
-      implicit val rootEnv: RootEnv = RootEnv(taenv.aliases, specs)
+      implicit val rootEnv: RootEnv = RootEnv(taenv.aliases, defSpecs, sigSpecs)
 
       val defs = visitDefs(root, oldRoot, changeSet)
 
@@ -268,6 +269,18 @@ object Kinder {
   }
 
   /**
+    * Performs kinding on the all the signature specifications in the given root.
+    */
+  private def visitSigSpecs(root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): Map[Symbol.SigSym, KindedAst.Spec] = {
+    val sigs = root.traits.values.flatMap(_.sigs).toMap
+    ParOps.parMapValues(sigs) {
+      case sig =>
+        val kenv = getKindEnvFromSpec(sig.spec, KindEnv.empty, root)
+        visitSpec(sig.spec, Nil, None, kenv, root)
+    }
+  }
+
+  /**
     * Performs kinding on the all the definitions in the given root.
     */
   private def visitDefs(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit rootEnv: RootEnv, sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, KindedAst.Def] = {
@@ -402,7 +415,7 @@ object Kinder {
 
       case ResolvedAst.Expr.ApplyDef(DefSymUse(sym, loc1), exps0, loc2) =>
         val exps = exps0.map(visitExp(_, kenv0, root))
-        val map = renv.specs(sym).tparams.map {
+        val map = renv.defSpecs(sym).tparams.map {
           tparam => (tparam.sym -> Type.freshVar(tparam.sym.kind, tparam.sym.loc))
         }.toMap
         val itvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
@@ -424,11 +437,16 @@ object Kinder {
         KindedAst.Expr.ApplyOp(symUse, exps, tvar, evar, loc)
 
       case ResolvedAst.Expr.ApplySig(SigSymUse(sym, loc1), exps0, loc2) =>
+        val traitKind = getTraitKind(sym.trt)
+        val svar = Type.freshVar(traitKind, loc1.asSynthetic)
+        val map = renv.sigSpecs(sym).tparams.map {
+          tparam => (tparam.sym -> Type.freshVar(tparam.sym.kind, tparam.sym.loc))
+        }.toMap
         val exps = exps0.map(visitExp(_, kenv0, root))
         val itvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
         val tvar = Type.freshVar(Kind.Star, loc2.asSynthetic)
         val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
-        KindedAst.Expr.ApplySig(SigSymUse(sym, loc1), exps, itvar, tvar, evar, loc2)
+        KindedAst.Expr.ApplySig(SigSymUse(sym, loc1), exps, svar, map, itvar, tvar, evar, loc2)
 
       case ResolvedAst.Expr.Lambda(fparam0, exp0, allowSubeffecting, loc) =>
         val fparam = visitFormalParam(fparam0, kenv0, root)
@@ -1766,7 +1784,11 @@ object Kinder {
   private case class SharedContext(errors: ConcurrentLinkedQueue[KindError])
 
   // MATT docs
-  private case class RootEnv(aliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], specs: Map[Symbol.DefnSym, KindedAst.Spec]) extends TypeAliasEnv
+  private case class RootEnv(
+                              aliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias],
+                              defSpecs: Map[Symbol.DefnSym, KindedAst.Spec],
+                              sigSpecs: Map[Symbol.SigSym, KindedAst.Spec]
+                            ) extends TypeAliasEnv
 
   // MATT docs
   private case class SimpleTypeAliasEnv(aliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias]) extends TypeAliasEnv
