@@ -218,6 +218,8 @@ object Deriver {
               mkVarExpr(varSym2, loc)
             ),
             Type.freshVar(Kind.Star, loc),
+            Map.empty,
+            Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Eff, loc),
             loc
@@ -346,6 +348,8 @@ object Deriver {
               loc),
           ),
           Type.freshVar(Kind.Star, loc),
+          Map.empty,
+          Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Eff, loc),
           loc
@@ -432,6 +436,8 @@ object Deriver {
               mkVarExpr(varSym1, loc),
               mkVarExpr(varSym2, loc)
             ),
+            Type.freshVar(Kind.Star, loc),
+            Map.empty,
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Eff, loc),
@@ -587,6 +593,8 @@ object Deriver {
             SigSymUse(toStringSym, loc),
             List(mkVarExpr(varSym, loc)),
             Type.freshVar(Kind.Star, loc),
+            Map.empty,
+            Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Eff, loc),
             loc
@@ -731,6 +739,8 @@ object Deriver {
               KindedAst.Expr.ApplySig(
                 SigSymUse(hashSigSym, loc),
                 List(mkVarExpr(varSym, loc)),
+                Type.freshVar(Kind.Star, loc),
+                Map.empty,
                 Type.freshVar(Kind.Star, loc),
                 Type.freshVar(Kind.Star, loc),
                 Type.freshVar(Kind.Eff, loc),

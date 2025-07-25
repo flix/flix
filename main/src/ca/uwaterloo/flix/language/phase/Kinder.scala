@@ -437,7 +437,7 @@ object Kinder {
         KindedAst.Expr.ApplyOp(symUse, exps, tvar, evar, loc)
 
       case ResolvedAst.Expr.ApplySig(SigSymUse(sym, loc1), exps0, loc2) =>
-        val traitKind = getTraitKind(sym.trt)
+        val traitKind = getTraitKind(root.traits(sym.trt))
         val svar = Type.freshVar(traitKind, loc1.asSynthetic)
         val map = renv.sigSpecs(sym).tparams.map {
           tparam => (tparam.sym -> Type.freshVar(tparam.sym.kind, tparam.sym.loc))

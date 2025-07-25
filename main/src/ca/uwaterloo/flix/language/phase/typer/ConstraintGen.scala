@@ -144,13 +144,19 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ApplySig(SigSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
-        val sig = root.traits(sym.trt).sigs(sym)
-        val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
-        val constrs1 = tconstrs1.map(_.copy(loc = loc1))
-        val declaredEff = declaredType.arrowEffectType
-        val declaredArgumentTypes = declaredType.arrowArgTypes
-        val declaredResultType = declaredType.arrowResultType
+      case Expr.ApplySig(SigSymUse(sym, loc1), exps, svar, map, itvar, tvar, evar, loc2) =>
+        val trt = root.traits(sym.trt)
+        val sig = trt.sigs(sym)
+
+        val subst = Substitution(map + (trt.tparam.sym -> svar))
+        val constrs1 = sig.spec.tconstrs.map(subst.apply) // TODO update location
+        val econstrs1 = sig.spec.econstrs.map(subst.apply) // TODO update location
+
+        val declaredEff = subst(sig.spec.eff)
+        val declaredResultType = subst(sig.spec.tpe)
+        val declaredArgumentTypes = sig.spec.fparams.map(_.tpe).map(subst.apply)
+        val declaredType = Type.mkUncurriedArrowWithEffect(declaredArgumentTypes, declaredEff, declaredResultType, loc1)
+
         val (tpes, effs) = exps.map(visitExp).unzip
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
         c.addClassConstraints(constrs1, loc2)
