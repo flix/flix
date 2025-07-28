@@ -53,6 +53,7 @@ mod Fixpoint3.Boxing {
     use Fixpoint3.Boxed
     use Fixpoint3.Boxed.{BoxedBool, BoxedChar, BoxedFloat32, BoxedFloat64, BoxedInt8, BoxedInt16, BoxedInt32, BoxedInt64, BoxedObject}
     use Fixpoint3.BoxingType.{Boxing, getType, RamIdToPos, setType, Types, TypeInfo, UnifiedTypePos}
+    use Fixpoint3.Options.usedArity
     use Fixpoint3.Predicate.relSymsOfProgram
     use Fixpoint3.ReadWriteLock
     use Fixpoint3.Util.getOrCrash
@@ -76,15 +77,14 @@ mod Fixpoint3.Boxing {
     /// the facts in `program`, with respect to `boxing`. Note that the old `boxingInfo` is
     /// invalid for the returned `facts`.
     ///
-    /// This procedure will be heavily simplified by https://github.com/flix/flix/issues/11034
-    /// where most of the code is removed.
-    ///
     def initializeFacts(rc1: Region[r], program: RamProgram, boxingInfo: Boxing[r], mapping: RamIdToPos, withProv: Bool): EFacts[r] \ r + IO =
-        let RamProgram.Program(_, facts, _, _) = program;
+        let RamProgram.Program(_, facts, _, (indexes, _)) = program;
         let (f1, f2) = facts;
         let newFacts = MutMap.empty(rc1);
         f1 |> Map.forEach(relSym -> relFacts -> {
-            let newTree = BPlusTree.empty(rc1);
+            // Get some search. This means that we have to create one less index in the interpreter.
+            let search = getOrCrash(Map.get(relSym, indexes)) |> Vector.get(0);
+            let newTree = BPlusTree.emptyWithArityAndSearch(rc1, usedArity(), search);
             mapAllFacts(relSym, relFacts, boxingInfo, mapping, withProv, newTree);
             MutMap.put(relSym, newTree, newFacts)
         });
@@ -111,6 +111,7 @@ mod Fixpoint3.Boxing {
             Vector.append(nonExtendedPositions, Vector#{getOrCrash(Map.get(RamId.Id(-1), mapping)), getOrCrash(Map.get(RamId.Id(-1), mapping))})
         };
         facts |> BPlusTree.parForEach(tuple -> lat -> {
+            // `facts` and `newTree` must have same the same region. Cast to achieve this.
             unchecked_cast(({
                 let savedVec = tuple |>
                     Vector.mapWithIndex(index -> boxedVal ->

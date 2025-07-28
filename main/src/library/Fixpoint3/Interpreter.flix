@@ -118,19 +118,22 @@ mod Fixpoint3.Interpreter {
         search: Vector[Int32],
         tuples: BPlusTree[Tuple, Boxed, r]
     ): Index[r] \ r =
-        let index = BPlusTree.emptyWithArityAndSearch(rc, usedArity(), search);
-        if (BPlusTree.isEmpty(tuples))
-            index
+        if (BPlusTree.search(tuples) == search) tuples // We can simply use `tuples` as it has the correct order.
         else {
-            BPlusTree.forEach(match nonLat -> lat -> {
-                match toDenotation(relSym) {
-                    case Relational =>
-                        BPlusTree.put(nonLat, lat, index)
-                    case Latticenal(_, _, lub, _) =>
-                        BPlusTree.putWith(lub, nonLat, lat, index)
-                }
-            }, tuples);
-            index
+            let index = BPlusTree.emptyWithArityAndSearch(rc, usedArity(), search);
+            if (BPlusTree.isEmpty(tuples))
+                index
+            else {
+                BPlusTree.forEach(match nonLat -> lat -> {
+                    match toDenotation(relSym) {
+                        case Relational =>
+                            BPlusTree.put(nonLat, lat, index)
+                        case Latticenal(_, _, lub, _) =>
+                            BPlusTree.putWith(lub, nonLat, lat, index)
+                    }
+                }, tuples);
+                index
+            }
         }
 
     ///
