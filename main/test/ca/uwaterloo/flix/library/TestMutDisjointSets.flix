@@ -38,8 +38,7 @@ mod TestMutDisjointSets {
         foreach (x <- List.range(0, 10)) {
             MutDisjointSets.makeSet(x, s)
         };
-        let MutDisjointSets.MutDisjointSets({ forest | _ }) = s;
-        let actual = MutMap.size(forest);
+        let actual = MutDisjointSets.size(s);
         Assert.eq(10, actual)
     }
 
@@ -62,8 +61,7 @@ mod TestMutDisjointSets {
     def makeSets02(): Bool = region rc {
         let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
-        let MutDisjointSets.MutDisjointSets({ forest | _ }) = s;
-        let actual = MutMap.size(forest);
+        let actual = MutDisjointSets.size(s);
         Assert.eq(10, actual)
     }
 
@@ -71,8 +69,7 @@ mod TestMutDisjointSets {
     def makeSets03(): Bool = region rc {
         let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets("a" :: "b" :: "c" :: Nil, s);
-        let MutDisjointSets.MutDisjointSets({ forest | _ }) = s;
-        let actual = MutMap.size(forest);
+        let actual = MutDisjointSets.size(s);
         Assert.eq(3, actual)
     }
 
