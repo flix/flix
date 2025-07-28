@@ -53,6 +53,7 @@ mod Fixpoint3.Boxing {
     use Fixpoint3.Boxed
     use Fixpoint3.Boxed.{BoxedBool, BoxedChar, BoxedFloat32, BoxedFloat64, BoxedInt8, BoxedInt16, BoxedInt32, BoxedInt64, BoxedObject}
     use Fixpoint3.BoxingType.{Boxing, getType, RamIdToPos, setType, Types, TypeInfo, UnifiedTypePos}
+    use Fixpoint3.Options.usedArity
     use Fixpoint3.Predicate.relSymsOfProgram
     use Fixpoint3.ReadWriteLock
     use Fixpoint3.Util.getOrCrash
@@ -76,15 +77,14 @@ mod Fixpoint3.Boxing {
     /// the facts in `program`, with respect to `boxing`. Note that the old `boxingInfo` is
     /// invalid for the returned `facts`.
     ///
-    /// This procedure will be heavily simplified by https://github.com/flix/flix/issues/11034
-    /// where most of the code is removed.
-    ///
     def initializeFacts(rc1: Region[r], program: RamProgram, boxingInfo: Boxing[r], mapping: RamIdToPos, withProv: Bool): EFacts[r] \ r + IO =
-        let RamProgram.Program(_, facts, _, _) = program;
+        let RamProgram.Program(_, facts, _, (indexes, _)) = program;
         let (f1, f2) = facts;
         let newFacts = MutMap.empty(rc1);
         f1 |> Map.forEach(relSym -> relFacts -> {
-            let newTree = BPlusTree.empty(rc1);
+            // Get some search. This means that we have to create one less index in the interpreter.
+            let search = getOrCrash(Map.get(relSym, indexes)) |> Vector.get(0);
+            let newTree = BPlusTree.emptyWithArityAndSearch(rc1, usedArity(), search);
             mapAllFacts(relSym, relFacts, boxingInfo, mapping, withProv, newTree);
             MutMap.put(relSym, newTree, newFacts)
         });
@@ -105,12 +105,13 @@ mod Fixpoint3.Boxing {
         let relSymId = Ram.toId(relSym);
         let nonExtendedPositions = Vector.range(0, arityOf(relSym)) |>
             Vector.map(i -> getOrCrash(Map.get(RamId.RelPos(relSymId, i), mapping)));
-        let positions = if(not withProv) {
+        let positions = if (not withProv) {
             nonExtendedPositions
         } else {
             Vector.append(nonExtendedPositions, Vector#{getOrCrash(Map.get(RamId.Id(-1), mapping)), getOrCrash(Map.get(RamId.Id(-1), mapping))})
         };
         facts |> BPlusTree.parForEach(tuple -> lat -> {
+            // `facts` and `newTree` must have same the same region. Cast to achieve this.
             unchecked_cast(({
                 let savedVec = tuple |>
                     Vector.mapWithIndex(index -> boxedVal ->
@@ -133,7 +134,7 @@ mod Fixpoint3.Boxing {
         let posToIndex = Array.init(rc, _ -> Types.TyUnknown, max);
         let info = (intToBox, boxToInt, posToIndex, locks);
         let relSyms = relSymsOfProgram(program);
-        if(withProv) {
+        if (withProv) {
             setType(Types.TyInt64, getOrCrash(Map.get(RamId.Id(-1), map)), posToIndex)
         } else {
             ()
@@ -284,7 +285,7 @@ mod Fixpoint3.Boxing {
             // Given the equivalence relation just computed assign unique positions for each
             // equivalence relation.
             computeMappingStmt(disjointSet, mutMap, counter, withProv, stmt);
-            if(withProv) {
+            if (withProv) {
                 registerRamId(disjointSet, mutMap, counter, RamId.Id(-1))
             } else ();
             MutMap.toMap(mutMap)
@@ -438,7 +439,7 @@ mod Fixpoint3.Boxing {
             unifyRelSyms(fullSymbol, newSymbol, set, withProv);
             let arity = Ram.arityOf(fullSymbol);
             let id1 = Ram.toId(fullSymbol);
-            if(withProv) {
+            if (withProv) {
                 MutDisjointSets.union(RamId.RelPos(id1, arity), RamId.Id(-1), set);
                 MutDisjointSets.union(RamId.RelPos(id1, arity + 1), RamId.Id(-1), set)
             } else ()
