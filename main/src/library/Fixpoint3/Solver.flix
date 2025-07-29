@@ -105,7 +105,7 @@ mod Fixpoint3.Solver {
                         BPlusTree.merge(v2, newTree)
                     case Latticenal(_, _, lub, _) =>
                         BPlusTree.merge(v1, newTree);
-                        BPlusTree.mergeWith(lub, v1, v2)
+                        BPlusTree.mergeWith(lub, v2, newTree)
                 };
                 newTree
             };
@@ -517,7 +517,7 @@ mod Fixpoint3.Solver {
         , p, ts)
 
     def injectIntoX(f: t -> Vector[Boxed] \ ef, p: PredSym, ts: f[t]): Datalog \ (ef + Foldable.Aef[f]) with Foldable[f] =
-        unsafely IO run region rc {
+        unchecked_cast(({region rc {
             let db = MutMap.empty(rc);
             Foldable.foldLeft(() -> t -> {
                 let vs = f(t);
@@ -527,7 +527,8 @@ mod Fixpoint3.Solver {
                 BPlusTree.put(vs, Boxed.NoValue, rel)
             }, (), ts);
             toModel(db)
-        }
+        // Remove the `IO` effect from dealing with `Static`.
+        }}: _ \ IO + ef + Foldable.Aef[f]) as _ \ ef + Foldable.Aef[f])
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -796,9 +797,11 @@ mod Fixpoint3.Solver {
     /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
     ///
     def factsOf(f: Vector[Boxed] -> t \ ef, p: PredSym, d: Datalog): Vector[t] \ ef =
-        // Remove the `IO` effect from dealing with `Static`.
-        unsafely IO run factsOfInternal(f, p, d)
+        unchecked_cast(factsOfInternal(f, p, d) as _ \ ef)
 
+    ///
+    /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
+    ///
     def factsOfInternal(f: Vector[Boxed] -> t \ ef, p: PredSym, d: Datalog): Vector[t] \ ef + IO = match d {
         case Datalog(_, cs) => region rc {
             let pFacts = MutList.empty(rc);
@@ -856,11 +859,11 @@ mod Fixpoint3.Solver {
     ///
     /// Returns the given database `db` as a Datalog value.
     ///
-    def toModelOnlyFull(withProv: Bool, rules: Vector[Constraint], dbMeta: (Database[r], Predicates)): Datalog \ r = unsafely IO run {
+    def toModelOnlyFull(_withProv: Bool, _rules: Vector[Constraint], dbMeta: (Database[r], Predicates)): Datalog \ r = unsafely IO run {
         let (db, meta) = dbMeta;
         let dbOnlyFullRels = MutMap.toMap(db) |>
             Map.filterWithKey(k -> facts -> match k {
-                case RelSym.Symbol(PredSym(_, id), _, _) => Predicate.isFullId(id, meta) and not BPlusTree.isEmpty(facts)
+                case RelSym.Symbol(PredSym(_, id), _, _) => Predicate.isFullId(id, meta) and not (unsafely IO run BPlusTree.isEmpty(facts))
             });
         Model(dbOnlyFullRels)
     }
