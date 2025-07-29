@@ -804,17 +804,14 @@ object Parser2 {
     // Handle use many case.
     if (at(TokenKind.DotCurlyL)) {
       val mark = open()
-      oneOrMore(
+      zeroOrMore(
         namedTokenSet = NamedTokenSet.Name,
         getItem = () => aliasedName(NAME_USE),
         checkForItem = NAME_USE.contains,
         breakWhen = _.isRecoverUseOrImport,
         delimiterL = TokenKind.DotCurlyL,
         delimiterR = TokenKind.CurlyR,
-      ) match {
-        case Some(err) => closeWithError(open(), err)
-        case None =>
-      }
+      )
       close(mark, TreeKind.UsesOrImports.UseMany)
     }
     close(mark, TreeKind.UsesOrImports.Use)
