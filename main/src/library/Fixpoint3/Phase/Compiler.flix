@@ -47,7 +47,7 @@ mod Fixpoint3.Phase.Compiler {
             let predicates = Predicate.initialize(d, db);
             let stmts = MutList.empty(rc);
             // Remove the `IO` effect from dealing with `Static`.
-            let compiledFacts = unchecked_cast((compileFacts(facts, db, predicates): _ \ IO ) as _ \ {});
+            let compiledFacts = unsafely IO run compileFacts(facts, db, predicates);
             // Create map of stratum to list of rules in stratum
             let counter = Counter.fresh(rc);
             let pseudoStratums = MutMap.empty(rc);

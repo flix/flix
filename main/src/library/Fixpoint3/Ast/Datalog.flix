@@ -92,7 +92,7 @@ mod Fixpoint3.Ast.Datalog {
                 if(not Fixpoint3.Options.enableDebugPrintFacts()) {
                     "Printing facts disabled."
                 } else {
-                   unchecked_cast(({
+                   unsafely IO run {
                         let builder = StringBuilder.empty(rc);
                         db |> Map.forEach(relSym -> innerMap ->
                             innerMap |> BPlusTree.forEach(tuple -> lat -> {
@@ -104,8 +104,7 @@ mod Fixpoint3.Ast.Datalog {
                             })
                         );
                         StringBuilder.toString(builder)
-                    // Remove the `IO` effect from dealing with `Static`.
-                    }: String \ rc + IO) as String \ rc)
+                    }
                 }
             }
             case Datalog.Join(d1, d2) => {
