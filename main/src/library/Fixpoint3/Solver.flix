@@ -21,15 +21,14 @@ mod Fixpoint3.Solver {
 
     use Fixpoint3.{Boxed, Debugging, Interpreter, Options, Phase, Predicate, PredSymsOf, SubstitutePredSym }
     use Fixpoint3.Ast.Datalog.{Datalog, Constraint, HeadTerm}
-    use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Model, Join}
+    use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Join, Model}
     use Fixpoint3.Ast.Datalog.Constraint.Constraint
     use Fixpoint3.Ast.Datalog.HeadPredicate.HeadAtom
     use Fixpoint3.Ast.Ram
     use Fixpoint3.Ast.Ram.{Predicates, RelSym, toDenotation}
     use Fixpoint3.Ast.ExecutableRam
-    use Fixpoint3.Ast.Shared.Denotation
+    use Fixpoint3.Ast.Shared.{Denotation, PredSym}
     use Fixpoint3.Ast.Shared.Denotation.{Relational, Latticenal}
-    use Fixpoint3.Ast.Shared.PredSym
     use Fixpoint3.Ast.Shared.PredSym.PredSym
     use Fixpoint3.Boxable.{box, unbox}
     use Fixpoint3.BoxingType.Boxing
@@ -131,12 +130,6 @@ mod Fixpoint3.Solver {
             Model
         case Join(d1, d2) => union(projectSym(p, d1), projectSym(p, d2))
     }
-
-    ///
-    /// Returns the provenance of fact `f` of relation `p` given Datalog program `d`.
-    ///
-    @Internal
-    pub def provenanceOf(f: Vector[Boxed], p: PredSym, d: Datalog, mapping: PredSym -> Vector[Boxed] -> t): Vector[t] = ???
 
     ///
     /// Renames every predicate symbol in `d` with a fresh name, except for those in `preds`.
