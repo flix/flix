@@ -81,3 +81,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Cade Lueker](https://github.com/cademichael)
 - [Asher Frost](https://github.com/wizard7377)
 - [Ry Wiese](https://github.com/rywiese)
+- [Michał Kukieła](https://github.com/kukimik)
