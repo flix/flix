@@ -633,6 +633,128 @@ mod TestBPlusTree {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def size01(): Bool = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.size(tree) == 0
+    }
+
+    @test
+    def size02(): Bool = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(0, 0, tree);
+        BPlusTree.size(tree) == 1
+    }
+
+    @test
+    def size03(): Bool = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(0, 0, tree);
+        BPlusTree.put(0, 0, tree);
+        BPlusTree.size(tree) == 1
+    }
+
+    @test
+    def size04(): Bool = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(0, 0, tree);
+        BPlusTree.put(0, 1, tree);
+        BPlusTree.size(tree) == 1
+    }
+
+    @test
+    def size05(): Bool = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(0, 0, tree);
+        BPlusTree.put(0, 1, tree);
+        BPlusTree.put(1, 1, tree);
+        BPlusTree.size(tree) == 2
+    }
+
+    @test
+    def size06(): Bool = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(0, 0, tree);
+        BPlusTree.computeIfAbsent(() -> 3, 0, tree);
+        BPlusTree.size(tree) == 1
+    }
+
+    @test
+    def size07(): Bool = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(0, 0, tree);
+        BPlusTree.computeIfAbsent(() -> 3, 1, tree);
+        BPlusTree.size(tree) == 2
+    }
+
+    @test
+    def size09(): Bool = region rc {
+        let tree1: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(0, 0, tree1);
+        BPlusTree.put(1, 1, tree1);
+        BPlusTree.put(2, 2, tree1);
+        BPlusTree.put(3, 3, tree1);
+        BPlusTree.put(4, 4, tree1);
+        BPlusTree.put(5, 5, tree1);
+        let tree2: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(4, 4, tree2);
+        BPlusTree.put(5, 5, tree2);
+        BPlusTree.put(6, 6, tree2);
+        BPlusTree.put(7, 7, tree2);
+        BPlusTree.put(8, 8, tree2);
+        BPlusTree.put(9, 9, tree2);
+        BPlusTree.merge(tree2, tree1);
+        BPlusTree.size(tree1) == 10
+    }
+
+    @test
+    def size10(): Bool = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(0, 0, tree);
+        BPlusTree.putWith(_ -> _ -> 0, 0, 0, tree);
+        BPlusTree.size(tree) == 1
+    }
+
+    @test
+    def size11(): Bool = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(0, 0, tree);
+        BPlusTree.putWith(_ -> _ -> 0, 1, 0, tree);
+        BPlusTree.size(tree) == 2
+    }
+
+    @test
+    def size12(): Bool \ IO + NonDet = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc);
+        let _: Unit = region rc2 {
+            (spawn unchecked_cast((
+                List.range(0, totalInsertNumInt32()) |>
+                    List.forEach(_ -> 
+                        Random.runWithIO(() -> BPlusTree.put(Random.randomInt32(), Random.randomInt32(), tree))
+            ): _ \ rc + NonDet + IO) as _ \ IO + NonDet) @ rc2);
+            (spawn unchecked_cast((
+                List.range(0, totalInsertNumInt32()) |>
+                    List.forEach(_ -> 
+                        Random.runWithIO(() -> BPlusTree.put(Random.randomInt32(), Random.randomInt32(), tree))
+            ): _ \ rc + NonDet + IO) as _ \ IO + NonDet) @ rc2);
+            (spawn unchecked_cast((
+                List.range(0, totalInsertNumInt32()) |>
+                    List.forEach(_ -> 
+                        Random.runWithIO(() -> BPlusTree.put(Random.randomInt32(), Random.randomInt32(), tree))
+            ): _ \ rc + NonDet + IO) as _ \ IO + NonDet) @ rc2);
+            (spawn unchecked_cast((
+                List.range(0, totalInsertNumInt32()) |>
+                    List.forEach(_ -> 
+                        Random.runWithIO(() -> BPlusTree.put(Random.randomInt32(), Random.randomInt32(), tree))
+            ): _ \ rc + NonDet + IO) as _ \ IO + NonDet) @ rc2)
+        };
+        BPlusTree.toList(tree) |> List.size == BPlusTree.size(tree)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
