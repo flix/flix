@@ -157,11 +157,11 @@ object LocationLink {
   /**
     * Returns a reference to the instance node `instance`.
     */
-  def fromInstanceTraitSymUse(trt: TraitSymUse, originLoc: SourceLocation): LocationLink = {
+  def fromInstanceTraitSymUse(symUse: TraitSymUse, originLoc: SourceLocation): LocationLink = {
     val originSelectionRange = Range.from(originLoc)
-    val targetUri = trt.loc.source.name
-    val targetRange = Range.from(trt.loc)
-    val targetSelectionRange = Range.from(trt.loc)
+    val targetUri = symUse.loc.source.name
+    val targetRange = Range.from(symUse.loc)
+    val targetSelectionRange = Range.from(symUse.loc)
     LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
   }
 

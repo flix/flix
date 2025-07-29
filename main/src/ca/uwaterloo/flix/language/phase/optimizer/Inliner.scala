@@ -401,10 +401,10 @@ object Inliner {
     case Pattern.Cst(cst, tpe, loc) =>
       (Pattern.Cst(cst, tpe, loc), Map.empty)
 
-    case Pattern.Tag(sym, pats, tpe, loc) =>
+    case Pattern.Tag(symUse, pats, tpe, loc) =>
       val (ps, varSubsts) = pats.map(visitPattern).unzip
       val varSubst = varSubsts.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
-      (Pattern.Tag(sym, ps, tpe, loc), varSubst)
+      (Pattern.Tag(symUse, ps, tpe, loc), varSubst)
 
     case Pattern.Tuple(pats, tpe, loc) =>
       val (ps, varSubsts) = pats.map(visitPattern).unzip

@@ -358,7 +358,7 @@ object HighlightProvider {
     object DefnSymConsumer extends Consumer {
       override def consumeDef(defn: TypedAst.Def): Unit = considerWrite(defn.sym, defn.sym.loc)
 
-      override def consumeDefSymUse(sym: SymUse.DefSymUse): Unit = considerRead(sym.sym, sym.loc)
+      override def consumeDefSymUse(symUse: SymUse.DefSymUse): Unit = considerRead(symUse.sym, symUse.loc)
     }
 
     Visitor.visitRoot(root, DefnSymConsumer, acceptor)
@@ -452,7 +452,7 @@ object HighlightProvider {
     object CaseSymConsumer extends Consumer {
       override def consumeCase(cse: TypedAst.Case): Unit = considerWrite(cse.sym, cse.sym.loc)
 
-      override def consumeCaseSymUse(sym: CaseSymUse): Unit = considerRead(sym.sym, sym.loc)
+      override def consumeCaseSymUse(symUse: CaseSymUse): Unit = considerRead(symUse.sym, symUse.loc)
     }
 
     Visitor.visitRoot(root, CaseSymConsumer, acceptor)
@@ -479,7 +479,7 @@ object HighlightProvider {
     object OpSymConsumer extends Consumer {
       override def consumeOp(op: TypedAst.Op): Unit = considerWrite(op.sym, op.sym.loc)
 
-      override def consumeOpSymUse(sym: SymUse.OpSymUse): Unit = considerRead(sym.sym, sym.loc)
+      override def consumeOpSymUse(symUse: SymUse.OpSymUse): Unit = considerRead(symUse.sym, symUse.loc)
     }
 
     Visitor.visitRoot(root, OpSymConsumer, acceptor)

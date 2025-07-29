@@ -338,13 +338,13 @@ object OccurrenceAnalyzer {
     case MonoAst.Pattern.Cst(_, _, _) =>
       (pat0, Set.empty) // Always reuse pat0.
 
-    case MonoAst.Pattern.Tag(sym, pats, tpe, loc) =>
+    case MonoAst.Pattern.Tag(symUse, pats, tpe, loc) =>
       val (ps, listOfSyms) = pats.map(visitPattern(_, ctx)).unzip
       val syms = listOfSyms.flatten.toSet
       if (pats.zip(ps).forall { case (p1, p2) => p1 eq p2 }) {
         (pat0, syms) // Reuse pat0.
       } else {
-        (MonoAst.Pattern.Tag(sym, ps, tpe, loc), syms)
+        (MonoAst.Pattern.Tag(symUse, ps, tpe, loc), syms)
       }
 
     case MonoAst.Pattern.Tuple(pats, tpe, loc) =>

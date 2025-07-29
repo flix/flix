@@ -330,8 +330,8 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given associated type definition `assoc`.
     */
   private def visitAssocTypeDef(assoc: TypedAst.AssocTypeDef): Iterator[SemanticToken] = assoc match {
-    case TypedAst.AssocTypeDef(_, _, sym, arg, tpe, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, sym.loc)
+    case TypedAst.AssocTypeDef(_, _, symUse, arg, tpe, _) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, symUse.loc)
       IteratorOps.all(
         Iterator(t),
         visitType(arg),
@@ -600,8 +600,8 @@ object SemanticTokensProvider {
     case Expr.Unsafe(exp, runEff, _, _, _) =>
       visitType(runEff) ++ visitExp(exp)
 
-    case Expr.Without(exp, sym, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, sym.qname.loc)
+    case Expr.Without(exp, symUse, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, symUse.qname.loc)
       Iterator(t) ++ visitExp(exp)
 
     case Expr.TryCatch(exp1, rules, _, _, _) =>
@@ -614,8 +614,8 @@ object SemanticTokensProvider {
     case Expr.Throw(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Handler(sym, rules, _, _, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, sym.qname.loc)
+    case Expr.Handler(symUse, rules, _, _, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, symUse.qname.loc)
       val st1 = Iterator(t)
       val st2 = rules.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, HandlerRule(op, fparams, exp, _)) =>
@@ -897,9 +897,9 @@ object SemanticTokensProvider {
   }
 
   /**
-    * Returns all semantic tokens in the given type constraint head `head0`.
+    * Returns all semantic tokens in the given trait sym use `symUse`.
     */
-  private def visitTraitSymUse(head0: TraitSymUse): Iterator[SemanticToken] = head0 match {
+  private def visitTraitSymUse(symUse: TraitSymUse): Iterator[SemanticToken] = symUse match {
     case TraitSymUse(_, loc) =>
       val o = SemanticTokenType.Class
       val t = SemanticToken(o, Nil, loc)
