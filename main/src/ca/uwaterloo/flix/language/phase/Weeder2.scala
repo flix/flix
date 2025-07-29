@@ -157,12 +157,23 @@ object Weeder2 {
     expect(tree, TreeKind.UsesOrImports.Import)
     mapN(pickJavaName(tree)) {
       jname =>
-        val maybeImportMany = tryPick(TreeKind.UsesOrImports.ImportMany, tree).map(visitImportMany(_, jname.fqn))
-        maybeImportMany match {
-          // case: import many, if the list is empty parser has reported an error
-          case Some(imports) => imports
+        val maybeImportMany = tryPick(TreeKind.UsesOrImports.ImportMany, tree)
 
-          // case: import one, use the java name
+        maybeImportMany match {
+          // case: Import many.
+          case Some(importMany) =>
+            visitImportMany(importMany, jname.fqn) match {
+              // subcase: Empty import many. Issue an error and return an empty list.
+              case Nil =>
+                val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, importMany.loc)
+                sctx.errors.add(error)
+                Nil
+              // subcase: Nonempty use many. Return the list.
+              case imports@(_ :: _) =>
+                imports
+            }
+
+          // case: Import one. Use the Java name.
           case None =>
             val ident = Name.Ident(jname.fqn.lastOption.getOrElse(""), jname.loc)
             List(UseOrImport.Import(jname, ident, tree.loc))
