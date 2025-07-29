@@ -40,7 +40,7 @@ mod Fixpoint3.Phase.Simplifier {
     /// The returned RAM program is always the same size or smaller.
     ///
     @Internal
-    pub def simplifyProgram(program: RamProgram): RamProgram = unchecked_cast((match program {
+    pub def simplifyProgram(program: RamProgram): RamProgram = unsafely IO run match program {
         case RamProgram.Program(stmt, facts, predicates, index) =>
             // Compute the a set of all relations which are initialized with facts, i.e. have some EDB facts.
             let filterOutEmpty = fact -> fact |>
@@ -49,8 +49,7 @@ mod Fixpoint3.Phase.Simplifier {
                 Set.map(rel -> getRelSymAsType(rel, PredType.Full, predicates));
             let nonEmpty = filterOutEmpty(fst(facts)) `Set.union` filterOutEmpty(snd(facts));
             RamProgram.Program(simplifyStmt(stmt, nonEmpty, predicates), facts, predicates, index)
-    // Remove the `IO` effect from dealing with `Static`.
-    }: _ \ IO) as _ \ {})
+    }
 
     ///
     /// Simplifies `stmt` by removing redundant code.

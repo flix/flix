@@ -69,7 +69,7 @@ mod Fixpoint3.Boxing {
         let mapping = Equality.computeMapping(program, withProv);
         let boxingInfo = initializeInternal(rc, program, mapping, withProv);
         // Remove the `IO` effect from dealing with `Static`.
-        let facts = unchecked_cast(((initializeFacts(rc, program, boxingInfo, mapping, withProv)): EFacts[r] \ IO + r) as _ \ r);
+        let facts = unsafely IO run initializeFacts(rc, program, boxingInfo, mapping, withProv);
         (boxingInfo, facts, mapping)
 
     ///

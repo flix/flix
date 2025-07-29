@@ -95,7 +95,7 @@ mod Fixpoint3.Solver {
     pub def union(d1: Datalog, d2: Datalog): Datalog = match (d1, d2) {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
             Datalog(Vector.append(edb1, edb2), Vector.append(idb1, idb2))
-        case (Model(db1), Model(db2)) => unchecked_cast((
+        case (Model(db1), Model(db2)) => unsafely IO run {
             let union = ramSym -> v1 -> v2 -> {
                 let newTree = BPlusTree.empty(Static);
 
@@ -110,7 +110,8 @@ mod Fixpoint3.Solver {
                 newTree
             };
             // Remove the `IO` effect from dealing with `Static`.
-            Model(Map.unionWithKey(union, db1, db2)): _ \ IO) as _ \ {})
+            Model(Map.unionWithKey(union, db1, db2))
+        }
         case (Model(_), Datalog(_, _)) => Join(d1, d2)
         case (Datalog(_, _), Model(_)) => Join(d2, d1)
         case (Join(model, datalog), Datalog(_, _)) => Join(model, union(datalog, d2))
@@ -516,7 +517,7 @@ mod Fixpoint3.Solver {
         , p, ts)
 
     def injectIntoX(f: t -> Vector[Boxed] \ ef, p: PredSym, ts: f[t]): Datalog \ (ef + Foldable.Aef[f]) with Foldable[f] =
-        unchecked_cast(({region rc {
+        unsafely IO run region rc {
             let db = MutMap.empty(rc);
             Foldable.foldLeft(() -> t -> {
                 let vs = f(t);
@@ -527,8 +528,6 @@ mod Fixpoint3.Solver {
             }, (), ts);
             toModel(db)
         }
-    // Remove the `IO` effect from dealing with `Static`.
-    }: _ \ ef + Foldable.Aef[f] + IO) as _ \ ef + Foldable.Aef[f])
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -798,7 +797,7 @@ mod Fixpoint3.Solver {
     ///
     def factsOf(f: Vector[Boxed] -> t \ ef, p: PredSym, d: Datalog): Vector[t] \ ef =
         // Remove the `IO` effect from dealing with `Static`.
-        unchecked_cast((factsOfInternal(f, p, d): _ \ ef + IO) as _ \ ef)
+        unsafely IO run factsOfInternal(f, p, d)
 
     def factsOfInternal(f: Vector[Boxed] -> t \ ef, p: PredSym, d: Datalog): Vector[t] \ ef + IO = match d {
         case Datalog(_, cs) => region rc {
@@ -857,15 +856,14 @@ mod Fixpoint3.Solver {
     ///
     /// Returns the given database `db` as a Datalog value.
     ///
-    def toModelOnlyFull(_withProv: Bool, _rules: Vector[Constraint], dbMeta: (Database[r], Predicates)): Datalog \ r = unchecked_cast(({
+    def toModelOnlyFull(withProv: Bool, rules: Vector[Constraint], dbMeta: (Database[r], Predicates)): Datalog \ r = unsafely IO run {
         let (db, meta) = dbMeta;
         let dbOnlyFullRels = MutMap.toMap(db) |>
             Map.filterWithKey(k -> facts -> match k {
                 case RelSym.Symbol(PredSym(_, id), _, _) => Predicate.isFullId(id, meta) and not BPlusTree.isEmpty(facts)
             });
         Model(dbOnlyFullRels)
-    // Remove the `IO` effect from dealing with `Static`.
-    }: _ \ IO + r) as _ \ r)
+    }
 
     ///
     /// Returns the given database `db` as a Datalog value.
