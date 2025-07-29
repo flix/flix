@@ -564,6 +564,8 @@ mod BPlusTree {
     ///
     /// Returns the size of `t`. This operation is `O(1)`.
     ///
+    /// Not atomic. 
+    ///
     /// Thread-safe.
     ///
     @Internal
