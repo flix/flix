@@ -115,19 +115,19 @@ mod TestBigDecimal {
     // pow                                                                     //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def pow01(): Bool = BigDecimal.pow(0.0ff, 0) == 1.0ff
+    def pow01(): Bool = BigDecimal.pow(base = 0.0ff, 0) == 1.0ff
 
     @test
-    def pow02(): Bool = BigDecimal.pow(0.0ff, 1) == 0.0ff
+    def pow02(): Bool = BigDecimal.pow(base = 0.0ff, 1) == 0.0ff
 
     @test
-    def pow03(): Bool = BigDecimal.pow(1.0ff, 0) == 1.0ff
+    def pow03(): Bool = BigDecimal.pow(base = 1.0ff, 0) == 1.0ff
 
     @test
-    def pow04(): Bool = BigDecimal.pow(1.0ff, 1) == 1.0ff
+    def pow04(): Bool = BigDecimal.pow(base = 1.0ff, 1) == 1.0ff
 
     @test
-    def pow05(): Bool = BigDecimal.pow(5.0ff, 2) == 25.0ff
+    def pow05(): Bool = BigDecimal.pow(base = 5.0ff, 2) == 25.0ff
 
     /////////////////////////////////////////////////////////////////////////////
     // fromString                                                              //

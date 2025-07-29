@@ -49,19 +49,9 @@ class ProgressBar {
 
   /**
     * Updates the progress with the given message `msg` in the given `phase`.
-    *
-    * If sample is `true` then
     */
-  def observe(phase: String, msg: String, sample: Boolean): Unit = {
-    // Always print if `sample` is `false`.
-    if (!sample) {
-      print(phase, msg)
-    } else {
-      // Print if `sample` is `true` and we have passed `SampleRate` ticks.
-      if (sampleTick.getAndIncrement() % SampleRate == 0) {
-        print(phase, msg)
-      }
-    }
+  def observe(phase: String, msg: String): Unit = {
+    print(phase, msg)
   }
 
   /**

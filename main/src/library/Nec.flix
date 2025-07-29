@@ -258,7 +258,7 @@ mod Nec {
             case (NecOne(x), None)      => k(ViewLeft.OneLeft(x))
             case (NecOne(x), Some(rs1)) => k(ViewLeft.SomeLeft(x, rs1))
             case (Nec(l, r), None)      => loop(l, Some(r),  k)
-            case (Nec(l, r), Some(rs1)) => loop(l, Some(append(r, rs1)),  k)
+            case (Nec(l, r), Some(rs1)) => loop(l, Some(append(r, rs1)), k)
         };
         loop(c, None, x -> x)
 
@@ -275,8 +275,8 @@ mod Nec {
         def loop(c1: Nec[a], rs: Option[Nec[a]], k: ViewRight[a] -> ViewRight[a]) = match (c1, rs) {
             case (NecOne(x), None)      => k(ViewRight.OneRight(x))
             case (NecOne(x), Some(rs1)) => k(ViewRight.SomeRight(rs1, x))
-            case (Nec(l, r), None)      => loop(r, Some(l),  k)
-            case (Nec(l, r), Some(rs1)) => loop(r, Some(append(rs1, l)),  k)
+            case (Nec(l, r), None)      => loop(r, Some(l), k)
+            case (Nec(l, r), Some(rs1)) => loop(r, Some(append(rs1, l)), k)
         };
         loop(c, None, x -> x)
 
@@ -751,7 +751,7 @@ mod Nec {
     ///
     /// Returns `c` as a MutDeque.
     ///
-    pub def toMutDeque(rc: Region[r], c: Nec[a]): MutDeque[a, r] \ r  =
+    pub def toMutDeque(rc: Region[r], c: Nec[a]): MutDeque[a, r] \ r =
         let d = MutDeque.empty(rc);
         forEach(x -> MutDeque.pushBack(x, d), c);
         d

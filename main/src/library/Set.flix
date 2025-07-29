@@ -126,7 +126,7 @@ mod Set {
     ///
     def useParallelEvaluation(s: Set[a]): Bool =
         let Set(t) = s;
-        let minSize = Int32.pow(2, RedBlackTree.blackHeight(t));
+        let minSize = Int32.pow(base = 2, RedBlackTree.blackHeight(t));
         minSize >= 1024
 
     ///
@@ -328,7 +328,7 @@ mod Set {
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), s)
 
     ///
-    /// Applies `f` to all elements in `s` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `s` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     /// Returns `None` if `s` is the empty set.
     ///
@@ -337,7 +337,7 @@ mod Set {
         RedBlackTree.reduceLeft((x, _, y, _) -> (f(x, y), ()), t) |> Option.map(fst)
 
     ///
-    /// Applies `f` to all elements in `s` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `s` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     /// Returns `None` if `s` is the empty set.
     ///
@@ -578,7 +578,7 @@ mod Set {
     ///
     pub def unfold(f: s -> Option[(a, s)] \ ef, st: s): Set[a] \ ef with Order[a] =
         def loop(sst, s) = match f(sst) {
-            case None         => s
+            case None           => s
             case Some((a, st1)) => loop(st1, insert(a, s))
         };
         loop(st, empty())

@@ -174,7 +174,7 @@ mod Fixpoint3.Boxing {
         let threadNum = threads();
         let resultArr = Array.empty(rc1, numOfFacts);
         // Map the facts in parallel, unless there are relatively few.
-        if(numOfFacts <= threadNum) {
+        if (numOfFacts <= threadNum) {
             mapPartOfVector(facts, 0, numOfFacts, isRelational(toDenotation(relSym)), resultArr, boxingInfo, counters, positions)
         } else {
             // Split `facts` into `threadNum` parts and assign each part to a thread.
@@ -254,7 +254,7 @@ mod Fixpoint3.Boxing {
         let posToIndex = Array.init(rc, _ -> Types.TyUnknown, max);
         let info = (intToBox, boxToInt, posToIndex, locks);
         let relSyms = relSymsOfProgram(program);
-        if(withProv) {
+        if (withProv) {
             setType(Types.TyInt64, getOrCrash(Map.get(RamId.Id(-1), map)), posToIndex)
         } else {
             ()
@@ -405,7 +405,7 @@ mod Fixpoint3.Boxing {
             // Given the equivalence relation just computed assign unique positions for each
             // equivalence relation.
             computeMappingStmt(disjointSet, mutMap, counter, withProv, stmt);
-            if(withProv) {
+            if (withProv) {
                 registerRamId(disjointSet, mutMap, counter, RamId.Id(-1))
             } else ();
             MutMap.toMap(mutMap)
@@ -559,7 +559,7 @@ mod Fixpoint3.Boxing {
             unifyRelSyms(fullSymbol, newSymbol, set, withProv);
             let arity = Ram.arityOf(fullSymbol);
             let id1 = Ram.toId(fullSymbol);
-            if(withProv) {
+            if (withProv) {
                 MutDisjointSets.union(RamId.RelPos(id1, arity), RamId.Id(-1), set);
                 MutDisjointSets.union(RamId.RelPos(id1, arity + 1), RamId.Id(-1), set)
             } else ()

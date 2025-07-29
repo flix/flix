@@ -1584,29 +1584,35 @@ mod TestList {
     /////////////////////////////////////////////////////////////////////////////
     // groupBy                                                                 //
     /////////////////////////////////////////////////////////////////////////////
+     def listToNel(head: v, list: List[v]): Nel[v] =
+        (Nel.singleton(head), list) ||> List.foldLeft(acc -> cur -> Nel.cons(cur, acc)) |> Nel.reverse
+
     @Test
     def groupBy01(): Bool = List.groupBy((a, b) -> a > 3 or b > 8, (Nil: List[Int32])) == Nil
 
     @Test
-    def groupBy02(): Bool = List.groupBy((a, b) -> a > 3 or b > 8, 1 :: Nil) == (1 :: Nil) :: Nil
+    def groupBy02(): Bool = List.groupBy((a, b) -> a > 3 or b > 8, 1 :: Nil) == (Nel.singleton(1)) :: Nil
 
     @Test
-    def groupBy03(): Bool = List.groupBy((a, b) -> a > 3 or b > 8, 1 :: 4 :: Nil) == (1 :: Nil) :: (4 :: Nil) :: Nil
+    def groupBy03(): Bool = List.groupBy((a, b) -> a > 3 or b > 8, 1 :: 4 :: Nil) == Nel.singleton(1) :: Nel.singleton(4) :: Nil
 
     @Test
-    def groupBy04(): Bool = List.groupBy((a, b) -> a > 3 or b > 8, 1 :: 9 :: Nil) == (1 :: 9 :: Nil) :: Nil
+    def groupBy04(): Bool = List.groupBy((a, b) -> a > 3 or b > 8, 1 :: 9 :: Nil) == (listToNel(1, 9 :: Nil)) :: Nil
 
     @Test
-    def groupBy05(): Bool = List.groupBy((a, b) -> a > 3 or b > 8, 1 :: 4 :: 7 :: 6 :: 9 :: 2 :: 4 :: 4 :: 8 :: 16 :: Nil) ==
-                          (1 :: 9 :: 16 :: Nil) :: (4 :: 7 :: 6 :: 4 :: 4 :: 8 :: Nil) :: (2 :: Nil) :: Nil
+    def groupBy05(): Bool =
+        List.groupBy((a, b) -> a > 3 or b > 8, 1 :: 4 :: 7 :: 6 :: 9 :: 2 :: 4 :: 4 :: 8 :: 16 :: Nil) ==
+            listToNel(1, 9 :: 16 :: Nil) :: listToNel(4, 7 :: 6 :: 4 :: 4 :: 8 :: Nil) :: listToNel(2, Nil) :: Nil
 
     @Test
-    def groupBy06(): Bool = List.groupBy((a, b) -> a > -6 or a*b >= 0, -1 :: -11 :: 4 :: -11 :: 0 :: 8 :: 2 :: 1 :: -3 :: -24 :: Nil) ==
-                          (-1 :: -11 :: -11 :: 0 :: -3 :: -24 :: Nil) :: (4 :: 8 :: 2 :: 1 :: Nil) :: Nil
+    def groupBy06(): Bool = 
+        List.groupBy((a, b) -> a > -6 or a*b >= 0, -1 :: -11 :: 4 :: -11 :: 0 :: 8 :: 2 :: 1 :: -3 :: -24 :: Nil) ==
+            listToNel(-1, -11 :: -11 :: 0 :: -3 :: -24 :: Nil) :: listToNel(4, 8 :: 2 :: 1 :: Nil) :: Nil
 
     @Test
-    def groupBy07(): Bool = List.groupBy((a, b) -> a < 0 or (a > 10 or (b > 10 or a == b)), -5 :: 6 :: 11 :: 8 :: 8 :: -11 :: -1 :: 0 :: 4 :: -1 :: Nil) ==
-                          (-5 :: 11 :: -11 :: -1 :: -1 :: Nil) :: (6 :: Nil) :: (8 :: 8 :: Nil) :: (0 :: Nil) :: (4 :: Nil) :: Nil
+    def groupBy07(): Bool =
+        List.groupBy((a, b) -> a < 0 or (a > 10 or (b > 10 or a == b)), -5 :: 6 :: 11 :: 8 :: 8 :: -11 :: -1 :: 0 :: 4 :: -1 :: Nil) ==
+            listToNel(-5, 11 :: -11 :: -1 :: -1 :: Nil) :: listToNel(6, Nil) :: listToNel(8, 8 :: Nil) :: listToNel(0, Nil) :: listToNel(4, Nil) :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // zip                                                                     //

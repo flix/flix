@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.WeederError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.Validation.*
-import ca.uwaterloo.flix.util.collection.{ArrayOps, Chain, Nel}
+import ca.uwaterloo.flix.util.collection.{ArrayOps, Chain, Nel, SeqOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 import java.lang.{Byte as JByte, Integer as JInt, Long as JLong, Short as JShort}
@@ -489,7 +489,7 @@ object Weeder2 {
       ) {
         (doc, ident, tparams, fields) =>
           // Ensure that each name is unique
-          val errors = getDuplicates(fields, (f: StructField) => f.name.name).map {
+          val errors = SeqOps.getDuplicates(fields, (f: StructField) => f.name.name).map {
             case (field1, field2) => DuplicateStructField(ident.name, field1.name.name, field1.name.loc, field2.name.loc, ident.loc)
           }
           errors.foreach(sctx.errors.add)
@@ -640,7 +640,7 @@ object Weeder2 {
           tree => {
             val tokens = pickAllTokens(tree)
             // Check for duplicate annotations
-            val errors = getDuplicates(tokens.toSeq, (t: Token) => t.text).map(pair => {
+            val errors = SeqOps.getDuplicates(tokens.toSeq, (t: Token) => t.text).map(pair => {
               val name = pair._1.text
               val loc1 = pair._1.mkSourceLocation()
               val loc2 = pair._2.mkSourceLocation()
@@ -743,7 +743,7 @@ object Weeder2 {
             }
           }
           // Check for duplicate modifiers
-          errors = errors ++ getDuplicates(tokens.toSeq, (t: Token) => t.kind).map(pair => {
+          errors = errors ++ SeqOps.getDuplicates(tokens.toSeq, (t: Token) => t.kind).map(pair => {
             val name = pair._1.text
             val loc1 = pair._1.mkSourceLocation()
             val loc2 = pair._2.mkSourceLocation()
@@ -790,7 +790,7 @@ object Weeder2 {
               params =>
                 // Check for duplicates
                 val paramsWithoutWildcards = params.filter(!_.ident.isWild)
-                val errors = getDuplicates(paramsWithoutWildcards, (p: FormalParam) => p.ident.name)
+                val errors = SeqOps.getDuplicates(paramsWithoutWildcards, (p: FormalParam) => p.ident.name)
                   .map(pair => DuplicateFormalParam(pair._1.ident.name, pair._1.loc, pair._2.loc))
                 errors.foreach(sctx.errors.add)
 
@@ -2852,6 +2852,7 @@ object Weeder2 {
         case TreeKind.Type.Record => visitRecordType(inner)
         case TreeKind.Type.RecordRow => visitRecordRowType(inner)
         case TreeKind.Type.Schema => visitSchemaType(inner)
+        case TreeKind.Type.Extensible => visitExtensibleType(inner)
         case TreeKind.Type.SchemaRow => visitSchemaRowType(inner)
         case TreeKind.Type.Apply => visitApplyType(inner)
         case TreeKind.Type.Constant => visitConstantType(inner)
@@ -2941,6 +2942,12 @@ object Weeder2 {
       expect(tree, TreeKind.Type.Schema)
       val row = visitSchemaRowType(tree)
       mapN(row)(Type.Schema(_, tree.loc))
+    }
+
+    private def visitExtensibleType(tree: Tree)(implicit sctx: SharedContext): Validation[Type, CompilationMessage] = {
+      expect(tree, TreeKind.Type.Extensible)
+      val row = visitSchemaRowType(tree)
+      mapN(row)(Type.Extensible(_, tree.loc))
     }
 
     private def visitSchemaRowType(parentTree: Tree)(implicit sctx: SharedContext): Validation[Type, CompilationMessage] = {
@@ -3442,22 +3449,6 @@ object Weeder2 {
       case tree: Tree if tree.kind == kind => acc.appended(tree)
       case _ => acc
     })
-  }
-
-  /**
-    * Gets duplicate pairs from a list of items.
-    * This is used to generate a list of pairs that can be mapped into Duplicate* errors.
-    * What constitutes a "duplicate" is abstracted into the groupBy argument.
-    * For instance, in the case of annotations, if the [[TokenKind]] of two annotations are equal then they form a duplicate pair.
-    * But for enum variants, two variants are duplicates if they share names.
-    */
-  private def getDuplicates[A, K](items: Seq[A], groupBy: A => K): List[(A, A)] = {
-    val groups = items.groupBy(groupBy)
-    for {
-      (_, group) <- groups.toList
-      // if a group has a nonempty tail, then everything in the tail is a duplicate of the head
-      duplicate <- group.tail
-    } yield (group.head, duplicate)
   }
 
   /**

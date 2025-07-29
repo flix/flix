@@ -245,19 +245,19 @@ mod TestInt32 {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def pow01(): Bool = Int32.pow(0i32, 0i32) == 1i32
+    def pow01(): Bool = Int32.pow(base = 0i32, 0i32) == 1i32
 
     @Test
-    def pow02(): Bool = Int32.pow(0i32, 1i32) == 0i32
+    def pow02(): Bool = Int32.pow(base = 0i32, 1i32) == 0i32
 
     @Test
-    def pow03(): Bool = Int32.pow(1i32, 0i32) == 1i32
+    def pow03(): Bool = Int32.pow(base = 1i32, 0i32) == 1i32
 
     @Test
-    def pow04(): Bool = Int32.pow(1i32, 1i32) == 1i32
+    def pow04(): Bool = Int32.pow(base = 1i32, 1i32) == 1i32
 
     @Test
-    def pow05(): Bool = Int32.pow(5i32, 2i32) == 25i32
+    def pow05(): Bool = Int32.pow(base = 5i32, 2i32) == 25i32
 
     /////////////////////////////////////////////////////////////////////////////
     // rightShift                                                              //
@@ -473,7 +473,7 @@ mod TestInt32 {
     def highestOneBitPosition06(): Bool = Int32.highestOneBitPosition(20) == 4
 
     @Test
-    def highestOneBitPosition07(): Bool = Int32.highestOneBitPosition(Int32.pow(2, 30)) == 30
+    def highestOneBitPosition07(): Bool = Int32.highestOneBitPosition(Int32.pow(base = 2, 30)) == 30
 
     @Test
     def highestOneBitPosition08(): Bool = Int32.highestOneBitPosition(2147483647) == 30
@@ -482,10 +482,10 @@ mod TestInt32 {
     def highestOneBitPosition09(): Bool = Int32.highestOneBitPosition(0) == -1
 
     @Test
-    def highestOneBitPosition10(): Bool = Int32.highestOneBitPosition(Int32.pow(2, 18) + Int32.pow(2, 23)) == 23
+    def highestOneBitPosition10(): Bool = Int32.highestOneBitPosition(Int32.pow(base = 2, 18) + Int32.pow(base = 2, 23)) == 23
 
     @Test
-    def highestOneBitPosition11(): Bool = Int32.highestOneBitPosition(Int32.pow(2, 3) + Int32.pow(2, 7)) == 7
+    def highestOneBitPosition11(): Bool = Int32.highestOneBitPosition(Int32.pow(base = 2, 3) + Int32.pow(base = 2, 7)) == 7
 
     @Test
     def highestOneBitPosition12(): Bool = Int32.highestOneBitPosition(-32767) == 31
@@ -513,7 +513,7 @@ mod TestInt32 {
     def highestOneBit06(): Bool = Int32.highestOneBit(20) == 16
 
     @Test
-    def highestOneBit07(): Bool = Int32.highestOneBit(Int32.pow(2, 30)) == 1073741824
+    def highestOneBit07(): Bool = Int32.highestOneBit(Int32.pow(base = 2, 30)) == 1073741824
 
     @Test
     def highestOneBit08(): Bool = Int32.highestOneBit(2147483647) == 1073741824
@@ -522,7 +522,7 @@ mod TestInt32 {
     def highestOneBit09(): Bool = Int32.highestOneBit(0) == 0
 
     @Test
-    def highestOneBit10(): Bool = Int32.highestOneBit(Int32.pow(2, 18) + Int32.pow(2, 24)) == 16777216
+    def highestOneBit10(): Bool = Int32.highestOneBit(Int32.pow(base = 2, 18) + Int32.pow(base = 2, 24)) == 16777216
 
     /////////////////////////////////////////////////////////////////////////////
     // numberOfLeadingZeros                                                    //
@@ -541,13 +541,13 @@ mod TestInt32 {
     def numberOfLeadingZeros04(): Bool = Int32.numberOfLeadingZeros(Int32.bitwiseNot(Int32.leftShift(1, 31))) == 1
 
     @Test
-    def numberOfLeadingZeros05(): Bool = Int32.numberOfLeadingZeros(Int32.pow(2, 29)) == 2
+    def numberOfLeadingZeros05(): Bool = Int32.numberOfLeadingZeros(Int32.pow(base = 2, 29)) == 2
 
     @Test
-    def numberOfLeadingZeros06(): Bool = Int32.numberOfLeadingZeros(Int32.pow(2, 24) + Int32.pow(2, 18)) == 7
+    def numberOfLeadingZeros06(): Bool = Int32.numberOfLeadingZeros(Int32.pow(base = 2, 24) + Int32.pow(base = 2, 18)) == 7
 
     @Test
-    def numberOfLeadingZeros07(): Bool = Int32.numberOfLeadingZeros(Int32.pow(2, 7) + Int32.pow(2, 6)) == 24
+    def numberOfLeadingZeros07(): Bool = Int32.numberOfLeadingZeros(Int32.pow(base = 2, 7) + Int32.pow(base = 2, 6)) == 24
 
     @Test
     def numberOfLeadingZeros08(): Bool = Int32.numberOfLeadingZeros(20) == 27
@@ -581,10 +581,10 @@ mod TestInt32 {
     def lowestOneBitPosition07(): Bool = Int32.lowestOneBitPosition(12) == 2
 
     @Test
-    def lowestOneBitPosition08(): Bool = Int32.lowestOneBitPosition(Int32.pow(2, 30)) == 30
+    def lowestOneBitPosition08(): Bool = Int32.lowestOneBitPosition(Int32.pow(base = 2, 30)) == 30
 
     @Test
-    def lowestOneBitPosition09(): Bool = Int32.lowestOneBitPosition(Int32.pow(2, 23) + Int32.pow(2, 18)) == 18
+    def lowestOneBitPosition09(): Bool = Int32.lowestOneBitPosition(Int32.pow(base = 2, 23) + Int32.pow(base = 2, 18)) == 18
 
     @Test
     def lowestOneBitPosition10(): Bool = Int32.lowestOneBitPosition(2147483647) == 0
@@ -615,13 +615,13 @@ mod TestInt32 {
     def lowestOneBit06(): Bool = Int32.lowestOneBit(12) == 4
 
     @Test
-    def lowestOneBit07(): Bool = Int32.lowestOneBit(Int32.pow(2, 6) + Int32.pow(2, 18) + Int32.pow(2, 27)) == 64
+    def lowestOneBit07(): Bool = Int32.lowestOneBit(Int32.pow(base = 2, 6) + Int32.pow(base = 2, 18) + Int32.pow(base = 2, 27)) == 64
 
     @Test
-    def lowestOneBit08(): Bool = Int32.lowestOneBit(Int32.pow(2, 30)) == 1073741824
+    def lowestOneBit08(): Bool = Int32.lowestOneBit(Int32.pow(base = 2, 30)) == 1073741824
 
     @Test
-    def lowestOneBit09(): Bool = Int32.lowestOneBit(Int32.pow(2, 18) + Int32.pow(2, 23)) == 262144
+    def lowestOneBit09(): Bool = Int32.lowestOneBit(Int32.pow(base = 2, 18) + Int32.pow(base = 2, 23)) == 262144
 
     @Test
     def lowestOneBit10(): Bool = Int32.lowestOneBit(2147483647) == 1
@@ -643,10 +643,10 @@ mod TestInt32 {
     def numberOfTrailingZeros03(): Bool = Int32.numberOfTrailingZeros(42) == 1
 
     @Test
-    def numberOfTrailingZeros04(): Bool = Int32.numberOfTrailingZeros(Int32.pow(2, 16) + Int32.pow(2, 22)) == 16
+    def numberOfTrailingZeros04(): Bool = Int32.numberOfTrailingZeros(Int32.pow(base = 2, 16) + Int32.pow(base = 2, 22)) == 16
 
     @Test
-    def numberOfTrailingZeros05(): Bool = Int32.numberOfTrailingZeros(Int32.pow(2, 30)) == 30
+    def numberOfTrailingZeros05(): Bool = Int32.numberOfTrailingZeros(Int32.pow(base = 2, 30)) == 30
 
     @Test
     def numberOfTrailingZeros06(): Bool = Int32.numberOfTrailingZeros(-1) == 0
@@ -665,19 +665,19 @@ mod TestInt32 {
     def getBit02(): Bool = Int32.getBit(pos = 31, -1000000) == 1
 
     @Test
-    def getBit03(): Bool = Int32.getBit(pos = 23, Int32.pow(2, 23)) == 1
+    def getBit03(): Bool = Int32.getBit(pos = 23, Int32.pow(base = 2, 23)) == 1
 
     @Test
-    def getBit04(): Bool = Int32.getBit(pos = 24, Int32.pow(2, 23)) == 0
+    def getBit04(): Bool = Int32.getBit(pos = 24, Int32.pow(base = 2, 23)) == 0
 
     @Test
-    def getBit05(): Bool = Int32.getBit(pos = 22, Int32.pow(2, 23)) == 0
+    def getBit05(): Bool = Int32.getBit(pos = 22, Int32.pow(base = 2, 23)) == 0
 
     @Test
-    def getBit06(): Bool = Int32.getBit(pos = 25, -1 - Int32.pow(2, 25)) == 0
+    def getBit06(): Bool = Int32.getBit(pos = 25, -1 - Int32.pow(base = 2, 25)) == 0
 
     @Test
-    def getBit07(): Bool = Int32.getBit(pos = 26, -1 - Int32.pow(2, 25)) == 1
+    def getBit07(): Bool = Int32.getBit(pos = 26, -1 - Int32.pow(base = 2, 25)) == 1
 
     @Test
     def getBit08(): Bool = Int32.getBit(pos = 15, 0) == 0

@@ -44,7 +44,7 @@
 ///    Vector#{Lock1, Lock2},
 /// )
 /// ```
-/// We then store the fact that the type information about `A[0]` and `B[0]` are stored
+/// We then store the fact that the type-information about `A[0]` and `B[0]` are stored
 /// at `UnifiedTypePos` `0` and `A[1]` and `B[1]` are stored at position 1. We only need
 /// to keep the `MutList` and `BPlusTree` for objects, as transforming the simple types
 /// requires less information.
@@ -112,19 +112,19 @@ mod Fixpoint3.BoxingType {
 
     ///
     /// `Boxing=(values, valueToRep, typeInfo, locks)` contains the information needed to
-    /// convert between Boxed objects and their Int64 representation
+    /// convert between `Boxed` objects and their `Int64` representation
     ///
-    /// The i'th value of each Vector belongs to a specific `UnifiedTypePos`. The
+    /// The `i`'th value of each Vector belongs to a specific `UnifiedTypePos`. The
     /// description of the values will be for some `i`.
     ///
-    /// `valueToRep` maps Boxed objects to their `Int64` representation.
+    /// `valueToRep` maps `Boxed` objects to their `Int64` representation.
     ///
-    /// `values` contains the Boxed objects being stored.
+    /// `values` contains the `Boxed` objects being stored.
     ///
-    /// The following invariant is kept `values(valueToRep[boxedValue]) == boxedValue`. This
-    /// design limits us to 2^32 objects of a given type.
+    /// The following invariant is kept `values(valueToRep[boxedValue]) == boxedValue`.
+    /// This design limits us to `2^32` objects of a given type.
     ///
-    /// Furthermore for lattice `Bot` should be represented by `0`.
+    /// Furthermore, for lattice `Bot` should be represented by `0`.
     ///
     /// `typeInfo[i]` records which type of values are associated with the information stored at `i`.
     /// If we have yet to meet any values associated with position `i`, `typeInfo[i]` will be `Unknown`.
