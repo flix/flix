@@ -93,14 +93,6 @@ mod BPlusTree {
             
 
         ///
-        /// Returns the current state of `counter` and increments it.
-        ///
-        // @Internal
-        // pub def getAndIncrement(counter: AtomicCounter[r]): Int32 \ r =
-        //     let AtomicCounter(c) = counter;
-        //     unchecked_cast((c.getAndIncrement(): _ \ IO) as _ \ r)
-
-        ///
         /// Increments `counter` by `1`.
         ///
         @Internal
