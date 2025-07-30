@@ -859,7 +859,7 @@ mod Fixpoint3.Solver {
     ///
     /// Returns the given database `db` as a Datalog value.
     ///
-    def toModelOnlyFull(_withProv: Bool, _rules: Vector[Constraint], dbMeta: (Database[r], Predicates)): Datalog \ r = unsafely IO run {
+    def toModelOnlyFull(_withProv: Bool, _rules: Vector[Constraint], dbMeta: (Database[r], Predicates)): Datalog \ r = {
         let (db, meta) = dbMeta;
         let dbOnlyFullRels = MutMap.toMap(db) |>
             Map.filterWithKey(k -> facts -> match k {
