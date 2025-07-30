@@ -263,7 +263,6 @@ mod Fixpoint3.Phase.Hoisting {
                         case None => None
                         case Some(hoistedBody) =>
                             let (intraEqualities, knownEqualities) = constructEqualityConstraints(rowVar, relSym, termMapWithCur, equalitySets);
-                            // unregisterNewTerms(rowVar, termMap, equalitySets, relSym);
                             // Expressions are hoisted to this point if they are ground with `rowVar` bound,
                             // but not without `rowVar`.
                             let hoistedToHere = getBoolsHoistedToHere(rowVar, termMap, termMapWithCur, equalitySets, idToBool);
