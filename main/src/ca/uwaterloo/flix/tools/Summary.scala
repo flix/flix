@@ -219,7 +219,7 @@ object Summary {
     case Expr.ExtMatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map(r => countCheckedEcasts(r.exp)).sum
     case Expr.Tag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.RestrictableTag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
-    case Expr.ExtensibleTag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.ExtTag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.Tuple(exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.RecordSelect(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.RecordExtend(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum

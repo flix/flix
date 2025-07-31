@@ -621,7 +621,7 @@ object Redundancy {
     case Expr.RestrictableTag(_, exps, _, _, _) =>
       visitExps(exps, env0, rc)
 
-    case Expr.ExtensibleTag(_, exps, _, _, _) =>
+    case Expr.ExtTag(_, exps, _, _, _) =>
       visitExps(exps, env0, rc)
 
     case Expr.Tuple(elms, _, _, _) =>

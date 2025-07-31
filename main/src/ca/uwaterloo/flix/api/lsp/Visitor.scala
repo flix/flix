@@ -419,7 +419,7 @@ object Visitor {
 
       case Expr.RestrictableTag(_, _, _, _, _) => () // Not visited, unsupported feature.
 
-      case Expr.ExtensibleTag(_, exps, _, _, _) =>
+      case Expr.ExtTag(_, exps, _, _, _) =>
         exps.foreach(visitExpr)
 
       case Expr.Tuple(exps, _, _, _) =>

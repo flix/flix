@@ -259,7 +259,7 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ExtensibleTag(_, exps, tpe, eff, _) =>
+    case Expr.ExtTag(_, exps, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)

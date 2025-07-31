@@ -170,7 +170,7 @@ object Safety {
     case Expr.RestrictableTag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ExtensibleTag(_, exps, _, _, _) =>
+    case Expr.ExtTag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.Tuple(elms, _, _, _) =>
