@@ -94,6 +94,7 @@ object KeywordCompleter {
       Completion.KeywordCompletion("discard"     , range, Priority.Lowest(0)),
       // E
       Completion.KeywordCompletion("else"        , range, Priority.Lowest(0)),
+      Completion.KeywordCompletion("ematch"      , range, Priority.Lowest(0)),
       // F
       Completion.KeywordCompletion("false"       , range, Priority.Lowest(-1), withSpace = false),
       Completion.KeywordCompletion("forA"        , range, Priority.Lowest(1)),
