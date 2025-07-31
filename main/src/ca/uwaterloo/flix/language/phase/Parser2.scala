@@ -2081,7 +2081,7 @@ object Parser2 {
           NamedTokenSet.FromKinds(Set(TokenKind.ArrowThickR)),
           actual = Some(TokenKind.Equal),
           sctx = sctx,
-          hint = Some("match cases use '=>' instead of '='."),
+          hint = Some("use '=>' instead of '='."),
           loc = previousSourceLocation())
         closeWithError(open(), error)
       } else {
@@ -2102,7 +2102,7 @@ object Parser2 {
           NamedTokenSet.FromKinds(Set(TokenKind.ArrowThickR)),
           actual = Some(TokenKind.Equal),
           sctx = sctx,
-          hint = Some("match cases use '=>' instead of '='."),
+          hint = Some("use '=>' instead of '='."),
           loc = previousSourceLocation())
         closeWithError(open(), error)
       } else {

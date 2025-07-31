@@ -394,6 +394,7 @@ object Lexer {
       case _ if isKeyword("par") => TokenKind.KeywordPar
       case _ if isKeyword("pub") => TokenKind.KeywordPub
       case _ if isKeyword("project") => TokenKind.KeywordProject
+      case _ if isKeyword("pquery") => TokenKind.KeywordPQuery
       case _ if isKeyword("query") => TokenKind.KeywordQuery
       case _ if isKeyword("redef") => TokenKind.KeywordRedef
       case _ if isKeyword("region") => TokenKind.KeywordRegion

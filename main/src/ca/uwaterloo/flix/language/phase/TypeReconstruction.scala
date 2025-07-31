@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
-import ca.uwaterloo.flix.language.ast.TypedAst.ExtMatchRule
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, SolveMode}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
@@ -255,7 +254,7 @@ object TypeReconstruction {
     case KindedAst.Expr.ExtMatch(exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitExtMatchRule)
-      val tpe = rs.head.exp.tpe
+      val tpe = rs.head.exp.tpe // Note: We are guaranteed to have at least one rule.
       val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)
       TypedAst.Expr.ExtMatch(e, rs, tpe, eff, loc)
 

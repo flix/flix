@@ -472,9 +472,9 @@ object ConstraintGen {
           case ((name, patTpes), acc) => Type.mkSchemaRowExtend(name, Type.mkRelation(patTpes, loc), acc, loc)
         }
         val expectedSchemaType = Type.mkExtensible(expectedRowType, loc)
-        c.unifyType(tpe, expectedSchemaType, loc)
+        c.unifyType(tpe, expectedSchemaType, exp.loc)
         c.unifyAllTypes(tpes, loc)
-        val resTpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
+        val resTpe = tpes.head // Note: We are guaranteed to have one rule.
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
@@ -1054,6 +1054,11 @@ object ConstraintGen {
     }
   }
 
+  /**
+    * Generates constraints for the patterns inside the record label pattern.
+    *
+    * Returns the type of the pattern.
+    */
   private def visitExtPattern(pat0: KindedAst.ExtPattern)(implicit c: TypeContext): Type = pat0 match {
     case ExtPattern.Wild(tvar, _) => tvar
 
@@ -1095,6 +1100,11 @@ object ConstraintGen {
       (patTpe, tpe, eff)
   }
 
+  /**
+    * Generates constraints for the given extensible match rule.
+    *
+    * Returns the name of the constructor, the types of the constructor, the type of the expression body, and its effect.
+    */
   private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): ((Name.Pred, List[Type]), Type, Type) = rule match {
     case KindedAst.ExtMatchRule(label, pats, exp, _) =>
       val name = Name.Pred(label.name, label.loc)
@@ -1106,7 +1116,7 @@ object ConstraintGen {
   /**
     * Generates constraints for the given typematch rule.
     *
-    * Returns the the body's type and the body's effect
+    * Returns the body's type and the body's effect
     */
   private def visitTypeMatchRule(rule: KindedAst.TypeMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
     case KindedAst.TypeMatchRule(sym, declTpe, exp, _) =>
