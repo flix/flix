@@ -394,7 +394,8 @@ mod FordFulkerson {
         let t = 5;
         let g = zeroFlow(exampleGraph02());
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
-        Assert.eq(Path(5 :: 4 :: 3 :: 0 :: Nil), p)
+        let foundShortestPath = Path(5 :: 2 :: 1 :: 0 :: Nil) == p or Path(5 :: 4 :: 3 :: 0 :: Nil) == p;
+        Assert.eq(true, foundShortestPath)
 
     @Test
     def testAugmentingPath07(): Bool =
