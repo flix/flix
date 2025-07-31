@@ -33,7 +33,7 @@ eff Process {
     def exitValue(ph: ProcessHandle): Option[Int32]
 
     ///
-    ///  Returns status of the process, if it alive or not.
+    /// Returns status of the process, if it alive or not.
     ///
     def isAlive(ph: ProcessHandle): Bool
 
@@ -101,11 +101,12 @@ mod Process {
     use Process.StdOut.StdOut
 
     pub enum StdIn(OutputStream)
-    instance Writer[StdIn] {
+    instance Writeable[StdIn] {
+        type Elm = Int8
         type Aef = IO
         pub def write(b: Array[Int8, r], r: StdIn): Result[IoError, Int32] \ r + IO =
             let StdIn(pr) = r;
-            Writer.write(b, pr)
+            Writeable.write(b, pr)
     }
 
     pub enum StdOut(InputStream)

@@ -504,7 +504,7 @@ object Visitor {
 
       case Expr.Without(exp, sym, _, _, _) =>
         visitExpr(exp)
-        visitEffectSymUse(sym)
+        visitEffSymUse(sym)
 
       case Expr.TryCatch(exp, rules, _, _, _) =>
         visitExpr(exp)
@@ -514,7 +514,7 @@ object Visitor {
         visitExpr(exp)
 
       case Expr.Handler(sym, rules, _, _, _, _, _) =>
-        visitEffectSymUse(sym)
+        visitEffSymUse(sym)
         rules.foreach(visitHandlerRule)
 
       case Expr.RunWith(exp1, exp2, _, _, _) =>
@@ -649,13 +649,13 @@ object Visitor {
     c.consumeStructFieldSymUse(symUse)
   }
 
-  private def visitEffectSymUse(effUse: EffectSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
-    val EffectSymUse(_, qname) = effUse
+  private def visitEffSymUse(effUse: EffSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
+    val EffSymUse(_, qname) = effUse
     if (!a.accept(qname.loc)) {
       return
     }
 
-    c.consumeEffectSymUse(effUse)
+    c.consumeEffSymUse(effUse)
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit a: Acceptor, c: Consumer): Unit = {

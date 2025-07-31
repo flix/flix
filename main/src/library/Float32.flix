@@ -47,7 +47,7 @@ mod Float32 {
     ///
     /// Returns the maximum number representable by a `Float32`.
     ///
-    pub def maxValue(): Float32 = (2.0f32 - pow(2.0f32, -23.0f32)) * pow(2.0f32, 127.0f32)
+    pub def maxValue(): Float32 = (2.0f32 - pow(base = 2.0f32, -23.0f32)) * pow(base = 2.0f32, 127.0f32)
 
     ///
     /// Returns the minimum number representable by a `Float32`.
@@ -57,7 +57,7 @@ mod Float32 {
     ///
     /// Returns the minimum positive number representable by a `Float32`.
     ///
-    pub def minPositiveValue(): Float32 = pow(2.0f32, -149.0f32)
+    pub def minPositiveValue(): Float32 = pow(base = 2.0f32, -149.0f32)
 
     ///
     /// Returns the NaN (not a number) value of type `Float32`.
@@ -314,9 +314,9 @@ mod Float32 {
         Double.valueOf(x1).floatValue()
 
     ///
-    /// Returns `b` raised to the power of `n`.
+    /// Returns `base` raised to the power of `n`.
     ///
-    pub def pow(b: Float32, n: Float32): Float32 = $FLOAT32_EXP$(b, n)
+    pub def pow(base: {base = Float32}, n: Float32): Float32 = $FLOAT32_EXP$(base#base, n)
 
     ///
     /// Get the primitive Float32 value from its object representation (i.e. java.lang.Float).

@@ -53,7 +53,7 @@ mod Iterator {
     /// Returns an empty iterator.
     ///
     pub def empty(rc: Region[r]): Iterator[a, r, r] =
-        let f = _ ->  checked_ecast(Done);
+        let f = _ -> checked_ecast(Done);
         Iterator(rc, f)
 
     ///
@@ -462,7 +462,7 @@ mod Iterator {
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), iter)
 
     ///
-    /// Applies `f` to all elements in `iter` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `iter` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     ///
@@ -745,7 +745,7 @@ mod Iterator {
     pub def cons(x: a, iter: Iterator[a, ef, r]): Iterator[a, ef, r] \ r =
         let Iterator(rc, iterF) = iter;
         let first = Ref.fresh(rc, true);
-        let f = () ->  {
+        let f = () -> {
             if (Ref.get(first)) {
                 Ref.put(false, first);
                 Ans(x)

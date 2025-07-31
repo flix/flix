@@ -17,6 +17,140 @@
 mod TestVector {
 
     /////////////////////////////////////////////////////////////////////////////
+    // binarySearch                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def binarySearch01(): Bool =
+        Vector.binarySearch(0, Vector#{}) == None
+
+    @test
+    def binarySearch02(): Bool =
+        Vector.binarySearch(0, Vector#{0}) == Some(0)
+
+    @test
+    def binarySearch03(): Bool =
+        Vector.binarySearch(0, Vector#{0, 1, 2, 3}) == Some(0)
+
+    @test
+    def binarySearch04(): Bool =
+        Vector.binarySearch(1, Vector#{0, 1, 2, 3}) == Some(1)
+
+    @test
+    def binarySearch05(): Bool =
+        Vector.binarySearch(2, Vector#{0, 1, 2, 3}) == Some(2)
+
+    @test
+    def binarySearch06(): Bool =
+        Vector.binarySearch(3, Vector#{0, 1, 2, 3}) == Some(3)
+
+    @test
+    def binarySearch07(): Bool =
+        Vector.binarySearch(1, Vector#{0, 1}) == Some(1)
+
+    @test
+    def binarySearch08(): Bool =
+        Vector.binarySearch(1, Vector#{0, 1, 2}) == Some(1)
+
+    @test
+    def binarySearch09(): Bool =
+        Vector.binarySearch(1, Vector#{0, 1, 2, 3, 4}) == Some(1)
+
+    @test
+    def binarySearch10(): Bool =
+        Vector.binarySearch(1, Vector#{0, 1, 2, 3, 4, 5}) == Some(1)
+
+    @test
+    def binarySearch11(): Bool =
+        Vector.binarySearch(1, Vector#{0, 1, 2, 3, 4, 5, 6}) == Some(1)
+
+    @test
+    def binarySearch12(): Bool =
+        Vector.binarySearch(1, Vector#{0, 1, 2, 3, 4, 5, 6, 7}) == Some(1)
+
+    @test
+    def binarySearch13(): Bool =
+        Vector.binarySearch(1, Vector#{0, 1, 2, 3, 4, 5, 6, 7, 8}) == Some(1)
+
+    @test
+    def binarySearch14(): Bool =
+        Vector.binarySearch(1, Vector#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}) == Some(1)
+
+    @test
+    def binarySearch15(): Bool =
+        Vector.binarySearch(4, Vector#{0, 2, 4, 6, 8, 10}) == Some(2)
+
+    @test
+    def binarySearch16(): Bool =
+        Vector.binarySearch(3, Vector#{0, 2, 4, 6, 8, 10}) == None
+
+    @test
+    def binarySearch17(): Bool =
+        Vector.binarySearch(-1, Vector#{0, 2, 4, 6, 8, 10}) == None
+
+    @test
+    def binarySearch18(): Bool =
+        Vector.binarySearch(11, Vector#{0, 2, 4, 6, 8, 10}) == None
+
+    @test
+    def binarySearch19(): Bool =
+        Vector.binarySearch(11i64, Vector#{0i64, 2i64, 4i64, 6i64, 8i64, 10i64}) == None
+
+    @test
+    def binarySearch20(): Bool =
+        Vector.binarySearch(2i64, Vector#{0i64, 2i64, 4i64, 6i64, 8i64, 10i64}) == Some(1)
+
+    @test
+    def binarySearch21(): Bool =
+        Vector.binarySearch("a", Vector#{"a", "b", "c", "d", "e", "f"}) == Some(0)
+
+    @test
+    def binarySearch22(): Bool =
+        Vector.binarySearch("b", Vector#{"a", "b", "c", "d", "e", "f"}) == Some(1)
+
+    @test
+    def binarySearch23(): Bool =
+        Vector.binarySearch("g", Vector#{"a", "b", "c", "d", "e", "f"}) == None
+
+    @test
+    def binarySearch24(): Bool =
+        let pos = Vector.binarySearch(1, Vector#{0, 1, 1, 2, 3, 4, 5, 6});
+        pos == Some(1) or pos == Some(2)
+
+    @test
+    def binarySearch25(): Bool =
+        Vector.binarySearch(0, Vector#{0, 1, 1, 1, 1, 1, 1, 1, 2}) == Some(0)
+
+    @test
+    def binarySearch26(): Bool =
+        Vector.binarySearch(-1, Vector#{0, 1, 1, 1, 1, 1, 1, 1, 2}) == None
+
+    @test
+    def binarySearch27(): Bool =
+        let pos = Vector.binarySearch(4, Vector#{4, 3, 2, 1, 0});
+        pos == None or pos == Some(0)
+
+    @test
+    def binarySearch28(): Bool =
+        let pos = Vector.binarySearch(3, Vector#{4, 3, 2, 1, 0});
+        pos == None or pos == Some(1)
+
+    @test
+    def binarySearch29(): Bool =
+        let pos = Vector.binarySearch(2, Vector#{4, 3, 2, 1, 0});
+        pos == None or pos == Some(2)
+
+    @test
+    def binarySearch30(): Bool =
+        let pos = Vector.binarySearch(1, Vector#{4, 3, 2, 1, 0});
+        pos == None or pos == Some(3)
+
+    @test
+    def binarySearch31(): Bool =
+        let pos = Vector.binarySearch(0, Vector#{4, 3, 2, 1, 0});
+        pos == None or pos == Some(4)
+
+    /////////////////////////////////////////////////////////////////////////////
     // compare                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

@@ -529,20 +529,32 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Builds a jar package for the project.
+    * Builds the jar or the fatjar
     */
-  def buildJar()(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+  private def buildJarBase(flix: Flix, includeDependencies: Boolean)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+    // Build the project before building the jar
+    val buildResult = build(flix)
+    buildResult match {
+      case Validation.Failure(error) =>
+        return Validation.Failure(error) // Return the build error directly
+      case _ => // Proceed if the build is successful
+    }
 
     // The path to the jar file.
     val jarFile = Bootstrap.getJarFile(projectPath)
-
-    // Create the artifact directory, if it does not exist.
-    Files.createDirectories(getArtifactDirectory(projectPath))
 
     // Check whether it is safe to write to the file.
     if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
       return Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
     }
+
+    val libFolder = Bootstrap.getLibraryDirectory(projectPath)
+    if (includeDependencies && Files.exists(libFolder) && (!Files.isDirectory(libFolder) || !Files.isReadable(libFolder))) {
+      return Validation.Failure(BootstrapError.FileError(s"The lib folder isn't a directory or isn't readable. Refusing to build fatjar-file."))
+    }
+
+    // Create the artifact directory, if it does not exist.
+    Files.createDirectories(getArtifactDirectory(projectPath))
 
     // Construct a new zip file.
     Using(new ZipOutputStream(Files.newOutputStream(jarFile))) { zip =>
@@ -568,6 +580,31 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         Bootstrap.addToZip(zip, fileNameWithSlashes, resource)
       }
 
+      if (includeDependencies) {
+        // First, we get all jar files inside the lib folder.
+        // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
+        val jarDependencies = if (libFolder.toFile.exists()) Bootstrap.getAllFilesWithExt(libFolder, "jar") else List[Path]()
+        // Add jar dependencies.
+        jarDependencies.foreach(dep => {
+          if (!Bootstrap.isJarFile(dep))
+            return Validation.Failure(BootstrapError.FileError(s"The jar file '${dep.toFile.getName} seems corrupted. Refusing to build fatjar-file."))
+
+          // Extract the content of the classes to the jar file.
+          Using(new ZipInputStream(Files.newInputStream(dep))) {
+            zipIn =>
+              var entry = zipIn.getNextEntry
+              while (entry != null) {
+                // Get the class files except module-info and META-INF classes which are specific to each library.
+                if (entry.getName.endsWith(".class") && !entry.getName.equals("module-info.class") && !entry.getName.contains("META-INF/")) {
+                  // Write extracted class files to zip.
+                  val classContent = zipIn.readAllBytes()
+                  Bootstrap.addToZip(zip, entry.getName, classContent)
+                }
+                entry = zipIn.getNextEntry
+              }
+          }
+        })
+      }
     } match {
       case Success(()) => Validation.Success(())
       case Failure(e) => Validation.Failure(BootstrapError.GeneralError(List(e.getMessage)))
@@ -575,83 +612,17 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Builds a fatjar package for the project.
-    * This function relies essentially on the same pattern as used in the buildJar function.
-    * It searches dependencies in the lib folder and includes everything in the generated jar file in addition.
-    *
-    * Note: As the buildJar does the same, this build doesn't erase previous jar-file if existing.
-    * It doesn't do a cleanup and as such remaining previous libraries may remain.
+    * Builds a jar package for the project.
     */
-  def buildFatJar()(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
-    // The path to the jar file.
-    val jarFile = Bootstrap.getJarFile(projectPath)
+  def buildJar(flix: Flix)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+    buildJarBase(flix, includeDependencies = false)
+  }
 
-    // Create the artifact directory, if it does not exist.
-    Files.createDirectories(getArtifactDirectory(projectPath))
-
-    // Check whether it is safe to write to the file.
-    if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
-      return Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
-    }
-
-    // Get the lib folder and check if it is safe to read.
-    val libFolder = Bootstrap.getLibraryDirectory(projectPath)
-    if (Files.exists(libFolder) && (!Files.isDirectory(libFolder) || !Files.isReadable(libFolder))) {
-      return Validation.Failure(BootstrapError.FileError(s"The lib folder isn't a directory or isn't readable. Refusing to build fatjar-file."))
-    }
-
-    // First, we get all jar files inside the lib folder.
-    // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
-    val jarDependencies = if (libFolder.toFile.exists()) Bootstrap.getAllFilesWithExt(libFolder, "jar") else List[Path]()
-
-    // Construct a new zip file, the built fatjar-file.
-    Using(new ZipOutputStream(Files.newOutputStream(jarFile))) { zipOut =>
-      // META-INF/MANIFEST.MF
-      val manifest =
-        """Manifest-Version: 1.0
-          |Main-Class: Main
-          |""".stripMargin
-
-      // Add manifest file.
-      Bootstrap.addToZip(zipOut, "META-INF/MANIFEST.MF", manifest.getBytes)
-
-      // Add class files of the project.
-      // Here we sort entries by relative file name to apply https://reproducible-builds.org/
-      val classDir = Bootstrap.getClassDirectory(projectPath)
-      for ((buildFile, fileNameWithSlashes) <- Bootstrap.getAllFilesSorted(classDir)) {
-        Bootstrap.addToZip(zipOut, fileNameWithSlashes, buildFile)
-      }
-
-      // Add all resources, again sorting by relative file name
-      val resourcesDir = Bootstrap.getResourcesDirectory(projectPath)
-      for ((resource, fileNameWithSlashes) <- Bootstrap.getAllFilesSorted(resourcesDir)) {
-        Bootstrap.addToZip(zipOut, fileNameWithSlashes, resource)
-      }
-
-      // Add jar dependencies.
-      jarDependencies.foreach(dep => {
-        if (!Bootstrap.isJarFile(dep))
-          return Validation.Failure(BootstrapError.FileError(s"The jar file '${dep.toFile.getName} seems corrupted. Refusing to build fatjar-file."))
-
-        // Extract the content of the classes to the jar file.
-        Using(new ZipInputStream(Files.newInputStream(dep))) {
-          zipIn =>
-            var entry = zipIn.getNextEntry
-            while (entry != null) {
-              // Get the class files except module-info and META-INF classes which are specific to each library.
-              if (entry.getName.endsWith(".class") && !entry.getName.equals("module-info.class") && !entry.getName.contains("META-INF/")) {
-                // Write extracted class file to zip.
-                val classContent = zipIn.readAllBytes()
-                Bootstrap.addToZip(zipOut, entry.getName, classContent)
-              }
-              entry = zipIn.getNextEntry
-            }
-        }
-      })
-    } match {
-      case Success(()) => Validation.Success(())
-      case Failure(e) => Validation.Failure(BootstrapError.GeneralError(List(e.getMessage)))
-    }
+  /**
+    * Builds a fatjar package for the project.
+    */
+  def buildFatJar(flix: Flix)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+    buildJarBase(flix, includeDependencies = true)
   }
 
   /**

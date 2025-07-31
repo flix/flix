@@ -752,7 +752,7 @@ mod MutList {
     ///
     /// Returns `v` as a MutDeque.
     ///
-    pub def toMutDeque(rc1: Region[r1], v: MutList[a, r2]): MutDeque[a, r1] \ { r2, r1 }  =
+    pub def toMutDeque(rc1: Region[r1], v: MutList[a, r2]): MutDeque[a, r1] \ { r2, r1 } =
         let d = MutDeque.empty(rc1);
         forEach(x -> MutDeque.pushBack(x, d), v);
         d

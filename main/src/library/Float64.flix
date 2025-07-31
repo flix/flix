@@ -47,7 +47,7 @@ mod Float64 {
     ///
     /// Returns the maximum number representable by a `Float64`.
     ///
-    pub def maxValue(): Float64 = (2.0f64 - pow(2.0f64, -52.0f64)) * pow(2.0f64, 1023.0f64)
+    pub def maxValue(): Float64 = (2.0f64 - pow(base = 2.0f64, -52.0f64)) * pow(base = 2.0f64, 1023.0f64)
 
     ///
     /// Returns the minimum number representable by a `Float64`.
@@ -57,7 +57,7 @@ mod Float64 {
     ///
     /// Returns the minimum positive number representable by a `Float64`.
     ///
-    pub def minPositiveValue(): Float64 = pow(2.0f64, -1074.0f64)
+    pub def minPositiveValue(): Float64 = pow(base = 2.0f64, -1074.0f64)
 
     ///
     /// Returns the NaN (not a number) value of type `Float64`.
@@ -342,9 +342,9 @@ mod Float64 {
         unsafe Math.rint(x)
 
     ///
-    /// Returns `x` raised to the power of `n`.
+    /// Returns ` base` raised to the power of `n`.
     ///
-    pub def pow(x: Float64, n: Float64): Float64 = $FLOAT64_EXP$(x, n)
+    pub def pow(base: {base = Float64}, n: Float64): Float64 = $FLOAT64_EXP$(base#base, n)
 
     ///
     /// Returns the exponential of `x`.

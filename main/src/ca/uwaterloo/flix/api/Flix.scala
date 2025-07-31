@@ -201,9 +201,12 @@ class Flix {
     "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
     "MutMap.flix" -> LocalResource.get("/src/library/MutMap.flix"),
 
+    "CharacterSet.flix" -> LocalResource.get("/src/library/CharacterSet.flix"),
+    "DecodingReader.flix" -> LocalResource.get("/src/library/DecodingReader.flix"),
     "IoError.flix" -> LocalResource.get("/src/library/IoError.flix"),
-    "Reader.flix" -> LocalResource.get("/src/library/Reader.flix"),
-    "Writer.flix" -> LocalResource.get("/src/library/Writer.flix"),
+    "Peekable.flix" -> LocalResource.get("/src/library/Peekable.flix"),
+    "Readable.flix" -> LocalResource.get("/src/library/Readable.flix"),
+    "Writable.flix" -> LocalResource.get("/src/library/Writable.flix"),
 
     "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
 
@@ -760,7 +763,7 @@ class Flix {
     currentPhase = PhaseTime(phase, 0)
 
     if (options.progress) {
-      progressBar.observe(currentPhase.phase, "", sample = false)
+      progressBar.observe(currentPhase.phase, "")
     }
 
     // Measure the execution time.
@@ -790,7 +793,7 @@ class Flix {
     currentPhase = PhaseTime(phase, 0)
 
     if (options.progress) {
-      progressBar.observe(currentPhase.phase, "", sample = false)
+      progressBar.observe(currentPhase.phase, "")
     }
 
     // Measure the execution time.
@@ -817,15 +820,6 @@ class Flix {
     */
   def getTotalTime: Long = phaseTimers.foldLeft(0L) {
     case (acc, phase) => acc + phase.time
-  }
-
-  /**
-    * A callback to indicate that work has started on the given subtask.
-    */
-  def subtask(subtask: String, sample: Boolean = false): Unit = {
-    if (options.progress) {
-      progressBar.observe(currentPhase.phase, subtask, sample)
-    }
   }
 
   /**

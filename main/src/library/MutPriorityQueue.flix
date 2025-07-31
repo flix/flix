@@ -166,7 +166,7 @@ mod MutPriorityQueue {
     def heapifyUp(idx: Int32, mq: MutPriorityQueue[a, r]): Unit \ r with Order[a] =
         if (idx != 0) {
             let parentIdx = (idx - 1) / 2;
-            let cur  = Array.get(idx, mq->values);
+            let cur = Array.get(idx, mq->values);
             let parent = Array.get(parentIdx, mq->values);
             if (cur > parent) {
                 Array.put(parent, idx, mq->values);
@@ -221,7 +221,7 @@ mod MutPriorityQueue {
         let oldCapacity = Array.length(mq->values);
         if (oldCapacity == mq->size) {
             let newCapacity = 2 + (oldCapacity * 2);
-            let newArr  = Array.empty(mq->r, newCapacity);
+            let newArr = Array.empty(mq->r, newCapacity);
             Array.forEachWithIndex((idx, x) -> Array.put(x, idx, newArr), mq->values);
             mq->values = newArr
         }

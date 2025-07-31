@@ -320,7 +320,7 @@ mod List {
     ///
     /// Accumulates the result of applying `f` to `l` going left to right.
     ///
-    /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2)  ...`.
+    /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2) ...`.
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): List[b] \ ef =
         def loop(ll, k, acc) = match ll {
@@ -679,7 +679,7 @@ mod List {
     }
 
     ///
-    /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     ///
@@ -691,7 +691,7 @@ mod List {
     }
 
     ///
-    /// Applies `f` to all elements in `l` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `l` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     ///
@@ -887,35 +887,34 @@ mod List {
     ///
     /// The function `f` must be pure.
     ///
-    pub def groupBy(f: (a, a) -> Bool, l: List[a]): List[List[a]] =
-        def loop(ll, k) = match ll {
-            case Nil     => k(Nil)
+    pub def groupBy(f: (a, a) -> Bool, l: List[a]): List[Nel[a]] =
+        (Nil, l) ||> List.foldLeft(acc -> value -> {
+            groupByHelper(value, f, acc)
+        }) |> List.map(Nel.reverse)
+
+    ///
+    /// Helper function for `groupBy`.
+    ///
+    /// Handles the 2 cases:
+    ///
+    /// 1. `value` can be added to a list. `value` is added as the first value to the `Nel`.
+    /// 2. `value` cannot be added to any list. Returns `List.reverse(currentNels) ::: (Nel(value, Nil) :: Nil)`.
+    ///
+    /// In either case the created `Nel`'s are reversed.
+    ///
+    def groupByHelper(value: a, f: (a, a) -> Bool, currentNels: List[Nel[a]]): List[Nel[a]] =
+        // Record seen elements in reverse order in `acc`.
+        def loop(cur, acc) = match cur {
+            case Nil => (Nel.singleton(value) :: acc) |> List.reverse
             case x :: xs =>
-                let (r1, r2) = extractHelper(f, xs, x :: Nil);
-                loop(r2, ks -> k(r1 :: ks))
+                if (Nel.forAll(v -> f(value, v) and f(v, value), x)) {
+                    let newNel = Nel.cons(value, x);
+                    List.reverse(newNel :: acc) ::: xs
+                } else {
+                    loop(xs, x :: acc)
+                }
         };
-        loop(l, identity)
-
-    ///
-    /// Helper function for `groupBy`.
-    ///
-    /// The list `l2` is needed by `agreeHelper` so it must be materialized (rather than a continuation).
-    /// We have no choice but to reverse it.
-    ///
-    def extractHelper(f: (a, a) -> Bool, l1: List[a], l2: List[a]): (List[a], List[a]) =
-        def loop(ll, ll2, k) = match ll {
-            case Nil     => (reverse(ll2), k(Nil))
-            case x :: xs => if (agreeHelper(f, x, ll2)) loop(xs, x :: ll2, k) else loop(xs, ll2, ks -> k(x :: ks))
-        };
-        loop(l1, l2, identity)
-
-    ///
-    /// Helper function for `groupBy`.
-    ///
-    def agreeHelper(f: (a, a) -> Bool, a: a, l: List[a]): Bool = match l {
-        case Nil     => true
-        case x :: xs => if (f(x, a) and f(a, x)) agreeHelper(f, a, xs) else false
-    }
+        loop(currentNels, Nil)
 
     ///
     /// Returns a list where the element at index `i` is `(a, b)` where
@@ -1246,7 +1245,7 @@ mod List {
     ///
     pub def unfold(f: s -> Option[(a, s)] \ ef, st: s): List[a] \ ef =
         def loop(sst, k) = match f(sst) {
-            case None         => k(Nil)
+            case None           => k(Nil)
             case Some((a, st1)) => loop(st1, ks -> k(a :: ks))
         };
         loop(st, identity)
@@ -1270,7 +1269,7 @@ mod List {
     /// Build a list by applying the function `next` to `()`. `next` is expected to encapsulate
     /// a stateful resource such as a file handle that can be iterated.
     ///
-    /// `next` should return `Ok(Some(a)` to signal a new list element `Ok(a)`.
+    /// `next` should return `Ok(Some(a))` to signal a new list element `Ok(a)`.
     ///
     /// `next` should return `Ok(None)` to signal the end of building the list.
     ///

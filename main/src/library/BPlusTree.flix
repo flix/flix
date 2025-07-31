@@ -49,6 +49,8 @@
 /// `Vector[Int64]`. A `Search` describes the order in which elements should be
 /// compared. E.g. [0, 1, 2, ..., n] is the natural order.
 ///
+/// `counter` is used for keeping track of the number of inserted elements.
+///
 /// For all other usages `search` will be a vector of size 0.
 ///
 pub struct BPlusTree[k, v, r] {
@@ -56,15 +58,58 @@ pub struct BPlusTree[k, v, r] {
     arity:    Int32,
     rootLock: BPlusTree.Lock[r],
     rc:       Region[r],
+    counter:  BPlusTree.AtomicCounter[r],
     search:   BPlusTree.Search
 }
 
 mod BPlusTree {
     import java.lang.Runtime
+    import java.util.concurrent.atomic.{LongAdder => JLongAdder}
     import java.util.concurrent.locks.{StampedLock => JStampedLock}
 
     @Internal
     pub type alias Search = Vector[Int32]
+
+    ///
+    /// A thread-safe counter producing `Int32`.
+    ///
+    /// A `LongAdder` is used as `AtomicInteger`/`AtomicLong` appeared to perform
+    /// badly under high contention.
+    ///
+    @Internal
+    pub enum AtomicCounter[_: Region](JLongAdder)
+
+    mod AtomicCounter {
+        import java.util.concurrent.atomic.{LongAdder => JLongAdder}
+
+        ///
+        /// Returns a fresh counter with initialized to `initialVal`.
+        ///
+        @Internal
+        pub def mkCounter(_: Region[r], initialValue: Int32): AtomicCounter[r] \ r =
+            let adder = unchecked_cast((new JLongAdder(): _ \ IO) as _ \ r);
+            unchecked_cast((adder.add(Int32.toInt64(initialValue)): _ \ IO) as _ \ r);
+            AtomicCounter(adder)
+            
+
+        ///
+        /// Increments `counter` by `1`.
+        ///
+        @Internal
+        pub def increment(counter: AtomicCounter[r]): Unit \ r =
+            let AtomicCounter(c) = counter;
+            unchecked_cast((c.increment(): _ \ IO) as _ \ r);
+            ()
+
+        ///
+        /// Returns the current state of `counter`.
+        ///
+        @Internal
+        pub def get(counter: AtomicCounter[r]): Int32 \ r =
+            let AtomicCounter(c) = counter;
+            unchecked_cast((c.intValue(): _ \ IO) as _ \ r)
+    }
+
 
     ///
     /// The purpose of Lock is to provide a thin wrapper around Java's StampedLock without
@@ -239,6 +284,12 @@ mod BPlusTree {
                 }
         }
 
+    ///
+    /// Increments the stored size of `t`.
+    ///
+    /// Thread-safe.
+    ///
+    def incrementSize(t: BPlusTree[k, v, r]): Unit \ r = AtomicCounter.increment(t->counter)
 
     ///
     /// Returns `true` if and only if `t` contains the mapping `k => v`.
@@ -282,7 +333,8 @@ mod BPlusTree {
             arity = m,
             rootLock = Lock.mkLock(rc),
             rc = rc,
-            search = search
+            search = search,
+            counter = AtomicCounter.mkCounter(rc, 0)
         }
 
     ///
@@ -510,6 +562,16 @@ mod BPlusTree {
     pub def search(t: BPlusTree[k, v, r]): Search = t->search
 
     ///
+    /// Returns the size of `t`. This operation is `O(1)`.
+    ///
+    /// Not atomic. 
+    ///
+    /// Thread-safe.
+    ///
+    @Internal
+    pub def size(t: BPlusTree[k, v, r]): Int32 \ r = AtomicCounter.get(t->counter)
+
+    ///
     /// Returns the number of threads to use for parallel evaluation.
     ///
     /// # SAFETY:
@@ -634,7 +696,7 @@ mod BPlusTree {
         ///
         def applyPredicate(v: Vector[k], f: k -> k -> Bool \ r): Bool \ r =
             let zipped = Vector.map(x -> (x, true), v);
-            let reduced =  Vector.reduceLeft(old -> cur ->
+            let reduced = Vector.reduceLeft(old -> cur ->
                 let (oldNum, oldBool) = old;
                 let (curNum, _) = cur;
                 (curNum, oldBool and f(oldNum, curNum))
@@ -802,7 +864,7 @@ mod BPlusTree {
                     case false => 
                         if(n->size == 0) {
                             count
-                        }  else {
+                        } else {
                             loop(count + 1, Array.get(0, n->children))
                         }
                 }
@@ -927,6 +989,7 @@ mod BPlusTree {
                     Lock.yieldBasedOn(node->lock);
                     BPlusTree.putInternal(key, val, tree)
                 } else {
+                    BPlusTree.incrementSize(tree);
                     // We now have a write lock and can insert and propagate.
                     let insertionPoint = toInsertionPoint(index);
                     if (size < arity) {
@@ -934,7 +997,7 @@ mod BPlusTree {
                         actualInsertLeaf(key, val, insertionPoint, node);
                         Lock.unlockWrite(writeStamp, node->lock);
                         None
-                    } else{
+                    } else {
                         // We need to insert and split, locking up through the tree.
                         splitLeaf(node, writeStamp, key, val, insertionPoint, tree)
                     }}
@@ -1401,8 +1464,8 @@ mod BPlusTree {
                     let values = Array.copyOfRange(rc, 0, node->size, node->values);
                     let keys = Array.copyOfRange(rc, 0, node->size, node->keys);
                     let keysStrings = Array.mapWithIndex(rc, i -> key -> "${key}: ${Array.get(i, values)}", keys);
-                    let keysString = Array.join(",\n${indentString}  ", keysStrings);
-                    "${indentString}Leaf(\n${indentString}  ${keysString}\n${indentString})\n"
+                    let keysString = Array.join(",\n${indentString} ", keysStrings);
+                    "${indentString}Leaf(\n${indentString} ${keysString}\n${indentString})\n"
             }
 
         ///
