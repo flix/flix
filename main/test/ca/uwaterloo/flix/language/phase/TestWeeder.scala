@@ -1502,5 +1502,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
       """
         |type alias T[] = Int32
         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
   }
 }
