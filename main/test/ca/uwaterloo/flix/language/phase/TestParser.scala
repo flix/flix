@@ -9,7 +9,8 @@ import org.scalatest.Suites
 
 class TestParser extends Suites(
   new TestParserRecovery,
-  new TestParserHappy
+  new TestParserHappy,
+  new TestParserSad,
 )
 
 /**
@@ -841,7 +842,12 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
+}
 
+/**
+  * Tests errors without testing recovery.
+  */
+class TestParserSad extends AnyFunSuite with TestUtils {
   test("ParseError.Interpolation.01") {
     val input = s"""pub def foo(): String = "$${1 + }""""
     val result = compile(input, Options.TestWithLibNix)
