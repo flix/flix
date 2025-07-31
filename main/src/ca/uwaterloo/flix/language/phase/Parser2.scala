@@ -1487,17 +1487,14 @@ object Parser2 {
       if (eat(TokenKind.KeywordWithout)) {
         val mark = open()
         if (at(TokenKind.CurlyL)) {
-          oneOrMore(
+          zeroOrMore(
             namedTokenSet = NamedTokenSet.Effect,
             getItem = () => nameAllowQualified(NAME_EFFECT),
             checkForItem = NAME_EFFECT.contains,
             breakWhen = _.isRecoverExpr,
             delimiterL = TokenKind.CurlyL,
             delimiterR = TokenKind.CurlyR
-          ) match {
-            case Some(error) => closeWithError(open(), error)
-            case _ =>
-          }
+          )
         } else if (NAME_EFFECT.contains(nth(0))) {
           nameAllowQualified(NAME_EFFECT)
         } else {

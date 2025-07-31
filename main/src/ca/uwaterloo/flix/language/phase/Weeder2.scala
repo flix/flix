@@ -1773,14 +1773,15 @@ object Weeder2 {
       val effectSet = pick(TreeKind.Type.EffectSet, tree)
       val effects = mapN(effectSet)(effectSetTree => pickAll(TreeKind.QName, effectSetTree).map(visitQName))
       mapN(pickExpr(tree), effects) {
-        case (expr, effect :: effects0) =>
-          val base = Expr.Without(expr, effect, tree.loc)
-          effects0.foldLeft(base) {
+        case (expr, effs) =>
+          if (effs.isEmpty) {
+            // If the list is empty, we report an error, but we can still use the base expression.
+            val error = NeedAtleastOne(NamedTokenSet.Effect,SyntacticContext.Expr.OtherExpr, None, tree.loc)
+            sctx.errors.add(error)
+          }
+          effs.foldLeft(expr) {
             case (acc, eff) => Expr.Without(acc, eff, tree.loc.asSynthetic)
           }
-        case (_, Nil) =>
-          // Fall back on Expr.Error, Parser has already reported this
-          Expr.Error(Malformed(NamedTokenSet.Effect, SyntacticContext.Expr.OtherExpr, None, tree.loc))
       }
     }
 

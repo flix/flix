@@ -1546,4 +1546,15 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError.NeedAtleastOne](result)
   }
+
+  test("MissingWithout.01") {
+    val input =
+      """
+        |def foo(): String = {
+        |  "hi" without {}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
+  }
 }
