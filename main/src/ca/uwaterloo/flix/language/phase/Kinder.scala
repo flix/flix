@@ -480,7 +480,7 @@ object Kinder {
       KindedAst.Expr.RestrictableChoose(star, exp, rules, tvar, loc)
 
     case ResolvedAst.Expr.ExtMatch(exp, rules, loc) =>
-      val e = visitExp(exp, kenv0, taenv, root)
+      val e = visitExp(exp, kenv0, root)
       val rs = rules.map(visitExtMatchRule(_, kenv0, root))
       KindedAst.Expr.ExtMatch(e, rs, loc)
 
