@@ -1,12 +1,12 @@
 name: AUTHORS.md Check
 on: pull_request
 
+# Checks that the author of the PR is in the AUTHORS.md file.
+# Specifically, it looks for the string "(https://github.com/<github_id>)"
+
 jobs:
   check-authors:
     runs-on: ubuntu-latest
-    env:
-      GRADLE_OPTS: "-Xms128m -Xmx4g"
-
     steps:
       - name: Check out master
         uses: actions/checkout@v4
