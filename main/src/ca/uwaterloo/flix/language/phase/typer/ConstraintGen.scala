@@ -472,7 +472,7 @@ object ConstraintGen {
           case ((name, patTpes), acc) => Type.mkSchemaRowExtend(name, Type.mkRelation(patTpes, loc), acc, loc)
         }
         val expectedSchemaType = Type.mkExtensible(expectedRowType, loc)
-        c.unifyType(tpe, expectedSchemaType, loc)
+        c.unifyType(tpe, expectedSchemaType, exp.loc)
         c.unifyAllTypes(tpes, loc)
         val resTpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
         val resEff = Type.mkUnion(eff :: effs, loc)
