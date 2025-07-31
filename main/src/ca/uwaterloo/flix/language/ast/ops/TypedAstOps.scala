@@ -65,7 +65,7 @@ object TypedAstOps {
     case Expr.ExtMatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(r => sigSymsOf(r.exp))
     case Expr.Tag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.RestrictableTag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.ExtensibleTag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Expr.ExtTag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.Tuple(elms, _, _, _) => elms.flatMap(sigSymsOf).toSet
     case Expr.RecordSelect(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.RecordExtend(_, value, rest, _, _, _) => sigSymsOf(value) ++ sigSymsOf(rest)
@@ -237,7 +237,7 @@ object TypedAstOps {
         case (acc, exp) => freeVars(exp) ++ acc
       }
 
-    case Expr.ExtensibleTag(_, exps, _, _, _) =>
+    case Expr.ExtTag(_, exps, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => freeVars(exp) ++ acc
       }

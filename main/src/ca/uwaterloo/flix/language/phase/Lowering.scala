@@ -495,10 +495,10 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Tag(caseSym), es, t, eff, loc)
 
-    case TypedAst.Expr.ExtensibleTag(label, exps, tpe, eff, loc) =>
+    case TypedAst.Expr.ExtTag(label, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.ExtensibleTag(label), es, t, eff, loc)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.ExtTag(label), es, t, eff, loc)
 
     case TypedAst.Expr.Tuple(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)

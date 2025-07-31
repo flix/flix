@@ -211,9 +211,9 @@ object Stratifier {
       val es = exps.map(visitExp)
       Expr.RestrictableTag(symUse, es, tpe, eff, loc)
 
-    case Expr.ExtensibleTag(label, exps, tpe, eff, loc) =>
+    case Expr.ExtTag(label, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.ExtensibleTag(label, es, tpe, eff, loc)
+      Expr.ExtTag(label, es, tpe, eff, loc)
 
     case Expr.Tuple(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)

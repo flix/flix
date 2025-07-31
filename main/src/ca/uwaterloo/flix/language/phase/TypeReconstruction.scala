@@ -272,7 +272,7 @@ object TypeReconstruction {
       val es = exps.map(visitExp)
       val tpe = subst(tvar)
       val eff = Type.mkUnion(es.map(_.eff), loc)
-      TypedAst.Expr.ExtensibleTag(label, es, tpe, eff, loc)
+      TypedAst.Expr.ExtTag(label, es, tpe, eff, loc)
 
     case KindedAst.Expr.Tuple(elms, loc) =>
       val es = elms.map(visitExp(_))

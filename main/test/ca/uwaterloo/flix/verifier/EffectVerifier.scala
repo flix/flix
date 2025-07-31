@@ -191,7 +191,7 @@ object EffectVerifier {
       val expected = Type.mkUnion(exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.ExtensibleTag(_, exps, _, eff, loc) =>
+    case Expr.ExtTag(_, exps, _, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(exps.map(_.eff), loc)
       val actual = eff
