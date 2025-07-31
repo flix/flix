@@ -35,7 +35,6 @@ object SemanticTokensProvider {
     //
     // This class uses iterators over lists to ensure fast append (!)
     //
-
     val sourceOpt = root.tokens.keys.find(_.name == uri)
 
     //
