@@ -2707,7 +2707,7 @@ object Parser2 {
         close(mark, TreeKind.Expr.NewStruct)
       } else if (at(TokenKind.CurlyL)) {
         // `new Type { ... }`.
-        oneOrMore(
+        zeroOrMore(
           namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
           checkForItem = t => t.isComment || t == TokenKind.KeywordDef,
           getItem = jvmMethod,
