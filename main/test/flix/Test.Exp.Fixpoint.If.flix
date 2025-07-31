@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-mod TestFixpoint.If {
+mod Test.Exp.Fixpoint.If {
     /////////////////////////////////////////////////////////////////////////////
     // Test if-guard with 0 parameters                                         //
     /////////////////////////////////////////////////////////////////////////////
@@ -274,5 +274,85 @@ mod TestFixpoint.If {
         let res = tuples |> Vector.filter(match (x, y, z, w, a) -> String.length(x + y + z + w + a) > 5) |> Vector.sort;
         res `Assert.eq` query f, r select (x, y, z, w, a) from R(x, y, z, w, a)
     }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Test if-guard with lattice elements                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testIfGuardOneLattice01(): Bool = {
+        let tuples = Vector#{(0, 1), (1, 2), (2, 0)};
+        let f = inject tuples into Edge/2;
+        let r = #{
+            Path(x, y; Down.Down(1)) :- Edge(x, y).
+            Path(x, z; l + Down.Down(1)) :- Path(x, y; l), Edge(y, z), if (l == Down.Down(0))
+        };
+        let res = query f, r select (x, y) from Path(x, y; l);
+        res `Assert.eq` tuples
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Test that if-guard position in body is irrelevant                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testIfGuardBodyPosition01(): Bool = {
+        let tuples = Vector.range(0, 20);
+        let f = inject tuples into Q/1;
+        let r = #{
+            P1(x) :- if (true), Q(x).
+            P2(x) :- Q(x), if (true).
+        };
+        let p = solve f, r;
+        let res1 = query p select x from P1(x);
+        let res2 = query p select x from P2(x);
+        res1 `Assert.eq` res2 and res1 `Assert.eq` tuples
+    }
+
+    @Test
+    def testIfGuardBodyPosition02(): Bool = {
+        let tuples = Vector.range(0, 20);
+        let f1 = inject tuples into Q1/1;
+        let f2 = inject tuples into Q2/1;
+        let r = #{
+            P1(x, y) :- if (true), Q1(x), Q2(y).
+            P2(x, y) :- Q1(x), if (true), Q2(y).
+            P3(x, y) :- Q1(x), Q2(y), if (true).
+        };
+        let p = solve f1, f2, r;
+        let res1 = query p select (x, y) from P1(x, y);
+        let res2 = query p select (x, y) from P2(x, y);
+        let res3 = query p select (x, y) from P3(x, y);
+        let res = tuples |>
+            Vector.map(x ->
+                Vector.foldLeft((acc, y) -> (x, y) :: acc, Nil, tuples) |>
+                List.reverse |>
+                List.toVector
+            ) |>
+            Vector.fold;
+        res1 `Assert.eq` res2 and res2 `Assert.eq` res3 and res3 `Assert.eq` res
+    }
+
+    @Test
+    def testIfGuardBodyPosition03(): Bool = {
+        let f = inject Vector#{("Alice", "Carol"), ("Bob", "Carol")} into Friend/2;
+        let r = #{
+            FriendInCommon(x, y) :- Friend(x, a), if (x != y), Friend(y, a).
+        };
+        let res = query f, r select (x, y) from FriendInCommon(x, y);
+        res `Assert.eq` Vector#{("Alice", "Bob"), ("Bob", "Alice")}
+    }
+
+    @Test
+    def testIfGuardBodyPosition04(): Bool = {
+        let f = inject Vector#{("Alice", "Carol"), ("Bob", "Carol")} into Friend/2;
+        let r = #{
+            FriendInCommon(x, y) :- if (x != y), Friend(x, a), Friend(y, a).
+        };
+        let res = query f, r select (x, y) from FriendInCommon(x, y);
+        res `Assert.eq` Vector#{("Alice", "Bob"), ("Bob", "Alice")}
+    }
+
+
 
 }
