@@ -408,7 +408,7 @@ object Weeder2 {
               Validation.Success(allCases)
             // Empty or Multiton enum
             case (None, cs) =>
-              Validation.Success(cases)
+              Validation.Success(cs)
           }
           mapN(casesVal) {
             cases => Declaration.Enum(doc, ann, mod, ident, tparams, derivations, cases.sortBy(_.loc), tree.loc)
@@ -466,7 +466,7 @@ object Weeder2 {
               Validation.Success(allCases)
             // Empty or Multiton enum
             case (None, cs) =>
-              Validation.Success(cases)
+              Validation.Success(cs)
           }
           mapN(casesVal) {
             cases => Declaration.RestrictableEnum(doc, ann, mod, ident, rParam, tparams, derivations, cases.sortBy(_.loc), tree.loc)
@@ -1427,7 +1427,7 @@ object Weeder2 {
             case Pattern.Wild(loc) => WeededAst.RestrictableChoosePattern.Wild(loc)
             case Pattern.Var(ident, loc) => WeededAst.RestrictableChoosePattern.Var(ident, loc)
             case Pattern.Cst(Constant.Unit, loc) => WeededAst.RestrictableChoosePattern.Wild(loc)
-            case other =>
+            case _ =>
               val error = UnsupportedRestrictedChoicePattern(isStar, loc0)
               sctx.errors.add(error)
               WeededAst.RestrictableChoosePattern.Error(loc0.asSynthetic)
@@ -3292,11 +3292,11 @@ object Weeder2 {
     }
   }
 
-  private def tryParsePredicateArity(token: Token)(implicit sctx: SharedContext): Validation[Int, CompilationMessage] = {
+  private def tryParsePredicateArity(token: Token): Validation[Int, CompilationMessage] = {
     token.text.toIntOption match {
       case Some(i) if i >= 1 => Success(i)
-      case Some(i) => Failure(WeederError.IllegalPredicateArity(token.mkSourceLocation(isReal = true)))
-      case None => Failure(WeederError.IllegalPredicateArity(token.mkSourceLocation(isReal = true)))
+      case Some(_) => Failure(WeederError.IllegalPredicateArity(token.mkSourceLocation()))
+      case None => Failure(WeederError.IllegalPredicateArity(token.mkSourceLocation()))
     }
   }
 
