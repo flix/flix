@@ -567,7 +567,7 @@ object Namer {
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
-      val sym = Symbol.mkEffectSym(ns0, ident)
+      val sym = Symbol.mkEffSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
       val tparams = visitExplicitTypeParams(tparams0)
       val ops = ops0.map(visitOp(_, ns0, sym))

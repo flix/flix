@@ -102,7 +102,7 @@ object Redundancy {
     val result = new ListBuffer[RedundancyError]
     for ((_, eff) <- root.effects) {
       if (deadEffect(eff)) {
-        result += UnusedEffectSym(eff.sym)
+        result += UnusedEffSym(eff.sym)
       }
     }
     result.toList

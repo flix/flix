@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.IntroducedBy
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffectSymUse, OpSymUse}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffSymUse, OpSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Modifiers, Source}
 
 object LiftedAst {
@@ -83,7 +83,7 @@ object LiftedAst {
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class RunWith(exp: Expr, effUse: EffectSymUse, rules: List[HandlerRule], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+    case class RunWith(exp: Expr, effUse: EffSymUse, rules: List[HandlerRule], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class NewObject(name: String, clazz: java.lang.Class[?], tpe: SimpleType, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
