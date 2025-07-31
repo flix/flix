@@ -1546,4 +1546,25 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError.NeedAtleastOne](result)
   }
+
+  test("MissingImport.Top.01") {
+    val input =
+      """
+        |import java.lang.{}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
+  }
+
+  test("MissingImport.Mod.01") {
+    val input =
+      """
+        |mod M {
+        |  import java.lang.{}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
+  }
+
 }

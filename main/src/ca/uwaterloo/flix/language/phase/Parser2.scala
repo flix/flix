@@ -833,10 +833,7 @@ object Parser2 {
         breakWhen = _.isRecoverUseOrImport,
         delimiterL = TokenKind.DotCurlyL,
         delimiterR = TokenKind.CurlyR,
-      ) match {
-        case Some(err) => closeWithError(open(), err)
-        case None =>
-      }
+      )
       close(mark, TreeKind.UsesOrImports.ImportMany)
     }
     close(mark, TreeKind.UsesOrImports.Import)
