@@ -31,15 +31,15 @@ object Symbol {
   /**
     * The primitive effects defined in the Prelude.
     */
-  val Chan: EffSym = mkEffectSym(Name.RootNS, Ident("Chan", SourceLocation.Unknown))
-  val Env: EffSym = mkEffectSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
-  val Exec: EffSym = mkEffectSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
-  val FsRead: EffSym = mkEffectSym(Name.RootNS, Ident("FsRead", SourceLocation.Unknown))
-  val FsWrite: EffSym = mkEffectSym(Name.RootNS, Ident("FsWrite", SourceLocation.Unknown))
-  val IO: EffSym = mkEffectSym(Name.RootNS, Ident("IO", SourceLocation.Unknown))
-  val Net: EffSym = mkEffectSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
-  val NonDet: EffSym = mkEffectSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
-  val Sys: EffSym = mkEffectSym(Name.RootNS, Ident("Sys", SourceLocation.Unknown))
+  val Chan: EffSym = mkEffSym(Name.RootNS, Ident("Chan", SourceLocation.Unknown))
+  val Env: EffSym = mkEffSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
+  val Exec: EffSym = mkEffSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
+  val FsRead: EffSym = mkEffSym(Name.RootNS, Ident("FsRead", SourceLocation.Unknown))
+  val FsWrite: EffSym = mkEffSym(Name.RootNS, Ident("FsWrite", SourceLocation.Unknown))
+  val IO: EffSym = mkEffSym(Name.RootNS, Ident("IO", SourceLocation.Unknown))
+  val Net: EffSym = mkEffSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
+  val NonDet: EffSym = mkEffSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
+  val Sys: EffSym = mkEffSym(Name.RootNS, Ident("Sys", SourceLocation.Unknown))
 
   /**
     * The set of all primitive effects defined in the Prelude.
@@ -301,14 +301,14 @@ object Symbol {
   /**
     * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
     */
-  def mkEffectSym(ns: NName, ident: Ident): EffSym = {
+  def mkEffSym(ns: NName, ident: Ident): EffSym = {
     new EffSym(ns.parts, ident.name, ident.loc)
   }
 
   /**
    * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
    */
-  def mkEffectSym(fqn: String): EffSym = split(fqn) match {
+  def mkEffSym(fqn: String): EffSym = split(fqn) match {
       case None => new EffSym(Nil, fqn, SourceLocation.Unknown)
       case Some((ns, name)) => new EffSym(ns, name, SourceLocation.Unknown)
     }

@@ -92,8 +92,9 @@ object ConstraintGen {
         // Pseudo variable for source to flow into
         val pvar = Type.freshVar(Kind.Eff, loc1)
 
-        val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
-        val constrs1 = tconstrs1.map(_.copy(loc = loc2))
+        val (tconstrs0, econstrs0, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
+        val tconstrs = tconstrs0.map(_.copy(loc = loc2))
+        val econstrs = econstrs0.map(_.copy(loc = loc2))
         val declaredEff = declaredType.arrowEffectType
         val declaredArgumentTypes = declaredType.arrowArgTypes
         val declaredResultType = declaredType.arrowResultType
@@ -101,8 +102,8 @@ object ConstraintGen {
 
         c.unifyType(itvar, declaredType, loc2)
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
-        c.addClassConstraints(constrs1, loc2)
-        c.addEqualityConstraints(econstrs1, loc2)
+        c.addClassConstraints(tconstrs, loc2)
+        c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
         c.unifySource(pvar, declaredEff, loc2)
         c.unifyType(evar, Type.mkUnion(pvar :: effs, loc2), loc2)
@@ -123,15 +124,16 @@ object ConstraintGen {
 
       case Expr.ApplyOp(OpSymUse(sym, loc1), exps, tvar, evar, loc2) =>
         val op = lookupOp(sym, loc1)
-        val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(op.spec.sc, loc1.asSynthetic)
-        val constrs1 = tconstrs1.map(_.copy(loc = loc1))
+        val (tconstrs0, econstrs0, declaredType, _) = Scheme.instantiate(op.spec.sc, loc1.asSynthetic)
+        val tconstrs = tconstrs0.map(_.copy(loc = loc2))
+        val econstrs = econstrs0.map(_.copy(loc = loc2))
         val declaredEff = declaredType.arrowEffectType
         val declaredArgumentTypes = declaredType.arrowArgTypes
         val declaredResultType = generalizeVoid(declaredType.arrowResultType)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
-        c.addClassConstraints(constrs1, loc2)
-        c.addEqualityConstraints(econstrs1, loc2)
+        c.addClassConstraints(tconstrs, loc2)
+        c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
         c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
         val resTpe = tvar
@@ -140,15 +142,16 @@ object ConstraintGen {
 
       case Expr.ApplySig(SigSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
         val sig = root.traits(sym.trt).sigs(sym)
-        val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
-        val constrs1 = tconstrs1.map(_.copy(loc = loc1))
+        val (tconstrs0, econstrs0, declaredType, _) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
+        val tconstrs = tconstrs0.map(_.copy(loc = loc2))
+        val econstrs = econstrs0.map(_.copy(loc = loc2))
         val declaredEff = declaredType.arrowEffectType
         val declaredArgumentTypes = declaredType.arrowArgTypes
         val declaredResultType = declaredType.arrowResultType
         val (tpes, effs) = exps.map(visitExp).unzip
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
-        c.addClassConstraints(constrs1, loc2)
-        c.addEqualityConstraints(econstrs1, loc2)
+        c.addClassConstraints(tconstrs, loc2)
+        c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(itvar, declaredType, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
         c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
