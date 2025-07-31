@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.WeederError
+import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -1477,5 +1477,30 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin.replace("BS", "\\")
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
+  }
+
+  test("MissingTypeParameter.Enum.01") {
+    val input =
+      """
+        |enum E[]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
+  }
+
+  test("MissingTypeParameter.Struct.01") {
+    val input =
+      """
+        |struct S[] { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
+  }
+
+  test("MissingTypeParameter.TypeAlias.01") {
+    val input =
+      """
+        |type alias T[] = Int32
+        |""".stripMargin
   }
 }
