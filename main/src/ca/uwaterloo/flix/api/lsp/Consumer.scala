@@ -56,7 +56,7 @@ trait Consumer {
 
   def consumeCase(cse: Case): Unit = ()
 
-  def consumeCaseSymUse(sym: CaseSymUse): Unit = ()
+  def consumeCaseSymUse(symUse: CaseSymUse): Unit = ()
 
   def consumeCatchRule(rule: CatchRule): Unit = ()
 
@@ -66,7 +66,7 @@ trait Consumer {
 
   def consumeDef(defn: Def): Unit = ()
 
-  def consumeDefSymUse(sym: DefSymUse): Unit = ()
+  def consumeDefSymUse(symUse: DefSymUse): Unit = ()
 
   def consumeDerivation(derive: Derivation): Unit = ()
 
@@ -100,7 +100,7 @@ trait Consumer {
 
   def consumeOp(op: Op): Unit = ()
 
-  def consumeOpSymUse(sym: OpSymUse): Unit = ()
+  def consumeOpSymUse(symUse: OpSymUse): Unit = ()
 
   def consumePattern(pat: Pattern): Unit = ()
 

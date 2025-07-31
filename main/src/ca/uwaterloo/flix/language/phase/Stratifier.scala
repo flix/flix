@@ -203,13 +203,13 @@ object Stratifier {
       val rs = rules.map(visitExtMatchRule)
       Expr.ExtMatch(e, rs, tpe, eff, loc)
 
-    case Expr.Tag(sym, exps, tpe, eff, loc) =>
+    case Expr.Tag(symUse, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.Tag(sym, es, tpe, eff, loc)
+      Expr.Tag(symUse, es, tpe, eff, loc)
 
-    case Expr.RestrictableTag(sym, exps, tpe, eff, loc) =>
+    case Expr.RestrictableTag(symUse, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.RestrictableTag(sym, es, tpe, eff, loc)
+      Expr.RestrictableTag(symUse, es, tpe, eff, loc)
 
     case Expr.ExtensibleTag(label, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -307,9 +307,9 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.Unsafe(e, runEff, tpe, eff, loc)
 
-    case Expr.Without(exp, sym, tpe, eff, loc) =>
+    case Expr.Without(exp, symUse, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.Without(e, sym, tpe, eff, loc)
+      Expr.Without(e, symUse, tpe, eff, loc)
 
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -320,9 +320,9 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.Throw(e, tpe, eff, loc)
 
-    case Expr.Handler(sym, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
+    case Expr.Handler(symUse, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
       val rs = rules.map(visitRunWithRule)
-      Expr.Handler(sym, rs, bodyTpe, bodyEff, handledEff, tpe, loc)
+      Expr.Handler(symUse, rs, bodyTpe, bodyEff, handledEff, tpe, loc)
 
     case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)

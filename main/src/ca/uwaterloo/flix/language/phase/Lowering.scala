@@ -192,7 +192,7 @@ object Lowering {
       val tconstrs = tconstrs0.map(visitTraitConstraint)
       val econstrs = econstrs0.map(visitEqConstraint)
       val assocs = assocs0.map {
-        case TypedAst.AssocTypeDef(defDoc, defMod, defSym, args, defTpe, defLoc) => LoweredAst.AssocTypeDef(defDoc, defMod, defSym, args, defTpe, defLoc)
+        case TypedAst.AssocTypeDef(defDoc, defMod, defSymUse, args, defTpe, defLoc) => LoweredAst.AssocTypeDef(defDoc, defMod, defSymUse, args, defTpe, defLoc)
       }
       val defs = defs0.map(visitDef)
       LoweredAst.Instance(doc, ann, mod, sym, tpe, tconstrs, econstrs, assocs, defs, ns, loc)
@@ -257,8 +257,8 @@ object Lowering {
   /**
     * Lowers `sym` from a restrictable case sym use into a regular case sym use.
     */
-  private def visitRestrictableCaseSymUse(sym: RestrictableCaseSymUse): CaseSymUse = {
-    CaseSymUse(visitRestrictableCaseSym(sym.sym), sym.sym.loc)
+  private def visitRestrictableCaseSymUse(symUse: RestrictableCaseSymUse): CaseSymUse = {
+    CaseSymUse(visitRestrictableCaseSym(symUse.sym), symUse.sym.loc)
   }
 
   /**
@@ -483,14 +483,14 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ExtMatch(e, rs, t, eff, loc)
 
-    case TypedAst.Expr.Tag(sym, exps, tpe, eff, loc) =>
+    case TypedAst.Expr.Tag(symUse, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.Tag(sym.sym), es, t, eff, loc)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.Tag(symUse.sym), es, t, eff, loc)
 
-    case TypedAst.Expr.RestrictableTag(sym0, exps, tpe, eff, loc) =>
+    case TypedAst.Expr.RestrictableTag(symUse, exps, tpe, eff, loc) =>
       // Lower a restrictable tag into a normal tag.
-      val caseSym = visitRestrictableCaseSym(sym0.sym)
+      val caseSym = visitRestrictableCaseSym(symUse.sym)
       val es = exps.map(visitExp)
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Tag(caseSym), es, t, eff, loc)
@@ -621,7 +621,7 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Throw, List(e), t, eff, loc)
 
-    case TypedAst.Expr.Handler(sym, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
+    case TypedAst.Expr.Handler(symUse, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
       // handler sym { rules }
       // is lowered to
       // handlerBody -> try handlerBody() with sym { rules }
@@ -632,7 +632,7 @@ object Lowering {
       val bodyThunkType = Type.mkArrowWithEffect(Type.Unit, bodyEff, bt, loc.asSynthetic)
       val bodyVar = LoweredAst.Expr.Var(bodySym, bodyThunkType, loc.asSynthetic)
       val body = LoweredAst.Expr.ApplyClo(bodyVar, LoweredAst.Expr.Cst(Constant.Unit, Type.Unit, loc.asSynthetic), bt, bodyEff, loc.asSynthetic)
-      val RunWith = LoweredAst.Expr.RunWith(body, sym, rs, bt, handledEff, loc)
+      val RunWith = LoweredAst.Expr.RunWith(body, symUse, rs, bt, handledEff, loc)
       val param = LoweredAst.FormalParam(bodySym, Modifiers.Empty, bodyThunkType, loc.asSynthetic)
       LoweredAst.Expr.Lambda(param, RunWith, t, loc)
 
@@ -873,10 +873,10 @@ object Lowering {
     case TypedAst.Pattern.Cst(cst, tpe, loc) =>
       LoweredAst.Pattern.Cst(cst, tpe, loc)
 
-    case TypedAst.Pattern.Tag(sym, pats, tpe, loc) =>
+    case TypedAst.Pattern.Tag(symUse, pats, tpe, loc) =>
       val ps = pats.map(visitPat)
       val t = visitType(tpe)
-      LoweredAst.Pattern.Tag(sym, ps, t, loc)
+      LoweredAst.Pattern.Tag(symUse, ps, t, loc)
 
     case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
       val es = elms.map(visitPat)
@@ -982,14 +982,14 @@ object Lowering {
     case TypedAst.RestrictableChooseRule(pat, exp) =>
       val e = visitExp(exp)
       pat match {
-        case TypedAst.RestrictableChoosePattern.Tag(sym, pat0, tpe, loc) =>
+        case TypedAst.RestrictableChoosePattern.Tag(symUse, pat0, tpe, loc) =>
           val termPatterns = pat0.map {
             case TypedAst.RestrictableChoosePattern.Var(TypedAst.Binder(varSym, _), varTpe, varLoc) => LoweredAst.Pattern.Var(varSym, varTpe, varLoc)
             case TypedAst.RestrictableChoosePattern.Wild(wildTpe, wildLoc) => LoweredAst.Pattern.Wild(wildTpe, wildLoc)
             case TypedAst.RestrictableChoosePattern.Error(_, errLoc) => throw InternalCompilerException("unexpected restrictable choose variable", errLoc)
           }
-          val tagSym = visitRestrictableCaseSymUse(sym)
-          val p = LoweredAst.Pattern.Tag(tagSym, termPatterns, tpe, loc)
+          val tagSymUse = visitRestrictableCaseSymUse(symUse)
+          val p = LoweredAst.Pattern.Tag(tagSymUse, termPatterns, tpe, loc)
           LoweredAst.MatchRule(p, None, e)
         case TypedAst.RestrictableChoosePattern.Error(_, loc) => throw InternalCompilerException("unexpected error restrictable choose pattern", loc)
       }
@@ -1021,10 +1021,10 @@ object Lowering {
     * Lowers the given handler rule `rule0`.
     */
   private def visitHandlerRule(rule0: TypedAst.HandlerRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.HandlerRule = rule0 match {
-    case TypedAst.HandlerRule(sym, fparams0, exp, _) =>
+    case TypedAst.HandlerRule(symUse, fparams0, exp, _) =>
       val fparams = fparams0.map(visitFormalParam)
       val e = visitExp(exp)
-      LoweredAst.HandlerRule(sym, fparams, e)
+      LoweredAst.HandlerRule(symUse, fparams, e)
   }
 
   /**
@@ -1939,15 +1939,15 @@ object Lowering {
 
     case LoweredAst.Expr.TryCatch(_, _, _, _, _) => ??? // TODO
 
-    case LoweredAst.Expr.RunWith(exp, sym, rules, tpe, eff, loc) =>
+    case LoweredAst.Expr.RunWith(exp, effSymUse, rules, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       val rs = rules.map {
-        case LoweredAst.HandlerRule(op, fparams, hexp) =>
+        case LoweredAst.HandlerRule(opSymUse, fparams, hexp) =>
           val fps = fparams.map(substFormalParam(_, subst))
           val he = substExp(hexp, subst)
-          LoweredAst.HandlerRule(op, fps, he)
+          LoweredAst.HandlerRule(opSymUse, fps, he)
       }
-      LoweredAst.Expr.RunWith(e, sym, rs, tpe, eff, loc)
+      LoweredAst.Expr.RunWith(e, effSymUse, rs, tpe, eff, loc)
 
     case LoweredAst.Expr.NewObject(_, _, _, _, _, _) => exp0
 

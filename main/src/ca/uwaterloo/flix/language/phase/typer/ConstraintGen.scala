@@ -630,9 +630,9 @@ object ConstraintGen {
         val (fieldTpes, fieldEffs) = visitedFields.unzip
         c.unifyType(tvar, structTpe, loc)
         for {
-          ((fieldSym, expr), fieldTpe1) <- fields.zip(fieldTpes)
+          ((fieldSymUse, expr), fieldTpe1) <- fields.zip(fieldTpes)
         } {
-          instantiatedFieldTpes.get(fieldSym.sym) match {
+          instantiatedFieldTpes.get(fieldSymUse.sym) match {
             case None => () // if not an actual field, there is nothing to unify
             case Some((_, fieldTpe2)) => c.unifyType(fieldTpe1, fieldTpe2, expr.loc)
           }

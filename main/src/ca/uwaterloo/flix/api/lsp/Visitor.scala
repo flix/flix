@@ -502,9 +502,9 @@ object Visitor {
         visitType(runEff)
         visitExpr(exp)
 
-      case Expr.Without(exp, sym, _, _, _) =>
+      case Expr.Without(exp, symUse, _, _, _) =>
         visitExpr(exp)
-        visitEffSymUse(sym)
+        visitEffSymUse(symUse)
 
       case Expr.TryCatch(exp, rules, _, _, _) =>
         visitExpr(exp)
@@ -513,8 +513,8 @@ object Visitor {
       case Expr.Throw(exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.Handler(sym, rules, _, _, _, _, _) =>
-        visitEffSymUse(sym)
+      case Expr.Handler(symUse, rules, _, _, _, _, _) =>
+        visitEffSymUse(symUse)
         rules.foreach(visitHandlerRule)
 
       case Expr.RunWith(exp1, exp2, _, _, _) =>
@@ -874,8 +874,8 @@ object Visitor {
       case Wild(_, _) => ()
       case Var(bnd, _, _) => visitBinder(bnd)
       case Cst(_, _, _) => ()
-      case Tag(sym, pats, _, _) =>
-        visitCaseSymUse(sym)
+      case Tag(symUse, pats, _, _) =>
+        visitCaseSymUse(symUse)
         pats.foreach(visitPattern)
       case Tuple(pats, _, _) =>
         pats.foreach(visitPattern)
