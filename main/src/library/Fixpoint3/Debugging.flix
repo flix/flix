@@ -20,24 +20,26 @@ mod Fixpoint3.Debugging {
     use Fixpoint3.Ast.Datalog.Datalog
     use Fixpoint3.Ast.ExecutableRam
     use Fixpoint3.Ast.Ram
+    use Fixpoint3.Ast.Ram.toInt32Id
     use Fixpoint3.Ast.Shared.PredSym
     use Fixpoint3.BoxingType
     use Fixpoint3.Options
+    use Fixpoint3.Predicate.allRelSyms
 
     ///
     /// Write `s` to standard file. Overwrite if `overwrite` is true, otherwise append.
     ///
-    def flush(s: String, overwrite: Bool): Unit \ IO = 
+    def flush(s: String, overwrite: Bool): Unit \ IO =
         if (Options.enableDebugToFile()) {
-            let res = 
-                if (overwrite) 
+            let res =
+                if (overwrite)
                     FileWrite.runWithIO(() -> FileWrite.write(str = s, Options.debugFileName()))
-                else 
+                else
                     FileWrite.runWithIO(() -> FileWrite.append(str = s, Options.debugFileName()));
             match res {
                 case Ok(_) => ()
                 case Err(e) => println(e)
-            } 
+            }
         } else println(s)
 
 
@@ -101,7 +103,7 @@ mod Fixpoint3.Debugging {
                 String.repeat(80, "*") |> psh;
                 "** (${phase}) Relation Algebra Machine AST" |> psh;
                 String.repeat(80, "*") |> psh;
-                "" |> psh;                
+                "" |> psh;
                 String.indent(4, "${stmt}") |> psh;
                 ""  |> psh;
                 flush(MutList.join("\n", strings), false);
@@ -121,7 +123,7 @@ mod Fixpoint3.Debugging {
     pub def notifyPreInterpret(
         input: (ExecutableRam.RamProgram, BoxingType.Boxing[rc])
     ): (ExecutableRam.RamProgram, BoxingType.Boxing[rc]) = match fst(input) {
-        case ExecutableRam.RamProgram.Program(stmt, _, _, (index, indexPos), _, _) => unchecked_cast({
+        case ExecutableRam.RamProgram.Program(stmt, _, predicates, (index, indexPos), _, _) => unchecked_cast({
             if (Options.enableDebugging()) region rc {
                 let strings = MutList.empty(rc);
                 let psh = s -> MutList.push(s, strings);
@@ -135,13 +137,15 @@ mod Fixpoint3.Debugging {
                 "** Index Information" |> psh;
                 String.repeat(80, "*") |> psh;
                 "" |> psh;
-                String.indent(4, Map.joinWith(k -> v -> "${k}: ${v}", "\n", index)) |> psh;
+                let relAndIndex = allRelSyms(predicates) |> List.map(x -> Vector.mapWithIndex(i -> index_ -> ((x, i), index_), Vector.get(toInt32Id(x), index))) |> List.map(Vector.toList) |> List.flatten;
+                String.indent(4, List.joinWith(match (k, v) -> "${k}: ${v}", "\n", relAndIndex)) |> psh;
                 "" |> psh;
                 String.repeat(80, "*") |> psh;
                 "** Index Position in Database" |> psh;
                 String.repeat(80, "*") |> psh;
                 "" |> psh;
-                String.indent(4, Map.joinWith(k -> v -> "${k}: ${v}", "\n", indexPos)) |> psh;
+                let relAndIndexPos = allRelSyms(predicates) |> List.map(x -> Vector.mapWithIndex(i -> index_ -> ((x, i), index_), Vector.get(toInt32Id(x), indexPos))) |> List.map(Vector.toList) |> List.flatten;
+                String.indent(4, List.joinWith(match (k, v) -> "${k}: ${v}", "\n", relAndIndexPos)) |> psh;
                 "" |> psh;
                 flush(MutList.join("\n", strings), false);
                 input

@@ -71,7 +71,7 @@ mod Fixpoint3.Phase.Compiler {
                 }
             });
             let stmt = MutList.toVector(stmts) |> RamStmt.Seq;
-            RamProgram.Program(stmt, compiledFacts, predicates, (Map#{}, Map#{}))
+            RamProgram.Program(stmt, compiledFacts, predicates, (Vector#{}, Vector#{}))
         }
         case _ => bug!("Datalog normalization bug")
     }

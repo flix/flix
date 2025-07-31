@@ -22,6 +22,7 @@ mod Fixpoint3.Ast.Ram {
     use Fixpoint3.Boxed
     use Fixpoint3.PredSymsOf
     use Fixpoint3.SubstitutePredSym
+    use Fixpoint3.Util.getOrCrash
 
     /////////////////////////////////////////////////////////////////////////////
     // RamProgram                                                              //
@@ -29,7 +30,7 @@ mod Fixpoint3.Ast.Ram {
 
     ///
     /// A `RamProgram` represents a compiled Datalog program.
-    /// 
+    ///
     @Internal
     pub enum RamProgram {
         case Program(RamStmt, Facts, Predicates, IndexInformation)
@@ -54,7 +55,7 @@ mod Fixpoint3.Ast.Ram {
     /// for efficient retrieval in range queries.
     ///
     /// For example, the Datalog rule
-    /// 
+    ///
     /// A(x) :- B(x), C(_, _, x).
     ///
     /// produces the search `Vector#{2, 0, 1}` for relation `C`. This means the tuples in
@@ -72,13 +73,13 @@ mod Fixpoint3.Ast.Ram {
     /// the indexes that will be created for `RelSym` during program evaluation.
     ///
     @Internal
-    pub type alias Indexes = Map[RelSym, Vector[Search]]
+    pub type alias Indexes = Vector[Vector[Search]]
 
     ///
     /// Maps a `RelSym` and its place in `Indexes[RelSym]` to its final position in memory.
     ///
     @Internal
-    pub type alias IndexPositions = Map[(RelSym, Int32), Int32]
+    pub type alias IndexPositions = Vector[Vector[Int32]]
 
     ///
     /// The indexes to be created during program evaluation and their positions in memory.
@@ -142,7 +143,7 @@ mod Fixpoint3.Ast.Ram {
     /////////////////////////////////////////////////////////////////////////////
     // RelOp                                                                   //
     /////////////////////////////////////////////////////////////////////////////
-    
+
     ///
     /// `Search(rv, relSym, body)` iterates through the facts in relation `relSym`, saving
     /// them as RowVar `rv` and executes `body`.
@@ -205,7 +206,7 @@ mod Fixpoint3.Ast.Ram {
     /// `term` must be a Meet or RowLoad of a lattice var.
     ///
     /// `Leq(const, rv, relSym)`: True if `const` is less than the lattice element of `rv`.
-    /// 
+    ///
     /// `Eq(term1, term2)`: True if `term1 == term2`.
     ///
     /// `Guard1(f, term1)`: True if `f(term1) == true`.
@@ -402,6 +403,14 @@ mod Fixpoint3.Ast.Ram {
         case RelSym.Symbol(PredSym.PredSym(_, id), _, _) => id
     }
 
+    ///
+    /// Returns the identifier of `relSym` as an `Int32`.
+    ///
+    @Internal
+    pub def toInt32Id(relSym: RelSym): Int32 = match relSym {
+        case RelSym.Symbol(PredSym.PredSym(_, id), _, _) => getOrCrash(Int64.tryToInt32(id)) // Indexes are at this point 0 .. |Indexes|.
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // RowVar                                                                  //
     /////////////////////////////////////////////////////////////////////////////
@@ -433,7 +442,7 @@ mod Fixpoint3.Ast.Ram {
             case (RowVar.Named(i1), RowVar.Named(i2)) => i1 <=> i2
         }
     }
-    
+
     /////////////////////////////////////////////////////////////////////////////
     // RamId                                                                   //
     /////////////////////////////////////////////////////////////////////////////
@@ -466,7 +475,7 @@ mod Fixpoint3.Ast.Ram {
             case (RamId.RelPos(i0, i1)) => "RelPos[${i0}, ${i1}]"
         }
     }
-    
+
     instance Eq[RamId] {
         pub def eq(a: RamId, b: RamId): Bool = match (a, b) {
             case (RamId.Id(i1), RamId.Id(i2)) => i1 == i2

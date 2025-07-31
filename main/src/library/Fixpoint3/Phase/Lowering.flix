@@ -87,9 +87,9 @@
 /// ```
 /// Whenever we bind `a` we update the query-value of `B`.
 ///
-/// An alternative approach would be to have `query` of the form 
+/// An alternative approach would be to have `query` of the form
 /// `query {b ∈ B | searchTerms }`. Then `searchTerms` would be evaluated to generate the
-/// restriction for the query. This would create a new object every time the `query` is 
+/// restriction for the query. This would create a new object every time the `query` is
 /// met. Furthermore it would have to be evaluated every time `query {b ∈ B | lookupArrForB }`
 /// is met. If the query is deeply nested with some values bound higher up in the nesting,
 /// we do not need to evaluate these every time.
@@ -98,7 +98,7 @@ mod Fixpoint3.Phase.Lowering {
     use Fixpoint3.Ast.ExecutableRam
     use Fixpoint3.Ast.ExecutableRam.WriteTuple
     use Fixpoint3.Ast.Ram
-    use Fixpoint3.Ast.Ram.{arityOf, arityOfNonLat, getTermRamId, IndexInformation, RamId, RelSym, RowVar, Search, toDenotation}
+    use Fixpoint3.Ast.Ram.{arityOf, arityOfNonLat, getTermRamId, IndexInformation, RamId, RelSym, RowVar, Search, toDenotation, toInt32Id}
     use Fixpoint3.Ast.Shared.{Denotation, PredSym}
     use Fixpoint3.Boxed
     use Fixpoint3.Boxing
@@ -107,13 +107,13 @@ mod Fixpoint3.Phase.Lowering {
     use Fixpoint3.Util.getOrCrash
 
     ///
-    /// Maps `RowVar`s to their memory position (position in an array the interpreter 
+    /// Maps `RowVar`s to their memory position (position in an array the interpreter
     /// will use).
     ///
     type alias IdToIndex[r: Region] = UniqueInts[RowVar, r]
 
     ///
-    /// Maps `RowVar`s to a list of writes that should be performed whenever the `RowVar` is 
+    /// Maps `RowVar`s to a list of writes that should be performed whenever the `RowVar` is
     /// rebound.
     ///
     type alias WriteTos[r: Region] = MutMap[RowVar, List[WriteTuple], r]
@@ -140,8 +140,8 @@ mod Fixpoint3.Phase.Lowering {
     /// end
     /// ```
     /// Initially, `MeetWithMap` is `(Nil, {})`. When the `RelOp` `search y ∈ B do` is
-    /// lowered, `x` is registered, and `MeetWithMap` becomes `(x :: Nil, {})`. When the 
-    /// `project` is lowered, it `(y :: x :: Nil, {})`. Finally, `Meet(x, y)` is lowered, 
+    /// lowered, `x` is registered, and `MeetWithMap` becomes `(x :: Nil, {})`. When the
+    /// `project` is lowered, it `(y :: x :: Nil, {})`. Finally, `Meet(x, y)` is lowered,
     /// which updates `disjoint` to `{y = x}`.
     ///
     /// The above code snippet is lowered to:
@@ -162,7 +162,7 @@ mod Fixpoint3.Phase.Lowering {
     /// Returns the result along with the `Boxing` used for the program
     ///
     @Internal
-    pub def lowerProgram(rc: Region[r], withProv: Bool, program: Ram.RamProgram): (ExecutableRam.RamProgram, Boxing[r]) \ r = match program { 
+    pub def lowerProgram(rc: Region[r], withProv: Bool, program: Ram.RamProgram): (ExecutableRam.RamProgram, Boxing[r]) \ r = match program {
         case Ram.RamProgram.Program(stmt, _, meta, indexInfo) =>
             let idToIndex = UniqueInts.empty(rc);
             let (boxing, newFacts, idToBoxing) = Boxing.initialize(rc, withProv, program);
@@ -207,23 +207,27 @@ mod Fixpoint3.Phase.Lowering {
                 ExecutableRam.RamStmt.Insert(newOp)
             case Ram.RamStmt.MergeInto(newRel, otherRel) =>
                 // `MergeInto` should simply be repeated for all indexes built on `deltaRel`.
+                let newId = toInt32Id(newRel);
+                let otherId = toInt32Id(otherRel);
                 let (constructed, placements) = indexInfo;
-                let newRelPos = getOrCrash(Map.get((newRel, 0), placements));
+                let newRelPos = Vector.get(0, Vector.get(newId, placements));
                 let lowerToMerge = index -> ExecutableRam.RamStmt.MergeInto(newRelPos, index, toDenotation(newRel));
-                let deltaRels = Vector.length(getOrCrash(Map.get(otherRel, constructed)));
-                let merges = Vector.map(index -> lowerToMerge(getOrCrash(Map.get((otherRel, index), placements))), Vector.range(0, deltaRels));
+                let deltaRels = Vector.length(Vector.get(otherId, constructed));
+                let merges = Vector.map(index -> lowerToMerge(Vector.get(index, (Vector.get(otherId, placements)))), Vector.range(0, deltaRels));
                 match Vector.length(merges) {
                     case 1 => Vector.get(0, merges)
                     case _ => ExecutableRam.RamStmt.Par(merges)
                 }
             case Ram.RamStmt.Swap(newRel, deltaRel) =>
                 let (constructed, placements) = indexInfo;
-                let newRelPos = getOrCrash(Map.get((newRel, 0), placements));
+                let newId = toInt32Id(newRel);
+                let deltaId = toInt32Id(deltaRel);
+                let newRelPos = Vector.get(0, Vector.get(newId, placements));
                 let lowerToMerge = index -> ExecutableRam.RamStmt.MergeInto(newRelPos, index, toDenotation(newRel));
                 let lowerToPurge = index -> ExecutableRam.RamStmt.Purge(index);
-                let deltaRels = Vector.length(getOrCrash(Map.get(deltaRel, constructed)));
-                let swapPart = ExecutableRam.RamStmt.Swap(newRelPos, getOrCrash(Map.get((deltaRel, 0), placements)));
-                match Vector.length(getOrCrash(Map.get(deltaRel, constructed))) {
+                let deltaRels = Vector.length(Vector.get(deltaId, constructed));
+                let swapPart = ExecutableRam.RamStmt.Swap(newRelPos, Vector.get(0, Vector.get(deltaId, placements)));
+                match Vector.length(Vector.get(deltaId, constructed)) {
                     // If there is only 1 index on `deltaRel` we can simply swap.
                     case 1 => swapPart
                     case _ =>
@@ -233,9 +237,9 @@ mod Fixpoint3.Phase.Lowering {
                     // parallel.
                     let merges =
                         Vector.range(1, deltaRels) |>
-                        Vector.map(index -> lowerToMerge(getOrCrash(Map.get((deltaRel, index), placements))));
+                        Vector.map(index -> lowerToMerge(Vector.get(index, Vector.get(deltaId, placements))));
                     let purges = Vector.range(1, deltaRels) |>
-                        Vector.map(index -> lowerToPurge(getOrCrash(Map.get((deltaRel, index), placements))));
+                        Vector.map(index -> lowerToPurge(Vector.get(index, (Vector.get(deltaId, placements)))));
                     if(Vector.length(merges) == 1) {
                         ExecutableRam.RamStmt.Seq(Vector#{Vector.get(0, merges), swapPart})
                     } else {
@@ -248,9 +252,10 @@ mod Fixpoint3.Phase.Lowering {
                 }
             case Ram.RamStmt.Purge(rel) =>
                 // `Purge` should simply be repeated for all indexes built on `rel`.
+                let relId = toInt32Id(rel);
                 let (constructed, placements) = indexInfo;
-                let indexNums = Vector.range(0, Vector.length(getOrCrash(Map.get(rel, constructed))));
-                let purges = Vector.map(i -> ExecutableRam.RamStmt.Purge(getOrCrash(Map.get((rel, i), placements))), indexNums);
+                let indexNums = Vector.range(0, Vector.length(Vector.get(relId, constructed)));
+                let purges = Vector.map(i -> ExecutableRam.RamStmt.Purge(Vector.get(i, Vector.get(relId, placements))), indexNums);
                 if (Vector.length(purges) == 1) {
                     Vector.get(0, purges)
                 } else {
@@ -288,7 +293,7 @@ mod Fixpoint3.Phase.Lowering {
                 let loweredBody = lowerOpRecNewRowVar(rv, body);
                 let thisWriteTo = getWriteTo(rv, writeTo);
                 let placements = snd(indexInfo);
-                let relPos = getOrCrash(Map.get((relSym, 0), placements));
+                let relPos = Vector.get(0, Vector.get(toInt32Id(relSym), placements));
                 let oldPos = computeMeetWithPos(rv, relSym, idToIndex, meetWithMap);
                 ExecutableRam.RelOp.Search(lowerRowVar(rv, idToIndex), relPos, oldPos, den, thisWriteTo, loweredBody)
             case Ram.RelOp.Query(rv, relSym, tests, index, body) =>
@@ -329,10 +334,10 @@ mod Fixpoint3.Phase.Lowering {
                     Vector.map(lowerTerm(idToIndex, boxingInfo, meetWithMap), terms),
                     thisWriteTo, loweredBody, to
                 )
-            case Ram.RelOp.Project(terms, s) =>
+            case Ram.RelOp.Project(terms, relSym) =>
                 let (_, placements) = indexInfo;
-                let newRelPos = getOrCrash(Map.get((s, 0), placements));
-                let den = toDenotation(s);
+                let newRelPos = Vector.get(0, Vector.get(toInt32Id(relSym), placements));
+                let den = toDenotation(relSym);
                 let loweredTerms = Vector.map(lowerTerm(idToIndex, boxingInfo, meetWithMap), terms);
                 ExecutableRam.RelOp.Project(
                     loweredTerms, newRelPos, den
@@ -431,14 +436,14 @@ mod Fixpoint3.Phase.Lowering {
             case Ram.BoolExp.Not(s) =>
                 lowerBool(idToIndex, boxingInfo, indexInfo, meetWithMap, s) |>
                 Option.map(ExecutableRam.BoolExp.Not)
-            case Ram.BoolExp.IsEmpty(s) =>
+            case Ram.BoolExp.IsEmpty(relSym) =>
                 let (_, placements) = indexInfo;
-                let sPos = getOrCrash(Map.get((s, 0), placements));
+                let sPos = Vector.get(0, Vector.get(toInt32Id(relSym), placements));
                 Some(ExecutableRam.BoolExp.IsEmpty(sPos))
-            case Ram.BoolExp.NotMemberOf(terms, s) =>
+            case Ram.BoolExp.NotMemberOf(terms, relSym) =>
                 let (_, placements) = indexInfo;
-                let den = toDenotation(s);
-                let sPos = getOrCrash(Map.get((s, 0), placements));
+                let den = toDenotation(relSym);
+                let sPos = Vector.get(0, Vector.get(toInt32Id(relSym), placements));
                 Some(ExecutableRam.BoolExp.NotMemberOf(Vector.map(lowerT, terms), sPos, den))
             case Ram.BoolExp.NotBot(t1, _, _) =>
                 lowerMeet(t1, idToIndex, meetWithMap);
@@ -470,7 +475,7 @@ mod Fixpoint3.Phase.Lowering {
     /// Add `rv` to `meetWithMap`.
     ///
     /// Concretely, for `meetWithMap = (seenRV, equalitySet)`, return
-    /// `(rv:: seen, equalitySet')` where `equalitySet` is simply updated with `rv` as a 
+    /// `(rv:: seen, equalitySet')` where `equalitySet` is simply updated with `rv` as a
     /// possible value.
     ///
     def addRowVarToMeetWithMap(rv: RowVar, meetWithMap: MeetWithMap[r]): MeetWithMap[r] \ r =
@@ -516,7 +521,7 @@ mod Fixpoint3.Phase.Lowering {
     }
 
     ///
-    /// Returns the memory position of the first value equivalent to `rv`, w.r.t. 
+    /// Returns the memory position of the first value equivalent to `rv`, w.r.t.
     /// `meetWithMap`. If no such value exists, returns the memory position of `rv`.
     ///
     /// See `computeMeetWithPos`.
@@ -583,14 +588,14 @@ mod Fixpoint3.Phase.Lowering {
     ///
     /// Returns a list `(RowVar, arity)` in `program` in the order of the nesting.
     ///
-    def collectRowVarArity(program: Ram.RamProgram): List[(RowVar, Int32)] = 
+    def collectRowVarArity(program: Ram.RamProgram): List[(RowVar, Int32)] =
         collectRowVarRelSym(program) |> List.map(match (rv, RelSym.Symbol(_, arity, _)) -> (rv, arity))
 
     ///
     /// Returns a list of pairs `(RowVar, RelSym)` in `program` in the order of the nesting.
     ///
     def collectRowVarRelSym(program: Ram.RamProgram): List[(RowVar, RelSym)] = match program {
-        case Ram.RamProgram.Program(stmt, _, _, _) => 
+        case Ram.RamProgram.Program(stmt, _, _, _) =>
             collectRowVarRelSymStmt(stmt)
     }
 
