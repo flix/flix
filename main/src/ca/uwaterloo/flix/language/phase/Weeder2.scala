@@ -99,13 +99,19 @@ object Weeder2 {
         List.empty
       } else {
         val nname = Name.NName(qname.namespace.idents :+ qname.ident, qname.loc)
-        val optUses = maybeUseMany.map(visitUseMany(_, nname))
-        optUses match {
-          // case: use many, if uses is empty the parser will have reported an error
-          case Some(uses) => uses
-
-          // case: use one, use the qname
-          case None => List(UseOrImport.Use(qname, qname.ident, qname.loc))
+        maybeUseMany match {
+          // case: Use many.
+          case Some(useMany) =>
+            val uses = visitUseMany(useMany, nname)
+            // Issue an error if it's empty.
+            if (uses.isEmpty) {
+              val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, useMany.loc)
+              sctx.errors.add(error)
+            }
+            uses
+          // case: Use one. Use the qname.
+          case None =>
+            List(UseOrImport.Use(qname, qname.ident, qname.loc))
         }
       }
     }
