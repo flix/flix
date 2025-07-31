@@ -29,7 +29,7 @@ mod Fixpoint3.Debugging {
     ///
     /// Write `s` to standard file. Overwrite if `overwrite` is true, otherwise append.
     ///
-    def flush(s: String, overwrite: Bool): Unit \ IO =
+    def flush(s: String, overwrite: Bool): Unit \ IO = 
         if (Options.enableDebugToFile()) {
             let res = 
                 if (overwrite) 

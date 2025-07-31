@@ -442,11 +442,11 @@ mod Fixpoint3.Ast.Ram {
             case (RowVar.Named(i1), RowVar.Named(i2)) => i1 <=> i2
         }
     }
-
+    
     /////////////////////////////////////////////////////////////////////////////
     // RamId                                                                   //
     /////////////////////////////////////////////////////////////////////////////
-    
+
     ///
     /// `RamId` represents a unique identifier for literals, positions in relations,
     /// positions in tuples or input to a function.
