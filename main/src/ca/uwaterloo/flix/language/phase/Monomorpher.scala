@@ -590,7 +590,7 @@ object Monomorpher {
       val e = specializeExp(exp, env0, subst)
       MonoAst.Expr.VectorLength(e, loc)
 
-    case LoweredAst.Expr.Ascribe(exp, tpe, eff, loc) =>
+    case LoweredAst.Expr.Ascribe(exp, _, _, _) =>
       specializeExp(exp, env0, subst)
 
     case LoweredAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>
