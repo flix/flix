@@ -474,7 +474,7 @@ object ConstraintGen {
         val expectedSchemaType = Type.mkExtensible(expectedRowType, loc)
         c.unifyType(tpe, expectedSchemaType, exp.loc)
         c.unifyAllTypes(tpes, loc)
-        val resTpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
+        val resTpe = tpes.head // Note: We are guaranteed to have one rule.
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
