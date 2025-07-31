@@ -324,7 +324,7 @@ mod Test.Exp.Fixpoint.If {
     }
 
     @Test
-    def testIfGuardTwo03(): Bool = {
+    def testIfGuardBodyPosition03(): Bool = {
         let f = inject Vector#{("Alice", "Carol"), ("Bob", "Carol")} into Friend/2;
         let r = #{
             FriendInCommon(x, y) :- Friend(x, a), Friend(y, a), if (x != y).
