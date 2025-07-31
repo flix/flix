@@ -144,16 +144,6 @@ mod Test.Exp.Fixpoint.If {
         res `Assert.eq` query f, r select (x, y) from R(x, y)
     }
 
-    @Test
-    def testIfGuardTwo05(): Bool = {
-        let f = inject Vector#{("Alice", "Carol"), ("Bob", "Carol")} into Friend/2;
-        let r = #{
-            FriendInCommon(x, y) :- Friend(x, a), Friend(y, a), if (x != y).
-        };
-        let res = query f, r select (x, y) from FriendInCommon(x, y);
-        res `Assert.eq` Vector#{("Alice", "Bob"), ("Bob", "Alice")}
-    }
-
     /////////////////////////////////////////////////////////////////////////////
     // Test if-guard with 3 parameters                                         //
     /////////////////////////////////////////////////////////////////////////////
@@ -334,7 +324,17 @@ mod Test.Exp.Fixpoint.If {
     }
 
     @Test
-    def testIfGuardBodyPosition03(): Bool = {
+    def testIfGuardTwo03(): Bool = {
+        let f = inject Vector#{("Alice", "Carol"), ("Bob", "Carol")} into Friend/2;
+        let r = #{
+            FriendInCommon(x, y) :- Friend(x, a), Friend(y, a), if (x != y).
+        };
+        let res = query f, r select (x, y) from FriendInCommon(x, y);
+        res `Assert.eq` Vector#{("Alice", "Bob"), ("Bob", "Alice")}
+    }
+
+    @Test
+    def testIfGuardBodyPosition04(): Bool = {
         let f = inject Vector#{("Alice", "Carol"), ("Bob", "Carol")} into Friend/2;
         let r = #{
             FriendInCommon(x, y) :- Friend(x, a), if (x != y), Friend(y, a).
@@ -344,7 +344,7 @@ mod Test.Exp.Fixpoint.If {
     }
 
     @Test
-    def testIfGuardBodyPosition04(): Bool = {
+    def testIfGuardBodyPosition05(): Bool = {
         let f = inject Vector#{("Alice", "Carol"), ("Bob", "Carol")} into Friend/2;
         let r = #{
             FriendInCommon(x, y) :- if (x != y), Friend(x, a), Friend(y, a).
