@@ -43,7 +43,7 @@ mod Fixpoint3.Phase.IndexSelection {
     /// `PrimitiveSearches` maps `RelSym`s to the primitive searches that must be supported
     /// for the relation.
     ///
-    /// In the example for `PrimitiveSearch` we would have
+    /// In the example for `PrimitiveSearch` we would have 
     /// `[B => (0 :: 1 :: Nil) :: (0 :: 1 :: 2 :: Nil) :: (0 :: 2 :: Nil) :: Nil]`.
     ///
     type alias PrimitiveSearches[r: Region] = Array[List[PrimitiveSearch], r]
@@ -70,8 +70,8 @@ mod Fixpoint3.Phase.IndexSelection {
     /// particular search should be created for it, and the single search `0 < 1 < 2`
     /// covers all its cases.
     ///
-    /// The searches returned by `minIndex` are expanded to encompass the whole tuple size
-    /// of the relation. I.e., the search `0 < 2` gets expanded to `0 < 2 < 1`.
+    /// The searches returned by `minIndex` are expanded to encompass the whole tuple size 
+    /// of the relation. I.e., the search `0 < 2` gets expanded to `0 < 2 < 1`. 
     ///
     /// Returns a new `RamProgram` where `Search`, `Query` and similar statements have
     /// been augmented with the memory position that the index they depend on will be placed.

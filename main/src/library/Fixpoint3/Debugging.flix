@@ -31,15 +31,15 @@ mod Fixpoint3.Debugging {
     ///
     def flush(s: String, overwrite: Bool): Unit \ IO =
         if (Options.enableDebugToFile()) {
-            let res =
-                if (overwrite)
+            let res = 
+                if (overwrite) 
                     FileWrite.runWithIO(() -> FileWrite.write(str = s, Options.debugFileName()))
-                else
+                else 
                     FileWrite.runWithIO(() -> FileWrite.append(str = s, Options.debugFileName()));
             match res {
                 case Ok(_) => ()
                 case Err(e) => println(e)
-            }
+            } 
         } else println(s)
 
 
@@ -103,7 +103,7 @@ mod Fixpoint3.Debugging {
                 String.repeat(80, "*") |> psh;
                 "** (${phase}) Relation Algebra Machine AST" |> psh;
                 String.repeat(80, "*") |> psh;
-                "" |> psh;
+                "" |> psh;                
                 String.indent(4, "${stmt}") |> psh;
                 ""  |> psh;
                 flush(MutList.join("\n", strings), false);
