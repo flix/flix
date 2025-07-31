@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-mod TestFixpoint.Application {
+mod Test.Exp.Fixpoint.Application {
 
     /////////////////////////////////////////////////////////////////////////////
     // Tests with application of 1 argument                                    //
@@ -68,6 +68,28 @@ mod TestFixpoint.Application {
             Vector.unzip |> snd
     }
 
+    @Test
+    def testApplicationOne04(): Bool = {
+        let tuples = Vector.range(0, 50);
+        let f = inject tuples into P/1;
+        let r = #{
+            R(x + 1, x) :- P(x).
+        };
+        let res = tuples |> Vector.map(x -> (x + 1, x));
+        res `Assert.eq` query f, r select (x, y) from R(x, y)
+    }
+
+    @Test
+    def testApplicationOne05(): Bool = {
+        let tuples = Vector.range(0, 50);
+        let f = inject tuples into P/1;
+        let r = #{
+            R(x + 1, x + 1) :- P(x).
+        };
+        let res = tuples |> Vector.map(x -> (x + 1, x + 1));
+        res `Assert.eq` query f, r select (x, y) from R(x, y)
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // Tests with application of 2 arguments                                   //
     /////////////////////////////////////////////////////////////////////////////
@@ -108,6 +130,30 @@ mod TestFixpoint.Application {
         Assert.eq(res, query f, r select (x, y) from R(x, y))
     }
 
+    @Test
+    def testApplicationTwo04(): Bool = {
+        let tuples = Vector.range(0, 50);
+        let f = inject tuples into P/1;
+        let r = #{
+            Q(1).
+            R(x + y, x) :- P(x), Q(y).
+        };
+        let res = tuples |> Vector.map(x -> (x + 1, x));
+        res `Assert.eq` query f, r select (x, y) from R(x, y)
+    }
+
+    @Test
+    def testApplicationTwo05(): Bool = {
+        let tuples = Vector.range(0, 50);
+        let f = inject tuples into P/1;
+        let r = #{
+            Q(1).
+            R(x + y, x + y) :- P(x), Q(y).
+        };
+        let res = tuples |> Vector.map(x -> (x + 1, x + 1));
+        res `Assert.eq` query f, r select (x, y) from R(x, y)
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // Tests with application of 3 arguments                                   //
     /////////////////////////////////////////////////////////////////////////////
@@ -136,6 +182,32 @@ mod TestFixpoint.Application {
         };
         let res = tuples |> Vector.map(x -> (x, x + "1" + "2")) |> Vector.sort;
         Assert.eq(res, query f, r select (x, y) from R(x, y))
+    }
+
+    @Test
+    def testApplicationThree03(): Bool = {
+        let tuples = Vector.range(0, 50);
+        let f = inject tuples into P/1;
+        let r = #{
+            Q(1).
+            S(2).
+            R(x + y + z, x) :- P(x), Q(y), S(z).
+        };
+        let res = tuples |> Vector.map(x -> (x + 1 + 2, x));
+        res `Assert.eq` query f, r select (x, y) from R(x, y)
+    }
+
+    @Test
+    def testApplicationThree04(): Bool = {
+        let tuples = Vector.range(0, 50);
+        let f = inject tuples into P/1;
+        let r = #{
+            Q(1).
+            S(2).
+            R(x + y + z, x + y + z) :- P(x), Q(y), S(z).
+        };
+        let res = tuples |> Vector.map(x -> (x + 1 + 2, x + 1 + 2));
+        res `Assert.eq` query f, r select (x, y) from R(x, y)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -170,6 +242,34 @@ mod TestFixpoint.Application {
         Assert.eq(res, query f, r select (x, y) from R(x, y))
     }
 
+    @Test
+    def testApplicationFour03(): Bool = {
+        let tuples = Vector.range(0, 50);
+        let f = inject tuples into P/1;
+        let r = #{
+            Q(1).
+            S(2).
+            T(3).
+            R(a + b + c + d, a) :- P(a), Q(b), S(c), T(d).
+        };
+        let res = tuples |> Vector.map(x -> (x + 1 + 2 + 3, x));
+        res `Assert.eq` query f, r select (x, y) from R(x, y)
+    }
+
+    @Test
+    def testApplicationFour04(): Bool = {
+        let tuples = Vector.range(0, 50);
+        let f = inject tuples into P/1;
+        let r = #{
+            Q(1).
+            S(2).
+            T(3).
+            R(a + b + c + d, a + b + c + d) :- P(a), Q(b), S(c), T(d).
+        };
+        let res = tuples |> Vector.map(x -> (x + 1 + 2 + 3, x + 1 + 2 + 3));
+        res `Assert.eq` query f, r select (x, y) from R(x, y)
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // Tests with application of 5 arguments                                   //
     /////////////////////////////////////////////////////////////////////////////
@@ -189,7 +289,6 @@ mod TestFixpoint.Application {
         res `Assert.eq` query f, r select (x, y) from R(x, y)
     }
 
-
     @Test
     def testApplicationFive02(): Bool = {
         let tuples = Vector.range(0, 50) |> Vector.map(Int32.toString);
@@ -203,6 +302,36 @@ mod TestFixpoint.Application {
         };
         let res = tuples |> Vector.map(x -> (x, x + "1" + "2" + "3" + "4")) |> Vector.sort;
         Assert.eq(res, query f, r select (x, y) from R(x, y))
+    }
+
+    @Test
+    def testApplicationFive03(): Bool = {
+        let tuples = Vector.range(0, 50);
+        let f = inject tuples into P/1;
+        let r = #{
+            Q(1).
+            S(2).
+            T(3).
+            U(4).
+            R(a + b + c + d + e, a) :- P(a), Q(b), S(c), T(d), U(e).
+        };
+        let res = tuples |> Vector.map(x -> (x + 1 + 2 + 3 + 4, x));
+        res `Assert.eq` query f, r select (x, y) from R(x, y)
+    }
+
+    @Test
+    def testApplicationFive04(): Bool = {
+        let tuples = Vector.range(0, 50);
+        let f = inject tuples into P/1;
+        let r = #{
+            Q(1).
+            S(2).
+            T(3).
+            U(4).
+            R(a + b + c + d + e, a + b + c + d + e) :- P(a), Q(b), S(c), T(d), U(e).
+        };
+        let res = tuples |> Vector.map(x -> (x + 1 + 2 + 3 + 4, x + 1 + 2 + 3 + 4));
+        res `Assert.eq` query f, r select (x, y) from R(x, y)
     }
 
 }
