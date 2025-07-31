@@ -51,38 +51,24 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that extensible constructor pattern `label` was used multiple times.
+    * An error raised to indicate that the extensible variant constructor `label` was used multiple times.
     *
-    * @param label    the name of the extensible match constructor.
-    * @param patterns the extensible patterns (var or wild).
+    * @param label    the name of the extensible variant constructor.
     * @param loc1     the location of the first pattern.
     * @param loc2     the location of the second pattern.
     */
-  case class DuplicateExtPattern(label: Name.Label, patterns: List[ExtPattern], loc1: SourceLocation, loc2: SourceLocation) extends RedundancyError {
-    private def formatPattern(pat: ExtPattern): String = pat match {
-      case ExtPattern.Wild(_, _) => "_"
-      case ExtPattern.Var(bnd, _, _) => bnd.sym.text
-      case ExtPattern.Error(_, _) => "Error"
-    }
-
-    private val pat = s"$label${patterns.map(formatPattern).mkString("(", ", ", ")")}"
-
-    def summary: String = s"Duplicate extensible match pattern '$pat'."
+  case class DuplicateExtPattern(label: Name.Label, loc1: SourceLocation, loc2: SourceLocation) extends RedundancyError {
+    def summary: String = s"Duplicate extensible variant pattern '${label.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> s"Duplicate extensible match pattern '${red(pat)}'."
+      s""">> Duplicate extensible pattern '${red(label.name)}'.
          |
          |${code(loc1, "the first occurrence was here.")}
          |
          |${code(loc2, "the second occurrence was here.")}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Remove one of the two patterns."
-    })
 
     def loc: SourceLocation = loc1
   }

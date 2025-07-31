@@ -607,7 +607,7 @@ object Redundancy {
       val duplicatePatterns: List[RedundancyError] =
         SeqOps.getDuplicates(rules, (rule: ExtMatchRule) => rule.label).map {
           case (rule1, rule2) =>
-            RedundancyError.DuplicateExtPattern(rule1.label, rule1.pats, rule1.loc, rule2.loc)
+            RedundancyError.DuplicateExtPattern(rule1.label, rule1.label.loc, rule2.label.loc)
         }
 
       Used(Set.empty, duplicatePatterns.toSet) ++ usedMatch ++ usedRules.reduceLeft(_ ++ _)
