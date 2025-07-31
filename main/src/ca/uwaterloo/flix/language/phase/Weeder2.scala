@@ -1594,7 +1594,7 @@ object Weeder2 {
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
       flatMapN(Patterns.pickExtPattern(tree), traverse(exprs)(visitExpr)) {
         case ((label, pats), expr :: Nil) =>
-          // case Tag(exp1, exp2, ..., expn)
+          // case Label(pats) => expr
           Validation.Success(Some(ExtMatchRule(label, pats, expr, tree.loc)))
 
         case (_, _) =>
