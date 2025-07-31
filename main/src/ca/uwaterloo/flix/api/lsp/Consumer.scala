@@ -96,11 +96,15 @@ trait Consumer {
 
   def consumeMatchRule(rule: MatchRule): Unit = ()
 
+  def consumeExtMatchRule(rule: ExtMatchRule): Unit = ()
+
   def consumeOp(op: Op): Unit = ()
 
   def consumeOpSymUse(symUse: OpSymUse): Unit = ()
 
   def consumePattern(pat: Pattern): Unit = ()
+
+  def consumeExtPattern(pat: ExtPattern): Unit = ()
 
   def consumePredicate(p: Predicate): Unit = ()
 

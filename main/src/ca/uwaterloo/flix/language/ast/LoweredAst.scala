@@ -115,7 +115,7 @@ object LoweredAst {
 
     case class Match(exp: Expr, rules: List[MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class ExtensibleMatch(label: Name.Label, exp1: Expr, sym1: Symbol.VarSym, exp2: Expr, sym2: Symbol.VarSym, exp3: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ExtMatch(exp: Expr, rules: List[ExtMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -166,6 +166,20 @@ object LoweredAst {
     }
   }
 
+  sealed trait ExtPattern {
+    def tpe: Type
+
+    def loc: SourceLocation
+  }
+
+  object ExtPattern {
+
+    case class Wild(tpe: Type, loc: SourceLocation) extends ExtPattern
+
+    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExtPattern
+
+  }
+
   sealed trait Predicate {
     def loc: SourceLocation
   }
@@ -211,6 +225,8 @@ object LoweredAst {
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
 
   case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr)
+
+  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
 

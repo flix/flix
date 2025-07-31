@@ -172,10 +172,9 @@ object PredDeps {
       visitExp(exp)
       rules.foreach { case RestrictableChooseRule(_, body) => visitExp(body) }
 
-    case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
-      visitExp(exp1)
-      visitExp(exp2)
-      visitExp(exp3)
+    case Expr.ExtMatch(exp, rules, _, _, _) =>
+      visitExp(exp)
+      rules.foreach(r => visitExp(r.exp))
 
     case Expr.Tag(_, exps, _, _, _) =>
       exps.foreach(visitExp)

@@ -477,14 +477,11 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Match(e, rs, t, eff, loc)
 
-    case TypedAst.Expr.ExtensibleMatch(label, exp1, bnd1, exp2, bnd2, exp3, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val sym1 = bnd1.sym
-      val e2 = visitExp(exp2)
-      val sym2 = bnd2.sym
-      val e3 = visitExp(exp3)
+    case TypedAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitExtMatchRule)
       val t = visitType(tpe)
-      LoweredAst.Expr.ExtensibleMatch(label, e1, sym1, e2, sym2, e3, t, eff, loc)
+      LoweredAst.Expr.ExtMatch(e, rs, t, eff, loc)
 
     case TypedAst.Expr.Tag(symUse, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -996,6 +993,19 @@ object Lowering {
           LoweredAst.MatchRule(p, None, e)
         case TypedAst.RestrictableChoosePattern.Error(_, loc) => throw InternalCompilerException("unexpected error restrictable choose pattern", loc)
       }
+  }
+
+  private def visitExtMatchRule(rule0: TypedAst.ExtMatchRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.ExtMatchRule = rule0 match {
+    case TypedAst.ExtMatchRule(label, pats, exp, loc) =>
+      val ps = pats.map(visitExtPat)
+      val e = visitExp(exp)
+      LoweredAst.ExtMatchRule(label, ps, e, loc)
+  }
+
+  private def visitExtPat(pat0: TypedAst.ExtPattern): LoweredAst.ExtPattern = pat0 match {
+    case TypedAst.ExtPattern.Wild(tpe, loc) => LoweredAst.ExtPattern.Wild(tpe, loc)
+    case TypedAst.ExtPattern.Var(bnd, tpe, loc) => LoweredAst.ExtPattern.Var(bnd.sym, tpe, loc)
+    case TypedAst.ExtPattern.Error(_, loc) => throw InternalCompilerException("unexpected error ext pattern", loc)
   }
 
   /**
@@ -1902,7 +1912,7 @@ object Lowering {
 
     case LoweredAst.Expr.Match(_, _, _, _, _) => ??? // TODO
 
-    case LoweredAst.Expr.ExtensibleMatch(_, _, _, _, _, _, _, _, _) => ??? // TODO
+    case LoweredAst.Expr.ExtMatch(_, _, _, _, _) => ??? // TODO
 
     case LoweredAst.Expr.TypeMatch(_, _, _, _, _) => ??? // TODO
 

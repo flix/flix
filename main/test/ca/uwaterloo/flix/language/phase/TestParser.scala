@@ -945,6 +945,15 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectTypeParams](result)
   }
 
+  test("IllegalExtMatchRule.01") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A(1) { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
   test("IllegalExtPattern.01") {
     val input =
       """
@@ -1019,6 +1028,28 @@ class TestParserSad extends AnyFunSuite with TestUtils {
         |    case A(1) => 1
         |    case A(1) => 1
         |    case A(1) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("IllegalExtTag.01") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A() -> 123 {
+        |    case A(x) => x
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  ignore("IllegalExtTag.02") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A (1) {
+        |    case A(x) => x
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)

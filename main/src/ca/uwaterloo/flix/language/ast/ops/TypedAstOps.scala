@@ -62,7 +62,7 @@ object TypedAstOps {
     case Expr.Match(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ rule.guard.toList.flatMap(sigSymsOf))
     case Expr.TypeMatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
-    case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
+    case Expr.ExtMatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(r => sigSymsOf(r.exp))
     case Expr.Tag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.RestrictableTag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.ExtensibleTag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
@@ -217,8 +217,15 @@ object TypedAstOps {
       }
       e ++ rs
 
-    case Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, _, _, _) =>
-      freeVars(exp1) ++ (freeVars(exp2) - bnd1.sym) ++ (freeVars(exp3) - bnd2.sym)
+    case Expr.ExtMatch(exp, rules, _, _, _) =>
+      rules.foldLeft(freeVars(exp)) {
+        case (acc, ExtMatchRule(_, pats, exp1, _)) =>
+          acc ++ freeVars(exp1) -- pats.flatMap {
+            case ExtPattern.Wild(_, _) => List.empty
+            case ExtPattern.Var(bnd, _, _) => List(bnd.sym)
+            case ExtPattern.Error(_, _) => List.empty
+          }
+      }
 
     case Expr.Tag(_, exps, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {

@@ -594,7 +594,7 @@ object Desugar {
 
     case WeededAst.Expr.ExtTag(label, exps, loc) =>
       val es = visitExps(exps)
-      Expr.ExtensibleTag(label, es, loc)
+      Expr.ExtTag(label, es, loc)
 
     case WeededAst.Expr.Tuple(exps, loc) =>
       desugarTuple(exps, loc)

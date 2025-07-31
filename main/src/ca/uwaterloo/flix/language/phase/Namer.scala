@@ -714,7 +714,7 @@ object Namer {
       val rs = rules.map(visitExtMatchRule)
       NamedAst.Expr.ExtMatch(e, rs, loc)
 
-    case DesugaredAst.Expr.ExtensibleTag(label, exps, loc) =>
+    case DesugaredAst.Expr.ExtTag(label, exps, loc) =>
       val es = exps.map(visitExp(_))
       NamedAst.Expr.ExtTag(label, es, loc)
 
