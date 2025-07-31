@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-mod TestFixpoint.Functional {
+mod Test.Exp.Fixpoint.Functional {
 
     /////////////////////////////////////////////////////////////////////////////
     // Tests with functional predicates                                        //
