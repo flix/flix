@@ -102,16 +102,13 @@ object Weeder2 {
         maybeUseMany match {
           // case: Use many.
           case Some(useMany) =>
-            visitUseMany(useMany, nname) match {
-              // subcase: Empty use many. Issue an error and return an empty list.
-              case Nil =>
-                val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, useMany.loc)
-                sctx.errors.add(error)
-                Nil
-              // subcase: Nonempty use many. Return the list.
-              case uses@(_ :: _) =>
-                uses
+            val uses = visitUseMany(useMany, nname)
+            // Issue an error if it's empty.
+            if (uses.isEmpty) {
+              val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, useMany.loc)
+              sctx.errors.add(error)
             }
+            uses
           // case: Use one. Use the qname.
           case None =>
             List(UseOrImport.Use(qname, qname.ident, qname.loc))

@@ -1505,4 +1505,35 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError.NeedAtleastOne](result)
   }
+
+  test("MissingUse.Top.01") {
+    val input =
+      """
+        |use Foo.{}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
+  }
+
+  test("MissingUse.Mod.01") {
+    val input =
+      """
+        |mod M {
+        |  use Foo.{}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
+  }
+
+  test("MissingUse.Def.01") {
+    val input =
+      """
+        |def foo(): String = {
+        |  use Foo.{}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
+  }
 }
