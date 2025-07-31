@@ -481,7 +481,7 @@ object Kinder {
 
     case ResolvedAst.Expr.ExtMatch(exp, rules, loc) =>
       val e = visitExp(exp, kenv0, taenv, root)
-      val rs = rules.map(visitExtMatchRule(_, kenv0, taenv, root))
+      val rs = rules.map(visitExtMatchRule(_, kenv0, root))
       KindedAst.Expr.ExtMatch(e, rs, loc)
 
     case ResolvedAst.Expr.Tag(symUse, exps0, loc) =>
