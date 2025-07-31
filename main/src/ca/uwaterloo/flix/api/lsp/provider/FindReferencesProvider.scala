@@ -264,7 +264,7 @@ object FindReferencesProvider {
     }
 
     object CaseSymConsumer extends Consumer {
-      override def consumeCaseSymUse(sym: SymUse.CaseSymUse): Unit = consider(sym.sym, sym.loc)
+      override def consumeCaseSymUse(symUse: SymUse.CaseSymUse): Unit = consider(symUse.sym, symUse.loc)
     }
 
     Visitor.visitRoot(root, CaseSymConsumer, AllAcceptor)
@@ -282,7 +282,7 @@ object FindReferencesProvider {
     }
 
     object DefnSymConsumer extends Consumer {
-      override def consumeDefSymUse(sym: SymUse.DefSymUse): Unit = consider(sym.sym, sym.loc)
+      override def consumeDefSymUse(symUse: SymUse.DefSymUse): Unit = consider(symUse.sym, symUse.loc)
     }
 
     Visitor.visitRoot(root, DefnSymConsumer, AllAcceptor)
@@ -344,7 +344,7 @@ object FindReferencesProvider {
     }
 
     object OpSymConsumer extends Consumer {
-      override def consumeOpSymUse(sym: SymUse.OpSymUse): Unit = consider(sym.sym, sym.loc)
+      override def consumeOpSymUse(symUse: SymUse.OpSymUse): Unit = consider(symUse.sym, symUse.loc)
     }
 
     Visitor.visitRoot(root, OpSymConsumer, AllAcceptor)

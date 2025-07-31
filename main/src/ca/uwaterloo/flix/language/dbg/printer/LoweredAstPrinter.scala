@@ -102,11 +102,11 @@ object LoweredAstPrinter {
         case LoweredAst.CatchRule(sym, clazz, body) => (sym, clazz, print(body))
       }
       DocAst.Expr.TryCatch(expD, rulesD)
-    case Expr.RunWith(exp, effUse, rules, _, _, _) =>
+    case Expr.RunWith(exp, effSymUse, rules, _, _, _) =>
       val expD = print(exp)
-      val effD = effUse.sym
+      val effD = effSymUse.sym
       val rulesD = rules.map {
-        case LoweredAst.HandlerRule(op, fparams, body) => (op.sym, fparams.map(printFormalParam), print(body))
+        case LoweredAst.HandlerRule(opSymUse, fparams, body) => (opSymUse.sym, fparams.map(printFormalParam), print(body))
       }
       DocAst.Expr.RunWithHandler(expD, effD, rulesD)
     case Expr.NewObject(name, clazz, tpe, _, methods, _) =>
@@ -123,7 +123,7 @@ object LoweredAstPrinter {
     case Pattern.Wild(_, _) => DocAst.Expr.Wild
     case Pattern.Var(sym, _, _) => DocAst.Expr.Var(sym)
     case Pattern.Cst(cst, _, _) => DocAst.Expr.Cst(cst)
-    case Pattern.Tag(sym, pats, _, _) => DocAst.Expr.Tag(sym.sym, pats.map(printPattern))
+    case Pattern.Tag(symUse, pats, _, _) => DocAst.Expr.Tag(symUse.sym, pats.map(printPattern))
     case Pattern.Tuple(elms, _, _) => DocAst.Expr.Tuple(elms.map(printPattern).toList)
     case Pattern.Record(pats, rest, _, _) => printRecordPattern(pats, rest)
   }

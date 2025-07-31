@@ -250,14 +250,14 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Tag(sym, exps, tpe, eff, _) =>
-      visitSymUse(sym)
+    case Expr.Tag(symUse, exps, tpe, eff, _) =>
+      visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.RestrictableTag(sym, exps, tpe, eff, _) =>
-      visitSymUse(sym)
+    case Expr.RestrictableTag(symUse, exps, tpe, eff, _) =>
+      visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
@@ -326,15 +326,15 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.StructGet(exp, sym, tpe, eff, _) =>
+    case Expr.StructGet(exp, symUse, tpe, eff, _) =>
       visitExp(exp)
-      visitSymUse(sym)
+      visitSymUse(symUse)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.StructPut(exp1, sym, exp2, tpe, eff, _) =>
+    case Expr.StructPut(exp1, symUse, exp2, tpe, eff, _) =>
       visitExp(exp1)
-      visitSymUse(sym)
+      visitSymUse(symUse)
       visitExp(exp2)
       visitType(tpe)
       visitType(eff)
@@ -379,9 +379,9 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Without(exp, sym, tpe, eff, _) =>
+    case Expr.Without(exp, symUse, tpe, eff, _) =>
       visitExp(exp)
-      visitSymUse(sym)
+      visitSymUse(symUse)
       visitType(tpe)
       visitType(eff)
 
@@ -396,8 +396,8 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Handler(sym, rules, bodyType, bodyEff, handledEff, tpe, _) =>
-      visitSymUse(sym)
+    case Expr.Handler(symUse, rules, bodyType, bodyEff, handledEff, tpe, _) =>
+      visitSymUse(symUse)
       rules.foreach(visitHandlerRule)
       visitType(bodyType)
       visitType(bodyEff)
@@ -558,7 +558,7 @@ object Dependencies {
     case Type.Var(_, _) => ()
   }
 
-  private def visitSymUse(use: SymUse)(implicit sctx: SharedContext): Unit = use match {
+  private def visitSymUse(symUse: SymUse)(implicit sctx: SharedContext): Unit = symUse match {
     case SymUse.AssocTypeSymUse(sym, loc) => addDependency(sym.loc, loc)
     case SymUse.CaseSymUse(sym, loc) => addDependency(sym.loc, loc)
     case SymUse.DefSymUse(sym, loc) => addDependency(sym.loc, loc)
@@ -614,8 +614,8 @@ object Dependencies {
     case Pattern.Var(bnd, tpe, _) =>
       visitBinder(bnd)
       visitType(tpe)
-    case Pattern.Tag(sym, pats, tpe, _) =>
-      visitSymUse(sym)
+    case Pattern.Tag(symUse, pats, tpe, _) =>
+      visitSymUse(symUse)
       pats.foreach(visitPattern)
       visitType(tpe)
     case Pattern.Tuple(pats, tpe, _) =>
@@ -646,8 +646,8 @@ object Dependencies {
   }
 
   private def visitRestrictableChoosePattern(pattern: TypedAst.RestrictableChoosePattern)(implicit sctx: SharedContext): Unit = pattern match {
-    case RestrictableChoosePattern.Tag(sym, pats, tpe, _) =>
-      visitSymUse(sym)
+    case RestrictableChoosePattern.Tag(symUse, pats, tpe, _) =>
+      visitSymUse(symUse)
       pats.foreach(visitVarOrWild)
       visitType(tpe)
     case RestrictableChoosePattern.Error(tpe, _) =>
