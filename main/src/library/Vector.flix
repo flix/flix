@@ -479,7 +479,7 @@ mod Vector {
     ///
     /// The first occurence in a chain of duplicates is kept.
     ///
-    /// `f` is assumed to be symmetric and transitive.
+    /// `f` must define an equivalence relation on the elements of the list.
     ///
     pub def removeAdjDupsWith(f: a -> a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = region rc {
         if (Vector.length(v) == 0) {
