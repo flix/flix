@@ -50,7 +50,6 @@
 /// requires less information.
 ///
 mod Fixpoint3.BoxingType {
-    use Fixpoint3.AtomicCounter
     use Fixpoint3.ReadWriteLock
     use Fixpoint3.Boxed
     use Fixpoint3.Ast.Ram.RamId
