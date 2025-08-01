@@ -119,7 +119,7 @@ object TypeReconstruction {
     case KindedAst.Expr.ApplyDef(symUse, exps, targs, itvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
       val tas = targs.map(subst.apply)
-      TypedAst.Expr.ApplyDef(symUse, es, subst(itvar), subst(tvar), subst(evar), loc)
+      TypedAst.Expr.ApplyDef(symUse, es, tas, subst(itvar), subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.ApplyLocalDef(symUse, exps, arrowTvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
@@ -138,7 +138,7 @@ object TypeReconstruction {
       val es = exps.map(visitExp)
       val ta = subst(targ)
       val tas = targs.map(subst.apply)
-      TypedAst.Expr.ApplySig(symUse, es, subst(itvar), subst(tvar), subst(evar), loc)
+      TypedAst.Expr.ApplySig(symUse, es, ta, tas, subst(itvar), subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.Lambda(fparam, exp, _, loc) =>
       val p = visitFormalParam(fparam, subst)

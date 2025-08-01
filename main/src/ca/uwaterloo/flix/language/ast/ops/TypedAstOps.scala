@@ -46,10 +46,10 @@ object TypedAstOps {
     case Expr.Use(_, _, exp, _) => sigSymsOf(exp)
     case Expr.Lambda(_, exp, _, _) => sigSymsOf(exp)
     case Expr.ApplyClo(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.ApplyDef(_, exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Expr.ApplyDef(_, exps, _, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.ApplyOp(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet + sym
+    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _, _, _) => exps.flatMap(sigSymsOf).toSet + sym
     case Expr.Unary(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Let(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
@@ -153,7 +153,7 @@ object TypedAstOps {
     case Expr.ApplyClo(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expr.ApplyDef(_, exps, _, _, _, _) =>
+    case Expr.ApplyDef(_, exps, _, _, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => freeVars(exp) ++ acc
       }
@@ -166,7 +166,7 @@ object TypedAstOps {
     case Expr.ApplyOp(_, exps, _, _, _) =>
       exps.flatMap(freeVars).toMap
 
-    case Expr.ApplySig(_, exps, _, _, _, _) =>
+    case Expr.ApplySig(_, exps, _, _, _, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => freeVars(exp) ++ acc
       }
