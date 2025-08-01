@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Kind.WildCaseSet
-import ca.uwaterloo.flix.language.ast.KindedAst.ExtPattern
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, DefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -286,10 +285,7 @@ object Kinder {
     * Performs kinding on the all the definitions in the given root.
     */
   private def visitDefs(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit rootEnv: RootEnv, sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, KindedAst.Def] = {
-    ParOps.parMapValues(root.defs) {
-      case defn =>
-        visitDef(defn, KindEnv.empty, root)
-    }
+    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef(_, KindEnv.empty, root)))
   }
 
   /**
@@ -525,7 +521,7 @@ object Kinder {
         KindedAst.Expr.RestrictableChoose(star, exp, rules, tvar, loc)
 
       case ResolvedAst.Expr.ExtMatch(exp, rules, loc) =>
-        val  e = visitExp(exp, kenv0, root)
+        val e = visitExp(exp, kenv0, root)
         val rs = rules.map(visitExtMatchRule(_, kenv0, root))
 
         KindedAst.Expr.ExtMatch(e, rs, loc)
@@ -1391,7 +1387,7 @@ object Kinder {
     * A KindEnvironment is provided in case some subset of of kinds have been declared (and therefore should not be inferred),
     * as in the case of a trait type parameter used in a sig or law.
     */
-  private def inferSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): KindEnv = spec0 match {
+  private def inferSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext): KindEnv = spec0 match {
     case ResolvedAst.Spec(_, _, _, _, fparams, tpe, eff0, tconstrs, econstrs) =>
       val fparamKenvs = fparams.map(inferFormalParam(_, kenv, root))
       val tpeKenv = inferType(tpe, Kind.Star, kenv, root)
@@ -1591,7 +1587,7 @@ object Kinder {
   /**
     * Gets a kind environment from the spec.
     */
-  private def getKindEnvFromSpec(spec0: ResolvedAst.Spec, kenv0: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): KindEnv = spec0 match {
+  private def getKindEnvFromSpec(spec0: ResolvedAst.Spec, kenv0: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext): KindEnv = spec0 match {
     case ResolvedAst.Spec(_, _, _, tparams0, _, _, _, _, _) =>
       // first get the kenv from the declared tparams
       val kenv1 = getKindEnvFromTypeParams(tparams0)
@@ -1601,13 +1597,6 @@ object Kinder {
 
       // Finally do inference on the spec under the new kenv
       inferSpec(spec0, kenv2, root)
-  }
-
-  private def getKindEnvFromKindedSpec(spec: KindedAst.Spec, kenv0: KindEnv) = {
-    val map = spec.tparams.map {
-      tparam => (tparam.sym.withoutKind -> tparam.sym.kind)
-    }.toMap
-    KindEnv(map)
   }
 
   /**
