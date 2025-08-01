@@ -99,13 +99,19 @@ object Weeder2 {
         List.empty
       } else {
         val nname = Name.NName(qname.namespace.idents :+ qname.ident, qname.loc)
-        val optUses = maybeUseMany.map(visitUseMany(_, nname))
-        optUses match {
-          // case: use many, if uses is empty the parser will have reported an error
-          case Some(uses) => uses
-
-          // case: use one, use the qname
-          case None => List(UseOrImport.Use(qname, qname.ident, qname.loc))
+        maybeUseMany match {
+          // case: Use many.
+          case Some(useMany) =>
+            val uses = visitUseMany(useMany, nname)
+            // Issue an error if it's empty.
+            if (uses.isEmpty) {
+              val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, useMany.loc)
+              sctx.errors.add(error)
+            }
+            uses
+          // case: Use one. Use the qname.
+          case None =>
+            List(UseOrImport.Use(qname, qname.ident, qname.loc))
         }
       }
     }
@@ -151,12 +157,18 @@ object Weeder2 {
     expect(tree, TreeKind.UsesOrImports.Import)
     mapN(pickJavaName(tree)) {
       jname =>
-        val maybeImportMany = tryPick(TreeKind.UsesOrImports.ImportMany, tree).map(visitImportMany(_, jname.fqn))
+        val maybeImportMany = tryPick(TreeKind.UsesOrImports.ImportMany, tree)
         maybeImportMany match {
-          // case: import many, if the list is empty parser has reported an error
-          case Some(imports) => imports
-
-          // case: import one, use the java name
+          // case: Import many.
+          case Some(importMany) =>
+            val imports = visitImportMany(importMany, jname.fqn)
+            // Issue an error if it's empty.
+            if (imports.isEmpty) {
+              val error = NeedAtleastOne(NamedTokenSet.Name, SyntacticContext.Unknown, None, importMany.loc)
+              sctx.errors.add(error)
+            }
+            imports
+          // case: Import one. Use the Java name.
           case None =>
             val ident = Name.Ident(jname.fqn.lastOption.getOrElse(""), jname.loc)
             List(UseOrImport.Import(jname, ident, tree.loc))
@@ -396,7 +408,7 @@ object Weeder2 {
               Validation.Success(allCases)
             // Empty or Multiton enum
             case (None, cs) =>
-              Validation.Success(cases)
+              Validation.Success(cs)
           }
           mapN(casesVal) {
             cases => Declaration.Enum(doc, ann, mod, ident, tparams, derivations, cases.sortBy(_.loc), tree.loc)
@@ -454,7 +466,7 @@ object Weeder2 {
               Validation.Success(allCases)
             // Empty or Multiton enum
             case (None, cs) =>
-              Validation.Success(cases)
+              Validation.Success(cs)
           }
           mapN(casesVal) {
             cases => Declaration.RestrictableEnum(doc, ann, mod, ident, rParam, tparams, derivations, cases.sortBy(_.loc), tree.loc)
@@ -1415,7 +1427,7 @@ object Weeder2 {
             case Pattern.Wild(loc) => WeededAst.RestrictableChoosePattern.Wild(loc)
             case Pattern.Var(ident, loc) => WeededAst.RestrictableChoosePattern.Var(ident, loc)
             case Pattern.Cst(Constant.Unit, loc) => WeededAst.RestrictableChoosePattern.Wild(loc)
-            case other =>
+            case _ =>
               val error = UnsupportedRestrictedChoicePattern(isStar, loc0)
               sctx.errors.add(error)
               WeededAst.RestrictableChoosePattern.Error(loc0.asSynthetic)
@@ -1572,39 +1584,29 @@ object Weeder2 {
           // Parser has reported an error here so do not add to sctx.
           Validation.Failure(error)
 
-        case (expr, rules) if rules.length == 2 => // Check for exactly 2 to prevent crash when desugaring in Kinder
-          Validation.Success(Expr.ExtMatch(expr, rules, tree.loc))
-
-        case (expr, _) =>
-          val error = Malformed(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
-          sctx.errors.add(error)
-          Validation.Failure(error)
+        case (expr, rules) =>
+          Validation.Success(Expr.ExtMatch(expr, rules.flatten, tree.loc))
       }
     }
 
-    private def visitExtMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[ExtMatchRule, CompilationMessage] = {
+    private def visitExtMatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[Option[ExtMatchRule], CompilationMessage] = {
       expect(tree, TreeKind.Expr.ExtMatchRuleFragment)
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
       flatMapN(Patterns.pickExtPattern(tree), traverse(exprs)(visitExpr)) {
-        case ((label, List(ExtPattern.Var(ident, loc))), expr :: Nil) =>
-          // case Tag(ident) => expr
-          Validation.Success(ExtMatchRule(label, List(ExtPattern.Var(ident, loc)), expr, tree.loc))
+        case ((label, pats), expr :: Nil) =>
+          // case Label(pats) => expr
+          Validation.Success(Some(ExtMatchRule(label, pats, expr, tree.loc)))
 
-        case ((label, List(ExtPattern.Wild(loc))), expr :: Nil) =>
-          // case Tag(_) => expr
-          Validation.Success(ExtMatchRule(label, List(ExtPattern.Wild(loc)), expr, tree.loc))
-
-        case ((_, _), _) =>
-          val error = Malformed(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
-          sctx.errors.add(error)
-          Validation.Failure(error) // Hard failure to prevent crash when desugaring in Kinder
+        case (_, _) =>
+          // Fall back on None. Parser has reported an error here.
+          Validation.Success(None)
       }
     }
 
     private def visitExtTag(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.ExtTag)
-      mapN(pickNameIdent(tree), pickExpr(tree)) {
-        (ident, e) => Expr.ExtTag(Name.mkLabel(ident), List(e), tree.loc)
+      mapN(pickNameIdent(tree), pickArguments(tree, SyntacticContext.Unknown)) {
+        case (ident, exps) => Expr.ExtTag(Name.mkLabel(ident), exps, tree.loc)
       }
     }
 
@@ -2110,7 +2112,7 @@ object Weeder2 {
 
     private def visitFixpointSolveExpr(tree: Tree, isPSolve: Boolean)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       val expectedTree = if (isPSolve) TreeKind.Expr.FixpointSolveWithProvenance else TreeKind.Expr.FixpointSolveWithProject
-      val solveMode = if(isPSolve) SolveMode.WithProvenance else SolveMode.Default
+      val solveMode = if (isPSolve) SolveMode.WithProvenance else SolveMode.Default
       expect(tree, expectedTree)
       val expressions = pickAll(TreeKind.Expr.Expr, tree)
       val idents = pickAll(TreeKind.Ident, tree).map(tokenToIdent)
@@ -2331,7 +2333,7 @@ object Weeder2 {
       }
     }
 
-    def visitExtPattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit sctx: SharedContext): Validation[(Name.Label, List[ExtPattern]), CompilationMessage] = {
+    private def visitExtPattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit sctx: SharedContext): Validation[(Name.Label, List[ExtPattern]), CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Pattern)
       val extTagPattern = tryPick(TreeKind.Pattern.ExtTag, tree)
       extTagPattern match {
@@ -3126,8 +3128,11 @@ object Weeder2 {
                   val error = MismatchedTypeParameters(tparamsTree.loc)
                   sctx.errors.add(error)
                   tparams
+                // No type parameters. Issue an error and return an empty list.
                 case (Nil, Nil) =>
-                  throw InternalCompilerException("Parser produced empty type parameter tree", tparamsTree.loc)
+                  val error = NeedAtleastOne(NamedTokenSet.Parameter, SyntacticContext.Decl.Type, None, tparamsTree.loc)
+                  sctx.errors.add(error)
+                  Nil
               }
           }
       }
@@ -3287,11 +3292,11 @@ object Weeder2 {
     }
   }
 
-  private def tryParsePredicateArity(token: Token)(implicit sctx: SharedContext): Validation[Int, CompilationMessage] = {
+  private def tryParsePredicateArity(token: Token): Validation[Int, CompilationMessage] = {
     token.text.toIntOption match {
       case Some(i) if i >= 1 => Success(i)
-      case Some(i) => Failure(WeederError.IllegalPredicateArity(token.mkSourceLocation(isReal = true)))
-      case None => Failure(WeederError.IllegalPredicateArity(token.mkSourceLocation(isReal = true)))
+      case Some(_) => Failure(WeederError.IllegalPredicateArity(token.mkSourceLocation()))
+      case None => Failure(WeederError.IllegalPredicateArity(token.mkSourceLocation()))
     }
   }
 

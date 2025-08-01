@@ -27,6 +27,7 @@ import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError.*
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
 import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.collection.SeqOps
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.annotation.tailrec
@@ -578,9 +579,38 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
-    case Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, _, _, _) =>
-      // TODO: Ext-Variants
-      visitExp(exp1, env0, rc) ++ visitExp(exp2, env0 + bnd1.sym, rc) ++ visitExp(exp3, env0 + bnd2.sym, rc)
+    case Expr.ExtMatch(exp, rules, _, _, _) =>
+      val usedMatch = visitExp(exp, env0, rc)
+
+      // Visit each match rule.
+      val usedRules = rules.map {
+        case ExtMatchRule(_, pats, exp1, _) =>
+          // Compute the free variables in the pattern.
+          val fvs = pats.flatMap(freeVars).toSet
+
+          // Extend the environment with the free variables.
+          val extendedEnv = env0 ++ fvs
+
+          // Visit the body.
+          val usedBody = visitExp(exp1, extendedEnv, rc)
+
+          // Check for unused variable symbols.
+          val unusedVarSyms = findUnusedVarSyms(fvs, usedBody)
+
+          // Check for shadowed variable symbols.
+          val shadowedVarSyms = findShadowedVarSyms(fvs, env0)
+
+          // Combine everything together.
+          (usedBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
+      }
+
+      val duplicatePatterns: List[RedundancyError] =
+        SeqOps.getDuplicates(rules, (rule: ExtMatchRule) => rule.label).map {
+          case (rule1, rule2) =>
+            RedundancyError.DuplicateExtPattern(rule1.label, rule1.label.loc, rule2.label.loc)
+        }
+
+      Used(Set.empty, duplicatePatterns.toSet) ++ usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
     case Expr.Tag(CaseSymUse(sym, _), exps, _, _, _) =>
       val us = visitExps(exps, env0, rc)
@@ -591,7 +621,7 @@ object Redundancy {
     case Expr.RestrictableTag(_, exps, _, _, _) =>
       visitExps(exps, env0, rc)
 
-    case Expr.ExtensibleTag(_, exps, _, _, _) =>
+    case Expr.ExtTag(_, exps, _, _, _) =>
       visitExps(exps, env0, rc)
 
     case Expr.Tuple(elms, _, _, _) =>
@@ -1088,6 +1118,15 @@ object Redundancy {
     case RestrictableChoosePattern.Wild(_, _) => None
     case RestrictableChoosePattern.Var(Binder(sym, _), _, _) => Some(sym)
     case RestrictableChoosePattern.Error(_, _) => None
+  }
+
+  /**
+    * Returns the free variables in the ext pattern `pat0`.
+    */
+  private def freeVars(pat0: ExtPattern): Option[Symbol.VarSym] = pat0 match {
+    case ExtPattern.Wild(_, _) => None
+    case ExtPattern.Var(Binder(sym, _), _, _) => Some(sym)
+    case ExtPattern.Error(_, _) => None
   }
 
   /**

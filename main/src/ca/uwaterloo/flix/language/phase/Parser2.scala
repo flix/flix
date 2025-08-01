@@ -804,17 +804,14 @@ object Parser2 {
     // Handle use many case.
     if (at(TokenKind.DotCurlyL)) {
       val mark = open()
-      oneOrMore(
+      zeroOrMore(
         namedTokenSet = NamedTokenSet.Name,
         getItem = () => aliasedName(NAME_USE),
         checkForItem = NAME_USE.contains,
         breakWhen = _.isRecoverUseOrImport,
         delimiterL = TokenKind.DotCurlyL,
         delimiterR = TokenKind.CurlyR,
-      ) match {
-        case Some(err) => closeWithError(open(), err)
-        case None =>
-      }
+      )
       close(mark, TreeKind.UsesOrImports.UseMany)
     }
     close(mark, TreeKind.UsesOrImports.Use)
@@ -836,10 +833,7 @@ object Parser2 {
         breakWhen = _.isRecoverUseOrImport,
         delimiterL = TokenKind.DotCurlyL,
         delimiterR = TokenKind.CurlyR,
-      ) match {
-        case Some(err) => closeWithError(open(), err)
-        case None =>
-      }
+      )
       close(mark, TreeKind.UsesOrImports.ImportMany)
     }
     close(mark, TreeKind.UsesOrImports.Import)
@@ -1876,17 +1870,16 @@ object Parser2 {
       )
       close(mark, TreeKind.Expr.ExtMatch)
     }
-
     private def extTagExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordXvar))
-      val mark = open()
       expect(TokenKind.KeywordXvar)
-      nameUnqualified(NAME_TAG)
-      expect(TokenKind.ParenL)
-      // TODO: Ext-Variants: Limited to one expression.
-      expression()
-      expect(TokenKind.ParenR)
+      val lhs = nameUnqualified(NAME_TAG)
+      val mark = openBefore(lhs)
+      nth(0) match {
+        case TokenKind.ParenL => arguments()
+        case _ => ()
+      }
       close(mark, TreeKind.Expr.ExtTag)
     }
 
@@ -2088,7 +2081,7 @@ object Parser2 {
           NamedTokenSet.FromKinds(Set(TokenKind.ArrowThickR)),
           actual = Some(TokenKind.Equal),
           sctx = sctx,
-          hint = Some("match cases use '=>' instead of '='."),
+          hint = Some("use '=>' instead of '='."),
           loc = previousSourceLocation())
         closeWithError(open(), error)
       } else {
@@ -2109,7 +2102,7 @@ object Parser2 {
           NamedTokenSet.FromKinds(Set(TokenKind.ArrowThickR)),
           actual = Some(TokenKind.Equal),
           sctx = sctx,
-          hint = Some("match cases use '=>' instead of '='."),
+          hint = Some("use '=>' instead of '='."),
           loc = previousSourceLocation())
         closeWithError(open(), error)
       } else {
@@ -2711,7 +2704,7 @@ object Parser2 {
         close(mark, TreeKind.Expr.NewStruct)
       } else if (at(TokenKind.CurlyL)) {
         // `new Type { ... }`.
-        oneOrMore(
+        zeroOrMore(
           namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
           checkForItem = t => t.isComment || t == TokenKind.KeywordDef,
           getItem = jvmMethod,
@@ -3320,17 +3313,15 @@ object Parser2 {
     def parameters()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
-      oneOrMore(
+      zeroOrMore(
         namedTokenSet = NamedTokenSet.Parameter,
         getItem = parameter,
         checkForItem = kind => NAME_VARIABLE.contains(kind),
         delimiterL = TokenKind.BracketL,
         delimiterR = TokenKind.BracketR,
         breakWhen = _.isRecoverType,
-      ) match {
-        case Some(error) => closeWithError(mark, error)
-        case None => close(mark, TreeKind.TypeParameterList)
-      }
+      )
+      close(mark, TreeKind.TypeParameterList)
     }
 
     private def parameter()(implicit s: State): Mark.Closed = {

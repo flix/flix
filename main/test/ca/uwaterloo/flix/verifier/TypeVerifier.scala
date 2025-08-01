@@ -363,16 +363,15 @@ object TypeVerifier {
             case None => failMismatchedShape(t1, s"Record with '${label.name}'", loc)
           }
 
-        case AtomicOp.ExtensibleIs(label) =>
+        case AtomicOp.ExtIs(label) =>
           val List(t1) = ts
-          t1 match {
-            case SimpleType.ExtensibleExtend(cons, _, _) if cons.name == label.name => ()
-            case _ => failMismatchedShape(t1, label.name, loc)
+          getExtensibleTagType(t1, label.name, loc) match {
+            case Some(_) => ()
+            case None => failMismatchedShape(t1, label.name, loc)
           }
           check(expected = SimpleType.Bool)(actual = tpe, loc)
 
-
-        case AtomicOp.ExtensibleTag(label) =>
+        case AtomicOp.ExtTag(label) =>
           getExtensibleTagType(tpe, label.name, loc) match {
             case Some(ts2) if ts.length == ts2.length =>
               ts.zip(ts2).map { case (t1, t2) => checkEq(t1, t2, loc) }
@@ -381,7 +380,7 @@ object TypeVerifier {
               failMismatchedShape(tpe, label.name, loc)
           }
 
-        case AtomicOp.ExtensibleUntag(label, idx) =>
+        case AtomicOp.ExtUntag(label, idx) =>
           val List(t1) = ts
           val termTypes = SimpleType.findExtensibleTermTypes(label, t1)
           checkEq(termTypes(idx), tpe, loc)

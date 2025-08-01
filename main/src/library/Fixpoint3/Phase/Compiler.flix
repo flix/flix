@@ -42,8 +42,14 @@ mod Fixpoint3.Phase.Compiler {
     /// A rule belongs to the same stratum as its head predicate.
     ///
     @Internal
-    pub def compile(d: Datalog, db: Map[RelSym, Map[Vector[Boxed], Boxed]], strat: Map[PredSym, (Int32, Int32)]): RamProgram = match d {
+    pub def compile(d: Datalog, db_: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]], strat: Map[PredSym, (Int32, Int32)]): RamProgram = match d {
         case Datalog(facts, rules) => region rc {
+            let db = unsafely IO run {db_ |> Map.map(tree -> {
+                // Temp solution to avoid changing backend.
+                let innerMap = MutMap.empty(rc);
+                BPlusTree.forEach(k -> v -> MutMap.put(k, v, innerMap), tree);
+                MutMap.toMap(innerMap)
+            })};
             let predicates = Predicate.initialize(d, db);
             let stmts = MutList.empty(rc);
             let compiledFacts = compileFacts(facts, db, predicates);

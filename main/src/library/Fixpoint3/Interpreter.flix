@@ -66,7 +66,7 @@ mod Fixpoint3.Interpreter {
     /// which uses `MutMap` instead of a `BPlusTree`.
     ///
     @Internal
-    pub type alias Database[r: Region] = MutMap[RelSym, MutMap[Vector[Boxed], Boxed, r], r]
+    pub type alias Database[r: Region] = MutMap[RelSym, BPlusTree[Vector[Boxed], Boxed, Static], r]
 
     ///
     /// A `SearchEnv` contains the dynamic information about the state of the Interpreter.
@@ -179,7 +179,9 @@ mod Fixpoint3.Interpreter {
             let env = (minEnv, maxEnv, tupleEnv, latEnv);
             let ctx = (db, env, boxing);
             evalStmt(rc, ctx, parLevel(), stmt);
-            (marshallDb(rc, db, boxing, indexPos, predState, marshallIndexes, withProv), predState)
+            // Remove the `IO` effect from dealing with static.
+            let boxedFacts = unsafely IO run marshallDb(rc, db, boxing, indexPos, predState, marshallIndexes, withProv);
+            (boxedFacts, predState)
     }
 
     ///
@@ -188,11 +190,19 @@ mod Fixpoint3.Interpreter {
     /// For all `RelSym`, some `Index` for relation is selected and all values are boxed
     /// and copied to a `MutMap`.
     ///
-    def marshallDb(rc: Region[r], db: Indexes[r], boxing: Boxing[r], indexPos: IndexPositions, predTrack: Predicates, boxingIndexes: RamIdToPos, withProv: Bool): Database[r] \ r =
+    def marshallDb(
+        rc: Region[r],
+        db: Indexes[r],
+        boxing: Boxing[r],
+        indexPos: IndexPositions,
+        predTrack: Predicates,
+        boxingIndexes: RamIdToPos,
+        withProv: Bool
+    ): Database[r] \ r + IO =
         let res = MutMap.empty(rc);
         allFullRelSyms(predTrack) |>
         List.forEach(relSym -> {
-            let innerMap = MutMap.empty(rc);
+            let innerMap = BPlusTree.empty(Static);
             // If we are doing provenance computations we need to also rebox the annotations.
             // Since there are 2 annotations we add 2 in this case.
             let usedArity =
@@ -205,7 +215,7 @@ mod Fixpoint3.Interpreter {
             Array.get(Vector.get(0, Vector.get(toInt32Id(relSym), indexPos)), db) |>
             BPlusTree.forEach(vec -> latticeElem -> {
                 let boxedVec = vec |> Vector.mapWithIndex(i -> val -> boxWith(val, Vector.get(i, curBoxingInfo), boxing));
-                MutMap.put(boxedVec, latticeElem, innerMap)
+                BPlusTree.put(boxedVec, latticeElem, innerMap)
             });
             MutMap.put(relSym, innerMap, res)
         });

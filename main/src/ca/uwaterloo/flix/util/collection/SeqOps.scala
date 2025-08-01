@@ -1,5 +1,4 @@
 /*
- * Copyright 2024 Herluf Baggesen
  * Copyright 2025 Matthew Lutze, Jakob Schneider Villumsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
