@@ -425,7 +425,7 @@ object SemanticTokensProvider {
     case Expr.ApplyClo(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.ApplyDef(DefSymUse(sym, loc), exps, _, _, _, _) =>
+    case Expr.ApplyDef(DefSymUse(sym, loc), exps, _, _, _, _, _) =>
       val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Function
       val t = SemanticToken(o, Nil, loc)
       exps.foldLeft(Iterator(t)) {
@@ -441,7 +441,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
       Iterator(t) ++ visitExps(exps)
 
-    case Expr.ApplySig(SigSymUse(sym, loc), exps, _, _, _, _) =>
+    case Expr.ApplySig(SigSymUse(sym, loc), exps, _, _, _, _, _, _) =>
       val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
       val t = SemanticToken(o, Nil, loc)
       exps.foldLeft(Iterator(t)) {

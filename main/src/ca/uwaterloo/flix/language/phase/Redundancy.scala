@@ -361,7 +361,7 @@ object Redundancy {
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
-    case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _) =>
+    case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _, _) =>
       // Recursive calls do not count as uses.
       if (!rc.defn.contains(sym)) {
         sctx.defSyms.put(sym, ())
@@ -379,7 +379,7 @@ object Redundancy {
       sctx.effSyms.put(opUse.sym.eff, ())
       visitExps(exps, env0, rc)
 
-    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _) =>
+    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _, _, _) =>
       // Recursive calls do not count as uses.
       if (!rc.defn.contains(sym)) {
         sctx.sigSyms.put(sym, ())
