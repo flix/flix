@@ -387,11 +387,12 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyClo(e1, e2, t, eff, loc)
 
-    case TypedAst.Expr.ApplyDef(DefSymUse(sym, _), exps, _, itpe, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplyDef(DefSymUse(sym, _), exps, targs, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
+      val tas = targs.map(visitType)
       val it = visitType(itpe)
       val t = visitType(tpe)
-      LoweredAst.Expr.ApplyDef(sym, es, it, t, eff, loc)
+      LoweredAst.Expr.ApplyDef(sym, es, tas, it, t, eff, loc)
 
     case TypedAst.Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -402,11 +403,13 @@ object Lowering {
       val es = exps.map(visitExp)
       LoweredAst.Expr.ApplyOp(sym, es, tpe, eff, loc)
 
-    case TypedAst.Expr.ApplySig(SigSymUse(sym, _), exps, _, _, itpe, tpe, eff, loc) =>
+    case TypedAst.Expr.ApplySig(SigSymUse(sym, _), exps, targ, targs, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
+      val ta = visitType(targ)
+      val tas = targs.map(visitType)
       val it = visitType(itpe)
       val t = visitType(tpe)
-      LoweredAst.Expr.ApplySig(sym, es, it, t, eff, loc)
+      LoweredAst.Expr.ApplySig(sym, es, ta, tas, it, t, eff, loc)
 
     case TypedAst.Expr.Unary(sop, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -785,13 +788,13 @@ object Lowering {
       val predExps = mkList(pparams.map(pparam => mkPredSym(pparam.pred)), Types.PredSym, loc)
       val argExps = predExps :: visitExp(exp) :: Nil
       val resultType = Types.Datalog
-      LoweredAst.Expr.ApplyDef(defn.sym, argExps, Types.RenameType, resultType, eff, loc)
+      LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.RenameType, resultType, eff, loc)
 
     case TypedAst.Expr.FixpointMerge(exp1, exp2, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Merge)
       val argExps = visitExp(exp1) :: visitExp(exp2) :: Nil
       val resultType = Types.Datalog
-      LoweredAst.Expr.ApplyDef(defn.sym, argExps, Types.MergeType, resultType, eff, loc)
+      LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.MergeType, resultType, eff, loc)
 
     case TypedAst.Expr.FixpointQueryWithProvenance(_, _, _, _, _, _) => ???
 
@@ -802,56 +805,56 @@ object Lowering {
       }
       val argExps = visitExp(exp) :: Nil
       val resultType = Types.Datalog
-      LoweredAst.Expr.ApplyDef(defn.sym, argExps, Types.SolveType, resultType, eff, loc)
+      LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.SolveType, resultType, eff, loc)
 
     case TypedAst.Expr.FixpointFilter(pred, exp, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Filter)
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       val resultType = Types.Datalog
-      LoweredAst.Expr.ApplyDef(defn.sym, argExps, Types.FilterType, resultType, eff, loc)
+      LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.FilterType, resultType, eff, loc)
 
     case TypedAst.Expr.FixpointInject(exp, pred, _, eff, loc) =>
-      // Compute the arity of the functor F[(a, b, c)] or F[a].
-      val arity = Type.eraseAliases(exp.tpe) match {
-        case Type.Apply(_, innerType, _) => innerType.typeConstructor match {
-          case Some(TypeConstructor.Tuple(l)) => l
-          case Some(TypeConstructor.Unit) => 0
-          case _ => 1
+      // Compute the types arguments of the functor F[(a, b, c)] or F[a].
+      val (targ, targs) = Type.eraseAliases(exp.tpe) match {
+        case Type.Apply(tycon, innerType, _) => innerType.typeConstructor match {
+          case Some(TypeConstructor.Tuple(_)) => (tycon, innerType.typeArguments)
+          case Some(TypeConstructor.Unit) => (tycon, Nil)
+          case _ => (tycon, List(innerType))
         }
         case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.", loc)
       }
 
       // Compute the symbol of the function.
-      val sym = Defs.ProjectInto(arity)
+      val sym = Defs.ProjectInto(targs.length)
 
       // The type of the function.
       val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, exp.tpe), Types.Datalog, loc)
 
       // Put everything together.
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
-      LoweredAst.Expr.ApplyDef(sym, argExps, defTpe, Types.Datalog, eff, loc)
+      LoweredAst.Expr.ApplyDef(sym, argExps, targ :: targs, defTpe, Types.Datalog, eff, loc)
 
     case TypedAst.Expr.FixpointProject(pred, exp, tpe, eff, loc) =>
       // Compute the arity of the predicate symbol.
       // The type is either of the form `Array[(a, b, c)]` or `Array[a]`.
-      val arity = Type.eraseAliases(tpe) match {
-        case Type.Apply(Type.Cst(_, _), innerType, _) => innerType.typeConstructor match {
-          case Some(TypeConstructor.Tuple(_)) => innerType.typeArguments.length
-          case Some(TypeConstructor.Unit) => 0
-          case _ => 1
+      val (_, targs) = Type.eraseAliases(tpe) match {
+        case Type.Apply(tycon, innerType, _) => innerType.typeConstructor match {
+          case Some(TypeConstructor.Tuple(_)) => (tycon, innerType.typeArguments)
+          case Some(TypeConstructor.Unit) => (tycon, Nil)
+          case _ => (innerType, List(innerType))
         }
-        case _ => throw InternalCompilerException(s"Unexpected non-list type: '$tpe'.", loc)
+        case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.", loc)
       }
 
       // Compute the symbol of the function.
-      val sym = Defs.Facts(arity)
+      val sym = Defs.Facts(targs.length)
 
       // The type of the function.
       val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, Types.Datalog), tpe, loc)
 
       // Put everything together.
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
-      LoweredAst.Expr.ApplyDef(sym, argExps, defTpe, tpe, eff, loc)
+      LoweredAst.Expr.ApplyDef(sym, argExps, targs, defTpe, tpe, eff, loc)
 
     case TypedAst.Expr.Error(m, _, _) =>
       throw InternalCompilerException(s"Unexpected error expression near", m.loc)
@@ -1248,8 +1251,9 @@ object Lowering {
       tpeOpt match {
         case None => throw InternalCompilerException("Unexpected nullary lattice predicate.", loc)
         case Some(tpe) =>
+          val innerType = visitType(tpe)
           // The type `Denotation[tpe]`.
-          val unboxedDenotationType = Type.mkEnum(Enums.Denotation, visitType(tpe) :: Nil, loc)
+          val unboxedDenotationType = Type.mkEnum(Enums.Denotation, innerType :: Nil, loc)
 
           // The type `Denotation[Boxed]`.
           val boxedDenotationType = Types.Denotation
@@ -1260,8 +1264,8 @@ object Lowering {
           val boxSym: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${Defs.version}.Ast.Shared.box")
           val boxType: Type = Type.mkPureArrow(unboxedDenotationType, boxedDenotationType, loc)
 
-          val innerApply = LoweredAst.Expr.ApplyDef(latticeSym, List(LoweredAst.Expr.Cst(Constant.Unit, Type.Unit, loc)), latticeType, unboxedDenotationType, Type.Pure, loc)
-          LoweredAst.Expr.ApplyDef(boxSym, List(innerApply), boxType, boxedDenotationType, Type.Pure, loc)
+          val innerApply = LoweredAst.Expr.ApplyDef(latticeSym, List(LoweredAst.Expr.Cst(Constant.Unit, Type.Unit, loc)), List(innerType), latticeType, unboxedDenotationType, Type.Pure, loc)
+          LoweredAst.Expr.ApplyDef(boxSym, List(innerApply), List(innerType), boxType, boxedDenotationType, Type.Pure, loc)
       }
   }
 
@@ -1312,7 +1316,7 @@ object Lowering {
   private def box(exp: LoweredAst.Expr): LoweredAst.Expr = {
     val loc = exp.loc
     val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed, loc)
-    LoweredAst.Expr.ApplyDef(Defs.Box, List(exp), tpe, Types.Boxed, Type.Pure, loc)
+    LoweredAst.Expr.ApplyDef(Defs.Box, List(exp), List(exp.tpe), tpe, Types.Boxed, Type.Pure, loc)
   }
 
   /**
@@ -1464,7 +1468,8 @@ object Lowering {
     */
   private def mkNewChannel(exp: LoweredAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): LoweredAst.Expr = {
     val itpe = Type.mkIoArrow(exp.tpe, tpe, loc)
-    LoweredAst.Expr.ApplyDef(Defs.ChannelNew, exp :: Nil, itpe, tpe, eff, loc)
+    val (targ, _) = extractChannelTpe(tpe)
+    LoweredAst.Expr.ApplyDef(Defs.ChannelNew, exp :: Nil, List(targ), itpe, tpe, eff, loc)
   }
 
   /**
@@ -1472,7 +1477,8 @@ object Lowering {
     */
   private def mkNewChannelTuple(exp: LoweredAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): LoweredAst.Expr = {
     val itpe = Type.mkIoArrow(exp.tpe, tpe, loc)
-    LoweredAst.Expr.ApplyDef(Defs.ChannelNewTuple, exp :: Nil, itpe, tpe, eff, loc)
+    val (targ, _) = extractChannelTpe(tpe.typeArguments.head) // TODO make helper
+    LoweredAst.Expr.ApplyDef(Defs.ChannelNewTuple, exp :: Nil, List(targ), itpe, tpe, eff, loc)
   }
 
   /**
@@ -1480,7 +1486,7 @@ object Lowering {
     */
   private def mkGetChannel(exp: LoweredAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): LoweredAst.Expr = {
     val itpe = Type.mkIoArrow(exp.tpe, tpe, loc)
-    LoweredAst.Expr.ApplyDef(Defs.ChannelGet, exp :: Nil, itpe, tpe, eff, loc)
+    LoweredAst.Expr.ApplyDef(Defs.ChannelGet, exp :: Nil, List(tpe), itpe, tpe, eff, loc)
   }
 
   /**
@@ -1488,7 +1494,8 @@ object Lowering {
     */
   private def mkPutChannel(exp1: LoweredAst.Expr, exp2: LoweredAst.Expr, eff: Type, loc: SourceLocation): LoweredAst.Expr = {
     val itpe = Type.mkIoUncurriedArrow(List(exp2.tpe, exp1.tpe), Type.Unit, loc)
-    LoweredAst.Expr.ApplyDef(Defs.ChannelPut, List(exp2, exp1), itpe, Type.Unit, eff, loc)
+    val targ = exp2.tpe
+    LoweredAst.Expr.ApplyDef(Defs.ChannelPut, List(exp2, exp1), List(targ), itpe, Type.Unit, eff, loc)
   }
 
   /**
@@ -1497,8 +1504,9 @@ object Lowering {
   private def mkChannelAdminList(rs: List[LoweredAst.SelectChannelRule], channels: List[(Symbol.VarSym, LoweredAst.Expr)], loc: SourceLocation): LoweredAst.Expr = {
     val admins = rs.zip(channels) map {
       case (LoweredAst.SelectChannelRule(_, c, _), (chanSym, _)) =>
+        val (targ, _) = extractChannelTpe(c.tpe)
         val itpe = Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc)
-        LoweredAst.Expr.ApplyDef(Defs.ChannelMpmcAdmin, List(LoweredAst.Expr.Var(chanSym, c.tpe, loc)), itpe, Types.ChannelMpmcAdmin, Type.Pure, loc)
+        LoweredAst.Expr.ApplyDef(Defs.ChannelMpmcAdmin, List(LoweredAst.Expr.Var(chanSym, c.tpe, loc)), List(targ), itpe, Types.ChannelMpmcAdmin, Type.Pure, loc)
     }
     mkList(admins, Types.ChannelMpmcAdmin, loc)
   }
@@ -1515,7 +1523,7 @@ object Lowering {
       case Some(_) => LoweredAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc)
       case None => LoweredAst.Expr.Cst(Constant.Bool(true), Type.Bool, loc)
     }
-    LoweredAst.Expr.ApplyDef(Defs.ChannelSelectFrom, List(admins, blocking), itpe, selectRetTpe, Type.IO, loc)
+    LoweredAst.Expr.ApplyDef(Defs.ChannelSelectFrom, List(admins, blocking), List.empty, itpe, selectRetTpe, Type.IO, loc)
   }
 
   /**
@@ -1531,7 +1539,7 @@ object Lowering {
         val (getTpe, _) = extractChannelTpe(chan.tpe)
         val itpe = Type.mkIoUncurriedArrow(List(chan.tpe, locksType), getTpe, loc)
         val args = List(LoweredAst.Expr.Var(chSym, chan.tpe, loc), LoweredAst.Expr.Var(locksSym, locksType, loc))
-        val getExp = LoweredAst.Expr.ApplyDef(Defs.ChannelUnsafeGetAndUnlock, args, itpe, getTpe, eff, loc)
+        val getExp = LoweredAst.Expr.ApplyDef(Defs.ChannelUnsafeGetAndUnlock, args, List(getTpe), itpe, getTpe, eff, loc)
         val e = LoweredAst.Expr.Let(sym, getExp, exp, exp.tpe, eff, loc)
         LoweredAst.MatchRule(pat, None, e)
     }
@@ -1578,7 +1586,7 @@ object Lowering {
     val liftType = Type.mkPureArrow(argType, returnType, exp0.loc)
 
     // Construct a call to the liftX function.
-    LoweredAst.Expr.ApplyDef(sym, List(exp0), liftType, returnType, Type.Pure, exp0.loc)
+    LoweredAst.Expr.ApplyDef(sym, List(exp0), argTypes :+ resultType, liftType, returnType, Type.Pure, exp0.loc)
   }
 
   /**
@@ -1604,7 +1612,7 @@ object Lowering {
     val liftType = Type.mkPureArrow(argType, returnType, exp0.loc)
 
     // Construct a call to the liftXb function.
-    LoweredAst.Expr.ApplyDef(sym, List(exp0), liftType, returnType, Type.Pure, exp0.loc)
+    LoweredAst.Expr.ApplyDef(sym, List(exp0), argTypes, liftType, returnType, Type.Pure, exp0.loc)
   }
 
 
@@ -1626,6 +1634,7 @@ object Lowering {
     // That is, the function accepts a *curried* function and an uncurried function that takes
     // its input as a boxed Vector and return its output as a vector of vectors.
     //
+    val targs = argTypes ::: extractTuplishTypes(resultType)
 
     // The type of the function argument, i.e. i1 -> i2 -> i3 -> Vector[(o1, o2, o3, ...)].
     val argType = Type.mkPureCurriedArrow(argTypes, resultType, loc)
@@ -1637,7 +1646,7 @@ object Lowering {
     val liftType = Type.mkPureArrow(argType, returnType, loc)
 
     // Construct a call to the liftXY function.
-    LoweredAst.Expr.ApplyDef(sym, List(exp0), liftType, returnType, Type.Pure, loc)
+    LoweredAst.Expr.ApplyDef(sym, List(exp0), targs, liftType, returnType, Type.Pure, loc)
   }
 
   /**
@@ -1709,6 +1718,21 @@ object Lowering {
   private def extractChannelTpe(tpe: Type): (Type, Type) = eraseAliases(tpe) match {
     case Type.Apply(Type.Apply(Types.ChannelMpmc, elmType, _), regionType, _) => (elmType, regionType)
     case _ => throw InternalCompilerException(s"Cannot interpret '$tpe' as a channel type", tpe.loc)
+  }
+
+  /**
+    * Extracts the fields of the given type, treating it as a tuple.
+    *
+    * If the given type is Unit, returns Nil.
+    * If the given type is not a tuple, returns the given type.
+    */
+  private def extractTuplishTypes(tpe0: Type): List[Type] = {
+    val tpe = eraseAliases(tpe0)
+    tpe.typeConstructor match {
+      case Some(TypeConstructor.Tuple(_)) => tpe.typeArguments
+      case Some(TypeConstructor.Unit) => Nil
+      case _ => List(tpe)
+    }
   }
 
   /**
@@ -1857,9 +1881,9 @@ object Lowering {
       val e2 = substExp(exp2, subst)
       LoweredAst.Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
-    case LoweredAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+    case LoweredAst.Expr.ApplyDef(sym, exps, targs, itpe, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
-      LoweredAst.Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
+      LoweredAst.Expr.ApplyDef(sym, es, targs, itpe, tpe, eff, loc)
 
     case LoweredAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
@@ -1869,9 +1893,9 @@ object Lowering {
       val es = exps.map(substExp(_, subst))
       LoweredAst.Expr.ApplyOp(sym, es, tpe, eff, loc)
 
-    case LoweredAst.Expr.ApplySig(sym, exps, itpe, tpe, eff, loc) =>
+    case LoweredAst.Expr.ApplySig(sym, exps, targ, targs, itpe, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
-      LoweredAst.Expr.ApplySig(sym, es, itpe, tpe, eff, loc)
+      LoweredAst.Expr.ApplySig(sym, es, targ, targs, itpe, tpe, eff, loc)
 
     case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
