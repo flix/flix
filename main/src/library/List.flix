@@ -526,6 +526,15 @@ mod List {
     }
 
     ///
+    /// Helper function for `permutations`.
+    ///
+    def removeIndex(i: Int32, l: List[a]): List[a] = match (i, l) {
+        case (_, Nil) => l
+        case (0, _ :: xs) => xs
+        case (p, x :: xs) => x :: removeIndex(p - 1, xs)
+    }
+
+    ///
     /// Returns `l` without adjacent duplicates according to their `Eq` instance.
     ///
     /// The first occurence in a chain of duplicates is kept.
@@ -554,15 +563,6 @@ mod List {
             case Nil     => Nil
             case x :: xs => loop(x, x :: Nil, xs)
         }
-    }
-
-    ///
-    /// Helper function for `permutations`.
-    ///
-    def removeIndex(i: Int32, l: List[a]): List[a] = match (i, l) {
-        case (_, Nil) => l
-        case (0, _ :: xs) => xs
-        case (p, x :: xs) => x :: removeIndex(p - 1, xs)
     }
 
     ///
