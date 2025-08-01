@@ -147,19 +147,13 @@ mod Fixpoint3.Solver {
     /// Returns the given provenance model `model` as a Datalog value.
     ///
     def provenanceModeltoModel(model: Map[RelSym, BPlusTree[Vector[Boxed], (Int64, Int32), IO]]): Map[RelSym, BPlusTree[Vector[Boxed], Boxed, IO]] = unsafely IO run {
-        model |> 
+        model |>
         Map.map(old -> {
             let newTree = BPlusTree.empty(Static);
             old |> BPlusTree.forEach(k -> _ -> BPlusTree.put(k, Boxed.NoValue, newTree));
             newTree
         })
     }
-
-    ///
-    /// Returns the provenance of fact `f` of relation `p` given Datalog program `d`.
-    ///
-    @Internal
-    pub def provenanceOf(f: Vector[Boxed], p: PredSym, d: Datalog, mapping: PredSym -> Vector[Boxed] -> t): Vector[t] = ???
 
     ///
     /// Project all facts in the given Datalog program `d` that has `p` in its head.
