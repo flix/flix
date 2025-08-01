@@ -37,14 +37,14 @@ mod Fixpoint3.Ast.Datalog {
     /// `Datalog(facts, rules)` is a Datalog program where `facts` and `rules` are the
     /// facts and rules of the program, respectively.
     ///
-    /// `Model(factsMap)` is a model containing the facts given by `factsMap`.
+    /// `Model(factsMap)` is a model mapping `RelSym` the their `IDB`/facts.
     ///
     /// `Join(p1, p2)` is the combination of Datalog programs `p1` and `p2`.
     ///
     @Internal
     pub enum Datalog {
         case Datalog(Vector[Constraint], Vector[Constraint])
-        case Model(Map[RelSym, Map[Vector[Boxed], Boxed]])
+        case Model(Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]])
         case Join(Datalog, Datalog)
     }
 
@@ -92,18 +92,19 @@ mod Fixpoint3.Ast.Datalog {
                 if(not Fixpoint3.Options.enableDebugPrintFacts()) {
                     "Printing facts disabled."
                 } else {
-                    Map.iterator(rc, db)
-                        |> Iterator.flatMap(match (ramSym, rel) -> {
-                            Map.iterator(rc, rel) |> Iterator.map(match (tuple, lat) -> {
+                   unsafely IO run {
+                        let builder = StringBuilder.empty(rc);
+                        db |> Map.forEach(relSym -> innerMap ->
+                            innerMap |> BPlusTree.forEach(tuple -> lat -> {
                                 let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
-                                match toDenotation(ramSym) {
-                                    case Relational => "${ramSym}(${tupleString})."
-                                    case Latticenal(_, _, _, _) => "${ramSym}(${tupleString}; %{lat})."
+                                match toDenotation(relSym) {
+                                    case Relational => StringBuilder.append("${relSym}(${tupleString}).${String.lineSeparator()}", builder)
+                                    case Latticenal(_, _, _, _) => StringBuilder.append("${relSym}(${tupleString}; %{lat}).${String.lineSeparator()}", builder)
                                 }
                             })
-                        })
-                        |> Iterator.join(String.lineSeparator())
-                        + String.lineSeparator()
+                        );
+                        StringBuilder.toString(builder)
+                    }
                 }
             }
             case Datalog.Join(d1, d2) => {
