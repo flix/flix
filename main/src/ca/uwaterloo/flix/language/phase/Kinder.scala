@@ -1765,7 +1765,7 @@ object Kinder {
     * Contains kind information necessary for kinding types in the program.
     *
     * We use a trait here so that RootEnv can implement it as well.
-    * (Avoids having extra implicit arguments).
+    * (Avoids having extra implicit arguments.)
     */
   private trait TypeAliasEnv {
     def aliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias]
