@@ -827,8 +827,7 @@ object Lowering {
       }
       val preds = ??? // How to get this information from tpe? Ex: tpe = XVar[#(P(String), Q(Int32, Int64))]
       val extVarType = Types.mkExtVarType(preds, loc)
-      val extVarDef = visitDef(mkExtVarDef(preds, extVarType, loc)) // What to do with this...
-      val lambdaExp = visitExp(mkExtVarLambda(extVarType, loc))
+      val lambdaExp = visitExp(mkExtVarLambda(preds, extVarType, loc))
       val argExps = mkPredSym(goalPred) :: goalTerms ::: mergeExp :: lambdaExp :: Nil
       val itpe = Types.mkProvenanceType(extVarType, loc)
       val resultType = Types.mkVector(extVarType, loc)
@@ -1737,29 +1736,17 @@ object Lowering {
     *   predSym -> terms -> mkExtVar(predSym, terms)
     * }}}
     */
-  private def mkExtVarLambda(tpe: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): TypedAst.Expr = {
-    val arg1 = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
-    val arg2 = Symbol.freshVarSym("y", BoundBy.FormalParam, loc)
+  private def mkExtVarLambda(preds: List[(Name.Pred, List[Type])], tpe: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): TypedAst.Expr = {
+    val arg1 = Symbol.freshVarSym("predSym", BoundBy.FormalParam, loc)
+    val arg2 = Symbol.freshVarSym("terms", BoundBy.FormalParam, loc)
     val vectorOfBoxed = Types.mkVector(Types.Boxed, loc)
     mkLambdaExp(arg1, Types.PredSym,
       exp = mkLambdaExp(arg2, vectorOfBoxed,
-        exp = TypedAst.Expr.ApplyDef(
-          DefSymUse(Defs.MkExtensibleVar, loc),
-          exps = List(TypedAst.Expr.Var(arg1, Types.PredSym, loc), TypedAst.Expr.Var(arg2, vectorOfBoxed, loc)),
-          targs = List.empty,
-          itpe = Type.mkPureUncurriedArrow(List(Types.PredSym, vectorOfBoxed), tpe, loc),
-          tpe = tpe, eff = Type.Pure, loc
-        ),
+        exp = mkExtVarOuterBody(preds, arg1, arg2, tpe, loc),
         expTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, vectorOfBoxed), tpe, loc), loc
       ),
       expTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, vectorOfBoxed), tpe, loc), loc
     )
-  }
-
-  private def mkExtVarDef(preds: List[(Name.Pred, List[Type])], tpe: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): TypedAst.Def = {
-    val predSym = Symbol.freshVarSym(Name.Ident("predSym", loc), BoundBy.FormalParam)
-    val terms = Symbol.freshVarSym(Name.Ident("terms", loc), BoundBy.FormalParam)
-    TypedAst.Def(Defs.MkExtensibleVar, mkExtVarSpec(predSym, terms, tpe, loc), mkExtVarOuterBody(preds, predSym, terms, tpe, loc), loc)
   }
 
   private def mkExtVarOuterBody(preds: List[(Name.Pred, List[Type])], predSymVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): TypedAst.Expr = {
@@ -1837,29 +1824,6 @@ object Lowering {
     TypedAst.Expr.Match(TypedAst.Expr.Var(nameVar, Type.Str, loc), rules, tpe, Type.Pure, loc
     )
   }
-
-  private def mkExtVarSpec(predSymVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation): TypedAst.Spec =
-    TypedAst.Spec(
-      doc = Doc(Nil, loc),
-      ann = Annotations.Empty,
-      mod = Modifiers.Empty,
-      tparams = Nil,
-      fparams = List(
-        TypedAst.FormalParam(
-          TypedAst.Binder(predSymVar, Types.PredSym),
-          Modifiers.Empty, Types.PredSym, TypeSource.Ascribed, loc
-        ),
-        TypedAst.FormalParam(
-          TypedAst.Binder(termsVar, Types.mkVector(Types.Boxed, loc)),
-          Modifiers.Empty, Types.mkVector(Types.Boxed, loc), TypeSource.Ascribed, loc
-        )
-      ),
-      declaredScheme = ???,
-      retTpe = tpe,
-      eff = Type.Pure,
-      tconstrs = Nil,
-      econstrs = Nil
-    )
 
   /**
     * The type of a channel which can transmit variables of type `tpe`.
