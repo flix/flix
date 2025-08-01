@@ -41,21 +41,30 @@ mod Fixpoint3.Ast.Datalog {
     ///
     /// `Join(p1, p2)` is the combination of Datalog programs `p1` and `p2`.
     ///
+    /// `Provenance(rules, model)` is a Datalog model where `model` is a map from
+    /// computed facts to annotations of the form `(depth, ruleUsed)` and `rules`
+    /// are the rules used during the computation of `model`.
+    ///
     @Internal
     pub enum Datalog {
         case Datalog(Vector[Constraint], Vector[Constraint])
         case Model(Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]])
         case Join(Datalog, Datalog)
+        case Provenance(Vector[Constraint], Map[RelSym, BPlusTree[Vector[Boxed], (Int64, Int32), Static]])
     }
 
     instance PredSymsOf[Datalog] {
         pub def predSymsOf(x: Datalog): Set[PredSym] = match x {
-            case Datalog.Datalog(facts, rules) =>
+            case Datalog.Datalog(facts, rules)    =>
                 let factSyms = facts |> Vector.map(predSymsOf) |> Monoid.fold;
                 let ruleSyms = rules |> Vector.map(predSymsOf) |> Monoid.fold;
                 factSyms ++ ruleSyms
-            case Datalog.Model(m)              => Map.keysOf(m) |> Set.toList |> List.map(predSymsOf) |> Monoid.fold
-            case Datalog.Join(v1, v2)          => predSymsOf(v1) ++ predSymsOf(v2)
+            case Datalog.Model(m)                 => Map.keysOf(m) |> Set.toList |> List.map(predSymsOf) |> Monoid.fold
+            case Datalog.Join(v1, v2)             => predSymsOf(v1) ++ predSymsOf(v2)
+            case Datalog.Provenance(rules, model) =>
+                let ruleSyms = rules |> Vector.map(predSymsOf) |> Monoid.fold;
+                let modelSyms = Map.keysOf(model) |> Set.map(predSymsOf) |> Monoid.fold;
+                ruleSyms ++ modelSyms
         }
     }
 
@@ -72,6 +81,12 @@ mod Fixpoint3.Ast.Datalog {
                 };
                 Datalog.Model(Map.foldLeftWithKey(f, Map.empty(), m))
             case Datalog.Join(v1, v2) => Datalog.Join(substitute(v1, s), substitute(v2, s))
+            case Datalog.Provenance(rules, model) =>
+                let newRules = Vector.map(c -> substitute(c, s), rules);
+                let newModel = (Map#{}, model) ||> Map.foldLeftWithKey(acc -> pred -> facts -> 
+                    Map.insert(substitute(pred, s), facts, acc)
+                );
+                Datalog.Provenance(newRules, newModel)
         }
     }
 
@@ -110,6 +125,21 @@ mod Fixpoint3.Ast.Datalog {
             case Datalog.Join(d1, d2) => {
                 let lineSep = String.lineSeparator();
                 "${d1}${lineSep}${d2}${lineSep}"
+            }
+            case Datalog.Provenance(_, db) => region rc {
+                unsafely IO run {
+                    let indent = String.repeat(4, " ");
+                    Map.joinWith(predSym -> facts -> {
+                        let builder = StringBuilder.empty(rc);
+                        facts |> BPlusTree.forEach(fact -> annotation -> {
+                            StringBuilder.append("${indent}${fact} @ ${annotation},{String.lineSeparator()}${indent}", builder)
+                        });
+                        let textOverflow = String.length("$,{String.lineSeparator()}${indent}");
+                        let rawFactString = StringBuilder.toString(builder);
+                        let factsString = String.sliceLeft(end = String.length(rawFactString)- textOverflow, rawFactString);
+                        "${predSym}:${String.lineSeparator()}${factsString}"
+                    }, "${String.lineSeparator()}", db)
+                }
             }
         }
     }

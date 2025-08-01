@@ -375,6 +375,17 @@ mod Fixpoint3.Ast.Ram {
     }
 
     ///
+    /// Returns a `RelSym` wrapper of the `predSym`.
+    ///
+    /// The returned `RelSym` is equivalent to a 'real' `RelSym` with respect
+    /// to the `Order` on `RelSym`.
+    ///
+    /// Used for accessing values in maps.
+    ///
+    @Internal
+    pub def makeFakeRelSym(predSym: PredSym): RelSym = RelSym.Symbol(predSym, -1, Relational)
+
+    ///
     /// Returns the arity of `relSym`.
     ///
     @Internal
