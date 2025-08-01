@@ -538,7 +538,7 @@ mod List {
     ///
     /// The first occurence in a chain of duplicates is kept.
     ///
-    /// `f` is assumed to be symmetric and transitive.
+    /// `f` must defined an equivalence relation on the elements of the list.
     ///
     pub def removeAdjDupsWith(f: a -> a -> Bool \ ef, l: List[a]): List[a] \ ef = {
         def loop(head, acc, ll) = match ll {
