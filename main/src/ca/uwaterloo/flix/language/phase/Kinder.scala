@@ -260,7 +260,6 @@ object Kinder {
     * Performs kinding on the all the definition specifications in the given root.
     */
   private def visitDefSpecs(root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, KindedAst.Spec] = {
-    //    changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef(_, KindEnv.empty, root)))
     ParOps.parMapValues(root.defs) {
       case defn =>
         val kenv = getKindEnvFromSpec(defn.spec, KindEnv.empty, root)
@@ -295,7 +294,8 @@ object Kinder {
   private def visitDef(def0: ResolvedAst.Declaration.Def, kenv0: KindEnv, root: ResolvedAst.Root)(implicit renv: RootEnv, sctx: SharedContext, flix: Flix): KindedAst.Def = def0 match {
     case ResolvedAst.Declaration.Def(sym, spec0, exp0, loc) =>
       val kenv = getKindEnvFromSpec(spec0, kenv0, root)
-      val spec = visitSpec(spec0, Nil, None, kenv, root) // TODO we can look this up in the renv in some cases (not laws and instance defs)
+      // if the spec is already calculated (this is a top-level def), then just look it up
+      val spec = renv.defSpecs.get(sym).getOrElse(visitSpec(spec0, Nil, None, kenv, root))
       val exp = visitExp(exp0, kenv, root)(Scope.Top, renv, sctx, flix)
       KindedAst.Def(sym, spec, exp, loc)
   }
