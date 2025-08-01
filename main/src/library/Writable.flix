@@ -22,7 +22,7 @@ import java.io.OutputStream
 ///
 /// A trait for types which are resources that can be written to.
 ///
-trait Writeable[t] {
+trait Writable[t] {
 
     ///
     /// Type of each element that can be written to the resource.
@@ -43,11 +43,11 @@ trait Writeable[t] {
     ///
     /// Returns `Err(e)` if some underlying I/O error occurs.
     ///
-    pub def write(buffer: Array[Writeable.Elm[t], r], writer: t): Result[IoError, Int32] \ r + Writeable.Aef[t]
+    pub def write(buffer: Array[Writable.Elm[t], r], writer: t): Result[IoError, Int32] \ r + Writable.Aef[t]
 
 }
 
-instance Writeable[OutputStream] {
+instance Writable[OutputStream] {
 
     type Elm = Int8
 

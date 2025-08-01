@@ -33,7 +33,7 @@ instance Readable[TcpSocket] {
         TcpSocket.read(buffer, socket)
 }
 
-instance Writeable[TcpSocket] {
+instance Writable[TcpSocket] {
 
     type Elm = Int8
 
@@ -52,6 +52,6 @@ mod TcpSocket {
 
     pub def write(buffer: Array[Int8, r], socket: TcpSocket): Result[IoError, Int32] \ r + IO =
         let TcpSocket(_, _, outputStream) = socket;
-        Writeable.write(buffer, outputStream)
+        Writable.write(buffer, outputStream)
 
 }
