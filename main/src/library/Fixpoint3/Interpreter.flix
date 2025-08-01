@@ -116,28 +116,31 @@ mod Fixpoint3.Interpreter {
         rc: Region[r],
         relSym: RelSym,
         search: Vector[Int32],
-        tuples: Vector[(Tuple, Boxed)]
+        tuples: BPlusTree[Tuple, Boxed, r]
     ): Index[r] \ r =
-        let index = BPlusTree.emptyWithArityAndSearch(rc, usedArity(), search);
-        if (Vector.isEmpty(tuples))
-            index
+        if (BPlusTree.search(tuples) == search) tuples // We can simply use `tuples` as it has the correct order.
         else {
-            Vector.forEach(match (nonLat, lat) -> {
-                match toDenotation(relSym) {
-                    case Relational =>
-                        BPlusTree.put(nonLat, lat, index)
-                    case Latticenal(_, _, lub, _) =>
-                        BPlusTree.putWith(lub, nonLat, lat, index)
-                }
-            }, tuples);
-            index
+            let index = BPlusTree.emptyWithArityAndSearch(rc, usedArity(), search);
+            if (BPlusTree.isEmpty(tuples))
+                index
+            else {
+                BPlusTree.forEach(match nonLat -> lat -> {
+                    match toDenotation(relSym) {
+                        case Relational =>
+                            BPlusTree.put(nonLat, lat, index)
+                        case Latticenal(_, _, lub, _) =>
+                            BPlusTree.putWith(lub, nonLat, lat, index)
+                    }
+                }, tuples);
+                index
+            }
         }
 
     ///
     /// Executes the `RamProgram` in `fst(input)` using the `Boxing` in `snd(input)`.
     ///
     @Internal
-    pub def interpret(rc: Region[r], withProv: Bool, input: (RamProgram, Boxing[r])): (Database[r], Predicates) \ r =
+    pub def interpret(rc: Region[r], withProv: Bool, input: (RamProgram[r], Boxing[r])): (Database[r], Predicates) \ r =
         let (program, boxing) = input;
         // Create `Indexes` from `program`.
         let RamProgram.Program(_, facts, predicates, (indexMap, posMap), _, _) = program;
@@ -148,7 +151,7 @@ mod Fixpoint3.Interpreter {
         let indexes = Array.empty(rc, indexNum);
         allRelSyms(predicates) |> List.forEach(relSym -> {
             let searches = Vector.get(toInt32Id(relSym), indexMap);
-            let tuples = Map.getWithDefault(relSym, Vector#{}, facts);
+            let tuples = Map.getWithDefault(relSym, BPlusTree.empty(rc), facts);
             searches |> Vector.forEachWithIndex(num -> search -> {
                 let pos = Vector.get(num, Vector.get(toInt32Id(relSym), posMap));
                 storeIndex(mkIndex(rc, relSym, search, tuples), pos, indexes)
@@ -165,7 +168,7 @@ mod Fixpoint3.Interpreter {
         db: Indexes[r],
         boxing: Boxing[r],
         withProv: Bool,
-        program: RamProgram
+        program: RamProgram[r]
     ): (Database[r], Predicates) \ r = match program {
         case RamProgram.Program(stmt, _, predState, (_, indexPos), (arities, constWrites), marshallIndexes) =>
             let minEnv = arities |> Vector.map(x -> Array.repeat(rc, x, Int64.minValue()));

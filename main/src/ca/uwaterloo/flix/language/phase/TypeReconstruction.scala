@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, SolveMode}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
+import ca.uwaterloo.flix.util.collection.MapOps
 
 import java.lang.reflect.Executable
 
@@ -115,9 +116,10 @@ object TypeReconstruction {
       val e2 = visitExp(exp2)
       TypedAst.Expr.ApplyClo(e1, e2, subst(tvar), subst(evar), loc)
 
-    case KindedAst.Expr.ApplyDef(symUse, exps, itvar, tvar, evar, loc) =>
+    case KindedAst.Expr.ApplyDef(symUse, exps, targs, itvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
-      TypedAst.Expr.ApplyDef(symUse, es, subst(itvar), subst(tvar), subst(evar), loc)
+      val tas = targs.map(subst.apply)
+      TypedAst.Expr.ApplyDef(symUse, es, tas, subst(itvar), subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.ApplyLocalDef(symUse, exps, arrowTvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
@@ -132,9 +134,11 @@ object TypeReconstruction {
       val eff = subst(evar)
       TypedAst.Expr.ApplyOp(symUse, es, tpe, eff, loc)
 
-    case KindedAst.Expr.ApplySig(symUse, exps, itvar, tvar, evar, loc) =>
+    case KindedAst.Expr.ApplySig(symUse, exps, targ, targs, itvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
-      TypedAst.Expr.ApplySig(symUse, es, subst(itvar), subst(tvar), subst(evar), loc)
+      val ta = subst(targ)
+      val tas = targs.map(subst.apply)
+      TypedAst.Expr.ApplySig(symUse, es, ta, tas, subst(itvar), subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.Lambda(fparam, exp, _, loc) =>
       val p = visitFormalParam(fparam, subst)

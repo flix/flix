@@ -162,7 +162,7 @@ mod Fixpoint3.Phase.Lowering {
     /// Returns the result along with the `Boxing` used for the program
     ///
     @Internal
-    pub def lowerProgram(rc: Region[r], withProv: Bool, program: Ram.RamProgram): (ExecutableRam.RamProgram, Boxing[r]) \ r = match program { 
+    pub def lowerProgram(rc: Region[r], withProv: Bool, program: Ram.RamProgram): (ExecutableRam.RamProgram[r], Boxing[r]) \ r = match program { 
         case Ram.RamProgram.Program(stmt, _, meta, indexInfo) =>
             let idToIndex = UniqueInts.empty(rc);
             let (boxing, newFacts, idToBoxing) = Boxing.initialize(rc, withProv, program);
@@ -475,7 +475,7 @@ mod Fixpoint3.Phase.Lowering {
     /// Add `rv` to `meetWithMap`.
     ///
     /// Concretely, for `meetWithMap = (seenRV, equalitySet)`, return
-    /// `(rv:: seen, equalitySet')` where `equalitySet` is simply updated with `rv` as a 
+    /// `(rv:: seen, equalitySet')` where `equalitySet` is simply updated with `rv` as a
     /// possible value.
     ///
     def addRowVarToMeetWithMap(rv: RowVar, meetWithMap: MeetWithMap[r]): MeetWithMap[r] \ r =
@@ -588,7 +588,7 @@ mod Fixpoint3.Phase.Lowering {
     ///
     /// Returns a list `(RowVar, arity)` in `program` in the order of the nesting.
     ///
-    def collectRowVarArity(program: Ram.RamProgram): List[(RowVar, Int32)] = 
+    def collectRowVarArity(program: Ram.RamProgram): List[(RowVar, Int32)] =
         collectRowVarRelSym(program) |> List.map(match (rv, RelSym.Symbol(_, arity, _)) -> (rv, arity))
 
     ///

@@ -33,14 +33,14 @@ mod Fixpoint3.Ast.ExecutableRam {
     /// A `RamProgram` represents a further compiled Datalog program ready to be run
     /// by the interpreter.
     /// 
-    pub enum RamProgram {
-        case Program(RamStmt, Facts, Predicates, IndexInformation, (Arities, ConstWrites), RamIdToPos)
+    pub enum RamProgram[r: Region] {
+        case Program(RamStmt, Facts[r], Predicates, IndexInformation, (Arities, ConstWrites), RamIdToPos)
     }
     ///
     /// The extensible database (EDB) of a program.
     ///
     @Internal
-    pub type alias Facts = Map[RelSym, Vector[(Vector[Int64], Boxed)]]
+    pub type alias Facts[r: Region] = Map[RelSym, BPlusTree[Vector[Int64], Boxed, r]]
 
     ///
     /// `ConstWrites` describes constants used for queries and the position they should be
