@@ -818,6 +818,74 @@ mod TestVector {
         v == Vector#{-1, 0, 1, 2}
 
     /////////////////////////////////////////////////////////////////////////////
+    // removeAdjDups                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def removeAdjDups01(): Bool = {
+        let list: Vector[Int32] = Vector#{};
+        list == Vector.removeAdjDups(list)
+    }
+
+    @test
+    def removeAdjDups02(): Bool = {
+        let list: Vector[Int32] = Vector#{1};
+        list == Vector.removeAdjDups(list)
+    }
+
+    @test
+    def removeAdjDups03(): Bool = {
+        let list: Vector[Int32] = Vector#{1, 1};
+        Vector#{1} == Vector.removeAdjDups(list)
+    }
+
+    @test
+    def removeAdjDups04(): Bool = {
+        let list: Vector[Int32] = Vector#{3, 3, 3, 2, 2, 1, 2, 1, 1};
+        Vector#{3, 2, 1, 2, 1} == Vector.removeAdjDups(list)
+    }
+
+    @test
+    def removeAdjDups05(): Bool = {
+        let list: Vector[(Int32, String)] = Vector#{(1, "a"), (2, "b"), (2, "b"), (3, "c"), (3, "a"), (3, "a"), (3, "c")};
+        Vector#{(1, "a"), (2, "b"), (3, "c"), (3, "a"), (3, "c")} == Vector.removeAdjDups(list)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // removeAdjDups                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def removeAdjDupsWith01(): Bool = {
+        let list: Vector[Int32] = Vector#{};
+        list == Vector.removeAdjDupsWith(x -> y -> x == y, list)
+    }
+
+    @test
+    def removeAdjDupsWith02(): Bool = {
+        let list: Vector[Int32] = Vector#{1};
+        list == Vector.removeAdjDupsWith(x -> y -> x == y, list)
+    }
+
+    @test
+    def removeAdjDupsWith03(): Bool = {
+        let list: Vector[Int32] = Vector#{1, 1};
+        Vector#{1} == Vector.removeAdjDupsWith(x -> y -> x == y, list)
+    }
+
+    @test
+    def removeAdjDupsWith04(): Bool = {
+        let list: Vector[Int32] = Vector#{3, 3, 3, 2, 2, 1, 2, 1, 1};
+        Vector#{3, 2, 1, 2, 1} == Vector.removeAdjDupsWith(x -> y -> x == y, list)
+    }
+
+    @test
+    def removeAdjDupsWith05(): Bool = {
+        let list: Vector[(Int32, String)] = Vector#{(1, "a"), (2, "b"), (2, "c"), (3, "c"), (3, "a"), (2, "d")};
+        Vector#{(1, "a"), (2, "b"), (3, "c"), (2, "d")} == Vector.removeAdjDupsWith(x -> y -> fst(x) == fst(y), list)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // repeat                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
