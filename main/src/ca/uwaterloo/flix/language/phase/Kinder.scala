@@ -73,6 +73,7 @@ object Kinder {
     val defSpecs = visitDefSpecs(root)
     val sigSpecs = visitSigSpecs(root)
 
+    // Open a new scope so that the richer RootEnv is the implicit used for TypeAliasEnv
     {
       implicit val rootEnv: RootEnv = RootEnv(taenv.aliases, defSpecs, sigSpecs)
 
@@ -1759,19 +1760,30 @@ object Kinder {
     */
   private case class SharedContext(errors: ConcurrentLinkedQueue[KindError])
 
-  // MATT docs
+
+  /**
+    * Contains kind information necessary for kinding types in the program.
+    *
+    * We use a trait here so that RootEnv can implement it as well.
+    * (Avoids having extra implicit arguments).
+    */
+  private trait TypeAliasEnv {
+    def aliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias]
+  }
+
+  /**
+    * Contains kind information necessary for only for kinding types in the program.
+    */
+  private case class SimpleTypeAliasEnv(aliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias]) extends TypeAliasEnv
+
+  /**
+    * Contains kind information necessary for kinding the entire program.
+    */
   private case class RootEnv(
                               aliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias],
                               defSpecs: Map[Symbol.DefnSym, KindedAst.Spec],
                               sigSpecs: Map[Symbol.SigSym, KindedAst.Spec]
                             ) extends TypeAliasEnv
 
-  // MATT docs
-  private case class SimpleTypeAliasEnv(aliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias]) extends TypeAliasEnv
-
-  // MATT docs
-  private trait TypeAliasEnv {
-    def aliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias]
-  }
 
 }
