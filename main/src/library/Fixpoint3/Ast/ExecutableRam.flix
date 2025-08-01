@@ -59,8 +59,8 @@ mod Fixpoint3.Ast.ExecutableRam {
     /// the context-specified `RowVar`, `rv`, write `searchEnv[indexTo][indexInTo] = rv[indexInFrom]`.
     ///
     /// They come from rules with variables like `Head(x):- Body1(x), Body2(y, x)`, since `x` is used
-    /// twice. We would here have a `WriteTuple` of `Vector#{(0, idOfBody2, 1)}` for `Body1`.
-    /// This should be read as: The first value of `Body1` should be saved as `idOfBody2`'s
+    /// twice. We would here have a `WriteTuple` of `Vector#{(0, idOfBody2, 1)}` for `Body1`. 
+    /// This should be read as: The first value of `Body1` should be saved as `idOfBody2`'s 
     /// (the position of `Body2`) second value.
     ///
     @Internal
