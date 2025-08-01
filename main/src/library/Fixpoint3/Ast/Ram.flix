@@ -32,7 +32,7 @@ mod Fixpoint3.Ast.Ram {
     /// 
     @Internal
     pub enum RamProgram {
-        case Program(RamStmt, Facts, Predicates, IndexInformation)
+        case Program(RamStmt, FactTuple, Predicates, IndexInformation)
     }
 
     ///
@@ -46,7 +46,14 @@ mod Fixpoint3.Ast.Ram {
     /// The extensible database (EDB) of a program.
     ///
     @Internal
-    pub type alias Facts = Map[RelSym, Vector[Vector[Boxed]]]
+    pub type alias Facts = Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]
+
+    ///
+    /// `FactsTuple` consists of `(oldFacts, newFacts)`, where `oldFacts` are given through
+    /// joining a model, while `newFacts` are EDB facts written in the Datalog program.
+    ///
+    @Internal
+    pub type alias FactTuple = (Facts, Facts)
 
     ///
     /// A `Search` describes the order in which entries in a tuple are ordered. These are

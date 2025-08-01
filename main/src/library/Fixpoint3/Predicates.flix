@@ -180,7 +180,7 @@ mod Fixpoint3.Predicate {
     /// Collect all preciate information given a Datalog program `program` and database `db`.
     ///
     @Internal
-    pub def initialize(program: Datalog, db: Map[RelSym, Map[Vector[Boxed], Boxed]]): Predicates =
+    pub def initialize(program: Datalog, db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): Predicates =
         collectPreds(program, db)
 
     ///
@@ -218,7 +218,7 @@ mod Fixpoint3.Predicate {
     ///
     /// Returns a set of all full `RelSym` created from `PredSym`s in `program` and `db` and the maximal identifier+1.
     ///
-    def collectPreds(program: Datalog, db: Map[RelSym, Map[Vector[Boxed], Boxed]]): (Int64, Set[RelSym]) = match program {
+    def collectPreds(program: Datalog, db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): (Int64, Set[RelSym]) = match program {
         case Datalog(facts, rules) =>
             let set1 = collectPredicates(rules);
             let set2 = collectPredicates(facts);
@@ -235,7 +235,7 @@ mod Fixpoint3.Predicate {
     ///
     /// Returns a set of full `RelSym` in `db`.
     ///
-    def collectDbPredicates(db: Map[RelSym, Map[Vector[Boxed], Boxed]]): Set[RelSym] =
+    def collectDbPredicates(db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): Set[RelSym] =
         Map.foldLeftWithKey(set -> relSym -> _ -> {
             Set.insert(relSym, set)
         }, Set#{}, db)
