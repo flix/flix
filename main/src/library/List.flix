@@ -526,6 +526,37 @@ mod List {
     }
 
     ///
+    /// Returns `l` without adjacent duplicates according to their `Eq` instance.
+    ///
+    /// The first occurence in a chain of duplicates is kept.
+    ///
+    pub def removeAdjDups(l: List[a]): List[a] with Eq[a] = removeAdjDupsWith(Eq.eq, l)
+
+    ///
+    /// Returns `l` without adjacent duplicates according to the function `f`.
+    /// Elements `x` and `y` are duplicates if and only if `f(x, y) = true`.
+    ///
+    /// The first occurence in a chain of duplicates is kept.
+    ///
+    /// `f` is assumed to be symmetric and transitive.
+    ///
+    pub def removeAdjDupsWith(f: a -> a -> Bool \ ef, l: List[a]): List[a] \ ef = {
+        def loop(head, acc, ll) = match ll {
+            case Nil     => List.reverse(acc)
+            case x :: xs =>
+                if (f(head, x)) {
+                    loop(head, acc, xs)
+                } else {
+                    loop(x, x :: acc, xs)
+                }
+        };
+        match l {
+            case Nil     => Nil
+            case x :: xs => loop(x, x :: Nil, xs)
+        }
+    }
+
+    ///
     /// Helper function for `permutations`.
     ///
     def removeIndex(i: Int32, l: List[a]): List[a] = match (i, l) {
