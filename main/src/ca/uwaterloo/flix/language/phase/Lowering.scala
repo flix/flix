@@ -45,12 +45,14 @@ object Lowering {
   private object Defs {
     val version: String = ""
     lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.box")
+    lazy val Unbox: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.Unbox")
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.runSolver")
     lazy val SolveWithProvenance: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.runSolverWithProvenance")
     lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.union")
     lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.projectSym")
     lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.rename")
     lazy val ProvenanceOf: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint3.Solver.provenanceOf")
+    lazy val MkExtensibleVar: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint3.Solver.mkExtensibleVar")
 
     def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.injectInto$arity")
 
@@ -63,6 +65,10 @@ object Lowering {
     lazy val ChannelMpmcAdmin: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.mpmcAdmin")
     lazy val ChannelSelectFrom: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.selectFrom")
     lazy val ChannelUnsafeGetAndUnlock: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.unsafeGetAndUnlock")
+
+    lazy val VectorGet: Symbol.DefnSym = Symbol.mkDefnSym(s"Vector.get")
+
+    lazy val Bug: Symbol.DefnSym = Symbol.mkDefnSym(s"Prelude.bug!")
 
     /**
       * Returns the definition associated with the given symbol `sym`.
@@ -132,11 +138,15 @@ object Lowering {
 
     def mkVector(t: Type, loc: SourceLocation): Type = Type.mkEnum(Enums.FVector, List(t), loc)
 
-    def mkProvenanceMapping(t: Type, loc: SourceLocation): Type =
-      Type.mkPureUncurriedArrow(List(PredSym, mkVector(Boxed, loc)), t, loc)
+    def mkExtVarType(preds: List[(Name.Pred, List[Type])], loc: SourceLocation): Type =
+      Type.mkExtensible(
+        preds.foldRight(Type.mkSchemaRowEmpty(loc)) {
+          case ((p, types), acc) => Type.mkSchemaRowExtend(p, Type.mkRelation(types, loc), acc, loc)
+        }, loc
+      )
 
     def mkProvenanceType(t: Type, loc: SourceLocation): Type =
-      Type.mkPureUncurriedArrow(List(mkVector(Boxed, loc), PredSym, Datalog, mkProvenanceMapping(t, loc)), t, loc)
+      Type.mkPureUncurriedArrow(List(mkVector(Boxed, loc), PredSym, Datalog, Type.mkPureUncurriedArrow(List(PredSym, mkVector(Boxed, loc)), t, loc)), t, loc)
 
     //
     // Function Types.
@@ -803,7 +813,7 @@ object Lowering {
       val resultType = Types.Datalog
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, Types.MergeType, resultType, eff, loc)
 
-    case TypedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe, eff, loc) =>
+    case TypedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, _, eff, loc) =>
       val defn = Defs.lookup(Defs.ProvenanceOf)
       val mergeExp = exps.dropRight(1).foldRight(visitExp(exps.last)) {
         (exp, acc) =>
@@ -812,14 +822,17 @@ object Lowering {
           val resultType = Types.Datalog
           LoweredAst.Expr.ApplyDef(defn.sym, argExps, Types.MergeType, resultType, eff, loc)
       }
-      select match {
-        case TypedAst.Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
-
+      val (goalPred, goalTerms) = select match {
+        case TypedAst.Predicate.Head.Atom(pred, _, terms, _, _) => (pred, terms.map(visitExp))
       }
-      val extType = ???
-      val argExps = mergeExp :: Nil
-      val resultType = Types.mkVector(extType, loc)
-      LoweredAst.Expr.ApplyDef(defn.sym, argExps, Types.mkProvenanceType(extType, loc), resultType, eff, loc)
+      val preds = ??? // How to get this information from tpe? Ex: tpe = XVar[#(P(String), Q(Int32, Int64))]
+      val extVarType = Types.mkExtVarType(preds, loc)
+      val extVarDef = visitDef(mkExtVarDef(preds, extVarType, loc)) // What to do with this...
+      val lambdaExp = visitExp(mkExtVarLambda(extVarType, loc))
+      val argExps = mkPredSym(goalPred) :: goalTerms ::: mergeExp :: lambdaExp :: Nil
+      val itpe = Types.mkProvenanceType(extVarType, loc)
+      val resultType = Types.mkVector(extVarType, loc)
+      LoweredAst.Expr.ApplyDef(defn.sym, argExps, itpe, resultType, eff, loc)
 
     case TypedAst.Expr.FixpointSolve(exp, _, eff, mode, loc) =>
       val defn = mode match {
@@ -1714,6 +1727,139 @@ object Lowering {
     val name = prefix + Flix.Delimiter + flix.genSym.freshId()
     Symbol.freshVarSym(name, BoundBy.Let, loc)
   }
+
+  private def mkLambdaExp(param: Symbol.VarSym, paramTpe: Type, exp: TypedAst.Expr, expTpe: Type, loc: SourceLocation): TypedAst.Expr =
+    TypedAst.Expr.Lambda(TypedAst.FormalParam(TypedAst.Binder(param, paramTpe), Modifiers.Empty, paramTpe, TypeSource.Ascribed, loc), exp, expTpe, loc)
+
+  /**
+    * Returns the lambda expression:
+    * {{{
+    *   predSym -> terms -> mkExtVar(predSym, terms)
+    * }}}
+    */
+  private def mkExtVarLambda(tpe: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): TypedAst.Expr = {
+    val arg1 = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
+    val arg2 = Symbol.freshVarSym("y", BoundBy.FormalParam, loc)
+    val vectorOfBoxed = Types.mkVector(Types.Boxed, loc)
+    mkLambdaExp(arg1, Types.PredSym,
+      exp = mkLambdaExp(arg2, vectorOfBoxed,
+        exp = TypedAst.Expr.ApplyDef(
+          DefSymUse(Defs.MkExtensibleVar, loc),
+          exps = List(TypedAst.Expr.Var(arg1, Types.PredSym, loc), TypedAst.Expr.Var(arg2, vectorOfBoxed, loc)),
+          targs = List.empty,
+          itpe = Type.mkPureUncurriedArrow(List(Types.PredSym, vectorOfBoxed), tpe, loc),
+          tpe = tpe, eff = Type.Pure, loc
+        ),
+        expTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, vectorOfBoxed), tpe, loc), loc
+      ),
+      expTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, vectorOfBoxed), tpe, loc), loc
+    )
+  }
+
+  private def mkExtVarDef(preds: List[(Name.Pred, List[Type])], tpe: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): TypedAst.Def = {
+    val predSym = Symbol.freshVarSym(Name.Ident("predSym", loc), BoundBy.FormalParam)
+    val terms = Symbol.freshVarSym(Name.Ident("terms", loc), BoundBy.FormalParam)
+    TypedAst.Def(Defs.MkExtensibleVar, mkExtVarSpec(predSym, terms, tpe, loc), mkExtVarOuterBody(preds, predSym, terms, tpe, loc), loc)
+  }
+
+  private def mkExtVarOuterBody(preds: List[(Name.Pred, List[Type])], predSymVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): TypedAst.Expr = {
+    val name = Symbol.freshVarSym(Name.Ident("name", loc), BoundBy.Pattern)
+    TypedAst.Expr.Match(
+      exp = TypedAst.Expr.Var(predSymVar, Types.PredSym, loc),
+      rules = List(
+        TypedAst.MatchRule(
+          pat = TypedAst.Pattern.Tag(
+            CaseSymUse(Symbol.mkCaseSym(Enums.PredSym, Name.Ident("PredSym", loc)), loc),
+            List(
+              TypedAst.Pattern.Var(TypedAst.Binder(name, Type.Str), Type.Str, loc),
+              TypedAst.Pattern.Wild(Type.Int64, loc)
+            ),
+            Types.PredSym, loc
+          ),
+          guard = None, exp = mkExtVarInnerBody(preds, name, termsVar, tpe, loc), loc
+        )
+      ),
+      tpe = tpe, eff = Type.Pure, loc
+    )
+  }
+
+  private def mkExtVarInnerBody(preds: List[(Name.Pred, List[Type])], nameVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation): TypedAst.Expr = {
+    val vectorOfBoxed = Types.mkVector(Types.Boxed, loc)
+    val predRules = preds.map {
+      case (p, types) =>
+        val termsExps = types.zipWithIndex.map {
+          case (tpe1, i) =>
+            TypedAst.Expr.ApplyDef(
+              DefSymUse(Defs.Unbox, loc),
+              exps = List(
+                TypedAst.Expr.ApplyDef(
+                  DefSymUse(Defs.VectorGet, loc),
+                  exps = List(
+                    TypedAst.Expr.Cst(Constant.Int32(i), Type.Int32, loc),
+                    TypedAst.Expr.Var(termsVar, vectorOfBoxed, loc)
+                  ),
+                  targs = List.empty,
+                  itpe = Type.mkPureUncurriedArrow(List(Type.Int32, vectorOfBoxed), Types.Boxed, loc),
+                  tpe = Types.Boxed, eff = Type.Pure, loc = loc
+                )
+              ),
+              targs = List.empty,
+              itpe = Type.mkPureUncurriedArrow(List(Types.Boxed), tpe1, loc),
+              tpe = tpe1, eff = Type.Pure, loc = loc
+            )
+        }
+        TypedAst.MatchRule(
+          pat = TypedAst.Pattern.Cst(Constant.Str(p.name), Type.Str, loc),
+          guard = None,
+          exp = TypedAst.Expr.ExtTag(
+            label = Name.Label(p.name, loc),
+            exps = List(
+              TypedAst.Expr.Tuple(termsExps, Type.mkTuple(types, loc), Type.Pure, loc),
+            ),
+            tpe = tpe, eff = Type.Pure, loc = loc
+          ),
+          loc = loc
+        )
+    }
+    val bugRule = TypedAst.MatchRule(
+      pat = TypedAst.Pattern.Wild(Type.Str, loc),
+      guard = None,
+      exp = TypedAst.Expr.ApplyDef(
+        DefSymUse(Defs.Bug, loc),
+        exps = List(TypedAst.Expr.Cst(Constant.Str("${nameVar.text} is not a predicate"), Type.Str, loc)),
+        targs = List.empty,
+        itpe = Type.mkPureUncurriedArrow(List(Type.Str), tpe, loc),
+        tpe = tpe, eff = Type.Pure, loc = loc
+      ),
+      loc = loc
+    )
+    val rules = predRules :+ bugRule
+    TypedAst.Expr.Match(TypedAst.Expr.Var(nameVar, Type.Str, loc), rules, tpe, Type.Pure, loc
+    )
+  }
+
+  private def mkExtVarSpec(predSymVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation): TypedAst.Spec =
+    TypedAst.Spec(
+      doc = Doc(Nil, loc),
+      ann = Annotations.Empty,
+      mod = Modifiers.Empty,
+      tparams = Nil,
+      fparams = List(
+        TypedAst.FormalParam(
+          TypedAst.Binder(predSymVar, Types.PredSym),
+          Modifiers.Empty, Types.PredSym, TypeSource.Ascribed, loc
+        ),
+        TypedAst.FormalParam(
+          TypedAst.Binder(termsVar, Types.mkVector(Types.Boxed, loc)),
+          Modifiers.Empty, Types.mkVector(Types.Boxed, loc), TypeSource.Ascribed, loc
+        )
+      ),
+      declaredScheme = ???,
+      retTpe = tpe,
+      eff = Type.Pure,
+      tconstrs = Nil,
+      econstrs = Nil
+    )
 
   /**
     * The type of a channel which can transmit variables of type `tpe`.
