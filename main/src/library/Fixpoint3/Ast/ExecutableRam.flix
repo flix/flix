@@ -29,10 +29,10 @@ mod Fixpoint3.Ast.ExecutableRam {
     // RamProgram                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    /// 
+    ///
     /// A `RamProgram` represents a further compiled Datalog program ready to be run
     /// by the interpreter.
-    ///
+    /// 
     pub enum RamProgram[r: Region] {
         case Program(RamStmt, Facts[r], Predicates, IndexInformation, (Arities, ConstWrites), RamIdToPos)
     }
@@ -178,7 +178,7 @@ mod Fixpoint3.Ast.ExecutableRam {
                 case RelOp.Query(var, ramSym, _, _, writes, body) =>
                     let writeString = Vector.joinWith(match term -> ToString.toString(term), " ∧ ", writes);
                     "query {x${var} ∈ indexes[${ramSym}] | ${writeString}} do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Functional(id, _, terms, _, body, _) =>
+                case RelOp.Functional(id, _, terms, _, body, _) => 
                     "loop(x${id} <- f(${terms |> Vector.join(", ")})) do${nl}${String.indent(4, "${body}")}end"
                 case RelOp.Project(terms, ramSym, _) =>
                     "project (${terms |> Vector.join(", ")}) into ${ramSym}"
