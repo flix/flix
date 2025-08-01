@@ -822,13 +822,13 @@ object Lowering {
           val resultType = Types.Datalog
           LoweredAst.Expr.ApplyDef(defn.sym, argExps, Types.MergeType, resultType, eff, loc)
       }
-      val (goalPred, goalTerms) = select match {
-        case TypedAst.Predicate.Head.Atom(pred, _, terms, _, _) => (pred, terms.map(visitExp))
+      val (goalPredSym, goalTerms) = select match {
+        case TypedAst.Predicate.Head.Atom(pred, _, terms, _, _) => (mkPredSym(pred), terms.map(visitExp))
       }
       val preds = ??? // How to get this information from tpe? Ex: tpe = XVar[#(P(String), Q(Int32, Int64))]
       val extVarType = Types.mkExtVarType(preds, loc)
       val lambdaExp = visitExp(mkExtVarLambda(preds, extVarType, loc))
-      val argExps = mkPredSym(goalPred) :: goalTerms ::: mergeExp :: lambdaExp :: Nil
+      val argExps = goalPredSym :: goalTerms ::: mergeExp :: lambdaExp :: Nil
       val itpe = Types.mkProvenanceType(extVarType, loc)
       val resultType = Types.mkVector(extVarType, loc)
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, itpe, resultType, eff, loc)
