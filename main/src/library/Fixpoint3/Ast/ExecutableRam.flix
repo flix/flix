@@ -29,7 +29,7 @@ mod Fixpoint3.Ast.ExecutableRam {
     // RamProgram                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    ///
+    /// 
     /// A `RamProgram` represents a further compiled Datalog program ready to be run
     /// by the interpreter.
     ///
@@ -134,7 +134,7 @@ mod Fixpoint3.Ast.ExecutableRam {
     /////////////////////////////////////////////////////////////////////////////
     // RelOp                                                                   //
     /////////////////////////////////////////////////////////////////////////////
-
+    
     ///
     /// `Search(rvPos, indexPos, meet, den, writeTuple, body)` iterates the facts in the
     /// index at `indexPos` saving them at `rvPos` and using the facts as context for
@@ -303,5 +303,5 @@ mod Fixpoint3.Ast.ExecutableRam {
             case RamTerm.App5(_, v1, v2, v3, v4, v5, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
         }
     }
-
+    
 }
