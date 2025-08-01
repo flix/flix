@@ -294,31 +294,32 @@ mod TestList {
     /////////////////////////////////////////////////////////////////////////////
     // removeAdjDups                                                           //
     /////////////////////////////////////////////////////////////////////////////
-    @test
+
+    @Test
     def removeAdjDups01(): Bool = {
         let list: List[Int32] = Nil;
         list == List.removeAdjDups(list)
     }
 
-    @test
+    @Test
     def removeAdjDups02(): Bool = {
         let list: List[Int32] = 1 :: Nil;
         list == List.removeAdjDups(list)
     }
 
-    @test
+    @Test
     def removeAdjDups03(): Bool = {
         let list: List[Int32] = 1 :: 1 :: Nil;
         1 :: Nil == List.removeAdjDups(list)
     }
 
-    @test
+    @Test
     def removeAdjDups04(): Bool = {
         let list: List[Int32] = 3 :: 3 :: 3 :: 2 :: 2 :: 1 :: 2 :: 1 :: 1 :: Nil;
         3 :: 2 :: 1 :: 2 :: 1 :: Nil == List.removeAdjDups(list)
     }
 
-    @test
+    @Test
     def removeAdjDups05(): Bool = {
         let list: List[(Int32, String)] = (1, "a") :: (2, "b") :: (2, "b") :: (3, "c") :: (3, "a") :: (3, "a") :: (3, "c") :: Nil;
         (1, "a") :: (2, "b") :: (3, "c") :: (3, "a") :: (3, "c") :: Nil == List.removeAdjDups(list)
@@ -327,31 +328,32 @@ mod TestList {
     /////////////////////////////////////////////////////////////////////////////
     // removeAdjDupsWith                                                       //
     /////////////////////////////////////////////////////////////////////////////
-    @test
+
+    @Test
     def removeAdjDupsWith01(): Bool = {
         let list: List[Int32] = Nil;
         list == List.removeAdjDupsWith(x -> y -> x == y, list)
     }
 
-    @test
+    @Test
     def removeAdjDupsWith02(): Bool = {
         let list: List[Int32] = 1 :: Nil;
         list == List.removeAdjDupsWith(x -> y -> x == y, list)
     }
 
-    @test
+    @Test
     def removeAdjDupsWith03(): Bool = {
         let list: List[Int32] = 1 :: 1 :: Nil;
         1 :: Nil == List.removeAdjDupsWith(x -> y -> x == y, list)
     }
 
-    @test
+    @Test
     def removeAdjDupsWith04(): Bool = {
         let list: List[Int32] = 3 :: 3 :: 3 :: 2 :: 2 :: 1 :: 2 :: 1 :: 1 :: Nil;
         3 :: 2 :: 1 :: 2 :: 1 :: Nil == List.removeAdjDupsWith(x -> y -> x == y, list)
     }
 
-    @test
+    @Test
     def removeAdjDupsWith05(): Bool = {
         let list: List[(Int32, String)] = (1, "a") :: (2, "b") :: (2, "c") :: (3, "c") :: (3, "a") :: (2, "d") :: Nil;
         (1, "a") :: (2, "b") :: (3, "c") :: (2, "d") :: Nil == List.removeAdjDupsWith(x -> y -> fst(x) == fst(y), list)
