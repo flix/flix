@@ -48,6 +48,13 @@ mod Fixpoint3.Solver {
     }
 
     ///
+    /// Returns a provenance model of the given Datalog program `d`.
+    /// The provenance model can later be used for provenance queries.
+    ///
+    @Internal
+    pub def runSolverWithProvenance(d: Datalog): Datalog = ???
+
+    ///
     /// Returns the minimal model of the given Datalog program `d`.
     /// The minimal model is given by the model semantics for Datalog programs with stratified negation.
     /// A stratification of `d` is given by `stf`.
@@ -119,6 +126,12 @@ mod Fixpoint3.Solver {
         case (Model(_), Join(model, datalog)) => Join(union(model, d1), datalog)
         case (Join(x, y), Join(z, w)) => Join(union(x, z), union(y, w))
     }
+
+    ///
+    /// Returns the provenance of fact `f` of relation `p` given Datalog program `d`.
+    ///
+    @Internal
+    pub def provenanceOf(f: Vector[Boxed], p: PredSym, d: Datalog, mapping: PredSym -> Vector[Boxed] -> t): Vector[t] = ???
 
     ///
     /// Project all facts in the given Datalog program `d` that has `p` in its head.
