@@ -118,6 +118,11 @@ instance Iterable[Map[k, v]] {
     pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), r, r] \ r = Map.iterator(rc, m)
 }
 
+instance ForEach[Map[k, v]] {
+    type Elm = (k, v)
+    pub def forEach(f: ((k, v)) -> Unit \ ef, t: Map[k, v]): Unit \ ef = Map.forEach(k -> v -> f((k, v)), t)
+}
+
 instance ToJava[Map[k, v]] with Order[k] {
     type Out = JMap
     type Aef = IO

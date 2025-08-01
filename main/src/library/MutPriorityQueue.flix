@@ -35,6 +35,14 @@ instance Iterable[MutPriorityQueue[a, r]] {
     pub def iterator(rc: Region[r1], q: MutPriorityQueue[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutPriorityQueue.iterator(rc, q)
 }
 
+instance ForEach[MutPriorityQueue[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def forEach(f: a -> Unit \ ef, q: MutPriorityQueue[a, r]): Unit \ ef + r = region rc {
+        MutPriorityQueue.iterator(rc, q) |> Iterator.forEach(f)
+    }
+}
+
 mod MutPriorityQueue {
 
     ///
