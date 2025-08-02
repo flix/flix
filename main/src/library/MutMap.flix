@@ -47,6 +47,12 @@ instance Iterable[MutMap[k, v, r]] {
         MutMap.iterator(rc, m)
 }
 
+instance ForEach[MutMap[k, v, r]] {
+    type Elm = (k, v)
+    type Aef = r
+    pub def forEach(f: ((k, v)) -> Unit \ ef, m: MutMap[k, v, r]): Unit \ ef + r = MutMap.forEach(k -> v -> f((k, v)), m)
+}
+
 mod MutMap {
 
     ///

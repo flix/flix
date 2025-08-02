@@ -59,6 +59,11 @@ instance Iterable[DelayMap[k, v]] {
         DelayMap.iterator(rc, m)
 }
 
+instance ForEach[DelayMap[k, v]] {
+    type Elm = (k, v)
+    pub def forEach(f: ((k, v)) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef = DelayMap.forEach(k -> v -> f((k, v)), m)
+}
+
 mod DelayMap {
 
     import java.lang.Runtime

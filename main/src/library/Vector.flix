@@ -125,6 +125,10 @@ instance ToJava[Vector[a]] {
     pub def toJava(v: Vector[a]): JList \ IO = Adaptor.toList(v)
 }
 
+instance ForEach[Vector[a]] {
+    type Elm = a
+    pub def forEach(f: a -> Unit \ ef, v: Vector[a]): Unit \ ef = Vector.forEach(f, v)
+}
 
 instance ToFlix[Vector[a]] {
     type In = JList

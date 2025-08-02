@@ -92,6 +92,11 @@ instance Iterable[RedBlackTree[k, v]] {
             RedBlackTree.iterator(rc, t)
 }
 
+instance ForEach[RedBlackTree[k, v]] {
+    type Elm = (k, v)
+    pub def forEach(f: ((k, v)) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = RedBlackTree.forEach(k -> v -> f((k, v)), t)
+}
+
 mod RedBlackTree {
 
     import java.lang.Runtime

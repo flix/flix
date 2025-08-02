@@ -124,6 +124,11 @@ instance Iterable[DelayList[a]] {
     pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r = DelayList.iterator(rc, l)
 }
 
+instance ForEach[DelayList[a]] {
+    type Elm = a
+    pub def forEach(f: a -> Unit \ ef, l: DelayList[a]): Unit \ ef = DelayList.forEach(f, l)
+}
+
 mod DelayList {
 
     ///

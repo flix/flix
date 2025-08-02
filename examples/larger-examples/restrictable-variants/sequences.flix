@@ -909,3 +909,8 @@ instance Iterable[Seq.Seq[s][a]] {
     type Elm = a
     pub def iterator(rc: Region[r], l: Seq.Seq[s][a]): Iterator[a, r, r] \ r = Seq.iterator(rc, l)
 }
+
+instance ForEach[Seq.Seq[s][a]] {
+    type Elm = a
+    pub def forEach(f: a -> Unit \ ef, t: Seq.Seq[s][a]): Unit \ ef = Seq.forEach(f, t)
+}

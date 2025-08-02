@@ -40,6 +40,12 @@ instance Iterable[MutDeque[a, r]] {
     pub def iterator(rc: Region[r1], md: MutDeque[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutDeque.iterator(rc, md)
 }
 
+instance ForEach[MutDeque[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def forEach(f: a -> Unit \ ef, md: MutDeque[a, r]): Unit \ ef + r = MutDeque.forEach(f, md)
+}
+
 mod MutDeque {
 
     ///

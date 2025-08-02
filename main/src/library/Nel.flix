@@ -118,6 +118,11 @@ instance Iterable[Nel[a]] {
     pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ r = Nel.iterator(rc, l)
 }
 
+instance ForEach[Nel[a]] {
+    type Elm = a
+    pub def forEach(f: a -> Unit \ ef, l: Nel[a]): Unit \ ef = Nel.forEach(f, l)
+}
+
 instance ToJava[Nel[a]] {
     type Out = JList
     type Aef = IO

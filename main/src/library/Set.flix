@@ -99,6 +99,11 @@ instance Iterable[Set[a]] {
     pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r = Set.iterator(rc, s)
 }
 
+instance ForEach[Set[a]] {
+    type Elm = a
+    pub def forEach(f: a -> Unit \ ef, s: Set[a]): Unit \ ef = Set.forEach(f, s)
+}
+
 instance ToJava[Set[a]] with Order[a] {
     type Out = JSet
     type Aef = IO
