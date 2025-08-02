@@ -33,6 +33,12 @@ instance Iterable[MutList[a, r]] {
     pub def iterator(rc: Region[r1], l: MutList[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutList.iterator(rc, l)
 }
 
+instance ForEach[MutList[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def forEach(f: a -> Unit \ ef, l: MutList[a, r]): Unit \ ef + r = MutList.forEach(f, l)
+}
+
 instance Indexable[MutList[a, r]] {
     type Idx = Int32
     type Elm = a

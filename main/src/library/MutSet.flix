@@ -27,6 +27,12 @@ instance Iterable[MutSet[a, r]] {
     pub def iterator(rc: Region[r1], s: MutSet[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutSet.iterator(rc, s)
 }
 
+instance ForEach[MutSet[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def forEach(f: a -> Unit \ ef, s: MutSet[a, r]): Unit \ ef + r = MutSet.forEach(f, s)
+}
+
 mod MutSet {
 
     ///

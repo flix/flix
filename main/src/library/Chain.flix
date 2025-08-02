@@ -114,6 +114,11 @@ instance Iterable[Chain[a]] {
     pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r = Chain.iterator(rc, c)
 }
 
+instance ForEach[Chain[a]] {
+    type Elm = a
+    pub def forEach(f: a -> Unit \ ef, c: Chain[a]): Unit \ ef = Chain.forEach(f, c)
+}
+
 instance ToJava[Chain[a]] {
     type Out = JList
     type Aef = IO

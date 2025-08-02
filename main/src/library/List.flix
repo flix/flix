@@ -128,6 +128,11 @@ instance Iterable[List[a]] {
     pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ r = List.iterator(rc, l)
 }
 
+instance ForEach[List[a]] {
+    type Elm = a
+    pub def forEach(f: a -> Unit \ ef, t: List[a]): Unit \ ef = List.forEach(f, t)
+}
+
 instance ToJava[List[a]] {
     type Out = JList
     type Aef = IO

@@ -47,6 +47,12 @@ instance Iterable[Array[a, r]] {
         checked_ecast(Array.iterator(rc, a))
 }
 
+instance ForEach[Array[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def forEach(f: a -> Unit \ ef, a: Array[a, r]): Unit \ ef + r = Array.forEach(f, a)
+}
+
 mod Array {
     import java.lang.Object
     import java.lang.System
