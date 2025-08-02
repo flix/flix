@@ -63,4 +63,32 @@ trait Peekable[t] with Readable[t] {
     ///
     pub def readUntil(p: Readable.Elm[t] -> Bool, reader: t): Result[IoError, Vector[Readable.Elm[t]]] \ Readable.Aef[t] = Peekable.readWhile(x -> not p(x), reader)
 
+    ///
+    /// Reads a single line from the `reader`.
+    ///
+    /// Returns `Ok(l)` where `l` is the first line. Returns `Ok("")` if EOF has been reached, or if an empty line was read.
+    ///
+    /// Lines are delineated by `\n`, `\r`, or `\r\n`. `\n` and `\r` characters are not included in the returned String.
+    ///
+    /// Returns `Err(err)` if there is an IO error.
+    ///
+    pub def readLine(reader: t): Result[IoError, String] \ Readable.Aef[t] where Readable.Elm[t] ~ Char =
+        forM(
+            line <- Peekable.readUntil(c -> c == '\n' or c == '\r', reader);
+            delim1 <- Peekable.peek(reader);
+            _ <- if (delim1 == Some('\n') or delim1 == Some('\r')) Peekable.skip(1, reader) else Ok(0);
+            _ <- if (delim1 == Some('\r')) {
+                forM(
+                    delim2 <- Peekable.peek(reader);
+                    res <- if (delim2 == Some('\n')) Peekable.skip(1, reader) else Ok(0)
+                ) yield res
+            } else Ok(0)
+        ) yield region rc {
+            let builder = StringBuilder.empty(rc);
+            foreach(char <- line) {
+                StringBuilder.append(char, builder)
+            };
+            StringBuilder.toString(builder)
+        }
+
 }
