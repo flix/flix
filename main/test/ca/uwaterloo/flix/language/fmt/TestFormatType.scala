@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TypeAliasSymUse
-import ca.uwaterloo.flix.language.ast.shared.{Scope, SymbolSet, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{Scope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -29,6 +29,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
   private val standardFormat = FormatOptions(
     FormatOptions.VarName.NameBased
   )
+
   test("FormatType.Type.Record.External.01") {
     val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Label("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc), loc)
 
