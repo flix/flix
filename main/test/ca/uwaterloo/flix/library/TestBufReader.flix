@@ -2243,6 +2243,424 @@
         word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector("world"))
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // readLine                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def readLine01(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("")
+    }
+
+    @test
+    def readLine02(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'\n'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("")
+    }
+
+    @test
+    def readLine03(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'\r'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("")
+    }
+
+    @test
+    def readLine04(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'\r', '\n'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("")
+    }
+
+    @test
+    def readLine05(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("hello world")
+    }
+
+    @test
+    def readLine06(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("hello world")
+    }
+
+    @test
+    def readLine07(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\r'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("hello world")
+    }
+
+    @test
+    def readLine08(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\r', '\n'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("hello world")
+    }
+
+    @test
+    def readLine09(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("hello")
+    }
+
+    @test
+    def readLine10(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("world")
+    }
+
+    @test
+    def readLine11(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("hello")
+    }
+
+    @test
+    def readLine12(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("world")
+    }
+
+    @test
+    def readLine13(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("hello")
+    }
+
+    @test
+    def readLine14(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("world")
+    }
+
+    @test
+    def readLine15(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("hello")
+    }
+
+    @test
+    def readLine16(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("")
+    }
+
+    @test
+    def readLine17(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("world")
+    }
+
+    @test
+    def readLine18(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("hello")
+    }
+
+    @test
+    def readLine19(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("")
+    }
+
+    @test
+    def readLine20(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("world")
+    }
+
+    @test
+    def readLine21(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("hello")
+    }
+
+    @test
+    def readLine22(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("")
+    }
+
+    @test
+    def readLine23(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("world")
+    }
+
+    @test
+    def readLine24(): Bool = region rc {
+        let capacity = 6;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("hello")
+    }
+
+    @test
+    def readLine25(): Bool = region rc {
+        let capacity = 6;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("world")
+    }
+
+    @test
+    def readLine26(): Bool = region rc {
+        let capacity = 6;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("hello")
+    }
+
+    @test
+    def readLine27(): Bool = region rc {
+        let capacity = 6;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("")
+    }
+
+    @test
+    def readLine28(): Bool = region rc {
+        let capacity = 6;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("world")
+    }
+
+    @test
+    def readLine29(): Bool = region rc {
+        let capacity = 6;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("hello")
+    }
+
+    @test
+    def readLine30(): Bool = region rc {
+        let capacity = 6;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("")
+    }
+
+    @test
+    def readLine31(): Bool = region rc {
+        let capacity = 6;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("world")
+    }
+
+    @test
+    def readLine32(): Bool = region rc {
+        let capacity = 6;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("hello")
+    }
+
+    @test
+    def readLine33(): Bool = region rc {
+        let capacity = 6;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("")
+    }
+
+    @test
+    def readLine34(): Bool = region rc {
+        let capacity = 6;
+        let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("world")
+    }
+
+    @test
+    def readLine35(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'\n', 'h', 'e', 'l', 'l', 'o'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("")
+    }
+
+    @test
+    def readLine36(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'\n', 'h', 'e', 'l', 'l', 'o'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("hello")
+    }
+
+    @test
+    def readLine37(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'\r', 'h', 'e', 'l', 'l', 'o'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("")
+    }
+
+    @test
+    def readLine38(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'\r', 'h', 'e', 'l', 'l', 'o'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("hello")
+    }
+
+    @test
+    def readLine39(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'\r', '\n', 'h', 'e', 'l', 'l', 'o'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("")
+    }
+
+    @test
+    def readLine40(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'\r', '\n', 'h', 'e', 'l', 'l', 'o'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("hello")
+    }
+
+    @test
+    def readLine41(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'\n', '\r', 'h', 'e', 'l', 'l', 'o'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("")
+    }
+
+    @test
+    def readLine42(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'\n', '\r', 'h', 'e', 'l', 'l', 'o'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("")
+    }
+
+    @test
+    def readLine43(): Bool = region rc {
+        let capacity = 8;
+        let array = Array#{'\n', '\r', 'h', 'e', 'l', 'l', 'o'} @ rc;
+        let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
+        let _ = bufReader |> Peekable.readLine;
+        let _ = bufReader |> Peekable.readLine;
+        let line = bufReader |> Peekable.readLine;
+        line == Ok("hello")
+    }
+
 }
 
 struct TestReader[t, r] {
