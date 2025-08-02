@@ -627,10 +627,10 @@ object DisplayType {
           t.typeArguments.map(visit).map(splitSymmetricDiff) match {
             // Case 1: No args. ? ⊕ ?
             case Nil => SymmetricDiff(Hole :: Hole :: Nil)
-            // Case 2: One arg. Take the left and put a hole at the end: tpe1 ⊕ tpe2 ⊕ ?
-            case args :: Nil => SymmetricDiff(args :+ Hole)
-            // Case 3: Multiple args. Concatenate them: tpe1 ⊕ tpe2 ⊕ tpe3 ⊕ tpe4
-            case args1 :: args2 :: Nil => SymmetricDiff(args1 ++ args2)
+            // Case 2: One arg. Take the left and put a hole at the end: tpe1 ⊕ ?
+            case arg :: Nil => SymmetricDiff(arg :+ Hole)
+            // Case 3: Multiple args. Concatenate them: tpe1 ⊕ tpe2
+            case arg1 :: arg2 :: Nil => SymmetricDiff(arg1 ++ arg2)
             // Case 4: Too many args. Error.
             case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
