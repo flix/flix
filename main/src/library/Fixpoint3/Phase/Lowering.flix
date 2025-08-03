@@ -329,7 +329,7 @@ mod Fixpoint3.Phase.Lowering {
                     Vector.map(lowerTerm(idToIndex, boxingInfo, meetWithMap), terms),
                     thisWriteTo, loweredBody, to
                 )
-            case Ram.RelOp.Project(terms, s) =>
+            case Ram.RelOp.Project(terms, s, _) =>
                 let (_, placements) = indexInfo;
                 let newRelPos = getOrCrash(Map.get((s, 0), placements));
                 let den = toDenotation(s);
@@ -365,6 +365,10 @@ mod Fixpoint3.Phase.Lowering {
         let termToBoxing = t -> getOrCrash(Map.get(getTermRamId(t), idToBoxing));
         match term {
             case Ram.RamTerm.Lit(val, id) => ExecutableRam.RamTerm.Lit(Boxing.unboxWith(val, getOrCrash(Map.get(id, idToBoxing)), boxing), val)
+            case Ram.RamTerm.ProvMax(vec) =>
+                vec |>
+                Vector.map(match (rv, i) -> (UniqueInts.getIndex(rv, idToIndex), i)) |>
+                ExecutableRam.RamTerm.ProvMax
             case Ram.RamTerm.RowLoad(rv, index, RelSym.Symbol(_, arity, den)) =>
                 match den {
                     case Denotation.Relational => ExecutableRam.RamTerm.LoadFromTuple(UniqueInts.getIndex(rv, idToIndex), index, termToBoxing(term))
@@ -615,7 +619,7 @@ mod Fixpoint3.Phase.Lowering {
         case Ram.RelOp.Search(rv, relSym, rest) => (rv, relSym) :: collectRowVarRelSymOp(rest)
         case Ram.RelOp.Query(rv, relSym, _, _, rest) => (rv, relSym) :: collectRowVarRelSymOp(rest)
         case Ram.RelOp.Functional(_, _, _, rest, _) => collectRowVarRelSymOp(rest)
-        case Ram.RelOp.Project(_, _) => Nil
+        case Ram.RelOp.Project(_, _, _) => Nil
         case Ram.RelOp.If(_, rest) => collectRowVarRelSymOp(rest)
     }
 

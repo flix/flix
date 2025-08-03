@@ -336,7 +336,7 @@ mod Fixpoint3.Boxing {
                     unifyRamIdsTerm(set, curTerm)
                 }, inputTerms);
                 unifyRamIdsOp(predicates, set, withProv, body)
-            case RelOp.Project(terms, RelSym.Symbol(PredSym.PredSym(_, predSym), _, _)) =>
+            case RelOp.Project(terms, RelSym.Symbol(PredSym.PredSym(_, predSym), _, _), _) =>
                 terms |>
                 Vector.forEachWithIndex(i -> term -> {
                     unifyRamIdsTerm(set, term);
@@ -393,6 +393,12 @@ mod Fixpoint3.Boxing {
         def unifyRamIdsTerm(set: MutDisjointSets[RamId, r], term: RamTerm): Unit \ r = match term {
             case RamTerm.Lit(_, _) => ()
             case RamTerm.RowLoad(_, _, _) => ()
+            case RamTerm.ProvMax(vec) =>
+                let id = Ram.getTermRamId(term);
+                vec |>
+                    Vector.forEach(match (rv, index) -> {
+                        MutDisjointSets.union(RamId.TuplePos(rv, index), id, set)
+                    })
             case RamTerm.Meet(_, t1, (rv, relSym), id) =>
                 unifyRamIdsTerm(set, t1);
                 let id1 = Ram.getTermRamId(t1);
@@ -503,7 +509,7 @@ mod Fixpoint3.Boxing {
                     Vector.forEach(i -> insert(RamId.InId(id, i)), Vector.range(0, Vector.length(inputTerms)));
                     Vector.forEach(computeMappingTerm(set, map, counter), inputTerms);
                     recurse(body)
-                case RelOp.Project(terms, RelSym.Symbol(PredSym.PredSym(_, predSym), _, _)) =>
+                case RelOp.Project(terms, RelSym.Symbol(PredSym.PredSym(_, predSym), _, _), _) =>
                     terms |> Vector.forEachWithIndex(i -> _ -> insert(RamId.RelPos(predSym, i)));
                     terms |>
                     Vector.forEach(computeMappingTerm(set, map, counter))
@@ -587,6 +593,8 @@ mod Fixpoint3.Boxing {
                     Vector#{t1, t2, t3, t4} |> computeMappingTermAppRec
                 case RamTerm.App5(_, t1, t2, t3, t4, t5, _) =>
                     Vector#{t1, t2, t3, t4, t5} |> computeMappingTermAppRec
+                case RamTerm.ProvMax(loads) =>
+                    loads |> Vector.forEach(match (rv, index) -> registerRamIdRec(RamId.TuplePos(rv, index)))
                 case RamTerm.Meet(_, _, _, _) => unreachable!()
             }
 

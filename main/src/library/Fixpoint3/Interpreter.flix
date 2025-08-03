@@ -630,6 +630,7 @@ mod Fixpoint3.Interpreter {
                 let (_, _, tupleEnv, _) = env;
                 let unboxed = Vector.get(indexInTuple, Array.get(tupleIndex, tupleEnv));
                 boxWith(unboxed, i, boxing)
+            case RamTerm.ProvMax(_) => Boxed.BoxedInt64(evalTerm(env, boxing, term))
             case RamTerm.LoadLatVar(index, _) =>
                 let (_, _, _, latEnv) = env;
                 Array.get(index, latEnv)
@@ -679,6 +680,11 @@ mod Fixpoint3.Interpreter {
             case RamTerm.LoadLatVar(index, boxingPos) =>
                 let (_, _, _, latEnv) = env;
                 unboxWith(Array.get(index, latEnv), boxingPos, boxing)
+            case RamTerm.ProvMax(vec) =>
+                let (_, _, tupleEnv, _) = env;
+                1i64 + Vector.foldLeft(acc -> match (tupleIndex, indexInTuple) ->
+                    acc `Int64.max` Vector.get(indexInTuple, Array.get(tupleIndex, tupleEnv))
+                , 0i64, vec)
             case RamTerm.Meet(cap, lhs, rhs, i) =>
                 let boxed1 = evalBoxedT(lhs);
                 let boxed2 = evalBoxedT(rhs);

@@ -213,7 +213,7 @@ mod Fixpoint3.Phase.Hoisting {
         case RelOp.Search(_, relSym, body) => relSym :: collectRelSymsOp(body)
         case RelOp.Query(_, relSym, _, _, body) => relSym :: collectRelSymsOp(body)
         case RelOp.Functional(_, _, _, body, _) => collectRelSymsOp(body)
-        case RelOp.Project(_, _) => Nil
+        case RelOp.Project(_, _, _) => Nil
         case RelOp.If(_, body) => collectRelSymsOp(body)
     }
 
@@ -293,7 +293,7 @@ mod Fixpoint3.Phase.Hoisting {
                         }
                     }
                 }
-            case RelOp.Project(_, _) => Some(op)
+            case RelOp.Project(_, _, _) => Some(op)
             case RelOp.If(boolExps, body) =>
                 // Just note all `boolExps`. They will be placed as high as possible in the AST by other cases.
                 // If `boolExps` contains no variables, push it all the way to the top, otherwise register it for
@@ -456,6 +456,7 @@ mod Fixpoint3.Phase.Hoisting {
         let getRepVar = getRepRowVar(termMap, equalitySets);
         match term {
             case RamTerm.Lit(_, _)                      => Set#{}
+            case RamTerm.ProvMax(vec)                   => Vector.foldLeft(acc -> match (rv, _) -> Set.insert(rv, acc), Set#{}, vec)
             case RamTerm.RowLoad(rv, i, _)              => getRepVar(rv, i)
             case RamTerm.Meet(_, t1, (rv, relSym), _)   => Set.union(collectTerm(t1), getRepVar(rv, arityOfNonLat(relSym)))
             case RamTerm.App1(_, t1, _)                 => collectTerm(t1)
@@ -501,9 +502,10 @@ mod Fixpoint3.Phase.Hoisting {
     /// This ensures that we all loads refer to variables as far up in the AST as possible,
     /// and therefore variables which are still bound after hoisting.
     ///
-    /// `Meet` is excluded from this treatment. `Meet` is simply used to ensure that for
-    /// `A(;x), B(;x)`, we will meet `A[0]` and `B[0]`. Even though `A[0] = B[0]` should
-    /// never exist we would not want to replace `Meet(A[0], B[0])` by `Meet(A[0], A[0])`.
+    /// `Meet` and `ProvMax` are excluded from this treatment. `ProvMax` should not exist
+    /// at this point. `Meet` is simply used to ensure that for `A(;x), B(;x)`, we will
+    /// meet `A[0]` and `B[0]`. Even though `A[0] = B[0]` should never exist we would not
+    /// want to replace `Meet(A[0], B[0])` by `Meet(A[0], A[0])`.
     ///
     def replaceByRepBoolExp(
         termMap: Map[(RowVar, Int32), RamTerm],
@@ -546,6 +548,7 @@ mod Fixpoint3.Phase.Hoisting {
         let replaceRec = replaceByRepRamTerm(termMap, equalitySets);
         match ramTerm {
             case RamTerm.Lit(_, _)                      => ramTerm
+            case RamTerm.ProvMax(_)                     => ramTerm
             case RamTerm.RowLoad(_, _, _)               => getRep(ramTerm)
             case RamTerm.Meet(_, _, _, _)               => ramTerm
             case RamTerm.App1(f, t1, id)                => RamTerm.App1(f, replaceRec(t1), id)
@@ -596,6 +599,10 @@ mod Fixpoint3.Phase.Hoisting {
         let termGround = isTermGround(termMap, equalitySets);
         match term {
             case RamTerm.Lit(_, _) => true
+            case RamTerm.ProvMax(loads) =>
+                loads |> Vector.forAll(load -> {
+                    Map.memberOf(MutDisjointSets.find(load, equalitySets) |> getOrCrash, termMap)
+                })
             case RamTerm.RowLoad(rv, i, _) =>
                 Map.memberOf(getOrCrash(MutDisjointSets.find((rv, i), equalitySets)), termMap)
             case RamTerm.Meet(_, t1, (rv, relSym), _) => termGround(t1) and Map.memberOf(getOrCrash(MutDisjointSets.find((rv, arityOfNonLat(relSym)), equalitySets)), termMap)
@@ -653,7 +660,7 @@ mod Fixpoint3.Phase.Hoisting {
         case RelOp.Functional(rowVar, _, _, body, arity) =>
             collectLoadsInto(rowVar, arity, equalitySets);
             unifyEqualitiesOp(equalitySets, constEqualities, body)
-        case RelOp.Project(_, _) => ()
+        case RelOp.Project(_, _, _) => ()
         case RelOp.If(boolExps, body) =>
             Vector.forEach(unifyBoolExp(equalitySets, constEqualities), boolExps);
             unifyEqualitiesOp(equalitySets, constEqualities, body)
