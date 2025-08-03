@@ -351,6 +351,94 @@ mod TestMutPriorityQueue {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // forEach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def forEach01(): Bool = region rc {
+        let ml = MutList.empty(rc);
+        let mq: MutPriorityQueue[Int32, rc] = MutPriorityQueue.empty(rc);
+        MutPriorityQueue.forEach(x -> MutList.push(x, ml), mq);
+        MutList.isEmpty(ml)
+    }
+
+    @Test
+    def forEach02(): Bool = region rc {
+        let startVec = Vector#{1};
+        let sortedStart = startVec |> Vector.sort;
+        let ml = MutList.empty(rc);
+        let mq: MutPriorityQueue[Int32, rc] = MutPriorityQueue.empty(rc);
+        MutPriorityQueue.enqueueAll(startVec, mq);
+        MutPriorityQueue.forEach(x -> MutList.push(x, ml), mq);
+        let resultVec = MutList.toVector(ml) |> Vector.sort;
+        resultVec == sortedStart
+    }
+
+    @Test
+    def forEach03(): Bool = region rc {
+        let startVec = Vector#{8, 1, 2, 8, 9, 5, 6};
+        let sortedStart = startVec |> Vector.sort;
+        let ml = MutList.empty(rc);
+        let mq: MutPriorityQueue[Int32, rc] = MutPriorityQueue.emptyWithCapacity(rc, 8);
+        MutPriorityQueue.enqueueAll(startVec, mq);
+        MutPriorityQueue.forEach(x -> MutList.push(x, ml), mq);
+        let resultVec = MutList.toVector(ml) |> Vector.sort;
+        resultVec == sortedStart
+    }
+
+    @Test
+    def forEach04(): Bool = region rc {
+        let startVec = Vector#{8, 1, 2, 8, 9, 5, 6, 3};
+        let sortedStart = startVec |> Vector.sort;
+        let ml = MutList.empty(rc);
+        let mq: MutPriorityQueue[Int32, rc] = MutPriorityQueue.emptyWithCapacity(rc, 8);
+        MutPriorityQueue.enqueueAll(startVec, mq);
+        MutPriorityQueue.forEach(x -> MutList.push(x, ml), mq);
+        let resultVec = MutList.toVector(ml) |> Vector.sort;
+        resultVec == sortedStart
+    }
+
+    @Test
+    def forEach05(): Bool = region rc {
+        let startVec = Vector#{8, 1, 2, 8, 9, 5, 6, 3, 2};
+        let sortedStart = startVec |> Vector.sort;
+        let ml = MutList.empty(rc);
+        let mq: MutPriorityQueue[Int32, rc] = MutPriorityQueue.emptyWithCapacity(rc, 8);
+        MutPriorityQueue.enqueueAll(startVec, mq);
+        MutPriorityQueue.forEach(x -> MutList.push(x, ml), mq);
+        let resultVec = MutList.toVector(ml) |> Vector.sort;
+        resultVec == sortedStart
+    }
+
+
+    @Test
+    def forEach06(): Bool = region rc {
+        let startVec = Vector#{(8, 1), (1, 2), (2, 4), (8, 9), (8, 9), (5, 3), (6, 2), (3, 9), (2, 20)};
+        let sortedStart = startVec |> Vector.sort;
+        let ml = MutList.empty(rc);
+        let mq: MutPriorityQueue[(Int32, Int32), rc] = MutPriorityQueue.empty(rc);
+        MutPriorityQueue.enqueueAll(startVec, mq);
+        MutPriorityQueue.forEach(x -> MutList.push(x, ml), mq);
+        let resultVec = MutList.toVector(ml) |> Vector.sort;
+        resultVec == sortedStart
+    }
+
+    @Test
+    def forEach07(): Bool = region rc {
+        let startVec = Vector#{8, 1, 2, 8, 9, 5, 6, 3, 2};
+        // Remove 8 and 9 from the result.
+        let sortedStart = Vector#{8, 1, 2, 5, 6, 3, 2} |> Vector.sort;
+        let ml = MutList.empty(rc);
+        let mq: MutPriorityQueue[Int32, rc] = MutPriorityQueue.empty(rc);
+        MutPriorityQueue.enqueueAll(startVec, mq);
+        MutPriorityQueue.dequeue(mq);
+        MutPriorityQueue.dequeue(mq);
+        MutPriorityQueue.forEach(x -> MutList.push(x, ml), mq);
+        let resultVec = MutList.toVector(ml) |> Vector.sort;
+        resultVec == sortedStart
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // iterator                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
