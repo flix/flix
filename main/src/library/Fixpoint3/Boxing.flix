@@ -82,7 +82,7 @@ mod Fixpoint3.Boxing {
         let newFacts = MutMap.empty(rc1);
         f1 |> Map.forEach(relSym -> relFacts -> {
             // Get some search. This means that we have to create one less index in the interpreter.
-            let search = getOrCrash(Map.get(relSym, indexes)) |> Vector.get(0);
+            let search = Vector.get(0, Vector.get(Ram.toInt32Id(relSym), indexes));
             let newTree = BPlusTree.emptyWithArityAndSearch(rc1, usedArity(), search);
             mapAllFacts(relSym, relFacts, boxingInfo, mapping, withProv, newTree);
             MutMap.put(relSym, newTree, newFacts)

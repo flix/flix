@@ -49,6 +49,7 @@ mod Fixpoint3.Predicate {
     use Fixpoint3.Ast.Datalog.BodyPredicate.{BodyAtom}
     use Fixpoint3.Ast.Ram.{BoolExp, Facts, Predicates, RamProgram, RamStmt, RamTerm, RelOp, RelSym, RowVar, toId}
     use Fixpoint3.Boxed
+    use Fixpoint3.Util.getOrCrash
 
     ///
     /// `PredType` describes the three types of predicates that exists in a RAM program.
@@ -79,12 +80,14 @@ mod Fixpoint3.Predicate {
     ///
     /// Returns a list of all `RelSym` in `predInfo`.
     ///
+    /// The returned list satisfies the requirement `RelSym`s are ordered like `Full->Delta->New`
+    ///
     @Internal
     pub def allRelSyms(predInfo: Predicates): List[RelSym] =
         let full = allFullRelSyms(predInfo);
-        full |>
-        List.append(List.map(x -> fullRelSymToType(x, PredType.Delta, predInfo), full)) |>
-        List.append(List.map(x -> fullRelSymToType(x, PredType.New, predInfo), full))
+        let delta = List.map(x -> fullRelSymToType(x, PredType.Delta, predInfo), full);
+        let new_ = List.map(x -> fullRelSymToType(x, PredType.New, predInfo), full);
+        full `List.append` delta `List.append` new_
 
     ///
     /// Returns the full `RelSym` associated with the `PredSym` in `body` according to `predInfo`.
@@ -122,6 +125,12 @@ mod Fixpoint3.Predicate {
     pub def getIdAsType(id: Int64, wantedType: PredType, predInfo: Predicates): Int64 =
         let fullId = idToFullPredId(id, predInfo);
         fullIdtoPredType(fullId, wantedType, predInfo)
+
+    ///
+    /// Returns the number of identifiers in `predInfo`, including `delta` and `delta'` relations.
+    ///
+    @Internal
+    pub def getIdCount(predInfo: Predicates): Int32 = Int64.max(0i64, 3i64 * fst(predInfo)) |> Int64.tryToInt32 |> getOrCrash
 
     ///
     /// Returns the `PredSym` of type `wantedType` from `predSym` according to `predInfo`.
