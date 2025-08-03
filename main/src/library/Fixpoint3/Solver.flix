@@ -19,9 +19,9 @@
 mod Fixpoint3.Solver {
     import dev.flix.runtime.Global
 
-    use Fixpoint3.{Boxed, Debugging, Interpreter, Options, Phase, Predicate, PredSymsOf, SubstitutePredSym }
+    use Fixpoint3.{Boxed, Debugging, Interpreter, Options, Phase, Predicate, PredSymsOf, SubstitutePredSym}
     use Fixpoint3.Ast.Datalog.{Datalog, Constraint, HeadTerm}
-    use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Join, Model}
+    use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Join, Model, Provenance}
     use Fixpoint3.Ast.Datalog.Constraint.Constraint
     use Fixpoint3.Ast.Datalog.HeadPredicate.HeadAtom
     use Fixpoint3.Ast.Ram
@@ -55,7 +55,7 @@ mod Fixpoint3.Solver {
     @Internal
     def runWithStratification(d0: Datalog, stf: Map[PredSym, (Int32, Int32)], withProv: Bool): Datalog = region rc {
         let d = Debugging.notifyPreSolve(d0);
-        def compiler(cs: Datalog, db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): (ExecutableRam.RamProgram[rc], Boxing[rc]) \ rc = {
+        def compiler(cs: Datalog, db: Ram.Facts): (ExecutableRam.RamProgram[rc], Boxing[rc]) \ rc = {
             Phase.Compiler.compile(cs, db, stf) |>
             Debugging.notifyPreLowering("Compiler") |>
             Phase.Simplifier.simplifyProgram |>
@@ -74,8 +74,18 @@ mod Fixpoint3.Solver {
                 toModelOnlyFull(withProv, r)
             case Model(_) =>
                 d
+            case Provenance(_, _) =>
+                d
             case Join(Model(m), Datalog(f, r)) =>
                 let cs = Datalog(f, r);
+                compiler(cs, m) |>
+                Debugging.notifyPreInterpret |>
+                Interpreter.interpret(rc, withProv) |>
+                toModelOnlyFull(withProv, r)
+            case Join(Provenance(_, model), Datalog(f, r)) =>
+                let cs = Datalog(f, r);
+                // Provenance is destroyed upon joining. Becomes a model.
+                let m = provenanceModeltoModel(model);
                 compiler(cs, m) |>
                 Debugging.notifyPreInterpret |>
                 Interpreter.interpret(rc, withProv) |>
@@ -118,6 +128,31 @@ mod Fixpoint3.Solver {
         case (Join(model, datalog), Model(_)) => Join(union(model, d2), datalog)
         case (Model(_), Join(model, datalog)) => Join(union(model, d1), datalog)
         case (Join(x, y), Join(z, w)) => Join(union(x, z), union(y, w))
+        case (Provenance(_, _), _) => union(provenanceToModel(d1), d2)
+        case (_, Provenance(_, _)) => union(d1, provenanceToModel(d2))
+    }
+
+    ///
+    /// Returns the `Provenance` program `d` as a `Model`.
+    ///
+    /// Crashes if `d` is not a `Provenance`.
+    ///
+    def provenanceToModel(d: Datalog): Datalog = match d {
+        case Provenance(_, facts) =>
+            provenanceModeltoModel(facts) |> Model
+        case _ => unreachable!()
+    }
+
+    ///
+    /// Returns the given provenance model `model` as a Datalog value.
+    ///
+    def provenanceModeltoModel(model: Map[RelSym, BPlusTree[Vector[Boxed], (Int64, Int32), IO]]): Map[RelSym, BPlusTree[Vector[Boxed], Boxed, IO]] = unsafely IO run {
+        model |>
+        Map.map(old -> {
+            let newTree = BPlusTree.empty(Static);
+            old |> BPlusTree.forEach(k -> _ -> BPlusTree.put(k, Boxed.NoValue, newTree));
+            newTree
+        })
     }
 
     ///
@@ -138,6 +173,12 @@ mod Fixpoint3.Solver {
             }, db) |>
             List.toMap |>
             Model
+        case Provenance(rules, db) =>
+            let fakeRelSym = Ram.makeFakeRelSym(p);
+            match Map.get(fakeRelSym, db) {
+                case None => Provenance(rules, Map#{})
+                case Some(v) => Provenance(rules, Map#{fakeRelSym => v})
+            }
         case Join(d1, d2) => union(projectSym(p, d1), projectSym(p, d2))
     }
 
@@ -843,6 +884,14 @@ mod Fixpoint3.Solver {
             pFacts |> MutList.toVector
         }
         case Join(d1, d2) => Vector.append(factsOf(f, p, d1), factsOf(f, p, d2))
+        case Provenance(_, db) => match Map.get(Ram.makeFakeRelSym(p), db) {
+            case None => Vector#{}
+            case Some(facts) => region rc {
+                let acc = MutList.empty(rc);
+                facts |> BPlusTree.forEach(k -> _ -> MutList.push(k |> f, acc));
+                unchecked_cast((MutList.toArray(rc, acc): Array[t, rc]) as Vector[t])
+            }
+        }
     }
 
     ///
@@ -858,13 +907,36 @@ mod Fixpoint3.Solver {
     ///
     /// Returns the given database `db` as a Datalog value.
     ///
-    def toModelOnlyFull(_withProv: Bool, _rules: Vector[Constraint], dbMeta: (Database[r], Predicates)): Datalog \ r =
+    def toModelOnlyFull(withProv: Bool, rules: Vector[Constraint], dbMeta: (Database[r], Predicates)): Datalog \ r = {
         let (db, meta) = dbMeta;
         let dbOnlyFullRels = MutMap.toMap(db) |>
             Map.filterWithKey(k -> facts -> match k {
                 case RelSym.Symbol(PredSym(_, id), _, _) => Predicate.isFullId(id, meta) and not (unsafely IO run BPlusTree.isEmpty(facts))
             });
-        Model(dbOnlyFullRels)
+        if(withProv) {
+            toProvenance(rules, dbOnlyFullRels)
+        } else {
+            Model(dbOnlyFullRels)
+        }
+    }
+
+    ///
+    /// Returns the given database `db` augmented with provenance as a Provenance value.
+    ///
+    def toProvenance(rules: Vector[Constraint], db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): Datalog = unsafely IO run {
+        let res = db |>
+        Map.foldLeftWithKey(acc -> relSym -> facts -> {
+            let len = Vector.length(fst(getOrCrash(BPlusTree.minimumKey(facts))));
+            let newTree = BPlusTree.empty(Static);
+            facts |> BPlusTree.forEach(fact -> _ -> {
+                let (rawFact, annotation) = Vector.splitAt(len - 2, fact);
+                newTree |> BPlusTree.put(rawFact, (unbox(Vector.get(0, annotation)), getOrCrash(Int64.tryToInt32(unbox(Vector.get(1, annotation))))))
+            });
+            Map.insert(relSym, newTree, acc)
+        }, Map#{}) |>
+        Provenance(rules);
+        res
+    }
 
     ///
     /// Returns the given database `db` as a Datalog value.
