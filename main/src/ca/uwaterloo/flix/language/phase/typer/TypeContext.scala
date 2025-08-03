@@ -63,11 +63,6 @@ class TypeContext {
     def add(constr: TypeConstraint): Unit = this.constrs.append(constr)
 
     /**
-      * Adds all the given constraints to the constraint set.
-      */
-    def addAll(constrs: Iterable[TypeConstraint]): Unit = this.constrs.appendAll(constrs)
-
-    /**
       * Returns the generated constraints.
       */
     def getConstraints: List[TypeConstraint] = this.constrs.toList
@@ -149,7 +144,7 @@ class TypeContext {
     * }}}
     */
   def unifyAllTypes(tpes: List[Type], loc: SourceLocation): Unit = {
-    // For performance, avoid creating a fresh type var if the list is non-empty
+    // Perf: Avoid creating a fresh type var if the list is non-empty
     tpes match {
       // Case 1: Nonempty list. Unify everything with the first type.
       case tpe1 :: rest =>
@@ -186,26 +181,40 @@ class TypeContext {
     *   ...
     *   tpeEN ~ tpeAN
     * }}}
+    *
+    * We assume that the length of `expectedTypes`, `actualTypes`, and `actualLocs` match.
     */
   def expectTypeArguments(sym: Symbol, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation]): Unit = {
-    expectedTypes.zip(actualTypes).zip(actualLocs).zipWithIndex.foreach {
-      case (((expectedType, actualType), loc), index) =>
-        val argNum = index + 1
-        val prov = Provenance.ExpectArgument(expectedType, actualType, sym, argNum, loc)
-        val constr = TypeConstraint.Equality(expectedType, actualType, prov)
-        currentScopeConstraints.add(constr)
+    // Perf: We use a low-level imperative style for optimal performance.
+    var idx = 1
+    var es = expectedTypes
+    var as = actualTypes
+    var ls = actualLocs
+    while (es.nonEmpty && as.nonEmpty) {
+      val expectedType = es.head
+      val actualType = as.head
+      val loc = actualLocs.head
+
+      val prov = Provenance.ExpectArgument(expectedType, actualType, sym, idx, loc)
+      val constr = TypeConstraint.Equality(expectedType, actualType, prov)
+      currentScopeConstraints.add(constr)
+
+      es = es.tail
+      as = as.tail
+      ls = ls.tail
+      idx = idx + 1
     }
   }
 
   /**
-   * Generates a constraint representing a source effect.
-   *
-   * For an effect variable effVar and source effect sourceEff, generates:
-   *
-   * {{{
-   *   effVar ~ sourceEff
-   * }}}
-   */
+    * Generates a constraint representing a source effect.
+    *
+    * For an effect variable effVar and source effect sourceEff, generates:
+    *
+    * {{{
+    *   effVar ~ sourceEff
+    * }}}
+    */
   def unifySource(effVar: Type.Var, sourceEff: Type, loc: SourceLocation): Unit = {
     val constr = TypeConstraint.Equality(effVar, sourceEff, Provenance.Source(effVar, sourceEff, loc))
     currentScopeConstraints.add(constr)
@@ -215,25 +224,23 @@ class TypeContext {
     * Adds the given trait constraints to the context.
     */
   def addClassConstraints(tconstrs0: List[TraitConstraint], loc: SourceLocation): Unit = {
-    // convert all the syntax-level constraints to semantic constraints
-    val tconstrs = tconstrs0.map {
-      case TraitConstraint(head, arg, _) => TypeConstraint.Trait(head.sym, arg, loc)
+    for (TraitConstraint(head, arg, _) <- tconstrs0) {
+      val tconstr = TypeConstraint.Trait(head.sym, arg, loc)
+      currentScopeConstraints.add(tconstr)
     }
-    currentScopeConstraints.addAll(tconstrs)
   }
 
   /**
     * Adds the given equality constraints to the context.
     */
   def addEqualityConstraints(econstrs0: List[EqualityConstraint], loc: SourceLocation): Unit = {
-    val econstrs = econstrs0.map {
-      case EqualityConstraint(symUse, tpe1, tpe2, loc) =>
-        val t1 = Type.AssocType(symUse, tpe1, tpe2.kind, loc)
-        val t2 = tpe2
-        val prov = Provenance.Match(t1, t2, loc)
-        TypeConstraint.Equality(t1, t2, prov)
+    for (EqualityConstraint(symUse, tpe1, tpe2, _) <- econstrs0) {
+      val t1 = Type.AssocType(symUse, tpe1, tpe2.kind, loc)
+      val t2 = tpe2
+      val prov = Provenance.Match(t1, t2, loc)
+      val tconstr = TypeConstraint.Equality(t1, t2, prov)
+      currentScopeConstraints.add(tconstr)
     }
-    currentScopeConstraints.addAll(econstrs)
   }
 
   /**
@@ -252,7 +259,7 @@ class TypeContext {
     */
   def enterRegion(sym: Symbol.RegionSym): Unit = {
     val newScope = currentScopeConstraints.scope.enter(sym)
-      // save the info from the parent region
+    // save the info from the parent region
     constraintStack.push(currentScopeConstraints)
     currentScopeConstraints = ScopeConstraints.emptyForScope(newScope)
   }
