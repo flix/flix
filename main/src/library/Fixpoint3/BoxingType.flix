@@ -44,7 +44,7 @@
 ///    Vector#{Lock1, Lock2},
 /// )
 /// ```
-/// We then store the fact that the type-information about `A[0]` and `B[0]` are stored
+/// We then store the fact that the type information about `A[0]` and `B[0]` are stored
 /// at `UnifiedTypePos` `0` and `A[1]` and `B[1]` are stored at position 1. We only need
 /// to keep the `MutList` and `BPlusTree` for objects, as transforming the simple types
 /// requires less information.
@@ -75,8 +75,23 @@ mod Fixpoint3.BoxingType {
         case TyObject
     }
 
+    instance ToString[Types] {
+        pub def toString(t: Types): String = match t {
+        case Types.TyUnknown => "Unknown"
+        case Types.TyBool    => "Bool"
+        case Types.TyChar    => "Char"
+        case Types.TyInt8    => "Int8"
+        case Types.TyInt16   => "Int16"
+        case Types.TyInt32   => "Int32"
+        case Types.TyInt64   => "Int64"
+        case Types.TyFloat32 => "Float32"
+        case Types.TyFloat64 => "Float64"
+        case Types.TyObject  => "Object"
+        }
+    }
+
     ///
-    /// Describes the placement of type-information of a group of values that share the
+    /// Describes the placement of type information of a group of values that share the
     /// same type.
     ///
     @Internal
@@ -111,7 +126,7 @@ mod Fixpoint3.BoxingType {
 
     ///
     /// `Boxing=(values, valueToRep, typeInfo, locks)` contains the information needed to
-    /// convert between `Boxed` objects and their `Int64` representation
+    /// convert between Boxed objects and their Int64 representation
     ///
     /// The `i`'th value of each Vector belongs to a specific `UnifiedTypePos`. The
     /// description of the values will be for some `i`.
@@ -120,8 +135,8 @@ mod Fixpoint3.BoxingType {
     ///
     /// `values` contains the `Boxed` objects being stored.
     ///
-    /// The following invariant is kept `values(valueToRep[boxedValue]) == boxedValue`.
-    /// This design limits us to `2^32` objects of a given type.
+    /// The following invariant is kept: `values(valueToRep[boxedValue]) == boxedValue`.
+    /// This design limits us to 2^32 objects of a given type.
     ///
     /// Furthermore, for lattice `Bot` should be represented by `0`.
     ///

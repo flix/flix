@@ -281,7 +281,7 @@ class Flix {
     "Fixpoint3/Interpreter.flix" -> LocalResource.get("/src/library/Fixpoint3/Interpreter.flix"),
     "Fixpoint3/Options.flix" -> LocalResource.get("/src/library/Fixpoint3/Options.flix"),
     "Fixpoint3/PrecedenceGraph.flix" -> LocalResource.get("/src/library/Fixpoint3/PrecedenceGraph.flix"),
-    "Fixpoint3/Predicates.flix" -> LocalResource.get("/src/library/Fixpoint3/Predicates.flix"),
+    "Fixpoint3/Predicate.flix" -> LocalResource.get("/src/library/Fixpoint3/Predicate.flix"),
     "Fixpoint3/PredSymsOf.flix" -> LocalResource.get("/src/library/Fixpoint3/PredSymsOf.flix"),
     "Fixpoint3/ReadWriteLock.flix" -> LocalResource.get("/src/library/Fixpoint3/ReadWriteLock.flix"),
     "Fixpoint3/Solver.flix" -> LocalResource.get("/src/library/Fixpoint3/Solver.flix"),

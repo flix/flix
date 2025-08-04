@@ -64,7 +64,7 @@ mod Fixpoint3.Phase.Compiler {
                     compileStratum(stmtsForPseudo, strataRules, stratarulesWithId, predicates, counter);
                     (MutList.toVector(stmtsForPseudo) |> RamStmt.Seq) :: acc
                 });
-                if(List.size(runInParallel) > 1) {
+                if (List.size(runInParallel) > 1) {
                     let codeBlock = List.toVector(runInParallel) |> RamStmt.Par;
                     MutList.push(codeBlock, stmts)
                 } else match List.head(runInParallel) {
@@ -81,7 +81,8 @@ mod Fixpoint3.Phase.Compiler {
     ///
     /// Collect all rules in `d` and assign them a number, deterministically.
     ///
-    def enumerateRules(d: Datalog): Vector[(Int32, Constraint)] = match d {
+    @Internal
+    pub def enumerateRules(d: Datalog): Vector[(Int32, Constraint)] = match d {
         case Datalog(_, rules) => Vector.mapWithIndex(i -> r -> (i, r), rules)
         case _ => unreachable!()
     }
@@ -112,7 +113,7 @@ mod Fixpoint3.Phase.Compiler {
                         case Latticenal(bot, leq, lub, _) =>
                             // Remove p(;bot) from the facts
                             let latVal = Vector.get(Vector.length(x) - 1, x);
-                            if(latVal `leq` bot) {
+                            if (latVal `leq` bot) {
                                 ()
                             } else {
                                 let sym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
@@ -157,7 +158,7 @@ mod Fixpoint3.Phase.Compiler {
         let inserts = MutList.empty(rc);
         List.forEach(match (rule, ruleNum) -> compileRule(inserts, rule, ruleNum, predicates, counter), List.zip(stratum, rulesWithId));
         let optPar =
-            if(MutList.size(inserts) > 1) {
+            if (MutList.size(inserts) > 1) {
                 Some(RamStmt.Par(MutList.toVector(inserts)))
             } else {
                 MutList.head(inserts)
@@ -214,21 +215,21 @@ mod Fixpoint3.Phase.Compiler {
             MutList.push(swapDelta, swaps);
             MutList.push(purgeNew, purges)
         }, idb);
-        let swapsAsRam = if(MutList.length(swaps) > 1) {
+        let swapsAsRam = if (MutList.length(swaps) > 1) {
             RamStmt.Seq(MutList.toVector(swaps))
-        } else if(MutList.size(swaps) == 1) {
+        } else if (MutList.size(swaps) == 1) {
             getOrCrash(MutList.head(swaps))
         } else {
             bug!("Bug in Fixpoint.Compiler: Stratum error. Stratum had no PredSyms")
         };
-        let purgesAsRam = if(MutList.length(purges) > 1) {
+        let purgesAsRam = if (MutList.length(purges) > 1) {
             RamStmt.Seq(MutList.toVector(purges))
-        } else if(MutList.size(purges) == 1) {
+        } else if (MutList.size(purges) == 1) {
             getOrCrash(MutList.head(purges))
         } else {
             bug!("Bug in Fixpoint.Compiler: Stratum error. Stratum had no PredSyms")
         };
-        let mergesAsRam = if(MutList.size(merges) > 1)
+        let mergesAsRam = if (MutList.size(merges) > 1)
             RamStmt.Par(MutList.toVector(merges))
         else if (MutList.size(merges) == 1)
             getOrCrash(MutList.head(merges))
@@ -242,7 +243,7 @@ mod Fixpoint3.Phase.Compiler {
     /// Each positive body atom in `rule` becomes part of the nested loop.
     /// The head atom in `rule` is compiled to an insertion into the corresponding relation.
     /// Negative atoms are compiled into if-statements.
-    /// The rule `R(x) :- not A(x), B(x),  C(x).` compiles to:
+    /// The rule `R(x) :- not A(x), B(x), C(x).` compiles to:
     ///     search B$1 ∈ B do
     ///         search C$2 ∈ C do
     ///             if (B$1[0] == C$2[0] ∧ (B$1[0]) ∉ A) then
@@ -289,7 +290,7 @@ mod Fixpoint3.Phase.Compiler {
     /// Incremental means there is a join loop for every positive atom.
     /// Each join loop "focuses" on a particular atom.
     /// Negative atoms are compiled into if-statements.
-    /// The rule `R(x) :- not A(x), B(x),  C(x).` compiles to:
+    /// The rule `R(x) :- not A(x), B(x), C(x).` compiles to:
     ///     search B$1 ∈ ΔB do
     ///         search C$2 ∈ C do
     ///             if (B$1[0] == C$2[0] ∧ (B$1[0]) ∉ A ∧ (B$1[0]) ∉ R) then
@@ -351,7 +352,7 @@ mod Fixpoint3.Phase.Compiler {
             let positiveIDBAtoms = body |>
             Vector.mapWithIndex(i -> atom -> match atom {
                 case BodyAtom(PredSym(_, id), _, Polarity.Positive, Fixity.Loose, _) =>
-                    if(Set.memberOf(id, idbSet)) {
+                    if (Set.memberOf(id, idbSet)) {
                         i
                     } else {
                         -1
@@ -360,7 +361,7 @@ mod Fixpoint3.Phase.Compiler {
             }) |>
             Vector.filter(i -> i != -1);
 
-            if (Fixpoint3.Options.enableDebugging()) {
+            if (Fixpoint.Options.enableDebugging()) {
                 let comment = RamStmt.Comment(ToString.toString(rule));
                 MutList.push(comment, stmts);
                 Vector.forEach(match rowVar -> compileSomething(rowVar), positiveIDBAtoms)
@@ -418,7 +419,7 @@ mod Fixpoint3.Phase.Compiler {
     /// Unifies each relational variable that occurs in a rule body with an attribute
     /// corresponding to a positive atom where the variable is a term.
     /// Latticenal variables are unified with a "meet" term.
-    /// For example, a body like `not A(x), B(x; s),  C(x; s).` returns the substitution:
+    /// For example, a body like `not A(x), B(x; s), C(x; s).` returns the substitution:
     ///     `Map#{x -> B$1[0], s -> B$1[1] ⊓ C$2[1]}`
     /// `x` is mapped to B$1[0] because `x` occurs positively in the second atom.
     /// `s` is mapped to the glb of all its positive occurences because it is latticenal.
@@ -480,7 +481,7 @@ mod Fixpoint3.Phase.Compiler {
     /// (3) is a function call that computes the expression `x > 0`.
     ///
     def compileBody(env: Map[VarSym, RamTerm], body: Vector[(BodyPredicate, RowVar)], predicates: Predicates, counter: Counter[r]): Option[Vector[BoolExp]] \ r =
-        if(isImpossible(body)) None
+        if (isImpossible(body)) None
         else Some(compileBodyWithoutGuard0(env, body, predicates, counter))
 
     ///

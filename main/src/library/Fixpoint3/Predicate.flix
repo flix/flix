@@ -154,7 +154,7 @@ mod Fixpoint3.Predicate {
     @Internal
     pub def idToFullPredId(id: Int64, predInfo: Predicates): Int64 =
         let (max, _) = predInfo;
-        if(id <= max) {
+        if (id <= max) {
             id
         } else if (id <= max * 2i64) {
             id - max
@@ -168,7 +168,7 @@ mod Fixpoint3.Predicate {
     @Internal
     pub def idToPredType(id: Int64, predInfo: Predicates): PredType =
         let (max, _) = predInfo;
-        if(id <= max) {
+        if (id <= max) {
             PredType.Full
         } else if (id <= max * 2i64) {
             PredType.Delta

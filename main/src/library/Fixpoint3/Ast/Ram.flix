@@ -29,7 +29,7 @@ mod Fixpoint3.Ast.Ram {
 
     ///
     /// A `RamProgram` represents a compiled Datalog program.
-    /// 
+    ///
     @Internal
     pub enum RamProgram {
         case Program(RamStmt, FactTuple, Predicates, IndexInformation)
@@ -37,7 +37,7 @@ mod Fixpoint3.Ast.Ram {
 
     ///
     /// Contains a set of `RelSym` representing the names of the relations in the program
-    ///  and 1 + the maximal identifier of the `RelSym`s.
+    /// and 1 + the maximal identifier of the `RelSym`s.
     ///
     @Internal
     pub type alias Predicates = (Int64, Set[RelSym])
@@ -61,7 +61,7 @@ mod Fixpoint3.Ast.Ram {
     /// for efficient retrieval in range queries.
     ///
     /// For example, the Datalog rule
-    /// 
+    ///
     /// A(x) :- B(x), C(_, _, x).
     ///
     /// produces the search `Vector#{2, 0, 1}` for relation `C`. This means the tuples in
@@ -149,7 +149,7 @@ mod Fixpoint3.Ast.Ram {
     /////////////////////////////////////////////////////////////////////////////
     // RelOp                                                                   //
     /////////////////////////////////////////////////////////////////////////////
-    
+
     ///
     /// `Search(rv, relSym, body)` iterates through the facts in relation `relSym`, saving
     /// them as RowVar `rv` and executes `body`.
@@ -213,7 +213,7 @@ mod Fixpoint3.Ast.Ram {
     /// `term` must be a Meet or RowLoad of a lattice var.
     ///
     /// `Leq(const, rv, relSym)`: True if `const` is less than the lattice element of `rv`.
-    /// 
+    ///
     /// `Eq(term1, term2)`: True if `term1 == term2`.
     ///
     /// `Guard1(f, term1)`: True if `f(term1) == true`.
@@ -460,7 +460,7 @@ mod Fixpoint3.Ast.Ram {
             case (RowVar.Named(i1), RowVar.Named(i2)) => i1 <=> i2
         }
     }
-    
+
     /////////////////////////////////////////////////////////////////////////////
     // RamId                                                                   //
     /////////////////////////////////////////////////////////////////////////////
@@ -496,7 +496,7 @@ mod Fixpoint3.Ast.Ram {
             case (RamId.RelPos(i0, i1)) => "RelPos[${i0}, ${i1}]"
         }
     }
-    
+
     instance Eq[RamId] {
         pub def eq(a: RamId, b: RamId): Bool = match (a, b) {
             case (RamId.Id(i1), RamId.Id(i2)) => i1 == i2
@@ -520,7 +520,7 @@ mod Fixpoint3.Ast.Ram {
                 let firstComp = i0 <=> j0;
                 if (firstComp != Comparison.EqualTo) firstComp else i1 <=> j1
             case (RamId.TuplePos(_, _), _) => Comparison.LessThan
-            case (_,  RamId.TuplePos(_, _)) => Comparison.GreaterThan
+            case (_, RamId.TuplePos(_, _)) => Comparison.GreaterThan
             case (RamId.RelPos(_, _), _) => Comparison.LessThan
             case (_, RamId.RelPos(_, _)) => Comparison.GreaterThan
             case (RamId.Id(_), _) => Comparison.LessThan

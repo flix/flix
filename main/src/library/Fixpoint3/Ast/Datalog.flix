@@ -83,7 +83,7 @@ mod Fixpoint3.Ast.Datalog {
             case Datalog.Join(v1, v2) => Datalog.Join(substitute(v1, s), substitute(v2, s))
             case Datalog.Provenance(rules, model) =>
                 let newRules = Vector.map(c -> substitute(c, s), rules);
-                let newModel = (Map#{}, model) ||> Map.foldLeftWithKey(acc -> pred -> facts -> 
+                let newModel = (Map#{}, model) ||> Map.foldLeftWithKey(acc -> pred -> facts ->
                     Map.insert(substitute(pred, s), facts, acc)
                 );
                 Datalog.Provenance(newRules, newModel)
@@ -93,7 +93,7 @@ mod Fixpoint3.Ast.Datalog {
     instance ToString[Datalog] {
         pub def toString(cs: Datalog): String = match cs {
             case Datalog.Datalog(facts, rules) => region rc {
-                if(not Fixpoint3.Options.enableDebugPrintFacts()) {
+                if (not Fixpoint3.Options.enableDebugPrintFacts()) {
                     "Printing facts disabled ${String.lineSeparator()}" +
                     Vector.iterator(rc, rules)
                         |> Iterator.join(String.lineSeparator())
@@ -104,7 +104,7 @@ mod Fixpoint3.Ast.Datalog {
             }
             case Datalog.Model(db) => region rc {
                 use Fixpoint3.Ast.Ram.toDenotation;
-                if(not Fixpoint3.Options.enableDebugPrintFacts()) {
+                if (not Fixpoint3.Options.enableDebugPrintFacts()) {
                     "Printing facts disabled."
                 } else {
                    unsafely IO run {

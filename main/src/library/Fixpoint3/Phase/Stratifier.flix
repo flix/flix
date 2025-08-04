@@ -97,7 +97,7 @@ mod Fixpoint3.Phase.Stratifier {
     ///
     def addDepEdge(graph: MutGraph[r], dst: HeadPredicate, src: BodyPredicate): Unit \ r = match (dst, src) {
         case (HeadAtom(PredSym.PredSym(_, dstId), _, _), BodyAtom(PredSym.PredSym(_, srcId), _, _, _, _)) => {
-            if(dstId != srcId) {
+            if (dstId != srcId) {
                 MutGraph.addEdge(toInt32(srcId), toInt32(dstId), graph)
             } else (
                 // We still register the vertex, as it is needed later.

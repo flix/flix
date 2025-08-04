@@ -29,7 +29,7 @@ mod Fixpoint3.Options {
     ///
     @Internal
     pub def enableDebugPrintFacts(): Bool = false
-    
+
     ///
     /// Prints the debug output to the file given by `debugFileName`.
     ///
@@ -40,13 +40,13 @@ mod Fixpoint3.Options {
     /// Returns the name of the debug file.
     ///
     @Internal
-    pub def debugFileName(): String = "fixpoint_debug.txt" 
+    pub def debugFileName(): String = "fixpoint_debug.txt"
 
     ///
     /// Disables the join optimization phase.
     ///
     @Internal
-    pub def disableJoinOptimizer(): Bool = false
+    pub def disableJoinOptimizer(): Bool = true
 
     ///
     /// Disables the join optimization phase.
@@ -98,7 +98,7 @@ mod Fixpoint3.Options {
     ///
     @Internal
     pub def profilerSeed(): Int64 = 0i64
-    
+
     ///
     /// Returns the minimum number of facts required for running join optimization.
     ///

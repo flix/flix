@@ -87,9 +87,9 @@
 /// ```
 /// Whenever we bind `a` we update the query-value of `B`.
 ///
-/// An alternative approach would be to have `query` of the form 
+/// An alternative approach would be to have `query` of the form
 /// `query {b ∈ B | searchTerms }`. Then `searchTerms` would be evaluated to generate the
-/// restriction for the query. This would create a new object every time the `query` is 
+/// restriction for the query. This would create a new object every time the `query` is
 /// met. Furthermore it would have to be evaluated every time `query {b ∈ B | lookupArrForB }`
 /// is met. If the query is deeply nested with some values bound higher up in the nesting,
 /// we do not need to evaluate these every time.
@@ -107,13 +107,13 @@ mod Fixpoint3.Phase.Lowering {
     use Fixpoint3.Util.getOrCrash
 
     ///
-    /// Maps `RowVar`s to their memory position (position in an array the interpreter 
+    /// Maps `RowVar`s to their memory position (position in an array the interpreter
     /// will use).
     ///
     type alias IdToIndex[r: Region] = UniqueInts[RowVar, r]
 
     ///
-    /// Maps `RowVar`s to a list of writes that should be performed whenever the `RowVar` is 
+    /// Maps `RowVar`s to a list of writes that should be performed whenever the `RowVar` is
     /// rebound.
     ///
     type alias WriteTos[r: Region] = MutMap[RowVar, List[WriteTuple], r]
@@ -140,8 +140,8 @@ mod Fixpoint3.Phase.Lowering {
     /// end
     /// ```
     /// Initially, `MeetWithMap` is `(Nil, {})`. When the `RelOp` `search y ∈ B do` is
-    /// lowered, `x` is registered, and `MeetWithMap` becomes `(x :: Nil, {})`. When the 
-    /// `project` is lowered, it `(y :: x :: Nil, {})`. Finally, `Meet(x, y)` is lowered, 
+    /// lowered, `x` is registered, and `MeetWithMap` becomes `(x :: Nil, {})`. When the
+    /// `project` is lowered, it `(y :: x :: Nil, {})`. Finally, `Meet(x, y)` is lowered,
     /// which updates `disjoint` to `{y = x}`.
     ///
     /// The above code snippet is lowered to:
@@ -162,7 +162,7 @@ mod Fixpoint3.Phase.Lowering {
     /// Returns the result along with the `Boxing` used for the program
     ///
     @Internal
-    pub def lowerProgram(rc: Region[r], withProv: Bool, program: Ram.RamProgram): (ExecutableRam.RamProgram[r], Boxing[r]) \ r = match program { 
+    pub def lowerProgram(rc: Region[r], withProv: Bool, program: Ram.RamProgram): (ExecutableRam.RamProgram[r], Boxing[r]) \ r = match program {
         case Ram.RamProgram.Program(stmt, _, meta, indexInfo) =>
             let idToIndex = UniqueInts.empty(rc);
             let (boxing, newFacts, idToBoxing) = Boxing.initialize(rc, withProv, program);
@@ -236,7 +236,7 @@ mod Fixpoint3.Phase.Lowering {
                         Vector.map(index -> lowerToMerge(getOrCrash(Map.get((deltaRel, index), placements))));
                     let purges = Vector.range(1, deltaRels) |>
                         Vector.map(index -> lowerToPurge(getOrCrash(Map.get((deltaRel, index), placements))));
-                    if(Vector.length(merges) == 1) {
+                    if (Vector.length(merges) == 1) {
                         ExecutableRam.RamStmt.Seq(Vector#{Vector.get(0, merges), swapPart})
                     } else {
                         ExecutableRam.RamStmt.Seq(Vector#{
@@ -314,7 +314,7 @@ mod Fixpoint3.Phase.Lowering {
                         None
                     case _ => Some(x)
                 }, tests);
-                if(Vector.length(otherBools) != 0)
+                if (Vector.length(otherBools) != 0)
                     unchecked_cast(bug!("Bug in Fixpoint.Lowering: Bools except equality in query") as _ \ r)
                 else ();
                 ExecutableRam.RelOp.Query(lowerRowVar(rv, idToIndex), index, oldPos, den, thisWriteTo, loweredBody)
@@ -373,7 +373,7 @@ mod Fixpoint3.Phase.Lowering {
                 match den {
                     case Denotation.Relational => ExecutableRam.RamTerm.LoadFromTuple(UniqueInts.getIndex(rv, idToIndex), index, termToBoxing(term))
                     case Denotation.Latticenal(_, _, _, _) =>
-                        if(index < arity - 1) {
+                        if (index < arity - 1) {
                             ExecutableRam.RamTerm.LoadFromTuple(UniqueInts.getIndex(rv, idToIndex), index, termToBoxing(term))
                         } else {
                             ExecutableRam.RamTerm.LoadLatVar(UniqueInts.getIndex(rv, idToIndex), termToBoxing(term))
@@ -520,7 +520,7 @@ mod Fixpoint3.Phase.Lowering {
     }
 
     ///
-    /// Returns the memory position of the first value equivalent to `rv`, w.r.t. 
+    /// Returns the memory position of the first value equivalent to `rv`, w.r.t.
     /// `meetWithMap`. If no such value exists, returns the memory position of `rv`.
     ///
     /// See `computeMeetWithPos`.
@@ -594,7 +594,7 @@ mod Fixpoint3.Phase.Lowering {
     /// Returns a list of pairs `(RowVar, RelSym)` in `program` in the order of the nesting.
     ///
     def collectRowVarRelSym(program: Ram.RamProgram): List[(RowVar, RelSym)] = match program {
-        case Ram.RamProgram.Program(stmt, _, _, _) => 
+        case Ram.RamProgram.Program(stmt, _, _, _) =>
             collectRowVarRelSymStmt(stmt)
     }
 
