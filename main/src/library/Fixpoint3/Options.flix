@@ -43,13 +43,9 @@ mod Fixpoint3.Options {
     pub def debugFileName(): String = "fixpoint_debug.txt"
 
     ///
-    /// Disables the join optimization phase.
+    /// Indicates whether provenance should be used.
     ///
-    @Internal
-    pub def disableJoinOptimizer(): Bool = false
-
-    ///
-    /// Disables the join optimization phase.
+    /// Used for testing. Should be removed.
     ///
     @Internal
     pub def useProvenance(): Bool = false
@@ -85,30 +81,5 @@ mod Fixpoint3.Options {
     ///
     @Internal
     pub def parLevel(): Int32 = 2
-
-    ///
-    /// Returns the minimum number of facts the profiler will sample.
-    ///
-    @Internal
-    pub def profilerFactLowerBound(): Int32 = 10
-
-    ///
-    /// Returns the seed used in the random number generator to generate
-    /// the representative input used by the profiler.
-    ///
-    @Internal
-    pub def profilerSeed(): Int64 = 0i64
-
-    ///
-    /// Returns the minimum number of facts required for running join optimization.
-    ///
-    @Internal
-    pub def profilerMinimumFacts(): Int64 = 100i64
-
-    ///
-    /// Returns the fraction of facts used in the join profiling stage.
-    ///
-    @Internal
-    pub def profilerDiscrimination(): Float64 = 0.20
 
 }

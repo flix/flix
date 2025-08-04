@@ -69,7 +69,7 @@ mod Fixpoint3 {
         ///
         @Internal
         pub def toMap(state: UniqueInts[k, r]): Map[k, Int32] \ r = {
-            state->map |> MutMap.toMap
+            MutMap.toMap(state->map)
         }
 
         ///
