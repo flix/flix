@@ -1753,7 +1753,7 @@ object Lowering {
   }
 
   private def mkLambdaExp(param: Symbol.VarSym, paramTpe: Type, exp: TypedAst.Expr, expTpe: Type, loc: SourceLocation): TypedAst.Expr =
-    TypedAst.Expr.Lambda(TypedAst.FormalParam(TypedAst.Binder(param, paramTpe), Modifiers.Empty, paramTpe, TypeSource.Ascribed, loc), exp, expTpe, loc)
+    TypedAst.Expr.Lambda(TypedAst.FormalParam(TypedAst.Binder(param, paramTpe), Modifiers.Empty, paramTpe, TypeSource.Ascribed, loc), exp, Type.mkPureArrow(paramTpe, expTpe, loc), loc)
 
   /**
     * Returns the lambda expression:
@@ -1762,15 +1762,14 @@ object Lowering {
     * }}}
     */
   private def mkExtVarLambda(preds: List[(Name.Pred, List[Type])], tpe: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): TypedAst.Expr = {
-    val arg1 = Symbol.freshVarSym("predSym", BoundBy.FormalParam, loc)
-    val arg2 = Symbol.freshVarSym("terms", BoundBy.FormalParam, loc)
+    val predSymVar = Symbol.freshVarSym("predSym", BoundBy.FormalParam, loc)
+    val termsVar = Symbol.freshVarSym("terms", BoundBy.FormalParam, loc)
     val vectorOfBoxed = Types.mkVector(Types.Boxed, loc)
-    mkLambdaExp(arg1, Types.PredSym,
-      exp = mkLambdaExp(arg2, vectorOfBoxed,
-        exp = mkExtVarOuterBody(preds, arg1, arg2, tpe, loc),
-        expTpe = Type.mkPureCurriedArrow(List(Types.PredSym, vectorOfBoxed), tpe, loc), loc
+    mkLambdaExp(predSymVar, Types.PredSym,
+      mkLambdaExp(termsVar, vectorOfBoxed,
+        mkExtVarOuterBody(preds, predSymVar, termsVar, tpe, loc), tpe, loc
       ),
-      expTpe = Type.mkPureCurriedArrow(List(Types.PredSym, vectorOfBoxed), tpe, loc), loc
+      Type.mkPureArrow(vectorOfBoxed, tpe, loc), loc
     )
   }
 
