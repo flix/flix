@@ -75,21 +75,6 @@ mod Fixpoint3.BoxingType {
         case TyObject
     }
 
-    instance ToString[Types] {
-        pub def toString(t: Types): String = match t {
-        case Types.TyUnknown => "Unknown"
-        case Types.TyBool    => "Bool"
-        case Types.TyChar    => "Char"
-        case Types.TyInt8    => "Int8"
-        case Types.TyInt16   => "Int16"
-        case Types.TyInt32   => "Int32"
-        case Types.TyInt64   => "Int64"
-        case Types.TyFloat32 => "Float32"
-        case Types.TyFloat64 => "Float64"
-        case Types.TyObject  => "Object"
-        }
-    }
-
     ///
     /// Describes the placement of type-information of a group of values that share the
     /// same type.
