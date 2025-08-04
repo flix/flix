@@ -166,7 +166,7 @@ mod Fixpoint3.Solver {
     /// Returns the provenance of fact `f` of relation `p` given Datalog program `d`.
     ///
     @Internal
-    pub def provenanceOf(f: Vector[Boxed], p: PredSym, d: Datalog, mapping: PredSym -> Vector[Boxed] -> t): Vector[t] = ???
+    pub def provenanceOf(f: Vector[Boxed], p: PredSym, d: Datalog, mkExtVar: PredSym -> Vector[Boxed] -> t): Vector[t] = ???
 
     ///
     /// Project all facts in the given Datalog program `d` that has `p` in its head.

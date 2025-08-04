@@ -43,9 +43,9 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 object Lowering {
 
   private object Defs {
-    val version: String = ""
+    val version: String = "3"
     lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.box")
-    lazy val Unbox: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.Unbox")
+    lazy val Unbox: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.unbox")
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.runSolver")
     lazy val SolveWithProvenance: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.runSolverWithProvenance")
     lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.union")
@@ -68,7 +68,7 @@ object Lowering {
 
     lazy val VectorGet: Symbol.DefnSym = Symbol.mkDefnSym(s"Vector.get")
 
-    lazy val Bug: Symbol.DefnSym = Symbol.mkDefnSym(s"Prelude.bug!")
+    lazy val Bug: Symbol.DefnSym = Symbol.mkDefnSym(s"bug!")
 
     /**
       * Returns the definition associated with the given symbol `sym`.
@@ -99,7 +99,6 @@ object Lowering {
     lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Boxed")
 
     lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
-    lazy val FVector: Symbol.EnumSym = Symbol.mkEnumSym("Vector")
 
     lazy val ChannelMpmc: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.Mpmc")
     lazy val ChannelMpmcAdmin: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.MpmcAdmin")
@@ -136,17 +135,10 @@ object Lowering {
 
     def mkList(t: Type, loc: SourceLocation): Type = Type.mkEnum(Enums.FList, List(t), loc)
 
-    def mkVector(t: Type, loc: SourceLocation): Type = Type.mkEnum(Enums.FVector, List(t), loc)
+    def mkVector(t: Type, loc: SourceLocation): Type = Type.mkVector(t, loc)
 
-    def mkExtVarType(preds: List[(Name.Pred, List[Type])], loc: SourceLocation): Type =
-      Type.mkExtensible(
-        preds.foldRight(Type.mkSchemaRowEmpty(loc)) {
-          case ((p, types), acc) => Type.mkSchemaRowExtend(p, Type.mkRelation(types, loc), acc, loc)
-        }, loc
-      )
-
-    def mkProvenanceType(t: Type, loc: SourceLocation): Type =
-      Type.mkPureUncurriedArrow(List(mkVector(Boxed, loc), PredSym, Datalog, Type.mkPureUncurriedArrow(List(PredSym, mkVector(Boxed, loc)), t, loc)), t, loc)
+    def mkProvenanceOf(t: Type, loc: SourceLocation): Type =
+      Type.mkPureUncurriedArrow(List(mkVector(Boxed, loc), PredSym, Datalog, Type.mkPureCurriedArrow(List(PredSym, mkVector(Boxed, loc)), t, loc)), mkVector(t, loc), loc)
 
     //
     // Function Types.
@@ -816,7 +808,7 @@ object Lowering {
       val resultType = Types.Datalog
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.MergeType, resultType, eff, loc)
 
-    case TypedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, _, eff, loc) =>
+    case TypedAst.Expr.FixpointQueryWithProvenance(exps, select, _, tpe, eff, loc) =>
       val defn = Defs.lookup(Defs.ProvenanceOf)
       val mergeExp = exps.dropRight(1).foldRight(visitExp(exps.last)) {
         (exp, acc) =>
@@ -826,15 +818,15 @@ object Lowering {
           LoweredAst.Expr.ApplyDef(defn.sym, argExps, Types.MergeType, resultType, eff, loc)
       }
       val (goalPredSym, goalTerms) = select match {
-        case TypedAst.Predicate.Head.Atom(pred, _, terms, _, _) => (mkPredSym(pred), terms.map(visitExp))
+        case TypedAst.Predicate.Head.Atom(pred, _, terms, _, loc1) =>
+          (mkPredSym(pred), mkVector(terms.map(visitExp), Types.Boxed, loc1))
       }
-      val preds = ??? // How to get this information from tpe? Ex: tpe = XVar[#(P(String), Q(Int32, Int64))]
-      val extVarType = Types.mkExtVarType(preds, loc)
+      val extVarType = unwrapProvenanceType(tpe, loc)
+      val preds = predsFromExtVar(extVarType, loc)
       val lambdaExp = visitExp(mkExtVarLambda(preds, extVarType, loc))
-      val argExps = goalPredSym :: goalTerms ::: mergeExp :: lambdaExp :: Nil
-      val itpe = Types.mkProvenanceType(extVarType, loc)
-      val resultType = Types.mkVector(extVarType, loc)
-      LoweredAst.Expr.ApplyDef(defn.sym, argExps, itpe, resultType, eff, loc)
+      val argExps = goalTerms :: goalPredSym :: mergeExp :: lambdaExp :: Nil
+      val itpe = Types.mkProvenanceOf(extVarType, loc)
+      LoweredAst.Expr.ApplyDef(defn.sym, argExps, itpe, tpe, eff, loc)
 
     case TypedAst.Expr.FixpointSolve(exp, _, eff, mode, loc) =>
       val defn = mode match {
@@ -1736,6 +1728,30 @@ object Lowering {
     Symbol.freshVarSym(name, BoundBy.Let, loc)
   }
 
+  private def unwrapProvenanceType(tpe: Type, loc: SourceLocation): Type = tpe match {
+    case Type.Apply(Type.Cst(TypeConstructor.Vector, _), extType, _) => extType
+    case _ => throw InternalCompilerException("Could not unwrap provenance type", loc)
+  }
+
+  private def predsFromExtVar(tpe: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = tpe match {
+    case Type.Apply(Type.Cst(TypeConstructor.Extensible, _), tpe1, loc1) =>
+      predsFromSchema(tpe1, loc1)
+    case _ => throw InternalCompilerException("Could not unwrap provenance type", loc)
+  }
+
+  private def predsFromSchema(row: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = row match {
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), rel, loc2), tpe2, loc1) =>
+      (pred, typesFromRelation(rel, loc2).reverse) :: predsFromSchema(tpe2, loc1)
+    case Type.Var(_, _) => Nil
+    case _ => throw InternalCompilerException("Could not unwrap row type", loc)
+  }
+
+  private def typesFromRelation(rel: Type, loc: SourceLocation): List[Type] = rel match {
+    case Type.Apply(Type.Cst(TypeConstructor.Relation(_), _), t, _) => t :: Nil
+    case Type.Apply(rest, t, loc1) => t :: typesFromRelation(rest, loc1)
+    case _ => throw InternalCompilerException("Could not unwrap relation type", loc)
+  }
+
   private def mkLambdaExp(param: Symbol.VarSym, paramTpe: Type, exp: TypedAst.Expr, expTpe: Type, loc: SourceLocation): TypedAst.Expr =
     TypedAst.Expr.Lambda(TypedAst.FormalParam(TypedAst.Binder(param, paramTpe), Modifiers.Empty, paramTpe, TypeSource.Ascribed, loc), exp, expTpe, loc)
 
@@ -1752,9 +1768,9 @@ object Lowering {
     mkLambdaExp(arg1, Types.PredSym,
       exp = mkLambdaExp(arg2, vectorOfBoxed,
         exp = mkExtVarOuterBody(preds, arg1, arg2, tpe, loc),
-        expTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, vectorOfBoxed), tpe, loc), loc
+        expTpe = Type.mkPureCurriedArrow(List(Types.PredSym, vectorOfBoxed), tpe, loc), loc
       ),
-      expTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, vectorOfBoxed), tpe, loc), loc
+      expTpe = Type.mkPureCurriedArrow(List(Types.PredSym, vectorOfBoxed), tpe, loc), loc
     )
   }
 
