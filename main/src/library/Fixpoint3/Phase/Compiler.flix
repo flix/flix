@@ -81,8 +81,7 @@ mod Fixpoint3.Phase.Compiler {
     ///
     /// Collect all rules in `d` and assign them a number, deterministically.
     ///
-    @Internal
-    pub def enumerateRules(d: Datalog): Vector[(Int32, Constraint)] = match d {
+    def enumerateRules(d: Datalog): Vector[(Int32, Constraint)] = match d {
         case Datalog(_, rules) => Vector.mapWithIndex(i -> r -> (i, r), rules)
         case _ => unreachable!()
     }
@@ -361,7 +360,7 @@ mod Fixpoint3.Phase.Compiler {
             }) |>
             Vector.filter(i -> i != -1);
 
-            if (Fixpoint.Options.enableDebugging()) {
+            if (Fixpoint3.Options.enableDebugging()) {
                 let comment = RamStmt.Comment(ToString.toString(rule));
                 MutList.push(comment, stmts);
                 Vector.forEach(match rowVar -> compileSomething(rowVar), positiveIDBAtoms)
