@@ -1748,6 +1748,7 @@ object Lowering {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), rel, loc2), tpe2, loc1) =>
       (pred, typesFromRelation(rel, loc2).reverse) :: predsFromSchema(tpe2, loc1)
     case Type.Var(_, _) => Nil
+    case Type.SchemaRowEmpty => Nil
     case _ => throw InternalCompilerException("Could not unwrap row type", loc)
   }
 
