@@ -83,9 +83,10 @@ mod Fixpoint3.Ast.Datalog {
             case Datalog.Join(v1, v2) => Datalog.Join(substitute(v1, s), substitute(v2, s))
             case Datalog.Provenance(rules, model) =>
                 let newRules = Vector.map(c -> substitute(c, s), rules);
-                let newModel = (Map#{}, model) ||> Map.foldLeftWithKey(acc -> pred -> facts ->
-                    Map.insert(substitute(pred, s), facts, acc)
-                );
+                let newModel = (Map#{}, model) ||>
+                    Map.foldLeftWithKey(acc -> pred -> facts ->
+                        Map.insert(substitute(pred, s), facts, acc)
+                    );
                 Datalog.Provenance(newRules, newModel)
         }
     }
@@ -95,8 +96,7 @@ mod Fixpoint3.Ast.Datalog {
             case Datalog.Datalog(facts, rules) => region rc {
                 if (not Fixpoint3.Options.enableDebugPrintFacts()) {
                     "Printing facts disabled ${String.lineSeparator()}" +
-                    Vector.iterator(rc, rules)
-                        |> Iterator.join(String.lineSeparator())
+                    Vector.iterator(rc, rules) |> Iterator.join(String.lineSeparator())
                 } else {
                     Iterator.append(Vector.iterator(rc, facts), Vector.iterator(rc, rules))
                         |> Iterator.join(String.lineSeparator())
@@ -109,15 +109,16 @@ mod Fixpoint3.Ast.Datalog {
                 } else {
                    unsafely IO run {
                         let builder = StringBuilder.empty(rc);
-                        db |> Map.forEach(relSym -> innerMap ->
-                            innerMap |> BPlusTree.forEach(tuple -> lat -> {
-                                let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
-                                match toDenotation(relSym) {
-                                    case Relational => StringBuilder.append("${relSym}(${tupleString}).${String.lineSeparator()}", builder)
-                                    case Latticenal(_, _, _, _) => StringBuilder.append("${relSym}(${tupleString}; %{lat}).${String.lineSeparator()}", builder)
-                                }
-                            })
-                        );
+                        db |>
+                            Map.forEach(relSym -> innerMap ->
+                                innerMap |> BPlusTree.forEach(tuple -> lat -> {
+                                    let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
+                                    match toDenotation(relSym) {
+                                        case Relational => StringBuilder.append("${relSym}(${tupleString}).${String.lineSeparator()}", builder)
+                                        case Latticenal(_, _, _, _) => StringBuilder.append("${relSym}(${tupleString}; %{lat}).${String.lineSeparator()}", builder)
+                                    }
+                                })
+                            );
                         StringBuilder.toString(builder)
                     }
                 }
@@ -131,9 +132,10 @@ mod Fixpoint3.Ast.Datalog {
                     let indent = String.repeat(4, " ");
                     Map.joinWith(predSym -> facts -> {
                         let builder = StringBuilder.empty(rc);
-                        facts |> BPlusTree.forEach(fact -> annotation -> {
-                            StringBuilder.append("${indent}${fact} @ ${annotation},{String.lineSeparator()}${indent}", builder)
-                        });
+                        facts |>
+                            BPlusTree.forEach(fact -> annotation -> {
+                                StringBuilder.append("${indent}${fact} @ ${annotation},{String.lineSeparator()}${indent}", builder)
+                            });
                         let textOverflow = String.length("$,{String.lineSeparator()}${indent}");
                         let rawFactString = StringBuilder.toString(builder);
                         let factsString = String.sliceLeft(end = String.length(rawFactString)- textOverflow, rawFactString);

@@ -51,28 +51,31 @@ mod Fixpoint3.Phase.Compiler {
             let counter = Counter.fresh(rc);
             let rulesWithId = enumerateRules(d);
             let pseudoStratums = MutMap.empty(rc);
-            rulesWithId |> Vector.forEach(match (num, rule) -> match rule {
-                case Constraint(HeadAtom(p, _, _), _) =>
-                    let (pseudoStratum, stratum) = Map.getWithDefault(p, (0, 0), strat);
-                    let pseudoMap = MutMap.getOrElsePut(pseudoStratum, MutMap.empty(rc), pseudoStratums);
-                    MutMap.putWith(List.append, stratum, (num, rule) :: Nil, pseudoMap)
-            });
-            pseudoStratums |> MutMap.forEach(_ -> pseudStrat -> {
-                let runInParallel = (Nil, pseudStrat) ||> MutMap.foldLeft(acc -> enumeratedRules -> {
-                    let stmtsForPseudo = MutList.empty(rc);
-                    let (stratarulesWithId, strataRules) = List.unzip(enumeratedRules);
-                    compileStratum(stmtsForPseudo, strataRules, stratarulesWithId, predicates, counter);
-                    (MutList.toVector(stmtsForPseudo) |> RamStmt.Seq) :: acc
+            rulesWithId |>
+                Vector.forEach(match (num, rule) -> match rule {
+                    case Constraint(HeadAtom(p, _, _), _) =>
+                        let (pseudoStratum, stratum) = Map.getWithDefault(p, (0, 0), strat);
+                        let pseudoMap = MutMap.getOrElsePut(pseudoStratum, MutMap.empty(rc), pseudoStratums);
+                        MutMap.putWith(List.append, stratum, (num, rule) :: Nil, pseudoMap)
                 });
-                if (List.size(runInParallel) > 1) {
-                    let codeBlock = List.toVector(runInParallel) |> RamStmt.Par;
-                    MutList.push(codeBlock, stmts)
-                } else match List.head(runInParallel) {
-                    case Some(v) => MutList.push(v, stmts)
-                    case None => ()
-                }
-            });
-            let stmt = MutList.toVector(stmts) |> RamStmt.Seq;
+            pseudoStratums |>
+                MutMap.forEach(_ -> pseudStrat -> {
+                    let runInParallel = (Nil, pseudStrat) ||>
+                        MutMap.foldLeft(acc -> enumeratedRules -> {
+                            let stmtsForPseudo = MutList.empty(rc);
+                            let (stratarulesWithId, strataRules) = List.unzip(enumeratedRules);
+                            compileStratum(stmtsForPseudo, strataRules, stratarulesWithId, predicates, counter);
+                            RamStmt.Seq(MutList.toVector(stmtsForPseudo)) :: acc
+                        });
+                    if (List.size(runInParallel) > 1) {
+                        let codeBlock = RamStmt.Par(List.toVector(runInParallel));
+                        MutList.push(codeBlock, stmts)
+                    } else match List.head(runInParallel) {
+                        case Some(v) => MutList.push(v, stmts)
+                        case None => ()
+                    }
+                });
+            let stmt = RamStmt.Seq(MutList.toVector(stmts));
             RamProgram.Program(stmt, compiledFacts, predicates, (Map#{}, Map#{}))
         }
         case _ => bug!("Datalog normalization bug")
@@ -81,7 +84,8 @@ mod Fixpoint3.Phase.Compiler {
     ///
     /// Collect all rules in `d` and assign them a number, deterministically.
     ///
-    def enumerateRules(d: Datalog): Vector[(Int32, Constraint)] = match d {
+    @Internal
+    pub def enumerateRules(d: Datalog): Vector[(Int32, Constraint)] = match d {
         case Datalog(_, rules) => Vector.mapWithIndex(i -> r -> (i, r), rules)
         case _ => unreachable!()
     }
@@ -99,29 +103,30 @@ mod Fixpoint3.Phase.Compiler {
     ///
     def compileFacts(facts: Vector[Constraint], db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]], predicates: Predicates): (Facts, Facts) \ IO = region rc {
         let newFacts = MutMap.empty(rc);
-        facts |> Vector.forEach(constraint -> {
-            match constraint {
-                case Constraint(headAtom, _) =>
-                    let HeadAtom(_, den, headTerms) = headAtom;
-                    let x = Vector.map(getLitOrCrash, headTerms);
-                    match den {
-                        case Relational =>
-                            let sym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
-                            let newFactsTree = MutMap.getOrElsePut(sym, BPlusTree.empty(Static), newFacts);
-                            BPlusTree.put(x, Boxed.NoValue, newFactsTree)
-                        case Latticenal(bot, leq, lub, _) =>
-                            // Remove p(;bot) from the facts
-                            let latVal = Vector.get(Vector.length(x) - 1, x);
-                            if (latVal `leq` bot) {
-                                ()
-                            } else {
+        facts |>
+            Vector.forEach(constraint -> {
+                match constraint {
+                    case Constraint(headAtom, _) =>
+                        let HeadAtom(_, den, headTerms) = headAtom;
+                        let x = Vector.map(getLitOrCrash, headTerms);
+                        match den {
+                            case Relational =>
                                 let sym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
                                 let newFactsTree = MutMap.getOrElsePut(sym, BPlusTree.empty(Static), newFacts);
-                                BPlusTree.putWith(lub, Vector.dropRight(1, x), latVal, newFactsTree)
-                            }
-                    }
-            }
-        });
+                                BPlusTree.put(x, Boxed.NoValue, newFactsTree)
+                            case Latticenal(bot, leq, lub, _) =>
+                                // Remove p(;bot) from the facts
+                                let latVal = Vector.get(Vector.length(x) - 1, x);
+                                if (latVal `leq` bot) {
+                                    ()
+                                } else {
+                                    let sym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
+                                    let newFactsTree = MutMap.getOrElsePut(sym, BPlusTree.empty(Static), newFacts);
+                                    BPlusTree.putWith(lub, Vector.dropRight(1, x), latVal, newFactsTree)
+                                }
+                        }
+                }
+            });
         (db, MutMap.toMap(newFacts))
     }
 
@@ -146,12 +151,14 @@ mod Fixpoint3.Phase.Compiler {
     /// and Eval-Rule-Incr is the code emitted by `compileRuleIncr`.
     ///
     def compileStratum(stmts: MutList[RamStmt, r1], stratum: List[Constraint], rulesWithId: List[Int32], predicates: Predicates, counter: Counter[r2]): Unit \ r1 + r2 = region rc {
-        let idb = (Set#{}, stratum) ||> List.foldRight(match Constraint(head, _) -> {
-            Set.insert(Predicate.headAtomToRelSym(head, Full, predicates))
-        });
-        let idbIds = (Set#{}, stratum) ||> List.foldRight(match Constraint(HeadAtom(PredSym(_, id), _, _), _) -> {
-            Set.insert(id)
-        });
+        let idb = (Set#{}, stratum) ||>
+            List.foldRight(match Constraint(head, _) -> {
+                Set.insert(Predicate.headAtomToRelSym(head, Full, predicates))
+            });
+        let idbIds = (Set#{}, stratum) ||>
+            List.foldRight(match Constraint(HeadAtom(PredSym(_, id), _, _), _) -> {
+                Set.insert(id)
+            });
 
         // Construct the inserts for step 1.
         let inserts = MutList.empty(rc);
@@ -186,9 +193,11 @@ mod Fixpoint3.Phase.Compiler {
                         MutList.push(loopPar, loopBody);
                         MutList.push(constructMerges(idb, predicates), loopBody);
                         let loopTest =
-                            idb |> Set.toVector |> Vector.map(relSym ->
-                                BoolExp.IsEmpty(Predicate.getRelSymAsType(relSym, Delta, predicates))
-                            );
+                            idb
+                                |> Set.toVector
+                                |> Vector.map(relSym ->
+                                    BoolExp.IsEmpty(Predicate.getRelSymAsType(relSym, Delta, predicates))
+                                );
                         let untilBody = RamStmt.Seq(MutList.toVector(loopBody));
                         let fixpoint = RamStmt.Until(loopTest, untilBody);
                         MutList.push(fixpoint, stmts)
@@ -262,16 +271,16 @@ mod Fixpoint3.Phase.Compiler {
                 case None => ()
                 case Some(join) =>
                     let loopBody = RelOp.If(join, projection);
-                    let insert = (loopBody, augBody) ||>
-                        Vector.foldRight(match (atom, rowVar) -> acc -> match atom {
+                    let insert = (loopBody, augBody)
+                        ||> Vector.foldRight(match (atom, rowVar) -> acc -> match atom {
                             case BodyAtom(_, _, Polarity.Positive, _, _) =>
                                 RelOp.Search(rowVar, Predicate.bodyAtomToRelSym(atom, Full, predicates), acc)
                             case Functional(boundVars, f, freeVars) =>
                                 let terms = Vector.map(v -> getOrCrash(Map.get(v, env)), freeVars);
                                 RelOp.Functional(rowVar, f, terms, acc, Vector.length(boundVars))
                             case _ => acc
-                        }) |>
-                        RamStmt.Insert;
+                        })
+                        |> RamStmt.Insert;
                     if (Fixpoint3.Options.enableDebugging()) {
                         let comment = RamStmt.Comment(ToString.toString(rule));
                         MutList.push(comment, stmts);
@@ -329,8 +338,8 @@ mod Fixpoint3.Phase.Compiler {
                             Vector.append(Vector#{BoolExp.NotMemberOf(ramTerms, relSym)}, join),
                             projection
                         );
-                        let insert = (loopBody, augBody) ||>
-                            Vector.foldRight(match (atom, rowVar) -> acc -> match atom {
+                        let insert = (loopBody, augBody)
+                            ||> Vector.foldRight(match (atom, rowVar) -> acc -> match atom {
                                 case BodyAtom(_, den, Polarity.Positive, _, _) =>
                                     let ramSym = if (rowVar == delta and isRelational(den)) {
                                         Predicate.bodyAtomToRelSym(atom, Delta, predicates)
@@ -342,23 +351,23 @@ mod Fixpoint3.Phase.Compiler {
                                     let terms = Vector.map(v -> getOrCrash(Map.get(v, env)), freeVars);
                                     RelOp.Functional(rowVar, f, terms, acc, Vector.length(boundVars))
                                 case _ => acc
-                            }) |>
-                            RamStmt.Insert;
+                            })
+                            |> RamStmt.Insert;
                         MutList.push(insert, stmts)
                 }
             };
 
-            let positiveIDBAtoms = body |>
-            Vector.mapWithIndex(i -> atom -> match atom {
-                case BodyAtom(PredSym(_, id), _, Polarity.Positive, Fixity.Loose, _) =>
-                    if (Set.memberOf(id, idbSet)) {
-                        i
-                    } else {
-                        -1
-                    }
-                case _ => -1
-            }) |>
-            Vector.filter(i -> i != -1);
+            let positiveIDBAtoms = body
+                |> Vector.mapWithIndex(i -> atom -> match atom {
+                    case BodyAtom(PredSym(_, id), _, Polarity.Positive, Fixity.Loose, _) =>
+                        if (Set.memberOf(id, idbSet)) {
+                            i
+                        } else {
+                            -1
+                        }
+                    case _ => -1
+                })
+                |> Vector.filter(i -> i != -1);
 
             if (Fixpoint3.Options.enableDebugging()) {
                 let comment = RamStmt.Comment(ToString.toString(rule));
@@ -432,21 +441,21 @@ mod Fixpoint3.Phase.Compiler {
             case BodyAtom(_, denotation, Polarity.Positive, _, terms) =>
                 let termsWithIndexes = Vector.mapWithIndex(i -> term -> (term, i), terms);
                 (acc, termsWithIndexes) ||>
-                Vector.foldRight(termI -> acc1 ->
-                    let (term, i) = termI;
-                    match term {
-                        case BodyTerm.Var(var) => match denotation {
-                            case Relational =>
-                                Map.insertWith(_ -> t -> t, var, RamTerm.RowLoad(rowVar, i, toFullSym(atom)), acc1)
-                            case Latticenal(_, _, _, glb) =>
-                                if (i < Vector.length(terms) - 1)
+                    Vector.foldRight(termI -> acc1 ->
+                        let (term, i) = termI;
+                        match term {
+                            case BodyTerm.Var(var) => match denotation {
+                                case Relational =>
                                     Map.insertWith(_ -> t -> t, var, RamTerm.RowLoad(rowVar, i, toFullSym(atom)), acc1)
-                                else
-                                    let f = _ -> t2 -> RamTerm.Meet(glb, t2, (rowVar, toFullSym(atom)), RamId.Id(Counter.getAndIncrement(counter)));
-                                    Map.insertWith(f, var, RamTerm.RowLoad(rowVar, i, toFullSym(atom)), acc1)
-                        }
-                        case _ => acc1
-                })
+                                case Latticenal(_, _, _, glb) =>
+                                    if (i < Vector.length(terms) - 1)
+                                        Map.insertWith(_ -> t -> t, var, RamTerm.RowLoad(rowVar, i, toFullSym(atom)), acc1)
+                                    else
+                                        let f = _ -> t2 -> RamTerm.Meet(glb, t2, (rowVar, toFullSym(atom)), RamId.Id(Counter.getAndIncrement(counter)));
+                                        Map.insertWith(f, var, RamTerm.RowLoad(rowVar, i, toFullSym(atom)), acc1)
+                            }
+                            case _ => acc1
+                    })
             case BodyAtom(_, _, Polarity.Negative, _, _) => acc
             case Functional(boundVars, _, freeVars) =>
                 let funcRelSym = functionalRelSym(Vector.length(freeVars));
@@ -509,56 +518,56 @@ mod Fixpoint3.Phase.Compiler {
     def compileBodyWithoutGuard0(env: Map[VarSym, RamTerm], body: Vector[(BodyPredicate, RowVar)], predicates: Predicates, counter: Counter[r]): Vector[BoolExp] \ r =
         let toFullSym = bodyAtom -> (Predicate.bodyAtomToRelSym(bodyAtom, Full, predicates));
         body |>
-        Vector.flatMap(match (atom, rowVar) ->
-            let compileBodyTerm = j -> term -> match term {
-                case BodyTerm.Wild      => RamTerm.RowLoad(rowVar, j, toFullSym(atom))
-                case BodyTerm.Var(var)  => getOrCrash(Map.get(var, env))
-                case BodyTerm.Lit(v)    => RamTerm.Lit(v, RamId.Id(Counter.getAndIncrement(counter)))
-            };
-            match atom {
-                case BodyAtom(_, denotation, Polarity.Positive, _, terms) =>
-                    Vector.mapWithIndex(compileBodyTerm, terms) |>
-                    Vector.zip(Vector.range(0, Vector.length(terms))) |>
-                    Vector.map(match (i, t) -> match denotation {
-                        case Relational =>
-                            BoolExp.Eq(RamTerm.RowLoad(rowVar, i, toFullSym(atom)), t)
-                        case Latticenal(bot, leq, _, _) =>
-                            if (i < Vector.length(terms) - 1)
-                                BoolExp.Eq(RamTerm.RowLoad(rowVar, i, toFullSym(atom)), t)
-                            else
-                                compileBoolForLatticeenal(t, leq, bot, rowVar, toFullSym(atom))
-                    })
-                case BodyAtom(_, _, Polarity.Negative, _, terms) =>
-                    let ramTerms = Vector.mapWithIndex(compileBodyTerm, terms);
-                    Vector#{BoolExp.NotMemberOf(ramTerms, Predicate.bodyAtomToRelSym(atom, Full, predicates))}
-                case Functional(_, _, _) => Vector.empty()
-                case Guard0(_) =>
-                    Vector#{}
-                case Guard1(f, v) =>
-                    let t = getOrCrash(Map.get(v, env));
-                    Vector#{BoolExp.Guard1(f, t)}
-                case Guard2(f, v1, v2) =>
-                    let t1 = getOrCrash(Map.get(v1, env));
-                    let t2 = getOrCrash(Map.get(v2, env));
-                    Vector#{BoolExp.Guard2(f, t1, t2)}
-                case Guard3(f, v1, v2, v3) =>
-                    let t1 = getOrCrash(Map.get(v1, env));
-                    let t2 = getOrCrash(Map.get(v2, env));
-                    let t3 = getOrCrash(Map.get(v3, env));
-                    Vector#{BoolExp.Guard3(f, t1, t2, t3)}
-                case Guard4(f, v1, v2, v3, v4) =>
-                    let t1 = getOrCrash(Map.get(v1, env));
-                    let t2 = getOrCrash(Map.get(v2, env));
-                    let t3 = getOrCrash(Map.get(v3, env));
-                    let t4 = getOrCrash(Map.get(v4, env));
-                    Vector#{BoolExp.Guard4(f, t1, t2, t3, t4)}
-                case Guard5(f, v1, v2, v3, v4, v5) =>
-                    let t1 = getOrCrash(Map.get(v1, env));
-                    let t2 = getOrCrash(Map.get(v2, env));
-                    let t3 = getOrCrash(Map.get(v3, env));
-                    let t4 = getOrCrash(Map.get(v4, env));
-                    let t5 = getOrCrash(Map.get(v5, env));
-                    Vector#{BoolExp.Guard5(f, t1, t2, t3, t4, t5)}
+            Vector.flatMap(match (atom, rowVar) ->
+                let compileBodyTerm = j -> term -> match term {
+                    case BodyTerm.Wild      => RamTerm.RowLoad(rowVar, j, toFullSym(atom))
+                    case BodyTerm.Var(var)  => getOrCrash(Map.get(var, env))
+                    case BodyTerm.Lit(v)    => RamTerm.Lit(v, RamId.Id(Counter.getAndIncrement(counter)))
+                };
+                match atom {
+                    case BodyAtom(_, denotation, Polarity.Positive, _, terms) =>
+                        Vector.mapWithIndex(compileBodyTerm, terms)
+                            |> Vector.zip(Vector.range(0, Vector.length(terms)))
+                            |> Vector.map(match (i, t) -> match denotation {
+                                case Relational =>
+                                    BoolExp.Eq(RamTerm.RowLoad(rowVar, i, toFullSym(atom)), t)
+                                case Latticenal(bot, leq, _, _) =>
+                                    if (i < Vector.length(terms) - 1)
+                                        BoolExp.Eq(RamTerm.RowLoad(rowVar, i, toFullSym(atom)), t)
+                                    else
+                                        compileBoolForLatticeenal(t, leq, bot, rowVar, toFullSym(atom))
+                            })
+                    case BodyAtom(_, _, Polarity.Negative, _, terms) =>
+                        let ramTerms = Vector.mapWithIndex(compileBodyTerm, terms);
+                        Vector#{BoolExp.NotMemberOf(ramTerms, Predicate.bodyAtomToRelSym(atom, Full, predicates))}
+                    case Functional(_, _, _) => Vector.empty()
+                    case Guard0(_) =>
+                        Vector#{}
+                    case Guard1(f, v) =>
+                        let t = getOrCrash(Map.get(v, env));
+                        Vector#{BoolExp.Guard1(f, t)}
+                    case Guard2(f, v1, v2) =>
+                        let t1 = getOrCrash(Map.get(v1, env));
+                        let t2 = getOrCrash(Map.get(v2, env));
+                        Vector#{BoolExp.Guard2(f, t1, t2)}
+                    case Guard3(f, v1, v2, v3) =>
+                        let t1 = getOrCrash(Map.get(v1, env));
+                        let t2 = getOrCrash(Map.get(v2, env));
+                        let t3 = getOrCrash(Map.get(v3, env));
+                        Vector#{BoolExp.Guard3(f, t1, t2, t3)}
+                    case Guard4(f, v1, v2, v3, v4) =>
+                        let t1 = getOrCrash(Map.get(v1, env));
+                        let t2 = getOrCrash(Map.get(v2, env));
+                        let t3 = getOrCrash(Map.get(v3, env));
+                        let t4 = getOrCrash(Map.get(v4, env));
+                        Vector#{BoolExp.Guard4(f, t1, t2, t3, t4)}
+                    case Guard5(f, v1, v2, v3, v4, v5) =>
+                        let t1 = getOrCrash(Map.get(v1, env));
+                        let t2 = getOrCrash(Map.get(v2, env));
+                        let t3 = getOrCrash(Map.get(v3, env));
+                        let t4 = getOrCrash(Map.get(v4, env));
+                        let t5 = getOrCrash(Map.get(v5, env));
+                        Vector#{BoolExp.Guard5(f, t1, t2, t3, t4, t5)}
             })
 
     ///

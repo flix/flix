@@ -80,17 +80,19 @@ mod Fixpoint3.Boxing {
         let RamProgram.Program(_, facts, _, (indexes, _)) = program;
         let (f1, f2) = facts;
         let newFacts = MutMap.empty(rc1);
-        f1 |> Map.forEach(relSym -> relFacts -> {
-            // Get some search. This means that we have to create one less index in the interpreter.
-            let search = getOrCrash(Map.get(relSym, indexes)) |> Vector.get(0);
-            let newTree = BPlusTree.emptyWithArityAndSearch(rc1, usedArity(), search);
-            mapAllFacts(relSym, relFacts, boxingInfo, mapping, withProv, newTree);
-            MutMap.put(relSym, newTree, newFacts)
-        });
-        f2 |> Map.forEach(relSym -> relFacts -> {
-            let newTree = MutMap.getOrElsePut(relSym, BPlusTree.empty(rc1), newFacts);
-            mapAllFacts(relSym, relFacts, boxingInfo, mapping, withProv, newTree)
-        });
+        f1 |>
+            Map.forEach(relSym -> relFacts -> {
+                // Get some search. This means that we have to create one less index in the interpreter.
+                let search = getOrCrash(Map.get(relSym, indexes)) |> Vector.get(0);
+                let newTree = BPlusTree.emptyWithArityAndSearch(rc1, usedArity(), search);
+                mapAllFacts(relSym, relFacts, boxingInfo, mapping, withProv, newTree);
+                MutMap.put(relSym, newTree, newFacts)
+            });
+        f2 |>
+            Map.forEach(relSym -> relFacts -> {
+                let newTree = MutMap.getOrElsePut(relSym, BPlusTree.empty(rc1), newFacts);
+                mapAllFacts(relSym, relFacts, boxingInfo, mapping, withProv, newTree)
+            });
         newFacts |> MutMap.toMap
 
     def mapAllFacts(
@@ -109,16 +111,18 @@ mod Fixpoint3.Boxing {
         } else {
             Vector.append(nonExtendedPositions, Vector#{getOrCrash(Map.get(RamId.Id(-1), mapping)), getOrCrash(Map.get(RamId.Id(-1), mapping))})
         };
-        facts |> BPlusTree.parForEach(tuple -> lat -> {
-            // `facts` and `newTree` must have same the same region. Cast to achieve this.
-            unchecked_cast(({
-                let savedVec = tuple |>
-                    Vector.mapWithIndex(index -> boxedVal ->
-                        let unifiedPos = Vector.get(index, positions);
-                        unboxWith(boxedVal, unifiedPos, boxingInfo)
-                    );
-                BPlusTree.put(savedVec, lat, newTree)
-        }: _ \ r) as _ \ IO)})
+        facts |>
+            BPlusTree.parForEach(tuple -> lat -> {
+                // `facts` and `newTree` must have same the same region. Cast to achieve this.
+                unchecked_cast(({
+                    let savedVec = tuple |>
+                        Vector.mapWithIndex(index -> boxedVal ->
+                            let unifiedPos = Vector.get(index, positions);
+                            unboxWith(boxedVal, unifiedPos, boxingInfo)
+                        );
+                    BPlusTree.put(savedVec, lat, newTree)
+                }: _ \ r) as _ \ IO)}
+            )
     // This is to signal that we indeed modify the region `r`.
     } as _ \ IO + r)
 
@@ -338,11 +342,11 @@ mod Fixpoint3.Boxing {
                 unifyRamIdsOp(predicates, set, withProv, body)
             case RelOp.Project(terms, RelSym.Symbol(PredSym.PredSym(_, predSym), _, _), _) =>
                 terms |>
-                Vector.forEachWithIndex(i -> term -> {
-                    unifyRamIdsTerm(set, term);
-                    let termID = Ram.getTermRamId(term);
-                    MutDisjointSets.union(RamId.RelPos(predSym, i), termID, set)
-                })
+                    Vector.forEachWithIndex(i -> term -> {
+                        unifyRamIdsTerm(set, term);
+                        let termID = Ram.getTermRamId(term);
+                        MutDisjointSets.union(RamId.RelPos(predSym, i), termID, set)
+                    })
             case RelOp.If(bools, body) =>
                 Vector.forEach(unifyRamIdsBool(set), bools);
                 unifyRamIdsOp(predicates, set, withProv, body)
@@ -491,17 +495,19 @@ mod Fixpoint3.Boxing {
             match op {
                 case RelOp.Search(rv, RelSym.Symbol(PredSym.PredSym(_, predSym), arity, _), body) =>
                     let usedArity = getProvSafeIdArity(arity, withProv);
-                    Vector.range(0, usedArity) |> Vector.forEach(i -> {
-                        insert(RamId.TuplePos(rv, i));
-                        insert(RamId.RelPos(predSym, i))
-                    });
+                    Vector.range(0, usedArity) |>
+                        Vector.forEach(i -> {
+                            insert(RamId.TuplePos(rv, i));
+                            insert(RamId.RelPos(predSym, i))
+                        });
                     recurse(body)
                 case RelOp.Query(rv, RelSym.Symbol(PredSym.PredSym(_, predSym), arity, _), bools, _, body) =>
                     let usedArity = getProvSafeIdArity(arity, withProv);
-                    Vector.range(0, usedArity) |> Vector.forEach(i -> {
-                        insert(RamId.TuplePos(rv, i));
-                        insert(RamId.RelPos(predSym, i))
-                    });
+                    Vector.range(0, usedArity) |>
+                        Vector.forEach(i -> {
+                            insert(RamId.TuplePos(rv, i));
+                            insert(RamId.RelPos(predSym, i))
+                        });
                     Vector.forEach(computeMappingBool(set, map, counter), bools);
                     recurse(body)
                 case RelOp.Functional(RowVar.Named(id), _, inputTerms, body, arity) => // equality on the input should be handled elsewhere.
@@ -511,8 +517,7 @@ mod Fixpoint3.Boxing {
                     recurse(body)
                 case RelOp.Project(terms, RelSym.Symbol(PredSym.PredSym(_, predSym), _, _), _) =>
                     terms |> Vector.forEachWithIndex(i -> _ -> insert(RamId.RelPos(predSym, i)));
-                    terms |>
-                    Vector.forEach(computeMappingTerm(set, map, counter))
+                    terms |> Vector.forEach(computeMappingTerm(set, map, counter))
                 case RelOp.If(bools, body) =>
                     recurse(body);
                     Vector.forEach(computeMappingBool(set, map, counter), bools)
@@ -612,10 +617,11 @@ mod Fixpoint3.Boxing {
                 case RamId.Id(i) => i
                 case _ => unreachable!()
             };
-            terms |> Vector.forEachWithIndex(i -> t -> {
-                computeMappingTermRec(t);
-                registerRamIdRec(RamId.InId(id1, i))
-            })
+            terms |>
+                Vector.forEachWithIndex(i -> t -> {
+                    computeMappingTermRec(t);
+                    registerRamIdRec(RamId.InId(id1, i))
+                })
 
         ///
         /// If `withProv` is true return `arity + 2`. Otherwise return `arity`.

@@ -169,9 +169,11 @@ mod Fixpoint3.Phase.Lowering {
             let writeTo = (MutMap.empty(rc), MutMap.empty(rc));
             let loweredStmt = lowerStmt(rc, idToIndex, (idToBoxing, boxing), writeTo, indexInfo, stmt);
 
-            let constWrites = snd(writeTo) |> MutMap.foldWithKey(acc1 -> outerPos -> inner ->
-                MutMap.foldLeftWithKey(acc2 -> innerPos -> value -> (outerPos, innerPos, value) :: acc2, acc1, inner)
-            , Nil) |> List.toVector;
+            let constWrites = snd(writeTo)
+                |> MutMap.foldWithKey(acc1 -> outerPos -> inner ->
+                    MutMap.foldLeftWithKey(acc2 -> innerPos -> value -> (outerPos, innerPos, value) :: acc2, acc1, inner)
+                , Nil)
+                |> List.toVector;
             // Compute arities
             let arityInformation = collectRowVarArity(program);
             let numOfArities = UniqueInts.get(idToIndex);
@@ -231,8 +233,7 @@ mod Fixpoint3.Phase.Lowering {
                     // instead treated as a `Purge(deltaRel[i])` followed by a `MergeInto(newRel, deltaRel[i])`.
                     // Purges are cheap and performed sequentially. Merges can be expensive and are performed in
                     // parallel.
-                    let merges =
-                        Vector.range(1, deltaRels) |>
+                    let merges = Vector.range(1, deltaRels) |>
                         Vector.map(index -> lowerToMerge(getOrCrash(Map.get((deltaRel, index), placements))));
                     let purges = Vector.range(1, deltaRels) |>
                         Vector.map(index -> lowerToPurge(getOrCrash(Map.get((deltaRel, index), placements))));
@@ -366,9 +367,9 @@ mod Fixpoint3.Phase.Lowering {
         match term {
             case Ram.RamTerm.Lit(val, id) => ExecutableRam.RamTerm.Lit(Boxing.unboxWith(val, getOrCrash(Map.get(id, idToBoxing)), boxing), val)
             case Ram.RamTerm.ProvMax(vec) =>
-                vec |>
-                Vector.map(match (rv, i) -> (UniqueInts.getIndex(rv, idToIndex), i)) |>
-                ExecutableRam.RamTerm.ProvMax
+                vec
+                    |> Vector.map(match (rv, i) -> (UniqueInts.getIndex(rv, idToIndex), i))
+                    |> ExecutableRam.RamTerm.ProvMax
             case Ram.RamTerm.RowLoad(rv, index, RelSym.Symbol(_, arity, den)) =>
                 match den {
                     case Denotation.Relational => ExecutableRam.RamTerm.LoadFromTuple(UniqueInts.getIndex(rv, idToIndex), index, termToBoxing(term))
@@ -434,7 +435,7 @@ mod Fixpoint3.Phase.Lowering {
         match boolExp {
             case Ram.BoolExp.Not(s) =>
                 lowerBool(idToIndex, boxingInfo, indexInfo, meetWithMap, s) |>
-                Option.map(ExecutableRam.BoolExp.Not)
+                    Option.map(ExecutableRam.BoolExp.Not)
             case Ram.BoolExp.IsEmpty(s) =>
                 let (_, placements) = indexInfo;
                 let sPos = getOrCrash(Map.get((s, 0), placements));

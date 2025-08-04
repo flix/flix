@@ -224,7 +224,8 @@ mod Fixpoint3.Predicate {
             let set2 = collectPredicates(facts);
             let set3 = collectDbPredicates(db);
             let set = (set1 `Set.union` set2) `Set.union` set3;
-            let optMax = set |> Set.maximumBy(match RelSym.Symbol(PredSym.PredSym(_, id1), _, _) -> match RelSym.Symbol(PredSym.PredSym(_, id2), _, _) -> id1 <=> id2);
+            let optMax = set |>
+                Set.maximumBy(match RelSym.Symbol(PredSym.PredSym(_, id1), _, _) -> match RelSym.Symbol(PredSym.PredSym(_, id2), _, _) -> id1 <=> id2);
             match optMax {
                 case None => (-1i64, set)
                 case Some(max) => (toId(max) + 1i64, set)

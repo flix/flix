@@ -56,7 +56,7 @@
             let augmentedFacts = (augmentedF1, augmentedF2);
             let augmentedStmt = augmentStmt(stmt);
             RamProgram.Program(augmentedStmt, augmentedFacts, predicates, indexInfo) |>
-            Fixpoint3.Debugging.notifyPreLowering("Provenance")
+                Fixpoint3.Debugging.notifyPreLowering("Provenance")
         }
     }
 
@@ -98,10 +98,10 @@
     def augmentOp(rowVarsArity: List[(RowVar, Int32)], op: RelOp): RelOp \ r = match op {
         case RelOp.Search(rowVar, relSym, body) =>
             augmentOp((rowVar, arityOf(relSym)) :: rowVarsArity, body) |>
-            RelOp.Search(rowVar, relSym)
+                RelOp.Search(rowVar, relSym)
         case RelOp.Query(rowVar, relSym, bools, index, body) =>
             augmentOp((rowVar, arityOf(relSym)) :: rowVarsArity, body) |>
-            RelOp.Query(rowVar, relSym, bools, index)
+                RelOp.Query(rowVar, relSym, bools, index)
         case RelOp.Functional(_, _, _, _, _) =>
             bug!("In Fixpoint.Phase.Provenance.augmentOp: Cannot do provenance with functional")
         case RelOp.Project(terms, relSym, ruleNum) =>

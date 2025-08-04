@@ -103,21 +103,24 @@ mod Fixpoint3.Phase.Hoisting {
             // exists for `constant1!=constant2`, register `x[i]` as impossible to satisfy.
             // Note that with the above unification, we do not really care about `x[i]`, but some representative.
             // We might have `x[i] = x[j] = y[k]` and we view these as the same.
-            let termMap = (Map.empty(), constEqualities) ||> MutMap.foldLeftWithKey(acc -> load -> listOfPairs ->
-                (acc, listOfPairs) ||> List.foldLeft(innerAcc -> match (val, id) -> {
-                    // `load` must have been registered by `unifyEqualitiesStmt`.
-                    let rep = getOrCrash(MutDisjointSets.find(load, equalitySets));
-                    match Map.get(rep, innerAcc) {
-                        case Some(RamTerm.Lit(v, _)) => {
-                                if (v != val) MutSet.add(fst(rep), impossible)
-                                else ()
-                            };
-                            innerAcc
-                        case Some(_) => bug!("In Fixpoint.Phase.Hoisting.hoistProgram: termMap contains non-literals before hoistStmt!")
-                        case None => Map.insert(rep, RamTerm.Lit(val, id), innerAcc)
-                    }
-            }));
-            match hoistStmt(rc, termMap, equalitySets, impossible |> MutSet.toSet, stmt) {
+            let termMap = (Map.empty(), constEqualities) ||>
+                MutMap.foldLeftWithKey(acc -> load -> listOfPairs ->
+                    (acc, listOfPairs) ||>
+                        List.foldLeft(innerAcc -> match (val, id) -> {
+                            // `load` must have been registered by `unifyEqualitiesStmt`.
+                            let rep = getOrCrash(MutDisjointSets.find(load, equalitySets));
+                            match Map.get(rep, innerAcc) {
+                                case Some(RamTerm.Lit(v, _)) => {
+                                        if (v != val) MutSet.add(fst(rep), impossible)
+                                        else ()
+                                    };
+                                    innerAcc
+                                case Some(_) => bug!("In Fixpoint.Phase.Hoisting.hoistProgram: termMap contains non-literals before hoistStmt!")
+                                case None => Map.insert(rep, RamTerm.Lit(val, id), innerAcc)
+                            }
+                        })
+                );
+            match hoistStmt(rc, termMap, equalitySets, MutSet.toSet(impossible), stmt) {
                 case None => RamProgram.Program(RamStmt.Comment("No rules are satisfiable"), facts, meta, index)
                 case Some(hoistedStmt) => RamProgram.Program(hoistedStmt, facts, meta, index)
             }
@@ -154,10 +157,9 @@ mod Fixpoint3.Phase.Hoisting {
                 case Some(newOp) =>
                     // Create a guard ensuring that no `RelSym` in the expression is empty. Note that this
                     // only include RelSym in `Search` and `Query`, not negative dependencies.
-                    let isEmptyBools =
-                        collectRelSymsStmt(stmt) |>
-                        List.map(relSym -> BoolExp.Not(BoolExp.IsEmpty(relSym))) |>
-                        List.toVector;
+                    let isEmptyBools = collectRelSymsStmt(stmt)
+                        |> List.map(relSym -> BoolExp.Not(BoolExp.IsEmpty(relSym)))
+                        |> List.toVector;
                     let newStmt =
                         if (MutList.size(independent) == 0) {
                             RamStmt.Insert(RelOp.If(isEmptyBools, newOp))
@@ -287,7 +289,8 @@ mod Fixpoint3.Phase.Hoisting {
                         let hoistedToHere = getBoolsHoistedToHere(rowVar, termMap, termMapWithCur, equalitySets, idToBool);
 
                         if (List.nonEmpty(hoistedToHere)) {
-                            Some(RelOp.Functional(rowVar, func, terms, RelOp.If(List.toVector(hoistedToHere) |> Vector.map(replaceByRepBoolExp(termMapWithCur, equalitySets)), v), arity))
+                            Some(RelOp.Functional(rowVar, func, terms, RelOp.If(List.toVector(hoistedToHere)
+                                |> Vector.map(replaceByRepBoolExp(termMapWithCur, equalitySets)), v), arity))
                         } else {
                             Some(RelOp.Functional(rowVar, func, terms, v, arity))
                         }
@@ -299,18 +302,20 @@ mod Fixpoint3.Phase.Hoisting {
                 // If `boolExps` contains no variables, push it all the way to the top, otherwise register it for
                 // all variables occurring in `boolExp`.
                 boolExps |>
-                Vector.forEach(b -> match b {
-                    // Don't collect Eq's: they are handled separately to ensure we refer to the earliest evaluated expression.
-                    case BoolExp.Eq(_, _) => ()
-                    case _ =>
-                        let vars = collectBoolVariables(termMap, equalitySets, b);
-                        if (Set.size(vars) == 0)
-                            MutList.push(b, independentBool)
-                        else
-                            vars |> Set.forEach(v -> {
-                                let boolList = MutMap.getOrElsePut(v, MutList.empty(rc), idToBool);
-                                MutList.push(b, boolList)})
-                });
+                    Vector.forEach(b -> match b {
+                        // Don't collect Eq's: they are handled separately to ensure we refer to the earliest evaluated expression.
+                        case BoolExp.Eq(_, _) => ()
+                        case _ =>
+                            let vars = collectBoolVariables(termMap, equalitySets, b);
+                            if (Set.size(vars) == 0)
+                                MutList.push(b, independentBool)
+                            else
+                                vars |>
+                                    Set.forEach(v -> {
+                                        let boolList = MutMap.getOrElsePut(v, MutList.empty(rc), idToBool);
+                                        MutList.push(b, boolList)
+                                    })
+                    });
                 hoistOpRec(body)
         }
 
@@ -337,18 +342,18 @@ mod Fixpoint3.Phase.Hoisting {
         let intraEqualities = MutList.empty(rc);
         let knownEqualities = MutList.empty(rc);
         Vector.range(0, arityOf(relSym)) |>
-        Vector.forEach(i -> match MutDisjointSets.find((rowVar, i), equalitySets) {
-            case None => ()
-            case Some(rep) => match getOrCrash(Map.get(rep, termMapCopy)) {
-                // If `rep => rowVar[_]`, then this is the place `rep` was considered bound
-                // and we unbind it by removing it from `termMap`.
-                // Furthermore, if `rep => rowVar[i1]`, where `i1 != i`, then `rowVar[i] == rowVar[i1]`.
-                // We cannot currently use this for index selection, but need to keep this invariant, so it is pushed to `intraEqualities`
-                case RamTerm.RowLoad(rv, i1, _) if (rv == rowVar and i1 == i) => ()
-                case RamTerm.RowLoad(rv, i1, rel) if (rv == rowVar) =>
-                    intraEqualities |> MutList.push(BoolExp.Eq(RamTerm.RowLoad(rv, i, rel), RamTerm.RowLoad(rv, i1, rel)))
-                case value => MutList.push(BoolExp.Eq(RamTerm.RowLoad(rowVar, i, relSym), value), knownEqualities)
-        }});
+            Vector.forEach(i -> match MutDisjointSets.find((rowVar, i), equalitySets) {
+                case None => ()
+                case Some(rep) => match getOrCrash(Map.get(rep, termMapCopy)) {
+                    // If `rep => rowVar[_]`, then this is the place `rep` was considered bound
+                    // and we unbind it by removing it from `termMap`.
+                    // Furthermore, if `rep => rowVar[i1]`, where `i1 != i`, then `rowVar[i] == rowVar[i1]`.
+                    // We cannot currently use this for index selection, but need to keep this invariant, so it is pushed to `intraEqualities`
+                    case RamTerm.RowLoad(rv, i1, _) if (rv == rowVar and i1 == i) => ()
+                    case RamTerm.RowLoad(rv, i1, rel) if (rv == rowVar) =>
+                        intraEqualities |> MutList.push(BoolExp.Eq(RamTerm.RowLoad(rv, i, rel), RamTerm.RowLoad(rv, i1, rel)))
+                    case value => MutList.push(BoolExp.Eq(RamTerm.RowLoad(rowVar, i, relSym), value), knownEqualities)
+            }});
         (MutList.toList(knownEqualities), MutList.toList(intraEqualities))
     }
 
@@ -366,12 +371,12 @@ mod Fixpoint3.Phase.Hoisting {
     ): Map[(RowVar, Int32), RamTerm] \ r = {
         // Register all values `rowVar[i]`, for `0 <= i < arity`, as known when hoisting `body`.
         (termMap, Vector.range(0, arityOf(relSym))) ||>
-        Vector.foldLeft(acc -> i -> {
-            match MutDisjointSets.find((rv, i), equalitySets) {
-                case Some(rep) => Map.insertWith(_ -> v -> v, rep, RamTerm.RowLoad(rv, i, relSym), acc)
-                case None => bug!("In Fixpoint.Phase.Hoisting: Everything should be in the equalitySet")
-            }
-        })
+            Vector.foldLeft(acc -> i -> {
+                match MutDisjointSets.find((rv, i), equalitySets) {
+                    case Some(rep) => Map.insertWith(_ -> v -> v, rep, RamTerm.RowLoad(rv, i, relSym), acc)
+                    case None => bug!("In Fixpoint.Phase.Hoisting: Everything should be in the equalitySet")
+                }
+            })
     }
 
     ///
@@ -404,9 +409,9 @@ mod Fixpoint3.Phase.Hoisting {
         equalitySets: MutDisjointSets[(RowVar, Int32), r],
         idToBool: MutMap[RowVar, MutList[BoolExp, r], r]
     ): List[BoolExp] \ r = {
-        keepGroundBools(rv, termMapCopy, equalitySets, idToBool) |>
-            List.filter(x -> not isBoolGround(termMap, equalitySets, x)) |>
-            List.map(replaceByRepBoolExp(termMapCopy, equalitySets))
+        keepGroundBools(rv, termMapCopy, equalitySets, idToBool)
+            |> List.filter(x -> not isBoolGround(termMap, equalitySets, x))
+            |> List.map(replaceByRepBoolExp(termMapCopy, equalitySets))
     }
 
     ///
@@ -462,16 +467,16 @@ mod Fixpoint3.Phase.Hoisting {
             case RamTerm.App1(_, t1, _)                 => collectTerm(t1)
             case RamTerm.App2(_, t1, t2, _) =>
                 Vector#{t1, t2} |>
-                Vector.foldRight(t -> acc -> collectTerm(t) `Set.union` acc, Set#{})
+                    Vector.foldRight(t -> acc -> collectTerm(t) `Set.union` acc, Set#{})
             case RamTerm.App3(_, t1, t2, t3, _) =>
                 Vector#{t1, t2, t3} |>
-                Vector.foldRight(t -> acc -> collectTerm(t) `Set.union` acc, Set#{})
+                    Vector.foldRight(t -> acc -> collectTerm(t) `Set.union` acc, Set#{})
             case RamTerm.App4(_, t1, t2, t3, t4, _) =>
                 Vector#{t1, t2, t3, t4} |>
-                Vector.foldRight(t -> acc -> collectTerm(t) `Set.union` acc, Set#{})
+                    Vector.foldRight(t -> acc -> collectTerm(t) `Set.union` acc, Set#{})
             case RamTerm.App5(_, t1, t2, t3, t4, t5, _) =>
                 Vector#{t1, t2, t3, t4, t5} |>
-                Vector.foldRight(t -> acc -> collectTerm(t) `Set.union` acc, Set#{})
+                    Vector.foldRight(t -> acc -> collectTerm(t) `Set.union` acc, Set#{})
         }
 
     ///
@@ -600,9 +605,10 @@ mod Fixpoint3.Phase.Hoisting {
         match term {
             case RamTerm.Lit(_, _) => true
             case RamTerm.ProvMax(loads) =>
-                loads |> Vector.forAll(load -> {
-                    Map.memberOf(MutDisjointSets.find(load, equalitySets) |> getOrCrash, termMap)
-                })
+                loads |>
+                    Vector.forAll(load -> {
+                        Map.memberOf(MutDisjointSets.find(load, equalitySets) |> getOrCrash, termMap)
+                    })
             case RamTerm.RowLoad(rv, i, _) =>
                 Map.memberOf(getOrCrash(MutDisjointSets.find((rv, i), equalitySets)), termMap)
             case RamTerm.Meet(_, t1, (rv, relSym), _) => termGround(t1) and Map.memberOf(getOrCrash(MutDisjointSets.find((rv, arityOfNonLat(relSym)), equalitySets)), termMap)

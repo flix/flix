@@ -85,7 +85,7 @@ mod Fixpoint3.Phase.RenamePredSyms {
             Map.foldLeftWithKey(newMap -> k -> v -> match k {
                 case RelSym.Symbol(p, arity, den) => Map.insert(RelSym.Symbol(transformer(p), arity, den), v, newMap)
             }, Map#{}, map) |>
-            Model
+                Model
         case _ => bug!("Bad argument of type 'Join' in PredSym renaming")
     }
 
