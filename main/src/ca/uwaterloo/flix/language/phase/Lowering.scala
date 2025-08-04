@@ -1757,8 +1757,13 @@ object Lowering {
     case _ => throw InternalCompilerException("Could not unwrap relation type", loc)
   }
 
-  private def mkLambdaExp(param: Symbol.VarSym, paramTpe: Type, exp: TypedAst.Expr, expTpe: Type, loc: SourceLocation): TypedAst.Expr =
-    TypedAst.Expr.Lambda(TypedAst.FormalParam(TypedAst.Binder(param, paramTpe), Modifiers.Empty, paramTpe, TypeSource.Ascribed, loc), exp, Type.mkPureArrow(paramTpe, expTpe, loc), loc)
+  private def mkLambdaExp(param: Symbol.VarSym, paramTpe: Type, exp: TypedAst.Expr, expTpe: Type, eff: Type, loc: SourceLocation): TypedAst.Expr =
+    TypedAst.Expr.Lambda(
+      TypedAst.FormalParam(TypedAst.Binder(param, paramTpe), Modifiers.Empty, paramTpe, TypeSource.Ascribed, loc),
+      exp,
+      Type.mkArrowWithEffect(paramTpe, eff, expTpe, loc),
+      loc
+    )
 
   private def mkExtVarLambda(preds: List[(Name.Pred, List[Type])], tpe: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): TypedAst.Expr = {
     val predSymVar = Symbol.freshVarSym("predSym", BoundBy.FormalParam, loc)
@@ -1766,9 +1771,10 @@ object Lowering {
     val vectorOfBoxed = Types.mkVector(Types.Boxed, loc)
     mkLambdaExp(predSymVar, Types.PredSym,
       mkLambdaExp(termsVar, vectorOfBoxed,
-        mkExtVarOuterBody(preds, predSymVar, termsVar, tpe, loc), tpe, loc
+        mkExtVarOuterBody(preds, predSymVar, termsVar, tpe, loc),
+        tpe, Type.Pure, loc
       ),
-      Type.mkPureArrow(vectorOfBoxed, tpe, loc), loc
+      Type.mkPureArrow(vectorOfBoxed, tpe, loc), Type.Pure, loc
     )
   }
 
