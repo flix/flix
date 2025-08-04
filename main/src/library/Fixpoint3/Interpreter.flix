@@ -687,9 +687,10 @@ mod Fixpoint3.Interpreter {
                 // For a tuple `(tupleIndex, indexInTuple)` `tupleIndex` describes where the fact is placed
                 // and `indexInTuple` described at which of the entries in the fact is the depth.
                 let (_, _, tupleEnv, _) = env;
-                1i64 + Vector.foldLeft(acc -> match (tupleIndex, indexInTuple) ->
-                    acc `Int64.max` Vector.get(indexInTuple, Array.get(tupleIndex, tupleEnv))
-                , 0i64, vec)
+                vec |>
+                    Vector.map(match (tupleIndex, indexInTuple) -> Vector.get(indexInTuple, Array.get(tupleIndex, tupleEnv))) |>
+                    Vector.maximum |>
+                    Option.getWithDefault(1i64)
             case RamTerm.Meet(cap, lhs, rhs, i) =>
                 let boxed1 = evalBoxedT(lhs);
                 let boxed2 = evalBoxedT(rhs);
