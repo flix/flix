@@ -52,7 +52,6 @@ object Lowering {
     lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.projectSym")
     lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.rename")
     lazy val ProvenanceOf: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint3.Solver.provenanceOf")
-    lazy val MkExtensibleVar: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint3.Solver.mkExtensibleVar")
 
     def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.injectInto$arity")
 
@@ -137,9 +136,6 @@ object Lowering {
 
     def mkVector(t: Type, loc: SourceLocation): Type = Type.mkVector(t, loc)
 
-    def mkProvenanceOf(t: Type, loc: SourceLocation): Type =
-      Type.mkPureUncurriedArrow(List(mkVector(Boxed, loc), PredSym, Datalog, Type.mkPureCurriedArrow(List(PredSym, mkVector(Boxed, loc)), t, loc)), mkVector(t, loc), loc)
-
     //
     // Function Types.
     //
@@ -147,6 +143,10 @@ object Lowering {
     lazy val MergeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog, SourceLocation.Unknown)
     lazy val FilterType: Type = Type.mkPureUncurriedArrow(List(PredSym, Datalog), Datalog, SourceLocation.Unknown)
     lazy val RenameType: Type = Type.mkPureUncurriedArrow(List(mkList(PredSym, SourceLocation.Unknown), Datalog), Datalog, SourceLocation.Unknown)
+
+    def mkProvenanceOf(t: Type, loc: SourceLocation): Type =
+      Type.mkPureUncurriedArrow(List(mkVector(Boxed, loc), PredSym, Datalog, Type.mkPureCurriedArrow(List(PredSym, mkVector(Boxed, loc)), t, loc)), mkVector(t, loc), loc)
+
   }
 
   /**
@@ -815,11 +815,16 @@ object Lowering {
           val defn = Defs.lookup(Defs.Merge)
           val argExps = visitExp(exp) :: acc :: Nil
           val resultType = Types.Datalog
-          LoweredAst.Expr.ApplyDef(defn.sym, argExps, Types.MergeType, resultType, eff, loc)
+          val itpe = Types.MergeType
+          LoweredAst.Expr.ApplyDef(defn.sym, argExps, itpe, resultType, exp.eff, loc)
       }
       val (goalPredSym, goalTerms) = select match {
         case TypedAst.Predicate.Head.Atom(pred, _, terms, _, loc1) =>
-          (mkPredSym(pred), mkVector(terms.map(visitExp), Types.Boxed, loc1))
+          val loweredTerms = terms.map(visitExp)
+          val boxedTerms = loweredTerms.map {
+            t => LoweredAst.Expr.ApplyDef(Defs.Box, List(t), Type.mkPureArrow(t.tpe, Types.Boxed, loc), Types.Boxed, t.eff, loc)
+          }
+          (mkPredSym(pred), mkVector(boxedTerms, Types.Boxed, loc1))
       }
       val extVarType = unwrapProvenanceType(tpe, loc)
       val preds = predsFromExtVar(extVarType, loc)
