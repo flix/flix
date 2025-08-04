@@ -64,6 +64,7 @@ mod Fixpoint3.Solver {
             Debugging.notifyPreLowering("Hoisting") |>
             Phase.IndexSelection.indexProgram |>
             Debugging.notifyPreLowering("Index Selection") |>
+            Phase.Provenance.augmentProgram(withProv) |>
             Phase.Lowering.lowerProgram(rc, withProv)
         };
         let model = match d {

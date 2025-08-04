@@ -43,23 +43,25 @@ mod Fixpoint3.Phase.Compiler {
     ///
     @Internal
     pub def compile(d: Datalog, db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]], strat: Map[PredSym, (Int32, Int32)]): RamProgram = match d {
-        case Datalog(facts, rules) => region rc {
+        case Datalog(facts, _) => region rc {
             let predicates = Predicate.initialize(d, db);
             let stmts = MutList.empty(rc);
             let compiledFacts = unsafely IO run compileFacts(facts, db, predicates);
             // Create map of stratum to list of rules in stratum
             let counter = Counter.fresh(rc);
+            let rulesWithId = enumerateRules(d);
             let pseudoStratums = MutMap.empty(rc);
-            rules |> Vector.forEach(rule -> match rule {
+            rulesWithId |> Vector.forEach(match (num, rule) -> match rule {
                 case Constraint(HeadAtom(p, _, _), _) =>
                     let (pseudoStratum, stratum) = Map.getWithDefault(p, (0, 0), strat);
                     let pseudoMap = MutMap.getOrElsePut(pseudoStratum, MutMap.empty(rc), pseudoStratums);
-                    MutMap.putWith(List.append, stratum, rule :: Nil, pseudoMap)
+                    MutMap.putWith(List.append, stratum, (num, rule) :: Nil, pseudoMap)
             });
             pseudoStratums |> MutMap.forEach(_ -> pseudStrat -> {
-                let runInParallel = (Nil, pseudStrat) ||> MutMap.foldLeft(acc -> stratRules -> {
+                let runInParallel = (Nil, pseudStrat) ||> MutMap.foldLeft(acc -> enumeratedRules -> {
                     let stmtsForPseudo = MutList.empty(rc);
-                    compileStratum(stmtsForPseudo, stratRules, predicates, counter);
+                    let (stratarulesWithId, strataRules) = List.unzip(enumeratedRules);
+                    compileStratum(stmtsForPseudo, strataRules, stratarulesWithId, predicates, counter);
                     (MutList.toVector(stmtsForPseudo) |> RamStmt.Seq) :: acc
                 });
                 if(List.size(runInParallel) > 1) {
@@ -74,6 +76,14 @@ mod Fixpoint3.Phase.Compiler {
             RamProgram.Program(stmt, compiledFacts, predicates, (Map#{}, Map#{}))
         }
         case _ => bug!("Datalog normalization bug")
+    }
+
+    ///
+    /// Collect all rules in `d` and assign them a number, deterministically.
+    ///
+    def enumerateRules(d: Datalog): Vector[(Int32, Constraint)] = match d {
+        case Datalog(_, rules) => Vector.mapWithIndex(i -> r -> (i, r), rules)
+        case _ => unreachable!()
     }
 
     ///
@@ -135,7 +145,7 @@ mod Fixpoint3.Phase.Compiler {
     /// Note that Eval-Rule is the code emitted by `compileRule`
     /// and Eval-Rule-Incr is the code emitted by `compileRuleIncr`.
     ///
-    def compileStratum(stmts: MutList[RamStmt, r1], stratum: List[Constraint], predicates: Predicates, counter: Counter[r2]): Unit \ r1 + r2 = region rc {
+    def compileStratum(stmts: MutList[RamStmt, r1], stratum: List[Constraint], rulesWithId: List[Int32], predicates: Predicates, counter: Counter[r2]): Unit \ r1 + r2 = region rc {
         let idb = (Set#{}, stratum) ||> List.foldRight(match Constraint(head, _) -> {
             Set.insert(Predicate.headAtomToRelSym(head, Full, predicates))
         });
@@ -145,7 +155,7 @@ mod Fixpoint3.Phase.Compiler {
 
         // Construct the inserts for step 1.
         let inserts = MutList.empty(rc);
-        List.forEach(rule -> compileRule(inserts, rule, predicates, counter), stratum);
+        List.forEach(match (rule, ruleNum) -> compileRule(inserts, rule, ruleNum, predicates, counter), List.zip(stratum, rulesWithId));
         let optPar =
             if(MutList.size(inserts) > 1) {
                 Some(RamStmt.Par(MutList.toVector(inserts)))
@@ -163,7 +173,7 @@ mod Fixpoint3.Phase.Compiler {
                 let loopBody = MutList.empty(rc);
 
                 let loopInserts = MutList.empty(rc);
-                List.forEach(rule -> compileRuleIncr(loopInserts, rule, idbIds, predicates, counter), stratum);
+                List.forEach(match (rule, ruleNum) -> compileRuleIncr(loopInserts, rule, ruleNum, idbIds, predicates, counter), List.zip(stratum, rulesWithId));
                 let loopParOpt =
                     if (MutList.size(loopInserts) > 1) {
                         Some(RamStmt.Par(MutList.toVector(loopInserts)))
@@ -241,13 +251,13 @@ mod Fixpoint3.Phase.Compiler {
     ///         end
     ///     end
     ///
-    def compileRule(stmts: MutList[RamStmt, r1], rule: Constraint, predicates: Predicates, counter: Counter[r2]): Unit \ r1 + r2 = match rule {
+    def compileRule(stmts: MutList[RamStmt, r1], rule: Constraint, ruleNum: Int32, predicates: Predicates, counter: Counter[r2]): Unit \ r1 + r2 = match rule {
         case Constraint(headAtom, body) =>
             let HeadAtom(_, _, headTerms) = headAtom;
             let augBody = augmentBody(body, counter);
             let env = unifyVars(predicates, counter, augBody);
             let ramTerms = Vector.map(compileHeadTerm(env, counter), headTerms);
-            let projection = RelOp.Project(ramTerms, Predicate.headAtomToRelSym(headAtom, New, predicates));
+            let projection = RelOp.Project(ramTerms, Predicate.headAtomToRelSym(headAtom, New, predicates), ruleNum);
             match compileBody(env, augBody, predicates, counter) {
                 case None => ()
                 case Some(join) =>
@@ -300,7 +310,9 @@ mod Fixpoint3.Phase.Compiler {
     ///
     /// Note that only relations in `idbSet` are used as Δ-relations.
     ///
-    def compileRuleIncr(stmts: MutList[RamStmt, r1], rule: Constraint, idbSet: Set[Int64], predicates: Predicates, counter: Counter[r2]): Unit \ r1 + r2 = match rule {
+    /// `ruleNum` is the rules assigned number and `counter` is used to create unique `RowVar`s.
+    ///
+    def compileRuleIncr(stmts: MutList[RamStmt, r1], rule: Constraint, ruleNum: Int32, idbSet: Set[Int64], predicates: Predicates, counter: Counter[r2]): Unit \ r1 + r2 = match rule {
         case Constraint(headAtom, body) =>
             let HeadAtom(_, _, headTerms) = headAtom;
             let compileSomething = deltaIndex -> { // `delta` designates the focused atom.
@@ -308,7 +320,7 @@ mod Fixpoint3.Phase.Compiler {
                 let delta = snd(Vector.get(deltaIndex, augBody));
                 let env = unifyVars(predicates, counter, augBody);
                 let ramTerms = Vector.map(compileHeadTerm(env, counter), headTerms);
-                let projection = RelOp.Project(ramTerms, Predicate.headAtomToRelSym(headAtom, New, predicates));
+                let projection = RelOp.Project(ramTerms, Predicate.headAtomToRelSym(headAtom, New, predicates), ruleNum);
                 match compileBody(env, augBody, predicates, counter) {
                     case None => ()
                     case Some(join) =>

@@ -142,7 +142,7 @@ mod Fixpoint3.Phase.Simplifier {
                 recurseNewRel(relSym, body) |> Option.map(RelOp.Query(rowVar, relSym, qry, -1))
             case RelOp.Functional(rowVar, f, terms, body, arity) =>
                 recurse(body) |> Option.map(newBody -> RelOp.Functional(rowVar, f, terms, newBody, arity))
-            case RelOp.Project(_, rel) =>
+            case RelOp.Project(_, rel, _) =>
                 // If we are not in an until and we insert in the new relation for `rel`,
                 // we depend on `rel`, and `rel` is empty beforehand the code is dead.
                 // See the example above in the doc comment for what this removes.

@@ -205,7 +205,7 @@ mod Fixpoint3.Phase.IndexSelection {
             RelOp.Query(rowVar, relSym, boolExps, absoluteIndex, indexOp(body, constructedIndexes, indexState))
         case RelOp.Functional(rowVar, func, terms, body, arity) =>
             RelOp.Functional(rowVar, func, terms, indexOp(body, constructedIndexes, indexState), arity)
-        case RelOp.Project(_, _) => op
+        case RelOp.Project(_, _, _) => op
         case RelOp.If(boolExps, body) => RelOp.If(boolExps, indexOp(body, constructedIndexes, indexState))
     }
 
@@ -287,7 +287,7 @@ mod Fixpoint3.Phase.IndexSelection {
             let res = RelOp.Functional(rowVar, func, terms, collectSearchesOp(body, indexes, seenTuples, rc), arity);
             MutSet.remove(rowVar, seenTuples);
             res
-        case RelOp.Project(_, _) => op
+        case RelOp.Project(_, _, _) => op
         case RelOp.If(boolExps, body) => RelOp.If(boolExps, collectSearchesOp(body, indexes, seenTuples, rc))
     }
 

@@ -630,6 +630,7 @@ mod Fixpoint3.Interpreter {
                 let (_, _, tupleEnv, _) = env;
                 let unboxed = Vector.get(indexInTuple, Array.get(tupleIndex, tupleEnv));
                 boxWith(unboxed, i, boxing)
+            case RamTerm.ProvMax(_) => Boxed.BoxedInt64(evalTerm(env, boxing, term))
             case RamTerm.LoadLatVar(index, _) =>
                 let (_, _, _, latEnv) = env;
                 Array.get(index, latEnv)
@@ -679,6 +680,17 @@ mod Fixpoint3.Interpreter {
             case RamTerm.LoadLatVar(index, boxingPos) =>
                 let (_, _, _, latEnv) = env;
                 unboxWith(Array.get(index, latEnv), boxingPos, boxing)
+            case RamTerm.ProvMax(vec) =>
+                // The depth of the fact is the 1 plus the maximum depth of the facts used to derive it.
+                // We therefore loop over all tuples in `vec` which describes the placements of the facts
+                // used to derive this fact and max over their depth.
+                // For a tuple `(tupleIndex, indexInTuple)` `tupleIndex` describes where the fact is placed
+                // and `indexInTuple` described at which of the entries in the fact is the depth.
+                let (_, _, tupleEnv, _) = env;
+                vec |>
+                    Vector.map(match (tupleIndex, indexInTuple) -> Vector.get(indexInTuple, Array.get(tupleIndex, tupleEnv))) |>
+                    Vector.maximum |>
+                    Option.getWithDefault(1i64)
             case RamTerm.Meet(cap, lhs, rhs, i) =>
                 let boxed1 = evalBoxedT(lhs);
                 let boxed2 = evalBoxedT(rhs);
