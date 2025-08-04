@@ -1755,12 +1755,6 @@ object Lowering {
   private def mkLambdaExp(param: Symbol.VarSym, paramTpe: Type, exp: TypedAst.Expr, expTpe: Type, loc: SourceLocation): TypedAst.Expr =
     TypedAst.Expr.Lambda(TypedAst.FormalParam(TypedAst.Binder(param, paramTpe), Modifiers.Empty, paramTpe, TypeSource.Ascribed, loc), exp, Type.mkPureArrow(paramTpe, expTpe, loc), loc)
 
-  /**
-    * Returns the lambda expression:
-    * {{{
-    *   predSym -> terms -> mkExtVar(predSym, terms)
-    * }}}
-    */
   private def mkExtVarLambda(preds: List[(Name.Pred, List[Type])], tpe: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): TypedAst.Expr = {
     val predSymVar = Symbol.freshVarSym("predSym", BoundBy.FormalParam, loc)
     val termsVar = Symbol.freshVarSym("terms", BoundBy.FormalParam, loc)
