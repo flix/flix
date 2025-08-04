@@ -7,7 +7,7 @@ mod Test.Exp.Foreach {
     @test
     def testForeach01(): Bool = region rc {
         let y = Ref.fresh(rc, 0);
-        foreach (x <- 1 :: Nil) Ref.put(x + 1, y); // Iterator.foreach(match x -> Ref.put(x + 1, y), Iterable.iterator(List.iterator(rc, 1 :: Nil)))
+        foreach (x <- 1 :: Nil) Ref.put(x + 1, y); // ForEach.forEach(match x -> Ref.put(x + 1, y), 1 :: Nil)
         Ref.get(y) == 2
     }
 
@@ -15,14 +15,14 @@ mod Test.Exp.Foreach {
     def testForeach02(): Bool = region rc {
         let y = Ref.fresh(rc, 0);
         foreach (x <- 1 :: Nil)
-            Ref.put(x + 1, y); // Iterator.foreach(match x -> Ref.put(x + 1, y), Iterable.iterator(List.iterator(rc, 1 :: Nil)))
+            Ref.put(x + 1, y); // ForEach.forEach(match x -> Ref.put(x + 1, y), 1 :: Nil)
         Ref.get(y) == 2
     }
 
     @test
     def testForeach03(): Bool = region rc {
         let z = Ref.fresh(rc, 0);
-        foreach ((x, y) <- (1, 2) :: (3, 4) :: Nil) Ref.put(Ref.get(z) + x + y, z); // Iterator.foreach(match (x, y) -> Ref.put(Ref.get(z) + x + y, z), Iterable.iterator(List.iterator(rc, (1, 2) :: (3, 4) :: Nil)))
+        foreach ((x, y) <- (1, 2) :: (3, 4) :: Nil) Ref.put(Ref.get(z) + x + y, z); // ForEach.forEach(match (x, y) -> Ref.put(Ref.get(z) + x + y, z), (1, 2) :: (3, 4) :: Nil)
         Ref.get(z) == 10
     }
 
@@ -30,7 +30,7 @@ mod Test.Exp.Foreach {
     def testForeach04(): Bool = region rc {
         let z = Ref.fresh(rc, 0);
         foreach ((x, y) <- (1, 2) :: (3, 4) :: Nil)
-            Ref.put(Ref.get(z) + x + y, z); // Iterator.foreach(match (x, y) -> Ref.put(Ref.get(z) + x + y, z), Iterable.iterator(List.iterator(rc, (1, 2) :: (3, 4) :: Nil)))
+            Ref.put(Ref.get(z) + x + y, z); // ForEach.forEach(match (x, y) -> Ref.put(Ref.get(z) + x + y, z), (1, 2) :: (3, 4) :: Nil)
         Ref.get(z) == 10
     }
 
@@ -39,7 +39,7 @@ mod Test.Exp.Foreach {
         let z = Ref.fresh(rc, 0);
         let l = (1, 2) :: (3, 4) :: Nil;
         foreach ((x, y) <- l)
-            Ref.put(Ref.get(z) + x + y, z); // Iterator.foreach(match (x, y) -> Ref.put(Ref.get(z) + x + y, z), Iterable.iterator(List.iterator(rc, l)))
+            Ref.put(Ref.get(z) + x + y, z); // ForEach.forEach(match (x, y) -> Ref.put(Ref.get(z) + x + y, z), l)
         Ref.get(z) == 10
     }
 
@@ -48,7 +48,7 @@ mod Test.Exp.Foreach {
         let z = Ref.fresh(rc, 0);
         let l = (1, 2) :: (3, 4) :: Nil;
         foreach ((x, _) <- l)
-            Ref.put(Ref.get(z) + x, z); // Iterator.foreach(match (x, _) -> Ref.put(Ref.get(z) + x, z), Iterable.iterator(List.iterator(rc, l)))
+            Ref.put(Ref.get(z) + x, z); // ForEach.forEach(match (x, _) -> Ref.put(Ref.get(z) + x, z), l)
         Ref.get(z) == 4
     }
 
@@ -157,7 +157,7 @@ mod Test.Exp.Foreach {
     @test
     def testForeach17(): Bool = region rc {
         let y = Ref.fresh(rc, 0);
-        foreach(   x     <-      1 :: Nil  )Ref.put(x + 1, y); // Iterator.foreach(match x -> Ref.put(x + 1, y), Iterable.iterator(List.iterator(rc, 1 :: Nil)))
+        foreach(   x     <-      1 :: Nil  )Ref.put(x + 1, y); // ForEach.forEach(match x -> Ref.put(x + 1, y), 1 :: Nil)
         Ref.get(y) == 2
     }
 
@@ -206,7 +206,7 @@ mod Test.Exp.Foreach {
     @test
     def testForeach23(): Bool = region rc {
         let y = Ref.fresh(rc, 0);
-        foreach (x <- 1 :: 2 :: 3 :: Nil; if x > 1) Ref.put(Ref.get(y) + x, y); // Iterator.foreach(match x -> if (x > 1) Ref.put(Ref.get(y) + x, y) else (), Iterable.iterator(List.iterator(rc, 1 :: 2 :: 3 :: Nil)))
+        foreach (x <- 1 :: 2 :: 3 :: Nil; if x > 1) Ref.put(Ref.get(y) + x, y); // ForEach.forEach(match x -> if (x > 1) Ref.put(Ref.get(y) + x, y) else (), 1 :: 2 :: 3 :: Nil)
         Ref.get(y) == 5
     }
 
@@ -215,7 +215,7 @@ mod Test.Exp.Foreach {
         let y = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: 3 :: Nil;
                  if x > 1)
-                    Ref.put(Ref.get(y) + x, y); // Iterator.foreach(match x -> if (x > 1) Ref.put(Ref.get(y) + x, y) else (), Iterable.iterator(List.iterator(rc, 1 :: 2 :: 3 :: Nil)))
+                    Ref.put(Ref.get(y) + x, y); // ForEach.forEach(match x -> if (x > 1) Ref.put(Ref.get(y) + x, y) else (), 1 :: 2 :: 3 :: Nil)
         Ref.get(y) == 5
     }
 
@@ -224,7 +224,7 @@ mod Test.Exp.Foreach {
         let y = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: 3 :: Nil;
                  if x > 1) {
-                    Ref.put(Ref.get(y) + x, y) // Iterator.foreach(match x -> if (x > 1) Ref.put(Ref.get(y) + x, y) else (), Iterable.iterator(List.iterator(rc, 1 :: 2 :: 3 :: Nil))))
+                    Ref.put(Ref.get(y) + x, y) // ForEach.forEach(match x -> if (x > 1) Ref.put(Ref.get(y) + x, y) else (), 1 :: 2 :: 3 :: Nil))
         };
         Ref.get(y) == 5
     }
@@ -233,7 +233,7 @@ mod Test.Exp.Foreach {
     def testForeach26(): Bool = region rc {
         let y = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: 3 :: Nil; if x > 1) {
-            Ref.put(Ref.get(y) + x, y) // Iterator.foreach(match x -> if (x > 1) Ref.put(Ref.get(y) + x, y) else (), Iterable.iterator(List.iterator(rc, 1 :: 2 :: 3 :: Nil)))
+            Ref.put(Ref.get(y) + x, y) // ForEach.forEach(match x -> if (x > 1) Ref.put(Ref.get(y) + x, y) else (), 1 :: 2 :: 3 :: Nil)
         };
         Ref.get(y) == 5
     }
@@ -283,7 +283,7 @@ mod Test.Exp.Foreach {
     @test
     def testForeach32(): Bool = region rc {
         let y = Ref.fresh(rc, 0);
-        foreach (x <- 1 :: 2 :: 3 :: Nil; if x > 1) Ref.put(Ref.get(y) + x, y); // Iterator.foreach(match x -> if (x > 1) Ref.put(Ref.get(y) + x, y) else (), Iterable.iterator(List.iterator(rc, 1 :: 2 :: 3 :: Nil)))
+        foreach (x <- 1 :: 2 :: 3 :: Nil; if x > 1) Ref.put(Ref.get(y) + x, y); // ForEach.forEach(match x -> if (x > 1) Ref.put(Ref.get(y) + x, y) else (), 1 :: 2 :: 3 :: Nil)
         Ref.get(y) == 5
     }
 
@@ -292,7 +292,7 @@ mod Test.Exp.Foreach {
         let y = Ref.fresh(rc, 0);
         foreach (x <- 1 :: 2 :: 3 :: Nil;
                  if x > 1)
-                    Ref.put(Ref.get(y) + x, y); // Iterator.foreach(match x -> if (x > 1) Ref.put(Ref.get(y) + x, y) else (), Iterable.iterator(List.iterator(rc, 1 :: 2 :: 3 :: Nil)))
+                    Ref.put(Ref.get(y) + x, y); // ForEach.forEach(match x -> if (x > 1) Ref.put(Ref.get(y) + x, y) else (), 1 :: 2 :: 3 :: Nil)
         Ref.get(y) == 5
     }
 
@@ -300,7 +300,7 @@ mod Test.Exp.Foreach {
     def testForeach35(): Bool = region rc {
         let z = Ref.fresh(rc, 0);
         foreach(  x <-  1 :: 2 :: Nil  ;   if x > 1 ;   y  <-   3 :: 4 :: Nil;if y > 3)Ref.put(Ref.get(z) + (x * y), z);
-        // Iterator.foreach(match x -> if (x > 1) Iterator.foreach(match y -> if (y > 3) Ref.put(Ref.get(z) + (x * y), z) else (), Iterable.iterator(List.iterator(rc, 3 :: 4 :: Nil))) else (), Iterable.iterator(List.iterator(rc, 1 :: 2 :: Nil)))
+        // ForEach.forEach(match x -> if (x > 1) Iterator.foreach(match y -> if (y > 3) Ref.put(Ref.get(z) + (x * y), z) else (), Iterable.iterator(List.iterator(rc, 3 :: 4 :: Nil))) else (), 1 :: 2 :: Nil)
         Ref.get(z) == 4 * 2
     }
 
@@ -335,7 +335,7 @@ mod Test.Exp.Foreach {
     @test
     def testForeach40(): Bool = region rc {
         let y = Ref.fresh(rc, 0);
-        foreach (x <- List.range(1, 2)) Ref.put(x + 1, y); // Iterator.foreach(match x -> Ref.put(x + 1, y), Iterable.iterator(MutList.range(rc, 1, 2)))
+        foreach (x <- List.range(1, 2)) Ref.put(x + 1, y); // ForEach.forEach(match x -> Ref.put(x + 1, y), 1, 2)
         Ref.get(y) == 2
     }
 
@@ -347,7 +347,7 @@ mod Test.Exp.Foreach {
         };
         let y = Ref.fresh(rc, 0);
         foreach (x <- MutList.toList(l))
-            Ref.put(Ref.get(y) + x, y); // Iterator.foreach(match x -> Ref.put(x + 1, y), Iterable.iterator(l))
+            Ref.put(Ref.get(y) + x, y); // ForEach.forEach(match x -> Ref.put(x + 1, y), l)
         Ref.get(y) == (9 + 1) * 9 / 2
     }
 
@@ -360,7 +360,7 @@ mod Test.Exp.Foreach {
         let y = Ref.fresh(rc, 0);
         foreach (x <- MutList.toList(l);
                  if x < 5)
-            Ref.put(Ref.get(y) + x, y); // Iterator.foreach(match x -> if (x < 5) Ref.put(x + 1, y) else (), Iterable.iterator(l))
+            Ref.put(Ref.get(y) + x, y); // ForEach.forEach(match x -> if (x < 5) Ref.put(x + 1, y) else (), l)
         Ref.get(y) == (4 + 1) * 4 / 2
     }
 
