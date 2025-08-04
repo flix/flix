@@ -121,7 +121,7 @@ mod MutPriorityQueue {
     ///
     /// Enqueues each element in `m` into `mq`.
     ///
-    pub def enqueueAll(m: m, mq: MutPriorityQueue[elt, r]): Unit \ (r + Iterable.Aef[m]) with Iterable[m], Order[elt] where Iterable.Elm[m] ~ elt =
+    pub def enqueueAll(m: m, mq: MutPriorityQueue[elt, r]): Unit \ (r + ForEach.Aef[m]) with ForEach[m], Order[elt] where ForEach.Elm[m] ~ elt =
         foreach(x <- m) {
             enqueue(x, mq)
         }
