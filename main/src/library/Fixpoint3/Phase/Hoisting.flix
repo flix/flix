@@ -25,7 +25,7 @@
 /// search a ∈ A do
 ///     search b ∈ B do
 ///         search c ∈ C do
-///             if(b[0] = a[0] ∧ c[0] = a[0]) then
+///             if (b[0] = a[0] ∧ c[0] = a[0]) then
 ///                 project (a[0]) into R
 ///             end
 ///         end
@@ -34,7 +34,7 @@
 /// ```
 /// is hoisted to
 /// ```
-/// if(not (A = ∅) ∧ not (B = ∅) not (C = ∅)) then
+/// if (not (A = ∅) ∧ not (B = ∅) not (C = ∅)) then
 ///     search a ∈ A do
 ///         query {b ∈ B | b[0] = a[0]} do
 ///             query {c ∈ C | c[0] = a[0]} do
@@ -60,7 +60,7 @@
 /// search a ∈ A do
 ///     search b ∈ B do
 ///         search c ∈ C do
-///             if(b[0] = a[0] ∧ c[0] = a[0], b[1] = 1, b[2] = c[1]) then
+///             if (b[0] = a[0] ∧ c[0] = a[0], b[1] = 1, b[2] = c[1]) then
 ///                 project (a[0]) into R
 ///             end
 ///         end
@@ -80,7 +80,7 @@
 ///
 /// When arriving at `search c ∈ C`, `termMap` will be `{b[1] => 1, a[0] => a[0], c[1] => b[2]}`.
 ///
-/// When arriving at `if(...)` and `project(...)` `termMap` will remain unchanged.
+/// When arriving at `if (...)` and `project(...)` `termMap` will remain unchanged.
 ///
 mod Fixpoint3.Phase.Hoisting {
     use Fixpoint3.Ast.Ram.{arityOf, arityOfNonLat, BoolExp, RamId, RamProgram, RamStmt, RamTerm, RelOp, RelSym, RowVar}
@@ -109,7 +109,7 @@ mod Fixpoint3.Phase.Hoisting {
                     let rep = getOrCrash(MutDisjointSets.find(load, equalitySets));
                     match Map.get(rep, innerAcc) {
                         case Some(RamTerm.Lit(v, _)) => {
-                                if(v != val) MutSet.add(fst(rep), impossible)
+                                if (v != val) MutSet.add(fst(rep), impossible)
                                 else ()
                             };
                             innerAcc
@@ -344,8 +344,8 @@ mod Fixpoint3.Phase.Hoisting {
                 // and we unbind it by removing it from `termMap`.
                 // Furthermore, if `rep => rowVar[i1]`, where `i1 != i`, then `rowVar[i] == rowVar[i1]`.
                 // We cannot currently use this for index selection, but need to keep this invariant, so it is pushed to `intraEqualities`
-                case RamTerm.RowLoad(rv, i1, _) if(rv == rowVar and i1 == i) => ()
-                case RamTerm.RowLoad(rv, i1, rel) if(rv == rowVar) =>
+                case RamTerm.RowLoad(rv, i1, _) if (rv == rowVar and i1 == i) => ()
+                case RamTerm.RowLoad(rv, i1, rel) if (rv == rowVar) =>
                     intraEqualities |> MutList.push(BoolExp.Eq(RamTerm.RowLoad(rv, i, rel), RamTerm.RowLoad(rv, i1, rel)))
                 case value => MutList.push(BoolExp.Eq(RamTerm.RowLoad(rowVar, i, relSym), value), knownEqualities)
         }});
@@ -363,7 +363,7 @@ mod Fixpoint3.Phase.Hoisting {
         termMap: Map[(RowVar, Int32), RamTerm],
         equalitySets: MutDisjointSets[(RowVar, Int32), r],
         relSym: RelSym
-    ): Map[(RowVar, Int32), RamTerm] \ r =  {
+    ): Map[(RowVar, Int32), RamTerm] \ r = {
         // Register all values `rowVar[i]`, for `0 <= i < arity`, as known when hoisting `body`.
         (termMap, Vector.range(0, arityOf(relSym))) ||>
         Vector.foldLeft(acc -> i -> {

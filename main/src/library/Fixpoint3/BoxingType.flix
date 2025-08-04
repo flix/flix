@@ -120,7 +120,7 @@ mod Fixpoint3.BoxingType {
     ///
     /// `values` contains the `Boxed` objects being stored.
     ///
-    /// The following invariant is kept `values(valueToRep[boxedValue]) == boxedValue`.
+    /// The following invariant is kept: `values(valueToRep[boxedValue]) == boxedValue`.
     /// This design limits us to `2^32` objects of a given type.
     ///
     /// Furthermore, for lattice `Bot` should be represented by `0`.

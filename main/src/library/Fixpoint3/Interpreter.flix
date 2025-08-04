@@ -163,7 +163,7 @@ mod Fixpoint3.Interpreter {
         interpretWithDatabase(rc, indexes, boxing, withProv, program)
 
     ///
-    /// Executes `program` using `boxing` as `Boxing` information and  `db` as initial
+    /// Executes `program` using `boxing` as `Boxing` information and `db` as initial
     /// `Indexes`.
     ///
     def interpretWithDatabase(

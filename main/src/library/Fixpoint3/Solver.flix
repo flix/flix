@@ -914,7 +914,7 @@ mod Fixpoint3.Solver {
             Map.filterWithKey(k -> facts -> match k {
                 case RelSym.Symbol(PredSym(_, id), _, _) => Predicate.isFullId(id, meta) and not (unsafely IO run BPlusTree.isEmpty(facts))
             });
-        if(withProv) {
+        if (withProv) {
             toProvenance(rules, dbOnlyFullRels)
         } else {
             Model(dbOnlyFullRels)

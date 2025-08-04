@@ -96,7 +96,7 @@ mod Fixpoint3.Phase.Simplifier {
             match simplifyHelper(nonEmpty, predicates, true, body) {
                 case None => None
                 case Some(simplifiedBody) =>
-                    if(isOnlyMergeSwapPurge(simplifiedBody)) {
+                    if (isOnlyMergeSwapPurge(simplifiedBody)) {
                         None
                     } else {
                         Some(RamStmt.Until(test, simplifiedBody))
