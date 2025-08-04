@@ -60,6 +60,15 @@
         }
     }
 
+    ///
+    /// All facts in `oldTree` are expanded/annotated to include a depth and rule number.
+    ///
+    /// By convention the order of augmentation is depth then rule. Facts have depth 0
+    /// and by convention rule -1.
+    ///
+    /// A fact of the form `[42i64, "someString", Nil]` will be augmented to
+    /// `[42i64, "someString", Nil, 0, -1]`.
+    ///
     def augmentFacts(oldTree: BPlusTree[Vector[Boxed], Boxed, Static]): BPlusTree[Vector[Boxed], Boxed, Static] \ IO = {
         let newTree = BPlusTree.empty(Static);
         BPlusTree.forEach(tuple -> v ->

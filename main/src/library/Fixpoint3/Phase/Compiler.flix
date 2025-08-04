@@ -49,9 +49,9 @@ mod Fixpoint3.Phase.Compiler {
             let compiledFacts = unsafely IO run compileFacts(facts, db, predicates);
             // Create map of stratum to list of rules in stratum
             let counter = Counter.fresh(rc);
-            let ruleNums = enumerateRules(d);
+            let rulesWithId = enumerateRules(d);
             let pseudoStratums = MutMap.empty(rc);
-            ruleNums |> Vector.forEach(match (num, rule) -> match rule {
+            rulesWithId |> Vector.forEach(match (num, rule) -> match rule {
                 case Constraint(HeadAtom(p, _, _), _) =>
                     let (pseudoStratum, stratum) = Map.getWithDefault(p, (0, 0), strat);
                     let pseudoMap = MutMap.getOrElsePut(pseudoStratum, MutMap.empty(rc), pseudoStratums);
@@ -60,8 +60,8 @@ mod Fixpoint3.Phase.Compiler {
             pseudoStratums |> MutMap.forEach(_ -> pseudStrat -> {
                 let runInParallel = (Nil, pseudStrat) ||> MutMap.foldLeft(acc -> enumeratedRules -> {
                     let stmtsForPseudo = MutList.empty(rc);
-                    let (strataRuleNums, strataRules) = List.unzip(enumeratedRules);
-                    compileStratum(stmtsForPseudo, strataRules, strataRuleNums, predicates, counter);
+                    let (stratarulesWithId, strataRules) = List.unzip(enumeratedRules);
+                    compileStratum(stmtsForPseudo, strataRules, stratarulesWithId, predicates, counter);
                     (MutList.toVector(stmtsForPseudo) |> RamStmt.Seq) :: acc
                 });
                 if(List.size(runInParallel) > 1) {
@@ -145,7 +145,7 @@ mod Fixpoint3.Phase.Compiler {
     /// Note that Eval-Rule is the code emitted by `compileRule`
     /// and Eval-Rule-Incr is the code emitted by `compileRuleIncr`.
     ///
-    def compileStratum(stmts: MutList[RamStmt, r1], stratum: List[Constraint], ruleNums: List[Int32], predicates: Predicates, counter: Counter[r2]): Unit \ r1 + r2 = region rc {
+    def compileStratum(stmts: MutList[RamStmt, r1], stratum: List[Constraint], rulesWithId: List[Int32], predicates: Predicates, counter: Counter[r2]): Unit \ r1 + r2 = region rc {
         let idb = (Set#{}, stratum) ||> List.foldRight(match Constraint(head, _) -> {
             Set.insert(Predicate.headAtomToRelSym(head, Full, predicates))
         });
@@ -155,7 +155,7 @@ mod Fixpoint3.Phase.Compiler {
 
         // Construct the inserts for step 1.
         let inserts = MutList.empty(rc);
-        List.forEach(match (rule, ruleNum) -> compileRule(inserts, rule, ruleNum, predicates, counter), List.zip(stratum, ruleNums));
+        List.forEach(match (rule, ruleNum) -> compileRule(inserts, rule, ruleNum, predicates, counter), List.zip(stratum, rulesWithId));
         let optPar =
             if(MutList.size(inserts) > 1) {
                 Some(RamStmt.Par(MutList.toVector(inserts)))
@@ -173,7 +173,7 @@ mod Fixpoint3.Phase.Compiler {
                 let loopBody = MutList.empty(rc);
 
                 let loopInserts = MutList.empty(rc);
-                List.forEach(match (rule, ruleNum) -> compileRuleIncr(loopInserts, rule, ruleNum, idbIds, predicates, counter), List.zip(stratum, ruleNums));
+                List.forEach(match (rule, ruleNum) -> compileRuleIncr(loopInserts, rule, ruleNum, idbIds, predicates, counter), List.zip(stratum, rulesWithId));
                 let loopParOpt =
                     if (MutList.size(loopInserts) > 1) {
                         Some(RamStmt.Par(MutList.toVector(loopInserts)))
