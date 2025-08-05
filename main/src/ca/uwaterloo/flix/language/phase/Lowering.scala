@@ -43,7 +43,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 object Lowering {
 
   private object Defs {
-    val version: String = "3"
+    val version: String = ""
     lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.box")
     lazy val Unbox: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.unbox")
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.runSolver")
@@ -131,6 +131,8 @@ object Lowering {
     lazy val ChannelMpmc: Type = Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Eff ->: Kind.Star), SourceLocation.Unknown)
 
     lazy val ConcurrentReentrantLock: Type = Type.mkEnum(Enums.ConcurrentReentrantLock, Nil, SourceLocation.Unknown)
+
+    lazy val VectorOfBoxed: Type = Types.mkVector(Types.Boxed, SourceLocation.Unknown)
 
     def mkList(t: Type, loc: SourceLocation): Type = Type.mkEnum(Enums.FList, List(t), loc)
 
@@ -1762,13 +1764,12 @@ object Lowering {
   private def mkExtVarLambda(preds: List[(Name.Pred, List[Type])], tpe: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): TypedAst.Expr = {
     val predSymVar = Symbol.freshVarSym("predSym", BoundBy.FormalParam, loc)
     val termsVar = Symbol.freshVarSym("terms", BoundBy.FormalParam, loc)
-    val vectorOfBoxed = Types.mkVector(Types.Boxed, loc)
     mkLambdaExp(predSymVar, Types.PredSym,
-      mkLambdaExp(termsVar, vectorOfBoxed,
+      mkLambdaExp(termsVar, Types.VectorOfBoxed,
         mkExtVarOuterBody(preds, predSymVar, termsVar, tpe, loc),
         tpe, Type.Pure, loc
       ),
-      Type.mkPureArrow(vectorOfBoxed, tpe, loc), Type.Pure, loc
+      Type.mkPureArrow(Types.VectorOfBoxed, tpe, loc), Type.Pure, loc
     )
   }
 
@@ -1794,7 +1795,6 @@ object Lowering {
   }
 
   private def mkExtVarInnerBody(preds: List[(Name.Pred, List[Type])], nameVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation): TypedAst.Expr = {
-    val vectorOfBoxed = Types.mkVector(Types.Boxed, loc)
     val predRules = preds.map {
       case (p, types) =>
         val termsExps = types.zipWithIndex.map {
@@ -1806,10 +1806,10 @@ object Lowering {
                   DefSymUse(Defs.VectorGet, loc),
                   exps = List(
                     TypedAst.Expr.Cst(Constant.Int32(i), Type.Int32, loc),
-                    TypedAst.Expr.Var(termsVar, vectorOfBoxed, loc)
+                    TypedAst.Expr.Var(termsVar, Types.VectorOfBoxed, loc)
                   ),
                   targs = List.empty,
-                  itpe = Type.mkPureUncurriedArrow(List(Type.Int32, vectorOfBoxed), Types.Boxed, loc),
+                  itpe = Type.mkPureUncurriedArrow(List(Type.Int32, Types.VectorOfBoxed), Types.Boxed, loc),
                   tpe = Types.Boxed, eff = Type.Pure, loc = loc
                 )
               ),
