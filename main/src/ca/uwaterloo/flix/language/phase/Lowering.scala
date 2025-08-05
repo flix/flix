@@ -128,11 +128,9 @@ object Lowering {
 
     lazy val ConcurrentReentrantLock: Type = Type.mkEnum(Enums.ConcurrentReentrantLock, Nil, SourceLocation.Unknown)
 
-    lazy val VectorOfBoxed: Type = Types.mkVector(Types.Boxed, SourceLocation.Unknown)
+    lazy val VectorOfBoxed: Type = Type.mkVector(Types.Boxed, SourceLocation.Unknown)
 
     def mkList(t: Type, loc: SourceLocation): Type = Type.mkEnum(Enums.FList, List(t), loc)
-
-    def mkVector(t: Type, loc: SourceLocation): Type = Type.mkVector(t, loc)
 
     //
     // Function Types.
@@ -143,7 +141,7 @@ object Lowering {
     lazy val RenameType: Type = Type.mkPureUncurriedArrow(List(mkList(PredSym, SourceLocation.Unknown), Datalog), Datalog, SourceLocation.Unknown)
 
     def mkProvenanceOf(t: Type, loc: SourceLocation): Type =
-      Type.mkPureUncurriedArrow(List(mkVector(Boxed, loc), PredSym, Datalog, Type.mkPureCurriedArrow(List(PredSym, mkVector(Boxed, loc)), t, loc)), mkVector(t, loc), loc)
+      Type.mkPureUncurriedArrow(List(Type.mkVector(Boxed, loc), PredSym, Datalog, Type.mkPureCurriedArrow(List(PredSym, Type.mkVector(Boxed, loc)), t, loc)), Type.mkVector(t, loc), loc)
 
   }
 
@@ -1907,7 +1905,7 @@ object Lowering {
     * }}}
     * where `"terms" == termsVar.text`.
     */
-  private def mkUnboxedTerm(termsVar: Symbol.VarSym, tpe1: Type, i: Int, loc: SourceLocation): TypedAst.Expr = {
+  private def mkUnboxedTerm(termsVar: Symbol.VarSym, tpe: Type, i: Int, loc: SourceLocation): TypedAst.Expr = {
     TypedAst.Expr.ApplyDef(
       DefSymUse(Defs.Unbox, loc),
       exps = List(
@@ -1923,8 +1921,8 @@ object Lowering {
         )
       ),
       targs = List.empty,
-      itpe = Type.mkPureUncurriedArrow(List(Types.Boxed), tpe1, loc),
-      tpe = tpe1, eff = Type.Pure, loc = loc
+      itpe = Type.mkPureUncurriedArrow(List(Types.Boxed), tpe, loc),
+      tpe = tpe, eff = Type.Pure, loc = loc
     )
   }
 
