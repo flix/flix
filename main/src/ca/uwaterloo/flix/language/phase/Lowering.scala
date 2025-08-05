@@ -824,7 +824,7 @@ object Lowering {
           (mkPredSym(pred), mkVector(boxedTerms, Types.Boxed, loc1))
       }
       val extVarType = unwrapProvenanceType(tpe, loc)
-      val preds = predsFromExtVar(extVarType, loc)
+      val preds = collectPredsFromExtVarType(extVarType, loc)
       val lambdaExp = visitExp(mkExtVarLambda(preds, extVarType, loc))
       val argExps = goalTerms :: goalPredSym :: mergeExp :: lambdaExp :: Nil
       val itpe = Types.mkProvenanceOf(extVarType, loc)
@@ -1729,24 +1729,27 @@ object Lowering {
     case _ => throw InternalCompilerException("Could not unwrap provenance type", loc)
   }
 
-  private def predsFromExtVar(tpe: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = tpe match {
+  private def collectPredsFromExtVarType(tpe: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = tpe match {
     case Type.Apply(Type.Cst(TypeConstructor.Extensible, _), tpe1, loc1) =>
-      predsFromSchema(tpe1, loc1)
+      collectPredsFromSchema(tpe1, loc1)
     case _ => throw InternalCompilerException("Could not unwrap provenance type", loc)
   }
 
-  private def predsFromSchema(row: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = row match {
+  private def collectPredsFromSchema(row: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = row match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), rel, loc2), tpe2, loc1) =>
-      (pred, typesFromRelation(rel, loc2).reverse) :: predsFromSchema(tpe2, loc1)
+      (pred, collectTypesFromRelation(rel, loc2)) :: collectPredsFromSchema(tpe2, loc1)
     case Type.Var(_, _) => Nil
     case Type.SchemaRowEmpty => Nil
     case _ => throw InternalCompilerException("Could not unwrap row type", loc)
   }
 
-  private def typesFromRelation(rel: Type, loc: SourceLocation): List[Type] = rel match {
-    case Type.Apply(Type.Cst(TypeConstructor.Relation(_), _), t, _) => t :: Nil
-    case Type.Apply(rest, t, loc1) => t :: typesFromRelation(rest, loc1)
-    case _ => throw InternalCompilerException("Could not unwrap relation type", loc)
+  private def collectTypesFromRelation(rel: Type, loc: SourceLocation): List[Type] = {
+    val f = (rel0: Type, loc0: SourceLocation) => rel0 match {
+      case Type.Apply(Type.Cst(TypeConstructor.Relation(_), _), t, _) => t :: Nil
+      case Type.Apply(rest, t, loc1) => t :: collectTypesFromRelation(rest, loc1)
+      case _ => throw InternalCompilerException("Could not unwrap relation type", loc0)
+    }
+    f(rel, loc).reverse
   }
 
   private def mkLambdaExp(param: Symbol.VarSym, paramTpe: Type, exp: TypedAst.Expr, expTpe: Type, eff: Type, loc: SourceLocation): TypedAst.Expr =
@@ -1821,9 +1824,7 @@ object Lowering {
           guard = None,
           exp = TypedAst.Expr.ExtTag(
             label = Name.Label(p.name, loc),
-            exps = List(
-              TypedAst.Expr.Tuple(termsExps, Type.mkTuple(types, loc), Type.Pure, loc),
-            ),
+            exps = termsExps,
             tpe = tpe, eff = Type.Pure, loc = loc
           ),
           loc = loc
