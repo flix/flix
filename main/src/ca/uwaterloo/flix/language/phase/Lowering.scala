@@ -43,7 +43,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 object Lowering {
 
   private object Defs {
-    val version: String = "3"
+    val version: String = ""
     lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.box")
     lazy val Unbox: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.unbox")
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.runSolver")
