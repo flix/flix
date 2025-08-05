@@ -1427,16 +1427,6 @@ object Lowering {
       throw InternalCompilerException("Cannot lift functions with more than 5 free variables.", loc)
     }
 
-    // Special case: No free variables.
-    if (fvs.isEmpty) {
-      val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)
-      // Construct a lambda that takes the unit argument.
-      val fparam = LoweredAst.FormalParam(sym, Modifiers.Empty, Type.Unit, loc)
-      val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
-      val lambdaExp = LoweredAst.Expr.Lambda(fparam, exp, tpe, loc)
-      return mkTag(Enums.HeadTerm, s"App0", List(lambdaExp), Types.HeadTerm, loc)
-    }
-
     // Introduce a fresh variable for each free variable.
     val freshVars = fvs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
       case (acc, (oldSym, _)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
