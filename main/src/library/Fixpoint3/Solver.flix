@@ -98,6 +98,13 @@ mod Fixpoint3.Solver {
     }
 
     ///
+    /// Returns a provenance model of the given Datalog program `d`.
+    /// The provenance model can later be used for provenance queries.
+    ///
+    @Internal
+    pub def runSolverWithProvenance(d: Datalog): Datalog = ???
+
+    ///
     /// Returns the pairwise union of `d1` and `d2`.
     /// I.e. the facts of the union is the union of the facts and likewise for rules.
     /// A fact or rule may occur twice in the Datalog program. This has no effect on its semantics.
@@ -132,6 +139,12 @@ mod Fixpoint3.Solver {
         case (Provenance(_, _), _) => union(provenanceToModel(d1), d2)
         case (_, Provenance(_, _)) => union(d1, provenanceToModel(d2))
     }
+
+    ///
+    /// Returns the provenance of fact `f` of relation `p` given Datalog program `d`.
+    ///
+    @Internal
+    pub def provenanceOf(f: Vector[Boxed], p: PredSym, d: Datalog, mapping: PredSym -> Vector[Boxed] -> t): Vector[t] = ???
 
     ///
     /// Returns the `Provenance` program `d` as a `Model`.
