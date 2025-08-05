@@ -19,7 +19,7 @@
 mod Fixpoint3.Solver {
     import dev.flix.runtime.Global
 
-    use Fixpoint3.{Boxed, Debugging, Interpreter, Options, Phase, Predicate, PredSymsOf, SubstitutePredSym}
+    use Fixpoint3.{Boxed, Debugging, Interpreter, Options, Phase, Predicate, PredSymsOf, SubstitutePredSym }
     use Fixpoint3.Ast.Datalog.{Datalog, Constraint, HeadTerm}
     use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Join, Model, Provenance}
     use Fixpoint3.Ast.Datalog.Constraint.Constraint
@@ -139,6 +139,13 @@ mod Fixpoint3.Solver {
         case (Provenance(_, _), _) => union(provenanceToModel(d1), d2)
         case (_, Provenance(_, _)) => union(d1, provenanceToModel(d2))
     }
+
+    ///
+    /// Returns the provenance of fact `f` of relation `p` given Datalog program `d`.
+    ///
+    @Internal
+    pub def provenanceOf(f: Vector[Boxed], p: PredSym, _d: Datalog, mkExtVar: PredSym -> Vector[Boxed] -> t): Vector[t] =
+        Vector#{mkExtVar(p, f)}
 
     ///
     /// Returns the `Provenance` program `d` as a `Model`.
