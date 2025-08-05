@@ -19,6 +19,7 @@ mod TestForEach {
     use ForEach.forEach
     use ForEach.withFilter
     use ForEach.withIndex
+    use ForEach.withMap
 
     /////////////////////////////////////////////////////////////////////////////
     // withIndex                                                               //
@@ -65,6 +66,28 @@ mod TestForEach {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // withMap.                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    pub def withMap01(): Bool = region rc {
+        let results = MutList.empty(rc);
+        foreach(x <- withMap(x -> x * 2, Nil)) {
+            results |> MutList.push(x)
+        };
+        results |> MutList.isEmpty
+    }
+
+    @test
+    pub def withMap02(): Bool = region rc {
+        let results = MutList.empty(rc);
+        foreach(x <- withMap(x -> x * 2, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)) {
+            results |> MutList.push(x)
+        };
+        results |> MutList.toList == 0 :: 2 :: 4 :: 6 :: 8 :: 10 :: Nil
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // composite                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -93,6 +116,57 @@ mod TestForEach {
             results |> MutList.push((i, x))
         };
         results |> MutList.toList == (0, 0) :: (2, 2) :: (4, 4) :: (6, 6) :: (8, 8) :: Nil
+    }
+
+    @test
+    pub def composite03(): Bool = region rc {
+        let results = MutList.empty(rc);
+        let list = (0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+            |> withMap(x -> x * 2)
+            |> withIndex;
+        foreach((i, x) <- list) {
+            results |> MutList.push((i, x))
+        };
+        results |> MutList.toList == (0, 0) :: (1, 2) :: (2, 4) :: (3, 6) :: (4, 8) :: (5, 10) :: Nil
+    }
+
+    @test
+    pub def composite04(): Bool = region rc {
+        let results = MutList.empty(rc);
+        let list = (0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+            |> withIndex
+            |> withMap(pair -> {
+                let (i, x) = pair;
+                i * x
+            });
+        foreach(x <- list) {
+            results |> MutList.push(x)
+        };
+        results |> MutList.toList == 0 :: 1 :: 4 :: 9 :: 16 :: 25 :: Nil
+    }
+
+    @test
+    pub def composite05(): Bool = region rc {
+        let results = MutList.empty(rc);
+        let list = (0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+            |> withMap(x -> x * 2)
+            |> withFilter(x -> x `modulo` 3 == 0);
+        foreach(x <- list) {
+            results |> MutList.push(x)
+        };
+        results |> MutList.toList == 0 :: 6 :: Nil
+    }
+
+    @test
+    pub def composite06(): Bool = region rc {
+        let results = MutList.empty(rc);
+        let list = (0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil)
+            |> withFilter(x -> x `modulo` 2 == 0)
+            |> withMap(x -> x * 3);
+        foreach(x <- list) {
+            results |> MutList.push(x)
+        };
+        results |> MutList.toList == 0 :: 6 :: 12 :: 18 :: 24 :: Nil
     }
 
 }
