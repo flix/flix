@@ -334,13 +334,10 @@ object Inliner {
       val rs = rules.map(visitMatchRule(_, ctx0))
       Expr.Match(e, rs, tpe, eff, loc)
 
-    case Expr.ExtensibleMatch(label, exp1, sym2, exp2, sym3, exp3, tpe, eff, loc) =>
-      val freshVarSym2 = Symbol.freshVarSym(sym2)
-      val freshVarSym3 = Symbol.freshVarSym(sym3)
-      val e1 = visitExp(exp1, ctx0)
-      val e2 = visitExp(exp2, ctx0.addVarSubst(sym2, freshVarSym2).addInScopeVar(freshVarSym2, BoundKind.ParameterOrPattern))
-      val e3 = visitExp(exp3, ctx0.addVarSubst(sym3, freshVarSym3).addInScopeVar(freshVarSym3, BoundKind.ParameterOrPattern))
-      Expr.ExtensibleMatch(label, e1, freshVarSym2, e2, freshVarSym3, e3, tpe, eff, loc)
+    case Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+      val e = visitExp(exp, ctx0)
+      val rs = rules.map(visitExtMatchRule(_, ctx0))
+      Expr.ExtMatch(e, rs, tpe, eff, loc)
 
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, ctx0))
@@ -401,10 +398,10 @@ object Inliner {
     case Pattern.Cst(cst, tpe, loc) =>
       (Pattern.Cst(cst, tpe, loc), Map.empty)
 
-    case Pattern.Tag(sym, pats, tpe, loc) =>
+    case Pattern.Tag(symUse, pats, tpe, loc) =>
       val (ps, varSubsts) = pats.map(visitPattern).unzip
       val varSubst = varSubsts.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
-      (Pattern.Tag(sym, ps, tpe, loc), varSubst)
+      (Pattern.Tag(symUse, ps, tpe, loc), varSubst)
 
     case Pattern.Tuple(pats, tpe, loc) =>
       val (ps, varSubsts) = pats.map(visitPattern).unzip
@@ -424,6 +421,26 @@ object Inliner {
       (Pattern.Record.RecordLabelPattern(label, p, tpe, loc), subst)
   }
 
+  private def visitExtPattern(pat0: MonoAst.ExtPattern)(implicit flix: Flix): (MonoAst.ExtPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
+    case MonoAst.ExtPattern.Wild(tpe, loc) =>
+      (MonoAst.ExtPattern.Wild(tpe, loc), Map.empty)
+
+    case MonoAst.ExtPattern.Var(sym, tpe, occur, loc) => occur match {
+      case Occur.Unknown => throw InternalCompilerException("unexpected unknown occurrence information", loc)
+
+      case Occur.Dead =>
+        (MonoAst.ExtPattern.Wild(tpe, loc), Map.empty)
+
+      case Occur.Once
+           | Occur.OnceInLambda
+           | Occur.OnceInLocalDef
+           | Occur.ManyBranch
+           | Occur.Many =>
+        val freshVarSym = Symbol.freshVarSym(sym)
+        (MonoAst.ExtPattern.Var(freshVarSym, tpe, occur, loc), Map(sym -> freshVarSym))
+    }
+  }
+
   /** Returns a formal param with a fresh symbol and a substitution mapping the old variable the fresh variable. */
   private def freshFormalParam(fp0: MonoAst.FormalParam)(implicit flix: Flix): (MonoAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = fp0 match {
     case MonoAst.FormalParam(sym, mod, tpe, occur, loc) =>
@@ -439,6 +456,15 @@ object Inliner {
       val g = guard.map(visitExp(_, ctx))
       val e1 = visitExp(exp1, ctx)
       MonoAst.MatchRule(p, g, e1)
+  }
+
+  private def visitExtMatchRule(rule: MonoAst.ExtMatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.ExtMatchRule = rule match {
+    case MonoAst.ExtMatchRule(label, pats, exp, loc) =>
+      val (ps, varSubsts) = pats.map(visitExtPattern).unzip
+      val varSubst1 = varSubsts.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
+      val ctx = ctx0.addVarSubsts(varSubst1).addInScopeVars(varSubst1.values.map(sym => sym -> BoundKind.ParameterOrPattern))
+      val e = visitExp(exp, ctx)
+      MonoAst.ExtMatchRule(label, ps, e, loc)
   }
 
   private def visitCatchRule(rule: MonoAst.CatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.CatchRule = rule match {

@@ -52,7 +52,7 @@ case class StackConsumer() extends Consumer {
 
   override def consumeCase(cse: Case): Unit = push(cse)
 
-  override def consumeCaseSymUse(sym: CaseSymUse): Unit = push(sym)
+  override def consumeCaseSymUse(symUse: CaseSymUse): Unit = push(symUse)
 
   override def consumeCatchRule(rule: CatchRule): Unit = push(rule)
 
@@ -62,7 +62,7 @@ case class StackConsumer() extends Consumer {
 
   override def consumeDef(defn: Def): Unit = push(defn)
 
-  override def consumeDefSymUse(sym: DefSymUse): Unit = push(sym)
+  override def consumeDefSymUse(symUse: DefSymUse): Unit = push(symUse)
 
   override def consumeDerivation(derive: Derivation): Unit = push(derive)
 
@@ -70,7 +70,7 @@ case class StackConsumer() extends Consumer {
 
   override def consumeEff(eff: Effect): Unit = push(eff)
 
-  override def consumeEffectSymUse(effUse: EffectSymUse): Unit = push(effUse)
+  override def consumeEffSymUse(effUse: EffSymUse): Unit = push(effUse)
 
   override def consumeEnum(enm: Enum): Unit = push(enm)
 
@@ -94,7 +94,7 @@ case class StackConsumer() extends Consumer {
 
   override def consumeOp(op: Op): Unit = push(op)
 
-  override def consumeOpSymUse(sym: OpSymUse): Unit = push(sym)
+  override def consumeOpSymUse(symUse: OpSymUse): Unit = push(symUse)
 
   override def consumePattern(pat: Pattern): Unit = push(pat)
 

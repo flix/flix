@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.TypedAst.ExtPattern
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
@@ -47,6 +48,29 @@ object RedundancyError {
          |${code(loc, "pure expression.")}
          |""".stripMargin
     }
+  }
+
+  /**
+    * An error raised to indicate that the extensible variant constructor `label` was used multiple times.
+    *
+    * @param label    the name of the extensible variant constructor.
+    * @param loc1     the location of the first pattern.
+    * @param loc2     the location of the second pattern.
+    */
+  case class DuplicateExtPattern(label: Name.Label, loc1: SourceLocation, loc2: SourceLocation) extends RedundancyError {
+    def summary: String = s"Duplicate extensible variant pattern '${label.name}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Duplicate extensible pattern '${red(label.name)}'.
+         |
+         |${code(loc1, "the first occurrence was here.")}
+         |
+         |${code(loc2, "the second occurrence was here.")}
+         |""".stripMargin
+    }
+
+    def loc: SourceLocation = loc1
   }
 
   /**
@@ -363,7 +387,7 @@ object RedundancyError {
     *
     * @param sym the unused effect symbol.
     */
-  case class UnusedEffectSym(sym: Symbol.EffSym) extends RedundancyError {
+  case class UnusedEffSym(sym: Symbol.EffSym) extends RedundancyError {
     def summary: String = s"Unused effect '${sym.name}'.'"
 
     def message(formatter: Formatter): String = {

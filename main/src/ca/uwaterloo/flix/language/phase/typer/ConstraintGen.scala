@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.KindedAst.Expr
+import ca.uwaterloo.flix.language.ast.KindedAst.{Expr, ExtPattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, OpSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Scope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
@@ -86,23 +86,29 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ApplyDef(DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
+      case Expr.ApplyDef(DefSymUse(sym, loc1), exps, targs, itvar, tvar, evar, loc2) =>
         val defn = root.defs(sym)
 
         // Pseudo variable for source to flow into
         val pvar = Type.freshVar(Kind.Eff, loc1)
 
-        val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
-        val constrs1 = tconstrs1.map(_.copy(loc = loc2))
-        val declaredEff = declaredType.arrowEffectType
-        val declaredArgumentTypes = declaredType.arrowArgTypes
-        val declaredResultType = declaredType.arrowResultType
+        val tparams = defn.spec.tparams.map(_.sym)
+        val subst = Substitution(tparams.zip(targs).toMap)
+
+        val tconstrs = defn.spec.tconstrs.map(subst.apply).map(_.copy(loc = loc2))
+        val econstrs = defn.spec.econstrs.map(subst.apply).map(_.copy(loc = loc2))
+
+        val declaredEff = subst(defn.spec.eff)
+        val declaredResultType = subst(defn.spec.tpe)
+        val declaredArgumentTypes = defn.spec.fparams.map(_.tpe).map(subst.apply)
+        val declaredType = Type.mkUncurriedArrowWithEffect(declaredArgumentTypes, declaredEff, declaredResultType, loc2)
+
         val (tpes, effs) = exps.map(visitExp).unzip
 
         c.unifyType(itvar, declaredType, loc2)
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
-        c.addClassConstraints(constrs1, loc2)
-        c.addEqualityConstraints(econstrs1, loc2)
+        c.addClassConstraints(tconstrs, loc2)
+        c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
         c.unifySource(pvar, declaredEff, loc2)
         c.unifyType(evar, Type.mkUnion(pvar :: effs, loc2), loc2)
@@ -123,32 +129,40 @@ object ConstraintGen {
 
       case Expr.ApplyOp(OpSymUse(sym, loc1), exps, tvar, evar, loc2) =>
         val op = lookupOp(sym, loc1)
-        val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(op.spec.sc, loc1.asSynthetic)
-        val constrs1 = tconstrs1.map(_.copy(loc = loc1))
+        val (tconstrs0, econstrs0, declaredType, _) = Scheme.instantiate(op.spec.sc, loc1.asSynthetic)
+        val tconstrs = tconstrs0.map(_.copy(loc = loc2))
+        val econstrs = econstrs0.map(_.copy(loc = loc2))
         val declaredEff = declaredType.arrowEffectType
         val declaredArgumentTypes = declaredType.arrowArgTypes
         val declaredResultType = generalizeVoid(declaredType.arrowResultType)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
-        c.addClassConstraints(constrs1, loc2)
-        c.addEqualityConstraints(econstrs1, loc2)
+        c.addClassConstraints(tconstrs, loc2)
+        c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
         c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ApplySig(SigSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
-        val sig = root.traits(sym.trt).sigs(sym)
-        val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
-        val constrs1 = tconstrs1.map(_.copy(loc = loc1))
-        val declaredEff = declaredType.arrowEffectType
-        val declaredArgumentTypes = declaredType.arrowArgTypes
-        val declaredResultType = declaredType.arrowResultType
+      case Expr.ApplySig(SigSymUse(sym, loc1), exps, targ, targs, itvar, tvar, evar, loc2) =>
+        val trt = root.traits(sym.trt)
+        val sig = trt.sigs(sym)
+
+        val mapping = (trt.tparam.sym -> targ) :: sig.spec.tparams.map(_.sym).zip(targs)
+        val subst = Substitution(mapping.toMap)
+        val tconstrs = sig.spec.tconstrs.map(subst.apply).map(_.copy(loc = loc2))
+        val econstrs = sig.spec.econstrs.map(subst.apply).map(_.copy(loc = loc2))
+
+        val declaredEff = subst(sig.spec.eff)
+        val declaredResultType = subst(sig.spec.tpe)
+        val declaredArgumentTypes = sig.spec.fparams.map(_.tpe).map(subst.apply)
+        val declaredType = Type.mkUncurriedArrowWithEffect(declaredArgumentTypes, declaredEff, declaredResultType, loc1)
+
         val (tpes, effs) = exps.map(visitExp).unzip
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
-        c.addClassConstraints(constrs1, loc2)
-        c.addEqualityConstraints(econstrs1, loc2)
+        c.addClassConstraints(tconstrs, loc2)
+        c.addEqualityConstraints(econstrs, loc2)
         c.unifyType(itvar, declaredType, loc2)
         c.unifyType(tvar, declaredResultType, loc2)
         c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
@@ -462,25 +476,17 @@ object ConstraintGen {
 
       case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
 
-      case Expr.ExtMatch(label, exp1, sym2, exp2, sym3, exp3, tvar, loc) =>
-        val pred = Name.Pred(label.name, label.loc)
-
-        val (tpe1, eff1) = visitExp(exp1)
-        val (tpe2, eff2) = visitExp(exp2)
-        val (tpe3, eff3) = visitExp(exp3)
-
-        val freshTypeVar = freshVar(Kind.Star, loc)
-        val freshRowVar = freshVar(Kind.SchemaRow, loc)
-        val expectedRowType = Type.mkSchemaRowExtend(pred, Type.mkRelation(List(freshTypeVar), loc), freshRowVar, loc)
+      case Expr.ExtMatch(exp, rules, loc) =>
+        val (tpe, eff) = visitExp(exp)
+        val (caseTpes, tpes, effs) = rules.map(visitExtMatchRule).unzip3
+        val expectedRowType = caseTpes.foldRight(Type.mkSchemaRowEmpty(loc)) {
+          case ((name, patTpes), acc) => Type.mkSchemaRowExtend(name, Type.mkRelation(patTpes, loc), acc, loc)
+        }
         val expectedSchemaType = Type.mkExtensible(expectedRowType, loc)
-
-        c.unifyType(tpe1, expectedSchemaType, loc)
-        c.unifyType(sym2.tvar, freshTypeVar, loc)
-        c.unifyType(sym3.tvar, Type.mkExtensible(freshRowVar, loc), loc)
-
-        c.unifyType(tvar, tpe2, tpe3, loc)
-        val resTpe = tvar
-        val resEff = Type.mkUnion(eff1, eff2, eff3, loc)
+        c.unifyType(tpe, expectedSchemaType, exp.loc)
+        c.unifyAllTypes(tpes, loc)
+        val resTpe = tpes.head // Note: We are guaranteed to have one rule.
+        val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
       case KindedAst.Expr.Tag(symUse, exps, tvar, loc) =>
@@ -635,9 +641,9 @@ object ConstraintGen {
         val (fieldTpes, fieldEffs) = visitedFields.unzip
         c.unifyType(tvar, structTpe, loc)
         for {
-          ((fieldSym, expr), fieldTpe1) <- fields.zip(fieldTpes)
+          ((fieldSymUse, expr), fieldTpe1) <- fields.zip(fieldTpes)
         } {
-          instantiatedFieldTpes.get(fieldSym.sym) match {
+          instantiatedFieldTpes.get(fieldSymUse.sym) match {
             case None => () // if not an actual field, there is nothing to unify
             case Some((_, fieldTpe2)) => c.unifyType(fieldTpe1, fieldTpe2, expr.loc)
           }
@@ -1062,6 +1068,21 @@ object ConstraintGen {
   /**
     * Generates constraints for the patterns inside the record label pattern.
     *
+    * Returns the type of the pattern.
+    */
+  private def visitExtPattern(pat0: KindedAst.ExtPattern)(implicit c: TypeContext): Type = pat0 match {
+    case ExtPattern.Wild(tvar, _) => tvar
+
+    case ExtPattern.Var(sym, tvar, loc) =>
+      c.unifyType(sym.tvar, tvar, loc)
+      tvar
+
+    case ExtPattern.Error(tvar, _) => tvar
+  }
+
+  /**
+    * Generates constraints for the patterns inside the record label pattern.
+    *
     * Returns the label, pattern type, and location of the pattern.
     */
   private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Name.Label, Type, SourceLocation) = pat match {
@@ -1091,9 +1112,22 @@ object ConstraintGen {
   }
 
   /**
+    * Generates constraints for the given extensible match rule.
+    *
+    * Returns the name of the constructor, the types of the constructor, the type of the expression body, and its effect.
+    */
+  private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): ((Name.Pred, List[Type]), Type, Type) = rule match {
+    case KindedAst.ExtMatchRule(label, pats, exp, _) =>
+      val name = Name.Pred(label.name, label.loc)
+      val patTypes = pats.map(visitExtPattern)
+      val (tpe, eff) = visitExp(exp)
+      ((name, patTypes), tpe, eff)
+  }
+
+  /**
     * Generates constraints for the given typematch rule.
     *
-    * Returns the the body's type and the body's effect
+    * Returns the body's type and the body's effect
     */
   private def visitTypeMatchRule(rule: KindedAst.TypeMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
     case KindedAst.TypeMatchRule(sym, declTpe, exp, _) =>

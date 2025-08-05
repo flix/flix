@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, SolveMode}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
+import ca.uwaterloo.flix.util.collection.MapOps
 
 import java.lang.reflect.Executable
 
@@ -115,9 +116,10 @@ object TypeReconstruction {
       val e2 = visitExp(exp2)
       TypedAst.Expr.ApplyClo(e1, e2, subst(tvar), subst(evar), loc)
 
-    case KindedAst.Expr.ApplyDef(symUse, exps, itvar, tvar, evar, loc) =>
+    case KindedAst.Expr.ApplyDef(symUse, exps, targs, itvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
-      TypedAst.Expr.ApplyDef(symUse, es, subst(itvar), subst(tvar), subst(evar), loc)
+      val tas = targs.map(subst.apply)
+      TypedAst.Expr.ApplyDef(symUse, es, tas, subst(itvar), subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.ApplyLocalDef(symUse, exps, arrowTvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
@@ -132,9 +134,11 @@ object TypeReconstruction {
       val eff = subst(evar)
       TypedAst.Expr.ApplyOp(symUse, es, tpe, eff, loc)
 
-    case KindedAst.Expr.ApplySig(symUse, exps, itvar, tvar, evar, loc) =>
+    case KindedAst.Expr.ApplySig(symUse, exps, targ, targs, itvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
-      TypedAst.Expr.ApplySig(symUse, es, subst(itvar), subst(tvar), subst(evar), loc)
+      val ta = subst(targ)
+      val tas = targs.map(subst.apply)
+      TypedAst.Expr.ApplySig(symUse, es, ta, tas, subst(itvar), subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.Lambda(fparam, exp, _, loc) =>
       val p = visitFormalParam(fparam, subst)
@@ -251,15 +255,12 @@ object TypeReconstruction {
       val eff = Type.mkUnion(rs.map(_.exp.eff), loc)
       TypedAst.Expr.RestrictableChoose(star, e, rs, subst(tvar), eff, loc)
 
-    case KindedAst.Expr.ExtMatch(label, exp1, sym2, exp2, sym3, exp3, tvar, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
-      val b2 = TypedAst.Binder(sym2, subst(sym2.tvar))
-      val b3 = TypedAst.Binder(sym3, subst(sym3.tvar))
-      val tpe = subst(tvar)
-      val eff = Type.mkUnion(e1.eff, e2.eff, e3.eff, loc)
-      TypedAst.Expr.ExtensibleMatch(label, e1, b2, e2, b3, e3, tpe, eff, loc)
+    case KindedAst.Expr.ExtMatch(exp, rules, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitExtMatchRule)
+      val tpe = rs.head.exp.tpe // Note: We are guaranteed to have at least one rule.
+      val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)
+      TypedAst.Expr.ExtMatch(e, rs, tpe, eff, loc)
 
     case KindedAst.Expr.Tag(symUse, exps, tvar, loc) =>
       val es = exps.map(visitExp)
@@ -274,7 +275,7 @@ object TypeReconstruction {
       val es = exps.map(visitExp)
       val tpe = subst(tvar)
       val eff = Type.mkUnion(es.map(_.eff), loc)
-      TypedAst.Expr.ExtensibleTag(label, es, tpe, eff, loc)
+      TypedAst.Expr.ExtTag(label, es, tpe, eff, loc)
 
     case KindedAst.Expr.Tuple(elms, loc) =>
       val es = elms.map(visitExp(_))
@@ -693,6 +694,16 @@ object TypeReconstruction {
   }
 
   /**
+    * Reconstructs types in the given ext-match rule.
+    */
+  private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit subst: SubstitutionTree): TypedAst.ExtMatchRule = rule match {
+    case KindedAst.ExtMatchRule(label, pats, exp, loc) =>
+      val ps = pats.map(visitExtPat)
+      val e = visitExp(exp)
+      TypedAst.ExtMatchRule(label, ps, e, loc)
+  }
+
+  /**
     * Reconstructs types in the given pattern.
     */
   private def visitPattern(pat0: KindedAst.Pattern)(implicit subst: SubstitutionTree): TypedAst.Pattern = pat0 match {
@@ -719,6 +730,19 @@ object TypeReconstruction {
       TypedAst.Pattern.Error(subst(tvar), loc)
   }
 
+  /**
+    * Reconstructs types in the given ext-pattern.
+    */
+  private def visitExtPat(pat0: KindedAst.ExtPattern)(implicit subst: SubstitutionTree): TypedAst.ExtPattern = pat0 match {
+    case KindedAst.ExtPattern.Wild(tvar, loc) => TypedAst.ExtPattern.Wild(subst(tvar), loc)
+
+    case KindedAst.ExtPattern.Var(sym, tvar, loc) =>
+      val tpe = subst(tvar)
+      val bnd = TypedAst.Binder(sym, tpe)
+      TypedAst.ExtPattern.Var(bnd, tpe, loc)
+
+    case KindedAst.ExtPattern.Error(tvar, loc) => TypedAst.ExtPattern.Error(subst(tvar), loc)
+  }
 
   /**
     * Reconstructs types in the given head predicate.

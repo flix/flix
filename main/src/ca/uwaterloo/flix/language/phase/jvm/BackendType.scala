@@ -16,11 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.{SimpleType, ReducedAst, SourceLocation}
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
-import ca.uwaterloo.flix.util.InternalCompilerException
-import org.objectweb.asm.Opcodes
+import ca.uwaterloo.flix.language.ast.{ReducedAst, SimpleType}
 
 import scala.annotation.tailrec
 

@@ -16,7 +16,6 @@
  */
 
 mod Fixpoint3.Util {
-
     ///
     /// Unwraps an option.
     ///

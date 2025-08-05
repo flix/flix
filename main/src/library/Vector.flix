@@ -125,6 +125,10 @@ instance ToJava[Vector[a]] {
     pub def toJava(v: Vector[a]): JList \ IO = Adaptor.toList(v)
 }
 
+instance ForEach[Vector[a]] {
+    type Elm = a
+    pub def forEach(f: a -> Unit \ ef, v: Vector[a]): Unit \ ef = Vector.forEach(f, v)
+}
 
 instance ToFlix[Vector[a]] {
     type In = JList
@@ -465,6 +469,40 @@ mod Vector {
     pub def range(b: Int32, e: Int32): Vector[Int32] =
         let len = e - b;
         init(ix -> b + ix, len)
+
+    ///
+    /// Returns `v` without adjacent duplicates according to their `Eq` instance.
+    ///
+    /// The first occurence in a chain of duplicates is kept.
+    ///
+    pub def removeAdjDups(v: Vector[a]): Vector[a] with Eq[a] = removeAdjDupsWith(Eq.eq, v)
+
+    ///
+    /// Returns `v` without adjacent duplicates according to the function `f`.
+    /// Elements `x` and `y` are duplicates if and only if `f(x, y) = true`.
+    ///
+    /// The first occurence in a chain of duplicates is kept.
+    ///
+    /// `f` must define an equivalence relation on the elements of the list.
+    ///
+    pub def removeAdjDupsWith(f: a -> a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = region rc {
+        if (Vector.length(v) == 0) {
+            v
+        } else {
+            let l = MutList.empty(rc);
+            // We handle the first element twice.
+            MutList.push(Vector.get(0, v), l);
+            (Vector.get(0, v), v) ||> Vector.foldLeft(head -> cur -> {
+                if (f(head, cur)) {
+                    head
+                } else {
+                    MutList.push(cur, l);
+                    cur
+                }
+            });
+            MutList.toVector(l)
+        }
+    }
 
     ///
     /// Returns a vector with the element `x` repeated `n` times.

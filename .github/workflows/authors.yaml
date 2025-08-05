@@ -1,0 +1,14 @@
+name: AUTHORS.md Check
+on: pull_request
+
+# Checks that the author of the PR is in the AUTHORS.md file.
+# Specifically, it looks for the string "(https://github.com/<github_id>)"
+
+jobs:
+  check-authors:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out master
+        uses: actions/checkout@v4
+      - name: Check for name
+        run: grep -q "(https://github.com/${{ github.actor }})" AUTHORS.md

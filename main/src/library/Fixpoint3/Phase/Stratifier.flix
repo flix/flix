@@ -19,7 +19,7 @@
 mod Fixpoint3.Phase.Stratifier {
     use Fixpoint3.Ast.Datalog.BodyPredicate.BodyAtom
     use Fixpoint3.Ast.Datalog.Constraint.Constraint
-    use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Join, Model}
+    use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Join, Model, Provenance}
     use Fixpoint3.Ast.Datalog.HeadPredicate.HeadAtom
     use Fixpoint3.Ast.Datalog.{BodyPredicate, Constraint, Datalog, Fixity, HeadPredicate, Polarity}
     use Fixpoint3.Ast.Shared.PredSym
@@ -57,14 +57,16 @@ mod Fixpoint3.Phase.Stratifier {
         let predSyms = Array.empty(rc, numberOfPredSyms);
         addPredSymsFrom(predSyms, d);
         let result = MutMap.empty(rc);
-        pseudoStrata |> List.forEachWithIndex(pseudoStratum -> list ->
-            list |> List.forEachWithIndex(stratum -> set ->
-                foreach (x <- set) {
-                    let predSym = PredSym.PredSym(Array.get(x, predSyms), Int32.toInt64(x));
-                    MutMap.put(predSym, (pseudoStratum, stratum), result)
-                }
-            )
-        );
+        pseudoStrata |>
+            List.forEachWithIndex(pseudoStratum -> list ->
+                list |>
+                    List.forEachWithIndex(stratum -> set ->
+                        foreach (x <- set) {
+                            let predSym = PredSym.PredSym(Array.get(x, predSyms), Int32.toInt64(x));
+                            MutMap.put(predSym, (pseudoStratum, stratum), result)
+                        }
+                    )
+            );
         MutMap.toMap(result)
 
     ///
@@ -77,6 +79,7 @@ mod Fixpoint3.Phase.Stratifier {
         case Join(d1, d2) =>
             addDepEdges(graph, d1);
             addDepEdges(graph, d2)
+        case Provenance(_, _) => ()
     }
 
     ///
@@ -96,7 +99,7 @@ mod Fixpoint3.Phase.Stratifier {
     ///
     def addDepEdge(graph: MutGraph[r], dst: HeadPredicate, src: BodyPredicate): Unit \ r = match (dst, src) {
         case (HeadAtom(PredSym.PredSym(_, dstId), _, _), BodyAtom(PredSym.PredSym(_, srcId), _, _, _, _)) => {
-            if(dstId != srcId) {
+            if (dstId != srcId) {
                 MutGraph.addEdge(toInt32(srcId), toInt32(dstId), graph)
             } else (
                 // We still register the vertex, as it is needed later.
@@ -114,6 +117,7 @@ mod Fixpoint3.Phase.Stratifier {
         case Datalog(_, rules) => Vector.forEach(predSymHelper(predMap), rules)
         case Model(_) => ()
         case Join(d1, d2) => addPredSymsFrom(predMap, d1); addPredSymsFrom(predMap, d2)
+        case Provenance(_, _) => ()
     }
 
     ///

@@ -19,17 +19,16 @@
 mod Fixpoint3.Solver {
     import dev.flix.runtime.Global
 
-    use Fixpoint3.{Boxed, Debugging, Interpreter, Options, Phase, Predicate, PredSymsOf, SubstitutePredSym }
+    use Fixpoint3.{Boxed, Debugging, Interpreter, Options, Phase, Predicate, PredSymsOf, SubstitutePredSym}
     use Fixpoint3.Ast.Datalog.{Datalog, Constraint, HeadTerm}
-    use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Model, Join}
+    use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Join, Model, Provenance}
     use Fixpoint3.Ast.Datalog.Constraint.Constraint
     use Fixpoint3.Ast.Datalog.HeadPredicate.HeadAtom
     use Fixpoint3.Ast.Ram
     use Fixpoint3.Ast.Ram.{Predicates, RelSym, toDenotation}
     use Fixpoint3.Ast.ExecutableRam
-    use Fixpoint3.Ast.Shared.Denotation
+    use Fixpoint3.Ast.Shared.{Denotation, PredSym}
     use Fixpoint3.Ast.Shared.Denotation.{Relational, Latticenal}
-    use Fixpoint3.Ast.Shared.PredSym
     use Fixpoint3.Ast.Shared.PredSym.PredSym
     use Fixpoint3.Boxable.{box, unbox}
     use Fixpoint3.BoxingType.Boxing
@@ -56,31 +55,42 @@ mod Fixpoint3.Solver {
     @Internal
     def runWithStratification(d0: Datalog, stf: Map[PredSym, (Int32, Int32)], withProv: Bool): Datalog = region rc {
         let d = Debugging.notifyPreSolve(d0);
-        def compiler(cs: Datalog, db: Map[RelSym, Map[Vector[Boxed], Boxed]]): (ExecutableRam.RamProgram, Boxing[rc]) \ rc = {
-            Phase.Compiler.compile(cs, db, stf) |>
-            Debugging.notifyPreLowering("Compiler") |>
-            Phase.Simplifier.simplifyProgram |>
-            Debugging.notifyPreLowering("Simplifier") |>
-            Phase.Hoisting.hoistProgram |>
-            Debugging.notifyPreLowering("Hoisting") |>
-            Phase.IndexSelection.indexProgram |>
-            Debugging.notifyPreLowering("Index Selection") |>
-            Phase.Lowering.lowerProgram(rc, withProv)
+        def compiler(cs: Datalog, db: Ram.Facts): (ExecutableRam.RamProgram[rc], Boxing[rc]) \ rc = {
+            Phase.Compiler.compile(cs, db, stf)
+                |> Debugging.notifyPreLowering("Compiler")
+                |> Phase.Simplifier.simplifyProgram
+                |> Debugging.notifyPreLowering("Simplifier")
+                |> Phase.Hoisting.hoistProgram
+                |> Debugging.notifyPreLowering("Hoisting")
+                |> Phase.IndexSelection.indexProgram
+                |> Debugging.notifyPreLowering("Index Selection")
+                |> Phase.Provenance.augmentProgram(withProv)
+                |> Phase.Lowering.lowerProgram(rc, withProv)
         };
         let model = match d {
             case Datalog(_, r) =>
-                compiler(d, Map.empty()) |>
-                Debugging.notifyPreInterpret |>
-                Interpreter.interpret(rc, withProv) |>
-                toModelOnlyFull(withProv, r)
+                compiler(d, Map.empty())
+                    |> Debugging.notifyPreInterpret
+                    |> Interpreter.interpret(rc, withProv)
+                    |> toModelOnlyFull(withProv, r)
             case Model(_) =>
+                d
+            case Provenance(_, _) =>
                 d
             case Join(Model(m), Datalog(f, r)) =>
                 let cs = Datalog(f, r);
-                compiler(cs, m) |>
-                Debugging.notifyPreInterpret |>
-                Interpreter.interpret(rc, withProv) |>
-                toModelOnlyFull(withProv, r)
+                compiler(cs, m)
+                    |> Debugging.notifyPreInterpret
+                    |> Interpreter.interpret(rc, withProv)
+                    |> toModelOnlyFull(withProv, r)
+            case Join(Provenance(_, model), Datalog(f, r)) =>
+                let cs = Datalog(f, r);
+                // Provenance is destroyed upon joining. Becomes a model.
+                let m = provenanceModeltoModel(model);
+                compiler(cs, m)
+                    |> Debugging.notifyPreInterpret
+                    |> Interpreter.interpret(rc, withProv)
+                    |> toModelOnlyFull(withProv, r)
             case _ => bug!("Datalog Boxing bug")
         };
         let m = Debugging.notifyPostSolve(model);
@@ -96,12 +106,22 @@ mod Fixpoint3.Solver {
     pub def union(d1: Datalog, d2: Datalog): Datalog = match (d1, d2) {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
             Datalog(Vector.append(edb1, edb2), Vector.append(idb1, idb2))
-        case (Model(db1), Model(db2)) =>
-            let union = ramSym -> match toDenotation(ramSym) {
-                case Relational => Map.union
-                case Latticenal(_, _, lub, _) => Map.unionWith(lub)
+        case (Model(db1), Model(db2)) => unsafely IO run {
+            let union = ramSym -> v1 -> v2 -> {
+                let newTree = BPlusTree.empty(Static);
+
+                match toDenotation(ramSym) {
+                    case Relational =>
+                        BPlusTree.merge(v1, newTree);
+                        BPlusTree.merge(v2, newTree)
+                    case Latticenal(_, _, lub, _) =>
+                        BPlusTree.merge(v1, newTree);
+                        BPlusTree.mergeWith(lub, v2, newTree)
+                };
+                newTree
             };
             Model(Map.unionWithKey(union, db1, db2))
+        }
         case (Model(_), Datalog(_, _)) => Join(d1, d2)
         case (Datalog(_, _), Model(_)) => Join(d2, d1)
         case (Join(model, datalog), Datalog(_, _)) => Join(model, union(datalog, d2))
@@ -109,6 +129,30 @@ mod Fixpoint3.Solver {
         case (Join(model, datalog), Model(_)) => Join(union(model, d2), datalog)
         case (Model(_), Join(model, datalog)) => Join(union(model, d1), datalog)
         case (Join(x, y), Join(z, w)) => Join(union(x, z), union(y, w))
+        case (Provenance(_, _), _) => union(provenanceToModel(d1), d2)
+        case (_, Provenance(_, _)) => union(d1, provenanceToModel(d2))
+    }
+
+    ///
+    /// Returns the `Provenance` program `d` as a `Model`.
+    ///
+    /// Crashes if `d` is not a `Provenance`.
+    ///
+    def provenanceToModel(d: Datalog): Datalog = match d {
+        case Provenance(_, facts) => Model(provenanceModeltoModel(facts))
+        case _ => unreachable!()
+    }
+
+    ///
+    /// Returns the given provenance model `model` as a Datalog value.
+    ///
+    def provenanceModeltoModel(model: Map[RelSym, BPlusTree[Vector[Boxed], (Int64, Int32), IO]]): Map[RelSym, BPlusTree[Vector[Boxed], Boxed, IO]] = unsafely IO run {
+        model |>
+            Map.map(old -> {
+                let newTree = BPlusTree.empty(Static);
+                BPlusTree.forEach(k -> _ -> BPlusTree.put(k, Boxed.NoValue, newTree), old);
+                newTree
+            })
     }
 
     ///
@@ -126,17 +170,17 @@ mod Fixpoint3.Solver {
                     case cmp => cmp
                 }
                 case _ => Comparison.LessThan
-            }, db) |>
-            List.toMap |>
-            Model
+            }, db)
+                |> List.toMap
+                |> Model
+        case Provenance(rules, db) =>
+            let fakeRelSym = Ram.makeFakeRelSym(p);
+            match Map.get(fakeRelSym, db) {
+                case None => Provenance(rules, Map#{})
+                case Some(v) => Provenance(rules, Map#{fakeRelSym => v})
+            }
         case Join(d1, d2) => union(projectSym(p, d1), projectSym(p, d2))
     }
-
-    ///
-    /// Returns the provenance of fact `f` of relation `p` given Datalog program `d`.
-    ///
-    @Internal
-    pub def provenanceOf(f: Vector[Boxed], p: PredSym, d: Datalog, mapping: PredSym -> Vector[Boxed] -> t): Vector[t] = ???
 
     ///
     /// Renames every predicate symbol in `d` with a fresh name, except for those in `preds`.
@@ -513,17 +557,18 @@ mod Fixpoint3.Solver {
         , p, ts)
 
     def injectIntoX(f: t -> Vector[Boxed] \ ef, p: PredSym, ts: f[t]): Datalog \ (ef + Foldable.Aef[f]) with Foldable[f] =
-        region rc {
+        unchecked_cast(({region rc {
             let db = MutMap.empty(rc);
             Foldable.foldLeft(() -> t -> {
                 let vs = f(t);
                 let arity = Vector.length(vs);
                 let ramSym = RelSym.Symbol(p, arity, Relational);
-                let rel = MutMap.getOrElsePut(ramSym, MutMap.empty(rc), db);
-                MutMap.put(vs, Reflect.default(), rel)
+                let rel = MutMap.getOrElsePut(ramSym, BPlusTree.empty(Static), db);
+                BPlusTree.put(vs, Boxed.NoValue, rel)
             }, (), ts);
             toModel(db)
-        }
+        // Remove the `IO` effect from dealing with `Static`.
+        }}: _ \ IO + ef + Foldable.Aef[f]) as _ \ ef + Foldable.Aef[f])
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -791,7 +836,13 @@ mod Fixpoint3.Solver {
     ///
     /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
     ///
-    def factsOf(f: Vector[Boxed] -> t \ ef, p: PredSym, d: Datalog): Vector[t] \ ef = match d {
+    def factsOf(f: Vector[Boxed] -> t \ ef, p: PredSym, d: Datalog): Vector[t] \ ef =
+        unchecked_cast(factsOfInternal(f, p, d) as _ \ ef)
+
+    ///
+    /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
+    ///
+    def factsOfInternal(f: Vector[Boxed] -> t \ ef, p: PredSym, d: Datalog): Vector[t] \ ef + IO = match d {
         case Datalog(_, cs) => region rc {
             let pFacts = MutList.empty(rc);
             Vector.forEach(c -> match c {
@@ -802,7 +853,7 @@ mod Fixpoint3.Solver {
                     else ()
                 case _ => ()
             }, cs);
-            pFacts |> MutList.toVector
+            MutList.toVector(pFacts)
         }
         case Model(db) => region rc {
             let pFacts = MutList.empty(rc);
@@ -813,26 +864,35 @@ mod Fixpoint3.Solver {
                 }
                 case _ => Comparison.LessThan
             };
-            Map.rangeQueryWith(qquery, ramSym -> rel -> match toDenotation(ramSym) {
-                case Relational =>
-                    Map.forEach((tuple, _) -> MutList.push(f(tuple), pFacts), rel)
-                case Latticenal(bot, leq, _, _) =>
-                    Map.forEach((tuple, lat) -> {
-                        if (not leq(lat, bot)) {
-                            let arity = Vector.length(tuple);
-                            let vs = Vector.init(i -> {
-                                if (i < arity)
-                                    Vector.get(i, tuple)
-                                else
-                                    lat
-                            }, arity + 1);
-                            MutList.push(f(vs), pFacts)
-                        } else ()
-                    }, rel)
-            }, db);
-            pFacts |> MutList.toVector
+            db |>
+                Map.rangeQueryWith(qquery, ramSym -> rel -> match toDenotation(ramSym) {
+                    case Relational =>
+                        BPlusTree.forEach(tuple -> _ -> MutList.push(f(tuple), pFacts), rel)
+                    case Latticenal(bot, leq, _, _) =>
+                        BPlusTree.forEach(tuple -> lat -> {
+                            if (not leq(lat, bot)) {
+                                let arity = Vector.length(tuple);
+                                let vs = Vector.init(i -> {
+                                    if (i < arity)
+                                        Vector.get(i, tuple)
+                                    else
+                                        lat
+                                }, arity + 1);
+                                MutList.push(f(vs), pFacts)
+                            } else ()
+                        }, rel)
+                });
+            MutList.toVector(pFacts)
         }
         case Join(d1, d2) => Vector.append(factsOf(f, p, d1), factsOf(f, p, d2))
+        case Provenance(_, db) => match Map.get(Ram.makeFakeRelSym(p), db) {
+            case None => Vector#{}
+            case Some(facts) => region rc {
+                let acc = MutList.empty(rc);
+                facts |> BPlusTree.forEach(k -> _ -> MutList.push(f(k), acc));
+                unchecked_cast((MutList.toArray(rc, acc): Array[t, rc]) as Vector[t])
+            }
+        }
     }
 
     ///
@@ -848,21 +908,41 @@ mod Fixpoint3.Solver {
     ///
     /// Returns the given database `db` as a Datalog value.
     ///
-    def toModelOnlyFull(_withProv: Bool, _rules: Vector[Constraint], dbMeta: (Database[r], Predicates)): Datalog \ r =
+    def toModelOnlyFull(withProv: Bool, rules: Vector[Constraint], dbMeta: (Database[r], Predicates)): Datalog \ r = {
         let (db, meta) = dbMeta;
         let dbOnlyFullRels = MutMap.toMap(db) |>
-            Map.map(MutMap.toMap) |>
             Map.filterWithKey(k -> facts -> match k {
-                case RelSym.Symbol(PredSym(_, id), _, _) => Predicate.isFullId(id, meta) and Map.nonEmpty(facts)
+                case RelSym.Symbol(PredSym(_, id), _, _) => Predicate.isFullId(id, meta) and not (unsafely IO run BPlusTree.isEmpty(facts))
             });
-        Model(dbOnlyFullRels)
+        if (withProv) {
+            toProvenance(rules, dbOnlyFullRels)
+        } else {
+            Model(dbOnlyFullRels)
+        }
+    }
+
+    ///
+    /// Returns the given database `db` augmented with provenance as a Provenance value.
+    ///
+    def toProvenance(rules: Vector[Constraint], db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): Datalog = unsafely IO run {
+        (Map#{}, db)
+            ||> Map.foldLeftWithKey(acc -> relSym -> facts -> {
+                let len = Vector.length(fst(getOrCrash(BPlusTree.minimumKey(facts))));
+                let newTree = BPlusTree.empty(Static);
+                facts |>
+                    BPlusTree.forEach(fact -> _ -> {
+                        let (rawFact, annotation) = Vector.splitAt(len - 2, fact);
+                        newTree |> BPlusTree.put(rawFact, (unbox(Vector.get(0, annotation)), getOrCrash(Int64.tryToInt32(unbox(Vector.get(1, annotation))))))
+                    });
+                Map.insert(relSym, newTree, acc)
+            })
+            |> Provenance(rules)
+    }
 
     ///
     /// Returns the given database `db` as a Datalog value.
     ///
     def toModel(db: Database[r]): Datalog \ r =
-        MutMap.toMap(db) |>
-        Map.map(MutMap.toMap) |>
-        Model
+        Model(MutMap.toMap(db))
 
 }

@@ -532,7 +532,6 @@ object Namer {
     */
   private def visitDef(decl0: DesugaredAst.Declaration.Def, ns0: Name.NName, defKind: DefKind)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Def = decl0 match {
     case DesugaredAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams, exp, tpe, eff, tconstrs, econstrs, loc) =>
-      flix.subtask(ident.name, sample = true)
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
@@ -568,7 +567,7 @@ object Namer {
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
-      val sym = Symbol.mkEffectSym(ns0, ident)
+      val sym = Symbol.mkEffSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
       val tparams = visitExplicitTypeParams(tparams0)
       val ops = ops0.map(visitOp(_, ns0, sym))
@@ -715,7 +714,7 @@ object Namer {
       val rs = rules.map(visitExtMatchRule)
       NamedAst.Expr.ExtMatch(e, rs, loc)
 
-    case DesugaredAst.Expr.ExtensibleTag(label, exps, loc) =>
+    case DesugaredAst.Expr.ExtTag(label, exps, loc) =>
       val es = exps.map(visitExp(_))
       NamedAst.Expr.ExtTag(label, es, loc)
 

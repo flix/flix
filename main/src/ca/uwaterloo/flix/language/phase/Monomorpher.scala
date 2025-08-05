@@ -66,15 +66,15 @@ import scala.collection.mutable
   * At a high-level, monomorphization works as follows:
   *
   *   - 1. We maintain a queue of functions and the concrete, normalized types they must be
-  *      specialized to.
+  *     specialized to.
   *   - 2. We populate the queue by specialization of non-parametric function definitions.
   *   - 3. We iteratively extract a function from the queue and specialize it:
   *      - a. We replace every type variable appearing anywhere in the definition by its concrete
-  *         type.
+  *        type.
   *      - b. We create new fresh local variable symbols (since the function is effectively being
-  *         copied).
+  *        copied).
   *      - c. We enqueue (or re-use) other functions referenced by the current function which require
-  *         specialization.
+  *        specialization.
   *   - 4. We reconstruct the AST from the specialized functions and remove all parametric functions.
   *
   * Type normalization details:
@@ -468,7 +468,7 @@ object Monomorpher {
       val e2 = specializeExp(exp2, env0, subst)
       MonoAst.Expr.ApplyClo(e1, e2, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+    case LoweredAst.Expr.ApplyDef(sym, exps, _, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
       val newSym = specializeDefnSym(sym, it)
       val es = exps.map(specializeExp(_, env0, subst))
@@ -485,7 +485,7 @@ object Monomorpher {
       val es = exps.map(specializeExp(_, env0, subst))
       MonoAst.Expr.ApplyOp(sym, es, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ApplySig(sym, exps, itpe, tpe, eff, loc) =>
+    case LoweredAst.Expr.ApplySig(sym, exps, _, _, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
       val newSym = specializeSigSym(sym, it)
       val es = exps.map(specializeExp(_, env0, subst))
@@ -539,14 +539,16 @@ object Monomorpher {
       }
       MonoAst.Expr.Match(specializeExp(exp, env0, subst), rs, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ExtensibleMatch(label, exp1, sym1, exp2, sym2, exp3, tpe, eff, loc) =>
-      val freshSym1 = Symbol.freshVarSym(sym1)
-      val freshSym2 = Symbol.freshVarSym(sym2)
-      val env1 = env0 + (sym1 -> freshSym1) + (sym2 -> freshSym2)
-      val e1 = specializeExp(exp1, env1, subst)
-      val e2 = specializeExp(exp2, env1, subst)
-      val e3 = specializeExp(exp3, env1, subst)
-      MonoAst.Expr.ExtensibleMatch(label, e1, freshSym1, e2, freshSym2, e3, subst(tpe), subst(eff), loc)
+    case LoweredAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+      val e = specializeExp(exp, env0, subst)
+      val rs = rules.map {
+        case LoweredAst.ExtMatchRule(label, pats, exp1, loc1) =>
+          val (ps, symMaps) = pats.map(specializeExtPat(_, subst)).unzip
+          val extendedEnv = symMaps.foldLeft(env0)(_ ++ _)
+          val e1 = specializeExp(exp1, extendedEnv, subst)
+          MonoAst.ExtMatchRule(label, ps, e1, loc1)
+      }
+      MonoAst.Expr.ExtMatch(e, rs, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.TypeMatch(exp, rules, tpe, _, loc) =>
       // Use the non-strict substitution to allow free type variables to match with anything.
@@ -588,7 +590,7 @@ object Monomorpher {
       val e = specializeExp(exp, env0, subst)
       MonoAst.Expr.VectorLength(e, loc)
 
-    case LoweredAst.Expr.Ascribe(exp, tpe, eff, loc) =>
+    case LoweredAst.Expr.Ascribe(exp, _, _, _) =>
       specializeExp(exp, env0, subst)
 
     case LoweredAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>
@@ -607,16 +609,16 @@ object Monomorpher {
       }
       MonoAst.Expr.TryCatch(e, rs, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.RunWith(exp, effect, rules, tpe, eff, loc) =>
+    case LoweredAst.Expr.RunWith(exp, effSymUse, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
       val rs = rules map {
-        case LoweredAst.HandlerRule(op, fparams0, body0) =>
+        case LoweredAst.HandlerRule(opSymUse, fparams0, body0) =>
           val (fparams, fparamEnv) = specializeFormalParams(fparams0, subst)
           val env1 = env0 ++ fparamEnv
           val body = specializeExp(body0, env1, subst)
-          MonoAst.HandlerRule(op, fparams, body)
+          MonoAst.HandlerRule(opSymUse, fparams, body)
       }
-      MonoAst.Expr.RunWith(e, effect, rs, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.RunWith(e, effSymUse, rs, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
@@ -707,9 +709,9 @@ object Monomorpher {
       val freshSym = Symbol.freshVarSym(sym)
       (MonoAst.Pattern.Var(freshSym, subst(tpe), Occur.Unknown, loc), Map(sym -> freshSym))
     case LoweredAst.Pattern.Cst(cst, tpe, loc) => (MonoAst.Pattern.Cst(cst, subst(tpe), loc), Map.empty)
-    case LoweredAst.Pattern.Tag(sym, pats, tpe, loc) =>
+    case LoweredAst.Pattern.Tag(symUse, pats, tpe, loc) =>
       val (ps, envs) = pats.map(specializePat(_, subst)).unzip
-      (MonoAst.Pattern.Tag(sym, ps, subst(tpe), loc), combineEnvs(envs))
+      (MonoAst.Pattern.Tag(symUse, ps, subst(tpe), loc), combineEnvs(envs))
     case LoweredAst.Pattern.Tuple(elms, tpe, loc) =>
       val (ps, envs) = elms.map(specializePat(_, subst)).unzip
       (MonoAst.Pattern.Tuple(ps, subst(tpe), loc), combineEnvs(envs))
@@ -722,6 +724,13 @@ object Monomorpher {
       val (p, env1) = specializePat(pat, subst)
       val finalEnv = env1 :: envs
       (MonoAst.Pattern.Record(ps, p, subst(tpe), loc), combineEnvs(finalEnv))
+  }
+
+  private def specializeExtPat(pat0: LoweredAst.ExtPattern, subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.ExtPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
+    case LoweredAst.ExtPattern.Wild(tpe, loc) => (MonoAst.ExtPattern.Wild(subst(tpe), loc), Map.empty)
+    case LoweredAst.ExtPattern.Var(sym, tpe, loc) =>
+      val freshSym = Symbol.freshVarSym(sym)
+      (MonoAst.ExtPattern.Var(freshSym, subst(tpe), Occur.Unknown, loc), Map(sym -> freshSym))
   }
 
   /** Specializes `method` w.r.t. `subst`. */

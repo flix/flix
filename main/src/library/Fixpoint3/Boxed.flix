@@ -90,5 +90,5 @@ mod Fixpoint3 {
             case Boxed.NoValue           => "Boxed.NoValue"
         }
     }
-    
+
 }

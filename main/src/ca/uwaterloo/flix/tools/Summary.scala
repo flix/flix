@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtMatchRule, Root}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -36,7 +36,7 @@ object Summary {
     *|            Totals | 2,986 |  311 |  291 |           4 |         16 |             3 |           -311 |              -311 |           -311 |           -311 |
     * }}}
     *
-    * @param root the root to create data for
+    * @param root    the root to create data for
     * @param nsDepth after this folder depth, files will be summarized under the
     *                folder
     * @param minLines all files with less lines than this will not be in the
@@ -194,10 +194,10 @@ object Summary {
     case Expr.Use(_, _, exp, _) => countCheckedEcasts(exp)
     case Expr.Lambda(_, exp, _, _) => countCheckedEcasts(exp)
     case Expr.ApplyClo(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.ApplyDef(_, exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.ApplyDef(_, exps, _, _, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.ApplyOp(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
-    case Expr.ApplySig(_, exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.ApplySig(_, exps, _, _, _, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.Unary(_, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.Binary(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.Let(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
@@ -216,11 +216,10 @@ object Summary {
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map {
       case TypedAst.RestrictableChooseRule(_, exp) => countCheckedEcasts(exp)
     }.sum
-    case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
-      countCheckedEcasts(exp1) + countCheckedEcasts(exp2) + countCheckedEcasts(exp3)
+    case Expr.ExtMatch(exp, rules, _, _, _) => countCheckedEcasts(exp) + rules.map(r => countCheckedEcasts(r.exp)).sum
     case Expr.Tag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.RestrictableTag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
-    case Expr.ExtensibleTag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
+    case Expr.ExtTag(_, exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.Tuple(exps, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.RecordSelect(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.RecordExtend(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum

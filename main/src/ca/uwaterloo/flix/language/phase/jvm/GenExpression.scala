@@ -664,16 +664,16 @@ object GenExpression {
         pushString(field.name)
         INVOKEINTERFACE(BackendObjType.Record.RestrictFieldMethod)
 
-      case AtomicOp.ExtensibleIs(sym) =>
+      case AtomicOp.ExtIs(sym) =>
         val List(exp) = exps
         val tpes = SimpleType.findExtensibleTermTypes(sym, exp.tpe).map(BackendType.toBackendType)
         compileIsTag(sym.name, exp, tpes)
 
-      case AtomicOp.ExtensibleTag(sym) =>
+      case AtomicOp.ExtTag(sym) =>
         val tpes = SimpleType.findExtensibleTermTypes(sym, tpe).map(BackendType.toBackendType)
         compileTag(sym.name, exps, tpes)
 
-      case AtomicOp.ExtensibleUntag(sym, idx) =>
+      case AtomicOp.ExtUntag(sym, idx) =>
         import BytecodeInstructions.*
 
         val List(exp) = exps

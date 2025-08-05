@@ -112,7 +112,6 @@ object Desugar {
     */
   private def visitDef(def0: WeededAst.Declaration.Def)(implicit flix: Flix): DesugaredAst.Declaration.Def = def0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
-      flix.subtask(ident.name, sample = true)
       val tparams = tparams0.map(visitTypeParam)
       val fparams = visitFormalParams(fparams0)
       val exp = visitExp(exp0)
@@ -128,7 +127,6 @@ object Desugar {
     */
   private def visitRedef(def0: WeededAst.Declaration.Redef)(implicit flix: Flix): DesugaredAst.Declaration.Def = def0 match {
     case WeededAst.Declaration.Redef(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
-      flix.subtask(ident.name, sample = true)
       val mod = mod0.copy(mod = Modifier.Override :: mod0.mod)
       val tparams = tparams0.map(visitTypeParam)
       val fparams = visitFormalParams(fparams0)
@@ -596,7 +594,7 @@ object Desugar {
 
     case WeededAst.Expr.ExtTag(label, exps, loc) =>
       val es = visitExps(exps)
-      Expr.ExtensibleTag(label, es, loc)
+      Expr.ExtTag(label, es, loc)
 
     case WeededAst.Expr.Tuple(exps, loc) =>
       desugarTuple(exps, loc)
@@ -1117,7 +1115,7 @@ object Desugar {
   }
 
   /**
-    * Rewrites a `ForEach` loop into a series of `Iterator.forEach` calls.
+    * Rewrites a `ForEach` loop into a series of `ForEach.forEach` calls.
     * {{{
     *   foreach (
     *           x <- xs;
@@ -1125,24 +1123,20 @@ object Desugar {
     *           y <- ys
     *       ) println(x + y)
     * }}}
-    * desugars to (omitting regions)
+    * desugars to
     * {{{
-    *   Iterator.foreach(x -> if (x > 0) Iterator.foreach(y -> println(x + y), Iterable.iterator(ys)) else (), Iterable.iterator(xs))
+    *   ForEach.foreach(x -> if (x > 0) ForEach.foreach(y -> println(x + y), ys) else (), xs)
     * }}}
     */
   private def desugarForEach(frags0: List[WeededAst.ForFragment], exp0: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val fqnForEach = "Iterator.forEach"
-    val fqnIterator = "Iterable.iterator"
-    val regIdent = Name.Ident("reg" + Flix.Delimiter + flix.genSym.freshId(), loc0.asSynthetic)
-    val regVar = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, regIdent, regIdent.loc), loc0.asSynthetic)
+    val fqnForEach = "ForEach.forEach"
 
     val foreachExp = frags0.foldRight(visitExp(exp0)) {
       case (WeededAst.ForFragment.Generator(pat1, exp1, loc1), acc) =>
         val p1 = visitPattern(pat1)
         val e1 = visitExp(exp1)
         val lambda = mkLambdaMatch(p1, acc, loc1)
-        val iterable = mkApplyFqn(fqnIterator, List(regVar, e1), e1.loc)
-        val fparams = List(lambda, iterable)
+        val fparams = List(lambda, e1)
         mkApplyFqn(fqnForEach, fparams, loc1.asSynthetic)
 
       case (WeededAst.ForFragment.Guard(exp1, loc1), acc) =>
@@ -1157,10 +1151,8 @@ object Desugar {
         DesugaredAst.Expr.Match(e1, List(matchRule), loc1.asSynthetic)
     }
 
-    val scope = DesugaredAst.Expr.Scope(regIdent, foreachExp, loc0)
-
     // We add an ascription to Unit because inference across region boundaries is limited.
-    DesugaredAst.Expr.Ascribe(scope, Some(DesugaredAst.Type.Unit(loc0.asSynthetic)), None, loc0.asSynthetic)
+    DesugaredAst.Expr.Ascribe(foreachExp, Some(DesugaredAst.Type.Unit(loc0.asSynthetic)), None, loc0.asSynthetic)
   }
 
   /**

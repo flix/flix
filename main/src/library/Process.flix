@@ -101,12 +101,12 @@ mod Process {
     use Process.StdOut.StdOut
 
     pub enum StdIn(OutputStream)
-    instance Writeable[StdIn] {
+    instance Writable[StdIn] {
         type Elm = Int8
         type Aef = IO
         pub def write(b: Array[Int8, r], r: StdIn): Result[IoError, Int32] \ r + IO =
             let StdIn(pr) = r;
-            Writeable.write(b, pr)
+            Writable.write(b, pr)
     }
 
     pub enum StdOut(InputStream)

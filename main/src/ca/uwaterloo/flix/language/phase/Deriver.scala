@@ -218,6 +218,8 @@ object Deriver {
               mkVarExpr(varSym2, loc)
             ),
             Type.freshVar(Kind.Star, loc),
+            List.empty,
+            Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Eff, loc),
             loc
@@ -346,6 +348,8 @@ object Deriver {
               loc),
           ),
           Type.freshVar(Kind.Star, loc),
+          List.empty,
+          Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Eff, loc),
           loc
@@ -433,6 +437,8 @@ object Deriver {
               mkVarExpr(varSym2, loc)
             ),
             Type.freshVar(Kind.Star, loc),
+            List.empty,
+            Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Eff, loc),
             loc
@@ -450,6 +456,7 @@ object Deriver {
             exp1,
             KindedAst.Expr.Lazy(exp2, loc)
           ),
+          List.empty,
           Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Eff, loc),
@@ -585,6 +592,8 @@ object Deriver {
           KindedAst.Expr.ApplySig(
             SigSymUse(toStringSym, loc),
             List(mkVarExpr(varSym, loc)),
+            Type.freshVar(Kind.Star, loc),
+            List.empty,
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Eff, loc),
@@ -731,11 +740,14 @@ object Deriver {
                 SigSymUse(hashSigSym, loc),
                 List(mkVarExpr(varSym, loc)),
                 Type.freshVar(Kind.Star, loc),
+                List.empty,
+                Type.freshVar(Kind.Star, loc),
                 Type.freshVar(Kind.Star, loc),
                 Type.freshVar(Kind.Eff, loc),
                 loc
               ),
             ),
+            List.empty,
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Eff, loc),

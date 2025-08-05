@@ -250,13 +250,11 @@ object Simplifier {
     case MonoAst.Expr.Match(exp, rules, tpe, _, loc) =>
       patternMatchWithLabels(exp, rules, tpe, loc)
 
-    case MonoAst.Expr.ExtensibleMatch(label, exp1, sym1, exp2, sym2, exp3, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
+    case MonoAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+      val e = visitExp(exp)
       val t = visitType(tpe)
       val ef = simplifyEffect(eff)
-      extensibleMatch(label, e1, sym1, e2, sym2, e3, t, ef, loc)
+      extMatch(e, rules, t, ef, loc)
 
     case MonoAst.Expr.VectorLit(exps, tpe, _, loc) =>
       // Note: We simplify Vectors to Arrays.
@@ -431,16 +429,7 @@ object Simplifier {
 
           case TypeConstructor.SchemaRowExtend(pred) =>
             val List(predType, rest) = tpe.typeArguments
-            val consType0 = predType match {
-              case Type.Apply(Type.Cst(TypeConstructor.Relation(_), _), ct, _) => ct
-              case Type.Apply(Type.Cst(TypeConstructor.Lattice(_), _), ct, _) => ct
-              case other => throw InternalCompilerException(s"Unexpected type: '$other'.", other.loc)
-            }
-            val consTypes = consType0.baseType match {
-              case Type.Cst(TypeConstructor.Tuple(_), _) => consType0.typeArguments
-              case Type.Cst(_, _) => List(consType0)
-              case other => throw InternalCompilerException(s"Unexpected type: '$other'.", other.loc)
-            }
+            val consTypes = predType.typeArguments
             SimpleType.ExtensibleExtend(pred, consTypes.map(visitType), visitType(rest))
 
           case TypeConstructor.Region(_) => SimpleType.Unit
@@ -993,36 +982,58 @@ object Simplifier {
       case p => throw InternalCompilerException(s"Unsupported pattern '$p'.", xs.head.loc)
     }
 
-  private def extensibleMatch(label: Name.Label, exp: SimplifiedAst.Expr, sym1: Symbol.VarSym, exp1: SimplifiedAst.Expr, sym2: Symbol.VarSym, exp2: SimplifiedAst.Expr, tpe: SimpleType, eff: Purity, loc: SourceLocation)(implicit flix: Flix): SimplifiedAst.Expr = {
-    import SimplifiedAst.*
+  private def extMatch(exp: SimplifiedAst.Expr, rules: List[MonoAst.ExtMatchRule], tpe: SimpleType, eff: Purity, loc: SourceLocation)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = {
     //
     // exp match {
-    //     case Label(sym1) => exp1
-    //     case sym2 => exp2
+    //     case Label1(sym1, sym2)     => exp1
+    //     case Label2(sym1', sym2')   => exp2
+    //     case Label3(sym1'', sym2'') => exp3
     // }
     //
     // Becomes
     //
     // let ext: tagType = exp;
-    // if (ext is Label) {
+    // if (ext is Label1) {
     //     let sym1 = untag 0 ext;
+    //     let sym2 = untag 1 ext;
     //     exp1
     // } else {
-    //     let sym2 = ext;
-    //     exp2
+    //     if (ext is Label2) {
+    //         let sym1' = untag 0 ext;
+    //         let sym2' = untag 1 ext;
+    //         exp2
+    //     } else {
+    //         if (ext is Label3) {
+    //             let sym1'' = untag 0 ext;
+    //             let sym2'' = untag 1 ext;
+    //             exp3
+    //         } else {
+    //             error
+    //         }
+    //     }
     // }
     //
+
+    // Build the nested if-then-else
     val tagType = exp.tpe
     val extName = Symbol.freshVarSym("ext", BoundBy.Let, exp.loc)(Scope.Top, flix)
-    val extVar = Expr.Var(extName, tagType, exp.loc)
-    val termTypes = SimpleType.findExtensibleTermTypes(label, tagType)
-    val idx = 0 // Currently all extensible variants have 1 term.
-    val untag = Expr.ApplyAtomic(AtomicOp.ExtensibleUntag(label, idx), List(extVar), termTypes(idx), Purity.Pure, sym1.loc)
-    val branch1 = Expr.Let(sym1, untag, exp1, exp1.tpe, exp1.purity, exp1.loc)
-    val branch2 = Expr.Let(sym2, extVar, exp2, exp2.tpe, exp2.purity, exp2.loc)
-    val is = Expr.ApplyAtomic(AtomicOp.ExtensibleIs(label), List(extVar), SimpleType.Bool, Purity.Pure, extVar.loc)
-    val ifte = Expr.IfThenElse(is, branch1, branch2, branch1.tpe, Purity.combine(branch1.purity, branch2.purity), loc)
-    Expr.Let(extName, exp, ifte, tpe, eff, loc)
+    val extVar = SimplifiedAst.Expr.Var(extName, tagType, exp.loc)
+    val errorExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.MatchError, List.empty, tpe, Purity.Impure, loc)
+    val iftes = rules.foldRight(errorExp: SimplifiedAst.Expr) {
+      case (MonoAst.ExtMatchRule(label, pats, exp1, loc1), branch2) =>
+        val e1 = visitExp(exp1)
+        val is = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ExtIs(label), List(extVar), SimpleType.Bool, Purity.Pure, extVar.loc)
+        val termTypes = SimpleType.findExtensibleTermTypes(label, tagType)
+        // Let-bind each variable in the rule / pattern
+        val branch1 = pats.zipWithIndex.foldRight(e1) {
+          case ((MonoAst.ExtPattern.Wild(_, _), _), acc1) => acc1
+          case ((MonoAst.ExtPattern.Var(sym, _, _, _), idx), acc1) =>
+            val untag = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ExtUntag(label, idx), List(extVar), termTypes(idx), Purity.Pure, sym.loc)
+            SimplifiedAst.Expr.Let(sym, untag, acc1, acc1.tpe, Purity.combine(untag.purity, acc1.purity), sym.loc)
+        }
+        SimplifiedAst.Expr.IfThenElse(is, branch1, branch2, branch1.tpe, Purity.combine(branch1.purity, branch2.purity), loc1)
+    }
+    SimplifiedAst.Expr.Let(extName, exp, iftes, tpe, eff, loc)
   }
 
   private def visitEffOp(op: MonoAst.Op)(implicit universe: Set[Symbol.EffSym]): SimplifiedAst.Op = op match {

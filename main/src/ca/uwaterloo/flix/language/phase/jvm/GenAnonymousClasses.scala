@@ -33,7 +33,6 @@ object GenAnonymousClasses {
   def gen(objs: List[AnonClass])(implicit root: Root, flix: Flix): List[JvmClass] = {
     for (obj <- objs) yield {
       val className = JvmName(RootPackage, obj.name)
-      flix.subtask(className.toInternalName, sample = true)
       JvmClass(className, genByteCode(className, obj))
     }
   }

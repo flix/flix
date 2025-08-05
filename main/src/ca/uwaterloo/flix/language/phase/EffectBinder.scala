@@ -205,10 +205,10 @@ object EffectBinder {
     case LiftedAst.Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
       val e = visitExpr(exp)
       val rules1 = rules.map {
-        case LiftedAst.HandlerRule(op, fparams0, body) =>
+        case LiftedAst.HandlerRule(symUse, fparams0, body) =>
           val fparams = fparams0.map(visitParam)
           val b = visitExpr(body)
-          ReducedAst.HandlerRule(op, fparams, b)
+          ReducedAst.HandlerRule(symUse, fparams, b)
       }
       ReducedAst.Expr.RunWith(e, effUse, rules1, ExpPosition.NonTail, tpe, purity, loc)
 
@@ -300,10 +300,10 @@ object EffectBinder {
     case LiftedAst.Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
       val e = visitExpr(exp)
       val rs = rules.map {
-        case LiftedAst.HandlerRule(op, fparams0, body) =>
+        case LiftedAst.HandlerRule(symUse, fparams0, body) =>
           val fparams = fparams0.map(visitParam)
           val b = visitExpr(body)
-          ReducedAst.HandlerRule(op, fparams, b)
+          ReducedAst.HandlerRule(symUse, fparams, b)
       }
       ReducedAst.Expr.RunWith(e, effUse, rs, ExpPosition.NonTail, tpe, purity, loc)
 

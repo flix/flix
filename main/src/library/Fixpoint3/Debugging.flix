@@ -27,17 +27,17 @@ mod Fixpoint3.Debugging {
     ///
     /// Write `s` to standard file. Overwrite if `overwrite` is true, otherwise append.
     ///
-    def flush(s: String, overwrite: Bool): Unit \ IO = 
+    def flush(s: String, overwrite: Bool): Unit \ IO =
         if (Options.enableDebugToFile()) {
-            let res = 
-                if (overwrite) 
+            let res =
+                if (overwrite)
                     FileWrite.runWithIO(() -> FileWrite.write(str = s, Options.debugFileName()))
-                else 
+                else
                     FileWrite.runWithIO(() -> FileWrite.append(str = s, Options.debugFileName()));
             match res {
                 case Ok(_) => ()
                 case Err(e) => println(e)
-            } 
+            }
         } else println(s)
 
 
@@ -47,7 +47,7 @@ mod Fixpoint3.Debugging {
     /// Note: Returns `d` to ensure it is not erased.
     ///
     @Internal
-    pub def notifyPreSolve(d: Datalog): Datalog = unchecked_cast({
+    pub def notifyPreSolve(d: Datalog): Datalog = unsafely IO run {
         if (Options.enableDebugging()) region rc {
             let strings = MutList.empty(rc);
             let psh = s -> MutList.push(s, strings);
@@ -62,7 +62,7 @@ mod Fixpoint3.Debugging {
         } else {
             d
         }
-    } as _ \ {})
+    }
 
     ///
     /// Invoked with the minimal model of the fixpoint computation.
@@ -70,7 +70,7 @@ mod Fixpoint3.Debugging {
     /// Note: Returns `d` to ensure it is not erased.
     ///
     @Internal
-    pub def notifyPostSolve(d: Datalog): Datalog = unchecked_cast({
+    pub def notifyPostSolve(d: Datalog): Datalog = unsafely IO run {
         if (Options.enableDebugging() and Options.enableDebugPrintFacts()) region rc {
             let strings = MutList.empty(rc);
             let psh = s -> MutList.push(s, strings);
@@ -85,7 +85,7 @@ mod Fixpoint3.Debugging {
         } else {
             d
         }
-    } as _ \ {})
+    }
 
     ///
     /// Invoked after every phase during the fixpoint computation.
@@ -94,22 +94,22 @@ mod Fixpoint3.Debugging {
     ///
     @Internal
     pub def notifyPreLowering(phase: String, program: Ram.RamProgram): Ram.RamProgram = match program {
-        case Ram.RamProgram.Program(stmt, _, _, _) => unchecked_cast({
+        case Ram.RamProgram.Program(stmt, _, _, _) => unsafely IO run {
             if (Options.enableDebugging()) region rc {
                 let strings = MutList.empty(rc);
                 let psh = s -> MutList.push(s, strings);
                 String.repeat(80, "*") |> psh;
                 "** (${phase}) Relation Algebra Machine AST" |> psh;
                 String.repeat(80, "*") |> psh;
-                "" |> psh;                
+                "" |> psh;
                 String.indent(4, "${stmt}") |> psh;
-                ""  |> psh;
+                "" |> psh;
                 flush(MutList.join("\n", strings), false);
                 program
             } else {
                 program
             }
-        } as _ \ {})
+        }
     }
 
     ///
@@ -119,9 +119,9 @@ mod Fixpoint3.Debugging {
     ///
     @Internal
     pub def notifyPreInterpret(
-        input: (ExecutableRam.RamProgram, BoxingType.Boxing[rc])
-    ): (ExecutableRam.RamProgram, BoxingType.Boxing[rc]) = match fst(input) {
-        case ExecutableRam.RamProgram.Program(stmt, _, _, (index, indexPos), _, _) => unchecked_cast({
+        input: (ExecutableRam.RamProgram[r], BoxingType.Boxing[r])
+    ): (ExecutableRam.RamProgram[r], BoxingType.Boxing[r]) = match fst(input) {
+        case ExecutableRam.RamProgram.Program(stmt, _, _, (index, indexPos), _, _) => unsafely IO run {
             if (Options.enableDebugging()) region rc {
                 let strings = MutList.empty(rc);
                 let psh = s -> MutList.push(s, strings);
@@ -148,7 +148,7 @@ mod Fixpoint3.Debugging {
             } else {
                 input
             }
-        } as _ \ {})
+        }
     }
 
 }

@@ -9,7 +9,8 @@ import org.scalatest.Suites
 
 class TestParser extends Suites(
   new TestParserRecovery,
-  new TestParserHappy
+  new TestParserHappy,
+  new TestParserSad,
 )
 
 /**
@@ -841,7 +842,12 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
+}
 
+/**
+  * Tests errors without testing recovery.
+  */
+class TestParserSad extends AnyFunSuite with TestUtils {
   test("ParseError.Interpolation.01") {
     val input = s"""pub def foo(): String = "$${1 + }""""
     val result = compile(input, Options.TestWithLibNix)
@@ -939,6 +945,15 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectTypeParams](result)
   }
 
+  test("IllegalExtMatchRule.01") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A(1) { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
   test("IllegalExtPattern.01") {
     val input =
       """
@@ -1013,6 +1028,28 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
         |    case A(1) => 1
         |    case A(1) => 1
         |    case A(1) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("IllegalExtTag.01") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A() -> 123 {
+        |    case A(x) => x
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  ignore("IllegalExtTag.02") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A (1) {
+        |    case A(x) => x
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)

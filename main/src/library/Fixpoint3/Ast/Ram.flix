@@ -29,15 +29,15 @@ mod Fixpoint3.Ast.Ram {
 
     ///
     /// A `RamProgram` represents a compiled Datalog program.
-    /// 
+    ///
     @Internal
     pub enum RamProgram {
-        case Program(RamStmt, Facts, Predicates, IndexInformation)
+        case Program(RamStmt, FactTuple, Predicates, IndexInformation)
     }
 
     ///
     /// Contains a set of `RelSym` representing the names of the relations in the program
-    ///  and 1 + the maximal identifier of the `RelSym`s.
+    /// and 1 + the maximal identifier of the `RelSym`s.
     ///
     @Internal
     pub type alias Predicates = (Int64, Set[RelSym])
@@ -46,7 +46,14 @@ mod Fixpoint3.Ast.Ram {
     /// The extensible database (EDB) of a program.
     ///
     @Internal
-    pub type alias Facts = Map[RelSym, Vector[Vector[Boxed]]]
+    pub type alias Facts = Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]
+
+    ///
+    /// `FactsTuple` consists of `(oldFacts, newFacts)`, where `oldFacts` are given through
+    /// joining a model, while `newFacts` are EDB facts written in the Datalog program.
+    ///
+    @Internal
+    pub type alias FactTuple = (Facts, Facts)
 
     ///
     /// A `Search` describes the order in which entries in a tuple are ordered. These are
@@ -54,7 +61,7 @@ mod Fixpoint3.Ast.Ram {
     /// for efficient retrieval in range queries.
     ///
     /// For example, the Datalog rule
-    /// 
+    ///
     /// A(x) :- B(x), C(_, _, x).
     ///
     /// produces the search `Vector#{2, 0, 1}` for relation `C`. This means the tuples in
@@ -142,7 +149,7 @@ mod Fixpoint3.Ast.Ram {
     /////////////////////////////////////////////////////////////////////////////
     // RelOp                                                                   //
     /////////////////////////////////////////////////////////////////////////////
-    
+
     ///
     /// `Search(rv, relSym, body)` iterates through the facts in relation `relSym`, saving
     /// them as RowVar `rv` and executes `body`.
@@ -154,8 +161,9 @@ mod Fixpoint3.Ast.Ram {
     /// `Functional(rv, f, input, body, arity)` evaluates `f(input)`, for each result,
     /// saves it as `rv` and executes `body`. `arity` is the arity of the output tuples.
     ///
-    /// `Project(terms, relSym)` constructs a tuple from `terms` and inserts it as a fact
-    /// for relation `relSym`. `relSym` should be a new relation.
+    /// `Project(terms, relSym, ruleNum)` constructs a tuple from `terms` and inserts it as a fact
+    /// for relation `relSym`. `relSym` should be a new relation. `ruleNum` is a unique number assigned
+    /// to the rule the project statement is associated with.
     ///
     /// `If(bools, body)` evaluates `body` if `bools` is true.
     ///
@@ -164,7 +172,7 @@ mod Fixpoint3.Ast.Ram {
         case Search(RowVar, RelSym, RelOp)
         case Query(RowVar, RelSym, Vector[BoolExp], Int32, RelOp)
         case Functional(RowVar, Vector[Boxed] -> Vector[Vector[Boxed]], Vector[RamTerm], RelOp, Int32)
-        case Project(Vector[RamTerm], RelSym)
+        case Project(Vector[RamTerm], RelSym, Int32)
         case If(Vector[BoolExp], RelOp)
     }
 
@@ -181,7 +189,7 @@ mod Fixpoint3.Ast.Ram {
                     "query {${var} ∈ ${relSym} | ${qry}} do${nl}${String.indent(4, "${body}")}end"
                 case RelOp.Functional(RowVar.Named(id), _, terms, body, _) =>
                     "loop(x${id} <- f(${terms |> Vector.join(", ")})) do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Project(terms, relSym) =>
+                case RelOp.Project(terms, relSym, _) =>
                     "project (${terms |> Vector.join(", ")}) into ${relSym}"
                 case RelOp.If(test, then) =>
                     let tst = test |> Vector.join(" ∧ ");
@@ -205,7 +213,7 @@ mod Fixpoint3.Ast.Ram {
     /// `term` must be a Meet or RowLoad of a lattice var.
     ///
     /// `Leq(const, rv, relSym)`: True if `const` is less than the lattice element of `rv`.
-    /// 
+    ///
     /// `Eq(term1, term2)`: True if `term1 == term2`.
     ///
     /// `Guard1(f, term1)`: True if `f(term1) == true`.
@@ -257,6 +265,9 @@ mod Fixpoint3.Ast.Ram {
     ///
     /// `Lit(val, id)` represents the literal `val`.
     ///
+    /// `ProvMax([(rv1, i1), (rv2, i2), (rv3, i3), ...])` where represents computing
+    /// `max(rv1[i1], rv2[i2], rv3[i3], ...)`.
+    ///
     /// `RowLoad(x, i, relSym)` represents an index into the tuple
     /// bound to the local variable `x`, i.e. `x[i]`. `x` is a tuple
     /// from `relSym`.
@@ -277,6 +288,7 @@ mod Fixpoint3.Ast.Ram {
     @Internal
     pub enum RamTerm {
         case Lit(Boxed, RamId)
+        case ProvMax(Vector[(RowVar, Int32)])
         case RowLoad(RowVar, Int32, RelSym)
         case Meet(Boxed -> Boxed -> Boxed, RamTerm, (RowVar, RelSym), RamId)
         case App1(Boxed -> Boxed, RamTerm, RamId)
@@ -292,6 +304,7 @@ mod Fixpoint3.Ast.Ram {
     @Internal
     pub def getTermRamId(t: RamTerm): RamId = match t {
         case RamTerm.Lit(_, id) => id
+        case RamTerm.ProvMax(_) => RamId.Id(-1)
         case RamTerm.RowLoad(rv, index, _) => RamId.TuplePos(rv, index)
         case RamTerm.Meet(_, _, _, id) => id
         case RamTerm.App1(_ , _, id) => id
@@ -312,6 +325,9 @@ mod Fixpoint3.Ast.Ram {
     instance ToString[RamTerm] {
         pub def toString(term: RamTerm): String = match term {
             case RamTerm.Lit(v, _) => "%{v}"
+            case RamTerm.ProvMax(loads) =>
+                let loadsStr = Vector.joinWith(match (rv, i) -> "${rv}[${i}]", ", ", loads);
+                "max(${loadsStr})"
             case RamTerm.RowLoad(var, index, _) => "${var}[${index}]"
             case RamTerm.Meet(_, lhs, rhs, _) => "(${lhs} ⊓ ${rhs})"
             case RamTerm.App1(_, v, _) => "<clo>(${v})"
@@ -366,6 +382,17 @@ mod Fixpoint3.Ast.Ram {
             case RelSym.Symbol(sym, _, _) => "${sym}"
         }
     }
+
+    ///
+    /// Returns a `RelSym` wrapper of the `predSym`.
+    ///
+    /// The returned `RelSym` is equivalent to a 'real' `RelSym` with respect
+    /// to the `Order` on `RelSym`.
+    ///
+    /// Used for accessing values in maps.
+    ///
+    @Internal
+    pub def makeFakeRelSym(predSym: PredSym): RelSym = RelSym.Symbol(predSym, -1, Relational)
 
     ///
     /// Returns the arity of `relSym`.
@@ -433,7 +460,7 @@ mod Fixpoint3.Ast.Ram {
             case (RowVar.Named(i1), RowVar.Named(i2)) => i1 <=> i2
         }
     }
-    
+
     /////////////////////////////////////////////////////////////////////////////
     // RamId                                                                   //
     /////////////////////////////////////////////////////////////////////////////
@@ -441,6 +468,9 @@ mod Fixpoint3.Ast.Ram {
     ///
     /// `RamId` represents a unique identifier for literals, positions in relations,
     /// positions in tuples or input to a function.
+    ///
+    /// The uniqueness is broken by provenance for convenience of implementation.
+    /// Literals describing rules also use `Id(-1)`.
     ///
     /// `Id(id)` represents the id `id`. If `Id(id)` exists `RowVar.Named(id)` does not.
     ///
@@ -466,7 +496,7 @@ mod Fixpoint3.Ast.Ram {
             case (RamId.RelPos(i0, i1)) => "RelPos[${i0}, ${i1}]"
         }
     }
-    
+
     instance Eq[RamId] {
         pub def eq(a: RamId, b: RamId): Bool = match (a, b) {
             case (RamId.Id(i1), RamId.Id(i2)) => i1 == i2
@@ -490,7 +520,7 @@ mod Fixpoint3.Ast.Ram {
                 let firstComp = i0 <=> j0;
                 if (firstComp != Comparison.EqualTo) firstComp else i1 <=> j1
             case (RamId.TuplePos(_, _), _) => Comparison.LessThan
-            case (_,  RamId.TuplePos(_, _)) => Comparison.GreaterThan
+            case (_, RamId.TuplePos(_, _)) => Comparison.GreaterThan
             case (RamId.RelPos(_, _), _) => Comparison.LessThan
             case (_, RamId.RelPos(_, _)) => Comparison.GreaterThan
             case (RamId.Id(_), _) => Comparison.LessThan

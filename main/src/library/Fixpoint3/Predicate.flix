@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 ///
 /// This file provides an interface for interacting with `Fixpoint.Ast.Ram.Predicates`.
 /// Core features include providing a list of all `RelSym` in `Predicates`,
@@ -23,10 +23,10 @@
 ///
 /// The three `PredType`s originate from semi-naive evaluation and are `Full`, `Delta` and `New`
 /// (delta').
-/// 
+///
 /// Instead of adding an enum type (Full/Delta/New) to the predicate, we embed the type into
 /// the identifier, which we can do since we have an upper bound on the integers used.
-/// 
+///
 /// For a `Datalog` AST consisting of predicates `PredSym("Road", 0)` and `PredSym("Path", 1)`
 /// the RAM has 6 predicates, 3 for each predicate in the `Datalog` AST. Every predicate
 /// has a `Full` version, a `Delta` version and a `New` version.
@@ -65,14 +65,14 @@ mod Fixpoint3.Predicate {
         case Delta,
         case New
     }
-    
+
     ///
     /// Returns a list of all full `RelSym` in `predInfo`.
     ///
     @Internal
     pub def allFullRelSyms(predInfo: Predicates): List[RelSym] =
         let (_, set) = predInfo;
-        Set.foldLeft(acc -> relSym -> 
+        Set.foldLeft(acc -> relSym ->
             relSym :: acc
         , Nil, set)
 
@@ -90,7 +90,7 @@ mod Fixpoint3.Predicate {
     /// Returns the full `RelSym` associated with the `PredSym` in `body` according to `predInfo`.
     ///
     @Internal
-    pub def bodyAtomToRelSym(body: BodyPredicate, wantedType: PredType, predInfo: Predicates): RelSym = 
+    pub def bodyAtomToRelSym(body: BodyPredicate, wantedType: PredType, predInfo: Predicates): RelSym =
         let fullRel = bodyAtomToFullRelSym(body);
         getRelSymAsType(fullRel, wantedType, predInfo)
 
@@ -154,7 +154,7 @@ mod Fixpoint3.Predicate {
     @Internal
     pub def idToFullPredId(id: Int64, predInfo: Predicates): Int64 =
         let (max, _) = predInfo;
-        if(id <= max) {
+        if (id <= max) {
             id
         } else if (id <= max * 2i64) {
             id - max
@@ -164,30 +164,30 @@ mod Fixpoint3.Predicate {
 
     ///
     /// Returns the type of a `PredSym` with identifier `id` according to `predInfo`.
-    /// 
+    ///
     @Internal
-    pub def idToPredType(id: Int64, predInfo: Predicates): PredType = 
+    pub def idToPredType(id: Int64, predInfo: Predicates): PredType =
         let (max, _) = predInfo;
-        if(id <= max) {
+        if (id <= max) {
             PredType.Full
         } else if (id <= max * 2i64) {
             PredType.Delta
         } else {
-            PredType.New                
+            PredType.New
         }
 
     ///
     /// Collect all preciate information given a Datalog program `program` and database `db`.
     ///
     @Internal
-    pub def initialize(program: Datalog, db: Map[RelSym, Map[Vector[Boxed], Boxed]]): Predicates = 
+    pub def initialize(program: Datalog, db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): Predicates =
         collectPreds(program, db)
 
     ///
     /// Returns true if `id` is the id of a full `PredSym` according to `predInfo`.
     ///
     @Internal
-    pub def isFullId(id: Int64, predInfo: Predicates): Bool = 
+    pub def isFullId(id: Int64, predInfo: Predicates): Bool =
         PredType.Full == idToPredType(id, predInfo)
 
     ///
@@ -218,13 +218,14 @@ mod Fixpoint3.Predicate {
     ///
     /// Returns a set of all full `RelSym` created from `PredSym`s in `program` and `db` and the maximal identifier+1.
     ///
-    def collectPreds(program: Datalog, db: Map[RelSym, Map[Vector[Boxed], Boxed]]): (Int64, Set[RelSym]) = match program {
+    def collectPreds(program: Datalog, db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): (Int64, Set[RelSym]) = match program {
         case Datalog(facts, rules) =>
             let set1 = collectPredicates(rules);
             let set2 = collectPredicates(facts);
             let set3 = collectDbPredicates(db);
             let set = (set1 `Set.union` set2) `Set.union` set3;
-            let optMax = set |> Set.maximumBy(match RelSym.Symbol(PredSym.PredSym(_, id1), _, _) -> match RelSym.Symbol(PredSym.PredSym(_, id2), _, _) -> id1 <=> id2);
+            let optMax = set |>
+                Set.maximumBy(match RelSym.Symbol(PredSym.PredSym(_, id1), _, _) -> match RelSym.Symbol(PredSym.PredSym(_, id2), _, _) -> id1 <=> id2);
             match optMax {
                 case None => (-1i64, set)
                 case Some(max) => (toId(max) + 1i64, set)
@@ -235,7 +236,7 @@ mod Fixpoint3.Predicate {
     ///
     /// Returns a set of full `RelSym` in `db`.
     ///
-    def collectDbPredicates(db: Map[RelSym, Map[Vector[Boxed], Boxed]]): Set[RelSym] =
+    def collectDbPredicates(db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): Set[RelSym] =
         Map.foldLeftWithKey(set -> relSym -> _ -> {
             Set.insert(relSym, set)
         }, Set#{}, db)
@@ -246,7 +247,7 @@ mod Fixpoint3.Predicate {
     def collectPredicates(constraints: Vector[Constraint]): Set[RelSym] =
         Vector.foldLeft(match set -> match Constraint(headAtom, body) -> {
             let setWithHead = Set.insert(headAtomToFullRelSym(headAtom), set);
-            Vector.foldLeft(setBody -> bodyConstraint -> 
+            Vector.foldLeft(setBody -> bodyConstraint ->
                 match bodyConstraint {
                     case BodyAtom(_, _, _, _, _) => Set.insert(bodyAtomToFullRelSym(bodyConstraint), setBody)
                     case _ => setBody

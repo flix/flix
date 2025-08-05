@@ -347,7 +347,7 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.ApplyDef(symUse, exps, _, _, _, _) =>
+      case Expr.ApplyDef(symUse, exps, _, _, _, _, _) =>
         visitDefSymUse(symUse)
         exps.foreach(visitExpr)
 
@@ -359,7 +359,7 @@ object Visitor {
         visitOpSymUse(op)
         exps.foreach(visitExpr)
 
-      case Expr.ApplySig(symUse, exps, _, _, _, _) =>
+      case Expr.ApplySig(symUse, exps, _, _, _, _, _, _) =>
         visitSigSymUse(symUse)
         exps.foreach(visitExpr)
 
@@ -409,12 +409,9 @@ object Visitor {
 
       case Expr.RestrictableChoose(_, _, _, _, _, _) => () // Not visited, unsupported feature.
 
-      case Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, _, _, _) =>
-        visitExpr(exp1)
-        visitBinder(bnd1)
-        visitExpr(exp2)
-        visitBinder(bnd2)
-        visitExpr(exp3)
+      case Expr.ExtMatch(exp, rules, _, _, _) =>
+        visitExpr(exp)
+        rules.foreach(visitExtMatchRule)
 
       case Expr.Tag(symUse, exps, _, _, _) =>
         visitCaseSymUse(symUse)
@@ -422,7 +419,7 @@ object Visitor {
 
       case Expr.RestrictableTag(_, _, _, _, _) => () // Not visited, unsupported feature.
 
-      case Expr.ExtensibleTag(_, exps, _, _, _) =>
+      case Expr.ExtTag(_, exps, _, _, _) =>
         exps.foreach(visitExpr)
 
       case Expr.Tuple(exps, _, _, _) =>
@@ -505,9 +502,9 @@ object Visitor {
         visitType(runEff)
         visitExpr(exp)
 
-      case Expr.Without(exp, sym, _, _, _) =>
+      case Expr.Without(exp, symUse, _, _, _) =>
         visitExpr(exp)
-        visitEffectSymUse(sym)
+        visitEffSymUse(symUse)
 
       case Expr.TryCatch(exp, rules, _, _, _) =>
         visitExpr(exp)
@@ -516,8 +513,8 @@ object Visitor {
       case Expr.Throw(exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.Handler(sym, rules, _, _, _, _, _) =>
-        visitEffectSymUse(sym)
+      case Expr.Handler(symUse, rules, _, _, _, _, _) =>
+        visitEffSymUse(symUse)
         rules.foreach(visitHandlerRule)
 
       case Expr.RunWith(exp1, exp2, _, _, _) =>
@@ -652,13 +649,13 @@ object Visitor {
     c.consumeStructFieldSymUse(symUse)
   }
 
-  private def visitEffectSymUse(effUse: EffectSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
-    val EffectSymUse(_, qname) = effUse
+  private def visitEffSymUse(effUse: EffSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
+    val EffSymUse(_, qname) = effUse
     if (!a.accept(qname.loc)) {
       return
     }
 
-    c.consumeEffectSymUse(effUse)
+    c.consumeEffSymUse(effUse)
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -753,6 +750,18 @@ object Visitor {
     visitPattern(pat)
     guard.foreach(visitExpr)
     visitExpr(exp)
+  }
+
+  private def visitExtMatchRule(rule: ExtMatchRule)(implicit a: Acceptor, c: Consumer): Unit = rule match {
+    case ExtMatchRule(_, pats, exp, loc) =>
+      if (!a.accept(loc)) {
+        return
+      }
+
+      c.consumeExtMatchRule(rule)
+
+      pats.foreach(visitExtPattern)
+      visitExpr(exp)
   }
 
   private def visitTypeMatchRule(rule: TypeMatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
@@ -865,8 +874,8 @@ object Visitor {
       case Wild(_, _) => ()
       case Var(bnd, _, _) => visitBinder(bnd)
       case Cst(_, _, _) => ()
-      case Tag(sym, pats, _, _) =>
-        visitCaseSymUse(sym)
+      case Tag(symUse, pats, _, _) =>
+        visitCaseSymUse(symUse)
         pats.foreach(visitPattern)
       case Tuple(pats, _, _) =>
         pats.foreach(visitPattern)
@@ -874,6 +883,20 @@ object Visitor {
         pats.foreach(visitRecordLabelPattern)
         visitPattern(pat1)
       case Pattern.Error(_, _) =>
+    }
+  }
+
+  private def visitExtPattern(pat: ExtPattern)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(pat.loc)) {
+      return
+    }
+
+    c.consumeExtPattern(pat)
+
+    pat match {
+      case ExtPattern.Wild(_, _) => ()
+      case ExtPattern.Var(bnd, _, _) => visitBinder(bnd)
+      case ExtPattern.Error(_, _) => ()
     }
   }
 

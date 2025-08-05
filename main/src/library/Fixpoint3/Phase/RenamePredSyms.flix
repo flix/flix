@@ -77,22 +77,22 @@ mod Fixpoint3.Phase.RenamePredSyms {
     ///
     @Internal
     pub def renamePredSyms(d: Datalog, fixing: FixInformation): Datalog = match d {
-        case Datalog(facts, rules) => 
+        case Datalog(facts, rules) =>
             let transformer = mapBack(fixing);
             Datalog(remapConstraints(facts, transformer), remapConstraints(rules, transformer))
-        case Model(map) => 
+        case Model(map) =>
             let transformer = mapBack(fixing);
             Map.foldLeftWithKey(newMap -> k -> v -> match k {
                 case RelSym.Symbol(p, arity, den) => Map.insert(RelSym.Symbol(transformer(p), arity, den), v, newMap)
-            }, Map#{}, map) |> 
-            Model
+            }, Map#{}, map) |>
+                Model
         case _ => bug!("Bad argument of type 'Join' in PredSym renaming")
     }
-    
+
     ///
     /// Maps `pred` back to its original `PredSym` according to `reversing`.
     ///
-    def mapBack(reversing: FixInformation, pred: PredSym): PredSym = 
+    def mapBack(reversing: FixInformation, pred: PredSym): PredSym =
         // The `id`s are assigned 0 to n for `n` `PredSym`s. They should
         // be well within the range for `Int32`. Also no new `PredSym`s should
         // have been created. There is no recovery for either.
@@ -102,7 +102,7 @@ mod Fixpoint3.Phase.RenamePredSyms {
     ///
     /// Maps `pred` back to its new `PredSym` according to `state`.
     ///
-    def mapForward(state: UniqueInts[PredSym, r], pred: PredSym): PredSym \ r = 
+    def mapForward(state: UniqueInts[PredSym, r], pred: PredSym): PredSym \ r =
         let PredSym(name, _) = pred;
         let index = UniqueInts.getIndex(pred, state);
         PredSym(name, Int32.toInt64(index))
@@ -120,7 +120,7 @@ mod Fixpoint3.Phase.RenamePredSyms {
     def remapHead(transformer: PredSym -> PredSym \ r, head: HeadPredicate): HeadPredicate \ r = match head {
         case HeadAtom(pred, den, terms) => HeadAtom(transformer(pred), den, terms)
     }
-    
+
     ///
     /// Maps `PredSym`s of `body` according to `transformer`.
     ///

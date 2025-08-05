@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/// 
+///
 /// A wrapper around a Java read-write-lock.
 ///
 mod Fixpoint3 {

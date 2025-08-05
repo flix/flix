@@ -35,6 +35,12 @@ instance Iterable[MutPriorityQueue[a, r]] {
     pub def iterator(rc: Region[r1], q: MutPriorityQueue[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutPriorityQueue.iterator(rc, q)
 }
 
+instance ForEach[MutPriorityQueue[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def forEach(f: a -> Unit \ ef, q: MutPriorityQueue[a, r]): Unit \ ef + r = MutPriorityQueue.forEach(f, q)
+}
+
 mod MutPriorityQueue {
 
     ///
@@ -115,10 +121,25 @@ mod MutPriorityQueue {
     ///
     /// Enqueues each element in `m` into `mq`.
     ///
-    pub def enqueueAll(m: m, mq: MutPriorityQueue[elt, r]): Unit \ (r + Iterable.Aef[m]) with Iterable[m], Order[elt] where Iterable.Elm[m] ~ elt =
+    pub def enqueueAll(m: m, mq: MutPriorityQueue[elt, r]): Unit \ (r + ForEach.Aef[m]) with ForEach[m], Order[elt] where ForEach.Elm[m] ~ elt =
         foreach(x <- m) {
             enqueue(x, mq)
         }
+
+    ///
+    /// Applies `f` to every element of `q`.
+    ///
+    pub def forEach(f: a -> Unit \ ef, q: MutPriorityQueue[a, r]): Unit \ ef + r = {
+        let arr = q->values;
+        let size = q->size;
+        def loop(i) = {
+            if (i < size) {
+                f(Array.get(i, arr));
+                loop(i + 1)
+            } else ()
+        };
+        loop(0)
+    }
 
     ///
     /// Returns an iterator over `mq`.

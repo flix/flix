@@ -377,7 +377,7 @@ object SetFormula {
         val (m, setFormulaUniv) = mkEnv(List(tpe), SortedSet.from(enm.cases.keys))
         val setFormula = fromCaseType(tpe, m, setFormulaUniv)
         val (lower, upper) = boundsAnalysis(setFormula)(setFormulaUniv)
-        Some(cstToType(lower, m), cstToType(upper, m))
+        Some((cstToType(lower, m), cstToType(upper, m)))
       case _ => None
     }
   }

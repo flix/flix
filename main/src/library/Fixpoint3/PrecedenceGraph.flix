@@ -74,7 +74,7 @@ mod Fixpoint3.PrecedenceGraph {
             case s :: rest => loop(s :: Nil, rest)
             case Nil => ()
         };
-        pseudoStratums |> MutList.toList
+        MutList.toList(pseudoStratums)
     }
 
     ///
@@ -169,7 +169,7 @@ mod Fixpoint3.PrecedenceGraph {
         pub def toString(g: MutGraph[r]): String \ r =
             let edges = g->adjList |>
                 MutMap.joinWith(u -> vSet ->
-                    Set.joinWith(v -> "\n  ${u} -> ${v}", ",", vSet), ","
+                    Set.joinWith(v -> "\n ${u} -> ${v}", ",", vSet), ","
                 );
             "MutGraph(${edges})"
 
@@ -184,31 +184,31 @@ mod Fixpoint3.PrecedenceGraph {
             let componentMap: MutMap[Vertex, Set[Vertex], rc] = MutMap.empty(rc);
             let rootMap: MutMap[Vertex, Vertex, rc] = MutMap.empty(rc);
             components |>
-            List.forEachWithIndex(i -> scc ->
-                foreach (partOfComp <- scc) {
-                    MutMap.put(partOfComp, i, rootMap);
-                    MutMap.put(partOfComp, scc, componentMap)
-                }
-            );
+                List.forEachWithIndex(i -> scc ->
+                    foreach (partOfComp <- scc) {
+                        MutMap.put(partOfComp, i, rootMap);
+                        MutMap.put(partOfComp, scc, componentMap)
+                    }
+                );
             g->adjList |> MutMap.forEach(u -> neighbors ->
                 neighbors |>
-                Set.forEach(v ->
-                    let uSCC = MutMap.get(u, rootMap) |> getOrCrash;
-                    let vSCC = MutMap.get(v, rootMap) |> getOrCrash;
-                    if (uSCC != vSCC) {
-                        addEdge(uSCC, vSCC, condensation)
-                    } else ()
-                )
+                    Set.forEach(v ->
+                        let uSCC = MutMap.get(u, rootMap) |> getOrCrash;
+                        let vSCC = MutMap.get(v, rootMap) |> getOrCrash;
+                        if (uSCC != vSCC) {
+                            addEdge(uSCC, vSCC, condensation)
+                        } else ()
+                    )
             );
-            let inverseRootMap = MutMap.toMap(rootMap) |>
-                Map.invert |>
+            let inverseRootMap = MutMap.toMap(rootMap)
+                |> Map.invert
                 // We are guaranteed to have singleton sets
-                Map.map(Set.find(_ -> true) >> getOrCrash);
-            topologicalSort(condensation) |>
-            List.map(u -> componentMap |>
-                MutMap.get(inverseRootMap |>
-                    Map.get(u) |> getOrCrash
-                ) |> getOrCrash
+                |> Map.map(Set.find(_ -> true) >> getOrCrash);
+            topologicalSort(condensation)
+                |> List.map(u -> 
+                    componentMap
+                        |> MutMap.get(Map.get(u, inverseRootMap) |> getOrCrash)
+                        |> getOrCrash
             )
         }
 
@@ -221,11 +221,11 @@ mod Fixpoint3.PrecedenceGraph {
             let sorted = MutList.empty(rc);
             let colors = Array.repeat(rc, numberOfVertices(g), Color.White);
             getVertices(g) |>
-            MutSet.forEach(u -> {
-                if (Array.get(u, colors) == Color.White) {
-                    topologicalSortVisit(g, colors, sorted, u)
-                } else ()
-            });
+                MutSet.forEach(u -> {
+                    if (Array.get(u, colors) == Color.White) {
+                        topologicalSortVisit(g, colors, sorted, u)
+                    } else ()
+                });
             sorted |> MutList.toList |> List.reverse
         }
 
@@ -241,13 +241,13 @@ mod Fixpoint3.PrecedenceGraph {
         ): Unit \ r0 + r1 = {
             Array.put(Color.Gray, u, colors);
             getNeighbors(u, g) |>
-            Set.forEach(v -> {
-                if (Array.get(v, colors) == Color.White)
-                    topologicalSortVisit(g, colors, sorted, v)
-                else if (Array.get(v, colors) == Color.Gray)
-                    bug!("In Fixpoint.PrecedenceGraph.MutGraph.topologicalSortVisit: Cycle detected")
-                else ()
-            });
+                Set.forEach(v -> {
+                    if (Array.get(v, colors) == Color.White)
+                        topologicalSortVisit(g, colors, sorted, v)
+                    else if (Array.get(v, colors) == Color.Gray)
+                        bug!("In Fixpoint.PrecedenceGraph.MutGraph.topologicalSortVisit: Cycle detected")
+                    else ()
+                });
             Array.put(Color.Black, u, colors);
             MutList.push(u, sorted)
         }
@@ -265,14 +265,14 @@ mod Fixpoint3.PrecedenceGraph {
 
             let time = Counter.fresh(rc);
             getVertices(g) |>
-            MutSet.forEach(u ->
-                if (Array.get(u, disc) == -1) {
-                    stronglyConnectedComponentsVisit(
-                        components, stack, disc, low, onStack, time, g, u
-                    )
-                } else ()
-            );
-            components |> MutList.toList
+                MutSet.forEach(u ->
+                    if (Array.get(u, disc) == -1) {
+                        stronglyConnectedComponentsVisit(
+                            components, stack, disc, low, onStack, time, g, u
+                        )
+                    } else ()
+                );
+            MutList.toList(components)
         }
 
         ///
@@ -314,20 +314,20 @@ mod Fixpoint3.PrecedenceGraph {
             MutList.push(u, stack);
 
             getNeighbors(u, g) |>
-            Set.forEach(v -> {
-                if (Array.get(v, disc) == -1) {
-                    stronglyConnectedComponentsVisit(
-                        components, stack, disc, low, onStack, time, g, v
-                    );
-                    let uLow = Array.get(u, low);
-                    let vLow = Array.get(v, low);
-                    Array.put(Int32.min(uLow, vLow), u, low)
-                } else if (Array.get(v, onStack)) {
-                    let uLow = Array.get(u, low);
-                    let vLow = Array.get(v, low);
-                    Array.put(Int32.min(uLow, vLow), u, low)
-                } else ()
-            });
+                Set.forEach(v -> {
+                    if (Array.get(v, disc) == -1) {
+                        stronglyConnectedComponentsVisit(
+                            components, stack, disc, low, onStack, time, g, v
+                        );
+                        let uLow = Array.get(u, low);
+                        let vLow = Array.get(v, low);
+                        Array.put(Int32.min(uLow, vLow), u, low)
+                    } else if (Array.get(v, onStack)) {
+                        let uLow = Array.get(u, low);
+                        let vLow = Array.get(v, low);
+                        Array.put(Int32.min(uLow, vLow), u, low)
+                    } else ()
+                });
             if (Array.get(u, low) == Array.get(u, disc)) {
                 region rc {
                     let mutSet = MutSet.empty(rc);

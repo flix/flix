@@ -199,12 +199,16 @@ object OccurrenceAnalyzer {
           (Expr.Match(e, rs, tpe, eff, loc), ctx3)
         }
 
-      case Expr.ExtensibleMatch(label, exp1, sym2, exp2, sym3, exp3, tpe, eff, loc) =>
-        val (e1, ctx1) = visitExp(exp1)
-        val (e2, ctx2) = visitExp(exp2)
-        val (e3, ctx3) = visitExp(exp3)
-        val ctx = combineSeq(ctx1, combineBranch(ctx2, ctx3)).removeVar(sym2).removeVar(sym3)
-        (Expr.ExtensibleMatch(label, e1, sym2, e2, sym3, e3, tpe, eff, loc), ctx)
+      case Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+        val (e, ctx1) = visitExp(exp)
+        val (rs, ctxs) = rules.map(visitExtMatchRule).unzip
+        val ctx2 = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
+        val ctx3 = combineSeq(ctx1, ctx2)
+        if ((e eq exp) && rules.zip(rs).forall { case (r1, r2) => r1 eq r2 }) {
+          (exp0, ctx3) // Reuse exp0.
+        } else {
+          (Expr.ExtMatch(e, rs, tpe, eff, loc), ctx3)
+        }
 
       case Expr.VectorLit(exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
@@ -288,6 +292,18 @@ object OccurrenceAnalyzer {
       }
   }
 
+  private def visitExtMatchRule(rule: MonoAst.ExtMatchRule)(implicit sym0: Symbol.DefnSym): (MonoAst.ExtMatchRule, ExprContext) = rule match {
+    case MonoAst.ExtMatchRule(label, pats, exp, loc) =>
+      val (e, ctx1) = visitExp(exp)
+      val (ps, syms) = pats.map(visitExtPattern(_, ctx1)).unzip
+      val ctx2 = ctx1.removeVars(syms.flatten)
+      if ((ps eq pats) && (e eq exp)) {
+        (rule, ctx2) // Reuse rule.
+      } else {
+        (MonoAst.ExtMatchRule(label, ps, e, loc), ctx2)
+      }
+  }
+
   private def visitCatchRule(rule: MonoAst.CatchRule)(implicit sym0: Symbol.DefnSym): (MonoAst.CatchRule, ExprContext) = rule match {
     case MonoAst.CatchRule(sym, clazz, exp) =>
       val (e, ctx1) = visitExp(exp)
@@ -338,13 +354,13 @@ object OccurrenceAnalyzer {
     case MonoAst.Pattern.Cst(_, _, _) =>
       (pat0, Set.empty) // Always reuse pat0.
 
-    case MonoAst.Pattern.Tag(sym, pats, tpe, loc) =>
+    case MonoAst.Pattern.Tag(symUse, pats, tpe, loc) =>
       val (ps, listOfSyms) = pats.map(visitPattern(_, ctx)).unzip
       val syms = listOfSyms.flatten.toSet
       if (pats.zip(ps).forall { case (p1, p2) => p1 eq p2 }) {
         (pat0, syms) // Reuse pat0.
       } else {
-        (MonoAst.Pattern.Tag(sym, ps, tpe, loc), syms)
+        (MonoAst.Pattern.Tag(symUse, ps, tpe, loc), syms)
       }
 
     case MonoAst.Pattern.Tuple(pats, tpe, loc) =>
@@ -374,6 +390,19 @@ object OccurrenceAnalyzer {
         (pat0, syms) // Reuse pat0.
       } else {
         (MonoAst.Pattern.Record.RecordLabelPattern(label, p, tpe, loc), syms)
+      }
+  }
+
+  private def visitExtPattern(pat0: MonoAst.ExtPattern, ctx: ExprContext): (MonoAst.ExtPattern, Set[VarSym]) = pat0 match {
+    case MonoAst.ExtPattern.Wild(_, _) =>
+      (pat0, Set.empty) // Always reuse pat0.
+
+    case MonoAst.ExtPattern.Var(sym, tpe, occur0, loc) =>
+      val occur = ctx.get(sym)
+      if (occur eq occur0) {
+        (pat0, Set(sym)) // Reuse pat0.
+      } else {
+        (MonoAst.ExtPattern.Var(sym, tpe, occur, loc), Set(sym))
       }
   }
 

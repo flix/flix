@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern, RestrictableChoosePattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtMatchRule, ExtPattern, Pattern, RestrictableChoosePattern, Root}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -144,7 +144,7 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ApplyDef(symUse, exps, itpe, tpe, eff, _) =>
+    case Expr.ApplyDef(symUse, exps, _, itpe, tpe, eff, _) =>
       visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(itpe)
@@ -164,7 +164,7 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ApplySig(symUse, exps, itpe, tpe, eff, _) =>
+    case Expr.ApplySig(symUse, exps, _, _, itpe, tpe, eff, _) =>
       visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(itpe)
@@ -241,28 +241,25 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, tpe, eff, _) =>
-      visitExp(exp1)
-      visitBinder(bnd1)
-      visitExp(exp2)
-      visitBinder(bnd2)
-      visitExp(exp3)
+    case Expr.ExtMatch(exp, rules, tpe, eff, _) =>
+      visitExp(exp)
+      rules.foreach(visitExtMatchRule)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Tag(sym, exps, tpe, eff, _) =>
-      visitSymUse(sym)
+    case Expr.Tag(symUse, exps, tpe, eff, _) =>
+      visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.RestrictableTag(sym, exps, tpe, eff, _) =>
-      visitSymUse(sym)
+    case Expr.RestrictableTag(symUse, exps, tpe, eff, _) =>
+      visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ExtensibleTag(_, exps, tpe, eff, _) =>
+    case Expr.ExtTag(_, exps, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
@@ -326,15 +323,15 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.StructGet(exp, sym, tpe, eff, _) =>
+    case Expr.StructGet(exp, symUse, tpe, eff, _) =>
       visitExp(exp)
-      visitSymUse(sym)
+      visitSymUse(symUse)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.StructPut(exp1, sym, exp2, tpe, eff, _) =>
+    case Expr.StructPut(exp1, symUse, exp2, tpe, eff, _) =>
       visitExp(exp1)
-      visitSymUse(sym)
+      visitSymUse(symUse)
       visitExp(exp2)
       visitType(tpe)
       visitType(eff)
@@ -379,9 +376,9 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Without(exp, sym, tpe, eff, _) =>
+    case Expr.Without(exp, symUse, tpe, eff, _) =>
       visitExp(exp)
-      visitSymUse(sym)
+      visitSymUse(symUse)
       visitType(tpe)
       visitType(eff)
 
@@ -396,8 +393,8 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Handler(sym, rules, bodyType, bodyEff, handledEff, tpe, _) =>
-      visitSymUse(sym)
+    case Expr.Handler(symUse, rules, bodyType, bodyEff, handledEff, tpe, _) =>
+      visitSymUse(symUse)
       rules.foreach(visitHandlerRule)
       visitType(bodyType)
       visitType(bodyEff)
@@ -558,11 +555,11 @@ object Dependencies {
     case Type.Var(_, _) => ()
   }
 
-  private def visitSymUse(use: SymUse)(implicit sctx: SharedContext): Unit = use match {
+  private def visitSymUse(symUse: SymUse)(implicit sctx: SharedContext): Unit = symUse match {
     case SymUse.AssocTypeSymUse(sym, loc) => addDependency(sym.loc, loc)
     case SymUse.CaseSymUse(sym, loc) => addDependency(sym.loc, loc)
     case SymUse.DefSymUse(sym, loc) => addDependency(sym.loc, loc)
-    case SymUse.EffectSymUse(sym, qname) => addDependency(sym.loc, qname.loc)
+    case SymUse.EffSymUse(sym, qname) => addDependency(sym.loc, qname.loc)
     case SymUse.OpSymUse(sym, loc) => addDependency(sym.loc, loc)
     case SymUse.SigSymUse(sym, loc) => addDependency(sym.loc, loc)
     case SymUse.StructFieldSymUse(sym, loc) => addDependency(sym.loc, loc)
@@ -610,12 +607,18 @@ object Dependencies {
     r.guard.toList.foreach(visitExp)
   }
 
+  private def visitExtMatchRule(r: TypedAst.ExtMatchRule)(implicit sctx: SharedContext): Unit = r match {
+    case ExtMatchRule(_, pats, exp, _) =>
+      pats.foreach(visitExtPattern)
+      visitExp(exp)
+  }
+
   private def visitPattern(p: TypedAst.Pattern)(implicit sctx: SharedContext): Unit = p match {
     case Pattern.Var(bnd, tpe, _) =>
       visitBinder(bnd)
       visitType(tpe)
-    case Pattern.Tag(sym, pats, tpe, _) =>
-      visitSymUse(sym)
+    case Pattern.Tag(symUse, pats, tpe, _) =>
+      visitSymUse(symUse)
       pats.foreach(visitPattern)
       visitType(tpe)
     case Pattern.Tuple(pats, tpe, _) =>
@@ -627,6 +630,18 @@ object Dependencies {
       visitType(tpe)
     case pat =>
       visitType(pat.tpe)
+  }
+
+  private def visitExtPattern(p: TypedAst.ExtPattern)(implicit sctx: SharedContext): Unit = p match {
+    case ExtPattern.Wild(tpe, _) =>
+      visitType(tpe)
+
+    case ExtPattern.Var(bnd, tpe, _) =>
+      visitBinder(bnd)
+      visitType(tpe)
+
+    case ExtPattern.Error(tpe, _) =>
+      visitType(tpe)
   }
 
   private def visitRecordLabelPattern(pattern: Record.RecordLabelPattern)(implicit sctx: SharedContext): Unit = {
@@ -646,8 +661,8 @@ object Dependencies {
   }
 
   private def visitRestrictableChoosePattern(pattern: TypedAst.RestrictableChoosePattern)(implicit sctx: SharedContext): Unit = pattern match {
-    case RestrictableChoosePattern.Tag(sym, pats, tpe, _) =>
-      visitSymUse(sym)
+    case RestrictableChoosePattern.Tag(symUse, pats, tpe, _) =>
+      visitSymUse(symUse)
       pats.foreach(visitVarOrWild)
       visitType(tpe)
     case RestrictableChoosePattern.Error(tpe, _) =>
