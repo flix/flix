@@ -62,4 +62,22 @@ mod ForEach {
      ///
      pub def withIndex(m: t): WithIndex[t] with ForEach[t] = WithIndex.WithIndex(m)
 
+    ///
+    /// A view for `ForEach` instance `t` that filters out elements that don't match the predicate.
+    ///
+    pub enum WithFilter[t, a](a -> Bool, t)
+
+    instance ForEach[WithFilter[t, a]] with ForEach[t] where ForEach.Elm[t] ~ a {
+        type Elm = a
+        type Aef = ForEach.Aef[t]
+        pub def forEach(f: a -> Unit \ ef, t: WithFilter[t, a]): Unit \ ef + ForEach.Aef[t] =
+            let WithFilter.WithFilter(p, base) = t;
+            base |> ForEach.forEach(elm -> if (p(elm)) f(elm) else ())
+    }
+
+    ///
+    /// Returns a view for `m` that filters out elements that don't match `p`.
+    ///
+    pub def withFilter(p: a -> Bool, m: t): WithFilter[t, a] with ForEach[t] where ForEach.Elm[t] ~ a = WithFilter.WithFilter(p, m)
+
 }
