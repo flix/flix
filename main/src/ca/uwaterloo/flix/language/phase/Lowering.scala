@@ -43,7 +43,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 object Lowering {
 
   private object Defs {
-    val version: String = ""
+    val version: String = "3"
     lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.box")
     lazy val Unbox: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.unbox")
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.runSolver")
@@ -806,23 +806,18 @@ object Lowering {
 
     case TypedAst.Expr.FixpointQueryWithProvenance(exps, select, _, tpe, eff, loc) =>
       val defn = Defs.lookup(Defs.ProvenanceOf)
-      val mergeExp = exps.dropRight(1).foldRight(visitExp(exps.last)) {
-        (exp, acc) =>
-          val defn = Defs.lookup(Defs.Merge)
-          val argExps = visitExp(exp) :: acc :: Nil
-          val resultType = Types.Datalog
-          val itpe = Types.MergeType
-          LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, resultType, exp.eff, loc)
-      }
+      val loweredExps = exps.map(visitExp)
+      val mergeExp = mergeExps(loweredExps, loc)
       val (goalPredSym, goalTerms) = select match {
         case TypedAst.Predicate.Head.Atom(pred, _, terms, _, loc1) =>
-          val boxedTerms = terms.map(visitExp).map(box)
+          val boxedTerms = terms.map(t => box(visitExp(t)))
           (mkPredSym(pred), mkVector(boxedTerms, Types.Boxed, loc1))
       }
       val extVarType = unwrapVectorType(tpe, loc)
       val preds = predicatesOfExtVar(extVarType, loc)
-      val lambdaExp = visitExp(mkExtVarLambda(preds, extVarType, loc))
-      val argExps = goalTerms :: goalPredSym :: mergeExp :: lambdaExp :: Nil
+      val lambdaExp = mkExtVarLambda(preds, extVarType, loc)
+      val loweredLambdaExp = visitExp(lambdaExp)
+      val argExps = goalTerms :: goalPredSym :: mergeExp :: loweredLambdaExp :: Nil
       val itpe = Types.mkProvenanceOf(extVarType, loc)
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, tpe, eff, loc)
 
@@ -1717,6 +1712,19 @@ object Lowering {
   }
 
   /**
+    * Returns an expression merging `exps` using `Defs.Merge`.
+    */
+  private def mergeExps(exps: List[LoweredAst.Expr], loc: SourceLocation)(implicit root: TypedAst.Root): LoweredAst.Expr =
+    exps.reduceRight {
+      (exp, acc) =>
+        val defn = Defs.lookup(Defs.Merge)
+        val argExps = exp :: acc :: Nil
+        val resultType = Types.Datalog
+        val itpe = Types.MergeType
+        LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, resultType, exp.eff, loc)
+    }
+
+  /**
     * Returns `t` from the Flix type `Vector[t]`.
     */
   private def unwrapVectorType(tpe: Type, loc: SourceLocation): Type = tpe match {
@@ -1754,7 +1762,7 @@ object Lowering {
   /**
     * Returns the types constituting a `Type.Relation`.
     */
-  private def termTypesOfRelation(rel: Type, loc: SourceLocation): List[Type] = {
+  def termTypesOfRelation(rel: Type, loc: SourceLocation): List[Type] = {
     val f = (rel0: Type, loc0: SourceLocation) => rel0 match {
       case Type.Apply(Type.Cst(TypeConstructor.Relation(_), _), t, _) => t :: Nil
       case Type.Apply(rest, t, loc1) => t :: termTypesOfRelation(rest, loc1)
