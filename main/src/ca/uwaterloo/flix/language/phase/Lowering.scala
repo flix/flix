@@ -43,13 +43,15 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 object Lowering {
 
   private object Defs {
-    val version: String = ""
+    val version: String = "3"
     lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.box")
+    lazy val Unbox: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.unbox")
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.runSolver")
     lazy val SolveWithProvenance: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.runSolverWithProvenance")
     lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.union")
     lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.projectSym")
     lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.rename")
+    lazy val ProvenanceOf: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint3.Solver.provenanceOf")
 
     def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.injectInto$arity")
 
@@ -62,6 +64,10 @@ object Lowering {
     lazy val ChannelMpmcAdmin: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.mpmcAdmin")
     lazy val ChannelSelectFrom: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.selectFrom")
     lazy val ChannelUnsafeGetAndUnlock: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.unsafeGetAndUnlock")
+
+    lazy val VectorGet: Symbol.DefnSym = Symbol.mkDefnSym(s"Vector.get")
+
+    lazy val Bug: Symbol.DefnSym = Symbol.mkDefnSym(s"bug!")
 
     /**
       * Returns the definition associated with the given symbol `sym`.
@@ -128,6 +134,8 @@ object Lowering {
 
     def mkList(t: Type, loc: SourceLocation): Type = Type.mkEnum(Enums.FList, List(t), loc)
 
+    def mkVector(t: Type, loc: SourceLocation): Type = Type.mkVector(t, loc)
+
     //
     // Function Types.
     //
@@ -135,6 +143,10 @@ object Lowering {
     lazy val MergeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog, SourceLocation.Unknown)
     lazy val FilterType: Type = Type.mkPureUncurriedArrow(List(PredSym, Datalog), Datalog, SourceLocation.Unknown)
     lazy val RenameType: Type = Type.mkPureUncurriedArrow(List(mkList(PredSym, SourceLocation.Unknown), Datalog), Datalog, SourceLocation.Unknown)
+
+    def mkProvenanceOf(t: Type, loc: SourceLocation): Type =
+      Type.mkPureUncurriedArrow(List(mkVector(Boxed, loc), PredSym, Datalog, Type.mkPureCurriedArrow(List(PredSym, mkVector(Boxed, loc)), t, loc)), mkVector(t, loc), loc)
+
   }
 
   /**
@@ -796,7 +808,30 @@ object Lowering {
       val resultType = Types.Datalog
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.MergeType, resultType, eff, loc)
 
-    case TypedAst.Expr.FixpointQueryWithProvenance(_, _, _, _, _, _) => ???
+    case TypedAst.Expr.FixpointQueryWithProvenance(exps, select, _, tpe, eff, loc) =>
+      val defn = Defs.lookup(Defs.ProvenanceOf)
+      val mergeExp = exps.dropRight(1).foldRight(visitExp(exps.last)) {
+        (exp, acc) =>
+          val defn = Defs.lookup(Defs.Merge)
+          val argExps = visitExp(exp) :: acc :: Nil
+          val resultType = Types.Datalog
+          val itpe = Types.MergeType
+          LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, resultType, exp.eff, loc)
+      }
+      val (goalPredSym, goalTerms) = select match {
+        case TypedAst.Predicate.Head.Atom(pred, _, terms, _, loc1) =>
+          val loweredTerms = terms.map(visitExp)
+          val boxedTerms = loweredTerms.map {
+            t => LoweredAst.Expr.ApplyDef(Defs.Box, List(t), List.empty, Type.mkPureArrow(t.tpe, Types.Boxed, loc), Types.Boxed, t.eff, loc)
+          }
+          (mkPredSym(pred), mkVector(boxedTerms, Types.Boxed, loc1))
+      }
+      val extVarType = unwrapProvenanceType(tpe, loc)
+      val preds = collectPredsFromExtVarType(extVarType, loc)
+      val lambdaExp = visitExp(mkExtVarLambda(preds, extVarType, loc))
+      val argExps = goalTerms :: goalPredSym :: mergeExp :: lambdaExp :: Nil
+      val itpe = Types.mkProvenanceOf(extVarType, loc)
+      LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, tpe, eff, loc)
 
     case TypedAst.Expr.FixpointSolve(exp, _, eff, mode, loc) =>
       val defn = mode match {
@@ -1686,6 +1721,129 @@ object Lowering {
   private def mkLetSym(prefix: String, loc: SourceLocation)(implicit scope: Scope, flix: Flix): Symbol.VarSym = {
     val name = prefix + Flix.Delimiter + flix.genSym.freshId()
     Symbol.freshVarSym(name, BoundBy.Let, loc)
+  }
+
+  private def unwrapProvenanceType(tpe: Type, loc: SourceLocation): Type = tpe match {
+    case Type.Apply(Type.Cst(TypeConstructor.Vector, _), extType, _) => extType
+    case _ => throw InternalCompilerException("Could not unwrap provenance type", loc)
+  }
+
+  private def collectPredsFromExtVarType(tpe: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = tpe match {
+    case Type.Apply(Type.Cst(TypeConstructor.Extensible, _), tpe1, loc1) =>
+      collectPredsFromSchema(tpe1, loc1)
+    case _ => throw InternalCompilerException("Could not unwrap provenance type", loc)
+  }
+
+  private def collectPredsFromSchema(row: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = row match {
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), rel, loc2), tpe2, loc1) =>
+      (pred, collectTypesFromRelation(rel, loc2)) :: collectPredsFromSchema(tpe2, loc1)
+    case Type.Var(_, _) => Nil
+    case Type.SchemaRowEmpty => Nil
+    case _ => throw InternalCompilerException("Could not unwrap row type", loc)
+  }
+
+  private def collectTypesFromRelation(rel: Type, loc: SourceLocation): List[Type] = {
+    val f = (rel0: Type, loc0: SourceLocation) => rel0 match {
+      case Type.Apply(Type.Cst(TypeConstructor.Relation(_), _), t, _) => t :: Nil
+      case Type.Apply(rest, t, loc1) => t :: collectTypesFromRelation(rest, loc1)
+      case _ => throw InternalCompilerException("Could not unwrap relation type", loc0)
+    }
+    f(rel, loc).reverse
+  }
+
+  private def mkLambdaExp(param: Symbol.VarSym, paramTpe: Type, exp: TypedAst.Expr, expTpe: Type, eff: Type, loc: SourceLocation): TypedAst.Expr =
+    TypedAst.Expr.Lambda(
+      TypedAst.FormalParam(TypedAst.Binder(param, paramTpe), Modifiers.Empty, paramTpe, TypeSource.Ascribed, loc),
+      exp,
+      Type.mkArrowWithEffect(paramTpe, eff, expTpe, loc),
+      loc
+    )
+
+  private def mkExtVarLambda(preds: List[(Name.Pred, List[Type])], tpe: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): TypedAst.Expr = {
+    val predSymVar = Symbol.freshVarSym("predSym", BoundBy.FormalParam, loc)
+    val termsVar = Symbol.freshVarSym("terms", BoundBy.FormalParam, loc)
+    val vectorOfBoxed = Types.mkVector(Types.Boxed, loc)
+    mkLambdaExp(predSymVar, Types.PredSym,
+      mkLambdaExp(termsVar, vectorOfBoxed,
+        mkExtVarOuterBody(preds, predSymVar, termsVar, tpe, loc),
+        tpe, Type.Pure, loc
+      ),
+      Type.mkPureArrow(vectorOfBoxed, tpe, loc), Type.Pure, loc
+    )
+  }
+
+  private def mkExtVarOuterBody(preds: List[(Name.Pred, List[Type])], predSymVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): TypedAst.Expr = {
+    val name = Symbol.freshVarSym(Name.Ident("name", loc), BoundBy.Pattern)
+    TypedAst.Expr.Match(
+      exp = TypedAst.Expr.Var(predSymVar, Types.PredSym, loc),
+      rules = List(
+        TypedAst.MatchRule(
+          pat = TypedAst.Pattern.Tag(
+            CaseSymUse(Symbol.mkCaseSym(Enums.PredSym, Name.Ident("PredSym", loc)), loc),
+            List(
+              TypedAst.Pattern.Var(TypedAst.Binder(name, Type.Str), Type.Str, loc),
+              TypedAst.Pattern.Wild(Type.Int64, loc)
+            ),
+            Types.PredSym, loc
+          ),
+          guard = None, exp = mkExtVarInnerBody(preds, name, termsVar, tpe, loc), loc
+        )
+      ),
+      tpe = tpe, eff = Type.Pure, loc
+    )
+  }
+
+  private def mkExtVarInnerBody(preds: List[(Name.Pred, List[Type])], nameVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation): TypedAst.Expr = {
+    val vectorOfBoxed = Types.mkVector(Types.Boxed, loc)
+    val predRules = preds.map {
+      case (p, types) =>
+        val termsExps = types.zipWithIndex.map {
+          case (tpe1, i) =>
+            TypedAst.Expr.ApplyDef(
+              DefSymUse(Defs.Unbox, loc),
+              exps = List(
+                TypedAst.Expr.ApplyDef(
+                  DefSymUse(Defs.VectorGet, loc),
+                  exps = List(
+                    TypedAst.Expr.Cst(Constant.Int32(i), Type.Int32, loc),
+                    TypedAst.Expr.Var(termsVar, vectorOfBoxed, loc)
+                  ),
+                  targs = List.empty,
+                  itpe = Type.mkPureUncurriedArrow(List(Type.Int32, vectorOfBoxed), Types.Boxed, loc),
+                  tpe = Types.Boxed, eff = Type.Pure, loc = loc
+                )
+              ),
+              targs = List.empty,
+              itpe = Type.mkPureUncurriedArrow(List(Types.Boxed), tpe1, loc),
+              tpe = tpe1, eff = Type.Pure, loc = loc
+            )
+        }
+        TypedAst.MatchRule(
+          pat = TypedAst.Pattern.Cst(Constant.Str(p.name), Type.Str, loc),
+          guard = None,
+          exp = TypedAst.Expr.ExtTag(
+            label = Name.Label(p.name, loc),
+            exps = termsExps,
+            tpe = tpe, eff = Type.Pure, loc = loc
+          ),
+          loc = loc
+        )
+    }
+    val bugRule = TypedAst.MatchRule(
+      pat = TypedAst.Pattern.Wild(Type.Str, loc),
+      guard = None,
+      exp = TypedAst.Expr.ApplyDef(
+        DefSymUse(Defs.Bug, loc),
+        exps = List(TypedAst.Expr.Cst(Constant.Str("${nameVar.text} is not a predicate"), Type.Str, loc)),
+        targs = List.empty,
+        itpe = Type.mkPureUncurriedArrow(List(Type.Str), tpe, loc),
+        tpe = tpe, eff = Type.Pure, loc = loc
+      ),
+      loc = loc
+    )
+    val rules = predRules :+ bugRule
+    TypedAst.Expr.Match(TypedAst.Expr.Var(nameVar, Type.Str, loc), rules, tpe, Type.Pure, loc
+    )
   }
 
   /**
