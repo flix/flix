@@ -402,7 +402,7 @@ object EffectVerifier {
       visitExp(exp)
       // TODO ?
       ()
-    case Expr.FixpointProject(pred, exp, tpe, eff, loc) =>
+    case Expr.FixpointProject(pred, _, exp, tpe, eff, loc) =>
       visitExp(exp)
       // TODO ?
       ()

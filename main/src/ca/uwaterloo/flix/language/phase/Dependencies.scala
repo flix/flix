@@ -523,7 +523,7 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.FixpointProject(_, exp, tpe, eff, _) =>
+    case Expr.FixpointProject(_, _, exp, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)

@@ -598,7 +598,7 @@ object Visitor {
       case Expr.FixpointInject(exp, _, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.FixpointProject(_, exp, _, _, _) =>
+      case Expr.FixpointProject(_, _, exp, _, _, _) =>
         visitExpr(exp)
 
       case Expr.Error(_, _, _) => ()
