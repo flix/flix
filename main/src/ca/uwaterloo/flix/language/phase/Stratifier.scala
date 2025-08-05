@@ -435,9 +435,9 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.FixpointInject(e, pred, tpe, eff, loc)
 
-    case Expr.FixpointProject(pred, exp, tpe, eff, loc) =>
+    case Expr.FixpointProject(pred, arity, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.FixpointProject(pred, e, tpe, eff, loc)
+      Expr.FixpointProject(pred, arity, e, tpe, eff, loc)
 
     case Expr.Error(m, tpe, eff) =>
       Expr.Error(m, tpe, eff)
