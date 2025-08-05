@@ -65,10 +65,6 @@ object Lowering {
     lazy val ChannelSelectFrom: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.selectFrom")
     lazy val ChannelUnsafeGetAndUnlock: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.unsafeGetAndUnlock")
 
-    lazy val VectorGet: Symbol.DefnSym = Symbol.mkDefnSym(s"Vector.get")
-
-    lazy val Bug: Symbol.DefnSym = Symbol.mkDefnSym(s"bug!")
-
     /**
       * Returns the definition associated with the given symbol `sym`.
       */
@@ -822,14 +818,11 @@ object Lowering {
       }
       val (goalPredSym, goalTerms) = select match {
         case TypedAst.Predicate.Head.Atom(pred, _, terms, _, loc1) =>
-          val loweredTerms = terms.map(visitExp)
-          val boxedTerms = loweredTerms.map {
-            t => LoweredAst.Expr.ApplyDef(Defs.Box, List(t), List.empty, Type.mkPureArrow(t.tpe, Types.Boxed, loc), Types.Boxed, t.eff, loc)
-          }
+          val boxedTerms = terms.map(visitExp).map(box)
           (mkPredSym(pred), mkVector(boxedTerms, Types.Boxed, loc1))
       }
-      val extVarType = unwrapProvenanceType(tpe, loc)
-      val preds = collectPredsFromExtVarType(extVarType, loc)
+      val extVarType = unwrapVectorType(tpe, loc)
+      val preds = predicatesOfExtVar(extVarType, loc)
       val lambdaExp = visitExp(mkExtVarLambda(preds, extVarType, loc))
       val argExps = goalTerms :: goalPredSym :: mergeExp :: lambdaExp :: Nil
       val itpe = Types.mkProvenanceOf(extVarType, loc)
@@ -1725,42 +1718,67 @@ object Lowering {
     Symbol.freshVarSym(name, BoundBy.Let, loc)
   }
 
-  private def unwrapProvenanceType(tpe: Type, loc: SourceLocation): Type = tpe match {
+  /**
+    * Returns `t` from the Flix type `Vector[t]`.
+    */
+  private def unwrapVectorType(tpe: Type, loc: SourceLocation): Type = tpe match {
     case Type.Apply(Type.Cst(TypeConstructor.Vector, _), extType, _) => extType
-    case _ => throw InternalCompilerException("Could not unwrap provenance type", loc)
+    case t => throw InternalCompilerException(
+      s"Expected Type.Apply(Type.Cst(TypeConstructor.Vector, _), _, _), but got ${t}",
+      loc
+    )
   }
 
-  private def collectPredsFromExtVarType(tpe: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = tpe match {
+  /**
+    * Returns the pairs consisting of predicates and their term types from the extensible variant
+    * type `tpe`.
+    */
+  private def predicatesOfExtVar(tpe: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = tpe match {
     case Type.Apply(Type.Cst(TypeConstructor.Extensible, _), tpe1, loc1) =>
-      collectPredsFromSchema(tpe1, loc1)
-    case _ => throw InternalCompilerException("Could not unwrap provenance type", loc)
+      predicatesOfSchemaRow(tpe1, loc1)
+    case t => throw InternalCompilerException(
+      s"Expected Type.Apply(Type.Cst(TypeConstructor.Extensible, _), _, _), but got ${t}",
+      loc
+    )
   }
 
-  private def collectPredsFromSchema(row: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = row match {
+  /**
+    * Returns the pairs consisting of predicates and their term types from the SchemaRow `row`.
+    */
+  private def predicatesOfSchemaRow(row: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = row match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), rel, loc2), tpe2, loc1) =>
-      (pred, collectTypesFromRelation(rel, loc2)) :: collectPredsFromSchema(tpe2, loc1)
+      (pred, termTypesOfRelation(rel, loc2)) :: predicatesOfSchemaRow(tpe2, loc1)
     case Type.Var(_, _) => Nil
     case Type.SchemaRowEmpty => Nil
-    case _ => throw InternalCompilerException("Could not unwrap row type", loc)
+    case t => throw InternalCompilerException(s"Got unexpected ${t}", loc)
   }
 
-  private def collectTypesFromRelation(rel: Type, loc: SourceLocation): List[Type] = {
+  /**
+    * Returns the types constituting a `Type.Relation`.
+    */
+  private def termTypesOfRelation(rel: Type, loc: SourceLocation): List[Type] = {
     val f = (rel0: Type, loc0: SourceLocation) => rel0 match {
       case Type.Apply(Type.Cst(TypeConstructor.Relation(_), _), t, _) => t :: Nil
-      case Type.Apply(rest, t, loc1) => t :: collectTypesFromRelation(rest, loc1)
-      case _ => throw InternalCompilerException("Could not unwrap relation type", loc0)
+      case Type.Apply(rest, t, loc1) => t :: termTypesOfRelation(rest, loc1)
+      case t => throw InternalCompilerException(s"Expected Type.Apply(_, _, _), but got ${t}", loc0)
     }
     f(rel, loc).reverse
   }
 
-  private def mkLambdaExp(param: Symbol.VarSym, paramTpe: Type, exp: TypedAst.Expr, expTpe: Type, eff: Type, loc: SourceLocation): TypedAst.Expr =
-    TypedAst.Expr.Lambda(
-      TypedAst.FormalParam(TypedAst.Binder(param, paramTpe), Modifiers.Empty, paramTpe, TypeSource.Ascribed, loc),
-      exp,
-      Type.mkArrowWithEffect(paramTpe, eff, expTpe, loc),
-      loc
-    )
-
+  /**
+    * Returns the `TypedAst` lambda expression
+    * {{{
+    *   predSym: PredSym -> terms: Vector[Boxed] -> match predSym {
+    *     case PredSym.PredSym(name, _) => match name {
+    *       case "P1" => xvar P1(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    *       case "P2" => xvar P2(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    *       ...
+    *       case _ => bug!("name is not a predicate")
+    *     }
+    *   }
+    * }}}
+    * where `P1, P2, ...` are in `preds` with their respective term types.
+    */
   private def mkExtVarLambda(preds: List[(Name.Pred, List[Type])], tpe: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): TypedAst.Expr = {
     val predSymVar = Symbol.freshVarSym("predSym", BoundBy.FormalParam, loc)
     val termsVar = Symbol.freshVarSym("terms", BoundBy.FormalParam, loc)
@@ -1773,6 +1791,36 @@ object Lowering {
     )
   }
 
+  /**
+    * Returns the `TypedAst` lambda expression
+    * {{{
+    *   paramName -> exp
+    * }}}
+    * where `"paramName" == param.text` and `exp` has type `expType` and effect `eff`.
+    */
+  private def mkLambdaExp(param: Symbol.VarSym, paramTpe: Type, exp: TypedAst.Expr, expTpe: Type, eff: Type, loc: SourceLocation): TypedAst.Expr =
+    TypedAst.Expr.Lambda(
+      TypedAst.FormalParam(TypedAst.Binder(param, paramTpe), Modifiers.Empty, paramTpe, TypeSource.Ascribed, loc),
+      exp,
+      Type.mkArrowWithEffect(paramTpe, eff, expTpe, loc),
+      loc
+    )
+
+  /**
+    Returns the `TypedAst` match expression
+    * {{{
+    *   match predSym {
+    *     case PredSym.PredSym(name, _) => match name {
+    *       case "P1" => xvar P1(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    *       case "P2" => xvar P2(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    *       ...
+    *       case _ => bug!("name is not a predicate")
+    *     }
+    *   }
+    * }}}
+    * where `P1, P2, ...` are in `preds` with their respective term types, `"predSym" == predSymVar.text`
+    * and `"terms" == termsVar.text`.
+    */
   private def mkExtVarOuterBody(preds: List[(Name.Pred, List[Type])], predSymVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): TypedAst.Expr = {
     val name = Symbol.freshVarSym(Name.Ident("name", loc), BoundBy.Pattern)
     TypedAst.Expr.Match(
@@ -1794,47 +1842,30 @@ object Lowering {
     )
   }
 
+
+  /**
+    * Returns the `TypedAst` match expression
+    * {{{
+    *   match name {
+    *     case "P1" => xvar P1(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    *     case "P2" => xvar P2(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    *     ...
+    *     case _ => bug!("name is not a predicate")
+    *   }
+    * }}}
+    * where `P1, P2, ...` are in `preds` with their respective term types, `terms` has the Flix
+    * type `Vector[Boxed]`, `"name" == nameVar.text` and `"terms" == termsVar.text`.
+    */
   private def mkExtVarInnerBody(preds: List[(Name.Pred, List[Type])], nameVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation): TypedAst.Expr = {
     val predRules = preds.map {
-      case (p, types) =>
-        val termsExps = types.zipWithIndex.map {
-          case (tpe1, i) =>
-            TypedAst.Expr.ApplyDef(
-              DefSymUse(Defs.Unbox, loc),
-              exps = List(
-                TypedAst.Expr.ApplyDef(
-                  DefSymUse(Defs.VectorGet, loc),
-                  exps = List(
-                    TypedAst.Expr.Cst(Constant.Int32(i), Type.Int32, loc),
-                    TypedAst.Expr.Var(termsVar, Types.VectorOfBoxed, loc)
-                  ),
-                  targs = List.empty,
-                  itpe = Type.mkPureUncurriedArrow(List(Type.Int32, Types.VectorOfBoxed), Types.Boxed, loc),
-                  tpe = Types.Boxed, eff = Type.Pure, loc = loc
-                )
-              ),
-              targs = List.empty,
-              itpe = Type.mkPureUncurriedArrow(List(Types.Boxed), tpe1, loc),
-              tpe = tpe1, eff = Type.Pure, loc = loc
-            )
-        }
-        TypedAst.MatchRule(
-          pat = TypedAst.Pattern.Cst(Constant.Str(p.name), Type.Str, loc),
-          guard = None,
-          exp = TypedAst.Expr.ExtTag(
-            label = Name.Label(p.name, loc),
-            exps = termsExps,
-            tpe = tpe, eff = Type.Pure, loc = loc
-          ),
-          loc = loc
-        )
+      case (p, types) => mkProvenanceMatchRule(termsVar, tpe, p, types, loc)
     }
     val bugRule = TypedAst.MatchRule(
       pat = TypedAst.Pattern.Wild(Type.Str, loc),
       guard = None,
       exp = TypedAst.Expr.ApplyDef(
-        DefSymUse(Defs.Bug, loc),
-        exps = List(TypedAst.Expr.Cst(Constant.Str("${nameVar.text} is not a predicate"), Type.Str, loc)),
+        DefSymUse(Symbol.mkDefnSym(s"bug!"), loc),
+        exps = List(TypedAst.Expr.Cst(Constant.Str("\"${name}\" is not a predicate"), Type.Str, loc)),
         targs = List.empty,
         itpe = Type.mkPureUncurriedArrow(List(Type.Str), tpe, loc),
         tpe = tpe, eff = Type.Pure, loc = loc
@@ -1843,6 +1874,57 @@ object Lowering {
     )
     val rules = predRules :+ bugRule
     TypedAst.Expr.Match(TypedAst.Expr.Var(nameVar, Type.Str, loc), rules, tpe, Type.Pure, loc
+    )
+  }
+
+  /**
+    * Returns the pattern match rule
+    * {{{
+    *   case "P" => xvar P(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    * }}}
+    * where `"P" == p.name`
+    */
+  private def mkProvenanceMatchRule(termsVar: Symbol.VarSym, tpe: Type, p: Name.Pred, types: List[Type], loc: SourceLocation): TypedAst.MatchRule = {
+    val termsExps = types.zipWithIndex.map {
+      case (tpe1, i) => mkUnboxedTerm(termsVar, tpe1, i, loc)
+    }
+    TypedAst.MatchRule(
+      pat = TypedAst.Pattern.Cst(Constant.Str(p.name), Type.Str, loc),
+      guard = None,
+      exp = TypedAst.Expr.ExtTag(
+        label = Name.Label(p.name, loc),
+        exps = termsExps,
+        tpe = tpe, eff = Type.Pure, loc = loc
+      ),
+      loc = loc
+    )
+  }
+
+  /**
+    * Returns the `TypedAst` expression
+    * {{{
+    *   unbox(Vector.get(i, terms))
+    * }}}
+    * where `"terms" == termsVar.text`.
+    */
+  private def mkUnboxedTerm(termsVar: Symbol.VarSym, tpe1: Type, i: Int, loc: SourceLocation): TypedAst.Expr = {
+    TypedAst.Expr.ApplyDef(
+      DefSymUse(Defs.Unbox, loc),
+      exps = List(
+        TypedAst.Expr.ApplyDef(
+          DefSymUse(Symbol.mkDefnSym(s"Vector.get"), loc),
+          exps = List(
+            TypedAst.Expr.Cst(Constant.Int32(i), Type.Int32, loc),
+            TypedAst.Expr.Var(termsVar, Types.VectorOfBoxed, loc)
+          ),
+          targs = List.empty,
+          itpe = Type.mkPureUncurriedArrow(List(Type.Int32, Types.VectorOfBoxed), Types.Boxed, loc),
+          tpe = Types.Boxed, eff = Type.Pure, loc = loc
+        )
+      ),
+      targs = List.empty,
+      itpe = Type.mkPureUncurriedArrow(List(Types.Boxed), tpe1, loc),
+      tpe = tpe1, eff = Type.Pure, loc = loc
     )
   }
 
