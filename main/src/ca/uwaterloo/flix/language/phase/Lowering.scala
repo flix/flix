@@ -816,13 +816,13 @@ object Lowering {
           val argExps = visitExp(exp) :: acc :: Nil
           val resultType = Types.Datalog
           val itpe = Types.MergeType
-          LoweredAst.Expr.ApplyDef(defn.sym, argExps, itpe, resultType, exp.eff, loc)
+          LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, resultType, exp.eff, loc)
       }
       val (goalPredSym, goalTerms) = select match {
         case TypedAst.Predicate.Head.Atom(pred, _, terms, _, loc1) =>
           val loweredTerms = terms.map(visitExp)
           val boxedTerms = loweredTerms.map {
-            t => LoweredAst.Expr.ApplyDef(Defs.Box, List(t), Type.mkPureArrow(t.tpe, Types.Boxed, loc), Types.Boxed, t.eff, loc)
+            t => LoweredAst.Expr.ApplyDef(Defs.Box, List(t), List.empty, Type.mkPureArrow(t.tpe, Types.Boxed, loc), Types.Boxed, t.eff, loc)
           }
           (mkPredSym(pred), mkVector(boxedTerms, Types.Boxed, loc1))
       }
@@ -831,7 +831,7 @@ object Lowering {
       val lambdaExp = visitExp(mkExtVarLambda(preds, extVarType, loc))
       val argExps = goalTerms :: goalPredSym :: mergeExp :: lambdaExp :: Nil
       val itpe = Types.mkProvenanceOf(extVarType, loc)
-      LoweredAst.Expr.ApplyDef(defn.sym, argExps, itpe, tpe, eff, loc)
+      LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, tpe, eff, loc)
 
     case TypedAst.Expr.FixpointSolve(exp, _, eff, mode, loc) =>
       val defn = mode match {
