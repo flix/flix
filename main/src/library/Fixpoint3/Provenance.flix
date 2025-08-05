@@ -152,17 +152,17 @@ mod Fixpoint3.Provenance {
     ///
     /// The tree is traversed in a pre-order fashion meaning that for `IDB` atoms the atom is listed before the children.
     ///
-    def filterAndFlattenProof(p: ProofTree, filterFunc: PredSym -> Bool): Vector[(PredSym, Vector[Boxed])] = region rc {
+    def filterAndFlattenProof(p: ProofTree, filter: PredSym -> Bool): Vector[(PredSym, Vector[Boxed])] = region rc {
         let res = MutList.empty(rc);
         def recurse(workList: List[ProofTree]) = match workList {
             case Nil => ()
             case ProofTree.EDB(pred, fact) :: tail =>
-                if (filterFunc(pred)) MutList.push((pred, fact), res)
+                if (filter(pred)) MutList.push((pred, fact), res)
                 else ();
                 recurse(tail)
             case ProofTree.Negative(_, _) :: tail => recurse(tail)
             case ProofTree.IDB(pred, fact, subTrees) :: tail => {
-                if (filterFunc(pred)) MutList.push((pred, fact), res)
+                if (filter(pred)) MutList.push((pred, fact), res)
                 else ();
                 let furtherWork = (tail, subTrees) ||> Vector.foldLeft(acc -> cur -> cur :: acc);
                 recurse(furtherWork)
@@ -184,12 +184,18 @@ mod Fixpoint3.Provenance {
         unsafely IO run provQueryInternal(predSym, fact, d)
 
     ///
-    /// Same interface as `provQuery`, but has an `IO` effect from dealing with `Static`.
+    /// Returns `None` if `predSym(fact)` is not a part of the provenance model `d`.
     ///
-    @Internal
-    pub def provQueryInternal(predSym: PredSym, fact: Vector[Boxed], d: Datalog): Option[Vector[(PredSym, Vector[Boxed])]] \ IO = match d {
+    /// Returns `Some(v)` where `v` is a vector of the facts that can be used to prove `fact`.
+    /// In other words they are the result of flattening the proof tree of `predSym(fact)`.
+    ///
+    /// Crashes if `d` is not a provenance model.
+    ///
+    /// The `IO` effect is from reading from `Static` data structures.
+    ///
+    def provQueryInternal(predSym: PredSym, fact: Vector[Boxed], d: Datalog): Option[Vector[(PredSym, Vector[Boxed])]] \ IO = match d {
         case Provenance(rules, provIdb) => region rc {
-            let annotation = match Map.get(RelSym.Symbol(predSym, -1, Denotation.Relational), provIdb) {
+            let annotation = match Map.get(makeFakeRelSym(predSym), provIdb) {
                 case None => None
                 case Some(v) => match BPlusTree.get(fact, v) {
                     case None => None
@@ -211,7 +217,6 @@ mod Fixpoint3.Provenance {
     ///
     /// Builds the provenance tree for `predSym(fact)` where `fact` was derived with
     /// depth `depth` using `rules[ruleUsed]`.
-    ///
     ///
     /// `ruleUsed == -1` means that `predSym(fact)` is an `EDB` atom. `ruleUsed == -2`
     /// means that `predSym(fact)` is a negative fact/not a fact in the model.
@@ -364,7 +369,7 @@ mod Fixpoint3.Provenance {
                                             false
                                         } else {
                                             // This combination could be delayed until we knew we had a satisfying assignment.
-                                            Array.put(Some((combineToFact(filterAsList, bodyFact, expected), bodyDepth, bodyRule)), index, bodyValues);
+                                            Array.put(Some((combineToFact(filterAsList, bodyFact), bodyDepth, bodyRule)), index, bodyValues);
                                             registerVars(freeVars, bodyFact);
                                             loop(index + 1)
                                         }
@@ -428,16 +433,24 @@ mod Fixpoint3.Provenance {
         bodyValues |> Array.filterMap(rc, identity) |> Array.toVector
     }
 
-    def combineToFact(filter: Vector[(Int32, Boxed)], newValues: Vector[Boxed], bodyTerms: Vector[BodyTerm]): Vector[Boxed] = region rc {
+    ///
+    /// Combines `filter` and `newValues` to a single vector.
+    ///
+    /// This is used to combine the search/lookup for a fact with the unknown/newly bound values.
+    ///
+    /// As an for `filter = [(1, Box(99)), (3, Box(42))]` and `newValues = [Box(23), Box(55), Box(77)]`
+    /// Would return `[Box(23), Box(99), Box(55), Box(42), Box(77)]`
+    ///
+    def combineToFact(filter: Vector[(Int32, Boxed)], newValues: Vector[Boxed]): Vector[Boxed] = region rc {
         let c1 = Counter.fresh(rc);
         let c2 = Counter.fresh(rc);
-        Vector.range(0, Vector.length(bodyTerms)) |>
-            Vector.map(i -> {
+        let size = Vector.length(filter) + Vector.length(newValues);
+        Vector.init(i -> {
                 if (Counter.get(c1) < Vector.length(filter) and i == fst(Vector.get(Counter.get(c1), filter))) {
                     snd(Vector.get(Counter.getAndIncrement(c1), filter))
                 } else {
                     Vector.get(Counter.getAndIncrement(c2), newValues)
                 }
-            })
+        }, size)
     }
 }
