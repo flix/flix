@@ -338,9 +338,9 @@ mod Fixpoint3.Boxing {
                 unifyRamIdsOp(predicates, set, withProv, body)
             case RelOp.Functional(RowVar.Named(id), _, inputTerms, body, _) =>
                 foreach((i, curTerm) <- ForEach.withIndex(inputTerms)) {
-                        let termID = Ram.getTermRamId(curTerm);
-                        MutDisjointSets.union(RamId.InId(id, i), termID, set);
-                        unifyRamIdsTerm(set, curTerm)
+                    let termID = Ram.getTermRamId(curTerm);
+                    MutDisjointSets.union(RamId.InId(id, i), termID, set);
+                    unifyRamIdsTerm(set, curTerm)
                 };
                 unifyRamIdsOp(predicates, set, withProv, body)
             case RelOp.Project(terms, RelSym.Symbol(PredSym.PredSym(_, predSym), _, _), _) =>
