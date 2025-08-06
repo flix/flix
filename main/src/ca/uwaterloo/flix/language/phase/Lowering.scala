@@ -45,11 +45,13 @@ object Lowering {
   private object Defs {
     val version: String = ""
     lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.box")
+    lazy val Unbox: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.unbox")
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.runSolver")
     lazy val SolveWithProvenance: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.runSolverWithProvenance")
     lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.union")
     lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.projectSym")
     lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.rename")
+    lazy val ProvenanceOf: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint3.Solver.provenanceOf")
 
     def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.injectInto$arity")
 
@@ -126,6 +128,8 @@ object Lowering {
 
     lazy val ConcurrentReentrantLock: Type = Type.mkEnum(Enums.ConcurrentReentrantLock, Nil, SourceLocation.Unknown)
 
+    lazy val VectorOfBoxed: Type = Type.mkVector(Types.Boxed, SourceLocation.Unknown)
+
     def mkList(t: Type, loc: SourceLocation): Type = Type.mkEnum(Enums.FList, List(t), loc)
 
     //
@@ -135,6 +139,10 @@ object Lowering {
     lazy val MergeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog, SourceLocation.Unknown)
     lazy val FilterType: Type = Type.mkPureUncurriedArrow(List(PredSym, Datalog), Datalog, SourceLocation.Unknown)
     lazy val RenameType: Type = Type.mkPureUncurriedArrow(List(mkList(PredSym, SourceLocation.Unknown), Datalog), Datalog, SourceLocation.Unknown)
+
+    def mkProvenanceOf(t: Type, loc: SourceLocation): Type =
+      Type.mkPureUncurriedArrow(List(Type.mkVector(Boxed, loc), PredSym, Datalog, Type.mkPureCurriedArrow(List(PredSym, Type.mkVector(Boxed, loc)), t, loc)), Type.mkVector(t, loc), loc)
+
   }
 
   /**
@@ -797,7 +805,22 @@ object Lowering {
       val resultType = Types.Datalog
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.MergeType, resultType, eff, loc)
 
-    case TypedAst.Expr.FixpointQueryWithProvenance(_, _, _, _, _, _) => ???
+    case TypedAst.Expr.FixpointQueryWithProvenance(exps, select, _, tpe, eff, loc) =>
+      // Create appropriate call to Fixpoint.Solver.provenanceOf. This requires creating a mapping, mkExtVar, from
+      // PredSym and terms to an extensible variant.
+      val defn = Defs.lookup(Defs.ProvenanceOf)
+      val mergedExp = mergeExps(exps.map(visitExp), loc)
+      val (goalPredSym, goalTerms) = select match {
+        case TypedAst.Predicate.Head.Atom(pred, _, terms, _, loc1) =>
+          val boxedTerms = terms.map(t => box(visitExp(t)))
+          (mkPredSym(pred), mkVector(boxedTerms, Types.Boxed, loc1))
+      }
+      val extVarType = unwrapVectorType(tpe, loc)
+      val preds = predicatesOfExtVar(extVarType, loc)
+      val lambdaExp = visitExp(mkExtVarLambda(preds, extVarType, loc))
+      val argExps = goalTerms :: goalPredSym :: mergedExp :: lambdaExp :: Nil
+      val itpe = Types.mkProvenanceOf(extVarType, loc)
+      LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, tpe, eff, loc)
 
     case TypedAst.Expr.FixpointSolve(exp, _, eff, mode, loc) =>
       val defn = mode match {
@@ -1687,6 +1710,200 @@ object Lowering {
   private def mkLetSym(prefix: String, loc: SourceLocation)(implicit scope: Scope, flix: Flix): Symbol.VarSym = {
     val name = prefix + Flix.Delimiter + flix.genSym.freshId()
     Symbol.freshVarSym(name, BoundBy.Let, loc)
+  }
+
+  /**
+    * Returns an expression merging `exps` using `Defs.Merge`.
+    */
+  private def mergeExps(exps: List[LoweredAst.Expr], loc: SourceLocation)(implicit root: TypedAst.Root): LoweredAst.Expr =
+    exps.reduceRight {
+      (exp, acc) =>
+        val defn = Defs.lookup(Defs.Merge)
+        val argExps = exp :: acc :: Nil
+        val resultType = Types.Datalog
+        val itpe = Types.MergeType
+        LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, resultType, exp.eff, loc)
+    }
+
+  /**
+    * Returns `t` from the Flix type `Vector[t]`.
+    */
+  private def unwrapVectorType(tpe: Type, loc: SourceLocation): Type = tpe match {
+    case Type.Apply(Type.Cst(TypeConstructor.Vector, _), extType, _) => extType
+    case t => throw InternalCompilerException(
+      s"Expected Type.Apply(Type.Cst(TypeConstructor.Vector, _), _, _), but got ${t}",
+      loc
+    )
+  }
+
+  /**
+    * Returns the pairs consisting of predicates and their term types from the extensible variant
+    * type `tpe`.
+    */
+  private def predicatesOfExtVar(tpe: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = tpe match {
+    case Type.Apply(Type.Cst(TypeConstructor.Extensible, _), tpe1, loc1) =>
+      predicatesOfSchemaRow(tpe1, loc1)
+    case t => throw InternalCompilerException(
+      s"Expected Type.Apply(Type.Cst(TypeConstructor.Extensible, _), _, _), but got ${t}",
+      loc
+    )
+  }
+
+  /**
+    * Returns the pairs consisting of predicates and their term types from the SchemaRow `row`.
+    */
+  private def predicatesOfSchemaRow(row: Type, loc: SourceLocation): List[(Name.Pred, List[Type])] = row match {
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), rel, loc2), tpe2, loc1) =>
+      (pred, termTypesOfRelation(rel, loc2)) :: predicatesOfSchemaRow(tpe2, loc1)
+    case Type.Var(_, _) => Nil
+    case Type.SchemaRowEmpty => Nil
+    case t => throw InternalCompilerException(s"Got unexpected ${t}", loc)
+  }
+
+  /**
+    * Returns the types constituting a `Type.Relation`.
+    */
+  private def termTypesOfRelation(rel: Type, loc: SourceLocation): List[Type] = {
+    def f(rel0: Type, loc0: SourceLocation) = rel0 match {
+      case Type.Apply(Type.Cst(TypeConstructor.Relation(_), _), t, _) => t :: Nil
+      case Type.Apply(rest, t, loc1) => t :: termTypesOfRelation(rest, loc1)
+      case t => throw InternalCompilerException(s"Expected Type.Apply(_, _, _), but got ${t}", loc0)
+    }
+    f(rel, loc).reverse
+  }
+
+  /**
+    * Returns the `TypedAst` lambda expression
+    * {{{
+    *   predSym: PredSym -> terms: Vector[Boxed] -> match predSym {
+    *     case PredSym.PredSym(name, _) => match name {
+    *       case "P1" => xvar P1(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    *       case "P2" => xvar P2(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    *       ...
+    *     }
+    *   }
+    * }}}
+    * where `P1, P2, ...` are in `preds` with their respective term types.
+    */
+  private def mkExtVarLambda(preds: List[(Name.Pred, List[Type])], tpe: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): TypedAst.Expr = {
+    val predSymVar = Symbol.freshVarSym("predSym", BoundBy.FormalParam, loc)
+    val termsVar = Symbol.freshVarSym("terms", BoundBy.FormalParam, loc)
+    mkLambdaExp(predSymVar, Types.PredSym,
+      mkLambdaExp(termsVar, Types.VectorOfBoxed,
+        mkExtVarBody(preds, predSymVar, termsVar, tpe, loc),
+        tpe, Type.Pure, loc
+      ),
+      Type.mkPureArrow(Types.VectorOfBoxed, tpe, loc), Type.Pure, loc
+    )
+  }
+
+  /**
+    * Returns the `TypedAst` lambda expression
+    * {{{
+    *   paramName -> exp
+    * }}}
+    * where `"paramName" == param.text` and `exp` has type `expType` and effect `eff`.
+    */
+  private def mkLambdaExp(param: Symbol.VarSym, paramTpe: Type, exp: TypedAst.Expr, expTpe: Type, eff: Type, loc: SourceLocation): TypedAst.Expr =
+    TypedAst.Expr.Lambda(
+      TypedAst.FormalParam(TypedAst.Binder(param, paramTpe), Modifiers.Empty, paramTpe, TypeSource.Ascribed, loc),
+      exp,
+      Type.mkArrowWithEffect(paramTpe, eff, expTpe, loc),
+      loc
+    )
+
+  /**
+    Returns the `TypedAst` match expression
+    * {{{
+    *   match predSym {
+    *     case PredSym.PredSym(name, _) => match name {
+    *       case "P1" => xvar P1(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    *       case "P2" => xvar P2(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    *       ...
+    *     }
+    *   }
+    * }}}
+    * where `P1, P2, ...` are in `preds` with their respective term types, `"predSym" == predSymVar.text`
+    * and `"terms" == termsVar.text`.
+    */
+  private def mkExtVarBody(preds: List[(Name.Pred, List[Type])], predSymVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): TypedAst.Expr = {
+    val nameVar = Symbol.freshVarSym(Name.Ident("name", loc), BoundBy.Pattern)
+    TypedAst.Expr.Match(
+      exp = TypedAst.Expr.Var(predSymVar, Types.PredSym, loc),
+      rules = List(
+        TypedAst.MatchRule(
+          pat = TypedAst.Pattern.Tag(
+            symUse = CaseSymUse(Symbol.mkCaseSym(Enums.PredSym, Name.Ident("PredSym", loc)), loc),
+            pats = List(
+              TypedAst.Pattern.Var(TypedAst.Binder(nameVar, Type.Str), Type.Str, loc),
+              TypedAst.Pattern.Wild(Type.Int64, loc)
+            ),
+            tpe = Types.PredSym, loc = loc
+          ),
+          guard = None,
+          exp = TypedAst.Expr.Match(
+            exp = TypedAst.Expr.Var(nameVar, Type.Str, loc),
+            rules = preds.map {
+              case (p, types) => mkProvenanceMatchRule(termsVar, tpe, p, types, loc)
+            },
+            tpe = tpe, eff = Type.Pure, loc = loc
+          ),
+          loc = loc
+        )
+      ),
+      tpe = tpe, eff = Type.Pure, loc
+    )
+  }
+
+  /**
+    * Returns the pattern match rule
+    * {{{
+    *   case "P" => xvar P(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
+    * }}}
+    * where `"P" == p.name`
+    */
+  private def mkProvenanceMatchRule(termsVar: Symbol.VarSym, tpe: Type, p: Name.Pred, types: List[Type], loc: SourceLocation): TypedAst.MatchRule = {
+    val termsExps = types.zipWithIndex.map {
+      case (tpe1, i) => mkUnboxedTerm(termsVar, tpe1, i, loc)
+    }
+    TypedAst.MatchRule(
+      pat = TypedAst.Pattern.Cst(Constant.Str(p.name), Type.Str, loc),
+      guard = None,
+      exp = TypedAst.Expr.ExtTag(
+        label = Name.Label(p.name, loc),
+        exps = termsExps,
+        tpe = tpe, eff = Type.Pure, loc = loc
+      ),
+      loc = loc
+    )
+  }
+
+  /**
+    * Returns the `TypedAst` expression
+    * {{{
+    *   unbox(Vector.get(i, terms))
+    * }}}
+    * where `"terms" == termsVar.text`.
+    */
+  private def mkUnboxedTerm(termsVar: Symbol.VarSym, tpe: Type, i: Int, loc: SourceLocation): TypedAst.Expr = {
+    TypedAst.Expr.ApplyDef(
+      symUse = DefSymUse(Defs.Unbox, loc),
+      exps = List(
+        TypedAst.Expr.ApplyDef(
+          symUse = DefSymUse(Symbol.mkDefnSym(s"Vector.get"), loc),
+          exps = List(
+            TypedAst.Expr.Cst(Constant.Int32(i), Type.Int32, loc),
+            TypedAst.Expr.Var(termsVar, Types.VectorOfBoxed, loc)
+          ),
+          targs = List.empty,
+          itpe = Type.mkPureUncurriedArrow(List(Type.Int32, Types.VectorOfBoxed), Types.Boxed, loc),
+          tpe = Types.Boxed, eff = Type.Pure, loc = loc
+        )
+      ),
+      targs = List.empty,
+      itpe = Type.mkPureUncurriedArrow(List(Types.Boxed), tpe, loc),
+      tpe = tpe, eff = Type.Pure, loc = loc
+    )
   }
 
   /**
