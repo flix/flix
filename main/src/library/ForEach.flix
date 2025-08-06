@@ -80,4 +80,22 @@ mod ForEach {
     ///
     pub def withFilter(p: a -> Bool, m: t): WithFilter[t, a] with ForEach[t] where ForEach.Elm[t] ~ a = WithFilter.WithFilter(p, m)
 
+    ///
+    /// A view for `ForEach` instance `t` that applies a mapping function to each element.
+    ///
+    pub enum WithMap[t, a, b](a -> b, t)
+
+    instance ForEach[WithMap[t, a, b]] with ForEach[t] where ForEach.Elm[t] ~ a {
+        type Elm = b
+        type Aef = ForEach.Aef[t]
+        pub def forEach(f: b -> Unit \ ef, t: WithMap[t, a, b]): Unit \ ef + ForEach.Aef[t] =
+            let WithMap.WithMap(mapper, base) = t;
+            base |> ForEach.forEach(elm -> f(mapper(elm)))
+    }
+
+    ///
+    /// Returns a view for `m` that applies `f` to each element.
+    ///
+    pub def withMap(f: a -> b, m: t): WithMap[t, a, b] with ForEach[t] = WithMap.WithMap(f, m)
+
 }

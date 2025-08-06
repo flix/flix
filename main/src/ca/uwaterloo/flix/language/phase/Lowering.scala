@@ -834,7 +834,7 @@ object Lowering {
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       LoweredAst.Expr.ApplyDef(sym, argExps, targ :: targs, defTpe, Types.Datalog, eff, loc)
 
-    case TypedAst.Expr.FixpointProject(pred, exp, tpe, eff, loc) =>
+    case TypedAst.Expr.FixpointProject(pred, arity, exp, tpe, eff, loc) =>
       // Compute the arity of the predicate symbol.
       // The type is either of the form `Array[(a, b, c)]` or `Array[a]`.
       val (_, targs) = Type.eraseAliases(tpe) match {
@@ -847,7 +847,7 @@ object Lowering {
       }
 
       // Compute the symbol of the function.
-      val sym = Defs.Facts(targs.length)
+      val sym = Defs.Facts(arity)
 
       // The type of the function.
       val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, Types.Datalog), tpe, loc)
@@ -1422,16 +1422,6 @@ object Lowering {
     // Check that we have <= 5 free variables.
     if (arity > 5) {
       throw InternalCompilerException("Cannot lift functions with more than 5 free variables.", loc)
-    }
-
-    // Special case: No free variables.
-    if (fvs.isEmpty) {
-      val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)
-      // Construct a lambda that takes the unit argument.
-      val fparam = LoweredAst.FormalParam(sym, Modifiers.Empty, Type.Unit, loc)
-      val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
-      val lambdaExp = LoweredAst.Expr.Lambda(fparam, exp, tpe, loc)
-      return mkTag(Enums.HeadTerm, s"App0", List(lambdaExp), Types.HeadTerm, loc)
     }
 
     // Introduce a fresh variable for each free variable.

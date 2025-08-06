@@ -291,7 +291,7 @@ object Summary {
     case Expr.FixpointSolve(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.FixpointFilter(_, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.FixpointInject(exp, _, _, _, _) => countCheckedEcasts(exp)
-    case Expr.FixpointProject(_, exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.FixpointProject(_, _, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.Error(_, _, _) => 0
   }
 
