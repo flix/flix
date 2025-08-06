@@ -146,8 +146,8 @@ mod Fixpoint3.Solver {
     /// Returns the provenance of fact `f` of relation `p` given Datalog program `d`.
     ///
     @Internal
-    pub def provenanceOf(f: Vector[Boxed], p: PredSym, d: Datalog, mkExtVar: PredSym -> Vector[Boxed] -> t): Vector[t] = match d {
-        case Datalog(_, _) => provenanceOf(f, p, runSolverWithProvenance(d), mkExtVar)
+    pub def provenanceOf(p: PredSym, f: Vector[Boxed], withh: Vector[PredSym], mkExtVar: PredSym -> Vector[Boxed] -> t, d: Datalog): Vector[t] = match d {
+        case Datalog(_, _) => provenanceOf(p, f, withh, mkExtVar, runSolverWithProvenance(d))
         case Model(db) => unsafely IO run {
             // This is a dirty hack based on the implementation of Order on RelSym (it only depends on PredSym).
             let fakeRelSym = Ram.makeFakeRelSym(p);
@@ -163,13 +163,13 @@ mod Fixpoint3.Solver {
                 }
             }
         }
-        case Provenance(_, _) => match Fixpoint3.Provenance.provQuery(p, f, d) {
+        case Provenance(_, _) => match Fixpoint3.Provenance.provQuery(p, f, withh, d) {
             case None =>
                 let termsStr = Vector.join(", ", f);
                 bug!("${p}(${termsStr}) is not a fact")
             case Some(v) => Vector.map(match (pred, fact) -> mkExtVar(pred, fact), v)
         }
-        case Join(_, _) => provenanceOf(f, p, runSolverWithProvenance(d), mkExtVar)
+        case Join(_, _) => provenanceOf(p, f, withh, mkExtVar, runSolverWithProvenance(d))
     }
 
     ///
