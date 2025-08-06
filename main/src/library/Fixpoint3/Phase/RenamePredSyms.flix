@@ -28,7 +28,7 @@
 ///
 mod Fixpoint3.Phase.RenamePredSyms {
     use Fixpoint3.Ast.Datalog.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Polarity, VarSym}
-    use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Model, Join}
+    use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Model, Join, Provenance}
     use Fixpoint3.Ast.Datalog.Constraint.Constraint
     use Fixpoint3.Ast.Datalog.HeadPredicate
     use Fixpoint3.Ast.Datalog.HeadPredicate.HeadAtom
@@ -62,11 +62,21 @@ mod Fixpoint3.Phase.RenamePredSyms {
             let transformer = mapForward(mapping);
             Datalog(remapConstraints(facts, transformer), remapConstraints(rules, transformer))
         case Model(facts) =>
-            Model(Map.foldLeftWithKey(acc -> k -> v -> match k {
-                case RelSym.Symbol(predSym, arity, den) =>
-                    let newSym = RelSym.Symbol(mapForward(mapping, predSym), arity, den);
-                    Map.insert(newSym, v, acc)
-            }, Map#{}, facts))
+            (Map#{}, facts)
+                ||> Map.foldLeftWithKey(acc -> k -> v -> match k {
+                    case RelSym.Symbol(predSym, arity, den) =>
+                        let newSym = RelSym.Symbol(mapForward(mapping, predSym), arity, den);
+                        Map.insert(newSym, v, acc)
+                })
+                |> Model
+        case Provenance(rules, facts) =>
+            (Map#{}, facts)
+                ||> Map.foldLeftWithKey(acc -> k -> v -> match k {
+                    case RelSym.Symbol(predSym, arity, den) =>
+                        let newSym = RelSym.Symbol(mapForward(mapping, predSym), arity, den);
+                        Map.insert(newSym, v, acc)
+                })
+                |> Provenance(rules)
         case Join(d1, d2) =>
             Join(fixPredSymsInternal(d1, mapping), fixPredSymsInternal(d2, mapping))
         case _ => bug!("PredSym error")
@@ -86,7 +96,16 @@ mod Fixpoint3.Phase.RenamePredSyms {
                 case RelSym.Symbol(p, arity, den) => Map.insert(RelSym.Symbol(transformer(p), arity, den), v, newMap)
             }, Map#{}, map) |>
                 Model
-        case _ => bug!("Bad argument of type 'Join' in PredSym renaming")
+        case Provenance(rules, model) => {
+            let transformer = mapBack(fixing);
+            let newRules = remapConstraints(rules, transformer);
+            (Map#{}, model)
+                ||> Map.foldLeftWithKey(newMap -> relSym -> v -> match relSym {
+                    case RelSym.Symbol(p, arity, den) => Map.insert(RelSym.Symbol(transformer(p), arity, den), v, newMap)
+                })
+                |> Provenance(newRules)
+        }
+        case Join(_, _) => bug!("Bad argument of type 'Join' in PredSym renaming")
     }
 
     ///
