@@ -99,9 +99,10 @@ mod Fixpoint3.Phase.RenamePredSyms {
         case Provenance(rules, model) => {
             let transformer = mapBack(fixing);
             let newRules = remapConstraints(rules, transformer);
-            Map.foldLeftWithKey(newMap -> relSym -> v -> match relSym {
-                case RelSym.Symbol(p, arity, den) => Map.insert(RelSym.Symbol(transformer(p), arity, den), v, newMap)
-            } , Map#{}, model)
+            (Map#{}, model)
+                ||> Map.foldLeftWithKey(newMap -> relSym -> v -> match relSym {
+                    case RelSym.Symbol(p, arity, den) => Map.insert(RelSym.Symbol(transformer(p), arity, den), v, newMap)
+                })
                 |> Provenance(newRules)
         }
         case Join(_, _) => bug!("Bad argument of type 'Join' in PredSym renaming")
