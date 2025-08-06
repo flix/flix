@@ -109,4 +109,74 @@ mod Test.Exp.Fixpoint.Functional {
         let res = Vector.range(0, 10) |> Vector.flatMap(x -> Vector.range(10, 20) |> Vector.map(y -> (x, y))) |> Vector.sort;
         res `Assert.eq` query p select (x, y) from Ranges(x, y)
     }
+
+    @Test
+    def testFunctionalZero01(): Bool = {
+        let p = #{
+            Empty(p) :- let p = Vector#{}.
+        };
+        let res: Vector[Int32] = Vector#{};
+        res `Assert.eq` query p select x from Empty(x)
+    }
+
+    @Test
+    def testFunctionalZero02(): Bool = {
+        let p = #{
+            NonEmpty(p) :- let p = Vector#{1}.
+        };
+        Vector#{1} `Assert.eq` query p select x from NonEmpty(x)
+    }
+
+    @Test
+    def testFunctionalZero03(): Bool = {
+        let p = #{
+            Range(p) :- let p = Vector.range(0, 10).
+        };
+        Vector.range(0, 10) `Assert.eq` query p select x from Range(x)
+    }
+
+    @Test
+    def testFunctionalZero04(): Bool = {
+        let p = #{
+            Primes(x) :- let x = primesInRange(0, 100).
+        };
+        let res = Vector#{
+            2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41,
+            43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97
+        };
+        res `Assert.eq` query p select (x) from Primes(x)
+    }
+
+    @Test
+    def testFunctionalZero05(): Bool = {
+        let p = #{
+            NonEmpty(x) :- let x = Vector#{"SomeString"}.
+        };
+        Vector#{"SomeString"} `Assert.eq` query p select (x) from NonEmpty(x)
+    }
+
+    @Test
+    def testFunctionalZero06(): Bool = {
+        let p = #{
+            NonEmpty(x) :- let x = Vector#{(1, 2)}.
+        };
+        Vector#{(1, 2)} `Assert.eq` query p select (x) from NonEmpty(x)
+    }
+
+    @Test
+    def testFunctionalZero07(): Bool = {
+        let p = #{
+            NonEmpty(x) :- let x = Vector#{1i64}.
+        };
+        Vector#{1i64} `Assert.eq` query p select (x) from NonEmpty(x)
+    }
+
+    @Test
+    def testFunctionalZero08(): Bool = {
+        let p = #{
+            NonEmpty(x) :- let x = Vector#{1f64}.
+        };
+        Vector#{1f64} `Assert.eq` query p select (x) from NonEmpty(x)
+    }
+
 }
