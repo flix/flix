@@ -805,9 +805,10 @@ object Lowering {
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.MergeType, resultType, eff, loc)
 
     case TypedAst.Expr.FixpointQueryWithProvenance(exps, select, _, tpe, eff, loc) =>
+      // Create appropriate call to Fixpoint.Solver.provenanceOf. This requires creating a mapping, mkExtVar, from
+      // PredSym and terms to an extensible variant.
       val defn = Defs.lookup(Defs.ProvenanceOf)
-      val loweredExps = exps.map(visitExp)
-      val mergeExp = mergeExps(loweredExps, loc)
+      val mergedExp = mergeExps(exps.map(visitExp), loc)
       val (goalPredSym, goalTerms) = select match {
         case TypedAst.Predicate.Head.Atom(pred, _, terms, _, loc1) =>
           val boxedTerms = terms.map(t => box(visitExp(t)))
@@ -815,9 +816,8 @@ object Lowering {
       }
       val extVarType = unwrapVectorType(tpe, loc)
       val preds = predicatesOfExtVar(extVarType, loc)
-      val lambdaExp = mkExtVarLambda(preds, extVarType, loc)
-      val loweredLambdaExp = visitExp(lambdaExp)
-      val argExps = goalTerms :: goalPredSym :: mergeExp :: loweredLambdaExp :: Nil
+      val lambdaExp = visitExp(mkExtVarLambda(preds, extVarType, loc))
+      val argExps = goalTerms :: goalPredSym :: mergedExp :: lambdaExp :: Nil
       val itpe = Types.mkProvenanceOf(extVarType, loc)
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, tpe, eff, loc)
 
@@ -1779,7 +1779,6 @@ object Lowering {
     *       case "P1" => xvar P1(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
     *       case "P2" => xvar P2(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
     *       ...
-    *       case _ => bug!("name is not a predicate")
     *     }
     *   }
     * }}}
@@ -1790,7 +1789,7 @@ object Lowering {
     val termsVar = Symbol.freshVarSym("terms", BoundBy.FormalParam, loc)
     mkLambdaExp(predSymVar, Types.PredSym,
       mkLambdaExp(termsVar, Types.VectorOfBoxed,
-        mkExtVarOuterBody(preds, predSymVar, termsVar, tpe, loc),
+        mkExtVarBody(preds, predSymVar, termsVar, tpe, loc),
         tpe, Type.Pure, loc
       ),
       Type.mkPureArrow(Types.VectorOfBoxed, tpe, loc), Type.Pure, loc
@@ -1820,66 +1819,38 @@ object Lowering {
     *       case "P1" => xvar P1(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
     *       case "P2" => xvar P2(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
     *       ...
-    *       case _ => bug!("name is not a predicate")
     *     }
     *   }
     * }}}
     * where `P1, P2, ...` are in `preds` with their respective term types, `"predSym" == predSymVar.text`
     * and `"terms" == termsVar.text`.
     */
-  private def mkExtVarOuterBody(preds: List[(Name.Pred, List[Type])], predSymVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): TypedAst.Expr = {
-    val name = Symbol.freshVarSym(Name.Ident("name", loc), BoundBy.Pattern)
+  private def mkExtVarBody(preds: List[(Name.Pred, List[Type])], predSymVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): TypedAst.Expr = {
+    val nameVar = Symbol.freshVarSym(Name.Ident("name", loc), BoundBy.Pattern)
     TypedAst.Expr.Match(
       exp = TypedAst.Expr.Var(predSymVar, Types.PredSym, loc),
       rules = List(
         TypedAst.MatchRule(
           pat = TypedAst.Pattern.Tag(
-            CaseSymUse(Symbol.mkCaseSym(Enums.PredSym, Name.Ident("PredSym", loc)), loc),
-            List(
-              TypedAst.Pattern.Var(TypedAst.Binder(name, Type.Str), Type.Str, loc),
+            symUse = CaseSymUse(Symbol.mkCaseSym(Enums.PredSym, Name.Ident("PredSym", loc)), loc),
+            pats = List(
+              TypedAst.Pattern.Var(TypedAst.Binder(nameVar, Type.Str), Type.Str, loc),
               TypedAst.Pattern.Wild(Type.Int64, loc)
             ),
-            Types.PredSym, loc
+            tpe = Types.PredSym, loc = loc
           ),
-          guard = None, exp = mkExtVarInnerBody(preds, name, termsVar, tpe, loc), loc
+          guard = None,
+          exp = TypedAst.Expr.Match(
+            exp = TypedAst.Expr.Var(nameVar, Type.Str, loc),
+            rules = preds.map {
+              case (p, types) => mkProvenanceMatchRule(termsVar, tpe, p, types, loc)
+            },
+            tpe = tpe, eff = Type.Pure, loc = loc
+          ),
+          loc = loc
         )
       ),
       tpe = tpe, eff = Type.Pure, loc
-    )
-  }
-
-
-  /**
-    * Returns the `TypedAst` match expression
-    * {{{
-    *   match name {
-    *     case "P1" => xvar P1(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
-    *     case "P2" => xvar P2(unbox(Vector.get(0, terms)), unbox(Vector.get(1, terms)), ...)
-    *     ...
-    *     case _ => bug!("name is not a predicate")
-    *   }
-    * }}}
-    * where `P1, P2, ...` are in `preds` with their respective term types, `terms` has the Flix
-    * type `Vector[Boxed]`, `"name" == nameVar.text` and `"terms" == termsVar.text`.
-    */
-  private def mkExtVarInnerBody(preds: List[(Name.Pred, List[Type])], nameVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation): TypedAst.Expr = {
-    val predRules = preds.map {
-      case (p, types) => mkProvenanceMatchRule(termsVar, tpe, p, types, loc)
-    }
-    val bugRule = TypedAst.MatchRule(
-      pat = TypedAst.Pattern.Wild(Type.Str, loc),
-      guard = None,
-      exp = TypedAst.Expr.ApplyDef(
-        DefSymUse(Symbol.mkDefnSym(s"bug!"), loc),
-        exps = List(TypedAst.Expr.Cst(Constant.Str("\"${name}\" is not a predicate"), Type.Str, loc)),
-        targs = List.empty,
-        itpe = Type.mkPureUncurriedArrow(List(Type.Str), tpe, loc),
-        tpe = tpe, eff = Type.Pure, loc = loc
-      ),
-      loc = loc
-    )
-    val rules = predRules :+ bugRule
-    TypedAst.Expr.Match(TypedAst.Expr.Var(nameVar, Type.Str, loc), rules, tpe, Type.Pure, loc
     )
   }
 
@@ -1915,10 +1886,10 @@ object Lowering {
     */
   private def mkUnboxedTerm(termsVar: Symbol.VarSym, tpe: Type, i: Int, loc: SourceLocation): TypedAst.Expr = {
     TypedAst.Expr.ApplyDef(
-      DefSymUse(Defs.Unbox, loc),
+      symUse = DefSymUse(Defs.Unbox, loc),
       exps = List(
         TypedAst.Expr.ApplyDef(
-          DefSymUse(Symbol.mkDefnSym(s"Vector.get"), loc),
+          symUse = DefSymUse(Symbol.mkDefnSym(s"Vector.get"), loc),
           exps = List(
             TypedAst.Expr.Cst(Constant.Int32(i), Type.Int32, loc),
             TypedAst.Expr.Var(termsVar, Types.VectorOfBoxed, loc)
