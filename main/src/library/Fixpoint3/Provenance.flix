@@ -164,7 +164,7 @@ mod Fixpoint3.Provenance {
             case ProofTree.IDB(pred, fact, subTrees) :: tail => {
                 if (filter(pred)) MutList.push((pred, fact), res)
                 else ();
-                let furtherWork = (tail, subTrees) ||> Vector.foldLeft(acc -> cur -> cur :: acc);
+                let furtherWork = (tail, subTrees) ||> Vector.foldRight(cur -> acc -> cur :: acc);
                 recurse(furtherWork)
         }};
         recurse(p :: Nil);
