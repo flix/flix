@@ -689,7 +689,7 @@ mod Fixpoint3.Interpreter {
                 // and `indexInTuple` described at which of the entries in the fact is the depth.
                 let (_, _, tupleEnv, _) = env;
                 vec
-                    |> Vector.map(match (tupleIndex, indexInTuple) -> Vector.get(indexInTuple, Array.get(tupleIndex, tupleEnv)))
+                    |> Vector.map(match (tupleIndex, indexInTuple) -> 1i64 + Vector.get(indexInTuple, Array.get(tupleIndex, tupleEnv)))
                     |> Vector.maximum
                     |> Option.getWithDefault(1i64)
             case RamTerm.Meet(cap, lhs, rhs, i) =>
