@@ -272,7 +272,6 @@ mod Fixpoint3.Provenance {
         let getValOfVar: MutMap[VarSym, Boxed, r] = MutMap.empty(rc);
         let headApps = Vector.zip(headTerms, fact) |>
             Vector.filter(match (h, _) -> match h {
-                case (HeadTerm.App0(_)) => false // `App0` is due to dead code in `Lowering`. It cannot be made.
                 case (HeadTerm.App1(_, _)) => true
                 case (HeadTerm.App2(_, _, _)) => true
                 case (HeadTerm.App3(_, _, _, _)) => true
