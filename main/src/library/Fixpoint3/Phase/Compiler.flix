@@ -384,7 +384,6 @@ mod Fixpoint3.Phase.Compiler {
     def compileHeadTerm(env: Map[VarSym, RamTerm], counter: Counter[r], term: HeadTerm): RamTerm \ r = match term {
         case HeadTerm.Var(var) => getOrCrash(Map.get(var, env))
         case HeadTerm.Lit(v) => RamTerm.Lit(v, RamId.Id(Counter.getAndIncrement(counter)))
-        case HeadTerm.App0(f) => RamTerm.Lit(f(), RamId.Id(Counter.getAndIncrement(counter)))
         case HeadTerm.App1(f, v) =>
             let t = getOrCrash(Map.get(v, env));
             RamTerm.App1(f, t, RamId.Id(Counter.getAndIncrement(counter)))
