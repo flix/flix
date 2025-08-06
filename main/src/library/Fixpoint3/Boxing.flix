@@ -80,14 +80,14 @@ mod Fixpoint3.Boxing {
         let RamProgram.Program(_, facts, _, (indexes, _)) = program;
         let (f1, f2) = facts;
         let newFacts = MutMap.empty(rc1);
-        foreach((relSym, relFacts) <- f1) {
+        foreach ((relSym, relFacts) <- f1) {
             // Get some search. This means that we have to create one less index in the interpreter.
             let search = getOrCrash(Map.get(relSym, indexes)) |> Vector.get(0);
             let newTree = BPlusTree.emptyWithArityAndSearch(rc1, usedArity(), search);
             mapAllFacts(relSym, relFacts, boxingInfo, mapping, withProv, newTree);
             MutMap.put(relSym, newTree, newFacts)
         };
-        foreach((relSym, relFacts) <- f2) {
+        foreach ((relSym, relFacts) <- f2) {
             let newTree = MutMap.getOrElsePut(relSym, BPlusTree.empty(rc1), newFacts);
             mapAllFacts(relSym, relFacts, boxingInfo, mapping, withProv, newTree)
         };
@@ -141,7 +141,7 @@ mod Fixpoint3.Boxing {
             ()
         };
         // Add bot first to make sure it corresponds to 0.
-        foreach(x <- relSyms) {
+        foreach (x <- relSyms) {
             match x {
                 case RelSym.Symbol(PredSym.PredSym(_, index), arity, Denotation.Latticenal(bot, _, _, _)) =>
                     unboxWith(bot, getOrCrash(Map.get(RamId.RelPos(index, arity - 1), map)), info); ()
@@ -279,8 +279,8 @@ mod Fixpoint3.Boxing {
             let relSyms = relSymsOfProgram(program);
             let mutMap = MutMap.empty(rc);
             let counter = Counter.fresh(rc);
-            foreach(RelSym.Symbol(PredSym.PredSym(_, id), arity, _) <- relSyms) {
-                foreach(i <- Vector.range(0, getProvSafeIdArity(arity, withProv))) {
+            foreach (RelSym.Symbol(PredSym.PredSym(_, id), arity, _) <- relSyms) {
+                foreach (i <- Vector.range(0, getProvSafeIdArity(arity, withProv))) {
                     registerRamId(disjointSet, mutMap, counter, RamId.RelPos(id, i))
                 }
             };
@@ -325,26 +325,26 @@ mod Fixpoint3.Boxing {
         def unifyRamIdsOp(predicates: Predicates, set: MutDisjointSets[RamId, r], withProv: Bool, op: RelOp): Unit \ r = match op {
             case RelOp.Search(rv, RelSym.Symbol(PredSym.PredSym(_, predSym), arity, _), body) =>
                 let usedArity = getProvSafeIdArity(arity, withProv);
-                foreach(i <- Vector.range(0, usedArity)) {
+                foreach (i <- Vector.range(0, usedArity)) {
                     MutDisjointSets.union(RamId.TuplePos(rv, i), RamId.RelPos(predSym, i), set)
                 };
                 unifyRamIdsOp(predicates, set, withProv, body)
             case RelOp.Query(rv, RelSym.Symbol(PredSym.PredSym(_, predSym), arity, _), bools, _, body) =>
                 let usedArity = getProvSafeIdArity(arity, withProv);
-                foreach(i <- Vector.range(0, usedArity)) {
+                foreach (i <- Vector.range(0, usedArity)) {
                     MutDisjointSets.union(RamId.TuplePos(rv, i), RamId.RelPos(predSym, i), set)
                 };
                 Vector.forEach(unifyRamIdsBool(set), bools);
                 unifyRamIdsOp(predicates, set, withProv, body)
             case RelOp.Functional(RowVar.Named(id), _, inputTerms, body, _) =>
-                foreach((i, curTerm) <- ForEach.withIndex(inputTerms)) {
+                foreach ((i, curTerm) <- ForEach.withIndex(inputTerms)) {
                     let termID = Ram.getTermRamId(curTerm);
                     MutDisjointSets.union(RamId.InId(id, i), termID, set);
                     unifyRamIdsTerm(set, curTerm)
                 };
                 unifyRamIdsOp(predicates, set, withProv, body)
             case RelOp.Project(terms, RelSym.Symbol(PredSym.PredSym(_, predSym), _, _), _) =>
-                foreach((i, term) <- ForEach.withIndex(terms)) {
+                foreach ((i, term) <- ForEach.withIndex(terms)) {
                     unifyRamIdsTerm(set, term);
                     let termID = Ram.getTermRamId(term);
                     MutDisjointSets.union(RamId.RelPos(predSym, i), termID, set)
@@ -362,7 +362,7 @@ mod Fixpoint3.Boxing {
             case BoolExp.IsEmpty(_) => ()
             case BoolExp.NotMemberOf(terms, RelSym.Symbol(PredSym.PredSym(_, id), _, _)) =>
                 Vector.forEach(term -> unifyRamIdsTerm(set, term), terms);
-                foreach((i, term) <- ForEach.withIndex(terms)) {
+                foreach ((i, term) <- ForEach.withIndex(terms)) {
                     MutDisjointSets.union(Ram.getTermRamId(term), RamId.RelPos(id, i), set)
                 }
             case BoolExp.NotBot(term, _, _) => unifyRamIdsTerm(set, term)
@@ -401,7 +401,7 @@ mod Fixpoint3.Boxing {
             case RamTerm.RowLoad(_, _, _) => ()
             case RamTerm.ProvMax(vec) =>
                 let id = Ram.getTermRamId(term);
-                foreach((rv, index) <- vec) {
+                foreach ((rv, index) <- vec) {
                     MutDisjointSets.union(RamId.TuplePos(rv, index), id, set)
                 }
             case RamTerm.Meet(_, t1, (rv, relSym), id) =>
@@ -434,7 +434,7 @@ mod Fixpoint3.Boxing {
             let usedArity = getProvSafeIdArity(arity, withProv);
             let id1 = Ram.toId(relSym1);
             let id2 = Ram.toId(relSym2);
-            foreach(i <- Vector.range(0, usedArity)) {
+            foreach (i <- Vector.range(0, usedArity)) {
                 MutDisjointSets.union(RamId.RelPos(id1, i), RamId.RelPos(id2, i), set)
             }
 
@@ -461,7 +461,7 @@ mod Fixpoint3.Boxing {
         /// the function at position `i`'.
         ///
         def unifyAppTerms(terms: Vector[RamTerm], id: Int32, set: MutDisjointSets[RamId, r]): Unit \ r =
-            foreach((i, t) <- ForEach.withIndex(terms)) {
+            foreach ((i, t) <- ForEach.withIndex(terms)) {
                 unifyRamIdsTerm(set, t);
                 let id1 = Ram.getTermRamId(t);
                 MutDisjointSets.union(id1, RamId.InId(id, i), set)
@@ -496,14 +496,14 @@ mod Fixpoint3.Boxing {
             match op {
                 case RelOp.Search(rv, RelSym.Symbol(PredSym.PredSym(_, predSym), arity, _), body) =>
                     let usedArity = getProvSafeIdArity(arity, withProv);
-                    foreach(i <- Vector.range(0, usedArity)) {
+                    foreach (i <- Vector.range(0, usedArity)) {
                         insert(RamId.TuplePos(rv, i));
                         insert(RamId.RelPos(predSym, i))
                     };
                     recurse(body)
                 case RelOp.Query(rv, RelSym.Symbol(PredSym.PredSym(_, predSym), arity, _), bools, _, body) =>
                     let usedArity = getProvSafeIdArity(arity, withProv);
-                    foreach(i <- Vector.range(0, usedArity)) {
+                    foreach (i <- Vector.range(0, usedArity)) {
                         insert(RamId.TuplePos(rv, i));
                         insert(RamId.RelPos(predSym, i))
                     };
@@ -616,7 +616,7 @@ mod Fixpoint3.Boxing {
                 case RamId.Id(i) => i
                 case _ => unreachable!()
             };
-            foreach((i, t) <- ForEach.withIndex(terms)) {
+            foreach ((i, t) <- ForEach.withIndex(terms)) {
                 computeMappingTermRec(t);
                 registerRamIdRec(RamId.InId(id1, i))
             }
@@ -643,7 +643,7 @@ mod Fixpoint3.Boxing {
             let arity = Ram.arityOf(relSym);
             let id = Ram.toId(relSym);
             let usedArity = getProvSafeIdArity(arity, withProv);
-            foreach(i <- Vector.range(0, usedArity)) {
+            foreach (i <- Vector.range(0, usedArity)) {
                 registerRamId(disjoint, map, counter, RamId.RelPos(id, i))
             }
 
