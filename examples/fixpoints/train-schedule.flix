@@ -37,9 +37,9 @@ def tripOf(origin: Station, dest: Station, t: Time): Unit \ IO = {
     Vector.forEach(v -> ematch v {
         case Edge(src, dst, train, t1, t2) =>
             let s = String.padRight(10, ' ', src);
-            let tr = String.padRight(20, ' ', "-- ${train} -->");
+            let tr = String.center(16, ' ', "${train}");
             let d = String.padRight(10, ' ', dst);
-            println("  ${fmt(t1)} ${s} ${tr} ${d} ${fmt(t2)}")
+            println("  ${fmt(t1)} ${s} -- ${tr} --> ${d} ${fmt(t2)}")
     }, r)
 }
 
@@ -56,9 +56,9 @@ def program(): #{ Edge(Station, Station, Train, Time, Time), Path(Station, Stati
 ///
 def database(): #{ Edge(Station, Station, Train, Time, Time) | r } = #{
     // Aalborg --> Aarhus
-    Edge("Aalborg", "Aarhus", "IC-4332", (09, 09), (10, 40)).
-    Edge("Aalborg", "Aarhus", "IL-4034", (09, 59), (11, 08)).
-    Edge("Aalborg", "Aarhus", "IC-4336", (10, 07), (11, 38)).
+    Edge("Aalborg", "Aarhus", "InterCity 4332", (09, 09), (10, 40)).
+    Edge("Aalborg", "Aarhus", "InterCityLyn 4034", (09, 59), (11, 08)).
+    Edge("Aalborg", "Aarhus", "InterCity 4336", (10, 07), (11, 38)).
 
     // Aarhus -> Kolding
     Edge("Aarhus", "Kolding", "IC-432",  (10, 45), (12, 04)).
