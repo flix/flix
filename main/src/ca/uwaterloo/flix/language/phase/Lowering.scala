@@ -141,7 +141,16 @@ object Lowering {
     lazy val RenameType: Type = Type.mkPureUncurriedArrow(List(mkList(PredSym, SourceLocation.Unknown), Datalog), Datalog, SourceLocation.Unknown)
 
     def mkProvenanceOf(t: Type, loc: SourceLocation): Type =
-      Type.mkPureUncurriedArrow(List(Type.mkVector(Boxed, loc), PredSym, Datalog, Type.mkPureCurriedArrow(List(PredSym, Type.mkVector(Boxed, loc)), t, loc)), Type.mkVector(t, loc), loc)
+      Type.mkPureUncurriedArrow(
+        List(
+          PredSym,
+          Type.mkVector(Boxed, loc),
+          Type.mkVector(PredSym, loc),
+          Type.mkPureCurriedArrow(List(PredSym, Type.mkVector(Boxed, loc)), t, loc),
+          Datalog
+        ),
+        Type.mkVector(t, loc), loc
+      )
 
   }
 
@@ -196,7 +205,7 @@ object Lowering {
     */
   private def visitInstance(inst0: TypedAst.Instance)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Instance = inst0 match {
     case TypedAst.Instance(doc, ann, mod, sym, tparams0, tpe0, tconstrs0, econstrs0, assocs0, defs0, ns, loc) =>
-//      val tparams = tparams0.map(visitTypeParam)
+      val tparams = tparams0.map(visitTypeParam)
       val tpe = visitType(tpe0)
       val tconstrs = tconstrs0.map(visitTraitConstraint)
       val econstrs = econstrs0.map(visitEqConstraint)
@@ -204,7 +213,7 @@ object Lowering {
         case TypedAst.AssocTypeDef(defDoc, defMod, defSymUse, args, defTpe, defLoc) => LoweredAst.AssocTypeDef(defDoc, defMod, defSymUse, args, defTpe, defLoc)
       }
       val defs = defs0.map(visitDef)
-      LoweredAst.Instance(doc, ann, mod, sym, tpe, tconstrs, econstrs, assocs, defs, ns, loc)
+      LoweredAst.Instance(doc, ann, mod, sym, tparams, tpe, tconstrs, econstrs, assocs, defs, ns, loc)
   }
 
   /**
@@ -805,7 +814,7 @@ object Lowering {
       val resultType = Types.Datalog
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.MergeType, resultType, eff, loc)
 
-    case TypedAst.Expr.FixpointQueryWithProvenance(exps, select, _, tpe, eff, loc) =>
+    case TypedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe, eff, loc) =>
       // Create appropriate call to Fixpoint.Solver.provenanceOf. This requires creating a mapping, mkExtVar, from
       // PredSym and terms to an extensible variant.
       val defn = Defs.lookup(Defs.ProvenanceOf)
@@ -815,10 +824,11 @@ object Lowering {
           val boxedTerms = terms.map(t => box(visitExp(t)))
           (mkPredSym(pred), mkVector(boxedTerms, Types.Boxed, loc1))
       }
+      val withPredSyms = mkVector(withh.map(mkPredSym), Types.PredSym, loc)
       val extVarType = unwrapVectorType(tpe, loc)
       val preds = predicatesOfExtVar(extVarType, loc)
       val lambdaExp = visitExp(mkExtVarLambda(preds, extVarType, loc))
-      val argExps = goalTerms :: goalPredSym :: mergedExp :: lambdaExp :: Nil
+      val argExps = goalPredSym :: goalTerms :: withPredSyms :: lambdaExp :: mergedExp :: Nil
       val itpe = Types.mkProvenanceOf(extVarType, loc)
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, tpe, eff, loc)
 
@@ -1761,9 +1771,9 @@ object Lowering {
     * Returns the types constituting a `Type.Relation`.
     */
   private def termTypesOfRelation(rel: Type, loc: SourceLocation): List[Type] = {
-    def f(rel0: Type, loc0: SourceLocation) = rel0 match {
+    def f(rel0: Type, loc0: SourceLocation): List[Type] = rel0 match {
       case Type.Apply(Type.Cst(TypeConstructor.Relation(_), _), t, _) => t :: Nil
-      case Type.Apply(rest, t, loc1) => t :: termTypesOfRelation(rest, loc1)
+      case Type.Apply(rest, t, loc1) => t :: f(rest, loc1)
       case t => throw InternalCompilerException(s"Expected Type.Apply(_, _, _), but got ${t}", loc0)
     }
     f(rel, loc).reverse

@@ -149,17 +149,16 @@ mod Fixpoint3.Interpreter {
             case Some((_, v)) => v + 1
         };
         let indexes = Array.empty(rc, indexNum);
-        indexMap |>
-            Map.forEach(relSym -> searches -> {
-                let tuples = Map.getWithDefault(relSym, BPlusTree.empty(rc), facts);
-                searches |> Vector.forEachWithIndex(num -> search -> {
-                    let pos = match Map.get((relSym, num), posMap) {
-                        case Some(v) => v
-                        case None => bug!("In Fixpoint.Interpreter.interpretWithInput: ${relSym} has no index!")
-                    };
-                    storeIndex(mkIndex(rc, relSym, search, tuples), pos, indexes)
-                })
-            });
+        foreach ((relSym, searches) <- indexMap) {
+            let tuples = Map.getWithDefault(relSym, BPlusTree.empty(rc), facts);
+            searches |> Vector.forEachWithIndex(num -> search -> {
+                let pos = match Map.get((relSym, num), posMap) {
+                    case Some(v) => v
+                    case None => bug!("In Fixpoint.Interpreter.interpretWithInput: ${relSym} has no index!")
+                };
+                storeIndex(mkIndex(rc, relSym, search, tuples), pos, indexes)
+            })
+        };
         interpretWithDatabase(rc, indexes, boxing, withProv, program)
 
     ///
@@ -176,11 +175,10 @@ mod Fixpoint3.Interpreter {
         case RamProgram.Program(stmt, _, predState, (_, indexPos), (arities, constWrites), marshallIndexes) =>
             let minEnv = arities |> Vector.map(x -> Array.repeat(rc, x, Int64.minValue()));
             let maxEnv = arities |> Vector.map(x -> Array.repeat(rc, x, Int64.maxValue()));
-            constWrites |>
-                Vector.forEach(match (id1, id2, val) -> {
-                    Array.put(val, id2, Vector.get(id1, minEnv));
-                    Array.put(val, id2, Vector.get(id1, maxEnv))
-                });
+            foreach ((id1, id2, val) <- constWrites) {
+                Array.put(val, id2, Vector.get(id1, minEnv));
+                Array.put(val, id2, Vector.get(id1, maxEnv))
+            };
             let tupleEnv = Array.repeat(rc, Vector.length(arities), Vector#{});
             let latEnv = arities |> Vector.length |> Array.empty(rc);
             let env = (minEnv, maxEnv, tupleEnv, latEnv);
@@ -207,26 +205,25 @@ mod Fixpoint3.Interpreter {
         withProv: Bool
     ): Database[r] \ r + IO =
         let res = MutMap.empty(rc);
-        allFullRelSyms(predTrack) |>
-            List.forEach(relSym -> {
-                let innerMap = BPlusTree.empty(Static);
-                // If we are doing provenance computations we need to also rebox the annotations.
-                // Since there are 2 annotations we add 2 in this case.
-                let usedArity =
-                    if (withProv) arityOfNonLat(relSym) + 2
-                    else arityOfNonLat(relSym);
-                let curBoxingInfo = Vector.range(0, usedArity) |>
-                    Vector.map(i ->
-                        getOrCrash(Map.get(RamId.RelPos(toId(relSym), i), boxingIndexes))
-                    );
-                Array.get(getOrCrash(Map.get((relSym, 0), indexPos)), db) |>
-                    BPlusTree.forEach(vec -> latticeElem -> {
-                        let boxedVec = vec |>
-                            Vector.mapWithIndex(i -> val -> boxWith(val, Vector.get(i, curBoxingInfo), boxing));
-                        BPlusTree.put(boxedVec, latticeElem, innerMap)
-                    });
-                MutMap.put(relSym, innerMap, res)
-            });
+        foreach (relSym <- allFullRelSyms(predTrack)) {
+            let innerMap = BPlusTree.empty(Static);
+            // If we are doing provenance computations we need to also rebox the annotations.
+            // Since there are 2 annotations we add 2 in this case.
+            let usedArity =
+                if (withProv) arityOfNonLat(relSym) + 2
+                else arityOfNonLat(relSym);
+            let curBoxingInfo = Vector.range(0, usedArity) |>
+                Vector.map(i ->
+                    getOrCrash(Map.get(RamId.RelPos(toId(relSym), i), boxingIndexes))
+                );
+            Array.get(getOrCrash(Map.get((relSym, 0), indexPos)), db) |>
+                BPlusTree.forEach(vec -> latticeElem -> {
+                    let boxedVec = vec |>
+                        Vector.mapWithIndex(i -> val -> boxWith(val, Vector.get(i, curBoxingInfo), boxing));
+                    BPlusTree.put(boxedVec, latticeElem, innerMap)
+                });
+            MutMap.put(relSym, innerMap, res)
+        };
         res
 
     ///
@@ -281,14 +278,15 @@ mod Fixpoint3.Interpreter {
         case RamStmt.Comment(_) => ()
         // Note: The region construct ensures that all threads spawned in rc2 will have completed before we leave its lexical scope.
         case RamStmt.Par(stmts) => region rc2 {
-            stmts |>
-                Vector.forEach(innerStmt -> unchecked_cast({
+            foreach (innerStmt <- stmts) {
+                unchecked_cast({
                     let _: Unit = spawn unchecked_cast({
                         let threadCtx = copyCtx(rc, ctx);
                         evalStmt(rc, threadCtx, parLevel, innerStmt)
                     } as _ \ IO) @ rc2; // spawn may not take an `r` effect, so we cast it to `IO`
                     ()
-                } as _ \ rc2)) // The `IO` effect is undesirable, so we cast it back to an `r` effect
+                } as _ \ rc2)
+            }
         }
     }
 
@@ -388,11 +386,10 @@ mod Fixpoint3.Interpreter {
                         Vector.mapWithIndex(i -> x -> unboxWith(x, Vector.get(i, i2), boxing), vec)
                     );
                 let (minEnv, maxEnv, tupleEnv, _) = env;
-                result |>
-                    Vector.forEach(t -> {
-                        bindTuple(t, writes, minEnv, maxEnv, tupleIndex, tupleEnv);
-                        evalOp(rc, ctx, parLevel, body)
-                    })
+                foreach (t <- result) {
+                    bindTuple(t, writes, minEnv, maxEnv, tupleIndex, tupleEnv);
+                    evalOp(rc, ctx, parLevel, body)
+                }
         }
 
     ///
@@ -411,11 +408,10 @@ mod Fixpoint3.Interpreter {
         tuplePos: Int32,
         tupleEnv: Array[Tuple, r]
     ): Unit \ r =
-        writes |>
-            Vector.forEach(match (srcIndex, dst, dstIndex) -> {
-                Array.put(Vector.get(srcIndex, t), dstIndex, Vector.get(dst, minEnv));
-                Array.put(Vector.get(srcIndex, t), dstIndex, Vector.get(dst, maxEnv))
-            });
+        foreach ((srcIndex, dst, dstIndex) <- writes) {
+            Array.put(Vector.get(srcIndex, t), dstIndex, Vector.get(dst, minEnv));
+            Array.put(Vector.get(srcIndex, t), dstIndex, Vector.get(dst, maxEnv))
+        };
         Array.put(t, tuplePos, tupleEnv)
 
     ///
