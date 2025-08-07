@@ -1,14 +1,14 @@
-type alias Hour = Int32
-type alias Minute = Int32
-type alias Time = (Hour, Minute)
-type alias Train = String
-type alias Origin = String
-type alias Destination = String
+///
+/// We introduce a collection of type aliases to model the domain.
+///
+type alias Station = String             // e.g. Aarhus
+type alias Train   = String             // e.g. InterCity-432.
+type alias Time    = (Int32, Int32)     // e.g. (10, 32) which is 10.32 AM.
 
 def main(): Unit \ IO =
-    let origin = "Aalborg";
-    let dest = "Copenhagen";
-    let schedules = findSchedules(origin, dest);
+    let src = "Aalborg";
+    let dst = "Copenhagen";
+    let schedules = findSchedules(src, dst);
     if (Vector.isEmpty(schedules)) {
         println("No connections found. Sorry.")
     } else {
@@ -18,19 +18,19 @@ def main(): Unit \ IO =
         };
         println("The trip for the earliest arrival is:");
         let (_, _, t) = Vector.get(0, schedules);
-        tripOf(origin, dest, t)
+        tripOf(src, dst, t)
     }
 
 ///
 /// Returns all schedules from the given origin to the given destination.
 ///
-def findSchedules(origin: Origin, dest: Destination): Vector[(Origin, Destination, Time)] =
+def findSchedules(origin: Station, dest: Station): Vector[(Station, Station, Time)] =
     let db = database();
     let pr = program();
     query db, pr select (origin, dest, t) from Path(origin, dest, t)
 
 
-def tripOf(origin: Origin, dest: Destination, t: Time): Unit \ IO = {
+def tripOf(origin: Station, dest: Station, t: Time): Unit \ IO = {
     let db = database();
     let pr = program();
     let r = pquery db, pr select Path(origin, dest, t) with {Edge};
@@ -43,7 +43,7 @@ def tripOf(origin: Origin, dest: Destination, t: Time): Unit \ IO = {
 ///
 /// Returns a Datalog program that computes reachability subject to time constraints.
 ///
-def program(): #{ Edge(Origin, Destination, Train, Time, Time), Path(Origin, Destination, Time) | r } = #{
+def program(): #{ Edge(Station, Station, Train, Time, Time), Path(Station, Station, Time) | r } = #{
     Path(x, y, t)  :- Edge(x, y, _, _, t).
     Path(x, z, t2) :- Path(x, y, t0), Edge(y, z, _, t1, t2), if (t0 < t1).
 }
@@ -51,7 +51,7 @@ def program(): #{ Edge(Origin, Destination, Train, Time, Time), Path(Origin, Des
 ///
 /// Returns the database of scheduled trains.
 ///
-def database(): #{ Edge(Origin, Destination, Train, Time, Time) | r } = #{
+def database(): #{ Edge(Station, Station, Train, Time, Time) | r } = #{
     // Aalborg --> Aarhus
     Edge("Aalborg", "Aarhus", "IC-4332", (09, 09), (10, 40)).
     Edge("Aalborg", "Aarhus", "IL-4034", (09, 59), (11, 08)).
