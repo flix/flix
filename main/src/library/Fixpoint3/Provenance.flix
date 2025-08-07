@@ -180,8 +180,8 @@ mod Fixpoint3.Provenance {
     /// Crashes if `d` is not a provenance model.
     ///
     @Internal
-    pub def provQuery(predSym: PredSym, fact: Vector[Boxed], d: Datalog): Option[Vector[(PredSym, Vector[Boxed])]] =
-        unsafely IO run provQueryInternal(predSym, fact, d)
+    pub def provQuery(predSym: PredSym, fact: Vector[Boxed], withh: Vector[PredSym], d: Datalog): Option[Vector[(PredSym, Vector[Boxed])]] =
+        unsafely IO run provQueryInternal(predSym, fact, withh, d)
 
     ///
     /// Returns `None` if `predSym(fact)` is not a part of the provenance model `d`.
@@ -193,7 +193,7 @@ mod Fixpoint3.Provenance {
     ///
     /// The `IO` effect is from reading from `Static` data structures.
     ///
-    def provQueryInternal(predSym: PredSym, fact: Vector[Boxed], d: Datalog): Option[Vector[(PredSym, Vector[Boxed])]] \ IO = match d {
+    def provQueryInternal(predSym: PredSym, fact: Vector[Boxed], withh: Vector[PredSym], d: Datalog): Option[Vector[(PredSym, Vector[Boxed])]] \ IO = match d {
         case Provenance(rules, provIdb) => region rc {
             let annotation = match Map.get(makeFakeRelSym(predSym), provIdb) {
                 case None => None
@@ -207,7 +207,7 @@ mod Fixpoint3.Provenance {
                 case Some((depth, ruleUsed)) =>
                     let lookupStruct = BPlusTree.empty(rc);
                     let tree = buildProof(predSym, fact, depth, ruleUsed, rules, provIdb, lookupStruct, rc);
-                    Some(filterAndFlattenProof(tree, _ -> true))
+                    Some(filterAndFlattenProof(tree, p -> Vector.memberOf(p, withh)))
             }
         }
         case _ =>

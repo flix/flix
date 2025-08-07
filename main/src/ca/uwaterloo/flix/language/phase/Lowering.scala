@@ -141,7 +141,16 @@ object Lowering {
     lazy val RenameType: Type = Type.mkPureUncurriedArrow(List(mkList(PredSym, SourceLocation.Unknown), Datalog), Datalog, SourceLocation.Unknown)
 
     def mkProvenanceOf(t: Type, loc: SourceLocation): Type =
-      Type.mkPureUncurriedArrow(List(Type.mkVector(Boxed, loc), PredSym, Datalog, Type.mkPureCurriedArrow(List(PredSym, Type.mkVector(Boxed, loc)), t, loc)), Type.mkVector(t, loc), loc)
+      Type.mkPureUncurriedArrow(
+        List(
+          PredSym,
+          Type.mkVector(Boxed, loc),
+          Type.mkVector(PredSym, loc),
+          Type.mkPureCurriedArrow(List(PredSym, Type.mkVector(Boxed, loc)), t, loc),
+          Datalog
+        ),
+        Type.mkVector(t, loc), loc
+      )
 
   }
 
@@ -805,7 +814,7 @@ object Lowering {
       val resultType = Types.Datalog
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.MergeType, resultType, eff, loc)
 
-    case TypedAst.Expr.FixpointQueryWithProvenance(exps, select, _, tpe, eff, loc) =>
+    case TypedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe, eff, loc) =>
       // Create appropriate call to Fixpoint.Solver.provenanceOf. This requires creating a mapping, mkExtVar, from
       // PredSym and terms to an extensible variant.
       val defn = Defs.lookup(Defs.ProvenanceOf)
@@ -815,10 +824,11 @@ object Lowering {
           val boxedTerms = terms.map(t => box(visitExp(t)))
           (mkPredSym(pred), mkVector(boxedTerms, Types.Boxed, loc1))
       }
+      val withPredSyms = mkVector(withh.map(mkPredSym), Types.PredSym, loc)
       val extVarType = unwrapVectorType(tpe, loc)
       val preds = predicatesOfExtVar(extVarType, loc)
       val lambdaExp = visitExp(mkExtVarLambda(preds, extVarType, loc))
-      val argExps = goalTerms :: goalPredSym :: mergedExp :: lambdaExp :: Nil
+      val argExps = goalPredSym :: goalTerms :: withPredSyms :: lambdaExp :: mergedExp :: Nil
       val itpe = Types.mkProvenanceOf(extVarType, loc)
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, tpe, eff, loc)
 
