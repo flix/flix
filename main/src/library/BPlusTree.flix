@@ -62,6 +62,12 @@ pub struct BPlusTree[k, v, r] {
     search:   BPlusTree.Search
 }
 
+instance ForEach[BPlusTree[k, v, r]] {
+    type Elm = (k, v)
+    type Aef = r
+    pub def forEach(f: ((k, v)) -> Unit \ ef, m: BPlusTree[k, v, r]): Unit \ ef + r = BPlusTree.forEach(k -> v -> f((k, v)), m)
+}
+
 mod BPlusTree {
     import java.lang.Runtime
     import java.util.concurrent.atomic.{LongAdder => JLongAdder}
