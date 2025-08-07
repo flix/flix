@@ -119,10 +119,10 @@ mod Fixpoint3.Phase.IndexSelection {
             let (indexedStmt, indexPlacement) = region rc2 {
                 let indexState = UniqueInts.empty(rc2);
                 let indexedStmt = indexStmt(newStmt, indexes, indexState);
-                Map.forEach(relSym -> _ -> {
+                foreach ((relSym, _) <- indexes) {
                     UniqueInts.getIndex((relSym, 0), indexState);
                     ()
-                }, indexes);
+                };
                 let finalState = UniqueInts.toMap(indexState);
                 (indexedStmt, finalState)
             };
