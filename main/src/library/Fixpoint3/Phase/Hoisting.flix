@@ -157,7 +157,7 @@ mod Fixpoint3.Phase.Hoisting {
                 case Some(newOp) =>
                     // Create a guard ensuring that no `RelSym` in the expression is empty. Note that this
                     // only include RelSym in `Search` and `Query`, not negative dependencies.
-                    let isEmptyBools = collectRelSymsStmt(stmt)
+                    let isEmptyBools = relSymsOfStmt(stmt)
                         |> List.map(relSym -> BoolExp.Not(BoolExp.IsEmpty(relSym)))
                         |> List.toVector;
                     let newStmt =
@@ -201,8 +201,8 @@ mod Fixpoint3.Phase.Hoisting {
     ///
     /// Only includes non-negative dependencies.
     ///
-    def collectRelSymsStmt(stmt: RamStmt): List[RelSym] = match stmt {
-        case RamStmt.Insert(op) => collectRelSymsOp(op)
+    def relSymsOfStmt(stmt: RamStmt): List[RelSym] = match stmt {
+        case RamStmt.Insert(op) => relSymsOfOp(op)
         case _ => unreachable!()
     }
 
@@ -211,12 +211,12 @@ mod Fixpoint3.Phase.Hoisting {
     ///
     /// Only includes non-negative dependencies.
     ///
-    def collectRelSymsOp(op: RelOp): List[RelSym] = match op {
-        case RelOp.Search(_, relSym, body) => relSym :: collectRelSymsOp(body)
-        case RelOp.Query(_, relSym, _, _, body) => relSym :: collectRelSymsOp(body)
-        case RelOp.Functional(_, _, _, body, _) => collectRelSymsOp(body)
+    def relSymsOfOp(op: RelOp): List[RelSym] = match op {
+        case RelOp.Search(_, relSym, body) => relSym :: relSymsOfOp(body)
+        case RelOp.Query(_, relSym, _, _, body) => relSym :: relSymsOfOp(body)
+        case RelOp.Functional(_, _, _, body, _) => relSymsOfOp(body)
         case RelOp.Project(_, _, _) => Nil
-        case RelOp.If(_, body) => collectRelSymsOp(body)
+        case RelOp.If(_, body) => relSymsOfOp(body)
     }
 
     ///
@@ -306,7 +306,7 @@ mod Fixpoint3.Phase.Hoisting {
                         // Don't collect Eq's: they are handled separately to ensure we refer to the earliest evaluated expression.
                         case BoolExp.Eq(_, _) => ()
                         case _ =>
-                            let vars = collectBoolVariables(termMap, equalitySets, b);
+                            let vars = boolVariablesOf(termMap, equalitySets, b);
                             if (Set.size(vars) == 0)
                                 MutList.push(b, independentBool)
                             else {
@@ -428,63 +428,63 @@ mod Fixpoint3.Phase.Hoisting {
     /// The purpose is to return the `RowVar`'s in the AST whose `RelOp`'s are possible
     /// places `bool` can be hoisted to.
     ///
-    def collectBoolVariables(
+    def boolVariablesOf(
         termMap: Map[(RowVar, Int32), RamTerm],
         equalitySets: MutDisjointSets[(RowVar, Int32), r],
         bexp: BoolExp
     ): Set[RowVar] \ r =
-        let collectTerm = collectTermVariables(termMap, equalitySets);
+        let termVarsOf = termVariablesOf(termMap, equalitySets);
         match bexp {
-            case BoolExp.Not(boolExp) => collectBoolVariables(termMap, equalitySets, boolExp)
+            case BoolExp.Not(boolExp) => boolVariablesOf(termMap, equalitySets, boolExp)
             case BoolExp.IsEmpty(_) => Set#{}
-            case BoolExp.NotMemberOf(terms, _) => Vector.foldLeft(y -> x -> Set.union(collectTerm(x), y), Set#{}, terms)
-            case BoolExp.NotBot(t1, _, _) => collectTerm(t1)
+            case BoolExp.NotMemberOf(terms, _) => Vector.foldLeft(y -> x -> Set.union(termVarsOf(x), y), Set#{}, terms)
+            case BoolExp.NotBot(t1, _, _) => termVarsOf(t1)
             case BoolExp.Leq(_, rv, relSym) => getRepRowVar(termMap, equalitySets, rv, arityOfNonLat(relSym))
             case BoolExp.Eq(_, _) => Set#{}
-            case BoolExp.Guard1(_, t1) => collectTerm(t1)
-            case BoolExp.Guard2(_, t1, t2) => Set.union(collectTerm(t1), collectTerm(t2))
+            case BoolExp.Guard1(_, t1) => termVarsOf(t1)
+            case BoolExp.Guard2(_, t1, t2) => Set.union(termVarsOf(t1), termVarsOf(t2))
             case BoolExp.Guard3(_, t1, t2, t3) =>
-                Set.union(Set.union(collectTerm(t1), collectTerm(t2)), collectTerm(t3))
+                Set.union(Set.union(termVarsOf(t1), termVarsOf(t2)), termVarsOf(t3))
             case BoolExp.Guard4(_, t1, t2, t3, t4) =>
-                Set.union(Set.union(Set.union(collectTerm(t1), collectTerm(t2)), collectTerm(t3)), collectTerm(t4))
+                Set.union(Set.union(Set.union(termVarsOf(t1), termVarsOf(t2)), termVarsOf(t3)), termVarsOf(t4))
             case BoolExp.Guard5(_, t1, t2, t3, t4, t5) =>
-                Set.union(Set.union(Set.union(Set.union(collectTerm(t1), collectTerm(t2)), collectTerm(t3)), collectTerm(t4)), collectTerm(t5))
+                Set.union(Set.union(Set.union(Set.union(termVarsOf(t1), termVarsOf(t2)), termVarsOf(t3)), termVarsOf(t4)), termVarsOf(t5))
     }
 
     ///
-    /// Returns the set of `RowVar` in `term`. See `collectBoolVariables`.
+    /// Returns the set of `RowVar` in `term`. See `boolVariablesOf`.
     ///
-    def collectTermVariables(
+    def termVariablesOf(
         termMap: Map[(RowVar, Int32), RamTerm],
         equalitySets: MutDisjointSets[(RowVar, Int32), r],
         term: RamTerm
     ): Set[RowVar] \ r =
-        let collectTerm = collectTermVariables(termMap, equalitySets);
+        let termVarsOf = termVariablesOf(termMap, equalitySets);
         let getRepVar = getRepRowVar(termMap, equalitySets);
         match term {
             case RamTerm.Lit(_, _)                      => Set#{}
             case RamTerm.ProvMax(vec)                   => Vector.foldLeft(acc -> match (rv, _) -> Set.insert(rv, acc), Set#{}, vec)
             case RamTerm.RowLoad(rv, i, _)              => getRepVar(rv, i)
-            case RamTerm.Meet(_, t1, (rv, relSym), _)   => Set.union(collectTerm(t1), getRepVar(rv, arityOfNonLat(relSym)))
-            case RamTerm.App1(_, t1, _)                 => collectTerm(t1)
+            case RamTerm.Meet(_, t1, (rv, relSym), _)   => Set.union(termVarsOf(t1), getRepVar(rv, arityOfNonLat(relSym)))
+            case RamTerm.App1(_, t1, _)                 => termVarsOf(t1)
             case RamTerm.App2(_, t1, t2, _) =>
                 Vector#{t1, t2} |>
-                    Vector.foldRight(t -> acc -> collectTerm(t) `Set.union` acc, Set#{})
+                    Vector.foldRight(t -> acc -> termVarsOf(t) `Set.union` acc, Set#{})
             case RamTerm.App3(_, t1, t2, t3, _) =>
                 Vector#{t1, t2, t3} |>
-                    Vector.foldRight(t -> acc -> collectTerm(t) `Set.union` acc, Set#{})
+                    Vector.foldRight(t -> acc -> termVarsOf(t) `Set.union` acc, Set#{})
             case RamTerm.App4(_, t1, t2, t3, t4, _) =>
                 Vector#{t1, t2, t3, t4} |>
-                    Vector.foldRight(t -> acc -> collectTerm(t) `Set.union` acc, Set#{})
+                    Vector.foldRight(t -> acc -> termVarsOf(t) `Set.union` acc, Set#{})
             case RamTerm.App5(_, t1, t2, t3, t4, t5, _) =>
                 Vector#{t1, t2, t3, t4, t5} |>
-                    Vector.foldRight(t -> acc -> collectTerm(t) `Set.union` acc, Set#{})
+                    Vector.foldRight(t -> acc -> termVarsOf(t) `Set.union` acc, Set#{})
         }
 
     ///
     /// Returns the (set of) `RowVar` that represents `term` with respect to `termMap`.
     ///
-    /// See `collectBoolVariables`.
+    /// See `boolVariablesOf`.
     ///
     def getRepRowVar(
         termMap: Map[(RowVar, Int32), RamTerm],
@@ -661,12 +661,12 @@ mod Fixpoint3.Phase.Hoisting {
         op: RelOp
     ): Unit \ r = match op {
         case RelOp.Search(rowVar, RelSym.Symbol(_, arity, _), body) =>
-            collectLoadsInto(rowVar, arity, equalitySets);
+            loadsIntoOf(rowVar, arity, equalitySets);
             unifyEqualitiesOp(equalitySets, constEqualities, body)
         case RelOp.Query(_, _, _, _, _) =>
             bug!("In Fixpoint.Phase.Hoisting.unifyEqualitiesOp: Query should not exist at this point!")
         case RelOp.Functional(rowVar, _, _, body, arity) =>
-            collectLoadsInto(rowVar, arity, equalitySets);
+            loadsIntoOf(rowVar, arity, equalitySets);
             unifyEqualitiesOp(equalitySets, constEqualities, body)
         case RelOp.Project(_, _, _) => ()
         case RelOp.If(boolExps, body) =>
@@ -699,7 +699,7 @@ mod Fixpoint3.Phase.Hoisting {
     /// Add `(rowVar, i)`, for all `i` between `0` (inclusive) and `arity` (exlusive),
     /// to `equalitySets`.
     ///
-    def collectLoadsInto(rowVar: RowVar, arity: Int32, equalitySets: MutDisjointSets[(RowVar, Int32), r]): Unit \ r =
+    def loadsIntoOf(rowVar: RowVar, arity: Int32, equalitySets: MutDisjointSets[(RowVar, Int32), r]): Unit \ r =
         Vector.forEach(i -> MutDisjointSets.makeSet((rowVar, i), equalitySets), Vector.range(0, arity))
 
 }
