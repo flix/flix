@@ -81,10 +81,10 @@ mod Fixpoint3.Predicate {
     ///
     @Internal
     pub def allRelSyms(predInfo: Predicates): List[RelSym] =
-        let full = allFullRelSyms(predInfo);
-        full |>
-        List.append(List.map(x -> fullRelSymToType(x, PredType.Delta, predInfo), full)) |>
-        List.append(List.map(x -> fullRelSymToType(x, PredType.New, predInfo), full))
+        let fullRels = allFullRelSyms(predInfo);
+        let deltaRels = List.map(x -> fullRelSymToType(x, PredType.Delta, predInfo), fullRels);
+        let newRels = List.map(x -> fullRelSymToType(x, PredType.New, predInfo), fullRels);
+        fullRels ::: deltaRels ::: newRels
 
     ///
     /// Returns the full `RelSym` associated with the `PredSym` in `body` according to `predInfo`.
