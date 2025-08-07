@@ -29,7 +29,7 @@ mod TestFileReadWithResultWithResult {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def exists01(): Bool \ IO = {
+    def exists01(): Bool \ { FsRead, IO } = {
         Result.flatten(
             FileWrite.handle(() -> {
                 let dir = FileWrite.mkTempDir("flix");
@@ -41,12 +41,12 @@ mod TestFileReadWithResultWithResult {
     }
 
     @Test
-    def exists02(): Bool \ IO = {
+    def exists02(): Bool \ { FsRead, IO } = {
         FileReadWithResult.handle(() -> FileReadWithResult.exists("SomeFileThatDoesNotExist"))() == Ok(false)
     }
 
     @Test
-    def exists03(): Bool \ IO = {
+    def exists03(): Bool \ { FsRead, IO } = {
         match FileReadWithResult.handle(() -> FileReadWithResult.exists("Some\\Invalid:{\u0000Path}/"))() {
             case Ok(_) => false
             case Err(IoError(kind, _)) => kind == ErrorKind.InvalidPath
