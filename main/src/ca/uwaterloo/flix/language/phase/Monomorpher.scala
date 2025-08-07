@@ -423,7 +423,7 @@ object Monomorpher {
     val map = defn.spec.tparams.zip(targs).map {
       case (tparam, tpe) => tparam.sym -> tpe
     }.toMap
-    val subst = StrictSubstitution(Substitution(map))
+    val subst = StrictSubstitution.mk(Substitution(map))
     val (specializedFparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
 
     val specializedExp = specializeExp(defn.exp, env0, subst)
