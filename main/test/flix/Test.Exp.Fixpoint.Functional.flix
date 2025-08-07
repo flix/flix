@@ -179,4 +179,45 @@ mod Test.Exp.Fixpoint.Functional {
         Vector#{1f64} `Assert.eq` query p select (x) from NonEmpty(x)
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // Tests with lattice values                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testFunctional06(): Bool = {
+        let p = #{
+            Start(;0).
+            End(;10).
+            InRange(p) :- let p = Vector.range(x, y), Start(;x), End(;y).
+        };
+        Vector.range(0, 10) `Assert.eq` query p select x from InRange(x)
+    }
+
+    def vectorRangeFromDown(x: Down[Int32], y: Down[Int32]): Vector[Int32] = {
+        let Down.Down(a) = x;
+        let Down.Down(b) = y;
+        Vector.range(a, b)
+    }
+
+    @Test
+    def testFunctional07(): Bool = {
+        let p = #{
+            Start(;Down.Down(0)).
+            Mid(;Down.Down(3)).
+            End(;Down.Down(10)).
+            InRange(p) :- let p = vectorRangeFromDown(x, y), Start(;x), Mid(;x), End(;y).
+        };
+        Vector.range(3, 10) `Assert.eq` query p select x from InRange(x)
+    }
+
+    @Test
+    def testFunctional08(): Bool = {
+        let p = #{
+            Start(;Down.Down(0)).
+            Mid(;Down.Down(3)).
+            End(;Down.Down(10)).
+            InRange(p) :- let p = vectorRangeFromDown(x, y), Mid(;x), Start(;x), End(;y).
+        };
+        Vector.range(3, 10) `Assert.eq` query p select x from InRange(x)
+    }
 }
