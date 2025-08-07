@@ -6,22 +6,31 @@ type alias Origin = String
 type alias Destination = String
 
 def main(): Unit \ IO =
+    let origin = "Aalborg";
+    let dest = "Copenhagen";
+    foreach ((x, y, t) <- findSchedules(origin, dest)) {
+        println("Path(${x}, ${y}, ${t})")
+    };
+    ()
+    // let r = pquery db, pr select Path("Aarhus", "Copenhagen") with {Edge};
+    // Vector.forEach(v -> ematch v {
+    //     case Edge(src, dst, _train, _departure, _arrival) => println("${src} -> ${dst}")
+    // }, r)
+
+///
+/// Returns all schedules from the given origin to the given destination.
+///
+def findSchedules(origin: Origin, dest: Destination): Vector[(Origin, Destination, Time)] =
     let db = database();
     let pr = program();
-    foreach((x, y) <- query db, pr select (x, y) from Path(x, y)) {
-        println("Path(${x}, ${y})")
-    };
-    let r = pquery db, pr select Path("Aarhus", "Copenhagen") with {Edge};
-    Vector.forEach(v -> ematch v {
-        case Edge(src, dst, _train, _departure, _arrival) => println("${src} -> ${dst}")
-    }, r)
+    query db, pr select (origin, dest, t) from Path(origin, dest, t)
 
 ///
 /// Returns a Datalog program that computes reachability subject to time constraints.
 ///
-def program(): #{ Edge(Origin, Destination, Train, Time, Time), Path(Origin, Destination) | r } = #{
-    Path(x, y) :- Edge(x, y, _, _, _).
-    Path(x, z) :- Path(x, y), Edge(y, z, _, _, _).
+def program(): #{ Edge(Origin, Destination, Train, Time, Time), Path(Origin, Destination, Time) | r } = #{
+    Path(x, y, t)  :- Edge(x, y, _, _, t).
+    Path(x, z, t2) :- Path(x, y, t0), Edge(y, z, _, t1, t2), if (t0 < t1).
 }
 
 ///
