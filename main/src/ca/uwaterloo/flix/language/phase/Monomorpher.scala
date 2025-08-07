@@ -194,7 +194,7 @@ object Monomorpher {
       * Note: [[ConcurrentLinkedQueue]] is non-blocking so threads can enqueue items without
       * contention.
       */
-    private val defQueue: ConcurrentLinkedQueue[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)] =
+    private val defQueue: ConcurrentLinkedQueue[(Symbol.DefnSym, LoweredAst.Def, List[Type])] =
       new ConcurrentLinkedQueue
 
     /** Returns `true` if the queue is non-empty. */
@@ -209,15 +209,15 @@ object Monomorpher {
       * This should be used in combination with [[getSpecializedName]] and [[addSpecializedName]] to
       * avoid enqueuing duplicate specializations.
       */
-    def enqueueSpecialization(sym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution): Unit =
+    def enqueueSpecialization(sym: Symbol.DefnSym, defn: LoweredAst.Def, targs: List[Type]): Unit =
       synchronized {
-        defQueue.add((sym, defn, subst))
+        defQueue.add((sym, defn, targs))
       }
 
     /** Dequeues all elements from the queue and clears it. */
-    def dequeueAllSpecializations: Array[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)] =
+    def dequeueAllSpecializations: Array[(Symbol.DefnSym, LoweredAst.Def, List[Type])] =
       synchronized {
-        val r = defQueue.toArray(Array.empty[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)])
+        val r = defQueue.toArray(Array.empty[(Symbol.DefnSym, LoweredAst.Def, List[Type])])
         defQueue.clear()
         r
       }
@@ -234,19 +234,19 @@ object Monomorpher {
       *
       *   - `(fst, (Int32, String) -> Int32) -> fst$1`
       */
-    private val specializedNames: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] =
+    private val specializedNames: mutable.Map[(Symbol.DefnSym, List[Type]), Symbol.DefnSym] =
       mutable.Map.empty
 
     /** Returns the specialized def symbol for `sym` w.r.t. `tpe` if it exists. */
-    def getSpecializedName(sym: Symbol.DefnSym, tpe: Type): Option[Symbol.DefnSym] =
+    def getSpecializedName(sym: Symbol.DefnSym, targs: List[Type]): Option[Symbol.DefnSym] =
       synchronized {
-        specializedNames.get((sym, tpe))
+        specializedNames.get((sym, targs))
       }
 
     /** Adds a specialized name, `specializedSym`, for `sym` w.r.t `tpe`. */
-    def addSpecializedName(sym1: Symbol.DefnSym, tpe: Type, sym2: Symbol.DefnSym): Unit =
+    def addSpecializedName(sym1: Symbol.DefnSym, targs: List[Type], sym2: Symbol.DefnSym): Unit =
       synchronized {
-        specializedNames.put((sym1, tpe), sym2)
+        specializedNames.put((sym1, targs), sym2)
       }
 
     /** A map of specialized definitions. */
@@ -329,7 +329,7 @@ object Monomorpher {
         // We use an empty substitution because the defs are non-parametric.
         // It's important that non-parametric functions keep their symbol to not
         // invalidate the set of entryPoints functions.
-        val specializedDefn = specializeDef(sym, defn, StrictSubstitution.empty)
+        val specializedDefn = specializeDef(sym, defn, Nil)
         ctx.addSpecializedDef(sym, specializedDefn)
     }
 
@@ -418,8 +418,12 @@ object Monomorpher {
         MonoAst.Op(sym, spec, loc)
     }
 
-  /** Returns a specialization of `defn` with the name `freshSym` according to `subst`. */
-  private def specializeDef(freshSym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): MonoAst.Def = {
+  /** Returns a specialization of `defn` with the name `freshSym` according to `subst`. */ // MATT docs
+  private def specializeDef(freshSym: Symbol.DefnSym, defn: LoweredAst.Def, targs: List[Type])(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): MonoAst.Def = {
+    val map = defn.spec.tparams.zip(targs).map {
+      case (tparam, tpe) => tparam.sym -> tpe
+    }.toMap
+    val subst = StrictSubstitution(Substitution(map))
     val (specializedFparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
 
     val specializedExp = specializeExp(defn.exp, env0, subst)
@@ -468,9 +472,9 @@ object Monomorpher {
       val e2 = specializeExp(exp2, env0, subst)
       MonoAst.Expr.ApplyClo(e1, e2, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ApplyDef(sym, exps, _, itpe, tpe, eff, loc) =>
+    case LoweredAst.Expr.ApplyDef(sym, exps, targs, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
-      val newSym = specializeDefnSym(sym, it)
+      val newSym = specializeDefnSym(sym, targs.map(subst.apply))
       val es = exps.map(specializeExp(_, env0, subst))
       MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
 
@@ -485,9 +489,9 @@ object Monomorpher {
       val es = exps.map(specializeExp(_, env0, subst))
       MonoAst.Expr.ApplyOp(sym, es, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ApplySig(sym, exps, _, _, itpe, tpe, eff, loc) =>
+    case LoweredAst.Expr.ApplySig(sym, exps, targ, targs, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
-      val newSym = specializeSigSym(sym, it)
+      val newSym = specializeSigSym(sym, subst(targ), targs.map(subst.apply))
       val es = exps.map(specializeExp(_, env0, subst))
       MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
 
@@ -746,13 +750,13 @@ object Monomorpher {
     *
     * N.B.: `tpe` must be normalized.
     */
-  private def specializeDefnSym(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
+  private def specializeDefnSym(sym: Symbol.DefnSym, targs: List[Type])(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
     val defn = root.defs(sym)
 
     if (defn.spec.tparams.isEmpty) {
       defn.sym
     } else {
-      specializeDefCallsite(defn, tpe)
+      specializeDefCallsite(defn, targs)
     }
   }
 
@@ -761,9 +765,9 @@ object Monomorpher {
     *
     * N.B.: `tpe` must be normalized.
     */
-  private def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
-    val defn = resolveSigSym(sym, tpe)
-    specializeDefCallsite(defn, tpe)
+  private def specializeSigSym(sym: Symbol.SigSym, targ0: Type, targs0: List[Type])(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
+    val (defn, targs) = resolveSigSym(sym, targ0, targs0)
+    specializeDefCallsite(defn, targs)
   }
 
   /**
@@ -771,26 +775,28 @@ object Monomorpher {
     *
     * N.B.: `tpe` must be normalized.
     */
-  private def resolveSigSym(sym: Symbol.SigSym, tpe: Type)(implicit instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): LoweredAst.Def = {
+  private def resolveSigSym(sym: Symbol.SigSym, targ: Type, targs: List[Type])(implicit instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): (LoweredAst.Def, List[Type]) = {
     val sig = root.sigs(sym)
     val trt = root.traits(sym.trt)
 
-    // Find out what instance to use by unifying with the sig type.
-    val subst = ConstraintSolver2.fullyUnify(sig.spec.declaredScheme.base, tpe, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix).get
-    val traitType = subst.m(trt.tparam.sym)
-    val tyCon = traitType.typeConstructor.get
+    val tyCon = targ.typeConstructor.get
 
     val instance = instances((sym.trt, tyCon))
     val defns = instance.defs.filter(_.sym.text == sig.sym.name)
 
     (sig.exp, defns) match {
-      // An instance implementation exists. Use it.
-      case (_, defn :: Nil) => defn
+      // An instance implementation exists.
+      case (_, defn :: Nil) =>
+        val extendedDef = defn.copy(spec = defn.spec.copy(tparams = instance.tparams ::: defn.spec.tparams)) // MATT docs
+        val extendedTargs = targ.typeArguments ::: targs
+        (extendedDef, extendedTargs)
       // No instance implementation, but a default implementation exists. Use it.
       case (Some(impl), Nil) =>
         val ns = sig.sym.trt.namespace :+ sig.sym.trt.name
         val defnSym = new Symbol.DefnSym(None, ns, sig.sym.name, sig.sym.loc)
-        LoweredAst.Def(defnSym, sig.spec, impl, sig.loc)
+        val extendedSpec = sig.spec.copy(tparams = trt.tparam :: sig.spec.tparams)
+        val extendedTargs = targ :: targs
+        (LoweredAst.Def(defnSym, extendedSpec, impl, sig.loc), extendedTargs)
       // Multiple matching defs. Should have been caught previously.
       case (_, _ :: _ :: _) => throw InternalCompilerException(s"Expected at most one matching definition for '$sym', but found ${defns.size} signatures.", sym.loc)
       // No matching defs and no default. Should have been caught previously.
@@ -803,23 +809,20 @@ object Monomorpher {
     *
     * N.B.: `tpe` must be normalized.
     */
-  private def specializeDefCallsite(defn: LoweredAst.Def, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
-    // Unify the declared and actual type to obtain the substitution map.
-    val subst = infallibleUnify(defn.spec.declaredScheme.base, tpe, defn.sym)
-
+  private def specializeDefCallsite(defn: LoweredAst.Def, targs: List[Type])(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
     // Check whether the function definition has already been specialized.
     ctx synchronized {
-      ctx.getSpecializedName(defn.sym, tpe) match {
+      ctx.getSpecializedName(defn.sym, targs) match {
         case None =>
           // The function has not been specialized.
           // Generate a fresh specialized definition symbol.
           val freshSym = Symbol.freshDefnSym(defn.sym)
 
           // Register the fresh symbol (and actual type).
-          ctx.addSpecializedName(defn.sym, tpe, freshSym)
+          ctx.addSpecializedName(defn.sym, targs, freshSym)
 
           // Enqueue the fresh symbol with the definition and substitution.
-          ctx.enqueueSpecialization(freshSym, defn, subst)
+          ctx.enqueueSpecialization(freshSym, defn, targs)
 
           // Now simply refer to the freshly generated symbol.
           freshSym
