@@ -28,9 +28,9 @@ instance Writable[EncodingWriter[t]] with Writable[t] where Writable.Elm[t] ~ In
 
     type Elm = Char
 
-    type Aef = Writable.Aef[t] + IO
+    type Aef = Writable.Aef[t]
 
-    pub def write(buffer: Array[Char, r], writer: EncodingWriter[t]): Result[IoError, Int32] \ r + Writable.Aef[t] + IO = EncodingWriter.write(buffer, writer)
+    pub def write(buffer: Array[Char, r], writer: EncodingWriter[t]): Result[IoError, Int32] \ r + Writable.Aef[t] = EncodingWriter.write(buffer, writer)
 
 }
 
@@ -59,7 +59,7 @@ mod EncodingWriter {
     ///
     /// Returns `Err(e)` if some underlying I/O error occurs.
     ///
-    pub def write(src: Array[Char, r], writer: EncodingWriter[t]): Result[IoError, Int32] \ IO + r + Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Int8 =
+    pub def write(src: Array[Char, r], writer: EncodingWriter[t]): Result[IoError, Int32] \ r + Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Int8 =
         let EncodingWriter.EncodingWriter({ encoder, byteWriter }) = writer;
         region rc {
             let dest = encoder |> encode(rc, src);
@@ -75,31 +75,39 @@ mod EncodingWriter {
     ///
     /// Returns an array of the encoded bytes whose size is the number of bytes encoded.
     ///
-    def encode(rc: Region[rc], src: Array[Char, r], encoder: CharsetEncoder): Array[Int8, rc] \ IO + rc + r =
-        let numChars = Array.length(src);
-        let maxBytesPerChar = encoder.maxBytesPerChar() |> Float32.ceil |> Float32.clampToInt32(min = 1, max = Int32.maxValue(), nanValue = 4);
-        let dest: Array[Int8, rc] = Array.empty(rc, numChars * maxBytesPerChar);
-        let charBuffer = CharBuffer.wrap(src);
-        let byteBuffer = ByteBuffer.wrap(dest);
-        checked_ecast(encoder |> encodeBuffered(rc, charBuffer, byteBuffer))
+    def encode(rc: Region[rc], src: Array[Char, r], encoder: CharsetEncoder): Array[Int8, rc] \ rc + r =
+        // Encoding is effectively a pure operation, so IO is casted away
+        def do() = {
+            let numChars = Array.length(src);
+            let maxBytesPerChar = encoder.maxBytesPerChar() |> Float32.ceil |> Float32.clampToInt32(min = 1, max = Int32.maxValue(), nanValue = 4);
+            let dest: Array[Int8, rc] = Array.empty(rc, numChars * maxBytesPerChar);
+            let charBuffer = CharBuffer.wrap(src);
+            let byteBuffer = ByteBuffer.wrap(dest);
+            checked_ecast(encoder |> encodeBuffered(rc, charBuffer, byteBuffer))
+        };
+        unchecked_cast(do() as _ \ rc + r)
 
     ///
     /// Encodes the chars from `charBuffer` into `byteBuffer` using `encoder`.
     ///
     /// Returns an array of the encoded bytes whose size is the number of bytes encoded.
     ///
-    def encodeBuffered(rc: Region[rc], charBuffer: CharBuffer, byteBuffer: ByteBuffer, encoder: CharsetEncoder): Array[Int8, rc] \ IO + rc =
-        let result = encoder.encode(charBuffer, byteBuffer, false);
-        let bytesEncoded = byteBuffer.position();
-        let dest = byteBuffer.array() |> Array.take(rc, bytesEncoded);
-        if (result.isOverflow()) {
-            charBuffer.flip();
-            byteBuffer.clear();
-            let rest = encoder |> encodeBuffered(rc, charBuffer, byteBuffer);
-            Array.append(rc, dest, rest)
-        } else {
-            dest
-        }
+    def encodeBuffered(rc: Region[rc], charBuffer: CharBuffer, byteBuffer: ByteBuffer, encoder: CharsetEncoder): Array[Int8, rc] \ rc =
+        // Encoding is effectively a pure operation, so IO is casted away
+        def do() = {
+            let result = encoder.encode(charBuffer, byteBuffer, false);
+            let bytesEncoded = byteBuffer.position();
+            let dest = byteBuffer.array() |> Array.take(rc, bytesEncoded);
+            if (result.isOverflow()) {
+                charBuffer.flip();
+                byteBuffer.clear();
+                let rest = encoder |> encodeBuffered(rc, charBuffer, byteBuffer);
+                Array.append(rc, dest, rest)
+            } else {
+                dest
+            }
+        };
+        unchecked_cast(do() as _ \ rc)
 
     ///
     /// Writes all bytes from `dest` into `byteWriter`.
