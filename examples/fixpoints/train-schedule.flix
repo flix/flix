@@ -1,5 +1,5 @@
 ///
-/// We introduce a collection of type aliases to model the domain.
+/// We introduce a collection of type aliases to model the train domain.
 ///
 type alias Station = String             // e.g. Aarhus
 type alias Train   = String             // e.g. InterCity-432.
@@ -35,8 +35,11 @@ def tripOf(origin: Station, dest: Station, t: Time): Unit \ IO = {
     let pr = program();
     let r = pquery db, pr select Path(origin, dest, t) with {Edge};
     Vector.forEach(v -> ematch v {
-        case Edge(src, dst, _train, _departure, _arrival) =>
-            println("${src} -> ${dst}")
+        case Edge(src, dst, train, t1, t2) =>
+            let s = String.padRight(10, ' ', src);
+            let tr = String.padRight(20, ' ', "-- ${train} -->");
+            let d = String.padRight(10, ' ', dst);
+            println("  ${fmt(t1)} ${s} ${tr} ${d} ${fmt(t2)}")
     }, r)
 }
 
@@ -69,4 +72,9 @@ def database(): #{ Edge(Station, Station, Train, Time, Time) | r } = #{
     // Odense -> Copenhagen
     Edge("Odense", "Copenhagen", "IL-38",  (13, 57), (15, 06)).
     Edge("Odense", "Copenhagen", "IL-42",  (14, 57), (16, 06)).
+}
+
+def fmt(t: Time): String = {
+    def f(x) = if (x < 9) "0${x}" else "${x}";
+    "(${f(fst(t))}.${f(snd(t))})"
 }
