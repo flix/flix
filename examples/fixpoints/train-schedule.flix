@@ -8,14 +8,18 @@ type alias Destination = String
 def main(): Unit \ IO =
     let origin = "Aalborg";
     let dest = "Copenhagen";
-    foreach ((x, y, t) <- findSchedules(origin, dest)) {
-        println("Path(${x}, ${y}, ${t})")
-    };
-    ()
-    // let r = pquery db, pr select Path("Aarhus", "Copenhagen") with {Edge};
-    // Vector.forEach(v -> ematch v {
-    //     case Edge(src, dst, _train, _departure, _arrival) => println("${src} -> ${dst}")
-    // }, r)
+    let schedules = findSchedules(origin, dest);
+    if (Vector.isEmpty(schedules)) {
+        println("No connections found. Sorry.")
+    } else {
+        println("Available connections:");
+        foreach ((x, y, t) <- schedules) {
+            println("  ${x} to ${y} arrival at ${t}")
+        };
+        println("The trip for the earliest arrival is:");
+        let (_, _, t) = Vector.get(0, schedules);
+        tripOf(origin, dest, t)
+    }
 
 ///
 /// Returns all schedules from the given origin to the given destination.
@@ -24,6 +28,17 @@ def findSchedules(origin: Origin, dest: Destination): Vector[(Origin, Destinatio
     let db = database();
     let pr = program();
     query db, pr select (origin, dest, t) from Path(origin, dest, t)
+
+
+def tripOf(origin: Origin, dest: Destination, t: Time): Unit \ IO = {
+    let db = database();
+    let pr = program();
+    let r = pquery db, pr select Path(origin, dest, t) with {Edge};
+    Vector.forEach(v -> ematch v {
+        case Edge(src, dst, _train, _departure, _arrival) =>
+            println("${src} -> ${dst}")
+    }, r)
+}
 
 ///
 /// Returns a Datalog program that computes reachability subject to time constraints.
