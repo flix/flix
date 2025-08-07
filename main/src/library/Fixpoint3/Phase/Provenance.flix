@@ -72,7 +72,7 @@
     def augmentFacts(oldTree: BPlusTree[Vector[Boxed], Boxed, Static]): BPlusTree[Vector[Boxed], Boxed, Static] \ IO = {
         let newTree = BPlusTree.empty(Static);
         BPlusTree.forEach(tuple -> v ->
-            let annotatedVector = Vector.append(tuple, Vector#{BoxedInt64(0i64), BoxedInt64(-1i64)});
+            let annotatedVector = tuple ++ Vector#{BoxedInt64(0i64), BoxedInt64(-1i64)};
             BPlusTree.put(annotatedVector, v, newTree)
         , oldTree);
         newTree
@@ -105,13 +105,10 @@
         case RelOp.Functional(_, _, _, _, _) =>
             bug!("In Fixpoint.Phase.Provenance.augmentOp: Cannot do provenance with functional")
         case RelOp.Project(terms, relSym, ruleNum) =>
-            let newTerms = Vector.append(
-                terms,
-                Vector#{
-                    RamTerm.ProvMax(List.toVector(rowVarsArity)),
-                    RamTerm.Lit(BoxedInt64(Int32.toInt64(ruleNum)), RamId.Id(-1))
-                }
-            );
+            let newTerms = terms ++ Vector#{
+                RamTerm.ProvMax(List.toVector(rowVarsArity)),
+                RamTerm.Lit(BoxedInt64(Int32.toInt64(ruleNum)), RamId.Id(-1))
+            };
             RelOp.Project(newTerms, relSym, ruleNum)
         case RelOp.If(boolExps, body) =>
             augmentOp(rowVarsArity, body) |> RelOp.If(boolExps)

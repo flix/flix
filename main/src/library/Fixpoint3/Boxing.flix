@@ -107,7 +107,7 @@ mod Fixpoint3.Boxing {
         let positions = if (not withProv) {
             nonExtendedPositions
         } else {
-            Vector.append(nonExtendedPositions, Vector#{getOrCrash(Map.get(RamId.Id(-1), mapping)), getOrCrash(Map.get(RamId.Id(-1), mapping))})
+            nonExtendedPositions ++ Vector#{getOrCrash(Map.get(RamId.Id(-1), mapping)), getOrCrash(Map.get(RamId.Id(-1), mapping))}
         };
         facts |>
             BPlusTree.parForEach(tuple -> lat -> {

@@ -163,7 +163,7 @@ mod Fixpoint3.Phase.Simplifier {
                         case BoolExp.NotMemberOf(_, _) => true
                         case _ => false
                     });
-                let newTest = Vector.append(rest, memberOf);
+                let newTest = rest ++ memberOf;
                 // Simplify `if () then body` to `body`.
                 match recurse(then) {
                     case None => None

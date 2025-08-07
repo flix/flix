@@ -164,7 +164,7 @@ mod Fixpoint3.Phase.Hoisting {
                         if (MutList.size(independent) == 0) {
                             RamStmt.Insert(RelOp.If(isEmptyBools, newOp))
                         } else {
-                            let bools = MutList.toVector(independent) `Vector.append` isEmptyBools;
+                            let bools = MutList.toVector(independent) ++ isEmptyBools;
                             RamStmt.Insert(RelOp.If(bools, newOp))
                         };
                     Some(newStmt)
