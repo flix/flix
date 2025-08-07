@@ -164,7 +164,7 @@ mod Fixpoint3.Provenance {
             case ProofTree.IDB(pred, fact, subTrees) :: tail => {
                 if (filter(pred)) MutList.push((pred, fact), res)
                 else ();
-                let furtherWork = (tail, subTrees) ||> Vector.foldLeft(acc -> cur -> cur :: acc);
+                let furtherWork = (tail, subTrees) ||> Vector.foldRight(cur -> acc -> cur :: acc);
                 recurse(furtherWork)
         }};
         recurse(p :: Nil);
@@ -180,8 +180,8 @@ mod Fixpoint3.Provenance {
     /// Crashes if `d` is not a provenance model.
     ///
     @Internal
-    pub def provQuery(predSym: PredSym, fact: Vector[Boxed], d: Datalog): Option[Vector[(PredSym, Vector[Boxed])]] =
-        unsafely IO run provQueryInternal(predSym, fact, d)
+    pub def provQuery(predSym: PredSym, fact: Vector[Boxed], withh: Vector[PredSym], d: Datalog): Option[Vector[(PredSym, Vector[Boxed])]] =
+        unsafely IO run provQueryInternal(predSym, fact, withh, d)
 
     ///
     /// Returns `None` if `predSym(fact)` is not a part of the provenance model `d`.
@@ -193,7 +193,7 @@ mod Fixpoint3.Provenance {
     ///
     /// The `IO` effect is from reading from `Static` data structures.
     ///
-    def provQueryInternal(predSym: PredSym, fact: Vector[Boxed], d: Datalog): Option[Vector[(PredSym, Vector[Boxed])]] \ IO = match d {
+    def provQueryInternal(predSym: PredSym, fact: Vector[Boxed], withh: Vector[PredSym], d: Datalog): Option[Vector[(PredSym, Vector[Boxed])]] \ IO = match d {
         case Provenance(rules, provIdb) => region rc {
             let annotation = match Map.get(makeFakeRelSym(predSym), provIdb) {
                 case None => None
@@ -207,7 +207,7 @@ mod Fixpoint3.Provenance {
                 case Some((depth, ruleUsed)) =>
                     let lookupStruct = BPlusTree.empty(rc);
                     let tree = buildProof(predSym, fact, depth, ruleUsed, rules, provIdb, lookupStruct, rc);
-                    Some(filterAndFlattenProof(tree, _ -> true))
+                    Some(filterAndFlattenProof(tree, p -> Vector.memberOf(p, withh)))
             }
         }
         case _ =>
@@ -272,7 +272,6 @@ mod Fixpoint3.Provenance {
         let getValOfVar: MutMap[VarSym, Boxed, r] = MutMap.empty(rc);
         let headApps = Vector.zip(headTerms, fact) |>
             Vector.filter(match (h, _) -> match h {
-                case (HeadTerm.App0(_)) => false // `App0` is due to dead code in `Lowering`. It cannot be made.
                 case (HeadTerm.App1(_, _)) => true
                 case (HeadTerm.App2(_, _, _)) => true
                 case (HeadTerm.App3(_, _, _, _)) => true
@@ -291,10 +290,9 @@ mod Fixpoint3.Provenance {
         /// Concretely, we update the `getValOfVar` to contain `varNames[i] => matchedFacts[i]`.
         ///
         def registerVars(varNames, matchedFact) =
-            varNames |>
-                Vector.forEachWithIndex(i -> v ->
-                    MutMap.put(v, Vector.get(i, matchedFact), getValOfVar)
-                );
+            foreach ((i, v) <- ForEach.withIndex(varNames)) {
+                MutMap.put(v, Vector.get(i, matchedFact), getValOfVar)
+            };
         ///
         /// Returns true if all head applications are satisfied by the current variable assignment.
         ///
@@ -424,11 +422,12 @@ mod Fixpoint3.Provenance {
                 }
             }};
         // Bind all variables in the head atom to the values of `fact`.
-        headTerms |>
-            Vector.forEachWithIndex(i -> h -> match h {
+        foreach ((i, h) <- ForEach.withIndex(headTerms)) {
+            match h {
                 case HeadTerm.Var(v) => MutMap.put(v, Vector.get(i, fact), getValOfVar)
                 case _ => ()
-            });
+            }
+        };
         loop(0);
         bodyValues |> Array.filterMap(rc, identity) |> Array.toVector
     }

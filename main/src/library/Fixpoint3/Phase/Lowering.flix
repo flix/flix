@@ -178,7 +178,9 @@ mod Fixpoint3.Phase.Lowering {
             let arityInformation = collectRowVarArity(program);
             let numOfArities = UniqueInts.get(idToIndex);
             let arities = Array.empty(rc, numOfArities);
-            arityInformation |> List.forEach(match (rv, arity) -> Array.put(arity, UniqueInts.getIndex(rv, idToIndex), arities));
+            foreach ((rv, arity) <- arityInformation) {
+                Array.put(arity, UniqueInts.getIndex(rv, idToIndex), arities)
+            };
             (ExecutableRam.RamProgram.Program(loweredStmt, newFacts, meta, indexInfo, (Array.toVector(arities), constWrites), idToBoxing), boxing)
     }
 

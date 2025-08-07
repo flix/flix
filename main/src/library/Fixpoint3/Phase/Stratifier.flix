@@ -57,16 +57,15 @@ mod Fixpoint3.Phase.Stratifier {
         let predSyms = Array.empty(rc, numberOfPredSyms);
         addPredSymsFrom(predSyms, d);
         let result = MutMap.empty(rc);
-        pseudoStrata |>
-            List.forEachWithIndex(pseudoStratum -> list ->
-                list |>
-                    List.forEachWithIndex(stratum -> set ->
-                        foreach (x <- set) {
-                            let predSym = PredSym.PredSym(Array.get(x, predSyms), Int32.toInt64(x));
-                            MutMap.put(predSym, (pseudoStratum, stratum), result)
-                        }
-                    )
-            );
+        foreach ((pseudoStratum, list) <- ForEach.withIndex(pseudoStrata)) {
+            foreach ((stratum, set) <- ForEach.withIndex(list)) {
+                foreach (x <- set) {
+                    let predSym = PredSym.PredSym(Array.get(x, predSyms), Int32.toInt64(x));
+                    MutMap.put(predSym, (pseudoStratum, stratum), result)
+                }
+
+            }
+        };
         MutMap.toMap(result)
 
     ///

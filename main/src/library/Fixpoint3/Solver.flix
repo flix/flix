@@ -41,10 +41,19 @@ mod Fixpoint3.Solver {
     /// The stratification is computed automatically by the solver.
     ///
     @Internal
-    pub def runSolver(d: Datalog): Datalog = region rc {
+    pub def runSolver(d: Datalog): Datalog = runSolverInternal(false, d)
+
+    ///
+    /// Returns a provenance model of the given Datalog program `d`.
+    /// The provenance model can later be used for provenance queries.
+    ///
+    @Internal
+    pub def runSolverWithProvenance(d: Datalog): Datalog = runSolverInternal(true, d)
+
+    def runSolverInternal(withProv: Bool, d: Datalog): Datalog = region rc {
         let (fixed, fixInfo) = Phase.RenamePredSyms.assignUniqueIdentifiersToPredSyms(rc, d);
         let strat = Phase.Stratifier.stratify(fixed);
-        Phase.RenamePredSyms.renamePredSyms(runWithStratification(fixed, strat, false), fixInfo)
+        Phase.RenamePredSyms.renamePredSyms(runWithStratification(fixed, strat, withProv), fixInfo)
     }
 
     ///
@@ -98,13 +107,6 @@ mod Fixpoint3.Solver {
     }
 
     ///
-    /// Returns a provenance model of the given Datalog program `d`.
-    /// The provenance model can later be used for provenance queries.
-    ///
-    @Internal
-    pub def runSolverWithProvenance(d: Datalog): Datalog = ???
-
-    ///
     /// Returns the pairwise union of `d1` and `d2`.
     /// I.e. the facts of the union is the union of the facts and likewise for rules.
     /// A fact or rule may occur twice in the Datalog program. This has no effect on its semantics.
@@ -144,7 +146,31 @@ mod Fixpoint3.Solver {
     /// Returns the provenance of fact `f` of relation `p` given Datalog program `d`.
     ///
     @Internal
-    pub def provenanceOf(f: Vector[Boxed], p: PredSym, d: Datalog, mkExtVar: PredSym -> Vector[Boxed] -> t): Vector[t] = ???
+    pub def provenanceOf(p: PredSym, f: Vector[Boxed], withh: Vector[PredSym], mkExtVar: PredSym -> Vector[Boxed] -> t, d: Datalog): Vector[t] = match d {
+        case Datalog(_, _) => provenanceOf(p, f, withh, mkExtVar, runSolverWithProvenance(d))
+        case Model(db) => unsafely IO run {
+            // This is a dirty hack based on the implementation of Order on RelSym (it only depends on PredSym).
+            let fakeRelSym = Ram.makeFakeRelSym(p);
+            match Map.get(fakeRelSym, db) {
+                case None => // Temporary
+                    let termsStr = Vector.join(", ", f);
+                    bug!("${p}(${termsStr}) is not a fact")
+                case Some(facts) => match BPlusTree.memberOf(f, facts) {
+                    case false => // Temporary
+                        let termsStr = Vector.join(", ", f);
+                        bug!("${p}(${termsStr}) is not a fact")
+                    case true => Vector#{mkExtVar(p, f)}
+                }
+            }
+        }
+        case Provenance(_, _) => match Fixpoint3.Provenance.provQuery(p, f, withh, d) {
+            case None =>
+                let termsStr = Vector.join(", ", f);
+                bug!("${p}(${termsStr}) is not a fact")
+            case Some(v) => Vector.map(match (pred, fact) -> mkExtVar(pred, fact), v)
+        }
+        case Join(_, _) => provenanceOf(p, f, withh, mkExtVar, runSolverWithProvenance(d))
+    }
 
     ///
     /// Returns the `Provenance` program `d` as a `Model`.
@@ -858,14 +884,12 @@ mod Fixpoint3.Solver {
     def factsOfInternal(f: Vector[Boxed] -> t \ ef, p: PredSym, d: Datalog): Vector[t] \ ef + IO = match d {
         case Datalog(_, cs) => region rc {
             let pFacts = MutList.empty(rc);
-            Vector.forEach(c -> match c {
-                case Constraint(HeadAtom(headPred, _, terms), body) =>
-                    if (headPred == p and Vector.isEmpty(body))
-                        let vs = Vector.map(headTermValue, terms);
-                        MutList.push(f(vs), pFacts)
-                    else ()
-                case _ => ()
-            }, cs);
+            foreach (Constraint(HeadAtom(headPred, _, terms), body) <- cs) {
+                if (headPred == p and Vector.isEmpty(body))
+                    let vs = Vector.map(headTermValue, terms);
+                    MutList.push(f(vs), pFacts)
+                else ()
+            };
             MutList.toVector(pFacts)
         }
         case Model(db) => region rc {

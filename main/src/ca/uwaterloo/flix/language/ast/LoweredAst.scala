@@ -41,7 +41,7 @@ object LoweredAst {
 
   case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[AssocTypeSig], signatures: List[Sig], laws: List[Def], loc: SourceLocation)
 
-  case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: TraitSymUse, tpe: Type, tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
+  case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: TraitSymUse, tparams: List[TypeParam], tpe: Type, tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
 
   case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr], loc: SourceLocation)
 

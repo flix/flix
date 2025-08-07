@@ -350,7 +350,7 @@ mod ShortestPath {
                 let shortestPathFound = v == Vector#{0, 1, 5} or v == Vector#{0, 3, 5};
                 Assert.eq(true, shortestPathFound)
             case 6 =>
-                let shortestPathFound = v == Vector#{0, 1, 2, 5} or v == Vector#{0, 1, 5, 6} or v == Vector#{0, 3, 5, 6};
+                let shortestPathFound = v == Vector#{0, 1, 2, 6} or v == Vector#{0, 1, 5, 6} or v == Vector#{0, 3, 5, 6};
                 Assert.eq(true, shortestPathFound)
             case _ => unreachable!()
         })
