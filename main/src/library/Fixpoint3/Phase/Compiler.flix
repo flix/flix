@@ -51,15 +51,15 @@ mod Fixpoint3.Phase.Compiler {
             let counter = Counter.fresh(rc);
             let rulesWithId = enumerateRules(d);
             let pseudoStratums = MutMap.empty(rc);
-            rulesWithId |>
-                Vector.forEach(match (num, rule) -> match rule {
+            foreach ((num, rule) <- rulesWithId) {
+                match rule {
                     case Constraint(HeadAtom(p, _, _), _) =>
                         let (pseudoStratum, stratum) = Map.getWithDefault(p, (0, 0), strat);
                         let pseudoMap = MutMap.getOrElsePut(pseudoStratum, MutMap.empty(rc), pseudoStratums);
                         MutMap.putWith(List.append, stratum, (num, rule) :: Nil, pseudoMap)
-                });
-            pseudoStratums |>
-                MutMap.forEach(_ -> pseudStrat -> {
+                }
+            };
+            foreach ((_, pseudStrat) <- pseudoStratums) {
                     let runInParallel = (Nil, pseudStrat) ||>
                         MutMap.foldLeft(acc -> enumeratedRules -> {
                             let stmtsForPseudo = MutList.empty(rc);
@@ -74,7 +74,7 @@ mod Fixpoint3.Phase.Compiler {
                         case Some(v) => MutList.push(v, stmts)
                         case None => ()
                     }
-                });
+            };
             let stmt = RamStmt.Seq(MutList.toVector(stmts));
             RamProgram.Program(stmt, compiledFacts, predicates, (Map#{}, Map#{}))
         }
@@ -103,30 +103,26 @@ mod Fixpoint3.Phase.Compiler {
     ///
     def compileFacts(facts: Vector[Constraint], db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]], predicates: Predicates): (Facts, Facts) \ IO = region rc {
         let newFacts = MutMap.empty(rc);
-        facts |>
-            Vector.forEach(constraint -> {
-                match constraint {
-                    case Constraint(headAtom, _) =>
-                        let HeadAtom(_, den, headTerms) = headAtom;
-                        let x = Vector.map(getLitOrCrash, headTerms);
-                        match den {
-                            case Relational =>
-                                let sym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
-                                let newFactsTree = MutMap.getOrElsePut(sym, BPlusTree.empty(Static), newFacts);
-                                BPlusTree.put(x, Boxed.NoValue, newFactsTree)
-                            case Latticenal(bot, leq, lub, _) =>
-                                // Remove p(;bot) from the facts
-                                let latVal = Vector.get(Vector.length(x) - 1, x);
-                                if (latVal `leq` bot) {
-                                    ()
-                                } else {
-                                    let sym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
-                                    let newFactsTree = MutMap.getOrElsePut(sym, BPlusTree.empty(Static), newFacts);
-                                    BPlusTree.putWith(lub, Vector.dropRight(1, x), latVal, newFactsTree)
-                                }
-                        }
-                }
-            });
+        foreach (Constraint(headAtom, _) <- facts) {
+            let HeadAtom(_, den, headTerms) = headAtom;
+            let x = Vector.map(getLitOrCrash, headTerms);
+            match den {
+                case Relational =>
+                    let sym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
+                    let newFactsTree = MutMap.getOrElsePut(sym, BPlusTree.empty(Static), newFacts);
+                    BPlusTree.put(x, Boxed.NoValue, newFactsTree)
+                case Latticenal(bot, leq, lub, _) =>
+                    // Remove p(;bot) from the facts
+                    let latVal = Vector.get(Vector.length(x) - 1, x);
+                    if (latVal `leq` bot) {
+                        ()
+                    } else {
+                        let sym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
+                        let newFactsTree = MutMap.getOrElsePut(sym, BPlusTree.empty(Static), newFacts);
+                        BPlusTree.putWith(lub, Vector.dropRight(1, x), latVal, newFactsTree)
+                    }
+            }
+        };
         (db, MutMap.toMap(newFacts))
     }
 
@@ -162,7 +158,9 @@ mod Fixpoint3.Phase.Compiler {
 
         // Construct the inserts for step 1.
         let inserts = MutList.empty(rc);
-        List.forEach(match (rule, ruleNum) -> compileRule(inserts, rule, ruleNum, predicates, counter), List.zip(stratum, rulesWithId));
+        foreach ((rule, ruleNum) <- List.zip(stratum, rulesWithId)) {
+            compileRule(inserts, rule, ruleNum, predicates, counter)
+        };
         let optPar =
             if (MutList.size(inserts) > 1) {
                 Some(RamStmt.Par(MutList.toVector(inserts)))
@@ -180,7 +178,9 @@ mod Fixpoint3.Phase.Compiler {
                 let loopBody = MutList.empty(rc);
 
                 let loopInserts = MutList.empty(rc);
-                List.forEach(match (rule, ruleNum) -> compileRuleIncr(loopInserts, rule, ruleNum, idbIds, predicates, counter), List.zip(stratum, rulesWithId));
+                foreach ((rule, ruleNum) <- List.zip(stratum, rulesWithId)) {
+                    compileRuleIncr(loopInserts, rule, ruleNum, idbIds, predicates, counter)
+                };
                 let loopParOpt =
                     if (MutList.size(loopInserts) > 1) {
                         Some(RamStmt.Par(MutList.toVector(loopInserts)))
@@ -212,7 +212,7 @@ mod Fixpoint3.Phase.Compiler {
         let merges = MutList.empty(rc);
         let swaps = MutList.empty(rc);
         let purges = MutList.empty(rc);
-        Set.forEach(relSym -> {
+        foreach (relSym <- idb) {
             let newRel = Predicate.getRelSymAsType(relSym, New, predicates);
             let deltaRel = Predicate.getRelSymAsType(relSym, Delta, predicates);
             let fullRel = Predicate.getRelSymAsType(relSym, Full, predicates);
@@ -222,7 +222,7 @@ mod Fixpoint3.Phase.Compiler {
             MutList.push(mergeFull, merges);
             MutList.push(swapDelta, swaps);
             MutList.push(purgeNew, purges)
-        }, idb);
+        };
         let swapsAsRam = if (MutList.length(swaps) > 1) {
             RamStmt.Seq(MutList.toVector(swaps))
         } else if (MutList.size(swaps) == 1) {
@@ -372,9 +372,9 @@ mod Fixpoint3.Phase.Compiler {
             if (Fixpoint3.Options.enableDebugging()) {
                 let comment = RamStmt.Comment(ToString.toString(rule));
                 MutList.push(comment, stmts);
-                Vector.forEach(match rowVar -> compileSomething(rowVar), positiveIDBAtoms)
+                Vector.forEach(compileSomething, positiveIDBAtoms)
             } else {
-                Vector.forEach(match rowVar -> compileSomething(rowVar), positiveIDBAtoms)
+                Vector.forEach(compileSomething, positiveIDBAtoms)
             }
     }
 
