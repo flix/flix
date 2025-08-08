@@ -186,7 +186,7 @@ mod Fixpoint3.Predicate {
     ///
     @Internal
     pub def initialize(program: Datalog, db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): Predicates =
-        collectPreds(program, db)
+        relSymsOfProgramWithDb(program, db)
 
     ///
     /// Returns true if `id` is the id of a full `PredSym` according to `predInfo`.
@@ -223,11 +223,11 @@ mod Fixpoint3.Predicate {
     ///
     /// Returns a set of all full `RelSym` created from `PredSym`s in `program` and `db` and the maximal identifier+1.
     ///
-    def collectPreds(program: Datalog, db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): Predicates = match program {
+    def relSymsOfProgramWithDb(program: Datalog, db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): Predicates = match program {
         case Datalog(facts, rules) =>
-            let set1 = collectPredicates(rules);
-            let set2 = collectPredicates(facts);
-            let set3 = collectDbPredicates(db);
+            let set1 = relSymsOf(rules);
+            let set2 = relSymsOf(facts);
+            let set3 = relSymsOfDb(db);
             let set = (set1 `Set.union` set2) `Set.union` set3;
             let fullRels = Set.toList(set);
             let optMax = fullRels |>
@@ -246,13 +246,13 @@ mod Fixpoint3.Predicate {
     ///
     /// Returns a set of full `RelSym` in `db`.
     ///
-    def collectDbPredicates(db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): Set[RelSym] =
+    def relSymsOfDb(db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): Set[RelSym] =
         Map.foldLeftWithKey(set -> relSym -> _ -> Set.insert(relSym, set), Set#{}, db)
 
     ///
     /// Returns a set of full `RelSym` in `constraints`.
     ///
-    def collectPredicates(constraints: Vector[Constraint]): Set[RelSym] =
+    def relSymsOf(constraints: Vector[Constraint]): Set[RelSym] =
         Vector.foldLeft(match set -> match Constraint(headAtom, body) -> {
             let setWithHead = Set.insert(headAtomToFullRelSym(headAtom), set);
             Vector.foldLeft(setBody -> bodyConstraint -> match bodyConstraint {

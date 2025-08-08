@@ -127,7 +127,7 @@ mod Fixpoint3.Phase.Stratifier {
     def predSymHelper(predMap: PredIdToName[r], cnst: Constraint): Unit \ r = match cnst {
         case Constraint(HeadPredicate.HeadAtom(PredSym.PredSym(name, id), _, _), body) =>
             Array.put(name, toInt32(id), predMap);
-            Vector.forEach(collectEdge(predMap), body)
+            Vector.forEach(addPredSymsOf(predMap), body)
     }
 
     ///
@@ -135,7 +135,7 @@ mod Fixpoint3.Phase.Stratifier {
     ///
     /// See `addPredSymsFrom`.
     ///
-    def collectEdge(predMap: PredIdToName[r], body: BodyPredicate): Unit \ r = match body {
+    def addPredSymsOf(predMap: PredIdToName[r], body: BodyPredicate): Unit \ r = match body {
         case (BodyAtom(PredSym.PredSym(name, id), _, _, _, _)) => {
             Array.put(name, toInt32(id), predMap);
             ()
