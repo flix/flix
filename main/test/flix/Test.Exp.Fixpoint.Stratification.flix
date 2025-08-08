@@ -43,9 +43,9 @@ mod Test.Exp.Fixpoint.Stratification {
         };
         let mm = solve pr;
         Vector#{1} `Assert.eq` query mm select (x) from A2(x) and
-            Vector#{1} `Assert.eq` query mm select (x) from B2(x) and
-            Vector#{1 + 1} `Assert.eq` query mm select (x) from C2(x) and
-            Vector#{1 + 1 + 2} `Assert.eq` query mm select (x) from D2(x)
+        Vector#{1} `Assert.eq` query mm select (x) from B2(x) and
+        Vector#{1 + 1} `Assert.eq` query mm select (x) from C2(x) and
+        Vector#{1 + 1 + 2} `Assert.eq` query mm select (x) from D2(x)
     }
 
     @Test
@@ -60,9 +60,9 @@ mod Test.Exp.Fixpoint.Stratification {
         };
         let mm = solve pr;
         Vector#{(1, 2), (2, 3), (3, 4)} `Assert.eq` query mm select (x, y) from A(x, y) and
-            Vector#{(2, 4)} `Assert.eq` query mm select (x, y) from B(x, y) and
-            Vector#{(3, 4)} `Assert.eq` query mm select (x, y) from C(x, y) and
-            Vector#{9} `Assert.eq` query mm select (x) from D(x)
+        Vector#{(2, 4)} `Assert.eq` query mm select (x, y) from B(x, y) and
+        Vector#{(3, 4)} `Assert.eq` query mm select (x, y) from C(x, y) and
+        Vector#{9} `Assert.eq` query mm select (x) from D(x)
     }
 
     @Test
@@ -77,9 +77,9 @@ mod Test.Exp.Fixpoint.Stratification {
         };
         let mm = solve pr;
         Vector#{(1, 2), (2, 3), (3, 4)} `Assert.eq` query mm select (x, y) from A(x, y) and
-            Vector#{(2, 4)} `Assert.eq` query mm select (x, y) from B(x, y) and
-            Vector#{(3, 4)} `Assert.eq` query mm select (x, y) from C(x, y) and
-            Vector#{9} `Assert.eq` query mm select (x) from D(x)
+        Vector#{(2, 4)} `Assert.eq` query mm select (x, y) from B(x, y) and
+        Vector#{(3, 4)} `Assert.eq` query mm select (x, y) from C(x, y) and
+        Vector#{9} `Assert.eq` query mm select (x) from D(x)
     }
 
     @Test
@@ -94,9 +94,9 @@ mod Test.Exp.Fixpoint.Stratification {
         };
         let mm = solve pr;
         Vector#{("1", "2"), ("2", "3"), ("3", "4")} `Assert.eq` query mm select (x, y) from A(x, y) and
-            Vector#{("2", "4")} `Assert.eq` query mm select (x, y) from B(x, y) and
-            Vector#{("3", "4")} `Assert.eq` query mm select (x, y) from C(x, y) and
-            Vector#{"9"} `Assert.eq` query mm select (x) from D(x)
+        Vector#{("2", "4")} `Assert.eq` query mm select (x, y) from B(x, y) and
+        Vector#{("3", "4")} `Assert.eq` query mm select (x, y) from C(x, y) and
+        Vector#{"9"} `Assert.eq` query mm select (x) from D(x)
     }
 
     @Test
@@ -110,8 +110,8 @@ mod Test.Exp.Fixpoint.Stratification {
         };
         let mm = solve pr;
         Vector#{1, 2} `Assert.eq` query mm select (x) from A(x) and
-            Vector#{1, 2, 3} `Assert.eq` query mm select (x) from B(x) and
-            Vector#{3} `Assert.eq` query mm select (x) from C(x)
+        Vector#{1, 2, 3} `Assert.eq` query mm select (x) from B(x) and
+        Vector#{3} `Assert.eq` query mm select (x) from C(x)
     }
 
     @Test
@@ -125,8 +125,8 @@ mod Test.Exp.Fixpoint.Stratification {
         };
         let mm = solve pr;
         Vector#{1, 2} `Assert.eq` query mm select (x) from A(x) and
-            Vector#{1, 2, 3} `Assert.eq` query mm select (x) from B(x) and
-            Vector#{3} `Assert.eq` query mm select (x) from C(x)
+        Vector#{1, 2, 3} `Assert.eq` query mm select (x) from B(x) and
+        Vector#{3} `Assert.eq` query mm select (x) from C(x)
     }
 
     @Test
@@ -140,8 +140,8 @@ mod Test.Exp.Fixpoint.Stratification {
         };
         let mm = solve pr;
         Vector#{1, 2} `Assert.eq` query mm select (x) from A(x) and
-            Vector#{1, 2, 3} `Assert.eq` query mm select (x) from B(x) and
-            Vector#{3} `Assert.eq` query mm select (x) from C(x)
+        Vector#{1, 2, 3} `Assert.eq` query mm select (x) from B(x) and
+        Vector#{3} `Assert.eq` query mm select (x) from C(x)
     }
 
     @Test
@@ -155,7 +155,7 @@ mod Test.Exp.Fixpoint.Stratification {
         };
         let mm = solve pr;
         Vector#{"1", "2"} `Assert.eq` query mm select (x) from A(x) and
-            Vector#{"1", "2", "3"} `Assert.eq` query mm select (x) from B(x) and
-            Vector#{"3"} `Assert.eq` query mm select (x) from C(x)
+        Vector#{"1", "2", "3"} `Assert.eq` query mm select (x) from B(x) and
+        Vector#{"3"} `Assert.eq` query mm select (x) from C(x)
     }
 }
