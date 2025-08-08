@@ -10,7 +10,7 @@ type alias Time    = (Int32, Int32)     // e.g. (10, 32) which is 10.32 AM.
 ///
 /// We compute all connections from Aalborg to Copenhagen.
 ///
-/// We also compute the detailed itinerary for one of the trips.
+/// We then compute the detailed itinerary for the earliest connection.
 ///
 def main(): Unit \ IO =
     let src = "Aalborg";
@@ -24,7 +24,7 @@ def main(): Unit \ IO =
         Path(x, z, tx, tz) :- Path(x, y, tx, ty1), Edge(y, z, _, ty2, tz), if (ty1 < ty2).
     };
 
-    // Use the database and Datalog value to compute all connections between `src` and `dst`.
+    // Use the database and Datalog program to compute *all* connections between `src` and `dst`.
     let connections = query db, pr select (src, dst, t1, t2) from Path(src, dst, t1, t2);
 
     if (Vector.isEmpty(connections)) {
@@ -35,7 +35,7 @@ def main(): Unit \ IO =
             let (h, m) = duration(t1, t2);
             println("  ${fmt(t1)} ${x} ~~> ${y} ${fmt(t2)} [${h} hrs, ${m} min]")
         };
-        println("\nThe itinary for the earliest connection is:");
+        println("\nThe itinerary for the earliest connection is:");
         let (_, _, t1, t2) = Vector.get(0, connections);
 
         // Use a provenance query to compute the edges that connect `src` and `dst`.
