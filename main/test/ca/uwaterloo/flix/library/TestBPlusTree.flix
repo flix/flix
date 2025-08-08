@@ -391,6 +391,48 @@ mod TestBPlusTree {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // parForEachWhen                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def parForEachWhen01(): Bool \ IO + NonDet = region rc {
+        Random.runWithIO(() -> {
+            let treeFrom = BPlusTree.empty(rc);
+            let treeTo = BPlusTree.empty(rc);
+            List.range(0, 100000) |> List.forEach(_ -> {
+                let x = Random.randomInt64();
+                let y = Random.randomInt64();
+                BPlusTree.put(x, y, treeFrom)
+            });
+            BPlusTree.parForEachWhen(x -> y -> {
+                BPlusTree.put(x, y, treeTo)
+            }, 1000, treeFrom);
+            List.toVector(BPlusTree.toList(treeFrom)) `Vector.equals` List.toVector(BPlusTree.toList(treeTo))
+        })
+    }
+
+
+    @test
+    def parForEachWhen02(): Bool = region rc {
+        let tree = rangeQueryDefaultTree(rc);
+        let list = MutList.empty(rc);
+        let f = k -> _ -> MutList.push(k, list);
+        BPlusTree.parForEachWhen(f, 1000, tree);
+        let res = Vector#{0, 1, 2, 3, 4, 5};
+        MutList.toVector(list) `Vector.equals` res
+    }
+
+    @test
+    def parForEachWhen03(): Bool = region rc {
+        let tree = rangeQueryMultipleValues(rc);
+        let list = MutList.empty(rc);
+        let f = k -> v -> MutList.push((k, v), list);
+        BPlusTree.parForEachWhen(f, 1000, tree);
+        let res = Vector#{(0, 12), (1, 12), (2, 13), (3, 14)};
+        MutList.toVector(list) `Vector.equals` res
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // put                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
