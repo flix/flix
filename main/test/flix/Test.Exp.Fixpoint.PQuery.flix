@@ -1,6 +1,14 @@
 mod Test.Exp.Fixpoint.PQuery {
 
     @Test
+    def testPQueryUnit(): Bool =
+        let pr = #{
+            A(()).
+        };
+        let pp = pquery pr select A(()) with {A};
+        Vector.map(v -> ematch v { case A(x) => x }, pp) == Vector#{()}
+
+    @Test
     def testPQueryBool(): Bool =
         let pr = #{
             A(true).
