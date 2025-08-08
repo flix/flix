@@ -109,16 +109,15 @@ mod Fixpoint3.Ast.Datalog {
                 } else {
                    unsafely IO run {
                         let builder = StringBuilder.empty(rc);
-                        db |>
-                            Map.forEach(relSym -> innerMap ->
-                                innerMap |> BPlusTree.forEach(tuple -> lat -> {
-                                    let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
-                                    match toDenotation(relSym) {
-                                        case Relational => StringBuilder.append("${relSym}(${tupleString}).${String.lineSeparator()}", builder)
-                                        case Latticenal(_, _, _, _) => StringBuilder.append("${relSym}(${tupleString}; %{lat}).${String.lineSeparator()}", builder)
-                                    }
-                                })
-                            );
+                        foreach ((relSym, innerMap) <- db) {
+                            innerMap |> BPlusTree.forEach(tuple -> lat -> {
+                                let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
+                                match toDenotation(relSym) {
+                                    case Relational => StringBuilder.append("${relSym}(${tupleString}).${String.lineSeparator()}", builder)
+                                    case Latticenal(_, _, _, _) => StringBuilder.append("${relSym}(${tupleString}; %{lat}).${String.lineSeparator()}", builder)
+                                }
+                            })
+                        };
                         StringBuilder.toString(builder)
                     }
                 }

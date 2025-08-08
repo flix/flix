@@ -119,10 +119,10 @@ mod Fixpoint3.Phase.IndexSelection {
             let (indexedStmt, indexPlacement) = region rc2 {
                 let indexState = UniqueInts.empty(rc2);
                 let indexedStmt = indexStmt(newStmt, indexes, indexState);
-                Map.forEach(relSym -> _ -> {
+                foreach ((relSym, _) <- indexes) {
                     UniqueInts.getIndex((relSym, 0), indexState);
                     ()
-                }, indexes);
+                };
                 let finalState = UniqueInts.toMap(indexState);
                 (indexedStmt, finalState)
             };
@@ -191,14 +191,14 @@ mod Fixpoint3.Phase.IndexSelection {
         case RelOp.Search(rowVar, relSym, body) =>
             RelOp.Search(rowVar, relSym, indexOp(body, constructedIndexes, indexState))
         case RelOp.Query(rowVar, relSym, boolExps, _, body) =>
-            let search =
+            let search = (List.empty(), boolExps) ||>
                 Vector.foldLeft(acc -> exp -> match exp {
                     case BoolExp.Eq(RamTerm.RowLoad(_, i, _), _) => i :: acc
                     case BoolExp.Eq(_, RamTerm.RowLoad(_, i, _)) => i :: acc
                     case _ =>
                         // This is only a bug when the only index type available is `BPlusTree`
                         bug!("In Fixpoint.Phase.IndexSelection.indexOp: Found non-equality BoolExp in indexOp!")
-                }, List.empty(), boolExps) |> List.toVector;
+                }) |> List.toVector;
             let index = lookupIndex(relSym, search, constructedIndexes);
             let absoluteIndex = UniqueInts.getIndex((relSym, index), indexState);
             RelOp.Query(rowVar, relSym, boolExps, absoluteIndex, indexOp(body, constructedIndexes, indexState))
@@ -395,16 +395,13 @@ mod Fixpoint3.Phase.IndexSelection {
         def graphFromSearches(searches: List[Search]): (List[Vertex], AdjacencyList) =
             // The vertices are are simply the indices of the searches in the list
             let vertices = List.range(0, List.length(searches));
-            let zipped = searches |> List.map(s -> Vector.toSet(s)) |> List.zip(vertices);
-            let adjList =
-                List.foldMap(match (u, s) -> {
+            let zipped = searches |> List.map(Vector.toSet) |> List.zip(vertices);
+            let adjList = zipped
+                |> List.foldMap(match (u, s) ->
                     List.filter(p -> Set.isProperSubsetOf(s, snd(p)), zipped) |>
                         List.map(p -> (u, fst(p)))
-                }, zipped)
-                |> List.foldLeft(a -> p -> {
-                    let (u, v) = p;
-                    MultiMap.insert(u, v, a)
-                }, MultiMap.empty());
+                )
+                |> List.foldLeft(a -> match (u, v) -> MultiMap.insert(u, v, a), MultiMap.empty());
             (vertices, adjList)
 
         ///

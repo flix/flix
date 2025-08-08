@@ -301,21 +301,22 @@ mod Fixpoint3.Phase.Hoisting {
                 // Just note all `boolExps`. They will be placed as high as possible in the AST by other cases.
                 // If `boolExps` contains no variables, push it all the way to the top, otherwise register it for
                 // all variables occurring in `boolExp`.
-                boolExps |>
-                    Vector.forEach(b -> match b {
+                foreach (b <- boolExps) {
+                    match b {
                         // Don't collect Eq's: they are handled separately to ensure we refer to the earliest evaluated expression.
                         case BoolExp.Eq(_, _) => ()
                         case _ =>
                             let vars = collectBoolVariables(termMap, equalitySets, b);
                             if (Set.size(vars) == 0)
                                 MutList.push(b, independentBool)
-                            else
-                                vars |>
-                                    Set.forEach(v -> {
-                                        let boolList = MutMap.getOrElsePut(v, MutList.empty(rc), idToBool);
-                                        MutList.push(b, boolList)
-                                    })
-                    });
+                            else {
+                                foreach (v <- vars) {
+                                    let boolList = MutMap.getOrElsePut(v, MutList.empty(rc), idToBool);
+                                    MutList.push(b, boolList)
+                                }
+                            }
+                    }
+                };
                 hoistOpRec(body)
         }
 
@@ -341,8 +342,8 @@ mod Fixpoint3.Phase.Hoisting {
     ): (List[BoolExp], List[BoolExp]) \ r = region rc {
         let intraEqualities = MutList.empty(rc);
         let knownEqualities = MutList.empty(rc);
-        Vector.range(0, arityOf(relSym)) |>
-            Vector.forEach(i -> match MutDisjointSets.find((rowVar, i), equalitySets) {
+        foreach (i <- Vector.range(0, arityOf(relSym))) {
+            match MutDisjointSets.find((rowVar, i), equalitySets) {
                 case None => ()
                 case Some(rep) => match getOrCrash(Map.get(rep, termMapCopy)) {
                     // If `rep => rowVar[_]`, then this is the place `rep` was considered bound
@@ -353,7 +354,8 @@ mod Fixpoint3.Phase.Hoisting {
                     case RamTerm.RowLoad(rv, i1, rel) if (rv == rowVar) =>
                         intraEqualities |> MutList.push(BoolExp.Eq(RamTerm.RowLoad(rv, i, rel), RamTerm.RowLoad(rv, i1, rel)))
                     case value => MutList.push(BoolExp.Eq(RamTerm.RowLoad(rowVar, i, relSym), value), knownEqualities)
-            }});
+            }}
+        };
         (MutList.toList(knownEqualities), MutList.toList(intraEqualities))
     }
 
@@ -435,7 +437,7 @@ mod Fixpoint3.Phase.Hoisting {
         match bexp {
             case BoolExp.Not(boolExp) => collectBoolVariables(termMap, equalitySets, boolExp)
             case BoolExp.IsEmpty(_) => Set#{}
-            case BoolExp.NotMemberOf(terms, _) => Vector.foldLeft(y -> x -> Set.union(collectTerm(x), y), Set#{}, terms)
+            case BoolExp.NotMemberOf(terms, _) => Vector.foldMap(collectTerm, terms)
             case BoolExp.NotBot(t1, _, _) => collectTerm(t1)
             case BoolExp.Leq(_, rv, relSym) => getRepRowVar(termMap, equalitySets, rv, arityOfNonLat(relSym))
             case BoolExp.Eq(_, _) => Set#{}
@@ -639,7 +641,7 @@ mod Fixpoint3.Phase.Hoisting {
         case RamStmt.Insert(op) => unifyEqualitiesOp(equalitySets, constEqualities, op)
         case RamStmt.Par(xs) => Vector.forEach(unifyEqualitiesStmt(equalitySets, constEqualities), xs)
         case RamStmt.Until(boolExps, body) =>
-            Vector.forEach(boolExp -> unifyBoolExp(equalitySets, constEqualities, boolExp), boolExps);
+            Vector.forEach(unifyBoolExp(equalitySets, constEqualities), boolExps);
             unifyEqualitiesStmt(equalitySets, constEqualities, body)
         case RamStmt.MergeInto(_, _) => ()
         case RamStmt.Swap(_, _) => ()
