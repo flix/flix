@@ -42,7 +42,7 @@ def main(): Unit \ IO =
         let p = pquery db, pr select Path(src, dst, t1, t2) with {Edge};
         let itinerary = Vector.map(v -> ematch v { case Edge(s, d, train, tx, ty) => (s, d, train, tx, ty) }, p);
 
-        foreach((s, d, t, tx, ty) <- itinerary) {
+        foreach ((s, d, t, tx, ty) <- itinerary) {
             let fmtS = String.padRight(10, ' ', s);
             let fmtT = String.center(16, ' ', t);
             let fmtD = String.padRight(10, ' ', d);
