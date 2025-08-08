@@ -437,7 +437,7 @@ mod Fixpoint3.Phase.Hoisting {
         match bexp {
             case BoolExp.Not(boolExp) => collectBoolVariables(termMap, equalitySets, boolExp)
             case BoolExp.IsEmpty(_) => Set#{}
-            case BoolExp.NotMemberOf(terms, _) => Vector.foldLeft(y -> x -> Set.union(collectTerm(x), y), Set#{}, terms)
+            case BoolExp.NotMemberOf(terms, _) => Vector.foldMap(collectTerm, terms)
             case BoolExp.NotBot(t1, _, _) => collectTerm(t1)
             case BoolExp.Leq(_, rv, relSym) => getRepRowVar(termMap, equalitySets, rv, arityOfNonLat(relSym))
             case BoolExp.Eq(_, _) => Set#{}

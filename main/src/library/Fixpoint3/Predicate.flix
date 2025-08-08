@@ -71,10 +71,7 @@ mod Fixpoint3.Predicate {
     ///
     @Internal
     pub def allFullRelSyms(predInfo: Predicates): List[RelSym] =
-        let (_, set) = predInfo;
-        Set.foldLeft(acc -> relSym ->
-            relSym :: acc
-        , Nil, set)
+        Set.foldLeft(acc -> relSym -> relSym :: acc , Nil, snd(predInfo))
 
     ///
     /// Returns a list of all `RelSym` in `predInfo`.
@@ -237,9 +234,7 @@ mod Fixpoint3.Predicate {
     /// Returns a set of full `RelSym` in `db`.
     ///
     def collectDbPredicates(db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): Set[RelSym] =
-        Map.foldLeftWithKey(set -> relSym -> _ -> {
-            Set.insert(relSym, set)
-        }, Set#{}, db)
+        Map.foldLeftWithKey(set -> relSym -> _ -> Set.insert(relSym, set), Set#{}, db)
 
     ///
     /// Returns a set of full `RelSym` in `constraints`.
@@ -247,11 +242,11 @@ mod Fixpoint3.Predicate {
     def collectPredicates(constraints: Vector[Constraint]): Set[RelSym] =
         Vector.foldLeft(match set -> match Constraint(headAtom, body) -> {
             let setWithHead = Set.insert(headAtomToFullRelSym(headAtom), set);
-            Vector.foldLeft(setBody -> bodyConstraint ->
-                match bodyConstraint {
-                    case BodyAtom(_, _, _, _, _) => Set.insert(bodyAtomToFullRelSym(bodyConstraint), setBody)
-                    case _ => setBody
-                }, setWithHead, body)
+            Vector.foldLeft(setBody -> bodyConstraint -> match bodyConstraint {
+                case BodyAtom(_, _, _, _, _) =>
+                    Set.insert(bodyAtomToFullRelSym(bodyConstraint), setBody)
+                case _ => setBody
+            }, setWithHead, body)
         }, Set#{}, constraints)
 
     ///
