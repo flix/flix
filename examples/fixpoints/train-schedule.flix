@@ -15,7 +15,12 @@ type alias Time    = (Int32, Int32)     // e.g. (10, 32) which is 10.32 AM.
 def main(): Unit \ IO =
     let src = "Aalborg";
     let dst = "Copenhagen";
-    let connections = getConnections(src, dst);
+    let db = database();
+    let pr = program();
+
+    // Compute the connections using db and pr.
+    let connections = query db, pr select (src, dst, t1, t2) from Path(src, dst, t1, t2);
+
     if (Vector.isEmpty(connections)) {
         println("No connections found. Sorry.")
     } else {
@@ -26,29 +31,18 @@ def main(): Unit \ IO =
         };
         println("\nThe itinary for the earliest connection is:");
         let (_, _, t1, t2) = Vector.get(0, connections);
-        foreach((src1, dst1, train, tx, ty) <- getItinerary(src, dst, t1, t2)) {
-            let s = String.padRight(10, ' ', src1);
-            let tr = String.center(16, ' ', "${train}");
-            let d = String.padRight(10, ' ', dst1);
-            println("  ${fmt(tx)} ${s} -- ${tr} --> ${d} ${fmt(ty)}")
+
+        // Compute the itinary for (src -> dst)
+        let p = pquery db, pr select Path(src, dst, t1, t2) with {Edge};
+        let itinerary = Vector.map(v -> ematch v { case Edge(s, d, train, tx, ty) => (s, d, train, tx, ty) }, p);
+
+        foreach((s, d, t, tx, ty) <- itinerary) {
+            let fmtS = String.padRight(10, ' ', s);
+            let fmtT = String.center(16, ' ', t);
+            let fmtD = String.padRight(10, ' ', d);
+            println("  ${fmt(tx)} ${fmtS} -- ${fmtT} --> ${fmtD} ${fmt(ty)}")
         }
     }
-
-///
-/// Returns all connections from the given origin to the given destination.
-///
-def getConnections(origin: Station, dest: Station): Vector[(Station, Station, Time, Time)] =
-    let db = database();
-    let pr = program();
-    query db, pr select (origin, dest, t1, t2) from Path(origin, dest, t1, t2)
-
-
-def getItinerary(origin: Station, dest: Station, t1: Time, t2: Time): Vector[(Station, Station, Train, Time, Time)] = {
-    let db = database();
-    let pr = program();
-    let r = pquery db, pr select Path(origin, dest, t1, t2) with {Edge};
-    r |> Vector.map(v -> ematch v { case Edge(src, dst, train, tx, ty) => (src, dst, train, tx, ty) })
-}
 
 ///
 /// Returns the Datalog program that computes reachability subject to time constraints.
