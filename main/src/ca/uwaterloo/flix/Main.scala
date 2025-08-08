@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.*
 
 import java.io.{File, PrintStream}
 import java.net.BindException
-import java.nio.file.Paths
+import java.nio.file.{Files, Path, Paths}
 
 /**
   * The main entry point for the Flix compiler and runtime.
@@ -40,7 +40,8 @@ object Main {
     */
   def main(argv: Array[String]): Unit = {
 
-    val cwd = Paths.get(".").toAbsolutePath.normalize()
+    val iwd = Paths.get(".").toAbsolutePath.normalize()
+    val cwd = findRootWorkingDirectory(iwd).getOrElse(iwd)
 
     // parse command line options.
     val cmdOpts: CmdOpts = parseCmdOpts(argv).getOrElse {
@@ -598,6 +599,24 @@ object Main {
     }
 
     parser.parse(args, CmdOpts())
+  }
+
+  /**
+    * Finds the working directory that contains the flix.toml file. If no such file is found,
+    * it returns None.
+    *
+    * @param cwd The current working directory from which to start searching.
+    * @return An Option containing the path to the directory with the flix.toml file, or None if not found.
+    */
+  private def findRootWorkingDirectory(cwd: Path): Option[Path] = {
+    val validFlixToml = "flix.toml"
+
+    def getParentDirectories(path: Path): Iterator[Path] =
+      Iterator.iterate(path)(_.getParent).takeWhile(_ != null)
+
+    getParentDirectories(cwd)
+      .map(_.resolve(validFlixToml))
+      .find(Files.exists(_))
   }
 
 }
