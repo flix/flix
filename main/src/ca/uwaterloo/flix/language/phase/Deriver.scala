@@ -264,7 +264,10 @@ object Deriver {
     *     match (x, y) {
     *       case (C0, C0) => Comparison.EqualTo
     *       case (C1(x0), C1(y0)) => Order.compare(x0, y0)
-    *       case (C2(x0, x1), C2(y0, y1)) => Order.compare(x0, y0) `Order.thenCompare` lazy Order.compare(x1, y1)
+    *       case (C2(x0, x1), C2(y0, y1)) => match Order.compare(x0, y0) {
+    *         case Comparison.EqualTo => Order.compare(x1, y1)
+    *         case z                  => z
+    *       }
     *       case _ => Order.compare(indexOf(x), indexOf(y))
     *     }
     *   }
@@ -418,7 +421,7 @@ object Deriver {
     case KindedAst.Case(sym, tpes, _, _) =>
       val equalToSym = PredefinedTraits.lookupCaseSym("Comparison", "EqualTo", root)
       val compareSigSym = PredefinedTraits.lookupSigSym("Order", "compare", root)
-      val thenCompareDefSym = PredefinedTraits.lookupDefSym(List("Order"), "thenCompare", root)
+      val comparisonEquals = PredefinedTraits.lookupCaseSym("Comparison", "EqualTo", root)
 
       // Match on the tuple
       // `case (C2(x0, x1), C2(y0, y1))
@@ -446,22 +449,27 @@ object Deriver {
       }
 
       /**
-        * Joins the two expressions via `Compare.thenCompare`, making the second expression lazy.
+        * Joins the two expressions via nested match rules.
         * (Cannot be inlined due to issues with Scala's type inference.
         */
       def thenCompare(exp1: KindedAst.Expr, exp2: KindedAst.Expr): KindedAst.Expr = {
-        KindedAst.Expr.ApplyDef(
-          DefSymUse(thenCompareDefSym, loc),
+        val matchVarSym = Symbol.freshVarSym("z", BoundBy.Pattern, loc)
+        KindedAst.Expr.Match(exp1,
           List(
-            exp1,
-            KindedAst.Expr.Lazy(exp2, loc)
-          ),
-          List.empty,
-          Type.freshVar(Kind.Star, loc),
-          Type.freshVar(Kind.Star, loc),
-          Type.freshVar(Kind.Eff, loc),
-          loc
-        )
+            KindedAst.MatchRule(
+              KindedAst.Pattern.Tag(
+                CaseSymUse(comparisonEquals, loc), Nil, Type.freshVar(Kind.Star, loc), loc
+              ),
+              None, exp2, loc
+            ),
+            KindedAst.MatchRule(
+              mkVarPattern(matchVarSym, loc),
+              None,
+              mkVarExpr(matchVarSym, loc),
+              loc
+            ),
+        ),
+        loc)
       }
 
       // Put it all together
