@@ -43,7 +43,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 object Lowering {
 
   private object Defs {
-    val version: String = ""
+    val version: String = "3"
     lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.box")
     lazy val Unbox: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.unbox")
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.runSolver")
@@ -1771,9 +1771,9 @@ object Lowering {
     * Returns the types constituting a `Type.Relation`.
     */
   private def termTypesOfRelation(rel: Type, loc: SourceLocation): List[Type] = {
-    def f(rel0: Type, loc0: SourceLocation) = rel0 match {
+    def f(rel0: Type, loc0: SourceLocation): List[Type] = rel0 match {
       case Type.Apply(Type.Cst(TypeConstructor.Relation(_), _), t, _) => t :: Nil
-      case Type.Apply(rest, t, loc1) => t :: termTypesOfRelation(rest, loc1)
+      case Type.Apply(rest, t, loc1) => t :: f(rest, loc1)
       case t => throw InternalCompilerException(s"Expected Type.Apply(_, _, _), but got ${t}", loc0)
     }
     f(rel, loc).reverse

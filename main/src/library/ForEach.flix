@@ -98,4 +98,25 @@ mod ForEach {
     ///
     pub def withMap(f: a -> b, m: t): WithMap[t, a, b] with ForEach[t] = WithMap.WithMap(f, m)
 
+    ///
+    /// A view for `Iterable` instances `s` and `t` that zips `s` and `t` together.
+    ///
+    pub enum WithZip[s, t](s, t)
+
+    instance ForEach[WithZip[s, t]] with Iterable[s], Iterable[t] {
+        type Elm = (Iterable.Elm[s], Iterable.Elm[t])
+        type Aef = Iterable.Aef[s] + Iterable.Aef[t]
+        pub def forEach(f: ((Iterable.Elm[s], Iterable.Elm[t])) -> Unit \ ef, t: WithZip[s, t]): Unit \ ef + Iterable.Aef[s] + Iterable.Aef[t] =
+            let WithZip.WithZip(xs, ys) = t;
+            region rc {
+                (Iterable.iterator(rc, xs) `Iterator.zip` Iterable.iterator(rc, ys)) |> Iterator.forEach(f)
+            }
+
+    }
+
+    ///
+    /// Returns a view that zips `left` and `right` together.
+    ///
+    pub def withZip(left: s, right: t): WithZip[s, t] with Iterable[s], Iterable[t] = WithZip.WithZip(left, right)
+
 }

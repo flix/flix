@@ -47,6 +47,45 @@ trait Writable[t] {
 
 }
 
+mod Writable {
+    import java.lang.System
+
+    ///
+    /// Writes `string` to `writer`.
+    ///
+    pub def writeString(string: String, writer: t): Result[IoError, Unit] \ Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Char =
+        region rc {
+            let buffer = String.toArray(rc, string);
+            forM(
+                charsWritten <- Writable.write(buffer, writer);
+                _ <- if (charsWritten < String.length(string)) {
+                    writeString(string |> String.drop(charsWritten), writer)
+                } else Ok(())
+            ) yield ()
+        }
+
+    ///
+    /// Writes a new line separator to `writer`.
+    ///
+    /// The new line separator is platform dependent, and is determined by the "line.separator" system property.
+    ///
+    pub def writeNewLine(writer: t): Result[IoError, Unit] \ IO + Sys + Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Char =
+        let newLine = System.getProperty("line.separator");
+        writeString(newLine, writer)
+
+    ///
+    /// Writes `line` to `writer` and appends a new line separator.
+    ///
+    /// The new line separator is platform dependent, and is determined by the "line.separator" system property.
+    ///
+    pub def writeLine(line: String, writer: t): Result[IoError, Unit] \ IO + Sys + Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Char =
+        forM(
+            _ <- writeString(line, writer);
+            _ <- writeNewLine(writer)
+        ) yield ()
+
+}
+
 instance Writable[OutputStream] {
 
     type Elm = Int8

@@ -93,13 +93,12 @@ mod Fixpoint3.Provenance {
                         let extractSearchPart = k -> Vector.init(i -> Vector.get(Vector.get(i, search), k), Vector.length(search));
                         let nonSearch = Vector.range(0, arity) |> Vector.filter(v -> not Vector.memberOf(v, search));
                         let extractNonSearchPart = k -> Vector.init(i -> Vector.get(Vector.get(i, nonSearch), k), Vector.length(nonSearch));
-                        fullTree |>
-                            BPlusTree.forEach(k -> match (depth, rule) -> {
-                                let searchPart = extractSearchPart(k);
-                                let nonSearchPart = extractNonSearchPart(k);
-                                let newVal = (nonSearchPart, depth, rule);
-                                BPlusTree.putWith(_ -> old -> newVal :: old, searchPart, newVal :: Nil, tree)
-                            });
+                        foreach ((k, (depth, rule)) <- fullTree) {
+                            let searchPart = extractSearchPart(k);
+                            let nonSearchPart = extractNonSearchPart(k);
+                            let newVal = (nonSearchPart, depth, rule);
+                            BPlusTree.putWith(_ -> old -> newVal :: old, searchPart, newVal :: Nil, tree)
+                        };
                         BPlusTree.put(search, tree, innerMap);
                         BPlusTree.get(vals, tree)
                 }
@@ -164,7 +163,7 @@ mod Fixpoint3.Provenance {
             case ProofTree.IDB(pred, fact, subTrees) :: tail => {
                 if (filter(pred)) MutList.push((pred, fact), res)
                 else ();
-                let furtherWork = (tail, subTrees) ||> Vector.foldRight(cur -> acc -> cur :: acc);
+                let furtherWork = Vector.foldRight(cur -> acc -> cur :: acc, tail, subTrees);
                 recurse(furtherWork)
         }};
         recurse(p :: Nil);
@@ -290,10 +289,9 @@ mod Fixpoint3.Provenance {
         /// Concretely, we update the `getValOfVar` to contain `varNames[i] => matchedFacts[i]`.
         ///
         def registerVars(varNames, matchedFact) =
-            varNames |>
-                Vector.forEachWithIndex(i -> v ->
-                    MutMap.put(v, Vector.get(i, matchedFact), getValOfVar)
-                );
+            foreach ((i, v) <- ForEach.withIndex(varNames)) {
+                MutMap.put(v, Vector.get(i, matchedFact), getValOfVar)
+            };
         ///
         /// Returns true if all head applications are satisfied by the current variable assignment.
         ///
@@ -423,11 +421,12 @@ mod Fixpoint3.Provenance {
                 }
             }};
         // Bind all variables in the head atom to the values of `fact`.
-        headTerms |>
-            Vector.forEachWithIndex(i -> h -> match h {
+        foreach ((i, h) <- ForEach.withIndex(headTerms)) {
+            match h {
                 case HeadTerm.Var(v) => MutMap.put(v, Vector.get(i, fact), getValOfVar)
                 case _ => ()
-            });
+            }
+        };
         loop(0);
         bodyValues |> Array.filterMap(rc, identity) |> Array.toVector
     }

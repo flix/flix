@@ -605,7 +605,12 @@ mod FordFulkerson {
             case (4, 10, 0, 5) => (4, 10, 10, 5)
             case _ => x
         }) |> Foldable.toVector;
-        Assert.eq(g1, increaseFlow(p, incr, g))
+        let g2 = Vector#{(0, 10, 10, 1), (0, 10, 0, 3), (1, 25, 10, 2), (2, 10, 10, 5), (3, 15, 0, 4), (4, 6, 0, 1), (4, 10, 0, 5)};
+        if(p == Path(5 :: 4 :: 3 :: 0 :: Nil)) {
+            Assert.eq(g1, increaseFlow(p, incr, g))
+        } else {
+            Assert.eq(g2, increaseFlow(p, incr, g))
+        }
 
     @Test
     def testIncreaseFlow05(): Bool =
