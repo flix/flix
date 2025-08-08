@@ -62,6 +62,12 @@ pub struct BPlusTree[k, v, r] {
     search:   BPlusTree.Search
 }
 
+instance ForEach[BPlusTree[k, v, r]] {
+    type Elm = (k, v)
+    type Aef = r
+    pub def forEach(f: ((k, v)) -> Unit \ ef, m: BPlusTree[k, v, r]): Unit \ ef + r = BPlusTree.forEach(k -> v -> f((k, v)), m)
+}
+
 mod BPlusTree {
     import java.lang.Runtime
     import java.util.concurrent.atomic.{LongAdder => JLongAdder}
@@ -433,6 +439,25 @@ mod BPlusTree {
             }): _ \ {}) as _ \ r)
         }
     }
+
+    ///
+    /// Applies `f` to all mappings `k => v` in `t`. If `t` contains `parLimit` or more
+    /// elements `f` is applied in parallel.
+    ///
+    /// `f` must not modify `t`.
+    ///
+    /// This method unsafely removes the `r` effect when spawning threads.
+    ///
+    /// Not thread-safe.
+    ///
+    @Internal
+    @Parallel
+    pub def parForEachWhen(f: k -> v -> Unit \ r, parLimit: Int32, t: BPlusTree[k, v, r]): Unit \ r = 
+        if(size(t) < parLimit)
+            forEach(f, t)
+        else
+            parForEach(f, t)
+
 
     ///
     /// Updates the tree `t` with the mapping `k => v`. Replaces any

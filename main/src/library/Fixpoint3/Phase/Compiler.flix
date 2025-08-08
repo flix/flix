@@ -158,7 +158,7 @@ mod Fixpoint3.Phase.Compiler {
 
         // Construct the inserts for step 1.
         let inserts = MutList.empty(rc);
-        foreach ((rule, ruleNum) <- List.zip(stratum, rulesWithId)) {
+        foreach ((rule, ruleNum) <- ForEach.withZip(stratum, rulesWithId)) {
             compileRule(inserts, rule, ruleNum, predicates, counter)
         };
         let optPar =
@@ -178,7 +178,7 @@ mod Fixpoint3.Phase.Compiler {
                 let loopBody = MutList.empty(rc);
 
                 let loopInserts = MutList.empty(rc);
-                foreach ((rule, ruleNum) <- List.zip(stratum, rulesWithId)) {
+                foreach ((rule, ruleNum) <- ForEach.withZip(stratum, rulesWithId)) {
                     compileRuleIncr(loopInserts, rule, ruleNum, idbIds, predicates, counter)
                 };
                 let loopParOpt =
@@ -335,7 +335,7 @@ mod Fixpoint3.Phase.Compiler {
                     case Some(join) =>
                         let relSym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
                         let loopBody = RelOp.If(
-                            Vector.append(Vector#{BoolExp.NotMemberOf(ramTerms, relSym)}, join),
+                            Vector#{BoolExp.NotMemberOf(ramTerms, relSym)} ++ join,
                             projection
                         );
                         let insert = (loopBody, augBody)

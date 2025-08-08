@@ -20,6 +20,7 @@ mod TestForEach {
     use ForEach.withFilter
     use ForEach.withIndex
     use ForEach.withMap
+    use ForEach.withZip
 
     /////////////////////////////////////////////////////////////////////////////
     // withIndex                                                               //
@@ -66,7 +67,7 @@ mod TestForEach {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // withMap.                                                                //
+    // withMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
@@ -85,6 +86,64 @@ mod TestForEach {
             results |> MutList.push(x)
         };
         results |> MutList.toList == 0 :: 2 :: 4 :: 6 :: 8 :: 10 :: Nil
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // withZip                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    pub def withZip01(): Bool = region rc {
+        let results = MutList.empty(rc);
+        foreach(x <- withZip(Nil, Nil)) {
+            results |> MutList.push(x)
+        };
+        results |> MutList.isEmpty
+    }
+
+    @test
+    pub def withZip02(): Bool = region rc {
+        let results = MutList.empty(rc);
+        foreach(x <- withZip(1 :: 2 :: 3 :: 4 :: 5 :: Nil, Nil)) {
+            results |> MutList.push(x)
+        };
+        results |> MutList.isEmpty
+    }
+
+    @test
+    pub def withZip03(): Bool = region rc {
+        let results = MutList.empty(rc);
+        foreach(x <- withZip(Nil, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)) {
+            results |> MutList.push(x)
+        };
+        results |> MutList.isEmpty
+    }
+
+    @test
+    pub def withZip04(): Bool = region rc {
+        let results = MutList.empty(rc);
+        foreach(x <- withZip(1 :: 2 :: 3 :: 4 :: 5 :: Nil, "one" :: "two" :: "three" :: Nil)) {
+            results |> MutList.push(x)
+        };
+        results |> MutList.toList == (1, "one") :: (2, "two") :: (3, "three") :: Nil
+    }
+
+    @test
+    pub def withZip05(): Bool = region rc {
+        let results = MutList.empty(rc);
+        foreach(x <- withZip(1 :: 2 :: 3 :: Nil, "one" :: "two" :: "three" :: "four" :: "five" :: Nil)) {
+            results |> MutList.push(x)
+        };
+        results |> MutList.toList == (1, "one") :: (2, "two") :: (3, "three") :: Nil
+    }
+
+    @test
+    pub def withZip06(): Bool = region rc {
+        let results = MutList.empty(rc);
+        foreach(x <- withZip(1 :: 2 :: 3 :: 4 :: 5 :: Nil, "one" :: "two" :: "three" :: "four" :: "five" :: Nil)) {
+            results |> MutList.push(x)
+        };
+        results |> MutList.toList == (1, "one") :: (2, "two") :: (3, "three") :: (4, "four") :: (5, "five") :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -167,6 +226,16 @@ mod TestForEach {
             results |> MutList.push(x)
         };
         results |> MutList.toList == 0 :: 6 :: 12 :: 18 :: 24 :: Nil
+    }
+
+    @test
+    pub def composite07(): Bool = region rc {
+        let results = MutList.empty(rc);
+        let list = withIndex(withZip('0' :: '1' :: '2' :: '3' :: '4' :: '5' :: Nil, "zero" :: "one" :: "two" :: "three" :: "four" :: "five" :: Nil));
+        foreach((i, (c, s)) <- list) {
+            results |> MutList.push((i, c, s))
+        };
+        results |> MutList.toList == (0, '0', "zero") :: (1, '1', "one") :: (2, '2', "two") :: (3, '3', "three") :: (4, '4', "four") :: (5, '5', "five") :: Nil
     }
 
 }

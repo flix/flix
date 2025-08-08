@@ -93,13 +93,12 @@ mod Fixpoint3.Provenance {
                         let extractSearchPart = k -> Vector.init(i -> Vector.get(Vector.get(i, search), k), Vector.length(search));
                         let nonSearch = Vector.range(0, arity) |> Vector.filter(v -> not Vector.memberOf(v, search));
                         let extractNonSearchPart = k -> Vector.init(i -> Vector.get(Vector.get(i, nonSearch), k), Vector.length(nonSearch));
-                        fullTree |>
-                            BPlusTree.forEach(k -> match (depth, rule) -> {
-                                let searchPart = extractSearchPart(k);
-                                let nonSearchPart = extractNonSearchPart(k);
-                                let newVal = (nonSearchPart, depth, rule);
-                                BPlusTree.putWith(_ -> old -> newVal :: old, searchPart, newVal :: Nil, tree)
-                            });
+                        foreach ((k, (depth, rule)) <- fullTree) {
+                            let searchPart = extractSearchPart(k);
+                            let nonSearchPart = extractNonSearchPart(k);
+                            let newVal = (nonSearchPart, depth, rule);
+                            BPlusTree.putWith(_ -> old -> newVal :: old, searchPart, newVal :: Nil, tree)
+                        };
                         BPlusTree.put(search, tree, innerMap);
                         BPlusTree.get(vals, tree)
                 }
@@ -164,7 +163,7 @@ mod Fixpoint3.Provenance {
             case ProofTree.IDB(pred, fact, subTrees) :: tail => {
                 if (filter(pred)) MutList.push((pred, fact), res)
                 else ();
-                let furtherWork = (tail, subTrees) ||> Vector.foldRight(cur -> acc -> cur :: acc);
+                let furtherWork = Vector.foldRight(cur -> acc -> cur :: acc, tail, subTrees);
                 recurse(furtherWork)
         }};
         recurse(p :: Nil);

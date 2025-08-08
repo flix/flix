@@ -164,7 +164,7 @@ mod Fixpoint3.Phase.Hoisting {
                         if (MutList.size(independent) == 0) {
                             RamStmt.Insert(RelOp.If(isEmptyBools, newOp))
                         } else {
-                            let bools = MutList.toVector(independent) `Vector.append` isEmptyBools;
+                            let bools = MutList.toVector(independent) ++ isEmptyBools;
                             RamStmt.Insert(RelOp.If(bools, newOp))
                         };
                     Some(newStmt)
@@ -437,7 +437,7 @@ mod Fixpoint3.Phase.Hoisting {
         match bexp {
             case BoolExp.Not(boolExp) => boolVariablesOf(termMap, equalitySets, boolExp)
             case BoolExp.IsEmpty(_) => Set#{}
-            case BoolExp.NotMemberOf(terms, _) => Vector.foldLeft(y -> x -> Set.union(termVarsOf(x), y), Set#{}, terms)
+            case BoolExp.NotMemberOf(terms, _) => Vector.foldMap(termVarsOf, terms)
             case BoolExp.NotBot(t1, _, _) => termVarsOf(t1)
             case BoolExp.Leq(_, rv, relSym) => getRepRowVar(termMap, equalitySets, rv, arityOfNonLat(relSym))
             case BoolExp.Eq(_, _) => Set#{}

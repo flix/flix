@@ -124,7 +124,7 @@ mod Fixpoint3.Interpreter {
             if (BPlusTree.isEmpty(tuples))
                 index
             else {
-                BPlusTree.forEach(match nonLat -> lat -> {
+                BPlusTree.forEach(nonLat -> lat -> {
                     match toDenotation(relSym) {
                         case Relational =>
                             BPlusTree.put(nonLat, lat, index)
@@ -151,13 +151,13 @@ mod Fixpoint3.Interpreter {
         let indexes = Array.empty(rc, indexNum);
         foreach ((relSym, searches) <- indexMap) {
             let tuples = Map.getWithDefault(relSym, BPlusTree.empty(rc), facts);
-            searches |> Vector.forEachWithIndex(num -> search -> {
+            foreach ((num, search) <- ForEach.withIndex(searches)) {
                 let pos = match Map.get((relSym, num), posMap) {
                     case Some(v) => v
                     case None => bug!("In Fixpoint.Interpreter.interpretWithInput: ${relSym} has no index!")
                 };
                 storeIndex(mkIndex(rc, relSym, search, tuples), pos, indexes)
-            })
+            }
         };
         interpretWithDatabase(rc, indexes, boxing, withProv, program)
 

@@ -107,7 +107,7 @@ mod Fixpoint3.Boxing {
         let positions = if (not withProv) {
             nonExtendedPositions
         } else {
-            Vector.append(nonExtendedPositions, Vector#{getOrCrash(Map.get(RamId.Id(-1), mapping)), getOrCrash(Map.get(RamId.Id(-1), mapping))})
+            nonExtendedPositions ++ Vector#{getOrCrash(Map.get(RamId.Id(-1), mapping)), getOrCrash(Map.get(RamId.Id(-1), mapping))}
         };
         facts |>
             BPlusTree.parForEach(tuple -> lat -> {
@@ -263,7 +263,7 @@ mod Fixpoint3.Boxing {
         use Fixpoint3.BoxingType.RamIdToPos
         use Fixpoint3.Counter
         use Fixpoint3.Util.getOrCrash
-        use Fixpoint3.Predicate.{PredType, idToFullPredId, fullRelSymToType, relSymFromPredType, relSymsOfProgram}
+        use Fixpoint3.Predicate.{PredType, fullRelSymToType, relSymFromPredType, relSymsOfProgram}
 
         ///
         /// Returns a map from `RamId` to `UnifiedTypePos` constructed from `program`.
@@ -361,7 +361,7 @@ mod Fixpoint3.Boxing {
             case BoolExp.Not(bexp) => unifyRamIdsBool(set, bexp)
             case BoolExp.IsEmpty(_) => ()
             case BoolExp.NotMemberOf(terms, RelSym.Symbol(PredSym.PredSym(_, id), _, _)) =>
-                Vector.forEach(term -> unifyRamIdsTerm(set, term), terms);
+                Vector.forEach(unifyRamIdsTerm(set), terms);
                 foreach ((i, term) <- ForEach.withIndex(terms)) {
                     MutDisjointSets.union(Ram.getTermRamId(term), RamId.RelPos(id, i), set)
                 }

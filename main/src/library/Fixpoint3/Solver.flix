@@ -114,7 +114,7 @@ mod Fixpoint3.Solver {
     @Internal
     pub def union(d1: Datalog, d2: Datalog): Datalog = match (d1, d2) {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
-            Datalog(Vector.append(edb1, edb2), Vector.append(idb1, idb2))
+            Datalog(edb1 ++ edb2, idb1 ++ idb2)
         case (Model(db1), Model(db2)) => unsafely IO run {
             let union = ramSym -> v1 -> v2 -> {
                 let newTree = BPlusTree.empty(Static);
@@ -921,12 +921,12 @@ mod Fixpoint3.Solver {
                 });
             MutList.toVector(pFacts)
         }
-        case Join(d1, d2) => Vector.append(factsOf(f, p, d1), factsOf(f, p, d2))
+        case Join(d1, d2) => factsOf(f, p, d1) ++ factsOf(f, p, d2)
         case Provenance(_, db) => match Map.get(Ram.makeFakeRelSym(p), db) {
             case None => Vector#{}
             case Some(facts) => region rc {
                 let acc = MutList.empty(rc);
-                facts |> BPlusTree.forEach(k -> _ -> MutList.push(f(k), acc));
+                BPlusTree.forEach(k -> _ -> MutList.push(f(k), acc), facts);
                 unchecked_cast((MutList.toArray(rc, acc): Array[t, rc]) as Vector[t])
             }
         }
@@ -966,11 +966,10 @@ mod Fixpoint3.Solver {
             ||> Map.foldLeftWithKey(acc -> relSym -> facts -> {
                 let len = Vector.length(fst(getOrCrash(BPlusTree.minimumKey(facts))));
                 let newTree = BPlusTree.empty(Static);
-                facts |>
-                    BPlusTree.forEach(fact -> _ -> {
-                        let (rawFact, annotation) = Vector.splitAt(len - 2, fact);
-                        newTree |> BPlusTree.put(rawFact, (unbox(Vector.get(0, annotation)), getOrCrash(Int64.tryToInt32(unbox(Vector.get(1, annotation))))))
-                    });
+                foreach ((fact, _) <- facts) {
+                    let (rawFact, annotation) = Vector.splitAt(len - 2, fact);
+                    newTree |> BPlusTree.put(rawFact, (unbox(Vector.get(0, annotation)), getOrCrash(Int64.tryToInt32(unbox(Vector.get(1, annotation))))))
+                };
                 Map.insert(relSym, newTree, acc)
             })
             |> Provenance(rules)
