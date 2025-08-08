@@ -522,7 +522,7 @@ object Resolver {
                 case (tpe, eff, optTconstrs, econstrs) =>
                   // add the inherited type constraint to the list
                   val tconstrs = (tconstr :: optTconstrs).collect { case Some(t) => t }
-                  ResolvedAst.Spec(doc, ann, mod, tparams1, fparams, tpe, eff, tconstrs, econstrs)
+                  ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs)
               }
           }
       }
