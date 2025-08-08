@@ -335,7 +335,7 @@ mod Fixpoint3.Phase.Compiler {
                     case Some(join) =>
                         let relSym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
                         let loopBody = RelOp.If(
-                            Vector.append(Vector#{BoolExp.NotMemberOf(ramTerms, relSym)}, join),
+                            Vector#{BoolExp.NotMemberOf(ramTerms, relSym)} ++ join,
                             projection
                         );
                         let insert = (loopBody, augBody)
