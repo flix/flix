@@ -274,6 +274,30 @@ mod TestBPlusTree {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // foreach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foreach01(): Bool = region rc {
+        let tree = rangeQueryDefaultTree(rc);
+        let list = MutList.empty(rc);
+        let f = kv -> MutList.push(fst(kv), list);
+        foreach (t <- tree) f(t);
+        let res = Vector#{0, 1, 2, 3, 4, 5};
+        MutList.toVector(list) `Vector.equals` res
+    }
+
+    @test
+    def foreach02(): Bool = region rc {
+        let tree = rangeQueryMultipleValues(rc);
+        let list = MutList.empty(rc);
+        let f = kv -> MutList.push(kv, list);
+        foreach(t <- tree) f(t);
+        let res = Vector#{(0, 12), (1, 12), (2, 13), (3, 14)};
+        MutList.toVector(list) `Vector.equals` res
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // getWithDefault                                                          //
     /////////////////////////////////////////////////////////////////////////////
 

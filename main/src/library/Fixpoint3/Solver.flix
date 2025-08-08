@@ -884,14 +884,12 @@ mod Fixpoint3.Solver {
     def factsOfInternal(f: Vector[Boxed] -> t \ ef, p: PredSym, d: Datalog): Vector[t] \ ef + IO = match d {
         case Datalog(_, cs) => region rc {
             let pFacts = MutList.empty(rc);
-            Vector.forEach(c -> match c {
-                case Constraint(HeadAtom(headPred, _, terms), body) =>
-                    if (headPred == p and Vector.isEmpty(body))
-                        let vs = Vector.map(headTermValue, terms);
-                        MutList.push(f(vs), pFacts)
-                    else ()
-                case _ => ()
-            }, cs);
+            foreach (Constraint(HeadAtom(headPred, _, terms), body) <- cs) {
+                if (headPred == p and Vector.isEmpty(body))
+                    let vs = Vector.map(headTermValue, terms);
+                    MutList.push(f(vs), pFacts)
+                else ()
+            };
             MutList.toVector(pFacts)
         }
         case Model(db) => region rc {

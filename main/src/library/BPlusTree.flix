@@ -62,6 +62,12 @@ pub struct BPlusTree[k, v, r] {
     search:   BPlusTree.Search
 }
 
+instance ForEach[BPlusTree[k, v, r]] {
+    type Elm = (k, v)
+    type Aef = r
+    pub def forEach(f: ((k, v)) -> Unit \ ef, m: BPlusTree[k, v, r]): Unit \ ef + r = BPlusTree.forEach(k -> v -> f((k, v)), m)
+}
+
 mod BPlusTree {
     import java.lang.Runtime
     import java.util.concurrent.atomic.{LongAdder => JLongAdder}
@@ -90,7 +96,7 @@ mod BPlusTree {
             let adder = unchecked_cast((new JLongAdder(): _ \ IO) as _ \ r);
             unchecked_cast((adder.add(Int32.toInt64(initialValue)): _ \ IO) as _ \ r);
             AtomicCounter(adder)
-            
+
 
         ///
         /// Increments `counter` by `1`.
@@ -370,7 +376,7 @@ mod BPlusTree {
     ///
     /// Not thread-safe.
     ///
-    pub def forEach(f: k -> v -> Unit \ ef, t: BPlusTree[k, v, r]): Unit \ ef + r with Order[k] =
+    pub def forEach(f: k -> v -> Unit \ ef, t: BPlusTree[k, v, r]): Unit \ ef + r =
         let minLeaf = Node.leftMostChild(t->root);
         Node.traverseRightUnconditional(f, 0, minLeaf)
 
@@ -403,7 +409,7 @@ mod BPlusTree {
         Node.getWithDefault(k, stamp, d, leaf, t)
 
     ///
-    /// Applies `f` to all mappings `k => v` in `t` in parallel. 
+    /// Applies `f` to all mappings `k => v` in `t` in parallel.
     /// `f` must not modify `t`.
     ///
     /// This method unsafely removes the `r` effect when spawning threads.
@@ -412,7 +418,7 @@ mod BPlusTree {
     ///
     @Internal
     @Parallel
-    pub def parForEach(f: k -> v -> Unit \ r, t: BPlusTree[k, v, r]): Unit \ r with Order[k] = region rc {
+    pub def parForEach(f: k -> v -> Unit \ r, t: BPlusTree[k, v, r]): Unit \ r = region rc {
         // `threadNum` is the number of spawned threads.
         let threadNum = if(Node.computeHeight(t->root) >= 2) {
             threads()
@@ -426,7 +432,7 @@ mod BPlusTree {
             unchecked_cast(Vector.range(0, threadNum) |>
             (Vector.forEach(i -> {
                 let _: Unit = spawn unchecked_cast(
-                    // Flix does not allow region effect in spawns. Remove the effect. 
+                    // Flix does not allow region effect in spawns. Remove the effect.
                     (Node.traverseRightUnconditionalInc(f, i, threadNum, minLeaf): _ \ r) as _ \ IO
                 ) @ rc;
                 ()
@@ -510,7 +516,7 @@ mod BPlusTree {
     ///
     /// Not thread-safe.
     ///
-    pub def minimumKey(t: BPlusTree[k, v, r]): Option[(k, v)] \ r with Order[k] =
+    pub def minimumKey(t: BPlusTree[k, v, r]): Option[(k, v)] \ r =
         Node.minimumKey(t->root)
 
     ///
@@ -564,7 +570,7 @@ mod BPlusTree {
     ///
     /// Returns the size of `t`. This operation is `O(1)`.
     ///
-    /// Not atomic. 
+    /// Not atomic.
     ///
     /// Thread-safe.
     ///
@@ -591,7 +597,7 @@ mod BPlusTree {
     ///
     /// Not thread-safe.
     ///
-    pub def toList(t: BPlusTree[k, v, r]): List[(k, v)] \ r with Order[k] = region rc {
+    pub def toList(t: BPlusTree[k, v, r]): List[(k, v)] \ r = region rc {
         let list = MutList.empty(rc);
         forEach(k -> v -> MutList.push((k, v), list), t);
         MutList.toList(list)
@@ -856,12 +862,12 @@ mod BPlusTree {
         /// Not thread-safe.
         ///
         @Internal
-        pub def computeHeight(node: Node[k, v, r]): Int32 \ r with Order[k] =
+        pub def computeHeight(node: Node[k, v, r]): Int32 \ r =
             // Every leaf is at the same height, so just use the left most path.
             def loop(count, n) = {
                 match n->isLeaf {
                     case true => count
-                    case false => 
+                    case false =>
                         if(n->size == 0) {
                             count
                         } else {
@@ -1077,7 +1083,7 @@ mod BPlusTree {
         /// Not thread-safe.
         ///
         @Internal
-        pub def minimumKey(t: Node[k, v, r]): Option[(k, v)] \ r with Order[k] =
+        pub def minimumKey(t: Node[k, v, r]): Option[(k, v)] \ r =
             let leftMost = leftMostChild(t);
             if(size(leftMost) == 0) {
                 None
@@ -1246,7 +1252,7 @@ mod BPlusTree {
         /// Returns the size of `node`.
         ///
         @Internal
-        pub def size(node: Node[k, v, r]): Int32 \ r with Order[k] = node->size
+        pub def size(node: Node[k, v, r]): Int32 \ r = node->size
 
         ///
         /// Split `leftLeaf` into two leaves and push the middle key into the parent,
@@ -1332,7 +1338,7 @@ mod BPlusTree {
         /// Moves elements of `leftLeaf->keys` and `leftLeaf->values` from `mid` (inclusive) to `arity` (exclusive)
         /// to the returned arrays, respectively.
         ///
-        def splitToRightLeaf(rc: Region[r], mid: Int32, arity: Int32, leftLeaf: Node[k, v, r]): (Array[k, r], Array[v, r]) \ r with Order[k] = {
+        def splitToRightLeaf(rc: Region[r], mid: Int32, arity: Int32, leftLeaf: Node[k, v, r]): (Array[k, r], Array[v, r]) \ r = {
             let rightKeys = Array.empty(rc, arity);
             let rightValues = Array.empty(rc, arity);
             Array.copyInto(srcPos = mid, dstPos = 0, len = arity - mid, src = leftLeaf->keys, rightKeys);
@@ -1521,7 +1527,7 @@ mod BPlusTree {
             f: k -> v -> Unit \ ef,
             index: Int32,
             node: Node[k, v, r]
-        ): Unit \ ef + r with Order[k] =
+        ): Unit \ ef + r =
             if(index < node->size) {
                 let k = Array.get(index, node->keys);
                 f(k, Array.get(index, node->values));
@@ -1541,7 +1547,7 @@ mod BPlusTree {
             index: Int32,
             stepSize: Int32,
             node: Node[k, v, r]
-        ): Unit \ ef + r with Order[k] =
+        ): Unit \ ef + r =
             if(index < node->size) {
                 let k = Array.get(index, node->keys);
                 f(k, Array.get(index, node->values));
