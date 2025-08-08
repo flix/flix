@@ -78,6 +78,9 @@ def database(): #{ Edge(Station, Station, Train, Time, Time) | r } = #{
 ///
 /// Returns the duration between the two given times `t1` and `t2`.
 ///
+/// For example, the duration between `(10,45)` and `(11,50)` is `(1, 5)`.
+/// For example, the duration between `(10,45)` and `(11,30)` is `(0, 45)`.
+///
 def duration(t1: Time, t2: Time): Time = {
     let (h1, m1) = t1;
     let (h2, m2) = t2;
