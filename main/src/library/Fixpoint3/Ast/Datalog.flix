@@ -110,13 +110,13 @@ mod Fixpoint3.Ast.Datalog {
                    unsafely IO run {
                         let builder = StringBuilder.empty(rc);
                         foreach ((relSym, innerMap) <- db) {
-                            innerMap |> BPlusTree.forEach(tuple -> lat -> {
+                            foreach ((tuple, lat) <- innerMap) {
                                 let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
                                 match toDenotation(relSym) {
                                     case Relational => StringBuilder.append("${relSym}(${tupleString}).${String.lineSeparator()}", builder)
                                     case Latticenal(_, _, _, _) => StringBuilder.append("${relSym}(${tupleString}; %{lat}).${String.lineSeparator()}", builder)
                                 }
-                            })
+                            }
                         };
                         StringBuilder.toString(builder)
                     }
@@ -131,10 +131,9 @@ mod Fixpoint3.Ast.Datalog {
                     let indent = String.repeat(4, " ");
                     Map.joinWith(predSym -> facts -> {
                         let builder = StringBuilder.empty(rc);
-                        facts |>
-                            BPlusTree.forEach(fact -> annotation -> {
-                                StringBuilder.append("${indent}${fact} @ ${annotation},{String.lineSeparator()}${indent}", builder)
-                            });
+                        foreach ((fact, annotation) <- facts) {
+                            StringBuilder.append("${indent}${fact} @ ${annotation},{String.lineSeparator()}${indent}", builder)
+                        };
                         let textOverflow = String.length("$,{String.lineSeparator()}${indent}");
                         let rawFactString = StringBuilder.toString(builder);
                         let factsString = String.sliceLeft(end = String.length(rawFactString)- textOverflow, rawFactString);
