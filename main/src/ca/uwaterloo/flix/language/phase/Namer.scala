@@ -1318,8 +1318,11 @@ object Namer {
 
   /**
     * Returns the free variables in the given type `tpe0`.
+    *
+    * Does not include wildcard variables.
     */
   private def freeTypeVars(tpe0: DesugaredAst.Type): List[Name.Ident] = tpe0 match {
+    case DesugaredAst.Type.Var(ident, _) if ident.isWild => Nil
     case DesugaredAst.Type.Var(ident, _) => ident :: Nil
     case DesugaredAst.Type.Ambiguous(_, _) => Nil
     case DesugaredAst.Type.Unit(_) => Nil
@@ -1449,7 +1452,7 @@ object Namer {
   /**
     * Returns the implicit type parameters constructed from the given formal parameters and type.
     *
-    * Implicit type parameters may include duplicates. These are handled by the Resolver.
+    * Does not include wildcard parameters. These are handled by the Resolver.
     */
   private def visitImplicitTypeParamsFromFormalParams(fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     // Compute the type variables that occur in the formal parameters.
