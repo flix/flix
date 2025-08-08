@@ -418,7 +418,8 @@ object Deriver {
     case KindedAst.Case(sym, tpes, _, _) =>
       val equalToSym = PredefinedTraits.lookupCaseSym("Comparison", "EqualTo", root)
       val compareSigSym = PredefinedTraits.lookupSigSym("Order", "compare", root)
-      val thenCompareDefSym = PredefinedTraits.lookupDefSym(List("Order"), "thenCompare", root)
+//      val thenCompareDefSym = PredefinedTraits.lookupDefSym(List("Order"), "thenCompare", root)
+      val comparisonEquals = PredefinedTraits.lookupCaseSym("Comparison", "EqualTo", root)
 
       // Match on the tuple
       // `case (C2(x0, x1), C2(y0, y1))
@@ -450,18 +451,23 @@ object Deriver {
         * (Cannot be inlined due to issues with Scala's type inference.
         */
       def thenCompare(exp1: KindedAst.Expr, exp2: KindedAst.Expr): KindedAst.Expr = {
-        KindedAst.Expr.ApplyDef(
-          DefSymUse(thenCompareDefSym, loc),
+        val matchVarSym = Symbol.freshVarSym("z", BoundBy.Pattern, loc)
+        KindedAst.Expr.Match(exp1,
           List(
-            exp1,
-            KindedAst.Expr.Lazy(exp2, loc)
-          ),
-          List.empty,
-          Type.freshVar(Kind.Star, loc),
-          Type.freshVar(Kind.Star, loc),
-          Type.freshVar(Kind.Eff, loc),
-          loc
-        )
+            KindedAst.MatchRule(
+              KindedAst.Pattern.Tag(
+                // Don't know what the type should be.
+                CaseSymUse(comparisonEquals, loc), Nil, Type.freshVar(Kind.Star, loc), loc
+              ), None, exp2, loc
+            ),
+            KindedAst.MatchRule(
+              mkVarPattern(matchVarSym, loc),
+              None,
+              mkVarExpr(matchVarSym, loc),
+              loc
+            ),
+        ),
+        loc)
       }
 
       // Put it all together
