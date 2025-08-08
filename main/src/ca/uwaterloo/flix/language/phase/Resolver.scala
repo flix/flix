@@ -2025,6 +2025,8 @@ object Resolver {
 
   /**
     * Performs name resolution on the given formal parameter `fparam0` in the given namespace `ns0`.
+    *
+    * Wildness may be set to `RecordWild` in nonlocal definitions and signatures to track the symbols of wildcard types.
     */
   private def resolveFormalParam(fparam0: NamedAst.FormalParam, wildness: Wildness, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[ResolvedAst.FormalParam, ResolutionError] = {
     val tVal = traverseOpt(fparam0.tpe)(resolveType(_, Some(Kind.Star), wildness, scp0, taenv, ns0, root))
@@ -2956,6 +2958,8 @@ object Resolver {
           // We use Top scope because these lookups only occur at top level
           Result.Ok(LowerType.Var(Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), ident.loc)))
         case Wildness.RecordWild(syms) =>
+          // ALERT!
+          // Here we mutate the RecordWild list because we are visiting a wildcard type!
           val sym = Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), ident.loc)
           syms.append((ident -> sym))
           Result.Ok(LowerType.Var(sym))
@@ -3678,6 +3682,8 @@ object Resolver {
       * Indicates that wildcard type variables should be recorded.
       *
       * This is used to track variables that must be added to a type signature.
+      *
+      * The field `syms` is mutable and is appended to each time a wildcard type variable is visited.
       */
     case class RecordWild(syms: ArrayBuffer[(Name.Ident, Symbol.UnkindedTypeVarSym)]) extends Wildness
 
