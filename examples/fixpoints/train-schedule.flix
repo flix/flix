@@ -20,34 +20,37 @@ def main(): Unit \ IO =
         println("No connections found. Sorry.")
     } else {
         println("The available connections are:");
-        foreach ((x, y, t) <- connections) {
-            println("  ${x} ~~> ${y} ${fmt(t)}")
+        foreach ((x, y, t1, t2) <- connections) {
+            let (h, m) = duration(t1, t2);
+            println("  ${fmt(t1)} ${x} ~~> ${y} ${fmt(t2)} [${h} hrs, ${m} min]")
         };
-        println("\nThe itinary for the earliest connection is:\n");
-        let (_, _, t) = Vector.get(0, connections);
-        tripOf(src, dst, t)
+        println("\nThe itinary for the earliest connection is:");
+        let (_, _, t1, t2) = Vector.get(0, connections);
+        tripOf(src, dst, t1, t2)
     }
 
 ///
 /// Returns all connections from the given origin to the given destination.
 ///
-def getConnections(origin: Station, dest: Station): Vector[(Station, Station, Time)] =
+def getConnections(origin: Station, dest: Station): Vector[(Station, Station, Time, Time)] =
     let db = database();
     let pr = program();
-    query db, pr select (origin, dest, t) from Path(origin, dest, t)
+    query db, pr select (origin, dest, t1, t2) from Path(origin, dest, t1, t2)
 
 
-def tripOf(origin: Station, dest: Station, t: Time): Unit \ IO = {
+def tripOf(origin: Station, dest: Station, t1: Time, t2: Time): Unit \ IO = {
     let db = database();
     let pr = program();
-    let r = pquery db, pr select Path(origin, dest, t) with {Edge};
-    Vector.forEach(v -> ematch v {
-        case Edge(src, dst, train, t1, t2) =>
-            let s = String.padRight(10, ' ', src);
-            let tr = String.center(16, ' ', "${train}");
-            let d = String.padRight(10, ' ', dst);
-            println("  ${fmt(t1)} ${s} -- ${tr} --> ${d} ${fmt(t2)}")
-    }, r)
+    let r = pquery db, pr select Path(origin, dest, t1, t2) with {Edge};
+    foreach(v <- r) {
+        ematch v {
+            case Edge(src, dst, train, tx, ty) =>
+                let s = String.padRight(10, ' ', src);
+                let tr = String.center(16, ' ', "${train}");
+                let d = String.padRight(10, ' ', dst);
+                println("  ${fmt(tx)} ${s} -- ${tr} --> ${d} ${fmt(ty)}")
+        }
+    }
 }
 
 ///
@@ -56,9 +59,9 @@ def tripOf(origin: Station, dest: Station, t: Time): Unit \ IO = {
 /// The Datalog program determines all pairs `(x, y)` where `y` is reachable from `x`
 /// by one or more edges such that departure times are respected.
 ///
-def program(): #{ Edge(Station, Station, Train, Time, Time), Path(Station, Station, Time) | r } = #{
-    Path(x, y, t)  :- Edge(x, y, _, _, t).
-    Path(x, z, t2) :- Path(x, y, t0), Edge(y, z, _, t1, t2), if (t0 < t1).
+def program(): #{ Edge(Station, Station, Train, Time, Time), Path(Station, Station, Time, Time) | r } = #{
+    Path(x, y, tx, ty) :- Edge(x, y, _, tx, ty).
+    Path(x, z, tx, tz) :- Path(x, y, tx, ty1), Edge(y, z, _, ty2, tz), if (ty1 < ty2).
 }
 
 ///
@@ -89,12 +92,21 @@ def database(): #{ Edge(Station, Station, Train, Time, Time) | r } = #{
 }
 
 ///
+/// Returns the duration between the two given times `t1` and `t2`.
+///
+def duration(t1: Time, t2: Time): Time = {
+    let (h1, m1) = t1;
+    let (h2, m2) = t2;
+    if (m2 > m1) (h2 - h1, m2 - m1) else ((h2 - h1) - 1, (60 + m2) - m1)
+}
+
+///
 /// Returns a human-readable representation of the given time `t`.
 ///
 /// For example, `(10, 52)` is formatted as `(10.52)`.
 /// For example, `(9, 7)`   is formatted as `(09.07)`.
 ///
 def fmt(t: Time): String = {
-    def f(x) = if (x < 9) "0${x}" else "${x}";
+    def f(x) = if (x <= 9) "0${x}" else "${x}";
     "(${f(fst(t))}.${f(snd(t))})"
 }
