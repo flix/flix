@@ -92,12 +92,11 @@ mod Fixpoint3.Phase.IndexSelection {
             // Expand the searches to full arity
             let indexesFull = newIndexes |>
                     Map.mapWithKey(relSym -> searches ->
-                        Vector.map(search ->
-                            Vector.range(0, arityOfNonLat(relSym))
-                                |> Vector.filter(x -> not Vector.memberOf(x, search))
-                                |> Vector.append(search),
-                            searches
-                        )
+                        Vector.map(search -> {
+                            let unusedIndexes = Vector.range(0, arityOfNonLat(relSym)) |>
+                                Vector.filter(x -> not Vector.memberOf(x, search));
+                            search ++ unusedIndexes
+                        }, searches)
                     );
             // Account for relations that have no body atoms with bound variables
             let indexesMissing =

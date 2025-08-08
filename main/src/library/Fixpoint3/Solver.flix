@@ -114,7 +114,7 @@ mod Fixpoint3.Solver {
     @Internal
     pub def union(d1: Datalog, d2: Datalog): Datalog = match (d1, d2) {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
-            Datalog(Vector.append(edb1, edb2), Vector.append(idb1, idb2))
+            Datalog(edb1 ++ edb2, idb1 ++ idb2)
         case (Model(db1), Model(db2)) => unsafely IO run {
             let union = ramSym -> v1 -> v2 -> {
                 let newTree = BPlusTree.empty(Static);
@@ -921,7 +921,7 @@ mod Fixpoint3.Solver {
                 });
             MutList.toVector(pFacts)
         }
-        case Join(d1, d2) => Vector.append(factsOf(f, p, d1), factsOf(f, p, d2))
+        case Join(d1, d2) => factsOf(f, p, d1) ++ factsOf(f, p, d2)
         case Provenance(_, db) => match Map.get(Ram.makeFakeRelSym(p), db) {
             case None => Vector#{}
             case Some(facts) => region rc {
