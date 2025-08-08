@@ -26,7 +26,12 @@ def main(): Unit \ IO =
         };
         println("\nThe itinary for the earliest connection is:");
         let (_, _, t1, t2) = Vector.get(0, connections);
-        tripOf(src, dst, t1, t2)
+        foreach((src1, dst1, train, tx, ty) <- getItinerary(src, dst, t1, t2)) {
+            let s = String.padRight(10, ' ', src1);
+            let tr = String.center(16, ' ', "${train}");
+            let d = String.padRight(10, ' ', dst1);
+            println("  ${fmt(tx)} ${s} -- ${tr} --> ${d} ${fmt(ty)}")
+        }
     }
 
 ///
@@ -38,19 +43,11 @@ def getConnections(origin: Station, dest: Station): Vector[(Station, Station, Ti
     query db, pr select (origin, dest, t1, t2) from Path(origin, dest, t1, t2)
 
 
-def tripOf(origin: Station, dest: Station, t1: Time, t2: Time): Unit \ IO = {
+def getItinerary(origin: Station, dest: Station, t1: Time, t2: Time): Vector[(Station, Station, Train, Time, Time)] = {
     let db = database();
     let pr = program();
     let r = pquery db, pr select Path(origin, dest, t1, t2) with {Edge};
-    foreach(v <- r) {
-        ematch v {
-            case Edge(src, dst, train, tx, ty) =>
-                let s = String.padRight(10, ' ', src);
-                let tr = String.center(16, ' ', "${train}");
-                let d = String.padRight(10, ' ', dst);
-                println("  ${fmt(tx)} ${s} -- ${tr} --> ${d} ${fmt(ty)}")
-        }
-    }
+    r |> Vector.map(v -> ematch v { case Edge(src, dst, train, tx, ty) => (src, dst, train, tx, ty) })
 }
 
 ///
