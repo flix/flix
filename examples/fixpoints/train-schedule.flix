@@ -1,30 +1,37 @@
 ///
 /// We introduce a collection of type aliases to model the train domain.
 ///
+/// In the real-world we would use newtype wrappers for increased type safety.
+///
 type alias Station = String             // e.g. Aarhus
 type alias Train   = String             // e.g. InterCity-432.
 type alias Time    = (Int32, Int32)     // e.g. (10, 32) which is 10.32 AM.
 
+///
+/// We compute all connections from Aalborg to Copenhagen.
+///
+/// We also compute the detailed itinerary for one of the trips.
+///
 def main(): Unit \ IO =
     let src = "Aalborg";
     let dst = "Copenhagen";
-    let schedules = findSchedules(src, dst);
-    if (Vector.isEmpty(schedules)) {
+    let connections = getConnections(src, dst);
+    if (Vector.isEmpty(connections)) {
         println("No connections found. Sorry.")
     } else {
-        println("Available connections:");
-        foreach ((x, y, t) <- schedules) {
-            println("  ${x} to ${y} arrival at ${t}")
+        println("The available connections are:");
+        foreach ((x, y, t) <- connections) {
+            println("  ${x} ~~> ${y} ${fmt(t)}")
         };
-        println("The trip for the earliest arrival is:");
-        let (_, _, t) = Vector.get(0, schedules);
+        println("\nThe itinary for the earliest connection is:\n");
+        let (_, _, t) = Vector.get(0, connections);
         tripOf(src, dst, t)
     }
 
 ///
-/// Returns all schedules from the given origin to the given destination.
+/// Returns all connections from the given origin to the given destination.
 ///
-def findSchedules(origin: Station, dest: Station): Vector[(Station, Station, Time)] =
+def getConnections(origin: Station, dest: Station): Vector[(Station, Station, Time)] =
     let db = database();
     let pr = program();
     query db, pr select (origin, dest, t) from Path(origin, dest, t)
@@ -44,7 +51,10 @@ def tripOf(origin: Station, dest: Station, t: Time): Unit \ IO = {
 }
 
 ///
-/// Returns a Datalog program that computes reachability subject to time constraints.
+/// Returns the Datalog program that computes reachability subject to time constraints.
+///
+/// The Datalog program determines all pairs `(x, y)` where `y` is reachable from `x`
+/// by one or more edges such that departure times are respected.
 ///
 def program(): #{ Edge(Station, Station, Train, Time, Time), Path(Station, Station, Time) | r } = #{
     Path(x, y, t)  :- Edge(x, y, _, _, t).
@@ -52,28 +62,38 @@ def program(): #{ Edge(Station, Station, Train, Time, Time), Path(Station, Stati
 }
 
 ///
-/// Returns the database of scheduled trains.
+/// Returns the database of scheduled train departures and arrivals.
+///
+/// Each trip is represented as an edge:
+///
+///     Edge(FromStation, ToStation, Train, DepartureTime, ArrivalTime)
 ///
 def database(): #{ Edge(Station, Station, Train, Time, Time) | r } = #{
     // Aalborg --> Aarhus
-    Edge("Aalborg", "Aarhus", "InterCity 4332", (09, 09), (10, 40)).
-    Edge("Aalborg", "Aarhus", "InterCityLyn 4034", (09, 59), (11, 08)).
-    Edge("Aalborg", "Aarhus", "InterCity 4336", (10, 07), (11, 38)).
+    Edge("Aalborg", "Aarhus", "InterCity 4332",     (09, 09), (10, 40)).
+    Edge("Aalborg", "Aarhus", "InterCityLyn 4034",  (09, 59), (11, 08)).
+    Edge("Aalborg", "Aarhus", "InterCity 4336",     (10, 07), (11, 38)).
 
     // Aarhus -> Kolding
-    Edge("Aarhus", "Kolding", "IC-432",  (10, 45), (12, 04)).
-    Edge("Aarhus", "Kolding", "IC-436",  (11, 45), (13, 04)).
+    Edge("Aarhus", "Kolding", "InterCity 432",      (10, 45), (12, 04)).
+    Edge("Aarhus", "Kolding", "InterCity 436",      (11, 45), (13, 04)).
 
     // Kolding -> Odense
-    Edge("Kolding", "Odense", "IL-934",  (12, 05), (12, 54)).
-    Edge("Kolding", "Odense", "IC-838",  (13, 13), (13, 52)).
-    Edge("Kolding", "Odense", "EuroCity-396", (13, 46), (14, 23)).
+    Edge("Kolding", "Odense", "InterCityLyn 934",   (12, 05), (12, 54)).
+    Edge("Kolding", "Odense", "InterCity 838",      (13, 13), (13, 52)).
+    Edge("Kolding", "Odense", "EuroCity-396",       (13, 46), (14, 23)).
 
     // Odense -> Copenhagen
-    Edge("Odense", "Copenhagen", "IL-38",  (13, 57), (15, 06)).
-    Edge("Odense", "Copenhagen", "IL-42",  (14, 57), (16, 06)).
+    Edge("Odense", "Copenhagen", "InterCityLyn 38", (13, 57), (15, 06)).
+    Edge("Odense", "Copenhagen", "InterCityLyn 42", (14, 57), (16, 06)).
 }
 
+///
+/// Returns a human-readable representation of the given time `t`.
+///
+/// For example, `(10, 52)` is formatted as `(10.52)`.
+/// For example, `(9, 7)`   is formatted as `(09.07)`.
+///
 def fmt(t: Time): String = {
     def f(x) = if (x < 9) "0${x}" else "${x}";
     "(${f(fst(t))}.${f(snd(t))})"
