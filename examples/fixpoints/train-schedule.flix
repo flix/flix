@@ -16,9 +16,15 @@ def main(): Unit \ IO =
     let src = "Aalborg";
     let dst = "Copenhagen";
     let db = database();
-    let pr = program();
 
-    // Compute the connections using db and pr.
+    // A Datalog value that computes reachability subject to time constraints.
+    let pr = #{
+        // An edge is of the form (FromStation, ToStation, Train, DepartureTime, ArrivalTime).
+        Path(x, y, tx, ty) :- Edge(x, y, _, tx, ty).
+        Path(x, z, tx, tz) :- Path(x, y, tx, ty1), Edge(y, z, _, ty2, tz), if (ty1 < ty2).
+    };
+
+    // Use the database and Datalog value to compute all connections between `src` and `dst`.
     let connections = query db, pr select (src, dst, t1, t2) from Path(src, dst, t1, t2);
 
     if (Vector.isEmpty(connections)) {
@@ -32,7 +38,7 @@ def main(): Unit \ IO =
         println("\nThe itinary for the earliest connection is:");
         let (_, _, t1, t2) = Vector.get(0, connections);
 
-        // Compute the itinary for (src -> dst)
+        // Use a provenance query to compute the edges that connect `src` and `dst`.
         let p = pquery db, pr select Path(src, dst, t1, t2) with {Edge};
         let itinerary = Vector.map(v -> ematch v { case Edge(s, d, train, tx, ty) => (s, d, train, tx, ty) }, p);
 
@@ -45,22 +51,9 @@ def main(): Unit \ IO =
     }
 
 ///
-/// Returns the Datalog program that computes reachability subject to time constraints.
-///
-/// The Datalog program determines all pairs `(x, y)` where `y` is reachable from `x`
-/// by one or more edges such that departure times are respected.
-///
-def program(): #{ Edge(Station, Station, Train, Time, Time), Path(Station, Station, Time, Time) | r } = #{
-    Path(x, y, tx, ty) :- Edge(x, y, _, tx, ty).
-    Path(x, z, tx, tz) :- Path(x, y, tx, ty1), Edge(y, z, _, ty2, tz), if (ty1 < ty2).
-}
-
-///
 /// Returns the database of scheduled train departures and arrivals.
 ///
-/// Each trip is represented as an edge:
-///
-///     Edge(FromStation, ToStation, Train, DepartureTime, ArrivalTime)
+/// An edge is of the form (FromStation, ToStation, Train, DepartureTime, ArrivalTime).
 ///
 def database(): #{ Edge(Station, Station, Train, Time, Time) | r } = #{
     // Aalborg --> Aarhus
