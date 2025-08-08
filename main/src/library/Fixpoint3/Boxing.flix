@@ -361,7 +361,7 @@ mod Fixpoint3.Boxing {
             case BoolExp.Not(bexp) => unifyRamIdsBool(set, bexp)
             case BoolExp.IsEmpty(_) => ()
             case BoolExp.NotMemberOf(terms, RelSym.Symbol(PredSym.PredSym(_, id), _, _)) =>
-                Vector.forEach(term -> unifyRamIdsTerm(set, term), terms);
+                Vector.forEach(unifyRamIdsTerm(set), terms);
                 foreach ((i, term) <- ForEach.withIndex(terms)) {
                     MutDisjointSets.union(Ram.getTermRamId(term), RamId.RelPos(id, i), set)
                 }

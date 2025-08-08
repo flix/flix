@@ -158,7 +158,7 @@ mod Fixpoint3.Phase.Compiler {
 
         // Construct the inserts for step 1.
         let inserts = MutList.empty(rc);
-        foreach ((rule, ruleNum) <- List.zip(stratum, rulesWithId)) {
+        foreach ((rule, ruleNum) <- ForEach.withZip(stratum, rulesWithId)) {
             compileRule(inserts, rule, ruleNum, predicates, counter)
         };
         let optPar =
@@ -178,7 +178,7 @@ mod Fixpoint3.Phase.Compiler {
                 let loopBody = MutList.empty(rc);
 
                 let loopInserts = MutList.empty(rc);
-                foreach ((rule, ruleNum) <- List.zip(stratum, rulesWithId)) {
+                foreach ((rule, ruleNum) <- ForEach.withZip(stratum, rulesWithId)) {
                     compileRuleIncr(loopInserts, rule, ruleNum, idbIds, predicates, counter)
                 };
                 let loopParOpt =
