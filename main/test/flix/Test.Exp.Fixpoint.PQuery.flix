@@ -257,4 +257,83 @@ mod Test.Exp.Fixpoint.PQuery {
         let pp = pquery db, pr select Cycle(2) with {Edge};
         Vector.map(v -> ematch v { case Edge(x, y) => (x, y) }, pp) `Assert.eq` Vector#{(2, 3), (3, 4), (4, 1), (1, 2)}
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Provenance for Alternating Paths
+    ///////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testPQueryWithAlternatingPath01(): Bool =
+        let db = #{
+            A(1).
+            B(1).
+        };
+        let pr = #{
+            R(x) :- A(x), B(x).
+        };
+        let pp = pquery db, pr select R(1) with {A, B};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+            case B(x) => "B(${x})"
+        }, pp) `Assert.eq` Vector#{"A(1)", "B(1)"}
+
+    @Test
+    def testPQueryWithAlternatingPath02(): Bool =
+        let db = #{
+            A(1).
+            B(1).
+        };
+        let pr = #{
+            R(x) :- A(x), B(x), A(x), B(x).
+        };
+        let pp = pquery db, pr select R(1) with {A, B};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+            case B(x) => "B(${x})"
+        }, pp) `Assert.eq` Vector#{"A(1)", "B(1)", "A(1)", "B(1)"}
+
+    @Test
+    def testPQueryWithAlternatingPath03(): Bool =
+        let db = #{
+            A(1).
+            B(1).
+        };
+        let pr = #{
+            R(x) :- A(x), B(x), A(x), B(x), A(x), B(x).
+        };
+        let pp = pquery db, pr select R(1) with {A, B};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+            case B(x) => "B(${x})"
+        }, pp) `Assert.eq` Vector#{"A(1)", "B(1)", "A(1)", "B(1)", "A(1)", "B(1)"}
+
+    @Test
+    def testPQueryWithAlternatingPath04(): Bool =
+        let db = #{
+            A(1).
+            B(1).
+        };
+        let pr = #{
+            R(x) :- A(x), B(x), A(x), B(x), A(x), B(x), A(x), B(x).
+        };
+        let pp = pquery db, pr select R(1) with {A, B};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+            case B(x) => "B(${x})"
+        }, pp) `Assert.eq` Vector#{"A(1)", "B(1)", "A(1)", "B(1)", "A(1)", "B(1)", "A(1)", "B(1)"}
+
+    @Test
+    def testPQueryWithAlternatingPath05(): Bool =
+        let db = #{
+            A(1).
+            B(1).
+        };
+        let pr = #{
+            R(x) :- A(x), B(x), A(x), B(x), A(x), B(x), A(x), B(x), A(x), B(x).
+        };
+        let pp = pquery db, pr select R(1) with {A, B};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+            case B(x) => "B(${x})"
+        }, pp) `Assert.eq` Vector#{"A(1)", "B(1)", "A(1)", "B(1)", "A(1)", "B(1)", "A(1)", "B(1)", "A(1)", "B(1)"}
+
 }
