@@ -341,7 +341,7 @@ mod Test.Exp.Fixpoint.PQuery {
     ///////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testPQueryWithRandomSequence01(): Bool =
+    def testPQueryWithSequence01(): Bool =
         let db = #{
             A(1). A(2). A(3).
             B(1). B(2). B(3).
@@ -358,7 +358,7 @@ mod Test.Exp.Fixpoint.PQuery {
         }, pp) `Assert.eq` Vector#{"A(2)", "C(2)", "A(2)", "C(2)"}
 
     @Test
-    def testPQueryWithRandomSequence02(): Bool =
+    def testPQueryWithSequence02(): Bool =
         let db = #{
             A(1). A(2). A(3).
             B(1). B(2). B(3).
@@ -375,7 +375,7 @@ mod Test.Exp.Fixpoint.PQuery {
         }, pp) `Assert.eq` Vector#{"D(1)", "B(1)", "D(1)"}
 
     @Test
-    def testPQueryWithRandomSequence03(): Bool =
+    def testPQueryWithSequence03(): Bool =
         let db = #{
             A(1). A(2). A(3).
             B(1). B(2). B(3).
@@ -392,7 +392,7 @@ mod Test.Exp.Fixpoint.PQuery {
         }, pp) `Assert.eq` Vector#{"C(3)", "D(3)", "C(3)", "D(3)", "C(3)"}
 
     @Test
-    def testPQueryWithRandomSequence04(): Bool =
+    def testPQueryWithSequence04(): Bool =
         let db = #{
             A(1). A(2). A(3).
             B(1). B(2). B(3).
@@ -408,7 +408,7 @@ mod Test.Exp.Fixpoint.PQuery {
         }, pp) `Assert.eq` Vector#{"A(1)", "A(1)"}
 
     @Test
-    def testPQueryWithRandomSequence05(): Bool =
+    def testPQueryWithSequence05(): Bool =
         let db = #{
             A(1). A(2). A(3).
             B(1). B(2). B(3).
@@ -424,5 +424,126 @@ mod Test.Exp.Fixpoint.PQuery {
             case C(x) => "C(${x})"
             case D(x) => "D(${x})"
         }, pp) `Assert.eq` Vector#{"B(2)", "D(2)", "C(2)", "D(2)", "C(2)", "B(2)", "D(2)", "B(2)", "C(2)"}
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Provenance for a subset of a tree
+    ///////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testPQueryWithTree01(): Bool =
+        let db = #{
+            A(1). A(2). A(3).
+            B(1). B(2). B(3).
+            C(1). C(2). C(3).
+        };
+        let pr = #{
+            Q(x) :- A(x), B(x), C(x).
+            R(0) :- Q(1), Q(2), Q(3).
+        };
+        let pp = pquery db, pr select R(0) with {A, B, C};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+            case B(x) => "B(${x})"
+            case C(x) => "C(${x})"
+        }, pp) `Assert.eq` Vector#{"A(1)", "B(1)", "C(1)", "A(2)", "B(2)", "C(2)", "A(3)", "B(3)", "C(3)"}
+
+    @Test
+    def testPQueryWithRandomTree02(): Bool =
+        let db = #{
+            A(1). A(2). A(3).
+            B(1). B(2). B(3).
+            C(1). C(2). C(3).
+        };
+        let pr = #{
+            Q(x) :- A(x), B(x), C(x).
+            R(0) :- Q(1), Q(2), Q(3).
+        };
+        let pp = pquery db, pr select R(0) with {A, B};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+            case B(x) => "B(${x})"
+        }, pp) `Assert.eq` Vector#{"A(1)", "B(1)", "A(2)", "B(2)", "A(3)", "B(3)"}
+
+    @Test
+    def testPQueryWithRandomTree03(): Bool =
+        let db = #{
+            A(1). A(2). A(3).
+            B(1). B(2). B(3).
+            C(1). C(2). C(3).
+        };
+        let pr = #{
+            Q(x) :- A(x), B(x), C(x).
+            R(0) :- Q(1), Q(2), Q(3).
+        };
+        let pp = pquery db, pr select R(0) with {A, C};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+            case C(x) => "C(${x})"
+        }, pp) `Assert.eq` Vector#{"A(1)", "C(1)", "A(2)", "C(2)", "A(3)", "C(3)"}
+
+    @Test
+    def testPQueryWithRandomTree04(): Bool =
+        let db = #{
+            A(1). A(2). A(3).
+            B(1). B(2). B(3).
+            C(1). C(2). C(3).
+        };
+        let pr = #{
+            Q(x) :- A(x), B(x), C(x).
+            R(0) :- Q(1), Q(2), Q(3).
+        };
+        let pp = pquery db, pr select R(0) with {B, C};
+        Vector.map(v -> ematch v {
+            case B(x) => "B(${x})"
+            case C(x) => "C(${x})"
+        }, pp) `Assert.eq` Vector#{"B(1)", "C(1)", "B(2)", "C(2)", "B(3)", "C(3)"}
+
+    @Test
+    def testPQueryWithRandomTree05(): Bool =
+        let db = #{
+            A(1). A(2). A(3).
+            B(1). B(2). B(3).
+            C(1). C(2). C(3).
+        };
+        let pr = #{
+            Q(x) :- A(x), B(x), C(x).
+            R(0) :- Q(1), Q(2), Q(3).
+        };
+        let pp = pquery db, pr select R(0) with {A};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+        }, pp) `Assert.eq` Vector#{"A(1)", "A(2)", "A(3)"}
+
+    @Test
+    def testPQueryWithRandomTree06(): Bool =
+        let db = #{
+            A(1). A(2). A(3).
+            B(1). B(2). B(3).
+            C(1). C(2). C(3).
+        };
+        let pr = #{
+            Q(x) :- A(x), B(x), C(x).
+            R(0) :- Q(1), Q(2), Q(3).
+        };
+        let pp = pquery db, pr select R(0) with {B};
+        Vector.map(v -> ematch v {
+            case B(x) => "B(${x})"
+        }, pp) `Assert.eq` Vector#{"B(1)", "B(2)", "B(3)"}
+
+    @Test
+    def testPQueryWithRandomTree07(): Bool =
+        let db = #{
+            A(1). A(2). A(3).
+            B(1). B(2). B(3).
+            C(1). C(2). C(3).
+        };
+        let pr = #{
+            Q(x) :- A(x), B(x), C(x).
+            R(0) :- Q(1), Q(2), Q(3).
+        };
+        let pp = pquery db, pr select R(0) with {C};
+        Vector.map(v -> ematch v {
+            case C(x) => "C(${x})"
+        }, pp) `Assert.eq` Vector#{"C(1)", "C(2)", "C(3)"}
 
 }
