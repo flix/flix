@@ -2149,6 +2149,10 @@ object Weeder2 {
       )
       mapN(expressions, select, withh) {
         (expressions, select, withh) =>
+          if (select.den == Denotation.Latticenal) {
+              val error = IllegalLatticeProvenance(select.loc)
+              sctx.errors.add(error)
+          }
           Expr.FixpointQueryWithProvenance(expressions, select, withh.map(Name.mkPred), tree.loc)
       }
     }

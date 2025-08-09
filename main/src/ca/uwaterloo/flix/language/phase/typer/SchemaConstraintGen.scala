@@ -86,10 +86,7 @@ object SchemaConstraintGen {
     e match {
       case KindedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tvar, loc1) =>
         val (tpes, effs) = exps.map(visitExp).unzip
-        val selectRow = select match {
-          case KindedAst.Predicate.Head.Atom(_, Denotation.Relational, _, _, _) => visitHeadPredicate(select)
-          case _ => throw InternalCompilerException("Provenance for lattice relations is not supported", loc1)
-        }
+        val selectRow = visitHeadPredicate(select)
         val (withRow, resultRow) = withh.foldRight((mkAnySchemaRowType(loc1), mkAnySchemaRowType(loc1))) {
           case (pred, (acc1, acc2)) =>
             val relType = Type.freshVar(Kind.Predicate, loc1)

@@ -570,6 +570,46 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalFormalParamAscription](result)
   }
 
+  test("IllegalLatticeProvenance.01") {
+    val input =
+      """
+        |def main(): Unit  =
+        |    let p = #{
+        |        A(x; y) :- B(x, y).
+        |    };
+        |    let _ = pquery p select A(1; 2) with { B };
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[WeederError.IllegalLatticeProvenance](result)
+  }
+
+  test("IllegalLatticeProvenance.02") {
+    val input =
+      """
+        |def main(): Unit  =
+        |    let p = #{
+        |        A(x; y) :- B(x, y).
+        |    };
+        |    let _ = pquery p select A("hello"; 2) with { B };
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[WeederError.IllegalLatticeProvenance](result)
+  }
+
+  test("IllegalLatticeProvenance.03") {
+    val input =
+      """
+        |def main(): Unit  =
+        |    let p = #{ };
+        |    let _ = pquery p select A("hello"; 2) with { B };
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[WeederError.IllegalLatticeProvenance](result)
+  }
+
   test("IllegalModifier.01") {
     val input =
       """
