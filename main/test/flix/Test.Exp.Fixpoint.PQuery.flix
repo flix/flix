@@ -336,4 +336,93 @@ mod Test.Exp.Fixpoint.PQuery {
             case B(x) => "B(${x})"
         }, pp) `Assert.eq` Vector#{"A(1)", "B(1)", "A(1)", "B(1)", "A(1)", "B(1)", "A(1)", "B(1)", "A(1)", "B(1)"}
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Provenance for a subset of a path
+    ///////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testPQueryWithRandomSequence01(): Bool =
+        let db = #{
+            A(1). A(2). A(3).
+            B(1). B(2). B(3).
+            C(1). C(2). C(3).
+            D(1). D(2). D(3).
+        };
+        let pr = #{
+            R(x) :- A(x), C(x), B(x), D(x), A(x), B(x), C(x), D(x), B(x).
+        };
+        let pp = pquery db, pr select R(2) with {A, C};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+            case C(x) => "C(${x})"
+        }, pp) `Assert.eq` Vector#{"A(2)", "C(2)", "A(2)", "C(2)"}
+
+    @Test
+    def testPQueryWithRandomSequence02(): Bool =
+        let db = #{
+            A(1). A(2). A(3).
+            B(1). B(2). B(3).
+            C(1). C(2). C(3).
+            D(1). D(2). D(3).
+        };
+        let pr = #{
+            R(x) :- D(x), B(x), A(x), C(x), D(x), C(x), A(x).
+        };
+        let pp = pquery db, pr select R(1) with {B, D};
+        Vector.map(v -> ematch v {
+            case B(x) => "B(${x})"
+            case D(x) => "D(${x})"
+        }, pp) `Assert.eq` Vector#{"D(1)", "B(1)", "D(1)"}
+
+    @Test
+    def testPQueryWithRandomSequence03(): Bool =
+        let db = #{
+            A(1). A(2). A(3).
+            B(1). B(2). B(3).
+            C(1). C(2). C(3).
+            D(1). D(2). D(3).
+        };
+        let pr = #{
+            R(x) :- C(x), A(x), D(x), B(x), B(x), C(x), D(x), A(x), C(x), B(x).
+        };
+        let pp = pquery db, pr select R(3) with {C, D};
+        Vector.map(v -> ematch v {
+            case C(x) => "C(${x})"
+            case D(x) => "D(${x})"
+        }, pp) `Assert.eq` Vector#{"C(3)", "D(3)", "C(3)", "D(3)", "C(3)"}
+
+    @Test
+    def testPQueryWithRandomSequence04(): Bool =
+        let db = #{
+            A(1). A(2). A(3).
+            B(1). B(2). B(3).
+            C(1). C(2). C(3).
+            D(1). D(2). D(3).
+        };
+        let pr = #{
+            R(x) :- B(x), D(x), A(x), C(x), B(x), A(x).
+        };
+        let pp = pquery db, pr select R(1) with {A};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+        }, pp) `Assert.eq` Vector#{"A(1)", "A(1)"}
+
+    @Test
+    def testPQueryWithRandomSequence05(): Bool =
+        let db = #{
+            A(1). A(2). A(3).
+            B(1). B(2). B(3).
+            C(1). C(2). C(3).
+            D(1). D(2). D(3).
+        };
+        let pr = #{
+            R(x) :- A(x), A(x), B(x), D(x), C(x), D(x), C(x), B(x), A(x), D(x), B(x), C(x).
+        };
+        let pp = pquery db, pr select R(2) with {B, C, D};
+        Vector.map(v -> ematch v {
+            case B(x) => "B(${x})"
+            case C(x) => "C(${x})"
+            case D(x) => "D(${x})"
+        }, pp) `Assert.eq` Vector#{"B(2)", "D(2)", "C(2)", "D(2)", "C(2)", "B(2)", "D(2)", "B(2)", "C(2)"}
+
 }
