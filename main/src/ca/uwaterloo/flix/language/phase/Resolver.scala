@@ -509,21 +509,18 @@ object Resolver {
           val scp1 = scp0 ++ mkTypeParamScp(tparams1)
           val wildness = Wildness.RecordWild(new ArrayBuffer)
           val fparamsVal = traverse(fparams0)(resolveFormalParam(_, wildness, scp1, taenv, ns0, root)(Scope.Top, sctx, flix))
-          flatMapN(fparamsVal) {
-            case fparams =>
-              val scp2 = scp1 ++ mkFormalParamScp(fparams)
-              val tpeVal = resolveType(tpe0, Some(Kind.Star), wildness, scp2, taenv, ns0, root)(Scope.Top, sctx, flix)
-              val effVal = traverseOpt(eff0)(resolveType(_, Some(Kind.Eff), wildness, scp2, taenv, ns0, root)(Scope.Top, sctx, flix))
-              val optTconstrsVal = traverse(tconstrs0)(resolveTraitConstraint(_, scp2, taenv, ns0, root))
-              val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, scp2, taenv, ns0, root))
-              val wildTparams = wildness.syms.toList.map { case (ident, sym) => ResolvedAst.TypeParam.Implicit(ident, sym, ident.loc) }
-              val tparams = tparams1 ::: wildTparams
-              mapN(tpeVal, effVal, optTconstrsVal, econstrsVal) {
-                case (tpe, eff, optTconstrs, econstrs) =>
-                  // add the inherited type constraint to the list
-                  val tconstrs = (tconstr :: optTconstrs).collect { case Some(t) => t }
-                  ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs)
-              }
+          val tpeVal = resolveType(tpe0, Some(Kind.Star), wildness, scp1, taenv, ns0, root)(Scope.Top, sctx, flix)
+          val effVal = traverseOpt(eff0)(resolveType(_, Some(Kind.Eff), wildness, scp1, taenv, ns0, root)(Scope.Top, sctx, flix))
+          val optTconstrsVal = traverse(tconstrs0)(resolveTraitConstraint(_, scp1, taenv, ns0, root))
+          val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, scp1, taenv, ns0, root))
+          val wildTparams = wildness.syms.toList.map { case (ident, sym) => ResolvedAst.TypeParam.Implicit(ident, sym, ident.loc) }
+          val tparams = tparams1 ::: wildTparams
+          mapN(fparamsVal, tpeVal, effVal, optTconstrsVal, econstrsVal) {
+            case (fparams, tpe, eff, optTconstrs, econstrs) =>
+              // add the inherited type constraint to the list
+              val tconstrs = (tconstr :: optTconstrs).collect { case Some(t) => t }
+              ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs)
+
           }
       }
   }
