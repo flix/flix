@@ -235,7 +235,6 @@ object WeederError {
     override def explain(formatter: Formatter): Option[String] = Some("Annotations are not allowed on local functions.")
   }
 
-
   /**
     * An error raised to indicate that a lowercase name was expected.
     *
@@ -455,6 +454,24 @@ object WeederError {
       s""">> Unexpected type ascription. Type ascriptions are not permitted on effect handler cases.
          |
          |${code(loc, "unexpected type ascription")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a provenance query was executed on a lattice relation, which is not supported.
+    *
+    * @param loc the location of the illegal latticenal atom.
+    */
+  case class IllegalLatticeProvenance(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Illegal lattice relation in provenance query."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal lattice relation in provenance query. Provenance on lattice relations is not supported.
+         |
+         |${code(loc, "illegal lattice relation")}
          |
          |""".stripMargin
     }

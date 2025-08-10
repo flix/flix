@@ -520,6 +520,7 @@ object Resolver {
               // add the inherited type constraint to the list
               val tconstrs = (tconstr :: optTconstrs).collect { case Some(t) => t }
               ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs)
+
           }
       }
   }
@@ -2951,7 +2952,6 @@ object Resolver {
     if (ident.isWild) {
       wildness match {
         case Wildness.AllowWild =>
-          // We use Top scope because these lookups only occur at top level
           Result.Ok(LowerType.Var(Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), ident.loc)))
         case Wildness.RecordWild(syms) =>
           // ALERT!
