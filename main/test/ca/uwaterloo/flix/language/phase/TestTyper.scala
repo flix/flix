@@ -2062,7 +2062,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.ExtraLabel](result)
   }
 
-  test("EmatchError.01") {
+  test("EmatchError#11283") {
     val input =
       """
         |def testExtMatchDatalog(): Bool = {
