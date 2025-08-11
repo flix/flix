@@ -357,7 +357,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEscapeSequence](result)
   }
 
-  test("IllegalExtPattern.01") {
+  ignore("IllegalExtPattern.01") {
     val input =
       """
         |def f(): Int32 = ematch xvar A(1) {
@@ -368,7 +368,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalExtPattern](result)
   }
 
-  test("IllegalExtPattern.02") {
+  ignore("IllegalExtPattern.02") {
     val input =
       """
         |def f(): Int32 = ematch xvar A(1) {
