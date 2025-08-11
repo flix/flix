@@ -792,6 +792,21 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("MissingWithInPQuery") {
+    val input =
+      """def main(): Unit =
+        |    let p = #{
+        |        Edge(1, 2).
+        |        Edge(y, x) :- Edge(x, y).
+        |    };
+        |    let _ = pquery p select A() with ;
+        |    ()
+        |"""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("Regression.#7646") {
     val input =
       """
