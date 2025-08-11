@@ -546,4 +546,78 @@ mod Test.Exp.Fixpoint.PQuery {
             case C(x) => "C(${x})"
         }, pp) `Assert.eq` Vector#{"C(1)", "C(2)", "C(3)"}
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Provenance computation on a path
+    ///////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testPQueryWithPathCost01(): Bool =
+        let db = #{
+            Edge("a", "b", 3).
+            Edge("b", "c", 1).
+            Edge("c", "d", 2).
+        };
+        let pr = #{
+            Path(x, y) :- Edge(x, y, _).
+            Path(x, z) :- Path(x, y), Edge(y, z, _).
+        };
+        let pp = pquery db, pr select Path("a", "d") with {Edge};
+        Vector.sumWith(v -> ematch v {
+            case Edge(_, _, c) => c
+        }, pp) `Assert.eq` 6
+
+    @Test
+    def testPQueryWithPathCost02(): Bool =
+        let db = #{
+            Edge("a", "b", 2).
+            Edge("b", "c", 4).
+            Edge("c", "d", 3).
+            Edge("d", "e", 1).
+            Edge("a", "x", 5).
+            Edge("b", "y", 6).
+            Edge("c", "z", 2).
+            Edge("e", "w", 7).
+        };
+        let pr = #{
+            Path(x, y) :- Edge(x, y, _).
+            Path(x, z) :- Path(x, y), Edge(y, z, _).
+        };
+        let pp = pquery db, pr select Path("a", "e") with {Edge};
+        Vector.sumWith(v -> ematch v {
+            case Edge(_, _, c) => c
+        }, pp) `Assert.eq` 10
+
+    @Test
+    def testPQueryWithPathCost03(): Bool =
+        let db = #{
+            Edge("a", "b", 3).
+            Edge("b", "c", 2).
+            Edge("c", "d", 4).
+            Edge("d", "f", 1).
+            Edge("f", "g", 2).
+            Edge("g", "e", 3).
+            Edge("a", "x", 5).
+            Edge("x", "y", 2).
+            Edge("y", "x", 1).
+            Edge("b", "z", 6).
+            Edge("z", "w", 3).
+            Edge("w", "z", 2).
+            Edge("c", "p", 4).
+            Edge("p", "q", 1).
+            Edge("q", "r", 2).
+            Edge("r", "p", 3).
+            Edge("d", "m", 2).
+            Edge("f", "n", 7).
+            Edge("g", "s", 1).
+            Edge("e", "t", 4).
+        };
+        let pr = #{
+            Path(x, y) :- Edge(x, y, _).
+            Path(x, z) :- Path(x, y), Edge(y, z, _).
+        };
+        let pp = pquery db, pr select Path("a", "e") with {Edge};
+        Vector.sumWith(v -> ematch v {
+            case Edge(_, _, c) => c
+        }, pp) `Assert.eq` 15
+
 }
