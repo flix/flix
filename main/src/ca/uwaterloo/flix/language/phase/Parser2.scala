@@ -2885,7 +2885,8 @@ object Parser2 {
 
       if (isPSolve) {
         return close(mark, TreeKind.Expr.FixpointSolveWithProvenance)
-      } else if (eat(TokenKind.KeywordProject)) {
+      }
+      if (eat(TokenKind.KeywordProject)) {
         nameUnqualified(NAME_PREDICATE)
         while (eat(TokenKind.Comma) && !eof()) {
           nameUnqualified(NAME_PREDICATE)
