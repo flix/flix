@@ -436,7 +436,7 @@ object WeederError {
 
     override def explain(formatter: Formatter): Option[String] = Some({
       s"""A loop must start with collection comprehension where the collection
-         |has an instance of the Iterable type class on it.
+         |has an instance of the Iterable trait on it.
          |
          |A minimal loop is written as follows:
          |

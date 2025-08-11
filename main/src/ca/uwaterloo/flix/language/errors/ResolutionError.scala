@@ -228,7 +228,7 @@ object ResolutionError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      "Every signature in a type class must mention the type variable of the class."
+      "Every signature in a trait must mention the type variable of the class."
     })
 
   }
