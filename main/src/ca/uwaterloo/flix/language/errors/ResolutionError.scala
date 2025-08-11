@@ -31,7 +31,7 @@ sealed trait ResolutionError extends CompilationMessage {
 object ResolutionError {
 
   /**
-    * An error raise to indicate a cycle in the trait hierarchy.
+    * An error raised to indicate a cycle in the trait hierarchy.
     *
     * @param path the super trait path from a trait to itself.
     * @param loc  the location where the error occurred.
@@ -64,7 +64,7 @@ object ResolutionError {
   }
 
   /**
-    * An error raise to indicate a cycle in type aliases.
+    * An error raised to indicate a cycle in type aliases.
     *
     * @param path the type reference path from a type alias to itself.
     * @param loc  the location where the error occurred.
