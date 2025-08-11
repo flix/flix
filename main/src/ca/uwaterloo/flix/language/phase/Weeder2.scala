@@ -2150,8 +2150,8 @@ object Weeder2 {
       mapN(expressions, select, withh) {
         (expressions, select, withh) =>
           if (select.den == Denotation.Latticenal) {
-              val error = IllegalLatticeProvenance(select.loc)
-              sctx.errors.add(error)
+            val error = IllegalLatticeProvenance(select.loc)
+            sctx.errors.add(error)
           }
           Expr.FixpointQueryWithProvenance(expressions, select, withh.map(Name.mkPred), tree.loc)
       }
@@ -2438,7 +2438,7 @@ object Weeder2 {
       case Pattern.Wild(loc) => ExtPattern.Wild(loc)
       case Pattern.Var(ident, loc) => ExtPattern.Var(ident, loc)
       case _ =>
-        val error = UnexpectedToken(NamedTokenSet.ExtPattern, actual = None, SyntacticContext.Unknown, loc = pat.loc)
+        val error = WeederError.IllegalExtPattern(pat.loc)
         sctx.errors.add(error)
         ExtPattern.Error(pat.loc)
     }
