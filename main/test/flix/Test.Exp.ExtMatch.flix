@@ -347,4 +347,15 @@ mod Test.Exp.ExtMatch {
             case Nullary => true
         }
     }
+
+    @Test
+    def testExtMatchDatalog01(): Bool = {
+        let p = #{
+            A(1).
+        };
+        let v = pquery p select A(1) with {A};
+        ematch Vector.get(0, v) {
+            case A() => true
+        }
+    }
 }
