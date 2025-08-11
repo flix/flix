@@ -182,7 +182,11 @@ object SchemaConstraintGen {
     implicit val scope: Scope = c.getScope
     e match {
       case KindedAst.Expr.FixpointInjectInto(exps, predsAndArities, tvar, evar, loc) =>
-        ???
+
+
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
     }
   }
 
