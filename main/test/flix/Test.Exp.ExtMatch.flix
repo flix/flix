@@ -416,4 +416,39 @@ mod Test.Exp.ExtMatch {
         }
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    /// Match on unit constructors.
+    ///////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testExtMatchUnit01(): Bool = {
+        ematch xvar A(()) {
+            case A(x) => x == ()
+        }
+    }
+
+    @Test
+    def testExtMatchUnit02(): Bool = {
+        ematch xvar A(()) {
+            case A(x) => x == ()
+            case B(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatchUnit03(): Bool = {
+        ematch xvar B((), 42) {
+            case A(_)    => false
+            case B(x, y) => x == () and y == 42
+        }
+    }
+
+    @Test
+    def testExtMatchUnit04(): Bool = {
+        ematch xvar A(42, (), "test") {
+            case A(x, y, z) => x == 42 and y == () and z == "test"
+            case B(_, _)    => false
+        }
+    }
+
 }
