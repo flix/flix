@@ -341,10 +341,10 @@ mod Test.Exp.ExtMatch {
 
     @Test
     def testExtMatchNullary01(): Bool = {
-        ematch xvar Null {
-            case A()  => false
-            case Q    => false
-            case Null => true
+        ematch xvar Nullary {
+            case A()     => false
+            case Q       => false
+            case Nullary => true
         }
     }
 }
