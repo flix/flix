@@ -2946,13 +2946,13 @@ object Parser2 {
           delimiterL = TokenKind.CurlyL,
           delimiterR = TokenKind.CurlyR
         )
-        case t => UnexpectedToken(
+        case t => closeWithError(open(), UnexpectedToken(
           expected = NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)),
           actual = Some(t),
           sctx,
           hint = Some("provide a list of predicates"),
           loc = currentSourceLocation()
-        )
+        ))
       }
       close(mark, TreeKind.Expr.FixpointWith)
     }
