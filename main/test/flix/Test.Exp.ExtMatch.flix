@@ -325,17 +325,48 @@ mod Test.Exp.ExtMatch {
 
     @Test
     def testExtMatchDifferentArities01(): Bool = {
-        ematch xvar AB("a") {
-            case A(_, _) => false
-            case AB(x)   => x == "a"
+        ematch xvar A(42) {
+            case A(x) => x == 42
+            case B    => false
         }
     }
 
     @Test
     def testExtMatchDifferentArities02(): Bool = {
-        ematch xvar AB("a", 1) {
-            case B(_, _)  => false
-            case AB(x, y) => x == "a" and y == 1
+        ematch xvar B("test", 1) {
+            case A(_)    => false
+            case B(x, y) => x == "test" and y == 1
+            case C       => false
+        }
+    }
+
+    @Test
+    def testExtMatchDifferentArities03(): Bool = {
+        ematch xvar A(1.0f32, 'x', true) {
+            case A(x, y, z) => x == 1.0f32 and y == 'x' and z == true
+            case B(_, _)    => false
+            case C(_)       => false
+        }
+    }
+
+    @Test
+    def testExtMatchDifferentArities04(): Bool = {
+        ematch xvar B(42, "test", 3.14f64, 'a') {
+            case A(_)          => false
+            case B(w, x, y, z) => w == 42 and x == "test" and y == 3.14f64 and z == 'a'
+            case C(_, _, _)    => false
+            case D             => false
+        }
+    }
+
+    @Test
+    def testExtMatchDifferentArities05(): Bool = {
+        ematch xvar C(1i8, 2i16, 3i32, 4i64, 5ii) {
+            case A(_)             => false
+            case B(_, _, _, _)    => false
+            case C(a, b, c, d, e) => a == 1i8 and b == 2i16 and c == 3i32 and d == 4i64 and e == 5ii
+            case D(_)             => false
+            case E                => false
         }
     }
 
