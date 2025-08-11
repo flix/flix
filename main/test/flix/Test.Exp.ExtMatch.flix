@@ -15,6 +15,10 @@
  */
 mod Test.Exp.ExtMatch {
 
+    ///////////////////////////////////////////////////////////////////////////
+    /// Matches on primitive and compound types.
+    ///////////////////////////////////////////////////////////////////////////
+
     @Test
     def testExtMatch01BigInt(): Bool = {
         ematch xvar A(1ii) {
@@ -315,6 +319,10 @@ mod Test.Exp.ExtMatch {
         }
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    /// Matches on varying arities.
+    ///////////////////////////////////////////////////////////////////////////
+
     @Test
     def testExtMatchDifferentArities01(): Bool = {
         ematch xvar AB("a") {
@@ -331,20 +339,49 @@ mod Test.Exp.ExtMatch {
         }
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    /// Matches on nullary constructors.
+    ///////////////////////////////////////////////////////////////////////////
+
     @Test
-    def testExtMatchUntag01(): Bool = {
-        ematch xvar ABC(true, 1, 2, true) {
-            case B()             => false
-            case ABC(x, _, _, y) => x and y
+    def testExtMatchNullary01(): Bool = {
+        ematch xvar A {
+            case A => true
         }
     }
 
     @Test
-    def testExtMatchNullary01(): Bool = {
-        ematch xvar Nullary {
-            case A()     => false
-            case Q       => false
-            case Nullary => true
+    def testExtMatchNullary02(): Bool = {
+        ematch xvar B {
+            case A => false
+            case B => true
+        }
+    }
+
+    @Test
+    def testExtMatchNullary03(): Bool = {
+        ematch xvar C {
+            case A => false
+            case B => false
+            case C => true
+        }
+    }
+
+    @Test
+    def testExtMatchNullary04(): Bool = {
+        ematch xvar A {
+            case B => false
+            case C => false
+            case A => true
+        }
+    }
+
+    @Test
+    def testExtMatchNullary05(): Bool = {
+        ematch xvar B {
+            case A => false
+            case B => true
+            case C => false
         }
     }
 }
