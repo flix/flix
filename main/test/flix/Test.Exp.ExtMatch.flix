@@ -338,4 +338,13 @@ mod Test.Exp.ExtMatch {
             case ABC(x, _, _, y) => x and y
         }
     }
+
+    @Test
+    def testExtMatchCall01(): Bool = {
+        ematch generatesA() {
+            case A(i) => i == 1
+        }
+    }
+
+    def generatesA(): #| A(Int32) |# = xvar A(1)
 }
