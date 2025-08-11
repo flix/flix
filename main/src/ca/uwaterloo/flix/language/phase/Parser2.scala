@@ -1870,6 +1870,7 @@ object Parser2 {
       )
       close(mark, TreeKind.Expr.ExtMatch)
     }
+
     private def extTagExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordXvar))
