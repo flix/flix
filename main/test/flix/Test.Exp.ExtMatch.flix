@@ -16,7 +16,7 @@
 mod Test.Exp.ExtMatch {
 
     ///////////////////////////////////////////////////////////////////////////
-    /// Matches on primitive and compound types.
+    /// Match on various types.
     ///////////////////////////////////////////////////////////////////////////
 
     @Test
@@ -320,11 +320,11 @@ mod Test.Exp.ExtMatch {
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    /// Matches on varying arities.
+    /// Match on varying arities.
     ///////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testExtMatchDifferentArities01(): Bool = {
+    def testExtMatchArities01(): Bool = {
         ematch xvar A(42) {
             case A(x) => x == 42
             case B    => false
@@ -332,7 +332,7 @@ mod Test.Exp.ExtMatch {
     }
 
     @Test
-    def testExtMatchDifferentArities02(): Bool = {
+    def testExtMatchArities02(): Bool = {
         ematch xvar B("test", 1) {
             case A(_)    => false
             case B(x, y) => x == "test" and y == 1
@@ -341,7 +341,7 @@ mod Test.Exp.ExtMatch {
     }
 
     @Test
-    def testExtMatchDifferentArities03(): Bool = {
+    def testExtMatchArities03(): Bool = {
         ematch xvar A(1.0f32, 'x', true) {
             case A(x, y, z) => x == 1.0f32 and y == 'x' and z == true
             case B(_, _)    => false
@@ -350,7 +350,7 @@ mod Test.Exp.ExtMatch {
     }
 
     @Test
-    def testExtMatchDifferentArities04(): Bool = {
+    def testExtMatchArities04(): Bool = {
         ematch xvar B(42, "test", 3.14f64, 'a') {
             case A(_)          => false
             case B(w, x, y, z) => w == 42 and x == "test" and y == 3.14f64 and z == 'a'
@@ -360,7 +360,7 @@ mod Test.Exp.ExtMatch {
     }
 
     @Test
-    def testExtMatchDifferentArities05(): Bool = {
+    def testExtMatchArities05(): Bool = {
         ematch xvar C(1i8, 2i16, 3i32, 4i64, 5ii) {
             case A(_)             => false
             case B(_, _, _, _)    => false
@@ -371,7 +371,7 @@ mod Test.Exp.ExtMatch {
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    /// Matches on nullary constructors.
+    /// Match on nullary constructors.
     ///////////////////////////////////////////////////////////////////////////
 
     @Test
@@ -415,4 +415,5 @@ mod Test.Exp.ExtMatch {
             case C => false
         }
     }
+
 }
