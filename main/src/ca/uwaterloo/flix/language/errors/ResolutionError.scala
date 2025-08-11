@@ -175,7 +175,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class IllegalAssocTypeApplication(loc: SourceLocation) extends ResolutionError {
-    override def summary: String = " Illegal associated type application."
+    override def summary: String = "Illegal associated type application."
 
     override def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
@@ -513,7 +513,7 @@ object ResolutionError {
     * @param loc      the location where the error occurred.
     */
   case class MismatchedTagPatternArity(caze: Symbol.CaseSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Expected ${Grammar.n_things(expected, "argument")} but found $actual actual ${Grammar.n_things(expected, "argument")}."
+    override def summary: String = s"Expected ${Grammar.n_things(expected, "argument")} but found ${Grammar.n_things(actual, "argument")}."
 
     override def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
