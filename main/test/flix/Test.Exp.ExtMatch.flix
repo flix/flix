@@ -338,4 +338,13 @@ mod Test.Exp.ExtMatch {
             case ABC(x, _, _, y) => x and y
         }
     }
+
+    @Test
+    def testExtMatchNullary01(): Bool = {
+        ematch xvar Nullary {
+            case A()     => false
+            case Q       => false
+            case Nullary => true
+        }
+    }
 }
