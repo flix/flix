@@ -2062,20 +2062,16 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.ExtraLabel](result)
   }
 
-  test("EmatchError#11283") {
+  test("ExtMatchError#11283") {
     val input =
       """
-        |def testExtMatchDatalog(): Bool = {
-        |    let p = #{
-        |        A(1).
-        |    };
-        |    let v = pquery p select A(1) with {A};
-        |    ematch Vector.get(0, v) {
+        |def f(): Bool = {
+        |    ematch xvar A(1) {
         |        case A() => true
         |    }
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibAll)
-    expectError[TypeError](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 }
