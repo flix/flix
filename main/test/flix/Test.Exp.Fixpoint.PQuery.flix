@@ -661,4 +661,45 @@ mod Test.Exp.Fixpoint.PQuery {
             case C(x, y, z) => x + y + z
         }, pp)
 
+    /////////////////////////////////////////////////////////////////////////////
+    /// Term types are ordered correctly.
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testPQueryTermTypes01(): Bool =
+        let pr = #{
+            A(1i32, 'c').
+            B('c').
+            R(x, y) :- A(x, y), B(y).
+        };
+        let pp = pquery pr select R(1i32, 'c') with {A};
+        let res = Vector.map(v -> ematch v {
+            case A(x, y) => (x, y)
+        }, pp);
+        Vector#{(1i32, 'c')} `Assert.eq` res
+
+    @Test
+    def testPQueryTermTypes02(): Bool =
+        let pr = #{
+            A(1i32, 'c', 2.4f64).
+            B('c').
+            R(x, y) :- A(x, y, z), B(y).
+        };
+        let pp = pquery pr select R(1i32, 'c') with {A};
+        let res = Vector.map(v -> ematch v {
+            case A(x, y, z) => (x, y, z)
+        }, pp);
+        Vector#{(1i32, 'c', 2.4f64)} `Assert.eq` res
+
+    @Test
+    def testPQueryTermTypes03(): Bool =
+        let pr = #{
+            A(1i32, 2i64, 3.4f32, 5.6f64, 6i8, 7i16, "Hello", 'c', true).
+        };
+        let pp = pquery pr select A(1i32, 2i64, 3.4f32, 5.6f64, 6i8, 7i16, "Hello", 'c', true) with {A};
+        let res = Vector.map(v -> ematch v {
+            case A(x, y, z, w, u, t, s, r, q) => (x, y, z, w, u, t, s, r, q)
+        }, pp);
+        Vector#{(1i32, 2i64, 3.4f32, 5.6f64, 6i8, 7i16, "Hello", 'c', true)} `Assert.eq` res
+
 }
