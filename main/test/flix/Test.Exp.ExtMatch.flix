@@ -454,6 +454,18 @@ mod Test.Exp.ExtMatch {
     ///////////////////////////////////////////////////////////////////////////
     /// Other.
     ///////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testExtMatchDatalog01(): Bool = {
+        let p = #{
+            A(1).
+        };
+        let v = pquery p select A(1) with {A};
+        ematch Vector.get(0, v) {
+            case A(x) => x == 1
+        }
+    }
+
     @Test
     def testExtMatchCall01(): Bool = {
         ematch generatesA() {
