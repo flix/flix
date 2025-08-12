@@ -131,15 +131,15 @@ mod Fixpoint3.Solver {
             };
             Model(Map.unionWithKey(union, db1, db2))
         }
-        case (Model(_), Datalog(_, _)) => Join(d1, d2)
-        case (Datalog(_, _), Model(_)) => Join(d2, d1)
+        case (Model(_), Datalog(_, _))             => Join(d1, d2)
+        case (Datalog(_, _), Model(_))             => Join(d2, d1)
         case (Join(model, datalog), Datalog(_, _)) => Join(model, union(datalog, d2))
         case (Datalog(_, _), Join(model, datalog)) => Join(model, union(datalog, d1))
-        case (Join(model, datalog), Model(_)) => Join(union(model, d2), datalog)
-        case (Model(_), Join(model, datalog)) => Join(union(model, d1), datalog)
-        case (Join(x, y), Join(z, w)) => Join(union(x, z), union(y, w))
-        case (Provenance(_, _), _) => union(provenanceToModel(d1), d2)
-        case (_, Provenance(_, _)) => union(d1, provenanceToModel(d2))
+        case (Join(model, datalog), Model(_))      => Join(union(model, d2), datalog)
+        case (Model(_), Join(model, datalog))      => Join(union(model, d1), datalog)
+        case (Join(x, y), Join(z, w))              => Join(union(x, z), union(y, w))
+        case (Provenance(_, _), _)                 => union(provenanceToModel(d1), d2)
+        case (_, Provenance(_, _))                 => union(d1, provenanceToModel(d2))
     }
 
     ///
@@ -179,7 +179,7 @@ mod Fixpoint3.Solver {
     ///
     def provenanceToModel(d: Datalog): Datalog = match d {
         case Provenance(_, facts) => Model(provenanceModeltoModel(facts))
-        case _ => unreachable!()
+        case _                    => unreachable!()
     }
 
     ///
@@ -215,7 +215,7 @@ mod Fixpoint3.Solver {
         case Provenance(rules, db) =>
             let fakeRelSym = Ram.makeFakeRelSym(p);
             match Map.get(fakeRelSym, db) {
-                case None => Provenance(rules, Map#{})
+                case None    => Provenance(rules, Map#{})
                 case Some(v) => Provenance(rules, Map#{fakeRelSym => v})
             }
         case Join(d1, d2) => union(projectSym(p, d1), projectSym(p, d2))
@@ -921,9 +921,9 @@ mod Fixpoint3.Solver {
                 });
             MutList.toVector(pFacts)
         }
-        case Join(d1, d2) => factsOf(f, p, d1) ++ factsOf(f, p, d2)
+        case Join(d1, d2)      => factsOf(f, p, d1) ++ factsOf(f, p, d2)
         case Provenance(_, db) => match Map.get(Ram.makeFakeRelSym(p), db) {
-            case None => Vector#{}
+            case None        => Vector#{}
             case Some(facts) => region rc {
                 let acc = MutList.empty(rc);
                 BPlusTree.forEach(k -> _ -> MutList.push(f(k), acc), facts);

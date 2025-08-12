@@ -108,7 +108,7 @@ mod Fixpoint3.Phase.IndexSelection {
                             case PredType.New =>
                                 match Map.get(deltaRelSym, indexesFull) {
                                     case Some(v) => Vector.get(0, v)
-                                    case None => Vector.range(0, arityOfNonLat(deltaRelSym))
+                                    case None    => Vector.range(0, arityOfNonLat(deltaRelSym))
                                 }
                             case _ => Vector.range(0, arityOfNonLat(relSym))
                         };
@@ -136,14 +136,14 @@ mod Fixpoint3.Phase.IndexSelection {
     /// For details about memory positions see `lookupIndex`.
     ///
     def indexStmt(stmt: RamStmt, constructedIndexes: Indexes, indexState: UniqueInts[(RelSym, Int32), r]): RamStmt \ r = match stmt {
-        case RamStmt.Insert(op) => RamStmt.Insert(indexOp(op, constructedIndexes, indexState))
-        case RamStmt.MergeInto(_, _) => stmt
-        case RamStmt.Swap(_, _) => stmt
-        case RamStmt.Purge(_) => stmt
-        case RamStmt.Seq(xs) => RamStmt.Seq(Vector.map(x -> indexStmt(x, constructedIndexes, indexState), xs))
-        case RamStmt.Par(xs) => RamStmt.Par(Vector.map(x -> indexStmt(x, constructedIndexes, indexState), xs))
+        case RamStmt.Insert(op)            => RamStmt.Insert(indexOp(op, constructedIndexes, indexState))
+        case RamStmt.MergeInto(_, _)       => stmt
+        case RamStmt.Swap(_, _)            => stmt
+        case RamStmt.Purge(_)              => stmt
+        case RamStmt.Seq(xs)               => RamStmt.Seq(Vector.map(x -> indexStmt(x, constructedIndexes, indexState), xs))
+        case RamStmt.Par(xs)               => RamStmt.Par(Vector.map(x -> indexStmt(x, constructedIndexes, indexState), xs))
         case RamStmt.Until(boolExps, body) => RamStmt.Until(boolExps, indexStmt(body, constructedIndexes, indexState))
-        case RamStmt.Comment(_) => stmt
+        case RamStmt.Comment(_)            => stmt
     }
 
     ///
@@ -217,16 +217,14 @@ mod Fixpoint3.Phase.IndexSelection {
     /// `Eq`, but future data-structures may make use of `NotMemberOf`, `Leq`, etc.
     ///
     def searchesOfStmt(indexes: PrimitiveSearches[r], rc: Region[r], stmt: RamStmt): RamStmt \ r = match stmt {
-        case RamStmt.Insert(op) =>
-            RamStmt.Insert(searchesOfOp(op, indexes, MutSet.empty(rc), rc))
-        case RamStmt.MergeInto(_, _) => stmt
-        case RamStmt.Swap(_, _) => stmt
-        case RamStmt.Purge(_) => stmt
-        case RamStmt.Seq(xs) => RamStmt.Seq(Vector.map(searchesOfStmt(indexes, rc), xs))
-        case RamStmt.Par(xs) => RamStmt.Par(Vector.map(searchesOfStmt(indexes, rc), xs))
-        case RamStmt.Until(boolExps, body) =>
-            RamStmt.Until(boolExps, searchesOfStmt(indexes, rc, body))
-        case RamStmt.Comment(_) => stmt
+        case RamStmt.Insert(op)            => RamStmt.Insert(searchesOfOp(op, indexes, MutSet.empty(rc), rc))
+        case RamStmt.MergeInto(_, _)       => stmt
+        case RamStmt.Swap(_, _)            => stmt
+        case RamStmt.Purge(_)              => stmt
+        case RamStmt.Seq(xs)               => RamStmt.Seq(Vector.map(searchesOfStmt(indexes, rc), xs))
+        case RamStmt.Par(xs)               => RamStmt.Par(Vector.map(searchesOfStmt(indexes, rc), xs))
+        case RamStmt.Until(boolExps, body) => RamStmt.Until(boolExps, searchesOfStmt(indexes, rc, body))
+        case RamStmt.Comment(_)            => stmt
     }
 
     ///
@@ -384,7 +382,7 @@ mod Fixpoint3.Phase.IndexSelection {
             f(from_);
             match MutMap.get(from_, allPaths) {
                 case Some(x) => x
-                case None => List.empty()
+                case None    => List.empty()
             }
         }
 

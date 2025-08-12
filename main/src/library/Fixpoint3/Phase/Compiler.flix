@@ -72,7 +72,7 @@ mod Fixpoint3.Phase.Compiler {
                         MutList.push(codeBlock, stmts)
                     } else match List.head(runInParallel) {
                         case Some(v) => MutList.push(v, stmts)
-                        case None => ()
+                        case None    => ()
                     }
             };
             let stmt = RamStmt.Seq(MutList.toVector(stmts));
@@ -87,7 +87,7 @@ mod Fixpoint3.Phase.Compiler {
     @Internal
     pub def enumerateRules(d: Datalog): Vector[(Int32, Constraint)] = match d {
         case Datalog(_, rules) => Vector.mapWithIndex(i -> r -> (i, r), rules)
-        case _ => unreachable!()
+        case _                 => unreachable!()
     }
 
     ///
@@ -168,7 +168,7 @@ mod Fixpoint3.Phase.Compiler {
                 MutList.head(inserts)
             };
         match optPar {
-            case None => ()
+            case None       => ()
             case Some(par1) =>
                 MutList.push(par1, stmts);
 
@@ -188,7 +188,7 @@ mod Fixpoint3.Phase.Compiler {
                         MutList.head(loopInserts)
                     };
                 match loopParOpt {
-                    case None => ()
+                    case None          => ()
                     case Some(loopPar) =>
                         MutList.push(loopPar, loopBody);
                         MutList.push(constructMerges(idb, predicates), loopBody);
@@ -268,7 +268,7 @@ mod Fixpoint3.Phase.Compiler {
             let ramTerms = Vector.map(compileHeadTerm(env, counter), headTerms);
             let projection = RelOp.Project(ramTerms, Predicate.headAtomToRelSym(headAtom, New, predicates), ruleNum);
             match compileBody(env, augBody, predicates, counter) {
-                case None => ()
+                case None       => ()
                 case Some(join) =>
                     let loopBody = RelOp.If(join, projection);
                     let insert = (loopBody, augBody)
@@ -331,7 +331,7 @@ mod Fixpoint3.Phase.Compiler {
                 let ramTerms = Vector.map(compileHeadTerm(env, counter), headTerms);
                 let projection = RelOp.Project(ramTerms, Predicate.headAtomToRelSym(headAtom, New, predicates), ruleNum);
                 match compileBody(env, augBody, predicates, counter) {
-                    case None => ()
+                    case None       => ()
                     case Some(join) =>
                         let relSym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
                         let loopBody = RelOp.If(
@@ -382,8 +382,8 @@ mod Fixpoint3.Phase.Compiler {
     /// Substitute Datalog head term `term` for a RAM term according to the given substitution `env`.
     ///
     def compileHeadTerm(env: Map[VarSym, RamTerm], counter: Counter[r], term: HeadTerm): RamTerm \ r = match term {
-        case HeadTerm.Var(var) => getOrCrash(Map.get(var, env))
-        case HeadTerm.Lit(v) => RamTerm.Lit(v, RamId.Id(Counter.getAndIncrement(counter)))
+        case HeadTerm.Var(var)   => getOrCrash(Map.get(var, env))
+        case HeadTerm.Lit(v)     => RamTerm.Lit(v, RamId.Id(Counter.getAndIncrement(counter)))
         case HeadTerm.App1(f, v) =>
             let t = getOrCrash(Map.get(v, env));
             RamTerm.App1(f, t, RamId.Id(Counter.getAndIncrement(counter)))
@@ -461,13 +461,13 @@ mod Fixpoint3.Phase.Compiler {
                 let varsWithIndexes = Vector.mapWithIndex(i -> var -> (var, i), boundVars);
                 (acc, varsWithIndexes) ||>
                     Vector.foldRight(match (var, i) -> Map.insertWith(_ -> old -> old, var, RamTerm.RowLoad(rowVar, i, funcRelSym)))
-            case Guard0(_)                               => acc
-            case Guard1(_, _)                            => acc
-            case Guard2(_, _, _)                         => acc
-            case Guard3(_, _, _, _)                      => acc
-            case Guard4(_, _, _, _, _)                   => acc
-            case Guard5(_, _, _, _, _, _)                => acc
-            case _ => acc
+            case Guard0(_)                => acc
+            case Guard1(_, _)             => acc
+            case Guard2(_, _, _)          => acc
+            case Guard3(_, _, _, _)       => acc
+            case Guard4(_, _, _, _, _)    => acc
+            case Guard5(_, _, _, _, _, _) => acc
+            case _                        => acc
         }};
         Vector.foldLeft(innerFunc, Map#{}, body)
 
@@ -497,16 +497,16 @@ mod Fixpoint3.Phase.Compiler {
     def isImpossible(body: Vector[(BodyPredicate, RowVar)]): Bool =
         Vector.exists(match (atom, _) ->
             match atom {
-                case BodyAtom(_, _, _, _, _) => false
-                case BodyAtom(_, _, _, _, _) => false
-                case Functional(_, _, _) => false
-                case Guard0(f) =>
+                case BodyAtom(_, _, _, _, _)  => false
+                case BodyAtom(_, _, _, _, _)  => false
+                case Functional(_, _, _)      => false
+                case Guard0(f)                =>
                     if (f()) false
                     else true
-                case Guard1(_, _) => false
-                case Guard2(_, _, _) => false
-                case Guard3(_, _, _, _) => false
-                case Guard4(_, _, _, _, _) => false
+                case Guard1(_, _)             => false
+                case Guard2(_, _, _)          => false
+                case Guard3(_, _, _, _)       => false
+                case Guard4(_, _, _, _, _)    => false
                 case Guard5(_, _, _, _, _, _) => false
             }, body)
 
@@ -583,7 +583,7 @@ mod Fixpoint3.Phase.Compiler {
     ///
     def getLitOrCrash(term: HeadTerm): Boxed = match term {
             case HeadTerm.Lit(v) => v
-            case _ => bug!("Facts should only consist of literals")
+            case _               => bug!("Facts should only consist of literals")
         }
 
 }

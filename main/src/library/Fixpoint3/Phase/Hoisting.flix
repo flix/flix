@@ -116,7 +116,7 @@ mod Fixpoint3.Phase.Hoisting {
                                     };
                                     innerAcc
                                 case Some(_) => bug!("In Fixpoint.Phase.Hoisting.hoistProgram: termMap contains non-literals before hoistStmt!")
-                                case None => Map.insert(rep, RamTerm.Lit(val, id), innerAcc)
+                                case None    => Map.insert(rep, RamTerm.Lit(val, id), innerAcc)
                             }
                         })
                 );
