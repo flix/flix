@@ -120,9 +120,9 @@ mod FileRead {
     ///
     /// Handles the `FileRead` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `FileRead` effect using the `IO` effect.
+    /// In other words, re-interprets the `FileRead` effect using the `FsRead` and `IO` effects.
     ///
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - FileRead) + IO = x ->
+    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - FileRead) + { FsRead, IO } = x ->
         run {
             Ok(f(x))
         } with handler FileRead {
@@ -261,9 +261,9 @@ mod FileRead {
     ///
     /// Runs the `FileRead` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `FileRead` effect using the `IO` effect.
+    /// In other words, re-interprets the `FileRead` effect using the `FsRead` and `IO` effects.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ (ef - FileRead) + {IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ (ef - FileRead) + { FsRead, IO } = handle(f)()
 
     ///
     /// Returns the attributes of the given file `f`.
