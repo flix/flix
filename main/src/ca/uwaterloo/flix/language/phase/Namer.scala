@@ -59,7 +59,7 @@ object Namer {
       val uses = uses0.map {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
-      var errors = sctx.errors.asScala.toList
+      val errors = sctx.errors.asScala.toList
       (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
     }
 
@@ -1064,7 +1064,7 @@ object Namer {
   /**
     * Names the given ext pattern `pat0`.
     */
-  private def visitExtPattern(pat0: DesugaredAst.ExtPattern)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.ExtPattern = pat0 match {
+  private def visitExtPattern(pat0: DesugaredAst.ExtPattern)(implicit scope: Scope, flix: Flix): NamedAst.ExtPattern = pat0 match {
     case DesugaredAst.ExtPattern.Wild(loc) =>
       NamedAst.ExtPattern.Wild(loc)
 
