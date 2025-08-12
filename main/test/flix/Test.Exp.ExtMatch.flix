@@ -15,6 +15,10 @@
  */
 mod Test.Exp.ExtMatch {
 
+    ///////////////////////////////////////////////////////////////////////////
+    /// Match on various types.
+    ///////////////////////////////////////////////////////////////////////////
+
     @Test
     def testExtMatch01BigInt(): Bool = {
         ematch xvar A(1ii) {
@@ -315,27 +319,163 @@ mod Test.Exp.ExtMatch {
         }
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    /// Match on various arities.
+    ///////////////////////////////////////////////////////////////////////////
+
     @Test
-    def testExtMatchDifferentArities01(): Bool = {
-        ematch xvar AB("a") {
-            case A(_, _) => false
-            case AB(x)   => x == "a"
+    def testExtMatchArities01(): Bool = {
+        ematch xvar A(42) {
+            case A(x) => x == 42
+            case B    => false
         }
     }
 
     @Test
-    def testExtMatchDifferentArities02(): Bool = {
-        ematch xvar AB("a", 1) {
-            case B(_, _)  => false
-            case AB(x, y) => x == "a" and y == 1
+    def testExtMatchArities02(): Bool = {
+        ematch xvar B("test", 1) {
+            case A(_)    => false
+            case B(x, y) => x == "test" and y == 1
+            case C       => false
         }
     }
 
     @Test
-    def testExtMatchUntag01(): Bool = {
-        ematch xvar ABC(true, 1, 2, true) {
-            case B()             => false
-            case ABC(x, _, _, y) => x and y
+    def testExtMatchArities03(): Bool = {
+        ematch xvar A(1.0f32, 'x', true) {
+            case A(x, y, z) => x == 1.0f32 and y == 'x' and z == true
+            case B(_, _)    => false
+            case C(_)       => false
         }
     }
+
+    @Test
+    def testExtMatchArities04(): Bool = {
+        ematch xvar B(42, "test", 3.14f64, 'a') {
+            case A(_)          => false
+            case B(w, x, y, z) => w == 42 and x == "test" and y == 3.14f64 and z == 'a'
+            case C(_, _, _)    => false
+            case D             => false
+        }
+    }
+
+    @Test
+    def testExtMatchArities05(): Bool = {
+        ematch xvar C(1i8, 2i16, 3i32, 4i64, 5ii) {
+            case A(_)             => false
+            case B(_, _, _, _)    => false
+            case C(a, b, c, d, e) => a == 1i8 and b == 2i16 and c == 3i32 and d == 4i64 and e == 5ii
+            case D(_)             => false
+            case E                => false
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    /// Match on nullary constructors.
+    ///////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testExtMatchNullary01(): Bool = {
+        ematch xvar A {
+            case A => true
+        }
+    }
+
+    @Test
+    def testExtMatchNullary02(): Bool = {
+        ematch xvar B {
+            case A => false
+            case B => true
+        }
+    }
+
+    @Test
+    def testExtMatchNullary03(): Bool = {
+        ematch xvar C {
+            case A => false
+            case B => false
+            case C => true
+        }
+    }
+
+    @Test
+    def testExtMatchNullary04(): Bool = {
+        ematch xvar A {
+            case B => false
+            case C => false
+            case A => true
+        }
+    }
+
+    @Test
+    def testExtMatchNullary05(): Bool = {
+        ematch xvar B {
+            case A => false
+            case B => true
+            case C => false
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    /// Match on unit constructors.
+    ///////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testExtMatchUnit01(): Bool = {
+        ematch xvar A(()) {
+            case A(x) => x == ()
+        }
+    }
+
+    @Test
+    def testExtMatchUnit02(): Bool = {
+        ematch xvar A(()) {
+            case A(x) => x == ()
+            case B(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatchUnit03(): Bool = {
+        ematch xvar B((), 42) {
+            case A(_)    => false
+            case B(x, y) => x == () and y == 42
+        }
+    }
+
+    @Test
+    def testExtMatchUnit04(): Bool = {
+        ematch xvar A(42, (), "test") {
+            case A(x, y, z) => x == 42 and y == () and z == "test"
+            case B(_, _)    => false
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    /// Other.
+    ///////////////////////////////////////////////////////////////////////////
+    @Test
+    def testExtMatchCall01(): Bool = {
+        ematch generatesA() {
+            case A(i) => i == 1
+        }
+    }
+
+    @Test
+    def testExtMatchCall02(): Bool = {
+        matchesA(xvar A(1))
+    }
+
+    @Test
+    def testExtMatchCall03(): Bool = {
+        not matchesA(xvar B(1))
+    }
+
+    def generatesA(): #| A(Int32) |# = xvar A(1)
+
+    def matchesA(var: #| A(Int32), B(Int32) |#): Bool = ematch var {
+        case A(_) => true
+        case B(_) => false
+    }
+
 }

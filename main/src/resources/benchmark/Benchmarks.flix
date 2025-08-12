@@ -37,31 +37,5 @@ def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
     "Map.foldRight"      => () -> List.range(0, 100) |> List.toMapWith(k -> k) |> Map.foldRight(Add.add, 0) |> blackhole,
     "Set.filter"         => () -> Set.range(0, 100) |> Set.filter(x -> Int32.modulo(x, 2) == 0) |> blackhole,
     "Set.foldLeft"       => () -> Set.range(0, 100) |> Set.foldLeft(Add.add, 0) |> blackhole,
-    "Set.foldRight"      => () -> Set.range(0, 100) |> Set.foldRight(Add.add, 0) |> blackhole,
-    "InlinerMap10k"      => () -> {
-        let l1 = Benchmark.Inliner.range(0, 10_000);
-        let l2 = Benchmark.Inliner.map(x -> x + 1, l1);
-        let l3 = Benchmark.Inliner.length(l2);
-        blackhole(l3)
-    },
-    "InlinerFilterMap10k" => () -> {
-        let l1 = Benchmark.Inliner.range(0, 10_000);
-        let l2 = Benchmark.Inliner.filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None, l1);
-        blackhole(l2)
-    },
-    "InlinerMap10kOptimized" => () -> {
-        let top = 10_000 - 1;
-        let l1 = Benchmark.Inliner.Optimized.rng(top, Nil);
-        let l2 = Benchmark.Inliner.Optimized.mp(l1, Nil);
-        let l3 = Benchmark.Inliner.Optimized.rv(l2, Nil);
-        let l4 = Benchmark.Inliner.Optimized.ln(l3, 0);
-        blackhole(l4)
-    },
-    "InlinerFilterMap10kOptimized" => () -> {
-        let top = 10_000 - 1;
-        let l1 = Benchmark.Inliner.Optimized.rng(top, Nil);
-        let l2 = Benchmark.Inliner.Optimized.fmp(l1, Nil);
-        let l3 = Benchmark.Inliner.Optimized.rv(l2, Nil);
-        blackhole(l3)
-    }
+    "Set.foldRight"      => () -> Set.range(0, 100) |> Set.foldRight(Add.add, 0) |> blackhole
 }

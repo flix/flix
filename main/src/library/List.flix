@@ -285,11 +285,7 @@ mod List {
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
     ///
     pub def findRight(f: a -> Bool \ ef, l: List[a]): Option[a] \ ef =
-        def loop(ll, k) = match ll {
-            case Nil     => k()
-            case x :: xs => loop(xs, () -> if (f(x)) Some(x) else k())
-        };
-        loop(l, _ -> checked_ecast(None))
+        l |> reverse |> findLeft(f)
 
     ///
     /// Returns a list of all integers between `b` (inclusive) and `e` (exclusive).

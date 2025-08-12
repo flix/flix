@@ -378,6 +378,29 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an illegal extensible variant pattern.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalExtPattern(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Unexpected extensible variant pattern."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected extensible variant pattern.
+         |
+         |${code(loc, "unexpected pattern")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter.*
+      underline("Tip:") + " Only variables or wildcards are allowed."
+    })
+  }
+
+  /**
     * An error raised to indicate that a negative atom is marked as fixed.
     *
     * @param loc the location where the illegal fixed atom occurs.
@@ -413,7 +436,7 @@ object WeederError {
 
     override def explain(formatter: Formatter): Option[String] = Some({
       s"""A loop must start with collection comprehension where the collection
-         |has an instance of the Iterable type class on it.
+         |has an instance of the Iterable trait on it.
          |
          |A minimal loop is written as follows:
          |

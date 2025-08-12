@@ -1100,6 +1100,10 @@ object Weeder2 {
       flatMapN(pick(TreeKind.ArgumentList, tree, synctx = synctx))(visitMethodArguments)
     }
 
+    private def tryPickArguments(tree: Tree)(implicit sctx: SharedContext): Validation[Option[List[Expr]], CompilationMessage] = {
+      traverseOpt(tryPick(TreeKind.ArgumentList, tree))(visitArguments)
+    }
+
     private def visitArguments(tree: Tree)(implicit sctx: SharedContext): Validation[List[Expr], CompilationMessage] = {
       mapN(
         traverse(pickAll(TreeKind.Argument, tree))(pickExpr),
@@ -1605,8 +1609,13 @@ object Weeder2 {
 
     private def visitExtTag(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.ExtTag)
-      mapN(pickNameIdent(tree), pickArguments(tree, SyntacticContext.Unknown)) {
-        case (ident, exps) => Expr.ExtTag(Name.mkLabel(ident), exps, tree.loc)
+      mapN(pickNameIdent(tree), tryPickArguments(tree)) {
+        case (ident, None) =>
+          // Nullary constructor
+          Expr.ExtTag(Name.mkLabel(ident), List.empty, tree.loc)
+
+        case (ident, Some(exps)) =>
+          Expr.ExtTag(Name.mkLabel(ident), exps, tree.loc)
       }
     }
 
@@ -2438,7 +2447,7 @@ object Weeder2 {
       case Pattern.Wild(loc) => ExtPattern.Wild(loc)
       case Pattern.Var(ident, loc) => ExtPattern.Var(ident, loc)
       case _ =>
-        val error = UnexpectedToken(NamedTokenSet.ExtPattern, actual = None, SyntacticContext.Unknown, loc = pat.loc)
+        val error = WeederError.IllegalExtPattern(pat.loc)
         sctx.errors.add(error)
         ExtPattern.Error(pat.loc)
     }
