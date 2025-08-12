@@ -2365,7 +2365,7 @@ object Weeder2 {
         (ident, maybePat) =>
           maybePat match {
             case None => (Name.mkLabel(ident), List.empty)
-            case Some(elms) => (Name.mkLabel(ident), elms.toList)
+            case Some(elms) => (Name.mkLabel(ident), elms)
           }
       }
     }
@@ -2434,13 +2434,10 @@ object Weeder2 {
       }
     }
 
-    private def visitExtTagTermsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Nel[ExtPattern], CompilationMessage] = {
+    private def visitExtTagTermsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[List[ExtPattern], CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Tuple)
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
-      mapN(traverse(patterns)(visitPattern(_, seen))) {
-        case Nil => Nel(ExtPattern.Wild(tree.loc), Nil)
-        case x :: xs => Nel(restrictToVarOrWild(x), xs.map(restrictToVarOrWild))
-      }
+      mapN(traverse(patterns)(visitPattern(_, seen)))(_.map(restrictToVarOrWild))
     }
 
     private def restrictToVarOrWild(pat: Pattern)(implicit sctx: SharedContext): ExtPattern = pat match {
