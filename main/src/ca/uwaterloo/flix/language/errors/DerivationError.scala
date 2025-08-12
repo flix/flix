@@ -54,7 +54,7 @@ object DerivationError {
   }
 
   /**
-    * Illegal type class derivation for an empty enum.
+    * Illegal trait derivation for an empty enum.
     *
     * @param sym      the enum symbol.
     * @param classSym the class symbol of what is being derived.

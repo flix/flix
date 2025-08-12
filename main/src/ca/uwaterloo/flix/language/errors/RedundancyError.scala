@@ -167,7 +167,7 @@ object RedundancyError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Type constraint '${red(FormatTraitConstraint.formatTraitConstraint(redundantTconstr))}' is entailed by type constraint '${green(FormatTraitConstraint.formatTraitConstraint(redundantTconstr))}'.
+      s""">> Type constraint '${red(FormatTraitConstraint.formatTraitConstraint(redundantTconstr))}' is entailed by type constraint '${green(FormatTraitConstraint.formatTraitConstraint(entailingTconstr))}'.
          |
          |${code(loc, "redundant type constraint.")}
          |""".stripMargin

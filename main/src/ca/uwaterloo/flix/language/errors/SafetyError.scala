@@ -15,10 +15,10 @@ sealed trait SafetyError extends CompilationMessage {
 object SafetyError {
 
   /**
-   * An error raised to indicate a forbidden operation.
-   *
-   * @param loc  the source location of the forbidden operation.
-   */
+    * An error raised to indicate a forbidden operation.
+    *
+    * @param loc the source location of the forbidden operation.
+    */
   case class Forbidden(ctx: SecurityContext, loc: SourceLocation) extends SafetyError {
     override def summary: String = "Operation not permitted"
 
