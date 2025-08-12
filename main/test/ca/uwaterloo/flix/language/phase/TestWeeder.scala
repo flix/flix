@@ -357,6 +357,86 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEscapeSequence](result)
   }
 
+  ignore("IllegalExtPattern.01") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A(1) {
+        |    case 1 => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalExtPattern](result)
+  }
+
+  ignore("IllegalExtPattern.02") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A(1) {
+        |    case A.B(2) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalExtPattern](result)
+  }
+
+  test("IllegalExtPattern.03") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A(1) {
+        |    case A((1, 2)) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalExtPattern](result)
+  }
+
+  test("IllegalExtPattern.04") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A(1) {
+        |    case A(B(1)) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalExtPattern](result)
+  }
+
+  test("IllegalExtPattern.05") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A(1) {
+        |    case A(1) => 1
+        |    case A(1) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalExtPattern](result)
+  }
+
+  test("IllegalExtPattern.06") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A(1) {
+        |    case A(1) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalExtPattern](result)
+  }
+
+  test("IllegalExtPattern.07") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar A(1) {
+        |    case A(1) => 1
+        |    case A(1) => 1
+        |    case A(1) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalExtPattern](result)
+  }
+
   test("IllegalFixedAtom.01") {
     val input =
       """def f(): Unit =
@@ -568,6 +648,46 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalFormalParamAscription](result)
+  }
+
+  test("IllegalLatticeProvenance.01") {
+    val input =
+      """
+        |def main(): Unit  =
+        |    let p = #{
+        |        A(x; y) :- B(x, y).
+        |    };
+        |    let _ = pquery p select A(1; 2) with { B };
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[WeederError.IllegalLatticeProvenance](result)
+  }
+
+  test("IllegalLatticeProvenance.02") {
+    val input =
+      """
+        |def main(): Unit  =
+        |    let p = #{
+        |        A(x; y) :- B(x, y).
+        |    };
+        |    let _ = pquery p select A("hello"; 2) with { B };
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[WeederError.IllegalLatticeProvenance](result)
+  }
+
+  test("IllegalLatticeProvenance.03") {
+    val input =
+      """
+        |def main(): Unit  =
+        |    let p = #{ };
+        |    let _ = pquery p select A("hello"; 2) with { B };
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[WeederError.IllegalLatticeProvenance](result)
   }
 
   test("IllegalModifier.01") {

@@ -39,7 +39,7 @@ import scala.collection.mutable
   * Additionally it eliminates all type variables and normalizes types. This means that types have
   * unique representations, without aliases and associated types.
   *
-  * Additionally it resolves type class methods into actual function calls.
+  * Additionally it resolves trait methods into actual function calls.
   *
   * For example, the polymorphic program:
   *

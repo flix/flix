@@ -792,6 +792,21 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("MissingWithInPQuery") {
+    val input =
+      """def main(): Unit =
+        |    let p = #{
+        |        Edge(1, 2).
+        |        Edge(y, x) :- Edge(x, y).
+        |    };
+        |    let _ = pquery p select A() with ;
+        |    ()
+        |"""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("Regression.#7646") {
     val input =
       """
@@ -949,86 +964,6 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Int32 = ematch xvar A(1) { }
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("IllegalExtPattern.01") {
-    val input =
-      """
-        |def f(): Int32 = ematch xvar A(1) {
-        |    case 1 => 1
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("IllegalExtPattern.02") {
-    val input =
-      """
-        |def f(): Int32 = ematch xvar A(1) {
-        |    case A.B(2) => 1
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("IllegalExtPattern.03") {
-    val input =
-      """
-        |def f(): Int32 = ematch xvar A(1) {
-        |    case A((1, 2)) => 1
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("IllegalExtPattern.04") {
-    val input =
-      """
-        |def f(): Int32 = ematch xvar A(1) {
-        |    case A(B(1)) => 1
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("IllegalExtPattern.05") {
-    val input =
-      """
-        |def f(): Int32 = ematch xvar A(1) {
-        |    case A(1) => 1
-        |    case A(1) => 1
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("IllegalExtPattern.06") {
-    val input =
-      """
-        |def f(): Int32 = ematch xvar A(1) {
-        |    case A(1) => 1
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("IllegalExtPattern.07") {
-    val input =
-      """
-        |def f(): Int32 = ematch xvar A(1) {
-        |    case A(1) => 1
-        |    case A(1) => 1
-        |    case A(1) => 1
-        |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)

@@ -35,6 +35,7 @@ import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MapOps}
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -502,25 +503,24 @@ object Resolver {
     */
   private def resolveSpec(s0: NamedAst.Spec, tconstr: Option[ResolvedAst.TraitConstraint], scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
     case NamedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0) =>
-      val tparamsVal = resolveTypeParams(tparams0, scp0, ns0, root)
-      flatMapN(tparamsVal) {
-        case tparams =>
-          val scp1 = scp0 ++ mkTypeParamScp(tparams)
-          val fparamsVal = traverse(fparams0)(resolveFormalParam(_, scp1, taenv, ns0, root)(Scope.Top, sctx, flix))
-          flatMapN(fparamsVal) {
-            case fparams =>
-              val scp2 = scp1 ++ mkFormalParamScp(fparams)
-              val tpeVal = resolveType(tpe0, Some(Kind.Star), Wildness.AllowWild, scp2, taenv, ns0, root)(Scope.Top, sctx, flix)
-              val effVal = traverseOpt(eff0)(resolveType(_, Some(Kind.Eff), Wildness.AllowWild, scp2, taenv, ns0, root)(Scope.Top, sctx, flix))
-              val optTconstrsVal = traverse(tconstrs0)(resolveTraitConstraint(_, scp2, taenv, ns0, root))
-              val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, scp2, taenv, ns0, root))
+      val tparams1Val = resolveTypeParams(tparams0, scp0, ns0, root)
+      flatMapN(tparams1Val) {
+        case tparams1 =>
+          val scp1 = scp0 ++ mkTypeParamScp(tparams1)
+          val wildness = Wildness.RecordWild(new ArrayBuffer)
+          val fparamsVal = traverse(fparams0)(resolveFormalParam(_, wildness, scp1, taenv, ns0, root)(Scope.Top, sctx, flix))
+          val tpeVal = resolveType(tpe0, Some(Kind.Star), wildness, scp1, taenv, ns0, root)(Scope.Top, sctx, flix)
+          val effVal = traverseOpt(eff0)(resolveType(_, Some(Kind.Eff), wildness, scp1, taenv, ns0, root)(Scope.Top, sctx, flix))
+          val optTconstrsVal = traverse(tconstrs0)(resolveTraitConstraint(_, scp1, taenv, ns0, root))
+          val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, scp1, taenv, ns0, root))
+          val wildTparams = wildness.syms.toList.map { case (ident, sym) => ResolvedAst.TypeParam.Implicit(ident, sym, ident.loc) }
+          val tparams = tparams1 ::: wildTparams
+          mapN(fparamsVal, tpeVal, effVal, optTconstrsVal, econstrsVal) {
+            case (fparams, tpe, eff, optTconstrs, econstrs) =>
+              // add the inherited type constraint to the list
+              val tconstrs = (tconstr :: optTconstrs).collect { case Some(t) => t }
+              ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs)
 
-              mapN(tpeVal, effVal, optTconstrsVal, econstrsVal) {
-                case (tpe, eff, optTconstrs, econstrs) =>
-                  // add the inherited type constraint to the list
-                  val tconstrs = (tconstr :: optTconstrs).collect { case Some(t) => t }
-                  ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs)
-              }
           }
       }
   }
@@ -918,7 +918,7 @@ object Resolver {
       visitApplyClo(app, scp0)
 
     case NamedAst.Expr.Lambda(fparam, exp, loc) =>
-      val pVal = resolveFormalParam(fparam, scp0, taenv, ns0, root)
+      val pVal = resolveFormalParam(fparam, Wildness.AllowWild, scp0, taenv, ns0, root)
       flatMapN(pVal) {
         case p =>
           val scp = scp0 ++ mkFormalParamScp(List(p))
@@ -970,7 +970,7 @@ object Resolver {
       }
 
     case NamedAst.Expr.LocalDef(sym, fparams0, exp1, exp2, loc) =>
-      val fparamsVal = traverse(fparams0)(resolveFormalParam(_, scp0, taenv, ns0, root))
+      val fparamsVal = traverse(fparams0)(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns0, root))
       flatMapN(fparamsVal) {
         fparams =>
           val scp1 = scp0 ++ mkLocalDefScp(sym, fparams) ++ mkFormalParamScp(fparams)
@@ -1803,7 +1803,7 @@ object Resolver {
     */
   private def visitJvmMethod(method: NamedAst.JvmMethod, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.JvmMethod, ResolutionError] = method match {
     case NamedAst.JvmMethod(ident, fparams0, exp, tpe, eff, loc) =>
-      val fparamsVal = traverse(fparams0)(resolveFormalParam(_, scp0, taenv, ns0, root))
+      val fparamsVal = traverse(fparams0)(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns0, root))
       flatMapN(fparamsVal) {
         case fparams =>
           val scp = scp0 ++ mkFormalParamScp(fparams)
@@ -1828,7 +1828,7 @@ object Resolver {
         val rulesVal = traverse(rules0) {
           case NamedAst.HandlerRule(ident, fparams, body, loc) =>
             val opVal = findOpInEffect(ident, decl, ns, scp0)
-            val fparamsVal = traverse(fparams)(resolveFormalParam(_, scp0, taenv, ns, root))
+            val fparamsVal = traverse(fparams)(resolveFormalParam(_, Wildness.AllowWild, scp0, taenv, ns, root))
             flatMapN(opVal, fparamsVal) {
               case (o, fp) =>
                 val scp = scp0 ++ mkFormalParamScp(fp)
@@ -2022,9 +2022,11 @@ object Resolver {
 
   /**
     * Performs name resolution on the given formal parameter `fparam0` in the given namespace `ns0`.
+    *
+    * Wildness may be set to `RecordWild` in nonlocal definitions and signatures to track the symbols of wildcard types.
     */
-  private def resolveFormalParam(fparam0: NamedAst.FormalParam, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[ResolvedAst.FormalParam, ResolutionError] = {
-    val tVal = traverseOpt(fparam0.tpe)(resolveType(_, Some(Kind.Star), Wildness.AllowWild, scp0, taenv, ns0, root))
+  private def resolveFormalParam(fparam0: NamedAst.FormalParam, wildness: Wildness, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[ResolvedAst.FormalParam, ResolutionError] = {
+    val tVal = traverseOpt(fparam0.tpe)(resolveType(_, Some(Kind.Star), wildness, scp0, taenv, ns0, root))
     mapN(tVal) {
       t => ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
     }
@@ -2951,6 +2953,12 @@ object Resolver {
       wildness match {
         case Wildness.AllowWild =>
           Result.Ok(LowerType.Var(Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), ident.loc)))
+        case Wildness.RecordWild(syms) =>
+          // ALERT!
+          // Here we mutate the RecordWild list because we are visiting a wildcard type!
+          val sym = Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), ident.loc)
+          syms.append((ident -> sym))
+          Result.Ok(LowerType.Var(sym))
         case Wildness.ForbidWild =>
           Result.Err(ResolutionError.IllegalWildType(ident, ident.loc))
       }
@@ -3661,13 +3669,28 @@ object Resolver {
 
 
   /**
-    * Enum indicating whether a variable may be a wildcard.
+    * Enum indicating whether a type variable may be a wildcard.
     */
   private sealed trait Wildness
 
   private object Wildness {
+    /**
+      * Indicates that wildcard type variables should be recorded.
+      *
+      * This is used to track variables that must be added to a type signature.
+      *
+      * The field `syms` is mutable and is appended to each time a wildcard type variable is visited.
+      */
+    case class RecordWild(syms: ArrayBuffer[(Name.Ident, Symbol.UnkindedTypeVarSym)]) extends Wildness
+
+    /**
+      * Indicates that wildcard type variables are allowed.
+      */
     case object AllowWild extends Wildness
 
+    /**
+      * Indicates that wildcard type variables are forbidden.
+      */
     case object ForbidWild extends Wildness
   }
 

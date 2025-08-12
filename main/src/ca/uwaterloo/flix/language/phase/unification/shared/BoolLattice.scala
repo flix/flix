@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification.shared
 
 /**
-  * A type class for Boolean lattices.
+  * A trait for Boolean lattices.
   */
 trait BoolLattice[T] {
 

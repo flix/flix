@@ -588,7 +588,7 @@ object EntryPoints {
       val printEffect = Type.IO
       val printArrowType = Type.mkArrowWithEffect(printArgType, printEffect, printReturnType, SourceLocation.Unknown)
       val printCallEffect = Type.mkUnion(printEffect, printArg.eff, SourceLocation.Unknown)
-      val printCall = TypedAst.Expr.ApplyDef(printSym, List(printArg), List.empty, printArrowType, printReturnType, printCallEffect, SourceLocation.Unknown)
+      val printCall = TypedAst.Expr.ApplyDef(printSym, List(printArg), List(printArgType), printArrowType, printReturnType, printCallEffect, SourceLocation.Unknown)
 
       val sym = new Symbol.DefnSym(None, Nil, "main" + Flix.Delimiter, SourceLocation.Unknown)
 
