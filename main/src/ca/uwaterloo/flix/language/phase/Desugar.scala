@@ -846,10 +846,10 @@ object Desugar {
     * Desugars the given [[WeededAst.MatchRule]] `rule0`.
     */
   private def visitExtMatchRule(rule0: WeededAst.ExtMatchRule)(implicit flix: Flix): DesugaredAst.ExtMatchRule = rule0 match {
-    case WeededAst.ExtMatchRule(label, pats, exp, loc) =>
-      val ps = pats.map(visitExtPattern)
+    case WeededAst.ExtMatchRule(pat, exp, loc) =>
+      val p = visitExtPattern(pat)
       val e = visitExp(exp)
-      DesugaredAst.ExtMatchRule(label, ps, e, loc)
+      DesugaredAst.ExtMatchRule(p, e, loc)
   }
 
   /**
@@ -885,15 +885,24 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.ExtPattern]] `pat0`.
     */
-  private def visitExtPattern(pat0: WeededAst.ExtPattern): DesugaredAst.ExtPattern = pat0 match {
-    case WeededAst.ExtPattern.Wild(loc) =>
-      DesugaredAst.ExtPattern.Wild(loc)
+  private def visitExtPattern(pat0: WeededAst.ExtPattern): DesugaredAst.ExtPattern = {
+    def visitVarOrWild(varOrWild0: WeededAst.ExtPattern.VarOrWild): DesugaredAst.ExtPattern.VarOrWild = varOrWild0 match {
+      case WeededAst.ExtPattern.Wild(loc) => DesugaredAst.ExtPattern.Wild(loc)
+      case WeededAst.ExtPattern.Var(ident, loc) => DesugaredAst.ExtPattern.Var(ident, loc)
+      case WeededAst.ExtPattern.Error(loc) => DesugaredAst.ExtPattern.Error(loc)
+    }
 
-    case WeededAst.ExtPattern.Var(ident, loc) =>
-      DesugaredAst.ExtPattern.Var(ident, loc)
+    pat0 match {
+      case WeededAst.ExtPattern.Wild(loc) =>
+        DesugaredAst.ExtPattern.Wild(loc)
 
-    case WeededAst.ExtPattern.Error(loc) =>
-      DesugaredAst.ExtPattern.Error(loc)
+      case WeededAst.ExtPattern.Tag(label, pats, loc) =>
+        val ps = pats.map(visitVarOrWild)
+        DesugaredAst.ExtPattern.Tag(label, ps, loc)
+
+      case WeededAst.ExtPattern.Error(loc) =>
+        DesugaredAst.ExtPattern.Error(loc)
+    }
   }
 
   /**
