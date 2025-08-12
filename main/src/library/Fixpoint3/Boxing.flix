@@ -307,12 +307,12 @@ mod Fixpoint3.Boxing {
         /// Unify all `RamId`s in `stmt` which can be proven to be equivalent, type-wise.
         ///
         def unifyRamIdsStmt(predicates: Predicates, set: MutDisjointSets[RamId, r], withProv: Bool, stmt: RamStmt): Unit \ r = match stmt {
-            case RamStmt.Insert(body) => unifyRamIdsOp(predicates, set, withProv, body)
+            case RamStmt.Insert(body)          => unifyRamIdsOp(predicates, set, withProv, body)
             case RamStmt.MergeInto(rel1, rel2) => unifyRelSyms(rel1, rel2, set, withProv)
-            case RamStmt.Swap(rel1, rel2) => unifyRelSyms(rel1, rel2, set, withProv)
-            case RamStmt.Purge(_) => ()
-            case RamStmt.Seq(stmts) => Vector.forEach(unifyRamIdsStmt(predicates, set, withProv), stmts)
-            case RamStmt.Par(stmts) => Vector.forEach(unifyRamIdsStmt(predicates, set, withProv), stmts)
+            case RamStmt.Swap(rel1, rel2)      => unifyRelSyms(rel1, rel2, set, withProv)
+            case RamStmt.Purge(_)              => ()
+            case RamStmt.Seq(stmts)            => Vector.forEach(unifyRamIdsStmt(predicates, set, withProv), stmts)
+            case RamStmt.Par(stmts)            => Vector.forEach(unifyRamIdsStmt(predicates, set, withProv), stmts)
             case RamStmt.Until(bools, body) =>
                 unifyRamIdsStmt(predicates, set, withProv, body);
                 Vector.forEach(unifyRamIdsBool(set), bools)

@@ -82,14 +82,14 @@
     /// Augments `RelOp`'s in `stmt` with `ProvMax` terms.
     ///
     def augmentStmt(stmt: RamStmt): RamStmt \ r= match stmt {
-        case RamStmt.Insert(op) => augmentOp(Nil, op) |> RamStmt.Insert
-        case RamStmt.MergeInto(_, _) => stmt
-        case RamStmt.Swap(_, _) => stmt
-        case RamStmt.Purge(_) => stmt
-        case RamStmt.Seq(stmts) => Vector.map(augmentStmt, stmts) |> RamStmt.Seq
-        case RamStmt.Par(stmts) => Vector.map(augmentStmt, stmts) |> RamStmt.Par
+        case RamStmt.Insert(op)         => augmentOp(Nil, op) |> RamStmt.Insert
+        case RamStmt.MergeInto(_, _)    => stmt
+        case RamStmt.Swap(_, _)         => stmt
+        case RamStmt.Purge(_)           => stmt
+        case RamStmt.Seq(stmts)         => Vector.map(augmentStmt, stmts) |> RamStmt.Seq
+        case RamStmt.Par(stmts)         => Vector.map(augmentStmt, stmts) |> RamStmt.Par
         case RamStmt.Until(bools, rest) => RamStmt.Until(bools, augmentStmt(rest))
-        case RamStmt.Comment(_) => stmt
+        case RamStmt.Comment(_)         => stmt
     }
 
     ///
