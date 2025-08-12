@@ -425,6 +425,46 @@ mod Test.Exp.Fixpoint.PQuery {
             case D(x) => "D(${x})"
         }, pp) `Assert.eq` Vector#{"B(2)", "D(2)", "C(2)", "D(2)", "C(2)", "B(2)", "D(2)", "B(2)", "C(2)"}
 
+    /////////////////////////////////////////////////////////////////////////////
+    // Test that `pquery` result type has open row                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testPQueryOpenRow01(): Bool =
+        let pr = #{
+            A(1, 2).
+        };
+        let pp = pquery pr select A(1, 2) with {A};
+        Vector#{3} `Assert.eq` Vector.map(v -> ematch v {
+            case A(x, y) => x + y
+            case B(x) => x
+        }, pp)
+
+    @Test
+    def testPQueryOpenRow02(): Bool =
+        let pr = #{
+            A(1, 2).
+            B(4).
+        };
+        let pp = pquery pr select B(4) with {B};
+        Vector#{4} `Assert.eq` Vector.map(v -> ematch v {
+            case A(x, y) => x + y
+            case B(x) => x
+        }, pp)
+
+    @Test
+    def testPQueryOpenRow03(): Bool =
+        let pr = #{
+            A(1, 2).
+            B(4).
+        };
+        let pp = pquery pr select A(1, 2) with {A};
+        Vector#{3} `Assert.eq` Vector.map(v -> ematch v {
+            case A(x, y) => x + y
+            case B(x) => x
+            case C(x, y, z) => x + y + z
+        }, pp)
+
     ///////////////////////////////////////////////////////////////////////////
     // Provenance for a subset of a tree
     ///////////////////////////////////////////////////////////////////////////
